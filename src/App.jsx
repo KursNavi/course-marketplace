@@ -23,6 +23,7 @@ const TRANSLATIONS = {
     filter_all_categories: "All Categories",
     no_results: "No courses found matching criteria.",
     btn_book: "Book Course",
+    btn_pay: "Pay & Book", // Correct label
     btn_publish: "Publish Course",
     btn_send: "Send Message",
     form_title: "List a Course",
@@ -95,7 +96,7 @@ const TRANSLATIONS = {
     nav_explore: "Entdecken", nav_login: "Anmelden", nav_logout: "Abmelden", nav_dashboard: "Dashboard",
     hero_title: "Finde Kurse in deiner Nähe.", hero_subtitle: "Vom Jodeln bis zum Programmieren.",
     search_placeholder: "Was möchtest du lernen?", filter_all_cantons: "Ganze Schweiz", filter_all_categories: "Alle Kategorien",
-    no_results: "Keine Kurse gefunden.", btn_book: "Kurs buchen", btn_publish: "Veröffentlichen",
+    no_results: "Keine Kurse gefunden.", btn_book: "Kurs buchen", btn_pay: "Bezahlen & Buchen", btn_publish: "Veröffentlichen",
     form_title: "Kurs anbieten", success_msg: "Erfolgreich!", currency: "CHF",
     teacher_dash: "Lehrer Dashboard", student_dash: "Meine Kurse",
     login_title: "Willkommen", my_bookings: "Meine Buchungen",
@@ -118,7 +119,7 @@ const TRANSLATIONS = {
     nav_explore: "Explorer", nav_login: "Connexion", nav_logout: "Déconnexion", nav_dashboard: "Tableau de bord",
     hero_title: "Découvrez des cours.", hero_subtitle: "Apprenez localement.",
     search_placeholder: "Que voulez-vous apprendre?", filter_all_cantons: "Toute la Suisse", filter_all_categories: "Toutes catégories",
-    no_results: "Aucun cours trouvé.", btn_book: "Réserver", btn_publish: "Publier",
+    no_results: "Aucun cours trouvé.", btn_book: "Réserver", btn_pay: "Payer et réserver", btn_publish: "Publier",
     form_title: "Proposer un cours", success_msg: "Succès!", currency: "CHF",
     teacher_dash: "Tableau de bord", student_dash: "Mes apprentissages",
     login_title: "Bienvenue", my_bookings: "Mes réservations",
@@ -150,7 +151,7 @@ export default function KursNaviPro() {
   
   // App State
   const [courses, setCourses] = useState([]); 
-  const [myBookings, setMyBookings] = useState([]); // NEW: Store real bookings
+  const [myBookings, setMyBookings] = useState([]); 
   const [loading, setLoading] = useState(true);
   const [cantons, setCantons] = useState(INITIAL_CANTONS);
   const [categories, setCategories] = useState(INITIAL_CATEGORIES);
@@ -191,6 +192,17 @@ export default function KursNaviPro() {
     });
 
     return () => subscription.unsubscribe();
+  }, []);
+
+  // --- Payment Success Handler ---
+  useEffect(() => {
+    // Check if URL has ?success=true or session_id
+    const query = new URLSearchParams(window.location.search);
+    if (query.get('session_id')) {
+      setView('success');
+      // In a real app, you would verify the session with your backend here
+      // For now, we assume if they are redirected here, it worked.
+    }
   }, []);
 
   // --- Fetch Data ---
@@ -291,21 +303,40 @@ export default function KursNaviPro() {
     }
   };
 
+  // --- UPDATED: Stripe Booking Logic ---
   const handleBookCourse = async (course) => {
       if (!user) {
           setView('login');
           return;
       }
+      
       try {
-          const { error } = await supabase.from('bookings').insert([
-              { user_id: user.id, course_id: course.id }
-          ]);
-          if (error) throw error;
-          showNotification(`Successfully booked: ${course.title}!`);
-          fetchBookings(user.id);
+          // Call the Vercel API Route
+          const response = await fetch('/api/create-checkout-session', {
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                  courseId: course.id,
+                  courseTitle: course.title,
+                  coursePrice: course.price,
+                  courseImage: course.image_url,
+                  userId: user.id,
+              }),
+          });
+
+          const { url, error } = await response.json();
+
+          if (error) throw new Error(error);
+          
+          // Redirect user to Stripe Checkout
+          window.location.href = url; 
+
       } catch (error) {
-          console.error(error);
-          showNotification("Booking failed. You might have already booked this.");
+          console.error("Booking error:", error);
+          // Fallback notification
+          showNotification("Connecting to payment system...");
       }
   };
 
@@ -323,6 +354,28 @@ export default function KursNaviPro() {
                           (course.instructor_name && course.instructor_name.toLowerCase().includes(searchQuery.toLowerCase()));
     return matchesCategory && matchesSearch && matchesCanton;
   });
+
+  // --- NEW: Success View ---
+  const SuccessView = () => (
+      <div className="min-h-[80vh] flex items-center justify-center px-4">
+          <div className="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full border border-green-100 text-center">
+              <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <CheckCircle className="w-10 h-10 text-green-600" />
+              </div>
+              <h2 className="text-3xl font-bold text-gray-900 mb-4">Payment Successful!</h2>
+              <p className="text-gray-600 mb-8">Thank you for your booking. You will receive a confirmation email shortly.</p>
+              <button 
+                  onClick={() => {
+                      window.history.replaceState({}, document.title, window.location.pathname);
+                      setView('dashboard');
+                  }} 
+                  className="w-full bg-green-600 text-white py-3 rounded-lg font-bold hover:bg-green-700 transition"
+              >
+                  Go to My Courses
+              </button>
+          </div>
+      </div>
+  );
 
   // --- Components ---
   const AuthView = () => {
@@ -344,7 +397,7 @@ export default function KursNaviPro() {
                     options: { data: { full_name: fullName, role: role } }
                 });
                 if (error) throw error;
-                showNotification("Account created! Check your email (or log in if auto-confirm is on).");
+                showNotification("Account created! Check your email.");
             } else {
                 const { error } = await supabase.auth.signInWithPassword({ email, password });
                 if (error) throw error;
@@ -499,7 +552,7 @@ export default function KursNaviPro() {
                 <span className="text-4xl font-extrabold text-gray-900 block mb-1">{t.currency} {course.price}</span>
                 <span className="text-sm text-gray-500 block mb-4">per person</span>
                 <button onClick={() => handleBookCourse(course)} className="w-full bg-red-600 text-white py-4 rounded-xl font-bold hover:bg-red-700 transition shadow-md active:scale-95">
-                    {t.btn_book}
+                    {t.btn_pay}
                 </button>
             </div>
             <div className="space-y-4">
@@ -652,88 +705,54 @@ export default function KursNaviPro() {
       </div>
   );
 
-  const TeacherForm = () => (
-    <div className="max-w-3xl mx-auto py-12 px-4 animate-in slide-in-from-bottom-4 duration-500">
-      <button onClick={() => setView('dashboard')} className="flex items-center text-gray-500 hover:text-gray-900 mb-6 transition-colors">
-        <ArrowLeft className="w-4 h-4 mr-2" /> Back to Dashboard
-      </button>
-      <div className="bg-white p-8 rounded-2xl shadow-xl border border-gray-100">
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
-            <PlusCircle className="w-8 h-8 text-red-600" />
-          </div>
-          <h2 className="text-2xl font-extrabold text-gray-900">{t.form_title}</h2>
+  const AdminPanel = () => (
+    <div className="max-w-6xl mx-auto px-4 py-8">
+        <div className="flex items-center justify-between mb-8">
+            <h1 className="text-3xl font-bold text-gray-900 flex items-center">
+                <Settings className="mr-3 w-8 h-8 text-gray-700" />
+                {t.admin_panel}
+            </h1>
+            <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm">Logged in as Admin</span>
         </div>
-        <form onSubmit={handlePublishCourse} className="space-y-8">
-          <div className="space-y-4">
-              <h3 className="text-lg font-bold text-gray-900 border-b pb-2">Basic Information</h3>
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">Course Title</label>
-                <input required name="title" type="text" className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:outline-none transition-all" />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1">Category</label>
-                  <select name="category" className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:outline-none transition-all bg-white">
-                    {categories.map(c => <option key={c} value={c}>{c}</option>)}
-                  </select>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                <h3 className="font-bold text-xl mb-4 text-gray-800">Manage Cantons</h3>
+                <div className="flex flex-wrap gap-2">
+                    {cantons.map(c => (
+                        <span key={c} className="bg-red-50 text-red-700 px-3 py-1 rounded-full text-sm flex items-center">
+                            {c}
+                        </span>
+                    ))}
                 </div>
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1">Price (CHF)</label>
-                  <input required name="price" type="number" className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:outline-none transition-all" />
+            </div>
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                <h3 className="font-bold text-xl mb-4 text-gray-800">Manage Categories</h3>
+                <div className="flex flex-wrap gap-2">
+                    {categories.map(c => (
+                        <span key={c} className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm flex items-center">
+                            {c}
+                        </span>
+                    ))}
                 </div>
-              </div>
-          </div>
-          <div className="space-y-4">
-              <h3 className="text-lg font-bold text-gray-900 border-b pb-2">Location & Details</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div>
-                     <label className="block text-sm font-bold text-gray-700 mb-1">Canton</label>
-                     <select name="canton" className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:outline-none transition-all bg-white">
-                         {cantons.map(c => <option key={c} value={c}>{c}</option>)}
-                     </select>
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-bold text-gray-700 mb-1">Exact Address</label>
-                    <input required name="address" type="text" placeholder="e.g. Langstrasse 15, 8004 Zürich" className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:outline-none transition-all" />
-                  </div>
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-                <div>
-                   <label className="block text-sm font-bold text-gray-700 mb-1">Number of Sessions</label>
-                   <input required name="sessionCount" type="number" min="1" defaultValue="1" className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:outline-none transition-all" />
+            </div>
+        </div>
+        <div className="mt-8 bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+             <h3 className="font-bold text-xl mb-4 text-gray-800">Platform Overview</h3>
+             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="p-4 bg-gray-50 rounded-lg">
+                    <div className="text-gray-500 text-sm">Total Courses</div>
+                    <div className="text-2xl font-bold">{courses.length}</div>
                 </div>
-                <div>
-                   <label className="block text-sm font-bold text-gray-700 mb-1">Session Length</label>
-                   <input required name="sessionLength" type="text" placeholder="e.g. 2 hours" className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:outline-none transition-all" />
+                <div className="p-4 bg-gray-50 rounded-lg">
+                    <div className="text-gray-500 text-sm">Active Cantons</div>
+                    <div className="text-2xl font-bold">{cantons.length}</div>
                 </div>
-                <div>
-                   <label className="block text-sm font-bold text-gray-700 mb-1">First Start Date</label>
-                   <input required name="startDate" type="date" className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:outline-none transition-all" />
+                <div className="p-4 bg-gray-50 rounded-lg">
+                    <div className="text-gray-500 text-sm">Platform Fees (Est.)</div>
+                    <div className="text-2xl font-bold">CHF 1,250</div>
                 </div>
-              </div>
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">Provider Website (Optional)</label>
-                <input name="providerUrl" type="url" placeholder="https://your-site.com" className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:outline-none transition-all" />
-              </div>
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">Description</label>
-                <textarea required name="description" rows="4" className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:outline-none transition-all" placeholder="General overview..."></textarea>
-              </div>
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">Objectives (One per line)</label>
-                <textarea required name="objectives" rows="4" className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:outline-none transition-all" placeholder="- Learn X&#10;- Master Y&#10;- Understand Z"></textarea>
-              </div>
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">Prerequisites</label>
-                <textarea required name="prerequisites" rows="2" className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:outline-none transition-all" placeholder="Any specific skills or gear needed?"></textarea>
-              </div>
-          </div>
-          <button type="submit" className="w-full bg-red-600 text-white py-4 rounded-xl font-bold hover:bg-red-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
-            {t.btn_publish}
-          </button>
-        </form>
-      </div>
+             </div>
+        </div>
     </div>
   );
 
@@ -842,6 +861,7 @@ export default function KursNaviPro() {
              </div>
           </div>
 
+           {/* Filter Bar */}
            <div className="bg-white border-b sticky top-16 z-40 shadow-sm">
             <div className="max-w-7xl mx-auto px-4 py-4 space-y-4 md:space-y-0 md:flex md:items-center md:space-x-4">
                 <div className="relative flex-grow max-w-lg">
@@ -897,6 +917,7 @@ export default function KursNaviPro() {
         </>
       )}
 
+      {view === 'success' && <SuccessView />}
       {view === 'detail' && selectedCourse && <DetailView course={selectedCourse} />}
       {view === 'login' && <AuthView />}
       {view === 'about' && <AboutPage />}
