@@ -1,25 +1,28 @@
-// We use 'require' instead of 'import' for better compatibility with Vercel Serverless
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const Stripe = require('stripe');
 
-export default async function handler(req, res) {
-  // 1. Basic Setup: Only allow POST requests (sending data)
+// This line is the key fix: using module.exports instead of export default
+module.exports = async (req, res) => {
+  // 1. Basic Setup: Only allow POST requests
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    // 2. SAFETY CHECK: Check if the key exists in Vercel
+    // 2. SAFETY CHECK: Check if the key exists
     if (!process.env.STRIPE_SECRET_KEY) {
-      console.error('CRITICAL: STRIPE_SECRET_KEY is missing.');
+      console.error('CRITICAL: STRIPE_SECRET_KEY is missing in Vercel Environment Variables.');
       return res.status(500).json({ error: 'Server configuration error: Missing Stripe Key' });
     }
 
-    // 3. Get the data sent from the frontend
+    // 3. Initialize Stripe
+    const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
+
+    // 4. Get the data
     const { courseId, courseTitle, coursePrice, userId, courseImage } = req.body;
 
     console.log("Creating session for:", courseTitle); 
 
-    // 4. Create the Stripe Checkout Session
+    // 5. Create the Stripe Checkout Session
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
@@ -36,7 +39,6 @@ export default async function handler(req, res) {
         },
       ],
       mode: 'payment',
-      // success_url is where the user goes after paying
       success_url: `${req.headers.origin}/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.headers.origin}/cancel`,
       metadata: {
@@ -45,11 +47,11 @@ export default async function handler(req, res) {
       },
     });
 
-    // 5. Send the payment URL back to the frontend
+    // 6. Send the URL
     res.status(200).json({ id: session.id, url: session.url });
 
   } catch (error) {
     console.error('Stripe error:', error);
     res.status(500).json({ error: error.message });
   }
-}
+};
