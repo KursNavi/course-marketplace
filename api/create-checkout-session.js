@@ -6,14 +6,16 @@ export default async function handler(req, res) {
   }
 
   try {
-    // 1. Verify the key exists
-    if (!process.env.STRIPE_SECRET_KEY) {
-      // I changed this error message so we can verify the update worked!
-      throw new Error('VERCEL IS BLOCKED. Key is missing.');
+    // 1. Look for the NEW variable name
+    const secretKey = process.env.VZ_STRIPE_KEY;
+
+    if (!secretKey) {
+      // If this fails, we know for a fact something is blocking variables
+      throw new Error('STILL MISSING. The new VZ_STRIPE_KEY was not found.');
     }
 
     // 2. Initialize Stripe
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+    const stripe = new Stripe(secretKey);
     const { courseId, courseTitle, coursePrice, userId, courseImage } = req.body;
 
     // 3. Create Session
