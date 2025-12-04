@@ -6,19 +6,18 @@ export default async function handler(req, res) {
   }
 
   try {
-    // 1. Look for the NEW variable name
-    const secretKey = process.env.VZ_STRIPE_KEY;
+    // ⚠️ HARDCODED KEY FOR TESTING ONLY 
+    // We are bypassing the Vercel Dashboard entirely.
+    const secretKey = 'sk_test_51R0pfBHd3CotzjPe3A6BLp4K0JvGqpncNIWoqcuOAnEgCCVo35hMJPqJJEc2QSqa3L0MyKBPuMCiFyynGjhnJvjr00iYuBK9fk';
 
     if (!secretKey) {
-      // If this fails, we know for a fact something is blocking variables
-      throw new Error('STILL MISSING. The new VZ_STRIPE_KEY was not found.');
+      throw new Error('This should never happen.');
     }
 
-    // 2. Initialize Stripe
+    // Initialize Stripe with the hardcoded key
     const stripe = new Stripe(secretKey);
     const { courseId, courseTitle, coursePrice, userId, courseImage } = req.body;
 
-    // 3. Create Session
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
