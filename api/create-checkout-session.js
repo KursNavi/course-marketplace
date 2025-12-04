@@ -6,13 +6,17 @@ export default async function handler(req, res) {
   }
 
   try {
+    // 1. Verify the key exists
     if (!process.env.STRIPE_SECRET_KEY) {
-      throw new Error('STRIPE_SECRET_KEY is missing in Vercel Environment Variables.');
+      // I changed this error message so we can verify the update worked!
+      throw new Error('VERCEL IS BLOCKED. Key is missing.');
     }
 
+    // 2. Initialize Stripe
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
     const { courseId, courseTitle, coursePrice, userId, courseImage } = req.body;
 
+    // 3. Create Session
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
