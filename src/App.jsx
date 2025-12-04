@@ -303,7 +303,7 @@ export default function KursNaviPro() {
     }
   };
 
-  // --- UPDATED: Stripe Booking Logic ---
+  // --- UPDATED: Stripe Booking Logic (With Debug Popup) ---
   const handleBookCourse = async (course) => {
       if (!user) {
           setView('login');
@@ -326,16 +326,18 @@ export default function KursNaviPro() {
               }),
           });
 
-          const { url, error } = await response.json();
+          // Try to parse the answer. If it's not JSON (like a 404 or 500 HTML page), this fails.
+          const data = await response.json();
 
-          if (error) throw new Error(error);
+          if (data.error) throw new Error(data.error);
           
           // Redirect user to Stripe Checkout
-          window.location.href = url; 
+          window.location.href = data.url; 
 
       } catch (error) {
           console.error("Booking error:", error);
-          // Fallback notification
+          // THIS IS THE NEW PART: Pop up the actual error on your screen
+          alert("SYSTEM ERROR: " + error.message);
           showNotification("Connecting to payment system...");
       }
   };
