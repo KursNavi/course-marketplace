@@ -1,29 +1,18 @@
 import Stripe from 'stripe';
 
 export default async function handler(req, res) {
-  // 1. Basic Setup
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    // 2. DETECTIVE MODE: Look for the key
-    const key = process.env.STRIPE_SECRET_KEY;
-
-    if (!key) {
-      // Create a list of all variable names the server CAN see (Security: Don't show values!)
-      const visibleKeys = Object.keys(process.env).join(', ');
-      
-      // Throw a descriptive error
-      throw new Error(`DEBUG INFO: Key is missing. The server only sees these variables: [${visibleKeys}]`);
+    if (!process.env.STRIPE_SECRET_KEY) {
+      throw new Error('STRIPE_SECRET_KEY is missing in Vercel Environment Variables.');
     }
 
-    // 3. Initialize Stripe
-    const stripe = new Stripe(key);
-
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
     const { courseId, courseTitle, coursePrice, userId, courseImage } = req.body;
 
-    // 4. Create Session
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
