@@ -7,13 +7,19 @@ export default async function handler(req, res) {
   }
 
   try {
-    // 2. Check for the Key
-    if (!process.env.STRIPE_SECRET_KEY) {
-      throw new Error('STRIPE_SECRET_KEY is missing in Vercel.');
+    // 2. DETECTIVE MODE: Look for the key
+    const key = process.env.STRIPE_SECRET_KEY;
+
+    if (!key) {
+      // Create a list of all variable names the server CAN see (Security: Don't show values!)
+      const visibleKeys = Object.keys(process.env).join(', ');
+      
+      // Throw a descriptive error
+      throw new Error(`DEBUG INFO: Key is missing. The server only sees these variables: [${visibleKeys}]`);
     }
 
     // 3. Initialize Stripe
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+    const stripe = new Stripe(key);
 
     const { courseId, courseTitle, coursePrice, userId, courseImage } = req.body;
 
@@ -39,13 +45,10 @@ export default async function handler(req, res) {
       metadata: { courseId, userId },
     });
 
-    // 5. Success
     res.status(200).json({ id: session.id, url: session.url });
 
   } catch (error) {
     console.error('API Error:', error);
-    // Send the actual error message back to the frontend
     res.status(500).json({ error: error.message });
   }
 }
-// forcing a fresh rebuild
