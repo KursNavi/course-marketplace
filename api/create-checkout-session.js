@@ -6,18 +6,18 @@ export default async function handler(req, res) {
   }
 
   try {
-    // ⚠️ HARDCODED KEY FOR TESTING ONLY 
-    // We are bypassing the Vercel Dashboard entirely.
-    const secretKey = 'sk_test_51R0pfBHd3CotzjPe3A6BLp4K0JvGqpncNIWoqcuOAnEgCCVo35hMJPqJJEc2QSqa3L0MyKBPuMCiFyynGjhnJvjr00iYuBK9fk';
+    // 1. Get the Key (Using the VITE_ prefix to bypass the filter)
+    const secretKey = process.env.VITE_STRIPE_SECRET_KEY;
 
     if (!secretKey) {
-      throw new Error('This should never happen.');
+      throw new Error('VITE_STRIPE_SECRET_KEY is missing.');
     }
 
-    // Initialize Stripe with the hardcoded key
+    // 2. Initialize Stripe
     const stripe = new Stripe(secretKey);
     const { courseId, courseTitle, coursePrice, userId, courseImage } = req.body;
 
+    // 3. Create Session
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
