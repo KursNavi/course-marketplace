@@ -11,7 +11,7 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 const TRANSLATIONS = {
   en: {
     nav_explore: "Explore",
-    nav_about: "About Us",
+    nav_about: "About Us", 
     nav_contact: "Contact",
     nav_login: "Login",
     nav_logout: "Logout",
