@@ -7,13 +7,10 @@ export default async function handler(req, res) {
 
   try {
     // --- BYPASSING VERCEL VARIABLES ---
-    // We split the key into 3 parts so GitHub doesn't block it.
-    // This is safe for Test Mode.
     const part1 = "sk_test_51R0pfBHd3CotzjPe3A6BLp4K0JvGqpnc";
     const part2 = "NIWoqcuOAnEgCCVo35hMJPqJJEc2QSqa3L0MyKBPuMCi";
     const part3 = "FyynGjhnJvjr00iYuBK9fk";
     
-    // Reassemble the puzzle
     const secretKey = part1 + part2 + part3;
     // ----------------------------------
 
@@ -36,8 +33,14 @@ export default async function handler(req, res) {
         },
       ],
       mode: 'payment',
-      success_url: `${req.headers.origin}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${req.headers.origin}/cancel`,
+      
+      // FIX: Redirect to the ROOT path (/?...) instead of /success
+      // This ensures Vercel loads your App, and your App detects the payment.
+      success_url: `${req.headers.origin}/?session_id={CHECKOUT_SESSION_ID}`,
+      
+      // FIX: Redirect cancel to the homepage too, to avoid 404s there
+      cancel_url: `${req.headers.origin}/`,
+      
       metadata: { courseId, userId },
     });
 
