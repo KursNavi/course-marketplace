@@ -194,16 +194,45 @@ export default function KursNaviPro() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // --- Payment Success Handler ---
+ // --- Payment Success Handler (Debug Version) ---
   useEffect(() => {
-    // Check if URL has ?success=true or session_id
     const query = new URLSearchParams(window.location.search);
-    if (query.get('session_id')) {
-      setView('success');
-      // In a real app, you would verify the session with your backend here
-      // For now, we assume if they are redirected here, it worked.
+    const sessionId = query.get('session_id');
+    
+    // Only run if we are back from Stripe (sessionId exists) AND the user is logged in
+    if (sessionId && user) {
+        
+        // Check for the "sticky note"
+        const pendingCourseId = localStorage.getItem('pendingCourseId');
+
+        if (pendingCourseId) {
+            // Debug Log
+            console.log("Attempting to book course:", pendingCourseId, "for user:", user.id);
+
+            const saveBooking = async () => {
+                const { error } = await supabase
+                    .from('bookings')
+                    .insert([{ user_id: user.id, course_id: pendingCourseId }]);
+
+                if (error) {
+                    // ALERT THE ERROR so we can see it
+                    alert("DATABASE ERROR: " + error.message + "\n\nDetails: " + error.details);
+                } else {
+                    // Success
+                    localStorage.removeItem('pendingCourseId');
+                    showNotification("Course booked successfully!");
+                    fetchBookings(user.id);
+                }
+            };
+            saveBooking();
+        } else {
+            // If the note is missing, tell us
+            console.log("No pending course ID found in local storage.");
+        }
+        
+        setView('success');
     }
-  }, []);
+  }, [user]);
 
   // --- Fetch Data ---
   useEffect(() => {
