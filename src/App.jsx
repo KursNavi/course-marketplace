@@ -304,6 +304,7 @@ export default function KursNaviPro() {
   };
 
   // --- UPDATED: Stripe Booking Logic (With Debug Popup) ---
+  // --- UPDATED: Stripe Booking Logic (With Memory) ---
   const handleBookCourse = async (course) => {
       if (!user) {
           setView('login');
@@ -311,7 +312,10 @@ export default function KursNaviPro() {
       }
       
       try {
-          // Call the Vercel API Route
+          // 1. SAVE THE MEMORY: Remember which course we are buying
+          localStorage.setItem('pendingCourseId', course.id);
+
+          // 2. Call the Payment API
           const response = await fetch('/api/create-checkout-session', {
               method: 'POST',
               headers: {
@@ -326,19 +330,16 @@ export default function KursNaviPro() {
               }),
           });
 
-          // Try to parse the answer. If it's not JSON (like a 404 or 500 HTML page), this fails.
           const data = await response.json();
 
           if (data.error) throw new Error(data.error);
           
-          // Redirect user to Stripe Checkout
+          // 3. Redirect to Stripe
           window.location.href = data.url; 
 
       } catch (error) {
           console.error("Booking error:", error);
-          // THIS IS THE NEW PART: Pop up the actual error on your screen
           alert("SYSTEM ERROR: " + error.message);
-          showNotification("Connecting to payment system...");
       }
   };
 
