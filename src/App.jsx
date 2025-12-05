@@ -23,7 +23,7 @@ const TRANSLATIONS = {
     filter_all_categories: "All Categories",
     no_results: "No courses found matching criteria.",
     btn_book: "Book Course",
-    btn_pay: "Pay & Book", // Correct label
+    btn_pay: "Pay & Book", 
     btn_publish: "Publish Course",
     btn_send: "Send Message",
     form_title: "List a Course",
@@ -194,21 +194,26 @@ export default function KursNaviPro() {
     return () => subscription.unsubscribe();
   }, []);
 
- // --- Payment Success Handler (Final Clean Version) ---
+  // --- Payment Success Handler (Writes to Database) ---
   useEffect(() => {
     const query = new URLSearchParams(window.location.search);
     const sessionId = query.get('session_id');
     
+    // Only run if we are back from Stripe (sessionId exists) AND the user is logged in
     if (sessionId && user) {
+        
+        // Check for the "sticky note" we left earlier
         const pendingCourseId = localStorage.getItem('pendingCourseId');
 
         if (pendingCourseId) {
+            // Write to the Database
             const saveBooking = async () => {
                 const { error } = await supabase
                     .from('bookings')
                     .insert([{ user_id: user.id, course_id: pendingCourseId }]);
 
                 if (!error) {
+                    // Success! Clean up the note and refresh the dashboard
                     localStorage.removeItem('pendingCourseId');
                     showNotification("Course booked successfully!");
                     fetchBookings(user.id);
@@ -298,7 +303,6 @@ export default function KursNaviPro() {
       category: formData.get('category'),
       canton: formData.get('canton'),
       address: formData.get('address'),
-      // FIXED: Plain string for image URL
       image_url: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=600",
       description: formData.get('description'),
       objectives: objectivesList,
@@ -306,7 +310,9 @@ export default function KursNaviPro() {
       session_count: Number(formData.get('sessionCount')),
       session_length: formData.get('sessionLength'),
       provider_url: formData.get('providerUrl'),
-      user_id: user.id
+      user_id: user.id,
+      // NEW: Save the date!
+      start_date: formData.get('startDate') 
     };
     
     const { data, error } = await supabase.from('courses').insert([newCourse]).select();
@@ -323,7 +329,6 @@ export default function KursNaviPro() {
     }
   };
 
-  // --- UPDATED: Stripe Booking Logic (With Debug Popup) ---
   // --- UPDATED: Stripe Booking Logic (With Memory) ---
   const handleBookCourse = async (course) => {
       if (!user) {
@@ -578,6 +583,20 @@ export default function KursNaviPro() {
                     {t.btn_pay}
                 </button>
             </div>
+            
+             {/* DATE DISPLAY BLOCK */}
+             {course.start_date && (
+                <div className="mb-6 pb-6 border-b border-gray-100">
+                    <div className="flex items-center text-red-600 font-bold mb-1">
+                        <Calendar className="w-5 h-5 mr-2" />
+                        <span>Start Date</span>
+                    </div>
+                    <div className="text-xl font-bold text-gray-900 ml-7">
+                      {new Date(course.start_date).toLocaleDateString('en-CH', { day: 'numeric', month: 'long', year: 'numeric' })}
+                    </div>
+                </div>
+             )}
+
             <div className="space-y-4">
                 <div className="flex items-start">
                     <div className="w-8 flex-shrink-0">
@@ -603,6 +622,112 @@ export default function KursNaviPro() {
           </div>
         </div>
       </div>
+    </div>
+  );
+
+  const TeacherForm = () => (
+    <div className="max-w-3xl mx-auto px-4 py-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <button onClick={() => setView('dashboard')} className="flex items-center text-gray-500 hover:text-gray-900 mb-6 transition-colors">
+            <ArrowLeft className="w-4 h-4 mr-2" /> Back to Dashboard
+        </button>
+        <div className="bg-white p-8 rounded-2xl shadow-xl border border-gray-200">
+            <div className="mb-8 border-b pb-4">
+                <h1 className="text-3xl font-bold text-gray-900">{t.form_title}</h1>
+                <p className="text-gray-500 mt-2">Share your skills with the community.</p>
+            </div>
+            
+            <form onSubmit={handlePublishCourse} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="md:col-span-2">
+                        <label className="block text-sm font-bold text-gray-700 mb-1">Course Title</label>
+                        <input required type="text" name="title" placeholder="e.g. Traditional Swiss Cooking" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none transition-shadow" />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">Category</label>
+                        <div className="relative">
+                            <select name="category" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none appearance-none bg-white">
+                                {categories.map(c => <option key={c} value={c}>{c}</option>)}
+                            </select>
+                            <ChevronDown className="absolute right-3 top-3 text-gray-400 w-4 h-4 pointer-events-none" />
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">Price (CHF)</label>
+                        <div className="relative">
+                            <span className="absolute left-3 top-2 text-gray-500 font-bold">CHF</span>
+                            <input required type="number" name="price" placeholder="50" className="w-full pl-12 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none" />
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">Canton</label>
+                        <div className="relative">
+                            <select name="canton" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none appearance-none bg-white">
+                                {cantons.map(c => <option key={c} value={c}>{c}</option>)}
+                            </select>
+                            <ChevronDown className="absolute right-3 top-3 text-gray-400 w-4 h-4 pointer-events-none" />
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">Specific Address</label>
+                        <input required type="text" name="address" placeholder="Street, City, Zip" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none" />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">Session Count</label>
+                        <input required type="number" name="sessionCount" defaultValue="1" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none" />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">Session Length</label>
+                        <input required type="text" name="sessionLength" placeholder="e.g. 2 hours" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none" />
+                    </div>
+
+                    {/* NEW START DATE FIELD */}
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">Start Date</label>
+                        <div className="relative">
+                            <Calendar className="absolute left-3 top-3 text-gray-400 w-5 h-5" />
+                            <input required type="date" name="startDate" className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none" />
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1">When does the first session begin?</p>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">Provider Website (Optional)</label>
+                        <div className="relative">
+                            <ExternalLink className="absolute left-3 top-3 text-gray-400 w-5 h-5" />
+                            <input type="url" name="providerUrl" placeholder="https://..." className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none" />
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-1">Description</label>
+                    <textarea required name="description" rows="4" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none" placeholder="Describe your course..."></textarea>
+                </div>
+
+                <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-1">What will students learn?</label>
+                    <textarea required name="objectives" rows="4" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none" placeholder="Enter each objective on a new line..."></textarea>
+                </div>
+
+                <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-1">Prerequisites</label>
+                    <input type="text" name="prerequisites" placeholder="e.g. Beginners welcome, bring a laptop" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none" />
+                </div>
+
+                <div className="pt-4 border-t border-gray-100 flex justify-end">
+                    <button type="submit" className="bg-red-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-red-700 shadow-lg hover:-translate-y-0.5 transition flex items-center">
+                        <PlusCircle className="w-5 h-5 mr-2" />
+                        {t.btn_publish}
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
   );
 
@@ -810,7 +935,7 @@ export default function KursNaviPro() {
                     {myCourses.length > 0 ? (
                         <div className="overflow-x-auto">
                             <table className="w-full text-left">
-                                <thead className="bg-gray-50 border-b border-gray-200">
+                                <thead className="bg-gray-5 border-b border-gray-200">
                                     <tr>
                                         <th className="px-6 py-4 font-semibold text-gray-600">Course</th>
                                         <th className="px-6 py-4 font-semibold text-gray-600">Price</th>
@@ -878,10 +1003,10 @@ export default function KursNaviPro() {
       {view === 'home' && (
         <>
           <div className="bg-gradient-to-r from-red-700 to-red-900 text-white py-20 px-4">
-             <div className="max-w-4xl mx-auto text-center space-y-6">
-                <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight">{t.hero_title}</h1>
-                <p className="text-xl text-red-100 max-w-2xl mx-auto">{t.hero_subtitle}</p>
-             </div>
+              <div className="max-w-4xl mx-auto text-center space-y-6">
+                 <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight">{t.hero_title}</h1>
+                 <p className="text-xl text-red-100 max-w-2xl mx-auto">{t.hero_subtitle}</p>
+              </div>
           </div>
 
            {/* Filter Bar */}
