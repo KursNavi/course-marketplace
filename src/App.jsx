@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { Search, User, Clock, MapPin, Menu, PlusCircle, CheckCircle, ArrowLeft, Globe, LogIn, LayoutDashboard, Settings, Trash2, DollarSign, BarChart, Lock, Calendar, ExternalLink, ChevronDown, ChevronUp, Info, X, Heart, Shield, Mail, Phone, Loader } from 'lucide-react';
+import { Search, User, Clock, MapPin, Menu, PlusCircle, CheckCircle, ArrowLeft, Globe, LogIn, LayoutDashboard, Settings, Trash2, DollarSign, BarChart, Lock, Calendar, ExternalLink, ChevronDown, ChevronUp, Info, X, Heart, Shield, Mail, Phone, Loader, AlertCircle } from 'lucide-react';
 
 // --- 1. Supabase Setup ---
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -269,14 +269,13 @@ export default function KursNaviPro() {
     }
   };
 
-  // --- NEW: Handle Cancellation ---
+  // --- Handle Cancellation ---
   const handleCancelBooking = async (courseId, courseTitle) => {
       if (!confirm(`Are you sure you want to cancel your spot in "${courseTitle}"?`)) return;
 
       showNotification("Processing cancellation...");
 
       try {
-          // IMPORTANT: Check if file exists in api/cancel-booking.js
           const response = await fetch('/api/cancel-booking', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -292,7 +291,6 @@ export default function KursNaviPro() {
 
           if (data.error) throw new Error(data.error);
 
-          // Success! Remove it from the list visually
           setMyBookings(myBookings.filter(c => c.id !== courseId));
           showNotification("Booking cancelled successfully.");
 
@@ -348,6 +346,16 @@ export default function KursNaviPro() {
                           (course.instructor_name && course.instructor_name.toLowerCase().includes(searchQuery.toLowerCase()));
     return matchesCategory && matchesSearch && matchesCanton;
   });
+
+  // --- Helpers ---
+  const calculateDeadline = (startDateString) => {
+      if (!startDateString) return null;
+      const start = new Date(startDateString);
+      const deadline = new Date(start);
+      // Deadline is 1 month before start
+      deadline.setMonth(deadline.getMonth() - 1);
+      return deadline;
+  };
 
   // --- Components ---
   const SuccessView = () => (
@@ -924,7 +932,7 @@ export default function KursNaviPro() {
         );
     } 
     
-    // STUDENT DASHBOARD (With Cancel Button)
+    // STUDENT DASHBOARD (With Smart Cancellation Logic)
     return (
         <div className="max-w-6xl mx-auto px-4 py-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-8">{t.student_dash}</h1>
@@ -932,29 +940,59 @@ export default function KursNaviPro() {
                 <div>
                     <h2 className="text-xl font-bold mb-4">{t.my_bookings}</h2>
                     <div className="space-y-4">
-                        {myBookings.length > 0 ? myBookings.map(course => (
-                            <div key={course.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex gap-4">
-                                <img src={course.image_url} className="w-20 h-20 rounded-lg object-cover" />
-                                <div className="flex-grow">
-                                    <h3 className="font-bold text-gray-900">{course.title}</h3>
-                                    <p className="text-sm text-gray-500">{course.instructor_name} • {course.canton}</p>
-                                    
-                                    {/* UPDATED: Cancel Button Section */}
-                                    <div className="mt-4 flex items-center justify-between">
-                                        <div className="text-green-600 text-sm font-medium flex items-center">
-                                            <CheckCircle className="w-4 h-4 mr-1" /> Confirmed
-                                        </div>
-                                        <button 
-                                            onClick={() => handleCancelBooking(course.id, course.title)}
-                                            className="text-red-500 text-sm hover:text-red-700 hover:underline font-medium"
-                                        >
-                                            Cancel Booking
-                                        </button>
-                                    </div>
+                        {myBookings.length > 0 ? myBookings.map(course => {
+                            // --- SMART CANCELLATION LOGIC ---
+                            let canCancel = true;
+                            let deadlineText = "";
+                            
+                            if (course.start_date) {
+                                const deadline = calculateDeadline(course.start_date);
+                                const now = new Date();
+                                
+                                if (now > deadline) {
+                                    canCancel = false;
+                                    deadlineText = `Cancellation period ended on ${deadline.toLocaleDateString()}`;
+                                } else {
+                                    deadlineText = `Cancel until ${deadline.toLocaleDateString()}`;
+                                }
+                            }
+                            // --------------------------------
 
+                            return (
+                                <div key={course.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex gap-4">
+                                    <img src={course.image_url} className="w-20 h-20 rounded-lg object-cover" />
+                                    <div className="flex-grow">
+                                        <h3 className="font-bold text-gray-900">{course.title}</h3>
+                                        <p className="text-sm text-gray-500">{course.instructor_name} • {course.canton}</p>
+                                        
+                                        <div className="mt-4 flex items-center justify-between">
+                                            <div className="text-green-600 text-sm font-medium flex items-center">
+                                                <CheckCircle className="w-4 h-4 mr-1" /> Confirmed
+                                            </div>
+
+                                            {/* CONDITIONAL BUTTON */}
+                                            {canCancel ? (
+                                                <div className="flex flex-col items-end">
+                                                    <button 
+                                                        onClick={() => handleCancelBooking(course.id, course.title)}
+                                                        className="text-red-500 text-sm hover:text-red-700 hover:underline font-medium"
+                                                    >
+                                                        Cancel Booking
+                                                    </button>
+                                                    <span className="text-xs text-gray-400 mt-1">{deadlineText}</span>
+                                                </div>
+                                            ) : (
+                                                <div className="flex items-center text-gray-400 text-sm bg-gray-50 px-2 py-1 rounded">
+                                                    <Lock className="w-3 h-3 mr-1" />
+                                                    <span>Non-refundable</span>
+                                                </div>
+                                            )}
+                                            
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                        )) : (
+                            );
+                        }) : (
                             <p className="text-gray-500 italic">You haven't booked any courses yet.</p>
                         )}
                     </div>
