@@ -10,87 +10,35 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 // --- Localization Data ---
 const TRANSLATIONS = {
   en: {
-    nav_explore: "Explore",
-    nav_about: "About Us", 
-    nav_contact: "Contact",
-    nav_login: "Login",
-    nav_logout: "Logout",
-    nav_dashboard: "Dashboard",
-    hero_title: "Discover courses near you.",
-    hero_subtitle: "From yodeling in Appenzell to coding in Zürich. Learn locally.",
-    search_placeholder: "What do you want to learn?",
-    filter_all_cantons: "All Switzerland",
-    filter_all_categories: "All Categories",
-    no_results: "No courses found matching criteria.",
-    btn_book: "Book Course",
-    btn_pay: "Pay & Book", 
-    btn_publish: "Publish Course",
-    btn_send: "Send Message",
-    form_title: "List a Course",
-    success_msg: "Grüezi! Action successful.",
-    currency: "CHF",
-    admin_panel: "Admin Control Center",
-    teacher_dash: "Teacher Dashboard",
-    student_dash: "My Learning",
-    login_title: "Welcome Back",
-    my_bookings: "My Bookings",
-    login_as_student: "Login as Student",
-    login_as_teacher: "Login as Teacher",
-    admin_login_title: "Admin Access",
-    footer_terms: "Terms & Conditions",
-    footer_privacy: "Data Protection",
-    footer_legal: "Legal Notice",
-    footer_madein: "Made in Switzerland",
-    footer_rights: "All rights reserved.",
-    lbl_objectives: "What you will learn",
-    lbl_prerequisites: "Prerequisites",
-    lbl_description: "About this course",
-    lbl_address: "Location",
-    lbl_duration: "Duration",
-    lbl_sessions: "sessions",
-    lbl_upcoming: "Upcoming Editions",
-    lbl_provider: "Provider",
-    lbl_show_more: "Show more dates",
-    lbl_show_less: "Show less",
-    about_title: "About KursNavi",
+    nav_explore: "Explore", nav_about: "About Us", nav_contact: "Contact", nav_login: "Login", nav_logout: "Logout", nav_dashboard: "Dashboard",
+    hero_title: "Discover courses near you.", hero_subtitle: "From yodeling in Appenzell to coding in Zürich. Learn locally.",
+    search_placeholder: "What do you want to learn?", filter_all_cantons: "All Switzerland", filter_all_categories: "All Categories",
+    no_results: "No courses found matching criteria.", btn_book: "Book Course", btn_pay: "Pay & Book", btn_publish: "Publish Course", btn_send: "Send Message",
+    form_title: "List a Course", success_msg: "Grüezi! Action successful.", currency: "CHF", admin_panel: "Admin Control Center",
+    teacher_dash: "Teacher Dashboard", student_dash: "My Learning", login_title: "Welcome Back", my_bookings: "My Bookings",
+    login_as_student: "Login as Student", login_as_teacher: "Login as Teacher", admin_login_title: "Admin Access",
+    footer_terms: "Terms & Conditions", footer_privacy: "Data Protection", footer_legal: "Legal Notice", footer_madein: "Made in Switzerland", footer_rights: "All rights reserved.",
+    lbl_objectives: "What you will learn", lbl_prerequisites: "Prerequisites", lbl_description: "About this course", lbl_address: "Location",
+    lbl_duration: "Duration", lbl_sessions: "sessions", lbl_upcoming: "Upcoming Editions", lbl_provider: "Provider",
+    lbl_show_more: "Show more dates", lbl_show_less: "Show less", about_title: "About KursNavi",
     about_subtitle: "Connecting Switzerland through knowledge and skills.",
-    about_text: "KursNavi was born from a simple idea: everyone has something to teach, and everyone has something to learn. In a country as diverse as Switzerland, with its rich tapestry of languages and cultures, we wanted to build a bridge between local experts and eager students.",
-    about_community_title: "Community First",
-    about_community_text: "We prioritize local connections. Your yoga teacher might be your neighbor, and your coding instructor might live just a canton away.",
-    about_quality_title: "Swiss Quality",
-    about_quality_text: "We verify our hosts and ensure that listings meet a high standard of clarity and transparency.",
-    contact_title: "Contact Us",
-    contact_get_in_touch: "Get in Touch",
-    contact_office_hours: "Office Hours",
-    contact_mon_fri: "Monday - Friday: 09:00 - 17:00",
-    contact_weekend: "Weekends: Closed",
-    contact_lbl_name: "Name",
-    contact_lbl_email: "Email",
-    contact_lbl_msg: "Message",
-    terms_title: "Terms & Conditions",
-    terms_last_updated: "Last Updated: October 2024",
-    terms_1_title: "1. Scope of Application",
-    terms_1_text: "These General Terms and Conditions (GTC) apply to the use of the KursNavi platform. By using the platform, you agree to these terms.",
-    terms_2_title: "2. Service Description",
-    terms_2_text: "KursNavi operates as an intermediary platform connecting independent course providers ('Teachers') with learners ('Students'). KursNavi is not the contracting party for the courses offered; contracts are formed directly between the Teacher and the Student.",
-    terms_3_title: "3. User Obligations",
-    terms_3_text: "Users are obliged to provide truthful information. Teachers are responsible for ensuring they have the necessary rights and qualifications to offer their courses.",
-    terms_4_title: "4. Cancellations and Refunds",
-    terms_4_text: "Cancellation policies are set by individual Teachers. However, KursNavi guarantees a full refund if a course is cancelled by the Teacher. Student cancellations made less than 24 hours before the course start may not be eligible for a refund.",
-    terms_5_title: "5. Liability",
-    terms_5_text: "KursNavi accepts no liability for the content or quality of the courses conducted. Liability for slight negligence is excluded.",
-    privacy_title: "Data Protection Guidelines",
-    privacy_compliant: "Compliant with the Swiss Federal Act on Data Protection (FADP) and GDPR.",
-    privacy_1_title: "1. Data Controller",
-    privacy_1_text: "KursNavi AG, Bahnhofstrasse 100, 8001 Zürich is responsible for data processing on this website.",
-    privacy_2_title: "2. Data Collection",
-    privacy_2_text: "We collect personal data that you provide to us (e.g., when registering, booking a course, or contacting us). This includes name, email address, payment information, and course preferences.",
-    privacy_3_title: "3. Purpose of Processing",
-    privacy_3_text: "Your data is processed to facilitate course bookings, manage user accounts, improving our platform, and for legal compliance.",
-    privacy_4_title: "4. Data Sharing",
-    privacy_4_text: "We only share necessary data with Teachers (e.g., student name for attendance) or payment processors. We do not sell your data to third parties.",
-    privacy_5_title: "5. Your Rights",
-    privacy_5_text: "You have the right to access, correct, or delete your personal data. Please contact privacy@kursnavi.ch for any requests.",
+    about_text: "KursNavi was born from a simple idea: everyone has something to teach, and everyone has something to learn.",
+    about_community_title: "Community First", about_community_text: "We prioritize local connections.",
+    about_quality_title: "Swiss Quality", about_quality_text: "We verify our hosts.", contact_title: "Contact Us",
+    contact_get_in_touch: "Get in Touch", contact_office_hours: "Office Hours", contact_mon_fri: "Monday - Friday: 09:00 - 17:00",
+    contact_weekend: "Weekends: Closed", contact_lbl_name: "Name", contact_lbl_email: "Email", contact_lbl_msg: "Message",
+    terms_title: "Terms & Conditions", terms_last_updated: "Last Updated: October 2024",
+    terms_1_title: "1. Scope of Application", terms_1_text: "These General Terms and Conditions (GTC) apply to the use of the KursNavi platform.",
+    terms_2_title: "2. Service Description", terms_2_text: "KursNavi operates as an intermediary platform.",
+    terms_3_title: "3. User Obligations", terms_3_text: "Users are obliged to provide truthful information.",
+    terms_4_title: "4. Cancellations and Refunds", terms_4_text: "Cancellation policies are set by individual Teachers.",
+    terms_5_title: "5. Liability", terms_5_text: "KursNavi accepts no liability for the content or quality of the courses conducted.",
+    privacy_title: "Data Protection Guidelines", privacy_compliant: "Compliant with the Swiss Federal Act on Data Protection (FADP).",
+    privacy_1_title: "1. Data Controller", privacy_1_text: "KursNavi AG, Bahnhofstrasse 100, 8001 Zürich.",
+    privacy_2_title: "2. Data Collection", privacy_2_text: "We collect personal data that you provide to us.",
+    privacy_3_title: "3. Purpose of Processing", privacy_3_text: "Your data is processed to facilitate course bookings.",
+    privacy_4_title: "4. Data Sharing", privacy_4_text: "We only share necessary data with Teachers.",
+    privacy_5_title: "5. Your Rights", privacy_5_text: "You have the right to access, correct, or delete your personal data.",
   },
   de: {
     nav_explore: "Entdecken", nav_login: "Anmelden", nav_logout: "Abmelden", nav_dashboard: "Dashboard",
@@ -194,37 +142,30 @@ export default function KursNaviPro() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // --- Payment Success Handler (Writes to Database) ---
+  // --- Payment Success Handler ---
   useEffect(() => {
     const query = new URLSearchParams(window.location.search);
     const sessionId = query.get('session_id');
     
-    // Only run if we are back from Stripe (sessionId exists) AND the user is logged in
     if (sessionId && user) {
-        
-        // Check for the "sticky note" we left earlier
         const pendingCourseId = localStorage.getItem('pendingCourseId');
 
         if (pendingCourseId) {
-            // Write to the Database
             const saveBooking = async () => {
                 const { error } = await supabase
                     .from('bookings')
                     .insert([{ user_id: user.id, course_id: pendingCourseId }]);
 
                 if (!error) {
-                    // Success! Clean up the note and refresh the dashboard
                     localStorage.removeItem('pendingCourseId');
                     showNotification("Course booked successfully!");
                     fetchBookings(user.id);
-                    // Remove the ugly ?session_id=... from the URL bar without reloading
                     window.history.replaceState({}, document.title, "/dashboard");
                     setView('dashboard');
                 }
             };
             saveBooking();
         } else {
-             // If no pending course, just show success view or dashboard
              setView('dashboard');
         }
     }
@@ -311,7 +252,6 @@ export default function KursNaviPro() {
       session_length: formData.get('sessionLength'),
       provider_url: formData.get('providerUrl'),
       user_id: user.id,
-      // NEW: Save the date!
       start_date: formData.get('startDate') 
     };
     
@@ -329,7 +269,39 @@ export default function KursNaviPro() {
     }
   };
 
-  // --- UPDATED: Stripe Booking Logic (With Memory) ---
+  // --- NEW: Handle Cancellation ---
+  const handleCancelBooking = async (courseId, courseTitle) => {
+      if (!confirm(`Are you sure you want to cancel your spot in "${courseTitle}"?`)) return;
+
+      showNotification("Processing cancellation...");
+
+      try {
+          // IMPORTANT: Check if file exists in api/cancel-booking.js
+          const response = await fetch('/api/cancel-booking', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                  courseId: courseId,
+                  userId: user.id,
+                  courseTitle: courseTitle,
+                  studentEmail: user.email 
+              }),
+          });
+
+          const data = await response.json();
+
+          if (data.error) throw new Error(data.error);
+
+          // Success! Remove it from the list visually
+          setMyBookings(myBookings.filter(c => c.id !== courseId));
+          showNotification("Booking cancelled successfully.");
+
+      } catch (error) {
+          console.error("Cancellation error:", error);
+          alert("Error cancelling: " + error.message);
+      }
+  };
+
   const handleBookCourse = async (course) => {
       if (!user) {
           setView('login');
@@ -337,10 +309,7 @@ export default function KursNaviPro() {
       }
       
       try {
-          // 1. SAVE THE MEMORY: Remember which course we are buying
           localStorage.setItem('pendingCourseId', course.id);
-
-          // 2. Call the Payment API
           const response = await fetch('/api/create-checkout-session', {
               method: 'POST',
               headers: {
@@ -356,10 +325,7 @@ export default function KursNaviPro() {
           });
 
           const data = await response.json();
-
           if (data.error) throw new Error(data.error);
-          
-          // 3. Redirect to Stripe
           window.location.href = data.url; 
 
       } catch (error) {
@@ -383,7 +349,7 @@ export default function KursNaviPro() {
     return matchesCategory && matchesSearch && matchesCanton;
   });
 
-  // --- NEW: Success View ---
+  // --- Components ---
   const SuccessView = () => (
       <div className="min-h-[80vh] flex items-center justify-center px-4">
           <div className="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full border border-green-100 text-center">
@@ -405,7 +371,6 @@ export default function KursNaviPro() {
       </div>
   );
 
-  // --- Components ---
   const AuthView = () => {
     const [isSignUp, setIsSignUp] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -959,7 +924,7 @@ export default function KursNaviPro() {
         );
     } 
     
-    // STUDENT DASHBOARD (With Real Bookings)
+    // STUDENT DASHBOARD (With Cancel Button)
     return (
         <div className="max-w-6xl mx-auto px-4 py-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-8">{t.student_dash}</h1>
@@ -970,12 +935,23 @@ export default function KursNaviPro() {
                         {myBookings.length > 0 ? myBookings.map(course => (
                             <div key={course.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex gap-4">
                                 <img src={course.image_url} className="w-20 h-20 rounded-lg object-cover" />
-                                <div>
+                                <div className="flex-grow">
                                     <h3 className="font-bold text-gray-900">{course.title}</h3>
                                     <p className="text-sm text-gray-500">{course.instructor_name} • {course.canton}</p>
-                                    <div className="mt-2 text-green-600 text-sm font-medium flex items-center">
-                                        <CheckCircle className="w-4 h-4 mr-1" /> Confirmed
+                                    
+                                    {/* UPDATED: Cancel Button Section */}
+                                    <div className="mt-4 flex items-center justify-between">
+                                        <div className="text-green-600 text-sm font-medium flex items-center">
+                                            <CheckCircle className="w-4 h-4 mr-1" /> Confirmed
+                                        </div>
+                                        <button 
+                                            onClick={() => handleCancelBooking(course.id, course.title)}
+                                            className="text-red-500 text-sm hover:text-red-700 hover:underline font-medium"
+                                        >
+                                            Cancel Booking
+                                        </button>
                                     </div>
+
                                 </div>
                             </div>
                         )) : (
