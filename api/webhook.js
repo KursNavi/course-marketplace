@@ -43,6 +43,7 @@ export default async function handler(req, res) {
   // ----------------------------------
 
   const stripe = new Stripe(STRIPE_KEY);
+  // We use the Service Key so we can access Admin features (like finding the teacher's email)
   const supabase = createClient(SUPABASE_URL, SERVICE_KEY);
   const resend = new Resend(RESEND_KEY);
 
@@ -66,46 +67,80 @@ export default async function handler(req, res) {
 
     console.log(`💰 Payment success! Booking Course: ${courseId} for User: ${userId}`);
 
-    // STEP A: Write to Supabase
+    // STEP A: Write to Supabase (Save the Booking)
     const { error: bookingError } = await supabase
       .from('bookings')
       .insert([{ user_id: userId, course_id: courseId }]);
 
     if (bookingError) {
         console.error('Supabase Write Error:', bookingError);
-        // If it's a duplicate, we just log it and continue to email
     }
 
-    // STEP B: Fetch Course Details
+    // STEP B: Fetch Course Details (AND Teacher ID)
     const { data: course } = await supabase
         .from('courses')
-        .select('title, start_date')
+        .select('title, start_date, user_id') // We need user_id to find the teacher
         .eq('id', courseId)
         .single();
 
     const courseTitle = course ? course.title : 'Your Course';
-    const courseDate = course ? course.start_date : 'Date to be announced';
+    const courseDate = course ? course.start_date : 'TBA';
 
-    // STEP C: Send Email (UPDATED LOGIC)
+    // STEP C: Send Student Confirmation Email
     try {
-        // We now ask Resend to give us the error report if there is one
-        const { data, error } = await resend.emails.send({
+        await resend.emails.send({
             from: 'KursNavi <onboarding@resend.dev>',
             to: customerEmail,
             subject: `Booking Confirmed: ${courseTitle}`,
-            html: `<h1>Booking Confirmation</h1><p>You booked <strong>${courseTitle}</strong> on ${courseDate}.</p>`
+            html: `
+              <h1>Booking Confirmation</h1>
+              <p>You booked <strong>${courseTitle}</strong> on ${courseDate}.</p>
+              <p>See you there!</p>
+            `
         });
-
-        if (error) {
-            // This is the line that was missing before!
-            console.error('❌ RESEND API ERROR:', error); 
-        } else {
-            console.log('✅ Email successfully sent to:', customerEmail);
-            console.log('📄 Resend Receipt ID:', data.id);
-        }
-        
+        console.log('✅ Student email sent.');
     } catch (err) {
-        console.error('❌ Unexpected Email Crash:', err);
+        console.error('❌ Student email failed:', err);
+    }
+
+    // STEP D: Teacher "Late Booking" Notification
+    if (course && course.start_date) {
+        const startDate = new Date(course.start_date);
+        const today = new Date();
+        const oneMonthFromNow = new Date();
+        oneMonthFromNow.setMonth(today.getMonth() + 1);
+
+        // If the course starts BEFORE 1 month from now...
+        if (startDate < oneMonthFromNow) {
+            console.log('⚡ Late Booking detected! Notifying Teacher...');
+
+            // 1. Get Teacher Email using Admin Key
+            const { data: teacherUser, error: teacherError } = await supabase.auth.admin.getUserById(course.user_id);
+
+            if (teacherUser && teacherUser.user) {
+                const teacherEmail = "BTRespondek@gmail.com"; // ⚠️ HARDCODED FOR TESTING ONLY
+
+                // 2. Send Email to Teacher
+                try {
+                    await resend.emails.send({
+                        from: 'KursNavi <onboarding@resend.dev>',
+                        to: teacherEmail,
+                        subject: `New Last-Minute Booking: ${course.title}`,
+                        html: `
+                          <h1>New Student!</h1>
+                          <p>A student has just booked your course <strong>${course.title}</strong>.</p>
+                          <p><strong>Student Email:</strong> ${customerEmail}</p>
+                          <p>Since the course starts soon (${courseDate}), please add them to your roster immediately.</p>
+                        `
+                    });
+                    console.log('✅ Teacher notification sent to:', teacherEmail);
+                } catch (tError) {
+                    console.error('❌ Teacher notification failed:', tError);
+                }
+            } else {
+                console.error('Could not find teacher email:', teacherError);
+            }
+        }
     }
   }
 
