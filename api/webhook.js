@@ -79,7 +79,7 @@ export default async function handler(req, res) {
 
     // 4. Send TEACHER Email (FORCED - NO DATE CHECK)
     // We are hardcoding the email to ensure it works in Test Mode
-    const teacherEmail = "BTRespondek@gmail.com"; 
+    const teacherEmail = "btrespondek@gmail.com"; 
 
     console.log(`⚡ ATTEMPTING TEACHER EMAIL to: ${teacherEmail}`);
 
