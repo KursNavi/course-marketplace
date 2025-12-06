@@ -3,11 +3,11 @@ import { Resend } from 'resend';
 
 export default async function handler(req, res) {
 
-  // --- KEYS ---
+  // --- KEYS (Still hardcoded for stability until we secure them) ---
   const SUPABASE_URL = "https://nplxmpfasgpumpiddjfl.supabase.co";
   const SERVICE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5wbHhtcGZhc2dwdW1waWRkamZsIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NDMzOTk0MiwiZXhwIjoyMDc5OTE1OTQyfQ.5BeY8BkISy_hexNUzx0nDTDNbU5N-Hg4jdeOnHufffw";
   const RESEND_KEY = "re_PWCFaKxw_LPBudxuw5WoRiefvdJSPnnds";
-  // ------------
+  // ---------------------------------------------------------------
 
   const supabase = createClient(SUPABASE_URL, SERVICE_KEY);
   const resend = new Resend(RESEND_KEY);
@@ -25,7 +25,7 @@ export default async function handler(req, res) {
     nextMonthEnd.setDate(nextMonthEnd.getDate() + 2);
     const endWindow = `${nextMonthEnd.toISOString().split('T')[0]}T23:59:59`;
 
-    // 2. Find courses in this window
+    // 2. Find courses
     const { data: courses } = await supabase
       .from('courses')
       .select('*')
@@ -33,15 +33,14 @@ export default async function handler(req, res) {
       .lte('start_date', endWindow);
 
     if (!courses || courses.length === 0) {
-      return res.status(200).json({ message: "No courses found." });
+      return res.status(200).json({ message: "No courses found in window." });
     }
 
     let emailsSent = 0;
 
     for (const course of courses) {
         
-        // SIMPLIFIED QUERY: We removed "profiles:user_id(...)"
-        // This prevents the code from breaking if the profile link is bad.
+        // 3. Find Bookings
         const { data: bookings } = await supabase
             .from('bookings')
             .select('*')
@@ -49,25 +48,38 @@ export default async function handler(req, res) {
 
         if (!bookings || bookings.length === 0) continue;
 
-        // Filter for Unpaid (False or Null)
+        // Filter: Keep only unpaid bookings
         const unpaidBookings = bookings.filter(b => b.is_paid !== true);
-
         if (unpaidBookings.length === 0) continue;
 
-        // Calculate Money
+        // 4. Fetch Student Names (The "Safe" Way)
+        // We get the list of User IDs from the bookings
+        const userIds = unpaidBookings.map(b => b.user_id);
+        
+        // We ask Supabase for the names matching those IDs
+        const { data: profiles } = await supabase
+            .from('profiles')
+            .select('id, full_name, email')
+            .in('id', userIds);
+
+        // 5. Generate the Email List with Real Names
+        const listHtml = unpaidBookings.map(booking => {
+            // Find the profile that matches this booking
+            const studentProfile = profiles?.find(p => p.id === booking.user_id);
+            const name = studentProfile?.full_name || 'Guest Student';
+            const email = studentProfile?.email || 'No email';
+            return `<li>${name} (${email})</li>`;
+        }).join('');
+
+        // 6. Calculate Payout
         const totalRevenue = unpaidBookings.length * course.price;
         const payoutAmount = totalRevenue * 0.85;
 
-        // Mark as Paid
+        // 7. Mark as Paid in DB
         const bookingIds = unpaidBookings.map(b => b.id);
         await supabase.from('bookings').update({ is_paid: true }).in('id', bookingIds);
 
-        // Generate List (Using User IDs since we removed the name lookup)
-        const listHtml = unpaidBookings
-            .map(b => `<li>Student User ID: ${b.user_id}</li>`)
-            .join('');
-
-        // Send Email
+        // 8. Send Email
         await resend.emails.send({
             from: 'KursNavi <onboarding@resend.dev>',
             to: 'btrespondek@gmail.com', 
@@ -78,7 +90,6 @@ export default async function handler(req, res) {
               <p>Payout processed: <strong>CHF ${payoutAmount}</strong></p>
               <h3>Student List:</h3>
               <ul>${listHtml}</ul>
-              <p><em>(Note: Student names hidden for this test to ensure delivery)</em></p>
             `
         });
         
