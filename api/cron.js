@@ -13,27 +13,37 @@ export default async function handler(req, res) {
   const resend = new Resend(RESEND_KEY);
 
   try {
-    // 1. Calculate Target Date (1 Month from now)
+    // 1. Calculate the Search Window (Next Month + 48 Hours)
+    // This handles the timezone difference between Switzerland and the Server
     const today = new Date();
-    const nextMonth = new Date(today);
-    nextMonth.setMonth(today.getMonth() + 1);
+    const nextMonthStart = new Date(today);
+    nextMonthStart.setMonth(today.getMonth() + 1);
     
-    // We search for the WHOLE day (00:00 to 23:59)
-    const targetDateStr = nextMonth.toISOString().split('T')[0];
-    const startOfDay = `${targetDateStr}T00:00:00`;
-    const endOfDay = `${targetDateStr}T23:59:59`;
+    // We look for courses starting in a wider window (Today+1 Month -> Today+1 Month+2 Days)
+    const startDateStr = nextMonthStart.toISOString().split('T')[0];
+    const startWindow = `${startDateStr}T00:00:00`;
+    
+    // Add 2 days to the end window to be safe
+    const nextMonthEnd = new Date(nextMonthStart);
+    nextMonthEnd.setDate(nextMonthEnd.getDate() + 2);
+    const endDateStr = nextMonthEnd.toISOString().split('T')[0];
+    const endWindow = `${endDateStr}T23:59:59`;
 
-    // 2. Find courses starting on that date
+    // 2. Find courses in this window
     const { data: courses, error: courseError } = await supabase
       .from('courses')
       .select('*')
-      .gte('start_date', startOfDay)
-      .lte('start_date', endOfDay);
+      .gte('start_date', startWindow) // Start of window
+      .lte('start_date', endWindow);  // End of window
 
     if (courseError) throw new Error(courseError.message);
 
     if (!courses || courses.length === 0) {
-      return res.status(200).json({ message: "No courses found for " + targetDateStr });
+      return res.status(200).json({ 
+          message: "No courses found in window.", 
+          serverDate: today.toISOString(),
+          lookingBetween: `${startWindow} and ${endWindow}`
+      });
     }
 
     // 3. Process the courses
@@ -41,30 +51,35 @@ export default async function handler(req, res) {
 
     for (const course of courses) {
         
-        // Find bookings that have NOT been paid out to the teacher yet
-        // We look for 'is_paid' being false (which is the default you just set)
+        // Fetch ALL bookings for this course (We don't filter by 'is_paid' here)
+        // We will filter in the code below to handle "NULL" vs "FALSE" safely
         const { data: bookings } = await supabase
             .from('bookings')
             .select('*, profiles:user_id(email, full_name)')
-            .eq('course_id', course.id)
-            .eq('is_paid', false); // This column now exists!
+            .eq('course_id', course.id);
 
         if (!bookings || bookings.length === 0) continue;
 
+        // FILTER: Keep only bookings that are NOT explicitly true
+        // This accepts bookings where is_paid is FALSE or NULL (Empty)
+        const unpaidBookings = bookings.filter(b => b.is_paid !== true);
+
+        if (unpaidBookings.length === 0) continue;
+
         // Calculate Money
-        const totalRevenue = bookings.length * course.price;
+        const totalRevenue = unpaidBookings.length * course.price;
         const payoutAmount = totalRevenue * 0.85;
 
-        // Mark them as PAID in the database so we don't pay again
-        const bookingIds = bookings.map(b => b.id);
+        // Mark them as PAID in database
+        const bookingIds = unpaidBookings.map(b => b.id);
         await supabase.from('bookings').update({ is_paid: true }).in('id', bookingIds);
 
         // Generate Student List
-        const listHtml = bookings
+        const listHtml = unpaidBookings
             .map(b => `<li>${b.profiles?.full_name || 'Student'}</li>`)
             .join('');
 
-        // Send Email to YOU (Teacher)
+        // Send Email
         await resend.emails.send({
             from: 'KursNavi <onboarding@resend.dev>',
             to: 'btrespondek@gmail.com', 
