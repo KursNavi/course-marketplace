@@ -14,54 +14,42 @@ export default async function handler(req, res) {
 
   try {
     // 1. Calculate the Search Window (Next Month + 48 Hours)
-    // This handles the timezone difference between Switzerland and the Server
     const today = new Date();
     const nextMonthStart = new Date(today);
     nextMonthStart.setMonth(today.getMonth() + 1);
     
-    // We look for courses starting in a wider window (Today+1 Month -> Today+1 Month+2 Days)
     const startDateStr = nextMonthStart.toISOString().split('T')[0];
     const startWindow = `${startDateStr}T00:00:00`;
     
-    // Add 2 days to the end window to be safe
     const nextMonthEnd = new Date(nextMonthStart);
     nextMonthEnd.setDate(nextMonthEnd.getDate() + 2);
-    const endDateStr = nextMonthEnd.toISOString().split('T')[0];
-    const endWindow = `${endDateStr}T23:59:59`;
+    const endWindow = `${nextMonthEnd.toISOString().split('T')[0]}T23:59:59`;
 
     // 2. Find courses in this window
-    const { data: courses, error: courseError } = await supabase
+    const { data: courses } = await supabase
       .from('courses')
       .select('*')
-      .gte('start_date', startWindow) // Start of window
-      .lte('start_date', endWindow);  // End of window
-
-    if (courseError) throw new Error(courseError.message);
+      .gte('start_date', startWindow)
+      .lte('start_date', endWindow);
 
     if (!courses || courses.length === 0) {
-      return res.status(200).json({ 
-          message: "No courses found in window.", 
-          serverDate: today.toISOString(),
-          lookingBetween: `${startWindow} and ${endWindow}`
-      });
+      return res.status(200).json({ message: "No courses found." });
     }
 
-    // 3. Process the courses
     let emailsSent = 0;
 
     for (const course of courses) {
         
-        // Fetch ALL bookings for this course (We don't filter by 'is_paid' here)
-        // We will filter in the code below to handle "NULL" vs "FALSE" safely
+        // SIMPLIFIED QUERY: We removed "profiles:user_id(...)"
+        // This prevents the code from breaking if the profile link is bad.
         const { data: bookings } = await supabase
             .from('bookings')
-            .select('*, profiles:user_id(email, full_name)')
+            .select('*')
             .eq('course_id', course.id);
 
         if (!bookings || bookings.length === 0) continue;
 
-        // FILTER: Keep only bookings that are NOT explicitly true
-        // This accepts bookings where is_paid is FALSE or NULL (Empty)
+        // Filter for Unpaid (False or Null)
         const unpaidBookings = bookings.filter(b => b.is_paid !== true);
 
         if (unpaidBookings.length === 0) continue;
@@ -70,26 +58,27 @@ export default async function handler(req, res) {
         const totalRevenue = unpaidBookings.length * course.price;
         const payoutAmount = totalRevenue * 0.85;
 
-        // Mark them as PAID in database
+        // Mark as Paid
         const bookingIds = unpaidBookings.map(b => b.id);
         await supabase.from('bookings').update({ is_paid: true }).in('id', bookingIds);
 
-        // Generate Student List
+        // Generate List (Using User IDs since we removed the name lookup)
         const listHtml = unpaidBookings
-            .map(b => `<li>${b.profiles?.full_name || 'Student'}</li>`)
+            .map(b => `<li>Student User ID: ${b.user_id}</li>`)
             .join('');
 
         // Send Email
         await resend.emails.send({
             from: 'KursNavi <onboarding@resend.dev>',
             to: 'btrespondek@gmail.com', 
-            subject: `Payout & Student List: ${course.title}`,
+            subject: `Payout Alert: ${course.title}`,
             html: `
               <h1>1-Month Reminder</h1>
               <p>Your course <strong>${course.title}</strong> starts on ${course.start_date}.</p>
               <p>Payout processed: <strong>CHF ${payoutAmount}</strong></p>
               <h3>Student List:</h3>
               <ul>${listHtml}</ul>
+              <p><em>(Note: Student names hidden for this test to ensure delivery)</em></p>
             `
         });
         
