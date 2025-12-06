@@ -2,7 +2,6 @@ import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
 
-// 1. Tell Vercel NOT to touch the data (we need the raw signature)
 export const config = {
   api: {
     bodyParser: false,
@@ -57,48 +56,72 @@ export default async function handler(req, res) {
     // 1. Save Booking
     await supabase.from('bookings').insert([{ user_id: userId, course_id: courseId }]);
 
-    // 2. Get Course Info
+    // 2. Get Course Info (Title + Start Date + Teacher ID)
     const { data: course } = await supabase
         .from('courses')
-        .select('title, start_date') 
+        .select('title, start_date, user_id') 
         .eq('id', courseId)
         .single();
     
     const courseTitle = course ? course.title : 'Course';
+    const courseDate = course ? course.start_date : 'TBA';
 
     // 3. Send STUDENT Email
     try {
         await resend.emails.send({
             from: 'KursNavi <onboarding@resend.dev>',
             to: customerEmail,
-            subject: `Student Confirmation: ${courseTitle}`,
-            html: `<h1>You are booked!</h1>`
+            subject: `Booking Confirmed: ${courseTitle}`,
+            html: `
+                <h1>You are booked!</h1>
+                <p>Course: <strong>${courseTitle}</strong></p>
+                <p>Date: ${courseDate}</p>
+            `
         });
         console.log('✅ Student Email Sent.');
     } catch (e) { console.error('Student Email Failed:', e); }
 
-    // 4. Send TEACHER Email (FORCED - NO DATE CHECK)
-    // We are hardcoding the email to ensure it works in Test Mode
-    const teacherEmail = "btrespondek@gmail.com"; 
+    // 4. Send TEACHER Email (With SMART DATE LOGIC)
+    if (course && course.start_date) {
+        const startDate = new Date(course.start_date);
+        const today = new Date();
+        
+        // Calculate "1 Month from now"
+        const oneMonthFromNow = new Date();
+        oneMonthFromNow.setMonth(today.getMonth() + 1);
 
-    console.log(`⚡ ATTEMPTING TEACHER EMAIL to: ${teacherEmail}`);
+        console.log(`📅 Date Check: Start (${course.start_date}) vs Limit (${oneMonthFromNow.toISOString().split('T')[0]})`);
 
-    try {
-        const { data, error } = await resend.emails.send({
-            from: 'KursNavi <onboarding@resend.dev>',
-            to: teacherEmail,
-            subject: `Teacher Notification: ${courseTitle}`,
-            html: `<h1>New Student!</h1><p>Student: ${customerEmail}</p>`
-        });
+        // IF course starts SOONER than 1 month...
+        if (startDate < oneMonthFromNow) {
+            console.log('⚡ Late Booking detected! Sending Teacher Alert...');
 
-        if (error) {
-            console.error('❌ TEACHER EMAIL FAILED (Resend Error):', error);
+            // --- TEACHER EMAIL LOGIC ---
+            // In Production, use this:
+            // const { data: teacherUser } = await supabase.auth.admin.getUserById(course.user_id);
+            // const teacherEmail = teacherUser.user.email;
+            
+            // For TESTING now, use this:
+            const teacherEmail = "btrespondek@gmail.com"; 
+
+            try {
+                await resend.emails.send({
+                    from: 'KursNavi <onboarding@resend.dev>',
+                    to: teacherEmail,
+                    subject: `New Last-Minute Student: ${courseTitle}`,
+                    html: `
+                        <h1>New Student!</h1>
+                        <p><strong>${customerEmail}</strong> has joined <strong>${courseTitle}</strong>.</p>
+                        <p>This course starts soon (${courseDate}). Please add them to your list!</p>
+                    `
+                });
+                console.log('✅ Teacher Alert Sent.');
+            } catch (tError) {
+                console.error('❌ Teacher Email Failed:', tError);
+            }
         } else {
-            // THIS IS THE ID WE NEED TO SEE IN LOGS
-            console.log('✅ TEACHER EMAIL SENT. Receipt ID:', data.id);
+            console.log('zzz Early booking. No immediate teacher alert needed.');
         }
-    } catch (tError) {
-        console.error('❌ TEACHER EMAIL CRASHED:', tError);
     }
   }
 
