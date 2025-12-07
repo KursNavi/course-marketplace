@@ -24,9 +24,9 @@ const KursNaviLogo = ({ className = "w-8 h-8" }) => (
   </svg>
 );
 
-// --- 3. DATA STRUCTURES (NEW) ---
+// --- 3. DATA STRUCTURES & TRANSLATIONS ---
 
-// The "Tree" of categories
+// MASTER HIERARCHY (ENGLISH - Database Values)
 const CATEGORY_HIERARCHY = {
   "Private & Hobby": {
     "Music & Audio": ["Guitar", "Piano", "Vocals", "Drums", "Production", "Other Instruments"],
@@ -48,8 +48,48 @@ const CATEGORY_HIERARCHY = {
   }
 };
 
-const SWISS_CANTONS = ["Zürich", "Bern", "Luzern", "Uri", "Schwyz", "Obwalden", "Nidwalden", "Glarus", "Zug", "Fribourg", "Solothurn", "Basel-Stadt", "Basel-Landschaft", "Schaffhausen", "Appenzell AR", "Appenzell AI", "St. Gallen", "Graubünden", "Aargau", "Thurgau", "Ticino", "Vaud", "Valais", "Neuchâtel", "Genève", "Jura"];
+// CATEGORY TRANSLATIONS (Display Labels)
+const CATEGORY_LABELS = {
+  // Top Levels
+  "Private & Hobby": { de: "Privat & Hobby", fr: "Privé & Loisirs" },
+  "Professional": { de: "Beruflich", fr: "Professionnel" },
+  "Children": { de: "Kinder", fr: "Enfants" },
+  
+  // Mid Levels
+  "Music & Audio": { de: "Musik & Audio", fr: "Musique & Audio" },
+  "Languages": { de: "Sprachen", fr: "Langues" },
+  "Sports & Fitness": { de: "Sport & Fitness", fr: "Sport & Forme" },
+  "Cooking & Nutrition": { de: "Kochen & Ernährung", fr: "Cuisine & Nutrition" },
+  "Art & Craft": { de: "Kunst & Handwerk", fr: "Art & Artisanat" },
+  "Lifestyle": { de: "Lifestyle", fr: "Art de vivre" },
+  "Business": { de: "Wirtschaft", fr: "Affaires" },
+  "Tech & Data": { de: "Technik & Daten", fr: "Tech & Données" },
+  "Soft Skills": { de: "Soft Skills", fr: "Compétences Douces" },
+  "Industry Specific": { de: "Branchenspezifisch", fr: "Spécifique à l'industrie" },
+  "Academic Support": { de: "Nachhilfe", fr: "Soutien scolaire" },
+  "Creative & Fun": { de: "Kreativ & Spaß", fr: "Créatif & Ludique" },
 
+  // Items (Selected examples, fallback to English if missing)
+  "Guitar": { de: "Gitarre", fr: "Guitare" },
+  "Piano": { de: "Klavier", fr: "Piano" },
+  "Vocals": { de: "Gesang", fr: "Chant" },
+  "Drums": { de: "Schlagzeug", fr: "Batterie" },
+  "Other Instruments": { de: "Andere Instrumente", fr: "Autres Instruments" },
+  "German": { de: "Deutsch", fr: "Allemand" },
+  "French": { de: "Französisch", fr: "Français" },
+  "English": { de: "Englisch", fr: "Anglais" },
+  "Italian": { de: "Italienisch", fr: "Italien" },
+  "Spanish": { de: "Spanisch", fr: "Espagnol" },
+  "Swiss German": { de: "Schweizerdeutsch", fr: "Suisse Allemand" },
+  "Other Languages": { de: "Andere Sprachen", fr: "Autres Langues" },
+  "Swiss Cuisine": { de: "Schweizer Küche", fr: "Cuisine Suisse" },
+  "Web Development": { de: "Webentwicklung", fr: "Développement Web" },
+  "Other Industry": { de: "Andere", fr: "Autre" },
+  "Homework Help": { de: "Hausaufgabenhilfe", fr: "Aide aux devoirs" },
+  "Music for Kids": { de: "Musik für Kinder", fr: "Musique pour enfants" }
+};
+
+const SWISS_CANTONS = ["Zürich", "Bern", "Luzern", "Uri", "Schwyz", "Obwalden", "Nidwalden", "Glarus", "Zug", "Fribourg", "Solothurn", "Basel-Stadt", "Basel-Landschaft", "Schaffhausen", "Appenzell AR", "Appenzell AI", "St. Gallen", "Graubünden", "Aargau", "Thurgau", "Ticino", "Vaud", "Valais", "Neuchâtel", "Genève", "Jura"];
 const SWISS_CITIES = ["Zürich", "Genève", "Basel", "Lausanne", "Bern", "Winterthur", "Luzern", "St. Gallen", "Lugano", "Biel/Bienne"];
 
 const TRANSLATIONS = {
@@ -60,40 +100,73 @@ const TRANSLATIONS = {
     no_results: "No courses found matching criteria.", btn_book: "Book Course", btn_pay: "Pay & Book", btn_publish: "Publish Course", btn_send: "Send Message",
     form_title: "List a Course", success_msg: "Grüezi! Action successful.", currency: "CHF", admin_panel: "Admin Control Center",
     teacher_dash: "Teacher Dashboard", student_dash: "My Learning", login_title: "Welcome Back", my_bookings: "My Bookings",
-    lbl_objectives: "What you will learn", lbl_description: "About this course", lbl_address: "Location", lbl_duration: "Duration",
-    terms_title: "Terms & Conditions", privacy_title: "Data Protection Guidelines", contact_title: "Contact Us",
-    about_title: "About KursNavi", about_subtitle: "Connecting Switzerland through knowledge and skills.",
+    lbl_objectives: "What you will learn", lbl_prerequisites: "Prerequisites", lbl_description: "About this course", lbl_address: "Location",
+    lbl_duration: "Duration", lbl_sessions: "sessions", lbl_upcoming: "Upcoming Editions", lbl_provider: "Provider",
+    lbl_show_more: "Show more dates", lbl_show_less: "Show less", about_title: "About KursNavi",
+    about_subtitle: "Connecting Switzerland through knowledge and skills.",
     about_text: "KursNavi was born from a simple idea: everyone has something to teach, and everyone has something to learn.",
     about_community_title: "Community First", about_community_text: "We prioritize local connections.",
-    about_quality_title: "Swiss Quality", about_quality_text: "We verify our hosts."
+    about_quality_title: "Swiss Quality", about_quality_text: "We verify our hosts.", contact_title: "Contact Us",
+    contact_get_in_touch: "Get in Touch", contact_office_hours: "Office Hours", contact_mon_fri: "Monday - Friday: 09:00 - 17:00",
+    contact_weekend: "Weekends: Closed", contact_lbl_name: "Name", contact_lbl_email: "Email", contact_lbl_msg: "Message",
+    terms_title: "Terms & Conditions", terms_last_updated: "Last Updated: October 2024",
+    terms_1_title: "1. Scope of Application", terms_1_text: "These General Terms and Conditions (GTC) apply to the use of the KursNavi platform.",
+    terms_2_title: "2. Service Description", terms_2_text: "KursNavi operates as an intermediary platform.",
+    terms_3_title: "3. User Obligations", terms_3_text: "Users are obliged to provide truthful information.",
+    terms_4_title: "4. Cancellations and Refunds", terms_4_text: "Cancellation policies are set by individual Teachers.",
+    terms_5_title: "5. Liability", terms_5_text: "KursNavi accepts no liability for the content or quality of the courses conducted.",
+    privacy_title: "Data Protection Guidelines", privacy_compliant: "Compliant with the Swiss Federal Act on Data Protection (FADP).",
+    privacy_1_title: "1. Data Controller", privacy_1_text: "KursNavi AG, Bahnhofstrasse 100, 8001 Zürich.",
+    privacy_2_title: "2. Data Collection", privacy_2_text: "We collect personal data that you provide to us.",
+    privacy_3_title: "3. Purpose of Processing", privacy_3_text: "Your data is processed to facilitate course bookings.",
+    privacy_4_title: "4. Data Sharing", privacy_4_text: "We only share necessary data with Teachers.",
+    privacy_5_title: "5. Your Rights", privacy_5_text: "You have the right to access, correct, or delete your personal data.",
   },
   de: {
-    nav_explore: "Entdecken", nav_about: "Über uns", nav_contact: "Kontakt", nav_login: "Anmelden", nav_logout: "Abmelden", nav_dashboard: "Dashboard",
+    nav_explore: "Entdecken", nav_login: "Anmelden", nav_logout: "Abmelden", nav_dashboard: "Dashboard",
     hero_title: "Finde Kurse in deiner Nähe.", hero_subtitle: "Vom Jodeln bis zum Programmieren.",
     search_placeholder: "Was möchtest du lernen?", filter_label_cat: "Kategorie", filter_label_loc: "Ort",
-    no_results: "Keine Kurse gefunden.", btn_book: "Kurs buchen", btn_pay: "Bezahlen & Buchen", btn_publish: "Veröffentlichen", btn_send: "Nachricht senden",
-    form_title: "Kurs anbieten", success_msg: "Erfolgreich!", currency: "CHF", admin_panel: "Admin Panel",
-    teacher_dash: "Lehrer Dashboard", student_dash: "Meine Kurse", login_title: "Willkommen", my_bookings: "Meine Buchungen",
-    lbl_objectives: "Lernziele", lbl_description: "Beschreibung", lbl_address: "Standort", lbl_duration: "Dauer",
-    terms_title: "AGB", privacy_title: "Datenschutz", contact_title: "Kontakt",
-    about_title: "Über uns", about_subtitle: "Die Schweiz verbinden.",
-    about_text: "Wir verbinden lokale Experten mit Schülern.",
+    no_results: "Keine Kurse gefunden.", btn_book: "Kurs buchen", btn_pay: "Bezahlen & Buchen", btn_publish: "Veröffentlichen",
+    form_title: "Kurs anbieten", success_msg: "Erfolgreich!", currency: "CHF",
+    teacher_dash: "Lehrer Dashboard", student_dash: "Meine Kurse",
+    login_title: "Willkommen", my_bookings: "Meine Buchungen",
+    lbl_description: "Beschreibung", lbl_address: "Standort", lbl_duration: "Dauer", lbl_provider: "Anbieter",
+    btn_send: "Nachricht senden", contact_title: "Kontakt", contact_get_in_touch: "Schreib uns",
+    contact_office_hours: "Öffnungszeiten", contact_mon_fri: "Mo-Fr: 09:00 - 17:00", contact_weekend: "Wochenende: Geschlossen",
+    contact_lbl_name: "Name", contact_lbl_email: "E-Mail", contact_lbl_msg: "Nachricht",
+    about_title: "Über uns", about_subtitle: "Die Schweiz verbinden.", about_text: "Wir verbinden lokale Experten mit Schülern.",
     about_community_title: "Gemeinschaft", about_community_text: "Lokale Verbindungen sind uns wichtig.",
-    about_quality_title: "Qualität", about_quality_text: "Geprüfte Gastgeber."
+    about_quality_title: "Qualität", about_quality_text: "Geprüfte Gastgeber.",
+    footer_terms: "AGB", footer_privacy: "Datenschutz", footer_legal: "Impressum", footer_madein: "Made in Switzerland", footer_rights: "Alle Rechte vorbehalten.",
+    terms_title: "AGB", terms_last_updated: "Stand: 2024", terms_1_title: "1. Geltungsbereich", terms_1_text: "Es gelten unsere AGB.",
+    terms_2_title: "2. Service", terms_2_text: "Wir sind nur Vermittler.", terms_3_title: "3. Pflichten", terms_3_text: "Wahre Angaben machen.",
+    terms_4_title: "4. Storno", terms_4_text: "Lehrer entscheiden.", terms_5_title: "5. Haftung", terms_5_text: "Keine Haftung für Kurse.",
+    privacy_title: "Datenschutz", privacy_compliant: "DSGVO konform.", privacy_1_title: "1. Verantwortlicher", privacy_1_text: "KursNavi AG.",
+    privacy_2_title: "2. Daten", privacy_2_text: "Wir speichern Ihre Eingaben.", privacy_3_title: "3. Zweck", privacy_3_text: "Vermittlung.",
+    privacy_4_title: "4. Weitergabe", privacy_4_text: "Nur an Lehrer.", privacy_5_title: "5. Rechte", privacy_5_text: "Auskunft jederzeit."
   },
   fr: {
-    nav_explore: "Explorer", nav_about: "À propos", nav_contact: "Contact", nav_login: "Connexion", nav_logout: "Déconnexion", nav_dashboard: "Tableau de bord",
+    nav_explore: "Explorer", nav_login: "Connexion", nav_logout: "Déconnexion", nav_dashboard: "Tableau de bord",
     hero_title: "Découvrez des cours.", hero_subtitle: "Apprenez localement.",
     search_placeholder: "Que voulez-vous apprendre?", filter_label_cat: "Catégorie", filter_label_loc: "Lieu",
-    no_results: "Aucun cours trouvé.", btn_book: "Réserver", btn_pay: "Payer et réserver", btn_publish: "Publier", btn_send: "Envoyer",
-    form_title: "Proposer un cours", success_msg: "Succès!", currency: "CHF", admin_panel: "Panneau Admin",
-    teacher_dash: "Tableau de bord", student_dash: "Mes apprentissages", login_title: "Bienvenue", my_bookings: "Mes réservations",
-    lbl_objectives: "Objectifs", lbl_description: "Description", lbl_address: "Lieu", lbl_duration: "Durée",
-    terms_title: "CGV", privacy_title: "Confidentialité", contact_title: "Contact",
-    about_title: "À propos", about_subtitle: "Relier la Suisse.",
-    about_text: "Nous connectons experts et étudiants.",
+    no_results: "Aucun cours trouvé.", btn_book: "Réserver", btn_pay: "Payer et réserver", btn_publish: "Publier",
+    form_title: "Proposer un cours", success_msg: "Succès!", currency: "CHF",
+    teacher_dash: "Tableau de bord", student_dash: "Mes apprentissages",
+    login_title: "Bienvenue", my_bookings: "Mes réservations",
+    lbl_description: "Description", lbl_address: "Lieu", lbl_duration: "Durée", lbl_provider: "Fournisseur",
+    btn_send: "Envoyer", contact_title: "Contact", contact_get_in_touch: "Contactez-nous",
+    contact_office_hours: "Heures", contact_mon_fri: "Lun-Ven: 09:00 - 17:00", contact_weekend: "Fermé",
+    contact_lbl_name: "Nom", contact_lbl_email: "Email", contact_lbl_msg: "Message",
+    about_title: "À propos", about_subtitle: "Relier la Suisse.", about_text: "Nous connectons experts et étudiants.",
     about_community_title: "Communauté", about_community_text: "Priorité au local.",
-    about_quality_title: "Qualité", about_quality_text: "Hôtes vérifiés."
+    about_quality_title: "Qualité", about_quality_text: "Hôtes vérifiés.",
+    footer_terms: "CGV", footer_privacy: "Confidentialité", footer_legal: "Mentions légales", footer_madein: "Fabriqué en Suisse", footer_rights: "Droits réservés.",
+    terms_title: "CGV", terms_last_updated: "2024", terms_1_title: "1. Portée", terms_1_text: "Nos CGV s'appliquent.",
+    terms_2_title: "2. Service", terms_2_text: "Intermédiaire uniquement.", terms_3_title: "3. Obligations", terms_3_text: "Informations véridiques.",
+    terms_4_title: "4. Annulation", terms_4_text: "Selon l'enseignant.", terms_5_title: "5. Responsabilité", terms_5_text: "Aucune responsabilité sur les cours.",
+    privacy_title: "Confidentialité", privacy_compliant: "Conforme LPD/RGPD.", privacy_1_title: "1. Responsable", privacy_1_text: "KursNavi AG.",
+    privacy_2_title: "2. Données", privacy_2_text: "Nous collectons vos saisies.", privacy_3_title: "3. But", privacy_3_text: "Facilitation.",
+    privacy_4_title: "4. Partage", privacy_4_text: "Aux profs uniquement.", privacy_5_title: "5. Droits", privacy_5_text: "Accès sur demande."
   }
 };
 
@@ -114,12 +187,12 @@ export default function KursNaviPro() {
   
   // Category State
   const [catMenuOpen, setCatMenuOpen] = useState(false);
-  const [selectedCatPath, setSelectedCatPath] = useState([]); // ["Professional", "Tech"]
+  const [selectedCatPath, setSelectedCatPath] = useState([]); 
   
   // Location State
   const [locMenuOpen, setLocMenuOpen] = useState(false);
-  const [locMode, setLocMode] = useState('canton'); // 'canton' or 'city'
-  const [selectedLocations, setSelectedLocations] = useState([]); // ["Zurich", "Zug"]
+  const [locMode, setLocMode] = useState('canton'); 
+  const [selectedLocations, setSelectedLocations] = useState([]);
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [notification, setNotification] = useState(null);
@@ -139,6 +212,13 @@ export default function KursNaviPro() {
   }, []);
 
   const t = TRANSLATIONS[lang] || TRANSLATIONS['en'];
+
+  // Helper to get translated category label
+  const getCatLabel = (key) => {
+    if (lang === 'en') return key;
+    const translation = CATEGORY_LABELS[key];
+    return translation && translation[lang] ? translation[lang] : key;
+  };
 
   // --- Real Auth Listener ---
   useEffect(() => {
@@ -288,7 +368,6 @@ export default function KursNaviPro() {
     else showNotification("Course deleted.");
   };
 
-  // --- NEW PUBLISH LOGIC: Combine Categories ---
   const handlePublishCourse = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
@@ -305,7 +384,7 @@ export default function KursNaviPro() {
       instructor_name: user.name,
       price: Number(formData.get('price')),
       rating: 0,
-      category: fullCategoryString, // Saving the hierarchy string
+      category: fullCategoryString, 
       canton: formData.get('canton'),
       address: formData.get('address'),
       image_url: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=600",
@@ -379,24 +458,18 @@ export default function KursNaviPro() {
 
   // --- NEW FILTER LOGIC ---
   const filteredCourses = courses.filter(course => {
-    // 1. Category Filter (Drill down)
     let matchesCategory = true;
     if (selectedCatPath.length > 0) {
-        // If course category is "Hobby | Music | Guitar" and selection is ["Hobby", "Music"]
-        // We check if the course string includes the parts
         const courseCatStr = (course.category || "").toLowerCase();
-        // Check if every part of the selection path exists in the course string
+        // IMPORTANT: We match against the ENGLISH values (selectedCatPath stores English)
         matchesCategory = selectedCatPath.every(part => courseCatStr.includes(part.toLowerCase()));
     }
 
-    // 2. Location Filter (Multi-select)
     let matchesLocation = true;
     if (selectedLocations.length > 0) {
         if (locMode === 'canton') {
-            // Exact match for Canton
             matchesLocation = selectedLocations.includes(course.canton);
         } else {
-            // Fuzzy match for City (check address or canton field)
             const address = (course.address || "").toLowerCase();
             const canton = (course.canton || "").toLowerCase();
             matchesLocation = selectedLocations.some(city => 
@@ -405,7 +478,6 @@ export default function KursNaviPro() {
         }
     }
 
-    // 3. Text Search
     const matchesSearch = course.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           (course.instructor_name && course.instructor_name.toLowerCase().includes(searchQuery.toLowerCase()));
 
@@ -427,21 +499,23 @@ export default function KursNaviPro() {
     const [lvl2, setLvl2] = useState(null);
 
     return (
-        <div ref={catMenuRef} className="relative">
+        <div ref={catMenuRef} className="static"> 
+        {/* Changed from relative to static so we can anchor the menu to the parent container */}
             <button onClick={() => setCatMenuOpen(!catMenuOpen)} className={`px-4 py-2 border rounded-full flex items-center space-x-2 text-sm font-medium transition ${selectedCatPath.length > 0 ? 'bg-[#FA6E28] text-white border-[#FA6E28]' : 'bg-white text-gray-700 hover:border-gray-400'}`}>
-                <span>{selectedCatPath.length > 0 ? selectedCatPath[selectedCatPath.length-1] : t.filter_label_cat}</span>
+                <span>{selectedCatPath.length > 0 ? getCatLabel(selectedCatPath[selectedCatPath.length-1]) : t.filter_label_cat}</span>
                 <ChevronDown className="w-4 h-4" />
             </button>
 
             {catMenuOpen && (
-                <div className="absolute top-12 left-0 bg-white rounded-xl shadow-2xl border border-gray-100 p-2 z-50 w-[600px] flex h-[300px]">
+                // FIXED LAYOUT: Absolute to the search container, constrained width
+                <div className="absolute top-16 left-0 right-0 mx-auto w-full max-w-4xl bg-white rounded-xl shadow-2xl border border-gray-100 p-2 z-50 flex h-[350px]">
                     {/* Level 1 */}
                     <div className="w-1/3 border-r overflow-y-auto">
                         {Object.keys(CATEGORY_HIERARCHY).map(cat => (
                             <div key={cat} 
                                 onClick={() => { setLvl1(cat); setLvl2(null); }}
                                 className={`p-3 cursor-pointer text-sm flex justify-between items-center hover:bg-gray-50 ${lvl1 === cat ? 'font-bold text-[#FA6E28] bg-orange-50' : 'text-gray-700'}`}>
-                                {cat}
+                                {getCatLabel(cat)}
                                 <ChevronRight className="w-4 h-4 text-gray-400" />
                             </div>
                         ))}
@@ -449,34 +523,24 @@ export default function KursNaviPro() {
                     </div>
                     {/* Level 2 */}
                     <div className="w-1/3 border-r overflow-y-auto bg-gray-50/50">
-                        {lvl1 && Object.keys(CATEGORY_HIERARCHY[lvl1]).map(sub => (
+                        {lvl1 ? Object.keys(CATEGORY_HIERARCHY[lvl1]).map(sub => (
                             <div key={sub} 
                                 onClick={() => setLvl2(sub)}
                                 className={`p-3 cursor-pointer text-sm flex justify-between items-center hover:bg-gray-100 ${lvl2 === sub ? 'font-bold text-[#FA6E28]' : 'text-gray-700'}`}>
-                                {sub}
+                                {getCatLabel(sub)}
                                 <ChevronRight className="w-4 h-4 text-gray-400" />
                             </div>
-                        ))}
-                        {lvl1 && (
-                             <button onClick={() => { setSelectedCatPath([lvl1]); setCatMenuOpen(false); }} className="w-full text-left p-3 text-xs text-[#FA6E28] font-bold hover:underline">
-                                 Select all {lvl1}
-                             </button>
-                        )}
+                        )) : <div className="p-4 text-xs text-gray-400">Select a category...</div>}
                     </div>
                     {/* Level 3 */}
                     <div className="w-1/3 overflow-y-auto bg-gray-50">
-                        {lvl1 && lvl2 && CATEGORY_HIERARCHY[lvl1][lvl2].map(item => (
+                        {lvl1 && lvl2 ? CATEGORY_HIERARCHY[lvl1][lvl2].map(item => (
                             <div key={item} 
                                 onClick={() => { setSelectedCatPath([lvl1, lvl2, item]); setCatMenuOpen(false); }}
                                 className="p-3 cursor-pointer text-sm text-gray-700 hover:text-[#FA6E28] hover:bg-white transition">
-                                {item}
+                                {getCatLabel(item)}
                             </div>
-                        ))}
-                         {lvl1 && lvl2 && (
-                             <button onClick={() => { setSelectedCatPath([lvl1, lvl2]); setCatMenuOpen(false); }} className="w-full text-left p-3 text-xs text-[#FA6E28] font-bold hover:underline">
-                                 Select all {lvl2}
-                             </button>
-                        )}
+                        )) : <div className="p-4 text-xs text-gray-400">Select a sub-category...</div>}
                     </div>
                 </div>
             )}
@@ -504,7 +568,7 @@ export default function KursNaviPro() {
             </button>
 
             {locMenuOpen && (
-                <div className="absolute top-12 left-0 bg-white rounded-xl shadow-2xl border border-gray-100 p-4 z-50 w-[300px]">
+                <div className="absolute top-12 left-1/2 transform -translate-x-1/2 md:left-0 md:translate-x-0 bg-white rounded-xl shadow-2xl border border-gray-100 p-4 z-50 w-[300px] max-w-[90vw]">
                     <div className="flex bg-gray-100 p-1 rounded-lg mb-4">
                         <button onClick={() => { setLocMode('canton'); setSelectedLocations([]); }} className={`flex-1 py-1 text-sm font-medium rounded-md transition ${locMode === 'canton' ? 'bg-white shadow text-[#FA6E28]' : 'text-gray-500'}`}>Cantons</button>
                         <button onClick={() => { setLocMode('city'); setSelectedLocations([]); }} className={`flex-1 py-1 text-sm font-medium rounded-md transition ${locMode === 'city' ? 'bg-white shadow text-[#FA6E28]' : 'text-gray-500'}`}>Major Cities</button>
@@ -570,19 +634,19 @@ export default function KursNaviPro() {
                             <div>
                                 <span className="text-xs text-gray-500 block mb-1">Type</span>
                                 <select name="catLvl1" value={lvl1} onChange={handleLvl1Change} className="w-full px-3 py-2 border rounded-lg focus:ring-[#FA6E28] bg-white text-sm">
-                                    {Object.keys(CATEGORY_HIERARCHY).map(c => <option key={c} value={c}>{c}</option>)}
+                                    {Object.keys(CATEGORY_HIERARCHY).map(c => <option key={c} value={c}>{getCatLabel(c)}</option>)}
                                 </select>
                             </div>
                             <div>
                                 <span className="text-xs text-gray-500 block mb-1">Area</span>
                                 <select name="catLvl2" value={lvl2} onChange={(e) => setLvl2(e.target.value)} className="w-full px-3 py-2 border rounded-lg focus:ring-[#FA6E28] bg-white text-sm">
-                                    {Object.keys(CATEGORY_HIERARCHY[lvl1]).map(c => <option key={c} value={c}>{c}</option>)}
+                                    {Object.keys(CATEGORY_HIERARCHY[lvl1]).map(c => <option key={c} value={c}>{getCatLabel(c)}</option>)}
                                 </select>
                             </div>
                             <div>
                                 <span className="text-xs text-gray-500 block mb-1">Specialty</span>
                                 <select name="catLvl3" className="w-full px-3 py-2 border rounded-lg focus:ring-[#FA6E28] bg-white text-sm">
-                                    {CATEGORY_HIERARCHY[lvl1][lvl2].map(c => <option key={c} value={c}>{c}</option>)}
+                                    {CATEGORY_HIERARCHY[lvl1][lvl2].map(c => <option key={c} value={c}>{getCatLabel(c)}</option>)}
                                 </select>
                             </div>
                         </div>
@@ -665,7 +729,6 @@ export default function KursNaviPro() {
     );
   };
 
-  // Reused components (kept as they were in essence, just simplified for this big file)
   const SuccessView = () => (
       <div className="min-h-[80vh] flex items-center justify-center px-4">
           <div className="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full border border-green-100 text-center">
@@ -877,19 +940,24 @@ export default function KursNaviPro() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
             <div className="space-y-8">
                 <div className="bg-[#FFF0EB] p-6 rounded-2xl border border-orange-100">
-                    <h3 className="font-bold text-lg mb-4 text-[#FA6E28] font-['Open_Sans']">Get in Touch</h3>
+                    <h3 className="font-bold text-lg mb-4 text-[#FA6E28] font-['Open_Sans']">{t.contact_get_in_touch}</h3>
                     <div className="space-y-4">
                         <div className="flex items-center text-gray-700"><Mail className="w-5 h-5 mr-3 text-[#FA6E28]" /><span>support@kursnavi.ch</span></div>
                         <div className="flex items-center text-gray-700"><Phone className="w-5 h-5 mr-3 text-[#FA6E28]" /><span>+41 44 123 45 67</span></div>
-                        <div className="flex items-start text-gray-700"><MapPin className="w-5 h-5 mr-3 text-[#FA6E28] mt-1" /><span>KursNavi AG<br/>Bahnhofstrasse 100<br/>8001 Zürich</span></div>
+                        <div className="flex items-start text-gray-700"><MapPin className="w-5 h-5 mr-3 text-[#FA6E28] mt-1" /><span>KursNavi AG<br/>Bahnhofstrasse 100<br/>8001 Zürich<br/>Switzerland</span></div>
                     </div>
+                </div>
+                <div>
+                    <h3 className="font-bold text-lg mb-2 font-['Open_Sans']">{t.contact_office_hours}</h3>
+                    <p className="text-gray-600">{t.contact_mon_fri}</p>
+                    <p className="text-gray-600">{t.contact_weekend}</p>
                 </div>
             </div>
             <div className="bg-white p-8 rounded-2xl shadow-lg border border-gray-100">
                 <form onSubmit={handleContactSubmit} className="space-y-4">
-                    <div><label className="block text-sm font-bold text-gray-700 mb-1">Name</label><input required type="text" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#FA6E28] outline-none" /></div>
-                    <div><label className="block text-sm font-bold text-gray-700 mb-1">Email</label><input required type="email" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#FA6E28] outline-none" /></div>
-                    <div><label className="block text-sm font-bold text-gray-700 mb-1">Message</label><textarea required rows="4" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#FA6E28] outline-none"></textarea></div>
+                    <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.contact_lbl_name}</label><input required type="text" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#FA6E28] outline-none" placeholder={t.contact_lbl_name} /></div>
+                    <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.contact_lbl_email}</label><input required type="email" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#FA6E28] outline-none" placeholder="you@example.com" /></div>
+                    <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.contact_lbl_msg}</label><textarea required rows="4" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#FA6E28] outline-none" placeholder="..."></textarea></div>
                     <button type="submit" className="w-full bg-[#FA6E28] text-white py-3 rounded-lg font-bold hover:bg-[#E55D1F] transition font-['Open_Sans']">{t.btn_send}</button>
                 </form>
             </div>
@@ -901,7 +969,12 @@ export default function KursNaviPro() {
       <div className="max-w-4xl mx-auto px-4 py-12 animate-in fade-in duration-500 font-['Hind_Madurai']">
           <div className="prose prose-orange max-w-none">
               <h1 className="text-3xl font-bold mb-6 font-['Open_Sans'] text-[#333333]">{t.terms_title}</h1>
-              <p>Placeholder content for Terms...</p>
+              <p className="text-sm text-gray-500 mb-8">{t.terms_last_updated}</p>
+              <h3 className="text-xl font-bold mt-6 mb-3 text-[#333333]">{t.terms_1_title}</h3><p className="text-gray-700 mb-4">{t.terms_1_text}</p>
+              <h3 className="text-xl font-bold mt-6 mb-3 text-[#333333]">{t.terms_2_title}</h3><p className="text-gray-700 mb-4">{t.terms_2_text}</p>
+              <h3 className="text-xl font-bold mt-6 mb-3 text-[#333333]">{t.terms_3_title}</h3><p className="text-gray-700 mb-4">{t.terms_3_text}</p>
+              <h3 className="text-xl font-bold mt-6 mb-3 text-[#333333]">{t.terms_4_title}</h3><p className="text-gray-700 mb-4">{t.terms_4_text}</p>
+              <h3 className="text-xl font-bold mt-6 mb-3 text-[#333333]">{t.terms_5_title}</h3><p className="text-gray-700 mb-4">{t.terms_5_text}</p>
           </div>
       </div>
   );
@@ -910,15 +983,34 @@ export default function KursNaviPro() {
       <div className="max-w-4xl mx-auto px-4 py-12 animate-in fade-in duration-500 font-['Hind_Madurai']">
           <div className="prose prose-orange max-w-none">
               <h1 className="text-3xl font-bold mb-6 font-['Open_Sans'] text-[#333333]">{t.privacy_title}</h1>
-              <p>Placeholder content for Privacy...</p>
+              <div className="bg-[#FFF0EB] border-l-4 border-[#FA6E28] p-4 mb-8"><p className="text-[#FA6E28] font-bold text-sm">{t.privacy_compliant}</p></div>
+              <h3 className="text-xl font-bold mt-6 mb-3 text-[#333333]">{t.privacy_1_title}</h3><p className="text-gray-700 mb-4">{t.privacy_1_text}</p>
+              <h3 className="text-xl font-bold mt-6 mb-3 text-[#333333]">{t.privacy_2_title}</h3><p className="text-gray-700 mb-4">{t.privacy_2_text}</p>
+              <h3 className="text-xl font-bold mt-6 mb-3 text-[#333333]">{t.privacy_3_title}</h3><p className="text-gray-700 mb-4">{t.privacy_3_text}</p>
+              <h3 className="text-xl font-bold mt-6 mb-3 text-[#333333]">{t.privacy_4_title}</h3><p className="text-gray-700 mb-4">{t.privacy_4_text}</p>
+              <h3 className="text-xl font-bold mt-6 mb-3 text-[#333333]">{t.privacy_5_title}</h3><p className="text-gray-700 mb-4">{t.privacy_5_text}</p>
           </div>
       </div>
   );
 
   const AdminPanel = () => (
     <div className="max-w-6xl mx-auto px-4 py-8 font-['Hind_Madurai']">
-        <h1 className="text-3xl font-bold text-[#333333] mb-8">{t.admin_panel}</h1>
-        <p>Admin panel restricted area.</p>
+        <div className="flex items-center justify-between mb-8">
+            <h1 className="text-3xl font-bold text-[#333333] flex items-center font-['Open_Sans']">
+                <Settings className="mr-3 w-8 h-8 text-gray-700" />
+                {t.admin_panel}
+            </h1>
+            <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm">Logged in as Admin</span>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                <h3 className="font-bold text-xl mb-4 text-[#333333]">Platform Stats</h3>
+                <div className="space-y-4">
+                    <div className="flex justify-between border-b pb-2"><span>Total Courses</span><span className="font-bold">{courses.length}</span></div>
+                    <div className="flex justify-between border-b pb-2"><span>Total Bookings</span><span className="font-bold">--</span></div>
+                </div>
+            </div>
+        </div>
     </div>
   );
 
@@ -1075,7 +1167,7 @@ export default function KursNaviPro() {
             {(selectedCatPath.length > 0 || selectedLocations.length > 0) && (
                  <div className="max-w-7xl mx-auto px-4 pb-4 flex gap-2 flex-wrap">
                     {selectedCatPath.map((part, i) => (
-                        <span key={i} className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-md font-bold">{part}</span>
+                        <span key={i} className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-md font-bold">{getCatLabel(part)}</span>
                     ))}
                     {selectedLocations.map((loc, i) => (
                          <span key={i} className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-md font-bold">{loc}</span>
