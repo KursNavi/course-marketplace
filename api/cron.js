@@ -7,8 +7,8 @@ export default async function handler(req, res) {
   const SUPABASE_URL = process.env.SUPABASE_URL;
   const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const RESEND_KEY = process.env.RESEND_API_KEY;
+  const ADMIN_EMAIL = 'btrespondek@gmail.com'; // Your fallback email
 
-  // Safety Check
   if (!SUPABASE_URL || !SUPABASE_KEY || !RESEND_KEY) {
       return res.status(500).json({ error: "Keys missing in Vercel." });
   }
@@ -17,18 +17,14 @@ export default async function handler(req, res) {
   const resend = new Resend(RESEND_KEY);
 
   try {
-    // 1. Calculate a WIDE Search Window (1 Month +/- 5 Days)
-    // This ensures we find the course regardless of timezones or weekends
+    // 1. Calculate Search Window (Today + 1 Month +/- 5 Days)
     const today = new Date();
-    
-    // Start Window: 25 Days from now
     const startWindowDate = new Date(today);
-    startWindowDate.setDate(today.getDate() + 25);
+    startWindowDate.setDate(today.getDate() + 25); // Start looking 25 days out
     const startWindow = `${startWindowDate.toISOString().split('T')[0]}T00:00:00`;
 
-    // End Window: 35 Days from now
     const endWindowDate = new Date(today);
-    endWindowDate.setDate(today.getDate() + 35);
+    endWindowDate.setDate(today.getDate() + 35); // Stop looking 35 days out
     const endWindow = `${endWindowDate.toISOString().split('T')[0]}T23:59:59`;
 
     // 2. Find Courses
@@ -39,11 +35,7 @@ export default async function handler(req, res) {
       .lte('start_date', endWindow);
 
     if (!courses || courses.length === 0) {
-      return res.status(200).json({ 
-          message: "No courses found in wide window.",
-          looking_from: startWindow,
-          looking_to: endWindow
-      });
+      return res.status(200).json({ message: "No courses found in window." });
     }
 
     let emailsSent = 0;
@@ -61,14 +53,29 @@ export default async function handler(req, res) {
         const unpaidBookings = bookings.filter(b => b.is_paid !== true);
         if (unpaidBookings.length === 0) continue;
 
-        // 4. Fetch Names
+        // 4. FETCH TEACHER EMAIL (New Logic)
+        // We look up the profile of the person who OWNS the course (course.user_id)
+        let teacherEmail = ADMIN_EMAIL; // Default to you
+        
+        if (course.user_id) {
+            const { data: teacherProfile } = await supabase
+                .from('profiles')
+                .select('email')
+                .eq('id', course.user_id)
+                .single();
+            
+            if (teacherProfile && teacherProfile.email) {
+                teacherEmail = teacherProfile.email;
+            }
+        }
+
+        // 5. Fetch Student Names
         const userIds = unpaidBookings.map(b => b.user_id);
         const { data: profiles } = await supabase
             .from('profiles')
             .select('id, full_name, email')
             .in('id', userIds);
 
-        // 5. Generate Email
         const listHtml = unpaidBookings.map(booking => {
             const profile = profiles?.find(p => p.id === booking.user_id);
             const name = profile?.full_name || 'Guest Student';
@@ -80,25 +87,32 @@ export default async function handler(req, res) {
         const totalRevenue = unpaidBookings.length * course.price;
         const payoutAmount = totalRevenue * 0.85;
 
-        // 7. Pay & Send
+        // 7. Mark as Paid
         const bookingIds = unpaidBookings.map(b => b.id);
         await supabase.from('bookings').update({ is_paid: true }).in('id', bookingIds);
 
-        await resend.emails.send({
-            from: 'KursNavi <onboarding@resend.dev>',
-            to: 'btrespondek@gmail.com', 
-            subject: `Payout Alert: ${course.title}`,
-            html: `
-              <h1>Payout Processed (Secure)</h1>
-              <p>Course: <strong>${course.title}</strong></p>
-              <p>Date: ${course.start_date}</p>
-              <p><strong>Payout: CHF ${payoutAmount}</strong></p>
-              <h3>Students:</h3>
-              <ul>${listHtml}</ul>
-            `
-        });
-        
-        emailsSent++;
+        // 8. Send Email to the TEACHER
+        // Note: In Resend Test Mode, this might fail if 'teacherEmail' isn't you.
+        // We wrap it in a try/catch so one failure doesn't stop the whole robot.
+        try {
+            await resend.emails.send({
+                from: 'KursNavi <onboarding@resend.dev>',
+                to: teacherEmail, 
+                bcc: ADMIN_EMAIL, // You always get a copy secretly
+                subject: `Payout Alert: ${course.title}`,
+                html: `
+                  <h1>Payout Processed</h1>
+                  <p>Hello Teacher,</p>
+                  <p>Your course <strong>${course.title}</strong> is starting soon.</p>
+                  <p>Payout Amount: <strong>CHF ${payoutAmount}</strong></p>
+                  <h3>Student List:</h3>
+                  <ul>${listHtml}</ul>
+                `
+            });
+            emailsSent++;
+        } catch (emailError) {
+            console.error(`Failed to send email to ${teacherEmail}:`, emailError);
+        }
     }
 
     return res.status(200).json({
