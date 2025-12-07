@@ -100,6 +100,7 @@ export default function KursNaviPro() {
   // App State
   const [courses, setCourses] = useState([]); 
   const [myBookings, setMyBookings] = useState([]); 
+  const [teacherEarnings, setTeacherEarnings] = useState([]); // NEW: Store Teacher Earnings
   const [loading, setLoading] = useState(true);
   const [cantons, setCantons] = useState(INITIAL_CANTONS);
   const [categories, setCategories] = useState(INITIAL_CATEGORIES);
@@ -122,6 +123,7 @@ export default function KursNaviPro() {
         const name = session.user.user_metadata?.full_name || session.user.email.split('@')[0];
         setUser({ id: session.user.id, email: session.user.email, role: role, name: name });
         fetchBookings(session.user.id);
+        if (role === 'teacher') fetchTeacherEarnings(session.user.id);
       }
     });
 
@@ -132,9 +134,11 @@ export default function KursNaviPro() {
         const name = session.user.user_metadata?.full_name || session.user.email.split('@')[0];
         setUser({ id: session.user.id, email: session.user.email, role: role, name: name });
         fetchBookings(session.user.id);
+        if (role === 'teacher') fetchTeacherEarnings(session.user.id);
       } else {
         setUser(null);
         setMyBookings([]);
+        setTeacherEarnings([]);
         setView('home');
       }
     });
@@ -154,7 +158,12 @@ export default function KursNaviPro() {
             const saveBooking = async () => {
                 const { error } = await supabase
                     .from('bookings')
-                    .insert([{ user_id: user.id, course_id: pendingCourseId }]);
+                    .insert([{ 
+                        user_id: user.id, 
+                        course_id: pendingCourseId,
+                        is_paid: false, // Default to false until robot pays
+                        status: 'confirmed'
+                    }]);
 
                 if (!error) {
                     localStorage.removeItem('pendingCourseId');
@@ -207,6 +216,48 @@ export default function KursNaviPro() {
     } catch (error) {
       console.error('Error fetching bookings:', error.message);
     }
+  };
+
+  // --- NEW: Fetch Teacher Earnings ---
+  const fetchTeacherEarnings = async (userId) => {
+      try {
+          // 1. Get all courses by this teacher
+          const { data: myCourses } = await supabase
+              .from('courses')
+              .select('id, title, price')
+              .eq('user_id', userId);
+
+          if (!myCourses || myCourses.length === 0) return;
+
+          const courseIds = myCourses.map(c => c.id);
+
+          // 2. Get all bookings for these courses
+          const { data: bookings } = await supabase
+              .from('bookings')
+              .select('*, profiles:user_id(full_name, email)')
+              .in('course_id', courseIds);
+
+          if (!bookings) return;
+
+          // 3. Merge data for display
+          const earningsData = bookings.map(booking => {
+              const course = myCourses.find(c => c.id === booking.course_id);
+              return {
+                  id: booking.id,
+                  courseTitle: course?.title || 'Unknown',
+                  studentName: booking.profiles?.full_name || 'Guest Student',
+                  price: course?.price || 0,
+                  payout: (course?.price || 0) * 0.85,
+                  isPaidOut: booking.is_paid, // The robot's checkbox
+                  date: new Date(booking.created_at).toLocaleDateString()
+              };
+          });
+
+          setTeacherEarnings(earningsData);
+
+      } catch (error) {
+          console.error("Error fetching earnings:", error);
+      }
   };
 
   // --- Actions ---
@@ -269,7 +320,6 @@ export default function KursNaviPro() {
     }
   };
 
-  // --- Handle Cancellation ---
   const handleCancelBooking = async (courseId, courseTitle) => {
       if (!confirm(`Are you sure you want to cancel your spot in "${courseTitle}"?`)) return;
 
@@ -392,12 +442,27 @@ export default function KursNaviPro() {
         setLoading(true);
         try {
             if (isSignUp) {
-                const { error } = await supabase.auth.signUp({
+                // 1. Sign up the user in Supabase Auth
+                const { data: authData, error: authError } = await supabase.auth.signUp({
                     email,
                     password,
                     options: { data: { full_name: fullName, role: role } }
                 });
-                if (error) throw error;
+                
+                if (authError) throw authError;
+
+                // 2. IMPORTANT: Create a profile in the 'profiles' table
+                // The robot needs this to find names later!
+                if (authData?.user) {
+                    await supabase.from('profiles').insert([
+                        { 
+                            id: authData.user.id, 
+                            full_name: fullName, 
+                            email: email 
+                        }
+                    ]);
+                }
+
                 showNotification("Account created! Check your email.");
             } else {
                 const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -878,9 +943,15 @@ export default function KursNaviPro() {
   );
 
   const Dashboard = () => {
-    // If Teacher
+    // TEACHER DASHBOARD
     if (user.role === 'teacher') {
         const myCourses = courses.filter(c => c.user_id === user.id); 
+        
+        // Calculate Total Paid Earnings
+        const totalPaidOut = teacherEarnings
+            .filter(e => e.isPaidOut)
+            .reduce((sum, e) => sum + e.payout, 0);
+
         return (
             <div className="max-w-6xl mx-auto px-4 py-8">
                 <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
@@ -892,23 +963,76 @@ export default function KursNaviPro() {
                         <PlusCircle className="mr-2 w-5 h-5" /> New Course
                     </button>
                 </div>
+
+                {/* EARNINGS SUMMARY */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                     <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm flex items-center">
                         <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4">
                             <DollarSign className="text-green-600" />
                         </div>
                         <div>
-                            <p className="text-sm text-gray-500">Total Earnings</p>
-                            <p className="text-2xl font-bold">CHF 0</p>
+                            <p className="text-sm text-gray-500">Total Payouts Received</p>
+                            <p className="text-2xl font-bold text-gray-900">CHF {totalPaidOut.toFixed(2)}</p>
+                        </div>
+                    </div>
+                    <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm flex items-center">
+                         <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-4">
+                            <User className="text-blue-600" />
+                        </div>
+                        <div>
+                            <p className="text-sm text-gray-500">Total Students</p>
+                            <p className="text-2xl font-bold text-gray-900">{teacherEarnings.length}</p>
                         </div>
                     </div>
                 </div>
+
+                {/* EARNINGS TABLE */}
+                <h2 className="text-xl font-bold mb-4">Student & Earnings History</h2>
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-8">
+                     {teacherEarnings.length > 0 ? (
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left">
+                                <thead className="bg-gray-50 border-b border-gray-200">
+                                    <tr>
+                                        <th className="px-6 py-4 font-semibold text-gray-600">Date</th>
+                                        <th className="px-6 py-4 font-semibold text-gray-600">Course</th>
+                                        <th className="px-6 py-4 font-semibold text-gray-600">Student</th>
+                                        <th className="px-6 py-4 font-semibold text-gray-600">Your Payout (85%)</th>
+                                        <th className="px-6 py-4 font-semibold text-gray-600">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-100">
+                                    {teacherEarnings.map(earning => (
+                                        <tr key={earning.id} className="hover:bg-gray-50">
+                                            <td className="px-6 py-4 text-sm text-gray-500">{earning.date}</td>
+                                            <td className="px-6 py-4 font-medium text-gray-900">{earning.courseTitle}</td>
+                                            <td className="px-6 py-4 text-gray-700">{earning.studentName}</td>
+                                            <td className="px-6 py-4 font-bold text-gray-900">CHF {earning.payout.toFixed(2)}</td>
+                                            <td className="px-6 py-4">
+                                                {earning.isPaidOut ? (
+                                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                        Paid Out
+                                                    </span>
+                                                ) : (
+                                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                                        Pending
+                                                    </span>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                     ) : <div className="p-8 text-center text-gray-500">No student bookings yet.</div>}
+                </div>
+
                 <h2 className="text-xl font-bold mb-4">My Active Courses</h2>
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                     {myCourses.length > 0 ? (
                         <div className="overflow-x-auto">
                             <table className="w-full text-left">
-                                <thead className="bg-gray-5 border-b border-gray-200">
+                                <thead className="bg-gray-50 border-b border-gray-200">
                                     <tr>
                                         <th className="px-6 py-4 font-semibold text-gray-600">Course</th>
                                         <th className="px-6 py-4 font-semibold text-gray-600">Price</th>
@@ -932,7 +1056,7 @@ export default function KursNaviPro() {
         );
     } 
     
-    // STUDENT DASHBOARD (With Smart Cancellation Logic)
+    // STUDENT DASHBOARD
     return (
         <div className="max-w-6xl mx-auto px-4 py-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-8">{t.student_dash}</h1>
