@@ -3,19 +3,26 @@ import { Resend } from 'resend';
 
 export default async function handler(req, res) {
 
-  // --- SECURE CONFIGURATION ---
-  // The code now asks Vercel for the keys. 
-  // If the keys are missing in Vercel, the script will stop safely.
+  // --- DEBUGGING THE KEYS ---
+  const missingKeys = [];
+  
+  if (!process.env.SUPABASE_URL) missingKeys.push("SUPABASE_URL");
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) missingKeys.push("SUPABASE_SERVICE_ROLE_KEY");
+  if (!process.env.RESEND_API_KEY) missingKeys.push("RESEND_API_KEY");
+
+  if (missingKeys.length > 0) {
+      return res.status(500).json({ 
+          error: "Keys are missing in Vercel.", 
+          missing_specifically: missingKeys,
+          tip: "Check the spelling in Vercel > Settings > Environment Variables"
+      });
+  }
+  // --------------------------
+
+  // If keys exist, assign them
   const SUPABASE_URL = process.env.SUPABASE_URL;
   const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const RESEND_KEY = process.env.RESEND_API_KEY;
-
-  if (!SUPABASE_URL || !SUPABASE_KEY || !RESEND_KEY) {
-      return res.status(500).json({ 
-          error: "Missing Environment Variables. Please check Vercel Settings." 
-      });
-  }
-  // ----------------------------
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
   const resend = new Resend(RESEND_KEY);
@@ -26,7 +33,6 @@ export default async function handler(req, res) {
     const nextMonthStart = new Date(today);
     nextMonthStart.setMonth(today.getMonth() + 1);
     
-    // Window: Next Month Start -> Next Month Start + 2 Days
     const startWindow = `${nextMonthStart.toISOString().split('T')[0]}T00:00:00`;
     
     const nextMonthEnd = new Date(nextMonthStart);
@@ -112,4 +118,3 @@ export default async function handler(req, res) {
     return res.status(500).json({ success: false, error: error.message });
   }
 }
-// Forcing a redeploy to pick up new keys
