@@ -3,13 +3,21 @@ import { Resend } from 'resend';
 
 export default async function handler(req, res) {
 
-  // --- KEYS ---
-  const SUPABASE_URL = "https://nplxmpfasgpumpiddjfl.supabase.co";
-  const SERVICE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5wbHhtcGZhc2dwdW1waWRkamZsIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NDMzOTk0MiwiZXhwIjoyMDc5OTE1OTQyfQ.5BeY8BkISy_hexNUzx0nDTDNbU5N-Hg4jdeOnHufffw";
-  const RESEND_KEY = "re_PWCFaKxw_LPBudxuw5WoRiefvdJSPnnds";
-  // ------------
+  // --- SECURE CONFIGURATION ---
+  // The code now asks Vercel for the keys. 
+  // If the keys are missing in Vercel, the script will stop safely.
+  const SUPABASE_URL = process.env.SUPABASE_URL;
+  const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const RESEND_KEY = process.env.RESEND_API_KEY;
 
-  const supabase = createClient(SUPABASE_URL, SERVICE_KEY);
+  if (!SUPABASE_URL || !SUPABASE_KEY || !RESEND_KEY) {
+      return res.status(500).json({ 
+          error: "Missing Environment Variables. Please check Vercel Settings." 
+      });
+  }
+  // ----------------------------
+
+  const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
   const resend = new Resend(RESEND_KEY);
 
   try {
@@ -18,7 +26,7 @@ export default async function handler(req, res) {
     const nextMonthStart = new Date(today);
     nextMonthStart.setMonth(today.getMonth() + 1);
     
-    // Look for courses starting in the next 48 hours from that target date
+    // Window: Next Month Start -> Next Month Start + 2 Days
     const startWindow = `${nextMonthStart.toISOString().split('T')[0]}T00:00:00`;
     
     const nextMonthEnd = new Date(nextMonthStart);
@@ -54,10 +62,8 @@ export default async function handler(req, res) {
         if (unpaidBookings.length === 0) continue;
 
         // 4. Fetch Student Names
-        // Get all User IDs from the unpaid bookings
         const userIds = unpaidBookings.map(b => b.user_id);
         
-        // Ask the 'profiles' table for names
         const { data: profiles } = await supabase
             .from('profiles')
             .select('id, full_name, email')
@@ -98,7 +104,7 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       success: true,
-      message: "Payouts Processed",
+      message: "Payouts Processed (Secure Mode)",
       emailsSent: emailsSent
     });
 
