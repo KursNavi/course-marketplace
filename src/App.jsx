@@ -465,8 +465,18 @@ export default function KursNaviPro() {
 
                 showNotification("Account created! Check your email.");
             } else {
-                const { error } = await supabase.auth.signInWithPassword({ email, password });
+                // LOGIN LOGIC - MODIFIED FOR REDIRECTION
+                const { data, error } = await supabase.auth.signInWithPassword({ email, password });
                 if (error) throw error;
+                
+                // TRAFFIC DIRECTOR: Check role and redirect
+                const userRole = data.user?.user_metadata?.role;
+                if (userRole === 'teacher') {
+                    setView('dashboard');
+                } else {
+                    setView('home');
+                }
+                
                 showNotification("Welcome back!");
             }
         } catch (error) {
@@ -989,7 +999,7 @@ export default function KursNaviPro() {
                 {/* EARNINGS TABLE */}
                 <h2 className="text-xl font-bold mb-4">Student & Earnings History</h2>
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-8">
-                     {teacherEarnings.length > 0 ? (
+                      {teacherEarnings.length > 0 ? (
                         <div className="overflow-x-auto">
                             <table className="w-full text-left">
                                 <thead className="bg-gray-50 border-b border-gray-200">
@@ -1024,7 +1034,7 @@ export default function KursNaviPro() {
                                 </tbody>
                             </table>
                         </div>
-                     ) : <div className="p-8 text-center text-gray-500">No student bookings yet.</div>}
+                      ) : <div className="p-8 text-center text-gray-500">No student bookings yet.</div>}
                 </div>
 
                 <h2 className="text-xl font-bold mb-4">My Active Courses</h2>
