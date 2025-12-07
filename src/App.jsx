@@ -1,11 +1,32 @@
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { Search, User, Clock, MapPin, Menu, PlusCircle, CheckCircle, ArrowLeft, Globe, LogIn, LayoutDashboard, Settings, Trash2, DollarSign, BarChart, Lock, Calendar, ExternalLink, ChevronDown, ChevronUp, Info, X, Heart, Shield, Mail, Phone, Loader, AlertCircle } from 'lucide-react';
+import { Search, User, Clock, MapPin, Menu, CheckCircle, ArrowLeft, Globe, LogIn, LayoutDashboard, Settings, Trash2, DollarSign, Lock, Calendar, ExternalLink, ChevronDown, Mail, Phone, Loader, Heart, Shield } from 'lucide-react';
 
 // --- 1. Supabase Setup ---
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
+
+// --- 2. Brand Assets & Styles ---
+// We inject the fonts and define the specific brand colors here
+const BRAND = {
+  orange: '#FA6E28', // Primary Brand Color
+  black: '#333333',  // Primary Text
+  lightOrange: '#FFF0EB', // Backgrounds
+  blue: '#78B3CE',   // Accents
+  lightBeige: '#FAF5F0', // Global Background
+};
+
+// Custom Logo Component based on your PDF (Book + Star)
+const KursNaviLogo = ({ className = "w-8 h-8" }) => (
+  <svg viewBox="0 0 100 100" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
+    {/* The Book (Angled Rectangles) */}
+    <path d="M10 40 L48 55 L48 85 L10 70 Z" fill={BRAND.orange} />
+    <path d="M52 55 L90 40 L90 70 L52 85 Z" fill={BRAND.orange} />
+    {/* The Compass Star */}
+    <path d="M50 10 L55 30 L75 35 L55 40 L50 60 L45 40 L25 35 L45 30 Z" fill={BRAND.orange} />
+  </svg>
+);
 
 // --- Localization Data ---
 const TRANSLATIONS = {
@@ -414,14 +435,14 @@ export default function KursNaviPro() {
               <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
                   <CheckCircle className="w-10 h-10 text-green-600" />
               </div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-4">Payment Successful!</h2>
-              <p className="text-gray-600 mb-8">Thank you for your booking. You will receive a confirmation email shortly.</p>
+              <h2 className="text-3xl font-bold text-[#333333] mb-4 font-['Open_Sans']">Payment Successful!</h2>
+              <p className="text-gray-600 mb-8 font-['Hind_Madurai']">Thank you for your booking. You will receive a confirmation email shortly.</p>
               <button 
                   onClick={() => {
                       window.history.replaceState({}, document.title, window.location.pathname);
                       setView('dashboard');
                   }} 
-                  className="w-full bg-green-600 text-white py-3 rounded-lg font-bold hover:bg-green-700 transition"
+                  className="w-full bg-[#FA6E28] text-white py-3 rounded-lg font-bold hover:bg-[#E55D1F] transition font-['Open_Sans']"
               >
                   Go to My Courses
               </button>
@@ -487,24 +508,24 @@ export default function KursNaviPro() {
     };
 
     return (
-        <div className="min-h-[80vh] flex items-center justify-center px-4 bg-gray-50">
+        <div className="min-h-[80vh] flex items-center justify-center px-4 bg-[#FAF5F0]">
             <div className="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full border border-gray-100">
-                <h2 className="text-2xl font-bold mb-6 text-center">{isSignUp ? "Create Account" : "Welcome Back"}</h2>
-                <form onSubmit={handleAuth} className="space-y-4">
+                <h2 className="text-2xl font-bold mb-6 text-center font-['Open_Sans'] text-[#333333]">{isSignUp ? "Create Account" : "Welcome Back"}</h2>
+                <form onSubmit={handleAuth} className="space-y-4 font-['Hind_Madurai']">
                     {isSignUp && (
                         <>
                             <div>
                                 <label className="block text-sm font-bold text-gray-700 mb-1">Full Name</label>
-                                <input required type="text" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500" value={fullName} onChange={e => setFullName(e.target.value)} />
+                                <input required type="text" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#FA6E28] outline-none" value={fullName} onChange={e => setFullName(e.target.value)} />
                             </div>
                             <div>
                                 <label className="block text-sm font-bold text-gray-700 mb-1">I am a...</label>
                                 <div className="flex gap-4">
-                                    <label className={`flex-1 p-3 border rounded-lg cursor-pointer text-center transition ${role === 'student' ? 'bg-red-50 border-red-500 text-red-700 font-bold' : 'hover:bg-gray-50'}`}>
+                                    <label className={`flex-1 p-3 border rounded-lg cursor-pointer text-center transition ${role === 'student' ? 'bg-[#FFF0EB] border-[#FA6E28] text-[#FA6E28] font-bold' : 'hover:bg-gray-50'}`}>
                                         <input type="radio" className="hidden" checked={role === 'student'} onChange={() => setRole('student')} />
                                         Student
                                     </label>
-                                    <label className={`flex-1 p-3 border rounded-lg cursor-pointer text-center transition ${role === 'teacher' ? 'bg-red-50 border-red-500 text-red-700 font-bold' : 'hover:bg-gray-50'}`}>
+                                    <label className={`flex-1 p-3 border rounded-lg cursor-pointer text-center transition ${role === 'teacher' ? 'bg-[#FFF0EB] border-[#FA6E28] text-[#FA6E28] font-bold' : 'hover:bg-gray-50'}`}>
                                         <input type="radio" className="hidden" checked={role === 'teacher'} onChange={() => setRole('teacher')} />
                                         Teacher
                                     </label>
@@ -514,19 +535,19 @@ export default function KursNaviPro() {
                     )}
                     <div>
                         <label className="block text-sm font-bold text-gray-700 mb-1">Email</label>
-                        <input required type="email" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500" value={email} onChange={e => setEmail(e.target.value)} />
+                        <input required type="email" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#FA6E28] outline-none" value={email} onChange={e => setEmail(e.target.value)} />
                     </div>
                     <div>
                         <label className="block text-sm font-bold text-gray-700 mb-1">Password</label>
-                        <input required type="password" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500" value={password} onChange={e => setPassword(e.target.value)} />
+                        <input required type="password" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#FA6E28] outline-none" value={password} onChange={e => setPassword(e.target.value)} />
                     </div>
-                    <button disabled={loading} type="submit" className="w-full bg-red-600 text-white py-3 rounded-lg font-bold hover:bg-red-700 transition disabled:opacity-50">
+                    <button disabled={loading} type="submit" className="w-full bg-[#FA6E28] text-white py-3 rounded-lg font-bold hover:bg-[#E55D1F] transition disabled:opacity-50 font-['Open_Sans']">
                         {loading ? <Loader className="animate-spin mx-auto" /> : (isSignUp ? "Sign Up" : "Login")}
                     </button>
                 </form>
-                <p className="text-center text-sm text-gray-600 mt-6">
+                <p className="text-center text-sm text-gray-600 mt-6 font-['Hind_Madurai']">
                     {isSignUp ? "Already have an account?" : "Don't have an account?"}
-                    <button onClick={() => setIsSignUp(!isSignUp)} className="text-red-600 font-bold ml-2 hover:underline">
+                    <button onClick={() => setIsSignUp(!isSignUp)} className="text-[#FA6E28] font-bold ml-2 hover:underline">
                         {isSignUp ? "Login" : "Sign Up"}
                     </button>
                 </p>
@@ -538,33 +559,31 @@ export default function KursNaviPro() {
   const Navbar = () => (
     <nav className="bg-white shadow-sm sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16 items-center">
+        <div className="flex justify-between h-20 items-center">
           <div className="flex items-center cursor-pointer" onClick={() => setView('home')}>
-            <div className="w-8 h-8 bg-red-600 rounded-md flex items-center justify-center mr-2">
-               <PlusCircle className="text-white w-5 h-5 font-bold" strokeWidth={3} />
-            </div>
-            <span className="font-bold text-xl text-gray-900 tracking-tight">KursNavi</span>
+             <KursNaviLogo className="w-10 h-10 mr-3" />
+            <span className="font-['Open_Sans'] font-bold text-2xl text-[#333333] tracking-tight">KursNavi</span>
           </div>
-          <div className="hidden md:flex items-center space-x-6">
-            <button onClick={() => setView('home')} className="text-gray-600 hover:text-red-600 font-medium">{t.nav_explore}</button>
-            <button onClick={() => setView('about')} className="text-gray-600 hover:text-red-600 font-medium">{t.nav_about}</button>
+          <div className="hidden md:flex items-center space-x-6 font-['Open_Sans']">
+            <button onClick={() => setView('home')} className="text-gray-600 hover:text-[#FA6E28] font-semibold">{t.nav_explore}</button>
+            <button onClick={() => setView('about')} className="text-gray-600 hover:text-[#FA6E28] font-semibold">{t.nav_about}</button>
             {!user ? (
-                <button onClick={() => setView('login')} className="text-gray-600 hover:text-red-600 font-medium flex items-center">
+                <button onClick={() => setView('login')} className="text-gray-600 hover:text-[#FA6E28] font-semibold flex items-center">
                     <LogIn className="w-4 h-4 mr-1" /> {t.nav_login}
                 </button>
             ) : (
                 <>
-                    <button onClick={() => setView('dashboard')} className="text-gray-600 hover:text-red-600 font-medium flex items-center">
+                    <button onClick={() => setView('dashboard')} className="text-gray-600 hover:text-[#FA6E28] font-semibold flex items-center">
                         <LayoutDashboard className="w-4 h-4 mr-1" /> {t.nav_dashboard}
                     </button>
-                    <button onClick={handleLogout} className="text-gray-400 hover:text-gray-600 font-medium text-sm">
+                    <button onClick={handleLogout} className="text-gray-400 hover:text-gray-600 font-semibold text-sm">
                         {t.nav_logout}
                     </button>
                 </>
             )}
-            <div className="border-l pl-4 ml-4 flex space-x-2 text-sm font-medium">
+            <div className="border-l pl-4 ml-4 flex space-x-2 text-sm font-semibold">
                 {['en', 'de', 'fr'].map(l => (
-                    <button key={l} onClick={() => setLang(l)} className={`${lang === l ? 'text-red-600 font-bold' : 'text-gray-400'}`}>{l.toUpperCase()}</button>
+                    <button key={l} onClick={() => setLang(l)} className={`${lang === l ? 'text-[#FA6E28] font-bold' : 'text-gray-400'}`}>{l.toUpperCase()}</button>
                 ))}
             </div>
           </div>
@@ -574,7 +593,7 @@ export default function KursNaviPro() {
         </div>
       </div>
       {isMenuOpen && (
-        <div className="md:hidden bg-white border-t p-4 space-y-4 shadow-lg">
+        <div className="md:hidden bg-white border-t p-4 space-y-4 shadow-lg font-['Open_Sans']">
              <button onClick={() => {setView('home'); setIsMenuOpen(false)}} className="block w-full text-left py-2 font-medium">{t.nav_explore}</button>
              <button onClick={() => {setView('about'); setIsMenuOpen(false)}} className="block w-full text-left py-2 font-medium">{t.nav_about}</button>
              <button onClick={() => {setView('login'); setIsMenuOpen(false)}} className="block w-full text-left py-2 font-medium">{t.nav_login}</button>
@@ -584,7 +603,7 @@ export default function KursNaviPro() {
   );
 
   const DetailView = ({ course }) => (
-    <div className="max-w-7xl mx-auto px-4 py-8 animate-in fade-in duration-500">
+    <div className="max-w-7xl mx-auto px-4 py-8 animate-in fade-in duration-500 font-['Hind_Madurai']">
       <button onClick={() => setView('home')} className="flex items-center text-gray-500 hover:text-gray-900 mb-6 transition-colors">
         <ArrowLeft className="w-4 h-4 mr-2" /> Back to courses
       </button>
@@ -593,23 +612,23 @@ export default function KursNaviPro() {
             <div className="relative rounded-2xl overflow-hidden shadow-lg h-80">
                 <img src={course.image_url} alt={course.title} className="w-full h-full object-cover" />
                 <div className="absolute top-4 left-4 bg-white/90 backdrop-blur px-3 py-1.5 rounded-lg text-sm font-bold text-gray-800 flex items-center shadow-sm">
-                    <MapPin className="w-4 h-4 mr-1 text-red-600" /> {course.canton}
+                    <MapPin className="w-4 h-4 mr-1 text-[#FA6E28]" /> {course.canton}
                 </div>
             </div>
             <div>
-                <h1 className="text-3xl font-extrabold text-gray-900 mb-3">{course.title}</h1>
+                <h1 className="text-3xl font-extrabold text-[#333333] mb-3 font-['Open_Sans']">{course.title}</h1>
                 <div className="flex items-center space-x-4 text-sm text-gray-500">
                     <span className="flex items-center"><User className="w-4 h-4 mr-1" /> {course.instructor_name}</span>
                 </div>
             </div>
             <div className="bg-white p-8 rounded-2xl border border-gray-100 shadow-sm space-y-6">
                 <div>
-                    <h3 className="text-xl font-bold mb-3 text-gray-900">{t.lbl_description}</h3>
+                    <h3 className="text-xl font-bold mb-3 text-[#333333] font-['Open_Sans']">{t.lbl_description}</h3>
                     <p className="text-gray-600 leading-relaxed text-lg">{course.description}</p>
                 </div>
                 {course.objectives && (
                     <div>
-                        <h3 className="text-xl font-bold mb-3 text-gray-900">{t.lbl_objectives}</h3>
+                        <h3 className="text-xl font-bold mb-3 text-[#333333] font-['Open_Sans']">{t.lbl_objectives}</h3>
                         <ul className="space-y-2">
                             {course.objectives.map((obj, i) => (
                                 <li key={i} className="flex items-start">
@@ -625,9 +644,9 @@ export default function KursNaviPro() {
         <div className="lg:col-span-1">
           <div className="bg-white p-6 rounded-2xl shadow-xl border border-gray-200 sticky top-24">
             <div className="mb-6 border-b pb-6">
-                <span className="text-4xl font-extrabold text-gray-900 block mb-1">{t.currency} {course.price}</span>
+                <span className="text-4xl font-extrabold text-[#333333] block mb-1 font-['Open_Sans']">{t.currency} {course.price}</span>
                 <span className="text-sm text-gray-500 block mb-4">per person</span>
-                <button onClick={() => handleBookCourse(course)} className="w-full bg-red-600 text-white py-4 rounded-xl font-bold hover:bg-red-700 transition shadow-md active:scale-95">
+                <button onClick={() => handleBookCourse(course)} className="w-full bg-[#FA6E28] text-white py-4 rounded-xl font-bold hover:bg-[#E55D1F] transition shadow-md active:scale-95 font-['Open_Sans']">
                     {t.btn_pay}
                 </button>
             </div>
@@ -635,11 +654,11 @@ export default function KursNaviPro() {
              {/* DATE DISPLAY BLOCK */}
              {course.start_date && (
                 <div className="mb-6 pb-6 border-b border-gray-100">
-                    <div className="flex items-center text-red-600 font-bold mb-1">
+                    <div className="flex items-center text-[#FA6E28] font-bold mb-1">
                         <Calendar className="w-5 h-5 mr-2" />
                         <span>Start Date</span>
                     </div>
-                    <div className="text-xl font-bold text-gray-900 ml-7">
+                    <div className="text-xl font-bold text-[#333333] ml-7">
                       {new Date(course.start_date).toLocaleDateString('en-CH', { day: 'numeric', month: 'long', year: 'numeric' })}
                     </div>
                 </div>
@@ -674,13 +693,13 @@ export default function KursNaviPro() {
   );
 
   const TeacherForm = () => (
-    <div className="max-w-3xl mx-auto px-4 py-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="max-w-3xl mx-auto px-4 py-8 animate-in fade-in slide-in-from-bottom-4 duration-500 font-['Hind_Madurai']">
         <button onClick={() => setView('dashboard')} className="flex items-center text-gray-500 hover:text-gray-900 mb-6 transition-colors">
             <ArrowLeft className="w-4 h-4 mr-2" /> Back to Dashboard
         </button>
         <div className="bg-white p-8 rounded-2xl shadow-xl border border-gray-200">
             <div className="mb-8 border-b pb-4">
-                <h1 className="text-3xl font-bold text-gray-900">{t.form_title}</h1>
+                <h1 className="text-3xl font-bold text-[#333333] font-['Open_Sans']">{t.form_title}</h1>
                 <p className="text-gray-500 mt-2">Share your skills with the community.</p>
             </div>
             
@@ -688,13 +707,13 @@ export default function KursNaviPro() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="md:col-span-2">
                         <label className="block text-sm font-bold text-gray-700 mb-1">Course Title</label>
-                        <input required type="text" name="title" placeholder="e.g. Traditional Swiss Cooking" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none transition-shadow" />
+                        <input required type="text" name="title" placeholder="e.g. Traditional Swiss Cooking" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#FA6E28] outline-none transition-shadow" />
                     </div>
 
                     <div>
                         <label className="block text-sm font-bold text-gray-700 mb-1">Category</label>
                         <div className="relative">
-                            <select name="category" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none appearance-none bg-white">
+                            <select name="category" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#FA6E28] outline-none appearance-none bg-white">
                                 {categories.map(c => <option key={c} value={c}>{c}</option>)}
                             </select>
                             <ChevronDown className="absolute right-3 top-3 text-gray-400 w-4 h-4 pointer-events-none" />
@@ -705,14 +724,14 @@ export default function KursNaviPro() {
                         <label className="block text-sm font-bold text-gray-700 mb-1">Price (CHF)</label>
                         <div className="relative">
                             <span className="absolute left-3 top-2 text-gray-500 font-bold">CHF</span>
-                            <input required type="number" name="price" placeholder="50" className="w-full pl-12 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none" />
+                            <input required type="number" name="price" placeholder="50" className="w-full pl-12 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#FA6E28] outline-none" />
                         </div>
                     </div>
 
                     <div>
                         <label className="block text-sm font-bold text-gray-700 mb-1">Canton</label>
                         <div className="relative">
-                            <select name="canton" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none appearance-none bg-white">
+                            <select name="canton" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#FA6E28] outline-none appearance-none bg-white">
                                 {cantons.map(c => <option key={c} value={c}>{c}</option>)}
                             </select>
                             <ChevronDown className="absolute right-3 top-3 text-gray-400 w-4 h-4 pointer-events-none" />
@@ -721,17 +740,17 @@ export default function KursNaviPro() {
 
                     <div>
                         <label className="block text-sm font-bold text-gray-700 mb-1">Specific Address</label>
-                        <input required type="text" name="address" placeholder="Street, City, Zip" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none" />
+                        <input required type="text" name="address" placeholder="Street, City, Zip" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#FA6E28] outline-none" />
                     </div>
 
                     <div>
                         <label className="block text-sm font-bold text-gray-700 mb-1">Session Count</label>
-                        <input required type="number" name="sessionCount" defaultValue="1" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none" />
+                        <input required type="number" name="sessionCount" defaultValue="1" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#FA6E28] outline-none" />
                     </div>
 
                     <div>
                         <label className="block text-sm font-bold text-gray-700 mb-1">Session Length</label>
-                        <input required type="text" name="sessionLength" placeholder="e.g. 2 hours" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none" />
+                        <input required type="text" name="sessionLength" placeholder="e.g. 2 hours" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#FA6E28] outline-none" />
                     </div>
 
                     {/* NEW START DATE FIELD */}
@@ -739,7 +758,7 @@ export default function KursNaviPro() {
                         <label className="block text-sm font-bold text-gray-700 mb-1">Start Date</label>
                         <div className="relative">
                             <Calendar className="absolute left-3 top-3 text-gray-400 w-5 h-5" />
-                            <input required type="date" name="startDate" className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none" />
+                            <input required type="date" name="startDate" className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#FA6E28] outline-none" />
                         </div>
                         <p className="text-xs text-gray-500 mt-1">When does the first session begin?</p>
                     </div>
@@ -748,29 +767,29 @@ export default function KursNaviPro() {
                         <label className="block text-sm font-bold text-gray-700 mb-1">Provider Website (Optional)</label>
                         <div className="relative">
                             <ExternalLink className="absolute left-3 top-3 text-gray-400 w-5 h-5" />
-                            <input type="url" name="providerUrl" placeholder="https://..." className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none" />
+                            <input type="url" name="providerUrl" placeholder="https://..." className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#FA6E28] outline-none" />
                         </div>
                     </div>
                 </div>
 
                 <div>
                     <label className="block text-sm font-bold text-gray-700 mb-1">Description</label>
-                    <textarea required name="description" rows="4" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none" placeholder="Describe your course..."></textarea>
+                    <textarea required name="description" rows="4" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#FA6E28] outline-none" placeholder="Describe your course..."></textarea>
                 </div>
 
                 <div>
                     <label className="block text-sm font-bold text-gray-700 mb-1">What will students learn?</label>
-                    <textarea required name="objectives" rows="4" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none" placeholder="Enter each objective on a new line..."></textarea>
+                    <textarea required name="objectives" rows="4" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#FA6E28] outline-none" placeholder="Enter each objective on a new line..."></textarea>
                 </div>
 
                 <div>
                     <label className="block text-sm font-bold text-gray-700 mb-1">Prerequisites</label>
-                    <input type="text" name="prerequisites" placeholder="e.g. Beginners welcome, bring a laptop" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none" />
+                    <input type="text" name="prerequisites" placeholder="e.g. Beginners welcome, bring a laptop" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#FA6E28] outline-none" />
                 </div>
 
                 <div className="pt-4 border-t border-gray-100 flex justify-end">
-                    <button type="submit" className="bg-red-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-red-700 shadow-lg hover:-translate-y-0.5 transition flex items-center">
-                        <PlusCircle className="w-5 h-5 mr-2" />
+                    <button type="submit" className="bg-[#FA6E28] text-white px-8 py-3 rounded-xl font-bold hover:bg-[#E55D1F] shadow-lg hover:-translate-y-0.5 transition flex items-center font-['Open_Sans']">
+                        <KursNaviLogo className="w-5 h-5 mr-2 text-white" />
                         {t.btn_publish}
                     </button>
                 </div>
@@ -780,9 +799,9 @@ export default function KursNaviPro() {
   );
 
   const AboutPage = () => (
-    <div className="max-w-4xl mx-auto px-4 py-16 animate-in fade-in duration-500">
+    <div className="max-w-4xl mx-auto px-4 py-16 animate-in fade-in duration-500 font-['Hind_Madurai']">
         <div className="text-center mb-12">
-            <h1 className="text-4xl font-extrabold text-gray-900 mb-4">{t.about_title}</h1>
+            <h1 className="text-4xl font-extrabold text-[#333333] mb-4 font-['Open_Sans']">{t.about_title}</h1>
             <p className="text-xl text-gray-500">{t.about_subtitle}</p>
         </div>
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden mb-12">
@@ -791,16 +810,16 @@ export default function KursNaviPro() {
                 <p className="text-lg text-gray-700 leading-relaxed">{t.about_text}</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 py-4">
                     <div className="flex items-start">
-                        <Heart className="w-8 h-8 text-red-600 mr-4 flex-shrink-0" />
+                        <Heart className="w-8 h-8 text-[#FA6E28] mr-4 flex-shrink-0" />
                         <div>
-                            <h3 className="font-bold text-gray-900 mb-1">{t.about_community_title}</h3>
+                            <h3 className="font-bold text-[#333333] mb-1 font-['Open_Sans']">{t.about_community_title}</h3>
                             <p className="text-gray-600">{t.about_community_text}</p>
                         </div>
                     </div>
                     <div className="flex items-start">
-                        <Shield className="w-8 h-8 text-red-600 mr-4 flex-shrink-0" />
+                        <Shield className="w-8 h-8 text-[#FA6E28] mr-4 flex-shrink-0" />
                         <div>
-                            <h3 className="font-bold text-gray-900 mb-1">{t.about_quality_title}</h3>
+                            <h3 className="font-bold text-[#333333] mb-1 font-['Open_Sans']">{t.about_quality_title}</h3>
                             <p className="text-gray-600">{t.about_quality_text}</p>
                         </div>
                     </div>
@@ -811,29 +830,29 @@ export default function KursNaviPro() {
   );
 
   const ContactPage = () => (
-    <div className="max-w-4xl mx-auto px-4 py-16 animate-in fade-in duration-500">
-        <h1 className="text-4xl font-extrabold text-gray-900 mb-8 text-center">{t.contact_title}</h1>
+    <div className="max-w-4xl mx-auto px-4 py-16 animate-in fade-in duration-500 font-['Hind_Madurai']">
+        <h1 className="text-4xl font-extrabold text-[#333333] mb-8 text-center font-['Open_Sans']">{t.contact_title}</h1>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
             <div className="space-y-8">
-                <div className="bg-red-50 p-6 rounded-2xl border border-red-100">
-                    <h3 className="font-bold text-lg mb-4 text-red-900">{t.contact_get_in_touch}</h3>
+                <div className="bg-[#FFF0EB] p-6 rounded-2xl border border-orange-100">
+                    <h3 className="font-bold text-lg mb-4 text-[#FA6E28] font-['Open_Sans']">{t.contact_get_in_touch}</h3>
                     <div className="space-y-4">
                         <div className="flex items-center text-gray-700">
-                            <Mail className="w-5 h-5 mr-3 text-red-600" />
+                            <Mail className="w-5 h-5 mr-3 text-[#FA6E28]" />
                             <span>support@kursnavi.ch</span>
                         </div>
                         <div className="flex items-center text-gray-700">
-                            <Phone className="w-5 h-5 mr-3 text-red-600" />
+                            <Phone className="w-5 h-5 mr-3 text-[#FA6E28]" />
                             <span>+41 44 123 45 67</span>
                         </div>
                         <div className="flex items-start text-gray-700">
-                            <MapPin className="w-5 h-5 mr-3 text-red-600 mt-1" />
+                            <MapPin className="w-5 h-5 mr-3 text-[#FA6E28] mt-1" />
                             <span>KursNavi AG<br/>Bahnhofstrasse 100<br/>8001 Zürich<br/>Switzerland</span>
                         </div>
                     </div>
                 </div>
                 <div>
-                    <h3 className="font-bold text-lg mb-2">{t.contact_office_hours}</h3>
+                    <h3 className="font-bold text-lg mb-2 font-['Open_Sans']">{t.contact_office_hours}</h3>
                     <p className="text-gray-600">{t.contact_mon_fri}</p>
                     <p className="text-gray-600">{t.contact_weekend}</p>
                 </div>
@@ -842,17 +861,17 @@ export default function KursNaviPro() {
                 <form onSubmit={handleContactSubmit} className="space-y-4">
                     <div>
                         <label className="block text-sm font-bold text-gray-700 mb-1">{t.contact_lbl_name}</label>
-                        <input required type="text" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none" placeholder={t.contact_lbl_name} />
+                        <input required type="text" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#FA6E28] outline-none" placeholder={t.contact_lbl_name} />
                     </div>
                     <div>
                         <label className="block text-sm font-bold text-gray-700 mb-1">{t.contact_lbl_email}</label>
-                        <input required type="email" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none" placeholder="you@example.com" />
+                        <input required type="email" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#FA6E28] outline-none" placeholder="you@example.com" />
                     </div>
                     <div>
                         <label className="block text-sm font-bold text-gray-700 mb-1">{t.contact_lbl_msg}</label>
-                        <textarea required rows="4" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none" placeholder="..."></textarea>
+                        <textarea required rows="4" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#FA6E28] outline-none" placeholder="..."></textarea>
                     </div>
-                    <button type="submit" className="w-full bg-red-600 text-white py-3 rounded-lg font-bold hover:bg-red-700 transition">
+                    <button type="submit" className="w-full bg-[#FA6E28] text-white py-3 rounded-lg font-bold hover:bg-[#E55D1F] transition font-['Open_Sans']">
                         {t.btn_send}
                     </button>
                 </form>
@@ -862,49 +881,49 @@ export default function KursNaviPro() {
   );
 
   const TermsPage = () => (
-      <div className="max-w-4xl mx-auto px-4 py-12 animate-in fade-in duration-500">
-          <div className="prose prose-red max-w-none">
-              <h1 className="text-3xl font-bold mb-6">{t.terms_title}</h1>
+      <div className="max-w-4xl mx-auto px-4 py-12 animate-in fade-in duration-500 font-['Hind_Madurai']">
+          <div className="prose prose-orange max-w-none">
+              <h1 className="text-3xl font-bold mb-6 font-['Open_Sans'] text-[#333333]">{t.terms_title}</h1>
               <p className="text-sm text-gray-500 mb-8">{t.terms_last_updated}</p>
-              <h3 className="text-xl font-bold mt-6 mb-3">{t.terms_1_title}</h3>
+              <h3 className="text-xl font-bold mt-6 mb-3 text-[#333333]">{t.terms_1_title}</h3>
               <p className="text-gray-700 mb-4">{t.terms_1_text}</p>
-              <h3 className="text-xl font-bold mt-6 mb-3">{t.terms_2_title}</h3>
+              <h3 className="text-xl font-bold mt-6 mb-3 text-[#333333]">{t.terms_2_title}</h3>
               <p className="text-gray-700 mb-4">{t.terms_2_text}</p>
-              <h3 className="text-xl font-bold mt-6 mb-3">{t.terms_3_title}</h3>
+              <h3 className="text-xl font-bold mt-6 mb-3 text-[#333333]">{t.terms_3_title}</h3>
               <p className="text-gray-700 mb-4">{t.terms_3_text}</p>
-              <h3 className="text-xl font-bold mt-6 mb-3">{t.terms_4_title}</h3>
+              <h3 className="text-xl font-bold mt-6 mb-3 text-[#333333]">{t.terms_4_title}</h3>
               <p className="text-gray-700 mb-4">{t.terms_4_text}</p>
-              <h3 className="text-xl font-bold mt-6 mb-3">{t.terms_5_title}</h3>
+              <h3 className="text-xl font-bold mt-6 mb-3 text-[#333333]">{t.terms_5_title}</h3>
               <p className="text-gray-700 mb-4">{t.terms_5_text}</p>
           </div>
       </div>
   );
 
   const PrivacyPage = () => (
-      <div className="max-w-4xl mx-auto px-4 py-12 animate-in fade-in duration-500">
-          <div className="prose prose-red max-w-none">
-              <h1 className="text-3xl font-bold mb-6">{t.privacy_title}</h1>
-              <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-8">
-                  <p className="text-blue-800 text-sm">{t.privacy_compliant}</p>
+      <div className="max-w-4xl mx-auto px-4 py-12 animate-in fade-in duration-500 font-['Hind_Madurai']">
+          <div className="prose prose-orange max-w-none">
+              <h1 className="text-3xl font-bold mb-6 font-['Open_Sans'] text-[#333333]">{t.privacy_title}</h1>
+              <div className="bg-[#FFF0EB] border-l-4 border-[#FA6E28] p-4 mb-8">
+                  <p className="text-[#FA6E28] font-bold text-sm">{t.privacy_compliant}</p>
               </div>
-              <h3 className="text-xl font-bold mt-6 mb-3">{t.privacy_1_title}</h3>
+              <h3 className="text-xl font-bold mt-6 mb-3 text-[#333333]">{t.privacy_1_title}</h3>
               <p className="text-gray-700 mb-4">{t.privacy_1_text}</p>
-              <h3 className="text-xl font-bold mt-6 mb-3">{t.privacy_2_title}</h3>
+              <h3 className="text-xl font-bold mt-6 mb-3 text-[#333333]">{t.privacy_2_title}</h3>
               <p className="text-gray-700 mb-4">{t.privacy_2_text}</p>
-              <h3 className="text-xl font-bold mt-6 mb-3">{t.privacy_3_title}</h3>
+              <h3 className="text-xl font-bold mt-6 mb-3 text-[#333333]">{t.privacy_3_title}</h3>
               <p className="text-gray-700 mb-4">{t.privacy_3_text}</p>
-              <h3 className="text-xl font-bold mt-6 mb-3">{t.privacy_4_title}</h3>
+              <h3 className="text-xl font-bold mt-6 mb-3 text-[#333333]">{t.privacy_4_title}</h3>
               <p className="text-gray-700 mb-4">{t.privacy_4_text}</p>
-              <h3 className="text-xl font-bold mt-6 mb-3">{t.privacy_5_title}</h3>
+              <h3 className="text-xl font-bold mt-6 mb-3 text-[#333333]">{t.privacy_5_title}</h3>
               <p className="text-gray-700 mb-4">{t.privacy_5_text}</p>
           </div>
       </div>
   );
 
   const AdminPanel = () => (
-    <div className="max-w-6xl mx-auto px-4 py-8">
+    <div className="max-w-6xl mx-auto px-4 py-8 font-['Hind_Madurai']">
         <div className="flex items-center justify-between mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 flex items-center">
+            <h1 className="text-3xl font-bold text-[#333333] flex items-center font-['Open_Sans']">
                 <Settings className="mr-3 w-8 h-8 text-gray-700" />
                 {t.admin_panel}
             </h1>
@@ -912,17 +931,17 @@ export default function KursNaviPro() {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                <h3 className="font-bold text-xl mb-4 text-gray-800">Manage Cantons</h3>
+                <h3 className="font-bold text-xl mb-4 text-[#333333]">Manage Cantons</h3>
                 <div className="flex flex-wrap gap-2">
                     {cantons.map(c => (
-                        <span key={c} className="bg-red-50 text-red-700 px-3 py-1 rounded-full text-sm flex items-center">
+                        <span key={c} className="bg-[#FFF0EB] text-[#FA6E28] px-3 py-1 rounded-full text-sm flex items-center">
                             {c}
                         </span>
                     ))}
                 </div>
             </div>
             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                <h3 className="font-bold text-xl mb-4 text-gray-800">Manage Categories</h3>
+                <h3 className="font-bold text-xl mb-4 text-[#333333]">Manage Categories</h3>
                 <div className="flex flex-wrap gap-2">
                     {categories.map(c => (
                         <span key={c} className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm flex items-center">
@@ -933,7 +952,7 @@ export default function KursNaviPro() {
             </div>
         </div>
         <div className="mt-8 bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-             <h3 className="font-bold text-xl mb-4 text-gray-800">Platform Overview</h3>
+             <h3 className="font-bold text-xl mb-4 text-[#333333]">Platform Overview</h3>
              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="p-4 bg-gray-50 rounded-lg">
                     <div className="text-gray-500 text-sm">Total Courses</div>
@@ -963,14 +982,14 @@ export default function KursNaviPro() {
             .reduce((sum, e) => sum + e.payout, 0);
 
         return (
-            <div className="max-w-6xl mx-auto px-4 py-8">
+            <div className="max-w-6xl mx-auto px-4 py-8 font-['Hind_Madurai']">
                 <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
                     <div>
-                        <h1 className="text-3xl font-bold text-gray-900">{t.teacher_dash}</h1>
+                        <h1 className="text-3xl font-bold text-[#333333] font-['Open_Sans']">{t.teacher_dash}</h1>
                         <p className="text-gray-500">Welcome back, {user.name}</p>
                     </div>
-                    <button onClick={() => setView('create')} className="bg-red-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-red-700 flex items-center shadow-lg hover:-translate-y-0.5 transition">
-                        <PlusCircle className="mr-2 w-5 h-5" /> New Course
+                    <button onClick={() => setView('create')} className="bg-[#FA6E28] text-white px-6 py-3 rounded-xl font-bold hover:bg-[#E55D1F] flex items-center shadow-lg hover:-translate-y-0.5 transition font-['Open_Sans']">
+                        <KursNaviLogo className="mr-2 w-5 h-5 text-white" /> New Course
                     </button>
                 </div>
 
@@ -982,7 +1001,7 @@ export default function KursNaviPro() {
                         </div>
                         <div>
                             <p className="text-sm text-gray-500">Total Payouts Received</p>
-                            <p className="text-2xl font-bold text-gray-900">CHF {totalPaidOut.toFixed(2)}</p>
+                            <p className="text-2xl font-bold text-[#333333]">CHF {totalPaidOut.toFixed(2)}</p>
                         </div>
                     </div>
                     <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm flex items-center">
@@ -991,18 +1010,18 @@ export default function KursNaviPro() {
                         </div>
                         <div>
                             <p className="text-sm text-gray-500">Total Students</p>
-                            <p className="text-2xl font-bold text-gray-900">{teacherEarnings.length}</p>
+                            <p className="text-2xl font-bold text-[#333333]">{teacherEarnings.length}</p>
                         </div>
                     </div>
                 </div>
 
                 {/* EARNINGS TABLE */}
-                <h2 className="text-xl font-bold mb-4">Student & Earnings History</h2>
+                <h2 className="text-xl font-bold mb-4 font-['Open_Sans'] text-[#333333]">Student & Earnings History</h2>
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-8">
                       {teacherEarnings.length > 0 ? (
                         <div className="overflow-x-auto">
                             <table className="w-full text-left">
-                                <thead className="bg-gray-50 border-b border-gray-200">
+                                <thead className="bg-[#FAF5F0] border-b border-gray-200">
                                     <tr>
                                         <th className="px-6 py-4 font-semibold text-gray-600">Date</th>
                                         <th className="px-6 py-4 font-semibold text-gray-600">Course</th>
@@ -1015,9 +1034,9 @@ export default function KursNaviPro() {
                                     {teacherEarnings.map(earning => (
                                         <tr key={earning.id} className="hover:bg-gray-50">
                                             <td className="px-6 py-4 text-sm text-gray-500">{earning.date}</td>
-                                            <td className="px-6 py-4 font-medium text-gray-900">{earning.courseTitle}</td>
+                                            <td className="px-6 py-4 font-medium text-[#333333]">{earning.courseTitle}</td>
                                             <td className="px-6 py-4 text-gray-700">{earning.studentName}</td>
-                                            <td className="px-6 py-4 font-bold text-gray-900">CHF {earning.payout.toFixed(2)}</td>
+                                            <td className="px-6 py-4 font-bold text-[#333333]">CHF {earning.payout.toFixed(2)}</td>
                                             <td className="px-6 py-4">
                                                 {earning.isPaidOut ? (
                                                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
@@ -1037,12 +1056,12 @@ export default function KursNaviPro() {
                       ) : <div className="p-8 text-center text-gray-500">No student bookings yet.</div>}
                 </div>
 
-                <h2 className="text-xl font-bold mb-4">My Active Courses</h2>
+                <h2 className="text-xl font-bold mb-4 font-['Open_Sans'] text-[#333333]">My Active Courses</h2>
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                     {myCourses.length > 0 ? (
                         <div className="overflow-x-auto">
                             <table className="w-full text-left">
-                                <thead className="bg-gray-50 border-b border-gray-200">
+                                <thead className="bg-[#FAF5F0] border-b border-gray-200">
                                     <tr>
                                         <th className="px-6 py-4 font-semibold text-gray-600">Course</th>
                                         <th className="px-6 py-4 font-semibold text-gray-600">Price</th>
@@ -1052,7 +1071,7 @@ export default function KursNaviPro() {
                                 <tbody className="divide-y divide-gray-100">
                                     {myCourses.map(course => (
                                         <tr key={course.id} className="hover:bg-gray-50">
-                                            <td className="px-6 py-4"><div className="font-bold text-gray-900">{course.title}</div></td>
+                                            <td className="px-6 py-4"><div className="font-bold text-[#333333]">{course.title}</div></td>
                                             <td className="px-6 py-4 font-medium">CHF {course.price}</td>
                                             <td className="px-6 py-4"><button onClick={() => handleDeleteCourse(course.id)} className="text-red-500 hover:text-red-700"><Trash2 className="w-5 h-5" /></button></td>
                                         </tr>
@@ -1068,11 +1087,11 @@ export default function KursNaviPro() {
     
     // STUDENT DASHBOARD
     return (
-        <div className="max-w-6xl mx-auto px-4 py-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-8">{t.student_dash}</h1>
+        <div className="max-w-6xl mx-auto px-4 py-8 font-['Hind_Madurai']">
+            <h1 className="text-3xl font-bold text-[#333333] mb-8 font-['Open_Sans']">{t.student_dash}</h1>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div>
-                    <h2 className="text-xl font-bold mb-4">{t.my_bookings}</h2>
+                    <h2 className="text-xl font-bold mb-4 text-[#333333]">{t.my_bookings}</h2>
                     <div className="space-y-4">
                         {myBookings.length > 0 ? myBookings.map(course => {
                             // --- SMART CANCELLATION LOGIC ---
@@ -1096,7 +1115,7 @@ export default function KursNaviPro() {
                                 <div key={course.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex gap-4">
                                     <img src={course.image_url} className="w-20 h-20 rounded-lg object-cover" />
                                     <div className="flex-grow">
-                                        <h3 className="font-bold text-gray-900">{course.title}</h3>
+                                        <h3 className="font-bold text-[#333333]">{course.title}</h3>
                                         <p className="text-sm text-gray-500">{course.instructor_name} • {course.canton}</p>
                                         
                                         <div className="mt-4 flex items-center justify-between">
@@ -1137,10 +1156,14 @@ export default function KursNaviPro() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 font-sans text-gray-900 selection:bg-red-100 selection:text-red-900 flex flex-col">
+    <div className="min-h-screen bg-[#FAF5F0] font-sans text-[#333333] selection:bg-orange-100 selection:text-[#FA6E28] flex flex-col font-['Hind_Madurai']">
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Hind+Madurai:wght@300;400;500;600&family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap');
+      `}</style>
+
       {notification && (
-        <div className="fixed top-24 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white px-6 py-3 rounded-full shadow-2xl z-50 flex items-center animate-bounce">
-          <CheckCircle className="w-5 h-5 mr-2 text-green-400" />
+        <div className="fixed top-24 left-1/2 transform -translate-x-1/2 bg-[#333333] text-white px-6 py-3 rounded-full shadow-2xl z-50 flex items-center animate-bounce font-['Open_Sans']">
+          <CheckCircle className="w-5 h-5 mr-2 text-[#FA6E28]" />
           {notification}
         </div>
       )}
@@ -1150,31 +1173,35 @@ export default function KursNaviPro() {
       <div className="flex-grow">
       {view === 'home' && (
         <>
-          <div className="bg-gradient-to-r from-red-700 to-red-900 text-white py-20 px-4">
+          <div className="bg-white text-[#333333] py-20 px-4">
               <div className="max-w-4xl mx-auto text-center space-y-6">
-                 <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight">{t.hero_title}</h1>
-                 <p className="text-xl text-red-100 max-w-2xl mx-auto">{t.hero_subtitle}</p>
+                 {/* HERO LOGO */}
+                 <div className="flex justify-center mb-6">
+                    <KursNaviLogo className="w-24 h-24" />
+                 </div>
+                 <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight font-['Open_Sans'] text-[#FA6E28]">{t.hero_title}</h1>
+                 <p className="text-xl text-gray-500 max-w-2xl mx-auto">{t.hero_subtitle}</p>
               </div>
           </div>
 
            {/* Filter Bar */}
-           <div className="bg-white border-b sticky top-16 z-40 shadow-sm">
+           <div className="bg-white border-b sticky top-20 z-40 shadow-sm">
             <div className="max-w-7xl mx-auto px-4 py-4 space-y-4 md:space-y-0 md:flex md:items-center md:space-x-4">
                 <div className="relative flex-grow max-w-lg">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                    <input type="text" placeholder={t.search_placeholder} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white transition-colors" />
+                    <input type="text" placeholder={t.search_placeholder} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-10 pr-4 py-2 bg-[#FAF5F0] border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FA6E28] focus:bg-white transition-colors" />
                 </div>
                 <div className="flex-shrink-0">
-                    <select className="w-full md:w-auto px-4 py-2 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 cursor-pointer" value={activeCanton} onChange={(e) => setActiveCanton(e.target.value)}>
+                    <select className="w-full md:w-auto px-4 py-2 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FA6E28] cursor-pointer" value={activeCanton} onChange={(e) => setActiveCanton(e.target.value)}>
                         <option value="All">{t.filter_all_cantons}</option>
                         {cantons.map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
                 </div>
                 <div className="flex-grow overflow-x-auto no-scrollbar md:flex md:justify-end">
                     <div className="flex space-x-2">
-                        <button onClick={() => setActiveCategory("All")} className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${activeCategory === "All" ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}>{t.filter_all_categories}</button>
+                        <button onClick={() => setActiveCategory("All")} className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${activeCategory === "All" ? "bg-[#333333] text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}>{t.filter_all_categories}</button>
                         {categories.map(cat => (
-                            <button key={cat} onClick={() => setActiveCategory(cat)} className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${activeCategory === cat ? "bg-red-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}>{cat}</button>
+                            <button key={cat} onClick={() => setActiveCategory(cat)} className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${activeCategory === cat ? "bg-[#FA6E28] text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}>{cat}</button>
                         ))}
                     </div>
                 </div>
@@ -1189,20 +1216,20 @@ export default function KursNaviPro() {
                     <div className="relative h-48 overflow-hidden">
                         <img src={course.image_url} alt={course.title} className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300" />
                         <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-sm px-2 py-1 rounded text-xs font-bold text-gray-700 shadow-sm flex items-center">
-                        <MapPin className="w-3 h-3 mr-1 text-red-600" />
+                        <MapPin className="w-3 h-3 mr-1 text-[#FA6E28]" />
                         {course.canton}
                         </div>
                     </div>
                     <div className="p-5">
-                        <h3 className="font-bold text-lg text-gray-900 leading-tight line-clamp-2 h-12 mb-2">{course.title}</h3>
+                        <h3 className="font-bold text-lg text-[#333333] leading-tight line-clamp-2 h-12 mb-2 font-['Open_Sans']">{course.title}</h3>
                         <div className="flex items-center justify-between pt-4 border-t border-gray-100">
                            <div className="flex items-center space-x-3 text-sm text-gray-500">
-                                <div className="flex items-center bg-gray-50 px-2 py-1 rounded">
+                                <div className="flex items-center bg-[#FAF5F0] px-2 py-1 rounded">
                                     <User className="w-3 h-3 text-gray-500 mr-1" />
                                     {course.instructor_name}
                                 </div>
                            </div>
-                           <span className="font-bold text-gray-900 text-lg">{t.currency} {course.price}</span>
+                           <span className="font-bold text-[#FA6E28] text-lg font-['Open_Sans']">{t.currency} {course.price}</span>
                         </div>
                     </div>
                   </div>
@@ -1225,39 +1252,37 @@ export default function KursNaviPro() {
       {view === 'create' && user?.role === 'teacher' && <TeacherForm />}
       </div>
     
-      <footer className="bg-white border-t border-gray-200 py-12 mt-auto">
+      <footer className="bg-white border-t border-gray-200 py-12 mt-auto font-['Hind_Madurai']">
         <div className="max-w-7xl mx-auto px-4">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
                 <div>
                     <div className="flex items-center mb-4">
-                        <div className="w-8 h-8 bg-red-600 rounded-md flex items-center justify-center mr-2">
-                           <PlusCircle className="text-white w-5 h-5 font-bold" strokeWidth={3} />
-                        </div>
-                        <span className="font-bold text-xl text-gray-900">KursNavi</span>
+                        <KursNaviLogo className="w-8 h-8 mr-2" />
+                        <span className="font-bold text-xl text-[#333333] font-['Open_Sans']">KursNavi</span>
                     </div>
                     <p className="text-sm text-gray-500">
                         {t.about_subtitle}
                     </p>
                 </div>
                 <div>
-                    <h4 className="font-bold text-gray-900 mb-4">Platform</h4>
+                    <h4 className="font-bold text-[#333333] mb-4 font-['Open_Sans']">Platform</h4>
                     <ul className="space-y-2 text-sm text-gray-500">
-                        <li><button onClick={() => setView('home')} className="hover:text-red-600">Home</button></li>
-                        <li><button onClick={() => setView('about')} className="hover:text-red-600">{t.nav_about}</button></li>
-                        <li><button onClick={() => setView('contact')} className="hover:text-red-600">{t.nav_contact}</button></li>
+                        <li><button onClick={() => setView('home')} className="hover:text-[#FA6E28]">Home</button></li>
+                        <li><button onClick={() => setView('about')} className="hover:text-[#FA6E28]">{t.nav_about}</button></li>
+                        <li><button onClick={() => setView('contact')} className="hover:text-[#FA6E28]">{t.nav_contact}</button></li>
                     </ul>
                 </div>
                 <div>
-                    <h4 className="font-bold text-gray-900 mb-4">Legal</h4>
+                    <h4 className="font-bold text-[#333333] mb-4 font-['Open_Sans']">Legal</h4>
                     <ul className="space-y-2 text-sm text-gray-500">
-                        <li><button onClick={() => setView('terms')} className="hover:text-red-600">{t.footer_terms}</button></li>
-                        <li><button onClick={() => setView('privacy')} className="hover:text-red-600">{t.footer_privacy}</button></li>
-                        <li><button onClick={() => setView('contact')} className="hover:text-red-600">{t.footer_legal}</button></li>
+                        <li><button onClick={() => setView('terms')} className="hover:text-[#FA6E28]">{t.footer_terms}</button></li>
+                        <li><button onClick={() => setView('privacy')} className="hover:text-[#FA6E28]">{t.footer_privacy}</button></li>
+                        <li><button onClick={() => setView('contact')} className="hover:text-[#FA6E28]">{t.footer_legal}</button></li>
                     </ul>
                 </div>
                 <div>
-                    <h4 className="font-bold text-gray-900 mb-4">Admin</h4>
-                      <button onClick={() => setView('admin_login')} className="text-sm text-gray-500 hover:text-red-600 flex items-center">
+                    <h4 className="font-bold text-[#333333] mb-4 font-['Open_Sans']">Admin</h4>
+                      <button onClick={() => setView('admin_login')} className="text-sm text-gray-500 hover:text-[#FA6E28] flex items-center">
                         <Lock className="w-3 h-3 mr-1" /> Admin Access
                     </button>
                 </div>
