@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { Search, User, Clock, MapPin, Menu, CheckCircle, ArrowLeft, Globe, LogIn, LayoutDashboard, Settings, Trash2, DollarSign, Lock, Calendar, ExternalLink, ChevronDown, ChevronRight, Mail, Phone, Loader, Heart, Shield, X, Filter } from 'lucide-react';
+import { Search, User, Clock, MapPin, Menu, CheckCircle, ArrowLeft, Globe, LogIn, LayoutDashboard, Settings, Trash2, DollarSign, Lock, Calendar, ExternalLink, ChevronDown, ChevronRight, Mail, Phone, Loader, Heart, Shield, X, Filter, BookOpen, Star, Zap, Users } from 'lucide-react';
 
 // --- 1. Supabase Setup ---
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -54,7 +54,6 @@ const CATEGORY_LABELS = {
   "Private & Hobby": { de: "Privat & Hobby", fr: "Privé & Loisirs" },
   "Professional": { de: "Beruflich", fr: "Professionnel" },
   "Children": { de: "Kinder", fr: "Enfants" },
-  
   // Mid Levels
   "Music & Audio": { de: "Musik & Audio", fr: "Musique & Audio" },
   "Languages": { de: "Sprachen", fr: "Langues" },
@@ -68,105 +67,116 @@ const CATEGORY_LABELS = {
   "Industry Specific": { de: "Branchenspezifisch", fr: "Spécifique à l'industrie" },
   "Academic Support": { de: "Nachhilfe", fr: "Soutien scolaire" },
   "Creative & Fun": { de: "Kreativ & Spaß", fr: "Créatif & Ludique" },
-
-  // Items (Selected examples, fallback to English if missing)
+  // Items
   "Guitar": { de: "Gitarre", fr: "Guitare" },
   "Piano": { de: "Klavier", fr: "Piano" },
   "Vocals": { de: "Gesang", fr: "Chant" },
-  "Drums": { de: "Schlagzeug", fr: "Batterie" },
   "Other Instruments": { de: "Andere Instrumente", fr: "Autres Instruments" },
   "German": { de: "Deutsch", fr: "Allemand" },
   "French": { de: "Französisch", fr: "Français" },
   "English": { de: "Englisch", fr: "Anglais" },
-  "Italian": { de: "Italienisch", fr: "Italien" },
-  "Spanish": { de: "Spanisch", fr: "Espagnol" },
-  "Swiss German": { de: "Schweizerdeutsch", fr: "Suisse Allemand" },
-  "Other Languages": { de: "Andere Sprachen", fr: "Autres Langues" },
   "Swiss Cuisine": { de: "Schweizer Küche", fr: "Cuisine Suisse" },
   "Web Development": { de: "Webentwicklung", fr: "Développement Web" },
-  "Other Industry": { de: "Andere", fr: "Autre" },
-  "Homework Help": { de: "Hausaufgabenhilfe", fr: "Aide aux devoirs" },
-  "Music for Kids": { de: "Musik für Kinder", fr: "Musique pour enfants" }
+  "Homework Help": { de: "Hausaufgabenhilfe", fr: "Aide aux devoirs" }
 };
 
-const SWISS_CANTONS = ["Zürich", "Bern", "Luzern", "Uri", "Schwyz", "Obwalden", "Nidwalden", "Glarus", "Zug", "Fribourg", "Solothurn", "Basel-Stadt", "Basel-Landschaft", "Schaffhausen", "Appenzell AR", "Appenzell AI", "St. Gallen", "Graubünden", "Aargau", "Thurgau", "Ticino", "Vaud", "Valais", "Neuchâtel", "Genève", "Jura"];
-const SWISS_CITIES = ["Zürich", "Genève", "Basel", "Lausanne", "Bern", "Winterthur", "Luzern", "St. Gallen", "Lugano", "Biel/Bienne"];
+// LOCATIONS - SORTED ALPHABETICALLY
+const SWISS_CANTONS = ["Aargau", "Appenzell AI", "Appenzell AR", "Basel-Landschaft", "Basel-Stadt", "Bern", "Fribourg", "Genève", "Glarus", "Graubünden", "Jura", "Luzern", "Neuchâtel", "Nidwalden", "Obwalden", "Schaffhausen", "Schwyz", "Solothurn", "St. Gallen", "Thurgau", "Ticino", "Uri", "Valais", "Vaud", "Zug", "Zürich"];
+const SWISS_CITIES = ["Basel", "Bern", "Biel/Bienne", "Genève", "Lausanne", "Lugano", "Luzern", "St. Gallen", "Winterthur", "Zürich"];
 
 const TRANSLATIONS = {
   en: {
     nav_explore: "Explore", nav_about: "About Us", nav_contact: "Contact", nav_login: "Login", nav_logout: "Logout", nav_dashboard: "Dashboard",
     hero_title: "Discover courses near you.", hero_subtitle: "From yodeling in Appenzell to coding in Zürich. Learn locally.",
-    search_placeholder: "What do you want to learn?", filter_label_cat: "Category", filter_label_loc: "Location",
+    search_placeholder: "What do you want to learn?", filter_label_cat: "Category", filter_label_loc: "Location", btn_search: "Search",
     no_results: "No courses found matching criteria.", btn_book: "Book Course", btn_pay: "Pay & Book", btn_publish: "Publish Course", btn_send: "Send Message",
     form_title: "List a Course", success_msg: "Grüezi! Action successful.", currency: "CHF", admin_panel: "Admin Control Center",
     teacher_dash: "Teacher Dashboard", student_dash: "My Learning", login_title: "Welcome Back", my_bookings: "My Bookings",
     lbl_objectives: "What you will learn", lbl_prerequisites: "Prerequisites", lbl_description: "About this course", lbl_address: "Location",
-    lbl_duration: "Duration", lbl_sessions: "sessions", lbl_upcoming: "Upcoming Editions", lbl_provider: "Provider",
-    lbl_show_more: "Show more dates", lbl_show_less: "Show less", about_title: "About KursNavi",
-    about_subtitle: "Connecting Switzerland through knowledge and skills.",
-    about_text: "KursNavi was born from a simple idea: everyone has something to teach, and everyone has something to learn.",
-    about_community_title: "Community First", about_community_text: "We prioritize local connections.",
-    about_quality_title: "Swiss Quality", about_quality_text: "We verify our hosts.", contact_title: "Contact Us",
-    contact_get_in_touch: "Get in Touch", contact_office_hours: "Office Hours", contact_mon_fri: "Monday - Friday: 09:00 - 17:00",
-    contact_weekend: "Weekends: Closed", contact_lbl_name: "Name", contact_lbl_email: "Email", contact_lbl_msg: "Message",
+    lbl_duration: "Duration", lbl_sessions: "sessions",
+    
+    // LANDING PAGE
+    how_it_works: "How it Works",
+    for_students: "For Students",
+    for_tutors: "For Tutors",
+    student_step_1: "Discover", student_desc_1: "Browse hundreds of unique local courses.",
+    student_step_2: "Book", student_desc_2: "Secure your spot instantly with our payment protection.",
+    student_step_3: "Learn", student_desc_3: "Meet your local expert and start learning.",
+    tutor_step_1: "List", tutor_desc_1: "Create a profile and list your skills for free.",
+    tutor_step_2: "Schedule", tutor_desc_2: "Set your own dates, location, and class size.",
+    tutor_step_3: "Earn", tutor_desc_3: "Get paid automatically 24h after the course starts.",
+    
+    cta_title: "Become a Tutor",
+    cta_subtitle: "Share your skills and knowledge with students across Switzerland. Set your own schedule and prices.",
+    cta_btn: "Get Started",
+    
+    // FOOTER
+    footer_terms: "Terms & Conditions", footer_privacy: "Data Protection", footer_legal: "Legal Notice", footer_madein: "Made in Switzerland", footer_rights: "All rights reserved.",
+    
+    // LEGAL
     terms_title: "Terms & Conditions", terms_last_updated: "Last Updated: October 2024",
-    terms_1_title: "1. Scope of Application", terms_1_text: "These General Terms and Conditions (GTC) apply to the use of the KursNavi platform.",
-    terms_2_title: "2. Service Description", terms_2_text: "KursNavi operates as an intermediary platform.",
-    terms_3_title: "3. User Obligations", terms_3_text: "Users are obliged to provide truthful information.",
-    terms_4_title: "4. Cancellations and Refunds", terms_4_text: "Cancellation policies are set by individual Teachers.",
-    terms_5_title: "5. Liability", terms_5_text: "KursNavi accepts no liability for the content or quality of the courses conducted.",
-    privacy_title: "Data Protection Guidelines", privacy_compliant: "Compliant with the Swiss Federal Act on Data Protection (FADP).",
-    privacy_1_title: "1. Data Controller", privacy_1_text: "KursNavi AG, Bahnhofstrasse 100, 8001 Zürich.",
-    privacy_2_title: "2. Data Collection", privacy_2_text: "We collect personal data that you provide to us.",
-    privacy_3_title: "3. Purpose of Processing", privacy_3_text: "Your data is processed to facilitate course bookings.",
-    privacy_4_title: "4. Data Sharing", privacy_4_text: "We only share necessary data with Teachers.",
-    privacy_5_title: "5. Your Rights", privacy_5_text: "You have the right to access, correct, or delete your personal data.",
+    terms_1_title: "1. Scope", terms_1_text: "General Terms apply.",
+    privacy_title: "Data Protection", privacy_compliant: "Compliant with FADP.",
+    contact_title: "Contact Us", contact_get_in_touch: "Get in Touch", contact_office_hours: "Office Hours",
+    contact_mon_fri: "Mon-Fri: 09:00 - 17:00", contact_weekend: "Weekends: Closed",
+    contact_lbl_name: "Name", contact_lbl_email: "Email", contact_lbl_msg: "Message",
+    about_title: "About KursNavi", about_subtitle: "Connecting Switzerland."
   },
   de: {
     nav_explore: "Entdecken", nav_login: "Anmelden", nav_logout: "Abmelden", nav_dashboard: "Dashboard",
     hero_title: "Finde Kurse in deiner Nähe.", hero_subtitle: "Vom Jodeln bis zum Programmieren.",
-    search_placeholder: "Was möchtest du lernen?", filter_label_cat: "Kategorie", filter_label_loc: "Ort",
+    search_placeholder: "Was möchtest du lernen?", filter_label_cat: "Kategorie", filter_label_loc: "Ort", btn_search: "Suchen",
     no_results: "Keine Kurse gefunden.", btn_book: "Kurs buchen", btn_pay: "Bezahlen & Buchen", btn_publish: "Veröffentlichen",
     form_title: "Kurs anbieten", success_msg: "Erfolgreich!", currency: "CHF",
     teacher_dash: "Lehrer Dashboard", student_dash: "Meine Kurse",
     login_title: "Willkommen", my_bookings: "Meine Buchungen",
-    lbl_description: "Beschreibung", lbl_address: "Standort", lbl_duration: "Dauer", lbl_provider: "Anbieter",
-    btn_send: "Nachricht senden", contact_title: "Kontakt", contact_get_in_touch: "Schreib uns",
-    contact_office_hours: "Öffnungszeiten", contact_mon_fri: "Mo-Fr: 09:00 - 17:00", contact_weekend: "Wochenende: Geschlossen",
-    contact_lbl_name: "Name", contact_lbl_email: "E-Mail", contact_lbl_msg: "Nachricht",
-    about_title: "Über uns", about_subtitle: "Die Schweiz verbinden.", about_text: "Wir verbinden lokale Experten mit Schülern.",
-    about_community_title: "Gemeinschaft", about_community_text: "Lokale Verbindungen sind uns wichtig.",
-    about_quality_title: "Qualität", about_quality_text: "Geprüfte Gastgeber.",
+    lbl_description: "Beschreibung", lbl_address: "Standort", lbl_duration: "Dauer",
+    
+    how_it_works: "So funktioniert's",
+    for_students: "Für Schüler", for_tutors: "Für Lehrer",
+    student_step_1: "Entdecken", student_desc_1: "Durchsuche hunderte lokale Kurse.",
+    student_step_2: "Buchen", student_desc_2: "Sichere deinen Platz sofort.",
+    student_step_3: "Lernen", student_desc_3: "Triff Experten und lerne Neues.",
+    tutor_step_1: "Erstellen", tutor_desc_1: "Erstelle dein Profil kostenlos.",
+    tutor_step_2: "Planen", tutor_desc_2: "Bestimme Datum, Ort und Preis.",
+    tutor_step_3: "Verdienen", tutor_desc_3: "Automatische Auszahlung nach Kursbeginn.",
+    
+    cta_title: "Werde Kursleiter",
+    cta_subtitle: "Teile dein Wissen in der ganzen Schweiz. Bestimme deinen eigenen Zeitplan.",
+    cta_btn: "Loslegen",
+
     footer_terms: "AGB", footer_privacy: "Datenschutz", footer_legal: "Impressum", footer_madein: "Made in Switzerland", footer_rights: "Alle Rechte vorbehalten.",
-    terms_title: "AGB", terms_last_updated: "Stand: 2024", terms_1_title: "1. Geltungsbereich", terms_1_text: "Es gelten unsere AGB.",
-    terms_2_title: "2. Service", terms_2_text: "Wir sind nur Vermittler.", terms_3_title: "3. Pflichten", terms_3_text: "Wahre Angaben machen.",
-    terms_4_title: "4. Storno", terms_4_text: "Lehrer entscheiden.", terms_5_title: "5. Haftung", terms_5_text: "Keine Haftung für Kurse.",
-    privacy_title: "Datenschutz", privacy_compliant: "DSGVO konform.", privacy_1_title: "1. Verantwortlicher", privacy_1_text: "KursNavi AG.",
-    privacy_2_title: "2. Daten", privacy_2_text: "Wir speichern Ihre Eingaben.", privacy_3_title: "3. Zweck", privacy_3_text: "Vermittlung.",
-    privacy_4_title: "4. Weitergabe", privacy_4_text: "Nur an Lehrer.", privacy_5_title: "5. Rechte", privacy_5_text: "Auskunft jederzeit."
+    contact_title: "Kontakt", contact_get_in_touch: "Schreib uns", btn_send: "Senden",
+    about_title: "Über uns", about_subtitle: "Die Schweiz verbinden.",
+    terms_title: "AGB", privacy_title: "Datenschutz"
   },
   fr: {
     nav_explore: "Explorer", nav_login: "Connexion", nav_logout: "Déconnexion", nav_dashboard: "Tableau de bord",
     hero_title: "Découvrez des cours.", hero_subtitle: "Apprenez localement.",
-    search_placeholder: "Que voulez-vous apprendre?", filter_label_cat: "Catégorie", filter_label_loc: "Lieu",
+    search_placeholder: "Que voulez-vous apprendre?", filter_label_cat: "Catégorie", filter_label_loc: "Lieu", btn_search: "Rechercher",
     no_results: "Aucun cours trouvé.", btn_book: "Réserver", btn_pay: "Payer et réserver", btn_publish: "Publier",
     form_title: "Proposer un cours", success_msg: "Succès!", currency: "CHF",
     teacher_dash: "Tableau de bord", student_dash: "Mes apprentissages",
     login_title: "Bienvenue", my_bookings: "Mes réservations",
-    lbl_description: "Description", lbl_address: "Lieu", lbl_duration: "Durée", lbl_provider: "Fournisseur",
-    btn_send: "Envoyer", contact_title: "Contact", contact_get_in_touch: "Contactez-nous",
-    contact_office_hours: "Heures", contact_mon_fri: "Lun-Ven: 09:00 - 17:00", contact_weekend: "Fermé",
-    contact_lbl_name: "Nom", contact_lbl_email: "Email", contact_lbl_msg: "Message",
-    about_title: "À propos", about_subtitle: "Relier la Suisse.", about_text: "Nous connectons experts et étudiants.",
-    about_community_title: "Communauté", about_community_text: "Priorité au local.",
-    about_quality_title: "Qualité", about_quality_text: "Hôtes vérifiés.",
+    lbl_description: "Description", lbl_address: "Lieu", lbl_duration: "Durée",
+    
+    how_it_works: "Comment ça marche",
+    for_students: "Pour Étudiants", for_tutors: "Pour Professeurs",
+    student_step_1: "Découvrir", student_desc_1: "Parcourez des centaines de cours.",
+    student_step_2: "Réserver", student_desc_2: "Réservez votre place instantanément.",
+    student_step_3: "Apprendre", student_desc_3: "Rencontrez des experts locaux.",
+    tutor_step_1: "Créer", tutor_desc_1: "Créez votre profil gratuitement.",
+    tutor_step_2: "Planifier", tutor_desc_2: "Définissez dates, lieux et prix.",
+    tutor_step_3: "Gagner", tutor_desc_3: "Paiement automatique après le cours.",
+    
+    cta_title: "Devenez Professeur",
+    cta_subtitle: "Partagez vos compétences à travers la Suisse. Gérez votre emploi du temps.",
+    cta_btn: "Commencer",
+
     footer_terms: "CGV", footer_privacy: "Confidentialité", footer_legal: "Mentions légales", footer_madein: "Fabriqué en Suisse", footer_rights: "Droits réservés.",
-    terms_title: "CGV", terms_last_updated: "2024", terms_1_title: "1. Portée", terms_1_text: "Nos CGV s'appliquent.",
-    terms_2_title: "2. Service", terms_2_text: "Intermédiaire uniquement.", terms_3_title: "3. Obligations", terms_3_text: "Informations véridiques.",
-    terms_4_title: "4. Annulation", terms_4_text: "Selon l'enseignant.", terms_5_title: "5. Responsabilité", terms_5_text: "Aucune responsabilité sur les cours.",
-    privacy_title: "Confidentialité", privacy_compliant: "Conforme LPD/RGPD.", privacy_1_title: "1. Responsable", privacy_1_text: "KursNavi AG.",
-    privacy_2_title: "2. Données", privacy_2_text: "Nous collectons vos saisies.", privacy_3_title: "3. But", privacy_3_text: "Facilitation.",
-    privacy_4_title: "4. Partage", privacy_4_text: "Aux profs uniquement.", privacy_5_title: "5. Droits", privacy_5_text: "Accès sur demande."
+    contact_title: "Contact", contact_get_in_touch: "Contactez-nous", btn_send: "Envoyer",
+    about_title: "À propos", about_subtitle: "Relier la Suisse.",
+    terms_title: "CGV", privacy_title: "Confidentialité"
   }
 };
 
@@ -184,6 +194,7 @@ export default function KursNaviPro() {
   
   // --- NEW FILTER STATE ---
   const [searchQuery, setSearchQuery] = useState("");
+  const [showResults, setShowResults] = useState(false); // NEW: Controls Landing vs Results
   
   // Category State
   const [catMenuOpen, setCatMenuOpen] = useState(false);
@@ -373,7 +384,6 @@ export default function KursNaviPro() {
     const formData = new FormData(e.target);
     const objectivesList = formData.get('objectives').split('\n').filter(line => line.trim() !== '');
 
-    // Combine 3 dropdowns into one string for storage
     const catLvl1 = formData.get('catLvl1');
     const catLvl2 = formData.get('catLvl2');
     const catLvl3 = formData.get('catLvl3');
@@ -456,12 +466,17 @@ export default function KursNaviPro() {
       setView('home');
   };
 
+  const handleSearchSubmit = () => {
+      setShowResults(true);
+      // Optional: scroll to results
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   // --- NEW FILTER LOGIC ---
   const filteredCourses = courses.filter(course => {
     let matchesCategory = true;
     if (selectedCatPath.length > 0) {
         const courseCatStr = (course.category || "").toLowerCase();
-        // IMPORTANT: We match against the ENGLISH values (selectedCatPath stores English)
         matchesCategory = selectedCatPath.every(part => courseCatStr.includes(part.toLowerCase()));
     }
 
@@ -500,44 +515,33 @@ export default function KursNaviPro() {
 
     return (
         <div ref={catMenuRef} className="static"> 
-        {/* Changed from relative to static so we can anchor the menu to the parent container */}
-            <button onClick={() => setCatMenuOpen(!catMenuOpen)} className={`px-4 py-2 border rounded-full flex items-center space-x-2 text-sm font-medium transition ${selectedCatPath.length > 0 ? 'bg-[#FA6E28] text-white border-[#FA6E28]' : 'bg-white text-gray-700 hover:border-gray-400'}`}>
+            <button onClick={() => setCatMenuOpen(!catMenuOpen)} className={`px-4 py-3 border rounded-full flex items-center space-x-2 text-sm font-medium transition ${selectedCatPath.length > 0 ? 'bg-[#FA6E28] text-white border-[#FA6E28]' : 'bg-white text-gray-700 hover:border-gray-400'}`}>
                 <span>{selectedCatPath.length > 0 ? getCatLabel(selectedCatPath[selectedCatPath.length-1]) : t.filter_label_cat}</span>
                 <ChevronDown className="w-4 h-4" />
             </button>
 
             {catMenuOpen && (
-                // FIXED LAYOUT: Absolute to the search container, constrained width
-                <div className="absolute top-16 left-0 right-0 mx-auto w-full max-w-4xl bg-white rounded-xl shadow-2xl border border-gray-100 p-2 z-50 flex h-[350px]">
-                    {/* Level 1 */}
+                <div className="absolute top-20 left-0 right-0 mx-auto w-full max-w-4xl bg-white rounded-xl shadow-2xl border border-gray-100 p-2 z-50 flex h-[350px]">
                     <div className="w-1/3 border-r overflow-y-auto">
                         {Object.keys(CATEGORY_HIERARCHY).map(cat => (
-                            <div key={cat} 
-                                onClick={() => { setLvl1(cat); setLvl2(null); }}
-                                className={`p-3 cursor-pointer text-sm flex justify-between items-center hover:bg-gray-50 ${lvl1 === cat ? 'font-bold text-[#FA6E28] bg-orange-50' : 'text-gray-700'}`}>
+                            <div key={cat} onClick={() => { setLvl1(cat); setLvl2(null); }} className={`p-3 cursor-pointer text-sm flex justify-between items-center hover:bg-gray-50 ${lvl1 === cat ? 'font-bold text-[#FA6E28] bg-orange-50' : 'text-gray-700'}`}>
                                 {getCatLabel(cat)}
                                 <ChevronRight className="w-4 h-4 text-gray-400" />
                             </div>
                         ))}
                         <div onClick={() => { setSelectedCatPath([]); setCatMenuOpen(false); }} className="p-3 text-xs text-gray-400 cursor-pointer hover:text-[#FA6E28] border-t mt-2">Clear Selection</div>
                     </div>
-                    {/* Level 2 */}
                     <div className="w-1/3 border-r overflow-y-auto bg-gray-50/50">
                         {lvl1 ? Object.keys(CATEGORY_HIERARCHY[lvl1]).map(sub => (
-                            <div key={sub} 
-                                onClick={() => setLvl2(sub)}
-                                className={`p-3 cursor-pointer text-sm flex justify-between items-center hover:bg-gray-100 ${lvl2 === sub ? 'font-bold text-[#FA6E28]' : 'text-gray-700'}`}>
+                            <div key={sub} onClick={() => setLvl2(sub)} className={`p-3 cursor-pointer text-sm flex justify-between items-center hover:bg-gray-100 ${lvl2 === sub ? 'font-bold text-[#FA6E28]' : 'text-gray-700'}`}>
                                 {getCatLabel(sub)}
                                 <ChevronRight className="w-4 h-4 text-gray-400" />
                             </div>
                         )) : <div className="p-4 text-xs text-gray-400">Select a category...</div>}
                     </div>
-                    {/* Level 3 */}
                     <div className="w-1/3 overflow-y-auto bg-gray-50">
                         {lvl1 && lvl2 ? CATEGORY_HIERARCHY[lvl1][lvl2].map(item => (
-                            <div key={item} 
-                                onClick={() => { setSelectedCatPath([lvl1, lvl2, item]); setCatMenuOpen(false); }}
-                                className="p-3 cursor-pointer text-sm text-gray-700 hover:text-[#FA6E28] hover:bg-white transition">
+                            <div key={item} onClick={() => { setSelectedCatPath([lvl1, lvl2, item]); setCatMenuOpen(false); }} className="p-3 cursor-pointer text-sm text-gray-700 hover:text-[#FA6E28] hover:bg-white transition">
                                 {getCatLabel(item)}
                             </div>
                         )) : <div className="p-4 text-xs text-gray-400">Select a sub-category...</div>}
@@ -550,40 +554,30 @@ export default function KursNaviPro() {
 
   const LocationDropdown = () => {
     const toggleLoc = (loc) => {
-        if (selectedLocations.includes(loc)) {
-            setSelectedLocations(selectedLocations.filter(l => l !== loc));
-        } else {
-            setSelectedLocations([...selectedLocations, loc]);
-        }
+        if (selectedLocations.includes(loc)) setSelectedLocations(selectedLocations.filter(l => l !== loc));
+        else setSelectedLocations([...selectedLocations, loc]);
     };
 
     const displayList = locMode === 'canton' ? SWISS_CANTONS : SWISS_CITIES;
 
     return (
-        <div ref={locMenuRef} className="static"> {/* Changed to static */}
-            <button onClick={() => setLocMenuOpen(!locMenuOpen)} className={`px-4 py-2 border rounded-full flex items-center space-x-2 text-sm font-medium transition ${selectedLocations.length > 0 ? 'bg-[#FA6E28] text-white border-[#FA6E28]' : 'bg-white text-gray-700 hover:border-gray-400'}`}>
+        <div ref={locMenuRef} className="static">
+            <button onClick={() => setLocMenuOpen(!locMenuOpen)} className={`px-4 py-3 border rounded-full flex items-center space-x-2 text-sm font-medium transition ${selectedLocations.length > 0 ? 'bg-[#FA6E28] text-white border-[#FA6E28]' : 'bg-white text-gray-700 hover:border-gray-400'}`}>
                  <MapPin className="w-4 h-4" />
                 <span>{selectedLocations.length > 0 ? `${selectedLocations.length} selected` : t.filter_label_loc}</span>
                 <ChevronDown className="w-4 h-4" />
             </button>
 
             {locMenuOpen && (
-                // Centered relative to parent container, restricted max-width
-                <div className="absolute top-16 left-0 right-0 mx-auto bg-white rounded-xl shadow-2xl border border-gray-100 p-4 z-50 w-full max-w-sm">
+                <div className="absolute top-20 left-0 right-0 mx-auto bg-white rounded-xl shadow-2xl border border-gray-100 p-4 z-50 w-full max-w-sm">
                     <div className="flex bg-gray-100 p-1 rounded-lg mb-4">
                         <button onClick={() => { setLocMode('canton'); setSelectedLocations([]); }} className={`flex-1 py-1 text-sm font-medium rounded-md transition ${locMode === 'canton' ? 'bg-white shadow text-[#FA6E28]' : 'text-gray-500'}`}>Cantons</button>
-                        <button onClick={() => { setLocMode('city'); setSelectedLocations([]); }} className={`flex-1 py-1 text-sm font-medium rounded-md transition ${locMode === 'city' ? 'bg-white shadow text-[#FA6E28]' : 'text-gray-500'}`}>Major Cities</button>
+                        <button onClick={() => { setLocMode('city'); setSelectedLocations([]); }} className={`flex-1 py-1 text-sm font-medium rounded-md transition ${locMode === 'city' ? 'bg-white shadow text-[#FA6E28]' : 'text-gray-500'}`}>Cities</button>
                     </div>
-                    
                     <div className="max-h-[250px] overflow-y-auto space-y-1">
                         {displayList.map(loc => (
                             <label key={loc} className="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
-                                <input 
-                                    type="checkbox" 
-                                    checked={selectedLocations.includes(loc)}
-                                    onChange={() => toggleLoc(loc)}
-                                    className="rounded border-gray-300 text-[#FA6E28] focus:ring-[#FA6E28]" 
-                                />
+                                <input type="checkbox" checked={selectedLocations.includes(loc)} onChange={() => toggleLoc(loc)} className="rounded border-gray-300 text-[#FA6E28] focus:ring-[#FA6E28]" />
                                 <span className="text-sm text-gray-700">{loc}</span>
                             </label>
                         ))}
@@ -599,6 +593,74 @@ export default function KursNaviPro() {
   };
 
   // --- Components ---
+  
+  // NEW: LANDING PAGE CONTENT (How it works + CTA)
+  const LandingPageContent = () => (
+      <div className="space-y-24 py-12 animate-in fade-in duration-700">
+          
+          {/* HOW IT WORKS */}
+          <div className="max-w-7xl mx-auto px-4">
+              <h2 className="text-3xl font-bold text-center mb-16 text-[#333333] font-['Open_Sans']">{t.how_it_works}</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-16">
+                  {/* Students Column */}
+                  <div className="space-y-8">
+                      <div className="flex items-center space-x-4 mb-8">
+                          <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center text-[#FA6E28]"><Users className="w-6 h-6" /></div>
+                          <h3 className="text-2xl font-bold text-[#333333]">{t.for_students}</h3>
+                      </div>
+                      <div className="space-y-8 pl-4 border-l-2 border-orange-100">
+                          <div>
+                              <h4 className="font-bold text-lg mb-1 flex items-center"><Search className="w-4 h-4 mr-2 text-[#FA6E28]" /> {t.student_step_1}</h4>
+                              <p className="text-gray-600">{t.student_desc_1}</p>
+                          </div>
+                          <div>
+                              <h4 className="font-bold text-lg mb-1 flex items-center"><Calendar className="w-4 h-4 mr-2 text-[#FA6E28]" /> {t.student_step_2}</h4>
+                              <p className="text-gray-600">{t.student_desc_2}</p>
+                          </div>
+                          <div>
+                              <h4 className="font-bold text-lg mb-1 flex items-center"><Star className="w-4 h-4 mr-2 text-[#FA6E28]" /> {t.student_step_3}</h4>
+                              <p className="text-gray-600">{t.student_desc_3}</p>
+                          </div>
+                      </div>
+                  </div>
+
+                  {/* Tutors Column */}
+                  <div className="space-y-8">
+                       <div className="flex items-center space-x-4 mb-8">
+                          <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600"><Zap className="w-6 h-6" /></div>
+                          <h3 className="text-2xl font-bold text-[#333333]">{t.for_tutors}</h3>
+                      </div>
+                      <div className="space-y-8 pl-4 border-l-2 border-blue-100">
+                           <div>
+                              <h4 className="font-bold text-lg mb-1 flex items-center"><BookOpen className="w-4 h-4 mr-2 text-blue-500" /> {t.tutor_step_1}</h4>
+                              <p className="text-gray-600">{t.tutor_desc_1}</p>
+                          </div>
+                          <div>
+                              <h4 className="font-bold text-lg mb-1 flex items-center"><Clock className="w-4 h-4 mr-2 text-blue-500" /> {t.tutor_step_2}</h4>
+                              <p className="text-gray-600">{t.tutor_desc_2}</p>
+                          </div>
+                          <div>
+                              <h4 className="font-bold text-lg mb-1 flex items-center"><DollarSign className="w-4 h-4 mr-2 text-blue-500" /> {t.tutor_step_3}</h4>
+                              <p className="text-gray-600">{t.tutor_desc_3}</p>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+          </div>
+
+          {/* TEACHER CTA */}
+          <div className="bg-[#333333] py-20">
+              <div className="max-w-4xl mx-auto px-4 text-center">
+                  <h2 className="text-3xl md:text-4xl font-bold text-white mb-6 font-['Open_Sans']">{t.cta_title}</h2>
+                  <p className="text-xl text-gray-300 mb-10 leading-relaxed">{t.cta_subtitle}</p>
+                  <button onClick={() => setView('login')} className="bg-[#FA6E28] text-white px-10 py-4 rounded-full font-bold text-lg hover:bg-[#E55D1F] transition transform hover:-translate-y-1 shadow-xl">
+                      {t.cta_btn}
+                  </button>
+              </div>
+          </div>
+      </div>
+  );
+
   const TeacherForm = () => {
     // Local state for the dynamic dropdowns in the form
     const [lvl1, setLvl1] = useState(Object.keys(CATEGORY_HIERARCHY)[0]);
@@ -811,12 +873,12 @@ export default function KursNaviPro() {
     <nav className="bg-white shadow-sm sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-20 items-center">
-          <div className="flex items-center cursor-pointer" onClick={() => setView('home')}>
+          <div className="flex items-center cursor-pointer" onClick={() => { setView('home'); setShowResults(false); }}>
              <KursNaviLogo className="w-10 h-10 mr-3" />
             <span className="font-['Open_Sans'] font-bold text-2xl text-[#333333] tracking-tight">KursNavi</span>
           </div>
           <div className="hidden md:flex items-center space-x-6 font-['Open_Sans']">
-            <button onClick={() => setView('home')} className="text-gray-600 hover:text-[#FA6E28] font-semibold">{t.nav_explore}</button>
+            <button onClick={() => { setView('home'); setShowResults(false); }} className="text-gray-600 hover:text-[#FA6E28] font-semibold">{t.nav_explore}</button>
             <button onClick={() => setView('about')} className="text-gray-600 hover:text-[#FA6E28] font-semibold">{t.nav_about}</button>
             {!user ? (
                 <button onClick={() => setView('login')} className="text-gray-600 hover:text-[#FA6E28] font-semibold flex items-center"><LogIn className="w-4 h-4 mr-1" /> {t.nav_login}</button>
@@ -837,7 +899,7 @@ export default function KursNaviPro() {
       </div>
       {isMenuOpen && (
         <div className="md:hidden bg-white border-t p-4 space-y-4 shadow-lg font-['Open_Sans']">
-             <button onClick={() => {setView('home'); setIsMenuOpen(false)}} className="block w-full text-left py-2 font-medium">{t.nav_explore}</button>
+             <button onClick={() => {setView('home'); setIsMenuOpen(false); setShowResults(false);}} className="block w-full text-left py-2 font-medium">{t.nav_explore}</button>
              <button onClick={() => {setView('about'); setIsMenuOpen(false)}} className="block w-full text-left py-2 font-medium">{t.nav_about}</button>
              <button onClick={() => {setView('login'); setIsMenuOpen(false)}} className="block w-full text-left py-2 font-medium">{t.nav_login}</button>
         </div>
@@ -1140,14 +1202,21 @@ export default function KursNaviPro() {
               </div>
           </div>
 
-           {/* --- NEW FILTER BAR --- */}
+           {/* --- FILTER BAR --- */}
            <div className="bg-white border-b sticky top-20 z-40 shadow-sm">
             <div className="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row gap-4 items-center">
                 
                 {/* Search Input */}
                 <div className="relative flex-grow w-full md:w-auto">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                    <input type="text" placeholder={t.search_placeholder} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-10 pr-4 py-2 bg-[#FAF5F0] border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-[#FA6E28] focus:bg-white transition-colors" />
+                    <input 
+                        type="text" 
+                        placeholder={t.search_placeholder} 
+                        value={searchQuery} 
+                        onChange={(e) => setSearchQuery(e.target.value)} 
+                        onKeyDown={(e) => e.key === 'Enter' && handleSearchSubmit()}
+                        className="w-full pl-10 pr-4 py-3 bg-[#FAF5F0] border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-[#FA6E28] focus:bg-white transition-colors" 
+                    />
                 </div>
 
                 {/* Drill Down Category */}
@@ -1156,9 +1225,14 @@ export default function KursNaviPro() {
                 {/* Location Multi Select */}
                 <LocationDropdown />
 
+                {/* SEARCH BUTTON (NEW) */}
+                <button onClick={handleSearchSubmit} className="bg-[#FA6E28] text-white px-8 py-3 rounded-full font-bold hover:bg-[#E55D1F] transition shadow-md">
+                    {t.btn_search}
+                </button>
+
                 {/* Reset Filters */}
                 {(selectedCatPath.length > 0 || selectedLocations.length > 0) && (
-                    <button onClick={() => { setSelectedCatPath([]); setSelectedLocations([]); setSearchQuery(""); }} className="p-2 text-gray-400 hover:text-red-500 rounded-full hover:bg-gray-100">
+                    <button onClick={() => { setSelectedCatPath([]); setSelectedLocations([]); setSearchQuery(""); setShowResults(false); }} className="p-2 text-gray-400 hover:text-red-500 rounded-full hover:bg-gray-100">
                         <X className="w-5 h-5" />
                     </button>
                 )}
@@ -1178,25 +1252,31 @@ export default function KursNaviPro() {
           </div>
 
           <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-            {loading ? <div className="text-center py-20">Loading courses...</div> : filteredCourses.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-                {filteredCourses.map(course => (
-                  <div key={course.id} onClick={() => { setSelectedCourse(course); setView('detail'); window.scrollTo(0,0); }} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer group">
-                    <div className="relative h-48 overflow-hidden">
-                        <img src={course.image_url} alt={course.title} className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300" />
-                        <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-sm px-2 py-1 rounded text-xs font-bold text-gray-700 shadow-sm flex items-center"><MapPin className="w-3 h-3 mr-1 text-[#FA6E28]" />{course.canton}</div>
-                    </div>
-                    <div className="p-5">
-                        <h3 className="font-bold text-lg text-[#333333] leading-tight line-clamp-2 h-12 mb-2 font-['Open_Sans']">{course.title}</h3>
-                        <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                           <div className="flex items-center space-x-3 text-sm text-gray-500"><div className="flex items-center bg-[#FAF5F0] px-2 py-1 rounded"><User className="w-3 h-3 text-gray-500 mr-1" />{course.instructor_name}</div></div>
-                           <span className="font-bold text-[#FA6E28] text-lg font-['Open_Sans']">{t.currency} {course.price}</span>
+            {!showResults ? (
+                // LANDING PAGE MODE
+                <LandingPageContent />
+            ) : (
+                // SEARCH RESULTS MODE
+                loading ? <div className="text-center py-20"><Loader className="animate-spin w-10 h-10 text-[#FA6E28] mx-auto" /></div> : filteredCourses.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                    {filteredCourses.map(course => (
+                      <div key={course.id} onClick={() => { setSelectedCourse(course); setView('detail'); window.scrollTo(0,0); }} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer group">
+                        <div className="relative h-48 overflow-hidden">
+                            <img src={course.image_url} alt={course.title} className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300" />
+                            <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-sm px-2 py-1 rounded text-xs font-bold text-gray-700 shadow-sm flex items-center"><MapPin className="w-3 h-3 mr-1 text-[#FA6E28]" />{course.canton}</div>
                         </div>
-                    </div>
+                        <div className="p-5">
+                            <h3 className="font-bold text-lg text-[#333333] leading-tight line-clamp-2 h-12 mb-2 font-['Open_Sans']">{course.title}</h3>
+                            <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                               <div className="flex items-center space-x-3 text-sm text-gray-500"><div className="flex items-center bg-[#FAF5F0] px-2 py-1 rounded"><User className="w-3 h-3 text-gray-500 mr-1" />{course.instructor_name}</div></div>
+                               <span className="font-bold text-[#FA6E28] text-lg font-['Open_Sans']">{t.currency} {course.price}</span>
+                            </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            ) : <div className="text-center py-24 bg-white rounded-2xl border border-dashed border-gray-300"><p className="text-gray-500 text-lg font-medium">{t.no_results}</p></div>}
+                ) : <div className="text-center py-24 bg-white rounded-2xl border border-dashed border-gray-300"><p className="text-gray-500 text-lg font-medium">{t.no_results}</p></div>
+            )}
           </main>
         </>
       )}
