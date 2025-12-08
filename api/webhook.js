@@ -125,12 +125,13 @@ export default async function handler(req, res) {
     const courseDate = course ? course.start_date : 'TBA';
 
     // 3. Get Student Language Preference
-    let studentLang = 'en';
+    // --- UPDATED: Default fallback is 'de' ---
+    let studentLang = 'de';
     if (userId) {
         const { data: profile } = await supabase.from('profiles').select('language').eq('id', userId).single();
         if (profile && profile.language) studentLang = profile.language;
     }
-    const sTexts = EMAIL_TRANSLATIONS[studentLang] || EMAIL_TRANSLATIONS['en'];
+    const sTexts = EMAIL_TRANSLATIONS[studentLang] || EMAIL_TRANSLATIONS['de'];
 
     // 4. Send STUDENT Email
     try {
@@ -143,12 +144,10 @@ export default async function handler(req, res) {
         console.log(`✅ Student Email Sent (${studentLang}).`);
     } catch (e) { console.error('Student Email Failed:', e); }
 
-    // 5. Send TEACHER Email (With SMART DATE LOGIC)
+    // 5. Send TEACHER Email
     if (course && course.start_date) {
         const startDate = new Date(course.start_date);
         const today = new Date();
-        
-        // Calculate "1 Month from now"
         const oneMonthFromNow = new Date();
         oneMonthFromNow.setMonth(today.getMonth() + 1);
 
@@ -157,10 +156,8 @@ export default async function handler(req, res) {
 
             const teacherEmail = "btrespondek@gmail.com"; 
             
-            // Try to find teacher language, default to EN for admin
-            let teacherLang = 'en';
-            // Logic to fetch teacher profile could go here if teacherEmail wasn't hardcoded
-            
+            // Default teacher lang to 'de'
+            let teacherLang = 'de';
             const tTexts = EMAIL_TRANSLATIONS[teacherLang];
 
             try {

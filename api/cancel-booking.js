@@ -77,12 +77,13 @@ export default async function handler(req, res) {
     if (deleteError) { throw new Error(deleteError.message); }
 
     // 2. Determine Language
-    let lang = 'en';
+    // --- UPDATED: Default fallback is 'de' ---
+    let lang = 'de';
     if (userId) {
         const { data: profile } = await supabase.from('profiles').select('language').eq('id', userId).single();
         if (profile && profile.language) lang = profile.language;
     }
-    const t = EMAIL_TRANSLATIONS[lang] || EMAIL_TRANSLATIONS['en'];
+    const t = EMAIL_TRANSLATIONS[lang] || EMAIL_TRANSLATIONS['de'];
 
     // 3. Send Email
     try {

@@ -204,7 +204,8 @@ const HowItWorksPage = ({ setView }) => (
 // -----------------------------------------------------------------------------
 
 export default function KursNaviPro() {
-  const [lang, setLang] = useState('en');
+  // --- UPDATED: DEFAULT TO 'de' (German) ---
+  const [lang, setLang] = useState('de');
   const [view, setView] = useState('home'); 
   const [user, setUser] = useState(null); 
   const [session, setSession] = useState(null);
@@ -294,7 +295,7 @@ export default function KursNaviPro() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const t = TRANSLATIONS[lang] || TRANSLATIONS['en'];
+  const t = TRANSLATIONS[lang] || TRANSLATIONS['de'];
 
   const getCatLabel = (key) => {
     if (lang === 'en') return key;
@@ -339,7 +340,7 @@ export default function KursNaviPro() {
         setMyBookings([]);
         setTeacherEarnings([]);
         setView('home');
-        setLang('en'); // Reset to default on logout
+        setLang('de'); // --- UPDATED: Default to 'de' on logout ---
       }
     });
 
