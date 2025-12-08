@@ -1,0 +1,142 @@
+// src/lib/constants.js
+import { Guitar, Piano, Mic, Music, Globe, Dumbbell, Utensils, Palette, Hammer, Briefcase, Code, Users, HardHat, GraduationCap, Smile } from 'lucide-react';
+
+// --- BRAND ASSETS ---
+export const BRAND = {
+  orange: '#FA6E28', 
+  black: '#333333',  
+  lightOrange: '#FFF0EB', 
+  blue: '#78B3CE',   
+  lightBeige: '#FAF5F0', 
+};
+
+// --- DATA LISTS ---
+export const SWISS_CANTONS = ["Aargau", "Appenzell AI", "Appenzell AR", "Basel-Landschaft", "Basel-Stadt", "Bern", "Fribourg", "Genève", "Glarus", "Graubünden", "Jura", "Luzern", "Neuchâtel", "Nidwalden", "Obwalden", "Schaffhausen", "Schwyz", "Solothurn", "St. Gallen", "Thurgau", "Ticino", "Uri", "Valais", "Vaud", "Zug", "Zürich"];
+export const SWISS_CITIES = ["Basel", "Bern", "Biel/Bienne", "Genève", "Lausanne", "Lugano", "Luzern", "St. Gallen", "Winterthur", "Zürich"];
+
+export const CATEGORY_HIERARCHY = {
+  "Private & Hobby": {
+    "Music & Audio": ["Guitar", "Piano", "Vocals", "Drums", "Production", "Other Instruments"],
+    "Languages": ["German", "French", "English", "Italian", "Spanish", "Swiss German", "Other Languages"],
+    "Sports & Fitness": ["Yoga", "Pilates", "Personal Training", "Team Sports", "Dancing", "Other Sports"],
+    "Cooking & Nutrition": ["Swiss Cuisine", "Italian Cuisine", "Asian Cuisine", "Baking", "Vegan/Vegetarian", "Other Cooking"],
+    "Art & Craft": ["Painting", "Photography", "Pottery", "Sewing", "Digital Art", "Other Art"],
+    "Lifestyle": ["Gardening", "Meditation", "DIY", "Other Lifestyle"]
+  },
+  "Professional": {
+    "Business": ["Management", "Finance", "Marketing", "Entrepreneurship", "Sales"],
+    "Tech & Data": ["Web Development", "Data Science", "Design Tools", "Office Skills", "Cybersecurity"],
+    "Soft Skills": ["Communication", "Leadership", "Public Speaking", "Negotiation"],
+    "Industry Specific": ["Healthcare", "Construction", "Hospitality", "Other Industry"]
+  },
+  "Children": {
+    "Academic Support": ["Math", "Languages", "Science", "Homework Help"],
+    "Creative & Fun": ["Music for Kids", "Art for Kids", "Dance", "Coding for Kids", "Camps"]
+  }
+};
+
+export const CATEGORY_LABELS = {
+  "Private & Hobby": { de: "Privat & Hobby", fr: "Privé & Loisirs" },
+  "Professional": { de: "Beruflich", fr: "Professionnel" },
+  "Children": { de: "Kinder", fr: "Enfants" },
+  "Music & Audio": { de: "Musik & Audio", fr: "Musique & Audio" },
+  "Languages": { de: "Sprachen", fr: "Langues" },
+  "Sports & Fitness": { de: "Sport & Fitness", fr: "Sport & Forme" },
+  "Cooking & Nutrition": { de: "Kochen & Ernährung", fr: "Cuisine & Nutrition" },
+  "Art & Craft": { de: "Kunst & Handwerk", fr: "Art & Artisanat" },
+  "Lifestyle": { de: "Lifestyle", fr: "Art de vivre" },
+  "Business": { de: "Wirtschaft", fr: "Affaires" },
+  "Tech & Data": { de: "Technik & Daten", fr: "Tech & Données" },
+  "Soft Skills": { de: "Soft Skills", fr: "Compétences Douces" },
+  "Industry Specific": { de: "Branchenspezifisch", fr: "Spécifique à l'industrie" },
+  "Academic Support": { de: "Nachhilfe", fr: "Soutien scolaire" },
+  "Creative & Fun": { de: "Kreativ & Spaß", fr: "Créatif & Ludique" },
+  "Guitar": { de: "Gitarre", fr: "Guitare" },
+  "Piano": { de: "Klavier", fr: "Piano" },
+  "Vocals": { de: "Gesang", fr: "Chant" },
+  "Other Instruments": { de: "Andere Instrumente", fr: "Autres Instruments" },
+  "German": { de: "Deutsch", fr: "Allemand" },
+  "French": { de: "Französisch", fr: "Français" },
+  "English": { de: "Englisch", fr: "Anglais" },
+  "Swiss Cuisine": { de: "Schweizer Küche", fr: "Cuisine Suisse" },
+  "Web Development": { de: "Webentwicklung", fr: "Développement Web" },
+  "Homework Help": { de: "Hausaufgabenhilfe", fr: "Aide aux devoirs" }
+};
+
+export const TRANSLATIONS = {
+  en: {
+    nav_explore: "Explore", nav_about: "About Us", nav_contact: "Contact", nav_login: "Login", nav_logout: "Logout", nav_dashboard: "Dashboard",
+    hero_title: "Discover courses near you.", hero_subtitle: "From yodeling in Appenzell to coding in Zürich. Learn locally.",
+    search_placeholder: "What do you want to learn?", filter_label_cat: "Category", filter_label_loc: "Location", btn_search: "Search",
+    no_results: "No courses found matching criteria.", btn_book: "Book Course", btn_pay: "Pay & Book", btn_publish: "Publish Course", btn_send: "Send Message",
+    form_title: "List a Course", success_msg: "Grüezi! Action successful.", currency: "CHF", admin_panel: "Admin Control Center",
+    teacher_dash: "Teacher Dashboard", student_dash: "My Learning", login_title: "Welcome Back", my_bookings: "My Bookings",
+    lbl_objectives: "What you will learn", lbl_prerequisites: "Prerequisites", lbl_description: "About this course", lbl_address: "Location",
+    lbl_duration: "Duration", lbl_sessions: "sessions",
+    how_it_works: "How it Works", for_students: "For Students", for_tutors: "For Tutors",
+    student_step_1: "Discover", student_desc_1: "Browse hundreds of unique local courses.",
+    student_step_2: "Book", student_desc_2: "Secure your spot instantly with our payment protection.",
+    student_step_3: "Learn", student_desc_3: "Meet your local expert and start learning.",
+    tutor_step_1: "List", tutor_desc_1: "Create a profile and list your skills for free.",
+    tutor_step_2: "Schedule", tutor_desc_2: "Set your own dates, location, and class size.",
+    tutor_step_3: "Earn", tutor_desc_3: "Get paid automatically 24h after the course starts.",
+    cta_title: "Become a Tutor", cta_subtitle: "Share your skills and knowledge with students across Switzerland. Set your own schedule and prices.", cta_btn: "Get Started",
+    footer_terms: "Terms & Conditions", footer_privacy: "Data Protection", footer_legal: "Legal Notice", footer_madein: "Made in Switzerland", footer_rights: "All rights reserved.",
+    terms_title: "Terms & Conditions", terms_last_updated: "Last Updated: October 2024",
+    terms_1_title: "1. Scope", terms_1_text: "General Terms apply.",
+    privacy_title: "Data Protection", privacy_compliant: "Compliant with FADP.",
+    contact_title: "Contact Us", contact_get_in_touch: "Get in Touch", contact_office_hours: "Office Hours",
+    contact_mon_fri: "Mon-Fri: 09:00 - 17:00", contact_weekend: "Weekends: Closed",
+    contact_lbl_name: "Name", contact_lbl_email: "Email", contact_lbl_msg: "Message",
+    about_title: "About KursNavi", about_subtitle: "Connecting Switzerland.",
+    about_text: "KursNavi is Switzerland's premier local learning platform...",
+    about_community_title: "Community", about_community_text: "We believe in the power of local connection.",
+    about_quality_title: "Quality", about_quality_text: "All our tutors are verified manually.",
+    privacy_1_title: "1. Collection", privacy_1_text: "We collect only necessary data.",
+    terms_1_title: "1. Service", terms_1_text: "We provide a marketplace platform."
+  },
+  de: {
+    nav_explore: "Entdecken", nav_login: "Anmelden", nav_logout: "Abmelden", nav_dashboard: "Dashboard",
+    hero_title: "Finde Kurse in deiner Nähe.", hero_subtitle: "Vom Jodeln bis zum Programmieren.",
+    search_placeholder: "Was möchtest du lernen?", filter_label_cat: "Kategorie", filter_label_loc: "Ort", btn_search: "Suchen",
+    no_results: "Keine Kurse gefunden.", btn_book: "Kurs buchen", btn_pay: "Bezahlen & Buchen", btn_publish: "Veröffentlichen",
+    form_title: "Kurs anbieten", success_msg: "Erfolgreich!", currency: "CHF",
+    teacher_dash: "Lehrer Dashboard", student_dash: "Meine Kurse",
+    login_title: "Willkommen", my_bookings: "Meine Buchungen",
+    lbl_description: "Beschreibung", lbl_address: "Standort", lbl_duration: "Dauer",
+    how_it_works: "So funktioniert's", for_students: "Für Schüler", for_tutors: "Für Lehrer",
+    student_step_1: "Entdecken", student_desc_1: "Durchsuche hunderte lokale Kurse.",
+    student_step_2: "Buchen", student_desc_2: "Sichere deinen Platz sofort.",
+    student_step_3: "Lernen", student_desc_3: "Triff Experten und lerne Neues.",
+    tutor_step_1: "Erstellen", tutor_desc_1: "Erstelle dein Profil kostenlos.",
+    tutor_step_2: "Planen", tutor_desc_2: "Bestimme Datum, Ort und Preis.",
+    tutor_step_3: "Verdienen", tutor_desc_3: "Automatische Auszahlung nach Kursbeginn.",
+    cta_title: "Werde Kursleiter", cta_subtitle: "Teile dein Wissen in der ganzen Schweiz. Bestimme deinen eigenen Zeitplan.", cta_btn: "Loslegen",
+    footer_terms: "AGB", footer_privacy: "Datenschutz", footer_legal: "Impressum", footer_madein: "Made in Switzerland", footer_rights: "Alle Rechte vorbehalten.",
+    contact_title: "Kontakt", contact_get_in_touch: "Schreib uns", btn_send: "Senden",
+    about_title: "Über uns", about_subtitle: "Die Schweiz verbinden.",
+    terms_title: "AGB", privacy_title: "Datenschutz"
+  },
+  fr: {
+    nav_explore: "Explorer", nav_login: "Connexion", nav_logout: "Déconnexion", nav_dashboard: "Tableau de bord",
+    hero_title: "Découvrez des cours.", hero_subtitle: "Apprenez localement.",
+    search_placeholder: "Que voulez-vous apprendre?", filter_label_cat: "Catégorie", filter_label_loc: "Lieu", btn_search: "Rechercher",
+    no_results: "Aucun cours trouvé.", btn_book: "Réserver", btn_pay: "Payer et réserver", btn_publish: "Publier",
+    form_title: "Proposer un cours", success_msg: "Succès!", currency: "CHF",
+    teacher_dash: "Tableau de bord", student_dash: "Mes apprentissages",
+    login_title: "Bienvenue", my_bookings: "Mes réservations",
+    lbl_description: "Description", lbl_address: "Lieu", lbl_duration: "Durée",
+    how_it_works: "Comment ça marche", for_students: "Pour Étudiants", for_tutors: "Pour Professeurs",
+    student_step_1: "Découvrir", student_desc_1: "Parcourez des centaines de cours.",
+    student_step_2: "Réserver", student_desc_2: "Réservez votre place instantanément.",
+    student_step_3: "Apprendre", student_desc_3: "Rencontrez des experts locaux.",
+    tutor_step_1: "Créer", tutor_desc_1: "Créez votre profil gratuitement.",
+    tutor_step_2: "Planifier", tutor_desc_2: "Définissez dates, lieux et prix.",
+    tutor_step_3: "Gagner", tutor_desc_3: "Paiement automatique après le cours.",
+    cta_title: "Devenez Professeur", cta_subtitle: "Partagez vos compétences à travers la Suisse. Gérez votre emploi du temps.", cta_btn: "Commencer",
+    footer_terms: "CGV", footer_privacy: "Confidentialité", footer_legal: "Mentions légales", footer_madein: "Fabriqué en Suisse", footer_rights: "Droits réservés.",
+    contact_title: "Contact", contact_get_in_touch: "Contactez-nous", btn_send: "Envoyer",
+    about_title: "À propos", about_subtitle: "Relier la Suisse.",
+    terms_title: "CGV", privacy_title: "Confidentialité"
+  }
+};
