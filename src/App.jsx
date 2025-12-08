@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { Search, User, Clock, MapPin, CheckCircle, ArrowLeft, LogIn, LayoutDashboard, Settings, Trash2, DollarSign, Lock, Calendar, ExternalLink, ChevronDown, ChevronRight, Mail, Phone, Loader, Heart, Shield, X, BookOpen, Star, Zap, Users, Briefcase, Smile, Music } from 'lucide-react';
+import { Search, User, Clock, MapPin, CheckCircle, ArrowLeft, LogIn, LayoutDashboard, Settings, Trash2, DollarSign, Lock, Calendar, ExternalLink, ChevronDown, ChevronRight, Mail, Phone, Loader, Heart, Shield, X, BookOpen, Star, Zap, Users, Briefcase, Smile, Music, ArrowRight } from 'lucide-react';
 
 // --- IMPORTS ---
 import { BRAND, CATEGORY_HIERARCHY, CATEGORY_LABELS, SWISS_CANTONS, SWISS_CITIES, TRANSLATIONS } from './lib/constants';
@@ -11,9 +11,238 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+// -----------------------------------------------------------------------------
+// --- COMPONENT DEFINITIONS (MOVED OUTSIDE TO FIX RE-RENDER/FOCUS ISSUES) ---
+// -----------------------------------------------------------------------------
+
+const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCatPath, catMenuOpen, setCatMenuOpen, t, getCatLabel, catMenuRef }) => {
+    const [lvl1, setLvl1] = useState(rootCategory); 
+    const [lvl2, setLvl2] = useState(null);
+    
+    useEffect(() => { if (rootCategory) setLvl1(rootCategory); }, [rootCategory]);
+    const availableLvl1 = rootCategory ? [rootCategory] : Object.keys(CATEGORY_HIERARCHY);
+
+    return (
+        <div ref={catMenuRef} className="static"> 
+            <button onClick={() => setCatMenuOpen(!catMenuOpen)} className={`px-4 py-3 border rounded-full flex items-center space-x-2 text-sm font-medium transition ${selectedCatPath.length > 0 ? 'bg-[#FA6E28] text-white border-[#FA6E28]' : 'bg-white text-gray-700 hover:border-gray-400'}`}>
+                <span>{selectedCatPath.length > 0 ? getCatLabel(selectedCatPath[selectedCatPath.length-1]) : t.filter_label_cat}</span><ChevronDown className="w-4 h-4" />
+            </button>
+            {catMenuOpen && (
+                <div className="absolute top-20 left-0 right-0 mx-auto w-full max-w-4xl bg-white rounded-xl shadow-2xl border border-gray-100 p-2 z-50 flex h-[350px]">
+                    <div className="w-1/3 border-r overflow-y-auto">
+                        {availableLvl1.map(cat => (<div key={cat} onClick={() => { setLvl1(cat); setLvl2(null); }} className={`p-3 cursor-pointer text-sm flex justify-between items-center hover:bg-gray-50 ${lvl1 === cat ? 'font-bold text-[#FA6E28] bg-orange-50' : 'text-gray-700'}`}>{getCatLabel(cat)}<ChevronRight className="w-4 h-4 text-gray-400" /></div>))}
+                        {!rootCategory && <div onClick={() => { setSelectedCatPath([]); setCatMenuOpen(false); }} className="p-3 text-xs text-gray-400 cursor-pointer hover:text-[#FA6E28] border-t mt-2">Clear Selection</div>}
+                    </div>
+                    <div className="w-1/3 border-r overflow-y-auto bg-gray-50/50">
+                        {lvl1 ? Object.keys(CATEGORY_HIERARCHY[lvl1]).map(sub => (<div key={sub} onClick={() => setLvl2(sub)} className={`p-3 cursor-pointer text-sm flex justify-between items-center hover:bg-gray-100 ${lvl2 === sub ? 'font-bold text-[#FA6E28]' : 'text-gray-700'}`}>{getCatLabel(sub)}<ChevronRight className="w-4 h-4 text-gray-400" /></div>)) : <div className="p-4 text-xs text-gray-400">Select a category...</div>}
+                    </div>
+                    <div className="w-1/3 overflow-y-auto bg-gray-50">
+                        {lvl1 && lvl2 ? CATEGORY_HIERARCHY[lvl1][lvl2].map(item => (<div key={item} onClick={() => { setSelectedCatPath([lvl1, lvl2, item]); setCatMenuOpen(false); }} className="p-3 cursor-pointer text-sm text-gray-700 hover:text-[#FA6E28] hover:bg-white transition">{getCatLabel(item)}</div>)) : <div className="p-4 text-xs text-gray-400">Select a sub-category...</div>}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
+const LocationDropdown = ({ locMode, setLocMode, selectedLocations, setSelectedLocations, locMenuOpen, setLocMenuOpen, locMenuRef, t }) => {
+    const toggleLoc = (loc) => { if (selectedLocations.includes(loc)) setSelectedLocations(selectedLocations.filter(l => l !== loc)); else setSelectedLocations([...selectedLocations, loc]); };
+    const displayList = locMode === 'canton' ? SWISS_CANTONS : SWISS_CITIES;
+    return (
+        <div ref={locMenuRef} className="static">
+            <button onClick={() => setLocMenuOpen(!locMenuOpen)} className={`px-4 py-3 border rounded-full flex items-center space-x-2 text-sm font-medium transition ${selectedLocations.length > 0 ? 'bg-[#FA6E28] text-white border-[#FA6E28]' : 'bg-white text-gray-700 hover:border-gray-400'}`}>
+                 <MapPin className="w-4 h-4" /><span>{selectedLocations.length > 0 ? `${selectedLocations.length} selected` : t.filter_label_loc}</span><ChevronDown className="w-4 h-4" />
+            </button>
+            {locMenuOpen && (
+                <div className="absolute top-20 left-0 right-0 mx-auto bg-white rounded-xl shadow-2xl border border-gray-100 p-4 z-50 w-full max-w-sm">
+                    <div className="flex bg-gray-100 p-1 rounded-lg mb-4">
+                        <button onClick={() => { setLocMode('canton'); setSelectedLocations([]); }} className={`flex-1 py-1 text-sm font-medium rounded-md transition ${locMode === 'canton' ? 'bg-white shadow text-[#FA6E28]' : 'text-gray-500'}`}>Cantons</button>
+                        <button onClick={() => { setLocMode('city'); setSelectedLocations([]); }} className={`flex-1 py-1 text-sm font-medium rounded-md transition ${locMode === 'city' ? 'bg-white shadow text-[#FA6E28]' : 'text-gray-500'}`}>Cities</button>
+                    </div>
+                    <div className="max-h-[250px] overflow-y-auto space-y-1">
+                        {displayList.map(loc => (<label key={loc} className="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded cursor-pointer"><input type="checkbox" checked={selectedLocations.includes(loc)} onChange={() => toggleLoc(loc)} className="rounded border-gray-300 text-[#FA6E28] focus:ring-[#FA6E28]" /><span className="text-sm text-gray-700">{loc}</span></label>))}
+                    </div>
+                    <div className="pt-3 mt-3 border-t flex justify-between items-center"><button onClick={() => setSelectedLocations([])} className="text-xs text-gray-400 hover:text-red-500">Clear</button><button onClick={() => setLocMenuOpen(false)} className="text-xs font-bold text-[#FA6E28]">Done</button></div>
+                </div>
+            )}
+        </div>
+    );
+};
+
+const LandingView = ({ title, subtitle, variant = 'main', searchQuery, setSearchQuery, handleSearchSubmit, setSelectedCatPath, setView, t, LandingPageContent }) => {
+    return (
+      <>
+          <div className={`py-24 px-4 ${variant === 'main' ? 'bg-white' : variant === 'private' ? 'bg-[#FFF0EB]' : variant === 'prof' ? 'bg-slate-900 text-white' : 'bg-yellow-50'}`}>
+              <div className="max-w-4xl mx-auto text-center space-y-6">
+                  <div className="flex justify-center mb-6">
+                      {variant === 'main' && <KursNaviLogo className="w-24 h-24" />}
+                      {variant === 'private' && <Music className="w-24 h-24 text-[#FA6E28]" />}
+                      {variant === 'prof' && <Briefcase className="w-24 h-24 text-blue-400" />}
+                      {variant === 'kids' && <Smile className="w-24 h-24 text-yellow-500" />}
+                  </div>
+                  <h1 className={`text-4xl md:text-6xl font-extrabold tracking-tight font-['Open_Sans'] ${variant === 'prof' ? 'text-white' : 'text-[#FA6E28]'}`}>{title}</h1>
+                  <p className={`text-xl max-w-2xl mx-auto ${variant === 'prof' ? 'text-gray-300' : 'text-gray-500'}`}>{subtitle}</p>
+              </div>
+          </div>
+
+          <div className={`border-b sticky top-20 z-40 shadow-sm ${variant === 'prof' ? 'bg-slate-800 border-slate-700' : 'bg-white'}`}>
+              <div className="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row gap-4 items-center">
+                  <div className="relative flex-grow w-full md:w-auto">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                      <input type="text" placeholder={t.search_placeholder} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearchSubmit()} className="w-full pl-10 pr-4 py-3 bg-[#FAF5F0] border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-[#FA6E28] focus:bg-white transition-colors" />
+                  </div>
+                  <button onClick={handleSearchSubmit} className="bg-[#FA6E28] text-white px-8 py-3 rounded-full font-bold hover:bg-[#E55D1F] transition shadow-md">{t.btn_search}</button>
+              </div>
+          </div>
+
+          {variant === 'main' && (
+              <div className="max-w-7xl mx-auto px-4 py-12">
+                  <h3 className="text-2xl font-bold text-center mb-8 text-[#333333]">Find the right course for you</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                      <div onClick={() => { setSelectedCatPath(['Private & Hobby']); setView('landing-private'); window.scrollTo(0,0); }} className="bg-white p-8 rounded-2xl shadow-lg hover:-translate-y-2 transition cursor-pointer border-t-4 border-[#FA6E28] text-center group">
+                          <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-[#FA6E28] transition"><Music className="w-8 h-8 text-[#FA6E28] group-hover:text-white" /></div>
+                          <h2 className="text-xl font-bold mb-2">Private & Hobby</h2>
+                          <p className="text-gray-500">Music, Art, Cooking, Sports. Pursue your passion.</p>
+                      </div>
+                      <div onClick={() => { setSelectedCatPath(['Professional']); setView('landing-prof'); window.scrollTo(0,0); }} className="bg-white p-8 rounded-2xl shadow-lg hover:-translate-y-2 transition cursor-pointer border-t-4 border-blue-600 text-center group">
+                          <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-blue-600 transition"><Briefcase className="w-8 h-8 text-blue-600 group-hover:text-white" /></div>
+                          <h2 className="text-xl font-bold mb-2">Professional</h2>
+                          <p className="text-gray-500">Business, Tech, Soft Skills. Advance your career.</p>
+                      </div>
+                      <div onClick={() => { setSelectedCatPath(['Children']); setView('landing-kids'); window.scrollTo(0,0); }} className="bg-white p-8 rounded-2xl shadow-lg hover:-translate-y-2 transition cursor-pointer border-t-4 border-yellow-500 text-center group">
+                          <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-yellow-500 transition"><Smile className="w-8 h-8 text-yellow-500 group-hover:text-white" /></div>
+                          <h2 className="text-xl font-bold mb-2">Children</h2>
+                          <p className="text-gray-500">Tutoring, Creative Arts, Camps. Fun for kids.</p>
+                      </div>
+                  </div>
+              </div>
+          )}
+
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+              <LandingPageContent />
+          </div>
+      </>
+    );
+};
+
+const SearchPageView = ({ selectedCatPath, setSelectedCatPath, searchQuery, setSearchQuery, catMenuOpen, setCatMenuOpen, catMenuRef, t, getCatLabel, locMode, setLocMode, selectedLocations, setSelectedLocations, locMenuOpen, setLocMenuOpen, locMenuRef, loading, filteredCourses, setSelectedCourse, setView }) => {
+    // Determine active section (Private, Prof, Kids, or ALL) based on state
+    const activeSection = selectedCatPath.length > 0 ? selectedCatPath[0] : null;
+
+    return (
+        <div className="min-h-screen bg-[#FAF5F0]">
+            <div className="bg-white border-b pt-8 pb-4 sticky top-20 z-30 shadow-sm">
+                <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row gap-4 items-center">
+                     <div className="relative flex-grow w-full md:w-auto">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                        <input type="text" placeholder="Refine search..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-10 pr-4 py-3 bg-[#FAF5F0] border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-[#FA6E28] focus:bg-white transition-colors" />
+                    </div>
+                    {/* The Category Dropdown adapts based on the active Section */}
+                    <CategoryDropdown rootCategory={activeSection} selectedCatPath={selectedCatPath} setSelectedCatPath={setSelectedCatPath} catMenuOpen={catMenuOpen} setCatMenuOpen={setCatMenuOpen} t={t} getCatLabel={getCatLabel} catMenuRef={catMenuRef} /> 
+                    <LocationDropdown locMode={locMode} setLocMode={setLocMode} selectedLocations={selectedLocations} setSelectedLocations={setSelectedLocations} locMenuOpen={locMenuOpen} setLocMenuOpen={setLocMenuOpen} locMenuRef={locMenuRef} t={t} />
+                    {(selectedCatPath.length > 0 || selectedLocations.length > 0) && (<button onClick={() => { setSelectedCatPath([]); setSelectedLocations([]); setSearchQuery(""); }} className="p-2 text-gray-400 hover:text-red-500 rounded-full hover:bg-gray-100"><X className="w-5 h-5" /></button>)}
+                </div>
+                {(selectedCatPath.length > 0 || selectedLocations.length > 0) && (<div className="max-w-7xl mx-auto px-4 pt-4 flex gap-2 flex-wrap">{selectedCatPath.map((part, i) => (<span key={i} className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-md font-bold">{getCatLabel(part)}</span>))}{selectedLocations.map((loc, i) => (<span key={i} className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-md font-bold">{loc}</span>))}</div>)}
+            </div>
+
+            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                 {loading ? <div className="text-center py-20"><Loader className="animate-spin w-10 h-10 text-[#FA6E28] mx-auto" /></div> : filteredCourses.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                    {filteredCourses.map(course => (
+                      <div key={course.id} onClick={() => { setSelectedCourse(course); setView('detail'); window.scrollTo(0,0); }} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer group">
+                        <div className="relative h-48 overflow-hidden">
+                            <img src={course.image_url} alt={course.title} className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300" />
+                            <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-sm px-2 py-1 rounded text-xs font-bold text-gray-700 shadow-sm flex items-center"><MapPin className="w-3 h-3 mr-1 text-[#FA6E28]" />{course.canton}</div>
+                        </div>
+                        <div className="p-5">
+                            <h3 className="font-bold text-lg text-[#333333] leading-tight line-clamp-2 h-12 mb-2 font-['Open_Sans']">{course.title}</h3>
+                            <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                               <div className="flex items-center space-x-3 text-sm text-gray-500"><div className="flex items-center bg-[#FAF5F0] px-2 py-1 rounded"><User className="w-3 h-3 text-gray-500 mr-1" />{course.instructor_name}</div></div>
+                               <span className="font-bold text-[#FA6E28] text-lg font-['Open_Sans']">{t.currency} {course.price}</span>
+                            </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : <div className="text-center py-24 bg-white rounded-2xl border border-dashed border-gray-300"><p className="text-gray-500 text-lg font-medium">{t.no_results}</p></div>}
+            </main>
+        </div>
+    );
+};
+
+// --- NEW: How It Works Page ---
+const HowItWorksPage = ({ setView }) => (
+    <div className="animate-in fade-in duration-700 font-['Hind_Madurai'] pb-20">
+        {/* Hero */}
+        <div className="bg-[#FFF0EB] py-20 px-4 text-center">
+             <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-6 shadow-md text-[#FA6E28]"><Zap className="w-10 h-10" /></div>
+            <h1 className="text-4xl md:text-5xl font-extrabold text-[#333333] mb-6 font-['Open_Sans']">Share your passion. Earn money.</h1>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">KursNavi handles the boring stuff—payments, bookings, and marketing—so you can focus on teaching.</p>
+        </div>
+
+        {/* Steps */}
+        <div className="max-w-7xl mx-auto px-4 py-20">
+            <h2 className="text-3xl font-bold text-center mb-16 text-[#333333]">Your journey to becoming a tutor</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+                <div className="text-center px-4">
+                    <div className="w-16 h-16 bg-[#FA6E28] text-white rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg text-2xl font-bold">1</div>
+                    <h3 className="text-xl font-bold mb-3 text-[#333333]">Create your profile</h3>
+                    <p className="text-gray-600">Sign up for free. Tell us about your expertise and upload a friendly photo.</p>
+                </div>
+                <div className="text-center px-4">
+                    <div className="w-16 h-16 bg-[#FA6E28] text-white rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg text-2xl font-bold">2</div>
+                    <h3 className="text-xl font-bold mb-3 text-[#333333]">List your course</h3>
+                    <p className="text-gray-600">Set your price, location, and schedule. You are in full control of your offering.</p>
+                </div>
+                <div className="text-center px-4">
+                    <div className="w-16 h-16 bg-[#FA6E28] text-white rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg text-2xl font-bold">3</div>
+                    <h3 className="text-xl font-bold mb-3 text-[#333333]">Get booked & paid</h3>
+                    <p className="text-gray-600">Students book instantly. We process the payment and transfer your earnings automatically.</p>
+                </div>
+            </div>
+        </div>
+
+        {/* Pricing Section */}
+        <div className="bg-slate-900 text-white py-20 px-4">
+            <div className="max-w-4xl mx-auto text-center">
+                <h2 className="text-3xl font-bold mb-6 font-['Open_Sans']">Fair & Transparent Pricing</h2>
+                <p className="text-xl text-gray-300 mb-12">No subscription fees. No listing fees. We only earn when you earn.</p>
+                
+                <div className="bg-white text-[#333333] p-8 rounded-2xl shadow-xl max-w-lg mx-auto transform hover:scale-105 transition duration-300">
+                    <div className="flex justify-between items-end border-b pb-4 mb-4">
+                        <span className="text-left font-bold text-gray-500">Your Course Price</span>
+                        <span className="text-2xl font-bold">CHF 100</span>
+                    </div>
+                    <div className="space-y-3 mb-6">
+                        <div className="flex justify-between items-center text-sm">
+                            <span className="text-gray-500">KursNavi Commission (15%)</span>
+                            <span className="text-red-500 font-medium">- CHF 15</span>
+                        </div>
+                        <div className="text-xs text-gray-400 text-left">
+                            Includes payment processing, marketing, insurance, and platform support.
+                        </div>
+                    </div>
+                    <div className="bg-green-50 p-4 rounded-xl flex justify-between items-center">
+                        <span className="font-bold text-green-800">Your Payout</span>
+                        <span className="text-3xl font-extrabold text-green-600">CHF 85</span>
+                    </div>
+                </div>
+
+                <div className="mt-12">
+                    <button onClick={() => setView('create')} className="bg-[#FA6E28] text-white px-10 py-4 rounded-full font-bold text-lg hover:bg-[#E55D1F] transition shadow-xl inline-flex items-center">Start Teaching Now <ArrowRight className="ml-2 w-5 h-5" /></button>
+                </div>
+            </div>
+        </div>
+    </div>
+);
+
+// -----------------------------------------------------------------------------
+// --- MAIN APP COMPONENT ---
+// -----------------------------------------------------------------------------
+
 export default function KursNaviPro() {
   const [lang, setLang] = useState('en');
-  const [view, setView] = useState('home'); // Options: home, landing-private, landing-prof, landing-kids, search, detail, etc.
+  const [view, setView] = useState('home'); 
   const [user, setUser] = useState(null); 
   const [session, setSession] = useState(null);
   
@@ -26,26 +255,24 @@ export default function KursNaviPro() {
   // Filter State
   const [searchQuery, setSearchQuery] = useState("");
   const [catMenuOpen, setCatMenuOpen] = useState(false);
-  const [selectedCatPath, setSelectedCatPath] = useState([]); // Array: [Level1, Level2, Level3]
+  const [selectedCatPath, setSelectedCatPath] = useState([]); 
   const [locMenuOpen, setLocMenuOpen] = useState(false);
   const [locMode, setLocMode] = useState('canton'); 
   const [selectedLocations, setSelectedLocations] = useState([]);
   const [notification, setNotification] = useState(null);
   const [selectedCourse, setSelectedCourse] = useState(null);
 
-  // Close menus on click outside
   const catMenuRef = useRef(null);
   const locMenuRef = useRef(null);
 
   // --- URL ROUTING LOGIC ---
   useEffect(() => {
     let path = '/';
-    // Main Pages
     if (view === 'landing-private') path = '/private';
     else if (view === 'landing-prof') path = '/professional';
     else if (view === 'landing-kids') path = '/children';
     else if (view === 'search') path = '/search';
-    // Standard Pages
+    else if (view === 'how-it-works') path = '/how-it-works';
     else if (view === 'about') path = '/about';
     else if (view === 'contact') path = '/contact';
     else if (view === 'login') path = '/login';
@@ -68,6 +295,7 @@ export default function KursNaviPro() {
         else if (path === '/professional') setView('landing-prof');
         else if (path === '/children') setView('landing-kids');
         else if (path === '/search') setView('search');
+        else if (path === '/how-it-works') setView('how-it-works');
         else if (path === '/about') setView('about');
         else if (path === '/contact') setView('contact');
         else if (path === '/login') setView('login');
@@ -79,7 +307,7 @@ export default function KursNaviPro() {
         else setView('home');
     };
     window.addEventListener('popstate', handlePopState);
-    handlePopState(); // Check on load
+    handlePopState(); 
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
@@ -132,10 +360,8 @@ export default function KursNaviPro() {
   }, []);
 
   useEffect(() => {
-    // Check for payment success
     const query = new URLSearchParams(window.location.search);
     const sessionId = query.get('session_id');
-    
     if (sessionId && user) {
         const pendingCourseId = localStorage.getItem('pendingCourseId');
         if (pendingCourseId) {
@@ -150,13 +376,10 @@ export default function KursNaviPro() {
                 }
             };
             saveBooking();
-        } else {
-             setView('dashboard');
-        }
+        } else { setView('dashboard'); }
     }
   }, [user]);
 
-  // --- Fetch Data ---
   useEffect(() => { fetchCourses(); }, []);
 
   const fetchCourses = async () => {
@@ -165,8 +388,6 @@ export default function KursNaviPro() {
       const { data, error } = await supabase.from('courses').select('*').order('created_at', { ascending: false });
       if (error) throw error;
       setCourses(data || []);
-
-      // Deep Linking Check for detail view
       const path = window.location.pathname;
       if (path.startsWith('/course/')) {
           const urlId = path.split('/')[2];
@@ -247,23 +468,15 @@ export default function KursNaviPro() {
 
   const handleContactSubmit = (e) => { e.preventDefault(); showNotification("Message sent!"); setView('home'); };
   
-  // Update Search Logic to redirect to Search View
   const handleSearchSubmit = () => { 
       setView('search');
       window.scrollTo({ top: 0, behavior: 'smooth' }); 
-  };
-
-  // Switch category on Search Page
-  const switchOverarchingCategory = (catName) => {
-      if (catName === 'ALL') setSelectedCatPath([]);
-      else setSelectedCatPath([catName]);
   };
 
   const filteredCourses = courses.filter(course => {
     let matchesCategory = true;
     if (selectedCatPath.length > 0) { 
         const courseCatStr = (course.category || "").toLowerCase(); 
-        // Strict match for first level to ensure toggle works
         matchesCategory = selectedCatPath.every(part => courseCatStr.includes(part.toLowerCase())); 
     }
     let matchesLocation = true;
@@ -283,185 +496,7 @@ export default function KursNaviPro() {
       return deadline;
   };
 
-  // --- REUSABLE COMPONENTS ---
-
-  const CategoryDropdown = ({ rootCategory = null }) => {
-    const [lvl1, setLvl1] = useState(rootCategory); 
-    const [lvl2, setLvl2] = useState(null);
-    
-    // If rootCategory is provided (e.g. we are in "Private" mode), lock the first column
-    useEffect(() => {
-        if (rootCategory) setLvl1(rootCategory);
-    }, [rootCategory]);
-
-    const availableLvl1 = rootCategory ? [rootCategory] : Object.keys(CATEGORY_HIERARCHY);
-
-    return (
-        <div ref={catMenuRef} className="static"> 
-            <button onClick={() => setCatMenuOpen(!catMenuOpen)} className={`px-4 py-3 border rounded-full flex items-center space-x-2 text-sm font-medium transition ${selectedCatPath.length > 0 ? 'bg-[#FA6E28] text-white border-[#FA6E28]' : 'bg-white text-gray-700 hover:border-gray-400'}`}>
-                <span>{selectedCatPath.length > 0 ? getCatLabel(selectedCatPath[selectedCatPath.length-1]) : t.filter_label_cat}</span><ChevronDown className="w-4 h-4" />
-            </button>
-            {catMenuOpen && (
-                <div className="absolute top-20 left-0 right-0 mx-auto w-full max-w-4xl bg-white rounded-xl shadow-2xl border border-gray-100 p-2 z-50 flex h-[350px]">
-                    <div className="w-1/3 border-r overflow-y-auto">
-                        {availableLvl1.map(cat => (<div key={cat} onClick={() => { setLvl1(cat); setLvl2(null); }} className={`p-3 cursor-pointer text-sm flex justify-between items-center hover:bg-gray-50 ${lvl1 === cat ? 'font-bold text-[#FA6E28] bg-orange-50' : 'text-gray-700'}`}>{getCatLabel(cat)}<ChevronRight className="w-4 h-4 text-gray-400" /></div>))}
-                        {!rootCategory && <div onClick={() => { setSelectedCatPath([]); setCatMenuOpen(false); }} className="p-3 text-xs text-gray-400 cursor-pointer hover:text-[#FA6E28] border-t mt-2">Clear Selection</div>}
-                    </div>
-                    <div className="w-1/3 border-r overflow-y-auto bg-gray-50/50">
-                        {lvl1 ? Object.keys(CATEGORY_HIERARCHY[lvl1]).map(sub => (<div key={sub} onClick={() => setLvl2(sub)} className={`p-3 cursor-pointer text-sm flex justify-between items-center hover:bg-gray-100 ${lvl2 === sub ? 'font-bold text-[#FA6E28]' : 'text-gray-700'}`}>{getCatLabel(sub)}<ChevronRight className="w-4 h-4 text-gray-400" /></div>)) : <div className="p-4 text-xs text-gray-400">Select a category...</div>}
-                    </div>
-                    <div className="w-1/3 overflow-y-auto bg-gray-50">
-                        {lvl1 && lvl2 ? CATEGORY_HIERARCHY[lvl1][lvl2].map(item => (<div key={item} onClick={() => { setSelectedCatPath([lvl1, lvl2, item]); setCatMenuOpen(false); }} className="p-3 cursor-pointer text-sm text-gray-700 hover:text-[#FA6E28] hover:bg-white transition">{getCatLabel(item)}</div>)) : <div className="p-4 text-xs text-gray-400">Select a sub-category...</div>}
-                    </div>
-                </div>
-            )}
-        </div>
-    );
-  };
-
-  const LocationDropdown = () => {
-    const toggleLoc = (loc) => { if (selectedLocations.includes(loc)) setSelectedLocations(selectedLocations.filter(l => l !== loc)); else setSelectedLocations([...selectedLocations, loc]); };
-    const displayList = locMode === 'canton' ? SWISS_CANTONS : SWISS_CITIES;
-    return (
-        <div ref={locMenuRef} className="static">
-            <button onClick={() => setLocMenuOpen(!locMenuOpen)} className={`px-4 py-3 border rounded-full flex items-center space-x-2 text-sm font-medium transition ${selectedLocations.length > 0 ? 'bg-[#FA6E28] text-white border-[#FA6E28]' : 'bg-white text-gray-700 hover:border-gray-400'}`}>
-                 <MapPin className="w-4 h-4" /><span>{selectedLocations.length > 0 ? `${selectedLocations.length} selected` : t.filter_label_loc}</span><ChevronDown className="w-4 h-4" />
-            </button>
-            {locMenuOpen && (
-                <div className="absolute top-20 left-0 right-0 mx-auto bg-white rounded-xl shadow-2xl border border-gray-100 p-4 z-50 w-full max-w-sm">
-                    <div className="flex bg-gray-100 p-1 rounded-lg mb-4">
-                        <button onClick={() => { setLocMode('canton'); setSelectedLocations([]); }} className={`flex-1 py-1 text-sm font-medium rounded-md transition ${locMode === 'canton' ? 'bg-white shadow text-[#FA6E28]' : 'text-gray-500'}`}>Cantons</button>
-                        <button onClick={() => { setLocMode('city'); setSelectedLocations([]); }} className={`flex-1 py-1 text-sm font-medium rounded-md transition ${locMode === 'city' ? 'bg-white shadow text-[#FA6E28]' : 'text-gray-500'}`}>Cities</button>
-                    </div>
-                    <div className="max-h-[250px] overflow-y-auto space-y-1">
-                        {displayList.map(loc => (<label key={loc} className="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded cursor-pointer"><input type="checkbox" checked={selectedLocations.includes(loc)} onChange={() => toggleLoc(loc)} className="rounded border-gray-300 text-[#FA6E28] focus:ring-[#FA6E28]" /><span className="text-sm text-gray-700">{loc}</span></label>))}
-                    </div>
-                    <div className="pt-3 mt-3 border-t flex justify-between items-center"><button onClick={() => setSelectedLocations([])} className="text-xs text-gray-400 hover:text-red-500">Clear</button><button onClick={() => setLocMenuOpen(false)} className="text-xs font-bold text-[#FA6E28]">Done</button></div>
-                </div>
-            )}
-        </div>
-    );
-  };
-  
-  // --- NEW: Landing View Component ---
-  const LandingView = ({ title, subtitle, variant = 'main', onSearch }) => {
-      return (
-        <>
-            <div className={`py-24 px-4 ${variant === 'main' ? 'bg-white' : variant === 'private' ? 'bg-[#FFF0EB]' : variant === 'prof' ? 'bg-slate-900 text-white' : 'bg-yellow-50'}`}>
-                <div className="max-w-4xl mx-auto text-center space-y-6">
-                    <div className="flex justify-center mb-6">
-                        {variant === 'main' && <KursNaviLogo className="w-24 h-24" />}
-                        {variant === 'private' && <Music className="w-24 h-24 text-[#FA6E28]" />}
-                        {variant === 'prof' && <Briefcase className="w-24 h-24 text-blue-400" />}
-                        {variant === 'kids' && <Smile className="w-24 h-24 text-yellow-500" />}
-                    </div>
-                    <h1 className={`text-4xl md:text-6xl font-extrabold tracking-tight font-['Open_Sans'] ${variant === 'prof' ? 'text-white' : 'text-[#FA6E28]'}`}>{title}</h1>
-                    <p className={`text-xl max-w-2xl mx-auto ${variant === 'prof' ? 'text-gray-300' : 'text-gray-500'}`}>{subtitle}</p>
-                </div>
-            </div>
-
-            {/* --- SEARCH BAR SECTION --- */}
-            <div className={`border-b sticky top-20 z-40 shadow-sm ${variant === 'prof' ? 'bg-slate-800 border-slate-700' : 'bg-white'}`}>
-                <div className="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row gap-4 items-center">
-                    <div className="relative flex-grow w-full md:w-auto">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                        <input type="text" placeholder={t.search_placeholder} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearchSubmit()} className="w-full pl-10 pr-4 py-3 bg-[#FAF5F0] border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-[#FA6E28] focus:bg-white transition-colors" />
-                    </div>
-                    {/* Only show full filters on Main Landing or Search Page, simple search button here */}
-                    <button onClick={handleSearchSubmit} className="bg-[#FA6E28] text-white px-8 py-3 rounded-full font-bold hover:bg-[#E55D1F] transition shadow-md">{t.btn_search}</button>
-                </div>
-            </div>
-
-            {/* --- CATEGORY CARDS (Navigation to other landing pages) --- */}
-            {variant === 'main' && (
-                <div className="max-w-7xl mx-auto px-4 py-12">
-                    <h3 className="text-2xl font-bold text-center mb-8 text-[#333333]">Find the right course for you</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        <div onClick={() => { setSelectedCatPath(['Private & Hobby']); setView('landing-private'); window.scrollTo(0,0); }} className="bg-white p-8 rounded-2xl shadow-lg hover:-translate-y-2 transition cursor-pointer border-t-4 border-[#FA6E28] text-center group">
-                            <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-[#FA6E28] transition"><Music className="w-8 h-8 text-[#FA6E28] group-hover:text-white" /></div>
-                            <h2 className="text-xl font-bold mb-2">Private & Hobby</h2>
-                            <p className="text-gray-500">Music, Art, Cooking, Sports. Pursue your passion.</p>
-                        </div>
-                        <div onClick={() => { setSelectedCatPath(['Professional']); setView('landing-prof'); window.scrollTo(0,0); }} className="bg-white p-8 rounded-2xl shadow-lg hover:-translate-y-2 transition cursor-pointer border-t-4 border-blue-600 text-center group">
-                            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-blue-600 transition"><Briefcase className="w-8 h-8 text-blue-600 group-hover:text-white" /></div>
-                            <h2 className="text-xl font-bold mb-2">Professional</h2>
-                            <p className="text-gray-500">Business, Tech, Soft Skills. Advance your career.</p>
-                        </div>
-                        <div onClick={() => { setSelectedCatPath(['Children']); setView('landing-kids'); window.scrollTo(0,0); }} className="bg-white p-8 rounded-2xl shadow-lg hover:-translate-y-2 transition cursor-pointer border-t-4 border-yellow-500 text-center group">
-                            <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-yellow-500 transition"><Smile className="w-8 h-8 text-yellow-500 group-hover:text-white" /></div>
-                            <h2 className="text-xl font-bold mb-2">Children</h2>
-                            <p className="text-gray-500">Tutoring, Creative Arts, Camps. Fun for kids.</p>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-                <LandingPageContent />
-            </div>
-        </>
-      );
-  };
-
-  // --- NEW: Search Results Page ---
-  const SearchPageView = () => {
-    // Determine which overarching category is active based on the first element of selectedCatPath
-    const activeSection = selectedCatPath.length > 0 ? selectedCatPath[0] : 'ALL';
-    
-    return (
-        <div className="min-h-screen bg-[#FAF5F0]">
-            {/* TOGGLE HEADER */}
-            <div className="bg-white border-b pt-8 pb-4 sticky top-20 z-30">
-                <div className="max-w-7xl mx-auto px-4 flex justify-center mb-6">
-                     <div className="inline-flex bg-gray-100 p-1 rounded-full">
-                        <button onClick={() => switchOverarchingCategory('ALL')} className={`px-6 py-2 rounded-full text-sm font-bold transition ${activeSection === 'ALL' ? 'bg-white shadow text-[#FA6E28]' : 'text-gray-500 hover:text-gray-900'}`}>All</button>
-                        <button onClick={() => switchOverarchingCategory('Private & Hobby')} className={`px-6 py-2 rounded-full text-sm font-bold transition ${activeSection === 'Private & Hobby' ? 'bg-white shadow text-[#FA6E28]' : 'text-gray-500 hover:text-gray-900'}`}>Private</button>
-                        <button onClick={() => switchOverarchingCategory('Professional')} className={`px-6 py-2 rounded-full text-sm font-bold transition ${activeSection === 'Professional' ? 'bg-white shadow text-[#FA6E28]' : 'text-gray-500 hover:text-gray-900'}`}>Professional</button>
-                        <button onClick={() => switchOverarchingCategory('Children')} className={`px-6 py-2 rounded-full text-sm font-bold transition ${activeSection === 'Children' ? 'bg-white shadow text-[#FA6E28]' : 'text-gray-500 hover:text-gray-900'}`}>Children</button>
-                     </div>
-                </div>
-                
-                {/* FILTERS */}
-                <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row gap-4 items-center">
-                     <div className="relative flex-grow w-full md:w-auto">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                        <input type="text" placeholder="Refine search..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-10 pr-4 py-3 bg-[#FAF5F0] border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-[#FA6E28] focus:bg-white transition-colors" />
-                    </div>
-                    {/* The Category Dropdown will adapt based on the active Section */}
-                    <CategoryDropdown rootCategory={activeSection !== 'ALL' ? activeSection : null} /> 
-                    <LocationDropdown />
-                    {(selectedCatPath.length > 0 || selectedLocations.length > 0) && (<button onClick={() => { setSelectedCatPath([]); setSelectedLocations([]); setSearchQuery(""); }} className="p-2 text-gray-400 hover:text-red-500 rounded-full hover:bg-gray-100"><X className="w-5 h-5" /></button>)}
-                </div>
-
-                {(selectedCatPath.length > 0 || selectedLocations.length > 0) && (<div className="max-w-7xl mx-auto px-4 pt-4 flex gap-2 flex-wrap">{selectedCatPath.map((part, i) => (<span key={i} className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-md font-bold">{getCatLabel(part)}</span>))}{selectedLocations.map((loc, i) => (<span key={i} className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-md font-bold">{loc}</span>))}</div>)}
-            </div>
-
-            {/* RESULTS */}
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-                 {loading ? <div className="text-center py-20"><Loader className="animate-spin w-10 h-10 text-[#FA6E28] mx-auto" /></div> : filteredCourses.length > 0 ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-                    {filteredCourses.map(course => (
-                      <div key={course.id} onClick={() => { setSelectedCourse(course); setView('detail'); window.scrollTo(0,0); }} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer group">
-                        <div className="relative h-48 overflow-hidden">
-                            <img src={course.image_url} alt={course.title} className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300" />
-                            <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-sm px-2 py-1 rounded text-xs font-bold text-gray-700 shadow-sm flex items-center"><MapPin className="w-3 h-3 mr-1 text-[#FA6E28]" />{course.canton}</div>
-                        </div>
-                        <div className="p-5">
-                            <h3 className="font-bold text-lg text-[#333333] leading-tight line-clamp-2 h-12 mb-2 font-['Open_Sans']">{course.title}</h3>
-                            <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                               <div className="flex items-center space-x-3 text-sm text-gray-500"><div className="flex items-center bg-[#FAF5F0] px-2 py-1 rounded"><User className="w-3 h-3 text-gray-500 mr-1" />{course.instructor_name}</div></div>
-                               <span className="font-bold text-[#FA6E28] text-lg font-['Open_Sans']">{t.currency} {course.price}</span>
-                            </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : <div className="text-center py-24 bg-white rounded-2xl border border-dashed border-gray-300"><p className="text-gray-500 text-lg font-medium">{t.no_results}</p></div>}
-            </main>
-        </div>
-    );
-  };
-  
+  // Content for the Landing View Cards/Steps
   const LandingPageContent = () => (
       <div className="space-y-24 py-12 animate-in fade-in duration-700">
           <div className="max-w-7xl mx-auto px-4">
@@ -488,7 +523,7 @@ export default function KursNaviPro() {
           <div className="bg-[#333333] py-20">
               <div className="max-w-4xl mx-auto px-4 text-center">
                   <h2 className="text-3xl md:text-4xl font-bold text-white mb-6 font-['Open_Sans']">{t.cta_title}</h2><p className="text-xl text-gray-300 mb-10 leading-relaxed">{t.cta_subtitle}</p>
-                  <button onClick={() => setView('login')} className="bg-[#FA6E28] text-white px-10 py-4 rounded-full font-bold text-lg hover:bg-[#E55D1F] transition transform hover:-translate-y-1 shadow-xl">{t.cta_btn}</button>
+                  <button onClick={() => setView('how-it-works')} className="bg-[#FA6E28] text-white px-10 py-4 rounded-full font-bold text-lg hover:bg-[#E55D1F] transition transform hover:-translate-y-1 shadow-xl">{t.cta_btn}</button>
               </div>
           </div>
       </div>
@@ -776,32 +811,45 @@ export default function KursNaviPro() {
     <div className="min-h-screen bg-[#FAF5F0] font-sans text-[#333333] selection:bg-orange-100 selection:text-[#FA6E28] flex flex-col font-['Hind_Madurai']">
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Hind+Madurai:wght@300;400;500;600&family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap');`}</style>
       {notification && (<div className="fixed top-24 left-1/2 transform -translate-x-1/2 bg-[#333333] text-white px-6 py-3 rounded-full shadow-2xl z-50 flex items-center animate-bounce font-['Open_Sans']"><CheckCircle className="w-5 h-5 mr-2 text-[#FA6E28]" />{notification}</div>)}
-      <Navbar t={t} user={user} lang={lang} setLang={setLang} setView={setView} handleLogout={handleLogout} setShowResults={() => setView('search')} />
+      <Navbar t={t} user={user} lang={lang} setLang={setLang} setView={setView} handleLogout={handleLogout} setShowResults={() => setView('search')} setSelectedCatPath={setSelectedCatPath} />
 
       <div className="flex-grow">
       
-      {/* --- NEW ROUTING --- */}
+      {/* --- ROUTING --- */}
       {view === 'home' && (
-         <LandingView title={t.hero_title} subtitle={t.hero_subtitle} variant="main" />
+         <LandingView title={t.hero_title} subtitle={t.hero_subtitle} variant="main" searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearchSubmit={handleSearchSubmit} setSelectedCatPath={setSelectedCatPath} setView={setView} t={t} LandingPageContent={LandingPageContent} />
       )}
       
       {view === 'landing-private' && (
-          <LandingView title="Unleash your passion." subtitle="From Piano to Pilates. Find the perfect hobby." variant="private" />
+          <LandingView title="Unleash your passion." subtitle="From Piano to Pilates. Find the perfect hobby." variant="private" searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearchSubmit={handleSearchSubmit} setSelectedCatPath={setSelectedCatPath} setView={setView} t={t} LandingPageContent={LandingPageContent} />
       )}
 
       {view === 'landing-prof' && (
-          <LandingView title="Boost your career." subtitle="Excel, Management, Coding. Learn from the pros." variant="prof" />
+          <LandingView title="Boost your career." subtitle="Excel, Management, Coding. Learn from the pros." variant="prof" searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearchSubmit={handleSearchSubmit} setSelectedCatPath={setSelectedCatPath} setView={setView} t={t} LandingPageContent={LandingPageContent} />
       )}
 
       {view === 'landing-kids' && (
-          <LandingView title="Fun learning for kids." subtitle="Tutoring, Music, Arts. Local and safe." variant="kids" />
+          <LandingView title="Fun learning for kids." subtitle="Tutoring, Music, Arts. Local and safe." variant="kids" searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearchSubmit={handleSearchSubmit} setSelectedCatPath={setSelectedCatPath} setView={setView} t={t} LandingPageContent={LandingPageContent} />
       )}
 
-      {view === 'search' && <SearchPageView />}
+      {view === 'search' && (
+          <SearchPageView 
+            selectedCatPath={selectedCatPath} setSelectedCatPath={setSelectedCatPath}
+            searchQuery={searchQuery} setSearchQuery={setSearchQuery}
+            catMenuOpen={catMenuOpen} setCatMenuOpen={setCatMenuOpen} catMenuRef={catMenuRef}
+            locMode={locMode} setLocMode={setLocMode}
+            selectedLocations={selectedLocations} setSelectedLocations={setSelectedLocations}
+            locMenuOpen={locMenuOpen} setLocMenuOpen={setLocMenuOpen} locMenuRef={locMenuRef}
+            loading={loading} filteredCourses={filteredCourses}
+            setSelectedCourse={setSelectedCourse} setView={setView}
+            t={t} getCatLabel={getCatLabel}
+          />
+      )}
 
       {/* --- STANDARD VIEWS --- */}
       {view === 'success' && <SuccessView />}
       {view === 'detail' && selectedCourse && <DetailView course={selectedCourse} />}
+      {view === 'how-it-works' && <HowItWorksPage setView={setView} />}
       {view === 'login' && <AuthView />}
       {view === 'about' && <AboutPage />}
       {view === 'contact' && <ContactPage />}

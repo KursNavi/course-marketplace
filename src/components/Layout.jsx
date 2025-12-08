@@ -1,74 +1,133 @@
-// src/components/Layout.jsx
 import React, { useState } from 'react';
-import { Menu, LogIn, LayoutDashboard, Lock, Globe } from 'lucide-react';
+import { Menu, X, Globe, LogOut, User, LayoutDashboard, ChevronDown } from 'lucide-react';
 import { BRAND } from '../lib/constants';
 
-// The Logo Component
-export const KursNaviLogo = ({ className = "w-8 h-8" }) => (
-  <svg viewBox="0 0 100 100" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M10 40 L48 55 L48 85 L10 70 Z" fill={BRAND.orange} />
-    <path d="M52 55 L90 40 L90 70 L52 85 Z" fill={BRAND.orange} />
-    <path d="M50 10 L55 30 L75 35 L55 40 L50 60 L45 40 L25 35 L45 30 Z" fill={BRAND.orange} />
+export const KursNaviLogo = ({ className }) => (
+  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+    <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M2 17L12 22L22 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M2 12L12 17L22 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
   </svg>
 );
 
-// The Navbar Component
-export const Navbar = ({ t, user, lang, setLang, setView, handleLogout, setShowResults }) => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+export const Navbar = ({ t, user, lang, setLang, setView, handleLogout, setShowResults, setSelectedCatPath }) => {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Helper to handle navigation to specific categories
+  const navTo = (viewName, catPath = []) => {
+    setView(viewName);
+    if (setSelectedCatPath) setSelectedCatPath(catPath);
+    setMobileMenuOpen(false);
+    window.scrollTo(0, 0);
+  };
 
   return (
-    <nav className="bg-white shadow-sm sticky top-0 z-50">
+    <nav className="bg-white border-b border-gray-100 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-20 items-center">
-          <div className="flex items-center cursor-pointer" onClick={() => { setView('home'); setShowResults(false); }}>
-             <KursNaviLogo className="w-10 h-10 mr-3" />
-            <span className="font-['Open_Sans'] font-bold text-2xl text-[#333333] tracking-tight">KursNavi</span>
-          </div>
-          <div className="hidden md:flex items-center space-x-6 font-['Open_Sans']">
-            <button onClick={() => { setView('home'); setShowResults(false); }} className="text-gray-600 hover:text-[#FA6E28] font-semibold">{t.nav_explore}</button>
-            <button onClick={() => setView('about')} className="text-gray-600 hover:text-[#FA6E28] font-semibold">{t.nav_about}</button>
-            {!user ? (
-                <button onClick={() => setView('login')} className="text-gray-600 hover:text-[#FA6E28] font-semibold flex items-center"><LogIn className="w-4 h-4 mr-1" /> {t.nav_login}</button>
-            ) : (
-                <>
-                    <button onClick={() => setView('dashboard')} className="text-gray-600 hover:text-[#FA6E28] font-semibold flex items-center"><LayoutDashboard className="w-4 h-4 mr-1" /> {t.nav_dashboard}</button>
-                    <button onClick={handleLogout} className="text-gray-400 hover:text-gray-600 font-semibold text-sm">{t.nav_logout}</button>
-                </>
-            )}
-            <div className="border-l pl-4 ml-4 flex space-x-2 text-sm font-semibold">
-                {['en', 'de', 'fr'].map(l => (
-                    <button key={l} onClick={() => setLang(l)} className={`${lang === l ? 'text-[#FA6E28] font-bold' : 'text-gray-400'}`}>{l.toUpperCase()}</button>
-                ))}
+        <div className="flex justify-between h-20">
+          
+          {/* LOGO & MAIN LINKS */}
+          <div className="flex items-center">
+            <div onClick={() => navTo('home')} className="flex-shrink-0 flex items-center cursor-pointer group">
+              <KursNaviLogo className="h-8 w-8 text-[#FA6E28] group-hover:scale-110 transition-transform" />
+              <span className="ml-2 text-2xl font-bold tracking-tighter text-[#333333]">Kurs<span className="text-[#FA6E28]">Navi</span></span>
+            </div>
+            
+            {/* DESKTOP NAV LINKS (The "Top Banner" Categories) */}
+            <div className="hidden md:ml-10 md:flex md:space-x-8">
+              <button onClick={() => navTo('landing-private', ['Private & Hobby'])} className="text-gray-500 hover:text-[#FA6E28] px-3 py-2 rounded-md text-sm font-medium transition-colors">Private & Hobby</button>
+              <button onClick={() => navTo('landing-prof', ['Professional'])} className="text-gray-500 hover:text-[#FA6E28] px-3 py-2 rounded-md text-sm font-medium transition-colors">Professional</button>
+              <button onClick={() => navTo('landing-kids', ['Children'])} className="text-gray-500 hover:text-[#FA6E28] px-3 py-2 rounded-md text-sm font-medium transition-colors">Children</button>
+              <button onClick={() => navTo('how-it-works')} className="text-gray-500 hover:text-[#FA6E28] px-3 py-2 rounded-md text-sm font-medium transition-colors">How it Works</button>
             </div>
           </div>
-           <div className="md:hidden flex items-center"><button onClick={() => setIsMenuOpen(!isMenuOpen)}><Menu /></button></div>
+
+          {/* RIGHT SIDE (User & Lang) */}
+          <div className="hidden md:flex items-center space-x-4">
+            <button onClick={() => setLang(lang === 'en' ? 'de' : lang === 'de' ? 'fr' : 'en')} className="text-gray-400 hover:text-gray-600 p-2 rounded-full">
+              <span className="font-bold text-xs uppercase">{lang}</span>
+            </button>
+            
+            {user ? (
+              <div className="flex items-center space-x-4">
+                <button onClick={() => navTo('dashboard')} className="flex items-center text-gray-700 hover:text-[#FA6E28] font-medium"><LayoutDashboard className="w-4 h-4 mr-2" />{user.role === 'teacher' ? 'Dashboard' : 'My Courses'}</button>
+                <button onClick={handleLogout} className="flex items-center text-gray-400 hover:text-red-500"><LogOut className="w-5 h-5" /></button>
+              </div>
+            ) : (
+              <button onClick={() => navTo('login')} className="bg-[#333333] text-white px-5 py-2.5 rounded-full text-sm font-bold hover:bg-black transition shadow-lg hover:-translate-y-0.5">{t.nav_login}</button>
+            )}
+          </div>
+
+          {/* MOBILE MENU BUTTON */}
+          <div className="flex items-center md:hidden">
+            <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="text-gray-500 hover:text-[#FA6E28] p-2">
+              {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </button>
+          </div>
         </div>
       </div>
-      {isMenuOpen && (
-        <div className="md:hidden bg-white border-t p-4 space-y-4 shadow-lg font-['Open_Sans']">
-             <button onClick={() => {setView('home'); setIsMenuOpen(false); setShowResults(false);}} className="block w-full text-left py-2 font-medium">{t.nav_explore}</button>
-             <button onClick={() => {setView('about'); setIsMenuOpen(false)}} className="block w-full text-left py-2 font-medium">{t.nav_about}</button>
-             <button onClick={() => {setView('login'); setIsMenuOpen(false)}} className="block w-full text-left py-2 font-medium">{t.nav_login}</button>
+
+      {/* MOBILE MENU DROPDOWN */}
+      {mobileMenuOpen && (
+        <div className="md:hidden bg-white border-t border-gray-100 absolute w-full left-0 shadow-xl">
+          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+            <button onClick={() => navTo('landing-private', ['Private & Hobby'])} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-orange-50 hover:text-[#FA6E28]">Private & Hobby</button>
+            <button onClick={() => navTo('landing-prof', ['Professional'])} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-orange-50 hover:text-[#FA6E28]">Professional</button>
+            <button onClick={() => navTo('landing-kids', ['Children'])} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-orange-50 hover:text-[#FA6E28]">Children</button>
+            <button onClick={() => navTo('how-it-works')} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-orange-50 hover:text-[#FA6E28]">How it Works</button>
+            <div className="border-t border-gray-100 my-2 pt-2">
+                {user ? (
+                    <>
+                        <button onClick={() => navTo('dashboard')} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50">Dashboard</button>
+                        <button onClick={handleLogout} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-red-500 hover:bg-red-50">Logout</button>
+                    </>
+                ) : (
+                    <button onClick={() => navTo('login')} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-[#FA6E28] font-bold">Login / Sign Up</button>
+                )}
+            </div>
+          </div>
         </div>
       )}
     </nav>
   );
 };
 
-// The Footer Component
 export const Footer = ({ t, setView }) => (
-    <footer className="bg-white border-t border-gray-200 py-12 mt-auto font-['Hind_Madurai']">
-        <div className="max-w-7xl mx-auto px-4">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
-                <div><div className="flex items-center mb-4"><KursNaviLogo className="w-8 h-8 mr-2" /><span className="font-bold text-xl text-[#333333] font-['Open_Sans']">KursNavi</span></div><p className="text-sm text-gray-500">{t.about_subtitle}</p></div>
-                <div><h4 className="font-bold text-[#333333] mb-4 font-['Open_Sans']">Platform</h4><ul className="space-y-2 text-sm text-gray-500"><li><button onClick={() => setView('home')} className="hover:text-[#FA6E28]">Home</button></li><li><button onClick={() => setView('about')} className="hover:text-[#FA6E28]">{t.nav_about}</button></li><li><button onClick={() => setView('contact')} className="hover:text-[#FA6E28]">{t.nav_contact}</button></li></ul></div>
-                <div><h4 className="font-bold text-[#333333] mb-4 font-['Open_Sans']">Legal</h4><ul className="space-y-2 text-sm text-gray-500"><li><button onClick={() => setView('terms')} className="hover:text-[#FA6E28]">{t.footer_terms}</button></li><li><button onClick={() => setView('privacy')} className="hover:text-[#FA6E28]">{t.footer_privacy}</button></li><li><button onClick={() => setView('contact')} className="hover:text-[#FA6E28]">{t.footer_legal}</button></li></ul></div>
-                <div><h4 className="font-bold text-[#333333] mb-4 font-['Open_Sans']">Admin</h4><button onClick={() => setView('admin_login')} className="text-sm text-gray-500 hover:text-[#FA6E28] flex items-center"><Lock className="w-3 h-3 mr-1" /> Admin Access</button></div>
-            </div>
-            <div className="border-t pt-8 flex flex-col md:flex-row justify-between items-center text-sm text-gray-400">
-                <div>© 2024 KursNavi Schweiz AG. All rights reserved.</div>
-                <div className="flex items-center space-x-2 mt-4 md:mt-0"><Globe className="w-4 h-4" /><span>{t.footer_madein}</span></div>
-            </div>
+  <footer className="bg-white border-t border-gray-200 py-12">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+        <div className="col-span-1 md:col-span-1">
+          <div className="flex items-center mb-4 text-[#333333] font-bold text-xl"><KursNaviLogo className="h-6 w-6 text-[#FA6E28] mr-2" /> KursNavi</div>
+          <p className="text-gray-500 text-sm">Made with love in Switzerland.</p>
         </div>
-    </footer>
+        <div>
+          <h4 className="font-bold text-[#333333] mb-4">Discover</h4>
+          <ul className="space-y-2 text-sm text-gray-500">
+            <li onClick={() => setView('landing-private')} className="hover:text-[#FA6E28] cursor-pointer">Private Courses</li>
+            <li onClick={() => setView('landing-prof')} className="hover:text-[#FA6E28] cursor-pointer">Professional Training</li>
+            <li onClick={() => setView('landing-kids')} className="hover:text-[#FA6E28] cursor-pointer">Courses for Kids</li>
+          </ul>
+        </div>
+        <div>
+          <h4 className="font-bold text-[#333333] mb-4">Support</h4>
+          <ul className="space-y-2 text-sm text-gray-500">
+            <li onClick={() => setView('how-it-works')} className="hover:text-[#FA6E28] cursor-pointer">How it Works</li>
+            <li onClick={() => setView('contact')} className="hover:text-[#FA6E28] cursor-pointer">{t.nav_contact}</li>
+            <li onClick={() => setView('about')} className="hover:text-[#FA6E28] cursor-pointer">About Us</li>
+          </ul>
+        </div>
+        <div>
+          <h4 className="font-bold text-[#333333] mb-4">Legal</h4>
+          <ul className="space-y-2 text-sm text-gray-500">
+            <li onClick={() => setView('terms')} className="hover:text-[#FA6E28] cursor-pointer">{t.footer_terms}</li>
+            <li onClick={() => setView('privacy')} className="hover:text-[#FA6E28] cursor-pointer">{t.footer_privacy}</li>
+          </ul>
+        </div>
+      </div>
+      <div className="border-t border-gray-100 pt-8 flex flex-col md:flex-row justify-between items-center">
+        <p className="text-gray-400 text-sm">&copy; {new Date().getFullYear()} KursNavi AG. {t.footer_rights}</p>
+        <div className="flex items-center text-gray-400 text-sm mt-4 md:mt-0"><Globe className="w-4 h-4 mr-2" /> Zürich, CH</div>
+      </div>
+    </div>
+  </footer>
 );
