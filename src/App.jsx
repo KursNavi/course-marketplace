@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { Search, User, Clock, MapPin, CheckCircle, ArrowLeft, LogIn, LayoutDashboard, Settings, Trash2, DollarSign, Lock, Calendar, ExternalLink, ChevronDown, ChevronRight, Mail, Phone, Loader, Heart, Shield, X, BookOpen, Star, Zap, Users } from 'lucide-react';
+import { Search, User, Clock, MapPin, CheckCircle, ArrowLeft, LogIn, LayoutDashboard, Settings, Trash2, DollarSign, Lock, Calendar, ExternalLink, ChevronDown, ChevronRight, Mail, Phone, Loader, Heart, Shield, X, BookOpen, Star, Zap, Users, Briefcase, Smile, Music } from 'lucide-react';
 
-// --- NEW IMPORTS ---
+// --- IMPORTS ---
 import { BRAND, CATEGORY_HIERARCHY, CATEGORY_LABELS, SWISS_CANTONS, SWISS_CITIES, TRANSLATIONS } from './lib/constants';
 import { Navbar, Footer, KursNaviLogo } from './components/Layout';
 
@@ -13,7 +13,7 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default function KursNaviPro() {
   const [lang, setLang] = useState('en');
-  const [view, setView] = useState('home'); 
+  const [view, setView] = useState('home'); // Options: home, landing-private, landing-prof, landing-kids, search, detail, etc.
   const [user, setUser] = useState(null); 
   const [session, setSession] = useState(null);
   
@@ -25,9 +25,8 @@ export default function KursNaviPro() {
   
   // Filter State
   const [searchQuery, setSearchQuery] = useState("");
-  const [showResults, setShowResults] = useState(false);
   const [catMenuOpen, setCatMenuOpen] = useState(false);
-  const [selectedCatPath, setSelectedCatPath] = useState([]); 
+  const [selectedCatPath, setSelectedCatPath] = useState([]); // Array: [Level1, Level2, Level3]
   const [locMenuOpen, setLocMenuOpen] = useState(false);
   const [locMode, setLocMode] = useState('canton'); 
   const [selectedLocations, setSelectedLocations] = useState([]);
@@ -41,7 +40,13 @@ export default function KursNaviPro() {
   // --- URL ROUTING LOGIC ---
   useEffect(() => {
     let path = '/';
-    if (view === 'about') path = '/about';
+    // Main Pages
+    if (view === 'landing-private') path = '/private';
+    else if (view === 'landing-prof') path = '/professional';
+    else if (view === 'landing-kids') path = '/children';
+    else if (view === 'search') path = '/search';
+    // Standard Pages
+    else if (view === 'about') path = '/about';
     else if (view === 'contact') path = '/contact';
     else if (view === 'login') path = '/login';
     else if (view === 'dashboard') path = '/dashboard';
@@ -55,20 +60,26 @@ export default function KursNaviPro() {
     }
   }, [view, selectedCourse]);
 
+  // Handle Back Button
   useEffect(() => {
     const handlePopState = () => {
         const path = window.location.pathname;
-        if (path === '/about') setView('about');
+        if (path === '/private') setView('landing-private');
+        else if (path === '/professional') setView('landing-prof');
+        else if (path === '/children') setView('landing-kids');
+        else if (path === '/search') setView('search');
+        else if (path === '/about') setView('about');
         else if (path === '/contact') setView('contact');
         else if (path === '/login') setView('login');
         else if (path === '/dashboard') setView('dashboard');
         else if (path === '/terms') setView('terms');
         else if (path === '/privacy') setView('privacy');
         else if (path === '/create-course') setView('create');
-        else if (path.startsWith('/course/')) { /* Logic in fetchCourses */ }
+        else if (path.startsWith('/course/')) { /* Logic handled in fetchCourses */ }
         else setView('home');
     };
     window.addEventListener('popstate', handlePopState);
+    handlePopState(); // Check on load
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
@@ -121,6 +132,7 @@ export default function KursNaviPro() {
   }, []);
 
   useEffect(() => {
+    // Check for payment success
     const query = new URLSearchParams(window.location.search);
     const sessionId = query.get('session_id');
     
@@ -154,15 +166,9 @@ export default function KursNaviPro() {
       if (error) throw error;
       setCourses(data || []);
 
-      // Deep Linking Check
+      // Deep Linking Check for detail view
       const path = window.location.pathname;
-      if (path === '/about') setView('about');
-      else if (path === '/contact') setView('contact');
-      else if (path === '/login') setView('login');
-      else if (path === '/terms') setView('terms');
-      else if (path === '/privacy') setView('privacy');
-      else if (path === '/dashboard') setView('dashboard');
-      else if (path.startsWith('/course/')) {
+      if (path.startsWith('/course/')) {
           const urlId = path.split('/')[2];
           if (data && urlId) {
               const found = data.find(c => c.id == urlId);
@@ -240,11 +246,26 @@ export default function KursNaviPro() {
   };
 
   const handleContactSubmit = (e) => { e.preventDefault(); showNotification("Message sent!"); setView('home'); };
-  const handleSearchSubmit = () => { setShowResults(true); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+  
+  // Update Search Logic to redirect to Search View
+  const handleSearchSubmit = () => { 
+      setView('search');
+      window.scrollTo({ top: 0, behavior: 'smooth' }); 
+  };
+
+  // Switch category on Search Page
+  const switchOverarchingCategory = (catName) => {
+      if (catName === 'ALL') setSelectedCatPath([]);
+      else setSelectedCatPath([catName]);
+  };
 
   const filteredCourses = courses.filter(course => {
     let matchesCategory = true;
-    if (selectedCatPath.length > 0) { const courseCatStr = (course.category || "").toLowerCase(); matchesCategory = selectedCatPath.every(part => courseCatStr.includes(part.toLowerCase())); }
+    if (selectedCatPath.length > 0) { 
+        const courseCatStr = (course.category || "").toLowerCase(); 
+        // Strict match for first level to ensure toggle works
+        matchesCategory = selectedCatPath.every(part => courseCatStr.includes(part.toLowerCase())); 
+    }
     let matchesLocation = true;
     if (selectedLocations.length > 0) {
         if (locMode === 'canton') { matchesLocation = selectedLocations.includes(course.canton); } 
@@ -262,9 +283,19 @@ export default function KursNaviPro() {
       return deadline;
   };
 
-  // --- SUB-COMPONENTS (Keep logic heavy ones here for now) ---
-  const CategoryDropdown = () => {
-    const [lvl1, setLvl1] = useState(null); const [lvl2, setLvl2] = useState(null);
+  // --- REUSABLE COMPONENTS ---
+
+  const CategoryDropdown = ({ rootCategory = null }) => {
+    const [lvl1, setLvl1] = useState(rootCategory); 
+    const [lvl2, setLvl2] = useState(null);
+    
+    // If rootCategory is provided (e.g. we are in "Private" mode), lock the first column
+    useEffect(() => {
+        if (rootCategory) setLvl1(rootCategory);
+    }, [rootCategory]);
+
+    const availableLvl1 = rootCategory ? [rootCategory] : Object.keys(CATEGORY_HIERARCHY);
+
     return (
         <div ref={catMenuRef} className="static"> 
             <button onClick={() => setCatMenuOpen(!catMenuOpen)} className={`px-4 py-3 border rounded-full flex items-center space-x-2 text-sm font-medium transition ${selectedCatPath.length > 0 ? 'bg-[#FA6E28] text-white border-[#FA6E28]' : 'bg-white text-gray-700 hover:border-gray-400'}`}>
@@ -273,8 +304,8 @@ export default function KursNaviPro() {
             {catMenuOpen && (
                 <div className="absolute top-20 left-0 right-0 mx-auto w-full max-w-4xl bg-white rounded-xl shadow-2xl border border-gray-100 p-2 z-50 flex h-[350px]">
                     <div className="w-1/3 border-r overflow-y-auto">
-                        {Object.keys(CATEGORY_HIERARCHY).map(cat => (<div key={cat} onClick={() => { setLvl1(cat); setLvl2(null); }} className={`p-3 cursor-pointer text-sm flex justify-between items-center hover:bg-gray-50 ${lvl1 === cat ? 'font-bold text-[#FA6E28] bg-orange-50' : 'text-gray-700'}`}>{getCatLabel(cat)}<ChevronRight className="w-4 h-4 text-gray-400" /></div>))}
-                        <div onClick={() => { setSelectedCatPath([]); setCatMenuOpen(false); }} className="p-3 text-xs text-gray-400 cursor-pointer hover:text-[#FA6E28] border-t mt-2">Clear Selection</div>
+                        {availableLvl1.map(cat => (<div key={cat} onClick={() => { setLvl1(cat); setLvl2(null); }} className={`p-3 cursor-pointer text-sm flex justify-between items-center hover:bg-gray-50 ${lvl1 === cat ? 'font-bold text-[#FA6E28] bg-orange-50' : 'text-gray-700'}`}>{getCatLabel(cat)}<ChevronRight className="w-4 h-4 text-gray-400" /></div>))}
+                        {!rootCategory && <div onClick={() => { setSelectedCatPath([]); setCatMenuOpen(false); }} className="p-3 text-xs text-gray-400 cursor-pointer hover:text-[#FA6E28] border-t mt-2">Clear Selection</div>}
                     </div>
                     <div className="w-1/3 border-r overflow-y-auto bg-gray-50/50">
                         {lvl1 ? Object.keys(CATEGORY_HIERARCHY[lvl1]).map(sub => (<div key={sub} onClick={() => setLvl2(sub)} className={`p-3 cursor-pointer text-sm flex justify-between items-center hover:bg-gray-100 ${lvl2 === sub ? 'font-bold text-[#FA6E28]' : 'text-gray-700'}`}>{getCatLabel(sub)}<ChevronRight className="w-4 h-4 text-gray-400" /></div>)) : <div className="p-4 text-xs text-gray-400">Select a category...</div>}
@@ -308,6 +339,125 @@ export default function KursNaviPro() {
                     <div className="pt-3 mt-3 border-t flex justify-between items-center"><button onClick={() => setSelectedLocations([])} className="text-xs text-gray-400 hover:text-red-500">Clear</button><button onClick={() => setLocMenuOpen(false)} className="text-xs font-bold text-[#FA6E28]">Done</button></div>
                 </div>
             )}
+        </div>
+    );
+  };
+  
+  // --- NEW: Landing View Component ---
+  const LandingView = ({ title, subtitle, variant = 'main', onSearch }) => {
+      return (
+        <>
+            <div className={`py-24 px-4 ${variant === 'main' ? 'bg-white' : variant === 'private' ? 'bg-[#FFF0EB]' : variant === 'prof' ? 'bg-slate-900 text-white' : 'bg-yellow-50'}`}>
+                <div className="max-w-4xl mx-auto text-center space-y-6">
+                    <div className="flex justify-center mb-6">
+                        {variant === 'main' && <KursNaviLogo className="w-24 h-24" />}
+                        {variant === 'private' && <Music className="w-24 h-24 text-[#FA6E28]" />}
+                        {variant === 'prof' && <Briefcase className="w-24 h-24 text-blue-400" />}
+                        {variant === 'kids' && <Smile className="w-24 h-24 text-yellow-500" />}
+                    </div>
+                    <h1 className={`text-4xl md:text-6xl font-extrabold tracking-tight font-['Open_Sans'] ${variant === 'prof' ? 'text-white' : 'text-[#FA6E28]'}`}>{title}</h1>
+                    <p className={`text-xl max-w-2xl mx-auto ${variant === 'prof' ? 'text-gray-300' : 'text-gray-500'}`}>{subtitle}</p>
+                </div>
+            </div>
+
+            {/* --- SEARCH BAR SECTION --- */}
+            <div className={`border-b sticky top-20 z-40 shadow-sm ${variant === 'prof' ? 'bg-slate-800 border-slate-700' : 'bg-white'}`}>
+                <div className="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row gap-4 items-center">
+                    <div className="relative flex-grow w-full md:w-auto">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                        <input type="text" placeholder={t.search_placeholder} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearchSubmit()} className="w-full pl-10 pr-4 py-3 bg-[#FAF5F0] border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-[#FA6E28] focus:bg-white transition-colors" />
+                    </div>
+                    {/* Only show full filters on Main Landing or Search Page, simple search button here */}
+                    <button onClick={handleSearchSubmit} className="bg-[#FA6E28] text-white px-8 py-3 rounded-full font-bold hover:bg-[#E55D1F] transition shadow-md">{t.btn_search}</button>
+                </div>
+            </div>
+
+            {/* --- CATEGORY CARDS (Navigation to other landing pages) --- */}
+            {variant === 'main' && (
+                <div className="max-w-7xl mx-auto px-4 py-12">
+                    <h3 className="text-2xl font-bold text-center mb-8 text-[#333333]">Find the right course for you</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        <div onClick={() => { setSelectedCatPath(['Private & Hobby']); setView('landing-private'); window.scrollTo(0,0); }} className="bg-white p-8 rounded-2xl shadow-lg hover:-translate-y-2 transition cursor-pointer border-t-4 border-[#FA6E28] text-center group">
+                            <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-[#FA6E28] transition"><Music className="w-8 h-8 text-[#FA6E28] group-hover:text-white" /></div>
+                            <h2 className="text-xl font-bold mb-2">Private & Hobby</h2>
+                            <p className="text-gray-500">Music, Art, Cooking, Sports. Pursue your passion.</p>
+                        </div>
+                        <div onClick={() => { setSelectedCatPath(['Professional']); setView('landing-prof'); window.scrollTo(0,0); }} className="bg-white p-8 rounded-2xl shadow-lg hover:-translate-y-2 transition cursor-pointer border-t-4 border-blue-600 text-center group">
+                            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-blue-600 transition"><Briefcase className="w-8 h-8 text-blue-600 group-hover:text-white" /></div>
+                            <h2 className="text-xl font-bold mb-2">Professional</h2>
+                            <p className="text-gray-500">Business, Tech, Soft Skills. Advance your career.</p>
+                        </div>
+                        <div onClick={() => { setSelectedCatPath(['Children']); setView('landing-kids'); window.scrollTo(0,0); }} className="bg-white p-8 rounded-2xl shadow-lg hover:-translate-y-2 transition cursor-pointer border-t-4 border-yellow-500 text-center group">
+                            <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-yellow-500 transition"><Smile className="w-8 h-8 text-yellow-500 group-hover:text-white" /></div>
+                            <h2 className="text-xl font-bold mb-2">Children</h2>
+                            <p className="text-gray-500">Tutoring, Creative Arts, Camps. Fun for kids.</p>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                <LandingPageContent />
+            </div>
+        </>
+      );
+  };
+
+  // --- NEW: Search Results Page ---
+  const SearchPageView = () => {
+    // Determine which overarching category is active based on the first element of selectedCatPath
+    const activeSection = selectedCatPath.length > 0 ? selectedCatPath[0] : 'ALL';
+    
+    return (
+        <div className="min-h-screen bg-[#FAF5F0]">
+            {/* TOGGLE HEADER */}
+            <div className="bg-white border-b pt-8 pb-4 sticky top-20 z-30">
+                <div className="max-w-7xl mx-auto px-4 flex justify-center mb-6">
+                     <div className="inline-flex bg-gray-100 p-1 rounded-full">
+                        <button onClick={() => switchOverarchingCategory('ALL')} className={`px-6 py-2 rounded-full text-sm font-bold transition ${activeSection === 'ALL' ? 'bg-white shadow text-[#FA6E28]' : 'text-gray-500 hover:text-gray-900'}`}>All</button>
+                        <button onClick={() => switchOverarchingCategory('Private & Hobby')} className={`px-6 py-2 rounded-full text-sm font-bold transition ${activeSection === 'Private & Hobby' ? 'bg-white shadow text-[#FA6E28]' : 'text-gray-500 hover:text-gray-900'}`}>Private</button>
+                        <button onClick={() => switchOverarchingCategory('Professional')} className={`px-6 py-2 rounded-full text-sm font-bold transition ${activeSection === 'Professional' ? 'bg-white shadow text-[#FA6E28]' : 'text-gray-500 hover:text-gray-900'}`}>Professional</button>
+                        <button onClick={() => switchOverarchingCategory('Children')} className={`px-6 py-2 rounded-full text-sm font-bold transition ${activeSection === 'Children' ? 'bg-white shadow text-[#FA6E28]' : 'text-gray-500 hover:text-gray-900'}`}>Children</button>
+                     </div>
+                </div>
+                
+                {/* FILTERS */}
+                <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row gap-4 items-center">
+                     <div className="relative flex-grow w-full md:w-auto">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                        <input type="text" placeholder="Refine search..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-10 pr-4 py-3 bg-[#FAF5F0] border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-[#FA6E28] focus:bg-white transition-colors" />
+                    </div>
+                    {/* The Category Dropdown will adapt based on the active Section */}
+                    <CategoryDropdown rootCategory={activeSection !== 'ALL' ? activeSection : null} /> 
+                    <LocationDropdown />
+                    {(selectedCatPath.length > 0 || selectedLocations.length > 0) && (<button onClick={() => { setSelectedCatPath([]); setSelectedLocations([]); setSearchQuery(""); }} className="p-2 text-gray-400 hover:text-red-500 rounded-full hover:bg-gray-100"><X className="w-5 h-5" /></button>)}
+                </div>
+
+                {(selectedCatPath.length > 0 || selectedLocations.length > 0) && (<div className="max-w-7xl mx-auto px-4 pt-4 flex gap-2 flex-wrap">{selectedCatPath.map((part, i) => (<span key={i} className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-md font-bold">{getCatLabel(part)}</span>))}{selectedLocations.map((loc, i) => (<span key={i} className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-md font-bold">{loc}</span>))}</div>)}
+            </div>
+
+            {/* RESULTS */}
+            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                 {loading ? <div className="text-center py-20"><Loader className="animate-spin w-10 h-10 text-[#FA6E28] mx-auto" /></div> : filteredCourses.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                    {filteredCourses.map(course => (
+                      <div key={course.id} onClick={() => { setSelectedCourse(course); setView('detail'); window.scrollTo(0,0); }} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer group">
+                        <div className="relative h-48 overflow-hidden">
+                            <img src={course.image_url} alt={course.title} className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300" />
+                            <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-sm px-2 py-1 rounded text-xs font-bold text-gray-700 shadow-sm flex items-center"><MapPin className="w-3 h-3 mr-1 text-[#FA6E28]" />{course.canton}</div>
+                        </div>
+                        <div className="p-5">
+                            <h3 className="font-bold text-lg text-[#333333] leading-tight line-clamp-2 h-12 mb-2 font-['Open_Sans']">{course.title}</h3>
+                            <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                               <div className="flex items-center space-x-3 text-sm text-gray-500"><div className="flex items-center bg-[#FAF5F0] px-2 py-1 rounded"><User className="w-3 h-3 text-gray-500 mr-1" />{course.instructor_name}</div></div>
+                               <span className="font-bold text-[#FA6E28] text-lg font-['Open_Sans']">{t.currency} {course.price}</span>
+                            </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : <div className="text-center py-24 bg-white rounded-2xl border border-dashed border-gray-300"><p className="text-gray-500 text-lg font-medium">{t.no_results}</p></div>}
+            </main>
         </div>
     );
   };
@@ -626,58 +776,30 @@ export default function KursNaviPro() {
     <div className="min-h-screen bg-[#FAF5F0] font-sans text-[#333333] selection:bg-orange-100 selection:text-[#FA6E28] flex flex-col font-['Hind_Madurai']">
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Hind+Madurai:wght@300;400;500;600&family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap');`}</style>
       {notification && (<div className="fixed top-24 left-1/2 transform -translate-x-1/2 bg-[#333333] text-white px-6 py-3 rounded-full shadow-2xl z-50 flex items-center animate-bounce font-['Open_Sans']"><CheckCircle className="w-5 h-5 mr-2 text-[#FA6E28]" />{notification}</div>)}
-      <Navbar t={t} user={user} lang={lang} setLang={setLang} setView={setView} handleLogout={handleLogout} setShowResults={setShowResults} />
+      <Navbar t={t} user={user} lang={lang} setLang={setLang} setView={setView} handleLogout={handleLogout} setShowResults={() => setView('search')} />
 
       <div className="flex-grow">
+      
+      {/* --- NEW ROUTING --- */}
       {view === 'home' && (
-        <>
-          <div className="bg-white text-[#333333] py-20 px-4">
-              <div className="max-w-4xl mx-auto text-center space-y-6">
-                 <div className="flex justify-center mb-6"><KursNaviLogo className="w-24 h-24" /></div>
-                 <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight font-['Open_Sans'] text-[#FA6E28]">{t.hero_title}</h1>
-                 <p className="text-xl text-gray-500 max-w-2xl mx-auto">{t.hero_subtitle}</p>
-              </div>
-          </div>
-           {/* --- FILTER BAR --- */}
-           <div className="bg-white border-b sticky top-20 z-40 shadow-sm">
-            <div className="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row gap-4 items-center">
-                <div className="relative flex-grow w-full md:w-auto">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                    <input type="text" placeholder={t.search_placeholder} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearchSubmit()} className="w-full pl-10 pr-4 py-3 bg-[#FAF5F0] border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-[#FA6E28] focus:bg-white transition-colors" />
-                </div>
-                <CategoryDropdown /> <LocationDropdown />
-                <button onClick={handleSearchSubmit} className="bg-[#FA6E28] text-white px-8 py-3 rounded-full font-bold hover:bg-[#E55D1F] transition shadow-md">{t.btn_search}</button>
-                {(selectedCatPath.length > 0 || selectedLocations.length > 0) && (<button onClick={() => { setSelectedCatPath([]); setSelectedLocations([]); setSearchQuery(""); setShowResults(false); }} className="p-2 text-gray-400 hover:text-red-500 rounded-full hover:bg-gray-100"><X className="w-5 h-5" /></button>)}
-            </div>
-            {(selectedCatPath.length > 0 || selectedLocations.length > 0) && (<div className="max-w-7xl mx-auto px-4 pb-4 flex gap-2 flex-wrap">{selectedCatPath.map((part, i) => (<span key={i} className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-md font-bold">{getCatLabel(part)}</span>))}{selectedLocations.map((loc, i) => (<span key={i} className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-md font-bold">{loc}</span>))}</div>)}
-          </div>
-
-          <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-            {!showResults ? (<LandingPageContent />) : (
-                loading ? <div className="text-center py-20"><Loader className="animate-spin w-10 h-10 text-[#FA6E28] mx-auto" /></div> : filteredCourses.length > 0 ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-                    {filteredCourses.map(course => (
-                      <div key={course.id} onClick={() => { setSelectedCourse(course); setView('detail'); window.scrollTo(0,0); }} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer group">
-                        <div className="relative h-48 overflow-hidden">
-                            <img src={course.image_url} alt={course.title} className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300" />
-                            <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-sm px-2 py-1 rounded text-xs font-bold text-gray-700 shadow-sm flex items-center"><MapPin className="w-3 h-3 mr-1 text-[#FA6E28]" />{course.canton}</div>
-                        </div>
-                        <div className="p-5">
-                            <h3 className="font-bold text-lg text-[#333333] leading-tight line-clamp-2 h-12 mb-2 font-['Open_Sans']">{course.title}</h3>
-                            <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                               <div className="flex items-center space-x-3 text-sm text-gray-500"><div className="flex items-center bg-[#FAF5F0] px-2 py-1 rounded"><User className="w-3 h-3 text-gray-500 mr-1" />{course.instructor_name}</div></div>
-                               <span className="font-bold text-[#FA6E28] text-lg font-['Open_Sans']">{t.currency} {course.price}</span>
-                            </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : <div className="text-center py-24 bg-white rounded-2xl border border-dashed border-gray-300"><p className="text-gray-500 text-lg font-medium">{t.no_results}</p></div>
-            )}
-          </main>
-        </>
+         <LandingView title={t.hero_title} subtitle={t.hero_subtitle} variant="main" />
+      )}
+      
+      {view === 'landing-private' && (
+          <LandingView title="Unleash your passion." subtitle="From Piano to Pilates. Find the perfect hobby." variant="private" />
       )}
 
+      {view === 'landing-prof' && (
+          <LandingView title="Boost your career." subtitle="Excel, Management, Coding. Learn from the pros." variant="prof" />
+      )}
+
+      {view === 'landing-kids' && (
+          <LandingView title="Fun learning for kids." subtitle="Tutoring, Music, Arts. Local and safe." variant="kids" />
+      )}
+
+      {view === 'search' && <SearchPageView />}
+
+      {/* --- STANDARD VIEWS --- */}
       {view === 'success' && <SuccessView />}
       {view === 'detail' && selectedCourse && <DetailView course={selectedCourse} />}
       {view === 'login' && <AuthView />}
