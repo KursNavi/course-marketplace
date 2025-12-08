@@ -560,7 +560,7 @@ export default function KursNaviPro() {
     const displayList = locMode === 'canton' ? SWISS_CANTONS : SWISS_CITIES;
 
     return (
-        <div ref={locMenuRef} className="relative">
+        <div ref={locMenuRef} className="static"> {/* Changed to static */}
             <button onClick={() => setLocMenuOpen(!locMenuOpen)} className={`px-4 py-2 border rounded-full flex items-center space-x-2 text-sm font-medium transition ${selectedLocations.length > 0 ? 'bg-[#FA6E28] text-white border-[#FA6E28]' : 'bg-white text-gray-700 hover:border-gray-400'}`}>
                  <MapPin className="w-4 h-4" />
                 <span>{selectedLocations.length > 0 ? `${selectedLocations.length} selected` : t.filter_label_loc}</span>
@@ -568,7 +568,8 @@ export default function KursNaviPro() {
             </button>
 
             {locMenuOpen && (
-                <div className="absolute top-12 left-1/2 transform -translate-x-1/2 md:left-0 md:translate-x-0 bg-white rounded-xl shadow-2xl border border-gray-100 p-4 z-50 w-[300px] max-w-[90vw]">
+                // Centered relative to parent container, restricted max-width
+                <div className="absolute top-16 left-0 right-0 mx-auto bg-white rounded-xl shadow-2xl border border-gray-100 p-4 z-50 w-full max-w-sm">
                     <div className="flex bg-gray-100 p-1 rounded-lg mb-4">
                         <button onClick={() => { setLocMode('canton'); setSelectedLocations([]); }} className={`flex-1 py-1 text-sm font-medium rounded-md transition ${locMode === 'canton' ? 'bg-white shadow text-[#FA6E28]' : 'text-gray-500'}`}>Cantons</button>
                         <button onClick={() => { setLocMode('city'); setSelectedLocations([]); }} className={`flex-1 py-1 text-sm font-medium rounded-md transition ${locMode === 'city' ? 'bg-white shadow text-[#FA6E28]' : 'text-gray-500'}`}>Major Cities</button>
