@@ -26,7 +26,6 @@ const KursNaviLogo = ({ className = "w-8 h-8" }) => (
 
 // --- 3. DATA STRUCTURES & TRANSLATIONS ---
 
-// MASTER HIERARCHY (ENGLISH - Database Values)
 const CATEGORY_HIERARCHY = {
   "Private & Hobby": {
     "Music & Audio": ["Guitar", "Piano", "Vocals", "Drums", "Production", "Other Instruments"],
@@ -48,13 +47,10 @@ const CATEGORY_HIERARCHY = {
   }
 };
 
-// CATEGORY TRANSLATIONS (Display Labels)
 const CATEGORY_LABELS = {
-  // Top Levels
   "Private & Hobby": { de: "Privat & Hobby", fr: "Privé & Loisirs" },
   "Professional": { de: "Beruflich", fr: "Professionnel" },
   "Children": { de: "Kinder", fr: "Enfants" },
-  // Mid Levels
   "Music & Audio": { de: "Musik & Audio", fr: "Musique & Audio" },
   "Languages": { de: "Sprachen", fr: "Langues" },
   "Sports & Fitness": { de: "Sport & Fitness", fr: "Sport & Forme" },
@@ -67,7 +63,6 @@ const CATEGORY_LABELS = {
   "Industry Specific": { de: "Branchenspezifisch", fr: "Spécifique à l'industrie" },
   "Academic Support": { de: "Nachhilfe", fr: "Soutien scolaire" },
   "Creative & Fun": { de: "Kreativ & Spaß", fr: "Créatif & Ludique" },
-  // Items
   "Guitar": { de: "Gitarre", fr: "Guitare" },
   "Piano": { de: "Klavier", fr: "Piano" },
   "Vocals": { de: "Gesang", fr: "Chant" },
@@ -80,7 +75,6 @@ const CATEGORY_LABELS = {
   "Homework Help": { de: "Hausaufgabenhilfe", fr: "Aide aux devoirs" }
 };
 
-// LOCATIONS - SORTED ALPHABETICALLY
 const SWISS_CANTONS = ["Aargau", "Appenzell AI", "Appenzell AR", "Basel-Landschaft", "Basel-Stadt", "Bern", "Fribourg", "Genève", "Glarus", "Graubünden", "Jura", "Luzern", "Neuchâtel", "Nidwalden", "Obwalden", "Schaffhausen", "Schwyz", "Solothurn", "St. Gallen", "Thurgau", "Ticino", "Uri", "Valais", "Vaud", "Zug", "Zürich"];
 const SWISS_CITIES = ["Basel", "Bern", "Biel/Bienne", "Genève", "Lausanne", "Lugano", "Luzern", "St. Gallen", "Winterthur", "Zürich"];
 
@@ -94,26 +88,15 @@ const TRANSLATIONS = {
     teacher_dash: "Teacher Dashboard", student_dash: "My Learning", login_title: "Welcome Back", my_bookings: "My Bookings",
     lbl_objectives: "What you will learn", lbl_prerequisites: "Prerequisites", lbl_description: "About this course", lbl_address: "Location",
     lbl_duration: "Duration", lbl_sessions: "sessions",
-    
-    // LANDING PAGE
-    how_it_works: "How it Works",
-    for_students: "For Students",
-    for_tutors: "For Tutors",
+    how_it_works: "How it Works", for_students: "For Students", for_tutors: "For Tutors",
     student_step_1: "Discover", student_desc_1: "Browse hundreds of unique local courses.",
     student_step_2: "Book", student_desc_2: "Secure your spot instantly with our payment protection.",
     student_step_3: "Learn", student_desc_3: "Meet your local expert and start learning.",
     tutor_step_1: "List", tutor_desc_1: "Create a profile and list your skills for free.",
     tutor_step_2: "Schedule", tutor_desc_2: "Set your own dates, location, and class size.",
     tutor_step_3: "Earn", tutor_desc_3: "Get paid automatically 24h after the course starts.",
-    
-    cta_title: "Become a Tutor",
-    cta_subtitle: "Share your skills and knowledge with students across Switzerland. Set your own schedule and prices.",
-    cta_btn: "Get Started",
-    
-    // FOOTER
+    cta_title: "Become a Tutor", cta_subtitle: "Share your skills and knowledge with students across Switzerland. Set your own schedule and prices.", cta_btn: "Get Started",
     footer_terms: "Terms & Conditions", footer_privacy: "Data Protection", footer_legal: "Legal Notice", footer_madein: "Made in Switzerland", footer_rights: "All rights reserved.",
-    
-    // LEGAL
     terms_title: "Terms & Conditions", terms_last_updated: "Last Updated: October 2024",
     terms_1_title: "1. Scope", terms_1_text: "General Terms apply.",
     privacy_title: "Data Protection", privacy_compliant: "Compliant with FADP.",
@@ -131,20 +114,14 @@ const TRANSLATIONS = {
     teacher_dash: "Lehrer Dashboard", student_dash: "Meine Kurse",
     login_title: "Willkommen", my_bookings: "Meine Buchungen",
     lbl_description: "Beschreibung", lbl_address: "Standort", lbl_duration: "Dauer",
-    
-    how_it_works: "So funktioniert's",
-    for_students: "Für Schüler", for_tutors: "Für Lehrer",
+    how_it_works: "So funktioniert's", for_students: "Für Schüler", for_tutors: "Für Lehrer",
     student_step_1: "Entdecken", student_desc_1: "Durchsuche hunderte lokale Kurse.",
     student_step_2: "Buchen", student_desc_2: "Sichere deinen Platz sofort.",
     student_step_3: "Lernen", student_desc_3: "Triff Experten und lerne Neues.",
     tutor_step_1: "Erstellen", tutor_desc_1: "Erstelle dein Profil kostenlos.",
     tutor_step_2: "Planen", tutor_desc_2: "Bestimme Datum, Ort und Preis.",
     tutor_step_3: "Verdienen", tutor_desc_3: "Automatische Auszahlung nach Kursbeginn.",
-    
-    cta_title: "Werde Kursleiter",
-    cta_subtitle: "Teile dein Wissen in der ganzen Schweiz. Bestimme deinen eigenen Zeitplan.",
-    cta_btn: "Loslegen",
-
+    cta_title: "Werde Kursleiter", cta_subtitle: "Teile dein Wissen in der ganzen Schweiz. Bestimme deinen eigenen Zeitplan.", cta_btn: "Loslegen",
     footer_terms: "AGB", footer_privacy: "Datenschutz", footer_legal: "Impressum", footer_madein: "Made in Switzerland", footer_rights: "Alle Rechte vorbehalten.",
     contact_title: "Kontakt", contact_get_in_touch: "Schreib uns", btn_send: "Senden",
     about_title: "Über uns", about_subtitle: "Die Schweiz verbinden.",
@@ -159,20 +136,14 @@ const TRANSLATIONS = {
     teacher_dash: "Tableau de bord", student_dash: "Mes apprentissages",
     login_title: "Bienvenue", my_bookings: "Mes réservations",
     lbl_description: "Description", lbl_address: "Lieu", lbl_duration: "Durée",
-    
-    how_it_works: "Comment ça marche",
-    for_students: "Pour Étudiants", for_tutors: "Pour Professeurs",
+    how_it_works: "Comment ça marche", for_students: "Pour Étudiants", for_tutors: "Pour Professeurs",
     student_step_1: "Découvrir", student_desc_1: "Parcourez des centaines de cours.",
     student_step_2: "Réserver", student_desc_2: "Réservez votre place instantanément.",
     student_step_3: "Apprendre", student_desc_3: "Rencontrez des experts locaux.",
     tutor_step_1: "Créer", tutor_desc_1: "Créez votre profil gratuitement.",
     tutor_step_2: "Planifier", tutor_desc_2: "Définissez dates, lieux et prix.",
     tutor_step_3: "Gagner", tutor_desc_3: "Paiement automatique après le cours.",
-    
-    cta_title: "Devenez Professeur",
-    cta_subtitle: "Partagez vos compétences à travers la Suisse. Gérez votre emploi du temps.",
-    cta_btn: "Commencer",
-
+    cta_title: "Devenez Professeur", cta_subtitle: "Partagez vos compétences à travers la Suisse. Gérez votre emploi du temps.", cta_btn: "Commencer",
     footer_terms: "CGV", footer_privacy: "Confidentialité", footer_legal: "Mentions légales", footer_madein: "Fabriqué en Suisse", footer_rights: "Droits réservés.",
     contact_title: "Contact", contact_get_in_touch: "Contactez-nous", btn_send: "Envoyer",
     about_title: "À propos", about_subtitle: "Relier la Suisse.",
@@ -182,6 +153,7 @@ const TRANSLATIONS = {
 
 export default function KursNaviPro() {
   const [lang, setLang] = useState('en');
+  // NOTE: 'view' is now also synced to the URL
   const [view, setView] = useState('home'); 
   const [user, setUser] = useState(null); 
   const [session, setSession] = useState(null);
@@ -192,19 +164,14 @@ export default function KursNaviPro() {
   const [teacherEarnings, setTeacherEarnings] = useState([]);
   const [loading, setLoading] = useState(true);
   
-  // --- NEW FILTER STATE ---
+  // Filter State
   const [searchQuery, setSearchQuery] = useState("");
-  const [showResults, setShowResults] = useState(false); // NEW: Controls Landing vs Results
-  
-  // Category State
+  const [showResults, setShowResults] = useState(false);
   const [catMenuOpen, setCatMenuOpen] = useState(false);
   const [selectedCatPath, setSelectedCatPath] = useState([]); 
-  
-  // Location State
   const [locMenuOpen, setLocMenuOpen] = useState(false);
   const [locMode, setLocMode] = useState('canton'); 
   const [selectedLocations, setSelectedLocations] = useState([]);
-
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [notification, setNotification] = useState(null);
   const [selectedCourse, setSelectedCourse] = useState(null);
@@ -212,6 +179,49 @@ export default function KursNaviPro() {
   // Close menus on click outside
   const catMenuRef = useRef(null);
   const locMenuRef = useRef(null);
+
+  // --- NEW: URL ROUTING LOGIC ---
+  
+  // 1. Sync VIEW State to Browser URL
+  useEffect(() => {
+    let path = '/';
+    if (view === 'about') path = '/about';
+    else if (view === 'contact') path = '/contact';
+    else if (view === 'login') path = '/login';
+    else if (view === 'dashboard') path = '/dashboard';
+    else if (view === 'terms') path = '/terms';
+    else if (view === 'privacy') path = '/privacy';
+    else if (view === 'create') path = '/create-course';
+    else if (view === 'detail' && selectedCourse) path = `/course/${selectedCourse.id}`;
+    
+    // Only update if URL is different to prevent loops
+    if (window.location.pathname !== path) {
+        window.history.pushState({ view, courseId: selectedCourse?.id }, '', path);
+    }
+  }, [view, selectedCourse]);
+
+  // 2. Handle Browser "Back" Button
+  useEffect(() => {
+    const handlePopState = () => {
+        const path = window.location.pathname;
+        if (path === '/about') setView('about');
+        else if (path === '/contact') setView('contact');
+        else if (path === '/login') setView('login');
+        else if (path === '/dashboard') setView('dashboard');
+        else if (path === '/terms') setView('terms');
+        else if (path === '/privacy') setView('privacy');
+        else if (path === '/create-course') setView('create');
+        else if (path.startsWith('/course/')) {
+            // Logic handled in fetchCourses to find the course
+        }
+        else setView('home');
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  // 3. Initial URL Check is handled inside fetchCourses (Deep Linking)
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -224,14 +234,12 @@ export default function KursNaviPro() {
 
   const t = TRANSLATIONS[lang] || TRANSLATIONS['en'];
 
-  // Helper to get translated category label
   const getCatLabel = (key) => {
     if (lang === 'en') return key;
     const translation = CATEGORY_LABELS[key];
     return translation && translation[lang] ? translation[lang] : key;
   };
 
-  // --- Real Auth Listener ---
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
@@ -263,7 +271,6 @@ export default function KursNaviPro() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // --- Payment Success Handler ---
   useEffect(() => {
     const query = new URLSearchParams(window.location.search);
     const sessionId = query.get('session_id');
@@ -286,6 +293,7 @@ export default function KursNaviPro() {
                     localStorage.removeItem('pendingCourseId');
                     showNotification("Course booked successfully!");
                     fetchBookings(user.id);
+                    // Update URL to remove session_id
                     window.history.replaceState({}, document.title, "/dashboard");
                     setView('dashboard');
                 }
@@ -297,7 +305,7 @@ export default function KursNaviPro() {
     }
   }, [user]);
 
-  // --- Fetch Data ---
+  // --- Fetch Data & Deep Linking ---
   useEffect(() => {
     fetchCourses();
   }, []);
@@ -312,6 +320,27 @@ export default function KursNaviPro() {
 
       if (error) throw error;
       setCourses(data || []);
+
+      // --- DEEP LINKING CHECK ---
+      // Check if user landed on a specific page
+      const path = window.location.pathname;
+      if (path === '/about') setView('about');
+      else if (path === '/contact') setView('contact');
+      else if (path === '/login') setView('login');
+      else if (path === '/terms') setView('terms');
+      else if (path === '/privacy') setView('privacy');
+      else if (path === '/dashboard') setView('dashboard');
+      else if (path.startsWith('/course/')) {
+          const urlId = path.split('/')[2]; // Get ID after /course/
+          if (data && urlId) {
+              const found = data.find(c => c.id == urlId); // Loose equality for string/number
+              if (found) {
+                  setSelectedCourse(found);
+                  setView('detail');
+              }
+          }
+      }
+
     } catch (error) {
       console.error('Error fetching courses:', error.message);
       showNotification("Error loading courses");
@@ -361,10 +390,10 @@ export default function KursNaviPro() {
       }
   };
 
-  // --- Actions ---
   const handleLogout = async () => {
     await supabase.auth.signOut();
     showNotification("Logged out successfully");
+    setView('home'); 
   };
 
   const showNotification = (msg) => {
@@ -468,11 +497,9 @@ export default function KursNaviPro() {
 
   const handleSearchSubmit = () => {
       setShowResults(true);
-      // Optional: scroll to results
       window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // --- NEW FILTER LOGIC ---
   const filteredCourses = courses.filter(course => {
     let matchesCategory = true;
     if (selectedCatPath.length > 0) {
@@ -507,7 +534,7 @@ export default function KursNaviPro() {
       return deadline;
   };
 
-  // --- SUB-COMPONENTS FOR FILTERS ---
+  // --- SUB-COMPONENTS ---
 
   const CategoryDropdown = () => {
     const [lvl1, setLvl1] = useState(null);
@@ -592,63 +619,37 @@ export default function KursNaviPro() {
     );
   };
 
-  // --- Components ---
+  // --- Views ---
   
-  // NEW: LANDING PAGE CONTENT (How it works + CTA)
   const LandingPageContent = () => (
       <div className="space-y-24 py-12 animate-in fade-in duration-700">
-          
-          {/* HOW IT WORKS */}
           <div className="max-w-7xl mx-auto px-4">
               <h2 className="text-3xl font-bold text-center mb-16 text-[#333333] font-['Open_Sans']">{t.how_it_works}</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-16">
-                  {/* Students Column */}
                   <div className="space-y-8">
                       <div className="flex items-center space-x-4 mb-8">
                           <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center text-[#FA6E28]"><Users className="w-6 h-6" /></div>
                           <h3 className="text-2xl font-bold text-[#333333]">{t.for_students}</h3>
                       </div>
                       <div className="space-y-8 pl-4 border-l-2 border-orange-100">
-                          <div>
-                              <h4 className="font-bold text-lg mb-1 flex items-center"><Search className="w-4 h-4 mr-2 text-[#FA6E28]" /> {t.student_step_1}</h4>
-                              <p className="text-gray-600">{t.student_desc_1}</p>
-                          </div>
-                          <div>
-                              <h4 className="font-bold text-lg mb-1 flex items-center"><Calendar className="w-4 h-4 mr-2 text-[#FA6E28]" /> {t.student_step_2}</h4>
-                              <p className="text-gray-600">{t.student_desc_2}</p>
-                          </div>
-                          <div>
-                              <h4 className="font-bold text-lg mb-1 flex items-center"><Star className="w-4 h-4 mr-2 text-[#FA6E28]" /> {t.student_step_3}</h4>
-                              <p className="text-gray-600">{t.student_desc_3}</p>
-                          </div>
+                          <div><h4 className="font-bold text-lg mb-1 flex items-center"><Search className="w-4 h-4 mr-2 text-[#FA6E28]" /> {t.student_step_1}</h4><p className="text-gray-600">{t.student_desc_1}</p></div>
+                          <div><h4 className="font-bold text-lg mb-1 flex items-center"><Calendar className="w-4 h-4 mr-2 text-[#FA6E28]" /> {t.student_step_2}</h4><p className="text-gray-600">{t.student_desc_2}</p></div>
+                          <div><h4 className="font-bold text-lg mb-1 flex items-center"><Star className="w-4 h-4 mr-2 text-[#FA6E28]" /> {t.student_step_3}</h4><p className="text-gray-600">{t.student_desc_3}</p></div>
                       </div>
                   </div>
-
-                  {/* Tutors Column */}
                   <div className="space-y-8">
-                       <div className="flex items-center space-x-4 mb-8">
+                        <div className="flex items-center space-x-4 mb-8">
                           <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600"><Zap className="w-6 h-6" /></div>
                           <h3 className="text-2xl font-bold text-[#333333]">{t.for_tutors}</h3>
                       </div>
                       <div className="space-y-8 pl-4 border-l-2 border-blue-100">
-                           <div>
-                              <h4 className="font-bold text-lg mb-1 flex items-center"><BookOpen className="w-4 h-4 mr-2 text-blue-500" /> {t.tutor_step_1}</h4>
-                              <p className="text-gray-600">{t.tutor_desc_1}</p>
-                          </div>
-                          <div>
-                              <h4 className="font-bold text-lg mb-1 flex items-center"><Clock className="w-4 h-4 mr-2 text-blue-500" /> {t.tutor_step_2}</h4>
-                              <p className="text-gray-600">{t.tutor_desc_2}</p>
-                          </div>
-                          <div>
-                              <h4 className="font-bold text-lg mb-1 flex items-center"><DollarSign className="w-4 h-4 mr-2 text-blue-500" /> {t.tutor_step_3}</h4>
-                              <p className="text-gray-600">{t.tutor_desc_3}</p>
-                          </div>
+                           <div><h4 className="font-bold text-lg mb-1 flex items-center"><BookOpen className="w-4 h-4 mr-2 text-blue-500" /> {t.tutor_step_1}</h4><p className="text-gray-600">{t.tutor_desc_1}</p></div>
+                          <div><h4 className="font-bold text-lg mb-1 flex items-center"><Clock className="w-4 h-4 mr-2 text-blue-500" /> {t.tutor_step_2}</h4><p className="text-gray-600">{t.tutor_desc_2}</p></div>
+                          <div><h4 className="font-bold text-lg mb-1 flex items-center"><DollarSign className="w-4 h-4 mr-2 text-blue-500" /> {t.tutor_step_3}</h4><p className="text-gray-600">{t.tutor_desc_3}</p></div>
                       </div>
                   </div>
               </div>
           </div>
-
-          {/* TEACHER CTA */}
           <div className="bg-[#333333] py-20">
               <div className="max-w-4xl mx-auto px-4 text-center">
                   <h2 className="text-3xl md:text-4xl font-bold text-white mb-6 font-['Open_Sans']">{t.cta_title}</h2>
@@ -662,7 +663,6 @@ export default function KursNaviPro() {
   );
 
   const TeacherForm = () => {
-    // Local state for the dynamic dropdowns in the form
     const [lvl1, setLvl1] = useState(Object.keys(CATEGORY_HIERARCHY)[0]);
     const [lvl2, setLvl2] = useState(Object.keys(CATEGORY_HIERARCHY[lvl1])[0]);
 
@@ -690,7 +690,6 @@ export default function KursNaviPro() {
                         <input required type="text" name="title" placeholder="e.g. Traditional Swiss Cooking" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#FA6E28] outline-none transition-shadow" />
                     </div>
 
-                    {/* NEW DYNAMIC CATEGORY SELECTORS */}
                     <div className="md:col-span-2 bg-[#FAF5F0] p-4 rounded-xl border border-orange-100">
                         <label className="block text-sm font-bold text-gray-700 mb-2">Category Classification</label>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -923,7 +922,6 @@ export default function KursNaviPro() {
                 <div className="flex items-center space-x-4 text-sm text-gray-500">
                     <span className="flex items-center"><User className="w-4 h-4 mr-1" /> {course.instructor_name}</span>
                 </div>
-                {/* Category Breadcrumb */}
                 <div className="mt-2 text-sm text-[#FA6E28] font-medium bg-orange-50 inline-block px-2 py-1 rounded">
                     {course.category}
                 </div>
@@ -1034,10 +1032,6 @@ export default function KursNaviPro() {
               <h1 className="text-3xl font-bold mb-6 font-['Open_Sans'] text-[#333333]">{t.terms_title}</h1>
               <p className="text-sm text-gray-500 mb-8">{t.terms_last_updated}</p>
               <h3 className="text-xl font-bold mt-6 mb-3 text-[#333333]">{t.terms_1_title}</h3><p className="text-gray-700 mb-4">{t.terms_1_text}</p>
-              <h3 className="text-xl font-bold mt-6 mb-3 text-[#333333]">{t.terms_2_title}</h3><p className="text-gray-700 mb-4">{t.terms_2_text}</p>
-              <h3 className="text-xl font-bold mt-6 mb-3 text-[#333333]">{t.terms_3_title}</h3><p className="text-gray-700 mb-4">{t.terms_3_text}</p>
-              <h3 className="text-xl font-bold mt-6 mb-3 text-[#333333]">{t.terms_4_title}</h3><p className="text-gray-700 mb-4">{t.terms_4_text}</p>
-              <h3 className="text-xl font-bold mt-6 mb-3 text-[#333333]">{t.terms_5_title}</h3><p className="text-gray-700 mb-4">{t.terms_5_text}</p>
           </div>
       </div>
   );
@@ -1048,10 +1042,6 @@ export default function KursNaviPro() {
               <h1 className="text-3xl font-bold mb-6 font-['Open_Sans'] text-[#333333]">{t.privacy_title}</h1>
               <div className="bg-[#FFF0EB] border-l-4 border-[#FA6E28] p-4 mb-8"><p className="text-[#FA6E28] font-bold text-sm">{t.privacy_compliant}</p></div>
               <h3 className="text-xl font-bold mt-6 mb-3 text-[#333333]">{t.privacy_1_title}</h3><p className="text-gray-700 mb-4">{t.privacy_1_text}</p>
-              <h3 className="text-xl font-bold mt-6 mb-3 text-[#333333]">{t.privacy_2_title}</h3><p className="text-gray-700 mb-4">{t.privacy_2_text}</p>
-              <h3 className="text-xl font-bold mt-6 mb-3 text-[#333333]">{t.privacy_3_title}</h3><p className="text-gray-700 mb-4">{t.privacy_3_text}</p>
-              <h3 className="text-xl font-bold mt-6 mb-3 text-[#333333]">{t.privacy_4_title}</h3><p className="text-gray-700 mb-4">{t.privacy_4_text}</p>
-              <h3 className="text-xl font-bold mt-6 mb-3 text-[#333333]">{t.privacy_5_title}</h3><p className="text-gray-700 mb-4">{t.privacy_5_text}</p>
           </div>
       </div>
   );
