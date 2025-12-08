@@ -55,17 +55,13 @@ const generateEmailHtml = (title, bodyHtml, ctaText) => `
 </head>
 <body>
   <div class="container">
-    <div class="header">
-      <h1>KursNavi</h1>
-    </div>
+    <div class="header"><h1>KursNavi</h1></div>
     <div class="content">
       <h2>${title}</h2>
       <p>${bodyHtml}</p>
-      <a href="https://www.kursnavi.ch/dashboard" class="btn">${ctaText}</a>
+      <a href="https://course-marketplace-nine.vercel.app/dashboard" class="btn">${ctaText}</a>
     </div>
-    <div class="footer">
-      <p>© ${new Date().getFullYear()} KursNavi Schweiz. All rights reserved.</p>
-    </div>
+    <div class="footer"><p>© ${new Date().getFullYear()} KursNavi Schweiz.</p></div>
   </div>
 </body>
 </html>
@@ -84,15 +80,23 @@ export default async function handler(req, res) {
     return res.status(405).send('Method Not Allowed');
   }
 
-  // --- ⚠️ PASTE YOUR KEYS HERE ⚠️ ---
+  // --- KEYS CONFIGURATION ---
   const STRIPE_KEY = "sk_test_51R0pfBHd3CotzjPe3A6BLp4K0JvGqpncNIWoqcuOAnEgCCVo35hMJPqJJEc2QSqa3L0MyKBPuMCiFyynGjhnJvjr00iYuBK9fk";
   const SUPABASE_URL = "https://nplxmpfasgpumpiddjfl.supabase.co";
-  const WEBHOOK_SECRET = "whsec_y42SCCQu6MAPO9yU3LANjFFaPvMEGW8d";
+  
+  // ⚠️ 1. PASTE YOUR STRIPE SIGNING SECRET (whsec_...) HERE
+  // You can find this in Stripe Dashboard > Webhooks > Signing Secret
+  const WEBHOOK_SECRET = "whsec_y42SCCQu6MAPO9yU3LANjFFaPvMEGW8d"; 
+  
+  // ⚠️ 2. PASTE THE 'SERVICE_ROLE' KEY HERE (The one you just found in the Legacy tab)
   const SERVICE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5wbHhtcGZhc2dwdW1waWRkamZsIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NDMzOTk0MiwiZXhwIjoyMDc5OTE1OTQyfQ.5BeY8BkISy_hexNUzx0nDTDNbU5N-Hg4jdeOnHufffw";
+  
   const RESEND_KEY = "re_PWCFaKxw_LPBudxuw5WoRiefvdJSPnnds"; 
-  // ----------------------------------
+  // --------------------------
 
   const stripe = new Stripe(STRIPE_KEY);
+  
+  // IMPORTANT: We use SERVICE_KEY here to have "God Mode" permissions
   const supabase = createClient(SUPABASE_URL, SERVICE_KEY);
   const resend = new Resend(RESEND_KEY);
 
@@ -114,18 +118,23 @@ export default async function handler(req, res) {
     const courseId = session.metadata.courseId;
     const customerEmail = session.customer_details.email;
 
-    console.log(`💰 Payment success! Booking Course: ${courseId}`);
+    console.log(`💰 Processing Booking: User ${userId} -> Course ${courseId}`);
 
-    // 1. Save Booking
-    await supabase.from('bookings').insert([{ user_id: userId, course_id: courseId }]);
+    // 1. Save Booking (With Error Check)
+    const { error: bookingError } = await supabase.from('bookings').insert([{ user_id: userId, course_id: courseId }]);
+
+    if (bookingError) {
+        console.error('❌ FATAL: Database Rejected Booking:', bookingError);
+        // This makes Stripe Logs turn RED if Supabase says no
+        return res.status(500).json({ error: "Database Insert Failed", details: bookingError });
+    }
 
     // 2. Get Course Info
     const { data: course } = await supabase.from('courses').select('title, start_date, user_id').eq('id', courseId).single();
     const courseTitle = course ? course.title : 'Course';
     const courseDate = course ? course.start_date : 'TBA';
 
-    // 3. Get Student Language Preference
-    // --- UPDATED: Default fallback is 'de' ---
+    // 3. Determine Language
     let studentLang = 'de';
     if (userId) {
         const { data: profile } = await supabase.from('profiles').select('language').eq('id', userId).single();
@@ -141,7 +150,6 @@ export default async function handler(req, res) {
             subject: `${sTexts.student_subject} ${courseTitle}`,
             html: generateEmailHtml(sTexts.student_title, sTexts.student_body(courseTitle, courseDate), sTexts.cta_view)
         });
-        console.log(`✅ Student Email Sent (${studentLang}).`);
     } catch (e) { console.error('Student Email Failed:', e); }
 
     // 5. Send TEACHER Email
@@ -152,11 +160,7 @@ export default async function handler(req, res) {
         oneMonthFromNow.setMonth(today.getMonth() + 1);
 
         if (startDate < oneMonthFromNow) {
-            console.log('⚡ Late Booking detected! Sending Teacher Alert...');
-
             const teacherEmail = "btrespondek@gmail.com"; 
-            
-            // Default teacher lang to 'de'
             let teacherLang = 'de';
             const tTexts = EMAIL_TRANSLATIONS[teacherLang];
 
@@ -167,10 +171,7 @@ export default async function handler(req, res) {
                     subject: `${tTexts.teacher_subject} ${courseTitle}`,
                     html: generateEmailHtml(tTexts.teacher_title, tTexts.teacher_body(customerEmail, courseTitle, courseDate), tTexts.cta_view)
                 });
-                console.log('✅ Teacher Alert Sent.');
-            } catch (tError) {
-                console.error('❌ Teacher Email Failed:', tError);
-            }
+            } catch (tError) { console.error('Teacher Email Failed:', tError); }
         }
     }
   }
