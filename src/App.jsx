@@ -12,7 +12,7 @@ const supabaseKey = import.meta.env.VITE_SUPABASE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // -----------------------------------------------------------------------------
-// --- COMPONENT DEFINITIONS (MOVED OUTSIDE TO FIX RE-RENDER/FOCUS ISSUES) ---
+// --- COMPONENT DEFINITIONS ---
 // -----------------------------------------------------------------------------
 
 const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCatPath, catMenuOpen, setCatMenuOpen, t, getCatLabel, catMenuRef }) => {
@@ -126,18 +126,16 @@ const LandingView = ({ title, subtitle, variant = 'main', searchQuery, setSearch
 };
 
 const SearchPageView = ({ selectedCatPath, setSelectedCatPath, searchQuery, setSearchQuery, catMenuOpen, setCatMenuOpen, catMenuRef, t, getCatLabel, locMode, setLocMode, selectedLocations, setSelectedLocations, locMenuOpen, setLocMenuOpen, locMenuRef, loading, filteredCourses, setSelectedCourse, setView }) => {
-    // Determine active section (Private, Prof, Kids, or ALL) based on state
     const activeSection = selectedCatPath.length > 0 ? selectedCatPath[0] : null;
 
     return (
         <div className="min-h-screen bg-[#FAF5F0]">
             <div className="bg-white border-b pt-8 pb-4 sticky top-20 z-30 shadow-sm">
                 <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row gap-4 items-center">
-                     <div className="relative flex-grow w-full md:w-auto">
+                      <div className="relative flex-grow w-full md:w-auto">
                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                         <input type="text" placeholder="Refine search..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-10 pr-4 py-3 bg-[#FAF5F0] border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-[#FA6E28] focus:bg-white transition-colors" />
                     </div>
-                    {/* The Category Dropdown adapts based on the active Section */}
                     <CategoryDropdown rootCategory={activeSection} selectedCatPath={selectedCatPath} setSelectedCatPath={setSelectedCatPath} catMenuOpen={catMenuOpen} setCatMenuOpen={setCatMenuOpen} t={t} getCatLabel={getCatLabel} catMenuRef={catMenuRef} /> 
                     <LocationDropdown locMode={locMode} setLocMode={setLocMode} selectedLocations={selectedLocations} setSelectedLocations={setSelectedLocations} locMenuOpen={locMenuOpen} setLocMenuOpen={setLocMenuOpen} locMenuRef={locMenuRef} t={t} />
                     {(selectedCatPath.length > 0 || selectedLocations.length > 0) && (<button onClick={() => { setSelectedCatPath([]); setSelectedLocations([]); setSearchQuery(""); }} className="p-2 text-gray-400 hover:text-red-500 rounded-full hover:bg-gray-100"><X className="w-5 h-5" /></button>)}
@@ -170,17 +168,14 @@ const SearchPageView = ({ selectedCatPath, setSelectedCatPath, searchQuery, setS
     );
 };
 
-// --- NEW: How It Works Page ---
 const HowItWorksPage = ({ setView }) => (
     <div className="animate-in fade-in duration-700 font-['Hind_Madurai'] pb-20">
-        {/* Hero */}
         <div className="bg-[#FFF0EB] py-20 px-4 text-center">
              <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-6 shadow-md text-[#FA6E28]"><Zap className="w-10 h-10" /></div>
             <h1 className="text-4xl md:text-5xl font-extrabold text-[#333333] mb-6 font-['Open_Sans']">Share your passion. Earn money.</h1>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">KursNavi handles the boring stuff—payments, bookings, and marketing—so you can focus on teaching.</p>
         </div>
 
-        {/* Steps */}
         <div className="max-w-7xl mx-auto px-4 py-20">
             <h2 className="text-3xl font-bold text-center mb-16 text-[#333333]">Your journey to becoming a tutor</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
@@ -198,38 +193,6 @@ const HowItWorksPage = ({ setView }) => (
                     <div className="w-16 h-16 bg-[#FA6E28] text-white rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg text-2xl font-bold">3</div>
                     <h3 className="text-xl font-bold mb-3 text-[#333333]">Get booked & paid</h3>
                     <p className="text-gray-600">Students book instantly. We process the payment and transfer your earnings automatically.</p>
-                </div>
-            </div>
-        </div>
-
-        {/* Pricing Section */}
-        <div className="bg-slate-900 text-white py-20 px-4">
-            <div className="max-w-4xl mx-auto text-center">
-                <h2 className="text-3xl font-bold mb-6 font-['Open_Sans']">Fair & Transparent Pricing</h2>
-                <p className="text-xl text-gray-300 mb-12">No subscription fees. No listing fees. We only earn when you earn.</p>
-                
-                <div className="bg-white text-[#333333] p-8 rounded-2xl shadow-xl max-w-lg mx-auto transform hover:scale-105 transition duration-300">
-                    <div className="flex justify-between items-end border-b pb-4 mb-4">
-                        <span className="text-left font-bold text-gray-500">Your Course Price</span>
-                        <span className="text-2xl font-bold">CHF 100</span>
-                    </div>
-                    <div className="space-y-3 mb-6">
-                        <div className="flex justify-between items-center text-sm">
-                            <span className="text-gray-500">KursNavi Commission (15%)</span>
-                            <span className="text-red-500 font-medium">- CHF 15</span>
-                        </div>
-                        <div className="text-xs text-gray-400 text-left">
-                            Includes payment processing, marketing, insurance, and platform support.
-                        </div>
-                    </div>
-                    <div className="bg-green-50 p-4 rounded-xl flex justify-between items-center">
-                        <span className="font-bold text-green-800">Your Payout</span>
-                        <span className="text-3xl font-extrabold text-green-600">CHF 85</span>
-                    </div>
-                </div>
-
-                <div className="mt-12">
-                    <button onClick={() => setView('create')} className="bg-[#FA6E28] text-white px-10 py-4 rounded-full font-bold text-lg hover:bg-[#E55D1F] transition shadow-xl inline-flex items-center">Start Teaching Now <ArrowRight className="ml-2 w-5 h-5" /></button>
                 </div>
             </div>
         </div>
@@ -264,6 +227,17 @@ export default function KursNaviPro() {
 
   const catMenuRef = useRef(null);
   const locMenuRef = useRef(null);
+
+  // --- LANGUAGE MANAGEMENT ---
+  // When user changes language via Navbar, save to database
+  const changeLanguage = async (newLang) => {
+    setLang(newLang);
+    if (user && user.id) {
+        // Silently update profile
+        const { error } = await supabase.from('profiles').update({ language: newLang }).eq('id', user.id);
+        if (error) console.error("Failed to save language preference:", error);
+    }
+  };
 
   // --- URL ROUTING LOGIC ---
   useEffect(() => {
@@ -337,6 +311,12 @@ export default function KursNaviPro() {
         setUser({ id: session.user.id, email: session.user.email, role: role, name: name });
         fetchBookings(session.user.id);
         if (role === 'teacher') fetchTeacherEarnings(session.user.id);
+
+        // --- NEW: FETCH LANGUAGE PREFERENCE ---
+        supabase.from('profiles').select('language').eq('id', session.user.id).single()
+            .then(({ data }) => {
+                if (data && data.language) setLang(data.language);
+            });
       }
     });
 
@@ -348,11 +328,18 @@ export default function KursNaviPro() {
         setUser({ id: session.user.id, email: session.user.email, role: role, name: name });
         fetchBookings(session.user.id);
         if (role === 'teacher') fetchTeacherEarnings(session.user.id);
+
+        // --- NEW: FETCH LANGUAGE PREFERENCE ON LOGIN ---
+        supabase.from('profiles').select('language').eq('id', session.user.id).single()
+            .then(({ data }) => {
+                if (data && data.language) setLang(data.language);
+            });
       } else {
         setUser(null);
         setMyBookings([]);
         setTeacherEarnings([]);
         setView('home');
+        setLang('en'); // Reset to default on logout
       }
     });
 
@@ -513,7 +500,7 @@ export default function KursNaviPro() {
                   <div className="space-y-8">
                         <div className="flex items-center space-x-4 mb-8"><div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600"><Zap className="w-6 h-6" /></div><h3 className="text-2xl font-bold text-[#333333]">{t.for_tutors}</h3></div>
                       <div className="space-y-8 pl-4 border-l-2 border-blue-100">
-                           <div><h4 className="font-bold text-lg mb-1 flex items-center"><BookOpen className="w-4 h-4 mr-2 text-blue-500" /> {t.tutor_step_1}</h4><p className="text-gray-600">{t.tutor_desc_1}</p></div>
+                            <div><h4 className="font-bold text-lg mb-1 flex items-center"><BookOpen className="w-4 h-4 mr-2 text-blue-500" /> {t.tutor_step_1}</h4><p className="text-gray-600">{t.tutor_desc_1}</p></div>
                           <div><h4 className="font-bold text-lg mb-1 flex items-center"><Clock className="w-4 h-4 mr-2 text-blue-500" /> {t.tutor_step_2}</h4><p className="text-gray-600">{t.tutor_desc_2}</p></div>
                           <div><h4 className="font-bold text-lg mb-1 flex items-center"><DollarSign className="w-4 h-4 mr-2 text-blue-500" /> {t.tutor_step_3}</h4><p className="text-gray-600">{t.tutor_desc_3}</p></div>
                       </div>
@@ -585,7 +572,8 @@ export default function KursNaviPro() {
             if (isSignUp) {
                 const { data: authData, error: authError } = await supabase.auth.signUp({ email, password, options: { data: { full_name: fullName, role: role } } });
                 if (authError) throw authError;
-                if (authData?.user) { await supabase.from('profiles').insert([{ id: authData.user.id, full_name: fullName, email: email }]); }
+                // --- NEW: SAVE LANGUAGE ON SIGNUP ---
+                if (authData?.user) { await supabase.from('profiles').insert([{ id: authData.user.id, full_name: fullName, email: email, language: lang }]); }
                 showNotification("Account created! Check your email.");
             } else {
                 const { data, error } = await supabase.auth.signInWithPassword({ email, password });
@@ -811,7 +799,7 @@ export default function KursNaviPro() {
     <div className="min-h-screen bg-[#FAF5F0] font-sans text-[#333333] selection:bg-orange-100 selection:text-[#FA6E28] flex flex-col font-['Hind_Madurai']">
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Hind+Madurai:wght@300;400;500;600&family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap');`}</style>
       {notification && (<div className="fixed top-24 left-1/2 transform -translate-x-1/2 bg-[#333333] text-white px-6 py-3 rounded-full shadow-2xl z-50 flex items-center animate-bounce font-['Open_Sans']"><CheckCircle className="w-5 h-5 mr-2 text-[#FA6E28]" />{notification}</div>)}
-      <Navbar t={t} user={user} lang={lang} setLang={setLang} setView={setView} handleLogout={handleLogout} setShowResults={() => setView('search')} setSelectedCatPath={setSelectedCatPath} />
+      <Navbar t={t} user={user} lang={lang} setLang={changeLanguage} setView={setView} handleLogout={handleLogout} setShowResults={() => setView('search')} setSelectedCatPath={setSelectedCatPath} />
 
       <div className="flex-grow">
       

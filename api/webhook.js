@@ -8,6 +8,69 @@ export const config = {
   },
 };
 
+// --- EMAIL HELPERS ---
+const EMAIL_TRANSLATIONS = {
+  en: {
+    student_subject: "Booking Confirmed: ",
+    student_title: "You are booked!",
+    student_body: (course, date) => `You have successfully booked <strong>${course}</strong>.<br>Start Date: ${date}`,
+    teacher_subject: "New Student: ",
+    teacher_title: "New Student!",
+    teacher_body: (email, course, date) => `<strong>${email}</strong> has joined <strong>${course}</strong>.<br>This course starts soon (${date}).`,
+    cta_view: "View Dashboard"
+  },
+  de: {
+    student_subject: "Buchung bestätigt: ",
+    student_title: "Du bist dabei!",
+    student_body: (course, date) => `Du hast dich erfolgreich für <strong>${course}</strong> angemeldet.<br>Startdatum: ${date}`,
+    teacher_subject: "Neuer Schüler: ",
+    teacher_title: "Neuer Schüler!",
+    teacher_body: (email, course, date) => `<strong>${email}</strong> hat sich für <strong>${course}</strong> angemeldet.<br>Kursbeginn: ${date}.`,
+    cta_view: "Zum Dashboard"
+  },
+  fr: {
+    student_subject: "Réservation confirmée : ",
+    student_title: "C'est confirmé !",
+    student_body: (course, date) => `Vous êtes inscrit à <strong>${course}</strong>.<br>Date de début : ${date}`,
+    teacher_subject: "Nouvel étudiant : ",
+    teacher_title: "Nouvel étudiant !",
+    teacher_body: (email, course, date) => `<strong>${email}</strong> a rejoint <strong>${course}</strong>.<br>Début du cours : ${date}.`,
+    cta_view: "Voir le tableau de bord"
+  }
+};
+
+const generateEmailHtml = (title, bodyHtml, ctaText) => `
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f9f9f9; padding: 20px; }
+    .container { max-width: 600px; margin: 0 auto; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    .header { background-color: #FA6E28; color: white; padding: 20px; text-align: center; }
+    .header h1 { margin: 0; font-size: 24px; letter-spacing: 1px; }
+    .content { padding: 30px; color: #333333; line-height: 1.6; }
+    .btn { display: inline-block; background-color: #FA6E28; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 20px; }
+    .footer { background-color: #f1f1f1; padding: 15px; text-align: center; font-size: 12px; color: #888; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>KursNavi</h1>
+    </div>
+    <div class="content">
+      <h2>${title}</h2>
+      <p>${bodyHtml}</p>
+      <a href="https://www.kursnavi.ch/dashboard" class="btn">${ctaText}</a>
+    </div>
+    <div class="footer">
+      <p>© ${new Date().getFullYear()} KursNavi Schweiz. All rights reserved.</p>
+    </div>
+  </div>
+</body>
+</html>
+`;
+
 async function buffer(readable) {
   const chunks = [];
   for await (const chunk of readable) {
@@ -56,32 +119,31 @@ export default async function handler(req, res) {
     // 1. Save Booking
     await supabase.from('bookings').insert([{ user_id: userId, course_id: courseId }]);
 
-    // 2. Get Course Info (Title + Start Date + Teacher ID)
-    const { data: course } = await supabase
-        .from('courses')
-        .select('title, start_date, user_id') 
-        .eq('id', courseId)
-        .single();
-    
+    // 2. Get Course Info
+    const { data: course } = await supabase.from('courses').select('title, start_date, user_id').eq('id', courseId).single();
     const courseTitle = course ? course.title : 'Course';
     const courseDate = course ? course.start_date : 'TBA';
 
-    // 3. Send STUDENT Email
+    // 3. Get Student Language Preference
+    let studentLang = 'en';
+    if (userId) {
+        const { data: profile } = await supabase.from('profiles').select('language').eq('id', userId).single();
+        if (profile && profile.language) studentLang = profile.language;
+    }
+    const sTexts = EMAIL_TRANSLATIONS[studentLang] || EMAIL_TRANSLATIONS['en'];
+
+    // 4. Send STUDENT Email
     try {
         await resend.emails.send({
             from: 'KursNavi <onboarding@resend.dev>',
             to: customerEmail,
-            subject: `Booking Confirmed: ${courseTitle}`,
-            html: `
-                <h1>You are booked!</h1>
-                <p>Course: <strong>${courseTitle}</strong></p>
-                <p>Date: ${courseDate}</p>
-            `
+            subject: `${sTexts.student_subject} ${courseTitle}`,
+            html: generateEmailHtml(sTexts.student_title, sTexts.student_body(courseTitle, courseDate), sTexts.cta_view)
         });
-        console.log('✅ Student Email Sent.');
+        console.log(`✅ Student Email Sent (${studentLang}).`);
     } catch (e) { console.error('Student Email Failed:', e); }
 
-    // 4. Send TEACHER Email (With SMART DATE LOGIC)
+    // 5. Send TEACHER Email (With SMART DATE LOGIC)
     if (course && course.start_date) {
         const startDate = new Date(course.start_date);
         const today = new Date();
@@ -90,37 +152,28 @@ export default async function handler(req, res) {
         const oneMonthFromNow = new Date();
         oneMonthFromNow.setMonth(today.getMonth() + 1);
 
-        console.log(`📅 Date Check: Start (${course.start_date}) vs Limit (${oneMonthFromNow.toISOString().split('T')[0]})`);
-
-        // IF course starts SOONER than 1 month...
         if (startDate < oneMonthFromNow) {
             console.log('⚡ Late Booking detected! Sending Teacher Alert...');
 
-            // --- TEACHER EMAIL LOGIC ---
-            // In Production, use this:
-            // const { data: teacherUser } = await supabase.auth.admin.getUserById(course.user_id);
-            // const teacherEmail = teacherUser.user.email;
-            
-            // For TESTING now, use this:
             const teacherEmail = "btrespondek@gmail.com"; 
+            
+            // Try to find teacher language, default to EN for admin
+            let teacherLang = 'en';
+            // Logic to fetch teacher profile could go here if teacherEmail wasn't hardcoded
+            
+            const tTexts = EMAIL_TRANSLATIONS[teacherLang];
 
             try {
                 await resend.emails.send({
                     from: 'KursNavi <onboarding@resend.dev>',
                     to: teacherEmail,
-                    subject: `New Last-Minute Student: ${courseTitle}`,
-                    html: `
-                        <h1>New Student!</h1>
-                        <p><strong>${customerEmail}</strong> has joined <strong>${courseTitle}</strong>.</p>
-                        <p>This course starts soon (${courseDate}). Please add them to your list!</p>
-                    `
+                    subject: `${tTexts.teacher_subject} ${courseTitle}`,
+                    html: generateEmailHtml(tTexts.teacher_title, tTexts.teacher_body(customerEmail, courseTitle, courseDate), tTexts.cta_view)
                 });
                 console.log('✅ Teacher Alert Sent.');
             } catch (tError) {
                 console.error('❌ Teacher Email Failed:', tError);
             }
-        } else {
-            console.log('zzz Early booking. No immediate teacher alert needed.');
         }
     }
   }
