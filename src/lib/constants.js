@@ -35,31 +35,31 @@ export const CATEGORY_HIERARCHY = {
 };
 
 export const CATEGORY_LABELS = {
-  "Private & Hobby": { de: "Privat & Hobby", fr: "Privé & Loisirs" },
-  "Professional": { de: "Beruflich", fr: "Professionnel" },
-  "Children": { de: "Kinder", fr: "Enfants" },
-  "Music & Audio": { de: "Musik & Audio", fr: "Musique & Audio" },
-  "Languages": { de: "Sprachen", fr: "Langues" },
-  "Sports & Fitness": { de: "Sport & Fitness", fr: "Sport & Forme" },
-  "Cooking & Nutrition": { de: "Kochen & Ernährung", fr: "Cuisine & Nutrition" },
-  "Art & Craft": { de: "Kunst & Handwerk", fr: "Art & Artisanat" },
-  "Lifestyle": { de: "Lifestyle", fr: "Art de vivre" },
-  "Business": { de: "Wirtschaft", fr: "Affaires" },
-  "Tech & Data": { de: "Technik & Daten", fr: "Tech & Données" },
-  "Soft Skills": { de: "Soft Skills", fr: "Compétences Douces" },
-  "Industry Specific": { de: "Branchenspezifisch", fr: "Spécifique à l'industrie" },
-  "Academic Support": { de: "Nachhilfe", fr: "Soutien scolaire" },
-  "Creative & Fun": { de: "Kreativ & Spaß", fr: "Créatif & Ludique" },
-  "Guitar": { de: "Gitarre", fr: "Guitare" },
-  "Piano": { de: "Klavier", fr: "Piano" },
-  "Vocals": { de: "Gesang", fr: "Chant" },
-  "Other Instruments": { de: "Andere Instrumente", fr: "Autres Instruments" },
-  "German": { de: "Deutsch", fr: "Allemand" },
-  "French": { de: "Französisch", fr: "Français" },
-  "English": { de: "Englisch", fr: "Anglais" },
-  "Swiss Cuisine": { de: "Schweizer Küche", fr: "Cuisine Suisse" },
-  "Web Development": { de: "Webentwicklung", fr: "Développement Web" },
-  "Homework Help": { de: "Hausaufgabenhilfe", fr: "Aide aux devoirs" }
+  "Private & Hobby": { de: "Privat & Hobby", fr: "Privé & Loisirs", it: "Privato & Hobby" },
+  "Professional": { de: "Beruflich", fr: "Professionnel", it: "Professionale" },
+  "Children": { de: "Kinder", fr: "Enfants", it: "Bambini" },
+  "Music & Audio": { de: "Musik & Audio", fr: "Musique & Audio", it: "Musica & Audio" },
+  "Languages": { de: "Sprachen", fr: "Langues", it: "Lingue" },
+  "Sports & Fitness": { de: "Sport & Fitness", fr: "Sport & Forme", it: "Sport & Fitness" },
+  "Cooking & Nutrition": { de: "Kochen & Ernährung", fr: "Cuisine & Nutrition", it: "Cucina & Nutrizione" },
+  "Art & Craft": { de: "Kunst & Handwerk", fr: "Art & Artisanat", it: "Arte & Artigianato" },
+  "Lifestyle": { de: "Lifestyle", fr: "Art de vivre", it: "Lifestyle" },
+  "Business": { de: "Wirtschaft", fr: "Affaires", it: "Affari" },
+  "Tech & Data": { de: "Technik & Daten", fr: "Tech & Données", it: "Tech & Dati" },
+  "Soft Skills": { de: "Soft Skills", fr: "Compétences Douces", it: "Soft Skills" },
+  "Industry Specific": { de: "Branchenspezifisch", fr: "Spécifique à l'industrie", it: "Settore Specifico" },
+  "Academic Support": { de: "Nachhilfe", fr: "Soutien scolaire", it: "Supporto Accademico" },
+  "Creative & Fun": { de: "Kreativ & Spaß", fr: "Créatif & Ludique", it: "Creativo & Divertimento" },
+  "Guitar": { de: "Gitarre", fr: "Guitare", it: "Chitarra" },
+  "Piano": { de: "Klavier", fr: "Piano", it: "Pianoforte" },
+  "Vocals": { de: "Gesang", fr: "Chant", it: "Canto" },
+  "Other Instruments": { de: "Andere Instrumente", fr: "Autres Instruments", it: "Altri Strumenti" },
+  "German": { de: "Deutsch", fr: "Allemand", it: "Tedesco" },
+  "French": { de: "Französisch", fr: "Français", it: "Francese" },
+  "English": { de: "Englisch", fr: "Anglais", it: "Inglese" },
+  "Swiss Cuisine": { de: "Schweizer Küche", fr: "Cuisine Suisse", it: "Cucina Svizzera" },
+  "Web Development": { de: "Webentwicklung", fr: "Développement Web", it: "Sviluppo Web" },
+  "Homework Help": { de: "Hausaufgabenhilfe", fr: "Aide aux devoirs", it: "Aiuto Compiti" }
 };
 
 export const TRANSLATIONS = {
@@ -93,7 +93,7 @@ export const TRANSLATIONS = {
     about_quality_title: "Quality", about_quality_text: "All our tutors are verified manually.",
     privacy_1_title: "1. Collection", privacy_1_text: "We collect only necessary data.",
     terms_1_title: "1. Service", terms_1_text: "We provide a marketplace platform.",
-    // --- NEW PROFILE STRINGS ---
+    // --- PROFILE STRINGS ---
     profile_settings: "Profile Settings",
     lbl_city: "City / Town",
     lbl_canton: "Canton",
@@ -127,7 +127,7 @@ export const TRANSLATIONS = {
     contact_title: "Kontakt", contact_get_in_touch: "Schreib uns", btn_send: "Senden",
     about_title: "Über uns", about_subtitle: "Die Schweiz verbinden.",
     terms_title: "AGB", privacy_title: "Datenschutz",
-    // --- NEW PROFILE STRINGS (DE) ---
+    // --- PROFILE STRINGS (DE) ---
     profile_settings: "Profileinstellungen",
     lbl_city: "Stadt / Ort",
     lbl_canton: "Kanton",
@@ -161,7 +161,7 @@ export const TRANSLATIONS = {
     contact_title: "Contact", contact_get_in_touch: "Contactez-nous", btn_send: "Envoyer",
     about_title: "À propos", about_subtitle: "Relier la Suisse.",
     terms_title: "CGV", privacy_title: "Confidentialité",
-    // --- NEW PROFILE STRINGS (FR) ---
+    // --- PROFILE STRINGS (FR) ---
     profile_settings: "Paramètres du profil",
     lbl_city: "Ville / Localité",
     lbl_canton: "Canton",
@@ -173,5 +173,39 @@ export const TRANSLATIONS = {
     dash_profile: "Mon Profil",
     dash_settings: "Paramètres",
     dash_new_course: "Nouveau Cours"
+  },
+  it: {
+    nav_explore: "Esplora", nav_login: "Accedi", nav_logout: "Esci", nav_dashboard: "Dashboard",
+    hero_title: "Scopri corsi vicino a te.", hero_subtitle: "Dallo jodel a Appenzello alla programmazione a Zurigo.",
+    search_placeholder: "Cosa vuoi imparare?", filter_label_cat: "Categoria", filter_label_loc: "Luogo", btn_search: "Cerca",
+    no_results: "Nessun corso trovato.", btn_book: "Prenota", btn_pay: "Paga & Prenota", btn_publish: "Pubblica",
+    form_title: "Offri un corso", success_msg: "Fatto!", currency: "CHF",
+    teacher_dash: "Dashboard Insegnante", student_dash: "I miei corsi",
+    login_title: "Benvenuto", my_bookings: "Le mie prenotazioni",
+    lbl_description: "Descrizione", lbl_address: "Luogo", lbl_duration: "Durata",
+    how_it_works: "Come funziona", for_students: "Per Studenti", for_tutors: "Per Insegnanti",
+    student_step_1: "Scopri", student_desc_1: "Sfoglia centinaia di corsi locali unici.",
+    student_step_2: "Prenota", student_desc_2: "Assicura il tuo posto istantaneamente.",
+    student_step_3: "Impara", student_desc_3: "Incontra esperti locali e impara.",
+    tutor_step_1: "Crea", tutor_desc_1: "Crea il tuo profilo gratuitamente.",
+    tutor_step_2: "Pianifica", tutor_desc_2: "Imposta date, luogo e prezzo.",
+    tutor_step_3: "Guadagna", tutor_desc_3: "Pagamento automatico dopo il corso.",
+    cta_title: "Diventa Insegnante", cta_subtitle: "Condividi le tue competenze in tutta la Svizzera.", cta_btn: "Inizia",
+    footer_terms: "Termini", footer_privacy: "Privacy", footer_legal: "Note legali", footer_madein: "Made in Switzerland", footer_rights: "Tutti i diritti riservati.",
+    contact_title: "Contatto", contact_get_in_touch: "Scrivici", btn_send: "Invia",
+    about_title: "Chi siamo", about_subtitle: "Connettere la Svizzera.",
+    terms_title: "Termini", privacy_title: "Privacy",
+    // --- PROFILE STRINGS (IT) ---
+    profile_settings: "Impostazioni Profilo",
+    lbl_city: "Città / Località",
+    lbl_canton: "Cantone",
+    lbl_bio: "Su di me (Bio)",
+    lbl_language: "Lingua preferita",
+    profile_lang_note: "Useremo questa lingua per email e sito web.",
+    btn_save: "Salva modifiche",
+    dash_overview: "Panoramica",
+    dash_profile: "Il mio Profilo",
+    dash_settings: "Impostazioni",
+    dash_new_course: "Nuovo Corso"
   }
 };
