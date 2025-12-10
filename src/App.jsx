@@ -70,7 +70,7 @@ const LocationDropdown = ({ locMode, setLocMode, selectedLocations, setSelectedL
 };
 
 // --- USER PROFILE SETTINGS COMPONENT ---
-const UserProfileSection = ({ user, showNotification, setLang }) => {
+const UserProfileSection = ({ user, showNotification, setLang, t }) => {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [formData, setFormData] = useState({
@@ -115,7 +115,6 @@ const UserProfileSection = ({ user, showNotification, setLang }) => {
             showNotification("Error saving profile");
         } else {
             showNotification("Profile saved successfully!");
-            // Update app language immediately
             setLang(formData.preferred_language);
         }
         setSaving(false);
@@ -126,12 +125,12 @@ const UserProfileSection = ({ user, showNotification, setLang }) => {
     return (
         <div className="bg-white p-6 md:p-8 rounded-xl border border-gray-200 shadow-sm animate-in fade-in">
             <h2 className="text-xl font-bold mb-6 text-[#333333] flex items-center">
-                <Settings className="w-5 h-5 mr-2 text-gray-500" /> Profile Settings
+                <Settings className="w-5 h-5 mr-2 text-gray-500" /> {t.profile_settings}
             </h2>
             <form onSubmit={handleSave} className="space-y-6 max-w-xl">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-1">City / Town</label>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_city}</label>
                         <input 
                             type="text" 
                             name="city" 
@@ -142,7 +141,7 @@ const UserProfileSection = ({ user, showNotification, setLang }) => {
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-1">Canton</label>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_canton}</label>
                         <div className="relative">
                             <select 
                                 name="canton" 
@@ -159,7 +158,7 @@ const UserProfileSection = ({ user, showNotification, setLang }) => {
                 </div>
 
                 <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-1">Preferred Language</label>
+                    <label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_language}</label>
                     <div className="relative">
                         <select 
                             name="preferred_language" 
@@ -174,17 +173,17 @@ const UserProfileSection = ({ user, showNotification, setLang }) => {
                         </select>
                         <ChevronDown className="absolute right-3 top-3 text-gray-400 w-4 h-4 pointer-events-none" />
                     </div>
-                    <p className="text-xs text-gray-500 mt-1">We will use this for emails and website content.</p>
+                    <p className="text-xs text-gray-500 mt-1">{t.profile_lang_note}</p>
                 </div>
 
                 <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-1">About Me (Bio)</label>
+                    <label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_bio}</label>
                     <textarea 
                         name="bio" 
                         rows="4" 
                         value={formData.bio} 
                         onChange={handleChange}
-                        placeholder="Tell us a little about yourself..."
+                        placeholder="..."
                         className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#FA6E28] outline-none"
                     ></textarea>
                 </div>
@@ -196,7 +195,7 @@ const UserProfileSection = ({ user, showNotification, setLang }) => {
                         className="bg-[#FA6E28] text-white px-6 py-3 rounded-lg font-bold hover:bg-[#E55D1F] transition flex items-center shadow-md disabled:opacity-50"
                     >
                         {saving ? <Loader className="animate-spin w-5 h-5 mr-2" /> : <Save className="w-5 h-5 mr-2" />}
-                        Save Changes
+                        {t.btn_save}
                     </button>
                 </div>
             </form>
@@ -849,15 +848,15 @@ export default function KursNaviPro() {
                     <div><h1 className="text-3xl font-bold text-[#333333] font-['Open_Sans']">{t.teacher_dash}</h1><p className="text-gray-500">Welcome back, {user.name}</p></div>
                     <div className="flex gap-4">
                         <div className="bg-white rounded-full p-1 border flex shadow-sm">
-                            <button onClick={() => setDashView('overview')} className={`px-4 py-2 rounded-full text-sm font-bold transition ${dashView === 'overview' ? 'bg-[#FA6E28] text-white shadow' : 'text-gray-500 hover:bg-gray-50'}`}>Overview</button>
-                            <button onClick={() => setDashView('profile')} className={`px-4 py-2 rounded-full text-sm font-bold transition ${dashView === 'profile' ? 'bg-[#FA6E28] text-white shadow' : 'text-gray-500 hover:bg-gray-50'}`}>My Profile</button>
+                            <button onClick={() => setDashView('overview')} className={`px-4 py-2 rounded-full text-sm font-bold transition ${dashView === 'overview' ? 'bg-[#FA6E28] text-white shadow' : 'text-gray-500 hover:bg-gray-50'}`}>{t.dash_overview}</button>
+                            <button onClick={() => setDashView('profile')} className={`px-4 py-2 rounded-full text-sm font-bold transition ${dashView === 'profile' ? 'bg-[#FA6E28] text-white shadow' : 'text-gray-500 hover:bg-gray-50'}`}>{t.dash_profile}</button>
                         </div>
-                        {dashView === 'overview' && <button onClick={() => setView('create')} className="bg-[#FA6E28] text-white px-6 py-3 rounded-xl font-bold hover:bg-[#E55D1F] flex items-center shadow-lg hover:-translate-y-0.5 transition font-['Open_Sans']"><KursNaviLogo className="mr-2 w-5 h-5 text-white" /> New Course</button>}
+                        {dashView === 'overview' && <button onClick={() => setView('create')} className="bg-[#FA6E28] text-white px-6 py-3 rounded-xl font-bold hover:bg-[#E55D1F] flex items-center shadow-lg hover:-translate-y-0.5 transition font-['Open_Sans']"><KursNaviLogo className="mr-2 w-5 h-5 text-white" /> {t.dash_new_course}</button>}
                     </div>
                 </div>
 
                 {dashView === 'profile' ? (
-                    <UserProfileSection user={user} showNotification={showNotification} setLang={changeLanguage} />
+                    <UserProfileSection user={user} showNotification={showNotification} setLang={changeLanguage} t={t} />
                 ) : (
                     <>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -915,13 +914,13 @@ export default function KursNaviPro() {
             <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
                  <h1 className="text-3xl font-bold text-[#333333] mb-8 font-['Open_Sans']">{t.student_dash}</h1>
                  <div className="bg-white rounded-full p-1 border flex shadow-sm h-fit">
-                    <button onClick={() => setDashView('overview')} className={`px-4 py-2 rounded-full text-sm font-bold transition ${dashView === 'overview' ? 'bg-[#FA6E28] text-white shadow' : 'text-gray-500 hover:bg-gray-50'}`}>My Bookings</button>
-                    <button onClick={() => setDashView('profile')} className={`px-4 py-2 rounded-full text-sm font-bold transition ${dashView === 'profile' ? 'bg-[#FA6E28] text-white shadow' : 'text-gray-500 hover:bg-gray-50'}`}>Profile Settings</button>
+                    <button onClick={() => setDashView('overview')} className={`px-4 py-2 rounded-full text-sm font-bold transition ${dashView === 'overview' ? 'bg-[#FA6E28] text-white shadow' : 'text-gray-500 hover:bg-gray-50'}`}>{t.my_bookings}</button>
+                    <button onClick={() => setDashView('profile')} className={`px-4 py-2 rounded-full text-sm font-bold transition ${dashView === 'profile' ? 'bg-[#FA6E28] text-white shadow' : 'text-gray-500 hover:bg-gray-50'}`}>{t.dash_settings}</button>
                 </div>
             </div>
             
             {dashView === 'profile' ? (
-                <UserProfileSection user={user} showNotification={showNotification} setLang={changeLanguage} />
+                <UserProfileSection user={user} showNotification={showNotification} setLang={changeLanguage} t={t} />
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div>

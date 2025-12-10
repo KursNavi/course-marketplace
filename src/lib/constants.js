@@ -1,4 +1,3 @@
-// src/lib/constants.js
 import { Guitar, Piano, Mic, Music, Globe, Dumbbell, Utensils, Palette, Hammer, Briefcase, Code, Users, HardHat, GraduationCap, Smile } from 'lucide-react';
 
 // --- BRAND ASSETS ---
@@ -93,7 +92,19 @@ export const TRANSLATIONS = {
     about_community_title: "Community", about_community_text: "We believe in the power of local connection.",
     about_quality_title: "Quality", about_quality_text: "All our tutors are verified manually.",
     privacy_1_title: "1. Collection", privacy_1_text: "We collect only necessary data.",
-    terms_1_title: "1. Service", terms_1_text: "We provide a marketplace platform."
+    terms_1_title: "1. Service", terms_1_text: "We provide a marketplace platform.",
+    // --- NEW PROFILE STRINGS ---
+    profile_settings: "Profile Settings",
+    lbl_city: "City / Town",
+    lbl_canton: "Canton",
+    lbl_bio: "About Me (Bio)",
+    lbl_language: "Preferred Language",
+    profile_lang_note: "We will use this for emails and website content.",
+    btn_save: "Save Changes",
+    dash_overview: "Overview",
+    dash_profile: "My Profile",
+    dash_settings: "Profile Settings",
+    dash_new_course: "New Course"
   },
   de: {
     nav_explore: "Entdecken", nav_login: "Anmelden", nav_logout: "Abmelden", nav_dashboard: "Dashboard",
@@ -115,7 +126,19 @@ export const TRANSLATIONS = {
     footer_terms: "AGB", footer_privacy: "Datenschutz", footer_legal: "Impressum", footer_madein: "Made in Switzerland", footer_rights: "Alle Rechte vorbehalten.",
     contact_title: "Kontakt", contact_get_in_touch: "Schreib uns", btn_send: "Senden",
     about_title: "Über uns", about_subtitle: "Die Schweiz verbinden.",
-    terms_title: "AGB", privacy_title: "Datenschutz"
+    terms_title: "AGB", privacy_title: "Datenschutz",
+    // --- NEW PROFILE STRINGS (DE) ---
+    profile_settings: "Profileinstellungen",
+    lbl_city: "Stadt / Ort",
+    lbl_canton: "Kanton",
+    lbl_bio: "Über mich (Bio)",
+    lbl_language: "Bevorzugte Sprache",
+    profile_lang_note: "Wir verwenden dies für E-Mails und Webseiteninhalte.",
+    btn_save: "Speichern",
+    dash_overview: "Übersicht",
+    dash_profile: "Mein Profil",
+    dash_settings: "Einstellungen",
+    dash_new_course: "Neuer Kurs"
   },
   fr: {
     nav_explore: "Explorer", nav_login: "Connexion", nav_logout: "Déconnexion", nav_dashboard: "Tableau de bord",
@@ -137,6 +160,18 @@ export const TRANSLATIONS = {
     footer_terms: "CGV", footer_privacy: "Confidentialité", footer_legal: "Mentions légales", footer_madein: "Fabriqué en Suisse", footer_rights: "Droits réservés.",
     contact_title: "Contact", contact_get_in_touch: "Contactez-nous", btn_send: "Envoyer",
     about_title: "À propos", about_subtitle: "Relier la Suisse.",
-    terms_title: "CGV", privacy_title: "Confidentialité"
+    terms_title: "CGV", privacy_title: "Confidentialité",
+    // --- NEW PROFILE STRINGS (FR) ---
+    profile_settings: "Paramètres du profil",
+    lbl_city: "Ville / Localité",
+    lbl_canton: "Canton",
+    lbl_bio: "À propos de moi",
+    lbl_language: "Langue préférée",
+    profile_lang_note: "Nous utiliserons ceci pour les e-mails et le site web.",
+    btn_save: "Enregistrer",
+    dash_overview: "Aperçu",
+    dash_profile: "Mon Profil",
+    dash_settings: "Paramètres",
+    dash_new_course: "Nouveau Cours"
   }
 };
