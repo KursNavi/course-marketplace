@@ -14,11 +14,12 @@ export const Navbar = ({ t, user, lang, setLang, setView, handleLogout, setShowR
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [langMenuOpen, setLangMenuOpen] = useState(false);
 
+  // UPDATED: Using text codes instead of emojis to ensure Windows displays DE/EN correctly
   const languages = [
-    { code: 'de', label: 'Deutsch', flag: '🇨🇭' },
-    { code: 'fr', label: 'Français', flag: '🇫🇷' },
-    { code: 'it', label: 'Italiano', flag: '🇮🇹' },
-    { code: 'en', label: 'English', flag: '🇬🇧' },
+    { code: 'de', label: 'Deutsch', short: 'DE' },
+    { code: 'fr', label: 'Français', short: 'FR' },
+    { code: 'it', label: 'Italiano', short: 'IT' },
+    { code: 'en', label: 'English', short: 'EN' },
   ];
 
   // Helper to handle navigation to specific categories
@@ -65,14 +66,15 @@ export const Navbar = ({ t, user, lang, setLang, setView, handleLogout, setShowR
                     <>
                     <div className="fixed inset-0 z-10" onClick={() => setLangMenuOpen(false)}></div>
                     <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-20 animate-in fade-in zoom-in-95 duration-200">
-                        <div className="px-4 py-2 border-b border-gray-50 text-xs font-bold text-gray-400 uppercase tracking-wider">Select Language</div>
+                        {/* HEADER REMOVED AS REQUESTED */}
                         {languages.map((l) => (
                             <button
                                 key={l.code}
                                 onClick={() => { setLang(l.code); setLangMenuOpen(false); }}
                                 className={`block w-full text-left px-4 py-3 text-sm hover:bg-orange-50 hover:text-[#FA6E28] transition flex items-center ${lang === l.code ? 'font-bold text-[#FA6E28] bg-orange-50/50' : 'text-gray-700'}`}
                             >
-                                <span className="mr-3 text-lg">{l.flag}</span>{l.label}
+                                <span className={`mr-3 font-bold w-6 ${lang === l.code ? 'text-[#FA6E28]' : 'text-gray-400'}`}>{l.short}</span>
+                                {l.label}
                             </button>
                         ))}
                     </div>
@@ -114,7 +116,7 @@ export const Navbar = ({ t, user, lang, setLang, setView, handleLogout, setShowR
                 <div className="grid grid-cols-2 gap-2 px-3">
                     {languages.map((l) => (
                         <button key={l.code} onClick={() => { setLang(l.code); setMobileMenuOpen(false); }} className={`flex items-center justify-center py-2 rounded-lg border text-sm ${lang === l.code ? 'border-[#FA6E28] text-[#FA6E28] bg-orange-50 font-bold' : 'border-gray-200 text-gray-600'}`}>
-                            <span className="mr-2">{l.flag}</span>{l.code.toUpperCase()}
+                            <span className="mr-2 font-bold">{l.short}</span>{l.label}
                         </button>
                     ))}
                 </div>
