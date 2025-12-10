@@ -95,8 +95,8 @@ export const TRANSLATIONS = {
     terms_1_title: "1. Service", terms_1_text: "We provide a marketplace platform.",
     // --- PROFILE STRINGS ---
     profile_settings: "Profile Settings",
-    lbl_city: "City / Town",
-    lbl_canton: "Canton",
+    lbl_city: "My City / Town",
+    lbl_canton: "My Canton",
     lbl_bio: "About Me (Bio)",
     lbl_language: "Preferred Language",
     profile_lang_note: "We will use this for emails and website content.",
@@ -104,7 +104,12 @@ export const TRANSLATIONS = {
     dash_overview: "Overview",
     dash_profile: "My Profile",
     dash_settings: "Profile Settings",
-    dash_new_course: "New Course"
+    dash_new_course: "New Course",
+    lbl_account_security: "Account Security",
+    lbl_new_password: "New Password",
+    lbl_confirm_password: "Confirm Password",
+    lbl_update_auth: "Update Login Details",
+    msg_auth_success: "Account details updated! Please check your email if you changed it."
   },
   de: {
     nav_explore: "Entdecken", nav_login: "Anmelden", nav_logout: "Abmelden", nav_dashboard: "Dashboard",
@@ -129,8 +134,8 @@ export const TRANSLATIONS = {
     terms_title: "AGB", privacy_title: "Datenschutz",
     // --- PROFILE STRINGS (DE) ---
     profile_settings: "Profileinstellungen",
-    lbl_city: "Stadt / Ort",
-    lbl_canton: "Kanton",
+    lbl_city: "Meine Stadt / Ort",
+    lbl_canton: "Mein Kanton",
     lbl_bio: "Über mich (Bio)",
     lbl_language: "Bevorzugte Sprache",
     profile_lang_note: "Wir verwenden dies für E-Mails und Webseiteninhalte.",
@@ -138,7 +143,12 @@ export const TRANSLATIONS = {
     dash_overview: "Übersicht",
     dash_profile: "Mein Profil",
     dash_settings: "Einstellungen",
-    dash_new_course: "Neuer Kurs"
+    dash_new_course: "Neuer Kurs",
+    lbl_account_security: "Konto & Sicherheit",
+    lbl_new_password: "Neues Passwort",
+    lbl_confirm_password: "Passwort bestätigen",
+    lbl_update_auth: "Zugangsdaten aktualisieren",
+    msg_auth_success: "Konto aktualisiert! Bitte E-Mail prüfen falls geändert."
   },
   fr: {
     nav_explore: "Explorer", nav_login: "Connexion", nav_logout: "Déconnexion", nav_dashboard: "Tableau de bord",
@@ -163,8 +173,8 @@ export const TRANSLATIONS = {
     terms_title: "CGV", privacy_title: "Confidentialité",
     // --- PROFILE STRINGS (FR) ---
     profile_settings: "Paramètres du profil",
-    lbl_city: "Ville / Localité",
-    lbl_canton: "Canton",
+    lbl_city: "Ma Ville / Localité",
+    lbl_canton: "Mon Canton",
     lbl_bio: "À propos de moi",
     lbl_language: "Langue préférée",
     profile_lang_note: "Nous utiliserons ceci pour les e-mails et le site web.",
@@ -172,7 +182,12 @@ export const TRANSLATIONS = {
     dash_overview: "Aperçu",
     dash_profile: "Mon Profil",
     dash_settings: "Paramètres",
-    dash_new_course: "Nouveau Cours"
+    dash_new_course: "Nouveau Cours",
+    lbl_account_security: "Compte et Sécurité",
+    lbl_new_password: "Nouveau mot de passe",
+    lbl_confirm_password: "Confirmer le mot de passe",
+    lbl_update_auth: "Mettre à jour",
+    msg_auth_success: "Compte mis à jour !"
   },
   it: {
     nav_explore: "Esplora", nav_login: "Accedi", nav_logout: "Esci", nav_dashboard: "Dashboard",
@@ -197,8 +212,8 @@ export const TRANSLATIONS = {
     terms_title: "Termini", privacy_title: "Privacy",
     // --- PROFILE STRINGS (IT) ---
     profile_settings: "Impostazioni Profilo",
-    lbl_city: "Città / Località",
-    lbl_canton: "Cantone",
+    lbl_city: "La mia Città",
+    lbl_canton: "Il mio Cantone",
     lbl_bio: "Su di me (Bio)",
     lbl_language: "Lingua preferita",
     profile_lang_note: "Useremo questa lingua per email e sito web.",
@@ -206,6 +221,11 @@ export const TRANSLATIONS = {
     dash_overview: "Panoramica",
     dash_profile: "Il mio Profilo",
     dash_settings: "Impostazioni",
-    dash_new_course: "Nuovo Corso"
+    dash_new_course: "Nuovo Corso",
+    lbl_account_security: "Sicurezza Account",
+    lbl_new_password: "Nuova Password",
+    lbl_confirm_password: "Conferma Password",
+    lbl_update_auth: "Aggiorna Account",
+    msg_auth_success: "Account aggiornato!"
   }
 };
