@@ -12,6 +12,14 @@ export const KursNaviLogo = ({ className }) => (
 
 export const Navbar = ({ t, user, lang, setLang, setView, handleLogout, setShowResults, setSelectedCatPath }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [langMenuOpen, setLangMenuOpen] = useState(false);
+
+  const languages = [
+    { code: 'de', label: 'Deutsch', flag: '🇨🇭' },
+    { code: 'fr', label: 'Français', flag: '🇫🇷' },
+    { code: 'it', label: 'Italiano', flag: '🇮🇹' },
+    { code: 'en', label: 'English', flag: '🇬🇧' },
+  ];
 
   // Helper to handle navigation to specific categories
   const navTo = (viewName, catPath = []) => {
@@ -44,10 +52,34 @@ export const Navbar = ({ t, user, lang, setLang, setView, handleLogout, setShowR
 
           {/* RIGHT SIDE (User & Lang) */}
           <div className="hidden md:flex items-center space-x-4">
-            <button onClick={() => setLang(lang === 'en' ? 'de' : lang === 'de' ? 'fr' : 'en')} className="text-gray-400 hover:text-gray-600 p-2 rounded-full">
-              <span className="font-bold text-xs uppercase">{lang}</span>
-            </button>
             
+            {/* LANGUAGE DROPDOWN */}
+            <div className="relative">
+                <button onClick={() => setLangMenuOpen(!langMenuOpen)} className="flex items-center space-x-1 text-gray-500 hover:text-[#FA6E28] p-2 rounded-full transition hover:bg-gray-50">
+                    <Globe className="w-5 h-5" />
+                    <span className="font-bold text-xs uppercase">{lang}</span>
+                    <ChevronDown className="w-3 h-3" />
+                </button>
+                
+                {langMenuOpen && (
+                    <>
+                    <div className="fixed inset-0 z-10" onClick={() => setLangMenuOpen(false)}></div>
+                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-20 animate-in fade-in zoom-in-95 duration-200">
+                        <div className="px-4 py-2 border-b border-gray-50 text-xs font-bold text-gray-400 uppercase tracking-wider">Select Language</div>
+                        {languages.map((l) => (
+                            <button
+                                key={l.code}
+                                onClick={() => { setLang(l.code); setLangMenuOpen(false); }}
+                                className={`block w-full text-left px-4 py-3 text-sm hover:bg-orange-50 hover:text-[#FA6E28] transition flex items-center ${lang === l.code ? 'font-bold text-[#FA6E28] bg-orange-50/50' : 'text-gray-700'}`}
+                            >
+                                <span className="mr-3 text-lg">{l.flag}</span>{l.label}
+                            </button>
+                        ))}
+                    </div>
+                    </>
+                )}
+            </div>
+
             {user ? (
               <div className="flex items-center space-x-4">
                 <button onClick={() => navTo('dashboard')} className="flex items-center text-gray-700 hover:text-[#FA6E28] font-medium"><LayoutDashboard className="w-4 h-4 mr-2" />{user.role === 'teacher' ? 'Dashboard' : 'My Courses'}</button>
@@ -69,12 +101,25 @@ export const Navbar = ({ t, user, lang, setLang, setView, handleLogout, setShowR
 
       {/* MOBILE MENU DROPDOWN */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-white border-t border-gray-100 absolute w-full left-0 shadow-xl">
+        <div className="md:hidden bg-white border-t border-gray-100 absolute w-full left-0 shadow-xl h-screen overflow-y-auto pb-20">
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
             <button onClick={() => navTo('landing-private', ['Private & Hobby'])} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-orange-50 hover:text-[#FA6E28]">Private & Hobby</button>
             <button onClick={() => navTo('landing-prof', ['Professional'])} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-orange-50 hover:text-[#FA6E28]">Professional</button>
             <button onClick={() => navTo('landing-kids', ['Children'])} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-orange-50 hover:text-[#FA6E28]">Children</button>
             <button onClick={() => navTo('how-it-works')} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-orange-50 hover:text-[#FA6E28]">How it Works</button>
+            
+            {/* MOBILE LANGUAGES */}
+            <div className="border-t border-gray-100 my-2 pt-2">
+                <p className="px-3 text-xs font-bold text-gray-400 uppercase mb-2">Language</p>
+                <div className="grid grid-cols-2 gap-2 px-3">
+                    {languages.map((l) => (
+                        <button key={l.code} onClick={() => { setLang(l.code); setMobileMenuOpen(false); }} className={`flex items-center justify-center py-2 rounded-lg border text-sm ${lang === l.code ? 'border-[#FA6E28] text-[#FA6E28] bg-orange-50 font-bold' : 'border-gray-200 text-gray-600'}`}>
+                            <span className="mr-2">{l.flag}</span>{l.code.toUpperCase()}
+                        </button>
+                    ))}
+                </div>
+            </div>
+
             <div className="border-t border-gray-100 my-2 pt-2">
                 {user ? (
                     <>
