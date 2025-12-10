@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { Search, User, Clock, MapPin, CheckCircle, ArrowLeft, LogIn, LayoutDashboard, Settings, Trash2, DollarSign, Lock, Calendar, ExternalLink, ChevronDown, ChevronRight, Mail, Phone, Loader, Heart, Shield, X, BookOpen, Star, Zap, Users, Briefcase, Smile, Music, ArrowRight } from 'lucide-react';
+import { Search, User, Clock, MapPin, CheckCircle, ArrowLeft, LogIn, LayoutDashboard, Settings, Trash2, DollarSign, Lock, Calendar, ExternalLink, ChevronDown, ChevronRight, Mail, Phone, Loader, Heart, Shield, X, BookOpen, Star, Zap, Users, Briefcase, Smile, Music, ArrowRight, Save } from 'lucide-react';
 
 // --- IMPORTS ---
 import { BRAND, CATEGORY_HIERARCHY, CATEGORY_LABELS, SWISS_CANTONS, SWISS_CITIES, TRANSLATIONS } from './lib/constants';
@@ -65,6 +65,141 @@ const LocationDropdown = ({ locMode, setLocMode, selectedLocations, setSelectedL
                     <div className="pt-3 mt-3 border-t flex justify-between items-center"><button onClick={() => setSelectedLocations([])} className="text-xs text-gray-400 hover:text-red-500">Clear</button><button onClick={() => setLocMenuOpen(false)} className="text-xs font-bold text-[#FA6E28]">Done</button></div>
                 </div>
             )}
+        </div>
+    );
+};
+
+// --- USER PROFILE SETTINGS COMPONENT ---
+const UserProfileSection = ({ user, showNotification, setLang }) => {
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [formData, setFormData] = useState({
+        city: '',
+        canton: '',
+        bio: '',
+        preferred_language: 'de'
+    });
+
+    useEffect(() => {
+        const fetchProfile = async () => {
+            if (!user?.id) return;
+            const { data, error } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+            if (data) {
+                setFormData({
+                    city: data.city || '',
+                    canton: data.canton || '',
+                    bio: data.bio || '',
+                    preferred_language: data.preferred_language || 'de'
+                });
+            }
+            setLoading(false);
+        };
+        fetchProfile();
+    }, [user]);
+
+    const handleChange = (e) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
+    };
+
+    const handleSave = async (e) => {
+        e.preventDefault();
+        setSaving(true);
+        const { error } = await supabase.from('profiles').update({
+            city: formData.city,
+            canton: formData.canton,
+            bio: formData.bio,
+            preferred_language: formData.preferred_language
+        }).eq('id', user.id);
+
+        if (error) {
+            showNotification("Error saving profile");
+        } else {
+            showNotification("Profile saved successfully!");
+            // Update app language immediately
+            setLang(formData.preferred_language);
+        }
+        setSaving(false);
+    };
+
+    if (loading) return <div className="p-8 text-center"><Loader className="animate-spin w-8 h-8 text-[#FA6E28] mx-auto"/></div>;
+
+    return (
+        <div className="bg-white p-6 md:p-8 rounded-xl border border-gray-200 shadow-sm animate-in fade-in">
+            <h2 className="text-xl font-bold mb-6 text-[#333333] flex items-center">
+                <Settings className="w-5 h-5 mr-2 text-gray-500" /> Profile Settings
+            </h2>
+            <form onSubmit={handleSave} className="space-y-6 max-w-xl">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">City / Town</label>
+                        <input 
+                            type="text" 
+                            name="city" 
+                            value={formData.city} 
+                            onChange={handleChange} 
+                            placeholder="e.g. Adligenswil"
+                            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#FA6E28] outline-none" 
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">Canton</label>
+                        <div className="relative">
+                            <select 
+                                name="canton" 
+                                value={formData.canton} 
+                                onChange={handleChange}
+                                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#FA6E28] outline-none appearance-none bg-white"
+                            >
+                                <option value="">Select Canton</option>
+                                {SWISS_CANTONS.map(c => <option key={c} value={c}>{c}</option>)}
+                            </select>
+                            <ChevronDown className="absolute right-3 top-3 text-gray-400 w-4 h-4 pointer-events-none" />
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-1">Preferred Language</label>
+                    <div className="relative">
+                        <select 
+                            name="preferred_language" 
+                            value={formData.preferred_language} 
+                            onChange={handleChange}
+                            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#FA6E28] outline-none appearance-none bg-white"
+                        >
+                            <option value="de">Deutsch (German)</option>
+                            <option value="en">English</option>
+                            <option value="fr">Français (French)</option>
+                            <option value="it">Italiano (Italian)</option>
+                        </select>
+                        <ChevronDown className="absolute right-3 top-3 text-gray-400 w-4 h-4 pointer-events-none" />
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">We will use this for emails and website content.</p>
+                </div>
+
+                <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-1">About Me (Bio)</label>
+                    <textarea 
+                        name="bio" 
+                        rows="4" 
+                        value={formData.bio} 
+                        onChange={handleChange}
+                        placeholder="Tell us a little about yourself..."
+                        className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#FA6E28] outline-none"
+                    ></textarea>
+                </div>
+
+                <div className="pt-2">
+                    <button 
+                        type="submit" 
+                        disabled={saving}
+                        className="bg-[#FA6E28] text-white px-6 py-3 rounded-lg font-bold hover:bg-[#E55D1F] transition flex items-center shadow-md disabled:opacity-50"
+                    >
+                        {saving ? <Loader className="animate-spin w-5 h-5 mr-2" /> : <Save className="w-5 h-5 mr-2" />}
+                        Save Changes
+                    </button>
+                </div>
+            </form>
         </div>
     );
 };
@@ -235,7 +370,7 @@ export default function KursNaviPro() {
     setLang(newLang);
     if (user && user.id) {
         // Silently update profile
-        const { error } = await supabase.from('profiles').update({ language: newLang }).eq('id', user.id);
+        const { error } = await supabase.from('profiles').update({ preferred_language: newLang }).eq('id', user.id);
         if (error) console.error("Failed to save language preference:", error);
     }
   };
@@ -314,9 +449,9 @@ export default function KursNaviPro() {
         if (role === 'teacher') fetchTeacherEarnings(session.user.id);
 
         // --- NEW: FETCH LANGUAGE PREFERENCE ---
-        supabase.from('profiles').select('language').eq('id', session.user.id).single()
+        supabase.from('profiles').select('preferred_language').eq('id', session.user.id).single()
             .then(({ data }) => {
-                if (data && data.language) setLang(data.language);
+                if (data && data.preferred_language) setLang(data.preferred_language);
             });
       }
     });
@@ -331,16 +466,16 @@ export default function KursNaviPro() {
         if (role === 'teacher') fetchTeacherEarnings(session.user.id);
 
         // --- NEW: FETCH LANGUAGE PREFERENCE ON LOGIN ---
-        supabase.from('profiles').select('language').eq('id', session.user.id).single()
+        supabase.from('profiles').select('preferred_language').eq('id', session.user.id).single()
             .then(({ data }) => {
-                if (data && data.language) setLang(data.language);
+                if (data && data.preferred_language) setLang(data.preferred_language);
             });
       } else {
         setUser(null);
         setMyBookings([]);
         setTeacherEarnings([]);
         setView('home');
-        setLang('de'); // --- UPDATED: Default to 'de' on logout ---
+        setLang('de'); 
       }
     });
 
@@ -574,7 +709,7 @@ export default function KursNaviPro() {
                 const { data: authData, error: authError } = await supabase.auth.signUp({ email, password, options: { data: { full_name: fullName, role: role } } });
                 if (authError) throw authError;
                 // --- NEW: SAVE LANGUAGE ON SIGNUP ---
-                if (authData?.user) { await supabase.from('profiles').insert([{ id: authData.user.id, full_name: fullName, email: email, language: lang }]); }
+                if (authData?.user) { await supabase.from('profiles').insert([{ id: authData.user.id, full_name: fullName, email: email, preferred_language: lang }]); }
                 showNotification("Account created! Check your email.");
             } else {
                 const { data, error } = await supabase.auth.signInWithPassword({ email, password });
@@ -700,6 +835,9 @@ export default function KursNaviPro() {
   );
 
   const Dashboard = () => {
+    // New State for Dashboard Tabs
+    const [dashView, setDashView] = useState('overview'); // 'overview' | 'profile'
+
     // TEACHER DASHBOARD
     if (user.role === 'teacher') {
         const myCourses = courses.filter(c => c.user_id === user.id); 
@@ -709,89 +847,113 @@ export default function KursNaviPro() {
             <div className="max-w-6xl mx-auto px-4 py-8 font-['Hind_Madurai']">
                 <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
                     <div><h1 className="text-3xl font-bold text-[#333333] font-['Open_Sans']">{t.teacher_dash}</h1><p className="text-gray-500">Welcome back, {user.name}</p></div>
-                    <button onClick={() => setView('create')} className="bg-[#FA6E28] text-white px-6 py-3 rounded-xl font-bold hover:bg-[#E55D1F] flex items-center shadow-lg hover:-translate-y-0.5 transition font-['Open_Sans']"><KursNaviLogo className="mr-2 w-5 h-5 text-white" /> New Course</button>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                    <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm flex items-center"><div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4"><DollarSign className="text-green-600" /></div><div><p className="text-sm text-gray-500">Total Payouts Received</p><p className="text-2xl font-bold text-[#333333]">CHF {totalPaidOut.toFixed(2)}</p></div></div>
-                    <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm flex items-center"><div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-4"><User className="text-blue-600" /></div><div><p className="text-sm text-gray-500">Total Students</p><p className="text-2xl font-bold text-[#333333]">{teacherEarnings.length}</p></div></div>
-                </div>
-                <h2 className="text-xl font-bold mb-4 font-['Open_Sans'] text-[#333333]">Student & Earnings History</h2>
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-8">
-                      {teacherEarnings.length > 0 ? (
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-left">
-                                <thead className="bg-[#FAF5F0] border-b border-gray-200"><tr><th className="px-6 py-4 font-semibold text-gray-600">Date</th><th className="px-6 py-4 font-semibold text-gray-600">Course</th><th className="px-6 py-4 font-semibold text-gray-600">Student</th><th className="px-6 py-4 font-semibold text-gray-600">Your Payout (85%)</th><th className="px-6 py-4 font-semibold text-gray-600">Status</th></tr></thead>
-                                <tbody className="divide-y divide-gray-100">
-                                    {teacherEarnings.map(earning => (
-                                        <tr key={earning.id} className="hover:bg-gray-50">
-                                            <td className="px-6 py-4 text-sm text-gray-500">{earning.date}</td>
-                                            <td className="px-6 py-4 font-medium text-[#333333]">{earning.courseTitle}</td>
-                                            <td className="px-6 py-4 text-gray-700">{earning.studentName}</td>
-                                            <td className="px-6 py-4 font-bold text-[#333333]">CHF {earning.payout.toFixed(2)}</td>
-                                            <td className="px-6 py-4">{earning.isPaidOut ? <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Paid Out</span> : <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Pending</span>}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                    <div className="flex gap-4">
+                        <div className="bg-white rounded-full p-1 border flex shadow-sm">
+                            <button onClick={() => setDashView('overview')} className={`px-4 py-2 rounded-full text-sm font-bold transition ${dashView === 'overview' ? 'bg-[#FA6E28] text-white shadow' : 'text-gray-500 hover:bg-gray-50'}`}>Overview</button>
+                            <button onClick={() => setDashView('profile')} className={`px-4 py-2 rounded-full text-sm font-bold transition ${dashView === 'profile' ? 'bg-[#FA6E28] text-white shadow' : 'text-gray-500 hover:bg-gray-50'}`}>My Profile</button>
                         </div>
-                      ) : <div className="p-8 text-center text-gray-500">No student bookings yet.</div>}
+                        {dashView === 'overview' && <button onClick={() => setView('create')} className="bg-[#FA6E28] text-white px-6 py-3 rounded-xl font-bold hover:bg-[#E55D1F] flex items-center shadow-lg hover:-translate-y-0.5 transition font-['Open_Sans']"><KursNaviLogo className="mr-2 w-5 h-5 text-white" /> New Course</button>}
+                    </div>
                 </div>
-                <h2 className="text-xl font-bold mb-4 font-['Open_Sans'] text-[#333333]">My Active Courses</h2>
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                    {myCourses.length > 0 ? (
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-left">
-                                <thead className="bg-[#FAF5F0] border-b border-gray-200"><tr><th className="px-6 py-4 font-semibold text-gray-600">Course</th><th className="px-6 py-4 font-semibold text-gray-600">Price</th><th className="px-6 py-4 font-semibold text-gray-600">Actions</th></tr></thead>
-                                <tbody className="divide-y divide-gray-100">
-                                    {myCourses.map(course => (
-                                        <tr key={course.id} className="hover:bg-gray-50">
-                                            <td className="px-6 py-4"><div className="font-bold text-[#333333]">{course.title}</div><div className="text-xs text-gray-400">{course.category}</div></td>
-                                            <td className="px-6 py-4 font-medium">CHF {course.price}</td>
-                                            <td className="px-6 py-4"><button onClick={() => handleDeleteCourse(course.id)} className="text-red-500 hover:text-red-700"><Trash2 className="w-5 h-5" /></button></td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+
+                {dashView === 'profile' ? (
+                    <UserProfileSection user={user} showNotification={showNotification} setLang={changeLanguage} />
+                ) : (
+                    <>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                            <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm flex items-center"><div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4"><DollarSign className="text-green-600" /></div><div><p className="text-sm text-gray-500">Total Payouts Received</p><p className="text-2xl font-bold text-[#333333]">CHF {totalPaidOut.toFixed(2)}</p></div></div>
+                            <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm flex items-center"><div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-4"><User className="text-blue-600" /></div><div><p className="text-sm text-gray-500">Total Students</p><p className="text-2xl font-bold text-[#333333]">{teacherEarnings.length}</p></div></div>
                         </div>
-                    ) : <div className="p-8 text-center text-gray-500">You haven't posted any courses yet.</div>}
-                </div>
+                        <h2 className="text-xl font-bold mb-4 font-['Open_Sans'] text-[#333333]">Student & Earnings History</h2>
+                        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-8">
+                              {teacherEarnings.length > 0 ? (
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-left">
+                                        <thead className="bg-[#FAF5F0] border-b border-gray-200"><tr><th className="px-6 py-4 font-semibold text-gray-600">Date</th><th className="px-6 py-4 font-semibold text-gray-600">Course</th><th className="px-6 py-4 font-semibold text-gray-600">Student</th><th className="px-6 py-4 font-semibold text-gray-600">Your Payout (85%)</th><th className="px-6 py-4 font-semibold text-gray-600">Status</th></tr></thead>
+                                        <tbody className="divide-y divide-gray-100">
+                                            {teacherEarnings.map(earning => (
+                                                <tr key={earning.id} className="hover:bg-gray-50">
+                                                    <td className="px-6 py-4 text-sm text-gray-500">{earning.date}</td>
+                                                    <td className="px-6 py-4 font-medium text-[#333333]">{earning.courseTitle}</td>
+                                                    <td className="px-6 py-4 text-gray-700">{earning.studentName}</td>
+                                                    <td className="px-6 py-4 font-bold text-[#333333]">CHF {earning.payout.toFixed(2)}</td>
+                                                    <td className="px-6 py-4">{earning.isPaidOut ? <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Paid Out</span> : <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Pending</span>}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                              ) : <div className="p-8 text-center text-gray-500">No student bookings yet.</div>}
+                        </div>
+                        <h2 className="text-xl font-bold mb-4 font-['Open_Sans'] text-[#333333]">My Active Courses</h2>
+                        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                            {myCourses.length > 0 ? (
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-left">
+                                        <thead className="bg-[#FAF5F0] border-b border-gray-200"><tr><th className="px-6 py-4 font-semibold text-gray-600">Course</th><th className="px-6 py-4 font-semibold text-gray-600">Price</th><th className="px-6 py-4 font-semibold text-gray-600">Actions</th></tr></thead>
+                                        <tbody className="divide-y divide-gray-100">
+                                            {myCourses.map(course => (
+                                                <tr key={course.id} className="hover:bg-gray-50">
+                                                    <td className="px-6 py-4"><div className="font-bold text-[#333333]">{course.title}</div><div className="text-xs text-gray-400">{course.category}</div></td>
+                                                    <td className="px-6 py-4 font-medium">CHF {course.price}</td>
+                                                    <td className="px-6 py-4"><button onClick={() => handleDeleteCourse(course.id)} className="text-red-500 hover:text-red-700"><Trash2 className="w-5 h-5" /></button></td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            ) : <div className="p-8 text-center text-gray-500">You haven't posted any courses yet.</div>}
+                        </div>
+                    </>
+                )}
             </div>
         );
     } 
     // STUDENT DASHBOARD
     return (
         <div className="max-w-6xl mx-auto px-4 py-8 font-['Hind_Madurai']">
-            <h1 className="text-3xl font-bold text-[#333333] mb-8 font-['Open_Sans']">{t.student_dash}</h1>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div>
-                    <h2 className="text-xl font-bold mb-4 text-[#333333]">{t.my_bookings}</h2>
-                    <div className="space-y-4">
-                        {myBookings.length > 0 ? myBookings.map(course => {
-                            let canCancel = true; let deadlineText = "";
-                            if (course.start_date) {
-                                const deadline = calculateDeadline(course.start_date);
-                                const now = new Date();
-                                if (now > deadline) { canCancel = false; deadlineText = `Cancellation period ended on ${deadline.toLocaleDateString()}`; } 
-                                else { deadlineText = `Cancel until ${deadline.toLocaleDateString()}`; }
-                            }
-                            return (
-                                <div key={course.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex gap-4">
-                                    <img src={course.image_url} className="w-20 h-20 rounded-lg object-cover" />
-                                    <div className="flex-grow">
-                                        <h3 className="font-bold text-[#333333]">{course.title}</h3><p className="text-sm text-gray-500">{course.instructor_name} • {course.canton}</p>
-                                        <div className="mt-4 flex items-center justify-between">
-                                            <div className="text-green-600 text-sm font-medium flex items-center"><CheckCircle className="w-4 h-4 mr-1" /> Confirmed</div>
-                                            {canCancel ? (
-                                                <div className="flex flex-col items-end"><button onClick={() => handleCancelBooking(course.id, course.title)} className="text-red-500 text-sm hover:text-red-700 hover:underline font-medium">Cancel Booking</button><span className="text-xs text-gray-400 mt-1">{deadlineText}</span></div>
-                                            ) : (<div className="flex items-center text-gray-400 text-sm bg-gray-50 px-2 py-1 rounded"><Lock className="w-3 h-3 mr-1" /><span>Non-refundable</span></div>)}
-                                        </div>
-                                    </div>
-                                </div>
-                            );
-                        }) : <p className="text-gray-500 italic">You haven't booked any courses yet.</p>}
-                    </div>
+            <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+                 <h1 className="text-3xl font-bold text-[#333333] mb-8 font-['Open_Sans']">{t.student_dash}</h1>
+                 <div className="bg-white rounded-full p-1 border flex shadow-sm h-fit">
+                    <button onClick={() => setDashView('overview')} className={`px-4 py-2 rounded-full text-sm font-bold transition ${dashView === 'overview' ? 'bg-[#FA6E28] text-white shadow' : 'text-gray-500 hover:bg-gray-50'}`}>My Bookings</button>
+                    <button onClick={() => setDashView('profile')} className={`px-4 py-2 rounded-full text-sm font-bold transition ${dashView === 'profile' ? 'bg-[#FA6E28] text-white shadow' : 'text-gray-500 hover:bg-gray-50'}`}>Profile Settings</button>
                 </div>
             </div>
+            
+            {dashView === 'profile' ? (
+                <UserProfileSection user={user} showNotification={showNotification} setLang={changeLanguage} />
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                        <h2 className="text-xl font-bold mb-4 text-[#333333]">{t.my_bookings}</h2>
+                        <div className="space-y-4">
+                            {myBookings.length > 0 ? myBookings.map(course => {
+                                let canCancel = true; let deadlineText = "";
+                                if (course.start_date) {
+                                    const deadline = calculateDeadline(course.start_date);
+                                    const now = new Date();
+                                    if (now > deadline) { canCancel = false; deadlineText = `Cancellation period ended on ${deadline.toLocaleDateString()}`; } 
+                                    else { deadlineText = `Cancel until ${deadline.toLocaleDateString()}`; }
+                                }
+                                return (
+                                    <div key={course.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex gap-4">
+                                        <img src={course.image_url} className="w-20 h-20 rounded-lg object-cover" />
+                                        <div className="flex-grow">
+                                            <h3 className="font-bold text-[#333333]">{course.title}</h3><p className="text-sm text-gray-500">{course.instructor_name} • {course.canton}</p>
+                                            <div className="mt-4 flex items-center justify-between">
+                                                <div className="text-green-600 text-sm font-medium flex items-center"><CheckCircle className="w-4 h-4 mr-1" /> Confirmed</div>
+                                                {canCancel ? (
+                                                    <div className="flex flex-col items-end"><button onClick={() => handleCancelBooking(course.id, course.title)} className="text-red-500 text-sm hover:text-red-700 hover:underline font-medium">Cancel Booking</button><span className="text-xs text-gray-400 mt-1">{deadlineText}</span></div>
+                                                ) : (<div className="flex items-center text-gray-400 text-sm bg-gray-50 px-2 py-1 rounded"><Lock className="w-3 h-3 mr-1" /><span>Non-refundable</span></div>)}
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            }) : <p className="text-gray-500 italic">You haven't booked any courses yet.</p>}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
   };
@@ -803,12 +965,12 @@ export default function KursNaviPro() {
       <Navbar t={t} user={user} lang={lang} setLang={changeLanguage} setView={setView} handleLogout={handleLogout} setShowResults={() => setView('search')} setSelectedCatPath={setSelectedCatPath} />
 
       <div className="flex-grow">
-      
+       
       {/* --- ROUTING --- */}
       {view === 'home' && (
          <LandingView title={t.hero_title} subtitle={t.hero_subtitle} variant="main" searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearchSubmit={handleSearchSubmit} setSelectedCatPath={setSelectedCatPath} setView={setView} t={t} LandingPageContent={LandingPageContent} />
       )}
-      
+       
       {view === 'landing-private' && (
           <LandingView title="Unleash your passion." subtitle="From Piano to Pilates. Find the perfect hobby." variant="private" searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearchSubmit={handleSearchSubmit} setSelectedCatPath={setSelectedCatPath} setView={setView} t={t} LandingPageContent={LandingPageContent} />
       )}
@@ -848,7 +1010,7 @@ export default function KursNaviPro() {
       {view === 'dashboard' && user && <Dashboard />}
       {view === 'create' && user?.role === 'teacher' && <TeacherForm />}
       </div>
-    
+     
       <Footer t={t} setView={setView} />
     </div>
   );
