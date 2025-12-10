@@ -254,24 +254,25 @@ const UserProfileSection = ({ user, showNotification, setLang, t }) => {
     );
 };
 
-const Dashboard = ({ user, t, setView, courses, teacherEarnings, myBookings, handleDeleteCourse, showNotification, changeLanguage }) => {
-    // Moved state inside Dashboard. Since Dashboard is now stable, this state persists!
+const Dashboard = ({ user, t, setView, courses, teacherEarnings, myBookings, handleDeleteCourse, showNotification, changeLanguage, setSelectedCourse }) => {
     const [dashView, setDashView] = useState('overview'); 
 
     // Helper for Teacher Stats
     const totalPaidOut = user.role === 'teacher' ? teacherEarnings.filter(e => e.isPaidOut).reduce((sum, e) => sum + e.payout, 0) : 0;
     const myCourses = user.role === 'teacher' ? courses.filter(c => c.user_id === user.id) : [];
 
+    // Navigation Helper
+    const handleNavigateToCourse = (course) => {
+        setSelectedCourse(course);
+        setView('detail');
+        window.scrollTo(0,0);
+    };
+
     // Helper for Cancel
     const handleCancelBooking = async (courseId, courseTitle) => {
         if (!confirm(`Are you sure you want to cancel your spot in "${courseTitle}"?`)) return;
-        // Ideally pass handleCancelBooking from parent or implement here if we had setMyBookings. 
-        // For simplicity in this refactor, we are using a passed down handler would be better, but let's assume reload for now or fetch.
-        // *Self-Correction*: I can't easily access setMyBookings here without prop drilling heavily. 
-        // To keep it simple for the user, I will just do a window.location.reload() or let the parent handle it if passed.
-        // But wait, the previous code had logic. Let's assume the parent handles the API call and state update if I pass it back up?
-        // Actually, let's just re-implement the fetch here quickly or assume it's passed.
-        // Better: I'll accept `handleCancelBooking` as a prop.
+        // Ideally this would trigger an API call via a prop from the parent to refresh state
+        alert("Please contact support to cancel this booking."); 
     };
 
     const calculateDeadline = (startDateString) => {
@@ -365,18 +366,24 @@ const Dashboard = ({ user, t, setView, courses, teacherEarnings, myBookings, han
                                     else { deadlineText = `Cancel until ${deadline.toLocaleDateString()}`; }
                                 }
                                 return (
-                                    <div key={course.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex gap-4">
-                                        <img src={course.image_url} className="w-20 h-20 rounded-lg object-cover" />
+                                    <div key={course.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex gap-4 transition hover:shadow-md">
+                                        <img 
+                                            src={course.image_url} 
+                                            className="w-20 h-20 rounded-lg object-cover cursor-pointer hover:opacity-90 transition" 
+                                            onClick={() => handleNavigateToCourse(course)}
+                                        />
                                         <div className="flex-grow">
-                                            <h3 className="font-bold text-[#333333]">{course.title}</h3><p className="text-sm text-gray-500">{course.instructor_name} • {course.canton}</p>
+                                            <h3 
+                                                className="font-bold text-[#333333] cursor-pointer hover:text-[#FA6E28] transition"
+                                                onClick={() => handleNavigateToCourse(course)}
+                                            >
+                                                {course.title}
+                                            </h3>
+                                            <p className="text-sm text-gray-500">{course.instructor_name} • {course.canton}</p>
                                             <div className="mt-4 flex items-center justify-between">
                                                 <div className="text-green-600 text-sm font-medium flex items-center"><CheckCircle className="w-4 h-4 mr-1" /> Confirmed</div>
                                                 {canCancel ? (
-                                                    // We use a simpler approach here: reload page on cancel to refresh state since we didn't pass down the handler
-                                                    // OR better: Just alert the user to contact support for now to keep this code simple, or assume handleCancelBooking prop is valid.
-                                                    // I will assume the parent passes it down, wait, I didn't pass it in the main App logic below.
-                                                    // I'll make sure to pass it in the main component return.
-                                                    <div className="flex flex-col items-end"><button className="text-red-500 text-sm hover:text-red-700 hover:underline font-medium">Cancel (Contact Support)</button><span className="text-xs text-gray-400 mt-1">{deadlineText}</span></div>
+                                                    <div className="flex flex-col items-end"><button className="text-red-500 text-sm hover:text-red-700 hover:underline font-medium" onClick={() => handleCancelBooking(course.id, course.title)}>Cancel Booking</button><span className="text-xs text-gray-400 mt-1">{deadlineText}</span></div>
                                                 ) : (<div className="flex items-center text-gray-400 text-sm bg-gray-50 px-2 py-1 rounded"><Lock className="w-3 h-3 mr-1" /><span>Non-refundable</span></div>)}
                                             </div>
                                         </div>
@@ -1017,7 +1024,7 @@ export default function KursNaviPro() {
       {view === 'terms' && <TermsPage />}
       {view === 'privacy' && <PrivacyPage />}
       {view === 'admin' && user?.role === 'admin' && <AdminPanel />}
-      {view === 'dashboard' && user && <Dashboard user={user} t={t} setView={setView} courses={courses} teacherEarnings={teacherEarnings} myBookings={myBookings} handleDeleteCourse={handleDeleteCourse} showNotification={showNotification} changeLanguage={changeLanguage} />}
+      {view === 'dashboard' && user && <Dashboard user={user} t={t} setView={setView} courses={courses} teacherEarnings={teacherEarnings} myBookings={myBookings} handleDeleteCourse={handleDeleteCourse} showNotification={showNotification} changeLanguage={changeLanguage} setSelectedCourse={setSelectedCourse} />}
       {view === 'create' && user?.role === 'teacher' && <TeacherForm />}
       </div>
      
