@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { Search, User, Clock, MapPin, CheckCircle, ArrowLeft, LogIn, LayoutDashboard, Settings, Trash2, DollarSign, Lock, Calendar, ExternalLink, ChevronDown, ChevronRight, Mail, Phone, Loader, Heart, Shield, X, BookOpen, Star, Zap, Users, Briefcase, Smile, Music, ArrowRight, Save } from 'lucide-react';
+import { Search, User, Clock, MapPin, CheckCircle, ArrowLeft, LogIn, LayoutDashboard, Settings, Trash2, DollarSign, Lock, Calendar, ExternalLink, ChevronDown, ChevronRight, Mail, Phone, Loader, Heart, Shield, X, BookOpen, Star, Zap, Users, Briefcase, Smile, Music, ArrowRight, Save, Filter, BadgeCheck } from 'lucide-react';
 
 // --- IMPORTS ---
 import { BRAND, CATEGORY_HIERARCHY, CATEGORY_LABELS, SWISS_CANTONS, SWISS_CITIES, TRANSLATIONS } from './lib/constants';
@@ -248,6 +248,31 @@ const TeacherForm = ({ t, setView, user, handlePublishCourse, getCatLabel }) => 
             <form onSubmit={handlePublishCourse} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="md:col-span-2"><label className="block text-sm font-bold text-gray-700 mb-1">Course Title</label><input required type="text" name="title" placeholder="e.g. Traditional Swiss Cooking" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#FA6E28] outline-none transition-shadow" /></div>
+                    
+                    {/* NEW FIELDS: Level, Target Group, Pro Toggle */}
+                    <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4">
+                         <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-1">Skill Level</label>
+                            <select name="level" className="w-full px-3 py-2 border rounded-lg focus:ring-[#FA6E28] bg-white text-sm outline-none">
+                                <option value="All Levels">All Levels</option>
+                                <option value="Beginner">Beginner (Anfänger)</option>
+                                <option value="Advanced">Advanced (Fortgeschritten)</option>
+                            </select>
+                         </div>
+                         <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-1">Target Group</label>
+                            <select name="target_group" className="w-full px-3 py-2 border rounded-lg focus:ring-[#FA6E28] bg-white text-sm outline-none">
+                                <option value="Adults">Adults (Erwachsene)</option>
+                                <option value="Teens">Teens</option>
+                                <option value="Kids">Kids (Kinder)</option>
+                            </select>
+                         </div>
+                         <div className="flex items-center p-3 border rounded-lg bg-gray-50">
+                             <input type="checkbox" name="is_pro" id="is_pro" className="w-5 h-5 text-[#FA6E28] focus:ring-[#FA6E28] rounded border-gray-300 mr-3" />
+                             <label htmlFor="is_pro" className="text-sm font-bold text-gray-700 cursor-pointer flex items-center">Professional Course <BadgeCheck className="w-4 h-4 ml-1 text-blue-500" /></label>
+                         </div>
+                    </div>
+
                     <div className="md:col-span-2 bg-[#FAF5F0] p-4 rounded-xl border border-orange-100">
                         <label className="block text-sm font-bold text-gray-700 mb-2">Category Classification</label>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -327,12 +352,19 @@ const DetailView = ({ course, setView, t, handleBookCourse }) => (
         <div className="lg:col-span-2 space-y-8">
             <div className="relative rounded-2xl overflow-hidden shadow-lg h-80">
                 <img src={course.image_url} alt={course.title} className="w-full h-full object-cover" />
-                <div className="absolute top-4 left-4 bg-white/90 backdrop-blur px-3 py-1.5 rounded-lg text-sm font-bold text-gray-800 flex items-center shadow-sm"><MapPin className="w-4 h-4 mr-1 text-[#FA6E28]" /> {course.canton}</div>
+                <div className="absolute top-4 left-4 flex gap-2">
+                    <div className="bg-white/90 backdrop-blur px-3 py-1.5 rounded-lg text-sm font-bold text-gray-800 flex items-center shadow-sm"><MapPin className="w-4 h-4 mr-1 text-[#FA6E28]" /> {course.canton}</div>
+                    {course.is_pro && <div className="bg-blue-600/90 backdrop-blur px-3 py-1.5 rounded-lg text-sm font-bold text-white flex items-center shadow-sm"><BadgeCheck className="w-4 h-4 mr-1" /> Pro</div>}
+                </div>
             </div>
             <div>
                 <h1 className="text-3xl font-extrabold text-[#333333] mb-3 font-['Open_Sans']">{course.title}</h1>
                 <div className="flex items-center space-x-4 text-sm text-gray-500"><span className="flex items-center"><User className="w-4 h-4 mr-1" /> {course.instructor_name}</span></div>
-                <div className="mt-2 text-sm text-[#FA6E28] font-medium bg-orange-50 inline-block px-2 py-1 rounded">{course.category}</div>
+                <div className="mt-3 flex gap-2">
+                     <span className="text-xs font-bold text-[#FA6E28] bg-orange-50 px-2 py-1 rounded border border-orange-100">{course.category}</span>
+                     {course.level && <span className="text-xs font-bold text-gray-600 bg-gray-100 px-2 py-1 rounded border border-gray-200">{course.level}</span>}
+                     {course.target_group && <span className="text-xs font-bold text-gray-600 bg-gray-100 px-2 py-1 rounded border border-gray-200">{course.target_group}</span>}
+                </div>
             </div>
             <div className="bg-white p-8 rounded-2xl border border-gray-100 shadow-sm space-y-6">
                 <div><h3 className="text-xl font-bold mb-3 text-[#333333] font-['Open_Sans']">{t.lbl_description}</h3><p className="text-gray-600 leading-relaxed text-lg">{course.description}</p></div>
@@ -474,22 +506,44 @@ const LandingView = ({ title, subtitle, variant = 'main', searchQuery, setSearch
     );
 };
 
-const SearchPageView = ({ selectedCatPath, setSelectedCatPath, searchQuery, setSearchQuery, catMenuOpen, setCatMenuOpen, catMenuRef, t, getCatLabel, locMode, setLocMode, selectedLocations, setSelectedLocations, locMenuOpen, setLocMenuOpen, locMenuRef, loading, filteredCourses, setSelectedCourse, setView }) => {
+const SearchPageView = ({ selectedCatPath, setSelectedCatPath, searchQuery, setSearchQuery, catMenuOpen, setCatMenuOpen, catMenuRef, t, getCatLabel, locMode, setLocMode, selectedLocations, setSelectedLocations, locMenuOpen, setLocMenuOpen, locMenuRef, loading, filteredCourses, setSelectedCourse, setView, filterDate, setFilterDate, filterPriceMax, setFilterPriceMax, filterLevel, setFilterLevel, filterPro, setFilterPro }) => {
     const activeSection = selectedCatPath.length > 0 ? selectedCatPath[0] : null;
 
     return (
         <div className="min-h-screen bg-[#FAF5F0]">
             <div className="bg-white border-b pt-8 pb-4 sticky top-20 z-30 shadow-sm">
-                <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row gap-4 items-center">
-                      <div className="relative flex-grow w-full md:w-auto">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                        <input type="text" placeholder="Refine search..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-10 pr-4 py-3 bg-[#FAF5F0] border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-[#FA6E28] focus:bg-white transition-colors" />
+                <div className="max-w-7xl mx-auto px-4 space-y-4">
+                    <div className="flex flex-col md:flex-row gap-4 items-center">
+                        <div className="relative flex-grow w-full md:w-auto">
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                            <input type="text" placeholder="Refine search..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-10 pr-4 py-3 bg-[#FAF5F0] border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-[#FA6E28] focus:bg-white transition-colors" />
+                        </div>
+                        <CategoryDropdown rootCategory={activeSection} selectedCatPath={selectedCatPath} setSelectedCatPath={setSelectedCatPath} catMenuOpen={catMenuOpen} setCatMenuOpen={setCatMenuOpen} t={t} getCatLabel={getCatLabel} catMenuRef={catMenuRef} /> 
+                        <LocationDropdown locMode={locMode} setLocMode={setLocMode} selectedLocations={selectedLocations} setSelectedLocations={setSelectedLocations} locMenuOpen={locMenuOpen} setLocMenuOpen={setLocMenuOpen} locMenuRef={locMenuRef} t={t} />
+                        {(selectedCatPath.length > 0 || selectedLocations.length > 0 || filterDate || filterPriceMax || filterLevel !== 'All' || filterPro) && (<button onClick={() => { setSelectedCatPath([]); setSelectedLocations([]); setSearchQuery(""); setFilterDate(""); setFilterPriceMax(""); setFilterLevel("All"); setFilterPro(false); }} className="p-2 text-gray-400 hover:text-red-500 rounded-full hover:bg-gray-100" title="Reset all filters"><X className="w-5 h-5" /></button>)}
                     </div>
-                    <CategoryDropdown rootCategory={activeSection} selectedCatPath={selectedCatPath} setSelectedCatPath={setSelectedCatPath} catMenuOpen={catMenuOpen} setCatMenuOpen={setCatMenuOpen} t={t} getCatLabel={getCatLabel} catMenuRef={catMenuRef} /> 
-                    <LocationDropdown locMode={locMode} setLocMode={setLocMode} selectedLocations={selectedLocations} setSelectedLocations={setSelectedLocations} locMenuOpen={locMenuOpen} setLocMenuOpen={setLocMenuOpen} locMenuRef={locMenuRef} t={t} />
-                    {(selectedCatPath.length > 0 || selectedLocations.length > 0) && (<button onClick={() => { setSelectedCatPath([]); setSelectedLocations([]); setSearchQuery(""); }} className="p-2 text-gray-400 hover:text-red-500 rounded-full hover:bg-gray-100"><X className="w-5 h-5" /></button>)}
+                    {/* NEW FILTERS ROW */}
+                    <div className="flex gap-4 overflow-x-auto pb-2 items-center">
+                        <div className="flex items-center space-x-2 bg-gray-50 px-3 py-1.5 rounded-lg border">
+                            <Calendar className="w-4 h-4 text-gray-500" />
+                            <input type="date" value={filterDate} onChange={(e) => setFilterDate(e.target.value)} className="bg-transparent text-sm outline-none text-gray-600" />
+                        </div>
+                        <div className="flex items-center space-x-2 bg-gray-50 px-3 py-1.5 rounded-lg border">
+                            <span className="text-sm text-gray-500">Max CHF</span>
+                            <input type="number" placeholder="Any" value={filterPriceMax} onChange={(e) => setFilterPriceMax(e.target.value)} className="w-16 bg-transparent text-sm outline-none text-gray-600" />
+                        </div>
+                        <select value={filterLevel} onChange={(e) => setFilterLevel(e.target.value)} className="bg-gray-50 border rounded-lg px-3 py-1.5 text-sm outline-none text-gray-600">
+                            <option value="All">All Levels</option>
+                            <option value="Beginner">Beginner</option>
+                            <option value="Advanced">Advanced</option>
+                        </select>
+                         <label className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg border cursor-pointer transition select-none ${filterPro ? 'bg-blue-50 border-blue-200' : 'bg-gray-50'}`}>
+                            <input type="checkbox" checked={filterPro} onChange={(e) => setFilterPro(e.target.checked)} className="rounded text-[#FA6E28] focus:ring-[#FA6E28]" />
+                            <span className={`text-sm font-medium ${filterPro ? 'text-blue-700' : 'text-gray-600'}`}>Professional</span>
+                        </label>
+                    </div>
                 </div>
-                {(selectedCatPath.length > 0 || selectedLocations.length > 0) && (<div className="max-w-7xl mx-auto px-4 pt-4 flex gap-2 flex-wrap">{selectedCatPath.map((part, i) => (<span key={i} className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-md font-bold">{getCatLabel(part)}</span>))}{selectedLocations.map((loc, i) => (<span key={i} className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-md font-bold">{loc}</span>))}</div>)}
+                 {(selectedCatPath.length > 0 || selectedLocations.length > 0) && (<div className="max-w-7xl mx-auto px-4 pt-4 flex gap-2 flex-wrap">{selectedCatPath.map((part, i) => (<span key={i} className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-md font-bold">{getCatLabel(part)}</span>))}{selectedLocations.map((loc, i) => (<span key={i} className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-md font-bold">{loc}</span>))}</div>)}
             </div>
 
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -499,7 +553,10 @@ const SearchPageView = ({ selectedCatPath, setSelectedCatPath, searchQuery, setS
                       <div key={course.id} onClick={() => { setSelectedCourse(course); setView('detail'); window.scrollTo(0,0); }} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer group">
                         <div className="relative h-48 overflow-hidden">
                             <img src={course.image_url} alt={course.title} className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300" />
-                            <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-sm px-2 py-1 rounded text-xs font-bold text-gray-700 shadow-sm flex items-center"><MapPin className="w-3 h-3 mr-1 text-[#FA6E28]" />{course.canton}</div>
+                            <div className="absolute top-3 left-3 flex flex-col gap-1 items-start">
+                                <div className="bg-white/95 backdrop-blur-sm px-2 py-1 rounded text-xs font-bold text-gray-700 shadow-sm flex items-center"><MapPin className="w-3 h-3 mr-1 text-[#FA6E28]" />{course.canton}</div>
+                                {course.is_pro && <div className="bg-blue-600/90 text-white px-2 py-1 rounded text-xs font-bold shadow-sm flex items-center"><BadgeCheck className="w-3 h-3 mr-1" /> Pro</div>}
+                            </div>
                         </div>
                         <div className="p-5">
                             <h3 className="font-bold text-lg text-[#333333] leading-tight line-clamp-2 h-12 mb-2 font-['Open_Sans']">{course.title}</h3>
@@ -542,6 +599,12 @@ export default function KursNaviPro() {
   const [selectedLocations, setSelectedLocations] = useState([]);
   const [notification, setNotification] = useState(null);
   const [selectedCourse, setSelectedCourse] = useState(null);
+
+  // NEW FILTER STATE
+  const [filterDate, setFilterDate] = useState("");
+  const [filterPriceMax, setFilterPriceMax] = useState("");
+  const [filterLevel, setFilterLevel] = useState("All");
+  const [filterPro, setFilterPro] = useState(false);
 
   const catMenuRef = useRef(null);
   const locMenuRef = useRef(null);
@@ -736,7 +799,8 @@ export default function KursNaviPro() {
     const newCourse = {
       title: formData.get('title'), instructor_name: user.name, price: Number(formData.get('price')), rating: 0, category: fullCategoryString, canton: formData.get('canton'), address: formData.get('address'),
       image_url: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=600",
-      description: formData.get('description'), objectives: objectivesList, prerequisites: formData.get('prerequisites'), session_count: Number(formData.get('sessionCount')), session_length: formData.get('sessionLength'), provider_url: formData.get('providerUrl'), user_id: user.id, start_date: formData.get('startDate') 
+      description: formData.get('description'), objectives: objectivesList, prerequisites: formData.get('prerequisites'), session_count: Number(formData.get('sessionCount')), session_length: formData.get('sessionLength'), provider_url: formData.get('providerUrl'), user_id: user.id, start_date: formData.get('startDate'),
+      level: formData.get('level'), target_group: formData.get('target_group'), is_pro: formData.get('is_pro') === 'on' 
     };
     const { data, error } = await supabase.from('courses').insert([newCourse]).select();
     if (error) { console.error(error); showNotification("Error publishing course"); } 
@@ -773,7 +837,26 @@ export default function KursNaviPro() {
         else { const address = (course.address || "").toLowerCase(); const canton = (course.canton || "").toLowerCase(); matchesLocation = selectedLocations.some(city => address.includes(city.toLowerCase()) || canton.includes(city.toLowerCase())); }
     }
     const matchesSearch = course.title.toLowerCase().includes(searchQuery.toLowerCase()) || (course.instructor_name && course.instructor_name.toLowerCase().includes(searchQuery.toLowerCase()));
-    return matchesCategory && matchesLocation && matchesSearch;
+    
+    // NEW FILTER LOGIC
+    let matchesDate = true;
+    if (filterDate && course.start_date) {
+        matchesDate = new Date(course.start_date) >= new Date(filterDate);
+    }
+    let matchesPrice = true;
+    if (filterPriceMax) {
+        matchesPrice = course.price <= Number(filterPriceMax);
+    }
+    let matchesLevel = true;
+    if (filterLevel !== 'All') {
+        matchesLevel = course.level === filterLevel;
+    }
+    let matchesPro = true;
+    if (filterPro) {
+        matchesPro = course.is_pro === true;
+    }
+
+    return matchesCategory && matchesLocation && matchesSearch && matchesDate && matchesPrice && matchesLevel && matchesPro;
   });
 
   return (
@@ -812,6 +895,10 @@ export default function KursNaviPro() {
             loading={loading} filteredCourses={filteredCourses}
             setSelectedCourse={setSelectedCourse} setView={setView}
             t={t} getCatLabel={getCatLabel}
+            filterDate={filterDate} setFilterDate={setFilterDate}
+            filterPriceMax={filterPriceMax} setFilterPriceMax={setFilterPriceMax}
+            filterLevel={filterLevel} setFilterLevel={setFilterLevel}
+            filterPro={filterPro} setFilterPro={setFilterPro}
           />
       )}
 
