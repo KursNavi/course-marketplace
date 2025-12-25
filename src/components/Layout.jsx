@@ -42,12 +42,12 @@ export const Navbar = ({ t, user, lang, setLang, setView, handleLogout, setShowR
               <span className="ml-2 text-2xl font-bold tracking-tighter text-[#333333]">Kurs<span className="text-[#FA6E28]">Navi</span></span>
             </div>
             
-            {/* DESKTOP NAV LINKS (The "Top Banner" Categories) */}
+            {/* DESKTOP NAV LINKS (TRANSLATED) */}
             <div className="hidden md:ml-10 md:flex md:space-x-8">
-              <button onClick={() => navTo('landing-private', ['Private & Hobby'])} className="text-gray-500 hover:text-[#FA6E28] px-3 py-2 rounded-md text-sm font-medium transition-colors">Private & Hobby</button>
-              <button onClick={() => navTo('landing-prof', ['Professional'])} className="text-gray-500 hover:text-[#FA6E28] px-3 py-2 rounded-md text-sm font-medium transition-colors">Professional</button>
-              <button onClick={() => navTo('landing-kids', ['Children'])} className="text-gray-500 hover:text-[#FA6E28] px-3 py-2 rounded-md text-sm font-medium transition-colors">Children</button>
-              <button onClick={() => navTo('how-it-works')} className="text-gray-500 hover:text-[#FA6E28] px-3 py-2 rounded-md text-sm font-medium transition-colors">How it Works</button>
+              <button onClick={() => navTo('landing-private', ['Private & Hobby'])} className="text-gray-500 hover:text-[#FA6E28] px-3 py-2 rounded-md text-sm font-medium transition-colors">{t.nav_private}</button>
+              <button onClick={() => navTo('landing-prof', ['Professional'])} className="text-gray-500 hover:text-[#FA6E28] px-3 py-2 rounded-md text-sm font-medium transition-colors">{t.nav_professional}</button>
+              <button onClick={() => navTo('landing-kids', ['Children'])} className="text-gray-500 hover:text-[#FA6E28] px-3 py-2 rounded-md text-sm font-medium transition-colors">{t.nav_kids}</button>
+              <button onClick={() => navTo('how-it-works')} className="text-gray-500 hover:text-[#FA6E28] px-3 py-2 rounded-md text-sm font-medium transition-colors">{t.nav_howitworks}</button>
             </div>
           </div>
 
@@ -66,7 +66,6 @@ export const Navbar = ({ t, user, lang, setLang, setView, handleLogout, setShowR
                     <>
                     <div className="fixed inset-0 z-10" onClick={() => setLangMenuOpen(false)}></div>
                     <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-20 animate-in fade-in zoom-in-95 duration-200">
-                        {/* HEADER REMOVED AS REQUESTED */}
                         {languages.map((l) => (
                             <button
                                 key={l.code}
@@ -84,7 +83,7 @@ export const Navbar = ({ t, user, lang, setLang, setView, handleLogout, setShowR
 
             {user ? (
               <div className="flex items-center space-x-4">
-                <button onClick={() => navTo('dashboard')} className="flex items-center text-gray-700 hover:text-[#FA6E28] font-medium"><LayoutDashboard className="w-4 h-4 mr-2" />{user.role === 'teacher' ? 'Dashboard' : 'My Courses'}</button>
+                <button onClick={() => navTo('dashboard')} className="flex items-center text-gray-700 hover:text-[#FA6E28] font-medium"><LayoutDashboard className="w-4 h-4 mr-2" />{user.role === 'teacher' ? t.nav_dashboard : t.student_dash}</button>
                 <button onClick={handleLogout} className="flex items-center text-gray-400 hover:text-red-500"><LogOut className="w-5 h-5" /></button>
               </div>
             ) : (
@@ -105,10 +104,10 @@ export const Navbar = ({ t, user, lang, setLang, setView, handleLogout, setShowR
       {mobileMenuOpen && (
         <div className="md:hidden bg-white border-t border-gray-100 absolute w-full left-0 shadow-xl h-screen overflow-y-auto pb-20">
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-            <button onClick={() => navTo('landing-private', ['Private & Hobby'])} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-orange-50 hover:text-[#FA6E28]">Private & Hobby</button>
-            <button onClick={() => navTo('landing-prof', ['Professional'])} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-orange-50 hover:text-[#FA6E28]">Professional</button>
-            <button onClick={() => navTo('landing-kids', ['Children'])} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-orange-50 hover:text-[#FA6E28]">Children</button>
-            <button onClick={() => navTo('how-it-works')} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-orange-50 hover:text-[#FA6E28]">How it Works</button>
+            <button onClick={() => navTo('landing-private', ['Private & Hobby'])} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-orange-50 hover:text-[#FA6E28]">{t.nav_private}</button>
+            <button onClick={() => navTo('landing-prof', ['Professional'])} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-orange-50 hover:text-[#FA6E28]">{t.nav_professional}</button>
+            <button onClick={() => navTo('landing-kids', ['Children'])} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-orange-50 hover:text-[#FA6E28]">{t.nav_kids}</button>
+            <button onClick={() => navTo('how-it-works')} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-orange-50 hover:text-[#FA6E28]">{t.nav_howitworks}</button>
             
             {/* MOBILE LANGUAGES */}
             <div className="border-t border-gray-100 my-2 pt-2">
@@ -125,11 +124,11 @@ export const Navbar = ({ t, user, lang, setLang, setView, handleLogout, setShowR
             <div className="border-t border-gray-100 my-2 pt-2">
                 {user ? (
                     <>
-                        <button onClick={() => navTo('dashboard')} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50">Dashboard</button>
-                        <button onClick={handleLogout} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-red-500 hover:bg-red-50">Logout</button>
+                        <button onClick={() => navTo('dashboard')} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50">{t.nav_dashboard}</button>
+                        <button onClick={handleLogout} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-red-500 hover:bg-red-50">{t.nav_logout}</button>
                     </>
                 ) : (
-                    <button onClick={() => navTo('login')} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-[#FA6E28] font-bold">Login / Sign Up</button>
+                    <button onClick={() => navTo('login')} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-[#FA6E28] font-bold">{t.nav_login}</button>
                 )}
             </div>
           </div>
@@ -145,22 +144,22 @@ export const Footer = ({ t, setView }) => (
       <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
         <div className="col-span-1 md:col-span-1">
           <div className="flex items-center mb-4 text-[#333333] font-bold text-xl"><KursNaviLogo className="h-6 w-6 text-[#FA6E28] mr-2" /> KursNavi</div>
-          <p className="text-gray-500 text-sm">Made with love in Switzerland.</p>
+          <p className="text-gray-500 text-sm">{t.footer_madein}</p>
         </div>
         <div>
           <h4 className="font-bold text-[#333333] mb-4">Discover</h4>
           <ul className="space-y-2 text-sm text-gray-500">
-            <li onClick={() => setView('landing-private')} className="hover:text-[#FA6E28] cursor-pointer">Private Courses</li>
-            <li onClick={() => setView('landing-prof')} className="hover:text-[#FA6E28] cursor-pointer">Professional Training</li>
-            <li onClick={() => setView('landing-kids')} className="hover:text-[#FA6E28] cursor-pointer">Courses for Kids</li>
+            <li onClick={() => setView('landing-private')} className="hover:text-[#FA6E28] cursor-pointer">{t.nav_private}</li>
+            <li onClick={() => setView('landing-prof')} className="hover:text-[#FA6E28] cursor-pointer">{t.nav_professional}</li>
+            <li onClick={() => setView('landing-kids')} className="hover:text-[#FA6E28] cursor-pointer">{t.nav_kids}</li>
           </ul>
         </div>
         <div>
           <h4 className="font-bold text-[#333333] mb-4">Support</h4>
           <ul className="space-y-2 text-sm text-gray-500">
-            <li onClick={() => setView('how-it-works')} className="hover:text-[#FA6E28] cursor-pointer">How it Works</li>
+            <li onClick={() => setView('how-it-works')} className="hover:text-[#FA6E28] cursor-pointer">{t.nav_howitworks}</li>
             <li onClick={() => setView('contact')} className="hover:text-[#FA6E28] cursor-pointer">{t.nav_contact}</li>
-            <li onClick={() => setView('about')} className="hover:text-[#FA6E28] cursor-pointer">About Us</li>
+            <li onClick={() => setView('about')} className="hover:text-[#FA6E28] cursor-pointer">{t.nav_about}</li>
           </ul>
         </div>
         <div>

@@ -65,9 +65,26 @@ export const CATEGORY_LABELS = {
 export const TRANSLATIONS = {
   en: {
     nav_explore: "Explore", nav_about: "About Us", nav_contact: "Contact", nav_login: "Login", nav_logout: "Logout", nav_dashboard: "Dashboard",
+    // --- NEW NAV ITEMS ---
+    nav_private: "Private & Hobby", nav_professional: "Professional", nav_kids: "Children", nav_howitworks: "How it Works",
+    // ---------------------
     hero_title: "Discover courses near you.", hero_subtitle: "From yodeling in Appenzell to coding in Zürich. Learn locally.",
     search_placeholder: "What do you want to learn?", filter_label_cat: "Category", filter_label_loc: "Location", btn_search: "Search",
     no_results: "No courses found matching criteria.", btn_book: "Book Course", btn_pay: "Pay & Book", btn_publish: "Publish Course", btn_send: "Send Message",
+    
+    // --- FORM LABELS (ENGLISH) ---
+    edit_course: "Edit Course", edit_course_sub: "Update your course details.",
+    create_course: "List a Course", create_course_sub: "Share your skills with the community.",
+    lbl_title: "Course Title", lbl_skill_level: "Skill Level", lbl_target_group: "Target Group", lbl_pro_checkbox: "Professional Course",
+    lbl_cat_class: "Category Classification", lbl_type: "Type", lbl_area: "Area", lbl_specialty: "Specialty",
+    lbl_price: "Price (CHF)", lbl_canton: "Canton", lbl_specific_address: "Specific Address",
+    lbl_session_count: "Session Count", lbl_session_length: "Session Length", lbl_start_date: "Start Date",
+    lbl_website: "Provider Website (Optional)", lbl_learn_goals: "What will students learn?", lbl_prereq: "Prerequisites",
+    btn_update: "Update Course", btn_back_dash: "Back to Dashboard",
+    opt_all_levels: "All Levels", opt_beginner: "Beginner", opt_advanced: "Advanced",
+    opt_adults: "Adults", opt_teens: "Teens", opt_kids: "Kids",
+    // -----------------------------
+
     form_title: "List a Course", success_msg: "Grüezi! Action successful.", currency: "CHF", admin_panel: "Admin Control Center",
     teacher_dash: "Teacher Dashboard", student_dash: "My Learning", login_title: "Welcome Back", my_bookings: "My Bookings",
     lbl_objectives: "What you will learn", lbl_prerequisites: "Prerequisites", lbl_description: "About this course", lbl_address: "Location",
@@ -93,10 +110,8 @@ export const TRANSLATIONS = {
     about_quality_title: "Quality", about_quality_text: "All our tutors are verified manually.",
     privacy_1_title: "1. Collection", privacy_1_text: "We collect only necessary data.",
     terms_1_title: "1. Service", terms_1_text: "We provide a marketplace platform.",
-    // --- PROFILE STRINGS ---
     profile_settings: "Profile Settings",
     lbl_city: "My City / Town",
-    lbl_canton: "My Canton",
     lbl_bio: "About Me (Bio)",
     lbl_language: "Preferred Language",
     profile_lang_note: "We will use this for emails and website content.",
@@ -113,9 +128,26 @@ export const TRANSLATIONS = {
   },
   de: {
     nav_explore: "Entdecken", nav_login: "Anmelden", nav_logout: "Abmelden", nav_dashboard: "Dashboard",
+    // --- NEW NAV ITEMS (DE) ---
+    nav_private: "Privat & Hobby", nav_professional: "Beruflich", nav_kids: "Kinder", nav_howitworks: "So funktioniert's",
+    // ---------------------
     hero_title: "Finde Kurse in deiner Nähe.", hero_subtitle: "Vom Jodeln bis zum Programmieren.",
     search_placeholder: "Was möchtest du lernen?", filter_label_cat: "Kategorie", filter_label_loc: "Ort", btn_search: "Suchen",
     no_results: "Keine Kurse gefunden.", btn_book: "Kurs buchen", btn_pay: "Bezahlen & Buchen", btn_publish: "Veröffentlichen",
+    
+    // --- FORM LABELS (DE) ---
+    edit_course: "Kurs bearbeiten", edit_course_sub: "Details aktualisieren.",
+    create_course: "Kurs erstellen", create_course_sub: "Teile dein Wissen.",
+    lbl_title: "Kurstitel", lbl_skill_level: "Niveau", lbl_target_group: "Zielgruppe", lbl_pro_checkbox: "Professioneller Kurs",
+    lbl_cat_class: "Kategorie-Einteilung", lbl_type: "Typ", lbl_area: "Bereich", lbl_specialty: "Spezialgebiet",
+    lbl_price: "Preis (CHF)", lbl_canton: "Kanton", lbl_specific_address: "Genaue Adresse",
+    lbl_session_count: "Anzahl Lektionen", lbl_session_length: "Lektionsdauer", lbl_start_date: "Startdatum",
+    lbl_website: "Webseite (Optional)", lbl_learn_goals: "Lernziele", lbl_prereq: "Voraussetzungen",
+    btn_update: "Kurs aktualisieren", btn_back_dash: "Zurück zum Dashboard",
+    opt_all_levels: "Alle Niveaus", opt_beginner: "Anfänger", opt_advanced: "Fortgeschritten",
+    opt_adults: "Erwachsene", opt_teens: "Jugendliche", opt_kids: "Kinder",
+    // -----------------------
+
     form_title: "Kurs anbieten", success_msg: "Erfolgreich!", currency: "CHF",
     teacher_dash: "Lehrer Dashboard", student_dash: "Meine Kurse",
     login_title: "Willkommen", my_bookings: "Meine Buchungen",
@@ -132,10 +164,8 @@ export const TRANSLATIONS = {
     contact_title: "Kontakt", contact_get_in_touch: "Schreib uns", btn_send: "Senden",
     about_title: "Über uns", about_subtitle: "Die Schweiz verbinden.",
     terms_title: "AGB", privacy_title: "Datenschutz",
-    // --- PROFILE STRINGS (DE) ---
     profile_settings: "Profileinstellungen",
     lbl_city: "Meine Stadt / Ort",
-    lbl_canton: "Mein Kanton",
     lbl_bio: "Über mich (Bio)",
     lbl_language: "Bevorzugte Sprache",
     profile_lang_note: "Wir verwenden dies für E-Mails und Webseiteninhalte.",
@@ -152,9 +182,26 @@ export const TRANSLATIONS = {
   },
   fr: {
     nav_explore: "Explorer", nav_login: "Connexion", nav_logout: "Déconnexion", nav_dashboard: "Tableau de bord",
+    // --- NEW NAV ITEMS (FR) ---
+    nav_private: "Privé & Loisirs", nav_professional: "Professionnel", nav_kids: "Enfants", nav_howitworks: "Comment ça marche",
+    // ---------------------
     hero_title: "Découvrez des cours.", hero_subtitle: "Apprenez localement.",
     search_placeholder: "Que voulez-vous apprendre?", filter_label_cat: "Catégorie", filter_label_loc: "Lieu", btn_search: "Rechercher",
     no_results: "Aucun cours trouvé.", btn_book: "Réserver", btn_pay: "Payer et réserver", btn_publish: "Publier",
+    
+    // --- FORM LABELS (FR) ---
+    edit_course: "Modifier le cours", edit_course_sub: "Mettre à jour les détails.",
+    create_course: "Créer un cours", create_course_sub: "Partagez vos compétences.",
+    lbl_title: "Titre du cours", lbl_skill_level: "Niveau", lbl_target_group: "Groupe cible", lbl_pro_checkbox: "Cours professionnel",
+    lbl_cat_class: "Classification", lbl_type: "Type", lbl_area: "Domaine", lbl_specialty: "Spécialité",
+    lbl_price: "Prix (CHF)", lbl_canton: "Canton", lbl_specific_address: "Adresse précise",
+    lbl_session_count: "Nombre de sessions", lbl_session_length: "Durée session", lbl_start_date: "Date de début",
+    lbl_website: "Site web (Optionnel)", lbl_learn_goals: "Objectifs d'apprentissage", lbl_prereq: "Prérequis",
+    btn_update: "Mettre à jour", btn_back_dash: "Retour au tableau de bord",
+    opt_all_levels: "Tous niveaux", opt_beginner: "Débutant", opt_advanced: "Avancé",
+    opt_adults: "Adultes", opt_teens: "Ados", opt_kids: "Enfants",
+    // -----------------------
+
     form_title: "Proposer un cours", success_msg: "Succès!", currency: "CHF",
     teacher_dash: "Tableau de bord", student_dash: "Mes apprentissages",
     login_title: "Bienvenue", my_bookings: "Mes réservations",
@@ -171,10 +218,8 @@ export const TRANSLATIONS = {
     contact_title: "Contact", contact_get_in_touch: "Contactez-nous", btn_send: "Envoyer",
     about_title: "À propos", about_subtitle: "Relier la Suisse.",
     terms_title: "CGV", privacy_title: "Confidentialité",
-    // --- PROFILE STRINGS (FR) ---
     profile_settings: "Paramètres du profil",
     lbl_city: "Ma Ville / Localité",
-    lbl_canton: "Mon Canton",
     lbl_bio: "À propos de moi",
     lbl_language: "Langue préférée",
     profile_lang_note: "Nous utiliserons ceci pour les e-mails et le site web.",
@@ -191,9 +236,26 @@ export const TRANSLATIONS = {
   },
   it: {
     nav_explore: "Esplora", nav_login: "Accedi", nav_logout: "Esci", nav_dashboard: "Dashboard",
+    // --- NEW NAV ITEMS (IT) ---
+    nav_private: "Privato & Hobby", nav_professional: "Professionale", nav_kids: "Bambini", nav_howitworks: "Come funziona",
+    // ---------------------
     hero_title: "Scopri corsi vicino a te.", hero_subtitle: "Dallo jodel a Appenzello alla programmazione a Zurigo.",
     search_placeholder: "Cosa vuoi imparare?", filter_label_cat: "Categoria", filter_label_loc: "Luogo", btn_search: "Cerca",
     no_results: "Nessun corso trovato.", btn_book: "Prenota", btn_pay: "Paga & Prenota", btn_publish: "Pubblica",
+    
+    // --- FORM LABELS (IT) ---
+    edit_course: "Modifica corso", edit_course_sub: "Aggiorna i dettagli.",
+    create_course: "Crea corso", create_course_sub: "Condividi le tue abilità.",
+    lbl_title: "Titolo del corso", lbl_skill_level: "Livello", lbl_target_group: "Gruppo target", lbl_pro_checkbox: "Corso professionale",
+    lbl_cat_class: "Classificazione", lbl_type: "Tipo", lbl_area: "Area", lbl_specialty: "Specialità",
+    lbl_price: "Prezzo (CHF)", lbl_canton: "Cantone", lbl_specific_address: "Indirizzo specifico",
+    lbl_session_count: "Numero di sessioni", lbl_session_length: "Durata sessione", lbl_start_date: "Data di inizio",
+    lbl_website: "Sito web (Opzionale)", lbl_learn_goals: "Obiettivi di apprendimento", lbl_prereq: "Prerequisiti",
+    btn_update: "Aggiorna corso", btn_back_dash: "Torna alla dashboard",
+    opt_all_levels: "Tutti i livelli", opt_beginner: "Principiante", opt_advanced: "Avanzato",
+    opt_adults: "Adulti", opt_teens: "Adolescenti", opt_kids: "Bambini",
+    // -----------------------
+
     form_title: "Offri un corso", success_msg: "Fatto!", currency: "CHF",
     teacher_dash: "Dashboard Insegnante", student_dash: "I miei corsi",
     login_title: "Benvenuto", my_bookings: "Le mie prenotazioni",
@@ -210,10 +272,8 @@ export const TRANSLATIONS = {
     contact_title: "Contatto", contact_get_in_touch: "Scrivici", btn_send: "Invia",
     about_title: "Chi siamo", about_subtitle: "Connettere la Svizzera.",
     terms_title: "Termini", privacy_title: "Privacy",
-    // --- PROFILE STRINGS (IT) ---
     profile_settings: "Impostazioni Profilo",
     lbl_city: "La mia Città",
-    lbl_canton: "Il mio Cantone",
     lbl_bio: "Su di me (Bio)",
     lbl_language: "Lingua preferita",
     profile_lang_note: "Useremo questa lingua per email e sito web.",
