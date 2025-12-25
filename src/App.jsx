@@ -5,72 +5,17 @@ import { Search, User, Clock, MapPin, CheckCircle, ArrowLeft, LogIn, LayoutDashb
 // --- IMPORTS ---
 import { BRAND, CATEGORY_HIERARCHY, CATEGORY_LABELS, SWISS_CANTONS, SWISS_CITIES, TRANSLATIONS } from './lib/constants';
 import { Navbar, Footer, KursNaviLogo } from './components/Layout';
-// BRANDING: Import the new visual Home component
 import { Home } from './components/Home';
 import LegalPage from './components/LegalPage';
+// NEW IMPORT:
+import { CategoryDropdown, LocationDropdown } from './components/Filters';
 
 // --- Supabase Setup ---
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// -----------------------------------------------------------------------------
-// --- SUB-COMPONENTS ---
-// -----------------------------------------------------------------------------
-
-const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCatPath, catMenuOpen, setCatMenuOpen, t, getCatLabel, catMenuRef }) => {
-    const [lvl1, setLvl1] = useState(rootCategory); 
-    const [lvl2, setLvl2] = useState(null);
-    
-    useEffect(() => { if (rootCategory) setLvl1(rootCategory); }, [rootCategory]);
-    const availableLvl1 = rootCategory ? [rootCategory] : Object.keys(CATEGORY_HIERARCHY);
-
-    return (
-        <div ref={catMenuRef} className="static"> 
-            <button onClick={() => setCatMenuOpen(!catMenuOpen)} className={`px-4 py-3 border rounded-full flex items-center space-x-2 text-sm font-medium transition ${selectedCatPath.length > 0 ? 'bg-primary text-white border-primary' : 'bg-white text-gray-700 hover:border-gray-400'}`}>
-                <span>{selectedCatPath.length > 0 ? getCatLabel(selectedCatPath[selectedCatPath.length-1]) : t.filter_label_cat}</span><ChevronDown className="w-4 h-4" />
-            </button>
-            {catMenuOpen && (
-                <div className="absolute top-20 left-0 right-0 mx-auto w-full max-w-4xl bg-white rounded-xl shadow-2xl border border-gray-100 p-2 z-50 flex h-[350px]">
-                    <div className="w-1/3 border-r overflow-y-auto">
-                        {availableLvl1.map(cat => (<div key={cat} onClick={() => { setLvl1(cat); setLvl2(null); }} className={`p-3 cursor-pointer text-sm flex justify-between items-center hover:bg-gray-50 ${lvl1 === cat ? 'font-bold text-primary bg-primaryLight' : 'text-gray-700'}`}>{getCatLabel(cat)}<ChevronRight className="w-4 h-4 text-gray-400" /></div>))}
-                        {!rootCategory && <div onClick={() => { setSelectedCatPath([]); setCatMenuOpen(false); }} className="p-3 text-xs text-gray-400 cursor-pointer hover:text-primary border-t mt-2">Clear Selection</div>}
-                    </div>
-                    <div className="w-1/3 border-r overflow-y-auto bg-gray-50/50">
-                        {lvl1 ? Object.keys(CATEGORY_HIERARCHY[lvl1]).map(sub => (<div key={sub} onClick={() => setLvl2(sub)} className={`p-3 cursor-pointer text-sm flex justify-between items-center hover:bg-gray-100 ${lvl2 === sub ? 'font-bold text-primary' : 'text-gray-700'}`}>{getCatLabel(sub)}<ChevronRight className="w-4 h-4 text-gray-400" /></div>)) : <div className="p-4 text-xs text-gray-400">Select a category...</div>}
-                    </div>
-                    <div className="w-1/3 overflow-y-auto bg-gray-50">
-                        {lvl1 && lvl2 ? CATEGORY_HIERARCHY[lvl1][lvl2].map(item => (<div key={item} onClick={() => { setSelectedCatPath([lvl1, lvl2, item]); setCatMenuOpen(false); }} className="p-3 cursor-pointer text-sm text-gray-700 hover:text-primary hover:bg-white transition">{getCatLabel(item)}</div>)) : <div className="p-4 text-xs text-gray-400">Select a sub-category...</div>}
-                    </div>
-                </div>
-            )}
-        </div>
-    );
-};
-
-const LocationDropdown = ({ locMode, setLocMode, selectedLocations, setSelectedLocations, locMenuOpen, setLocMenuOpen, locMenuRef, t }) => {
-    const toggleLoc = (loc) => { if (selectedLocations.includes(loc)) setSelectedLocations(selectedLocations.filter(l => l !== loc)); else setSelectedLocations([...selectedLocations, loc]); };
-    const displayList = locMode === 'canton' ? SWISS_CANTONS : SWISS_CITIES;
-    return (
-        <div ref={locMenuRef} className="static">
-            <button onClick={() => setLocMenuOpen(!locMenuOpen)} className={`px-4 py-3 border rounded-full flex items-center space-x-2 text-sm font-medium transition ${selectedLocations.length > 0 ? 'bg-primary text-white border-primary' : 'bg-white text-gray-700 hover:border-gray-400'}`}>
-                 <MapPin className="w-4 h-4" /><span>{selectedLocations.length > 0 ? `${selectedLocations.length} selected` : t.filter_label_loc}</span><ChevronDown className="w-4 h-4" />
-            </button>
-            {locMenuOpen && (
-                <div className="absolute top-20 left-0 right-0 mx-auto bg-white rounded-xl shadow-2xl border border-gray-100 p-4 z-50 w-full max-w-sm">
-                    <div className="flex bg-gray-100 p-1 rounded-lg mb-4">
-                        <button onClick={() => { setLocMode('canton'); setSelectedLocations([]); }} className={`flex-1 py-1 text-sm font-medium rounded-md transition ${locMode === 'canton' ? 'bg-white shadow text-primary' : 'text-gray-500'}`}>Cantons</button>
-                        <button onClick={() => { setLocMode('city'); setSelectedLocations([]); }} className={`flex-1 py-1 text-sm font-medium rounded-md transition ${locMode === 'city' ? 'bg-white shadow text-primary' : 'text-gray-500'}`}>Cities</button>
-                    </div>
-                    <div className="max-h-[250px] overflow-y-auto space-y-1">
-                        {displayList.map(loc => (<label key={loc} className="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded cursor-pointer"><input type="checkbox" checked={selectedLocations.includes(loc)} onChange={() => toggleLoc(loc)} className="rounded border-gray-300 text-primary focus:ring-primary" /><span className="text-sm text-gray-700">{loc}</span></label>))}
-                    </div>
-                    <div className="pt-3 mt-3 border-t flex justify-between items-center"><button onClick={() => setSelectedLocations([])} className="text-xs text-gray-400 hover:text-red-500">Clear</button><button onClick={() => setLocMenuOpen(false)} className="text-xs font-bold text-primary">Done</button></div>
-                </div>
-            )}
-        </div>
-    );
-};
+// --- SUB-COMPONENTS REMOVED (Moved to Filters.jsx) ---
 
 const UserProfileSection = ({ user, showNotification, setLang, t }) => {
     const [loading, setLoading] = useState(true);
@@ -331,65 +276,6 @@ const AuthView = ({ setView, showNotification, lang }) => {
     );
 };
 
-const DetailView = ({ course, setView, t, handleBookCourse }) => (
-    <div className="max-w-7xl mx-auto px-4 py-8 animate-in fade-in duration-500 font-sans">
-      <button onClick={() => setView('home')} className="flex items-center text-gray-500 hover:text-gray-900 mb-6 transition-colors"><ArrowLeft className="w-4 h-4 mr-2" /> Back to courses</button>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-8">
-            <div className="relative rounded-2xl overflow-hidden shadow-lg h-80">
-                <img src={course.image_url} alt={course.title} className="w-full h-full object-cover" />
-                <div className="absolute top-4 left-4 flex gap-2">
-                    <div className="bg-white/90 backdrop-blur px-3 py-1.5 rounded-lg text-sm font-bold text-gray-800 flex items-center shadow-sm"><MapPin className="w-4 h-4 mr-1 text-primary" /> {course.canton}</div>
-                    {course.is_pro && <div className="bg-blue-600/90 backdrop-blur px-3 py-1.5 rounded-lg text-sm font-bold text-white flex items-center shadow-sm"><BadgeCheck className="w-4 h-4 mr-1" /> Pro</div>}
-                </div>
-            </div>
-            <div>
-                <h1 className="text-3xl font-extrabold text-dark mb-3 font-heading">{course.title}</h1>
-                <div className="flex items-center space-x-4 text-sm text-gray-500"><span className="flex items-center"><User className="w-4 h-4 mr-1" /> {course.instructor_name}</span></div>
-                <div className="mt-3 flex gap-2">
-                      <span className="text-xs font-bold text-primary bg-primaryLight px-2 py-1 rounded border border-orange-100">{course.category}</span>
-                      {course.level && <span className="text-xs font-bold text-gray-600 bg-gray-100 px-2 py-1 rounded border border-gray-200">{course.level}</span>}
-                      {course.target_group && <span className="text-xs font-bold text-gray-600 bg-gray-100 px-2 py-1 rounded border border-gray-200">{course.target_group}</span>}
-                </div>
-            </div>
-            <div className="bg-white p-8 rounded-2xl border border-gray-100 shadow-sm space-y-6">
-                <div><h3 className="text-xl font-bold mb-3 text-dark font-heading">{t.lbl_description}</h3><p className="text-gray-600 leading-relaxed text-lg">{course.description}</p></div>
-                {course.objectives && (<div><h3 className="text-xl font-bold mb-3 text-dark font-heading">{t.lbl_objectives}</h3><ul className="space-y-2">{course.objectives.map((obj, i) => (<li key={i} className="flex items-start"><CheckCircle className="w-5 h-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" /><span className="text-gray-700">{obj}</span></li>))}</ul></div>)}
-            </div>
-        </div>
-        <div className="lg:col-span-1">
-          <div className="bg-white p-6 rounded-2xl shadow-xl border border-gray-200 sticky top-24">
-            <div className="mb-6 border-b pb-6">
-                <span className="text-4xl font-extrabold text-dark block mb-1 font-heading">{t.currency} {course.price}</span><span className="text-sm text-gray-500 block mb-4">per person</span>
-                <button onClick={() => handleBookCourse(course)} className="w-full bg-primary text-white py-4 rounded-xl font-bold hover:bg-orange-600 transition shadow-md active:scale-95 font-heading">{t.btn_pay}</button>
-            </div>
-             {course.start_date && (<div className="mb-6 pb-6 border-b border-gray-100"><div className="flex items-center text-primary font-bold mb-1"><Calendar className="w-5 h-5 mr-2" /><span>Start Date</span></div><div className="text-xl font-bold text-dark ml-7">{new Date(course.start_date).toLocaleDateString('en-CH', { day: 'numeric', month: 'long', year: 'numeric' })}</div></div>)}
-            <div className="space-y-4">
-                <div className="flex items-start"><div className="w-8 flex-shrink-0"><MapPin className="w-5 h-5 text-gray-400" /></div><div><span className="block text-xs font-bold text-gray-400 uppercase tracking-wide">{t.lbl_address}</span><span className="text-gray-700 font-medium">{course.address || course.canton}</span></div></div>
-                {course.session_count && (<div className="flex items-start"><div className="w-8 flex-shrink-0"><Clock className="w-5 h-5 text-gray-400" /></div><div><span className="block text-xs font-bold text-gray-400 uppercase tracking-wide">{t.lbl_duration}</span><span className="text-gray-700 font-medium">{course.session_count} sessions × {course.session_length}</span></div></div>)}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-);
-
-const AboutPage = ({ t }) => (
-    <div className="max-w-4xl mx-auto px-4 py-16 animate-in fade-in duration-500 font-sans">
-        <div className="text-center mb-12"><h1 className="text-4xl font-extrabold text-dark mb-4 font-heading">{t.about_title}</h1><p className="text-xl text-gray-500">{t.about_subtitle}</p></div>
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden mb-12">
-            <img src="https://images.unsplash.com/photo-1528495612343-9ca9f4a4de28?auto=format&fit=crop&q=80&w=1200" alt="Swiss Landscape" className="w-full h-64 object-cover" />
-            <div className="p-8 space-y-6">
-                <p className="text-lg text-gray-700 leading-relaxed">{t.about_text}</p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 py-4">
-                    <div className="flex items-start"><Heart className="w-8 h-8 text-primary mr-4 flex-shrink-0" /><div><h3 className="font-bold text-dark mb-1 font-heading">{t.about_community_title}</h3><p className="text-gray-600">{t.about_community_text}</p></div></div>
-                    <div className="flex items-start"><Shield className="w-8 h-8 text-primary mr-4 flex-shrink-0" /><div><h3 className="font-bold text-dark mb-1 font-heading">{t.about_quality_title}</h3><p className="text-gray-600">{t.about_quality_text}</p></div></div>
-                </div>
-            </div>
-        </div>
-    </div>
-);
-
 const ContactPage = ({ t, handleContactSubmit, setView }) => (
     <div className="max-w-4xl mx-auto px-4 py-16 animate-in fade-in duration-500 font-sans">
         <h1 className="text-4xl font-extrabold text-dark mb-8 text-center font-heading">{t.contact_title}</h1>
@@ -641,6 +527,12 @@ export default function KursNaviPro() {
     }
   };
 
+  const getCatLabel = (key) => {
+    if (lang === 'en') return key;
+    const translation = CATEGORY_LABELS[key];
+    return translation && translation[lang] ? translation[lang] : key;
+  };
+
   // --- URL SYNCHRONIZATION ---
   useEffect(() => {
     let path = '/';
@@ -673,14 +565,12 @@ export default function KursNaviPro() {
   useEffect(() => {
     const handleUrlChange = () => {
         const path = window.location.pathname;
-        // Legal Pages
         if (path === '/agb') setView('agb');
         else if (path === '/datenschutz') setView('datenschutz');
         else if (path === '/impressum') setView('impressum');
         else if (path === '/widerruf-storno') setView('widerruf');
         else if (path === '/vertrauen-sicherheit') setView('trust');
         
-        // Standard Pages
         else if (path === '/search') setView('search');
         else if (path === '/dashboard') setView('dashboard');
         else if (path === '/how-it-works') setView('how-it-works');
@@ -689,7 +579,6 @@ export default function KursNaviPro() {
         else if (path === '/login') setView('login');
         else if (path === '/create-course') setView('create');
         
-        // Category Landings
         else if (path === '/private') { setSelectedCatPath(['Private & Hobby']); setView('landing-private'); }
         else if (path === '/professional') { setSelectedCatPath(['Professional']); setView('landing-prof'); }
         else if (path === '/children') { setSelectedCatPath(['Children']); setView('landing-kids'); }
@@ -697,10 +586,7 @@ export default function KursNaviPro() {
         else if (path !== '/' && !path.startsWith('/course/')) setView('home');
     };
 
-    // 1. Run ONCE on mount to handle reloads
     handleUrlChange();
-
-    // 2. Listen for back/forward buttons
     window.addEventListener('popstate', handleUrlChange);
     return () => window.removeEventListener('popstate', handleUrlChange);
   }, []);
@@ -715,12 +601,6 @@ export default function KursNaviPro() {
   }, []);
 
   const t = TRANSLATIONS[lang] || TRANSLATIONS['de'];
-
-  const getCatLabel = (key) => {
-    if (lang === 'en') return key;
-    const translation = CATEGORY_LABELS[key];
-    return translation && translation[lang] ? translation[lang] : key;
-  };
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -844,7 +724,7 @@ export default function KursNaviPro() {
   const handlePublishCourse = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
-    const courseId = formData.get('course_id'); // If this exists, it's an UPDATE
+    const courseId = formData.get('course_id');
     const objectivesList = formData.get('objectives').split('\n').filter(line => line.trim() !== '');
     const fullCategoryString = `${formData.get('catLvl1')} | ${formData.get('catLvl2')} | ${formData.get('catLvl3')}`;
     const newCourse = {
@@ -856,12 +736,10 @@ export default function KursNaviPro() {
 
     let error;
     if (courseId) {
-        // UPDATE
         const { error: err } = await supabase.from('courses').update(newCourse).eq('id', courseId);
         error = err;
         showNotification("Course updated successfully!");
     } else {
-        // INSERT
         const { error: err } = await supabase.from('courses').insert([newCourse]).select();
         error = err;
         showNotification(t.success_msg);
@@ -884,14 +762,9 @@ export default function KursNaviPro() {
 
   const handleContactSubmit = (e) => { 
     e.preventDefault(); 
-    // Uses FormSubmit.co for free, no-backend email forwarding. 
-    // SECURITY UPDATE: Using token instead of raw email
     fetch("https://formsubmit.co/ajax/995007a94ce934b7d8c8e7776670f9c4", {
         method: "POST",
-        headers: { 
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
         body: JSON.stringify(Object.fromEntries(new FormData(e.target)))
     })
     .then(response => response.json())
@@ -923,23 +796,10 @@ export default function KursNaviPro() {
     }
     const matchesSearch = course.title.toLowerCase().includes(searchQuery.toLowerCase()) || (course.instructor_name && course.instructor_name.toLowerCase().includes(searchQuery.toLowerCase()));
     
-    // NEW FILTER LOGIC
-    let matchesDate = true;
-    if (filterDate && course.start_date) {
-        matchesDate = new Date(course.start_date) >= new Date(filterDate);
-    }
-    let matchesPrice = true;
-    if (filterPriceMax) {
-        matchesPrice = course.price <= Number(filterPriceMax);
-    }
-    let matchesLevel = true;
-    if (filterLevel !== 'All') {
-        matchesLevel = course.level === filterLevel;
-    }
-    let matchesPro = true;
-    if (filterPro) {
-        matchesPro = course.is_pro === true;
-    }
+    let matchesDate = true; if (filterDate && course.start_date) matchesDate = new Date(course.start_date) >= new Date(filterDate);
+    let matchesPrice = true; if (filterPriceMax) matchesPrice = course.price <= Number(filterPriceMax);
+    let matchesLevel = true; if (filterLevel !== 'All') matchesLevel = course.level === filterLevel;
+    let matchesPro = true; if (filterPro) matchesPro = course.is_pro === true;
 
     return matchesCategory && matchesLocation && matchesSearch && matchesDate && matchesPrice && matchesLevel && matchesPro;
   });
@@ -951,23 +811,26 @@ export default function KursNaviPro() {
       <Navbar t={t} user={user} lang={lang} setLang={changeLanguage} setView={setView} handleLogout={handleLogout} setShowResults={() => setView('search')} setSelectedCatPath={setSelectedCatPath} />
 
       <div className="flex-grow">
-        
       {/* --- ROUTING --- */}
       {view === 'home' && (
-         <Home t={t} setView={setView} setSelectedCatPath={setSelectedCatPath} />
+         <Home 
+            t={t} 
+            setView={setView} 
+            setSelectedCatPath={setSelectedCatPath}
+            
+            // Pass all filter states to Home so it can use the dropdowns
+            searchQuery={searchQuery} setSearchQuery={setSearchQuery}
+            catMenuOpen={catMenuOpen} setCatMenuOpen={setCatMenuOpen} catMenuRef={catMenuRef}
+            locMode={locMode} setLocMode={setLocMode}
+            selectedLocations={selectedLocations} setSelectedLocations={setSelectedLocations}
+            locMenuOpen={locMenuOpen} setLocMenuOpen={setLocMenuOpen} locMenuRef={locMenuRef}
+            getCatLabel={getCatLabel}
+         />
       )}
         
-      {view === 'landing-private' && (
-          <LandingView title="Unleash your passion." subtitle="Hobby Courses" variant="private" searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearchSubmit={handleSearchSubmit} setSelectedCatPath={setSelectedCatPath} setView={setView} t={t} />
-      )}
-
-      {view === 'landing-prof' && (
-          <LandingView title="Boost your career." subtitle="Professional Courses" variant="prof" searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearchSubmit={handleSearchSubmit} setSelectedCatPath={setSelectedCatPath} setView={setView} t={t} />
-      )}
-
-      {view === 'landing-kids' && (
-          <LandingView title="Fun learning for kids." subtitle="Children's Courses" variant="kids" searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearchSubmit={handleSearchSubmit} setSelectedCatPath={setSelectedCatPath} setView={setView} t={t} />
-      )}
+      {view === 'landing-private' && ( <LandingView title="Unleash your passion." subtitle="Hobby Courses" variant="private" searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearchSubmit={handleSearchSubmit} setSelectedCatPath={setSelectedCatPath} setView={setView} t={t} /> )}
+      {view === 'landing-prof' && ( <LandingView title="Boost your career." subtitle="Professional Courses" variant="prof" searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearchSubmit={handleSearchSubmit} setSelectedCatPath={setSelectedCatPath} setView={setView} t={t} /> )}
+      {view === 'landing-kids' && ( <LandingView title="Fun learning for kids." subtitle="Children's Courses" variant="kids" searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearchSubmit={handleSearchSubmit} setSelectedCatPath={setSelectedCatPath} setView={setView} t={t} /> )}
 
       {view === 'search' && (
           <SearchPageView 
@@ -1001,7 +864,6 @@ export default function KursNaviPro() {
       {view === 'impressum' && <LegalPage pageKey="impressum" lang={lang} setView={setView} />}
       {view === 'widerruf' && <LegalPage pageKey="widerruf" lang={lang} setView={setView} />}
       {view === 'trust' && <LegalPage pageKey="trust" lang={lang} setView={setView} />}
-      {/* ----------------- */}
 
       {view === 'admin' && user?.role === 'admin' && <AdminPanel t={t} courses={courses} />}
       {view === 'dashboard' && user && <Dashboard user={user} t={t} setView={setView} courses={courses} teacherEarnings={teacherEarnings} myBookings={myBookings} handleDeleteCourse={handleDeleteCourse} handleEditCourse={handleEditCourse} showNotification={showNotification} changeLanguage={changeLanguage} setSelectedCourse={setSelectedCourse} />}
