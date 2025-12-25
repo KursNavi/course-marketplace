@@ -5,7 +5,7 @@ import { Search, User, Clock, MapPin, CheckCircle, ArrowLeft, LogIn, LayoutDashb
 // --- IMPORTS ---
 import { BRAND, CATEGORY_HIERARCHY, CATEGORY_LABELS, SWISS_CANTONS, SWISS_CITIES, TRANSLATIONS } from './lib/constants';
 import { Navbar, Footer, KursNaviLogo } from './components/Layout';
-import LegalPage from './components/LegalPage'; // <--- NEW IMPORT
+import LegalPage from './components/LegalPage';
 
 // --- Supabase Setup ---
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -276,10 +276,13 @@ const SuccessView = ({ setView }) => (
 
 const AuthView = ({ setView, showNotification, lang }) => {
     const [isSignUp, setIsSignUp] = useState(false); const [loading, setLoading] = useState(false); const [email, setEmail] = useState(''); const [password, setPassword] = useState(''); const [fullName, setFullName] = useState(''); const [role, setRole] = useState('student');
+    const [agbAccepted, setAgbAccepted] = useState(false); // NEW STATE
+
     const handleAuth = async (e) => {
         e.preventDefault(); setLoading(true);
         try {
             if (isSignUp) {
+                if (!agbAccepted) { throw new Error("Please accept the Terms & Conditions."); } // NEW VALIDATION
                 const { data: authData, error: authError } = await supabase.auth.signUp({ email, password, options: { data: { full_name: fullName, role: role } } });
                 if (authError) throw authError;
                 if (authData?.user) { await supabase.from('profiles').insert([{ id: authData.user.id, full_name: fullName, email: email, preferred_language: lang }]); }
@@ -301,6 +304,28 @@ const AuthView = ({ setView, showNotification, lang }) => {
                     {isSignUp && (<><div><label className="block text-sm font-bold text-gray-700 mb-1">Full Name</label><input required type="text" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#FA6E28] outline-none" value={fullName} onChange={e => setFullName(e.target.value)} /></div><div><label className="block text-sm font-bold text-gray-700 mb-1">I am a...</label><div className="flex gap-4"><label className={`flex-1 p-3 border rounded-lg cursor-pointer text-center transition ${role === 'student' ? 'bg-[#FFF0EB] border-[#FA6E28] text-[#FA6E28] font-bold' : 'hover:bg-gray-50'}`}><input type="radio" className="hidden" checked={role === 'student'} onChange={() => setRole('student')} />Student</label><label className={`flex-1 p-3 border rounded-lg cursor-pointer text-center transition ${role === 'teacher' ? 'bg-[#FFF0EB] border-[#FA6E28] text-[#FA6E28] font-bold' : 'hover:bg-gray-50'}`}><input type="radio" className="hidden" checked={role === 'teacher'} onChange={() => setRole('teacher')} />Teacher</label></div></div></>)}
                     <div><label className="block text-sm font-bold text-gray-700 mb-1">Email</label><input required type="email" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#FA6E28] outline-none" value={email} onChange={e => setEmail(e.target.value)} /></div>
                     <div><label className="block text-sm font-bold text-gray-700 mb-1">Password</label><input required type="password" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#FA6E28] outline-none" value={password} onChange={e => setPassword(e.target.value)} /></div>
+                    
+                    {/* NEW CHECKBOX AREA */}
+                    {isSignUp && (
+                        <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg border border-gray-100">
+                            <input
+                                id="agb"
+                                type="checkbox"
+                                checked={agbAccepted}
+                                onChange={(e) => setAgbAccepted(e.target.checked)}
+                                className="mt-1 w-4 h-4 text-[#FA6E28] border-gray-300 rounded focus:ring-[#FA6E28] cursor-pointer"
+                            />
+                            <label htmlFor="agb" className="text-sm text-gray-600 cursor-pointer">
+                                {role === 'student' ? (
+                                    <span>Ich akzeptiere die <a href="/agb" target="_blank" rel="noreferrer" className="text-[#FA6E28] hover:underline font-bold">AGB</a> und habe die <a href="/datenschutz" target="_blank" rel="noreferrer" className="text-[#FA6E28] hover:underline font-bold">Datenschutzerklärung</a> gelesen.</span>
+                                ) : (
+                                    <span>Ich akzeptiere die <a href="/agb" target="_blank" rel="noreferrer" className="text-[#FA6E28] hover:underline font-bold">AGB inkl. Anbieterbedingungen</a> und habe die <a href="/datenschutz" target="_blank" rel="noreferrer" className="text-[#FA6E28] hover:underline font-bold">Datenschutzerklärung</a> gelesen.</span>
+                                )}
+                            </label>
+                        </div>
+                    )}
+                    {/* END NEW CHECKBOX AREA */}
+
                     <button disabled={loading} type="submit" className="w-full bg-[#FA6E28] text-white py-3 rounded-lg font-bold hover:bg-[#E55D1F] transition disabled:opacity-50 font-['Open_Sans']">{loading ? <Loader className="animate-spin mx-auto" /> : (isSignUp ? "Sign Up" : "Login")}</button>
                 </form>
                 <p className="text-center text-sm text-gray-600 mt-6 font-['Hind_Madurai']">{isSignUp ? "Already have an account?" : "Don't have an account?"}<button onClick={() => setIsSignUp(!isSignUp)} className="text-[#FA6E28] font-bold ml-2 hover:underline">{isSignUp ? "Login" : "Sign Up"}</button></p>
@@ -935,13 +960,13 @@ export default function KursNaviPro() {
       {view === 'about' && <AboutPage t={t} />}
       {view === 'contact' && <ContactPage t={t} handleContactSubmit={handleContactSubmit} setView={setView} />}
       
-      {/* --- LEGAL PAGES (REPLACES OLD TERMS/PRIVACY) --- */}
+      {/* --- LEGAL PAGES --- */}
       {view === 'agb' && <LegalPage pageKey="agb" />}
       {view === 'datenschutz' && <LegalPage pageKey="datenschutz" />}
       {view === 'impressum' && <LegalPage pageKey="impressum" />}
       {view === 'widerruf' && <LegalPage pageKey="widerruf" />}
       {view === 'trust' && <LegalPage pageKey="trust" />}
-      {/* ----------------------------------------------- */}
+      {/* ----------------- */}
 
       {view === 'admin' && user?.role === 'admin' && <AdminPanel t={t} courses={courses} />}
       {view === 'dashboard' && user && <Dashboard user={user} t={t} setView={setView} courses={courses} teacherEarnings={teacherEarnings} myBookings={myBookings} handleDeleteCourse={handleDeleteCourse} handleEditCourse={handleEditCourse} showNotification={showNotification} changeLanguage={changeLanguage} setSelectedCourse={setSelectedCourse} />}
