@@ -13,7 +13,7 @@ export const Navbar = ({ t, user, lang, setLang, setView, handleLogout, setShowR
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [langMenuOpen, setLangMenuOpen] = useState(false);
 
-  // UPDATED: Using text codes instead of emojis to ensure Windows displays DE/EN correctly
+  // Using text codes instead of flags
   const languages = [
     { code: 'de', label: 'Deutsch', short: 'DE' },
     { code: 'fr', label: 'Français', short: 'FR' },
@@ -21,7 +21,6 @@ export const Navbar = ({ t, user, lang, setLang, setView, handleLogout, setShowR
     { code: 'en', label: 'English', short: 'EN' },
   ];
 
-  // Helper to handle navigation to specific categories
   const navTo = (viewName, catPath = []) => {
     setView(viewName);
     if (setSelectedCatPath) setSelectedCatPath(catPath);
@@ -41,7 +40,6 @@ export const Navbar = ({ t, user, lang, setLang, setView, handleLogout, setShowR
               <span className="ml-2 text-2xl font-bold tracking-tighter text-[#333333]">Kurs<span className="text-[#FA6E28]">Navi</span></span>
             </div>
             
-            {/* DESKTOP NAV LINKS (TRANSLATED) */}
             <div className="hidden md:ml-10 md:flex md:space-x-8">
               <button onClick={() => navTo('landing-private', ['Private & Hobby'])} className="text-gray-500 hover:text-[#FA6E28] px-3 py-2 rounded-md text-sm font-medium transition-colors">{t.nav_private}</button>
               <button onClick={() => navTo('landing-prof', ['Professional'])} className="text-gray-500 hover:text-[#FA6E28] px-3 py-2 rounded-md text-sm font-medium transition-colors">{t.nav_professional}</button>
@@ -50,10 +48,8 @@ export const Navbar = ({ t, user, lang, setLang, setView, handleLogout, setShowR
             </div>
           </div>
 
-          {/* RIGHT SIDE (User & Lang) */}
+          {/* RIGHT SIDE */}
           <div className="hidden md:flex items-center space-x-4">
-            
-            {/* LANGUAGE DROPDOWN */}
             <div className="relative">
                 <button onClick={() => setLangMenuOpen(!langMenuOpen)} className="flex items-center space-x-1 text-gray-500 hover:text-[#FA6E28] p-2 rounded-full transition hover:bg-gray-50">
                     <Globe className="w-5 h-5" />
@@ -66,13 +62,8 @@ export const Navbar = ({ t, user, lang, setLang, setView, handleLogout, setShowR
                     <div className="fixed inset-0 z-10" onClick={() => setLangMenuOpen(false)}></div>
                     <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-20 animate-in fade-in zoom-in-95 duration-200">
                         {languages.map((l) => (
-                            <button
-                                key={l.code}
-                                onClick={() => { setLang(l.code); setLangMenuOpen(false); }}
-                                className={`block w-full text-left px-4 py-3 text-sm hover:bg-orange-50 hover:text-[#FA6E28] transition flex items-center ${lang === l.code ? 'font-bold text-[#FA6E28] bg-orange-50/50' : 'text-gray-700'}`}
-                            >
-                                <span className={`mr-3 font-bold w-6 ${lang === l.code ? 'text-[#FA6E28]' : 'text-gray-400'}`}>{l.short}</span>
-                                {l.label}
+                            <button key={l.code} onClick={() => { setLang(l.code); setLangMenuOpen(false); }} className={`block w-full text-left px-4 py-3 text-sm hover:bg-orange-50 hover:text-[#FA6E28] transition flex items-center ${lang === l.code ? 'font-bold text-[#FA6E28] bg-orange-50/50' : 'text-gray-700'}`}>
+                                <span className={`mr-3 font-bold w-6 ${lang === l.code ? 'text-[#FA6E28]' : 'text-gray-400'}`}>{l.short}</span>{l.label}
                             </button>
                         ))}
                     </div>
@@ -99,7 +90,7 @@ export const Navbar = ({ t, user, lang, setLang, setView, handleLogout, setShowR
         </div>
       </div>
 
-      {/* MOBILE MENU DROPDOWN */}
+      {/* MOBILE MENU */}
       {mobileMenuOpen && (
         <div className="md:hidden bg-white border-t border-gray-100 absolute w-full left-0 shadow-xl h-screen overflow-y-auto pb-20">
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
@@ -108,7 +99,6 @@ export const Navbar = ({ t, user, lang, setLang, setView, handleLogout, setShowR
             <button onClick={() => navTo('landing-kids', ['Children'])} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-orange-50 hover:text-[#FA6E28]">{t.nav_kids}</button>
             <button onClick={() => navTo('how-it-works')} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-orange-50 hover:text-[#FA6E28]">{t.nav_howitworks}</button>
             
-            {/* MOBILE LANGUAGES */}
             <div className="border-t border-gray-100 my-2 pt-2">
                 <p className="px-3 text-xs font-bold text-gray-400 uppercase mb-2">Language</p>
                 <div className="grid grid-cols-2 gap-2 px-3">
@@ -164,12 +154,10 @@ export const Footer = ({ t, setView }) => (
         <div>
           <h4 className="font-bold text-[#333333] mb-4">Legal</h4>
           <ul className="space-y-2 text-sm text-gray-500">
-            {/* UPDATED: Replaced <a href> with onClick to prevent reload loop */}
+            {/* CLEANED UP: Only AGB, Privacy, and Impressum */}
             <li onClick={() => { setView('agb'); window.scrollTo(0,0); }} className="hover:text-[#FA6E28] cursor-pointer transition-colors">AGB</li>
             <li onClick={() => { setView('datenschutz'); window.scrollTo(0,0); }} className="hover:text-[#FA6E28] cursor-pointer transition-colors">Datenschutz</li>
             <li onClick={() => { setView('impressum'); window.scrollTo(0,0); }} className="hover:text-[#FA6E28] cursor-pointer transition-colors">Impressum</li>
-            <li onClick={() => { setView('widerruf'); window.scrollTo(0,0); }} className="hover:text-[#FA6E28] cursor-pointer transition-colors">Widerruf & Stornierung</li>
-            <li onClick={() => { setView('trust'); window.scrollTo(0,0); }} className="hover:text-[#FA6E28] cursor-pointer transition-colors">Vertrauen & Sicherheit</li>
           </ul>
         </div>
       </div>
