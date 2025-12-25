@@ -398,18 +398,26 @@ const ContactPage = ({ t, handleContactSubmit, setView }) => (
                 <div className="bg-primaryLight p-6 rounded-2xl border border-orange-100">
                     <h3 className="font-bold text-lg mb-4 text-primary font-heading">{t.contact_get_in_touch}</h3>
                     <div className="space-y-4">
-                        <div className="flex items-center text-gray-700"><Mail className="w-5 h-5 mr-3 text-primary" /><span>support@kursnavi.ch</span></div>
-                        <div className="flex items-center text-gray-700"><Phone className="w-5 h-5 mr-3 text-primary" /><span>+41 44 123 45 67</span></div>
-                        <div className="flex items-start text-gray-700"><MapPin className="w-5 h-5 mr-3 text-primary mt-1" /><span>KursNavi AG<br/>Bahnhofstrasse 100<br/>8001 Zürich<br/>Switzerland</span></div>
+                        <div className="flex items-center text-gray-700"><Mail className="w-5 h-5 mr-3 text-primary" /><span>info@kursnavi.ch</span></div>
+                        <div className="flex items-start text-gray-700"><MapPin className="w-5 h-5 mr-3 text-primary mt-1" /><span>LifeSkills360 GmbH<br/>Talrain 25<br/>6043 Adligenswil</span></div>
                     </div>
                 </div>
                 <div><h3 className="font-bold text-lg mb-2 font-heading">{t.contact_office_hours}</h3><p className="text-gray-600">{t.contact_mon_fri}</p><p className="text-gray-600">{t.contact_weekend}</p></div>
             </div>
             <div className="bg-white p-8 rounded-2xl shadow-lg border border-gray-100">
                 <form onSubmit={handleContactSubmit} className="space-y-4">
-                    <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.contact_lbl_name}</label><input required type="text" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" placeholder={t.contact_lbl_name} /></div>
-                    <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.contact_lbl_email}</label><input required type="email" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" placeholder="you@example.com" /></div>
-                    <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.contact_lbl_msg}</label><textarea required rows="4" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" placeholder="..."></textarea></div>
+                    {/* EMAIL (First) */}
+                    <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.contact_lbl_email}</label><input required type="email" name="email" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" placeholder="you@example.com" /></div>
+                    
+                    {/* NAME (Optional but standard) */}
+                    <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.contact_lbl_name}</label><input required type="text" name="name" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" placeholder={t.contact_lbl_name} /></div>
+
+                    {/* SUBJECT (Added) */}
+                    <div><label className="block text-sm font-bold text-gray-700 mb-1">Betreff / Subject</label><input required type="text" name="subject" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" placeholder="..." /></div>
+
+                    {/* MESSAGE */}
+                    <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.contact_lbl_msg}</label><textarea required name="message" rows="4" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" placeholder="..."></textarea></div>
+                    
                     <button type="submit" className="w-full bg-primary text-white py-3 rounded-lg font-bold hover:bg-orange-600 transition font-heading">{t.btn_send}</button>
                 </form>
             </div>
@@ -871,7 +879,15 @@ export default function KursNaviPro() {
       } catch (error) { alert("SYSTEM ERROR: " + error.message); }
   };
 
-  const handleContactSubmit = (e) => { e.preventDefault(); showNotification("Message sent!"); setView('home'); };
+  const handleContactSubmit = (e) => { 
+    e.preventDefault(); 
+    // In a real app, we would send this data to the backend
+    // For now, we simulate success
+    const formData = new FormData(e.target);
+    console.log("Sending email to info@kursnavi.ch", Object.fromEntries(formData));
+    showNotification("Message sent! We will get back to you shortly."); 
+    setView('home'); 
+  };
   
   const handleSearchSubmit = () => { 
       setView('search');
