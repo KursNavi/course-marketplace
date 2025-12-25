@@ -631,6 +631,7 @@ export default function KursNaviPro() {
     }
   };
 
+  // --- URL SYNCHRONIZATION ---
   useEffect(() => {
     let path = '/';
     if (view === 'landing-private') path = '/private';
@@ -649,7 +650,6 @@ export default function KursNaviPro() {
     else if (view === 'impressum') path = '/impressum';
     else if (view === 'widerruf') path = '/widerruf-storno';
     else if (view === 'trust') path = '/vertrauen-sicherheit';
-    // -------------------
 
     else if (view === 'create') path = '/create-course';
     else if (view === 'detail' && selectedCourse) path = `/course/${selectedCourse.id}`;
@@ -659,33 +659,20 @@ export default function KursNaviPro() {
     }
   }, [view, selectedCourse]);
 
+  // --- POPSTATE HANDLER ---
   useEffect(() => {
     const handlePopState = () => {
         const path = window.location.pathname;
-        if (path === '/private') setView('landing-private');
-        else if (path === '/professional') setView('landing-prof');
-        else if (path === '/children') setView('landing-kids');
-        else if (path === '/search') setView('search');
-        else if (path === '/how-it-works') setView('how-it-works');
-        else if (path === '/about') setView('about');
-        else if (path === '/contact') setView('contact');
-        else if (path === '/login') setView('login');
-        else if (path === '/dashboard') setView('dashboard');
-        
-        // --- LEGAL PATH HANDLERS ---
-        else if (path === '/agb') setView('agb');
+        if (path === '/agb') setView('agb');
         else if (path === '/datenschutz') setView('datenschutz');
         else if (path === '/impressum') setView('impressum');
         else if (path === '/widerruf-storno') setView('widerruf');
         else if (path === '/vertrauen-sicherheit') setView('trust');
-        // --------------------------
-
-        else if (path === '/create-course') setView('create');
-        else if (path.startsWith('/course/')) { /* Logic handled in fetchCourses */ }
+        else if (path === '/search') setView('search');
+        else if (path === '/dashboard') setView('dashboard');
         else setView('home');
     };
     window.addEventListener('popstate', handlePopState);
-    handlePopState(); 
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
@@ -959,11 +946,11 @@ export default function KursNaviPro() {
       {view === 'contact' && <ContactPage t={t} handleContactSubmit={handleContactSubmit} setView={setView} />}
       
       {/* --- LEGAL PAGES --- */}
-      {view === 'agb' && <LegalPage pageKey="agb" setView={setView} />}
-      {view === 'datenschutz' && <LegalPage pageKey="datenschutz" setView={setView} />}
-      {view === 'impressum' && <LegalPage pageKey="impressum" setView={setView} />}
-      {view === 'widerruf' && <LegalPage pageKey="widerruf" setView={setView} />}
-      {view === 'trust' && <LegalPage pageKey="trust" setView={setView} />}
+      {view === 'agb' && <LegalPage pageKey="agb" lang={lang} setView={setView} />}
+      {view === 'datenschutz' && <LegalPage pageKey="datenschutz" lang={lang} setView={setView} />}
+      {view === 'impressum' && <LegalPage pageKey="impressum" lang={lang} setView={setView} />}
+      {view === 'widerruf' && <LegalPage pageKey="widerruf" lang={lang} setView={setView} />}
+      {view === 'trust' && <LegalPage pageKey="trust" lang={lang} setView={setView} />}
       {/* ----------------- */}
 
       {view === 'admin' && user?.role === 'admin' && <AdminPanel t={t} courses={courses} />}
