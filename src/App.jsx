@@ -277,7 +277,7 @@ const SuccessView = ({ setView }) => (
 const AuthView = ({ setView, showNotification, lang }) => {
     const [isSignUp, setIsSignUp] = useState(false); const [loading, setLoading] = useState(false); const [email, setEmail] = useState(''); const [password, setPassword] = useState(''); const [fullName, setFullName] = useState(''); const [role, setRole] = useState('student');
     const [agbAccepted, setAgbAccepted] = useState(false);
-    const t = TRANSLATIONS[lang] || TRANSLATIONS['de']; // Ensure we have translations
+    const t = TRANSLATIONS[lang] || TRANSLATIONS['de']; 
 
     const handleAuth = async (e) => {
         e.preventDefault(); setLoading(true);
@@ -297,7 +297,6 @@ const AuthView = ({ setView, showNotification, lang }) => {
             }
         } catch (error) { showNotification(error.message); } finally { setLoading(false); }
     };
-    
     return (
         <div className="min-h-[80vh] flex items-center justify-center px-4 bg-[#FAF5F0]">
             <div className="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full border border-gray-100">
@@ -657,21 +656,40 @@ export default function KursNaviPro() {
     }
   }, [view, selectedCourse]);
 
-  // --- POPSTATE HANDLER ---
+  // --- POPSTATE HANDLER & INITIAL LOAD FIX ---
   useEffect(() => {
-    const handlePopState = () => {
+    const handleUrlChange = () => {
         const path = window.location.pathname;
+        // Legal Pages
         if (path === '/agb') setView('agb');
         else if (path === '/datenschutz') setView('datenschutz');
         else if (path === '/impressum') setView('impressum');
         else if (path === '/widerruf-storno') setView('widerruf');
         else if (path === '/vertrauen-sicherheit') setView('trust');
+        
+        // Standard Pages
         else if (path === '/search') setView('search');
         else if (path === '/dashboard') setView('dashboard');
-        else setView('home');
+        else if (path === '/how-it-works') setView('how-it-works');
+        else if (path === '/about') setView('about');
+        else if (path === '/contact') setView('contact');
+        else if (path === '/login') setView('login');
+        else if (path === '/create-course') setView('create');
+        
+        // Category Landings
+        else if (path === '/private') { setSelectedCatPath(['Private & Hobby']); setView('landing-private'); }
+        else if (path === '/professional') { setSelectedCatPath(['Professional']); setView('landing-prof'); }
+        else if (path === '/children') { setSelectedCatPath(['Children']); setView('landing-kids'); }
+        
+        else if (path !== '/' && !path.startsWith('/course/')) setView('home');
     };
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
+
+    // 1. Run ONCE on mount to handle reloads
+    handleUrlChange();
+
+    // 2. Listen for back/forward buttons
+    window.addEventListener('popstate', handleUrlChange);
+    return () => window.removeEventListener('popstate', handleUrlChange);
   }, []);
 
   useEffect(() => {
