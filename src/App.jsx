@@ -402,22 +402,25 @@ const ContactPage = ({ t, handleContactSubmit, setView }) => (
                         <div className="flex items-start text-gray-700"><MapPin className="w-5 h-5 mr-3 text-primary mt-1" /><span>LifeSkills360 GmbH<br/>Talrain 25<br/>6043 Adligenswil</span></div>
                     </div>
                 </div>
-                <div><h3 className="font-bold text-lg mb-2 font-heading">{t.contact_office_hours}</h3><p className="text-gray-600">{t.contact_mon_fri}</p><p className="text-gray-600">{t.contact_weekend}</p></div>
             </div>
             <div className="bg-white p-8 rounded-2xl shadow-lg border border-gray-100">
                 <form onSubmit={handleContactSubmit} className="space-y-4">
                     {/* EMAIL (First) */}
-                    <div><label className="block text-sm font-bold text-gray-700 mb-1">Email</label><input required type="email" name="email" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" placeholder="you@example.com" /></div>
+                    <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.contact_lbl_email}</label><input required type="email" name="email" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" placeholder="you@example.com" /></div>
                     
                     {/* NAME (Optional but standard) */}
-                    <div><label className="block text-sm font-bold text-gray-700 mb-1">Name</label><input required type="text" name="name" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" placeholder="Your Name" /></div>
+                    <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.contact_lbl_name}</label><input required type="text" name="name" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" placeholder={t.contact_lbl_name} /></div>
 
                     {/* SUBJECT (Added) */}
-                    <div><label className="block text-sm font-bold text-gray-700 mb-1">Betreff / Subject</label><input required type="text" name="subject" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" placeholder="..." /></div>
+                    <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.contact_lbl_subject}</label><input required type="text" name="_subject" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" placeholder="..." /></div>
 
                     {/* MESSAGE */}
-                    <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.contact_lbl_msg || "Message"}</label><textarea required name="message" rows="4" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" placeholder="..."></textarea></div>
+                    <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.contact_lbl_msg}</label><textarea required name="message" rows="4" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" placeholder="..."></textarea></div>
                     
+                    {/* HONEYPOT & CONFIG for FormSubmit */}
+                    <input type="text" name="_honey" className="hidden" />
+                    <input type="hidden" name="_captcha" value="false" />
+
                     <button type="submit" className="w-full bg-primary text-white py-3 rounded-lg font-bold hover:bg-orange-600 transition font-heading">{t.btn_send}</button>
                 </form>
             </div>
@@ -881,12 +884,25 @@ export default function KursNaviPro() {
 
   const handleContactSubmit = (e) => { 
     e.preventDefault(); 
-    // In a real app, we would send this data to the backend
-    // For now, we simulate success
-    const formData = new FormData(e.target);
-    console.log("Sending email to info@kursnavi.ch", Object.fromEntries(formData));
-    showNotification("Message sent! We will get back to you shortly."); 
-    setView('home'); 
+    // Uses FormSubmit.co for free, no-backend email forwarding. 
+    // First time you test this, you will get an ACTIVATION EMAIL at info@kursnavi.ch.
+    fetch("https://formsubmit.co/ajax/info@kursnavi.ch", {
+        method: "POST",
+        headers: { 
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify(Object.fromEntries(new FormData(e.target)))
+    })
+    .then(response => response.json())
+    .then(data => {
+         showNotification(t.success_msg || "Message sent!"); 
+         setView('home');
+    })
+    .catch(error => {
+        console.error("Error:", error);
+        showNotification("Error sending message. Please email us directly.");
+    });
   };
   
   const handleSearchSubmit = () => { 

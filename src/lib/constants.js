@@ -101,7 +101,8 @@ export const TRANSLATIONS = {
 
     contact_title: "Contact Us", contact_get_in_touch: "Get in Touch", contact_office_hours: "Office Hours",
     contact_mon_fri: "Mon-Fri: 09:00 - 17:00", contact_weekend: "Weekends: Closed",
-    contact_lbl_name: "Name", contact_lbl_email: "Email", contact_lbl_msg: "Message",
+    contact_lbl_name: "Name", contact_lbl_email: "Email", contact_lbl_msg: "Message", contact_lbl_subject: "Subject",
+
     about_title: "About KursNavi", about_subtitle: "Connecting Switzerland.",
     about_text: "KursNavi is Switzerland's premier local learning platform...",
     about_community_title: "Community", about_community_text: "We believe in the power of local connection.",
@@ -153,6 +154,8 @@ export const TRANSLATIONS = {
     footer_discover: "Entdecken", footer_support: "Support", footer_legal_header: "Rechtliches",
 
     contact_title: "Kontakt", contact_get_in_touch: "Schreib uns", btn_send: "Senden",
+    contact_lbl_name: "Name", contact_lbl_email: "E-Mail", contact_lbl_msg: "Nachricht", contact_lbl_subject: "Betreff",
+
     about_title: "Über uns", about_subtitle: "Die Schweiz verbinden.",
     profile_settings: "Profileinstellungen", lbl_city: "Meine Stadt / Ort", lbl_bio: "Über mich (Bio)", lbl_language: "Bevorzugte Sprache",
     profile_lang_note: "Wir verwenden dies für E-Mails und Webseiteninhalte.", btn_save: "Speichern",
@@ -201,6 +204,8 @@ export const TRANSLATIONS = {
     footer_discover: "Découvrir", footer_support: "Support", footer_legal_header: "Juridique",
 
     contact_title: "Contact", contact_get_in_touch: "Contactez-nous", btn_send: "Envoyer",
+    contact_lbl_name: "Nom", contact_lbl_email: "E-mail", contact_lbl_msg: "Message", contact_lbl_subject: "Objet",
+
     about_title: "À propos", about_subtitle: "Relier la Suisse.",
     profile_settings: "Paramètres du profil", lbl_city: "Ma Ville / Localité", lbl_bio: "À propos de moi", lbl_language: "Langue préférée",
     profile_lang_note: "Nous utiliserons ceci pour les e-mails.", btn_save: "Enregistrer",
@@ -249,6 +254,8 @@ export const TRANSLATIONS = {
     footer_discover: "Scopri", footer_support: "Supporto", footer_legal_header: "Legale",
 
     contact_title: "Contatto", contact_get_in_touch: "Scrivici", btn_send: "Invia",
+    contact_lbl_name: "Nome", contact_lbl_email: "E-mail", contact_lbl_msg: "Messaggio", contact_lbl_subject: "Oggetto",
+
     about_title: "Chi siamo", about_subtitle: "Connettere la Svizzera.",
     profile_settings: "Impostazioni Profilo", lbl_city: "La mia Città", lbl_bio: "Su di me (Bio)", lbl_language: "Lingua preferita",
     profile_lang_note: "Useremo questa lingua per email e sito web.", btn_save: "Salva modifiche",
