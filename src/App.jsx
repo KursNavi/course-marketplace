@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { Search, User, Clock, MapPin, CheckCircle, ArrowLeft, LogIn, LayoutDashboard, Settings, Trash2, DollarSign, Lock, Calendar, ExternalLink, ChevronDown, ChevronRight, Mail, Phone, Loader, Heart, Shield, X, BookOpen, Star, Zap, Users, Briefcase, Smile, Music, ArrowRight, Save, Filter, BadgeCheck } from 'lucide-react';
+import { Search, User, Clock, MapPin, CheckCircle, ArrowLeft, LogIn, LayoutDashboard, Settings, Trash2, DollarSign, Lock, Calendar, ExternalLink, ChevronDown, ChevronRight, Mail, Phone, Loader, Heart, Shield, X, BookOpen, Star, Zap, Users, Briefcase, Smile, Music, ArrowRight, Save, Filter, BadgeCheck, Pencil } from 'lucide-react';
 
 // --- IMPORTS ---
 import { BRAND, CATEGORY_HIERARCHY, CATEGORY_LABELS, SWISS_CANTONS, SWISS_CITIES, TRANSLATIONS } from './lib/constants';
@@ -119,7 +119,7 @@ const UserProfileSection = ({ user, showNotification, setLang, t }) => {
     );
 };
 
-const Dashboard = ({ user, t, setView, courses, teacherEarnings, myBookings, handleDeleteCourse, showNotification, changeLanguage, setSelectedCourse }) => {
+const Dashboard = ({ user, t, setView, courses, teacherEarnings, myBookings, handleDeleteCourse, handleEditCourse, showNotification, changeLanguage, setSelectedCourse }) => {
     const [dashView, setDashView] = useState('overview'); 
     const totalPaidOut = user.role === 'teacher' ? teacherEarnings.filter(e => e.isPaidOut).reduce((sum, e) => sum + e.payout, 0) : 0;
     const myCourses = user.role === 'teacher' ? courses.filter(c => c.user_id === user.id) : [];
@@ -133,7 +133,7 @@ const Dashboard = ({ user, t, setView, courses, teacherEarnings, myBookings, han
             <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
                  <div><h1 className="text-3xl font-bold text-[#333333] font-['Open_Sans']">{user.role === 'teacher' ? t.teacher_dash : t.student_dash}</h1><p className="text-gray-500">Welcome back, {user.name}</p></div>
                  <div className="bg-white rounded-full p-1 border flex shadow-sm h-fit"><button onClick={() => setDashView('overview')} className={`px-4 py-2 rounded-full text-sm font-bold transition ${dashView === 'overview' ? 'bg-[#FA6E28] text-white shadow' : 'text-gray-500 hover:bg-gray-50'}`}>{t.dash_overview}</button><button onClick={() => setDashView('profile')} className={`px-4 py-2 rounded-full text-sm font-bold transition ${dashView === 'profile' ? 'bg-[#FA6E28] text-white shadow' : 'text-gray-500 hover:bg-gray-50'}`}>{t.dash_settings}</button></div>
-                {user.role === 'teacher' && dashView === 'overview' && <button onClick={() => setView('create')} className="bg-[#FA6E28] text-white px-6 py-3 rounded-xl font-bold hover:bg-[#E55D1F] flex items-center shadow-lg hover:-translate-y-0.5 transition font-['Open_Sans']"><KursNaviLogo className="mr-2 w-5 h-5 text-white" /> {t.dash_new_course}</button>}
+                {user.role === 'teacher' && dashView === 'overview' && <button onClick={() => handleEditCourse(null)} className="bg-[#FA6E28] text-white px-6 py-3 rounded-xl font-bold hover:bg-[#E55D1F] flex items-center shadow-lg hover:-translate-y-0.5 transition font-['Open_Sans']"><KursNaviLogo className="mr-2 w-5 h-5 text-white" /> {t.dash_new_course}</button>}
             </div>
             {dashView === 'profile' ? ( <UserProfileSection user={user} showNotification={showNotification} setLang={changeLanguage} t={t} /> ) : (
                 <>
@@ -160,7 +160,16 @@ const Dashboard = ({ user, t, setView, courses, teacherEarnings, myBookings, han
                                 <div className="overflow-x-auto">
                                     <table className="w-full text-left">
                                         <thead className="bg-[#FAF5F0] border-b border-gray-200"><tr><th className="px-6 py-4 font-semibold text-gray-600">Course</th><th className="px-6 py-4 font-semibold text-gray-600">Price</th><th className="px-6 py-4 font-semibold text-gray-600">Actions</th></tr></thead>
-                                        <tbody className="divide-y divide-gray-100">{myCourses.map(course => (<tr key={course.id} className="hover:bg-gray-50"><td className="px-6 py-4"><div className="font-bold text-[#333333]">{course.title}</div><div className="text-xs text-gray-400">{course.category}</div></td><td className="px-6 py-4 font-medium">CHF {course.price}</td><td className="px-6 py-4"><button onClick={() => handleDeleteCourse(course.id)} className="text-red-500 hover:text-red-700"><Trash2 className="w-5 h-5" /></button></td></tr>))}</tbody>
+                                        <tbody className="divide-y divide-gray-100">{myCourses.map(course => (
+                                            <tr key={course.id} className="hover:bg-gray-50">
+                                                <td className="px-6 py-4"><div className="font-bold text-[#333333]">{course.title}</div><div className="text-xs text-gray-400">{course.category}</div></td>
+                                                <td className="px-6 py-4 font-medium">CHF {course.price}</td>
+                                                <td className="px-6 py-4 flex gap-2">
+                                                    <button onClick={() => handleEditCourse(course)} className="text-blue-500 hover:text-blue-700 bg-blue-50 p-2 rounded-full"><Pencil className="w-4 h-4" /></button>
+                                                    <button onClick={() => handleDeleteCourse(course.id)} className="text-red-500 hover:text-red-700 bg-red-50 p-2 rounded-full"><Trash2 className="w-4 h-4" /></button>
+                                                </td>
+                                            </tr>
+                                        ))}</tbody>
                                     </table>
                                 </div>
                             ) : <div className="p-8 text-center text-gray-500">You haven't posted any courses yet.</div>}
@@ -198,79 +207,33 @@ const Dashboard = ({ user, t, setView, courses, teacherEarnings, myBookings, han
     );
 };
 
-const LandingPageContent = ({ t, setView }) => (
-    <div className="space-y-24 py-12 animate-in fade-in duration-700">
-        <div className="max-w-7xl mx-auto px-4">
-            <h2 className="text-3xl font-bold text-center mb-16 text-[#333333] font-['Open_Sans']">{t.how_it_works}</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-16">
-                <div className="space-y-8">
-                    <div className="flex items-center space-x-4 mb-8"><div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center text-[#FA6E28]"><Users className="w-6 h-6" /></div><h3 className="text-2xl font-bold text-[#333333]">{t.for_students}</h3></div>
-                    <div className="space-y-8 pl-4 border-l-2 border-orange-100">
-                        <div><h4 className="font-bold text-lg mb-1 flex items-center"><Search className="w-4 h-4 mr-2 text-[#FA6E28]" /> {t.student_step_1}</h4><p className="text-gray-600">{t.student_desc_1}</p></div>
-                        <div><h4 className="font-bold text-lg mb-1 flex items-center"><Calendar className="w-4 h-4 mr-2 text-[#FA6E28]" /> {t.student_step_2}</h4><p className="text-gray-600">{t.student_desc_2}</p></div>
-                        <div><h4 className="font-bold text-lg mb-1 flex items-center"><Star className="w-4 h-4 mr-2 text-[#FA6E28]" /> {t.student_step_3}</h4><p className="text-gray-600">{t.student_desc_3}</p></div>
-                    </div>
-                </div>
-                <div className="space-y-8">
-                      <div className="flex items-center space-x-4 mb-8"><div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600"><Zap className="w-6 h-6" /></div><h3 className="text-2xl font-bold text-[#333333]">{t.for_tutors}</h3></div>
-                    <div className="space-y-8 pl-4 border-l-2 border-blue-100">
-                          <div><h4 className="font-bold text-lg mb-1 flex items-center"><BookOpen className="w-4 h-4 mr-2 text-blue-500" /> {t.tutor_step_1}</h4><p className="text-gray-600">{t.tutor_desc_1}</p></div>
-                        <div><h4 className="font-bold text-lg mb-1 flex items-center"><Clock className="w-4 h-4 mr-2 text-blue-500" /> {t.tutor_step_2}</h4><p className="text-gray-600">{t.tutor_desc_2}</p></div>
-                        <div><h4 className="font-bold text-lg mb-1 flex items-center"><DollarSign className="w-4 h-4 mr-2 text-blue-500" /> {t.tutor_step_3}</h4><p className="text-gray-600">{t.tutor_desc_3}</p></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div className="bg-[#333333] py-20">
-            <div className="max-w-4xl mx-auto px-4 text-center">
-                <h2 className="text-3xl md:text-4xl font-bold text-white mb-6 font-['Open_Sans']">{t.cta_title}</h2><p className="text-xl text-gray-300 mb-10 leading-relaxed">{t.cta_subtitle}</p>
-                <button onClick={() => setView('how-it-works')} className="bg-[#FA6E28] text-white px-10 py-4 rounded-full font-bold text-lg hover:bg-[#E55D1F] transition transform hover:-translate-y-1 shadow-xl">{t.cta_btn}</button>
-            </div>
-        </div>
-    </div>
-);
+const TeacherForm = ({ t, setView, user, handlePublishCourse, getCatLabel, initialData }) => {
+    const [lvl1, setLvl1] = useState(Object.keys(CATEGORY_HIERARCHY)[0]); 
+    const [lvl2, setLvl2] = useState(Object.keys(CATEGORY_HIERARCHY[lvl1])[0]);
 
-const HowItWorksPage = ({ t, setView }) => (
-    <div className="pt-8">
-        <button onClick={() => setView('home')} className="flex items-center text-gray-500 hover:text-gray-900 mb-6 transition-colors px-4"><ArrowLeft className="w-4 h-4 mr-2" /> Back</button>
-        <LandingPageContent t={t} setView={setView} />
-    </div>
-);
+    useEffect(() => {
+        if (initialData && initialData.category) {
+            const parts = initialData.category.split(' | ');
+            if (parts.length >= 2) { setLvl1(parts[0]); setLvl2(parts[1]); }
+        }
+    }, [initialData]);
 
-const TeacherForm = ({ t, setView, user, handlePublishCourse, getCatLabel }) => {
-    const [lvl1, setLvl1] = useState(Object.keys(CATEGORY_HIERARCHY)[0]); const [lvl2, setLvl2] = useState(Object.keys(CATEGORY_HIERARCHY[lvl1])[0]);
     const handleLvl1Change = (e) => { const val = e.target.value; setLvl1(val); setLvl2(Object.keys(CATEGORY_HIERARCHY[val])[0]); };
+    
     return (
     <div className="max-w-3xl mx-auto px-4 py-8 animate-in fade-in slide-in-from-bottom-4 duration-500 font-['Hind_Madurai']">
         <button onClick={() => setView('dashboard')} className="flex items-center text-gray-500 hover:text-gray-900 mb-6 transition-colors"><ArrowLeft className="w-4 h-4 mr-2" /> Back to Dashboard</button>
         <div className="bg-white p-8 rounded-2xl shadow-xl border border-gray-200">
-            <div className="mb-8 border-b pb-4"><h1 className="text-3xl font-bold text-[#333333] font-['Open_Sans']">{t.form_title}</h1><p className="text-gray-500 mt-2">Share your skills with the community.</p></div>
+            <div className="mb-8 border-b pb-4"><h1 className="text-3xl font-bold text-[#333333] font-['Open_Sans']">{initialData ? 'Edit Course' : t.form_title}</h1><p className="text-gray-500 mt-2">{initialData ? 'Update your course details.' : 'Share your skills with the community.'}</p></div>
             <form onSubmit={handlePublishCourse} className="space-y-6">
+                {initialData && <input type="hidden" name="course_id" value={initialData.id} />}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="md:col-span-2"><label className="block text-sm font-bold text-gray-700 mb-1">Course Title</label><input required type="text" name="title" placeholder="e.g. Traditional Swiss Cooking" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#FA6E28] outline-none transition-shadow" /></div>
+                    <div className="md:col-span-2"><label className="block text-sm font-bold text-gray-700 mb-1">Course Title</label><input required type="text" name="title" defaultValue={initialData?.title} placeholder="e.g. Traditional Swiss Cooking" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#FA6E28] outline-none transition-shadow" /></div>
                     
-                    {/* NEW FIELDS: Level, Target Group, Pro Toggle */}
                     <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4">
-                         <div>
-                            <label className="block text-sm font-bold text-gray-700 mb-1">Skill Level</label>
-                            <select name="level" className="w-full px-3 py-2 border rounded-lg focus:ring-[#FA6E28] bg-white text-sm outline-none">
-                                <option value="All Levels">All Levels</option>
-                                <option value="Beginner">Beginner (Anfänger)</option>
-                                <option value="Advanced">Advanced (Fortgeschritten)</option>
-                            </select>
-                         </div>
-                         <div>
-                            <label className="block text-sm font-bold text-gray-700 mb-1">Target Group</label>
-                            <select name="target_group" className="w-full px-3 py-2 border rounded-lg focus:ring-[#FA6E28] bg-white text-sm outline-none">
-                                <option value="Adults">Adults (Erwachsene)</option>
-                                <option value="Teens">Teens</option>
-                                <option value="Kids">Kids (Kinder)</option>
-                            </select>
-                         </div>
-                         <div className="flex items-center p-3 border rounded-lg bg-gray-50">
-                             <input type="checkbox" name="is_pro" id="is_pro" className="w-5 h-5 text-[#FA6E28] focus:ring-[#FA6E28] rounded border-gray-300 mr-3" />
-                             <label htmlFor="is_pro" className="text-sm font-bold text-gray-700 cursor-pointer flex items-center">Professional Course <BadgeCheck className="w-4 h-4 ml-1 text-blue-500" /></label>
-                         </div>
+                         <div><label className="block text-sm font-bold text-gray-700 mb-1">Skill Level</label><select name="level" defaultValue={initialData?.level || "All Levels"} className="w-full px-3 py-2 border rounded-lg focus:ring-[#FA6E28] bg-white text-sm outline-none"><option value="All Levels">All Levels</option><option value="Beginner">Beginner (Anfänger)</option><option value="Advanced">Advanced (Fortgeschritten)</option></select></div>
+                         <div><label className="block text-sm font-bold text-gray-700 mb-1">Target Group</label><select name="target_group" defaultValue={initialData?.target_group || "Adults"} className="w-full px-3 py-2 border rounded-lg focus:ring-[#FA6E28] bg-white text-sm outline-none"><option value="Adults">Adults (Erwachsene)</option><option value="Teens">Teens</option><option value="Kids">Kids (Kinder)</option></select></div>
+                         <div className="flex items-center p-3 border rounded-lg bg-gray-50"><input type="checkbox" name="is_pro" id="is_pro" defaultChecked={initialData?.is_pro} className="w-5 h-5 text-[#FA6E28] focus:ring-[#FA6E28] rounded border-gray-300 mr-3" /><label htmlFor="is_pro" className="text-sm font-bold text-gray-700 cursor-pointer flex items-center">Professional Course <BadgeCheck className="w-4 h-4 ml-1 text-blue-500" /></label></div>
                     </div>
 
                     <div className="md:col-span-2 bg-[#FAF5F0] p-4 rounded-xl border border-orange-100">
@@ -278,21 +241,21 @@ const TeacherForm = ({ t, setView, user, handlePublishCourse, getCatLabel }) => 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div><span className="text-xs text-gray-500 block mb-1">Type</span><select name="catLvl1" value={lvl1} onChange={handleLvl1Change} className="w-full px-3 py-2 border rounded-lg focus:ring-[#FA6E28] bg-white text-sm">{Object.keys(CATEGORY_HIERARCHY).map(c => <option key={c} value={c}>{getCatLabel(c)}</option>)}</select></div>
                             <div><span className="text-xs text-gray-500 block mb-1">Area</span><select name="catLvl2" value={lvl2} onChange={(e) => setLvl2(e.target.value)} className="w-full px-3 py-2 border rounded-lg focus:ring-[#FA6E28] bg-white text-sm">{Object.keys(CATEGORY_HIERARCHY[lvl1]).map(c => <option key={c} value={c}>{getCatLabel(c)}</option>)}</select></div>
-                            <div><span className="text-xs text-gray-500 block mb-1">Specialty</span><select name="catLvl3" className="w-full px-3 py-2 border rounded-lg focus:ring-[#FA6E28] bg-white text-sm">{CATEGORY_HIERARCHY[lvl1][lvl2].map(c => <option key={c} value={c}>{getCatLabel(c)}</option>)}</select></div>
+                            <div><span className="text-xs text-gray-500 block mb-1">Specialty</span><select name="catLvl3" defaultValue={initialData ? initialData.category.split(' | ')[2] : ''} className="w-full px-3 py-2 border rounded-lg focus:ring-[#FA6E28] bg-white text-sm">{CATEGORY_HIERARCHY[lvl1][lvl2].map(c => <option key={c} value={c}>{getCatLabel(c)}</option>)}</select></div>
                         </div>
                     </div>
-                    <div><label className="block text-sm font-bold text-gray-700 mb-1">Price (CHF)</label><div className="relative"><span className="absolute left-3 top-2 text-gray-500 font-bold">CHF</span><input required type="number" name="price" placeholder="50" className="w-full pl-12 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#FA6E28] outline-none" /></div></div>
-                    <div><label className="block text-sm font-bold text-gray-700 mb-1">Canton</label><div className="relative"><select name="canton" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#FA6E28] outline-none appearance-none bg-white">{SWISS_CANTONS.map(c => <option key={c} value={c}>{c}</option>)}</select><ChevronDown className="absolute right-3 top-3 text-gray-400 w-4 h-4 pointer-events-none" /></div></div>
-                    <div><label className="block text-sm font-bold text-gray-700 mb-1">Specific Address</label><input required type="text" name="address" placeholder="Street, City, Zip" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#FA6E28] outline-none" /></div>
-                    <div><label className="block text-sm font-bold text-gray-700 mb-1">Session Count</label><input required type="number" name="sessionCount" defaultValue="1" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#FA6E28] outline-none" /></div>
-                    <div><label className="block text-sm font-bold text-gray-700 mb-1">Session Length</label><input required type="text" name="sessionLength" placeholder="e.g. 2 hours" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#FA6E28] outline-none" /></div>
-                    <div><label className="block text-sm font-bold text-gray-700 mb-1">Start Date</label><div className="relative"><Calendar className="absolute left-3 top-3 text-gray-400 w-5 h-5" /><input required type="date" name="startDate" className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#FA6E28] outline-none" /></div></div>
-                    <div><label className="block text-sm font-bold text-gray-700 mb-1">Provider Website (Optional)</label><div className="relative"><ExternalLink className="absolute left-3 top-3 text-gray-400 w-5 h-5" /><input type="url" name="providerUrl" placeholder="https://..." className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#FA6E28] outline-none" /></div></div>
+                    <div><label className="block text-sm font-bold text-gray-700 mb-1">Price (CHF)</label><div className="relative"><span className="absolute left-3 top-2 text-gray-500 font-bold">CHF</span><input required type="number" name="price" defaultValue={initialData?.price} className="w-full pl-12 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#FA6E28] outline-none" /></div></div>
+                    <div><label className="block text-sm font-bold text-gray-700 mb-1">Canton</label><div className="relative"><select name="canton" defaultValue={initialData?.canton} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#FA6E28] outline-none appearance-none bg-white">{SWISS_CANTONS.map(c => <option key={c} value={c}>{c}</option>)}</select><ChevronDown className="absolute right-3 top-3 text-gray-400 w-4 h-4 pointer-events-none" /></div></div>
+                    <div><label className="block text-sm font-bold text-gray-700 mb-1">Specific Address</label><input required type="text" name="address" defaultValue={initialData?.address} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#FA6E28] outline-none" /></div>
+                    <div><label className="block text-sm font-bold text-gray-700 mb-1">Session Count</label><input required type="number" name="sessionCount" defaultValue={initialData?.session_count || 1} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#FA6E28] outline-none" /></div>
+                    <div><label className="block text-sm font-bold text-gray-700 mb-1">Session Length</label><input required type="text" name="sessionLength" defaultValue={initialData?.session_length} placeholder="e.g. 2 hours" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#FA6E28] outline-none" /></div>
+                    <div><label className="block text-sm font-bold text-gray-700 mb-1">Start Date</label><div className="relative"><Calendar className="absolute left-3 top-3 text-gray-400 w-5 h-5" /><input required type="date" name="startDate" defaultValue={initialData?.start_date} className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#FA6E28] outline-none" /></div></div>
+                    <div><label className="block text-sm font-bold text-gray-700 mb-1">Provider Website (Optional)</label><div className="relative"><ExternalLink className="absolute left-3 top-3 text-gray-400 w-5 h-5" /><input type="url" name="providerUrl" defaultValue={initialData?.provider_url} className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#FA6E28] outline-none" /></div></div>
                 </div>
-                <div><label className="block text-sm font-bold text-gray-700 mb-1">Description</label><textarea required name="description" rows="4" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#FA6E28] outline-none" placeholder="Describe your course..."></textarea></div>
-                <div><label className="block text-sm font-bold text-gray-700 mb-1">What will students learn?</label><textarea required name="objectives" rows="4" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#FA6E28] outline-none" placeholder="Enter each objective on a new line..."></textarea></div>
-                <div><label className="block text-sm font-bold text-gray-700 mb-1">Prerequisites</label><input type="text" name="prerequisites" placeholder="e.g. Beginners welcome, bring a laptop" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#FA6E28] outline-none" /></div>
-                <div className="pt-4 border-t border-gray-100 flex justify-end"><button type="submit" className="bg-[#FA6E28] text-white px-8 py-3 rounded-xl font-bold hover:bg-[#E55D1F] shadow-lg hover:-translate-y-0.5 transition flex items-center font-['Open_Sans']"><KursNaviLogo className="w-5 h-5 mr-2 text-white" />{t.btn_publish}</button></div>
+                <div><label className="block text-sm font-bold text-gray-700 mb-1">Description</label><textarea required name="description" defaultValue={initialData?.description} rows="4" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#FA6E28] outline-none"></textarea></div>
+                <div><label className="block text-sm font-bold text-gray-700 mb-1">What will students learn?</label><textarea required name="objectives" defaultValue={initialData?.objectives?.join('\n')} rows="4" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#FA6E28] outline-none" placeholder="Enter each objective on a new line..."></textarea></div>
+                <div><label className="block text-sm font-bold text-gray-700 mb-1">Prerequisites</label><input type="text" name="prerequisites" defaultValue={initialData?.prerequisites} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#FA6E28] outline-none" /></div>
+                <div className="pt-4 border-t border-gray-100 flex justify-end"><button type="submit" className="bg-[#FA6E28] text-white px-8 py-3 rounded-xl font-bold hover:bg-[#E55D1F] shadow-lg hover:-translate-y-0.5 transition flex items-center font-['Open_Sans']"><KursNaviLogo className="w-5 h-5 mr-2 text-white" />{initialData ? 'Update Course' : t.btn_publish}</button></div>
             </form>
         </div>
     </div>
@@ -450,6 +413,45 @@ const AdminPanel = ({ t, courses }) => (
     </div>
 );
 
+const LandingPageContent = ({ t, setView }) => (
+    <div className="space-y-24 py-12 animate-in fade-in duration-700">
+        <div className="max-w-7xl mx-auto px-4">
+            <h2 className="text-3xl font-bold text-center mb-16 text-[#333333] font-['Open_Sans']">{t.how_it_works}</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-16">
+                <div className="space-y-8">
+                    <div className="flex items-center space-x-4 mb-8"><div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center text-[#FA6E28]"><Users className="w-6 h-6" /></div><h3 className="text-2xl font-bold text-[#333333]">{t.for_students}</h3></div>
+                    <div className="space-y-8 pl-4 border-l-2 border-orange-100">
+                        <div><h4 className="font-bold text-lg mb-1 flex items-center"><Search className="w-4 h-4 mr-2 text-[#FA6E28]" /> {t.student_step_1}</h4><p className="text-gray-600">{t.student_desc_1}</p></div>
+                        <div><h4 className="font-bold text-lg mb-1 flex items-center"><Calendar className="w-4 h-4 mr-2 text-[#FA6E28]" /> {t.student_step_2}</h4><p className="text-gray-600">{t.student_desc_2}</p></div>
+                        <div><h4 className="font-bold text-lg mb-1 flex items-center"><Star className="w-4 h-4 mr-2 text-[#FA6E28]" /> {t.student_step_3}</h4><p className="text-gray-600">{t.student_desc_3}</p></div>
+                    </div>
+                </div>
+                <div className="space-y-8">
+                      <div className="flex items-center space-x-4 mb-8"><div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600"><Zap className="w-6 h-6" /></div><h3 className="text-2xl font-bold text-[#333333]">{t.for_tutors}</h3></div>
+                    <div className="space-y-8 pl-4 border-l-2 border-blue-100">
+                          <div><h4 className="font-bold text-lg mb-1 flex items-center"><BookOpen className="w-4 h-4 mr-2 text-blue-500" /> {t.tutor_step_1}</h4><p className="text-gray-600">{t.tutor_desc_1}</p></div>
+                        <div><h4 className="font-bold text-lg mb-1 flex items-center"><Clock className="w-4 h-4 mr-2 text-blue-500" /> {t.tutor_step_2}</h4><p className="text-gray-600">{t.tutor_desc_2}</p></div>
+                        <div><h4 className="font-bold text-lg mb-1 flex items-center"><DollarSign className="w-4 h-4 mr-2 text-blue-500" /> {t.tutor_step_3}</h4><p className="text-gray-600">{t.tutor_desc_3}</p></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div className="bg-[#333333] py-20">
+            <div className="max-w-4xl mx-auto px-4 text-center">
+                <h2 className="text-3xl md:text-4xl font-bold text-white mb-6 font-['Open_Sans']">{t.cta_title}</h2><p className="text-xl text-gray-300 mb-10 leading-relaxed">{t.cta_subtitle}</p>
+                <button onClick={() => setView('how-it-works')} className="bg-[#FA6E28] text-white px-10 py-4 rounded-full font-bold text-lg hover:bg-[#E55D1F] transition transform hover:-translate-y-1 shadow-xl">{t.cta_btn}</button>
+            </div>
+        </div>
+    </div>
+);
+
+const HowItWorksPage = ({ t, setView }) => (
+    <div className="pt-8">
+        <button onClick={() => setView('home')} className="flex items-center text-gray-500 hover:text-gray-900 mb-6 transition-colors px-4"><ArrowLeft className="w-4 h-4 mr-2" /> Back</button>
+        <LandingPageContent t={t} setView={setView} />
+    </div>
+);
+
 const LandingView = ({ title, subtitle, variant = 'main', searchQuery, setSearchQuery, handleSearchSubmit, setSelectedCatPath, setView, t }) => {
     return (
       <>
@@ -534,8 +536,7 @@ const SearchPageView = ({ selectedCatPath, setSelectedCatPath, searchQuery, setS
                         </div>
                         <select value={filterLevel} onChange={(e) => setFilterLevel(e.target.value)} className="bg-gray-50 border rounded-lg px-3 py-1.5 text-sm outline-none text-gray-600">
                             <option value="All">All Levels</option>
-                            <option value="Beginner">Beginner</option>
-                            <option value="Advanced">Advanced</option>
+                            <option value="Beginner">Beginner</option><option value="Advanced">Advanced</option>
                         </select>
                          <label className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg border cursor-pointer transition select-none ${filterPro ? 'bg-blue-50 border-blue-200' : 'bg-gray-50'}`}>
                             <input type="checkbox" checked={filterPro} onChange={(e) => setFilterPro(e.target.checked)} className="rounded text-[#FA6E28] focus:ring-[#FA6E28]" />
@@ -599,6 +600,7 @@ export default function KursNaviPro() {
   const [selectedLocations, setSelectedLocations] = useState([]);
   const [notification, setNotification] = useState(null);
   const [selectedCourse, setSelectedCourse] = useState(null);
+  const [editingCourse, setEditingCourse] = useState(null); // State for Edit Mode
 
   // NEW FILTER STATE
   const [filterDate, setFilterDate] = useState("");
@@ -786,14 +788,21 @@ export default function KursNaviPro() {
   const showNotification = (msg) => { setNotification(msg); setTimeout(() => setNotification(null), 3000); };
 
   const handleDeleteCourse = async (courseId) => {
+    if(!confirm("Are you sure you want to delete this course?")) return;
     setCourses(courses.filter(c => c.id !== courseId));
     const { error } = await supabase.from('courses').delete().eq('id', courseId);
-    if (error) showNotification("Error deleting course"); else showNotification("Course deleted.");
+    if (error) showNotification("Error deleting: " + error.message); else showNotification("Course deleted.");
+  };
+
+  const handleEditCourse = (course) => {
+      setEditingCourse(course);
+      setView('create');
   };
 
   const handlePublishCourse = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
+    const courseId = formData.get('course_id'); // If this exists, it's an UPDATE
     const objectivesList = formData.get('objectives').split('\n').filter(line => line.trim() !== '');
     const fullCategoryString = `${formData.get('catLvl1')} | ${formData.get('catLvl2')} | ${formData.get('catLvl3')}`;
     const newCourse = {
@@ -802,9 +811,22 @@ export default function KursNaviPro() {
       description: formData.get('description'), objectives: objectivesList, prerequisites: formData.get('prerequisites'), session_count: Number(formData.get('sessionCount')), session_length: formData.get('sessionLength'), provider_url: formData.get('providerUrl'), user_id: user.id, start_date: formData.get('startDate'),
       level: formData.get('level'), target_group: formData.get('target_group'), is_pro: formData.get('is_pro') === 'on' 
     };
-    const { data, error } = await supabase.from('courses').insert([newCourse]).select();
-    if (error) { console.error(error); showNotification("Error publishing course"); } 
-    else { if (data && data.length > 0) setCourses([data[0], ...courses]); else fetchCourses(); setView('dashboard'); showNotification(t.success_msg); }
+
+    let error;
+    if (courseId) {
+        // UPDATE
+        const { error: err } = await supabase.from('courses').update(newCourse).eq('id', courseId);
+        error = err;
+        showNotification("Course updated successfully!");
+    } else {
+        // INSERT
+        const { error: err } = await supabase.from('courses').insert([newCourse]).select();
+        error = err;
+        showNotification(t.success_msg);
+    }
+
+    if (error) { console.error(error); showNotification("Error saving course: " + error.message); } 
+    else { fetchCourses(); setView('dashboard'); setEditingCourse(null); }
   };
 
   const handleBookCourse = async (course) => {
@@ -873,15 +895,15 @@ export default function KursNaviPro() {
       )}
        
       {view === 'landing-private' && (
-          <LandingView title="Unleash your passion." subtitle="From Piano to Pilates. Find the perfect hobby." variant="private" searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearchSubmit={handleSearchSubmit} setSelectedCatPath={setSelectedCatPath} setView={setView} t={t} />
+          <LandingView title="Unleash your passion." subtitle="Hobby Courses" variant="private" searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearchSubmit={handleSearchSubmit} setSelectedCatPath={setSelectedCatPath} setView={setView} t={t} />
       )}
 
       {view === 'landing-prof' && (
-          <LandingView title="Boost your career." subtitle="Excel, Management, Coding. Learn from the pros." variant="prof" searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearchSubmit={handleSearchSubmit} setSelectedCatPath={setSelectedCatPath} setView={setView} t={t} />
+          <LandingView title="Boost your career." subtitle="Professional Courses" variant="prof" searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearchSubmit={handleSearchSubmit} setSelectedCatPath={setSelectedCatPath} setView={setView} t={t} />
       )}
 
       {view === 'landing-kids' && (
-          <LandingView title="Fun learning for kids." subtitle="Tutoring, Music, Arts. Local and safe." variant="kids" searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearchSubmit={handleSearchSubmit} setSelectedCatPath={setSelectedCatPath} setView={setView} t={t} />
+          <LandingView title="Fun learning for kids." subtitle="Children's Courses" variant="kids" searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearchSubmit={handleSearchSubmit} setSelectedCatPath={setSelectedCatPath} setView={setView} t={t} />
       )}
 
       {view === 'search' && (
@@ -912,8 +934,8 @@ export default function KursNaviPro() {
       {view === 'terms' && <TermsPage t={t} />}
       {view === 'privacy' && <PrivacyPage t={t} />}
       {view === 'admin' && user?.role === 'admin' && <AdminPanel t={t} courses={courses} />}
-      {view === 'dashboard' && user && <Dashboard user={user} t={t} setView={setView} courses={courses} teacherEarnings={teacherEarnings} myBookings={myBookings} handleDeleteCourse={handleDeleteCourse} showNotification={showNotification} changeLanguage={changeLanguage} setSelectedCourse={setSelectedCourse} />}
-      {view === 'create' && user?.role === 'teacher' && <TeacherForm t={t} setView={setView} user={user} handlePublishCourse={handlePublishCourse} getCatLabel={getCatLabel} />}
+      {view === 'dashboard' && user && <Dashboard user={user} t={t} setView={setView} courses={courses} teacherEarnings={teacherEarnings} myBookings={myBookings} handleDeleteCourse={handleDeleteCourse} handleEditCourse={handleEditCourse} showNotification={showNotification} changeLanguage={changeLanguage} setSelectedCourse={setSelectedCourse} />}
+      {view === 'create' && user?.role === 'teacher' && <TeacherForm t={t} setView={setView} user={user} handlePublishCourse={handlePublishCourse} getCatLabel={getCatLabel} initialData={editingCourse} />}
       </div>
       
       <Footer t={t} setView={setView} />
