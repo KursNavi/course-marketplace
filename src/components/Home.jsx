@@ -5,11 +5,18 @@ import { CategoryDropdown, LocationDropdown } from './Filters';
 
 export const Home = ({ t, setView, setSelectedCatPath, searchQuery, setSearchQuery, catMenuOpen, setCatMenuOpen, catMenuRef, locMode, setLocMode, selectedLocations, setSelectedLocations, locMenuOpen, setLocMenuOpen, locMenuRef, getCatLabel }) => {
   
-  // Handle search submit -> Redirect to search page
+  // 1. Handle text search -> Redirect to search page
   const handleSearch = (e) => {
     e.preventDefault();
     setView('search'); 
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // 2. NEW: Handle Category Selection -> Redirect immediately to search page
+  const handleCategorySelect = (path) => {
+    setSelectedCatPath(path); // Save the selection
+    setView('search');        // Switch to search view
+    window.scrollTo({ top: 0, behavior: 'smooth' }); // Scroll to top
   };
 
   return (
@@ -57,7 +64,8 @@ export const Home = ({ t, setView, setSelectedCatPath, searchQuery, setSearchQue
                     <CategoryDropdown 
                         rootCategory={null} 
                         selectedCatPath={[]} 
-                        setSelectedCatPath={setSelectedCatPath} 
+                        // HERE IS THE FIX: Use our new wrapper function
+                        setSelectedCatPath={handleCategorySelect} 
                         catMenuOpen={catMenuOpen} 
                         setCatMenuOpen={setCatMenuOpen} 
                         t={t} 
