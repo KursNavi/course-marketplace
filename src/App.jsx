@@ -885,8 +885,8 @@ export default function KursNaviPro() {
   const handleContactSubmit = (e) => { 
     e.preventDefault(); 
     // Uses FormSubmit.co for free, no-backend email forwarding. 
-    // First time you test this, you will get an ACTIVATION EMAIL at info@kursnavi.ch.
-    fetch("https://formsubmit.co/ajax/info@kursnavi.ch", {
+    // SECURITY UPDATE: Using token instead of raw email
+    fetch("https://formsubmit.co/ajax/995007a94ce934b7d8c8e7776670f9c4", {
         method: "POST",
         headers: { 
             'Content-Type': 'application/json',
