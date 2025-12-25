@@ -70,6 +70,19 @@ export const TRANSLATIONS = {
     search_placeholder: "What do you want to learn?", filter_label_cat: "Category", filter_label_loc: "Location", btn_search: "Search",
     no_results: "No courses found matching criteria.", btn_book: "Book Course", btn_pay: "Pay & Book", btn_publish: "Publish Course", btn_send: "Send Message",
     
+    // HOME PAGE CONTENT
+    home_headline: "Navigate Your Future with KursNavi",
+    home_subhead: "Discover courses, gain new skills, and unlock your potential with expert-led learning tailored to your goals.",
+    home_verified_tutors: "Verified Tutors",
+    home_students: "Students",
+    home_rating: "Rating",
+    home_path_title: "Choose Your Path",
+    home_path_sub: "Explore our most popular learning directions",
+    home_card_prof_sub: "Advance your career with certified skills.",
+    home_card_priv_sub: "Cooking, Photography, Sports & more.",
+    home_card_kids_sub: "Fun and engaging courses for children.",
+    btn_explore: "EXPLORE",
+
     // Form Labels
     edit_course: "Edit Course", edit_course_sub: "Update your course details.",
     create_course: "List a Course", create_course_sub: "Share your skills with the community.",
@@ -125,6 +138,19 @@ export const TRANSLATIONS = {
     search_placeholder: "Was möchtest du lernen?", filter_label_cat: "Kategorie", filter_label_loc: "Ort", btn_search: "Suchen",
     no_results: "Keine Kurse gefunden.", btn_book: "Kurs buchen", btn_pay: "Bezahlen & Buchen", btn_publish: "Veröffentlichen",
     
+    // HOME PAGE CONTENT
+    home_headline: "Gestalte deine Zukunft mit KursNavi",
+    home_subhead: "Entdecke Kurse, lerne neue Fähigkeiten und entfalte dein Potenzial mit Experten, die dich weiterbringen.",
+    home_verified_tutors: "Geprüfte Lehrer",
+    home_students: "Schüler",
+    home_rating: "Bewertung",
+    home_path_title: "Wähle deinen Weg",
+    home_path_sub: "Entdecke unsere beliebtesten Lernbereiche",
+    home_card_prof_sub: "Karriere fördern mit zertifizierten Skills.",
+    home_card_priv_sub: "Kochen, Fotografie, Sport & mehr.",
+    home_card_kids_sub: "Spaßige und spannende Kurse für Kinder.",
+    btn_explore: "ENTDECKEN",
+
     edit_course: "Kurs bearbeiten", edit_course_sub: "Details aktualisieren.",
     create_course: "Kurs erstellen", create_course_sub: "Teile dein Wissen.",
     lbl_title: "Kurstitel", lbl_skill_level: "Niveau", lbl_target_group: "Zielgruppe", lbl_pro_checkbox: "Professioneller Kurs",
@@ -175,6 +201,19 @@ export const TRANSLATIONS = {
     search_placeholder: "Que voulez-vous apprendre?", filter_label_cat: "Catégorie", filter_label_loc: "Lieu", btn_search: "Rechercher",
     no_results: "Aucun cours trouvé.", btn_book: "Réserver", btn_pay: "Payer et réserver", btn_publish: "Publier",
     
+    // HOME PAGE CONTENT
+    home_headline: "Naviguez vers votre avenir avec KursNavi",
+    home_subhead: "Découvrez des cours, acquérez de nouvelles compétences et libérez votre potentiel avec des experts.",
+    home_verified_tutors: "Professeurs vérifiés",
+    home_students: "Étudiants",
+    home_rating: "Évaluation",
+    home_path_title: "Choisissez votre voie",
+    home_path_sub: "Explorez nos domaines d'apprentissage les plus populaires",
+    home_card_prof_sub: "Avancez votre carrière avec des compétences certifiées.",
+    home_card_priv_sub: "Cuisine, Photographie, Sport & plus.",
+    home_card_kids_sub: "Cours amusants et stimulants pour les enfants.",
+    btn_explore: "EXPLORER",
+
     edit_course: "Modifier le cours", edit_course_sub: "Mettre à jour les détails.",
     create_course: "Créer un cours", create_course_sub: "Partagez vos compétences.",
     lbl_title: "Titre du cours", lbl_skill_level: "Niveau", lbl_target_group: "Groupe cible", lbl_pro_checkbox: "Cours professionnel",
@@ -225,6 +264,19 @@ export const TRANSLATIONS = {
     search_placeholder: "Cosa vuoi imparare?", filter_label_cat: "Categoria", filter_label_loc: "Luogo", btn_search: "Cerca",
     no_results: "Nessun corso trovato.", btn_book: "Prenota", btn_pay: "Paga & Prenota", btn_publish: "Pubblica",
     
+    // HOME PAGE CONTENT
+    home_headline: "Naviga il tuo futuro con KursNavi",
+    home_subhead: "Scopri corsi, acquisisci nuove competenze e sblocca il tuo potenziale con esperti.",
+    home_verified_tutors: "Tutor verificati",
+    home_students: "Studenti",
+    home_rating: "Valutazione",
+    home_path_title: "Scegli il tuo percorso",
+    home_path_sub: "Esplora i nostri percorsi di apprendimento più popolari",
+    home_card_prof_sub: "Avanza nella tua carriera con competenze certificate.",
+    home_card_priv_sub: "Cucina, Fotografia, Sport & altro.",
+    home_card_kids_sub: "Corsi divertenti e coinvolgenti per bambini.",
+    btn_explore: "ESPLORA",
+
     edit_course: "Modifica corso", edit_course_sub: "Aggiorna i dettagli.",
     create_course: "Crea corso", create_course_sub: "Condividi le tue abilità.",
     lbl_title: "Titolo del corso", lbl_skill_level: "Livello", lbl_target_group: "Gruppo target", lbl_pro_checkbox: "Corso professionale",
