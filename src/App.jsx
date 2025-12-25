@@ -407,16 +407,16 @@ const ContactPage = ({ t, handleContactSubmit, setView }) => (
             <div className="bg-white p-8 rounded-2xl shadow-lg border border-gray-100">
                 <form onSubmit={handleContactSubmit} className="space-y-4">
                     {/* EMAIL (First) */}
-                    <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.contact_lbl_email}</label><input required type="email" name="email" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" placeholder="you@example.com" /></div>
+                    <div><label className="block text-sm font-bold text-gray-700 mb-1">Email</label><input required type="email" name="email" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" placeholder="you@example.com" /></div>
                     
                     {/* NAME (Optional but standard) */}
-                    <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.contact_lbl_name}</label><input required type="text" name="name" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" placeholder={t.contact_lbl_name} /></div>
+                    <div><label className="block text-sm font-bold text-gray-700 mb-1">Name</label><input required type="text" name="name" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" placeholder="Your Name" /></div>
 
                     {/* SUBJECT (Added) */}
                     <div><label className="block text-sm font-bold text-gray-700 mb-1">Betreff / Subject</label><input required type="text" name="subject" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" placeholder="..." /></div>
 
                     {/* MESSAGE */}
-                    <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.contact_lbl_msg}</label><textarea required name="message" rows="4" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" placeholder="..."></textarea></div>
+                    <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.contact_lbl_msg || "Message"}</label><textarea required name="message" rows="4" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" placeholder="..."></textarea></div>
                     
                     <button type="submit" className="w-full bg-primary text-white py-3 rounded-lg font-bold hover:bg-orange-600 transition font-heading">{t.btn_send}</button>
                 </form>
