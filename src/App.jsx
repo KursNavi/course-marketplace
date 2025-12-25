@@ -5,6 +5,7 @@ import { Search, User, Clock, MapPin, CheckCircle, ArrowLeft, LogIn, LayoutDashb
 // --- IMPORTS ---
 import { BRAND, CATEGORY_HIERARCHY, CATEGORY_LABELS, SWISS_CANTONS, SWISS_CITIES, TRANSLATIONS } from './lib/constants';
 import { Navbar, Footer, KursNaviLogo } from './components/Layout';
+import LegalPage from './components/LegalPage'; // <--- NEW IMPORT
 
 // --- Supabase Setup ---
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -12,7 +13,7 @@ const supabaseKey = import.meta.env.VITE_SUPABASE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // -----------------------------------------------------------------------------
-// --- SUB-COMPONENTS (MOVED OUTSIDE FOR STABILITY) ---
+// --- SUB-COMPONENTS ---
 // -----------------------------------------------------------------------------
 
 const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCatPath, catMenuOpen, setCatMenuOpen, t, getCatLabel, catMenuRef }) => {
@@ -394,18 +395,6 @@ const ContactPage = ({ t, handleContactSubmit, setView }) => (
     </div>
 );
 
-const TermsPage = ({ t }) => (
-    <div className="max-w-4xl mx-auto px-4 py-12 animate-in fade-in duration-500 font-['Hind_Madurai']">
-        <div className="prose prose-orange max-w-none"><h1 className="text-3xl font-bold mb-6 font-['Open_Sans'] text-[#333333]">{t.terms_title}</h1><p className="text-sm text-gray-500 mb-8">{t.terms_last_updated}</p><h3 className="text-xl font-bold mt-6 mb-3 text-[#333333]">{t.terms_1_title}</h3><p className="text-gray-700 mb-4">{t.terms_1_text}</p></div>
-    </div>
-);
-
-const PrivacyPage = ({ t }) => (
-    <div className="max-w-4xl mx-auto px-4 py-12 animate-in fade-in duration-500 font-['Hind_Madurai']">
-        <div className="prose prose-orange max-w-none"><h1 className="text-3xl font-bold mb-6 font-['Open_Sans'] text-[#333333]">{t.privacy_title}</h1><div className="bg-[#FFF0EB] border-l-4 border-[#FA6E28] p-4 mb-8"><p className="text-[#FA6E28] font-bold text-sm">{t.privacy_compliant}</p></div><h3 className="text-xl font-bold mt-6 mb-3 text-[#333333]">{t.privacy_1_title}</h3><p className="text-gray-700 mb-4">{t.privacy_1_text}</p></div>
-    </div>
-);
-
 const AdminPanel = ({ t, courses }) => (
     <div className="max-w-6xl mx-auto px-4 py-8 font-['Hind_Madurai']">
         <div className="flex items-center justify-between mb-8"><h1 className="text-3xl font-bold text-[#333333] flex items-center font-['Open_Sans']"><Settings className="mr-3 w-8 h-8 text-gray-700" />{t.admin_panel}</h1><span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm">Logged in as Admin</span></div>
@@ -630,8 +619,15 @@ export default function KursNaviPro() {
     else if (view === 'contact') path = '/contact';
     else if (view === 'login') path = '/login';
     else if (view === 'dashboard') path = '/dashboard';
-    else if (view === 'terms') path = '/terms';
-    else if (view === 'privacy') path = '/privacy';
+    
+    // --- LEGAL PATHS ---
+    else if (view === 'agb') path = '/agb';
+    else if (view === 'datenschutz') path = '/datenschutz';
+    else if (view === 'impressum') path = '/impressum';
+    else if (view === 'widerruf') path = '/widerruf-storno';
+    else if (view === 'trust') path = '/vertrauen-sicherheit';
+    // -------------------
+
     else if (view === 'create') path = '/create-course';
     else if (view === 'detail' && selectedCourse) path = `/course/${selectedCourse.id}`;
     
@@ -652,8 +648,15 @@ export default function KursNaviPro() {
         else if (path === '/contact') setView('contact');
         else if (path === '/login') setView('login');
         else if (path === '/dashboard') setView('dashboard');
-        else if (path === '/terms') setView('terms');
-        else if (path === '/privacy') setView('privacy');
+        
+        // --- LEGAL PATH HANDLERS ---
+        else if (path === '/agb') setView('agb');
+        else if (path === '/datenschutz') setView('datenschutz');
+        else if (path === '/impressum') setView('impressum');
+        else if (path === '/widerruf-storno') setView('widerruf');
+        else if (path === '/vertrauen-sicherheit') setView('trust');
+        // --------------------------
+
         else if (path === '/create-course') setView('create');
         else if (path.startsWith('/course/')) { /* Logic handled in fetchCourses */ }
         else setView('home');
@@ -931,8 +934,15 @@ export default function KursNaviPro() {
       {view === 'login' && <AuthView setView={setView} showNotification={showNotification} lang={lang} />}
       {view === 'about' && <AboutPage t={t} />}
       {view === 'contact' && <ContactPage t={t} handleContactSubmit={handleContactSubmit} setView={setView} />}
-      {view === 'terms' && <TermsPage t={t} />}
-      {view === 'privacy' && <PrivacyPage t={t} />}
+      
+      {/* --- LEGAL PAGES (REPLACES OLD TERMS/PRIVACY) --- */}
+      {view === 'agb' && <LegalPage pageKey="agb" />}
+      {view === 'datenschutz' && <LegalPage pageKey="datenschutz" />}
+      {view === 'impressum' && <LegalPage pageKey="impressum" />}
+      {view === 'widerruf' && <LegalPage pageKey="widerruf" />}
+      {view === 'trust' && <LegalPage pageKey="trust" />}
+      {/* ----------------------------------------------- */}
+
       {view === 'admin' && user?.role === 'admin' && <AdminPanel t={t} courses={courses} />}
       {view === 'dashboard' && user && <Dashboard user={user} t={t} setView={setView} courses={courses} teacherEarnings={teacherEarnings} myBookings={myBookings} handleDeleteCourse={handleDeleteCourse} handleEditCourse={handleEditCourse} showNotification={showNotification} changeLanguage={changeLanguage} setSelectedCourse={setSelectedCourse} />}
       {view === 'create' && user?.role === 'teacher' && <TeacherForm t={t} setView={setView} user={user} handlePublishCourse={handlePublishCourse} getCatLabel={getCatLabel} initialData={editingCourse} />}

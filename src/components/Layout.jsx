@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { Menu, X, Globe, LogOut, User, LayoutDashboard, ChevronDown } from 'lucide-react';
-import { BRAND } from '../lib/constants';
+import { Menu, X, Globe, LogOut, LayoutDashboard, ChevronDown } from 'lucide-react';
 
 export const KursNaviLogo = ({ className }) => (
   <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
@@ -165,8 +164,11 @@ export const Footer = ({ t, setView }) => (
         <div>
           <h4 className="font-bold text-[#333333] mb-4">Legal</h4>
           <ul className="space-y-2 text-sm text-gray-500">
-            <li onClick={() => setView('terms')} className="hover:text-[#FA6E28] cursor-pointer">{t.footer_terms}</li>
-            <li onClick={() => setView('privacy')} className="hover:text-[#FA6E28] cursor-pointer">{t.footer_privacy}</li>
+            <li><a href="/agb" className="hover:text-[#FA6E28]">AGB</a></li>
+            <li><a href="/datenschutz" className="hover:text-[#FA6E28]">Datenschutz</a></li>
+            <li><a href="/impressum" className="hover:text-[#FA6E28]">Impressum</a></li>
+            <li><a href="/widerruf-storno" className="hover:text-[#FA6E28]">Widerruf & Stornierung</a></li>
+            <li><a href="/vertrauen-sicherheit" className="hover:text-[#FA6E28]">Vertrauen & Sicherheit</a></li>
           </ul>
         </div>
       </div>
