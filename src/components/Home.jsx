@@ -26,19 +26,19 @@ export const Home = ({ t, setView, setSelectedCatPath }) => {
         {/* Content */}
         <div className="relative z-20 text-center px-4 max-w-4xl mx-auto">
           <h1 className="text-4xl md:text-6xl font-heading font-bold text-white mb-6 tracking-tight">
-            {/* Exact text from Source 283-284 */}
-            Navigate Your Future with <span className="text-primary">KursNavi</span>
+            {/* Dynamic Headline */}
+            {t.home_headline}
           </h1>
           <p className="text-lg md:text-xl text-gray-100 mb-8 font-sans max-w-2xl mx-auto leading-relaxed">
-            {/* Exact text from Source 286 */}
-            Discover courses, gain new skills, and unlock your potential with expert-led learning tailored to your goals.
+            {/* Dynamic Subheadline */}
+            {t.home_subhead}
           </p>
 
           {/* Search Bar */}
           <form onSubmit={handleSearch} className="max-w-xl mx-auto relative flex items-center">
             <input 
               type="text" 
-              placeholder={t.search_placeholder || "What do you want to learn?"}
+              placeholder={t.search_placeholder}
               className="w-full px-6 py-4 rounded-full text-dark font-sans shadow-xl focus:outline-none focus:ring-4 focus:ring-primary/30 text-lg placeholder-gray-400"
             />
             <button type="submit" className="absolute right-2 bg-primary hover:bg-orange-600 text-white p-3 rounded-full transition-colors duration-300">
@@ -48,17 +48,17 @@ export const Home = ({ t, setView, setSelectedCatPath }) => {
 
           {/* Trust Badges */}
           <div className="mt-10 flex justify-center space-x-8 text-white/80 text-sm font-sans font-medium">
-            <div className="flex items-center"><Shield className="w-4 h-4 mr-2 text-primary" /> Verified Tutors</div>
-            <div className="flex items-center"><Users className="w-4 h-4 mr-2 text-primary" /> 10k+ Students</div>
-            <div className="flex items-center"><Star className="w-4 h-4 mr-2 text-primary" /> 4.9/5 Rating</div>
+            <div className="flex items-center"><Shield className="w-4 h-4 mr-2 text-primary" /> {t.home_verified_tutors}</div>
+            <div className="flex items-center"><Users className="w-4 h-4 mr-2 text-primary" /> 10k+ {t.home_students}</div>
+            <div className="flex items-center"><Star className="w-4 h-4 mr-2 text-primary" /> 4.9/5 {t.home_rating}</div>
           </div>
         </div>
       </div>
 
       {/* 2. CATEGORY PREVIEW */}
       <div className="py-20 bg-beige max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-        <h2 className="text-3xl font-heading font-bold text-dark mb-2 text-center">Choose Your Path</h2>
-        <p className="text-gray-500 text-center mb-12 font-sans">Explore our most popular learning directions</p>
+        <h2 className="text-3xl font-heading font-bold text-dark mb-2 text-center">{t.home_path_title}</h2>
+        <p className="text-gray-500 text-center mb-12 font-sans">{t.home_path_sub}</p>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           
@@ -71,9 +71,9 @@ export const Home = ({ t, setView, setSelectedCatPath }) => {
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
             <div className="absolute bottom-0 left-0 p-6">
               <h3 className="text-2xl font-bold text-white font-heading mb-1">{t.nav_professional}</h3>
-              <p className="text-gray-300 text-sm font-sans mb-4">Advance your career with certified skills.</p>
+              <p className="text-gray-300 text-sm font-sans mb-4">{t.home_card_prof_sub}</p>
               <span className="inline-flex items-center text-primary font-bold text-sm uppercase tracking-wider group-hover:text-white transition-colors">
-                Explore <ArrowRight className="w-4 h-4 ml-2" />
+                {t.btn_explore} <ArrowRight className="w-4 h-4 ml-2" />
               </span>
             </div>
           </div>
@@ -87,9 +87,9 @@ export const Home = ({ t, setView, setSelectedCatPath }) => {
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
             <div className="absolute bottom-0 left-0 p-6">
               <h3 className="text-2xl font-bold text-white font-heading mb-1">{t.nav_private}</h3>
-              <p className="text-gray-300 text-sm font-sans mb-4">Cooking, Photography, Sports & more.</p>
+              <p className="text-gray-300 text-sm font-sans mb-4">{t.home_card_priv_sub}</p>
               <span className="inline-flex items-center text-primary font-bold text-sm uppercase tracking-wider group-hover:text-white transition-colors">
-                Explore <ArrowRight className="w-4 h-4 ml-2" />
+                {t.btn_explore} <ArrowRight className="w-4 h-4 ml-2" />
               </span>
             </div>
           </div>
@@ -103,9 +103,9 @@ export const Home = ({ t, setView, setSelectedCatPath }) => {
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
             <div className="absolute bottom-0 left-0 p-6">
               <h3 className="text-2xl font-bold text-white font-heading mb-1">{t.nav_kids}</h3>
-              <p className="text-gray-300 text-sm font-sans mb-4">Fun and engaging courses for children.</p>
+              <p className="text-gray-300 text-sm font-sans mb-4">{t.home_card_kids_sub}</p>
               <span className="inline-flex items-center text-primary font-bold text-sm uppercase tracking-wider group-hover:text-white transition-colors">
-                Explore <ArrowRight className="w-4 h-4 ml-2" />
+                {t.btn_explore} <ArrowRight className="w-4 h-4 ml-2" />
               </span>
             </div>
           </div>
