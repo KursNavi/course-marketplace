@@ -62,17 +62,17 @@ export const CATEGORY_LABELS = {
   "Homework Help": { de: "Hausaufgabenhilfe", fr: "Aide aux devoirs", it: "Aiuto Compiti" }
 };
 
+// ... keep imports and other constants ...
+
 export const TRANSLATIONS = {
   en: {
     nav_explore: "Explore", nav_about: "About Us", nav_contact: "Contact", nav_login: "Login", nav_logout: "Logout", nav_dashboard: "Dashboard",
-    // --- NEW NAV ITEMS ---
     nav_private: "Private & Hobby", nav_professional: "Professional", nav_kids: "Children", nav_howitworks: "How it Works",
-    // ---------------------
     hero_title: "Discover courses near you.", hero_subtitle: "From yodeling in Appenzell to coding in Zürich. Learn locally.",
     search_placeholder: "What do you want to learn?", filter_label_cat: "Category", filter_label_loc: "Location", btn_search: "Search",
     no_results: "No courses found matching criteria.", btn_book: "Book Course", btn_pay: "Pay & Book", btn_publish: "Publish Course", btn_send: "Send Message",
     
-    // --- FORM LABELS (ENGLISH) ---
+    // Form Labels
     edit_course: "Edit Course", edit_course_sub: "Update your course details.",
     create_course: "List a Course", create_course_sub: "Share your skills with the community.",
     lbl_title: "Course Title", lbl_skill_level: "Skill Level", lbl_target_group: "Target Group", lbl_pro_checkbox: "Professional Course",
@@ -83,7 +83,6 @@ export const TRANSLATIONS = {
     btn_update: "Update Course", btn_back_dash: "Back to Dashboard",
     opt_all_levels: "All Levels", opt_beginner: "Beginner", opt_advanced: "Advanced",
     opt_adults: "Adults", opt_teens: "Teens", opt_kids: "Kids",
-    // -----------------------------
 
     form_title: "List a Course", success_msg: "Grüezi! Action successful.", currency: "CHF", admin_panel: "Admin Control Center",
     teacher_dash: "Teacher Dashboard", student_dash: "My Learning", login_title: "Welcome Back", my_bookings: "My Bookings",
@@ -98,9 +97,6 @@ export const TRANSLATIONS = {
     tutor_step_3: "Earn", tutor_desc_3: "Get paid automatically 24h after the course starts.",
     cta_title: "Become a Tutor", cta_subtitle: "Share your skills and knowledge with students across Switzerland. Set your own schedule and prices.", cta_btn: "Get Started",
     footer_terms: "Terms & Conditions", footer_privacy: "Data Protection", footer_legal: "Legal Notice", footer_madein: "Made in Switzerland", footer_rights: "All rights reserved.",
-    terms_title: "Terms & Conditions", terms_last_updated: "Last Updated: October 2024",
-    terms_1_title: "1. Scope", terms_1_text: "General Terms apply.",
-    privacy_title: "Data Protection", privacy_compliant: "Compliant with FADP.",
     contact_title: "Contact Us", contact_get_in_touch: "Get in Touch", contact_office_hours: "Office Hours",
     contact_mon_fri: "Mon-Fri: 09:00 - 17:00", contact_weekend: "Weekends: Closed",
     contact_lbl_name: "Name", contact_lbl_email: "Email", contact_lbl_msg: "Message",
@@ -108,34 +104,24 @@ export const TRANSLATIONS = {
     about_text: "KursNavi is Switzerland's premier local learning platform...",
     about_community_title: "Community", about_community_text: "We believe in the power of local connection.",
     about_quality_title: "Quality", about_quality_text: "All our tutors are verified manually.",
-    privacy_1_title: "1. Collection", privacy_1_text: "We collect only necessary data.",
-    terms_1_title: "1. Service", terms_1_text: "We provide a marketplace platform.",
-    profile_settings: "Profile Settings",
-    lbl_city: "My City / Town",
-    lbl_bio: "About Me (Bio)",
-    lbl_language: "Preferred Language",
-    profile_lang_note: "We will use this for emails and website content.",
-    btn_save: "Save Changes",
-    dash_overview: "Overview",
-    dash_profile: "My Profile",
-    dash_settings: "Profile Settings",
-    dash_new_course: "New Course",
-    lbl_account_security: "Account Security",
-    lbl_new_password: "New Password",
-    lbl_confirm_password: "Confirm Password",
-    lbl_update_auth: "Update Login Details",
-    msg_auth_success: "Account details updated! Please check your email if you changed it."
+    profile_settings: "Profile Settings", lbl_city: "My City / Town", lbl_bio: "About Me (Bio)", lbl_language: "Preferred Language",
+    profile_lang_note: "We will use this for emails and website content.", btn_save: "Save Changes",
+    dash_overview: "Overview", dash_profile: "My Profile", dash_settings: "Profile Settings", dash_new_course: "New Course",
+    lbl_account_security: "Account Security", lbl_new_password: "New Password", lbl_confirm_password: "Confirm Password",
+    lbl_update_auth: "Update Login Details", msg_auth_success: "Account details updated!",
+    
+    // LEGAL MICRO-COPY
+    legal_agree: "I accept the", legal_agb: "GTC", legal_and: "and have read the", legal_privacy: "Privacy Policy",
+    legal_provider_suffix: "incl. Provider Terms", legal_mediator_note: "KursNavi is the intermediary. Contract is with the provider.",
+    legal_provider_verified_tooltip: "Verified manually by LifeSkills360 (Identity & Basic Info).",
   },
   de: {
     nav_explore: "Entdecken", nav_login: "Anmelden", nav_logout: "Abmelden", nav_dashboard: "Dashboard",
-    // --- NEW NAV ITEMS (DE) ---
     nav_private: "Privat & Hobby", nav_professional: "Beruflich", nav_kids: "Kinder", nav_howitworks: "So funktioniert's",
-    // ---------------------
     hero_title: "Finde Kurse in deiner Nähe.", hero_subtitle: "Vom Jodeln bis zum Programmieren.",
     search_placeholder: "Was möchtest du lernen?", filter_label_cat: "Kategorie", filter_label_loc: "Ort", btn_search: "Suchen",
     no_results: "Keine Kurse gefunden.", btn_book: "Kurs buchen", btn_pay: "Bezahlen & Buchen", btn_publish: "Veröffentlichen",
     
-    // --- FORM LABELS (DE) ---
     edit_course: "Kurs bearbeiten", edit_course_sub: "Details aktualisieren.",
     create_course: "Kurs erstellen", create_course_sub: "Teile dein Wissen.",
     lbl_title: "Kurstitel", lbl_skill_level: "Niveau", lbl_target_group: "Zielgruppe", lbl_pro_checkbox: "Professioneller Kurs",
@@ -146,7 +132,6 @@ export const TRANSLATIONS = {
     btn_update: "Kurs aktualisieren", btn_back_dash: "Zurück zum Dashboard",
     opt_all_levels: "Alle Niveaus", opt_beginner: "Anfänger", opt_advanced: "Fortgeschritten",
     opt_adults: "Erwachsene", opt_teens: "Jugendliche", opt_kids: "Kinder",
-    // -----------------------
 
     form_title: "Kurs anbieten", success_msg: "Erfolgreich!", currency: "CHF",
     teacher_dash: "Lehrer Dashboard", student_dash: "Meine Kurse",
@@ -163,33 +148,24 @@ export const TRANSLATIONS = {
     footer_terms: "AGB", footer_privacy: "Datenschutz", footer_legal: "Impressum", footer_madein: "Made in Switzerland", footer_rights: "Alle Rechte vorbehalten.",
     contact_title: "Kontakt", contact_get_in_touch: "Schreib uns", btn_send: "Senden",
     about_title: "Über uns", about_subtitle: "Die Schweiz verbinden.",
-    terms_title: "AGB", privacy_title: "Datenschutz",
-    profile_settings: "Profileinstellungen",
-    lbl_city: "Meine Stadt / Ort",
-    lbl_bio: "Über mich (Bio)",
-    lbl_language: "Bevorzugte Sprache",
-    profile_lang_note: "Wir verwenden dies für E-Mails und Webseiteninhalte.",
-    btn_save: "Speichern",
-    dash_overview: "Übersicht",
-    dash_profile: "Mein Profil",
-    dash_settings: "Einstellungen",
-    dash_new_course: "Neuer Kurs",
-    lbl_account_security: "Konto & Sicherheit",
-    lbl_new_password: "Neues Passwort",
-    lbl_confirm_password: "Passwort bestätigen",
-    lbl_update_auth: "Zugangsdaten aktualisieren",
-    msg_auth_success: "Konto aktualisiert! Bitte E-Mail prüfen falls geändert."
+    profile_settings: "Profileinstellungen", lbl_city: "Meine Stadt / Ort", lbl_bio: "Über mich (Bio)", lbl_language: "Bevorzugte Sprache",
+    profile_lang_note: "Wir verwenden dies für E-Mails und Webseiteninhalte.", btn_save: "Speichern",
+    dash_overview: "Übersicht", dash_profile: "Mein Profil", dash_settings: "Einstellungen", dash_new_course: "Neuer Kurs",
+    lbl_account_security: "Konto & Sicherheit", lbl_new_password: "Neues Passwort", lbl_confirm_password: "Passwort bestätigen",
+    lbl_update_auth: "Zugangsdaten aktualisieren", msg_auth_success: "Konto aktualisiert!",
+
+    // LEGAL MICRO-COPY
+    legal_agree: "Ich akzeptiere die", legal_agb: "AGB", legal_and: "und habe die", legal_privacy: "Datenschutzerklärung", legal_read: "gelesen.",
+    legal_provider_suffix: "inkl. Anbieterbedingungen", legal_mediator_note: "KursNavi ist Vermittlerin. Vertragspartner ist der Anbieter.",
+    legal_provider_verified_tooltip: "Manuell geprüft von LifeSkills360 (Identität & Basisdaten).",
   },
   fr: {
     nav_explore: "Explorer", nav_login: "Connexion", nav_logout: "Déconnexion", nav_dashboard: "Tableau de bord",
-    // --- NEW NAV ITEMS (FR) ---
     nav_private: "Privé & Loisirs", nav_professional: "Professionnel", nav_kids: "Enfants", nav_howitworks: "Comment ça marche",
-    // ---------------------
     hero_title: "Découvrez des cours.", hero_subtitle: "Apprenez localement.",
     search_placeholder: "Que voulez-vous apprendre?", filter_label_cat: "Catégorie", filter_label_loc: "Lieu", btn_search: "Rechercher",
     no_results: "Aucun cours trouvé.", btn_book: "Réserver", btn_pay: "Payer et réserver", btn_publish: "Publier",
     
-    // --- FORM LABELS (FR) ---
     edit_course: "Modifier le cours", edit_course_sub: "Mettre à jour les détails.",
     create_course: "Créer un cours", create_course_sub: "Partagez vos compétences.",
     lbl_title: "Titre du cours", lbl_skill_level: "Niveau", lbl_target_group: "Groupe cible", lbl_pro_checkbox: "Cours professionnel",
@@ -200,7 +176,6 @@ export const TRANSLATIONS = {
     btn_update: "Mettre à jour", btn_back_dash: "Retour au tableau de bord",
     opt_all_levels: "Tous niveaux", opt_beginner: "Débutant", opt_advanced: "Avancé",
     opt_adults: "Adultes", opt_teens: "Ados", opt_kids: "Enfants",
-    // -----------------------
 
     form_title: "Proposer un cours", success_msg: "Succès!", currency: "CHF",
     teacher_dash: "Tableau de bord", student_dash: "Mes apprentissages",
@@ -213,37 +188,28 @@ export const TRANSLATIONS = {
     tutor_step_1: "Créer", tutor_desc_1: "Créez votre profil gratuitement.",
     tutor_step_2: "Planifier", tutor_desc_2: "Définissez dates, lieux et prix.",
     tutor_step_3: "Gagner", tutor_desc_3: "Paiement automatique après le cours.",
-    cta_title: "Devenez Professeur", cta_subtitle: "Partagez vos compétences à travers la Suisse. Gérez votre emploi du temps.", cta_btn: "Commencer",
+    cta_title: "Devenez Professeur", cta_subtitle: "Partagez vos compétences à travers la Suisse.", cta_btn: "Commencer",
     footer_terms: "CGV", footer_privacy: "Confidentialité", footer_legal: "Mentions légales", footer_madein: "Fabriqué en Suisse", footer_rights: "Droits réservés.",
     contact_title: "Contact", contact_get_in_touch: "Contactez-nous", btn_send: "Envoyer",
     about_title: "À propos", about_subtitle: "Relier la Suisse.",
-    terms_title: "CGV", privacy_title: "Confidentialité",
-    profile_settings: "Paramètres du profil",
-    lbl_city: "Ma Ville / Localité",
-    lbl_bio: "À propos de moi",
-    lbl_language: "Langue préférée",
-    profile_lang_note: "Nous utiliserons ceci pour les e-mails et le site web.",
-    btn_save: "Enregistrer",
-    dash_overview: "Aperçu",
-    dash_profile: "Mon Profil",
-    dash_settings: "Paramètres",
-    dash_new_course: "Nouveau Cours",
-    lbl_account_security: "Compte et Sécurité",
-    lbl_new_password: "Nouveau mot de passe",
-    lbl_confirm_password: "Confirmer le mot de passe",
-    lbl_update_auth: "Mettre à jour",
-    msg_auth_success: "Compte mis à jour !"
+    profile_settings: "Paramètres du profil", lbl_city: "Ma Ville / Localité", lbl_bio: "À propos de moi", lbl_language: "Langue préférée",
+    profile_lang_note: "Nous utiliserons ceci pour les e-mails.", btn_save: "Enregistrer",
+    dash_overview: "Aperçu", dash_profile: "Mon Profil", dash_settings: "Paramètres", dash_new_course: "Nouveau Cours",
+    lbl_account_security: "Compte et Sécurité", lbl_new_password: "Nouveau mot de passe", lbl_confirm_password: "Confirmer",
+    lbl_update_auth: "Mettre à jour", msg_auth_success: "Compte mis à jour !",
+
+    // LEGAL MICRO-COPY
+    legal_agree: "J'accepte les", legal_agb: "CG", legal_and: "et j'ai lu la", legal_privacy: "Déclaration de confidentialité", legal_read: ".",
+    legal_provider_suffix: "y compris les conditions du prestataire", legal_mediator_note: "KursNavi est intermédiaire. Contrat avec le prestataire.",
+    legal_provider_verified_tooltip: "Vérifié manuellement par LifeSkills360.",
   },
   it: {
     nav_explore: "Esplora", nav_login: "Accedi", nav_logout: "Esci", nav_dashboard: "Dashboard",
-    // --- NEW NAV ITEMS (IT) ---
     nav_private: "Privato & Hobby", nav_professional: "Professionale", nav_kids: "Bambini", nav_howitworks: "Come funziona",
-    // ---------------------
     hero_title: "Scopri corsi vicino a te.", hero_subtitle: "Dallo jodel a Appenzello alla programmazione a Zurigo.",
     search_placeholder: "Cosa vuoi imparare?", filter_label_cat: "Categoria", filter_label_loc: "Luogo", btn_search: "Cerca",
     no_results: "Nessun corso trovato.", btn_book: "Prenota", btn_pay: "Paga & Prenota", btn_publish: "Pubblica",
     
-    // --- FORM LABELS (IT) ---
     edit_course: "Modifica corso", edit_course_sub: "Aggiorna i dettagli.",
     create_course: "Crea corso", create_course_sub: "Condividi le tue abilità.",
     lbl_title: "Titolo del corso", lbl_skill_level: "Livello", lbl_target_group: "Gruppo target", lbl_pro_checkbox: "Corso professionale",
@@ -254,7 +220,6 @@ export const TRANSLATIONS = {
     btn_update: "Aggiorna corso", btn_back_dash: "Torna alla dashboard",
     opt_all_levels: "Tutti i livelli", opt_beginner: "Principiante", opt_advanced: "Avanzato",
     opt_adults: "Adulti", opt_teens: "Adolescenti", opt_kids: "Bambini",
-    // -----------------------
 
     form_title: "Offri un corso", success_msg: "Fatto!", currency: "CHF",
     teacher_dash: "Dashboard Insegnante", student_dash: "I miei corsi",
@@ -271,21 +236,15 @@ export const TRANSLATIONS = {
     footer_terms: "Termini", footer_privacy: "Privacy", footer_legal: "Note legali", footer_madein: "Made in Switzerland", footer_rights: "Tutti i diritti riservati.",
     contact_title: "Contatto", contact_get_in_touch: "Scrivici", btn_send: "Invia",
     about_title: "Chi siamo", about_subtitle: "Connettere la Svizzera.",
-    terms_title: "Termini", privacy_title: "Privacy",
-    profile_settings: "Impostazioni Profilo",
-    lbl_city: "La mia Città",
-    lbl_bio: "Su di me (Bio)",
-    lbl_language: "Lingua preferita",
-    profile_lang_note: "Useremo questa lingua per email e sito web.",
-    btn_save: "Salva modifiche",
-    dash_overview: "Panoramica",
-    dash_profile: "Il mio Profilo",
-    dash_settings: "Impostazioni",
-    dash_new_course: "Nuovo Corso",
-    lbl_account_security: "Sicurezza Account",
-    lbl_new_password: "Nuova Password",
-    lbl_confirm_password: "Conferma Password",
-    lbl_update_auth: "Aggiorna Account",
-    msg_auth_success: "Account aggiornato!"
+    profile_settings: "Impostazioni Profilo", lbl_city: "La mia Città", lbl_bio: "Su di me (Bio)", lbl_language: "Lingua preferita",
+    profile_lang_note: "Useremo questa lingua per email e sito web.", btn_save: "Salva modifiche",
+    dash_overview: "Panoramica", dash_profile: "Il mio Profilo", dash_settings: "Impostazioni", dash_new_course: "Nuovo Corso",
+    lbl_account_security: "Sicurezza Account", lbl_new_password: "Nuova Password", lbl_confirm_password: "Conferma",
+    lbl_update_auth: "Aggiorna Account", msg_auth_success: "Account aggiornato!",
+
+    // LEGAL MICRO-COPY
+    legal_agree: "Accetto i", legal_agb: "CGC", legal_and: "e ho letto la", legal_privacy: "Privacy Policy", legal_read: ".",
+    legal_provider_suffix: "incl. condizioni del fornitore", legal_mediator_note: "KursNavi è intermediario. Il contratto è con il fornitore.",
+    legal_provider_verified_tooltip: "Verificato manualmente da LifeSkills360.",
   }
 };

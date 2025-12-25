@@ -276,13 +276,14 @@ const SuccessView = ({ setView }) => (
 
 const AuthView = ({ setView, showNotification, lang }) => {
     const [isSignUp, setIsSignUp] = useState(false); const [loading, setLoading] = useState(false); const [email, setEmail] = useState(''); const [password, setPassword] = useState(''); const [fullName, setFullName] = useState(''); const [role, setRole] = useState('student');
-    const [agbAccepted, setAgbAccepted] = useState(false); 
+    const [agbAccepted, setAgbAccepted] = useState(false);
+    const t = TRANSLATIONS[lang] || TRANSLATIONS['de']; // Ensure we have translations
 
     const handleAuth = async (e) => {
         e.preventDefault(); setLoading(true);
         try {
             if (isSignUp) {
-                if (!agbAccepted) { throw new Error("Please accept the Terms & Conditions."); } 
+                if (!agbAccepted) { throw new Error(t.legal_agree + " " + t.legal_agb); } 
                 const { data: authData, error: authError } = await supabase.auth.signUp({ email, password, options: { data: { full_name: fullName, role: role } } });
                 if (authError) throw authError;
                 if (authData?.user) { await supabase.from('profiles').insert([{ id: authData.user.id, full_name: fullName, email: email, preferred_language: lang }]); }
@@ -296,6 +297,7 @@ const AuthView = ({ setView, showNotification, lang }) => {
             }
         } catch (error) { showNotification(error.message); } finally { setLoading(false); }
     };
+    
     return (
         <div className="min-h-[80vh] flex items-center justify-center px-4 bg-[#FAF5F0]">
             <div className="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full border border-gray-100">
@@ -315,11 +317,7 @@ const AuthView = ({ setView, showNotification, lang }) => {
                                 className="mt-1 w-4 h-4 text-[#FA6E28] border-gray-300 rounded focus:ring-[#FA6E28] cursor-pointer"
                             />
                             <label htmlFor="agb" className="text-sm text-gray-600 cursor-pointer">
-                                {role === 'student' ? (
-                                    <span>Ich akzeptiere die <a href="/agb" target="_blank" rel="noreferrer" className="text-[#FA6E28] hover:underline font-bold">AGB</a> und habe die <a href="/datenschutz" target="_blank" rel="noreferrer" className="text-[#FA6E28] hover:underline font-bold">Datenschutzerklärung</a> gelesen.</span>
-                                ) : (
-                                    <span>Ich akzeptiere die <a href="/agb" target="_blank" rel="noreferrer" className="text-[#FA6E28] hover:underline font-bold">AGB inkl. Anbieterbedingungen</a> und habe die <a href="/datenschutz" target="_blank" rel="noreferrer" className="text-[#FA6E28] hover:underline font-bold">Datenschutzerklärung</a> gelesen.</span>
-                                )}
+                                <span>{t.legal_agree} <a href="/agb" onClick={(e) => { e.preventDefault(); setView('agb'); }} className="text-[#FA6E28] hover:underline font-bold">{t.legal_agb}</a> {role === 'teacher' ? t.legal_provider_suffix : ''} {t.legal_and} <a href="/datenschutz" onClick={(e) => { e.preventDefault(); setView('datenschutz'); }} className="text-[#FA6E28] hover:underline font-bold">{t.legal_privacy}</a>{t.legal_read ? t.legal_read : '.'}</span>
                             </label>
                         </div>
                     )}
