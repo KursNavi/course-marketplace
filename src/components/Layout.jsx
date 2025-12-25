@@ -145,7 +145,7 @@ export const Footer = ({ t, setView }) => (
           <p className="text-gray-500 text-sm font-sans">{t.footer_madein}</p>
         </div>
         <div>
-          <h4 className="font-heading font-bold text-dark mb-4">Discover</h4>
+          <h4 className="font-heading font-bold text-dark mb-4">{t.footer_discover}</h4>
           <ul className="space-y-2 text-sm text-gray-500 font-sans">
             <li onClick={() => { setView('landing-private'); window.scrollTo(0,0); }} className="hover:text-primary cursor-pointer transition-colors">{t.nav_private}</li>
             <li onClick={() => { setView('landing-prof'); window.scrollTo(0,0); }} className="hover:text-primary cursor-pointer transition-colors">{t.nav_professional}</li>
@@ -153,7 +153,7 @@ export const Footer = ({ t, setView }) => (
           </ul>
         </div>
         <div>
-          <h4 className="font-heading font-bold text-dark mb-4">Support</h4>
+          <h4 className="font-heading font-bold text-dark mb-4">{t.footer_support}</h4>
           <ul className="space-y-2 text-sm text-gray-500 font-sans">
             <li onClick={() => { setView('how-it-works'); window.scrollTo(0,0); }} className="hover:text-primary cursor-pointer transition-colors">{t.nav_howitworks}</li>
             <li onClick={() => { setView('contact'); window.scrollTo(0,0); }} className="hover:text-primary cursor-pointer transition-colors">{t.nav_contact}</li>
@@ -161,17 +161,16 @@ export const Footer = ({ t, setView }) => (
           </ul>
         </div>
         <div>
-          <h4 className="font-heading font-bold text-dark mb-4">Legal</h4>
+          <h4 className="font-heading font-bold text-dark mb-4">{t.footer_legal_header}</h4>
           <ul className="space-y-2 text-sm text-gray-500 font-sans">
-            <li onClick={() => { setView('agb'); window.scrollTo(0,0); }} className="hover:text-primary cursor-pointer transition-colors">AGB</li>
-            <li onClick={() => { setView('datenschutz'); window.scrollTo(0,0); }} className="hover:text-primary cursor-pointer transition-colors">Datenschutz</li>
-            <li onClick={() => { setView('impressum'); window.scrollTo(0,0); }} className="hover:text-primary cursor-pointer transition-colors">Impressum</li>
+            <li onClick={() => { setView('agb'); window.scrollTo(0,0); }} className="hover:text-primary cursor-pointer transition-colors">{t.legal_agb}</li>
+            <li onClick={() => { setView('datenschutz'); window.scrollTo(0,0); }} className="hover:text-primary cursor-pointer transition-colors">{t.footer_privacy}</li>
+            <li onClick={() => { setView('impressum'); window.scrollTo(0,0); }} className="hover:text-primary cursor-pointer transition-colors">{t.footer_legal}</li>
           </ul>
         </div>
       </div>
       <div className="border-t border-gray-100 pt-8 flex flex-col md:flex-row justify-between items-center">
-        <p className="text-gray-400 text-sm font-sans">&copy; {new Date().getFullYear()} KursNavi AG. {t.footer_rights}</p>
-        <div className="flex items-center text-gray-400 text-sm mt-4 md:mt-0 font-sans"><Globe className="w-4 h-4 mr-2" /> Zürich, CH</div>
+        <p className="text-gray-400 text-sm font-sans">&copy; {new Date().getFullYear()} LifeSkills360 GmbH. {t.footer_rights}</p>
       </div>
     </div>
   </footer>

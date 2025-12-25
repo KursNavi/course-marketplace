@@ -62,8 +62,6 @@ export const CATEGORY_LABELS = {
   "Homework Help": { de: "Hausaufgabenhilfe", fr: "Aide aux devoirs", it: "Aiuto Compiti" }
 };
 
-// ... keep imports and other constants ...
-
 export const TRANSLATIONS = {
   en: {
     nav_explore: "Explore", nav_about: "About Us", nav_contact: "Contact", nav_login: "Login", nav_logout: "Logout", nav_dashboard: "Dashboard",
@@ -96,7 +94,11 @@ export const TRANSLATIONS = {
     tutor_step_2: "Schedule", tutor_desc_2: "Set your own dates, location, and class size.",
     tutor_step_3: "Earn", tutor_desc_3: "Get paid automatically 24h after the course starts.",
     cta_title: "Become a Tutor", cta_subtitle: "Share your skills and knowledge with students across Switzerland. Set your own schedule and prices.", cta_btn: "Get Started",
+    
+    // FOOTER
     footer_terms: "Terms & Conditions", footer_privacy: "Data Protection", footer_legal: "Legal Notice", footer_madein: "Made in Switzerland", footer_rights: "All rights reserved.",
+    footer_discover: "Discover", footer_support: "Support", footer_legal_header: "Legal",
+
     contact_title: "Contact Us", contact_get_in_touch: "Get in Touch", contact_office_hours: "Office Hours",
     contact_mon_fri: "Mon-Fri: 09:00 - 17:00", contact_weekend: "Weekends: Closed",
     contact_lbl_name: "Name", contact_lbl_email: "Email", contact_lbl_msg: "Message",
@@ -116,7 +118,7 @@ export const TRANSLATIONS = {
     legal_provider_verified_tooltip: "Verified manually by LifeSkills360 (Identity & Basic Info).",
   },
   de: {
-    nav_explore: "Entdecken", nav_login: "Anmelden", nav_logout: "Abmelden", nav_dashboard: "Dashboard",
+    nav_explore: "Entdecken", nav_about: "Über uns", nav_contact: "Kontakt", nav_login: "Anmelden", nav_logout: "Abmelden", nav_dashboard: "Dashboard",
     nav_private: "Privat & Hobby", nav_professional: "Beruflich", nav_kids: "Kinder", nav_howitworks: "So funktioniert's",
     hero_title: "Finde Kurse in deiner Nähe.", hero_subtitle: "Vom Jodeln bis zum Programmieren.",
     search_placeholder: "Was möchtest du lernen?", filter_label_cat: "Kategorie", filter_label_loc: "Ort", btn_search: "Suchen",
@@ -145,7 +147,11 @@ export const TRANSLATIONS = {
     tutor_step_2: "Planen", tutor_desc_2: "Bestimme Datum, Ort und Preis.",
     tutor_step_3: "Verdienen", tutor_desc_3: "Automatische Auszahlung nach Kursbeginn.",
     cta_title: "Werde Kursleiter", cta_subtitle: "Teile dein Wissen in der ganzen Schweiz. Bestimme deinen eigenen Zeitplan.", cta_btn: "Loslegen",
+    
+    // FOOTER
     footer_terms: "AGB", footer_privacy: "Datenschutz", footer_legal: "Impressum", footer_madein: "Made in Switzerland", footer_rights: "Alle Rechte vorbehalten.",
+    footer_discover: "Entdecken", footer_support: "Support", footer_legal_header: "Rechtliches",
+
     contact_title: "Kontakt", contact_get_in_touch: "Schreib uns", btn_send: "Senden",
     about_title: "Über uns", about_subtitle: "Die Schweiz verbinden.",
     profile_settings: "Profileinstellungen", lbl_city: "Meine Stadt / Ort", lbl_bio: "Über mich (Bio)", lbl_language: "Bevorzugte Sprache",
@@ -160,7 +166,7 @@ export const TRANSLATIONS = {
     legal_provider_verified_tooltip: "Manuell geprüft von LifeSkills360 (Identität & Basisdaten).",
   },
   fr: {
-    nav_explore: "Explorer", nav_login: "Connexion", nav_logout: "Déconnexion", nav_dashboard: "Tableau de bord",
+    nav_explore: "Explorer", nav_about: "À propos", nav_contact: "Contact", nav_login: "Connexion", nav_logout: "Déconnexion", nav_dashboard: "Tableau de bord",
     nav_private: "Privé & Loisirs", nav_professional: "Professionnel", nav_kids: "Enfants", nav_howitworks: "Comment ça marche",
     hero_title: "Découvrez des cours.", hero_subtitle: "Apprenez localement.",
     search_placeholder: "Que voulez-vous apprendre?", filter_label_cat: "Catégorie", filter_label_loc: "Lieu", btn_search: "Rechercher",
@@ -189,7 +195,11 @@ export const TRANSLATIONS = {
     tutor_step_2: "Planifier", tutor_desc_2: "Définissez dates, lieux et prix.",
     tutor_step_3: "Gagner", tutor_desc_3: "Paiement automatique après le cours.",
     cta_title: "Devenez Professeur", cta_subtitle: "Partagez vos compétences à travers la Suisse.", cta_btn: "Commencer",
+    
+    // FOOTER
     footer_terms: "CGV", footer_privacy: "Confidentialité", footer_legal: "Mentions légales", footer_madein: "Fabriqué en Suisse", footer_rights: "Droits réservés.",
+    footer_discover: "Découvrir", footer_support: "Support", footer_legal_header: "Juridique",
+
     contact_title: "Contact", contact_get_in_touch: "Contactez-nous", btn_send: "Envoyer",
     about_title: "À propos", about_subtitle: "Relier la Suisse.",
     profile_settings: "Paramètres du profil", lbl_city: "Ma Ville / Localité", lbl_bio: "À propos de moi", lbl_language: "Langue préférée",
@@ -204,7 +214,7 @@ export const TRANSLATIONS = {
     legal_provider_verified_tooltip: "Vérifié manuellement par LifeSkills360.",
   },
   it: {
-    nav_explore: "Esplora", nav_login: "Accedi", nav_logout: "Esci", nav_dashboard: "Dashboard",
+    nav_explore: "Esplora", nav_about: "Chi siamo", nav_contact: "Contatto", nav_login: "Accedi", nav_logout: "Esci", nav_dashboard: "Dashboard",
     nav_private: "Privato & Hobby", nav_professional: "Professionale", nav_kids: "Bambini", nav_howitworks: "Come funziona",
     hero_title: "Scopri corsi vicino a te.", hero_subtitle: "Dallo jodel a Appenzello alla programmazione a Zurigo.",
     search_placeholder: "Cosa vuoi imparare?", filter_label_cat: "Categoria", filter_label_loc: "Luogo", btn_search: "Cerca",
@@ -233,7 +243,11 @@ export const TRANSLATIONS = {
     tutor_step_2: "Pianifica", tutor_desc_2: "Imposta date, luogo e prezzo.",
     tutor_step_3: "Guadagna", tutor_desc_3: "Pagamento automatico dopo il corso.",
     cta_title: "Diventa Insegnante", cta_subtitle: "Condividi le tue competenze in tutta la Svizzera.", cta_btn: "Inizia",
+    
+    // FOOTER
     footer_terms: "Termini", footer_privacy: "Privacy", footer_legal: "Note legali", footer_madein: "Made in Switzerland", footer_rights: "Tutti i diritti riservati.",
+    footer_discover: "Scopri", footer_support: "Supporto", footer_legal_header: "Legale",
+
     contact_title: "Contatto", contact_get_in_touch: "Scrivici", btn_send: "Invia",
     about_title: "Chi siamo", about_subtitle: "Connettere la Svizzera.",
     profile_settings: "Impostazioni Profilo", lbl_city: "La mia Città", lbl_bio: "Su di me (Bio)", lbl_language: "Lingua preferita",
