@@ -148,27 +148,28 @@ export const Footer = ({ t, setView }) => (
         <div>
           <h4 className="font-bold text-[#333333] mb-4">Discover</h4>
           <ul className="space-y-2 text-sm text-gray-500">
-            <li onClick={() => setView('landing-private')} className="hover:text-[#FA6E28] cursor-pointer">{t.nav_private}</li>
-            <li onClick={() => setView('landing-prof')} className="hover:text-[#FA6E28] cursor-pointer">{t.nav_professional}</li>
-            <li onClick={() => setView('landing-kids')} className="hover:text-[#FA6E28] cursor-pointer">{t.nav_kids}</li>
+            <li onClick={() => { setView('landing-private'); window.scrollTo(0,0); }} className="hover:text-[#FA6E28] cursor-pointer transition-colors">{t.nav_private}</li>
+            <li onClick={() => { setView('landing-prof'); window.scrollTo(0,0); }} className="hover:text-[#FA6E28] cursor-pointer transition-colors">{t.nav_professional}</li>
+            <li onClick={() => { setView('landing-kids'); window.scrollTo(0,0); }} className="hover:text-[#FA6E28] cursor-pointer transition-colors">{t.nav_kids}</li>
           </ul>
         </div>
         <div>
           <h4 className="font-bold text-[#333333] mb-4">Support</h4>
           <ul className="space-y-2 text-sm text-gray-500">
-            <li onClick={() => setView('how-it-works')} className="hover:text-[#FA6E28] cursor-pointer">{t.nav_howitworks}</li>
-            <li onClick={() => setView('contact')} className="hover:text-[#FA6E28] cursor-pointer">{t.nav_contact}</li>
-            <li onClick={() => setView('about')} className="hover:text-[#FA6E28] cursor-pointer">{t.nav_about}</li>
+            <li onClick={() => { setView('how-it-works'); window.scrollTo(0,0); }} className="hover:text-[#FA6E28] cursor-pointer transition-colors">{t.nav_howitworks}</li>
+            <li onClick={() => { setView('contact'); window.scrollTo(0,0); }} className="hover:text-[#FA6E28] cursor-pointer transition-colors">{t.nav_contact}</li>
+            <li onClick={() => { setView('about'); window.scrollTo(0,0); }} className="hover:text-[#FA6E28] cursor-pointer transition-colors">{t.nav_about}</li>
           </ul>
         </div>
         <div>
           <h4 className="font-bold text-[#333333] mb-4">Legal</h4>
           <ul className="space-y-2 text-sm text-gray-500">
-            <li><a href="/agb" className="hover:text-[#FA6E28]">AGB</a></li>
-            <li><a href="/datenschutz" className="hover:text-[#FA6E28]">Datenschutz</a></li>
-            <li><a href="/impressum" className="hover:text-[#FA6E28]">Impressum</a></li>
-            <li><a href="/widerruf-storno" className="hover:text-[#FA6E28]">Widerruf & Stornierung</a></li>
-            <li><a href="/vertrauen-sicherheit" className="hover:text-[#FA6E28]">Vertrauen & Sicherheit</a></li>
+            {/* UPDATED: Replaced <a href> with onClick to prevent reload loop */}
+            <li onClick={() => { setView('agb'); window.scrollTo(0,0); }} className="hover:text-[#FA6E28] cursor-pointer transition-colors">AGB</li>
+            <li onClick={() => { setView('datenschutz'); window.scrollTo(0,0); }} className="hover:text-[#FA6E28] cursor-pointer transition-colors">Datenschutz</li>
+            <li onClick={() => { setView('impressum'); window.scrollTo(0,0); }} className="hover:text-[#FA6E28] cursor-pointer transition-colors">Impressum</li>
+            <li onClick={() => { setView('widerruf'); window.scrollTo(0,0); }} className="hover:text-[#FA6E28] cursor-pointer transition-colors">Widerruf & Stornierung</li>
+            <li onClick={() => { setView('trust'); window.scrollTo(0,0); }} className="hover:text-[#FA6E28] cursor-pointer transition-colors">Vertrauen & Sicherheit</li>
           </ul>
         </div>
       </div>
