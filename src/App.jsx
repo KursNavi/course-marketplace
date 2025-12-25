@@ -276,13 +276,13 @@ const SuccessView = ({ setView }) => (
 
 const AuthView = ({ setView, showNotification, lang }) => {
     const [isSignUp, setIsSignUp] = useState(false); const [loading, setLoading] = useState(false); const [email, setEmail] = useState(''); const [password, setPassword] = useState(''); const [fullName, setFullName] = useState(''); const [role, setRole] = useState('student');
-    const [agbAccepted, setAgbAccepted] = useState(false); // NEW STATE
+    const [agbAccepted, setAgbAccepted] = useState(false); 
 
     const handleAuth = async (e) => {
         e.preventDefault(); setLoading(true);
         try {
             if (isSignUp) {
-                if (!agbAccepted) { throw new Error("Please accept the Terms & Conditions."); } // NEW VALIDATION
+                if (!agbAccepted) { throw new Error("Please accept the Terms & Conditions."); } 
                 const { data: authData, error: authError } = await supabase.auth.signUp({ email, password, options: { data: { full_name: fullName, role: role } } });
                 if (authError) throw authError;
                 if (authData?.user) { await supabase.from('profiles').insert([{ id: authData.user.id, full_name: fullName, email: email, preferred_language: lang }]); }
@@ -305,7 +305,6 @@ const AuthView = ({ setView, showNotification, lang }) => {
                     <div><label className="block text-sm font-bold text-gray-700 mb-1">Email</label><input required type="email" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#FA6E28] outline-none" value={email} onChange={e => setEmail(e.target.value)} /></div>
                     <div><label className="block text-sm font-bold text-gray-700 mb-1">Password</label><input required type="password" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#FA6E28] outline-none" value={password} onChange={e => setPassword(e.target.value)} /></div>
                     
-                    {/* NEW CHECKBOX AREA */}
                     {isSignUp && (
                         <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg border border-gray-100">
                             <input
@@ -324,7 +323,6 @@ const AuthView = ({ setView, showNotification, lang }) => {
                             </label>
                         </div>
                     )}
-                    {/* END NEW CHECKBOX AREA */}
 
                     <button disabled={loading} type="submit" className="w-full bg-[#FA6E28] text-white py-3 rounded-lg font-bold hover:bg-[#E55D1F] transition disabled:opacity-50 font-['Open_Sans']">{loading ? <Loader className="animate-spin mx-auto" /> : (isSignUp ? "Sign Up" : "Login")}</button>
                 </form>
@@ -961,11 +959,11 @@ export default function KursNaviPro() {
       {view === 'contact' && <ContactPage t={t} handleContactSubmit={handleContactSubmit} setView={setView} />}
       
       {/* --- LEGAL PAGES --- */}
-      {view === 'agb' && <LegalPage pageKey="agb" />}
-      {view === 'datenschutz' && <LegalPage pageKey="datenschutz" />}
-      {view === 'impressum' && <LegalPage pageKey="impressum" />}
-      {view === 'widerruf' && <LegalPage pageKey="widerruf" />}
-      {view === 'trust' && <LegalPage pageKey="trust" />}
+      {view === 'agb' && <LegalPage pageKey="agb" setView={setView} />}
+      {view === 'datenschutz' && <LegalPage pageKey="datenschutz" setView={setView} />}
+      {view === 'impressum' && <LegalPage pageKey="impressum" setView={setView} />}
+      {view === 'widerruf' && <LegalPage pageKey="widerruf" setView={setView} />}
+      {view === 'trust' && <LegalPage pageKey="trust" setView={setView} />}
       {/* ----------------- */}
 
       {view === 'admin' && user?.role === 'admin' && <AdminPanel t={t} courses={courses} />}

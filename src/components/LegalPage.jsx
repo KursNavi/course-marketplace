@@ -1,5 +1,4 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 
 // --- HIER SIND DIE TEXTE DIREKT INTEGRIERT ---
@@ -168,7 +167,7 @@ const LEGAL_CONTENT = {
   }
 };
 
-const LegalPage = ({ pageKey }) => {
+const LegalPage = ({ pageKey, setView }) => {
   const content = LEGAL_CONTENT[pageKey];
 
   if (!content) {
@@ -177,7 +176,7 @@ const LegalPage = ({ pageKey }) => {
         <div className="text-center">
           <h2 className="text-xl font-bold text-gray-800">Inhalt nicht gefunden</h2>
           <p className="text-gray-500 mt-2">Die Seite "{pageKey}" existiert nicht oder ist leer.</p>
-          <Link to="/" className="mt-4 inline-block text-[#FA6E28] font-bold">Zurück zur Startseite</Link>
+          <button onClick={() => setView('home')} className="mt-4 inline-block text-[#FA6E28] font-bold">Zurück zur Startseite</button>
         </div>
       </div>
     );
@@ -189,9 +188,9 @@ const LegalPage = ({ pageKey }) => {
         
         {/* Header */}
         <div className="bg-white px-8 py-8 border-b border-gray-100">
-          <Link to="/" className="inline-flex items-center text-gray-400 hover:text-[#FA6E28] mb-6 transition-colors text-sm font-bold">
+          <button onClick={() => setView('home')} className="inline-flex items-center text-gray-400 hover:text-[#FA6E28] mb-6 transition-colors text-sm font-bold">
             <ArrowLeft className="w-4 h-4 mr-2" /> Zurück
-          </Link>
+          </button>
           <h1 className="text-3xl font-extrabold text-[#333333] font-['Open_Sans']">
             {content.title}
           </h1>
@@ -207,7 +206,6 @@ const LegalPage = ({ pageKey }) => {
               <h2 className="text-lg font-bold text-[#333333] mb-3 font-['Open_Sans']">
                 {section.heading}
               </h2>
-              {/* whitespace-pre-wrap sorgt dafür, dass Zeilenumbrüche angezeigt werden */}
               <div className="text-gray-600 leading-relaxed whitespace-pre-wrap text-base">
                 {section.text}
               </div>
