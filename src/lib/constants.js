@@ -70,7 +70,7 @@ export const TRANSLATIONS = {
     search_placeholder: "What do you want to learn?", filter_label_cat: "Category", filter_label_loc: "Location", btn_search: "Search",
     no_results: "No courses found matching criteria.", btn_book: "Book Course", btn_pay: "Pay & Book", btn_publish: "Publish Course", btn_send: "Send Message",
     
-    // HOME PAGE CONTENT
+    // HOME PAGE
     home_headline: "Navigate Your Future with KursNavi",
     home_subhead: "Discover courses, gain new skills, and unlock your potential with expert-led learning tailored to your goals.",
     home_verified_tutors: "Verified Tutors",
@@ -82,6 +82,12 @@ export const TRANSLATIONS = {
     home_card_priv_sub: "Cooking, Photography, Sports & more.",
     home_card_kids_sub: "Fun and engaging courses for children.",
     btn_explore: "EXPLORE",
+
+    // SEARCH FILTERS
+    search_refine: "Refine search...",
+    lbl_max_price: "Max CHF",
+    lbl_professional_filter: "Professional",
+    tooltip_pro_verified: "Professional course provider verified by KursNavi.",
 
     // Form Labels
     edit_course: "Edit Course", edit_course_sub: "Update your course details.",
@@ -138,7 +144,7 @@ export const TRANSLATIONS = {
     search_placeholder: "Was möchtest du lernen?", filter_label_cat: "Kategorie", filter_label_loc: "Ort", btn_search: "Suchen",
     no_results: "Keine Kurse gefunden.", btn_book: "Kurs buchen", btn_pay: "Bezahlen & Buchen", btn_publish: "Veröffentlichen",
     
-    // HOME PAGE CONTENT
+    // HOME PAGE
     home_headline: "Gestalte deine Zukunft mit KursNavi",
     home_subhead: "Entdecke Kurse, lerne neue Fähigkeiten und entfalte dein Potenzial mit Experten, die dich weiterbringen.",
     home_verified_tutors: "Geprüfte Lehrer",
@@ -150,6 +156,12 @@ export const TRANSLATIONS = {
     home_card_priv_sub: "Kochen, Fotografie, Sport & mehr.",
     home_card_kids_sub: "Spaßige und spannende Kurse für Kinder.",
     btn_explore: "ENTDECKEN",
+
+    // SEARCH FILTERS
+    search_refine: "Suche verfeinern...",
+    lbl_max_price: "Max CHF",
+    lbl_professional_filter: "Professionell",
+    tooltip_pro_verified: "Professioneller Kursanbieter, geprüft von KursNavi.",
 
     edit_course: "Kurs bearbeiten", edit_course_sub: "Details aktualisieren.",
     create_course: "Kurs erstellen", create_course_sub: "Teile dein Wissen.",
@@ -201,7 +213,7 @@ export const TRANSLATIONS = {
     search_placeholder: "Que voulez-vous apprendre?", filter_label_cat: "Catégorie", filter_label_loc: "Lieu", btn_search: "Rechercher",
     no_results: "Aucun cours trouvé.", btn_book: "Réserver", btn_pay: "Payer et réserver", btn_publish: "Publier",
     
-    // HOME PAGE CONTENT
+    // HOME PAGE
     home_headline: "Naviguez vers votre avenir avec KursNavi",
     home_subhead: "Découvrez des cours, acquérez de nouvelles compétences et libérez votre potentiel avec des experts.",
     home_verified_tutors: "Professeurs vérifiés",
@@ -213,6 +225,12 @@ export const TRANSLATIONS = {
     home_card_priv_sub: "Cuisine, Photographie, Sport & plus.",
     home_card_kids_sub: "Cours amusants et stimulants pour les enfants.",
     btn_explore: "EXPLORER",
+
+    // SEARCH FILTERS
+    search_refine: "Affiner la recherche...",
+    lbl_max_price: "Max CHF",
+    lbl_professional_filter: "Professionnel",
+    tooltip_pro_verified: "Prestataire de cours professionnel vérifié par KursNavi.",
 
     edit_course: "Modifier le cours", edit_course_sub: "Mettre à jour les détails.",
     create_course: "Créer un cours", create_course_sub: "Partagez vos compétences.",
@@ -264,7 +282,7 @@ export const TRANSLATIONS = {
     search_placeholder: "Cosa vuoi imparare?", filter_label_cat: "Categoria", filter_label_loc: "Luogo", btn_search: "Cerca",
     no_results: "Nessun corso trovato.", btn_book: "Prenota", btn_pay: "Paga & Prenota", btn_publish: "Pubblica",
     
-    // HOME PAGE CONTENT
+    // HOME PAGE
     home_headline: "Naviga il tuo futuro con KursNavi",
     home_subhead: "Scopri corsi, acquisisci nuove competenze e sblocca il tuo potenziale con esperti.",
     home_verified_tutors: "Tutor verificati",
@@ -276,6 +294,12 @@ export const TRANSLATIONS = {
     home_card_priv_sub: "Cucina, Fotografia, Sport & altro.",
     home_card_kids_sub: "Corsi divertenti e coinvolgenti per bambini.",
     btn_explore: "ESPLORA",
+
+    // SEARCH FILTERS
+    search_refine: "Affina la ricerca...",
+    lbl_max_price: "Max CHF",
+    lbl_professional_filter: "Professionale",
+    tooltip_pro_verified: "Fornitore di corsi professionale verificato da KursNavi.",
 
     edit_course: "Modifica corso", edit_course_sub: "Aggiorna i dettagli.",
     create_course: "Crea corso", create_course_sub: "Condividi le tue abilità.",

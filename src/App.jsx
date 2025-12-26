@@ -1,21 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { Search, User, Clock, MapPin, CheckCircle, ArrowLeft, LogIn, LayoutDashboard, Settings, Trash2, DollarSign, Lock, Calendar, ExternalLink, ChevronDown, ChevronRight, Mail, Phone, Loader, Heart, Shield, X, BookOpen, Star, Zap, Users, Briefcase, Smile, Music, ArrowRight, Save, Filter, BadgeCheck, Pencil } from 'lucide-react';
+import { Search, User, Clock, MapPin, CheckCircle, ArrowLeft, LogIn, LayoutDashboard, Settings, Trash2, DollarSign, Lock, Calendar, ExternalLink, ChevronDown, ChevronRight, Mail, Phone, Loader, Heart, Shield, X, BookOpen, Star, Zap, Users, Briefcase, Smile, Music, ArrowRight, Save, Filter, BadgeCheck, Pencil, HelpCircle } from 'lucide-react';
 
 // --- IMPORTS ---
 import { BRAND, CATEGORY_HIERARCHY, CATEGORY_LABELS, SWISS_CANTONS, SWISS_CITIES, TRANSLATIONS } from './lib/constants';
 import { Navbar, Footer, KursNaviLogo } from './components/Layout';
 import { Home } from './components/Home';
 import LegalPage from './components/LegalPage';
-// NEW IMPORT:
 import { CategoryDropdown, LocationDropdown } from './components/Filters';
 
 // --- Supabase Setup ---
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
-
-// --- SUB-COMPONENTS REMOVED (Moved to Filters.jsx) ---
 
 const UserProfileSection = ({ user, showNotification, setLang, t }) => {
     const [loading, setLoading] = useState(true);
@@ -181,7 +178,7 @@ const TeacherForm = ({ t, setView, user, handlePublishCourse, getCatLabel, initi
                     <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4">
                          <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_skill_level}</label><select name="level" defaultValue={initialData?.level || "All Levels"} className="w-full px-3 py-2 border rounded-lg focus:ring-primary bg-white text-sm outline-none"><option value="All Levels">{t.opt_all_levels}</option><option value="Beginner">{t.opt_beginner}</option><option value="Advanced">{t.opt_advanced}</option></select></div>
                          <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_target_group}</label><select name="target_group" defaultValue={initialData?.target_group || "Adults"} className="w-full px-3 py-2 border rounded-lg focus:ring-primary bg-white text-sm outline-none"><option value="Adults">{t.opt_adults}</option><option value="Teens">{t.opt_teens}</option><option value="Kids">{t.opt_kids}</option></select></div>
-                         <div className="flex items-center p-3 border rounded-lg bg-gray-50"><input type="checkbox" name="is_pro" id="is_pro" defaultChecked={initialData?.is_pro} className="w-5 h-5 text-primary focus:ring-primary rounded border-gray-300 mr-3" /><label htmlFor="is_pro" className="text-sm font-bold text-gray-700 cursor-pointer flex items-center">{t.lbl_pro_checkbox} <BadgeCheck className="w-4 h-4 ml-1 text-blue-500" /></label></div>
+                         {/* REMOVED: Professional Checkbox (now Admin only) */}
                     </div>
 
                     <div className="md:col-span-2 bg-beige p-4 rounded-xl border border-orange-100">
@@ -276,148 +273,23 @@ const AuthView = ({ setView, showNotification, lang }) => {
     );
 };
 
-const ContactPage = ({ t, handleContactSubmit, setView }) => (
-    <div className="max-w-4xl mx-auto px-4 py-16 animate-in fade-in duration-500 font-sans">
-        <h1 className="text-4xl font-extrabold text-dark mb-8 text-center font-heading">{t.contact_title}</h1>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-            <div className="space-y-8">
-                <div className="bg-primaryLight p-6 rounded-2xl border border-orange-100">
-                    <h3 className="font-bold text-lg mb-4 text-primary font-heading">{t.contact_get_in_touch}</h3>
-                    <div className="space-y-4">
-                        <div className="flex items-center text-gray-700"><Mail className="w-5 h-5 mr-3 text-primary" /><span>info@kursnavi.ch</span></div>
-                        <div className="flex items-start text-gray-700"><MapPin className="w-5 h-5 mr-3 text-primary mt-1" /><span>LifeSkills360 GmbH<br/>Talrain 25<br/>6043 Adligenswil</span></div>
-                    </div>
-                </div>
-            </div>
-            <div className="bg-white p-8 rounded-2xl shadow-lg border border-gray-100">
-                <form onSubmit={handleContactSubmit} className="space-y-4">
-                    {/* EMAIL (First) */}
-                    <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.contact_lbl_email}</label><input required type="email" name="email" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" placeholder="you@example.com" /></div>
-                    
-                    {/* NAME (Optional but standard) */}
-                    <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.contact_lbl_name}</label><input required type="text" name="name" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" placeholder={t.contact_lbl_name} /></div>
-
-                    {/* SUBJECT (Added) */}
-                    <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.contact_lbl_subject}</label><input required type="text" name="_subject" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" placeholder="..." /></div>
-
-                    {/* MESSAGE */}
-                    <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.contact_lbl_msg}</label><textarea required name="message" rows="4" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" placeholder="..."></textarea></div>
-                    
-                    {/* HONEYPOT & CONFIG for FormSubmit */}
-                    <input type="text" name="_honey" className="hidden" />
-                    <input type="hidden" name="_captcha" value="false" />
-
-                    <button type="submit" className="w-full bg-primary text-white py-3 rounded-lg font-bold hover:bg-orange-600 transition font-heading">{t.btn_send}</button>
-                </form>
-            </div>
-        </div>
-    </div>
-);
-
-const AdminPanel = ({ t, courses }) => (
-    <div className="max-w-6xl mx-auto px-4 py-8 font-sans">
-        <div className="flex items-center justify-between mb-8"><h1 className="text-3xl font-bold text-dark flex items-center font-heading"><Settings className="mr-3 w-8 h-8 text-gray-700" />{t.admin_panel}</h1><span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm">Logged in as Admin</span></div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8"><div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200"><h3 className="font-bold text-xl mb-4 text-dark">Platform Stats</h3><div className="space-y-4"><div className="flex justify-between border-b pb-2"><span>Total Courses</span><span className="font-bold">{courses.length}</span></div><div className="flex justify-between border-b pb-2"><span>Total Bookings</span><span className="font-bold">--</span></div></div></div></div>
-    </div>
-);
-
-const LandingPageContent = ({ t, setView }) => (
-    <div className="space-y-24 py-12 animate-in fade-in duration-700">
-        <div className="max-w-7xl mx-auto px-4">
-            <h2 className="text-3xl font-bold text-center mb-16 text-dark font-heading">{t.how_it_works}</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-16">
-                <div className="space-y-8">
-                    <div className="flex items-center space-x-4 mb-8"><div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center text-primary"><Users className="w-6 h-6" /></div><h3 className="text-2xl font-bold text-dark">{t.for_students}</h3></div>
-                    <div className="space-y-8 pl-4 border-l-2 border-orange-100">
-                        <div><h4 className="font-bold text-lg mb-1 flex items-center"><Search className="w-4 h-4 mr-2 text-primary" /> {t.student_step_1}</h4><p className="text-gray-600">{t.student_desc_1}</p></div>
-                        <div><h4 className="font-bold text-lg mb-1 flex items-center"><Calendar className="w-4 h-4 mr-2 text-primary" /> {t.student_step_2}</h4><p className="text-gray-600">{t.student_desc_2}</p></div>
-                        <div><h4 className="font-bold text-lg mb-1 flex items-center"><Star className="w-4 h-4 mr-2 text-primary" /> {t.student_step_3}</h4><p className="text-gray-600">{t.student_desc_3}</p></div>
-                    </div>
-                </div>
-                <div className="space-y-8">
-                      <div className="flex items-center space-x-4 mb-8"><div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600"><Zap className="w-6 h-6" /></div><h3 className="text-2xl font-bold text-dark">{t.for_tutors}</h3></div>
-                    <div className="space-y-8 pl-4 border-l-2 border-blue-100">
-                          <div><h4 className="font-bold text-lg mb-1 flex items-center"><BookOpen className="w-4 h-4 mr-2 text-blue-500" /> {t.tutor_step_1}</h4><p className="text-gray-600">{t.tutor_desc_1}</p></div>
-                        <div><h4 className="font-bold text-lg mb-1 flex items-center"><Clock className="w-4 h-4 mr-2 text-blue-500" /> {t.tutor_step_2}</h4><p className="text-gray-600">{t.tutor_desc_2}</p></div>
-                        <div><h4 className="font-bold text-lg mb-1 flex items-center"><DollarSign className="w-4 h-4 mr-2 text-blue-500" /> {t.tutor_step_3}</h4><p className="text-gray-600">{t.tutor_desc_3}</p></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div className="bg-dark py-20">
-            <div className="max-w-4xl mx-auto px-4 text-center">
-                <h2 className="text-3xl md:text-4xl font-bold text-white mb-6 font-heading">{t.cta_title}</h2><p className="text-xl text-gray-300 mb-10 leading-relaxed">{t.cta_subtitle}</p>
-                <button onClick={() => setView('how-it-works')} className="bg-primary text-white px-10 py-4 rounded-full font-bold text-lg hover:bg-orange-600 transition transform hover:-translate-y-1 shadow-xl">{t.cta_btn}</button>
-            </div>
-        </div>
-    </div>
-);
-
-const HowItWorksPage = ({ t, setView }) => (
-    <div className="pt-8">
-        <button onClick={() => setView('home')} className="flex items-center text-gray-500 hover:text-gray-900 mb-6 transition-colors px-4"><ArrowLeft className="w-4 h-4 mr-2" /> Back</button>
-        <LandingPageContent t={t} setView={setView} />
-    </div>
-);
-
-const LandingView = ({ title, subtitle, variant = 'main', searchQuery, setSearchQuery, handleSearchSubmit, setSelectedCatPath, setView, t }) => {
-    return (
-      <>
-          <div className={`py-24 px-4 ${variant === 'main' ? 'bg-white' : variant === 'private' ? 'bg-primaryLight' : variant === 'prof' ? 'bg-slate-900 text-white' : 'bg-yellow-50'}`}>
-              <div className="max-w-4xl mx-auto text-center space-y-6">
-                  <div className="flex justify-center mb-6">
-                      {variant === 'main' && <KursNaviLogo className="w-24 h-24" />}
-                      {variant === 'private' && <Music className="w-24 h-24 text-primary" />}
-                      {variant === 'prof' && <Briefcase className="w-24 h-24 text-blue-400" />}
-                      {variant === 'kids' && <Smile className="w-24 h-24 text-yellow-500" />}
-                  </div>
-                  <h1 className={`text-4xl md:text-6xl font-extrabold tracking-tight font-heading ${variant === 'prof' ? 'text-white' : 'text-primary'}`}>{title}</h1>
-                  <p className={`text-xl max-w-2xl mx-auto ${variant === 'prof' ? 'text-gray-300' : 'text-gray-500'}`}>{subtitle}</p>
-              </div>
-          </div>
-
-          <div className={`border-b sticky top-20 z-40 shadow-sm ${variant === 'prof' ? 'bg-slate-800 border-slate-700' : 'bg-white'}`}>
-              <div className="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row gap-4 items-center">
-                  <div className="relative flex-grow w-full md:w-auto">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                      <input type="text" placeholder={t.search_placeholder} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearchSubmit()} className="w-full pl-10 pr-4 py-3 bg-beige border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-colors" />
-                  </div>
-                  <button onClick={handleSearchSubmit} className="bg-primary text-white px-8 py-3 rounded-full font-bold hover:bg-orange-600 transition shadow-md">{t.btn_search}</button>
-              </div>
-          </div>
-
-          {variant === 'main' && (
-              <div className="max-w-7xl mx-auto px-4 py-12">
-                  <h3 className="text-2xl font-bold text-center mb-8 text-dark">Find the right course for you</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                      <div onClick={() => { setSelectedCatPath(['Private & Hobby']); setView('landing-private'); window.scrollTo(0,0); }} className="bg-white p-8 rounded-2xl shadow-lg hover:-translate-y-2 transition cursor-pointer border-t-4 border-primary text-center group">
-                          <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-primary transition"><Music className="w-8 h-8 text-primary group-hover:text-white" /></div>
-                          <h2 className="text-xl font-bold mb-2">{t.nav_private}</h2>
-                          <p className="text-gray-500">Music, Art, Cooking, Sports. Pursue your passion.</p>
-                      </div>
-                      <div onClick={() => { setSelectedCatPath(['Professional']); setView('landing-prof'); window.scrollTo(0,0); }} className="bg-white p-8 rounded-2xl shadow-lg hover:-translate-y-2 transition cursor-pointer border-t-4 border-blue-600 text-center group">
-                          <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-blue-600 transition"><Briefcase className="w-8 h-8 text-blue-600 group-hover:text-white" /></div>
-                          <h2 className="text-xl font-bold mb-2">{t.nav_professional}</h2>
-                          <p className="text-gray-500">Business, Tech, Soft Skills. Advance your career.</p>
-                      </div>
-                      <div onClick={() => { setSelectedCatPath(['Children']); setView('landing-kids'); window.scrollTo(0,0); }} className="bg-white p-8 rounded-2xl shadow-lg hover:-translate-y-2 transition cursor-pointer border-t-4 border-yellow-500 text-center group">
-                          <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-yellow-500 transition"><Smile className="w-8 h-8 text-yellow-500 group-hover:text-white" /></div>
-                          <h2 className="text-xl font-bold mb-2">{t.nav_kids}</h2>
-                          <p className="text-gray-500">Tutoring, Creative Arts, Camps. Fun for kids.</p>
-                      </div>
-                  </div>
-              </div>
-          )}
-
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-              <LandingPageContent t={t} setView={setView} />
-          </div>
-      </>
-    );
-};
-
 const SearchPageView = ({ selectedCatPath, setSelectedCatPath, searchQuery, setSearchQuery, catMenuOpen, setCatMenuOpen, catMenuRef, t, getCatLabel, locMode, setLocMode, selectedLocations, setSelectedLocations, locMenuOpen, setLocMenuOpen, locMenuRef, loading, filteredCourses, setSelectedCourse, setView, filterDate, setFilterDate, filterPriceMax, setFilterPriceMax, filterLevel, setFilterLevel, filterPro, setFilterPro }) => {
     const activeSection = selectedCatPath.length > 0 ? selectedCatPath[0] : null;
+
+    // Helper to remove a category level
+    const removeCategoryStep = (index) => {
+        // If index is 0, we are removing root, so clear all. 
+        // Actually, let's just slice. If index is 0, we keep nothing? No, we keep 0 items.
+        // Wait, if we click "Professional", we probably want to keep Professional? 
+        // No, user wants to remove. Usually clicking "X" removes. 
+        // Let's implement: Clicking a specific pill resets the path to THAT level (keeping it).
+        // To remove root, we need a clear button or click the pill to toggle off?
+        // Let's just allow clicking to "go back" to that level. 
+        // And add an explicit X to the root if needed. 
+        // For now, let's implement: Click = Remove everything AFTER this level.
+        // But the user said "remove the filters". 
+        // I will add an X icon to each pill.
+    };
 
     return (
         <div className="min-h-screen bg-beige">
@@ -426,7 +298,7 @@ const SearchPageView = ({ selectedCatPath, setSelectedCatPath, searchQuery, setS
                     <div className="flex flex-col md:flex-row gap-4 items-center">
                         <div className="relative flex-grow w-full md:w-auto">
                             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                            <input type="text" placeholder="Refine search..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-10 pr-4 py-3 bg-beige border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-colors" />
+                            <input type="text" placeholder={t.search_refine} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-10 pr-4 py-3 bg-beige border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-colors" />
                         </div>
                         <CategoryDropdown rootCategory={activeSection} selectedCatPath={selectedCatPath} setSelectedCatPath={setSelectedCatPath} catMenuOpen={catMenuOpen} setCatMenuOpen={setCatMenuOpen} t={t} getCatLabel={getCatLabel} catMenuRef={catMenuRef} /> 
                         <LocationDropdown locMode={locMode} setLocMode={setLocMode} selectedLocations={selectedLocations} setSelectedLocations={setSelectedLocations} locMenuOpen={locMenuOpen} setLocMenuOpen={setLocMenuOpen} locMenuRef={locMenuRef} t={t} />
@@ -436,23 +308,39 @@ const SearchPageView = ({ selectedCatPath, setSelectedCatPath, searchQuery, setS
                     <div className="flex gap-4 overflow-x-auto pb-2 items-center">
                         <div className="flex items-center space-x-2 bg-gray-50 px-3 py-1.5 rounded-lg border">
                             <Calendar className="w-4 h-4 text-gray-500" />
-                            <input type="date" value={filterDate} onChange={(e) => setFilterDate(e.target.value)} className="bg-transparent text-sm outline-none text-gray-600" />
+                            <input type="date" placeholder="dd/mm/yyyy" value={filterDate} onChange={(e) => setFilterDate(e.target.value)} className="bg-transparent text-sm outline-none text-gray-600 placeholder-gray-400" />
                         </div>
                         <div className="flex items-center space-x-2 bg-gray-50 px-3 py-1.5 rounded-lg border">
-                            <span className="text-sm text-gray-500">Max CHF</span>
+                            <span className="text-sm text-gray-500">{t.lbl_max_price}</span>
                             <input type="number" placeholder="Any" value={filterPriceMax} onChange={(e) => setFilterPriceMax(e.target.value)} className="w-16 bg-transparent text-sm outline-none text-gray-600" />
                         </div>
                         <select value={filterLevel} onChange={(e) => setFilterLevel(e.target.value)} className="bg-gray-50 border rounded-lg px-3 py-1.5 text-sm outline-none text-gray-600">
-                            <option value="All">All Levels</option>
-                            <option value="Beginner">Beginner</option><option value="Advanced">Advanced</option>
+                            <option value="All">{t.opt_all_levels}</option>
+                            <option value="Beginner">{t.opt_beginner}</option><option value="Advanced">{t.opt_advanced}</option>
                         </select>
-                         <label className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg border cursor-pointer transition select-none ${filterPro ? 'bg-blue-50 border-blue-200' : 'bg-gray-50'}`}>
+                         <label className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg border cursor-pointer transition select-none ${filterPro ? 'bg-blue-50 border-blue-200' : 'bg-gray-50'}`} title={t.tooltip_pro_verified}>
                             <input type="checkbox" checked={filterPro} onChange={(e) => setFilterPro(e.target.checked)} className="rounded text-primary focus:ring-primary" />
-                            <span className={`text-sm font-medium ${filterPro ? 'text-blue-700' : 'text-gray-600'}`}>Professional</span>
+                            <span className={`text-sm font-medium ${filterPro ? 'text-blue-700' : 'text-gray-600'}`}>{t.lbl_professional_filter}</span>
+                            <HelpCircle className="w-3 h-3 text-gray-400" />
                         </label>
                     </div>
                 </div>
-                 {(selectedCatPath.length > 0 || selectedLocations.length > 0) && (<div className="max-w-7xl mx-auto px-4 pt-4 flex gap-2 flex-wrap">{selectedCatPath.map((part, i) => (<span key={i} className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-md font-bold">{getCatLabel(part)}</span>))}{selectedLocations.map((loc, i) => (<span key={i} className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-md font-bold">{loc}</span>))}</div>)}
+                 {(selectedCatPath.length > 0 || selectedLocations.length > 0) && (
+                    <div className="max-w-7xl mx-auto px-4 pt-4 flex gap-2 flex-wrap">
+                        {/* Categories: Click to remove specific level */}
+                        {selectedCatPath.map((part, i) => (
+                            <span key={i} onClick={() => setSelectedCatPath(selectedCatPath.slice(0, i))} className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-orange-200 flex items-center">
+                                {getCatLabel(part)} <X className="w-3 h-3 ml-1 opacity-50" />
+                            </span>
+                        ))}
+                        {/* Locations: Click to remove */}
+                        {selectedLocations.map((loc, i) => (
+                            <span key={i} onClick={() => setSelectedLocations(selectedLocations.filter(l => l !== loc))} className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-blue-200 flex items-center">
+                                {loc} <X className="w-3 h-3 ml-1 opacity-50" />
+                            </span>
+                        ))}
+                    </div>
+                 )}
             </div>
 
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -817,8 +705,6 @@ export default function KursNaviPro() {
             t={t} 
             setView={setView} 
             setSelectedCatPath={setSelectedCatPath}
-            
-            // Pass all filter states to Home so it can use the dropdowns
             searchQuery={searchQuery} setSearchQuery={setSearchQuery}
             catMenuOpen={catMenuOpen} setCatMenuOpen={setCatMenuOpen} catMenuRef={catMenuRef}
             locMode={locMode} setLocMode={setLocMode}
