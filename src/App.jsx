@@ -257,7 +257,7 @@ const ContactPage = ({ t, handleContactSubmit }) => (
     </div>
 );
 
-// --- NEW ABOUT PAGE COMPONENT ---
+// --- NEW ABOUT PAGE COMPONENT (FIXED IMAGES & REDESIGNED BOXES) ---
 const AboutPage = ({ t, setView }) => (
     <div className="font-sans">
         {/* HERO SECTION */}
@@ -287,25 +287,46 @@ const AboutPage = ({ t, setView }) => (
             </div>
         </div>
 
-        {/* WHAT WE DO (ICONS) */}
-        <div className="bg-gray-50 py-16">
+        {/* WHAT WE DO (ICONS) - REDESIGNED */}
+        <div className="bg-gray-50 py-20">
             <div className="max-w-7xl mx-auto px-4 text-center">
                 <h2 className="text-3xl font-bold text-dark font-heading mb-4">{t.about_what_title}</h2>
-                <p className="text-gray-600 max-w-2xl mx-auto mb-12 text-lg">{t.about_what_intro}</p>
+                <p className="text-gray-600 max-w-2xl mx-auto mb-16 text-lg">{t.about_what_intro}</p>
                 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center">
-                        <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mb-6 text-primary"><Search className="w-8 h-8"/></div>
+                <div className="flex flex-col md:flex-row items-center justify-center gap-8 relative">
+                    {/* BOX 1 */}
+                    <div className="group bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 flex-1 flex flex-col items-center text-center z-10 relative">
+                        <div className="w-20 h-20 bg-primaryLight text-primary rounded-2xl flex items-center justify-center mb-6 transform rotate-3 group-hover:rotate-6 transition-transform">
+                            <Search className="w-10 h-10"/>
+                        </div>
                         <h3 className="font-bold text-xl mb-2">{t.about_micro_1}</h3>
                         <p className="text-gray-500">{t.about_benefit_1}</p>
                     </div>
-                    <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center">
-                        <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mb-6 text-primary"><Calendar className="w-8 h-8"/></div>
+
+                    {/* CONNECTOR 1 */}
+                    <div className="hidden md:block text-primary/30 z-0">
+                        <ArrowRight className="w-12 h-12" />
+                    </div>
+
+                    {/* BOX 2 */}
+                    <div className="group bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 flex-1 flex flex-col items-center text-center z-10 relative">
+                        <div className="w-20 h-20 bg-primaryLight text-primary rounded-2xl flex items-center justify-center mb-6 transform -rotate-3 group-hover:-rotate-6 transition-transform">
+                            <Calendar className="w-10 h-10"/>
+                        </div>
                         <h3 className="font-bold text-xl mb-2">{t.about_micro_2}</h3>
                         <p className="text-gray-500">{t.about_benefit_2}</p>
                     </div>
-                    <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center">
-                        <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mb-6 text-primary"><Smile className="w-8 h-8"/></div>
+
+                    {/* CONNECTOR 2 */}
+                    <div className="hidden md:block text-primary/30 z-0">
+                        <ArrowRight className="w-12 h-12" />
+                    </div>
+
+                    {/* BOX 3 */}
+                    <div className="group bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 flex-1 flex flex-col items-center text-center z-10 relative">
+                        <div className="w-20 h-20 bg-primaryLight text-primary rounded-2xl flex items-center justify-center mb-6 transform rotate-3 group-hover:rotate-6 transition-transform">
+                            <Smile className="w-10 h-10"/>
+                        </div>
                         <h3 className="font-bold text-xl mb-2">{t.about_micro_3}</h3>
                         <p className="text-gray-500">{t.about_benefit_4}</p>
                     </div>
@@ -313,10 +334,10 @@ const AboutPage = ({ t, setView }) => (
             </div>
         </div>
 
-        {/* FOR YOU */}
+        {/* FOR YOU - FIXED IMAGE */}
         <div className="max-w-7xl mx-auto px-4 py-16 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
             <div className="order-2 md:order-1">
-                <img src="https://images.unsplash.com/photo-1452457750107-cd084dce00d6?auto=format&fit=crop&q=80&w=1200" alt="Hands on learning" className="rounded-2xl shadow-xl w-full h-auto object-cover" />
+                <img src="https://images.unsplash.com/photo-1452860606245-08befc0ff44b?auto=format&fit=crop&q=80&w=1200" alt="Hands on learning" className="rounded-2xl shadow-xl w-full h-auto object-cover" />
             </div>
             <div className="order-1 md:order-2">
                 <h2 className="text-3xl font-bold text-dark font-heading mb-6">{t.about_you_title}</h2>
@@ -324,7 +345,7 @@ const AboutPage = ({ t, setView }) => (
             </div>
         </div>
 
-        {/* FOR KIDS */}
+        {/* FOR KIDS - FIXED IMAGE */}
         <div className="max-w-7xl mx-auto px-4 py-16 grid grid-cols-1 md:grid-cols-2 gap-12 items-center bg-white">
             <div>
                 <h2 className="text-3xl font-bold text-dark font-heading mb-6">{t.about_kids_title}</h2>
@@ -334,7 +355,7 @@ const AboutPage = ({ t, setView }) => (
                 </div>
             </div>
             <div>
-                <img src="https://images.unsplash.com/photo-1502086223501-636b9f06e3e1?auto=format&fit=crop&q=80&w=1200" alt="Kids learning" className="rounded-2xl shadow-xl w-full h-auto object-cover" />
+                <img src="https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?auto=format&fit=crop&q=80&w=1200" alt="Kids learning" className="rounded-2xl shadow-xl w-full h-auto object-cover" />
             </div>
         </div>
 
