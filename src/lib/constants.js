@@ -142,7 +142,7 @@ export const TRANSLATIONS = {
     nav_private: "Privat & Hobby", nav_professional: "Beruflich", nav_kids: "Kinder", nav_howitworks: "So funktioniert's",
     hero_title: "Finde Kurse in deiner Nähe.", hero_subtitle: "Vom Jodeln bis zum Programmieren.",
     search_placeholder: "Was möchtest du lernen?", filter_label_cat: "Kategorie", filter_label_loc: "Ort", btn_search: "Suchen",
-    no_results: "Keine Kurse gefunden.", btn_book: "Kurs buchen", btn_pay: "Bezahlen & Buchen", btn_publish: "Veröffentlichen",
+    no_results: "Keine Kurse gefunden.", btn_book: "Kurs buchen", btn_pay: "Bezahlen & Buchen", btn_publish: "Veröffentlichen", btn_send: "Senden",
     
     // HOME PAGE
     home_headline: "Gestalte deine Zukunft mit KursNavi",
@@ -174,10 +174,11 @@ export const TRANSLATIONS = {
     opt_all_levels: "Alle Niveaus", opt_beginner: "Anfänger", opt_advanced: "Fortgeschritten",
     opt_adults: "Erwachsene", opt_teens: "Jugendliche", opt_kids: "Kinder",
 
-    form_title: "Kurs anbieten", success_msg: "Erfolgreich!", currency: "CHF",
+    form_title: "Kurs anbieten", success_msg: "Erfolgreich!", currency: "CHF", admin_panel: "Admin Konsole",
     teacher_dash: "Lehrer Dashboard", student_dash: "Meine Kurse",
     login_title: "Willkommen", my_bookings: "Meine Buchungen",
-    lbl_description: "Beschreibung", lbl_address: "Standort", lbl_duration: "Dauer",
+    lbl_description: "Beschreibung", lbl_address: "Standort", lbl_duration: "Dauer", lbl_sessions: "Lektionen",
+    lbl_objectives: "Was du lernst", lbl_prerequisites: "Voraussetzungen",
     how_it_works: "So funktioniert's", for_students: "Für Schüler", for_tutors: "Für Lehrer",
     student_step_1: "Entdecken", student_desc_1: "Durchsuche hunderte lokale Kurse.",
     student_step_2: "Buchen", student_desc_2: "Sichere deinen Platz sofort.",
@@ -191,10 +192,14 @@ export const TRANSLATIONS = {
     footer_terms: "AGB", footer_privacy: "Datenschutz", footer_legal: "Impressum", footer_madein: "Made in Switzerland", footer_rights: "Alle Rechte vorbehalten.",
     footer_discover: "Entdecken", footer_support: "Support", footer_legal_header: "Rechtliches",
 
-    contact_title: "Kontakt", contact_get_in_touch: "Schreib uns", btn_send: "Senden",
+    contact_title: "Kontakt", contact_get_in_touch: "Schreib uns", 
     contact_lbl_name: "Name", contact_lbl_email: "E-Mail", contact_lbl_msg: "Nachricht", contact_lbl_subject: "Betreff",
 
     about_title: "Über uns", about_subtitle: "Die Schweiz verbinden.",
+    about_text: "KursNavi ist die führende lokale Lernplattform der Schweiz...",
+    about_community_title: "Gemeinschaft", about_community_text: "Wir glauben an lokale Verbindungen.",
+    about_quality_title: "Qualität", about_quality_text: "Alle Lehrer werden manuell geprüft.",
+
     profile_settings: "Profileinstellungen", lbl_city: "Meine Stadt / Ort", lbl_bio: "Über mich (Bio)", lbl_language: "Bevorzugte Sprache",
     profile_lang_note: "Wir verwenden dies für E-Mails und Webseiteninhalte.", btn_save: "Speichern",
     dash_overview: "Übersicht", dash_profile: "Mein Profil", dash_settings: "Einstellungen", dash_new_course: "Neuer Kurs",
@@ -211,7 +216,7 @@ export const TRANSLATIONS = {
     nav_private: "Privé & Loisirs", nav_professional: "Professionnel", nav_kids: "Enfants", nav_howitworks: "Comment ça marche",
     hero_title: "Découvrez des cours.", hero_subtitle: "Apprenez localement.",
     search_placeholder: "Que voulez-vous apprendre?", filter_label_cat: "Catégorie", filter_label_loc: "Lieu", btn_search: "Rechercher",
-    no_results: "Aucun cours trouvé.", btn_book: "Réserver", btn_pay: "Payer et réserver", btn_publish: "Publier",
+    no_results: "Aucun cours trouvé.", btn_book: "Réserver", btn_pay: "Payer et réserver", btn_publish: "Publier", btn_send: "Envoyer",
     
     // HOME PAGE
     home_headline: "Naviguez vers votre avenir avec KursNavi",
@@ -243,10 +248,11 @@ export const TRANSLATIONS = {
     opt_all_levels: "Tous niveaux", opt_beginner: "Débutant", opt_advanced: "Avancé",
     opt_adults: "Adultes", opt_teens: "Ados", opt_kids: "Enfants",
 
-    form_title: "Proposer un cours", success_msg: "Succès!", currency: "CHF",
+    form_title: "Proposer un cours", success_msg: "Succès!", currency: "CHF", admin_panel: "Panneau d'administration",
     teacher_dash: "Tableau de bord", student_dash: "Mes apprentissages",
     login_title: "Bienvenue", my_bookings: "Mes réservations",
-    lbl_description: "Description", lbl_address: "Lieu", lbl_duration: "Durée",
+    lbl_description: "Description", lbl_address: "Lieu", lbl_duration: "Durée", lbl_sessions: "sessions",
+    lbl_objectives: "Ce que vous apprendrez", lbl_prerequisites: "Prérequis",
     how_it_works: "Comment ça marche", for_students: "Pour Étudiants", for_tutors: "Pour Professeurs",
     student_step_1: "Découvrir", student_desc_1: "Parcourez des centaines de cours.",
     student_step_2: "Réserver", student_desc_2: "Réservez votre place instantanément.",
@@ -260,10 +266,14 @@ export const TRANSLATIONS = {
     footer_terms: "CGV", footer_privacy: "Confidentialité", footer_legal: "Mentions légales", footer_madein: "Fabriqué en Suisse", footer_rights: "Droits réservés.",
     footer_discover: "Découvrir", footer_support: "Support", footer_legal_header: "Juridique",
 
-    contact_title: "Contact", contact_get_in_touch: "Contactez-nous", btn_send: "Envoyer",
+    contact_title: "Contact", contact_get_in_touch: "Contactez-nous", 
     contact_lbl_name: "Nom", contact_lbl_email: "E-mail", contact_lbl_msg: "Message", contact_lbl_subject: "Objet",
 
     about_title: "À propos", about_subtitle: "Relier la Suisse.",
+    about_text: "KursNavi est la première plateforme d'apprentissage locale en Suisse...",
+    about_community_title: "Communauté", about_community_text: "Nous croyons au pouvoir de la connexion locale.",
+    about_quality_title: "Qualité", about_quality_text: "Tous nos tuteurs sont vérifiés manuellement.",
+
     profile_settings: "Paramètres du profil", lbl_city: "Ma Ville / Localité", lbl_bio: "À propos de moi", lbl_language: "Langue préférée",
     profile_lang_note: "Nous utiliserons ceci pour les e-mails.", btn_save: "Enregistrer",
     dash_overview: "Aperçu", dash_profile: "Mon Profil", dash_settings: "Paramètres", dash_new_course: "Nouveau Cours",
@@ -280,7 +290,7 @@ export const TRANSLATIONS = {
     nav_private: "Privato & Hobby", nav_professional: "Professionale", nav_kids: "Bambini", nav_howitworks: "Come funziona",
     hero_title: "Scopri corsi vicino a te.", hero_subtitle: "Dallo jodel a Appenzello alla programmazione a Zurigo.",
     search_placeholder: "Cosa vuoi imparare?", filter_label_cat: "Categoria", filter_label_loc: "Luogo", btn_search: "Cerca",
-    no_results: "Nessun corso trovato.", btn_book: "Prenota", btn_pay: "Paga & Prenota", btn_publish: "Pubblica",
+    no_results: "Nessun corso trovato.", btn_book: "Prenota", btn_pay: "Paga & Prenota", btn_publish: "Pubblica", btn_send: "Invia",
     
     // HOME PAGE
     home_headline: "Naviga il tuo futuro con KursNavi",
@@ -312,10 +322,11 @@ export const TRANSLATIONS = {
     opt_all_levels: "Tutti i livelli", opt_beginner: "Principiante", opt_advanced: "Avanzato",
     opt_adults: "Adulti", opt_teens: "Adolescenti", opt_kids: "Bambini",
 
-    form_title: "Offri un corso", success_msg: "Fatto!", currency: "CHF",
+    form_title: "Offri un corso", success_msg: "Fatto!", currency: "CHF", admin_panel: "Pannello di Amministrazione",
     teacher_dash: "Dashboard Insegnante", student_dash: "I miei corsi",
     login_title: "Benvenuto", my_bookings: "Le mie prenotazioni",
-    lbl_description: "Descrizione", lbl_address: "Luogo", lbl_duration: "Durata",
+    lbl_description: "Descrizione", lbl_address: "Luogo", lbl_duration: "Durata", lbl_sessions: "sessioni",
+    lbl_objectives: "Cosa imparerai", lbl_prerequisites: "Prerequisiti",
     how_it_works: "Come funziona", for_students: "Per Studenti", for_tutors: "Per Insegnanti",
     student_step_1: "Scopri", student_desc_1: "Sfoglia centinaia di corsi locali unici.",
     student_step_2: "Prenota", student_desc_2: "Assicura il tuo posto istantaneamente.",
@@ -329,10 +340,14 @@ export const TRANSLATIONS = {
     footer_terms: "Termini", footer_privacy: "Privacy", footer_legal: "Note legali", footer_madein: "Made in Switzerland", footer_rights: "Tutti i diritti riservati.",
     footer_discover: "Scopri", footer_support: "Supporto", footer_legal_header: "Legale",
 
-    contact_title: "Contatto", contact_get_in_touch: "Scrivici", btn_send: "Invia",
+    contact_title: "Contatto", contact_get_in_touch: "Scrivici", 
     contact_lbl_name: "Nome", contact_lbl_email: "E-mail", contact_lbl_msg: "Messaggio", contact_lbl_subject: "Oggetto",
 
     about_title: "Chi siamo", about_subtitle: "Connettere la Svizzera.",
+    about_text: "KursNavi è la piattaforma di apprendimento locale leader in Svizzera...",
+    about_community_title: "Comunità", about_community_text: "Crediamo nel potere della connessione locale.",
+    about_quality_title: "Qualità", about_quality_text: "Tutti i nostri tutor sono verificati manualmente.",
+
     profile_settings: "Impostazioni Profilo", lbl_city: "La mia Città", lbl_bio: "Su di me (Bio)", lbl_language: "Lingua preferita",
     profile_lang_note: "Useremo questa lingua per email e sito web.", btn_save: "Salva modifiche",
     dash_overview: "Panoramica", dash_profile: "Il mio Profilo", dash_settings: "Impostazioni", dash_new_course: "Nuovo Corso",

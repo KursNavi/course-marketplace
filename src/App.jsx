@@ -19,7 +19,7 @@ const LandingView = ({ title, subtitle, variant, searchQuery, setSearchQuery, ha
     let categories = {};
     let rootCategory = "";
     let bgImage = "";
-    
+     
     // Select data and images based on the variant
     if (variant === 'private') {
         categories = CATEGORY_HIERARCHY["Private & Hobby"];
@@ -435,7 +435,7 @@ const TeacherForm = ({ t, setView, user, handlePublishCourse, getCatLabel, initi
     }, [initialData]);
 
     const handleLvl1Change = (e) => { const val = e.target.value; setLvl1(val); setLvl2(Object.keys(CATEGORY_HIERARCHY[val])[0]); };
-    
+     
     return (
     <div className="max-w-3xl mx-auto px-4 py-8 animate-in fade-in slide-in-from-bottom-4 duration-500 font-sans">
         <button onClick={() => setView('dashboard')} className="flex items-center text-gray-500 hover:text-gray-900 mb-6 transition-colors"><ArrowLeft className="w-4 h-4 mr-2" /> {t.btn_back_dash}</button>
