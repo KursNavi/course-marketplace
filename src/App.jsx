@@ -14,6 +14,185 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+// --- MISSING COMPONENTS (ADDED BY ARCHITECT) ---
+
+const LandingView = ({ title, subtitle, variant, searchQuery, setSearchQuery, handleSearchSubmit, setSelectedCatPath, setView, t, getCatLabel }) => {
+    let categories = {};
+    let rootCategory = "";
+    
+    if (variant === 'private') {
+        categories = CATEGORY_HIERARCHY["Private & Hobby"];
+        rootCategory = "Private & Hobby";
+    } else if (variant === 'prof') {
+        categories = CATEGORY_HIERARCHY["Professional"];
+        rootCategory = "Professional";
+    } else if (variant === 'kids') {
+        categories = CATEGORY_HIERARCHY["Children"];
+        rootCategory = "Children";
+    }
+
+    const handleCategoryClick = (subCat) => {
+        setSelectedCatPath([rootCategory, subCat]);
+        setView('search');
+        window.scrollTo(0, 0);
+    };
+
+    return (
+        <div className="min-h-screen bg-beige font-sans">
+            <div className="bg-dark text-white py-20 px-4 text-center">
+                <div className="max-w-4xl mx-auto">
+                    <h1 className="text-4xl md:text-5xl font-heading font-bold mb-4">{title}</h1>
+                    <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">{subtitle}</p>
+                    <div className="max-w-xl mx-auto relative">
+                        <input 
+                            type="text" 
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            placeholder={t.search_placeholder}
+                            className="w-full px-6 py-4 rounded-full text-dark focus:outline-none focus:ring-4 focus:ring-primary/50 text-lg shadow-lg"
+                            onKeyDown={(e) => e.key === 'Enter' && handleSearchSubmit()}
+                        />
+                        <button onClick={handleSearchSubmit} className="absolute right-2 top-2 bg-primary text-white p-2 rounded-full hover:bg-orange-600 transition">
+                            <Search className="w-6 h-6" />
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div className="max-w-7xl mx-auto px-4 py-16">
+                <h2 className="text-2xl font-bold text-dark mb-8 font-heading text-center border-b pb-4">Explore Categories</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                    {Object.keys(categories).map((catName) => (
+                        <div key={catName} onClick={() => handleCategoryClick(catName)} className="bg-white p-6 rounded-xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer border border-gray-100 group">
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-xl font-bold text-dark group-hover:text-primary transition-colors">{getCatLabel(catName)}</h3>
+                                <ArrowRight className="w-5 h-5 text-gray-300 group-hover:text-primary transition-colors" />
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                                {categories[catName].slice(0, 4).map(sub => (
+                                    <span key={sub} className="text-xs bg-gray-50 text-gray-500 px-2 py-1 rounded">{getCatLabel(sub)}</span>
+                                ))}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const DetailView = ({ course, setView, t, handleBookCourse }) => (
+    <div className="max-w-7xl mx-auto px-4 py-8 font-sans">
+        <button onClick={() => setView('search')} className="flex items-center text-gray-500 hover:text-primary mb-6"><ArrowLeft className="w-4 h-4 mr-2"/> Back to Search</button>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 space-y-8">
+                <img src={course.image_url} className="w-full h-80 object-cover rounded-2xl shadow-lg" alt={course.title} />
+                <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
+                    <h1 className="text-3xl font-bold font-heading text-dark mb-4">{course.title}</h1>
+                    <div className="flex flex-wrap gap-4 text-sm text-gray-600 mb-6">
+                        <span className="flex items-center bg-gray-50 px-3 py-1 rounded-full"><User className="w-4 h-4 mr-2"/> {course.instructor_name}</span>
+                        <span className="flex items-center bg-gray-50 px-3 py-1 rounded-full"><MapPin className="w-4 h-4 mr-2"/> {course.canton}</span>
+                        <span className="flex items-center bg-gray-50 px-3 py-1 rounded-full"><Clock className="w-4 h-4 mr-2"/> {course.session_count} x {course.session_length}</span>
+                    </div>
+                    <div className="prose max-w-none text-gray-600">
+                        <h3 className="text-xl font-bold text-dark mb-2">{t.lbl_description}</h3>
+                        <p className="whitespace-pre-wrap mb-6">{course.description}</p>
+                        <h3 className="text-xl font-bold text-dark mb-2">{t.lbl_learn_goals}</h3>
+                        <ul className="list-disc pl-5 space-y-1 mb-6">
+                            {course.objectives && course.objectives.map((obj, i) => <li key={i}>{obj}</li>)}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div className="lg:col-span-1">
+                <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100 sticky top-24">
+                    <div className="text-3xl font-bold text-primary font-heading mb-2">CHF {course.price}</div>
+                    <p className="text-gray-500 text-sm mb-6">per person</p>
+                    <button onClick={() => handleBookCourse(course)} className="w-full bg-primary text-white py-4 rounded-xl font-bold text-lg hover:bg-orange-600 transition shadow-lg hover:-translate-y-1">{t.btn_book}</button>
+                    <div className="mt-6 space-y-4 text-sm text-gray-600">
+                        <div className="flex items-center"><Calendar className="w-5 h-5 mr-3 text-gray-400"/> {course.start_date ? new Date(course.start_date).toLocaleDateString() : 'Flexible'}</div>
+                        <div className="flex items-center"><MapPin className="w-5 h-5 mr-3 text-gray-400"/> {course.address}</div>
+                        <div className="flex items-center"><Shield className="w-5 h-5 mr-3 text-green-500"/> Secure Payment</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+);
+
+const HowItWorksPage = ({ t, setView }) => (
+    <div className="max-w-7xl mx-auto px-4 py-16 font-sans">
+        <h1 className="text-4xl font-bold text-center text-dark font-heading mb-16">{t.how_it_works}</h1>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-16">
+            <div>
+                <h2 className="text-2xl font-bold text-primary mb-8 flex items-center"><Smile className="mr-2"/> {t.for_students}</h2>
+                <div className="space-y-8">
+                    <div className="flex"><div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center font-bold text-primary mr-4 flex-shrink-0">1</div><div><h3 className="font-bold text-lg">{t.student_step_1}</h3><p className="text-gray-600">{t.student_desc_1}</p></div></div>
+                    <div className="flex"><div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center font-bold text-primary mr-4 flex-shrink-0">2</div><div><h3 className="font-bold text-lg">{t.student_step_2}</h3><p className="text-gray-600">{t.student_desc_2}</p></div></div>
+                    <div className="flex"><div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center font-bold text-primary mr-4 flex-shrink-0">3</div><div><h3 className="font-bold text-lg">{t.student_step_3}</h3><p className="text-gray-600">{t.student_desc_3}</p></div></div>
+                </div>
+            </div>
+            <div>
+                <h2 className="text-2xl font-bold text-blue-600 mb-8 flex items-center"><Briefcase className="mr-2"/> {t.for_tutors}</h2>
+                <div className="space-y-8">
+                    <div className="flex"><div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center font-bold text-blue-600 mr-4 flex-shrink-0">1</div><div><h3 className="font-bold text-lg">{t.tutor_step_1}</h3><p className="text-gray-600">{t.tutor_desc_1}</p></div></div>
+                    <div className="flex"><div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center font-bold text-blue-600 mr-4 flex-shrink-0">2</div><div><h3 className="font-bold text-lg">{t.tutor_step_2}</h3><p className="text-gray-600">{t.tutor_desc_2}</p></div></div>
+                    <div className="flex"><div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center font-bold text-blue-600 mr-4 flex-shrink-0">3</div><div><h3 className="font-bold text-lg">{t.tutor_step_3}</h3><p className="text-gray-600">{t.tutor_desc_3}</p></div></div>
+                </div>
+            </div>
+        </div>
+        <div className="mt-16 text-center bg-primaryLight p-8 rounded-2xl">
+            <h2 className="text-2xl font-bold text-dark mb-4">{t.cta_title}</h2>
+            <p className="text-gray-600 mb-6 max-w-2xl mx-auto">{t.cta_subtitle}</p>
+            <button onClick={() => setView('login')} className="bg-primary text-white px-8 py-3 rounded-xl font-bold hover:bg-orange-600 transition shadow-lg">{t.cta_btn}</button>
+        </div>
+    </div>
+);
+
+const ContactPage = ({ t, handleContactSubmit }) => (
+    <div className="max-w-3xl mx-auto px-4 py-16 font-sans">
+        <h1 className="text-4xl font-bold text-center text-dark font-heading mb-8">{t.contact_title}</h1>
+        <div className="bg-white p-8 rounded-2xl shadow-xl border border-gray-100">
+            <form onSubmit={handleContactSubmit} className="space-y-6">
+                <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.contact_lbl_name}</label><input type="text" name="name" required className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none"/></div>
+                <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.contact_lbl_email}</label><input type="email" name="email" required className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none"/></div>
+                <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.contact_lbl_subject}</label><input type="text" name="subject" required className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none"/></div>
+                <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.contact_lbl_msg}</label><textarea name="message" rows="5" required className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none"></textarea></div>
+                <button type="submit" className="w-full bg-primary text-white py-3 rounded-lg font-bold hover:bg-orange-600 transition">{t.btn_send}</button>
+            </form>
+        </div>
+    </div>
+);
+
+const AboutPage = ({ t }) => (
+    <div className="max-w-4xl mx-auto px-4 py-16 font-sans text-center">
+        <h1 className="text-4xl font-bold text-dark font-heading mb-6">{t.about_title}</h1>
+        <p className="text-xl text-gray-600 mb-12">{t.about_subtitle}</p>
+        <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 text-left space-y-6">
+            <p>{t.about_text}</p>
+            <h3 className="text-xl font-bold text-dark">{t.about_community_title}</h3>
+            <p>{t.about_community_text}</p>
+            <h3 className="text-xl font-bold text-dark">{t.about_quality_title}</h3>
+            <p>{t.about_quality_text}</p>
+        </div>
+    </div>
+);
+
+const AdminPanel = ({ t, courses }) => (
+    <div className="max-w-7xl mx-auto px-4 py-8">
+        <h1 className="text-3xl font-bold mb-6">Admin Panel</h1>
+        <div className="bg-white p-6 rounded-xl shadow-sm overflow-x-auto">
+            <table className="w-full text-left">
+                <thead><tr className="border-b"><th className="p-3">Title</th><th className="p-3">User</th><th className="p-3">Created</th></tr></thead>
+                <tbody>
+                    {courses.map(c => <tr key={c.id} className="hover:bg-gray-50"><td className="p-3">{c.title}</td><td className="p-3">{c.instructor_name}</td><td className="p-3">{new Date(c.created_at).toLocaleDateString()}</td></tr>)}
+                </tbody>
+            </table>
+        </div>
+    </div>
+);
+
+// --- END MISSING COMPONENTS ---
+
 const UserProfileSection = ({ user, showNotification, setLang, t }) => {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -176,9 +355,9 @@ const TeacherForm = ({ t, setView, user, handlePublishCourse, getCatLabel, initi
                     <div className="md:col-span-2"><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_title}</label><input required type="text" name="title" defaultValue={initialData?.title} placeholder="e.g. Traditional Swiss Cooking" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none transition-shadow" /></div>
                     
                     <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4">
-                         <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_skill_level}</label><select name="level" defaultValue={initialData?.level || "All Levels"} className="w-full px-3 py-2 border rounded-lg focus:ring-primary bg-white text-sm outline-none"><option value="All Levels">{t.opt_all_levels}</option><option value="Beginner">{t.opt_beginner}</option><option value="Advanced">{t.opt_advanced}</option></select></div>
-                         <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_target_group}</label><select name="target_group" defaultValue={initialData?.target_group || "Adults"} className="w-full px-3 py-2 border rounded-lg focus:ring-primary bg-white text-sm outline-none"><option value="Adults">{t.opt_adults}</option><option value="Teens">{t.opt_teens}</option><option value="Kids">{t.opt_kids}</option></select></div>
-                         {/* REMOVED: Professional Checkbox (now Admin only) */}
+                          <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_skill_level}</label><select name="level" defaultValue={initialData?.level || "All Levels"} className="w-full px-3 py-2 border rounded-lg focus:ring-primary bg-white text-sm outline-none"><option value="All Levels">{t.opt_all_levels}</option><option value="Beginner">{t.opt_beginner}</option><option value="Advanced">{t.opt_advanced}</option></select></div>
+                          <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_target_group}</label><select name="target_group" defaultValue={initialData?.target_group || "Adults"} className="w-full px-3 py-2 border rounded-lg focus:ring-primary bg-white text-sm outline-none"><option value="Adults">{t.opt_adults}</option><option value="Teens">{t.opt_teens}</option><option value="Kids">{t.opt_kids}</option></select></div>
+                          {/* REMOVED: Professional Checkbox (now Admin only) */}
                     </div>
 
                     <div className="md:col-span-2 bg-beige p-4 rounded-xl border border-orange-100">
@@ -275,21 +454,6 @@ const AuthView = ({ setView, showNotification, lang }) => {
 
 const SearchPageView = ({ selectedCatPath, setSelectedCatPath, searchQuery, setSearchQuery, catMenuOpen, setCatMenuOpen, catMenuRef, t, getCatLabel, locMode, setLocMode, selectedLocations, setSelectedLocations, locMenuOpen, setLocMenuOpen, locMenuRef, loading, filteredCourses, setSelectedCourse, setView, filterDate, setFilterDate, filterPriceMax, setFilterPriceMax, filterLevel, setFilterLevel, filterPro, setFilterPro }) => {
     const activeSection = selectedCatPath.length > 0 ? selectedCatPath[0] : null;
-
-    // Helper to remove a category level
-    const removeCategoryStep = (index) => {
-        // If index is 0, we are removing root, so clear all. 
-        // Actually, let's just slice. If index is 0, we keep nothing? No, we keep 0 items.
-        // Wait, if we click "Professional", we probably want to keep Professional? 
-        // No, user wants to remove. Usually clicking "X" removes. 
-        // Let's implement: Clicking a specific pill resets the path to THAT level (keeping it).
-        // To remove root, we need a clear button or click the pill to toggle off?
-        // Let's just allow clicking to "go back" to that level. 
-        // And add an explicit X to the root if needed. 
-        // For now, let's implement: Click = Remove everything AFTER this level.
-        // But the user said "remove the filters". 
-        // I will add an X icon to each pill.
-    };
 
     return (
         <div className="min-h-screen bg-beige">
@@ -657,8 +821,8 @@ export default function KursNaviPro() {
     })
     .then(response => response.json())
     .then(data => {
-         showNotification(t.success_msg || "Message sent!"); 
-         setView('home');
+          showNotification(t.success_msg || "Message sent!"); 
+          setView('home');
     })
     .catch(error => {
         console.error("Error:", error);
@@ -714,9 +878,9 @@ export default function KursNaviPro() {
          />
       )}
         
-      {view === 'landing-private' && ( <LandingView title="Unleash your passion." subtitle="Hobby Courses" variant="private" searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearchSubmit={handleSearchSubmit} setSelectedCatPath={setSelectedCatPath} setView={setView} t={t} /> )}
-      {view === 'landing-prof' && ( <LandingView title="Boost your career." subtitle="Professional Courses" variant="prof" searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearchSubmit={handleSearchSubmit} setSelectedCatPath={setSelectedCatPath} setView={setView} t={t} /> )}
-      {view === 'landing-kids' && ( <LandingView title="Fun learning for kids." subtitle="Children's Courses" variant="kids" searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearchSubmit={handleSearchSubmit} setSelectedCatPath={setSelectedCatPath} setView={setView} t={t} /> )}
+      {view === 'landing-private' && ( <LandingView title="Unleash your passion." subtitle="Hobby Courses" variant="private" searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearchSubmit={handleSearchSubmit} setSelectedCatPath={setSelectedCatPath} setView={setView} t={t} getCatLabel={getCatLabel} /> )}
+      {view === 'landing-prof' && ( <LandingView title="Boost your career." subtitle="Professional Courses" variant="prof" searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearchSubmit={handleSearchSubmit} setSelectedCatPath={setSelectedCatPath} setView={setView} t={t} getCatLabel={getCatLabel} /> )}
+      {view === 'landing-kids' && ( <LandingView title="Fun learning for kids." subtitle="Children's Courses" variant="kids" searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearchSubmit={handleSearchSubmit} setSelectedCatPath={setSelectedCatPath} setView={setView} t={t} getCatLabel={getCatLabel} /> )}
 
       {view === 'search' && (
           <SearchPageView 
