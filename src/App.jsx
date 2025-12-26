@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { Search, User, Clock, MapPin, CheckCircle, ArrowLeft, LogIn, LayoutDashboard, Settings, Trash2, DollarSign, Lock, Calendar, ExternalLink, ChevronDown, ChevronRight, Mail, Phone, Loader, Heart, Shield, X, BookOpen, Star, Zap, Users, Briefcase, Smile, Music, ArrowRight, Save, Filter, BadgeCheck, Pencil, HelpCircle } from 'lucide-react';
+import { Search, User, Clock, MapPin, CheckCircle, ArrowLeft, LogIn, LayoutDashboard, Settings, Trash2, DollarSign, Lock, Calendar, ExternalLink, ChevronDown, ChevronRight, Mail, Phone, Loader, Heart, Shield, X, BookOpen, Star, Zap, Users, Briefcase, Smile, Music, ArrowRight, Save, Filter, PenTool, Info } from 'lucide-react';
 
 // --- IMPORTS ---
 import { BRAND, CATEGORY_HIERARCHY, CATEGORY_LABELS, SWISS_CANTONS, SWISS_CITIES, TRANSLATIONS } from './lib/constants';
@@ -14,8 +14,7 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// --- ARCHITECT UPDATE: Switched to reliable "Art/Painting" image ---
-
+// --- ARCHITECT COMPONENT: Landing View (Category Pages) ---
 const LandingView = ({ title, subtitle, variant, searchQuery, setSearchQuery, handleSearchSubmit, setSelectedCatPath, setView, t, getCatLabel }) => {
     let categories = {};
     let rootCategory = "";
@@ -25,17 +24,17 @@ const LandingView = ({ title, subtitle, variant, searchQuery, setSearchQuery, ha
     if (variant === 'private') {
         categories = CATEGORY_HIERARCHY["Private & Hobby"];
         rootCategory = "Private & Hobby";
-        // NEW IMAGE: Art/Painting (Very stable URL)
+        // Art/Painting Image
         bgImage = "https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?auto=format&fit=crop&q=80&w=2000"; 
     } else if (variant === 'prof') {
         categories = CATEGORY_HIERARCHY["Professional"];
         rootCategory = "Professional";
-        // Modern office meeting image
+        // Modern office image
         bgImage = "https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&q=80&w=2000"; 
     } else if (variant === 'kids') {
         categories = CATEGORY_HIERARCHY["Children"];
         rootCategory = "Children";
-        // Kids playing/learning image
+        // Kids playing image
         bgImage = "https://images.unsplash.com/photo-1472162072942-cd5147eb3902?auto=format&fit=crop&q=80&w=2000"; 
     }
 
@@ -47,20 +46,14 @@ const LandingView = ({ title, subtitle, variant, searchQuery, setSearchQuery, ha
 
     return (
         <div className="min-h-screen bg-beige font-sans">
-            {/* HERO SECTION WITH BACKGROUND IMAGE */}
             <div className="relative py-24 px-4 text-center text-white overflow-hidden" style={{ backgroundColor: '#2d2d2d' }}>
-                {/* Background Image Layer */}
                 <div className="absolute inset-0 z-0">
                     <img src={bgImage} alt={title} className="w-full h-full object-cover" onError={(e) => e.target.style.display = 'none'} />
-                    {/* Dark Overlay to make text readable */}
                     <div className="absolute inset-0 bg-black/60"></div>
                 </div>
-
-                {/* Content Layer */}
                 <div className="relative z-10 max-w-4xl mx-auto">
                     <h1 className="text-4xl md:text-6xl font-heading font-bold mb-4 drop-shadow-md animate-in fade-in slide-in-from-bottom-4 duration-700">{title}</h1>
                     <p className="text-xl md:text-2xl text-gray-100 mb-10 max-w-2xl mx-auto drop-shadow-sm font-light">{subtitle}</p>
-                    
                     <div className="max-w-xl mx-auto relative group">
                         <input 
                             type="text" 
@@ -76,8 +69,6 @@ const LandingView = ({ title, subtitle, variant, searchQuery, setSearchQuery, ha
                     </div>
                 </div>
             </div>
-
-            {/* CATEGORY GRID */}
             <div className="max-w-7xl mx-auto px-4 py-16">
                 <h2 className="text-2xl font-bold text-dark mb-8 font-heading text-center border-b border-gray-200 pb-4">Explore Categories</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
@@ -100,6 +91,89 @@ const LandingView = ({ title, subtitle, variant, searchQuery, setSearchQuery, ha
     );
 };
 
+// --- ARCHITECT COMPONENT: Search Page View ---
+const SearchPageView = ({ selectedCatPath, setSelectedCatPath, searchQuery, setSearchQuery, catMenuOpen, setCatMenuOpen, catMenuRef, t, getCatLabel, locMode, setLocMode, selectedLocations, setSelectedLocations, locMenuOpen, setLocMenuOpen, locMenuRef, loading, filteredCourses, setSelectedCourse, setView, filterDate, setFilterDate, filterPriceMax, setFilterPriceMax, filterLevel, setFilterLevel, filterPro, setFilterPro }) => {
+    const activeSection = selectedCatPath.length > 0 ? selectedCatPath[0] : null;
+
+    return (
+        <div className="min-h-screen bg-beige">
+            <div className="bg-white border-b pt-8 pb-4 sticky top-20 z-30 shadow-sm">
+                <div className="max-w-7xl mx-auto px-4 space-y-4">
+                    <div className="flex flex-col md:flex-row gap-4 items-center">
+                        <div className="relative flex-grow w-full md:w-auto">
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                            <input type="text" placeholder={t.search_refine} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-10 pr-4 py-3 bg-beige border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-colors" />
+                        </div>
+                        <CategoryDropdown rootCategory={activeSection} selectedCatPath={selectedCatPath} setSelectedCatPath={setSelectedCatPath} catMenuOpen={catMenuOpen} setCatMenuOpen={setCatMenuOpen} t={t} getCatLabel={getCatLabel} catMenuRef={catMenuRef} /> 
+                        <LocationDropdown locMode={locMode} setLocMode={setLocMode} selectedLocations={selectedLocations} setSelectedLocations={setSelectedLocations} locMenuOpen={locMenuOpen} setLocMenuOpen={setLocMenuOpen} locMenuRef={locMenuRef} t={t} />
+                        {(selectedCatPath.length > 0 || selectedLocations.length > 0 || filterDate || filterPriceMax || filterLevel !== 'All' || filterPro) && (<button onClick={() => { setSelectedCatPath([]); setSelectedLocations([]); setSearchQuery(""); setFilterDate(""); setFilterPriceMax(""); setFilterLevel("All"); setFilterPro(false); }} className="p-2 text-gray-400 hover:text-red-500 rounded-full hover:bg-gray-100" title="Reset all filters"><X className="w-5 h-5" /></button>)}
+                    </div>
+                    {/* NEW FILTERS ROW */}
+                    <div className="flex gap-4 overflow-x-auto pb-2 items-center">
+                        <div className="flex items-center space-x-2 bg-gray-50 px-3 py-1.5 rounded-lg border">
+                            <Calendar className="w-4 h-4 text-gray-500" />
+                            <input type="date" placeholder="dd/mm/yyyy" value={filterDate} onChange={(e) => setFilterDate(e.target.value)} className="bg-transparent text-sm outline-none text-gray-600 placeholder-gray-400" />
+                        </div>
+                        <div className="flex items-center space-x-2 bg-gray-50 px-3 py-1.5 rounded-lg border">
+                            <span className="text-sm text-gray-500">{t.lbl_max_price}</span>
+                            <input type="number" placeholder="Any" value={filterPriceMax} onChange={(e) => setFilterPriceMax(e.target.value)} className="w-16 bg-transparent text-sm outline-none text-gray-600" />
+                        </div>
+                        <select value={filterLevel} onChange={(e) => setFilterLevel(e.target.value)} className="bg-gray-50 border rounded-lg px-3 py-1.5 text-sm outline-none text-gray-600">
+                            <option value="All">{t.opt_all_levels}</option>
+                            <option value="Beginner">{t.opt_beginner}</option><option value="Advanced">{t.opt_advanced}</option>
+                        </select>
+                         <label className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg border cursor-pointer transition select-none ${filterPro ? 'bg-blue-50 border-blue-200' : 'bg-gray-50'}`} title={t.tooltip_pro_verified}>
+                            <input type="checkbox" checked={filterPro} onChange={(e) => setFilterPro(e.target.checked)} className="rounded text-primary focus:ring-primary" />
+                            <span className={`text-sm font-medium ${filterPro ? 'text-blue-700' : 'text-gray-600'}`}>{t.lbl_professional_filter}</span>
+                            <Info className="w-3 h-3 text-gray-400" />
+                        </label>
+                    </div>
+                </div>
+                 {(selectedCatPath.length > 0 || selectedLocations.length > 0) && (
+                    <div className="max-w-7xl mx-auto px-4 pt-4 flex gap-2 flex-wrap">
+                        {selectedCatPath.map((part, i) => (
+                            <span key={i} onClick={() => setSelectedCatPath(selectedCatPath.slice(0, i))} className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-orange-200 flex items-center">
+                                {getCatLabel(part)} <X className="w-3 h-3 ml-1 opacity-50" />
+                            </span>
+                        ))}
+                        {selectedLocations.map((loc, i) => (
+                            <span key={i} onClick={() => setSelectedLocations(selectedLocations.filter(l => l !== loc))} className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-blue-200 flex items-center">
+                                {loc} <X className="w-3 h-3 ml-1 opacity-50" />
+                            </span>
+                        ))}
+                    </div>
+                 )}
+            </div>
+
+            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                 {loading ? <div className="text-center py-20"><Loader className="animate-spin w-10 h-10 text-primary mx-auto" /></div> : filteredCourses.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                    {filteredCourses.map(course => (
+                      <div key={course.id} onClick={() => { setSelectedCourse(course); setView('detail'); window.scrollTo(0,0); }} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer group">
+                        <div className="relative h-48 overflow-hidden">
+                            <img src={course.image_url} alt={course.title} className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300" />
+                            <div className="absolute top-3 left-3 flex flex-col gap-1 items-start">
+                                <div className="bg-white/95 backdrop-blur-sm px-2 py-1 rounded text-xs font-bold text-gray-700 shadow-sm flex items-center"><MapPin className="w-3 h-3 mr-1 text-primary" />{course.canton}</div>
+                                {course.is_pro && <div className="bg-blue-600/90 text-white px-2 py-1 rounded text-xs font-bold shadow-sm flex items-center"><CheckCircle className="w-3 h-3 mr-1" /> Pro</div>}
+                            </div>
+                        </div>
+                        <div className="p-5">
+                            <h3 className="font-bold text-lg text-dark leading-tight line-clamp-2 h-12 mb-2 font-heading">{course.title}</h3>
+                            <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                               <div className="flex items-center space-x-3 text-sm text-gray-500"><div className="flex items-center bg-beige px-2 py-1 rounded"><User className="w-3 h-3 text-gray-500 mr-1" />{course.instructor_name}</div></div>
+                               <span className="font-bold text-primary text-lg font-heading">{t.currency} {course.price}</span>
+                            </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : <div className="text-center py-24 bg-white rounded-2xl border border-dashed border-gray-300"><p className="text-gray-500 text-lg font-medium">{t.no_results}</p></div>}
+            </main>
+        </div>
+    );
+};
+
+// --- Standard Views ---
 const DetailView = ({ course, setView, t, handleBookCourse }) => (
     <div className="max-w-7xl mx-auto px-4 py-8 font-sans">
         <button onClick={() => setView('search')} className="flex items-center text-gray-500 hover:text-primary mb-6"><ArrowLeft className="w-4 h-4 mr-2"/> Back to Search</button>
@@ -211,8 +285,6 @@ const AdminPanel = ({ t, courses }) => (
     </div>
 );
 
-// --- END MISSING COMPONENTS ---
-
 const UserProfileSection = ({ user, showNotification, setLang, t }) => {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -309,7 +381,7 @@ const Dashboard = ({ user, t, setView, courses, teacherEarnings, myBookings, han
                                                 <td className="px-6 py-4"><div className="font-bold text-dark">{course.title}</div><div className="text-xs text-gray-400">{course.category}</div></td>
                                                 <td className="px-6 py-4 font-medium">CHF {course.price}</td>
                                                 <td className="px-6 py-4 flex gap-2">
-                                                    <button onClick={() => handleEditCourse(course)} className="text-blue-500 hover:text-blue-700 bg-blue-50 p-2 rounded-full"><Pencil className="w-4 h-4" /></button>
+                                                    <button onClick={() => handleEditCourse(course)} className="text-blue-500 hover:text-blue-700 bg-blue-50 p-2 rounded-full"><PenTool className="w-4 h-4" /></button>
                                                     <button onClick={() => handleDeleteCourse(course.id)} className="text-red-500 hover:text-red-700 bg-red-50 p-2 rounded-full"><Trash2 className="w-4 h-4" /></button>
                                                 </td>
                                             </tr>
@@ -347,6 +419,126 @@ const Dashboard = ({ user, t, setView, courses, teacherEarnings, myBookings, han
                 )}
                 </>
             )}
+        </div>
+    );
+};
+
+const TeacherForm = ({ t, setView, user, handlePublishCourse, getCatLabel, initialData }) => {
+    const [lvl1, setLvl1] = useState(Object.keys(CATEGORY_HIERARCHY)[0]); 
+    const [lvl2, setLvl2] = useState(Object.keys(CATEGORY_HIERARCHY[lvl1])[0]);
+
+    useEffect(() => {
+        if (initialData && initialData.category) {
+            const parts = initialData.category.split(' | ');
+            if (parts.length >= 2) { setLvl1(parts[0]); setLvl2(parts[1]); }
+        }
+    }, [initialData]);
+
+    const handleLvl1Change = (e) => { const val = e.target.value; setLvl1(val); setLvl2(Object.keys(CATEGORY_HIERARCHY[val])[0]); };
+    
+    return (
+    <div className="max-w-3xl mx-auto px-4 py-8 animate-in fade-in slide-in-from-bottom-4 duration-500 font-sans">
+        <button onClick={() => setView('dashboard')} className="flex items-center text-gray-500 hover:text-gray-900 mb-6 transition-colors"><ArrowLeft className="w-4 h-4 mr-2" /> {t.btn_back_dash}</button>
+        <div className="bg-white p-8 rounded-2xl shadow-xl border border-gray-200">
+            <div className="mb-8 border-b pb-4"><h1 className="text-3xl font-bold text-dark font-heading">{initialData ? t.edit_course : t.create_course}</h1><p className="text-gray-500 mt-2">{initialData ? t.edit_course_sub : t.create_course_sub}</p></div>
+            <form onSubmit={handlePublishCourse} className="space-y-6">
+                {initialData && <input type="hidden" name="course_id" value={initialData.id} />}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="md:col-span-2"><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_title}</label><input required type="text" name="title" defaultValue={initialData?.title} placeholder="e.g. Traditional Swiss Cooking" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none transition-shadow" /></div>
+                    
+                    <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_skill_level}</label><select name="level" defaultValue={initialData?.level || "All Levels"} className="w-full px-3 py-2 border rounded-lg focus:ring-primary bg-white text-sm outline-none"><option value="All Levels">{t.opt_all_levels}</option><option value="Beginner">{t.opt_beginner}</option><option value="Advanced">{t.opt_advanced}</option></select></div>
+                          <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_target_group}</label><select name="target_group" defaultValue={initialData?.target_group || "Adults"} className="w-full px-3 py-2 border rounded-lg focus:ring-primary bg-white text-sm outline-none"><option value="Adults">{t.opt_adults}</option><option value="Teens">{t.opt_teens}</option><option value="Kids">{t.opt_kids}</option></select></div>
+                    </div>
+
+                    <div className="md:col-span-2 bg-beige p-4 rounded-xl border border-orange-100">
+                        <label className="block text-sm font-bold text-gray-700 mb-2">{t.lbl_cat_class}</label>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div><span className="text-xs text-gray-500 block mb-1">{t.lbl_type}</span><select name="catLvl1" value={lvl1} onChange={handleLvl1Change} className="w-full px-3 py-2 border rounded-lg focus:ring-primary bg-white text-sm">{Object.keys(CATEGORY_HIERARCHY).map(c => <option key={c} value={c}>{getCatLabel(c)}</option>)}</select></div>
+                            <div><span className="text-xs text-gray-500 block mb-1">{t.lbl_area}</span><select name="catLvl2" value={lvl2} onChange={(e) => setLvl2(e.target.value)} className="w-full px-3 py-2 border rounded-lg focus:ring-primary bg-white text-sm">{Object.keys(CATEGORY_HIERARCHY[lvl1]).map(c => <option key={c} value={c}>{getCatLabel(c)}</option>)}</select></div>
+                            <div><span className="text-xs text-gray-500 block mb-1">{t.lbl_specialty}</span><select name="catLvl3" defaultValue={initialData ? initialData.category.split(' | ')[2] : ''} className="w-full px-3 py-2 border rounded-lg focus:ring-primary bg-white text-sm">{CATEGORY_HIERARCHY[lvl1][lvl2].map(c => <option key={c} value={c}>{getCatLabel(c)}</option>)}</select></div>
+                        </div>
+                    </div>
+                    <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_price}</label><div className="relative"><span className="absolute left-3 top-2 text-gray-500 font-bold">CHF</span><input required type="number" name="price" defaultValue={initialData?.price} className="w-full pl-12 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" /></div></div>
+                    <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_canton}</label><div className="relative"><select name="canton" defaultValue={initialData?.canton} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none appearance-none bg-white">{SWISS_CANTONS.map(c => <option key={c} value={c}>{c}</option>)}</select><ChevronDown className="absolute right-3 top-3 text-gray-400 w-4 h-4 pointer-events-none" /></div></div>
+                    <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_specific_address}</label><input required type="text" name="address" defaultValue={initialData?.address} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" /></div>
+                    <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_session_count}</label><input required type="number" name="sessionCount" defaultValue={initialData?.session_count || 1} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" /></div>
+                    <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_session_length}</label><input required type="text" name="sessionLength" defaultValue={initialData?.session_length} placeholder="e.g. 2 hours" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" /></div>
+                    <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_start_date}</label><div className="relative"><Calendar className="absolute left-3 top-3 text-gray-400 w-5 h-5" /><input required type="date" name="startDate" defaultValue={initialData?.start_date} className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" /></div></div>
+                    <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_website}</label><div className="relative"><ExternalLink className="absolute left-3 top-3 text-gray-400 w-5 h-5" /><input type="url" name="providerUrl" defaultValue={initialData?.provider_url} className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" /></div></div>
+                </div>
+                <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_description}</label><textarea required name="description" defaultValue={initialData?.description} rows="4" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none"></textarea></div>
+                <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_learn_goals}</label><textarea required name="objectives" defaultValue={initialData?.objectives?.join('\n')} rows="4" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" placeholder="Enter each objective on a new line..."></textarea></div>
+                <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_prereq}</label><input type="text" name="prerequisites" defaultValue={initialData?.prerequisites} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" /></div>
+                <div className="pt-4 border-t border-gray-100 flex justify-end"><button type="submit" className="bg-primary text-white px-8 py-3 rounded-xl font-bold hover:bg-orange-600 shadow-lg hover:-translate-y-0.5 transition flex items-center font-heading"><KursNaviLogo className="w-5 h-5 mr-2 text-white" />{initialData ? t.btn_update : t.btn_publish}</button></div>
+            </form>
+        </div>
+    </div>
+    );
+};
+
+const SuccessView = ({ setView }) => (
+    <div className="min-h-[80vh] flex items-center justify-center px-4">
+        <div className="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full border border-green-100 text-center">
+            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6"><CheckCircle className="w-10 h-10 text-green-600" /></div>
+            <h2 className="text-3xl font-bold text-dark mb-4 font-heading">Payment Successful!</h2>
+            <p className="text-gray-600 mb-8 font-sans">Thank you for your booking. You will receive a confirmation email shortly.</p>
+            <button onClick={() => { window.history.replaceState({}, document.title, window.location.pathname); setView('dashboard'); }} className="w-full bg-primary text-white py-3 rounded-lg font-bold hover:bg-orange-600 transition font-heading">Go to My Courses</button>
+        </div>
+    </div>
+);
+
+const AuthView = ({ setView, showNotification, lang }) => {
+    const [isSignUp, setIsSignUp] = useState(false); const [loading, setLoading] = useState(false); const [email, setEmail] = useState(''); const [password, setPassword] = useState(''); const [fullName, setFullName] = useState(''); const [role, setRole] = useState('student');
+    const [agbAccepted, setAgbAccepted] = useState(false);
+    const t = TRANSLATIONS[lang] || TRANSLATIONS['de']; 
+
+    const handleAuth = async (e) => {
+        e.preventDefault(); setLoading(true);
+        try {
+            if (isSignUp) {
+                if (!agbAccepted) { throw new Error(t.legal_agree + " " + t.legal_agb); } 
+                const { data: authData, error: authError } = await supabase.auth.signUp({ email, password, options: { data: { full_name: fullName, role: role } } });
+                if (authError) throw authError;
+                if (authData?.user) { await supabase.from('profiles').insert([{ id: authData.user.id, full_name: fullName, email: email, preferred_language: lang }]); }
+                showNotification("Account created! Check your email.");
+            } else {
+                const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+                if (error) throw error;
+                const userRole = data.user?.user_metadata?.role;
+                if (userRole === 'teacher') setView('dashboard'); else setView('home');
+                showNotification("Welcome back!");
+            }
+        } catch (error) { showNotification(error.message); } finally { setLoading(false); }
+    };
+    return (
+        <div className="min-h-[80vh] flex items-center justify-center px-4 bg-beige">
+            <div className="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full border border-gray-100">
+                <h2 className="text-2xl font-bold mb-6 text-center font-heading text-dark">{isSignUp ? "Create Account" : "Welcome Back"}</h2>
+                <form onSubmit={handleAuth} className="space-y-4 font-sans">
+                    {isSignUp && (<><div><label className="block text-sm font-bold text-gray-700 mb-1">Full Name</label><input required type="text" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" value={fullName} onChange={e => setFullName(e.target.value)} /></div><div><label className="block text-sm font-bold text-gray-700 mb-1">I am a...</label><div className="flex gap-4"><label className={`flex-1 p-3 border rounded-lg cursor-pointer text-center transition ${role === 'student' ? 'bg-primaryLight border-primary text-primary font-bold' : 'hover:bg-gray-50'}`}><input type="radio" className="hidden" checked={role === 'student'} onChange={() => setRole('student')} />Student</label><label className={`flex-1 p-3 border rounded-lg cursor-pointer text-center transition ${role === 'teacher' ? 'bg-primaryLight border-primary text-primary font-bold' : 'hover:bg-gray-50'}`}><input type="radio" className="hidden" checked={role === 'teacher'} onChange={() => setRole('teacher')} />Teacher</label></div></div></>)}
+                    <div><label className="block text-sm font-bold text-gray-700 mb-1">Email</label><input required type="email" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" value={email} onChange={e => setEmail(e.target.value)} /></div>
+                    <div><label className="block text-sm font-bold text-gray-700 mb-1">Password</label><input required type="password" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" value={password} onChange={e => setPassword(e.target.value)} /></div>
+                    
+                    {isSignUp && (
+                        <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg border border-gray-100">
+                            <input
+                                id="agb"
+                                type="checkbox"
+                                checked={agbAccepted}
+                                onChange={(e) => setAgbAccepted(e.target.checked)}
+                                className="mt-1 w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary cursor-pointer"
+                            />
+                            <label htmlFor="agb" className="text-sm text-gray-600 cursor-pointer">
+                                <span>{t.legal_agree} <a href="/agb" onClick={(e) => { e.preventDefault(); setView('agb'); }} className="text-primary hover:underline font-bold">{t.legal_agb}</a> {role === 'teacher' ? t.legal_provider_suffix : ''} {t.legal_and} <a href="/datenschutz" onClick={(e) => { e.preventDefault(); setView('datenschutz'); }} className="text-primary hover:underline font-bold">{t.legal_privacy}</a>{t.legal_read ? t.legal_read : '.'}</span>
+                            </label>
+                        </div>
+                    )}
+
+                    <button disabled={loading} type="submit" className="w-full bg-primary text-white py-3 rounded-lg font-bold hover:bg-orange-600 transition disabled:opacity-50 font-heading">{loading ? <Loader className="animate-spin mx-auto" /> : (isSignUp ? "Sign Up" : "Login")}</button>
+                </form>
+                <p className="text-center text-sm text-gray-600 mt-6 font-sans">{isSignUp ? "Already have an account?" : "Don't have an account?"}<button onClick={() => setIsSignUp(!isSignUp)} className="text-primary font-bold ml-2 hover:underline">{isSignUp ? "Login" : "Sign Up"}</button></p>
+            </div>
         </div>
     );
 };
@@ -652,6 +844,8 @@ export default function KursNaviPro() {
   };
 
   const filteredCourses = courses.filter(course => {
+    // --- SAFETY CHECKS ---
+    if (!course) return false;
     let matchesCategory = true;
     if (selectedCatPath.length > 0) { 
         const courseCatStr = (course.category || "").toLowerCase(); 
@@ -662,10 +856,12 @@ export default function KursNaviPro() {
         if (locMode === 'canton') { matchesLocation = selectedLocations.includes(course.canton); } 
         else { const address = (course.address || "").toLowerCase(); const canton = (course.canton || "").toLowerCase(); matchesLocation = selectedLocations.some(city => address.includes(city.toLowerCase()) || canton.includes(city.toLowerCase())); }
     }
-    const matchesSearch = course.title.toLowerCase().includes(searchQuery.toLowerCase()) || (course.instructor_name && course.instructor_name.toLowerCase().includes(searchQuery.toLowerCase()));
+    const safeTitle = (course.title || "").toLowerCase();
+    const safeInstructor = (course.instructor_name || "").toLowerCase();
+    const matchesSearch = safeTitle.includes(searchQuery.toLowerCase()) || safeInstructor.includes(searchQuery.toLowerCase());
     
     let matchesDate = true; if (filterDate && course.start_date) matchesDate = new Date(course.start_date) >= new Date(filterDate);
-    let matchesPrice = true; if (filterPriceMax) matchesPrice = course.price <= Number(filterPriceMax);
+    let matchesPrice = true; if (filterPriceMax) matchesPrice = (course.price || 0) <= Number(filterPriceMax);
     let matchesLevel = true; if (filterLevel !== 'All') matchesLevel = course.level === filterLevel;
     let matchesPro = true; if (filterPro) matchesPro = course.is_pro === true;
 
