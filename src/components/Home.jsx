@@ -98,9 +98,9 @@ export const Home = ({ t, setView, setSelectedCatPath, searchQuery, setSearchQue
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           
-          {/* CARD 1: PRIVATE & HOBBY (Moved to First Position + New Baking Image) */}
+          {/* CARD 1: PRIVATE & HOBBY (UPDATED with Art Image) */}
           <div onClick={() => setView('landing-private')} className="group relative h-80 rounded-2xl overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
-            <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1556910103-1c02745a30bf?auto=format&fit=crop&q=80&w=2670")' }}></div>
+            <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?auto=format&fit=crop&q=80&w=2000")' }}></div>
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
             <div className="absolute bottom-0 left-0 p-6">
               <h3 className="text-2xl font-bold text-white font-heading mb-1">{t.nav_private}</h3>
@@ -111,7 +111,7 @@ export const Home = ({ t, setView, setSelectedCatPath, searchQuery, setSearchQue
             </div>
           </div>
 
-          {/* CARD 2: PROFESSIONAL (Moved to Second Position) */}
+          {/* CARD 2: PROFESSIONAL */}
           <div onClick={() => setView('landing-prof')} className="group relative h-80 rounded-2xl overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
             <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=2670&auto=format&fit=crop")' }}></div>
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
@@ -124,7 +124,7 @@ export const Home = ({ t, setView, setSelectedCatPath, searchQuery, setSearchQue
             </div>
           </div>
 
-          {/* CARD 3: KIDS (Remains Third Position) */}
+          {/* CARD 3: KIDS */}
           <div onClick={() => setView('landing-kids')} className="group relative h-80 rounded-2xl overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
             <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1503676260728-1c00da094a0b?q=80&w=2622&auto=format&fit=crop")' }}></div>
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
