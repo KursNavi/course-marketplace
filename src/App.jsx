@@ -19,7 +19,7 @@ const LandingView = ({ title, subtitle, variant, searchQuery, setSearchQuery, ha
     let categories = {};
     let rootCategory = "";
     let bgImage = "";
-     
+      
     // Select data and images based on the variant
     if (variant === 'private') {
         categories = CATEGORY_HIERARCHY["Private & Hobby"];
@@ -257,16 +257,111 @@ const ContactPage = ({ t, handleContactSubmit }) => (
     </div>
 );
 
-const AboutPage = ({ t }) => (
-    <div className="max-w-4xl mx-auto px-4 py-16 font-sans text-center">
-        <h1 className="text-4xl font-bold text-dark font-heading mb-6">{t.about_title}</h1>
-        <p className="text-xl text-gray-600 mb-12">{t.about_subtitle}</p>
-        <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 text-left space-y-6">
-            <p>{t.about_text}</p>
-            <h3 className="text-xl font-bold text-dark">{t.about_community_title}</h3>
-            <p>{t.about_community_text}</p>
-            <h3 className="text-xl font-bold text-dark">{t.about_quality_title}</h3>
-            <p>{t.about_quality_text}</p>
+// --- NEW ABOUT PAGE COMPONENT ---
+const AboutPage = ({ t, setView }) => (
+    <div className="font-sans">
+        {/* HERO SECTION */}
+        <div className="relative py-24 px-4 text-center text-white overflow-hidden" style={{ backgroundColor: '#2d2d2d' }}>
+            <div className="absolute inset-0 z-0">
+                <img src="https://images.unsplash.com/photo-1544928147-79a2dbc1f389?auto=format&fit=crop&q=80&w=2000" alt="Learning together" className="w-full h-full object-cover opacity-50" />
+                <div className="absolute inset-0 bg-black/60"></div>
+            </div>
+            <div className="relative z-10 max-w-4xl mx-auto">
+                <h1 className="text-4xl md:text-5xl font-heading font-bold mb-6 drop-shadow-md">{t.about_hero_title}</h1>
+                <p className="text-lg md:text-xl text-gray-100 max-w-2xl mx-auto drop-shadow-sm font-light leading-relaxed mb-8">{t.about_hero_teaser}</p>
+            </div>
+        </div>
+
+        {/* STORY SECTION */}
+        <div className="max-w-7xl mx-auto px-4 py-16 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+            <div>
+                <h2 className="text-3xl font-bold text-dark font-heading mb-6">{t.about_story_title}</h2>
+                <div className="space-y-4 text-gray-600 text-lg leading-relaxed">
+                    <p>{t.about_story_text_1}</p>
+                    <p>{t.about_story_text_2}</p>
+                    <p>{t.about_story_text_3}</p>
+                </div>
+            </div>
+            <div>
+                <img src="https://images.unsplash.com/photo-1531545514256-b1400bc00f31?auto=format&fit=crop&q=80&w=1200" alt="Team KursNavi" className="rounded-2xl shadow-xl w-full h-auto object-cover transform hover:scale-105 transition-transform duration-500" />
+            </div>
+        </div>
+
+        {/* WHAT WE DO (ICONS) */}
+        <div className="bg-gray-50 py-16">
+            <div className="max-w-7xl mx-auto px-4 text-center">
+                <h2 className="text-3xl font-bold text-dark font-heading mb-4">{t.about_what_title}</h2>
+                <p className="text-gray-600 max-w-2xl mx-auto mb-12 text-lg">{t.about_what_intro}</p>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center">
+                        <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mb-6 text-primary"><Search className="w-8 h-8"/></div>
+                        <h3 className="font-bold text-xl mb-2">{t.about_micro_1}</h3>
+                        <p className="text-gray-500">{t.about_benefit_1}</p>
+                    </div>
+                    <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center">
+                        <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mb-6 text-primary"><Calendar className="w-8 h-8"/></div>
+                        <h3 className="font-bold text-xl mb-2">{t.about_micro_2}</h3>
+                        <p className="text-gray-500">{t.about_benefit_2}</p>
+                    </div>
+                    <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center">
+                        <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mb-6 text-primary"><Smile className="w-8 h-8"/></div>
+                        <h3 className="font-bold text-xl mb-2">{t.about_micro_3}</h3>
+                        <p className="text-gray-500">{t.about_benefit_4}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {/* FOR YOU */}
+        <div className="max-w-7xl mx-auto px-4 py-16 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+            <div className="order-2 md:order-1">
+                <img src="https://images.unsplash.com/photo-1452457750107-cd084dce00d6?auto=format&fit=crop&q=80&w=1200" alt="Hands on learning" className="rounded-2xl shadow-xl w-full h-auto object-cover" />
+            </div>
+            <div className="order-1 md:order-2">
+                <h2 className="text-3xl font-bold text-dark font-heading mb-6">{t.about_you_title}</h2>
+                <p className="text-gray-600 text-lg leading-relaxed mb-6">{t.about_you_text}</p>
+            </div>
+        </div>
+
+        {/* FOR KIDS */}
+        <div className="max-w-7xl mx-auto px-4 py-16 grid grid-cols-1 md:grid-cols-2 gap-12 items-center bg-white">
+            <div>
+                <h2 className="text-3xl font-bold text-dark font-heading mb-6">{t.about_kids_title}</h2>
+                <p className="text-gray-600 text-lg leading-relaxed mb-6">{t.about_kids_text}</p>
+                <div className="bg-primaryLight/30 p-4 rounded-lg border border-primary/20">
+                     <p className="text-primary font-medium">{t.about_kids_sub}</p>
+                </div>
+            </div>
+            <div>
+                <img src="https://images.unsplash.com/photo-1502086223501-636b9f06e3e1?auto=format&fit=crop&q=80&w=1200" alt="Kids learning" className="rounded-2xl shadow-xl w-full h-auto object-cover" />
+            </div>
+        </div>
+
+        {/* FOR PROVIDERS */}
+        <div className="max-w-7xl mx-auto px-4 py-16 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+            <div className="order-2 md:order-1">
+                <img src="https://images.unsplash.com/photo-1544531586-fde5298cdd40?auto=format&fit=crop&q=80&w=1200" alt="Teacher instructing" className="rounded-2xl shadow-xl w-full h-auto object-cover" />
+            </div>
+            <div className="order-1 md:order-2">
+                <h2 className="text-3xl font-bold text-dark font-heading mb-6">{t.about_prov_title}</h2>
+                <p className="text-gray-600 text-lg leading-relaxed mb-6">{t.about_prov_text}</p>
+            </div>
+        </div>
+
+        {/* CTA SECTION */}
+        <div className="bg-dark text-white py-20 text-center">
+            <div className="max-w-3xl mx-auto px-4">
+                <h2 className="text-3xl font-bold font-heading mb-6">{t.about_promise_title}</h2>
+                <p className="text-xl text-gray-300 mb-10">{t.about_promise_text}</p>
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                    <button onClick={() => setView('search')} className="bg-primary text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-orange-600 transition shadow-lg hover:scale-105">{t.about_cta_primary}</button>
+                    <button onClick={() => setView('login')} className="bg-transparent border-2 border-white text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-white hover:text-dark transition shadow-lg">{t.about_cta_secondary}</button>
+                </div>
+            </div>
+            <div className="mt-12 max-w-4xl mx-auto px-4">
+                 <img src="https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&q=80&w=1200" alt="Happy group" className="rounded-2xl shadow-2xl w-full h-64 object-cover opacity-80" />
+            </div>
         </div>
     </div>
 );
@@ -435,7 +530,7 @@ const TeacherForm = ({ t, setView, user, handlePublishCourse, getCatLabel, initi
     }, [initialData]);
 
     const handleLvl1Change = (e) => { const val = e.target.value; setLvl1(val); setLvl2(Object.keys(CATEGORY_HIERARCHY[val])[0]); };
-     
+      
     return (
     <div className="max-w-3xl mx-auto px-4 py-8 animate-in fade-in slide-in-from-bottom-4 duration-500 font-sans">
         <button onClick={() => setView('dashboard')} className="flex items-center text-gray-500 hover:text-gray-900 mb-6 transition-colors"><ArrowLeft className="w-4 h-4 mr-2" /> {t.btn_back_dash}</button>
@@ -917,7 +1012,7 @@ export default function KursNaviPro() {
       {view === 'detail' && selectedCourse && <DetailView course={selectedCourse} setView={setView} t={t} handleBookCourse={handleBookCourse} />}
       {view === 'how-it-works' && <HowItWorksPage t={t} setView={setView} />}
       {view === 'login' && <AuthView setView={setView} showNotification={showNotification} lang={lang} />}
-      {view === 'about' && <AboutPage t={t} />}
+      {view === 'about' && <AboutPage t={t} setView={setView} />}
       {view === 'contact' && <ContactPage t={t} handleContactSubmit={handleContactSubmit} setView={setView} />}
       
       {/* --- LEGAL PAGES --- */}
