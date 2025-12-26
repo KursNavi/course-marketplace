@@ -276,21 +276,6 @@ const AuthView = ({ setView, showNotification, lang }) => {
 const SearchPageView = ({ selectedCatPath, setSelectedCatPath, searchQuery, setSearchQuery, catMenuOpen, setCatMenuOpen, catMenuRef, t, getCatLabel, locMode, setLocMode, selectedLocations, setSelectedLocations, locMenuOpen, setLocMenuOpen, locMenuRef, loading, filteredCourses, setSelectedCourse, setView, filterDate, setFilterDate, filterPriceMax, setFilterPriceMax, filterLevel, setFilterLevel, filterPro, setFilterPro }) => {
     const activeSection = selectedCatPath.length > 0 ? selectedCatPath[0] : null;
 
-    // Helper to remove a category level
-    const removeCategoryStep = (index) => {
-        // If index is 0, we are removing root, so clear all. 
-        // Actually, let's just slice. If index is 0, we keep nothing? No, we keep 0 items.
-        // Wait, if we click "Professional", we probably want to keep Professional? 
-        // No, user wants to remove. Usually clicking "X" removes. 
-        // Let's implement: Clicking a specific pill resets the path to THAT level (keeping it).
-        // To remove root, we need a clear button or click the pill to toggle off?
-        // Let's just allow clicking to "go back" to that level. 
-        // And add an explicit X to the root if needed. 
-        // For now, let's implement: Click = Remove everything AFTER this level.
-        // But the user said "remove the filters". 
-        // I will add an X icon to each pill.
-    };
-
     return (
         <div className="min-h-screen bg-beige">
             <div className="bg-white border-b pt-8 pb-4 sticky top-20 z-30 shadow-sm">
@@ -308,7 +293,16 @@ const SearchPageView = ({ selectedCatPath, setSelectedCatPath, searchQuery, setS
                     <div className="flex gap-4 overflow-x-auto pb-2 items-center">
                         <div className="flex items-center space-x-2 bg-gray-50 px-3 py-1.5 rounded-lg border">
                             <Calendar className="w-4 h-4 text-gray-500" />
-                            <input type="date" placeholder="dd/mm/yyyy" value={filterDate} onChange={(e) => setFilterDate(e.target.value)} className="bg-transparent text-sm outline-none text-gray-600 placeholder-gray-400" />
+                            {/* Browser type="date" forces local format, but we set placeholder as hint. */}
+                            <input 
+                                type="text" 
+                                placeholder="dd/mm/yyyy" 
+                                onFocus={(e) => (e.target.type = "date")}
+                                onBlur={(e) => { if (!e.target.value) e.target.type = "text"; }}
+                                value={filterDate} 
+                                onChange={(e) => setFilterDate(e.target.value)} 
+                                className="bg-transparent text-sm outline-none text-gray-600 placeholder-gray-400" 
+                            />
                         </div>
                         <div className="flex items-center space-x-2 bg-gray-50 px-3 py-1.5 rounded-lg border">
                             <span className="text-sm text-gray-500">{t.lbl_max_price}</span>
