@@ -14,7 +14,7 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// --- ARCHITECT UPDATE: Added Background Images to LandingView ---
+// --- ARCHITECT UPDATE: Fixed Background Image for Private/Hobby ---
 
 const LandingView = ({ title, subtitle, variant, searchQuery, setSearchQuery, handleSearchSubmit, setSelectedCatPath, setView, t, getCatLabel }) => {
     let categories = {};
@@ -25,8 +25,8 @@ const LandingView = ({ title, subtitle, variant, searchQuery, setSearchQuery, ha
     if (variant === 'private') {
         categories = CATEGORY_HIERARCHY["Private & Hobby"];
         rootCategory = "Private & Hobby";
-        // Warm baking/kitchen image
-        bgImage = "https://images.unsplash.com/photo-1556910103-1c02745a30bf?auto=format&fit=crop&q=80&w=2000"; 
+        // NEW STABLE IMAGE: Cooking / Hobby Scene
+        bgImage = "https://images.unsplash.com/photo-1507048331197-7d4defea8700?q=80&w=2000&auto=format&fit=crop"; 
     } else if (variant === 'prof') {
         categories = CATEGORY_HIERARCHY["Professional"];
         rootCategory = "Professional";
