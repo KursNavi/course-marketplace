@@ -98,6 +98,20 @@ export const Home = ({ t, setView, setSelectedCatPath, searchQuery, setSearchQue
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           
+          {/* CARD 1: PRIVATE & HOBBY (Moved to First Position + New Baking Image) */}
+          <div onClick={() => setView('landing-private')} className="group relative h-80 rounded-2xl overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
+            <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1556910103-1c02745a30bf?auto=format&fit=crop&q=80&w=2670")' }}></div>
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+            <div className="absolute bottom-0 left-0 p-6">
+              <h3 className="text-2xl font-bold text-white font-heading mb-1">{t.nav_private}</h3>
+              <p className="text-gray-300 text-sm font-sans mb-4">{t.home_card_priv_sub}</p>
+              <span className="inline-flex items-center text-primary font-bold text-sm uppercase tracking-wider group-hover:text-white transition-colors">
+                {t.btn_explore} <ArrowRight className="w-4 h-4 ml-2" />
+              </span>
+            </div>
+          </div>
+
+          {/* CARD 2: PROFESSIONAL (Moved to Second Position) */}
           <div onClick={() => setView('landing-prof')} className="group relative h-80 rounded-2xl overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
             <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=2670&auto=format&fit=crop")' }}></div>
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
@@ -110,18 +124,7 @@ export const Home = ({ t, setView, setSelectedCatPath, searchQuery, setSearchQue
             </div>
           </div>
 
-          <div onClick={() => setView('landing-private')} className="group relative h-80 rounded-2xl overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
-            <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1461749280684-dccba630e2f6?q=80&w=2669&auto=format&fit=crop")' }}></div>
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
-            <div className="absolute bottom-0 left-0 p-6">
-              <h3 className="text-2xl font-bold text-white font-heading mb-1">{t.nav_private}</h3>
-              <p className="text-gray-300 text-sm font-sans mb-4">{t.home_card_priv_sub}</p>
-              <span className="inline-flex items-center text-primary font-bold text-sm uppercase tracking-wider group-hover:text-white transition-colors">
-                {t.btn_explore} <ArrowRight className="w-4 h-4 ml-2" />
-              </span>
-            </div>
-          </div>
-
+          {/* CARD 3: KIDS (Remains Third Position) */}
           <div onClick={() => setView('landing-kids')} className="group relative h-80 rounded-2xl overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
             <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1503676260728-1c00da094a0b?q=80&w=2622&auto=format&fit=crop")' }}></div>
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
