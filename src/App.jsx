@@ -906,7 +906,8 @@ export default function KursNaviPro() {
         else if (path === '/widerruf-storno') setView('widerruf');
         else if (path === '/vertrauen-sicherheit') setView('trust');
         
-        else if (path === '/control-room-2025') setView('admin');
+        // --- ROBUST CHECK for Trailing Slashes ---
+        else if (path.startsWith('/control-room-2025')) setView('admin');
 
         else if (path === '/search') setView('search');
         else if (path === '/dashboard') setView('dashboard');
@@ -975,7 +976,8 @@ export default function KursNaviPro() {
         setTeacherEarnings([]);
         
         // --- BUG FIX: Don't redirect to Home if we are in the Secret Room ---
-        if (window.location.pathname !== '/control-room-2025') {
+        // Using "startsWith" handles cases like /control-room-2025/ (with slash)
+        if (!window.location.pathname.startsWith('/control-room-2025')) {
             setView('home');
         }
         
