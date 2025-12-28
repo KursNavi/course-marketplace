@@ -70,6 +70,12 @@ export const TRANSLATIONS = {
     search_placeholder: "What do you want to learn?", filter_label_cat: "Category", filter_label_loc: "Location", btn_search: "Search",
     no_results: "No courses found matching criteria.", btn_book: "Book Course", btn_pay: "Pay & Book", btn_publish: "Publish Course", btn_send: "Send Message",
     
+    // ADMIN
+    admin_login_title: "KursNavi Control Room", admin_pass_placeholder: "Enter Access Code", admin_btn_access: "Access System",
+    admin_tab_teachers: "Teachers", admin_tab_students: "Students", admin_tab_courses: "Courses",
+    admin_col_name: "Name", admin_col_email: "Email", admin_col_status: "Status", admin_col_actions: "Actions",
+    admin_btn_verify: "Verify Pro", admin_btn_unverify: "Remove Pro", admin_verified: "Verified Pro",
+    
     // HOME PAGE
     home_headline: "Navigate Your Future with KursNavi",
     home_subhead: "Discover courses, gain new skills, and unlock your potential with expert-led learning tailored to your goals.",
@@ -166,6 +172,12 @@ export const TRANSLATIONS = {
     search_placeholder: "Was möchtest du lernen?", filter_label_cat: "Kategorie", filter_label_loc: "Ort", btn_search: "Suchen",
     no_results: "Keine Kurse gefunden.", btn_book: "Kurs buchen", btn_pay: "Bezahlen & Buchen", btn_publish: "Veröffentlichen", btn_send: "Senden",
     
+    // ADMIN
+    admin_login_title: "KursNavi Kommandozentrale", admin_pass_placeholder: "Zugangscode eingeben", admin_btn_access: "System öffnen",
+    admin_tab_teachers: "Lehrer", admin_tab_students: "Schüler", admin_tab_courses: "Kurse",
+    admin_col_name: "Name", admin_col_email: "E-Mail", admin_col_status: "Status", admin_col_actions: "Aktionen",
+    admin_btn_verify: "Verifizieren (Pro)", admin_btn_unverify: "Pro entfernen", admin_verified: "Verifizierter Pro",
+
     // HOME PAGE
     home_headline: "Gestalte deine Zukunft mit KursNavi",
     home_subhead: "Entdecke Kurse, lerne neue Fähigkeiten und entfalte dein Potenzial mit Experten, die dich weiterbringen.",
@@ -261,6 +273,12 @@ export const TRANSLATIONS = {
     search_placeholder: "Que voulez-vous apprendre?", filter_label_cat: "Catégorie", filter_label_loc: "Lieu", btn_search: "Rechercher",
     no_results: "Aucun cours trouvé.", btn_book: "Réserver", btn_pay: "Payer et réserver", btn_publish: "Publier", btn_send: "Envoyer",
     
+    // ADMIN
+    admin_login_title: "Centre de Contrôle KursNavi", admin_pass_placeholder: "Entrer le code", admin_btn_access: "Accéder au système",
+    admin_tab_teachers: "Professeurs", admin_tab_students: "Étudiants", admin_tab_courses: "Cours",
+    admin_col_name: "Nom", admin_col_email: "E-mail", admin_col_status: "Statut", admin_col_actions: "Actions",
+    admin_btn_verify: "Vérifier Pro", admin_btn_unverify: "Retirer Pro", admin_verified: "Pro Vérifié",
+
     // HOME PAGE
     home_headline: "Naviguez vers votre avenir avec KursNavi",
     home_subhead: "Découvrez des cours, acquérez de nouvelles compétences et libérez votre potentiel avec des experts.",
@@ -356,6 +374,12 @@ export const TRANSLATIONS = {
     search_placeholder: "Cosa vuoi imparare?", filter_label_cat: "Categoria", filter_label_loc: "Luogo", btn_search: "Cerca",
     no_results: "Nessun corso trovato.", btn_book: "Prenota", btn_pay: "Paga & Prenota", btn_publish: "Pubblica", btn_send: "Invia",
     
+    // ADMIN
+    admin_login_title: "Centro di Controllo KursNavi", admin_pass_placeholder: "Inserisci codice", admin_btn_access: "Accedi al sistema",
+    admin_tab_teachers: "Insegnanti", admin_tab_students: "Studenti", admin_tab_courses: "Corsi",
+    admin_col_name: "Nome", admin_col_email: "E-mail", admin_col_status: "Stato", admin_col_actions: "Azioni",
+    admin_btn_verify: "Verifica Pro", admin_btn_unverify: "Rimuovi Pro", admin_verified: "Pro Verificato",
+
     // HOME PAGE
     home_headline: "Naviga il tuo futuro con KursNavi",
     home_subhead: "Scopri corsi, acquisisci nuove competenze e sblocca il tuo potenziale con esperti.",

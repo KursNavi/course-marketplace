@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { Search, User, Clock, MapPin, CheckCircle, ArrowLeft, LogIn, LayoutDashboard, Settings, Trash2, DollarSign, Lock, Calendar, ExternalLink, ChevronDown, ChevronRight, Mail, Phone, Loader, Heart, Shield, X, BookOpen, Star, Zap, Users, Briefcase, Smile, Music, ArrowRight, Save, Filter, PenTool, Info } from 'lucide-react';
+import { Search, User, Clock, MapPin, CheckCircle, ArrowLeft, LogIn, LayoutDashboard, Settings, Trash2, DollarSign, Lock, Calendar, ExternalLink, ChevronDown, ChevronRight, Mail, Phone, Loader, Heart, Shield, X, BookOpen, Star, Zap, Users, Briefcase, Smile, Music, ArrowRight, Save, Filter, PenTool, Info, Eye } from 'lucide-react';
 
 // --- IMPORTS ---
 import { BRAND, CATEGORY_HIERARCHY, CATEGORY_LABELS, SWISS_CANTONS, SWISS_CITIES, TRANSLATIONS } from './lib/constants';
@@ -387,19 +387,168 @@ const AboutPage = ({ t, setView }) => (
     </div>
 );
 
-const AdminPanel = ({ t, courses }) => (
-    <div className="max-w-7xl mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-6">Admin Panel</h1>
-        <div className="bg-white p-6 rounded-xl shadow-sm overflow-x-auto">
-            <table className="w-full text-left">
-                <thead><tr className="border-b"><th className="p-3">Title</th><th className="p-3">User</th><th className="p-3">Created</th></tr></thead>
-                <tbody>
-                    {courses.map(c => <tr key={c.id} className="hover:bg-gray-50"><td className="p-3">{c.title}</td><td className="p-3">{c.instructor_name}</td><td className="p-3">{new Date(c.created_at).toLocaleDateString()}</td></tr>)}
-                </tbody>
-            </table>
+// --- ARCHITECT COMPONENT: Admin Panel with Secret Login ---
+const AdminPanel = ({ t, courses, setCourses, showNotification }) => {
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [password, setPassword] = useState("");
+    const [activeTab, setActiveTab] = useState("teachers");
+    const [profiles, setProfiles] = useState([]);
+    const [loading, setLoading] = useState(false);
+
+    // SECURITY: The secret password (MVP Version)
+    const ADMIN_PW = "KursNavi2025!";
+
+    useEffect(() => {
+        if (isAuthenticated) {
+            fetchProfiles();
+        }
+    }, [isAuthenticated]);
+
+    const handleLogin = (e) => {
+        e.preventDefault();
+        if (password === ADMIN_PW) {
+            setIsAuthenticated(true);
+        } else {
+            showNotification("Access Denied");
+            setPassword("");
+        }
+    };
+
+    const fetchProfiles = async () => {
+        setLoading(true);
+        // In a real app we'd use pagination. Here we grab all.
+        const { data, error } = await supabase.from('profiles').select('*');
+        if (error) {
+            showNotification("Error loading users");
+        } else {
+            setProfiles(data || []);
+        }
+        setLoading(false);
+    };
+
+    const toggleVerify = async (userId, currentStatus) => {
+        const { error } = await supabase.from('profiles').update({ is_professional: !currentStatus }).eq('id', userId);
+        if (error) {
+            showNotification("Error updating status. Check RLS policies.");
+        } else {
+            // Update local state to reflect change immediately
+            setProfiles(profiles.map(p => p.id === userId ? { ...p, is_professional: !currentStatus } : p));
+            showNotification(!currentStatus ? "User Verified" : "Verification Removed");
+        }
+    };
+
+    // Filter Logic
+    const teachers = profiles.filter(p => p.role === 'teacher');
+    const students = profiles.filter(p => p.role === 'student' || !p.role);
+
+    if (!isAuthenticated) {
+        return (
+            <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
+                <div className="bg-white p-8 rounded-2xl shadow-2xl max-w-md w-full">
+                    <div className="text-center mb-6">
+                        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <Lock className="w-8 h-8 text-gray-700" />
+                        </div>
+                        <h1 className="text-2xl font-bold text-gray-800">{t.admin_login_title}</h1>
+                    </div>
+                    <form onSubmit={handleLogin} className="space-y-4">
+                        <input 
+                            type="password" 
+                            value={password} 
+                            onChange={(e) => setPassword(e.target.value)} 
+                            placeholder={t.admin_pass_placeholder}
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 outline-none transition"
+                        />
+                        <button type="submit" className="w-full bg-gray-800 text-white py-3 rounded-lg font-bold hover:bg-black transition">
+                            {t.admin_btn_access}
+                        </button>
+                    </form>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="min-h-screen bg-gray-50 p-6">
+            <div className="max-w-7xl mx-auto">
+                <div className="flex justify-between items-center mb-8">
+                    <h1 className="text-3xl font-bold text-gray-900 font-heading">{t.admin_panel}</h1>
+                    <button onClick={() => setIsAuthenticated(false)} className="text-red-500 hover:underline">Exit</button>
+                </div>
+
+                {/* TABS */}
+                <div className="flex space-x-4 mb-8">
+                    <button onClick={() => setActiveTab('teachers')} className={`px-6 py-2 rounded-full font-bold transition ${activeTab === 'teachers' ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 shadow-sm'}`}>{t.admin_tab_teachers}</button>
+                    <button onClick={() => setActiveTab('students')} className={`px-6 py-2 rounded-full font-bold transition ${activeTab === 'students' ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 shadow-sm'}`}>{t.admin_tab_students}</button>
+                    <button onClick={() => setActiveTab('courses')} className={`px-6 py-2 rounded-full font-bold transition ${activeTab === 'courses' ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 shadow-sm'}`}>{t.admin_tab_courses}</button>
+                </div>
+
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    {loading ? (
+                        <div className="p-12 text-center"><Loader className="animate-spin mx-auto w-8 h-8 text-blue-600" /></div>
+                    ) : (
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left">
+                                <thead className="bg-gray-50 border-b border-gray-200">
+                                    <tr>
+                                        <th className="px-6 py-4 font-semibold text-gray-600">{t.admin_col_name}</th>
+                                        <th className="px-6 py-4 font-semibold text-gray-600">{t.admin_col_email}</th>
+                                        {activeTab !== 'courses' && <th className="px-6 py-4 font-semibold text-gray-600">Location</th>}
+                                        {activeTab === 'courses' && <th className="px-6 py-4 font-semibold text-gray-600">Price</th>}
+                                        <th className="px-6 py-4 font-semibold text-gray-600">{t.admin_col_status}</th>
+                                        <th className="px-6 py-4 font-semibold text-gray-600 text-right">{t.admin_col_actions}</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-100">
+                                    {activeTab === 'teachers' && teachers.map(user => (
+                                        <tr key={user.id} className="hover:bg-gray-50">
+                                            <td className="px-6 py-4 font-bold">{user.full_name}</td>
+                                            <td className="px-6 py-4 text-gray-500">{user.email}</td>
+                                            <td className="px-6 py-4">{user.city}, {user.canton}</td>
+                                            <td className="px-6 py-4">
+                                                {user.is_professional ? (
+                                                    <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-bold flex w-fit items-center"><CheckCircle className="w-3 h-3 mr-1"/> {t.admin_verified}</span>
+                                                ) : <span className="text-gray-400 text-sm">Standard</span>}
+                                            </td>
+                                            <td className="px-6 py-4 text-right">
+                                                <button 
+                                                    onClick={() => toggleVerify(user.id, user.is_professional)} 
+                                                    className={`text-xs font-bold px-3 py-1.5 rounded transition ${user.is_professional ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-green-50 text-green-600 hover:bg-green-100'}`}
+                                                >
+                                                    {user.is_professional ? t.admin_btn_unverify : t.admin_btn_verify}
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                    {activeTab === 'students' && students.map(user => (
+                                        <tr key={user.id} className="hover:bg-gray-50">
+                                            <td className="px-6 py-4 font-bold">{user.full_name}</td>
+                                            <td className="px-6 py-4 text-gray-500">{user.email}</td>
+                                            <td className="px-6 py-4">{user.city}, {user.canton}</td>
+                                            <td className="px-6 py-4"><span className="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs">Student</span></td>
+                                            <td className="px-6 py-4 text-right"><span className="text-gray-400 text-xs">-</span></td>
+                                        </tr>
+                                    ))}
+                                    {activeTab === 'courses' && courses.map(course => (
+                                        <tr key={course.id} className="hover:bg-gray-50">
+                                            <td className="px-6 py-4 font-bold">{course.title}</td>
+                                            <td className="px-6 py-4 text-gray-500">{course.instructor_name}</td>
+                                            <td className="px-6 py-4">CHF {course.price}</td>
+                                            <td className="px-6 py-4 text-sm text-gray-500">{new Date(course.created_at).toLocaleDateString()}</td>
+                                            <td className="px-6 py-4 text-right">
+                                                <button className="text-blue-500 hover:underline text-sm mr-3">Edit</button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                </div>
+            </div>
         </div>
-    </div>
-);
+    );
+};
 
 const UserProfileSection = ({ user, showNotification, setLang, t }) => {
     const [loading, setLoading] = useState(true);
@@ -565,6 +714,12 @@ const TeacherForm = ({ t, setView, user, handlePublishCourse, getCatLabel, initi
                     <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4">
                           <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_skill_level}</label><select name="level" defaultValue={initialData?.level || "All Levels"} className="w-full px-3 py-2 border rounded-lg focus:ring-primary bg-white text-sm outline-none"><option value="All Levels">{t.opt_all_levels}</option><option value="Beginner">{t.opt_beginner}</option><option value="Advanced">{t.opt_advanced}</option></select></div>
                           <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_target_group}</label><select name="target_group" defaultValue={initialData?.target_group || "Adults"} className="w-full px-3 py-2 border rounded-lg focus:ring-primary bg-white text-sm outline-none"><option value="Adults">{t.opt_adults}</option><option value="Teens">{t.opt_teens}</option><option value="Kids">{t.opt_kids}</option></select></div>
+                          <div className="flex items-end">
+                            <label className="flex items-center space-x-2 bg-gray-50 p-2.5 rounded-lg border w-full cursor-pointer">
+                                <input type="checkbox" name="is_pro" defaultChecked={initialData?.is_pro} className="rounded text-primary focus:ring-primary" />
+                                <span className="text-sm font-bold text-gray-700">{t.lbl_pro_checkbox}</span>
+                            </label>
+                          </div>
                     </div>
 
                     <div className="md:col-span-2 bg-beige p-4 rounded-xl border border-orange-100">
@@ -616,7 +771,8 @@ const AuthView = ({ setView, showNotification, lang }) => {
                 if (!agbAccepted) { throw new Error(t.legal_agree + " " + t.legal_agb); } 
                 const { data: authData, error: authError } = await supabase.auth.signUp({ email, password, options: { data: { full_name: fullName, role: role } } });
                 if (authError) throw authError;
-                if (authData?.user) { await supabase.from('profiles').insert([{ id: authData.user.id, full_name: fullName, email: email, preferred_language: lang }]); }
+                // Add role to the profile row for easier Admin Panel sorting
+                if (authData?.user) { await supabase.from('profiles').insert([{ id: authData.user.id, full_name: fullName, email: email, preferred_language: lang, role: role }]); }
                 showNotification("Account created! Check your email.");
             } else {
                 const { data, error } = await supabase.auth.signInWithPassword({ email, password });
@@ -728,6 +884,9 @@ export default function KursNaviPro() {
     else if (view === 'impressum') path = '/impressum';
     else if (view === 'widerruf') path = '/widerruf-storno';
     else if (view === 'trust') path = '/vertrauen-sicherheit';
+    
+    // --- SECRET ADMIN PATH ---
+    else if (view === 'admin') path = '/control-room-2025';
 
     else if (view === 'create') path = '/create-course';
     else if (view === 'detail' && selectedCourse) path = `/course/${selectedCourse.id}`;
@@ -747,6 +906,8 @@ export default function KursNaviPro() {
         else if (path === '/widerruf-storno') setView('widerruf');
         else if (path === '/vertrauen-sicherheit') setView('trust');
         
+        else if (path === '/control-room-2025') setView('admin');
+
         else if (path === '/search') setView('search');
         else if (path === '/dashboard') setView('dashboard');
         else if (path === '/how-it-works') setView('how-it-works');
@@ -812,7 +973,12 @@ export default function KursNaviPro() {
         setUser(null);
         setMyBookings([]);
         setTeacherEarnings([]);
-        setView('home');
+        
+        // --- BUG FIX: Don't redirect to Home if we are in the Secret Room ---
+        if (window.location.pathname !== '/control-room-2025') {
+            setView('home');
+        }
+        
         setLang('de'); 
       }
     });
@@ -1043,7 +1209,7 @@ export default function KursNaviPro() {
       {view === 'widerruf' && <LegalPage pageKey="widerruf" lang={lang} setView={setView} />}
       {view === 'trust' && <LegalPage pageKey="trust" lang={lang} setView={setView} />}
 
-      {view === 'admin' && user?.role === 'admin' && <AdminPanel t={t} courses={courses} />}
+      {view === 'admin' && <AdminPanel t={t} courses={courses} setCourses={setCourses} showNotification={showNotification} />}
       {view === 'dashboard' && user && <Dashboard user={user} t={t} setView={setView} courses={courses} teacherEarnings={teacherEarnings} myBookings={myBookings} handleDeleteCourse={handleDeleteCourse} handleEditCourse={handleEditCourse} showNotification={showNotification} changeLanguage={changeLanguage} setSelectedCourse={setSelectedCourse} />}
       {view === 'create' && user?.role === 'teacher' && <TeacherForm t={t} setView={setView} user={user} handlePublishCourse={handlePublishCourse} getCatLabel={getCatLabel} initialData={editingCourse} />}
       </div>
