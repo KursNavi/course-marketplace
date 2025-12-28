@@ -819,9 +819,40 @@ const AuthView = ({ setView, showNotification, lang }) => {
 // --- MAIN APP COMPONENT ---
 // -----------------------------------------------------------------------------
 
+// -----------------------------------------------------------------------------
+// --- MAIN APP COMPONENT ---
+// -----------------------------------------------------------------------------
+
 export default function KursNaviPro() {
+  // --- ARCHITECT FIX: Smart Initialization to prevent Redirect Loop ---
+  const getInitialView = () => {
+      const path = window.location.pathname;
+      // Critical: Check Admin Route first
+      if (path.startsWith('/control-room-2025')) return 'admin';
+      
+      // Check other routes so they don't get overwritten to Home
+      if (path === '/search') return 'search';
+      if (path === '/dashboard') return 'dashboard';
+      if (path === '/how-it-works') return 'how-it-works';
+      if (path === '/about') return 'about';
+      if (path === '/contact') return 'contact';
+      if (path === '/login') return 'login';
+      if (path === '/create-course') return 'create';
+      if (path === '/private') return 'landing-private';
+      if (path === '/professional') return 'landing-prof';
+      if (path === '/children') return 'landing-kids';
+      if (path.startsWith('/course/')) return 'detail';
+      if (path === '/agb') return 'agb';
+      if (path === '/datenschutz') return 'datenschutz';
+      if (path === '/impressum') return 'impressum';
+      if (path === '/widerruf-storno') return 'widerruf';
+      if (path === '/vertrauen-sicherheit') return 'trust';
+      
+      return 'home';
+  };
+
   const [lang, setLang] = useState('de');
-  const [view, setView] = useState('home'); 
+  const [view, setView] = useState(getInitialView); // <--- Sets correct view instantly
   const [user, setUser] = useState(null); 
   const [session, setSession] = useState(null);
   
