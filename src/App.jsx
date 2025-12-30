@@ -714,12 +714,7 @@ const TeacherForm = ({ t, setView, user, handlePublishCourse, getCatLabel, initi
                     <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4">
                           <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_skill_level}</label><select name="level" defaultValue={initialData?.level || "All Levels"} className="w-full px-3 py-2 border rounded-lg focus:ring-primary bg-white text-sm outline-none"><option value="All Levels">{t.opt_all_levels}</option><option value="Beginner">{t.opt_beginner}</option><option value="Advanced">{t.opt_advanced}</option></select></div>
                           <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_target_group}</label><select name="target_group" defaultValue={initialData?.target_group || "Adults"} className="w-full px-3 py-2 border rounded-lg focus:ring-primary bg-white text-sm outline-none"><option value="Adults">{t.opt_adults}</option><option value="Teens">{t.opt_teens}</option><option value="Kids">{t.opt_kids}</option></select></div>
-                          <div className="flex items-end">
-                            <label className="flex items-center space-x-2 bg-gray-50 p-2.5 rounded-lg border w-full cursor-pointer">
-                                <input type="checkbox" name="is_pro" defaultChecked={initialData?.is_pro} className="rounded text-primary focus:ring-primary" />
-                                <span className="text-sm font-bold text-gray-700">{t.lbl_pro_checkbox}</span>
-                            </label>
-                          </div>
+
                     </div>
 
                     <div className="md:col-span-2 bg-beige p-4 rounded-xl border border-orange-100">
@@ -1106,7 +1101,7 @@ export default function KursNaviPro() {
       title: formData.get('title'), instructor_name: user.name, price: Number(formData.get('price')), rating: 0, category: fullCategoryString, canton: formData.get('canton'), address: formData.get('address'),
       image_url: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=600",
       description: formData.get('description'), objectives: objectivesList, prerequisites: formData.get('prerequisites'), session_count: Number(formData.get('sessionCount')), session_length: formData.get('sessionLength'), provider_url: formData.get('providerUrl'), user_id: user.id, start_date: formData.get('startDate'),
-      level: formData.get('level'), target_group: formData.get('target_group'), is_pro: formData.get('is_pro') === 'on' 
+      level: formData.get('level'), target_group: formData.get('target_group')
     };
 
     let error;
