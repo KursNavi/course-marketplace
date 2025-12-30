@@ -976,9 +976,13 @@ export default function KursNaviPro() {
         fetchBookings(session.user.id);
         if (role === 'teacher') fetchTeacherEarnings(session.user.id);
 
-        supabase.from('profiles').select('preferred_language').eq('id', session.user.id).single()
+        supabase.from('profiles').select('preferred_language, is_professional').eq('id', session.user.id).single()
             .then(({ data }) => {
-                if (data && data.preferred_language) setLang(data.preferred_language);
+                if (data) {
+                    if (data.preferred_language) setLang(data.preferred_language);
+                    // Hier wird der Pro-Status in den User-Speicher geladen
+                    setUser(prev => prev ? { ...prev, is_professional: data.is_professional } : prev);
+                }
             });
       }
     });
@@ -992,11 +996,14 @@ export default function KursNaviPro() {
         fetchBookings(session.user.id);
         if (role === 'teacher') fetchTeacherEarnings(session.user.id);
 
-        supabase.from('profiles').select('preferred_language').eq('id', session.user.id).single()
+        supabase.from('profiles').select('preferred_language, is_professional').eq('id', session.user.id).single()
             .then(({ data }) => {
-                if (data && data.preferred_language) setLang(data.preferred_language);
+                if (data) {
+                    if (data.preferred_language) setLang(data.preferred_language);
+                    // Hier wird der Pro-Status in den User-Speicher geladen
+                    setUser(prev => prev ? { ...prev, is_professional: data.is_professional } : prev);
+                }
             });
-      } else {
         setUser(null);
         setMyBookings([]);
         setTeacherEarnings([]);
@@ -1101,7 +1108,8 @@ export default function KursNaviPro() {
       title: formData.get('title'), instructor_name: user.name, price: Number(formData.get('price')), rating: 0, category: fullCategoryString, canton: formData.get('canton'), address: formData.get('address'),
       image_url: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=600",
       description: formData.get('description'), objectives: objectivesList, prerequisites: formData.get('prerequisites'), session_count: Number(formData.get('sessionCount')), session_length: formData.get('sessionLength'), provider_url: formData.get('providerUrl'), user_id: user.id, start_date: formData.get('startDate'),
-      level: formData.get('level'), target_group: formData.get('target_group')
+      level: formData.get('level'), target_group: formData.get('target_group'),
+      is_pro: user.is_professional || false // Setzt den Pro-Status basierend auf dem Lehrer-Profil
     };
 
     let error;
