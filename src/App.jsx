@@ -603,12 +603,14 @@ const AdminPanel = ({ t, courses, setCourses, showNotification }) => {
 };
 
 const UserProfileSection = ({ user, showNotification, setLang, t }) => {
-    const [loading, setLoading] = useState(true);
-    const [saving, setSaving] = useState(false);
-    // NEW: Added bio_text and certificates (string for editing)
-    const [formData, setFormData] = useState({
-        city: '', canton: '', bio_text: '', certificates: '', preferred_language: 'de', email: user.email, password: '', confirmPassword: ''
-    });
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [uploadingDoc, setUploadingDoc] = useState(false);
+    const [verificationStatus, setVerificationStatus] = useState('none'); // none, pending, verified
+    
+    const [formData, setFormData] = useState({
+        city: '', canton: '', bio_text: '', certificates: '', preferred_language: 'de', email: user.email, password: '', confirmPassword: ''
+    });
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -622,11 +624,12 @@ const UserProfileSection = ({ user, showNotification, setLang, t }) => {
                     // MAP DB TO FORM: Use bio_text to match public profile
                     bio_text: data.bio_text || '', 
                     // MAP DB ARRAY TO STRING: Join with newlines for textarea
-                    certificates: data.certificates ? data.certificates.join('\n') : '',
-                    preferred_language: data.preferred_language || 'de' 
-                })); 
-            }
-            setLoading(false);
+                    certificates: data.certificates ? data.certificates.join('\n') : '',
+                    preferred_language: data.preferred_language || 'de' 
+                }));
+                if (data.verification_status) setVerificationStatus(data.verification_status);
+            }
+            setLoading(false);
         };
         fetchProfile();
     }, [user]);
@@ -658,9 +661,42 @@ const UserProfileSection = ({ user, showNotification, setLang, t }) => {
         } else { showNotification("Profile saved successfully!"); }
         
         setLang(formData.preferred_language); setSaving(false);
+    };
+
+    const handleDocUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        setUploadingDoc(true);
+
+        // 1. Upload to Supabase 'certificates' bucket (Private)
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${user.id}_verification.${fileExt}`;
+        const { error: uploadError } = await supabase.storage.from('certificates').upload(fileName, file, { upsert: true });
+
+        if (uploadError) {
+            showNotification("Upload failed: " + uploadError.message);
+            setUploadingDoc(false);
+            return;
+        }
+
+        // 2. Get Signed URL (valid for 10 years, essentially persistent for admin)
+        const { data: { signedUrl } } = await supabase.storage.from('certificates').createSignedUrl(fileName, 315360000);
+
+        // 3. Save to DB and set status to pending
+        const { error: dbError } = await supabase.from('profiles').update({
+            verification_docs: [signedUrl], // Store as array
+            verification_status: 'pending'
+        }).eq('id', user.id);
+
+        if (dbError) showNotification("Database update failed.");
+        else {
+            setVerificationStatus('pending');
+            showNotification("Document uploaded! Please proceed to payment.");
+        }
+        setUploadingDoc(false);
     };
 
-    if (loading) return <div className="p-8 text-center"><Loader className="animate-spin w-8 h-8 text-primary mx-auto"/></div>;
+    if (loading) return <div className="p-8 text-center"><Loader className="animate-spin w-8 h-8 text-primary mx-auto"/></div>;
     
     return (
         <div className="bg-white p-6 md:p-8 rounded-xl border border-gray-200 shadow-sm animate-in fade-in">
@@ -688,8 +724,51 @@ const UserProfileSection = ({ user, showNotification, setLang, t }) => {
                     </div>
                 </div>
 
-                <div className="border-t pt-6 mt-6"><h3 className="text-lg font-bold mb-4 text-dark flex items-center"><Lock className="w-4 h-4 mr-2" /> {t.lbl_account_security}</h3><div className="space-y-4"><div><label className="block text-sm font-bold text-gray-700 mb-1">Email</label><input type="email" name="email" value={formData.email} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none bg-gray-50" /></div><div className="grid grid-cols-1 md:grid-cols-2 gap-6"><div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_new_password}</label><input type="password" name="password" value={formData.password} onChange={handleChange} placeholder="******" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" /></div><div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_confirm_password}</label><input type="password" name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} placeholder="******" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" /></div></div></div></div>
-                <div className="pt-2"><button type="submit" disabled={saving} className="bg-primary text-white px-6 py-3 rounded-lg font-bold hover:bg-orange-600 transition flex items-center shadow-md disabled:opacity-50">{saving ? <Loader className="animate-spin w-5 h-5 mr-2" /> : <Save className="w-5 h-5 mr-2" />}{t.btn_save}</button></div>
+                {/* VERIFICATION SECTION */}
+                {user.role === 'teacher' && (
+                    <div className="border-t pt-6 mt-6">
+                        <h3 className="text-lg font-bold mb-4 text-blue-600 flex items-center"><Shield className="w-4 h-4 mr-2" /> Verification & Blue Check</h3>
+                        <div className="bg-blue-50 border border-blue-100 p-6 rounded-xl">
+                            <div className="flex items-start gap-4 mb-6">
+                                <div className="bg-white p-2 rounded-full shadow-sm"><CheckCircle className="w-6 h-6 text-blue-500" /></div>
+                                <div>
+                                    <h4 className="font-bold text-dark">Get Verified (CHF 75.00)</h4>
+                                    <p className="text-sm text-gray-600 mt-1">Upload your diplomas/certificates to receive the "Professional" badge and boost your bookings.</p>
+                                </div>
+                            </div>
+
+                            {verificationStatus === 'verified' ? (
+                                <div className="bg-green-100 text-green-800 px-4 py-3 rounded-lg flex items-center font-bold">
+                                    <CheckCircle className="w-5 h-5 mr-2" /> You are verified!
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Step 1: Upload Proof</label>
+                                        <input type="file" onChange={handleDocUpload} disabled={uploadingDoc || verificationStatus === 'pending'} className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 cursor-pointer bg-white border rounded-lg p-1" />
+                                        {uploadingDoc && <p className="text-xs text-blue-500 mt-1">Uploading...</p>}
+                                    </div>
+
+                                    {verificationStatus === 'pending' && (
+                                        <div className="animate-in fade-in">
+                                             <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Step 2: Payment</label>
+                                             <div className="flex items-center gap-4 bg-white p-4 rounded-lg border border-gray-200">
+                                                <span className="text-gray-600 text-sm">Document uploaded. Please complete payment to finalize request.</span>
+                                                <a href="https://buy.stripe.com/test_3cIcN5dBF9ux4AoeoSbQY00" target="_blank" rel="noreferrer" className="bg-dark text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-black transition whitespace-nowrap">
+                                                    Pay CHF 75.00
+                                                </a>
+                                             </div>
+                                             <p className="text-xs text-orange-600 mt-2 font-medium">Note: We will review your profile after payment.</p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
+
+                <div className="border-t pt-6 mt-6"><h3 className="text-lg font-bold mb-4 text-dark flex items-center"><Lock className="w-4 h-4 mr-2" /> {t.lbl_account_security}</h3><div className="space-y-4"><div><label className="block text-sm font-bold text-gray-700 mb-1">Email</label><input type="email" name="email" value={formData.email} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none bg-gray-50" /></div><div className="grid grid-cols-1 md:grid-cols-2 gap-6"><div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_new_password}</label><input type="password" name="password" value={formData.password} onChange={handleChange} placeholder="******" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" /></div><div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_confirm_password}</label><input type="password" name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} placeholder="******" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" /></div></div></div></div>
+                <div className="pt-2"><button type="submit" disabled={saving} className="bg-primary text-white px-6 py-3 rounded-lg font-bold hover:bg-orange-600 transition flex items-center shadow-md disabled:opacity-50">{saving ? <Loader className="animate-spin w-5 h-5 mr-2" /> : <Save className="w-5 h-5 mr-2" />}{t.btn_save}</button></div>
             </form>
         </div>
     );
@@ -803,6 +882,16 @@ const TeacherForm = ({ t, setView, user, handlePublishCourse, getCatLabel, initi
             <div className="mb-8 border-b pb-4"><h1 className="text-3xl font-bold text-dark font-heading">{initialData ? t.edit_course : t.create_course}</h1><p className="text-gray-500 mt-2">{initialData ? t.edit_course_sub : t.create_course_sub}</p></div>
             <form onSubmit={handlePublishCourse} className="space-y-6">
                 {initialData && <input type="hidden" name="course_id" value={initialData.id} />}
+                {/* NEW IMAGE UPLOAD FIELD */}
+                <div className="md:col-span-2">
+                     <label className="block text-sm font-bold text-gray-700 mb-1">Course Image</label>
+                     <div className="flex items-center gap-4">
+                        {initialData?.image_url && <img src={initialData.image_url} className="w-16 h-16 rounded object-cover border" alt="Current" />}
+                        <input type="file" name="courseImage" accept="image/*" className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-primary hover:file:bg-orange-100 cursor-pointer border rounded-lg p-1" />
+                     </div>
+                     <p className="text-xs text-gray-400 mt-1">Leave empty to keep current image or use default.</p>
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="md:col-span-2"><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_title}</label><input required type="text" name="title" defaultValue={initialData?.title} placeholder="e.g. Traditional Swiss Cooking" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none transition-shadow" /></div>
                     
@@ -1269,33 +1358,52 @@ export default function KursNaviPro() {
   };
 
   const handlePublishCourse = async (e) => {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    const courseId = formData.get('course_id');
-    const objectivesList = formData.get('objectives').split('\n').filter(line => line.trim() !== '');
-    const fullCategoryString = `${formData.get('catLvl1')} | ${formData.get('catLvl2')} | ${formData.get('catLvl3')}`;
-    const newCourse = {
-      title: formData.get('title'), instructor_name: user.name, price: Number(formData.get('price')), rating: 0, category: fullCategoryString, canton: formData.get('canton'), address: formData.get('address'),
-      image_url: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=600",
-      description: formData.get('description'), objectives: objectivesList, prerequisites: formData.get('prerequisites'), session_count: Number(formData.get('sessionCount')), session_length: formData.get('sessionLength'), provider_url: formData.get('providerUrl'), user_id: user.id, start_date: formData.get('startDate'),
-      level: formData.get('level'), target_group: formData.get('target_group'),
-      is_pro: user.is_professional || false // Setzt den Pro-Status basierend auf dem Lehrer-Profil
-    };
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const courseId = formData.get('course_id');
+    const objectivesList = formData.get('objectives').split('\n').filter(line => line.trim() !== '');
+    const fullCategoryString = `${formData.get('catLvl1')} | ${formData.get('catLvl2')} | ${formData.get('catLvl3')}`;
 
-    let error;
-    if (courseId) {
-        const { error: err } = await supabase.from('courses').update(newCourse).eq('id', courseId);
-        error = err;
-        showNotification("Course updated successfully!");
-    } else {
-        const { error: err } = await supabase.from('courses').insert([newCourse]).select();
-        error = err;
-        showNotification(t.success_msg);
-    }
+    // 1. Image Upload Logic
+    let imageUrl = initialData?.image_url || "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=600";
+    const imageFile = formData.get('courseImage');
 
-    if (error) { console.error(error); showNotification("Error saving course: " + error.message); } 
-    else { fetchCourses(); setView('dashboard'); setEditingCourse(null); }
-  };
+    if (imageFile && imageFile.size > 0) {
+        const fileExt = imageFile.name.split('.').pop();
+        const fileName = `${Date.now()}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage.from('course-images').upload(fileName, imageFile);
+
+        if (uploadError) {
+            showNotification("Error uploading image: " + uploadError.message);
+            return;
+        }
+
+        const { data: { publicUrl } } = supabase.storage.from('course-images').getPublicUrl(fileName);
+        imageUrl = publicUrl;
+    }
+
+    const newCourse = {
+      title: formData.get('title'), instructor_name: user.name, price: Number(formData.get('price')), rating: 0, category: fullCategoryString, canton: formData.get('canton'), address: formData.get('address'),
+      image_url: imageUrl, // Uses the new uploaded URL
+      description: formData.get('description'), objectives: objectivesList, prerequisites: formData.get('prerequisites'), session_count: Number(formData.get('sessionCount')), session_length: formData.get('sessionLength'), provider_url: formData.get('providerUrl'), user_id: user.id, start_date: formData.get('startDate'),
+      level: formData.get('level'), target_group: formData.get('target_group'),
+      is_pro: user.is_professional || false
+    };
+
+    let error;
+    if (courseId) {
+        const { error: err } = await supabase.from('courses').update(newCourse).eq('id', courseId);
+        error = err;
+        showNotification("Course updated successfully!");
+    } else {
+        const { error: err } = await supabase.from('courses').insert([newCourse]).select();
+        error = err;
+        showNotification(t.success_msg);
+    }
+
+    if (error) { console.error(error); showNotification("Error saving course: " + error.message); } 
+    else { fetchCourses(); setView('dashboard'); setEditingCourse(null); }
+  };
 
   const handleBookCourse = async (course) => {
       if (!user) { setView('login'); return; }
