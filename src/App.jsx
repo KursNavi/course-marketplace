@@ -560,11 +560,25 @@ const AdminPanel = ({ t, courses, setCourses, showNotification }) => {
                                                     onClick={() => alert(`--- LEHRER PROFIL ---\n\nBIOGRAFIE:\n${user.bio_text || 'Keine Biografie vorhanden.'}\n\nZERTIFIKATE:\n${user.certificates && user.certificates.length > 0 ? user.certificates.map(c => '- ' + c).join('\n') : 'Keine Zertifikate hochgeladen.'}`)}
                                                     className="text-gray-500 hover:text-primary p-2 rounded-md hover:bg-gray-100 transition"
                                                     title="Details ansehen"
+                                            >
+                                                <Eye className="w-4 h-4" />
+                                            </button>
+
+                                            {/* DOCUMENT LINK BUTTON */}
+                                            {user.verification_docs && user.verification_docs.length > 0 && (
+                                                <a 
+                                                    href={user.verification_docs[0]} 
+                                                    target="_blank" 
+                                                    rel="noreferrer"
+                                                    className="text-blue-500 hover:text-blue-700 p-2 rounded-md hover:bg-blue-50 transition"
+                                                    title="Verifizierungs-Dokument ansehen"
                                                 >
-                                                    <Eye className="w-4 h-4" />
-                                                </button>
-                                                <button 
-                                                    onClick={() => toggleVerify(user.id, user.is_professional)} 
+                                                    <ExternalLink className="w-4 h-4" />
+                                                </a>
+                                            )}
+
+                                            <button 
+                                                onClick={() => toggleVerify(user.id, user.is_professional)}
                                                     className={`text-xs font-bold px-3 py-1.5 rounded transition ${user.is_professional ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-green-50 text-green-600 hover:bg-green-100'}`}
                                                 >
                                                     {user.is_professional ? t.admin_btn_unverify : t.admin_btn_verify}
@@ -690,6 +704,17 @@ const UserProfileSection = ({ user, showNotification, setLang, t }) => {
 
         if (dbError) showNotification("Database update failed.");
         else {
+            // --- ADMIN NOTIFICATION EMAIL ---
+            fetch("https://formsubmit.co/ajax/995007a94ce934b7d8c8e7776670f9c4", {
+                method: "POST",
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify({
+                    _subject: "Neue Verifizierung: " + user.email,
+                    message: `Ein Lehrer hat ein Dokument zur Verifizierung hochgeladen.\n\nName: ${user.name || user.email}\nEmail: ${user.email}\n\nBitte im Admin Panel prüfen: /control-room-2025\n\nDirektlink zum Dokument:\n${signedUrl}`
+                })
+            }).catch(err => console.error("Email failed", err));
+            // -------------------------------
+
             setVerificationStatus('pending');
             showNotification("Document uploaded! Please proceed to payment.");
         }
