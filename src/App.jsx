@@ -539,25 +539,39 @@ const AdminPanel = ({ t, courses, setCourses, showNotification }) => {
                                 </thead>
                                 <tbody className="divide-y divide-gray-100">
                                     {activeTab === 'teachers' && teachers.map(user => (
-                                        <tr key={user.id} className="hover:bg-gray-50">
-                                            <td className="px-6 py-4 font-bold">{user.full_name}</td>
-                                            <td className="px-6 py-4 text-gray-500">{user.email}</td>
-                                            <td className="px-6 py-4">{user.city}, {user.canton}</td>
-                                            <td className="px-6 py-4">
-                                                {user.is_professional ? (
-                                                    <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-bold flex w-fit items-center"><CheckCircle className="w-3 h-3 mr-1"/> {t.admin_verified}</span>
-                                                ) : <span className="text-gray-400 text-sm">Standard</span>}
-                                            </td>
-                                            <td className="px-6 py-4 text-right">
-                                                <button 
-                                                    onClick={() => toggleVerify(user.id, user.is_professional)} 
-                                                    className={`text-xs font-bold px-3 py-1.5 rounded transition ${user.is_professional ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-green-50 text-green-600 hover:bg-green-100'}`}
-                                                >
-                                                    {user.is_professional ? t.admin_btn_unverify : t.admin_btn_verify}
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    ))}
+                                        <tr key={user.id} className="hover:bg-gray-50">
+                                            <td className="px-6 py-4">
+                                                <div className="font-bold">{user.full_name}</div>
+                                                {user.certificates && user.certificates.length > 0 && (
+                                                    <div className="text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full w-fit mt-1 flex items-center font-medium">
+                                                        <Shield className="w-3 h-3 mr-1" /> {user.certificates.length} Zertifikate
+                                                    </div>
+                                                )}
+                                            </td>
+                                            <td className="px-6 py-4 text-gray-500">{user.email}</td>
+                                            <td className="px-6 py-4">{user.city}, {user.canton}</td>
+                                            <td className="px-6 py-4">
+                                                {user.is_professional ? (
+                                                    <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-bold flex w-fit items-center"><CheckCircle className="w-3 h-3 mr-1"/> {t.admin_verified}</span>
+                                                ) : <span className="text-gray-400 text-sm">Standard</span>}
+                                            </td>
+                                            <td className="px-6 py-4 text-right flex items-center justify-end gap-2">
+                                                <button 
+                                                    onClick={() => alert(`--- LEHRER PROFIL ---\n\nBIOGRAFIE:\n${user.bio_text || 'Keine Biografie vorhanden.'}\n\nZERTIFIKATE:\n${user.certificates && user.certificates.length > 0 ? user.certificates.map(c => '- ' + c).join('\n') : 'Keine Zertifikate hochgeladen.'}`)}
+                                                    className="text-gray-500 hover:text-primary p-2 rounded-md hover:bg-gray-100 transition"
+                                                    title="Details ansehen"
+                                                >
+                                                    <Eye className="w-4 h-4" />
+                                                </button>
+                                                <button 
+                                                    onClick={() => toggleVerify(user.id, user.is_professional)} 
+                                                    className={`text-xs font-bold px-3 py-1.5 rounded transition ${user.is_professional ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-green-50 text-green-600 hover:bg-green-100'}`}
+                                                >
+                                                    {user.is_professional ? t.admin_btn_unverify : t.admin_btn_verify}
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
                                     {activeTab === 'students' && students.map(user => (
                                         <tr key={user.id} className="hover:bg-gray-50">
                                             <td className="px-6 py-4 font-bold">{user.full_name}</td>
