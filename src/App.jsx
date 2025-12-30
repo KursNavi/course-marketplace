@@ -185,7 +185,7 @@ const DetailView = ({ course, setView, t, handleBookCourse, setSelectedTeacher }
             return { ...ev, spotsLeft, isFull: max > 0 && spotsLeft <= 0 };
         }).sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
     } else {
-        // Fallback for legacy courses or simple mode
+        // Fallback for legacy courses
         displayEvents = [{ 
             id: null, 
             start_date: course.start_date, 
@@ -245,18 +245,23 @@ const DetailView = ({ course, setView, t, handleBookCourse, setSelectedTeacher }
                         {displayEvents.map((ev, i) => (
                             <div key={i} className={`p-4 rounded-xl border transition ${ev.isFull ? 'bg-gray-50 border-gray-200 opacity-70' : 'bg-white border-blue-100 hover:border-blue-300 hover:shadow-md'}`}>
                                 <div className="flex justify-between items-start mb-2">
-                                    <div className="flex items-center text-dark font-bold">
-                                        <Calendar className="w-4 h-4 mr-2 text-primary"/>
-                                        {ev.start_date ? new Date(ev.start_date).toLocaleDateString() : 'Flexible'}
+                                    <div className="flex flex-col">
+                                        <span className="flex items-center text-dark font-bold">
+                                            <Calendar className="w-4 h-4 mr-2 text-primary"/>
+                                            {ev.start_date ? new Date(ev.start_date).toLocaleDateString() : 'Flexible'}
+                                        </span>
+                                        {ev.schedule_description && (
+                                            <span className="text-xs text-gray-500 ml-6 mt-0.5">{ev.schedule_description}</span>
+                                        )}
                                     </div>
                                     {ev.isFull ? (
-                                        <span className="text-xs font-bold bg-red-100 text-red-600 px-2 py-1 rounded">SOLD OUT</span>
+                                        <span className="text-xs font-bold bg-red-100 text-red-600 px-2 py-1 rounded whitespace-nowrap">SOLD OUT</span>
                                     ) : (
-                                        <span className="text-xs font-bold bg-green-100 text-green-700 px-2 py-1 rounded">{ev.spotsLeft > 50 ? 'Available' : `${ev.spotsLeft} spots left`}</span>
+                                        <span className="text-xs font-bold bg-green-100 text-green-700 px-2 py-1 rounded whitespace-nowrap">{ev.spotsLeft > 50 ? 'Available' : `${ev.spotsLeft} left`}</span>
                                     )}
                                 </div>
-                                <div className="flex items-center text-gray-500 text-sm mb-3">
-                                    <MapPin className="w-4 h-4 mr-2"/> {ev.location || course.address}
+                                <div className="flex items-center text-gray-500 text-sm mb-3 ml-6">
+                                    <MapPin className="w-3 h-3 mr-1"/> {ev.location || course.address}
                                 </div>
                                 <button 
                                     onClick={() => !ev.isFull && handleBookCourse(course, ev.id)} 
@@ -1088,8 +1093,9 @@ const TeacherForm = ({ t, setView, user, handlePublishCourse, getCatLabel, initi
     const [lvl1, setLvl1] = useState(Object.keys(CATEGORY_HIERARCHY)[0]);
     const [lvl2, setLvl2] = useState(Object.keys(CATEGORY_HIERARCHY[lvl1])[0]);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    // NEW: Event Management State (Added canton per event)
-    const [events, setEvents] = useState([{ start_date: '', location: '', max_participants: 0, canton: '' }]);
+    
+    // NEW: Added schedule_description to state
+    const [events, setEvents] = useState([{ start_date: '', location: '', max_participants: 0, canton: '', schedule_description: '' }]);
 
     useEffect(() => {
         if (initialData) {
@@ -1097,24 +1103,25 @@ const TeacherForm = ({ t, setView, user, handlePublishCourse, getCatLabel, initi
                 const parts = initialData.category.split(' | ');
                 if (parts.length >= 2) { setLvl1(parts[0]); setLvl2(parts[1]); }
             }
-            // Load events if they exist
+            // Load events
             if (initialData.course_events && initialData.course_events.length > 0) {
                 setEvents(initialData.course_events.map(e => ({
                     start_date: e.start_date ? e.start_date.split('T')[0] : '', 
                     location: e.location,
                     max_participants: e.max_participants,
-                    canton: e.canton || initialData.canton || '' // Fallback to course canton if event canton missing
+                    canton: e.canton || initialData.canton || '',
+                    schedule_description: e.schedule_description || '' // Load schedule info
                 })));
             } else if (initialData.start_date) {
-                setEvents([{ start_date: initialData.start_date, location: initialData.address || '', max_participants: 0, canton: initialData.canton || '' }]);
+                setEvents([{ start_date: initialData.start_date, location: initialData.address || '', max_participants: 0, canton: initialData.canton || '', schedule_description: '' }]);
             }
         }
     }, [initialData]);
 
     const handleLvl1Change = (e) => { const val = e.target.value; setLvl1(val); setLvl2(Object.keys(CATEGORY_HIERARCHY[val])[0]); };
     
-    // Event Management Handlers
-    const addEvent = () => setEvents([...events, { start_date: '', location: '', max_participants: 0, canton: '' }]);
+    // Updated Add/Update handlers
+    const addEvent = () => setEvents([...events, { start_date: '', location: '', max_participants: 0, canton: '', schedule_description: '' }]);
     const removeEvent = (index) => setEvents(events.filter((_, i) => i !== index));
     const updateEvent = (index, field, value) => {
         const newEvents = [...events];
@@ -1125,7 +1132,6 @@ const TeacherForm = ({ t, setView, user, handlePublishCourse, getCatLabel, initi
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (isSubmitting) return;
-        // Validate Events (Must have date, location AND canton)
         const validEvents = events.filter(ev => ev.start_date && ev.location && ev.canton);
         if (validEvents.length === 0) { alert("Please add at least one valid date, location and canton."); return; }
         
@@ -1143,7 +1149,7 @@ const TeacherForm = ({ t, setView, user, handlePublishCourse, getCatLabel, initi
             <form onSubmit={handleSubmit} className="space-y-8">
                 {initialData && <input type="hidden" name="course_id" value={initialData.id} />}
                 
-                {/* --- GENERAL INFO SECTION --- */}
+                {/* --- GENERAL INFO --- */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="md:col-span-2">
                          <label className="block text-sm font-bold text-gray-700 mb-1">Course Image</label>
@@ -1170,7 +1176,7 @@ const TeacherForm = ({ t, setView, user, handlePublishCourse, getCatLabel, initi
                     </div>
                 </div>
 
-                {/* --- DATES & LOCATIONS (UPDATED WITH CANTON) --- */}
+                {/* --- DATES & LOCATIONS (UPDATED WITH SCHEDULE INFO) --- */}
                 <div className="bg-blue-50 p-6 rounded-xl border border-blue-100">
                     <div className="flex justify-between items-center mb-4">
                         <h3 className="text-lg font-bold text-blue-900 flex items-center"><Calendar className="w-5 h-5 mr-2" /> Dates & Locations</h3>
@@ -1181,9 +1187,15 @@ const TeacherForm = ({ t, setView, user, handlePublishCourse, getCatLabel, initi
                             <div key={i} className="bg-white p-4 rounded-lg shadow-sm flex flex-col gap-4 border border-gray-200">
                                 <div className="flex flex-col md:flex-row gap-4">
                                     <div className="flex-1">
-                                        <label className="text-xs font-bold text-gray-500 uppercase">Date</label>
+                                        <label className="text-xs font-bold text-gray-500 uppercase">Start Date</label>
                                         <input type="date" required value={ev.start_date} onChange={e => updateEvent(i, 'start_date', e.target.value)} className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white" />
                                     </div>
+                                    <div className="flex-[2]">
+                                        <label className="text-xs font-bold text-gray-500 uppercase">Schedule / Duration (Optional)</label>
+                                        <input type="text" value={ev.schedule_description} onChange={e => updateEvent(i, 'schedule_description', e.target.value)} placeholder="e.g. Sat & Sun, 09:00 - 17:00" className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white" />
+                                    </div>
+                                </div>
+                                <div className="flex flex-col md:flex-row gap-4">
                                     <div className="flex-1">
                                         <label className="text-xs font-bold text-gray-500 uppercase">Canton</label>
                                         <select required value={ev.canton} onChange={e => updateEvent(i, 'canton', e.target.value)} className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white">
@@ -1191,8 +1203,6 @@ const TeacherForm = ({ t, setView, user, handlePublishCourse, getCatLabel, initi
                                             {SWISS_CANTONS.map(c => <option key={c} value={c}>{c}</option>)}
                                         </select>
                                     </div>
-                                </div>
-                                <div className="flex flex-col md:flex-row gap-4">
                                     <div className="flex-[2]">
                                         <label className="text-xs font-bold text-gray-500 uppercase">Specific Address</label>
                                         <input type="text" required value={ev.location} onChange={e => updateEvent(i, 'location', e.target.value)} placeholder="Strasse 1, 8000 Zürich" className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white" />
@@ -1726,15 +1736,16 @@ export default function KursNaviPro() {
 
     if (error) { console.error(error); showNotification("Error saving course: " + error.message); return; } 
 
-    // 3. HANDLE EVENTS (Delete all and re-insert for simplicity)
+    // 3. HANDLE EVENTS (Delete all and re-insert)
     if (activeCourseId && eventsList.length > 0) {
-         // Delete old
          await supabase.from('course_events').delete().eq('course_id', activeCourseId);
-         // Insert new
+         
          const eventsToInsert = eventsList.map(ev => ({
              course_id: activeCourseId,
              start_date: ev.start_date,
              location: ev.location,
+             canton: ev.canton,
+             schedule_description: ev.schedule_description, // NEW FIELD
              max_participants: parseInt(ev.max_participants) || 0
          }));
          const { error: eventError } = await supabase.from('course_events').insert(eventsToInsert);
