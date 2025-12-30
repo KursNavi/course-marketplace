@@ -181,7 +181,14 @@ const DetailView = ({ course, setView, t, handleBookCourse }) => (
             <div className="lg:col-span-2 space-y-8">
                 <img src={course.image_url} className="w-full h-80 object-cover rounded-2xl shadow-lg" alt={course.title} />
                 <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
-                    <h1 className="text-3xl font-bold font-heading text-dark mb-4">{course.title}</h1>
+                    <div className="flex items-center gap-3 mb-4">
+                        <h1 className="text-3xl font-bold font-heading text-dark">{course.title}</h1>
+                        {course.is_pro && (
+                            <span className="bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-bold flex items-center shadow-sm">
+                                <CheckCircle className="w-3 h-3 mr-1" /> Professional
+                            </span>
+                        )}
+                    </div>
                     <div className="flex flex-wrap gap-4 text-sm text-gray-600 mb-6">
                         <span className="flex items-center bg-gray-50 px-3 py-1 rounded-full"><User className="w-4 h-4 mr-2"/> {course.instructor_name}</span>
                         <span className="flex items-center bg-gray-50 px-3 py-1 rounded-full"><MapPin className="w-4 h-4 mr-2"/> {course.canton}</span>
@@ -427,13 +434,26 @@ const AdminPanel = ({ t, courses, setCourses, showNotification }) => {
     };
 
     const toggleVerify = async (userId, currentStatus) => {
-        const { error } = await supabase.from('profiles').update({ is_professional: !currentStatus }).eq('id', userId);
-        if (error) {
-            showNotification("Error updating status. Check RLS policies.");
+        const newStatus = !currentStatus;
+        
+        // 1. Profil aktualisieren
+        const { error: profileError } = await supabase.from('profiles').update({ is_professional: newStatus }).eq('id', userId);
+        
+        if (profileError) {
+            showNotification("Error updating profile.");
+            return;
+        }
+
+        // 2. ALLE Kurse dieses Lehrers gleichzeitig aktualisieren (Mass-Update)
+        const { error: courseError } = await supabase.from('courses').update({ is_pro: newStatus }).eq('user_id', userId);
+        
+        if (courseError) {
+            showNotification("Profile updated, but courses failed.");
         } else {
-            // Update local state to reflect change immediately
-            setProfiles(profiles.map(p => p.id === userId ? { ...p, is_professional: !currentStatus } : p));
-            showNotification(!currentStatus ? "User Verified" : "Verification Removed");
+            setProfiles(profiles.map(p => p.id === userId ? { ...p, is_professional: newStatus } : p));
+            showNotification(newStatus ? "User & all courses verified" : "Verification removed");
+            // Optional: Kurse neu laden, damit die UI aktuell ist
+            if (typeof fetchCourses === 'function') fetchCourses();
         }
     };
 
