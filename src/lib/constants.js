@@ -164,6 +164,19 @@ export const TRANSLATIONS = {
     legal_agree: "I accept the", legal_agb: "GTC", legal_and: "and have read the", legal_privacy: "Privacy Policy",
     legal_provider_suffix: "incl. Provider Terms", legal_mediator_note: "KursNavi is the intermediary. Contract is with the provider.",
     legal_provider_verified_tooltip: "Verified manually by LifeSkills360 (Identity & Basic Info).",
+
+    // FAQ
+    faq_title: "Frequently Asked Questions",
+    faq_q1: "What exactly is KursNavi?", faq_a1: "KursNavi is Switzerland's local course marketplace. We connect people who want to learn (students) with local experts (tutors) for face-to-face courses.",
+    faq_q2: "Is the course search free for me?", faq_a2: "Yes! searching and contacting tutors is 100% free for students. You only pay the course fee when you book.",
+    faq_q3: "How do I book a course?", faq_a3: "Simply choose a course, click 'Book', and pay securely online. You will receive an instant confirmation.",
+    faq_q4: "Do I need to register to book?", faq_a4: "Yes, you need a free account so that the tutor can contact you and we can send you the booking confirmation.",
+    faq_q5: "How do I pay for the course?", faq_a5: "We accept all major credit cards and TWINT (via Stripe). Your payment is held securely until the course starts.",
+    faq_q6: "Are the course providers verified?", faq_a6: "We check the identity of all providers. Providers with the 'Blue Check' have also submitted diplomas/certificates, which we have manually verified.",
+    faq_q7: "Can I cancel a booking?", faq_a7: "Yes. Cancellation conditions depend on the start date. You can see the details directly in your booking dashboard.",
+    faq_q8: "Are there courses for companies or groups?", faq_a8: "Many of our tutors offer private group courses. Simply use the 'Contact' button on the course profile to ask.",
+    faq_q9: "I can't find the course I want – what now?", faq_a9: "We are growing daily! Check back next week or send us a message with your wish.",
+    faq_q10: "I am a provider myself. How can I list courses?", faq_a10: "Create a free profile, verify your email, and click on 'New Course' in the dashboard. It takes less than 5 minutes.",
   },
   de: {
     nav_explore: "Entdecken", nav_about: "Über uns", nav_contact: "Kontakt", nav_login: "Anmelden", nav_logout: "Abmelden", nav_dashboard: "Dashboard",
@@ -265,6 +278,19 @@ export const TRANSLATIONS = {
     legal_agree: "Ich akzeptiere die", legal_agb: "AGB", legal_and: "und habe die", legal_privacy: "Datenschutzerklärung", legal_read: "gelesen.",
     legal_provider_suffix: "inkl. Anbieterbedingungen", legal_mediator_note: "KursNavi ist Vermittlerin. Vertragspartner ist der Anbieter.",
     legal_provider_verified_tooltip: "Manuell geprüft von LifeSkills360 (Identität & Basisdaten).",
+
+    // FAQ
+    faq_title: "Häufige Fragen (FAQ)",
+    faq_q1: "Was genau ist KursNavi?", faq_a1: "KursNavi ist der Schweizer Marktplatz für lokale Kurse. Wir verbinden Menschen, die lernen wollen, mit Experten vor Ort für Präsenzkurse.",
+    faq_q2: "Ist die Kurssuche für mich kostenlos?", faq_a2: "Ja! Die Suche ist zu 100% kostenlos. Du zahlst nur den Kurspreis bei einer Buchung.",
+    faq_q3: "Wie buche ich einen Kurs?", faq_a3: "Wähle einfach einen Kurs, klicke auf 'Buchen' und zahle sicher online. Du erhältst sofort eine Bestätigung.",
+    faq_q4: "Muss ich mich für eine Buchung registrieren?", faq_a4: "Ja, du benötigst einen kostenlosen Account, damit der Lehrer dich kontaktieren kann und wir dir die Buchungsbestätigung senden können.",
+    faq_q5: "Wie bezahle ich den Kurs?", faq_a5: "Wir akzeptieren alle gängigen Kreditkarten und TWINT (via Stripe). Deine Zahlung wird sicher verwahrt.",
+    faq_q6: "Sind die Kursanbieter auf KursNavi geprüft?", faq_a6: "Wir prüfen die Identität aller Anbieter. Anbieter mit dem 'Blauen Haken' haben zudem Diplome/Zertifikate eingereicht, die wir manuell geprüft haben.",
+    faq_q7: "Kann ich eine Buchung stornieren?", faq_a7: "Ja. Die Stornierungsbedingungen hängen vom Startdatum ab. Details siehst du direkt in deinem Buchungs-Dashboard.",
+    faq_q8: "Gibt es auch Kurse für Firmen oder Gruppen?", faq_a8: "Viele unserer Lehrer bieten private Gruppenkurse an. Nutze einfach den 'Kontakt'-Button auf dem Kursprofil.",
+    faq_q9: "Ich finde meinen gewünschten Kurs nicht – was tun?", faq_a9: "Wir wachsen täglich! Schau nächste Woche wieder vorbei oder schreib uns eine Nachricht mit deinem Wunsch.",
+    faq_q10: "Ich bin selbst Kursanbieter. Wie kann ich meine Kurse listen?", faq_a10: "Erstelle ein kostenloses Profil, bestätige deine E-Mail und klicke im Dashboard auf 'Neuer Kurs'. Es dauert keine 5 Minuten.",
   },
   fr: {
     nav_explore: "Explorer", nav_about: "À propos", nav_contact: "Contact", nav_login: "Connexion", nav_logout: "Déconnexion", nav_dashboard: "Tableau de bord",
@@ -366,6 +392,19 @@ export const TRANSLATIONS = {
     legal_agree: "J'accepte les", legal_agb: "CG", legal_and: "et j'ai lu la", legal_privacy: "Déclaration de confidentialité", legal_read: ".",
     legal_provider_suffix: "y compris les conditions du prestataire", legal_mediator_note: "KursNavi est intermédiaire. Contrat avec le prestataire.",
     legal_provider_verified_tooltip: "Vérifié manuellement par LifeSkills360.",
+
+    // FAQ
+    faq_title: "Questions Fréquentes (FAQ)",
+    faq_q1: "Qu'est-ce que KursNavi exactement?", faq_a1: "KursNavi est la place de marché suisse pour les cours locaux. Nous connectons les étudiants aux experts locaux.",
+    faq_q2: "La recherche de cours est-elle gratuite?", faq_a2: "Oui ! La recherche est 100% gratuite. Vous ne payez que le prix du cours lors de la réservation.",
+    faq_q3: "Comment réserver un cours?", faq_a3: "Choisissez un cours, cliquez sur 'Réserver' et payez en toute sécurité en ligne.",
+    faq_q4: "Dois-je m'inscrire pour réserver?", faq_a4: "Oui, vous avez besoin d'un compte gratuit pour que le professeur puisse vous contacter.",
+    faq_q5: "Comment payer le cours?", faq_a5: "Nous acceptons les cartes de crédit et TWINT. Votre paiement est sécurisé.",
+    faq_q6: "Les prestataires sont-ils vérifiés?", faq_a6: "Nous vérifions l'identité de tous. Ceux avec la 'Coche Bleue' ont soumis des diplômes vérifiés manuellement.",
+    faq_q7: "Puis-je annuler une réservation?", faq_a7: "Oui. Les conditions dépendent de la date de début. Voir votre tableau de bord.",
+    faq_q8: "Y a-t-il des cours pour entreprises?", faq_a8: "Beaucoup de nos professeurs proposent des cours privés. Utilisez le bouton 'Contact'.",
+    faq_q9: "Je ne trouve pas mon cours?", faq_a9: "Nous grandissons chaque jour ! Revenez la semaine prochaine.",
+    faq_q10: "Je suis prestataire. Comment lister des cours?", faq_a10: "Créez un profil gratuit et cliquez sur 'Nouveau Cours' dans le tableau de bord.",
   },
   it: {
     nav_explore: "Esplora", nav_about: "Chi siamo", nav_contact: "Contatto", nav_login: "Accedi", nav_logout: "Esci", nav_dashboard: "Dashboard",
@@ -467,5 +506,18 @@ export const TRANSLATIONS = {
     legal_agree: "Accetto i", legal_agb: "CGC", legal_and: "e ho letto la", legal_privacy: "Privacy Policy", legal_read: ".",
     legal_provider_suffix: "incl. condizioni del fornitore", legal_mediator_note: "KursNavi è intermediario. Il contratto è con il fornitore.",
     legal_provider_verified_tooltip: "Verificato manualmente da LifeSkills360.",
+
+    // FAQ
+    faq_title: "Domande Frequenti (FAQ)",
+    faq_q1: "Cos'è esattamente KursNavi?", faq_a1: "KursNavi è il mercato svizzero per i corsi locali. Mettiamo in contatto studenti ed esperti locali.",
+    faq_q2: "La ricerca dei corsi è gratuita?", faq_a2: "Sì! La ricerca è gratuita al 100%. Paghi solo il costo del corso al momento della prenotazione.",
+    faq_q3: "Come prenotare un corso?", faq_a3: "Scegli un corso, clicca su 'Prenota' e paga in modo sicuro online.",
+    faq_q4: "Devo registrarmi per prenotare?", faq_a4: "Sì, hai bisogno di un account gratuito in modo che l'insegnante possa contattarti.",
+    faq_q5: "Come pago il corso?", faq_a5: "Accettiamo carte di credito e TWINT. Il tuo pagamento è al sicuro.",
+    faq_q6: "I fornitori sono verificati?", faq_a6: "Verifichiamo l'identità di tutti. Quelli con la 'Spunta Blu' hanno diplomi verificati manualmente.",
+    faq_q7: "Posso cancellare una prenotazione?", faq_a7: "Sì. Le condizioni dipendono dalla data di inizio. Vedi la tua dashboard.",
+    faq_q8: "Ci sono corsi per aziende?", faq_a8: "Molti dei nostri insegnanti offrono corsi privati. Usa il pulsante 'Contatto'.",
+    faq_q9: "Non trovo il corso che cerco?", faq_a9: "Cresciamo ogni giorno! Torna la prossima settimana.",
+    faq_q10: "Sono un insegnante. Come inserisco i corsi?", faq_a10: "Crea un profilo gratuito e clicca su 'Nuovo Corso' nella dashboard.",
   }
 };
