@@ -1365,7 +1365,7 @@ export default function KursNaviPro() {
     const fullCategoryString = `${formData.get('catLvl1')} | ${formData.get('catLvl2')} | ${formData.get('catLvl3')}`;
 
     // 1. Image Upload Logic
-    let imageUrl = initialData?.image_url || "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=600";
+    let imageUrl = editingCourse?.image_url || "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=600";
     const imageFile = formData.get('courseImage');
 
     if (imageFile && imageFile.size > 0) {
