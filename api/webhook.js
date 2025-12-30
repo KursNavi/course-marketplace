@@ -152,27 +152,23 @@ export default async function handler(req, res) {
         });
     } catch (e) { console.error('Student Email Failed:', e); }
 
-    // 5. Send TEACHER Email
-    if (course && course.start_date) {
-        const startDate = new Date(course.start_date);
-        const today = new Date();
-        const oneMonthFromNow = new Date();
-        oneMonthFromNow.setMonth(today.getMonth() + 1);
+    // 5. Send TEACHER Email (ALWAYS)
+    if (course) {
+        const teacherEmail = "btrespondek@gmail.com"; 
+        // Optional: Hier könnten wir später die echte E-Mail des Lehrers aus der DB holen
+        
+        let teacherLang = 'de';
+        const tTexts = EMAIL_TRANSLATIONS[teacherLang];
 
-        if (startDate < oneMonthFromNow) {
-            const teacherEmail = "btrespondek@gmail.com"; 
-            let teacherLang = 'de';
-            const tTexts = EMAIL_TRANSLATIONS[teacherLang];
-
-            try {
-                await resend.emails.send({
-                    from: 'KursNavi <onboarding@resend.dev>',
-                    to: teacherEmail,
-                    subject: `${tTexts.teacher_subject} ${courseTitle}`,
-                    html: generateEmailHtml(tTexts.teacher_title, tTexts.teacher_body(customerEmail, courseTitle, courseDate), tTexts.cta_view)
-                });
-            } catch (tError) { console.error('Teacher Email Failed:', tError); }
-        }
+        try {
+            console.log(`📧 Sending Teacher Notification to ${teacherEmail}`);
+            await resend.emails.send({
+                from: 'KursNavi <onboarding@resend.dev>',
+                to: teacherEmail,
+                subject: `${tTexts.teacher_subject} ${courseTitle}`,
+                html: generateEmailHtml(tTexts.teacher_title, tTexts.teacher_body(customerEmail, courseTitle, courseDate), tTexts.cta_view)
+            });
+        } catch (tError) { console.error('Teacher Email Failed:', tError); }
     }
   }
 
