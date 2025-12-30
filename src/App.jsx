@@ -184,9 +184,15 @@ const DetailView = ({ course, setView, t, handleBookCourse }) => (
                     <div className="flex items-center gap-3 mb-4">
                         <h1 className="text-3xl font-bold font-heading text-dark">{course.title}</h1>
                         {course.is_pro && (
-                            <span className="bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-bold flex items-center shadow-sm">
-                                <CheckCircle className="w-3 h-3 mr-1" /> Professional
-                            </span>
+                            <div className="flex flex-col items-start gap-1">
+                                <span className="bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-bold flex items-center shadow-sm">
+                                    <CheckCircle className="w-3 h-3 mr-1" /> Professional
+                                </span>
+                                <div className="flex items-center text-[10px] text-blue-600 font-medium bg-blue-50 px-2 py-0.5 rounded border border-blue-100">
+                                    <Info className="w-3 h-3 mr-1" />
+                                    Geprüfter Anbieter mit Zertifizierung
+                                </div>
+                            </div>
                         )}
                     </div>
                     <div className="flex flex-wrap gap-4 text-sm text-gray-600 mb-6">
@@ -774,7 +780,7 @@ const SuccessView = ({ setView }) => (
     </div>
 );
 
-const AuthView = ({ setView, showNotification, lang }) => {
+const AuthView = ({ setView, setUser, showNotification, lang }) => {
     const [isSignUp, setIsSignUp] = useState(false); const [loading, setLoading] = useState(false); const [email, setEmail] = useState(''); const [password, setPassword] = useState(''); const [fullName, setFullName] = useState(''); const [role, setRole] = useState('student');
     const [agbAccepted, setAgbAccepted] = useState(false);
     const t = TRANSLATIONS[lang] || TRANSLATIONS['de']; 
@@ -792,8 +798,17 @@ const AuthView = ({ setView, showNotification, lang }) => {
             } else {
                 const { data, error } = await supabase.auth.signInWithPassword({ email, password });
                 if (error) throw error;
-                const userRole = data.user?.user_metadata?.role;
-                if (userRole === 'teacher') setView('dashboard'); else setView('home');
+                const userMetadata = data.user?.user_metadata;
+                const loggedInUser = {
+                    id: data.user.id,
+                    email: data.user.email,
+                    role: userMetadata?.role || 'student',
+                    name: userMetadata?.full_name || data.user.email.split('@')[0]
+                };
+                // Sofortiges Update für die Navbar
+                setUser(loggedInUser); 
+                
+                if (loggedInUser.role === 'teacher') setView('dashboard'); else setView('home');
                 showNotification("Welcome back!");
             }
         } catch (error) { showNotification(error.message); } finally { setLoading(false); }
@@ -1254,7 +1269,7 @@ export default function KursNaviPro() {
       {view === 'success' && <SuccessView setView={setView} />}
       {view === 'detail' && selectedCourse && <DetailView course={selectedCourse} setView={setView} t={t} handleBookCourse={handleBookCourse} />}
       {view === 'how-it-works' && <HowItWorksPage t={t} setView={setView} />}
-      {view === 'login' && <AuthView setView={setView} showNotification={showNotification} lang={lang} />}
+      {view === 'login' && <AuthView setView={setView} setUser={setUser} showNotification={showNotification} lang={lang} />}
       {view === 'about' && <AboutPage t={t} setView={setView} />}
       {view === 'contact' && <ContactPage t={t} handleContactSubmit={handleContactSubmit} setView={setView} />}
       
