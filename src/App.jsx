@@ -589,53 +589,96 @@ const AdminPanel = ({ t, courses, setCourses, showNotification }) => {
 };
 
 const UserProfileSection = ({ user, showNotification, setLang, t }) => {
-    const [loading, setLoading] = useState(true);
-    const [saving, setSaving] = useState(false);
-    const [formData, setFormData] = useState({
-        city: '', canton: '', bio: '', preferred_language: 'de', email: user.email, password: '', confirmPassword: ''
-    });
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    // NEW: Added bio_text and certificates (string for editing)
+    const [formData, setFormData] = useState({
+        city: '', canton: '', bio_text: '', certificates: '', preferred_language: 'de', email: user.email, password: '', confirmPassword: ''
+    });
 
-    useEffect(() => {
-        const fetchProfile = async () => {
-            if (!user?.id) return;
-            const { data, error } = await supabase.from('profiles').select('*').eq('id', user.id).single();
-            if (data) { setFormData(prev => ({ ...prev, city: data.city || '', canton: data.canton || '', bio: data.bio || '', preferred_language: data.preferred_language || 'de' })); }
-            setLoading(false);
-        };
-        fetchProfile();
-    }, [user]);
+    useEffect(() => {
+        const fetchProfile = async () => {
+            if (!user?.id) return;
+            const { data, error } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+            if (data) { 
+                setFormData(prev => ({ 
+                    ...prev, 
+                    city: data.city || '', 
+                    canton: data.canton || '', 
+                    // MAP DB TO FORM: Use bio_text to match public profile
+                    bio_text: data.bio_text || '', 
+                    // MAP DB ARRAY TO STRING: Join with newlines for textarea
+                    certificates: data.certificates ? data.certificates.join('\n') : '',
+                    preferred_language: data.preferred_language || 'de' 
+                })); 
+            }
+            setLoading(false);
+        };
+        fetchProfile();
+    }, [user]);
 
-    const handleChange = (e) => { setFormData({ ...formData, [e.target.name]: e.target.value }); };
+    const handleChange = (e) => { setFormData({ ...formData, [e.target.name]: e.target.value }); };
 
-    const handleSave = async (e) => {
-        e.preventDefault(); setSaving(true);
-        const { error } = await supabase.from('profiles').update({ city: formData.city, canton: formData.canton, bio: formData.bio, preferred_language: formData.preferred_language }).eq('id', user.id);
-        if (error) { showNotification("Error saving profile"); setSaving(false); return; }
-        if (formData.email !== user.email || formData.password) {
-            if (formData.password && formData.password !== formData.confirmPassword) { showNotification("Passwords do not match!"); setSaving(false); return; }
-            const updates = {}; if (formData.email !== user.email) updates.email = formData.email; if (formData.password) updates.password = formData.password;
-            const { error: authError } = await supabase.auth.updateUser(updates);
-            if (authError) { showNotification("Error updating account: " + authError.message); } else { showNotification(t.msg_auth_success); }
-        } else { showNotification("Profile saved successfully!"); }
-        setLang(formData.preferred_language); setSaving(false);
-    };
+    const handleSave = async (e) => {
+        e.preventDefault(); setSaving(true);
+        
+        // LOGIC: Convert textarea string back to array for DB
+        const certArray = formData.certificates.split('\n').filter(line => line.trim() !== '');
 
-    if (loading) return <div className="p-8 text-center"><Loader className="animate-spin w-8 h-8 text-primary mx-auto"/></div>;
-    return (
-        <div className="bg-white p-6 md:p-8 rounded-xl border border-gray-200 shadow-sm animate-in fade-in">
-            <h2 className="text-xl font-bold mb-6 text-dark flex items-center"><Settings className="w-5 h-5 mr-2 text-gray-500" /> {t.profile_settings}</h2>
-            <form onSubmit={handleSave} className="space-y-6 max-w-xl">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_city}</label><input type="text" name="city" value={formData.city} onChange={handleChange} placeholder="e.g. Adligenswil" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" /></div>
-                    <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_canton}</label><div className="relative"><select name="canton" value={formData.canton} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none appearance-none bg-white"><option value="">Select Canton</option>{SWISS_CANTONS.map(c => <option key={c} value={c}>{c}</option>)}</select><ChevronDown className="absolute right-3 top-3 text-gray-400 w-4 h-4 pointer-events-none" /></div></div>
-                </div>
-                <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_language}</label><div className="relative"><select name="preferred_language" value={formData.preferred_language} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none appearance-none bg-white"><option value="de">Deutsch (German)</option><option value="en">English</option><option value="fr">Français (French)</option><option value="it">Italiano (Italian)</option></select><ChevronDown className="absolute right-3 top-3 text-gray-400 w-4 h-4 pointer-events-none" /></div></div>
-                <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_bio}</label><textarea name="bio" rows="4" value={formData.bio} onChange={handleChange} placeholder="..." className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none"></textarea></div>
-                <div className="border-t pt-6 mt-6"><h3 className="text-lg font-bold mb-4 text-dark flex items-center"><Lock className="w-4 h-4 mr-2" /> {t.lbl_account_security}</h3><div className="space-y-4"><div><label className="block text-sm font-bold text-gray-700 mb-1">Email</label><input type="email" name="email" value={formData.email} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none bg-gray-50" /></div><div className="grid grid-cols-1 md:grid-cols-2 gap-6"><div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_new_password}</label><input type="password" name="password" value={formData.password} onChange={handleChange} placeholder="******" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" /></div><div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_confirm_password}</label><input type="password" name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} placeholder="******" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" /></div></div></div></div>
-                <div className="pt-2"><button type="submit" disabled={saving} className="bg-primary text-white px-6 py-3 rounded-lg font-bold hover:bg-orange-600 transition flex items-center shadow-md disabled:opacity-50">{saving ? <Loader className="animate-spin w-5 h-5 mr-2" /> : <Save className="w-5 h-5 mr-2" />}{t.btn_save}</button></div>
-            </form>
-        </div>
-    );
+        // UPDATE: Saving to bio_text and certificates column
+        const { error } = await supabase.from('profiles').update({ 
+            city: formData.city, 
+            canton: formData.canton, 
+            bio_text: formData.bio_text, 
+            certificates: certArray,
+            preferred_language: formData.preferred_language 
+        }).eq('id', user.id);
+
+        if (error) { showNotification("Error saving profile"); setSaving(false); return; }
+
+        if (formData.email !== user.email || formData.password) {
+            if (formData.password && formData.password !== formData.confirmPassword) { showNotification("Passwords do not match!"); setSaving(false); return; }
+            const updates = {}; if (formData.email !== user.email) updates.email = formData.email; if (formData.password) updates.password = formData.password;
+            const { error: authError } = await supabase.auth.updateUser(updates);
+            if (authError) { showNotification("Error updating account: " + authError.message); } else { showNotification(t.msg_auth_success); }
+        } else { showNotification("Profile saved successfully!"); }
+        
+        setLang(formData.preferred_language); setSaving(false);
+    };
+
+    if (loading) return <div className="p-8 text-center"><Loader className="animate-spin w-8 h-8 text-primary mx-auto"/></div>;
+    
+    return (
+        <div className="bg-white p-6 md:p-8 rounded-xl border border-gray-200 shadow-sm animate-in fade-in">
+            <h2 className="text-xl font-bold mb-6 text-dark flex items-center"><Settings className="w-5 h-5 mr-2 text-gray-500" /> {t.profile_settings}</h2>
+            <form onSubmit={handleSave} className="space-y-6 max-w-xl">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_city}</label><input type="text" name="city" value={formData.city} onChange={handleChange} placeholder="e.g. Adligenswil" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" /></div>
+                    <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_canton}</label><div className="relative"><select name="canton" value={formData.canton} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none appearance-none bg-white"><option value="">Select Canton</option>{SWISS_CANTONS.map(c => <option key={c} value={c}>{c}</option>)}</select><ChevronDown className="absolute right-3 top-3 text-gray-400 w-4 h-4 pointer-events-none" /></div></div>
+                </div>
+                <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_language}</label><div className="relative"><select name="preferred_language" value={formData.preferred_language} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none appearance-none bg-white"><option value="de">Deutsch (German)</option><option value="en">English</option><option value="fr">Français (French)</option><option value="it">Italiano (Italian)</option></select><ChevronDown className="absolute right-3 top-3 text-gray-400 w-4 h-4 pointer-events-none" /></div></div>
+                
+                {/* NEW FIELDS: Biography & Certificates */}
+                <div className="border-t pt-6 mt-6">
+                    <h3 className="text-lg font-bold mb-4 text-dark flex items-center"><User className="w-4 h-4 mr-2" /> {t.lbl_bio || "Public Profile (Teacher Only)"}</h3>
+                    <div className="space-y-4">
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-1">Biography (About Me)</label>
+                            <textarea name="bio_text" rows="5" value={formData.bio_text} onChange={handleChange} placeholder="Tell students about your experience..." className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none bg-gray-50 focus:bg-white transition-colors"></textarea>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-1">Certificates & Qualifications</label>
+                            <div className="text-xs text-gray-500 mb-2">Enter one certificate per line. We will format them as a list.</div>
+                            <textarea name="certificates" rows="3" value={formData.certificates} onChange={handleChange} placeholder="Master in Pedagogy&#10;Certified Yoga Instructor&#10;..." className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none bg-gray-50 focus:bg-white transition-colors"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="border-t pt-6 mt-6"><h3 className="text-lg font-bold mb-4 text-dark flex items-center"><Lock className="w-4 h-4 mr-2" /> {t.lbl_account_security}</h3><div className="space-y-4"><div><label className="block text-sm font-bold text-gray-700 mb-1">Email</label><input type="email" name="email" value={formData.email} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none bg-gray-50" /></div><div className="grid grid-cols-1 md:grid-cols-2 gap-6"><div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_new_password}</label><input type="password" name="password" value={formData.password} onChange={handleChange} placeholder="******" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" /></div><div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_confirm_password}</label><input type="password" name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} placeholder="******" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" /></div></div></div></div>
+                <div className="pt-2"><button type="submit" disabled={saving} className="bg-primary text-white px-6 py-3 rounded-lg font-bold hover:bg-orange-600 transition flex items-center shadow-md disabled:opacity-50">{saving ? <Loader className="animate-spin w-5 h-5 mr-2" /> : <Save className="w-5 h-5 mr-2" />}{t.btn_save}</button></div>
+            </form>
+        </div>
+    );
 };
 
 const Dashboard = ({ user, t, setView, courses, teacherEarnings, myBookings, handleDeleteCourse, handleEditCourse, showNotification, changeLanguage, setSelectedCourse }) => {
