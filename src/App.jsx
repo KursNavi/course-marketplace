@@ -1581,38 +1581,30 @@ export default function KursNaviPro() {
   }, []);
 
   useEffect(() => {
-    const query = new URLSearchParams(window.location.search);
-    const sessionId = query.get('session_id');
-    if (sessionId && user) {
-        const pendingCourseId = localStorage.getItem('pendingCourseId');
-        if (pendingCourseId) {
-            const saveBooking = async () => {
-                 const pendingEventId = localStorage.getItem('pendingEventId');
-                 const payload = { user_id: user.id, course_id: pendingCourseId, is_paid: false, status: 'confirmed' };
-                 if (pendingEventId) payload.event_id = pendingEventId;
-                 
-                 const { error } = await supabase.from('bookings').insert([payload]);
-                 if (!error) {
-                     localStorage.removeItem('pendingCourseId');
-                     localStorage.removeItem('pendingEventId');
-                     showNotification("Course booked successfully!");
-                     fetchBookings(user.id);
-                     window.history.replaceState({}, document.title, "/dashboard");
-                     setView('dashboard');
-                 }
-             };
-                if (!error) {
-                    localStorage.removeItem('pendingCourseId');
-                    showNotification("Course booked successfully!");
-                    fetchBookings(user.id);
-                    window.history.replaceState({}, document.title, "/dashboard");
-                    setView('dashboard');
-                }
-            };
-            saveBooking();
-        } else { setView('dashboard'); }
-    }
-  }, [user]);
+    const query = new URLSearchParams(window.location.search);
+    const sessionId = query.get('session_id');
+    if (sessionId && user) {
+        const pendingCourseId = localStorage.getItem('pendingCourseId');
+        if (pendingCourseId) {
+            const saveBooking = async () => {
+                const pendingEventId = localStorage.getItem('pendingEventId');
+                const payload = { user_id: user.id, course_id: pendingCourseId, is_paid: false, status: 'confirmed' };
+                if (pendingEventId) payload.event_id = pendingEventId;
+                
+                const { error } = await supabase.from('bookings').insert([payload]);
+                if (!error) {
+                    localStorage.removeItem('pendingCourseId');
+                    localStorage.removeItem('pendingEventId');
+                    showNotification("Course booked successfully!");
+                    fetchBookings(user.id);
+                    window.history.replaceState({}, document.title, "/dashboard");
+                    setView('dashboard');
+                }
+            };
+            saveBooking();
+        } else { setView('dashboard'); }
+    }
+  }, [user]);
 
   useEffect(() => { fetchCourses(); }, []);
 
