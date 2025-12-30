@@ -451,29 +451,39 @@ const AdminPanel = ({ t, courses, setCourses, showNotification }) => {
         setLoading(false);
     };
 
-    const toggleVerify = async (userId, currentStatus) => {
-        const newStatus = !currentStatus;
-        
-        // 1. Profil aktualisieren
-        const { error: profileError } = await supabase.from('profiles').update({ is_professional: newStatus }).eq('id', userId);
-        
-        if (profileError) {
-            showNotification("Error updating profile.");
-            return;
-        }
+    const toggleVerify = async (userId, currentStatus, userEmail) => {
+        const newStatus = !currentStatus;
+        
+        // 1. Profil aktualisieren & Status setzen
+        const { error: profileError } = await supabase.from('profiles').update({ 
+            is_professional: newStatus,
+            verification_status: newStatus ? 'verified' : 'pending' 
+        }).eq('id', userId);
+        
+        if (profileError) {
+            showNotification("Error updating profile.");
+            return;
+        }
 
-        // 2. ALLE Kurse dieses Lehrers gleichzeitig aktualisieren (Mass-Update)
-        const { error: courseError } = await supabase.from('courses').update({ is_pro: newStatus }).eq('user_id', userId);
-        
-        if (courseError) {
-            showNotification("Profile updated, but courses failed.");
-        } else {
-            setProfiles(profiles.map(p => p.id === userId ? { ...p, is_professional: newStatus } : p));
-            showNotification(newStatus ? "User & all courses verified" : "Verification removed");
-            // Optional: Kurse neu laden, damit die UI aktuell ist
-            if (typeof fetchCourses === 'function') fetchCourses();
-        }
-    };
+        // 2. ALLE Kurse dieses Lehrers gleichzeitig aktualisieren
+        const { error: courseError } = await supabase.from('courses').update({ is_pro: newStatus }).eq('user_id', userId);
+        
+        if (courseError) {
+            showNotification("Profile updated, but courses failed.");
+        } else {
+            setProfiles(profiles.map(p => p.id === userId ? { ...p, is_professional: newStatus, verification_status: newStatus ? 'verified' : 'pending' } : p));
+            showNotification(newStatus ? "User verifiziert!" : "Verifizierung entfernt.");
+            
+            // AUTOMATIC EMAIL TRIGGER (Mailto)
+            if (newStatus && userEmail) {
+                const subject = "Glückwunsch: Dein Profil ist verifiziert!";
+                const body = "Hallo,\n\nwir haben deine Unterlagen geprüft und dein Profil erfolgreich verifiziert. Du hast jetzt den 'Professional' Status und das blaue Häkchen.\n\nViel Erfolg!\nDein KursNavi Team";
+                window.location.href = `mailto:${userEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+            }
+
+            if (typeof fetchCourses === 'function') fetchCourses();
+        }
+    };
 
     // Filter Logic
     const teachers = profiles.filter(p => p.role === 'teacher');
@@ -577,8 +587,7 @@ const AdminPanel = ({ t, courses, setCourses, showNotification }) => {
                                                 </a>
                                             )}
 
-                                            <button 
-                                                onClick={() => toggleVerify(user.id, user.is_professional)}
+                                            <button onClick={() => toggleVerify(user.id, user.is_professional, user.email)}
                                                     className={`text-xs font-bold px-3 py-1.5 rounded transition ${user.is_professional ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-green-50 text-green-600 hover:bg-green-100'}`}
                                                 >
                                                     {user.is_professional ? t.admin_btn_unverify : t.admin_btn_verify}
@@ -678,45 +687,51 @@ const UserProfileSection = ({ user, showNotification, setLang, t }) => {
     };
 
     const handleDocUpload = async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
+        const files = Array.from(e.target.files);
+        if (files.length === 0) return;
         setUploadingDoc(true);
 
-        // 1. Upload to Supabase 'certificates' bucket (Private)
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${user.id}_verification.${fileExt}`;
-        const { error: uploadError } = await supabase.storage.from('certificates').upload(fileName, file, { upsert: true });
+        const newDocUrls = [];
 
-        if (uploadError) {
-            showNotification("Upload failed: " + uploadError.message);
-            setUploadingDoc(false);
-            return;
+        for (const file of files) {
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${user.id}_${Date.now()}.${fileExt}`;
+            const { error: uploadError } = await supabase.storage.from('certificates').upload(fileName, file, { upsert: true });
+
+            if (uploadError) {
+                console.error("Upload failed", uploadError);
+                continue; 
+            }
+
+            const { data: { signedUrl } } = await supabase.storage.from('certificates').createSignedUrl(fileName, 315360000);
+            newDocUrls.push(signedUrl);
         }
 
-        // 2. Get Signed URL (valid for 10 years, essentially persistent for admin)
-        const { data: { signedUrl } } = await supabase.storage.from('certificates').createSignedUrl(fileName, 315360000);
+        if (newDocUrls.length > 0) {
+            // Get existing docs to append
+            const { data: currentProfile } = await supabase.from('profiles').select('verification_docs').eq('id', user.id).single();
+            const existingDocs = currentProfile?.verification_docs || [];
+            const updatedDocs = [...existingDocs, ...newDocUrls];
 
-        // 3. Save to DB and set status to pending
-        const { error: dbError } = await supabase.from('profiles').update({
-            verification_docs: [signedUrl], // Store as array
-            verification_status: 'pending'
-        }).eq('id', user.id);
+            const { error: dbError } = await supabase.from('profiles').update({
+                verification_docs: updatedDocs,
+                verification_status: 'pending'
+            }).eq('id', user.id);
 
-        if (dbError) showNotification("Database update failed.");
-        else {
-            // --- ADMIN NOTIFICATION EMAIL ---
-            fetch("https://formsubmit.co/ajax/995007a94ce934b7d8c8e7776670f9c4", {
-                method: "POST",
-                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-                body: JSON.stringify({
-                    _subject: "Neue Verifizierung: " + user.email,
-                    message: `Ein Lehrer hat ein Dokument zur Verifizierung hochgeladen.\n\nName: ${user.name || user.email}\nEmail: ${user.email}\n\nBitte im Admin Panel prüfen: /control-room-2025\n\nDirektlink zum Dokument:\n${signedUrl}`
-                })
-            }).catch(err => console.error("Email failed", err));
-            // -------------------------------
+            if (!dbError) {
+                // Notify Admin
+                fetch("https://formsubmit.co/ajax/995007a94ce934b7d8c8e7776670f9c4", {
+                    method: "POST",
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify({
+                        _subject: "Neue Verifizierung (Mehrere Dateien): " + user.email,
+                        message: `User: ${user.email}\nAnzahl Dateien: ${newDocUrls.length}\nBitte im Admin Panel prüfen.`
+                    })
+                }).catch(err => console.error("Email failed", err));
 
-            setVerificationStatus('pending');
-            showNotification("Document uploaded! Please proceed to payment.");
+                setVerificationStatus('pending');
+                showNotification(`${newDocUrls.length} Datei(en) erfolgreich hochgeladen.`);
+            }
         }
         setUploadingDoc(false);
     };
@@ -763,31 +778,46 @@ const UserProfileSection = ({ user, showNotification, setLang, t }) => {
                             </div>
 
                             {verificationStatus === 'verified' ? (
-                                <div className="bg-green-100 text-green-800 px-4 py-3 rounded-lg flex items-center font-bold">
-                                    <CheckCircle className="w-5 h-5 mr-2" /> You are verified!
-                                </div>
-                            ) : (
-                                <div className="space-y-4">
-                                    <div>
-                                        <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Step 1: Upload Proof</label>
-                                        <input type="file" onChange={handleDocUpload} disabled={uploadingDoc || verificationStatus === 'pending'} className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 cursor-pointer bg-white border rounded-lg p-1" />
-                                        {uploadingDoc && <p className="text-xs text-blue-500 mt-1">Uploading...</p>}
-                                    </div>
-
-                                    {verificationStatus === 'pending' && (
-                                        <div className="animate-in fade-in">
-                                             <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Step 2: Payment</label>
-                                             <div className="flex items-center gap-4 bg-white p-4 rounded-lg border border-gray-200">
-                                                <span className="text-gray-600 text-sm">Document uploaded. Please complete payment to finalize request.</span>
-                                                <a href="https://buy.stripe.com/test_3cIcN5dBF9ux4AoeoSbQY00" target="_blank" rel="noreferrer" className="bg-dark text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-black transition whitespace-nowrap">
-                                                    Pay CHF 75.00
-                                                </a>
-                                             </div>
-                                             <p className="text-xs text-orange-600 mt-2 font-medium">Note: We will review your profile after payment.</p>
+                            <div className="bg-green-100 text-green-800 px-4 py-6 rounded-xl flex flex-col items-center justify-center font-bold text-center">
+                                <CheckCircle className="w-12 h-12 mb-2 text-green-600" /> 
+                                <span className="text-lg">Dein Account ist verifiziert!</span>
+                                <p className="text-sm font-normal text-green-700 mt-1">Du hast das blaue Häkchen und den "Professional" Status erhalten.</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-6">
+                                {verificationStatus === 'pending' ? (
+                                    <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-xl animate-in fade-in">
+                                        <div className="flex items-center gap-3 mb-2">
+                                            <Clock className="w-5 h-5 text-yellow-600" />
+                                            <h4 className="font-bold text-yellow-800">Verifizierung in Bearbeitung</h4>
                                         </div>
-                                    )}
-                                </div>
-                            )}
+                                        <p className="text-sm text-yellow-700 mb-4">Wir haben deine Dokumente erhalten. Bitte stelle sicher, dass du die Gebühr beglichen hast, damit wir die Prüfung abschliessen können.</p>
+                                        
+                                        <div className="flex flex-col sm:flex-row gap-3">
+                                            <a href="https://buy.stripe.com/test_3cIcN5dBF9ux4AoeoSbQY00" target="_blank" rel="noreferrer" className="bg-dark text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-black transition text-center">
+                                                Zahlung öffnen (falls noch offen)
+                                            </a>
+                                            <label className="bg-white border border-gray-300 text-gray-600 px-4 py-2 rounded-lg text-sm font-bold hover:bg-gray-50 transition text-center cursor-pointer">
+                                                Weitere Dateien hochladen
+                                                <input type="file" multiple onChange={handleDocUpload} disabled={uploadingDoc} className="hidden" />
+                                            </label>
+                                        </div>
+                                        {uploadingDoc && <p className="text-xs text-blue-500 mt-2 text-center">Lade hoch...</p>}
+                                    </div>
+                                ) : (
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Schritt 1: Nachweis hochladen</label>
+                                            <div className="relative">
+                                                <input type="file" multiple onChange={handleDocUpload} disabled={uploadingDoc} className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 cursor-pointer bg-white border rounded-lg p-1" />
+                                            </div>
+                                            <p className="text-xs text-gray-400 mt-1">Du kannst mehrere Dateien auswählen (Zertifikate, Diplome, Ausweis).</p>
+                                            {uploadingDoc && <p className="text-xs text-blue-500 mt-1">Upload läuft...</p>}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                         </div>
                     </div>
                 )}
