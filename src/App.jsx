@@ -1088,8 +1088,8 @@ const TeacherForm = ({ t, setView, user, handlePublishCourse, getCatLabel, initi
     const [lvl1, setLvl1] = useState(Object.keys(CATEGORY_HIERARCHY)[0]);
     const [lvl2, setLvl2] = useState(Object.keys(CATEGORY_HIERARCHY[lvl1])[0]);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    // NEW: Event Management State
-    const [events, setEvents] = useState([{ start_date: '', location: '', max_participants: 0 }]);
+    // NEW: Event Management State (Added canton per event)
+    const [events, setEvents] = useState([{ start_date: '', location: '', max_participants: 0, canton: '' }]);
 
     useEffect(() => {
         if (initialData) {
@@ -1097,23 +1097,24 @@ const TeacherForm = ({ t, setView, user, handlePublishCourse, getCatLabel, initi
                 const parts = initialData.category.split(' | ');
                 if (parts.length >= 2) { setLvl1(parts[0]); setLvl2(parts[1]); }
             }
-            // Load events if they exist, otherwise fallback to legacy single fields
+            // Load events if they exist
             if (initialData.course_events && initialData.course_events.length > 0) {
                 setEvents(initialData.course_events.map(e => ({
-                    start_date: e.start_date ? e.start_date.split('T')[0] : '', // Format for input type=date
+                    start_date: e.start_date ? e.start_date.split('T')[0] : '', 
                     location: e.location,
-                    max_participants: e.max_participants
+                    max_participants: e.max_participants,
+                    canton: e.canton || initialData.canton || '' // Fallback to course canton if event canton missing
                 })));
             } else if (initialData.start_date) {
-                setEvents([{ start_date: initialData.start_date, location: initialData.address || '', max_participants: 0 }]);
+                setEvents([{ start_date: initialData.start_date, location: initialData.address || '', max_participants: 0, canton: initialData.canton || '' }]);
             }
         }
     }, [initialData]);
 
     const handleLvl1Change = (e) => { const val = e.target.value; setLvl1(val); setLvl2(Object.keys(CATEGORY_HIERARCHY[val])[0]); };
-
+    
     // Event Management Handlers
-    const addEvent = () => setEvents([...events, { start_date: '', location: '', max_participants: 0 }]);
+    const addEvent = () => setEvents([...events, { start_date: '', location: '', max_participants: 0, canton: '' }]);
     const removeEvent = (index) => setEvents(events.filter((_, i) => i !== index));
     const updateEvent = (index, field, value) => {
         const newEvents = [...events];
@@ -1124,12 +1125,12 @@ const TeacherForm = ({ t, setView, user, handlePublishCourse, getCatLabel, initi
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (isSubmitting) return;
-        // Validate Events
-        const validEvents = events.filter(ev => ev.start_date && ev.location);
-        if (validEvents.length === 0) { alert("Please add at least one valid date and location."); return; }
-
+        // Validate Events (Must have date, location AND canton)
+        const validEvents = events.filter(ev => ev.start_date && ev.location && ev.canton);
+        if (validEvents.length === 0) { alert("Please add at least one valid date, location and canton."); return; }
+        
         setIsSubmitting(true);
-        await handlePublishCourse(e, validEvents); // Pass events explicitly
+        await handlePublishCourse(e, validEvents); 
         setIsSubmitting(false);
     };
 
@@ -1138,10 +1139,10 @@ const TeacherForm = ({ t, setView, user, handlePublishCourse, getCatLabel, initi
         <button onClick={() => setView('dashboard')} className="flex items-center text-gray-500 hover:text-gray-900 mb-6 transition-colors"><ArrowLeft className="w-4 h-4 mr-2" /> {t.btn_back_dash}</button>
         <div className="bg-white p-8 rounded-2xl shadow-xl border border-gray-200">
             <div className="mb-8 border-b pb-4"><h1 className="text-3xl font-bold text-dark font-heading">{initialData ? t.edit_course : t.create_course}</h1><p className="text-gray-500 mt-2">{initialData ? t.edit_course_sub : t.create_course_sub}</p></div>
-
+            
             <form onSubmit={handleSubmit} className="space-y-8">
                 {initialData && <input type="hidden" name="course_id" value={initialData.id} />}
-
+                
                 {/* --- GENERAL INFO SECTION --- */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="md:col-span-2">
@@ -1153,11 +1154,10 @@ const TeacherForm = ({ t, setView, user, handlePublishCourse, getCatLabel, initi
                     </div>
 
                     <div className="md:col-span-2"><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_title}</label><input required type="text" name="title" defaultValue={initialData?.title} placeholder="e.g. Traditional Swiss Cooking" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none transition-shadow" /></div>
-
-                    <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4">
+                    
+                    <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_skill_level}</label><select name="level" defaultValue={initialData?.level || "All Levels"} className="w-full px-3 py-2 border rounded-lg focus:ring-primary bg-white text-sm outline-none"><option value="All Levels">{t.opt_all_levels}</option><option value="Beginner">{t.opt_beginner}</option><option value="Advanced">{t.opt_advanced}</option></select></div>
                           <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_target_group}</label><select name="target_group" defaultValue={initialData?.target_group || "Adults"} className="w-full px-3 py-2 border rounded-lg focus:ring-primary bg-white text-sm outline-none"><option value="Adults">{t.opt_adults}</option><option value="Teens">{t.opt_teens}</option><option value="Kids">{t.opt_kids}</option></select></div>
-                          <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_canton}</label><div className="relative"><select name="canton" defaultValue={initialData?.canton} className="w-full px-3 py-2 border rounded-lg focus:ring-primary outline-none appearance-none bg-white text-sm">{SWISS_CANTONS.map(c => <option key={c} value={c}>{c}</option>)}</select><ChevronDown className="absolute right-3 top-3 text-gray-400 w-4 h-4 pointer-events-none" /></div></div>
                     </div>
 
                     <div className="md:col-span-2 bg-beige p-4 rounded-xl border border-orange-100">
@@ -1170,32 +1170,43 @@ const TeacherForm = ({ t, setView, user, handlePublishCourse, getCatLabel, initi
                     </div>
                 </div>
 
-                {/* --- DATES & LOCATIONS (NEW SECTION) --- */}
+                {/* --- DATES & LOCATIONS (UPDATED WITH CANTON) --- */}
                 <div className="bg-blue-50 p-6 rounded-xl border border-blue-100">
                     <div className="flex justify-between items-center mb-4">
                         <h3 className="text-lg font-bold text-blue-900 flex items-center"><Calendar className="w-5 h-5 mr-2" /> Dates & Locations</h3>
                         <button type="button" onClick={addEvent} className="bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-bold hover:bg-blue-700 flex items-center"><Plus className="w-4 h-4 mr-1"/> Add Date</button>
                     </div>
-                    <div className="space-y-3">
+                    <div className="space-y-4">
                         {events.map((ev, i) => (
-                            <div key={i} className="bg-white p-4 rounded-lg shadow-sm flex flex-col md:flex-row gap-4 items-end border border-gray-200">
-                                <div className="flex-1 w-full">
-                                    <label className="text-xs font-bold text-gray-500 uppercase">Date</label>
-                                    <input type="date" required value={ev.start_date} onChange={e => updateEvent(i, 'start_date', e.target.value)} className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white" />
+                            <div key={i} className="bg-white p-4 rounded-lg shadow-sm flex flex-col gap-4 border border-gray-200">
+                                <div className="flex flex-col md:flex-row gap-4">
+                                    <div className="flex-1">
+                                        <label className="text-xs font-bold text-gray-500 uppercase">Date</label>
+                                        <input type="date" required value={ev.start_date} onChange={e => updateEvent(i, 'start_date', e.target.value)} className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <label className="text-xs font-bold text-gray-500 uppercase">Canton</label>
+                                        <select required value={ev.canton} onChange={e => updateEvent(i, 'canton', e.target.value)} className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white">
+                                            <option value="">Select Canton</option>
+                                            {SWISS_CANTONS.map(c => <option key={c} value={c}>{c}</option>)}
+                                        </select>
+                                    </div>
                                 </div>
-                                <div className="flex-[2] w-full">
-                                    <label className="text-xs font-bold text-gray-500 uppercase">Specific Address</label>
-                                    <input type="text" required value={ev.location} onChange={e => updateEvent(i, 'location', e.target.value)} placeholder="Strasse 1, 8000 Zürich" className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white" />
-                                </div>
-                                <div className="flex-1 w-full">
-                                    <label className="text-xs font-bold text-gray-500 uppercase">Capacity</label>
-                                    <div className="relative">
-                                        <input type="number" min="0" max="99" value={ev.max_participants} onChange={e => updateEvent(i, 'max_participants', e.target.value)} className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white" title="0 = Unlimited" />
-                                        <span className="absolute right-2 top-2 text-xs text-gray-400 pointer-events-none">Pers.</span>
+                                <div className="flex flex-col md:flex-row gap-4">
+                                    <div className="flex-[2]">
+                                        <label className="text-xs font-bold text-gray-500 uppercase">Specific Address</label>
+                                        <input type="text" required value={ev.location} onChange={e => updateEvent(i, 'location', e.target.value)} placeholder="Strasse 1, 8000 Zürich" className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <label className="text-xs font-bold text-gray-500 uppercase">Capacity</label>
+                                        <div className="relative">
+                                            <input type="number" min="0" max="99" value={ev.max_participants} onChange={e => updateEvent(i, 'max_participants', e.target.value)} className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white" title="0 = Unlimited" />
+                                            <span className="absolute right-2 top-2 text-xs text-gray-400 pointer-events-none">Pers.</span>
+                                        </div>
                                     </div>
                                 </div>
                                 {events.length > 1 && (
-                                    <button type="button" onClick={() => removeEvent(i)} className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-full"><Trash2 className="w-5 h-5" /></button>
+                                    <button type="button" onClick={() => removeEvent(i)} className="text-red-500 text-xs hover:underline flex items-center justify-end"><Trash2 className="w-3 h-3 mr-1" /> Remove this date</button>
                                 )}
                             </div>
                         ))}
@@ -1214,7 +1225,7 @@ const TeacherForm = ({ t, setView, user, handlePublishCourse, getCatLabel, initi
                 <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_description}</label><textarea required name="description" defaultValue={initialData?.description} rows="4" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none"></textarea></div>
                 <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_learn_goals}</label><textarea required name="objectives" defaultValue={initialData?.objectives?.join('\n')} rows="4" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" placeholder="Enter each objective on a new line..."></textarea></div>
                 <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_prereq}</label><input type="text" name="prerequisites" defaultValue={initialData?.prerequisites} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" /></div>
-
+                
                 <div className="pt-4 border-t border-gray-100 flex justify-end">
                     <button type="submit" disabled={isSubmitting} className="bg-primary text-white px-8 py-3 rounded-xl font-bold hover:bg-orange-600 shadow-lg hover:-translate-y-0.5 transition flex items-center font-heading disabled:opacity-50 disabled:cursor-not-allowed">
                         {isSubmitting ? <Loader className="animate-spin w-5 h-5 mr-2 text-white" /> : <KursNaviLogo className="w-5 h-5 mr-2 text-white" />}
@@ -1793,29 +1804,68 @@ export default function KursNaviPro() {
   };
 
   const filteredCourses = courses.filter(course => {
-    // --- SAFETY CHECKS ---
-    if (!course) return false;
-    let matchesCategory = true;
-    if (selectedCatPath.length > 0) { 
-        const courseCatStr = (course.category || "").toLowerCase(); 
-        matchesCategory = selectedCatPath.every(part => courseCatStr.includes(part.toLowerCase())); 
-    }
-    let matchesLocation = true;
-    if (selectedLocations.length > 0) {
-        if (locMode === 'canton') { matchesLocation = selectedLocations.includes(course.canton); } 
-        else { const address = (course.address || "").toLowerCase(); const canton = (course.canton || "").toLowerCase(); matchesLocation = selectedLocations.some(city => address.includes(city.toLowerCase()) || canton.includes(city.toLowerCase())); }
-    }
-    const safeTitle = (course.title || "").toLowerCase();
-    const safeInstructor = (course.instructor_name || "").toLowerCase();
-    const matchesSearch = safeTitle.includes(searchQuery.toLowerCase()) || safeInstructor.includes(searchQuery.toLowerCase());
-    
-    let matchesDate = true; if (filterDate && course.start_date) matchesDate = new Date(course.start_date) >= new Date(filterDate);
-    let matchesPrice = true; if (filterPriceMax) matchesPrice = (course.price || 0) <= Number(filterPriceMax);
-    let matchesLevel = true; if (filterLevel !== 'All') matchesLevel = course.level === filterLevel;
-    let matchesPro = true; if (filterPro) matchesPro = course.is_pro === true;
+    // --- SAFETY CHECKS ---
+    if (!course) return false;
+    let matchesCategory = true;
+    if (selectedCatPath.length > 0) { 
+        const courseCatStr = (course.category || "").toLowerCase(); 
+        matchesCategory = selectedCatPath.every(part => courseCatStr.includes(part.toLowerCase())); 
+    }
+    
+    // ARCHITECT CHANGE: Filter by Event Location (Canton or City)
+    let matchesLocation = true;
+    if (selectedLocations.length > 0) {
+        // Collect all locations from the course events + the main course fallback
+        const courseLocations = [];
+        if (course.canton) courseLocations.push(course.canton); // Legacy/Fallback
+        if (course.course_events) {
+            course.course_events.forEach(ev => {
+                if (ev.canton) courseLocations.push(ev.canton);
+                if (ev.location) courseLocations.push(ev.location); // Also search in address text
+            });
+        }
 
-    return matchesCategory && matchesLocation && matchesSearch && matchesDate && matchesPrice && matchesLevel && matchesPro;
-  });
+        if (locMode === 'canton') { 
+            // Check if ANY of the selected cantons match ANY of the course's event cantons
+            matchesLocation = selectedLocations.some(selLoc => courseLocations.includes(selLoc));
+        } else { 
+            // City search (text based)
+            const address = (course.address || "").toLowerCase(); 
+            const canton = (course.canton || "").toLowerCase(); 
+            // Also check event addresses
+            const eventAddresses = course.course_events ? course.course_events.map(ev => (ev.location || "").toLowerCase()).join(" ") : "";
+            
+            matchesLocation = selectedLocations.some(city => 
+                address.includes(city.toLowerCase()) || 
+                canton.includes(city.toLowerCase()) ||
+                eventAddresses.includes(city.toLowerCase())
+            ); 
+        }
+    }
+
+    const safeTitle = (course.title || "").toLowerCase();
+    const safeInstructor = (course.instructor_name || "").toLowerCase();
+    const matchesSearch = safeTitle.includes(searchQuery.toLowerCase()) || safeInstructor.includes(searchQuery.toLowerCase());
+    
+    // Date filter also checks events
+    let matchesDate = true; 
+    if (filterDate) {
+        const filterTime = new Date(filterDate).getTime();
+        const mainDate = course.start_date ? new Date(course.start_date).getTime() : 0;
+        let hasEventAfter = mainDate >= filterTime;
+        
+        if (course.course_events && course.course_events.length > 0) {
+            hasEventAfter = course.course_events.some(ev => new Date(ev.start_date).getTime() >= filterTime);
+        }
+        matchesDate = hasEventAfter;
+    }
+
+    let matchesPrice = true; if (filterPriceMax) matchesPrice = (course.price || 0) <= Number(filterPriceMax);
+    let matchesLevel = true; if (filterLevel !== 'All') matchesLevel = course.level === filterLevel;
+    let matchesPro = true; if (filterPro) matchesPro = course.is_pro === true;
+
+    return matchesCategory && matchesLocation && matchesSearch && matchesDate && matchesPrice && matchesLevel && matchesPro;
+  });
 
   return (
     <div className="min-h-screen bg-beige font-sans text-dark selection:bg-orange-100 selection:text-primary flex flex-col font-sans">
