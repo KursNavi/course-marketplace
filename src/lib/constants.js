@@ -13,6 +13,208 @@ export const BRAND = {
 export const SWISS_CANTONS = ["Aargau", "Appenzell AI", "Appenzell AR", "Basel-Landschaft", "Basel-Stadt", "Bern", "Fribourg", "Genève", "Glarus", "Graubünden", "Jura", "Luzern", "Neuchâtel", "Nidwalden", "Obwalden", "Schaffhausen", "Schwyz", "Solothurn", "St. Gallen", "Thurgau", "Ticino", "Uri", "Valais", "Vaud", "Zug", "Zürich"];
 export const SWISS_CITIES = ["Basel", "Bern", "Biel/Bienne", "Genève", "Lausanne", "Lugano", "Luzern", "St. Gallen", "Winterthur", "Zürich"];
 
+// --- NEW TAXONOMY CONSTANTS ---
+
+export const COURSE_LEVELS = {
+  beginner: { de: "Einsteiger / keine Vorkenntnisse", en: "Beginner / No prior knowledge", fr: "Débutant / Aucune connaissance", it: "Principiante / Nessuna conoscenza" },
+  intermediate: { de: "Mit Vorkenntnissen / Mittelstufe", en: "Intermediate", fr: "Intermédiaire", it: "Intermedio" },
+  advanced: { de: "Fortgeschritten / Profi", en: "Advanced / Professional", fr: "Avancé / Professionnel", it: "Avanzato / Professionale" },
+  all_levels: { de: "Alle Niveaus / gemischtes Niveau", en: "All Levels / Mixed", fr: "Tous niveaux", it: "Tutti i livelli" }
+};
+
+export const AGE_GROUPS = {
+  age_0_3: { de: "0–3 Jahre", en: "0–3 Years", fr: "0–3 ans", it: "0–3 anni" },
+  age_4_6: { de: "4–6 Jahre", en: "4–6 Years", fr: "4–6 ans", it: "4–6 anni" },
+  age_7_9: { de: "7–9 Jahre", en: "7–9 Years", fr: "7–9 ans", it: "7–9 anni" },
+  age_10_12: { de: "10–12 Jahre", en: "10–12 Years", fr: "10–12 ans", it: "10–12 anni" },
+  age_13_15: { de: "13–15 Jahre", en: "13–15 Years", fr: "13–15 ans", it: "13–15 anni" },
+  age_16_18: { de: "16–18 Jahre", en: "16–18 Years", fr: "16–18 ans", it: "16–18 anni" },
+  age_18_25: { de: "18–25 Jahre", en: "18–25 Years", fr: "18–25 ans", it: "18–25 anni" },
+  age_26_59: { de: "26–59 Jahre", en: "26–59 Years", fr: "26–59 ans", it: "26–59 anni" },
+  age_60_plus: { de: "60+ Jahre", en: "60+ Years", fr: "60+ ans", it: "60+ anni" },
+  parents_caregivers: { de: "Eltern & Bezugspersonen", en: "Parents & Caregivers", fr: "Parents & Soignants", it: "Genitori & Tutori" },
+  age_mixed: { de: "Altersgemischt / offen", en: "Mixed Age / Open", fr: "Âge mixte / Ouvert", it: "Età mista / Aperto" }
+};
+
+export const CATEGORY_TYPES = {
+  beruflich: { de: "Berufliche Weiterbildung", en: "Professional Development", fr: "Formation professionnelle", it: "Formazione professionale" },
+  privat_hobby: { de: "Privat & Hobby", en: "Private & Hobby", fr: "Privé & Loisirs", it: "Privato & Hobby" },
+  kinder_jugend: { de: "Kinder & Jugendliche", en: "Kids & Teens", fr: "Enfants & Ados", it: "Bambini & Adolescenti" }
+};
+
+// The Structure: Type -> Area (Level 1) -> Specialties (Level 2)
+// Note: Labels currently DE only for deep levels, EN/FR/IT default to DE key or generic. 
+// In a real app, we would fill all translations.
+export const NEW_TAXONOMY = {
+  beruflich: {
+    business_mgmt: {
+      label: { de: "Business, Management & Leadership", en: "Business & Management", fr: "Affaires & Gestion", it: "Affari & Gestione" },
+      specialties: [
+        "Unternehmensstrategie & Geschäftsmodelle", "Projektmanagement klassisch", "Agiles Projekt- & Produktmanagement", 
+        "Prozessmanagement & Lean", "Leadership & Teamführung", "Change- & Transformationsmanagement", 
+        "Organisationsentwicklung", "Innovation & Entrepreneurship", "Nachhaltigkeit & CSR", 
+        "Unternehmensgründung", "Governance & Compliance", "Sonstiges Business"
+      ]
+    },
+    hr_recht: {
+      label: { de: "HR, Recht & Administration", en: "HR, Law & Admin", fr: "RH, Droit & Admin", it: "HR, Diritto & Ammin." },
+      specialties: [
+        "Recruiting & Personalmarketing", "Personaladministration & Lohn", "Arbeitsrecht", 
+        "Personalentwicklung", "HR-Strategie", "Diversity & Inclusion", "Office-Management", "Sonstiges HR/Recht"
+      ]
+    },
+    finanzen: {
+      label: { de: "Finanzen, Controlling & Treuhand", en: "Finance & Accounting", fr: "Finance & Comptabilité", it: "Finanza & Contabilità" },
+      specialties: [
+        "Buchhaltung & Abschluss", "Controlling & Reporting", "Finanzplanung & Budget", 
+        "Steuern für Unternehmen", "Treuhand", "Rechnungslegung (OR/Swiss GAAP)", "Sonstiges Finanzen"
+      ]
+    },
+    marketing: {
+      label: { de: "Verkauf, Marketing & Kommunikation", en: "Sales & Marketing", fr: "Ventes & Marketing", it: "Vendite & Marketing" },
+      specialties: [
+        "Verkauf & Vertrieb", "Verhandlungstechnik", "Marketingstrategie", "Online-Marketing & Social Media", 
+        "Content & Storytelling", "SEO/SEA", "CRM & Automation", "Eventmarketing", "Sonstiges Marketing"
+      ]
+    },
+    it_digital: {
+      label: { de: "IT, Digital & Data", en: "IT, Digital & Data", fr: "IT, Numérique & Données", it: "IT, Digitale & Dati" },
+      specialties: [
+        "Softwareentwicklung", "Webdesign & Webdev", "Datenbanken & SQL", "Data Science & BI", 
+        "AI & Machine Learning", "Cybersecurity", "Cloud & Infrastruktur", "Office-Tools (Excel etc.)", "Sonstiges IT"
+      ]
+    },
+    industrie_bau: {
+      label: { de: "Industrie, Bau & Immobilien", en: "Industry & Construction", fr: "Industrie & Construction", it: "Industria & Edilizia" },
+      specialties: [
+        "Bauleitung & Planung", "CAD & BIM", "Energie & Gebäudetechnik", "Facility Management", 
+        "Logistik & Supply Chain", "Arbeitssicherheit", "Immobilienbewirtschaftung", "Sonstiges Industrie/Bau"
+      ]
+    },
+    gesundheit_beruf: {
+      label: { de: "Gesundheit, Pflege & Soziales", en: "Health & Social Care", fr: "Santé & Soins", it: "Salute & Assistenza" },
+      specialties: [
+        "Pflege & Betreuung", "Medizinische Grundlagen", "Notfallmedizin & Erste Hilfe", 
+        "Praxisorganisation", "Soziale Arbeit", "Pädagogik (beruflich)", "Sonstiges Gesundheit"
+      ]
+    },
+    sprachen_beruf: {
+      label: { de: "Sprachen für den Beruf", en: "Business Languages", fr: "Langues des affaires", it: "Lingue commerciali" },
+      specialties: [
+        "Business Deutsch", "Business Englisch", "Business Französisch", "Fachsprache (Medizin/Recht)", 
+        "Präsentieren in Fremdsprache", "Sonstige Berufssprachen"
+      ]
+    },
+    soft_skills: {
+      label: { de: "Soft Skills & Persönlichkeit", en: "Soft Skills", fr: "Compétences douces", it: "Soft Skills" },
+      specialties: [
+        "Kommunikation", "Präsentation & Auftritt", "Zeitmanagement", "Konfliktmanagement", 
+        "Resilienz & Stress", "Interkulturelle Kompetenz", "Sonstige Soft Skills"
+      ]
+    }
+  },
+  privat_hobby: {
+    sport_fitness: {
+      label: { de: "Sport, Fitness & Bewegung", en: "Sports & Fitness", fr: "Sport & Fitness", it: "Sport & Fitness" },
+      specialties: [
+        "Fitness & Kraft", "Ausdauer & Lauf", "Kampfsport", "Tanz-Fitness (Zumba etc.)", 
+        "Teamsport", "Wintersport", "Wassersport", "Outdoor & Wandern", "Sonstiges Sport"
+      ]
+    },
+    yoga_mental: {
+      label: { de: "Yoga, Entspannung & Mental", en: "Yoga & Mental Health", fr: "Yoga & Santé mentale", it: "Yoga & Salute mentale" },
+      specialties: [
+        "Hatha Yoga", "Vinyasa/Power Yoga", "Pilates", "Meditation & Achtsamkeit", 
+        "Atemtraining", "Stressbewältigung", "Sonstiges Yoga/Mental"
+      ]
+    },
+    musik: {
+      label: { de: "Musik & Bühne", en: "Music & Stage", fr: "Musique & Scène", it: "Musica & Palcoscenico" },
+      specialties: [
+        "Gitarre/Bass", "Klavier/Tasten", "Gesang", "Schlagzeug", "Blasinstrumente", "Streichinstrumente", 
+        "Chor/Ensemble", "Musikproduktion & DJ", "Theater & Schauspiel", "Tanz (Standard/Salsa)", "Sonstiges Musik"
+      ]
+    },
+    kunst_kreativ: {
+      label: { de: "Kunst, Design & Kreatives", en: "Art & Creative", fr: "Art & Créatif", it: "Arte & Creativo" },
+      specialties: [
+        "Zeichnen & Malen", "Fotografie", "Bildbearbeitung", "Grafikdesign", "Keramik & Töpfern", 
+        "Nähen & Textil", "Schmuck & DIY", "Calligraphy & Lettering", "Sonstiges Kreativ"
+      ]
+    },
+    kochen_genuss: {
+      label: { de: "Kochen, Backen & Genuss", en: "Cooking & Nutrition", fr: "Cuisine & Nutrition", it: "Cucina & Nutrizione" },
+      specialties: [
+        "Kochkurse Basics", "Länderküchen", "Vegetarisch/Vegan", "Backen & Patisserie", 
+        "Barista & Kaffee", "Wein & Degustation", "Ernährungswissen", "Sonstiges Kochen"
+      ]
+    },
+    sprachen_privat: {
+      label: { de: "Sprachen & Reisen", en: "Languages & Travel", fr: "Langues & Voyage", it: "Lingue & Viaggi" },
+      specialties: [
+        "Deutsch (Alltag)", "Englisch (Alltag)", "Französisch (Alltag)", "Italienisch (Alltag)", 
+        "Spanisch (Alltag)", "Schweizerdeutsch", "Reisevorbereitung", "Sonstige Sprachen"
+      ]
+    },
+    heim_garten: {
+      label: { de: "Heim, Handwerk & Natur", en: "Home & Nature", fr: "Maison & Nature", it: "Casa & Natura" },
+      specialties: [
+        "Heimwerken & Reparatur", "Garten & Pflanzen", "Tiere & Hundeschule", "Floristik", 
+        "Technik zuhause", "Sonstiges Heim/Natur"
+      ]
+    },
+    alltag_leben: {
+      label: { de: "Alltag & Persönlichkeit", en: "Life & Personality", fr: "Vie & Personnalité", it: "Vita & Personalità" },
+      specialties: [
+        "Persönlichkeitsentwicklung", "Beziehung & Kommunikation", "Finanzen (Privat)", 
+        "Ordnung & Haushalt", "Spiele & Kultur", "Sonstiges Alltag"
+      ]
+    }
+  },
+  kinder_jugend: {
+    fruehkind: {
+      label: { de: "Frühkind & Eltern-Kind (0-5)", en: "Early Childhood (0-5)", fr: "Petite enfance (0-5)", it: "Prima infanzia (0-5)" },
+      specialties: [
+        "Babyschwimmen", "Eltern-Kind-Turnen (Muki/Vaki)", "Musikgarten & Rhythmik", 
+        "Spielgruppen", "Kreatives für Kleinkinder", "Sonstiges Frühkind"
+      ]
+    },
+    schule_lernen: {
+      label: { de: "Schule, Nachhilfe & Lernen", en: "School & Tutoring", fr: "École & Soutien", it: "Scuola & Tutoraggio" },
+      specialties: [
+        "Nachhilfe Mathe", "Nachhilfe Sprachen", "Nachhilfe Naturwissenschaften", 
+        "Hausaufgabenbetreuung", "Lerncoaching & Prüfungsvorbereitung", "Vorbereitung Gymi/Lehre", "Sonstiges Schule"
+      ]
+    },
+    freizeit_hobbys: {
+      label: { de: "Hobbys, Sport & Kreatives", en: "Hobbies & Sports", fr: "Loisirs & Sports", it: "Hobby & Sport" },
+      specialties: [
+        "Kinderturnen & Sport", "Kampfsport Kinder", "Tanzen Kinder", "Musik & Instrumente", 
+        "Malen & Basteln", "Theater & Zirkus", "Pfadi & Outdoor", "Sonstiges Hobbys"
+      ]
+    },
+    technik_medien: {
+      label: { de: "Technik, Coding & Medien", en: "Tech & Coding", fr: "Tech & Codage", it: "Tech & Coding" },
+      specialties: [
+        "Programmieren & Games", "Robotik & Lego", "Medienkompetenz", "Foto & Video für Kids", "Sonstiges Technik"
+      ]
+    },
+    ferien: {
+      label: { de: "Feriencamps & Betreuung", en: "Camps", fr: "Camps", it: "Campi" },
+      specialties: [
+        "Sportcamps", "Kreativcamps", "Sprachcamps", "Outdoorlager", "Tagesbetreuung", "Sonstiges Ferien"
+      ]
+    },
+    eltern: {
+      label: { de: "Elternbildung & Familie", en: "Parenting", fr: "Parentalité", it: "Genitorialità" },
+      specialties: [
+        "Geburtsvorbereitung", "Erziehung & Entwicklung", "Erste Hilfe am Kind", "Familienleben", "Sonstiges Eltern"
+      ]
+    }
+  }
+};
+
+// --- LEGACY CATEGORIES (Required for Landing Page & Filters) ---
 export const CATEGORY_HIERARCHY = {
   "Private & Hobby": {
     "Music & Audio": ["Guitar", "Piano", "Vocals", "Drums", "Production", "Other Instruments"],
@@ -61,7 +263,6 @@ export const CATEGORY_LABELS = {
   "Web Development": { de: "Webentwicklung", fr: "Développement Web", it: "Sviluppo Web" },
   "Homework Help": { de: "Hausaufgabenhilfe", fr: "Aide aux devoirs", it: "Aiuto Compiti" }
 };
-
 export const TRANSLATIONS = {
   en: {
     nav_explore: "Explore", nav_about: "About Us", nav_contact: "Contact", nav_login: "Login", nav_logout: "Logout", nav_dashboard: "Dashboard",

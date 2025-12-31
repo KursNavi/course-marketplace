@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { Search, User, Clock, MapPin, CheckCircle, ArrowLeft, LogIn, LayoutDashboard, Settings, Trash2, DollarSign, Lock, Calendar, ExternalLink, ChevronDown, ChevronRight, Mail, Phone, Loader, Heart, Shield, X, BookOpen, Star, Zap, Users, Briefcase, Smile, Music, ArrowRight, Save, Filter, PenTool, Info, Eye, HelpCircle, Plus, Minus } from 'lucide-react';
 
 // --- IMPORTS ---
-import { BRAND, CATEGORY_HIERARCHY, CATEGORY_LABELS, SWISS_CANTONS, SWISS_CITIES, TRANSLATIONS } from './lib/constants';
+import { BRAND, CATEGORY_HIERARCHY, CATEGORY_LABELS, SWISS_CANTONS, SWISS_CITIES, TRANSLATIONS, NEW_TAXONOMY, CATEGORY_TYPES, COURSE_LEVELS, AGE_GROUPS } from './lib/constants';
 import { Navbar, Footer, KursNaviLogo } from './components/Layout';
 import { Home } from './components/Home';
 import LegalPage from './components/LegalPage';
@@ -1089,9 +1089,17 @@ const Dashboard = ({ user, t, setView, courses, teacherEarnings, myBookings, han
     );
 };
 
+
 const TeacherForm = ({ t, setView, user, handlePublishCourse, getCatLabel, initialData }) => {
-    const [lvl1, setLvl1] = useState(Object.keys(CATEGORY_HIERARCHY)[0]);
-    const [lvl2, setLvl2] = useState(Object.keys(CATEGORY_HIERARCHY[lvl1])[0]);
+    // New Taxonomy State
+    const [selectedType, setSelectedType] = useState('privat_hobby');
+    const [selectedArea, setSelectedArea] = useState('');
+    const [selectedSpecialty, setSelectedSpecialty] = useState('');
+    
+    // New Metadata State
+    const [selectedLevel, setSelectedLevel] = useState('all_levels');
+    const [selectedAgeGroups, setSelectedAgeGroups] = useState([]);
+
     const [isSubmitting, setIsSubmitting] = useState(false);
     
     // NEW: Added schedule_description to state
@@ -1099,9 +1107,19 @@ const TeacherForm = ({ t, setView, user, handlePublishCourse, getCatLabel, initi
 
     useEffect(() => {
         if (initialData) {
-            if (initialData.category) {
-                const parts = initialData.category.split(' | ');
-                if (parts.length >= 2) { setLvl1(parts[0]); setLvl2(parts[1]); }
+            // Restore Taxonomy
+            if (initialData.category_type) setSelectedType(initialData.category_type);
+            if (initialData.category_area) setSelectedArea(initialData.category_area);
+            if (initialData.category_specialty) setSelectedSpecialty(initialData.category_specialty);
+            
+            // Restore Metadata
+            if (initialData.level) setSelectedLevel(initialData.level);
+            if (initialData.target_age_groups) setSelectedAgeGroups(initialData.target_age_groups);
+
+            // Legacy Fallback for old courses
+            if (!initialData.category_type && initialData.category) {
+                 // Try to guess or just set default
+                 setSelectedType('privat_hobby');
             }
             // Load events
             if (initialData.course_events && initialData.course_events.length > 0) {
@@ -1117,6 +1135,31 @@ const TeacherForm = ({ t, setView, user, handlePublishCourse, getCatLabel, initi
             }
         }
     }, [initialData]);
+
+    // Taxonomy Helpers
+    const getAreas = (type) => type && NEW_TAXONOMY[type] ? Object.keys(NEW_TAXONOMY[type]) : [];
+    const getSpecialties = (type, area) => type && area && NEW_TAXONOMY[type][area] ? NEW_TAXONOMY[type][area].specialties : [];
+    
+    // Reset logic when parents change
+    const handleTypeChange = (e) => {
+        const newType = e.target.value;
+        setSelectedType(newType);
+        setSelectedArea(''); // Reset child
+        setSelectedSpecialty(''); // Reset grandchild
+    };
+
+    const handleAreaChange = (e) => {
+        setSelectedArea(e.target.value);
+        setSelectedSpecialty(''); // Reset child
+    };
+
+    const toggleAgeGroup = (key) => {
+        if (selectedAgeGroups.includes(key)) {
+            setSelectedAgeGroups(selectedAgeGroups.filter(k => k !== key));
+        } else {
+            setSelectedAgeGroups([...selectedAgeGroups, key]);
+        }
+    };
 
     const handleLvl1Change = (e) => { const val = e.target.value; setLvl1(val); setLvl2(Object.keys(CATEGORY_HIERARCHY[val])[0]); };
     
@@ -1161,20 +1204,79 @@ const TeacherForm = ({ t, setView, user, handlePublishCourse, getCatLabel, initi
 
                     <div className="md:col-span-2"><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_title}</label><input required type="text" name="title" defaultValue={initialData?.title} placeholder="e.g. Traditional Swiss Cooking" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none transition-shadow" /></div>
                     
-                    <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_skill_level}</label><select name="level" defaultValue={initialData?.level || "All Levels"} className="w-full px-3 py-2 border rounded-lg focus:ring-primary bg-white text-sm outline-none"><option value="All Levels">{t.opt_all_levels}</option><option value="Beginner">{t.opt_beginner}</option><option value="Advanced">{t.opt_advanced}</option></select></div>
-                          <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_target_group}</label><select name="target_group" defaultValue={initialData?.target_group || "Adults"} className="w-full px-3 py-2 border rounded-lg focus:ring-primary bg-white text-sm outline-none"><option value="Adults">{t.opt_adults}</option><option value="Teens">{t.opt_teens}</option><option value="Kids">{t.opt_kids}</option></select></div>
-                    </div>
+                    {/* NEW TAXONOMY & METADATA SECTION */}
+                    <div className="md:col-span-2 bg-beige p-5 rounded-xl border border-orange-100 space-y-6">
+                        
+                        {/* 1. Category Classification */}
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-2">{t.lbl_cat_class}</label>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                {/* Type */}
+                                <div>
+                                    <span className="text-xs text-gray-500 block mb-1">Typ (Hauptkategorie)</span>
+                                    <select name="category_type" value={selectedType} onChange={handleTypeChange} className="w-full px-3 py-2 border rounded-lg focus:ring-primary bg-white text-sm">
+                                        {Object.keys(CATEGORY_TYPES).map(key => (
+                                            <option key={key} value={key}>{CATEGORY_TYPES[key].de}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                {/* Area */}
+                                <div>
+                                    <span className="text-xs text-gray-500 block mb-1">Bereich</span>
+                                    <select name="category_area" value={selectedArea} onChange={handleAreaChange} className="w-full px-3 py-2 border rounded-lg focus:ring-primary bg-white text-sm" disabled={!selectedType}>
+                                        <option value="">Bitte wählen...</option>
+                                        {getAreas(selectedType).map(key => (
+                                            <option key={key} value={key}>{NEW_TAXONOMY[selectedType][key].label.de}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                {/* Specialty */}
+                                <div>
+                                    <span className="text-xs text-gray-500 block mb-1">Spezialgebiet</span>
+                                    <select name="category_specialty" value={selectedSpecialty} onChange={(e) => setSelectedSpecialty(e.target.value)} className="w-full px-3 py-2 border rounded-lg focus:ring-primary bg-white text-sm" disabled={!selectedArea}>
+                                        <option value="">Bitte wählen...</option>
+                                        {getSpecialties(selectedType, selectedArea).map(spec => (
+                                            <option key={spec} value={spec}>{spec}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
 
-                    <div className="md:col-span-2 bg-beige p-4 rounded-xl border border-orange-100">
-                        <label className="block text-sm font-bold text-gray-700 mb-2">{t.lbl_cat_class}</label>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div><span className="text-xs text-gray-500 block mb-1">{t.lbl_type}</span><select name="catLvl1" value={lvl1} onChange={handleLvl1Change} className="w-full px-3 py-2 border rounded-lg focus:ring-primary bg-white text-sm">{Object.keys(CATEGORY_HIERARCHY).map(c => <option key={c} value={c}>{getCatLabel(c)}</option>)}</select></div>
-                            <div><span className="text-xs text-gray-500 block mb-1">{t.lbl_area}</span><select name="catLvl2" value={lvl2} onChange={(e) => setLvl2(e.target.value)} className="w-full px-3 py-2 border rounded-lg focus:ring-primary bg-white text-sm">{Object.keys(CATEGORY_HIERARCHY[lvl1]).map(c => <option key={c} value={c}>{getCatLabel(c)}</option>)}</select></div>
-                            <div><span className="text-xs text-gray-500 block mb-1">{t.lbl_specialty}</span><select name="catLvl3" defaultValue={initialData ? initialData.category.split(' | ')[2] : ''} className="w-full px-3 py-2 border rounded-lg focus:ring-primary bg-white text-sm">{CATEGORY_HIERARCHY[lvl1][lvl2].map(c => <option key={c} value={c}>{getCatLabel(c)}</option>)}</select></div>
+                        <div className="border-t border-orange-200/50 my-2"></div>
+
+                        {/* 2. Metadata: Level & Age */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* Level */}
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_skill_level}</label>
+                                <select name="level" value={selectedLevel} onChange={(e) => setSelectedLevel(e.target.value)} className="w-full px-3 py-2 border rounded-lg focus:ring-primary bg-white text-sm outline-none">
+                                    {Object.keys(COURSE_LEVELS).map(key => (
+                                        <option key={key} value={key}>{COURSE_LEVELS[key].de}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            {/* Age Groups (Multi-Select) */}
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-2">Altersgruppe(n)</label>
+                                <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto p-2 border rounded-lg bg-white">
+                                    {Object.keys(AGE_GROUPS).map(key => (
+                                        <label key={key} className="flex items-center space-x-2 text-sm cursor-pointer hover:bg-gray-50 rounded p-1">
+                                            <input 
+                                                type="checkbox" 
+                                                checked={selectedAgeGroups.includes(key)} 
+                                                onChange={() => toggleAgeGroup(key)}
+                                                className="rounded text-primary focus:ring-primary"
+                                            />
+                                            <span className="text-gray-700 text-xs">{AGE_GROUPS[key].de}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                                <input type="hidden" name="target_age_groups_json" value={JSON.stringify(selectedAgeGroups)} />
+                            </div>
                         </div>
                     </div>
-                </div>
 
                 {/* --- DATES & LOCATIONS (UPDATED WITH SCHEDULE INFO) --- */}
                 <div className="bg-blue-50 p-6 rounded-xl border border-blue-100">
@@ -1688,11 +1790,27 @@ export default function KursNaviPro() {
   };
 
   const handlePublishCourse = async (e, eventsList) => {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    const courseId = formData.get('course_id');
-    const objectivesList = formData.get('objectives').split('\n').filter(line => line.trim() !== '');
-    const fullCategoryString = `${formData.get('catLvl1')} | ${formData.get('catLvl2')} | ${formData.get('catLvl3')}`;
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const courseId = formData.get('course_id');
+      const objectivesList = formData.get('objectives').split('\n').filter(line => line.trim() !== '');
+      
+      // NEW: Parse new fields
+      const catType = formData.get('category_type');
+      const catArea = formData.get('category_area');
+      const catSpec = formData.get('category_specialty');
+      const level = formData.get('level');
+      const ageGroups = JSON.parse(formData.get('target_age_groups_json') || '[]');
+
+      // Validation
+      if (!catType || !catArea || !catSpec) {
+          alert("Bitte wählen Sie eine vollständige Kategorie aus (Typ, Bereich und Spezialgebiet).");
+          return;
+      }
+      if (ageGroups.length === 0) {
+          alert("Bitte wählen Sie mindestens eine Altersgruppe aus.");
+          return;
+      }
 
     // 1. Image Upload Logic
     let imageUrl = editingCourse?.image_url || "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=600";
@@ -1712,13 +1830,33 @@ export default function KursNaviPro() {
     const mainDate = eventsList.length > 0 ? eventsList[0].start_date : formData.get('startDate');
 
     const newCourse = {
-      title: formData.get('title'), instructor_name: user.name, price: Number(formData.get('price')), rating: 0, category: fullCategoryString, 
-      canton: formData.get('canton'), address: mainLocation, start_date: mainDate, // Fallback values
-      image_url: imageUrl, description: formData.get('description'), objectives: objectivesList, prerequisites: formData.get('prerequisites'), 
-      session_count: Number(formData.get('sessionCount')), session_length: formData.get('sessionLength'), provider_url: formData.get('providerUrl'), 
-      user_id: user.id, level: formData.get('level'), target_group: formData.get('target_group'),
-      is_pro: user.is_professional || false
-    };
+        title: formData.get('title'), 
+        instructor_name: user.name, 
+        price: Number(formData.get('price')), 
+        rating: 0, 
+        // Legacy Support (optional, can simulate string)
+        category: `${catType} | ${catArea}`, 
+        
+        // NEW FIELDS
+        category_type: catType,
+        category_area: catArea,
+        category_specialty: catSpec,
+        level: level,
+        target_age_groups: ageGroups,
+
+        canton: formData.get('canton'), 
+        address: mainLocation, 
+        start_date: mainDate,
+        image_url: imageUrl, 
+        description: formData.get('description'), 
+        objectives: objectivesList, 
+        prerequisites: formData.get('prerequisites'), 
+        session_count: Number(formData.get('sessionCount')), 
+        session_length: formData.get('sessionLength'), 
+        provider_url: formData.get('providerUrl'), 
+        user_id: user.id, 
+        is_pro: user.is_professional || false
+      };
 
     let activeCourseId = courseId;
     let error;
