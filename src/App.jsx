@@ -415,7 +415,7 @@ export default function KursNaviPro() {
       )}
 
       {view === 'success' && <SuccessView setView={setView} />}
-      {view === 'detail' && selectedCourse && ( <DetailView course={selectedCourse} setView={setView} t={t} setSelectedTeacher={setSelectedTeacher} user={user} /> )}
+      {view === 'detail' && selectedCourse && ( <DetailView course={selectedCourse} courses={courses} setView={setView} t={t} setSelectedTeacher={setSelectedTeacher} user={user} /> )}
       {view === 'teacher-profile' && selectedTeacher && ( <TeacherProfileView teacher={selectedTeacher} courses={courses} setView={setView} setSelectedCourse={setSelectedCourse} t={t} getCatLabel={getCatLabel} /> )}
       {view === 'how-it-works' && <HowItWorksPage t={t} setView={setView} />}
       {view === 'login' && <AuthView setView={setView} setUser={setUser} showNotification={showNotification} lang={lang} />}

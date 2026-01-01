@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Search, ChevronRight, User, X, Calendar, Shield, MapPin, CheckCircle, Loader } from 'lucide-react';
 import { LocationDropdown } from './Filters';
 import { CATEGORY_TYPES, NEW_TAXONOMY, AGE_GROUPS, COURSE_LEVELS } from '../lib/constants';
@@ -14,6 +14,32 @@ const SearchPageView = ({
     loading, filteredCourses, setSelectedCourse, setView, 
     t, filterDate, setFilterDate, filterPriceMax, setFilterPriceMax, filterLevel, setFilterLevel, filterPro, setFilterPro 
 }) => {
+
+    // --- SEO LOGIC: Zero-Result Rule ---
+    useEffect(() => {
+        if (loading) return; // Wait for data
+
+        // Check or create meta robots tag
+        let robotsMeta = document.querySelector('meta[name="robots"]');
+        if (!robotsMeta) {
+            robotsMeta = document.createElement('meta');
+            robotsMeta.name = "robots";
+            document.head.appendChild(robotsMeta);
+        }
+
+        if (filteredCourses.length === 0) {
+            // 3.1 Empty Category/Search -> NOINDEX
+            robotsMeta.content = "noindex,follow";
+        } else {
+            // Has Results -> INDEX
+            robotsMeta.content = "index,follow";
+        }
+
+        // Cleanup: Reset to index on unmount to avoid polluting other pages
+        return () => {
+            if (robotsMeta) robotsMeta.content = "index,follow";
+        };
+    }, [filteredCourses.length, loading]);
 
     // --- DYNAMIC FILTER LOGIC (Hide empty categories) ---
     const availableTypes = [...new Set(courses.map(c => c.category_type).filter(Boolean))];
