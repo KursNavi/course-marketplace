@@ -1589,6 +1589,16 @@ export default function KursNaviPro() {
   // Filter State
   const [searchQuery, setSearchQuery] = useState("");
 
+  // --- MISSING STATES (FIX FOR WHITE SCREEN) ---
+  const [selectedTeacher, setSelectedTeacher] = useState(null);
+  const [editingCourse, setEditingCourse] = useState(null);
+  const [notification, setNotification] = useState(null);
+
+  // Location States
+  const [locMode, setLocMode] = useState('canton');
+  const [selectedLocations, setSelectedLocations] = useState([]);
+  const [locMenuOpen, setLocMenuOpen] = useState(false);
+
   // --- NEW TAXONOMY FILTERS ---
   const [searchType, setSearchType] = useState("");
   const [searchArea, setSearchArea] = useState("");
