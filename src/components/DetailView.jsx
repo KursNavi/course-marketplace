@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { ArrowLeft, User, MapPin, Clock, CheckCircle, Calendar, Shield, Lock } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
-const DetailView = ({ course, setView, t, setSelectedTeacher, user }) => {
+const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user }) => {
 
     // SEO: Dynamic Title & Meta + Schema.org Injection
     useEffect(() => {
@@ -79,6 +79,12 @@ const DetailView = ({ course, setView, t, setSelectedTeacher, user }) => {
             isFull: false 
         }];
     }
+
+    // LOGIC: Related Courses (Liquidity)
+    // Filter logic: Same category_area, excludes current course, limit 4
+    const relatedCourses = (courses || [])
+        .filter(c => c.id !== course.id && c.category_area === course.category_area)
+        .slice(0, 4);
 
     return (
     <div className="max-w-7xl mx-auto px-4 py-8 font-sans">
@@ -176,6 +182,43 @@ const DetailView = ({ course, setView, t, setSelectedTeacher, user }) => {
                 </div>
             </div>
         </div>
+
+        {/* RELATED COURSES (Liquidity Engine) */}
+        {relatedCourses.length > 0 && (
+            <div className="mt-16 pt-10 border-t border-gray-200">
+                <h2 className="text-2xl font-bold font-heading text-dark mb-6">Das könnte dich auch interessieren</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {relatedCourses.map(rel => (
+                         <div key={rel.id} 
+                              onClick={() => { 
+                                  // Use standard navigation to trigger URL update in App.jsx
+                                  const topicSlug = (rel.category_area || 'kurs').toLowerCase().replace(/_/g, '-');
+                                  const locSlug = (rel.canton || 'schweiz').toLowerCase();
+                                  const titleSlug = (rel.title || 'detail').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+                                  window.history.pushState({}, '', `/courses/${topicSlug}/${locSlug}/${rel.id}-${titleSlug}`);
+                                  // Force reload of view since we are already in detail view (simple state update might not trigger useEffect correctly if logic relies on selectedCourse change alone)
+                                  window.location.href = `/courses/${topicSlug}/${locSlug}/${rel.id}-${titleSlug}`;
+                              }} 
+                              className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md cursor-pointer group"
+                         >
+                            <div className="h-40 overflow-hidden relative">
+                                <img src={rel.image_url} alt={rel.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"/>
+                                <span className="absolute bottom-2 left-2 bg-white/90 px-2 py-0.5 rounded text-xs font-bold text-gray-700 flex items-center shadow-sm">
+                                    <MapPin className="w-3 h-3 mr-1 text-primary"/> {rel.canton}
+                                </span>
+                            </div>
+                            <div className="p-4">
+                                <h4 className="font-bold text-dark text-sm line-clamp-2 h-10 mb-2 font-heading">{rel.title}</h4>
+                                <div className="flex justify-between items-center text-xs text-gray-500">
+                                    <span>{rel.category_area?.replace('_', ' ')}</span>
+                                    <span className="font-bold text-primary">CHF {rel.price}</span>
+                                </div>
+                            </div>
+                         </div>
+                    ))}
+                </div>
+            </div>
+        )}
         
         {/* SEO: Structured Data (JSON-LD) */}
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
