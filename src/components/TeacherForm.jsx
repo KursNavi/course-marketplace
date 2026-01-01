@@ -235,7 +235,10 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
                         </div>
                     </div>
 
-                    <div className="md:col-span-2"><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_title}</label>
+                    <div className="md:col-span-2">
+                        <label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_title}</label>
+                        <input required type="text" name="title" defaultValue={initialData?.title} placeholder="e.g. Traditional Swiss Cooking" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none transition-shadow" />
+                    </div>
                     
                     {/* NEW TAXONOMY & METADATA SECTION */}
                     <div className="md:col-span-2 bg-beige p-5 rounded-xl border border-orange-100 space-y-6">
