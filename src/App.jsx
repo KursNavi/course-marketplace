@@ -1791,26 +1791,87 @@ export default function KursNaviPro() {
 
   useEffect(() => { fetchCourses(); }, []);
 
-  const fetchCourses = async () => {
+  // --- HELPER: Live-Migration für alte Daten ---
+  const normalizeCourse = (c) => {
+    // Wenn der Kurs schon die neuen Felder hat, nichts tun
+    if (c.category_type) return c;
+
+    // --- MAPPING LOGIK FÜR ALTE KURSE ---
+    let type = 'privat_hobby';
+    let area = 'alltag_leben';
+    let specialty = 'Sonstiges';
+    let age = ['age_26_59']; // Default: Erwachsene
+    let level = 'all_levels';
+
+    const oldCat = (c.category || "").toLowerCase();
+
+    // 1. TYP BESTIMMEN
+    if (oldCat.includes('professional') || oldCat.includes('beruflich') || oldCat.includes('business')) {
+       type = 'beruflich';
+       area = 'soft_skills'; // Fallback
+       if (oldCat.includes('business')) area = 'business_mgmt';
+       if (oldCat.includes('tech') || oldCat.includes('it') || oldCat.includes('data')) area = 'it_digital';
+       if (oldCat.includes('marketing')) area = 'marketing';
+    } 
+    else if (oldCat.includes('children') || oldCat.includes('kinder') || oldCat.includes('kids')) {
+       type = 'kinder_jugend';
+       area = 'freizeit_hobbys';
+       age = ['age_7_9', 'age_10_12'];
+       if (oldCat.includes('school') || oldCat.includes('math')) area = 'schule_lernen';
+    }
+    else {
+       // Privat & Hobby (Default)
+       if (oldCat.includes('music') || oldCat.includes('musik') || oldCat.includes('guitar') || oldCat.includes('piano')) { 
+           area = 'musik'; 
+       }
+       else if (oldCat.includes('sport') || oldCat.includes('yoga') || oldCat.includes('fitness')) { 
+           area = 'sport_fitness'; 
+       }
+       else if (oldCat.includes('cook') || oldCat.includes('kochen')) { 
+           area = 'kochen_genuss'; 
+       }
+       else if (oldCat.includes('art') || oldCat.includes('kunst')) { 
+           area = 'kunst_kreativ'; 
+       }
+       else if (oldCat.includes('language') || oldCat.includes('sprache')) { 
+           area = 'sprachen_privat'; 
+       }
+    }
+
+    // Angereichertes Objekt zurückgeben (simuliert neue DB-Struktur)
+    return { 
+        ...c, 
+        category_type: type, 
+        category_area: area, 
+        category_specialty: specialty, 
+        target_age_groups: age, 
+        level: level 
+    };
+  };
+
+  const fetchCourses = async () => {
     try {
       setLoading(true);
-      // ARCHITECT CHANGE: Load events and booking counts
       const { data, error } = await supabase
         .from('courses')
         .select('*, course_events(*, bookings(count))')
         .order('created_at', { ascending: false });
       if (error) throw error;
-      setCourses(data || []);
-      const path = window.location.pathname;
-      if (path.startsWith('/course/')) {
-          const urlId = path.split('/')[2];
-          if (data && urlId) {
-              const found = data.find(c => c.id == urlId);
-              if (found) { setSelectedCourse(found); setView('detail'); }
-          }
-      }
-    } catch (error) { console.error('Error fetching courses:', error.message); showNotification("Error loading courses"); } finally { setLoading(false); }
-  };
+
+      // Hier wenden wir den Adapter an
+      const migratedData = (data || []).map(normalizeCourse);
+      setCourses(migratedData);
+
+      const path = window.location.pathname;
+      if (path.startsWith('/course/')) {
+          const urlId = path.split('/')[2];
+          if (migratedData && urlId) {
+              const found = migratedData.find(c => c.id == urlId);
+              if (found) { setSelectedCourse(found); setView('detail'); }
+          }
+      }
+    } catch (error) { console.error('Error fetching courses:', error.message); showNotification("Error loading courses"); } finally { setLoading(false); }
+  };
 
   const fetchBookings = async (userId) => {
     try {
