@@ -287,6 +287,8 @@ export default function KursNaviPro() {
   }, []);
 
   useEffect(() => {
+    if (loading) return;
+    
     let path = '/';
     const routes = {
         'landing-private': '/private', 'landing-prof': '/professional', 'landing-kids': '/children',
@@ -404,8 +406,17 @@ export default function KursNaviPro() {
       <Navbar t={t} user={user} lang={lang} setLang={changeLanguage} setView={setView} handleLogout={handleLogout} setShowResults={() => setView('search')} setSelectedCatPath={setSelectedCatPath} />
 
       <div className="flex-grow">
-      {view === 'home' && (
-            <Home t={t} courses={courses} setView={setView} setSearchType={setSearchType} setSearchArea={setSearchArea} setSearchSpecialty={setSearchSpecialty} setSelectedCatPath={setSelectedCatPath} searchQuery={searchQuery} setSearchQuery={setSearchQuery} catMenuOpen={catMenuOpen} setCatMenuOpen={setCatMenuOpen} catMenuRef={catMenuRef} locMode={locMode} setLocMode={setLocMode} selectedLocations={selectedLocations} setSelectedLocations={setSelectedLocations} locMenuOpen={locMenuOpen} setLocMenuOpen={setLocMenuOpen} locMenuRef={locMenuRef} getCatLabel={getCatLabel} />
+            
+      {/* GLOBAL LOADING STATE - Prevents White Screen / Redirects */}
+      {loading && (
+          <div className="flex flex-col items-center justify-center min-h-[60vh]">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mb-4"></div>
+              <p className="text-gray-500 font-sans animate-pulse">Lade Kurse...</p>
+          </div>
+      )}
+
+      {!loading && view === 'home' && (
+              <Home t={t} courses={courses} setView={setView} setSearchType={setSearchType} setSearchArea={setSearchArea} setSearchSpecialty={setSearchSpecialty} setSelectedCatPath={setSelectedCatPath} searchQuery={searchQuery} setSearchQuery={setSearchQuery} catMenuOpen={catMenuOpen} setCatMenuOpen={setCatMenuOpen} catMenuRef={catMenuRef} locMode={locMode} setLocMode={setLocMode} selectedLocations={selectedLocations} setSelectedLocations={setSelectedLocations} locMenuOpen={locMenuOpen} setLocMenuOpen={setLocMenuOpen} locMenuRef={locMenuRef} getCatLabel={getCatLabel} />
         )}
         
       {view === 'landing-private' && ( <LandingView title="Unleash your passion." subtitle="Hobby Courses" variant="private" searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearchSubmit={handleSearchSubmit} setSelectedCatPath={setSelectedCatPath} setView={setView} t={t} getCatLabel={getCatLabel} /> )}
@@ -417,7 +428,7 @@ export default function KursNaviPro() {
       )}
 
       {view === 'success' && <SuccessView setView={setView} />}
-      {view === 'detail' && selectedCourse && ( <DetailView course={selectedCourse} courses={courses} setView={setView} t={t} setSelectedTeacher={setSelectedTeacher} user={user} /> )}
+      {!loading && view === 'detail' && selectedCourse && (<DetailView course={selectedCourse} courses={courses} setView={setView} t={t} setSelectedTeacher={setSelectedTeacher} user={user} /> )}
       {view === 'teacher-hub' && <TeacherHub setView={setView} t={t} user={user} />}
       {view === 'teacher-profile' && selectedTeacher && ( <TeacherProfileView teacher={selectedTeacher} courses={courses} setView={setView} setSelectedCourse={setSelectedCourse} t={t} getCatLabel={getCatLabel} /> )}
       {view === 'how-it-works' && <HowItWorksPage t={t} setView={setView} />}

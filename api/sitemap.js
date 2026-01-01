@@ -77,7 +77,12 @@ export default async function handler(req, res) {
     res.status(200).send(sitemap);
 
   } catch (e) {
-    console.error(e);
-    res.status(500).send('Error generating sitemap');
+    console.error("SITEMAP ERROR:", e);
+    // Gib den echten Fehler als JSON zurück, damit wir ihn lesen können
+    res.status(500).json({ 
+      error: 'Error generating sitemap', 
+      details: e.message, 
+      stack: e.stack 
+    });
   }
 }
