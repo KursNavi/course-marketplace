@@ -7,49 +7,57 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user }) =
 
     // SEO: Dynamic Title & Meta + Schema.org Injection
     useEffect(() => {
-        if (!course) return;
-        
-        // 1. Meta Title
-        document.title = `${course.title} in ${course.canton} | KursNavi`;
-        
-        // 2. Meta Description (Check if meta tag exists, else create)
-        let metaDesc = document.querySelector('meta[name="description"]');
-        if (!metaDesc) {
-            metaDesc = document.createElement('meta');
-            metaDesc.name = "description";
-            document.head.appendChild(metaDesc);
+    if (!course) return;
+
+    // 1. Meta Title
+    document.title = `${course.title} in ${course.canton} | KursNavi`;
+
+    // 2. Meta Description
+    let metaDesc = document.querySelector('meta[name="description"]');
+    if (!metaDesc) {
+        metaDesc = document.createElement('meta');
+        metaDesc.name = "description";
+        document.head.appendChild(metaDesc);
+    }
+    metaDesc.content = `Buchen Sie "${course.title}" in ${course.canton}. ${course.description ? course.description.substring(0, 150) : ''}...`;
+
+    // 3. Canonical Link (Twin-Sync Logic)
+    let linkCanonical = document.querySelector('link[rel="canonical"]');
+    if (!linkCanonical) {
+        linkCanonical = document.createElement('link');
+        linkCanonical.rel = "canonical";
+        document.head.appendChild(linkCanonical);
+    }
+
+    // Construct EXACT URL match (Slug Logic from App.jsx)
+    const topicSlug = (course.category_area || 'kurs').toLowerCase().replace(/_/g, '-');
+    const locSlug = (course.canton || 'schweiz').toLowerCase();
+    const titleSlug = (course.title || 'detail')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '');
+
+    const canonicalUrl = `https://kursnavi.ch/courses/${topicSlug}/${locSlug}/${course.id}-${titleSlug}`;
+    linkCanonical.href = canonicalUrl;
+
+    // 4. Open Graph
+    const setOgTag = (property, content) => {
+        let tag = document.querySelector(`meta[property="${property}"]`);
+        if (!tag) {
+            tag = document.createElement('meta');
+            tag.setAttribute('property', property);
+            document.head.appendChild(tag);
         }
-        metaDesc.content = `Buchen Sie "${course.title}" in ${course.canton}. ${course.description ? course.description.substring(0, 150) : ''}...`;
+        tag.setAttribute('content', content || '');
+    };
 
-        // 3. Canonical Link
-        let linkCanonical = document.querySelector('link[rel="canonical"]');
-        if (!linkCanonical) {
-            linkCanonical = document.createElement('link');
-            linkCanonical.rel = "canonical";
-            document.head.appendChild(linkCanonical);
-        }
-        // Construct canonical URL based on ID to avoid duplicate content issues
-        const canonicalUrl = `https://kursnavi.ch/courses/${(course.category_area||'kurs').toLowerCase()}/${(course.canton||'ch').toLowerCase()}/${course.id}`;
-        linkCanonical.href = canonicalUrl;
+    setOgTag('og:title', `${course.title} | KursNavi`);
+    setOgTag('og:description', course.description ? course.description.substring(0, 150) + '...' : 'Entdecke diesen Kurs auf KursNavi.');
+    setOgTag('og:image', course.image_url);
+    setOgTag('og:url', canonicalUrl);
+    setOgTag('og:type', 'website');
 
-        // 4. Open Graph (Social Sharing via WhatsApp/LinkedIn/FB)
-        const setOgTag = (property, content) => {
-            let tag = document.querySelector(`meta[property="${property}"]`);
-            if (!tag) {
-                tag = document.createElement('meta');
-                tag.setAttribute('property', property);
-                document.head.appendChild(tag);
-            }
-            tag.setAttribute('content', content || '');
-        };
-
-        setOgTag('og:title', `${course.title} | KursNavi`);
-        setOgTag('og:description', course.description ? course.description.substring(0, 150) + '...' : 'Entdecke diesen Kurs auf KursNavi.');
-        setOgTag('og:image', course.image_url);
-        setOgTag('og:url', canonicalUrl);
-        setOgTag('og:type', 'website');
-
-    }, [course]);
+}, [course]);
     
     // LOGIC: Handle Booking (Moved from App.jsx)
     const handleBookCourse = async (course, eventId = null) => {
