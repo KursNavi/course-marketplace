@@ -260,9 +260,19 @@ export default function KursNaviPro() {
         else { const address = (course.address || "").toLowerCase(); const canton = (course.canton || "").toLowerCase(); const eventAddresses = course.course_events ? course.course_events.map(ev => (ev.location || "").toLowerCase()).join(" ") : ""; matchesLocation = selectedLocations.some(city => address.includes(city.toLowerCase()) || canton.includes(city.toLowerCase()) || eventAddresses.includes(city.toLowerCase())); }
     }
 
+    const q = searchQuery.toLowerCase();
     const safeTitle = (course.title || "").toLowerCase(); 
     const safeInstructor = (course.instructor_name || "").toLowerCase(); 
-    const matchesSearch = safeTitle.includes(searchQuery.toLowerCase()) || safeInstructor.includes(searchQuery.toLowerCase());
+    const safeSpecialty = (course.category_specialty || "").toLowerCase();
+    const safeArea = (course.category_area || "").toLowerCase();
+    // NEU: Zugriff auf das manuelle Keyword-Feld für maximale Präzision
+    const safeKeywords = (course.keywords || "").toLowerCase();
+    
+    const matchesSearch = safeTitle.includes(q) || 
+                          safeInstructor.includes(q) || 
+                          safeSpecialty.includes(q) || 
+                          safeArea.includes(q) ||
+                          safeKeywords.includes(q);
     
     let matchesDate = true; 
     if (filterDate) {

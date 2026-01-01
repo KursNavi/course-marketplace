@@ -143,8 +143,9 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
             start_date: mainDate,
             image_url: imageUrl, 
             description: formData.get('description'), 
+            keywords: formData.get('keywords'),
             objectives: objectivesList, 
-            prerequisites: formData.get('prerequisites'), 
+            prerequisites: formData.get('prerequisites'),
             session_count: Number(formData.get('sessionCount')), 
             session_length: formData.get('sessionLength'), 
             provider_url: formData.get('providerUrl'), 
@@ -349,6 +350,13 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
                 <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_learn_goals}</label><textarea required name="objectives" defaultValue={initialData?.objectives?.join('\n')} rows="4" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" placeholder="Enter each objective on a new line..."></textarea></div>
                 <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_prereq}</label><input type="text" name="prerequisites" defaultValue={initialData?.prerequisites} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" /></div>
                 
+                {/* NEW KEYWORD FIELD */}
+                <div className="bg-orange-50 p-4 rounded-lg border border-orange-100">
+                    <label className="block text-sm font-bold text-gray-700 mb-1">Keywords / Suchbegriffe (Optional)</label>
+                    <input type="text" name="keywords" defaultValue={initialData?.keywords} placeholder="z.B. Stressabbau, Rücken, Abendkurs, Anfänger (Kommagetrennt)" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+                    <p className="text-xs text-gray-500 mt-1">Diese Begriffe helfen der Suche, Ihren Kurs zu finden, auch wenn die Wörter nicht im Titel stehen.</p>
+                </div>
+
                 <div className="pt-4 border-t border-gray-100 flex justify-end">
                     <button type="submit" disabled={isSubmitting} className="bg-primary text-white px-8 py-3 rounded-xl font-bold hover:bg-orange-600 shadow-lg hover:-translate-y-0.5 transition flex items-center font-heading disabled:opacity-50 disabled:cursor-not-allowed">
                         {isSubmitting ? <Loader className="animate-spin w-5 h-5 mr-2 text-white" /> : <KursNaviLogo className="w-5 h-5 mr-2 text-white" />}
