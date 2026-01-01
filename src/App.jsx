@@ -1161,8 +1161,6 @@ const TeacherForm = ({ t, setView, user, handlePublishCourse, getCatLabel, initi
         }
     };
 
-    const handleLvl1Change = (e) => { const val = e.target.value; setLvl1(val); setLvl2(Object.keys(CATEGORY_HIERARCHY[val])[0]); };
-    
     // Updated Add/Update handlers
     const addEvent = () => setEvents([...events, { start_date: '', location: '', max_participants: 0, canton: '', schedule_description: '' }]);
     const removeEvent = (index) => setEvents(events.filter((_, i) => i !== index));
@@ -1278,9 +1276,9 @@ const TeacherForm = ({ t, setView, user, handlePublishCourse, getCatLabel, initi
                         </div>
                     </div>
                 </div>
-            </div>
-                    {/* --- DATES & LOCATIONS (UPDATED WITH SCHEDULE INFO) --- */}
-                    <div className="bg-blue-50 p-6 rounded-xl border border-blue-100">
+
+                {/* --- DATES & LOCATIONS (UPDATED WITH SCHEDULE INFO) --- */}
+                <div className="bg-blue-50 p-6 rounded-xl border border-blue-100">
                     <div className="flex justify-between items-center mb-4">
                         <h3 className="text-lg font-bold text-blue-900 flex items-center"><Calendar className="w-5 h-5 mr-2" /> Dates & Locations</h3>
                         <button type="button" onClick={addEvent} className="bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-bold hover:bg-blue-700 flex items-center"><Plus className="w-4 h-4 mr-1"/> Add Date</button>
