@@ -15,6 +15,7 @@ import LegalPage from './components/LegalPage';
 import LandingView from './components/LandingView';
 import SearchPageView from './components/SearchPageView';
 import DetailView from './components/DetailView';
+import TeacherHub from './components/TeacherHub';
 import TeacherProfileView from './components/TeacherProfileView';
 import Dashboard from './components/Dashboard';
 import TeacherForm from './components/TeacherForm';
@@ -40,6 +41,7 @@ export default function KursNaviPro() {
           '/contact': 'contact',
           '/login': 'login',
           '/create-course': 'create',
+          '/teacher-hub': 'teacher-hub',
           '/private': 'landing-private',
           '/professional': 'landing-prof',
           '/children': 'landing-kids',
@@ -416,6 +418,7 @@ export default function KursNaviPro() {
 
       {view === 'success' && <SuccessView setView={setView} />}
       {view === 'detail' && selectedCourse && ( <DetailView course={selectedCourse} courses={courses} setView={setView} t={t} setSelectedTeacher={setSelectedTeacher} user={user} /> )}
+      {view === 'teacher-hub' && <TeacherHub setView={setView} t={t} user={user} />}
       {view === 'teacher-profile' && selectedTeacher && ( <TeacherProfileView teacher={selectedTeacher} courses={courses} setView={setView} setSelectedCourse={setSelectedCourse} t={t} getCatLabel={getCatLabel} /> )}
       {view === 'how-it-works' && <HowItWorksPage t={t} setView={setView} />}
       {view === 'login' && <AuthView setView={setView} setUser={setUser} showNotification={showNotification} lang={lang} />}

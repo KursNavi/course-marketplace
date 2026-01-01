@@ -33,6 +33,7 @@ export default async function handler(req, res) {
       '/about',
       '/how-it-works',
       '/contact',
+      '/teacher-hub',
       '/private',
       '/professional',
       '/children'
