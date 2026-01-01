@@ -29,7 +29,25 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user }) =
             document.head.appendChild(linkCanonical);
         }
         // Construct canonical URL based on ID to avoid duplicate content issues
-        linkCanonical.href = `https://kursnavi.ch/courses/${(course.category_area||'kurs').toLowerCase()}/${(course.canton||'ch').toLowerCase()}/${course.id}`;
+        const canonicalUrl = `https://kursnavi.ch/courses/${(course.category_area||'kurs').toLowerCase()}/${(course.canton||'ch').toLowerCase()}/${course.id}`;
+        linkCanonical.href = canonicalUrl;
+
+        // 4. Open Graph (Social Sharing via WhatsApp/LinkedIn/FB)
+        const setOgTag = (property, content) => {
+            let tag = document.querySelector(`meta[property="${property}"]`);
+            if (!tag) {
+                tag = document.createElement('meta');
+                tag.setAttribute('property', property);
+                document.head.appendChild(tag);
+            }
+            tag.setAttribute('content', content || '');
+        };
+
+        setOgTag('og:title', `${course.title} | KursNavi`);
+        setOgTag('og:description', course.description ? course.description.substring(0, 150) + '...' : 'Entdecke diesen Kurs auf KursNavi.');
+        setOgTag('og:image', course.image_url);
+        setOgTag('og:url', canonicalUrl);
+        setOgTag('og:type', 'website');
 
     }, [course]);
     
