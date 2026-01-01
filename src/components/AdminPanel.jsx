@@ -1,11 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { Lock, Loader, Shield, CheckCircle, Eye, ExternalLink } from 'lucide-react';
-
-// Initialize Supabase locally for this component
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseKey = import.meta.env.VITE_SUPABASE_KEY;
-const supabase = createClient(supabaseUrl, supabaseKey);
+import { supabase } from '../lib/supabase';
 
 const AdminPanel = ({ t, courses, setCourses, showNotification, fetchCourses }) => {
     const [isAuthenticated, setIsAuthenticated] = useState(false);

@@ -2,10 +2,7 @@ import React, { useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { Loader } from 'lucide-react';
 import { TRANSLATIONS } from '../lib/constants';
-
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseKey = import.meta.env.VITE_SUPABASE_KEY;
-const supabase = createClient(supabaseUrl, supabaseKey);
+import { supabase } from '../lib/supabase';
 
 const AuthView = ({ setView, setUser, showNotification, lang }) => {
     const [isSignUp, setIsSignUp] = useState(false); 

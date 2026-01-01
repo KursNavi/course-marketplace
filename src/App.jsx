@@ -19,11 +19,7 @@ import DetailView from './components/DetailView';
 import AuthView from './components/AuthView';
 import ContactPage from './components/ContactPage';
 import AboutPage from './components/AboutPage';
-
-// --- Supabase Setup ---
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseKey = import.meta.env.VITE_SUPABASE_KEY;
-const supabase = createClient(supabaseUrl, supabaseKey);
+import { supabase } from './lib/supabase';
 
 // --- LOKALE KOMPONENTEN (Diese lassen wir vorerst hier, da sie kleiner sind) ---
 

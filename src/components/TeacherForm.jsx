@@ -3,11 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { ArrowLeft, Loader, Calendar, Plus, Trash2, Info, ExternalLink } from 'lucide-react';
 import { KursNaviLogo } from './Layout';
 import { SWISS_CANTONS, NEW_TAXONOMY, CATEGORY_TYPES, COURSE_LEVELS, AGE_GROUPS } from '../lib/constants';
-
-// Initialize Supabase locally
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseKey = import.meta.env.VITE_SUPABASE_KEY;
-const supabase = createClient(supabaseUrl, supabaseKey);
+import { supabase } from '../lib/supabase';
 
 const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotification, setEditingCourse }) => {
     // New Taxonomy State

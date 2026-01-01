@@ -6,11 +6,7 @@ import {
 } from 'lucide-react';
 import { SWISS_CANTONS } from '../lib/constants';
 import { KursNaviLogo } from './Layout';
-
-// Initialize Supabase locally
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseKey = import.meta.env.VITE_SUPABASE_KEY;
-const supabase = createClient(supabaseUrl, supabaseKey);
+import { supabase } from '../lib/supabase';
 
 // --- HELPER COMPONENT: User Profile Settings ---
 const UserProfileSection = ({ user, showNotification, setLang, t }) => {

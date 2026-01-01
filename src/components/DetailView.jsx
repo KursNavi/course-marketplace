@@ -1,10 +1,7 @@
 import React from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { ArrowLeft, User, MapPin, Clock, CheckCircle, Calendar, Shield, Lock } from 'lucide-react';
-
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseKey = import.meta.env.VITE_SUPABASE_KEY;
-const supabase = createClient(supabaseUrl, supabaseKey);
+import { supabase } from '../lib/supabase';
 
 const DetailView = ({ course, setView, t, setSelectedTeacher, user }) => {
     
