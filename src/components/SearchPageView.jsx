@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { Search, ChevronRight, User, X, Calendar, Shield, MapPin, CheckCircle, Loader } from 'lucide-react';
-import { LocationDropdown } from './Filters';
+import { LocationDropdown, LanguageDropdown } from './Filters';
+import { Globe } from 'lucide-react';
 import { CATEGORY_TYPES, NEW_TAXONOMY, AGE_GROUPS, COURSE_LEVELS } from '../lib/constants';
 
 const SearchPageView = ({ 
@@ -12,7 +13,8 @@ const SearchPageView = ({
     searchAge, setSearchAge,
     locMode, setLocMode, selectedLocations, setSelectedLocations, locMenuOpen, setLocMenuOpen, locMenuRef, 
     loading, filteredCourses, setSelectedCourse, setView, 
-    t, filterDate, setFilterDate, filterPriceMax, setFilterPriceMax, filterLevel, setFilterLevel, filterPro, setFilterPro 
+    t, filterDate, setFilterDate, filterPriceMax, setFilterPriceMax, filterLevel, setFilterLevel, filterPro, setFilterPro,
+    selectedLanguage, setSelectedLanguage, langMenuOpen, setLangMenuOpen, langMenuRef
 }) => {
 
     // --- SEO LOGIC: Zero-Result Rule ---
@@ -91,7 +93,8 @@ const SearchPageView = ({
                             <input type="text" placeholder={t.search_refine} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-10 pr-4 py-3 bg-beige border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-colors" />
                         </div>
                         <LocationDropdown locMode={locMode} setLocMode={setLocMode} selectedLocations={selectedLocations} setSelectedLocations={setSelectedLocations} locMenuOpen={locMenuOpen} setLocMenuOpen={setLocMenuOpen} locMenuRef={locMenuRef} t={t} />
-                        <button onClick={resetFilters} className="p-2 text-gray-400 hover:text-red-500 rounded-full hover:bg-gray-100 transition" title="Reset Filters"><X className="w-6 h-6" /></button>
+                        <LanguageDropdown selectedLanguage={selectedLanguage} setSelectedLanguage={setSelectedLanguage} langMenuOpen={langMenuOpen} setLangMenuOpen={setLangMenuOpen} langMenuRef={langMenuRef} t={t} />
+                        <button onClick={() => { resetFilters(); setSelectedLanguage(null); }} className="p-2 text-gray-400 hover:text-red-500 rounded-full hover:bg-gray-100 transition" title="Reset Filters"><X className="w-6 h-6" /></button>
                     </div>
 
                     {/* NEW TAXONOMY FILTERS */}
@@ -121,11 +124,12 @@ const SearchPageView = ({
                          <label className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg border cursor-pointer transition select-none ${filterPro ? 'bg-blue-50 border-blue-200' : 'bg-white border-gray-200'}`} title={t.tooltip_pro_verified}><input type="checkbox" checked={filterPro} onChange={(e) => setFilterPro(e.target.checked)} className="rounded text-primary focus:ring-primary" /><span className={`text-sm font-medium ${filterPro ? 'text-blue-700' : 'text-gray-600'}`}>{t.lbl_professional_filter}</span><Shield className="w-3 h-3 text-blue-500" /></label>
                     </div>
                 </div>
-                 {(searchType || searchArea || selectedLocations.length > 0 || searchAge) && (
+                 {(searchType || searchArea || selectedLocations.length > 0 || searchAge || selectedLanguage) && (
                     <div className="max-w-7xl mx-auto px-4 pt-2 flex gap-2 flex-wrap">
                         {searchType && <span className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-md font-bold flex items-center">{getLabel(searchType, 'type')}</span>}
                         {searchArea && <span className="text-xs bg-orange-50 text-orange-700 px-2 py-1 rounded-md flex items-center"><ChevronRight className="w-3 h-3 mr-1"/> {getLabel(searchArea, 'area')}</span>}
                         {searchAge && <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-md flex items-center"><User className="w-3 h-3 mr-1"/> {getLabel(searchAge, 'age')}</span>}
+                        {selectedLanguage && <span onClick={() => setSelectedLanguage(null)} className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-purple-200 flex items-center"><Globe className="w-3 h-3 mr-1"/> {selectedLanguage} <X className="w-3 h-3 ml-1 opacity-50" /></span>}
                         {selectedLocations.map((loc, i) => (<span key={i} onClick={() => setSelectedLocations(selectedLocations.filter(l => l !== loc))} className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-blue-200 flex items-center">{loc} <X className="w-3 h-3 ml-1 opacity-50" /></span>))}
                     </div>
                  )}

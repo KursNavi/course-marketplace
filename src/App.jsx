@@ -8,7 +8,7 @@ import { supabase } from './lib/supabase';
 // Components
 import { Navbar, Footer } from './components/Layout';
 import { Home } from './components/Home';
-import { CategoryDropdown, LocationDropdown } from './components/Filters';
+import { CategoryDropdown, LocationDropdown, LanguageDropdown } from './components/Filters';
 import LegalPage from './components/LegalPage';
 
 // Full Page Components
@@ -89,6 +89,9 @@ export default function KursNaviPro() {
   const [locMode, setLocMode] = useState('canton');
   const [selectedLocations, setSelectedLocations] = useState([]);
   const [locMenuOpen, setLocMenuOpen] = useState(false);
+  const [selectedLanguage, setSelectedLanguage] = useState(null);
+  const [langMenuOpen, setLangMenuOpen] = useState(false);
+  const langMenuRef = useRef(null);
   const [searchType, setSearchType] = useState("");
   const [searchArea, setSearchArea] = useState("");
   const [searchSpecialty, setSearchSpecialty] = useState("");
@@ -286,8 +289,9 @@ export default function KursNaviPro() {
     let matchesPrice = true; if (filterPriceMax) matchesPrice = (course.price || 0) <= Number(filterPriceMax);
     let matchesLevel = true; if (filterLevel !== 'All') matchesLevel = course.level === filterLevel;
     let matchesPro = true; if (filterPro) matchesPro = course.is_pro === true;
+    let matchesLanguage = true; if (selectedLanguage) matchesLanguage = course.language === selectedLanguage;
     
-    return matchesType && matchesArea && matchesSpecialty && matchesAge && matchesCategory && matchesLocation && matchesSearch && matchesDate && matchesPrice && matchesLevel && matchesPro;
+    return matchesType && matchesArea && matchesSpecialty && matchesAge && matchesCategory && matchesLocation && matchesSearch && matchesDate && matchesPrice && matchesLevel && matchesPro && matchesLanguage;
   });
 
 // --- EFFECT HOOKS ---
@@ -353,6 +357,7 @@ export default function KursNaviPro() {
     function handleClickOutside(event) {
       if (catMenuRef.current && !catMenuRef.current.contains(event.target)) setCatMenuOpen(false);
       if (locMenuRef.current && !locMenuRef.current.contains(event.target)) setLocMenuOpen(false);
+      if (langMenuRef.current && !langMenuRef.current.contains(event.target)) setLangMenuOpen(false);
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
@@ -453,7 +458,7 @@ export default function KursNaviPro() {
       {view === 'landing-kids' && ( <LandingView title="Fun learning for kids." subtitle="Children's Courses" variant="kids" searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearchSubmit={handleSearchSubmit} setSelectedCatPath={setSelectedCatPath} setView={setView} t={t} getCatLabel={getCatLabel} /> )}
 
       {view === 'search' && (
-          <SearchPageView courses={courses} searchQuery={searchQuery} setSearchQuery={setSearchQuery} searchType={searchType} setSearchType={setSearchType} searchArea={searchArea} setSearchArea={setSearchArea} searchSpecialty={searchSpecialty} setSearchSpecialty={setSearchSpecialty} searchAge={searchAge} setSearchAge={setSearchAge} locMode={locMode} setLocMode={setLocMode} selectedLocations={selectedLocations} setSelectedLocations={setSelectedLocations} locMenuOpen={locMenuOpen} setLocMenuOpen={setLocMenuOpen} locMenuRef={locMenuRef} loading={loading} filteredCourses={filteredCourses} setSelectedCourse={setSelectedCourse} setView={setView} t={t} getCatLabel={getCatLabel} filterDate={filterDate} setFilterDate={setFilterDate} filterPriceMax={filterPriceMax} setFilterPriceMax={setFilterPriceMax} filterLevel={filterLevel} setFilterLevel={setFilterLevel} filterPro={filterPro} setFilterPro={setFilterPro} />
+          <SearchPageView courses={courses} searchQuery={searchQuery} setSearchQuery={setSearchQuery} searchType={searchType} setSearchType={setSearchType} searchArea={searchArea} setSearchArea={setSearchArea} searchSpecialty={searchSpecialty} setSearchSpecialty={setSearchSpecialty} searchAge={searchAge} setSearchAge={setSearchAge} locMode={locMode} setLocMode={setLocMode} selectedLocations={selectedLocations} setSelectedLocations={setSelectedLocations} locMenuOpen={locMenuOpen} setLocMenuOpen={setLocMenuOpen} locMenuRef={locMenuRef} loading={loading} filteredCourses={filteredCourses} setSelectedCourse={setSelectedCourse} setView={setView} t={t} getCatLabel={getCatLabel} filterDate={filterDate} setFilterDate={setFilterDate} filterPriceMax={filterPriceMax} setFilterPriceMax={setFilterPriceMax} filterLevel={filterLevel} setFilterLevel={setFilterLevel} filterPro={filterPro} setFilterPro={setFilterPro} selectedLanguage={selectedLanguage} setSelectedLanguage={setSelectedLanguage} langMenuOpen={langMenuOpen} setLangMenuOpen={setLangMenuOpen} langMenuRef={langMenuRef} />
       )}
 
       {view === 'success' && <SuccessView setView={setView} />}

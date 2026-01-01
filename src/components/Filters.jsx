@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronDown, ChevronRight, MapPin } from 'lucide-react';
+import { ChevronDown, ChevronRight, MapPin, Globe } from 'lucide-react';
 import { CATEGORY_HIERARCHY, SWISS_CANTONS, SWISS_CITIES } from '../lib/constants';
 
 export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCatPath, catMenuOpen, setCatMenuOpen, t, getCatLabel, catMenuRef }) => {
@@ -50,6 +50,37 @@ export const LocationDropdown = ({ locMode, setLocMode, selectedLocations, setSe
                         {displayList.map(loc => (<label key={loc} className="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded cursor-pointer"><input type="checkbox" checked={selectedLocations.includes(loc)} onChange={() => toggleLoc(loc)} className="rounded border-gray-300 text-primary focus:ring-primary" /><span className="text-sm text-gray-700">{loc}</span></label>))}
                     </div>
                     <div className="pt-3 mt-3 border-t flex justify-between items-center"><button onClick={() => setSelectedLocations([])} className="text-xs text-gray-400 hover:text-red-500">Clear</button><button onClick={() => setLocMenuOpen(false)} className="text-xs font-bold text-primary">Done</button></div>
+                </div>
+            )}
+        </div>
+    );
+};
+
+export const LanguageDropdown = ({ selectedLanguage, setSelectedLanguage, langMenuOpen, setLangMenuOpen, langMenuRef, t }) => {
+    const languages = ['Deutsch', 'Französisch', 'Italienisch', 'Englisch', 'Andere'];
+
+    return (
+        <div ref={langMenuRef} className="static relative z-50 text-left">
+            <button type="button" onClick={() => setLangMenuOpen(!langMenuOpen)} className={`w-full md:w-auto px-4 py-3 border rounded-full flex items-center justify-between space-x-2 text-sm font-medium transition shadow-sm ${selectedLanguage ? 'bg-primary text-white border-primary' : 'bg-white text-gray-700 hover:border-gray-400'}`}>
+                <div className="flex items-center">
+                    <Globe className="w-4 h-4 mr-2" />
+                    <span>{selectedLanguage || (t?.filter_label_lang || "Sprache")}</span>
+                </div>
+                <ChevronDown className="w-4 h-4" />
+            </button>
+            {langMenuOpen && (
+                <div className="absolute top-14 left-0 w-[200px] bg-white rounded-xl shadow-2xl border border-gray-100 p-2 overflow-hidden">
+                    {languages.map(lang => (
+                        <div key={lang} onClick={() => { setSelectedLanguage(lang === selectedLanguage ? null : lang); setLangMenuOpen(false); }} className={`p-3 cursor-pointer text-sm flex justify-between items-center hover:bg-gray-50 rounded ${selectedLanguage === lang ? 'font-bold text-primary bg-primaryLight' : 'text-gray-700'}`}>
+                            {lang}
+                            {selectedLanguage === lang && <ChevronRight className="w-4 h-4 text-primary" />}
+                        </div>
+                    ))}
+                    {selectedLanguage && (
+                        <div onClick={() => { setSelectedLanguage(null); setLangMenuOpen(false); }} className="p-3 text-xs text-gray-400 cursor-pointer hover:text-primary border-t mt-2">
+                            Auswahl löschen
+                        </div>
+                    )}
                 </div>
             )}
         </div>

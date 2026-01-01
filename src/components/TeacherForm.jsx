@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { ArrowLeft, Loader, Calendar, Plus, Trash2, Info, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Loader, Calendar, Plus, Trash2, Info, ExternalLink, Globe } from 'lucide-react';
 import { KursNaviLogo } from './Layout';
 import { SWISS_CANTONS, NEW_TAXONOMY, CATEGORY_TYPES, COURSE_LEVELS, AGE_GROUPS } from '../lib/constants';
 import { supabase } from '../lib/supabase';
@@ -14,6 +14,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
     // New Metadata State
     const [selectedLevel, setSelectedLevel] = useState('all_levels');
     const [selectedAgeGroups, setSelectedAgeGroups] = useState([]);
+    const [courseLanguage, setCourseLanguage] = useState('Deutsch');
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     
@@ -21,21 +22,17 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
     const [events, setEvents] = useState([{ start_date: '', location: '', max_participants: 0, canton: '', schedule_description: '' }]);
 
     useEffect(() => {
+        // 1. Load Initial Data if editing
         if (initialData) {
-            // Restore Taxonomy
             if (initialData.category_type) setSelectedType(initialData.category_type);
             if (initialData.category_area) setSelectedArea(initialData.category_area);
             if (initialData.category_specialty) setSelectedSpecialty(initialData.category_specialty);
-            
-            // Restore Metadata
             if (initialData.level) setSelectedLevel(initialData.level);
             if (initialData.target_age_groups) setSelectedAgeGroups(initialData.target_age_groups);
+            if (initialData.language) setCourseLanguage(initialData.language); // Load saved language
 
-            // Legacy Fallback for old courses
-            if (!initialData.category_type && initialData.category) {
-                 setSelectedType('privat_hobby');
-            }
-            // Load events
+            if (!initialData.category_type && initialData.category) setSelectedType('privat_hobby');
+            
             if (initialData.course_events && initialData.course_events.length > 0) {
                 setEvents(initialData.course_events.map(e => ({
                     start_date: e.start_date ? e.start_date.split('T')[0] : '', 
@@ -47,8 +44,18 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
             } else if (initialData.start_date) {
                 setEvents([{ start_date: initialData.start_date, location: initialData.address || '', max_participants: 0, canton: initialData.canton || '', schedule_description: '' }]);
             }
+        } 
+        // 2. If Creating NEW: Fetch User Profile Language preference
+        else if (user && user.id) {
+             supabase.from('profiles').select('preferred_language').eq('id', user.id).single()
+             .then(({ data }) => {
+                 if (data?.preferred_language) {
+                    const map = { de: 'Deutsch', fr: 'Französisch', it: 'Italienisch', en: 'Englisch' };
+                    if (map[data.preferred_language]) setCourseLanguage(map[data.preferred_language]);
+                 }
+             });
         }
-    }, [initialData]);
+    }, [initialData, user]);
 
     // Taxonomy Helpers
     const getAreas = (type) => type && NEW_TAXONOMY[type] ? Object.keys(NEW_TAXONOMY[type]) : [];
@@ -131,6 +138,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
             title: formData.get('title'), 
             instructor_name: user.name, 
             price: Number(formData.get('price')), 
+            language: formData.get('language'),
             rating: 0, 
             category: `${catType} | ${catArea}`, // Legacy
             category_type: catType,
@@ -209,11 +217,25 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
                          <label className="block text-sm font-bold text-gray-700 mb-1">Course Image</label>
                          <div className="flex items-center gap-4">
                             {initialData?.image_url && <img src={initialData.image_url} className="w-16 h-16 rounded object-cover border" alt="Current" />}
-                            <input type="file" name="courseImage" accept="image/*" className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-primary hover:file:bg-orange-100 cursor-pointer border rounded-lg p-1" />
+                           <input type="file" name="courseImage" accept="image/*" className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-primary hover:file:bg-orange-100 cursor-pointer border rounded-lg p-1" />
                          </div>
                     </div>
+                    
+                    <div className="md:col-span-1">
+                        <label className="block text-sm font-bold text-gray-700 mb-1">Kurssprache</label>
+                        <div className="relative">
+                            <Globe className="absolute left-3 top-2.5 text-gray-400 w-4 h-4" />
+                            <select name="language" value={courseLanguage} onChange={(e) => setCourseLanguage(e.target.value)} className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-primary bg-white outline-none">
+                                <option value="Deutsch">Deutsch</option>
+                                <option value="Französisch">Französisch</option>
+                                <option value="Italienisch">Italienisch</option>
+                                <option value="Englisch">Englisch</option>
+                                <option value="Andere">Andere</option>
+                            </select>
+                        </div>
+                    </div>
 
-                    <div className="md:col-span-2"><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_title}</label><input required type="text" name="title" defaultValue={initialData?.title} placeholder="e.g. Traditional Swiss Cooking" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none transition-shadow" /></div>
+                    <div className="md:col-span-2"><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_title}</label>
                     
                     {/* NEW TAXONOMY & METADATA SECTION */}
                     <div className="md:col-span-2 bg-beige p-5 rounded-xl border border-orange-100 space-y-6">
