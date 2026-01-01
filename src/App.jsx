@@ -2166,6 +2166,7 @@ export default function KursNaviPro() {
       {view === 'home' && (
             <Home 
                 t={t} 
+                courses={courses} // <--- WICHTIG: Daten für Smart-Filter übergeben
                 setView={setView} 
                 // NEUE FILTER PROPS DURCHREICHEN:
                 setSearchType={setSearchType}

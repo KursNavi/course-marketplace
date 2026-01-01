@@ -1,57 +1,92 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, ArrowRight, ChevronRight, ChevronDown } from 'lucide-react';
-// Wir importieren LocationDropdown weiter, aber bauen das Kategorie-Menü hier neu
 import { LocationDropdown } from './Filters'; 
 import { NEW_TAXONOMY, CATEGORY_TYPES } from '../lib/constants';
 
 export const Home = ({ 
-  t, setView, 
-  setSearchType, setSearchArea, setSearchSpecialty, // Neue Setter aus App.jsx
+  t, setView, courses, // Jetzt haben wir Zugriff auf die Kurse!
+  setSearchType, setSearchArea, setSearchSpecialty, 
   searchQuery, setSearchQuery, 
   catMenuOpen, setCatMenuOpen, catMenuRef, 
   locMode, setLocMode, selectedLocations, setSelectedLocations, locMenuOpen, setLocMenuOpen, locMenuRef 
 }) => {
   
-  // State für das Mega-Menü (welcher Typ ist gerade aktiv gehovert?)
-  const [activeType, setActiveType] = useState('privat_hobby'); // Default: Privat & Hobby
+  // State für das Mega-Menü
+  const [activeType, setActiveType] = useState('privat_hobby'); // Spalte 1 Auswahl
+  const [activeArea, setActiveArea] = useState(null);           // Spalte 2 Auswahl
 
-  // 1. Suche ausführen
+  // --- LOGIK: Nur Kategorien mit Kursen anzeigen ---
+  
+  // 1. Welche Typen haben überhaupt Kurse?
+  const availableTypes = activeType ? [activeType] : []; // Wir zeigen links immer alle an (statisch), aber filtern rechts dynamisch
+
+  // 2. Welche Bereiche (Level 1) im aktiven Typ haben Kurse?
+  const getActiveAreas = () => {
+    if (!courses || courses.length === 0) return [];
+    
+    // Filtere Kurse nach dem aktiven Typ
+    const relevantCourses = courses.filter(c => c.category_type === activeType);
+    
+    // Hole alle Areas, die vorkommen
+    const areaKeys = [...new Set(relevantCourses.map(c => c.category_area).filter(Boolean))];
+    return areaKeys;
+  };
+
+  // 3. Welche Spezialgebiete (Level 2) im aktiven Bereich haben Kurse?
+  const getActiveSpecialties = () => {
+    if (!courses || courses.length === 0 || !activeArea) return [];
+
+    // Filtere Kurse nach Typ UND Bereich
+    const relevantCourses = courses.filter(c => c.category_type === activeType && c.category_area === activeArea);
+
+    // Hole alle Specialties
+    const specKeys = [...new Set(relevantCourses.map(c => c.category_specialty).filter(Boolean))];
+    return specKeys;
+  };
+
+  const visibleAreas = getActiveAreas();
+  const visibleSpecialties = getActiveSpecialties();
+
+  // --- ACTIONS ---
+
   const handleSearch = (e) => {
     e.preventDefault();
     setView('search'); 
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // 2. Klick auf eine Kategorie im Dropdown
-  const handleCategorySelect = (typeKey, areaKey) => {
-    // 1. Filter setzen
+  const handleCategorySelect = (typeKey, areaKey, specialtyKey) => {
     setSearchType(typeKey);
-    setSearchArea(areaKey);
-    setSearchSpecialty(""); // Reset Spezialgebiet
+    setSearchArea(areaKey || "");
+    setSearchSpecialty(specialtyKey || ""); 
     
-    // 2. Menü schließen
     setCatMenuOpen(false);
-
-    // 3. Zur Suche navigieren
     setView('search');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Helper für Labels (falls Übersetzungen fehlen, Fallback auf Key)
+  // Helper für Labels
   const getTypeLabel = (key) => CATEGORY_TYPES[key]?.de || key;
   const getAreaLabel = (type, areaKey) => NEW_TAXONOMY[type]?.[areaKey]?.label?.de || areaKey;
+
+  // Auto-Select first area when type changes (optional, improves UX)
+  useEffect(() => {
+    const areas = getActiveAreas();
+    if (areas.length > 0 && !areas.includes(activeArea)) {
+        setActiveArea(areas[0]);
+    }
+  }, [activeType, courses]);
 
   return (
     <div className="flex flex-col w-full font-sans">
       
       {/* 1. HERO SECTION */}
       <div className="relative h-[600px] w-full flex items-center justify-center">
-        {/* Background Image */}
+        {/* Background */}
         <div 
           className="absolute inset-0 bg-cover bg-center z-0"
           style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=2671&auto=format&fit=crop")' }}
         ></div>
-        {/* Overlay */}
         <div className="absolute inset-0 bg-black/50 z-10"></div>
 
         {/* Content */}
@@ -81,10 +116,10 @@ export const Home = ({
                 </button>
             </form>
 
-            {/* Row 2: Filters (Category & Location) */}
+            {/* Row 2: Filters */}
             <div className="flex flex-col md:flex-row gap-3 relative z-50">
                 
-                {/* NEW CATEGORY DROPDOWN */}
+                {/* NEW 3-LEVEL CATEGORY DROPDOWN */}
                 <div className="flex-1 bg-white rounded-xl relative" ref={catMenuRef}>
                     <button 
                         type="button"
@@ -97,16 +132,19 @@ export const Home = ({
                         <ChevronDown className={`w-4 h-4 transition-transform ${catMenuOpen ? 'rotate-180' : ''}`} />
                     </button>
 
-                    {/* MEGA MENU DROPDOWN */}
+                    {/* MEGA MENU (3 SPALTEN) */}
                     {catMenuOpen && (
-                        <div className="absolute top-full left-0 mt-2 w-[600px] bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden flex z-50 text-left">
-                            {/* Left Col: Types */}
-                            <div className="w-1/3 bg-gray-50 border-r border-gray-100">
+                        <div className="absolute top-full left-0 mt-2 w-[800px] -ml-0 md:-ml-0 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden flex z-50 text-left h-[450px]">
+                            
+                            {/* SPALTE 1: TYP (Immer sichtbar) */}
+                            <div className="w-1/4 bg-gray-50 border-r border-gray-100 py-2">
+                                <div className="px-4 py-2 text-xs font-bold text-gray-400 uppercase">Typ</div>
                                 {Object.keys(CATEGORY_TYPES).map(typeKey => (
                                     <div 
                                         key={typeKey}
                                         onMouseEnter={() => setActiveType(typeKey)}
-                                        className={`px-4 py-3 cursor-pointer text-sm font-bold flex justify-between items-center ${activeType === typeKey ? 'bg-white text-primary border-l-4 border-primary' : 'text-gray-600 hover:bg-gray-100'}`}
+                                        onClick={() => handleCategorySelect(typeKey)} // Klick auf Typ filtert nur Typ
+                                        className={`px-4 py-3 cursor-pointer text-sm font-bold flex justify-between items-center transition-colors ${activeType === typeKey ? 'bg-white text-primary border-l-4 border-primary shadow-sm' : 'text-gray-600 hover:bg-gray-200'}`}
                                     >
                                         {getTypeLabel(typeKey)}
                                         {activeType === typeKey && <ChevronRight className="w-3 h-3" />}
@@ -114,29 +152,52 @@ export const Home = ({
                                 ))}
                             </div>
 
-                            {/* Right Col: Areas */}
-                            <div className="w-2/3 max-h-[400px] overflow-y-auto p-2">
-                                <div className="p-2">
-                                    <h4 className="text-xs font-bold text-gray-400 uppercase mb-2 px-2">Bereiche in "{getTypeLabel(activeType)}"</h4>
-                                    <div className="space-y-1">
-                                        {NEW_TAXONOMY[activeType] && Object.keys(NEW_TAXONOMY[activeType]).map(areaKey => (
-                                            <button
-                                                key={areaKey}
-                                                onClick={() => handleCategorySelect(activeType, areaKey)}
-                                                className="w-full text-left px-3 py-2 rounded-lg hover:bg-orange-50 hover:text-primary text-sm text-gray-700 transition-colors flex items-center group"
-                                            >
-                                                <span className="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-primary mr-3 transition-colors"></span>
-                                                {getAreaLabel(activeType, areaKey)}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
+                            {/* SPALTE 2: BEREICH (Gefiltert nach Existenz) */}
+                            <div className="w-1/3 border-r border-gray-100 py-2 overflow-y-auto">
+                                <div className="px-4 py-2 text-xs font-bold text-gray-400 uppercase">Bereich</div>
+                                {visibleAreas.length > 0 ? (
+                                    visibleAreas.map(areaKey => (
+                                        <div
+                                            key={areaKey}
+                                            onMouseEnter={() => setActiveArea(areaKey)}
+                                            onClick={() => handleCategorySelect(activeType, areaKey)}
+                                            className={`px-4 py-2 cursor-pointer text-sm flex justify-between items-center transition-colors ${activeArea === areaKey ? 'text-primary font-bold bg-orange-50' : 'text-gray-700 hover:bg-gray-50'}`}
+                                        >
+                                            {getAreaLabel(activeType, areaKey)}
+                                            {activeArea === areaKey && <ChevronRight className="w-3 h-3" />}
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="p-4 text-xs text-gray-400 italic">Keine Kurse in dieser Kategorie verfügbar.</div>
+                                )}
                             </div>
+
+                            {/* SPALTE 3: SPEZIALGEBIET (Gefiltert nach Existenz) */}
+                            <div className="flex-1 py-2 overflow-y-auto bg-gray-50/50">
+                                <div className="px-4 py-2 text-xs font-bold text-gray-400 uppercase">Spezialgebiet</div>
+                                {visibleSpecialties.length > 0 ? (
+                                    visibleSpecialties.map(specKey => (
+                                        <button
+                                            key={specKey}
+                                            onClick={() => handleCategorySelect(activeType, activeArea, specKey)}
+                                            className="w-full text-left px-4 py-2 hover:bg-orange-100 text-sm text-gray-600 hover:text-primary transition-colors flex items-center group"
+                                        >
+                                            <span className="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-primary mr-2 transition-colors"></span>
+                                            {specKey}
+                                        </button>
+                                    ))
+                                ) : (
+                                    <div className="p-4 text-xs text-gray-400 italic">
+                                        {activeArea ? "Alle Themen in diesem Bereich." : "Wähle einen Bereich."}
+                                    </div>
+                                )}
+                            </div>
+
                         </div>
                     )}
                 </div>
 
-                {/* LOCATION DROPDOWN (Unchanged) */}
+                {/* LOCATION DROPDOWN */}
                 <div className="flex-1 bg-white rounded-xl">
                     <LocationDropdown 
                         locMode={locMode} 
@@ -155,14 +216,13 @@ export const Home = ({
         </div>
       </div>
 
-      {/* 2. CATEGORY PREVIEW */}
+      {/* 2. CATEGORY PREVIEW (Static fallback filters) */}
       <div className="py-20 bg-beige max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
         <h2 className="text-3xl font-heading font-bold text-dark mb-2 text-center">{t.home_path_title}</h2>
         <p className="text-gray-500 text-center mb-12 font-sans">{t.home_path_sub}</p>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           
-          {/* CARD 1: PRIVATE & HOBBY */}
           <div onClick={() => { setSearchType('privat_hobby'); setView('search'); window.scrollTo(0,0); }} className="group relative h-80 rounded-2xl overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
             <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?auto=format&fit=crop&q=80&w=2000")' }}></div>
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
@@ -175,7 +235,6 @@ export const Home = ({
             </div>
           </div>
 
-          {/* CARD 2: PROFESSIONAL */}
           <div onClick={() => { setSearchType('beruflich'); setView('search'); window.scrollTo(0,0); }} className="group relative h-80 rounded-2xl overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
             <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=2670&auto=format&fit=crop")' }}></div>
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
@@ -188,7 +247,6 @@ export const Home = ({
             </div>
           </div>
 
-          {/* CARD 3: KIDS */}
           <div onClick={() => { setSearchType('kinder_jugend'); setView('search'); window.scrollTo(0,0); }} className="group relative h-80 rounded-2xl overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
             <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1503676260728-1c00da094a0b?q=80&w=2622&auto=format&fit=crop")' }}></div>
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
