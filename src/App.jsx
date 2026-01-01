@@ -1590,6 +1590,7 @@ export default function KursNaviPro() {
   const [searchQuery, setSearchQuery] = useState("");
 
   // --- MISSING STATES (FIX FOR WHITE SCREEN) ---
+  const [selectedCourse, setSelectedCourse] = useState(null); // <--- NEU
   const [selectedTeacher, setSelectedTeacher] = useState(null);
   const [editingCourse, setEditingCourse] = useState(null);
   const [notification, setNotification] = useState(null);
