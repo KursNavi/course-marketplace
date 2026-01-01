@@ -1,0 +1,16 @@
+User-agent: *
+Allow: /
+
+# Private Bereiche schützen (Crawl Budget sparen)
+Disallow: /dashboard
+Disallow: /control-room-2025
+Disallow: /create-course
+Disallow: /success
+Disallow: /login
+Disallow: /api/*
+
+# Sitemap explizit erlauben (auch wenn /api gesperrt ist)
+Allow: /api/sitemap
+
+# Verweis auf die Sitemap
+Sitemap: https://kursnavi.ch/api/sitemap
