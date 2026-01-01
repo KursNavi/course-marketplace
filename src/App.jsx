@@ -332,7 +332,7 @@ export default function KursNaviPro() {
     }
   }, [view, selectedCourse, loading]);
 
-  uuseEffect(() => {
+  useEffect(() => {
     fetchCourses();
     const handleUrlChange = () => setView(getInitialView());
     window.addEventListener('popstate', handleUrlChange);
