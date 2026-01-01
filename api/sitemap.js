@@ -33,7 +33,10 @@ export default async function handler(req, res) {
       '/private',
       '/professional',
       '/children',
-      '/teacher-hub'
+      '/teacher-hub',
+      '/agb',
+      '/datenschutz',
+      '/impressum'
     ].map((page) => {
       return `
       <url>
