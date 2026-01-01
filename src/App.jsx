@@ -91,86 +91,205 @@ const LandingView = ({ title, subtitle, variant, searchQuery, setSearchQuery, ha
     );
 };
 
-// --- ARCHITECT COMPONENT: Search Page View ---
-const SearchPageView = ({ selectedCatPath, setSelectedCatPath, searchQuery, setSearchQuery, catMenuOpen, setCatMenuOpen, catMenuRef, t, getCatLabel, locMode, setLocMode, selectedLocations, setSelectedLocations, locMenuOpen, setLocMenuOpen, locMenuRef, loading, filteredCourses, setSelectedCourse, setView, filterDate, setFilterDate, filterPriceMax, setFilterPriceMax, filterLevel, setFilterLevel, filterPro, setFilterPro }) => {
-    const activeSection = selectedCatPath.length > 0 ? selectedCatPath[0] : null;
+// --- ARCHITECT COMPONENT: Search Page View (Dynamic Taxonomy) ---
+const SearchPageView = ({ 
+    courses, // We need ALL courses to calculate available filters
+    searchQuery, setSearchQuery, 
+    searchType, setSearchType,
+    searchArea, setSearchArea,
+    searchSpecialty, setSearchSpecialty,
+    searchAge, setSearchAge,
+    locMode, setLocMode, selectedLocations, setSelectedLocations, locMenuOpen, setLocMenuOpen, locMenuRef, 
+    loading, filteredCourses, setSelectedCourse, setView, 
+    t, filterDate, setFilterDate, filterPriceMax, setFilterPriceMax, filterLevel, setFilterLevel, filterPro, setFilterPro 
+}) => {
 
-    return (
-        <div className="min-h-screen bg-beige">
-            <div className="bg-white border-b pt-8 pb-4 sticky top-20 z-30 shadow-sm">
-                <div className="max-w-7xl mx-auto px-4 space-y-4">
-                    <div className="flex flex-col md:flex-row gap-4 items-center">
-                        <div className="relative flex-grow w-full md:w-auto">
-                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                            <input type="text" placeholder={t.search_refine} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-10 pr-4 py-3 bg-beige border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-colors" />
-                        </div>
-                        <CategoryDropdown rootCategory={activeSection} selectedCatPath={selectedCatPath} setSelectedCatPath={setSelectedCatPath} catMenuOpen={catMenuOpen} setCatMenuOpen={setCatMenuOpen} t={t} getCatLabel={getCatLabel} catMenuRef={catMenuRef} /> 
-                        <LocationDropdown locMode={locMode} setLocMode={setLocMode} selectedLocations={selectedLocations} setSelectedLocations={setSelectedLocations} locMenuOpen={locMenuOpen} setLocMenuOpen={setLocMenuOpen} locMenuRef={locMenuRef} t={t} />
-                        {(selectedCatPath.length > 0 || selectedLocations.length > 0 || filterDate || filterPriceMax || filterLevel !== 'All' || filterPro) && (<button onClick={() => { setSelectedCatPath([]); setSelectedLocations([]); setSearchQuery(""); setFilterDate(""); setFilterPriceMax(""); setFilterLevel("All"); setFilterPro(false); }} className="p-2 text-gray-400 hover:text-red-500 rounded-full hover:bg-gray-100" title="Reset all filters"><X className="w-5 h-5" /></button>)}
-                    </div>
-                    {/* NEW FILTERS ROW */}
-                    <div className="flex gap-4 overflow-x-auto pb-2 items-center">
-                        <div className="flex items-center space-x-2 bg-gray-50 px-3 py-1.5 rounded-lg border">
-                            <Calendar className="w-4 h-4 text-gray-500" />
-                            <input type="date" placeholder="dd/mm/yyyy" value={filterDate} onChange={(e) => setFilterDate(e.target.value)} className="bg-transparent text-sm outline-none text-gray-600 placeholder-gray-400" />
-                        </div>
-                        <div className="flex items-center space-x-2 bg-gray-50 px-3 py-1.5 rounded-lg border">
-                            <span className="text-sm text-gray-500">{t.lbl_max_price}</span>
-                            <input type="number" placeholder="Any" value={filterPriceMax} onChange={(e) => setFilterPriceMax(e.target.value)} className="w-16 bg-transparent text-sm outline-none text-gray-600" />
-                        </div>
-                        <select value={filterLevel} onChange={(e) => setFilterLevel(e.target.value)} className="bg-gray-50 border rounded-lg px-3 py-1.5 text-sm outline-none text-gray-600">
-                            <option value="All">{t.opt_all_levels}</option>
-                            <option value="Beginner">{t.opt_beginner}</option><option value="Advanced">{t.opt_advanced}</option>
-                        </select>
-                         <label className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg border cursor-pointer transition select-none ${filterPro ? 'bg-blue-50 border-blue-200' : 'bg-gray-50'}`} title={t.tooltip_pro_verified}>
-                            <input type="checkbox" checked={filterPro} onChange={(e) => setFilterPro(e.target.checked)} className="rounded text-primary focus:ring-primary" />
-                            <span className={`text-sm font-medium ${filterPro ? 'text-blue-700' : 'text-gray-600'}`}>{t.lbl_professional_filter}</span>
-                            <Info className="w-3 h-3 text-gray-400" />
-                        </label>
-                    </div>
-                </div>
-                 {(selectedCatPath.length > 0 || selectedLocations.length > 0) && (
-                    <div className="max-w-7xl mx-auto px-4 pt-4 flex gap-2 flex-wrap">
-                        {selectedCatPath.map((part, i) => (
-                            <span key={i} onClick={() => setSelectedCatPath(selectedCatPath.slice(0, i))} className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-orange-200 flex items-center">
-                                {getCatLabel(part)} <X className="w-3 h-3 ml-1 opacity-50" />
-                            </span>
-                        ))}
-                        {selectedLocations.map((loc, i) => (
-                            <span key={i} onClick={() => setSelectedLocations(selectedLocations.filter(l => l !== loc))} className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-blue-200 flex items-center">
-                                {loc} <X className="w-3 h-3 ml-1 opacity-50" />
-                            </span>
-                        ))}
-                    </div>
-                 )}
-            </div>
+    // --- DYNAMIC FILTER LOGIC (Hide empty categories) ---
+    
+    // 1. Get unique Types available in DB
+    const availableTypes = [...new Set(courses.map(c => c.category_type).filter(Boolean))];
 
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-                 {loading ? <div className="text-center py-20"><Loader className="animate-spin w-10 h-10 text-primary mx-auto" /></div> : filteredCourses.length > 0 ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-                    {filteredCourses.map(course => (
-                      <div key={course.id} onClick={() => { setSelectedCourse(course); setView('detail'); window.scrollTo(0,0); }} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer group">
-                        <div className="relative h-48 overflow-hidden">
-                            <img src={course.image_url} alt={course.title} className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300" />
-                            <div className="absolute top-3 left-3 flex flex-col gap-1 items-start">
-                                <div className="bg-white/95 backdrop-blur-sm px-2 py-1 rounded text-xs font-bold text-gray-700 shadow-sm flex items-center"><MapPin className="w-3 h-3 mr-1 text-primary" />{course.canton}</div>
-                                {course.is_pro && <div className="bg-blue-600/90 text-white px-2 py-1 rounded text-xs font-bold shadow-sm flex items-center"><CheckCircle className="w-3 h-3 mr-1" /> Pro</div>}
-                            </div>
-                        </div>
-                        <div className="p-5">
-                            <h3 className="font-bold text-lg text-dark leading-tight line-clamp-2 h-12 mb-2 font-heading">{course.title}</h3>
-                            <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                               <div className="flex items-center space-x-3 text-sm text-gray-500"><div className="flex items-center bg-beige px-2 py-1 rounded"><User className="w-3 h-3 text-gray-500 mr-1" />{course.instructor_name}</div></div>
-                               <span className="font-bold text-primary text-lg font-heading">{t.currency} {course.price}</span>
-                            </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : <div className="text-center py-24 bg-white rounded-2xl border border-dashed border-gray-300"><p className="text-gray-500 text-lg font-medium">{t.no_results}</p></div>}
-            </main>
-        </div>
-    );
+    // 2. Get Areas based on selected Type (or all if no type selected - optional, usually strict hierarchy is better)
+    const availableAreas = [...new Set(
+        courses
+        .filter(c => !searchType || c.category_type === searchType)
+        .map(c => c.category_area)
+        .filter(Boolean)
+    )];
+
+    // 3. Get Specialties based on selected Area
+    const availableSpecialties = [...new Set(
+        courses
+        .filter(c => (!searchType || c.category_type === searchType) && (!searchArea || c.category_area === searchArea))
+        .map(c => c.category_specialty)
+        .filter(Boolean)
+    )];
+
+    // 4. Get available Age Groups
+    const availableAgeGroups = [...new Set(
+        courses.flatMap(c => c.target_age_groups || [])
+    )];
+
+    // Helper to get Label
+    const getLabel = (key, scope) => {
+        if (scope === 'type' && CATEGORY_TYPES[key]) return CATEGORY_TYPES[key].de;
+        if (scope === 'age' && AGE_GROUPS[key]) return AGE_GROUPS[key].de;
+        
+        // For Areas and Specialties, we look up in NEW_TAXONOMY
+        // This is a bit complex because structure is nested. Simple lookup loop:
+        if (scope === 'area' || scope === 'specialty') {
+             for (const typeKey in NEW_TAXONOMY) {
+                 const typeObj = NEW_TAXONOMY[typeKey];
+                 // Check Areas
+                 if (typeObj[key]) return typeObj[key].label.de;
+                 // Check Specialties (Arrays) - difficult to map back perfectly without ID, relying on string match
+                 // For MVP we just return the key if it's the specialty value, as specialties are stored as strings in DB matching the Values, not Keys in some cases.
+                 // Actually in our constant, specialties is an array of Strings. So key IS the label.
+                 if (scope === 'specialty') return key; 
+             }
+        }
+        return key; 
+    };
+
+    // Reset Handlers
+    const resetFilters = () => {
+        setSearchType(""); setSearchArea(""); setSearchSpecialty(""); setSearchAge("");
+        setSelectedLocations([]); setSearchQuery(""); setFilterDate(""); setFilterPriceMax(""); setFilterLevel("All"); setFilterPro(false);
+    };
+
+    return (
+        <div className="min-h-screen bg-beige">
+            <div className="bg-white border-b pt-8 pb-4 sticky top-20 z-30 shadow-sm">
+                <div className="max-w-7xl mx-auto px-4 space-y-4">
+                    
+                    {/* TOP ROW: Search & Location */}
+                    <div className="flex flex-col md:flex-row gap-4 items-center">
+                        <div className="relative flex-grow w-full md:w-auto">
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                            <input type="text" placeholder={t.search_refine} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-10 pr-4 py-3 bg-beige border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-colors" />
+                        </div>
+                        <LocationDropdown locMode={locMode} setLocMode={setLocMode} selectedLocations={selectedLocations} setSelectedLocations={setSelectedLocations} locMenuOpen={locMenuOpen} setLocMenuOpen={setLocMenuOpen} locMenuRef={locMenuRef} t={t} />
+                        <button onClick={resetFilters} className="p-2 text-gray-400 hover:text-red-500 rounded-full hover:bg-gray-100 transition" title="Alle Filter zurücksetzen">
+                            <X className="w-6 h-6" />
+                        </button>
+                    </div>
+
+                    {/* MIDDLE ROW: The New Taxonomy Filters */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        {/* 1. TYP */}
+                        <select 
+                            value={searchType} 
+                            onChange={(e) => { setSearchType(e.target.value); setSearchArea(""); setSearchSpecialty(""); }} 
+                            className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                        >
+                            <option value="">Alle Kategorien</option>
+                            {availableTypes.map(type => (
+                                <option key={type} value={type}>{getLabel(type, 'type')}</option>
+                            ))}
+                        </select>
+
+                        {/* 2. BEREICH */}
+                        <select 
+                            value={searchArea} 
+                            onChange={(e) => { setSearchArea(e.target.value); setSearchSpecialty(""); }} 
+                            className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
+                            disabled={!searchType}
+                        >
+                            <option value="">Alle Bereiche</option>
+                            {availableAreas.map(area => (
+                                <option key={area} value={area}>{getLabel(area, 'area')}</option>
+                            ))}
+                        </select>
+
+                        {/* 3. SPEZIALGEBIET */}
+                        <select 
+                            value={searchSpecialty} 
+                            onChange={(e) => setSearchSpecialty(e.target.value)} 
+                            className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
+                            disabled={!searchArea}
+                        >
+                            <option value="">Alle Themen</option>
+                            {availableSpecialties.map(spec => (
+                                <option key={spec} value={spec}>{spec}</option>
+                            ))}
+                        </select>
+
+                         {/* 4. ZIELGRUPPE (Age) */}
+                         <select 
+                            value={searchAge} 
+                            onChange={(e) => setSearchAge(e.target.value)} 
+                            className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                        >
+                            <option value="">Zielgruppe (Alle)</option>
+                            {availableAgeGroups.map(age => (
+                                <option key={age} value={age}>{getLabel(age, 'age')}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {/* BOTTOM ROW: Specific Filters (Date, Price, Level, Pro) */}
+                    <div className="flex gap-4 overflow-x-auto pb-2 items-center border-t pt-3 border-gray-100">
+                        <div className="flex items-center space-x-2 bg-white px-3 py-1.5 rounded-lg border border-gray-200">
+                            <Calendar className="w-4 h-4 text-gray-500" />
+                            <input type="date" value={filterDate} onChange={(e) => setFilterDate(e.target.value)} className="bg-transparent text-sm outline-none text-gray-600" />
+                        </div>
+                        <div className="flex items-center space-x-2 bg-white px-3 py-1.5 rounded-lg border border-gray-200">
+                            <span className="text-sm text-gray-500">{t.lbl_max_price}</span>
+                            <input type="number" placeholder="Any" value={filterPriceMax} onChange={(e) => setFilterPriceMax(e.target.value)} className="w-16 bg-transparent text-sm outline-none text-gray-600" />
+                        </div>
+                        <select value={filterLevel} onChange={(e) => setFilterLevel(e.target.value)} className="bg-white border border-gray-200 rounded-lg px-3 py-1.5 text-sm outline-none text-gray-600">
+                            <option value="All">{t.opt_all_levels}</option>
+                            {Object.keys(COURSE_LEVELS).map(k => <option key={k} value={k}>{COURSE_LEVELS[k].de}</option>)}
+                        </select>
+                         <label className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg border cursor-pointer transition select-none ${filterPro ? 'bg-blue-50 border-blue-200' : 'bg-white border-gray-200'}`} title={t.tooltip_pro_verified}>
+                            <input type="checkbox" checked={filterPro} onChange={(e) => setFilterPro(e.target.checked)} className="rounded text-primary focus:ring-primary" />
+                            <span className={`text-sm font-medium ${filterPro ? 'text-blue-700' : 'text-gray-600'}`}>{t.lbl_professional_filter}</span>
+                            <Shield className="w-3 h-3 text-blue-500" />
+                        </label>
+                    </div>
+                </div>
+
+                {/* Active Filters Display */}
+                 {(searchType || searchArea || selectedLocations.length > 0 || searchAge) && (
+                    <div className="max-w-7xl mx-auto px-4 pt-2 flex gap-2 flex-wrap">
+                        {searchType && <span className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-md font-bold flex items-center">{getLabel(searchType, 'type')}</span>}
+                        {searchArea && <span className="text-xs bg-orange-50 text-orange-700 px-2 py-1 rounded-md flex items-center"><ChevronRight className="w-3 h-3 mr-1"/> {getLabel(searchArea, 'area')}</span>}
+                        {searchAge && <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-md flex items-center"><User className="w-3 h-3 mr-1"/> {getLabel(searchAge, 'age')}</span>}
+                        {selectedLocations.map((loc, i) => (
+                            <span key={i} onClick={() => setSelectedLocations(selectedLocations.filter(l => l !== loc))} className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-blue-200 flex items-center">
+                                {loc} <X className="w-3 h-3 ml-1 opacity-50" />
+                            </span>
+                        ))}
+                    </div>
+                 )}
+            </div>
+
+            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                 {loading ? <div className="text-center py-20"><Loader className="animate-spin w-10 h-10 text-primary mx-auto" /></div> : filteredCourses.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                    {filteredCourses.map(course => (
+                      <div key={course.id} onClick={() => { setSelectedCourse(course); setView('detail'); window.scrollTo(0,0); }} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer group">
+                        <div className="relative h-48 overflow-hidden">
+                            <img src={course.image_url} alt={course.title} className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300" />
+                            <div className="absolute top-3 left-3 flex flex-col gap-1 items-start">
+                                <div className="bg-white/95 backdrop-blur-sm px-2 py-1 rounded text-xs font-bold text-gray-700 shadow-sm flex items-center"><MapPin className="w-3 h-3 mr-1 text-primary" />{course.canton}</div>
+                                {course.is_pro && <div className="bg-blue-600/90 text-white px-2 py-1 rounded text-xs font-bold shadow-sm flex items-center"><CheckCircle className="w-3 h-3 mr-1" /> Pro</div>}
+                            </div>
+                        </div>
+                        <div className="p-5">
+                            <h3 className="font-bold text-lg text-dark leading-tight line-clamp-2 h-12 mb-2 font-heading">{course.title}</h3>
+                            <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                               <div className="flex items-center space-x-3 text-sm text-gray-500"><div className="flex items-center bg-beige px-2 py-1 rounded"><User className="w-3 h-3 text-gray-500 mr-1" />{course.instructor_name}</div></div>
+                               <span className="font-bold text-primary text-lg font-heading">{t.currency} {course.price}</span>
+                            </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : <div className="text-center py-24 bg-white rounded-2xl border border-dashed border-gray-300"><p className="text-gray-500 text-lg font-medium">{t.no_results}</p></div>}
+            </main>
+        </div>
+    );
 };
 
 // --- Standard Views ---
@@ -1538,22 +1657,28 @@ export default function KursNaviPro() {
   const [loading, setLoading] = useState(true);
   
   // Filter State
-  const [searchQuery, setSearchQuery] = useState("");
-  const [catMenuOpen, setCatMenuOpen] = useState(false);
-  const [selectedCatPath, setSelectedCatPath] = useState([]); 
-  const [locMenuOpen, setLocMenuOpen] = useState(false);
-  const [locMode, setLocMode] = useState('canton'); 
-  const [selectedLocations, setSelectedLocations] = useState([]);
-  const [notification, setNotification] = useState(null);
-  const [selectedCourse, setSelectedCourse] = useState(null);
-  const [selectedTeacher, setSelectedTeacher] = useState(null);
-  const [editingCourse, setEditingCourse] = useState(null); // State for Edit Mode
+  const [searchQuery, setSearchQuery] = useState("");
+  
+  // --- NEW TAXONOMY FILTERS ---
+  const [searchType, setSearchType] = useState(""); // beruflich, privat, etc.
+  const [searchArea, setSearchArea] = useState(""); // Level 1
+  const [searchSpecialty, setSearchSpecialty] = useState(""); // Level 2
+  const [searchAge, setSearchAge] = useState(""); // Zielgruppe
 
-  // NEW FILTER STATE
-  const [filterDate, setFilterDate] = useState("");
-  const [filterPriceMax, setFilterPriceMax] = useState("");
-  const [filterLevel, setFilterLevel] = useState("All");
-  const [filterPro, setFilterPro] = useState(false);
+  // Location & Other Filters
+  const [locMenuOpen, setLocMenuOpen] = useState(false);
+  const [locMode, setLocMode] = useState('canton'); 
+  const [selectedLocations, setSelectedLocations] = useState([]);
+  const [notification, setNotification] = useState(null);
+  const [selectedCourse, setSelectedCourse] = useState(null);
+  const [selectedTeacher, setSelectedTeacher] = useState(null);
+  const [editingCourse, setEditingCourse] = useState(null);
+
+  // Secondary Filters
+  const [filterDate, setFilterDate] = useState("");
+  const [filterPriceMax, setFilterPriceMax] = useState("");
+  const [filterLevel, setFilterLevel] = useState("All");
+  const [filterPro, setFilterPro] = useState(false);
 
   const catMenuRef = useRef(null);
   const locMenuRef = useRef(null);
@@ -1954,10 +2079,22 @@ export default function KursNaviPro() {
   const filteredCourses = courses.filter(course => {
     // --- SAFETY CHECKS ---
     if (!course) return false;
-    let matchesCategory = true;
-    if (selectedCatPath.length > 0) { 
-        const courseCatStr = (course.category || "").toLowerCase(); 
-        matchesCategory = selectedCatPath.every(part => courseCatStr.includes(part.toLowerCase())); 
+
+    // 1. TAXONOMY FILTER
+    let matchesType = true;
+    if (searchType) matchesType = course.category_type === searchType;
+
+    let matchesArea = true;
+    if (searchArea) matchesArea = course.category_area === searchArea;
+
+    let matchesSpecialty = true;
+    if (searchSpecialty) matchesSpecialty = course.category_specialty === searchSpecialty;
+
+    // 2. AGE / TARGET GROUP FILTER (Overlap Logic)
+    let matchesAge = true;
+    if (searchAge) {
+        // course.target_age_groups is an array. Check if searchAge is included.
+        matchesAge = course.target_age_groups && course.target_age_groups.includes(searchAge);
     }
     
     // ARCHITECT CHANGE: Filter by Event Location (Canton or City)
@@ -2012,7 +2149,7 @@ export default function KursNaviPro() {
     let matchesLevel = true; if (filterLevel !== 'All') matchesLevel = course.level === filterLevel;
     let matchesPro = true; if (filterPro) matchesPro = course.is_pro === true;
 
-    return matchesCategory && matchesLocation && matchesSearch && matchesDate && matchesPrice && matchesLevel && matchesPro;
+    return matchesType && matchesArea && matchesSpecialty && matchesAge && matchesLocation && matchesSearch && matchesDate && matchesPrice && matchesLevel && matchesPro;
   });
 
   return (
@@ -2042,22 +2179,31 @@ export default function KursNaviPro() {
       {view === 'landing-kids' && ( <LandingView title="Fun learning for kids." subtitle="Children's Courses" variant="kids" searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearchSubmit={handleSearchSubmit} setSelectedCatPath={setSelectedCatPath} setView={setView} t={t} getCatLabel={getCatLabel} /> )}
 
       {view === 'search' && (
-          <SearchPageView 
-            selectedCatPath={selectedCatPath} setSelectedCatPath={setSelectedCatPath}
-            searchQuery={searchQuery} setSearchQuery={setSearchQuery}
-            catMenuOpen={catMenuOpen} setCatMenuOpen={setCatMenuOpen} catMenuRef={catMenuRef}
-            locMode={locMode} setLocMode={setLocMode}
-            selectedLocations={selectedLocations} setSelectedLocations={setSelectedLocations}
-            locMenuOpen={locMenuOpen} setLocMenuOpen={setLocMenuOpen} locMenuRef={locMenuRef}
-            loading={loading} filteredCourses={filteredCourses}
-            setSelectedCourse={setSelectedCourse} setView={setView}
-            t={t} getCatLabel={getCatLabel}
-            filterDate={filterDate} setFilterDate={setFilterDate}
-            filterPriceMax={filterPriceMax} setFilterPriceMax={setFilterPriceMax}
-            filterLevel={filterLevel} setFilterLevel={setFilterLevel}
-            filterPro={filterPro} setFilterPro={setFilterPro}
-          />
-      )}
+          <SearchPageView 
+            courses={courses} // WICHTIG für dynamische Filter
+            searchQuery={searchQuery} setSearchQuery={setSearchQuery}
+            searchType={searchType} setSearchType={setSearchType}
+            searchArea={searchArea} setSearchArea={setSearchArea}
+            searchSpecialty={searchSpecialty} setSearchSpecialty={setSearchSpecialty}
+            searchAge={searchAge} setSearchAge={setSearchAge}
+            
+            // Legacy/Unused can stay but ideally cleaned up later
+            catMenuOpen={catMenuOpen} setCatMenuOpen={setCatMenuOpen} catMenuRef={catMenuRef}
+            selectedCatPath={selectedCatPath} setSelectedCatPath={setSelectedCatPath}
+            
+            locMode={locMode} setLocMode={setLocMode}
+            selectedLocations={selectedLocations} setSelectedLocations={setSelectedLocations}
+            locMenuOpen={locMenuOpen} setLocMenuOpen={setLocMenuOpen} locMenuRef={locMenuRef}
+            
+            loading={loading} filteredCourses={filteredCourses}
+            setSelectedCourse={setSelectedCourse} setView={setView}
+            t={t} getCatLabel={getCatLabel}
+            filterDate={filterDate} setFilterDate={setFilterDate}
+            filterPriceMax={filterPriceMax} setFilterPriceMax={setFilterPriceMax}
+            filterLevel={filterLevel} setFilterLevel={setFilterLevel}
+            filterPro={filterPro} setFilterPro={setFilterPro}
+          />
+      )}
 
       {/* --- STANDARD VIEWS --- */}
       {view === 'success' && <SuccessView setView={setView} />}
