@@ -281,21 +281,39 @@ export default function KursNaviPro() {
   });
 
 // --- EFFECT HOOKS ---
-  // 1. Initial Data Load
-  useEffect(() => {
-    fetchCourses();
-  }, []);
-
   useEffect(() => {
     if (loading) return;
     
+    // 1. Manage Window Title (SEO & UX)
+    const baseTitle = "KursNavi - Der Schweizer Kursmarktplatz";
+    const titles = {
+        'home': baseTitle,
+        'search': 'Kurse suchen & filtern | KursNavi',
+        'landing-private': 'Hobby & Freizeit Kurse | KursNavi',
+        'landing-prof': 'Weiterbildung & Karriere | KursNavi',
+        'landing-kids': 'Kinderkurse & Förderung | KursNavi',
+        'login': 'Anmelden | KursNavi',
+        'create': 'Neuen Kurs erstellen | KursNavi',
+        'dashboard': 'Mein Bereich | KursNavi',
+        'how-it-works': 'So funktioniert es | KursNavi',
+        'contact': 'Kontakt | KursNavi',
+        'about': 'Über uns | KursNavi'
+    };
+    
+    // Set title based on view map, or keep existing for dynamic pages (detail/teacher-hub handle their own)
+    if (titles[view]) {
+        document.title = titles[view];
+    }
+    // Note: DetailView and TeacherHub manage their own document.title via their own useEffect
+
+    // 2. Manage URL (Routing)
     let path = '/';
     const routes = {
         'landing-private': '/private', 'landing-prof': '/professional', 'landing-kids': '/children',
         'search': '/search', 'how-it-works': '/how-it-works', 'about': '/about', 'contact': '/contact',
         'login': '/login', 'dashboard': '/dashboard', 'agb': '/agb', 'datenschutz': '/datenschutz',
         'impressum': '/impressum', 'widerruf': '/widerruf-storno', 'trust': '/vertrauen-sicherheit',
-        'admin': '/control-room-2025', 'create': '/create-course'
+        'admin': '/control-room-2025', 'create': '/create-course', 'teacher-hub': '/teacher-hub'
     };
     if (routes[view]) path = routes[view];
     else if (view === 'detail' && selectedCourse) {
@@ -312,7 +330,7 @@ export default function KursNaviPro() {
         const method = window.location.pathname.startsWith('/course/') ? 'replaceState' : 'pushState';
         window.history[method]({ view, courseId: selectedCourse?.id }, '', path);
     }
-  }, [view, selectedCourse]);
+  }, [view, selectedCourse, loading]);
 
   useEffect(() => {
     const handleUrlChange = () => setView(getInitialView());
