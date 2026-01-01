@@ -1,9 +1,37 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { ArrowLeft, User, MapPin, Clock, CheckCircle, Calendar, Shield, Lock } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 const DetailView = ({ course, setView, t, setSelectedTeacher, user }) => {
+
+    // SEO: Dynamic Title & Meta + Schema.org Injection
+    useEffect(() => {
+        if (!course) return;
+        
+        // 1. Meta Title
+        document.title = `${course.title} in ${course.canton} | KursNavi`;
+        
+        // 2. Meta Description (Check if meta tag exists, else create)
+        let metaDesc = document.querySelector('meta[name="description"]');
+        if (!metaDesc) {
+            metaDesc = document.createElement('meta');
+            metaDesc.name = "description";
+            document.head.appendChild(metaDesc);
+        }
+        metaDesc.content = `Buchen Sie "${course.title}" in ${course.canton}. ${course.description ? course.description.substring(0, 150) : ''}...`;
+
+        // 3. Canonical Link
+        let linkCanonical = document.querySelector('link[rel="canonical"]');
+        if (!linkCanonical) {
+            linkCanonical = document.createElement('link');
+            linkCanonical.rel = "canonical";
+            document.head.appendChild(linkCanonical);
+        }
+        // Construct canonical URL based on ID to avoid duplicate content issues
+        linkCanonical.href = `https://kursnavi.ch/courses/${(course.category_area||'kurs').toLowerCase()}/${(course.canton||'ch').toLowerCase()}/${course.id}`;
+
+    }, [course]);
     
     // LOGIC: Handle Booking (Moved from App.jsx)
     const handleBookCourse = async (course, eventId = null) => {
@@ -57,8 +85,18 @@ const DetailView = ({ course, setView, t, setSelectedTeacher, user }) => {
         <button onClick={() => setView('search')} className="flex items-center text-gray-500 hover:text-primary mb-6"><ArrowLeft className="w-4 h-4 mr-2"/> Back to Search</button>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-8">
-                <img src={course.image_url} className="w-full h-80 object-cover rounded-2xl shadow-lg" alt={course.title} />
-                <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
+                {/* CLS Fix: Added explicit aspect-ratio container or min-height */}
+                <div className="w-full h-80 bg-gray-100 rounded-2xl overflow-hidden shadow-lg">
+                    <img 
+                        src={course.image_url} 
+                        className="w-full h-full object-cover transition-opacity duration-500" 
+                        alt={course.title} 
+                        loading="eager" 
+                        width="800" 
+                        height="320"
+                    />
+                </div>
+                <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 min-h-[400px]">
                     <div className="flex items-center gap-3 mb-4">
                         <h1 className="text-3xl font-bold font-heading text-dark">{course.title}</h1>
                         {course.is_pro && (
@@ -138,6 +176,41 @@ const DetailView = ({ course, setView, t, setSelectedTeacher, user }) => {
                 </div>
             </div>
         </div>
+        
+        {/* SEO: Structured Data (JSON-LD) */}
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Course",
+            "name": course.title,
+            "description": course.description,
+            "provider": {
+                "@type": "Organization",
+                "name": course.instructor_name,
+                "sameAs": `https://kursnavi.ch/teacher/${course.user_id}`
+            },
+            "hasCourseInstance": (course.course_events || []).map(ev => ({
+                "@type": "EducationEvent",
+                "startDate": ev.start_date,
+                "location": {
+                    "@type": "Place",
+                    "name": ev.location || course.address,
+                    "address": {
+                        "@type": "PostalAddress",
+                        "addressLocality": course.canton
+                    }
+                },
+                "offers": {
+                    "@type": "Offer",
+                    "price": course.price,
+                    "priceCurrency": "CHF",
+                    "availability": (ev.max_participants > 0 && (ev.max_participants - (ev.bookings?.[0]?.count || 0)) <= 0) 
+                        ? "https://schema.org/SoldOut" 
+                        : "https://schema.org/InStock",
+                    "url": window.location.href
+                }
+            }))
+        })}} />
+
     </div>
     );
 };

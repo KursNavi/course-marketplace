@@ -51,6 +51,15 @@ export default function KursNaviPro() {
       };
       
       if (routes[path]) return routes[path];
+      // SEO Routing: Check for new structure /courses/topic/location/id
+      if (path.startsWith('/courses/')) {
+          const parts = path.split('/').filter(Boolean); // remove empty strings
+          // Pattern: courses (0) -> topic (1) -> location (2) -> id (3)
+          if (parts.length >= 4) return 'detail'; 
+          // Pattern: courses (0) -> topic (1) -> location (2) (Category Page)
+          if (parts.length >= 2) return 'search';
+      }
+      // Legacy Redirect Support
       if (path.startsWith('/course/')) return 'detail';
       
       return 'home';
@@ -169,13 +178,37 @@ export default function KursNaviPro() {
       const migratedData = (data || []).map(normalizeCourse);
       setCourses(migratedData);
       
-      // Deep Link Logic
+      // Deep Link Logic (SEO Enhanced)
       const path = window.location.pathname;
-      if (path.startsWith('/course/')) {
-          const urlId = path.split('/')[2];
-          if (migratedData && urlId) {
-              const found = migratedData.find(c => c.id == urlId);
-              if (found) { setSelectedCourse(found); setView('detail'); }
+      let urlId = null;
+
+      if (path.startsWith('/courses/')) {
+          const parts = path.split('/').filter(Boolean);
+          // Expecting: courses/topic/location/ID or courses/topic/location/ID-slug
+          if (parts.length >= 4) {
+              const lastPart = parts[3]; 
+              // Extract ID if it contains a slug (e.g. "123-yoga-course" -> "123")
+              urlId = lastPart.split('-')[0];
+          } else if (parts.length >= 2) {
+             // Pre-fill filters for category pages (Topic/Location)
+             // This would need logic to map 'pottery' to searchArea, but kept simple for now:
+             setView('search');
+          }
+      } else if (path.startsWith('/course/')) {
+          // Legacy support
+          urlId = path.split('/')[2];
+      }
+
+      if (migratedData && urlId) {
+          const found = migratedData.find(c => c.id == urlId);
+          if (found) { 
+              setSelectedCourse(found); 
+              setView('detail'); 
+              
+              // 301-Style Client Redirect: Update URL to new structure if it's the old one
+              if (path.startsWith('/course/')) {
+                 // The useEffect hook below will handle the URL replacement automatically
+              }
           }
       }
     } catch (error) { console.error('Error:', error.message); showNotification("Error loading courses"); } finally { setLoading(false); }
@@ -261,10 +294,19 @@ export default function KursNaviPro() {
         'admin': '/control-room-2025', 'create': '/create-course'
     };
     if (routes[view]) path = routes[view];
-    else if (view === 'detail' && selectedCourse) path = `/course/${selectedCourse.id}`;
+    else if (view === 'detail' && selectedCourse) {
+        // SEO Friendly URL Construction: /courses/{topic}/{location}/{id}-{slug}
+        const topicSlug = (selectedCourse.category_area || 'kurs').toLowerCase().replace(/_/g, '-');
+        const locSlug = (selectedCourse.canton || 'schweiz').toLowerCase();
+        const titleSlug = (selectedCourse.title || 'detail').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+        
+        path = `/courses/${topicSlug}/${locSlug}/${selectedCourse.id}-${titleSlug}`;
+    }
 
     if (window.location.pathname !== path) {
-        window.history.pushState({ view, courseId: selectedCourse?.id }, '', path);
+        // Use replaceState if correcting a legacy URL, otherwise pushState
+        const method = window.location.pathname.startsWith('/course/') ? 'replaceState' : 'pushState';
+        window.history[method]({ view, courseId: selectedCourse?.id }, '', path);
     }
   }, [view, selectedCourse]);
 
