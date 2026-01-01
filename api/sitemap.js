@@ -2,10 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 
 export default async function handler(req, res) {
   // 1. Supabase Init (Robust Environment Check)
-  // Wir prüfen auf deine Vercel-Variablen (ohne VITE_) und Fallbacks
   const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-  
-  // Wir nutzen bevorzugt den Service Role Key (Backend) oder den Anon Key
   const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseKey) {
@@ -16,10 +13,10 @@ export default async function handler(req, res) {
 
   try {
     // 2. Fetch all active courses
-    // Wir holen nur ID, Titel, Area, Canton und Updated_at für die URL-Generierung
+    // FIX: Removed 'updated_at' because it does not exist in the DB schema
     const { data: courses, error } = await supabase
       .from('courses')
-      .select('id, title, category_area, canton, updated_at, created_at')
+      .select('id, title, category_area, canton, created_at')
       .order('created_at', { ascending: false });
 
     if (error) throw error;
@@ -33,10 +30,10 @@ export default async function handler(req, res) {
       '/about',
       '/how-it-works',
       '/contact',
-      '/teacher-hub',
       '/private',
       '/professional',
-      '/children'
+      '/children',
+      '/teacher-hub'
     ].map((page) => {
       return `
       <url>
@@ -58,7 +55,7 @@ export default async function handler(req, res) {
       return `
       <url>
           <loc>${baseUrl}/courses/${topicSlug}/${locSlug}/${course.id}-${titleSlug}</loc>
-          <lastmod>${new Date(course.updated_at || course.created_at).toISOString()}</lastmod>
+          <lastmod>${new Date(course.created_at).toISOString()}</lastmod>
           <changefreq>daily</changefreq>
           <priority>0.7</priority>
       </url>`;
@@ -78,11 +75,9 @@ export default async function handler(req, res) {
 
   } catch (e) {
     console.error("SITEMAP ERROR:", e);
-    // Gib den echten Fehler als JSON zurück, damit wir ihn lesen können
     res.status(500).json({ 
       error: 'Error generating sitemap', 
-      details: e.message, 
-      stack: e.stack 
+      details: e.message 
     });
   }
 }
