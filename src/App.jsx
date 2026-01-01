@@ -2164,18 +2164,23 @@ export default function KursNaviPro() {
       <div className="flex-grow">
       {/* --- ROUTING --- */}
       {view === 'home' && (
-         <Home 
-            t={t} 
-            setView={setView} 
-            setSelectedCatPath={setSelectedCatPath}
-            searchQuery={searchQuery} setSearchQuery={setSearchQuery}
-            catMenuOpen={catMenuOpen} setCatMenuOpen={setCatMenuOpen} catMenuRef={catMenuRef}
-            locMode={locMode} setLocMode={setLocMode}
-            selectedLocations={selectedLocations} setSelectedLocations={setSelectedLocations}
-            locMenuOpen={locMenuOpen} setLocMenuOpen={setLocMenuOpen} locMenuRef={locMenuRef}
-            getCatLabel={getCatLabel}
-         />
-      )}
+            <Home 
+                t={t} 
+                setView={setView} 
+                // NEUE FILTER PROPS DURCHREICHEN:
+                setSearchType={setSearchType}
+                setSearchArea={setSearchArea}
+                setSearchSpecialty={setSearchSpecialty}
+                // Alte Props (zur Sicherheit behalten, falls Locations genutzt werden)
+                setSelectedCatPath={setSelectedCatPath}
+                searchQuery={searchQuery} setSearchQuery={setSearchQuery}
+                catMenuOpen={catMenuOpen} setCatMenuOpen={setCatMenuOpen} catMenuRef={catMenuRef}
+                locMode={locMode} setLocMode={setLocMode}
+                selectedLocations={selectedLocations} setSelectedLocations={setSelectedLocations}
+                locMenuOpen={locMenuOpen} setLocMenuOpen={setLocMenuOpen} locMenuRef={locMenuRef}
+                getCatLabel={getCatLabel}
+            />
+        )}
         
       {view === 'landing-private' && ( <LandingView title="Unleash your passion." subtitle="Hobby Courses" variant="private" searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearchSubmit={handleSearchSubmit} setSelectedCatPath={setSelectedCatPath} setView={setView} t={t} getCatLabel={getCatLabel} /> )}
       {view === 'landing-prof' && ( <LandingView title="Boost your career." subtitle="Professional Courses" variant="prof" searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearchSubmit={handleSearchSubmit} setSelectedCatPath={setSelectedCatPath} setView={setView} t={t} getCatLabel={getCatLabel} /> )}
