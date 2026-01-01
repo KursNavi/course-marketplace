@@ -245,7 +245,12 @@ export default function KursNaviPro() {
     return matchesType && matchesArea && matchesSpecialty && matchesAge && matchesCategory && matchesLocation && matchesSearch && matchesDate && matchesPrice && matchesLevel && matchesPro;
   });
 
-  // --- EFFECT HOOKS ---
+// --- EFFECT HOOKS ---
+  // 1. Initial Data Load
+  useEffect(() => {
+    fetchCourses();
+  }, []);
+
   useEffect(() => {
     let path = '/';
     const routes = {
