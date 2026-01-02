@@ -441,9 +441,20 @@ export default function KursNaviPro() {
   }, []);
 
   useEffect(() => {
-    const query = new URLSearchParams(window.location.search);
-    const sessionId = query.get('session_id');
-    if (sessionId && user) {
+    const query = new URLSearchParams(window.location.search);
+
+    // SEO Deep Linking: Allow links like /search?q=Yoga&loc=Zurich
+    const qParam = query.get('q');
+    const locParam = query.get('loc');
+    if (qParam || locParam) {
+        if (qParam) setSearchQuery(qParam);
+        if (locParam) setSelectedLocations([locParam]);
+        // Only switch view if not already on a specific detail/landing page
+        if (view !== 'detail') setView('search');
+    }
+
+    const sessionId = query.get('session_id');
+    if (sessionId && user) {
         const pendingCourseId = localStorage.getItem('pendingCourseId');
         if (pendingCourseId) {
             const saveBooking = async () => {
@@ -509,8 +520,8 @@ export default function KursNaviPro() {
       {view === 'widerruf' && <LegalPage pageKey="widerruf" lang={lang} setView={setView} />}
       {view === 'trust' && <LegalPage pageKey="trust" lang={lang} setView={setView} />}
 
-     {view === 'admin' && <AdminPanel t={t} courses={courses} setCourses={setCourses} showNotification={showNotification} fetchCourses={fetchCourses} setView={setView} />}
-      {view === 'admin-blog' && <AdminBlogManager showNotification={showNotification} setView={setView} />}
+      {view === 'admin' && <AdminPanel t={t} courses={courses} setCourses={setCourses} showNotification={showNotification} fetchCourses={fetchCourses} setView={setView} />}
+      {view === 'admin-blog' && <AdminBlogManager showNotification={showNotification} setView={setView} courses={courses} />}
       {view === 'blog' && <BlogList articles={articles} setView={setView} setSelectedArticle={setSelectedArticle} />}
       {view === 'blog-detail' && <BlogDetail article={selectedArticle} setView={setView} />}
       {view === 'dashboard' && user && <Dashboard user={user} t={t} setView={setView} courses={courses} teacherEarnings={teacherEarnings} myBookings={myBookings} handleDeleteCourse={handleDeleteCourse} handleEditCourse={handleEditCourse} showNotification={showNotification} changeLanguage={changeLanguage} setSelectedCourse={setSelectedCourse} />}
