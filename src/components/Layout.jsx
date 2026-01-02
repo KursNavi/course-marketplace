@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Menu, X, Globe, LogOut, LayoutDashboard, ChevronDown } from 'lucide-react';
+import { Menu, X, Globe, LogOut, LayoutDashboard, ChevronDown, Mail, ArrowRight, Check, Loader2 } from 'lucide-react';
 
 // BRANDING: The "Compass & Book" Logo [Source: 9]
 // Recreated as SVG: A 4-point star (compass) floating above an abstract open book.
@@ -138,9 +138,77 @@ export const Navbar = ({ t, user, lang, setLang, setView, handleLogout, setShowR
   );
 };
 
-export const Footer = ({ t, setView }) => (
-  <footer className="bg-white border-t border-gray-200 py-12">
+export const Footer = ({ t, setView }) => {
+  const [email, setEmail] = useState('');
+  const [status, setStatus] = useState('idle'); // idle, loading, success, error
+
+  const handleSubscribe = async (e) => {
+    e.preventDefault();
+    if (!email) return;
+    setStatus('loading');
+    try {
+      const res = await fetch('/api/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      if (res.ok) {
+        setStatus('success');
+        setEmail('');
+      } else {
+        setStatus('error');
+      }
+    } catch (err) {
+      setStatus('error');
+    }
+  };
+
+  return (
+  <footer className="bg-white border-t border-gray-200 py-12 font-sans">
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      {/* NEWSLETTER SECTION */}
+      <div className="bg-dark rounded-2xl p-8 mb-12 flex flex-col md:flex-row items-center justify-between gap-8 shadow-xl relative overflow-hidden">
+        {/* Abstract Background Decoration */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-primary opacity-10 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
+        
+        <div className="relative z-10 max-w-lg">
+          <h3 className="text-2xl font-bold text-white font-heading mb-2">Verpasse keine neuen Kurse!</h3>
+          <p className="text-gray-400 text-sm">Erhalte wöchentlich handverlesene Kurs-Empfehlungen und exklusive Angebote direkt in dein Postfach.</p>
+        </div>
+        
+        <div className="relative z-10 w-full max-w-md">
+          {status === 'success' ? (
+             <div className="bg-green-500/20 border border-green-500/50 text-green-400 px-4 py-3 rounded-xl flex items-center justify-center animate-in fade-in">
+                <Check className="w-5 h-5 mr-2" />
+                <span className="font-bold">Erfolgreich angemeldet!</span>
+             </div>
+          ) : (
+            <form onSubmit={handleSubscribe} className="flex gap-2">
+              <div className="relative flex-grow">
+                <Mail className="absolute left-3 top-3.5 text-gray-500 w-5 h-5" />
+                <input 
+                  type="email" 
+                  required
+                  placeholder="Deine E-Mail Adresse" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white/20 transition"
+                />
+              </div>
+              <button 
+                type="submit" 
+                disabled={status === 'loading'}
+                className="bg-primary hover:bg-orange-600 text-white px-6 py-3 rounded-xl font-bold transition flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {status === 'loading' ? <Loader2 className="w-5 h-5 animate-spin" /> : <ArrowRight className="w-5 h-5" />}
+              </button>
+            </form>
+          )}
+          {status === 'error' && <p className="text-red-400 text-xs mt-2 ml-1">Hoppla, das hat nicht geklappt. Versuch es später noch einmal.</p>}
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
         <div className="col-span-1 md:col-span-1">
           <div className="flex items-center mb-4 text-dark font-heading font-bold text-xl">
@@ -155,7 +223,7 @@ export const Footer = ({ t, setView }) => (
             <li onClick={() => { setView('landing-prof'); window.scrollTo(0,0); }} className="hover:text-primary cursor-pointer transition-colors">{t.nav_professional}</li>
             <li onClick={() => { setView('landing-kids'); window.scrollTo(0,0); }} className="hover:text-primary cursor-pointer transition-colors">{t.nav_kids}</li>
             <li onClick={() => { setView('blog'); window.scrollTo(0,0); }} className="hover:text-primary cursor-pointer transition-colors">Neuigkeiten</li>
-            <li onClick={() => { setView('teacher-hub'); window.scrollTo(0,0); }} className="hover:text-primary cursor-pointer transition-colors font-bold text-orange-600">Für Anbieter</li>
+            <li onClick={() => { setView('teacher-hub'); window.scrollTo(0,0); }} className="hover:text-primary cursor-pointer transition-colors font-bold text-orange-600">Für Anbieter</li>
           </ul>
         </div>
         <div>
@@ -180,4 +248,5 @@ export const Footer = ({ t, setView }) => (
       </div>
     </div>
   </footer>
-);
+  );
+};
