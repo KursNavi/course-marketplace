@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { 
     Loader, Settings, Save, Lock, CheckCircle, Clock, 
-    ChevronDown, User, DollarSign, PenTool, Trash2, ArrowRight 
+    ChevronDown, User, DollarSign, PenTool, Trash2, ArrowRight,
+    Crown, BarChart3, AlertTriangle 
 } from 'lucide-react';
-import { SWISS_CANTONS } from '../lib/constants';
+import { SWISS_CANTONS, TIER_CONFIG } from '../lib/constants';
 import { KursNaviLogo } from './Layout';
 import { supabase } from '../lib/supabase';
 
@@ -216,8 +217,26 @@ const UserProfileSection = ({ user, showNotification, setLang, t }) => {
 // --- MAIN DASHBOARD COMPONENT ---
 const Dashboard = ({ user, t, setView, courses, teacherEarnings, myBookings, handleDeleteCourse, handleEditCourse, showNotification, changeLanguage, setSelectedCourse }) => {
     const [dashView, setDashView] = useState('overview'); 
+    const [userTier, setUserTier] = useState('basic'); // basic, pro, premium
+
+    // 1. Fetch User Tier
+    useEffect(() => {
+        if (user.role === 'teacher') {
+            supabase.from('profiles').select('plan_tier').eq('id', user.id).single()
+            .then(({ data }) => { if (data?.plan_tier) setUserTier(data.plan_tier); });
+        }
+    }, [user]);
+
+    // 2. Calculate Limits (Business Logic)
+    const currentTierConfig = TIER_CONFIG[userTier] || TIER_CONFIG['basic'];
+    const maxCourses = currentTierConfig.course_limit;
+    
     const totalPaidOut = user.role === 'teacher' ? teacherEarnings.filter(e => e.isPaidOut).reduce((sum, e) => sum + e.payout, 0) : 0;
     const myCourses = user.role === 'teacher' ? courses.filter(c => c.user_id === user.id) : [];
+    
+    const courseCount = myCourses.length;
+    const canCreate = courseCount < maxCourses;
+    const usagePercent = Math.min(100, (courseCount / maxCourses) * 100);
 
     const handleNavigateToCourse = (course) => { setSelectedCourse(course); setView('detail'); window.scrollTo(0,0); };
     const handleCancelBooking = async (courseId, courseTitle) => { if (!confirm(`Are you sure you want to cancel your spot in "${courseTitle}"?`)) return; alert("Please contact support to cancel this booking."); };
@@ -228,36 +247,123 @@ const Dashboard = ({ user, t, setView, courses, teacherEarnings, myBookings, han
             <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
                  <div><h1 className="text-3xl font-bold text-dark font-heading">{user.role === 'teacher' ? t.teacher_dash : t.student_dash}</h1><p className="text-gray-500">Welcome back, {user.name}</p></div>
                  <div className="bg-white rounded-full p-1 border flex shadow-sm h-fit"><button onClick={() => setDashView('overview')} className={`px-4 py-2 rounded-full text-sm font-bold transition ${dashView === 'overview' ? 'bg-primary text-white shadow' : 'text-gray-500 hover:bg-gray-50'}`}>{t.dash_overview}</button><button onClick={() => setDashView('profile')} className={`px-4 py-2 rounded-full text-sm font-bold transition ${dashView === 'profile' ? 'bg-primary text-white shadow' : 'text-gray-500 hover:bg-gray-50'}`}>{t.dash_settings}</button></div>
-                {user.role === 'teacher' && dashView === 'overview' && <button onClick={() => handleEditCourse(null)} className="bg-primary text-white px-6 py-3 rounded-xl font-bold hover:bg-orange-600 flex items-center shadow-lg hover:-translate-y-0.5 transition font-heading"><KursNaviLogo className="mr-2 w-5 h-5 text-white" /> {t.dash_new_course}</button>}
+                
+                {/* LOGIC: Create Button with Limit Check */}
+                {user.role === 'teacher' && dashView === 'overview' && (
+                    <div className="relative group">
+                        <button 
+                            onClick={() => canCreate ? handleEditCourse(null) : alert(`Limit erreicht! Ihr Paket (${userTier}) erlaubt maximal ${maxCourses} Kurse. Bitte upgraden.`)} 
+                            disabled={!canCreate}
+                            className={`px-6 py-3 rounded-xl font-bold flex items-center shadow-lg transition font-heading 
+                                ${canCreate 
+                                    ? 'bg-primary text-white hover:bg-orange-600 hover:-translate-y-0.5' 
+                                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
+                        >
+                            <KursNaviLogo className={`mr-2 w-5 h-5 ${canCreate ? 'text-white' : 'text-gray-400'}`} /> 
+                            {t.dash_new_course}
+                            {!canCreate && <Lock className="ml-2 w-4 h-4" />}
+                        </button>
+                    </div>
+                )}
             </div>
+
             {dashView === 'profile' ? ( <UserProfileSection user={user} showNotification={showNotification} setLang={changeLanguage} t={t} /> ) : (
                 <>
                 {user.role === 'teacher' ? (
                     <>
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                            <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm flex items-center"><div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4"><DollarSign className="text-green-600" /></div><div><p className="text-sm text-gray-500">Total Payouts Received</p><p className="text-2xl font-bold text-dark">CHF {totalPaidOut.toFixed(2)}</p></div></div>
-                            <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm flex items-center"><div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-4"><User className="text-blue-600" /></div><div><p className="text-sm text-gray-500">Total Students</p><p className="text-2xl font-bold text-dark">{teacherEarnings.length}</p></div></div>
+                        {/* BUSINESS LOGIC: Usage Stats & Limits Card */}
+                        <div className="bg-dark text-white rounded-xl p-6 mb-8 shadow-xl relative overflow-hidden">
+                            <div className="absolute top-0 right-0 p-4 opacity-10"><BarChart3 className="w-32 h-32" /></div>
+                            <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
+                                <div>
+                                    <h3 className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-1">Dein Plan</h3>
+                                    <div className="flex items-center gap-2">
+                                        {userTier === 'premium' ? <Crown className="w-6 h-6 text-yellow-400" /> : <User className="w-6 h-6 text-gray-300" />}
+                                        <span className="text-2xl font-bold capitalize">{currentTierConfig.label} Mitglied</span>
+                                    </div>
+                                    <p className="text-xs text-gray-400 mt-1">{currentTierConfig.description}</p>
+                                </div>
+                                <div>
+                                    <div className="flex justify-between text-sm mb-2">
+                                        <span className="text-gray-300">Kurs-Limit ({courseCount}/{userTier === 'enterprise' ? '∞' : maxCourses})</span>
+                                        <span className={`${canCreate ? 'text-green-400' : 'text-red-400'} font-bold`}>{canCreate ? 'Aktiv' : 'Limit erreicht'}</span>
+                                    </div>
+                                    <div className="w-full bg-gray-700 rounded-full h-3 border border-gray-600">
+                                        <div className={`h-full rounded-full transition-all duration-500 ${canCreate ? 'bg-primary' : 'bg-red-500'}`} style={{ width: `${usagePercent}%` }}></div>
+                                    </div>
+                                </div>
+                                <div className="text-right">
+                                    {userTier === 'basic' && (
+                                        <button onClick={() => window.open('mailto:support@kursnavi.ch?subject=Upgrade Anfrage Pro', '_blank')} className="bg-white text-dark px-4 py-2 rounded-lg font-bold text-sm hover:bg-gray-100 transition shadow-lg">
+                                            Auf Pro upgraden ⭐
+                                        </button>
+                                    )}
+                                    {userTier === 'pro' && (
+                                        <button onClick={() => window.open('mailto:support@kursnavi.ch?subject=Upgrade Anfrage Premium', '_blank')} className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-4 py-2 rounded-lg font-bold text-sm hover:shadow-lg transition">
+                                            Auf Premium upgraden 🚀
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
                         </div>
-                        <h2 className="text-xl font-bold mb-4 font-heading text-dark">Student & Earnings History</h2>
+
+                        {/* SERVICE UPSELL CARD (New Revenue Stream) */}
+                        <div className="bg-gradient-to-r from-orange-50 to-white p-6 rounded-xl border border-orange-100 shadow-sm mb-8 flex flex-col md:flex-row items-center justify-between gap-6">
+                            <div className="flex items-start gap-4">
+                                <div className="bg-white p-3 rounded-full shadow-sm border border-orange-100 text-primary hidden md:block">
+                                    <PenTool className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-bold text-dark font-heading">Keine Zeit, Kurse zu erfassen?</h3>
+                                    <p className="text-sm text-gray-600 mt-1 max-w-lg">Wir übernehmen das für dich! Sende uns einfach deine Unterlagen (PDF/Link). Wir optimieren Texte & Bilder.</p>
+                                    <div className="flex flex-wrap gap-4 mt-3 text-xs font-medium text-gray-500">
+                                        <span className="flex items-center"><CheckCircle className="w-3 h-3 mr-1 text-green-500"/> SEO-Optimierung</span>
+                                        <span className="flex items-center"><CheckCircle className="w-3 h-3 mr-1 text-green-500"/> Bild-Bearbeitung</span>
+                                        <span className="flex items-center"><CheckCircle className="w-3 h-3 mr-1 text-green-500"/> Qualitäts-Check</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="text-right flex flex-col items-end">
+                                <span className="text-xs text-gray-400 mb-1 bg-white px-2 py-0.5 rounded border">ab 4. Kurs günstiger</span>
+                                <button onClick={() => window.open('mailto:support@kursnavi.ch?subject=Kurserfassungs-Service Anfrage', '_blank')} className="bg-white border-2 border-primary text-primary px-5 py-2 rounded-lg font-bold shadow-sm hover:bg-primary hover:text-white transition whitespace-nowrap flex items-center">
+                                    Service buchen (ab CHF 50.-) <ArrowRight className="w-4 h-4 ml-2"/>
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* STATS & LISTS */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                            <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm flex items-center"><div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4"><DollarSign className="text-green-600" /></div><div><p className="text-sm text-gray-500">Einnahmen (Platform)</p><p className="text-2xl font-bold text-dark">CHF {totalPaidOut.toFixed(2)}</p></div></div>
+                            <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm flex items-center"><div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-4"><User className="text-blue-600" /></div><div><p className="text-sm text-gray-500">Buchungen Total</p><p className="text-2xl font-bold text-dark">{teacherEarnings.length}</p></div></div>
+                            <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm flex items-center"><div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mr-4"><Clock className="text-purple-600" /></div><div><p className="text-sm text-gray-500">Aktive Kurse</p><p className="text-2xl font-bold text-dark">{courseCount}</p></div></div>
+                        </div>
+
+                        <h2 className="text-xl font-bold mb-4 font-heading text-dark">Buchungs-Historie (Schüler)</h2>
                         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-8">
                              {teacherEarnings.length > 0 ? (
                                 <div className="overflow-x-auto">
                                     <table className="w-full text-left">
-                                            <thead className="bg-beige border-b border-gray-200"><tr><th className="px-6 py-4 font-semibold text-gray-600">Date</th><th className="px-6 py-4 font-semibold text-gray-600">Course</th><th className="px-6 py-4 font-semibold text-gray-600">Student</th><th className="px-6 py-4 font-semibold text-gray-600">Your Payout (85%)</th><th className="px-6 py-4 font-semibold text-gray-600">Status</th></tr></thead>
-                                            <tbody className="divide-y divide-gray-100">{teacherEarnings.map(earning => (<tr key={earning.id} className="hover:bg-gray-50"><td className="px-6 py-4 text-sm text-gray-500">{earning.date}</td><td className="px-6 py-4 font-medium text-dark">{earning.courseTitle}</td><td className="px-6 py-4 text-gray-700">{earning.studentName}</td><td className="px-6 py-4 font-bold text-dark">CHF {earning.payout.toFixed(2)}</td><td className="px-6 py-4">{earning.isPaidOut ? <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Paid Out</span> : <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Pending</span>}</td></tr>))}</tbody>
+                                            <thead className="bg-beige border-b border-gray-200"><tr><th className="px-6 py-4 font-semibold text-gray-600">Datum</th><th className="px-6 py-4 font-semibold text-gray-600">Kurs</th><th className="px-6 py-4 font-semibold text-gray-600">Schüler</th><th className="px-6 py-4 font-semibold text-gray-600">Auszahlung (Netto)</th><th className="px-6 py-4 font-semibold text-gray-600">Status</th></tr></thead>
+                                            <tbody className="divide-y divide-gray-100">{teacherEarnings.map(earning => (<tr key={earning.id} className="hover:bg-gray-50"><td className="px-6 py-4 text-sm text-gray-500">{earning.date}</td><td className="px-6 py-4 font-medium text-dark">{earning.courseTitle}</td><td className="px-6 py-4 text-gray-700">{earning.studentName}</td><td className="px-6 py-4 font-bold text-dark">CHF {earning.payout.toFixed(2)}</td><td className="px-6 py-4">{earning.isPaidOut ? <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Bezahlt</span> : <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Offen</span>}</td></tr>))}</tbody>
                                     </table>
                                 </div>
-                             ) : <div className="p-8 text-center text-gray-500">No student bookings yet.</div>}
+                             ) : <div className="p-8 text-center text-gray-500">Noch keine Buchungen über die Plattform.</div>}
                         </div>
-                        <h2 className="text-xl font-bold mb-4 font-heading text-dark">My Active Courses</h2>
+
+                        <h2 className="text-xl font-bold mb-4 font-heading text-dark">Meine Kurse verwalten</h2>
                         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                             {myCourses.length > 0 ? (
                                 <div className="overflow-x-auto">
                                     <table className="w-full text-left">
-                                            <thead className="bg-beige border-b border-gray-200"><tr><th className="px-6 py-4 font-semibold text-gray-600">Course</th><th className="px-6 py-4 font-semibold text-gray-600">Price</th><th className="px-6 py-4 font-semibold text-gray-600">Actions</th></tr></thead>
+                                            <thead className="bg-beige border-b border-gray-200"><tr><th className="px-6 py-4 font-semibold text-gray-600">Kurs</th><th className="px-6 py-4 font-semibold text-gray-600">Typ</th><th className="px-6 py-4 font-semibold text-gray-600">Preis</th><th className="px-6 py-4 font-semibold text-gray-600">Aktionen</th></tr></thead>
                                             <tbody className="divide-y divide-gray-100">{myCourses.map(course => (
                                                 <tr key={course.id} className="hover:bg-gray-50">
-                                                    <td className="px-6 py-4"><div className="font-bold text-dark">{course.title}</div><div className="text-xs text-gray-400">{course.category}</div></td>
+                                                    <td className="px-6 py-4"><div className="font-bold text-dark">{course.title}</div><div className="text-xs text-gray-400">{course.canton}</div></td>
+                                                    <td className="px-6 py-4">
+                                                        <span className={`text-xs px-2 py-1 rounded font-bold uppercase ${course.booking_type === 'platform' ? 'bg-green-100 text-green-700' : (course.booking_type === 'external' ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700')}`}>
+                                                            {course.booking_type || 'platform'}
+                                                        </span>
+                                                    </td>
                                                     <td className="px-6 py-4 font-medium">CHF {course.price}</td>
                                                     <td className="px-6 py-4 flex gap-2">
                                                         <button onClick={() => handleEditCourse(course)} className="text-blue-500 hover:text-blue-700 bg-blue-50 p-2 rounded-full"><PenTool className="w-4 h-4" /></button>
@@ -267,7 +373,7 @@ const Dashboard = ({ user, t, setView, courses, teacherEarnings, myBookings, han
                                             ))}</tbody>
                                     </table>
                                 </div>
-                            ) : <div className="p-8 text-center text-gray-500">You haven't posted any courses yet.</div>}
+                            ) : <div className="p-8 text-center text-gray-500">Du hast noch keine Kurse erstellt.</div>}
                         </div>
                     </>
                 ) : (
