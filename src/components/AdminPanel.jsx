@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { createClient } from '@supabase/supabase-js';
-import { Lock, Loader, Shield, CheckCircle, Eye, ExternalLink } from 'lucide-react';
+import { Lock, Loader, Shield, CheckCircle, Eye, ExternalLink, FileText } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
-const AdminPanel = ({ t, courses, setCourses, showNotification, fetchCourses }) => {
+const AdminPanel = ({ t, courses, setCourses, showNotification, fetchCourses, setView }) => {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [password, setPassword] = useState("");
     const [activeTab, setActiveTab] = useState("teachers");
@@ -111,7 +110,12 @@ const AdminPanel = ({ t, courses, setCourses, showNotification, fetchCourses }) 
             <div className="max-w-7xl mx-auto">
                 <div className="flex justify-between items-center mb-8">
                     <h1 className="text-3xl font-bold text-gray-900 font-heading">{t.admin_panel}</h1>
-                    <button onClick={() => setIsAuthenticated(false)} className="text-red-500 hover:underline">Exit</button>
+                    <div className="flex items-center gap-4">
+                        <button onClick={() => setView('admin-blog')} className="flex items-center bg-orange-100 text-orange-800 px-4 py-2 rounded-lg hover:bg-orange-200 font-bold transition border border-orange-200 shadow-sm">
+                            <FileText className="w-4 h-4 mr-2"/> Blog Manager
+                        </button>
+                        <button onClick={() => setIsAuthenticated(false)} className="text-red-500 hover:underline font-medium">Exit</button>
+                    </div>
                 </div>
 
                 {/* TABS */}

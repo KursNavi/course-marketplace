@@ -25,6 +25,9 @@ import ContactPage from './components/ContactPage';
 import AboutPage from './components/AboutPage';
 import HowItWorksPage from './components/HowItWorksPage';
 import SuccessView from './components/SuccessView';
+import BlogList from './components/BlogList';
+import BlogDetail from './components/BlogDetail';
+import AdminBlogManager from './components/AdminBlogManager';
 
 // --- MAIN APP COMPONENT ---
 export default function KursNaviPro() {
@@ -41,7 +44,8 @@ export default function KursNaviPro() {
           '/contact': 'contact',
           '/login': 'login',
           '/create-course': 'create',
-          '/teacher-hub': 'teacher-hub',
+          '/admin-blog': 'admin-blog',
+          '/teacher-hub': 'teacher-hub',
           '/private': 'landing-private',
           '/professional': 'landing-prof',
           '/children': 'landing-kids',
@@ -53,8 +57,13 @@ export default function KursNaviPro() {
       };
       
       if (routes[path]) return routes[path];
-      // SEO Routing: Check for new structure /courses/topic/location/id
-      if (path.startsWith('/courses/')) {
+
+      // BLOG ROUTING
+      if (path === '/blog') return 'blog';
+      if (path.startsWith('/blog/')) return 'blog-detail';
+
+      // SEO Routing: Check for new structure /courses/topic/location/id
+      if (path.startsWith('/courses/')) {
           const parts = path.split('/').filter(Boolean); // remove empty strings
           // Pattern: courses (0) -> topic (1) -> location (2) -> id (3)
           if (parts.length >= 4) return 'detail'; 
@@ -76,7 +85,9 @@ export default function KursNaviPro() {
   const [courses, setCourses] = useState([]); 
   const [myBookings, setMyBookings] = useState([]); 
   const [teacherEarnings, setTeacherEarnings] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [articles, setArticles] = useState([]); // Blog State
+  const [selectedArticle, setSelectedArticle] = useState(null);
+  const [loading, setLoading] = useState(true);
   
   // UI State
   const [searchQuery, setSearchQuery] = useState("");
@@ -217,9 +228,25 @@ export default function KursNaviPro() {
           }
       }
     } catch (error) { console.error('Error:', error.message); showNotification("Error loading courses"); } finally { setLoading(false); }
+  };
+
+  const fetchArticles = async () => {
+      const { data } = await supabase.from('articles').select('*');
+      if (data) setArticles(data);
+      
+      // Check URL for direct blog access
+      const path = window.location.pathname;
+      if (path.startsWith('/blog/') && path.length > 6) {
+          const slug = path.split('/')[2];
+          const found = data?.find(a => a.slug === slug);
+          if (found) {
+              setSelectedArticle(found);
+              setView('blog-detail');
+          }
+      }
   };
 
-  const fetchBookings = async (userId) => {
+    const fetchBookings = async (userId) => {
     const { data } = await supabase.from('bookings').select('*, courses(*)').eq('user_id', userId);
     setMyBookings(data ? data.map(booking => booking.courses).filter(Boolean) : []);
   };
@@ -327,10 +354,14 @@ export default function KursNaviPro() {
         'search': '/search', 'how-it-works': '/how-it-works', 'about': '/about', 'contact': '/contact',
         'login': '/login', 'dashboard': '/dashboard', 'agb': '/agb', 'datenschutz': '/datenschutz',
         'impressum': '/impressum', 'widerruf': '/widerruf-storno', 'trust': '/vertrauen-sicherheit',
-        'admin': '/control-room-2025', 'create': '/create-course', 'teacher-hub': '/teacher-hub'
-    };
+        'admin': '/control-room-2025', 'create': '/create-course', 'teacher-hub': '/teacher-hub',
+        'blog': '/blog', 'admin-blog': '/admin-blog'
+    };
     if (routes[view]) path = routes[view];
-    else if (view === 'detail' && selectedCourse) {
+    else if (view === 'blog-detail' && selectedArticle) {
+        path = `/blog/${selectedArticle.slug}`;
+    }
+    else if (view === 'detail' && selectedCourse) {
         // SEO Friendly URL Construction: /courses/{topic}/{location}/{id}-{slug}
         const topicSlug = (selectedCourse.category_area || 'kurs').toLowerCase().replace(/_/g, '-');
         const locSlug = (selectedCourse.canton || 'schweiz').toLowerCase();
@@ -347,8 +378,9 @@ export default function KursNaviPro() {
   }, [view, selectedCourse, loading]);
 
   useEffect(() => {
-    fetchCourses();
-    const handleUrlChange = () => setView(getInitialView());
+    fetchCourses();
+    fetchArticles();
+    const handleUrlChange = () => setView(getInitialView());
     window.addEventListener('popstate', handleUrlChange);
     return () => window.removeEventListener('popstate', handleUrlChange);
   }, []);
@@ -477,7 +509,10 @@ export default function KursNaviPro() {
       {view === 'widerruf' && <LegalPage pageKey="widerruf" lang={lang} setView={setView} />}
       {view === 'trust' && <LegalPage pageKey="trust" lang={lang} setView={setView} />}
 
-      {view === 'admin' && <AdminPanel t={t} courses={courses} setCourses={setCourses} showNotification={showNotification} fetchCourses={fetchCourses} />}
+     {view === 'admin' && <AdminPanel t={t} courses={courses} setCourses={setCourses} showNotification={showNotification} fetchCourses={fetchCourses} setView={setView} />}
+      {view === 'admin-blog' && <AdminBlogManager showNotification={showNotification} setView={setView} />}
+      {view === 'blog' && <BlogList articles={articles} setView={setView} setSelectedArticle={setSelectedArticle} />}
+      {view === 'blog-detail' && <BlogDetail article={selectedArticle} setView={setView} />}
       {view === 'dashboard' && user && <Dashboard user={user} t={t} setView={setView} courses={courses} teacherEarnings={teacherEarnings} myBookings={myBookings} handleDeleteCourse={handleDeleteCourse} handleEditCourse={handleEditCourse} showNotification={showNotification} changeLanguage={changeLanguage} setSelectedCourse={setSelectedCourse} />}
       {view === 'create' && user?.role === 'teacher' && <TeacherForm t={t} setView={setView} user={user} fetchCourses={fetchCourses} showNotification={showNotification} setEditingCourse={setEditingCourse} initialData={editingCourse} />}
       </div>
