@@ -221,9 +221,17 @@ export default function KursNaviPro() {
               setSelectedCourse(found); 
               setView('detail'); 
               
-              // 301-Style Client Redirect: Update URL to new structure if it's the old one
-              if (path.startsWith('/course/')) {
-                 // The useEffect hook below will handle the URL replacement automatically
+              // --- V2.1 SEO TRAFFIC COP (Canonical Enforcer) ---
+              // Bestimmt die einzig wahre URL basierend auf primary_category (oder Fallback auf Area)
+              const primaryCat = found.primary_category || found.category_area || 'kurs';
+              const canonicalTopic = primaryCat.toLowerCase().replace(/_/g, '-');
+              const canonicalLoc = (found.canton || 'schweiz').toLowerCase();
+              const canonicalSlug = (found.title || 'detail').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+              const canonicalPath = `/courses/${canonicalTopic}/${canonicalLoc}/${found.id}-${canonicalSlug}`;
+
+              // Silent Fix: Wenn die aktuelle URL nicht der Canonical entspricht (falsche Kategorie oder Legacy), korrigieren.
+              if (window.location.pathname !== canonicalPath) {
+                  window.history.replaceState({ view: 'detail', courseId: found.id }, '', canonicalPath);
               }
           }
       }
