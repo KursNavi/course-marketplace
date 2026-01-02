@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { CATEGORY_TYPES, COURSE_LEVELS, AGE_GROUPS } from '../lib/constants'; // Import constants for dropdowns
+// Wir importieren die Konstanten, fangen aber Fehler ab, falls sie undefined sind
+import { CATEGORY_TYPES, COURSE_LEVELS, AGE_GROUPS } from '../lib/constants';
 import { Save, Trash2, Edit, Plus, ArrowLeft, Bold, Search, Link as LinkIcon, X, LayoutTemplate, Filter } from 'lucide-react';
 
 export default function AdminBlogManager({ showNotification, setView, courses }) {
@@ -8,12 +9,14 @@ export default function AdminBlogManager({ showNotification, setView, courses })
   const [isEditing, setIsEditing] = useState(false);
   const [linkToolMode, setLinkToolMode] = useState(null); 
   
-  // Form State
-  const [formData, setFormData] = useState({
+  // Standard-Werte für ein leeres Formular
+  const initialFormState = {
     title: '', slug: '', excerpt: '', content: '', image_url: '', is_published: false, related_config: {}
-  });
+  };
 
-  // Link Tool State for Inline Editor
+  const [formData, setFormData] = useState(initialFormState);
+
+  // Link Tool State
   const [selectedCourseId, setSelectedCourseId] = useState('');
   const [searchParams, setSearchParams] = useState({ q: '', loc: '', label: '' });
 
@@ -58,7 +61,7 @@ export default function AdminBlogManager({ showNotification, setView, courses })
     if (!textarea) return;
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
-    const text = textarea.value;
+    const text = textarea.value || ''; // Fallback falls value undefined
     const before = text.substring(0, start);
     const after = text.substring(end);
     setFormData({ ...formData, content: before + textToInsert + after });
@@ -70,12 +73,13 @@ export default function AdminBlogManager({ showNotification, setView, courses })
     if (!textarea) return;
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
-    const selection = textarea.value.substring(start, end);
+    const text = textarea.value || '';
+    const selection = text.substring(start, end);
     const effectiveClose = closeTag || `</${tag.replace('<', '').replace('>', '')}>`;
     insertText(tag + selection + effectiveClose);
   };
 
-  // --- SMART LINK GENERATORS (INLINE) ---
+  // --- SMART LINK GENERATORS ---
   const generateCourseLink = () => {
     if (!selectedCourseId) return;
     const course = courses.find(c => c.id.toString() === selectedCourseId);
@@ -108,6 +112,11 @@ export default function AdminBlogManager({ showNotification, setView, courses })
       }));
   };
 
+  // Safe Accessors für Konstanten (Verhindert White Screen Crash)
+  const safeCategoryTypes = CATEGORY_TYPES || {};
+  const safeLevels = COURSE_LEVELS || [];
+  const safeAgeGroups = AGE_GROUPS || {};
+
   if (isEditing) {
     return (
       <div className="p-6 max-w-5xl mx-auto bg-white shadow-xl rounded-xl">
@@ -123,13 +132,13 @@ export default function AdminBlogManager({ showNotification, setView, courses })
 
         {/* METADATA */}
         <div className="grid gap-4 mb-6">
-          <input type="text" placeholder="H1 Titel" className="w-full p-3 border rounded font-bold text-lg" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} />
+          <input type="text" placeholder="H1 Titel" className="w-full p-3 border rounded font-bold text-lg" value={formData.title || ''} onChange={e => setFormData({...formData, title: e.target.value})} />
           <div className="grid grid-cols-2 gap-4">
-             <input type="text" placeholder="slug-url" className="w-full p-3 border rounded font-mono text-sm" value={formData.slug} onChange={e => setFormData({...formData, slug: e.target.value})} />
-             <div className="flex items-center space-x-2"><input type="checkbox" checked={formData.is_published} onChange={e => setFormData({...formData, is_published: e.target.checked})} /> <label>Veröffentlicht</label></div>
+             <input type="text" placeholder="slug-url" className="w-full p-3 border rounded font-mono text-sm" value={formData.slug || ''} onChange={e => setFormData({...formData, slug: e.target.value})} />
+             <div className="flex items-center space-x-2"><input type="checkbox" checked={formData.is_published || false} onChange={e => setFormData({...formData, is_published: e.target.checked})} /> <label>Veröffentlicht</label></div>
           </div>
-          <input type="text" placeholder="Bild URL" className="w-full p-3 border rounded" value={formData.image_url} onChange={e => setFormData({...formData, image_url: e.target.value})} />
-          <textarea placeholder="Vorschau Text (Excerpt)" className="w-full p-3 border rounded h-20" value={formData.excerpt} onChange={e => setFormData({...formData, excerpt: e.target.value})} />
+          <input type="text" placeholder="Bild URL" className="w-full p-3 border rounded" value={formData.image_url || ''} onChange={e => setFormData({...formData, image_url: e.target.value})} />
+          <textarea placeholder="Vorschau Text (Excerpt)" className="w-full p-3 border rounded h-20" value={formData.excerpt || ''} onChange={e => setFormData({...formData, excerpt: e.target.value})} />
         </div>
 
         {/* TOOLBAR */}
@@ -164,7 +173,7 @@ export default function AdminBlogManager({ showNotification, setView, courses })
             </div>
         )}
         
-        <textarea id="blog-editor" placeholder="Artikel Inhalt..." className="w-full p-4 border rounded-b-lg h-[500px] font-mono text-sm leading-relaxed focus:ring-2 focus:ring-primary outline-none" value={formData.content} onChange={e => setFormData({...formData, content: e.target.value})} />
+        <textarea id="blog-editor" placeholder="Artikel Inhalt..." className="w-full p-4 border rounded-b-lg h-[500px] font-mono text-sm leading-relaxed focus:ring-2 focus:ring-primary outline-none" value={formData.content || ''} onChange={e => setFormData({...formData, content: e.target.value})} />
 
         {/* --- SECTION: EMPFEHLUNGEN (CTA) - ERWEITERT --- */}
         <div className="mt-8 bg-orange-50 p-6 rounded-xl border border-orange-100">
@@ -201,21 +210,21 @@ export default function AdminBlogManager({ showNotification, setView, courses })
                             <input type="text" placeholder="Ort (loc)" className="p-2 border rounded text-sm" value={formData.related_config?.search_loc || ''} onChange={(e) => updateRelated('search_loc', e.target.value)} />
                         </div>
                         
-                        {/* Dropdowns for Categories */}
+                        {/* Dropdowns for Categories (Safe Access) */}
                         <div className="grid grid-cols-2 gap-2">
                              <select className="p-2 border rounded text-sm" value={formData.related_config?.search_type || ''} onChange={(e) => updateRelated('search_type', e.target.value)}>
                                 <option value="">- Kategorie Typ -</option>
-                                {Object.entries(CATEGORY_TYPES).map(([key, label]) => <option key={key} value={key}>{key}</option>)}
+                                {Object.entries(safeCategoryTypes).map(([key, label]) => <option key={key} value={key}>{key}</option>)}
                              </select>
                              <select className="p-2 border rounded text-sm" value={formData.related_config?.search_level || ''} onChange={(e) => updateRelated('search_level', e.target.value)}>
                                 <option value="">- Level -</option>
-                                {COURSE_LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
+                                {safeLevels.map(l => <option key={l} value={l}>{l}</option>)}
                              </select>
                         </div>
                          <div className="grid grid-cols-2 gap-2">
                              <select className="p-2 border rounded text-sm" value={formData.related_config?.search_age || ''} onChange={(e) => updateRelated('search_age', e.target.value)}>
                                 <option value="">- Zielgruppe -</option>
-                                {Object.keys(AGE_GROUPS).map(k => <option key={k} value={k}>{k}</option>)}
+                                {Object.keys(safeAgeGroups).map(k => <option key={k} value={k}>{k}</option>)}
                              </select>
                              <input type="text" placeholder="Spezialgebiet (Key)" className="p-2 border rounded text-sm" value={formData.related_config?.search_spec || ''} onChange={(e) => updateRelated('search_spec', e.target.value)} />
                         </div>
@@ -231,7 +240,7 @@ export default function AdminBlogManager({ showNotification, setView, courses })
     <div className="p-8 max-w-6xl mx-auto">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-heading font-bold text-dark">Blog Management</h1>
-        <button onClick={() => { setFormData({ related_config: {} }); setIsEditing(true); }} className="bg-primary text-white px-4 py-2 rounded flex items-center"><Plus className="w-4 h-4 mr-2" /> Neuer Artikel</button>
+        <button onClick={() => { setFormData(initialFormState); setIsEditing(true); }} className="bg-primary text-white px-4 py-2 rounded flex items-center"><Plus className="w-4 h-4 mr-2" /> Neuer Artikel</button>
       </div>
       <div className="bg-white rounded-xl shadow overflow-hidden">
         <table className="w-full text-left">
