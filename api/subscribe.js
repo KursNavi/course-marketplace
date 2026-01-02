@@ -4,7 +4,9 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  const { email } = req.body;
+  // Force Update V2
+  const rawEmail = req.body.email;
+  const email = rawEmail ? rawEmail.trim() : '';
 
   if (!email || !email.includes('@')) {
     return res.status(400).json({ error: 'Valid email required' });
@@ -20,7 +22,7 @@ export default async function handler(req, res) {
         throw new Error("Key not configured in Vercel");
     } else {
         console.log("Key gefunden. Länge:", BREVO_KEY.length);
-        console.log("Key Start:", BREVO_KEY.substring(0, 5)); // Zeigt nur "xkeys..."
+        console.log("Key Start:", BREVO_KEY.substring(0, 5)); // Zeigt nur "..."
     }
     // --- DEBUGGING END ---
     // 
