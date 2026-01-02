@@ -6,6 +6,9 @@ import { SWISS_CANTONS, NEW_TAXONOMY, CATEGORY_TYPES, COURSE_LEVELS, AGE_GROUPS 
 import { supabase } from '../lib/supabase';
 
 const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotification, setEditingCourse }) => {
+    // Booking & Link State (v2.1)
+    const [bookingType, setBookingType] = useState('platform'); // 'platform', 'external', 'lead'
+
     // New Taxonomy State
     const [selectedType, setSelectedType] = useState('privat_hobby');
     const [selectedArea, setSelectedArea] = useState('');
@@ -24,6 +27,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
     useEffect(() => {
         // 1. Load Initial Data if editing
         if (initialData) {
+            if (initialData.booking_type) setBookingType(initialData.booking_type); // Load Booking Type
             if (initialData.category_type) setSelectedType(initialData.category_type);
             if (initialData.category_area) setSelectedArea(initialData.category_area);
             if (initialData.category_specialty) setSelectedSpecialty(initialData.category_specialty);
@@ -135,31 +139,33 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
         const mainDate = validEvents[0].start_date;
 
         const newCourse = {
-            title: formData.get('title'), 
-            instructor_name: user.name, 
-            price: Number(formData.get('price')), 
-            language: formData.get('language'),
-            rating: 0, 
-            category: `${catType} | ${catArea}`, // Legacy
-            category_type: catType,
-            category_area: catArea,
-            category_specialty: catSpec,
-            level: level,
-            target_age_groups: ageGroups,
-            canton: formData.get('canton'), 
-            address: mainLocation, 
-            start_date: mainDate,
-            image_url: imageUrl, 
-            description: formData.get('description'), 
-            keywords: formData.get('keywords'),
-            objectives: objectivesList, 
-            prerequisites: formData.get('prerequisites'),
-            session_count: Number(formData.get('sessionCount')), 
-            session_length: formData.get('sessionLength'), 
-            provider_url: formData.get('providerUrl'), 
-            user_id: user.id, 
-            is_pro: user.is_professional || false
-        };
+        title: formData.get('title'), 
+        instructor_name: user.name, 
+        price: Number(formData.get('price')), 
+        language: formData.get('language'),
+        rating: 0, 
+        category: `${catType} | ${catArea}`, // Legacy
+        category_type: catType,
+        category_area: catArea,
+        category_specialty: catSpec,
+        booking_type: bookingType, // v2.1
+        external_link: bookingType === 'external' ? formData.get('external_link') : null, // v2.1
+        level: level,
+        target_age_groups: ageGroups,
+        canton: formData.get('canton'), 
+        address: mainLocation, 
+        start_date: mainDate,
+        image_url: imageUrl, 
+        description: formData.get('description'), 
+        keywords: formData.get('keywords'),
+        objectives: objectivesList, 
+        prerequisites: formData.get('prerequisites'),
+        session_count: Number(formData.get('sessionCount')), 
+        session_length: formData.get('sessionLength'), 
+        provider_url: formData.get('providerUrl'), 
+        user_id: user.id, 
+        is_pro: user.is_professional || false
+    };
 
         let activeCourseId = courseId;
         let error;
@@ -363,9 +369,38 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
                     <p className="text-xs text-blue-600 mt-3 flex items-center"><Info className="w-3 h-3 mr-1"/> Set Capacity to "0" for unlimited spots.</p>
                 </div>
 
-                {/* --- DETAILS SECTION --- */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_price}</label><div className="relative"><span className="absolute left-3 top-2 text-gray-500 font-bold">CHF</span><input required type="number" name="price" defaultValue={initialData?.price} className="w-full pl-12 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" /></div></div>
+                {/* --- BOOKING OPTIONS (v2.1) --- */}
+                <div className="bg-white p-6 rounded-xl border border-gray-200 space-y-4">
+                    <h3 className="text-lg font-bold text-dark border-b pb-2">Buchungs-Einstellungen</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <label className={`cursor-pointer border p-4 rounded-xl transition ${bookingType === 'platform' ? 'border-primary bg-orange-50 ring-1 ring-primary' : 'hover:bg-gray-50'}`}>
+                            <div className="flex items-center mb-2"><input type="radio" name="bookingType" value="platform" checked={bookingType === 'platform'} onChange={() => setBookingType('platform')} className="mr-2 accent-primary"/> <span className="font-bold">Direktbuchung</span></div>
+                            <p className="text-xs text-gray-500">Zahlung via KursNavi (Stripe). Automatische Rechnung & Bestätigung.</p>
+                        </label>
+                        <label className={`cursor-pointer border p-4 rounded-xl transition ${bookingType === 'lead' ? 'border-primary bg-orange-50 ring-1 ring-primary' : 'hover:bg-gray-50'}`}>
+                            <div className="flex items-center mb-2"><input type="radio" name="bookingType" value="lead" checked={bookingType === 'lead'} onChange={() => setBookingType('lead')} className="mr-2 accent-primary"/> <span className="font-bold">Anfrage (Lead)</span></div>
+                            <p className="text-xs text-gray-500">Kunden senden ein Kontaktformular. Ideal für flexible Kurse.</p>
+                        </label>
+                        <label className={`cursor-pointer border p-4 rounded-xl transition ${bookingType === 'external' ? 'border-primary bg-orange-50 ring-1 ring-primary' : 'hover:bg-gray-50'}`}>
+                            <div className="flex items-center mb-2"><input type="radio" name="bookingType" value="external" checked={bookingType === 'external'} onChange={() => setBookingType('external')} className="mr-2 accent-primary"/> <span className="font-bold">Externer Link</span></div>
+                            <p className="text-xs text-gray-500">Weiterleitung auf Ihre eigene Webseite oder Buchungstool.</p>
+                        </label>
+                    </div>
+
+                    {bookingType === 'external' && (
+                        <div className="animate-in fade-in slide-in-from-top-2">
+                            <label className="block text-sm font-bold text-gray-700 mb-1">Link zur Buchungsseite</label>
+                            <div className="relative">
+                                <ExternalLink className="absolute left-3 top-2.5 text-gray-400 w-4 h-4" />
+                                <input required type="url" name="external_link" defaultValue={initialData?.external_link} placeholder="https://meine-seite.ch/kurs-buchen" className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+            {/* --- DETAILS SECTION --- */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_price}</label><div className="relative"><span className="absolute left-3 top-2 text-gray-500 font-bold">CHF</span><input required type="number" name="price" defaultValue={initialData?.price} className="w-full pl-12 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" /></div></div>
                     <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_session_count}</label><input required type="number" name="sessionCount" defaultValue={initialData?.session_count || 1} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" /></div>
                     <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_session_length}</label><input required type="text" name="sessionLength" defaultValue={initialData?.session_length} placeholder="e.g. 2 hours" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" /></div>
                     <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_website}</label><div className="relative"><ExternalLink className="absolute left-3 top-3 text-gray-400 w-5 h-5" /><input type="url" name="providerUrl" defaultValue={initialData?.provider_url} className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" /></div></div>
