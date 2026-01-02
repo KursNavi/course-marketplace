@@ -16,7 +16,7 @@ export default async function handler(req, res) {
     // Die ID deiner Liste bei Brevo. 
     // Falls du keine hast, erstelle eine Liste "Newsletter" und setze die ID hier ein (z.B. 2).
     // Wenn du es leer lässt, landet der Kontakt meist in der Standard-Liste.
-    const LIST_ID = 2; 
+    const LIST_ID = 5; 
 
     const response = await fetch('https://api.brevo.com/v3/contacts', {
       method: 'POST',
