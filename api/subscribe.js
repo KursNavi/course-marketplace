@@ -13,6 +13,18 @@ export default async function handler(req, res) {
   try {
     const BREVO_KEY = process.env.BREVO_API_KEY;
     
+    // --- DEBUGGING START ---
+    console.log("Versuche Brevo Key zu lesen...");
+    if (!BREVO_KEY) {
+        console.error("FEHLER: BREVO_API_KEY ist undefined/leer!");
+        throw new Error("Key not configured in Vercel");
+    } else {
+        console.log("Key gefunden. Länge:", BREVO_KEY.length);
+        console.log("Key Start:", BREVO_KEY.substring(0, 5)); // Zeigt nur "xkeys..."
+    }
+    // --- DEBUGGING END ---
+    // 
+    
     // Die ID deiner Liste bei Brevo. 
     // Falls du keine hast, erstelle eine Liste "Newsletter" und setze die ID hier ein (z.B. 2).
     // Wenn du es leer lässt, landet der Kontakt meist in der Standard-Liste.
