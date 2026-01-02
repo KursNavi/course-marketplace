@@ -12,6 +12,7 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.86.0",
     "lucide-react": "^0.555.0",
+    "pdfkit": "^0.17.2",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "resend": "^6.5.2",
