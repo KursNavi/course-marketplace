@@ -1,17 +1,50 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-// Wir importieren die Konstanten, fangen aber Fehler ab, falls sie undefined sind
-import { CATEGORY_TYPES, COURSE_LEVELS, AGE_GROUPS } from '../lib/constants';
-import { Save, Trash2, Edit, Plus, ArrowLeft, Bold, Search, Link as LinkIcon, X, LayoutTemplate, Filter } from 'lucide-react';
+// Safe Mode: Wir entfernen den externen Import und definieren Listen lokal, um Abstürze zu verhindern.
+// import { CATEGORY_TYPES, COURSE_LEVELS, AGE_GROUPS } from '../lib/constants';
+import { Save, Trash2, Edit, Plus, ArrowLeft, Bold, Search, Link as LinkIcon, X, Layout, Filter } from 'lucide-react';
 
 export default function AdminBlogManager({ showNotification, setView, courses }) {
   const [articles, setArticles] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
   const [linkToolMode, setLinkToolMode] = useState(null); 
   
-  // Standard-Werte für ein leeres Formular
+  // FALLBACK CONSTANTS (Damit die Seite nicht crasht, wenn der Import fehlt)
+  const LOCAL_CATEGORY_TYPES = {
+      'beruflich': 'Beruflich',
+      'privat_hobby': 'Privat & Hobby',
+      'kinder_jugend': 'Kinder & Jugend'
+  };
+  const LOCAL_LEVELS = ['all_levels', 'beginner', 'intermediate', 'advanced'];
+  const LOCAL_AGE_GROUPS = {
+      'age_0_3': '0-3 Jahre',
+      'age_4_6': '4-6 Jahre', 
+      'age_7_9': '7-9 Jahre',
+      'age_10_12': '10-12 Jahre',
+      'age_13_17': '13-17 Jahre',
+      'age_18_25': '18-25 Jahre',
+      'age_26_59': '26-59 Jahre',
+      'age_60_plus': '60+ Jahre'
+  };
+
+  // Standard-Werte explizit setzen
   const initialFormState = {
-    title: '', slug: '', excerpt: '', content: '', image_url: '', is_published: false, related_config: {}
+    title: '', 
+    slug: '', 
+    excerpt: '', 
+    content: '', 
+    image_url: '', 
+    is_published: false, 
+    related_config: {
+        course_id: '',
+        search_label: '',
+        search_q: '',
+        search_loc: '',
+        search_type: '',
+        search_level: '',
+        search_age: '',
+        search_spec: ''
+    }
   };
 
   const [formData, setFormData] = useState(initialFormState);
@@ -25,6 +58,21 @@ export default function AdminBlogManager({ showNotification, setView, courses })
   const fetchArticles = async () => {
     const { data } = await supabase.from('articles').select('*').order('created_at', { ascending: false });
     if (data) setArticles(data);
+  };
+
+  const handleCreateNew = () => {
+      // Hard Reset des Formulars vor dem Öffnen
+      setFormData(JSON.parse(JSON.stringify(initialFormState))); 
+      setIsEditing(true);
+  };
+
+  const handleEdit = (article) => {
+      // Bestehende Daten laden und related_config sicherstellen
+      setFormData({
+          ...article,
+          related_config: article.related_config || initialFormState.related_config
+      });
+      setIsEditing(true);
   };
 
   const handleSave = async () => {
@@ -61,7 +109,7 @@ export default function AdminBlogManager({ showNotification, setView, courses })
     if (!textarea) return;
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
-    const text = textarea.value || ''; // Fallback falls value undefined
+    const text = textarea.value || ''; 
     const before = text.substring(0, start);
     const after = text.substring(end);
     setFormData({ ...formData, content: before + textToInsert + after });
@@ -79,10 +127,9 @@ export default function AdminBlogManager({ showNotification, setView, courses })
     insertText(tag + selection + effectiveClose);
   };
 
-  // --- SMART LINK GENERATORS ---
   const generateCourseLink = () => {
     if (!selectedCourseId) return;
-    const course = courses.find(c => c.id.toString() === selectedCourseId);
+    const course = (courses || []).find(c => c.id.toString() === selectedCourseId);
     if (course) {
         const topicSlug = (course.category_area || 'kurs').toLowerCase().replace(/_/g, '-');
         const locSlug = (course.canton || 'schweiz').toLowerCase();
@@ -106,18 +153,21 @@ export default function AdminBlogManager({ showNotification, setView, courses })
   };
 
   const updateRelated = (key, value) => {
-      setFormData(prev => ({
-          ...prev,
-          related_config: { ...prev.related_config, [key]: value }
-      }));
+      setFormData(prev => {
+          const safeConfig = prev.related_config || {};
+          return {
+            ...prev,
+            related_config: { ...safeConfig, [key]: value }
+          };
+      });
   };
 
-  // Safe Accessors für Konstanten (Verhindert White Screen Crash)
-  const safeCategoryTypes = CATEGORY_TYPES || {};
-  const safeLevels = COURSE_LEVELS || [];
-  const safeAgeGroups = AGE_GROUPS || {};
-
   if (isEditing) {
+    // Safety Check: Falls formData null ist (sollte nicht passieren)
+    if (!formData) return <div>Lade Editor...</div>;
+    // Safety Check: Falls related_config fehlt
+    const config = formData.related_config || {};
+
     return (
       <div className="p-6 max-w-5xl mx-auto bg-white shadow-xl rounded-xl">
         <div className="flex justify-between items-center mb-6">
@@ -178,7 +228,7 @@ export default function AdminBlogManager({ showNotification, setView, courses })
         {/* --- SECTION: EMPFEHLUNGEN (CTA) - ERWEITERT --- */}
         <div className="mt-8 bg-orange-50 p-6 rounded-xl border border-orange-100">
             <div className="flex items-center mb-4 text-orange-800">
-                <LayoutTemplate className="w-5 h-5 mr-2" />
+                <Layout className="w-5 h-5 mr-2" />
                 <h3 className="font-heading font-bold text-lg">Empfehlungen (Call-to-Action)</h3>
             </div>
             <div className="grid md:grid-cols-2 gap-8">
@@ -187,7 +237,7 @@ export default function AdminBlogManager({ showNotification, setView, courses })
                     <label className="block text-sm font-bold text-gray-700 mb-2">Hervorgehobener Kurs</label>
                     <select 
                         className="w-full p-2 border rounded bg-white text-sm"
-                        value={formData.related_config?.course_id || ''}
+                        value={config.course_id || ''}
                         onChange={(e) => updateRelated('course_id', e.target.value)}
                     >
                         <option value="">-- Keinen Kurs anzeigen --</option>
@@ -202,31 +252,31 @@ export default function AdminBlogManager({ showNotification, setView, courses })
                         <input 
                             type="text" placeholder="Button Label (z.B. 'Alle Kinder-Englisch Kurse')" 
                             className="w-full p-2 border rounded text-sm font-bold text-primary"
-                            value={formData.related_config?.search_label || ''}
+                            value={config.search_label || ''}
                             onChange={(e) => updateRelated('search_label', e.target.value)}
                         />
                         <div className="grid grid-cols-2 gap-2">
-                            <input type="text" placeholder="Suchbegriff (q)" className="p-2 border rounded text-sm" value={formData.related_config?.search_q || ''} onChange={(e) => updateRelated('search_q', e.target.value)} />
-                            <input type="text" placeholder="Ort (loc)" className="p-2 border rounded text-sm" value={formData.related_config?.search_loc || ''} onChange={(e) => updateRelated('search_loc', e.target.value)} />
+                            <input type="text" placeholder="Suchbegriff (q)" className="p-2 border rounded text-sm" value={config.search_q || ''} onChange={(e) => updateRelated('search_q', e.target.value)} />
+                            <input type="text" placeholder="Ort (loc)" className="p-2 border rounded text-sm" value={config.search_loc || ''} onChange={(e) => updateRelated('search_loc', e.target.value)} />
                         </div>
                         
-                        {/* Dropdowns for Categories (Safe Access) */}
+                        {/* Dropdowns for Categories (Local Constants Safe Mode) */}
                         <div className="grid grid-cols-2 gap-2">
-                             <select className="p-2 border rounded text-sm" value={formData.related_config?.search_type || ''} onChange={(e) => updateRelated('search_type', e.target.value)}>
+                             <select className="p-2 border rounded text-sm" value={config.search_type || ''} onChange={(e) => updateRelated('search_type', e.target.value)}>
                                 <option value="">- Kategorie Typ -</option>
-                                {Object.entries(safeCategoryTypes).map(([key, label]) => <option key={key} value={key}>{key}</option>)}
+                                {Object.entries(LOCAL_CATEGORY_TYPES).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
                              </select>
-                             <select className="p-2 border rounded text-sm" value={formData.related_config?.search_level || ''} onChange={(e) => updateRelated('search_level', e.target.value)}>
+                             <select className="p-2 border rounded text-sm" value={config.search_level || ''} onChange={(e) => updateRelated('search_level', e.target.value)}>
                                 <option value="">- Level -</option>
-                                {safeLevels.map(l => <option key={l} value={l}>{l}</option>)}
+                                {LOCAL_LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
                              </select>
                         </div>
                          <div className="grid grid-cols-2 gap-2">
-                             <select className="p-2 border rounded text-sm" value={formData.related_config?.search_age || ''} onChange={(e) => updateRelated('search_age', e.target.value)}>
+                             <select className="p-2 border rounded text-sm" value={config.search_age || ''} onChange={(e) => updateRelated('search_age', e.target.value)}>
                                 <option value="">- Zielgruppe -</option>
-                                {Object.keys(safeAgeGroups).map(k => <option key={k} value={k}>{k}</option>)}
+                                {Object.entries(LOCAL_AGE_GROUPS).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
                              </select>
-                             <input type="text" placeholder="Spezialgebiet (Key)" className="p-2 border rounded text-sm" value={formData.related_config?.search_spec || ''} onChange={(e) => updateRelated('search_spec', e.target.value)} />
+                             <input type="text" placeholder="Spezialgebiet (Key)" className="p-2 border rounded text-sm" value={config.search_spec || ''} onChange={(e) => updateRelated('search_spec', e.target.value)} />
                         </div>
                     </div>
                 </div>
@@ -240,7 +290,7 @@ export default function AdminBlogManager({ showNotification, setView, courses })
     <div className="p-8 max-w-6xl mx-auto">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-heading font-bold text-dark">Blog Management</h1>
-        <button onClick={() => { setFormData(initialFormState); setIsEditing(true); }} className="bg-primary text-white px-4 py-2 rounded flex items-center"><Plus className="w-4 h-4 mr-2" /> Neuer Artikel</button>
+        <button onClick={handleCreateNew} className="bg-primary text-white px-4 py-2 rounded flex items-center"><Plus className="w-4 h-4 mr-2" /> Neuer Artikel</button>
       </div>
       <div className="bg-white rounded-xl shadow overflow-hidden">
         <table className="w-full text-left">
@@ -252,7 +302,7 @@ export default function AdminBlogManager({ showNotification, setView, courses })
                         <td className="p-4">{art.is_published ? <span className="text-green-600 text-xs font-bold bg-green-100 px-2 py-1 rounded">Online</span> : <span className="text-yellow-600 text-xs font-bold bg-yellow-100 px-2 py-1 rounded">Entwurf</span>}</td>
                         <td className="p-4 text-sm text-gray-500">{new Date(art.created_at).toLocaleDateString()}</td>
                         <td className="p-4 text-right space-x-2">
-                            <button onClick={() => { setFormData(art); setIsEditing(true); }} className="p-2 text-blue-600"><Edit size={18}/></button>
+                            <button onClick={() => handleEdit(art)} className="p-2 text-blue-600"><Edit size={18}/></button>
                             <button onClick={() => handleDelete(art.id)} className="p-2 text-red-600"><Trash2 size={18}/></button>
                         </td>
                     </tr>
