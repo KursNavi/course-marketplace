@@ -1,9 +1,11 @@
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { ArrowLeft, User, MapPin, Clock, CheckCircle, Calendar, Shield, Lock } from 'lucide-react';
+import { ArrowLeft, User, MapPin, Clock, CheckCircle, Calendar, Shield, Lock, ExternalLink, Mail, X, Send } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user }) => {
+    const [showLeadModal, setShowLeadModal] = useState(false);
+    const [leadStatus, setLeadStatus] = useState('idle'); // idle, submitting, success
 
     // SEO: Dynamic Title & Meta + Schema.org Injection
     useEffect(() => {
@@ -59,13 +61,31 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user }) =
 
 }, [course]);
     
-    // LOGIC: Handle Booking (Moved from App.jsx)
-    const handleBookCourse = async (course, eventId = null) => {
-        if (!user) { setView('login'); return; }
-        try {
+    // LOGIC: Smart Booking Handler (v2.1)
+    const handleBookingAction = async (course, eventId = null) => {
+        const type = course.booking_type || 'platform';
+
+        // 1. EXTERNAL LINK
+        if (type === 'external' && course.external_link) {
+            window.open(course.external_link, '_blank');
+            return;
+        }
+
+        // 2. LEAD GENERATION
+        if (type === 'lead') {
+            setShowLeadModal(true);
+            return;
+        }
+
+        // 3. PLATFORM CHECKOUT (Stripe)
+        if (!user) { 
             localStorage.setItem('pendingCourseId', course.id);
             if (eventId) localStorage.setItem('pendingEventId', eventId);
+            setView('login'); 
+            return; 
+        }
 
+        try {
             const response = await fetch('/api/create-checkout-session', { 
                 method: 'POST', 
                 headers: { 'Content-Type': 'application/json' }, 
@@ -83,8 +103,16 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user }) =
             window.location.href = data.url; 
         } catch (error) { 
             console.warn("Backend error (expected in demo):", error);
-            // Optional: Hier könnte man eine Demo-Success-Weiterleitung einbauen
         }
+    };
+
+    const handleLeadSubmit = async (e) => {
+        e.preventDefault();
+        setLeadStatus('submitting');
+        // Simulation API Call
+        await new Promise(r => setTimeout(r, 1000));
+        setLeadStatus('success');
+        setTimeout(() => { setShowLeadModal(false); setLeadStatus('idle'); }, 2500);
     };
 
     // Prepare events logic
@@ -191,12 +219,20 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user }) =
                                     <MapPin className="w-3 h-3 mr-1"/> {ev.location || course.address}
                                 </div>
                                 <button 
-                                    onClick={() => !ev.isFull && handleBookCourse(course, ev.id)} 
-                                    disabled={ev.isFull}
-                                    className={`w-full py-2 rounded-lg font-bold text-sm transition ${ev.isFull ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-primary text-white hover:bg-orange-600 shadow-sm'}`}
-                                >
-                                    {ev.isFull ? 'Ausgebucht' : t.btn_book}
-                                </button>
+                                onClick={() => !ev.isFull && handleBookingAction(course, ev.id)} 
+                                disabled={ev.isFull && course.booking_type === 'platform'}
+                                className={`w-full py-2 rounded-lg font-bold text-sm transition flex items-center justify-center 
+                                    ${(ev.isFull && course.booking_type === 'platform') 
+                                        ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
+                                        : 'bg-primary text-white hover:bg-orange-600 shadow-sm'}`}
+                            >
+                                {course.booking_type === 'external' && <ExternalLink className="w-4 h-4 mr-2" />}
+                                {course.booking_type === 'lead' && <Mail className="w-4 h-4 mr-2" />}
+
+                                {(ev.isFull && course.booking_type === 'platform') ? 'Ausgebucht' : 
+                                 (course.booking_type === 'external' ? 'Zur Anbieter-Webseite' : 
+                                 (course.booking_type === 'lead' ? 'Kurs anfragen' : t.btn_book))}
+                            </button>
                             </div>
                         ))}
                     </div>
@@ -269,19 +305,58 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user }) =
                     }
                 },
                 "offers": {
-                    "@type": "Offer",
-                    "price": course.price,
-                    "priceCurrency": "CHF",
-                    "availability": (ev.max_participants > 0 && (ev.max_participants - (ev.bookings?.[0]?.count || 0)) <= 0) 
-                        ? "https://schema.org/SoldOut" 
-                        : "https://schema.org/InStock",
-                    "url": window.location.href
-                }
-            }))
-        })}} />
+                "@type": "Offer",
+                "price": course.price,
+                "priceCurrency": "CHF",
+                "availability": (course.booking_type === 'platform' && ev.max_participants > 0 && (ev.max_participants - (ev.bookings?.[0]?.count || 0)) <= 0) 
+                    ? "https://schema.org/SoldOut" 
+                    : "https://schema.org/InStock",
+                "url": course.booking_type === 'external' ? course.external_link : window.location.href
+            }
+        }))
+    })}} />
 
-    </div>
-    );
+    {/* LEAD FORM MODAL */}
+    {showLeadModal && (
+        <div className="fixed inset-0 bg-dark/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl p-6 max-w-md w-full relative shadow-2xl animate-in fade-in zoom-in duration-200">
+                <button onClick={() => setShowLeadModal(false)} className="absolute top-4 right-4 text-gray-400 hover:text-dark"><X className="w-6 h-6"/></button>
+
+                {leadStatus === 'success' ? (
+                    <div className="text-center py-8">
+                        <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+                        <h3 className="text-xl font-bold font-heading mb-2">Anfrage gesendet!</h3>
+                        <p className="text-gray-600">Der Anbieter wird sich in Kürze bei dir melden.</p>
+                    </div>
+                ) : (
+                    <>
+                        <h3 className="text-xl font-bold mb-2 font-heading">Kurs unverbindlich anfragen</h3>
+                        <p className="text-sm text-gray-600 mb-6">Sende eine Nachricht direkt an {course.instructor_name}.</p>
+                        <form onSubmit={handleLeadSubmit} className="space-y-4">
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Dein Name</label>
+                                <input name="name" required defaultValue={user?.name || ''} className="w-full p-3 bg-gray-50 rounded-lg border border-transparent focus:bg-white focus:border-primary outline-none transition" />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Deine Email</label>
+                                <input name="email" type="email" required defaultValue={user?.email || ''} className="w-full p-3 bg-gray-50 rounded-lg border border-transparent focus:bg-white focus:border-primary outline-none transition" />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Nachricht</label>
+                                <textarea name="message" rows="3" defaultValue={`Ich interessiere mich für den Kurs "${course.title}". Ist noch ein Platz frei?`} className="w-full p-3 bg-gray-50 rounded-lg border border-transparent focus:bg-white focus:border-primary outline-none transition"></textarea>
+                            </div>
+                            <button type="submit" disabled={leadStatus === 'submitting'} className="w-full bg-primary text-white font-bold py-3 rounded-lg hover:bg-orange-600 transition flex items-center justify-center disabled:opacity-50">
+                                {leadStatus === 'submitting' ? <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-white"></div> : <><Send className="w-4 h-4 mr-2"/> Anfrage absenden</>}
+                            </button>
+                        </form>
+                    </>
+                )}
+            </div>
+        </div>
+    )}
+
+</div>
+);
 };
 
 export default DetailView;
