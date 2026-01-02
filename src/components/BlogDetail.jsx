@@ -18,22 +18,22 @@ export default function BlogDetail({ article, setView, courses }) {
     ? courses.find(c => c.id.toString() === config.course_id.toString()) 
     : null;
 
-  // 2. Build Search URL if params exist
-  const hasSearch = config.search_label && (config.search_q || config.search_loc);
-  const searchUrl = hasSearch 
-    ? `/search?q=${encodeURIComponent(config.search_q || '')}&loc=${encodeURIComponent(config.search_loc || '')}` 
-    : null;
-
-  const handleDeepLink = (url) => {
-      // Manually push state to trigger App.jsx detection
-      window.history.pushState({}, '', url);
-      // Force a reload of the view state logic by triggering a popstate event essentially or relies on App.jsx to pick it up on re-render if we change view prop? 
-      // Actually, since we are in App.jsx control, we should just update URL and let user click or reload. 
-      // BETTER: Just use href and let App.jsx handle it via standard navigation if we built a link handler.
-      // But since we are inside React, let's use the native setView if possible, BUT we need to pass params.
-      // Easiest way compliant with our "Traffic Cop":
-      window.location.href = url; 
-  };
+  // 2. Build Complex Search URL
+  // We check if we have a label + at least one filter parameter
+  const hasParams = config.search_q || config.search_loc || config.search_type || config.search_level || config.search_age || config.search_spec;
+  const hasSearch = config.search_label && hasParams;
+  
+  let searchUrl = null;
+  if (hasSearch) {
+      const params = new URLSearchParams();
+      if (config.search_q) params.append('q', config.search_q);
+      if (config.search_loc) params.append('loc', config.search_loc);
+      if (config.search_type) params.append('type', config.search_type);
+      if (config.search_level) params.append('level', config.search_level);
+      if (config.search_age) params.append('age', config.search_age);
+      if (config.search_spec) params.append('spec', config.search_spec);
+      searchUrl = `/search?${params.toString()}`;
+  }
 
   return (
     <div className="min-h-screen bg-white">
@@ -75,7 +75,7 @@ export default function BlogDetail({ article, setView, courses }) {
                             <div className="bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all group">
                                 <div className="p-6 flex flex-col sm:flex-row gap-6 items-center">
                                     <div className="w-full sm:w-32 h-32 bg-gray-200 rounded-lg flex-shrink-0 overflow-hidden">
-                                         {/* Fallback image logic same as SearchCard */}
+                                        {/* Fallback image logic */}
                                         <div className="w-full h-full bg-primary/10 flex items-center justify-center text-primary font-bold text-2xl">
                                             {linkedCourse.title.charAt(0)}
                                         </div>
@@ -87,7 +87,7 @@ export default function BlogDetail({ article, setView, courses }) {
                                             <MapPin className="w-4 h-4 mr-1" /> {linkedCourse.canton} | CHF {linkedCourse.price}
                                         </div>
                                         <button 
-                                            onClick={() => window.location.href = `/courses/topic/loc/${linkedCourse.id}`} // Simple redirect handled by App init
+                                            onClick={() => window.location.href = `/courses/topic/loc/${linkedCourse.id}`} 
                                             className="bg-dark text-white px-6 py-2 rounded-full text-sm font-bold hover:bg-primary transition-colors inline-flex items-center"
                                         >
                                             Kurs ansehen <ArrowRight className="w-4 h-4 ml-2"/>

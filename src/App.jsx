@@ -443,12 +443,24 @@ export default function KursNaviPro() {
   useEffect(() => {
     const query = new URLSearchParams(window.location.search);
 
-    // SEO Deep Linking: Allow links like /search?q=Yoga&loc=Zurich
+    // SEO Deep Linking: Allow complex filters /search?q=Yoga&loc=Zurich&type=kinder...
     const qParam = query.get('q');
     const locParam = query.get('loc');
-    if (qParam || locParam) {
+    const typeParam = query.get('type');
+    const areaParam = query.get('area');
+    const specParam = query.get('spec');
+    const ageParam = query.get('age');
+    const levelParam = query.get('level');
+
+    if (qParam || locParam || typeParam || areaParam || specParam || ageParam || levelParam) {
         if (qParam) setSearchQuery(qParam);
         if (locParam) setSelectedLocations([locParam]);
+        if (typeParam) setSearchType(typeParam);
+        if (areaParam) setSearchArea(areaParam);
+        if (specParam) setSearchSpecialty(specParam);
+        if (ageParam) setSearchAge(ageParam);
+        if (levelParam) setFilterLevel(levelParam);
+
         // Only switch view if not already on a specific detail/landing page
         if (view !== 'detail') setView('search');
     }

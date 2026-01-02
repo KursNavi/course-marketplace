@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Save, Trash2, Edit, Plus, ArrowLeft, Bold, Search, Link as LinkIcon, X, LayoutTemplate } from 'lucide-react';
+import { CATEGORY_TYPES, COURSE_LEVELS, AGE_GROUPS } from '../lib/constants'; // Import constants for dropdowns
+import { Save, Trash2, Edit, Plus, ArrowLeft, Bold, Search, Link as LinkIcon, X, LayoutTemplate, Filter } from 'lucide-react';
 
 export default function AdminBlogManager({ showNotification, setView, courses }) {
   const [articles, setArticles] = useState([]);
@@ -27,7 +28,6 @@ export default function AdminBlogManager({ showNotification, setView, courses })
     if (!formData.title || !formData.slug) return showNotification("Titel und Slug sind Pflichtfelder.");
     const cleanSlug = formData.slug.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
     
-    // Ensure related_config is saved properly
     const payload = { ...formData, slug: cleanSlug };
     
     let error;
@@ -101,7 +101,6 @@ export default function AdminBlogManager({ showNotification, setView, courses })
     setSearchParams({ q: '', loc: '', label: '' });
   };
 
-  // Helper to update related config safely
   const updateRelated = (key, value) => {
       setFormData(prev => ({
           ...prev,
@@ -140,14 +139,14 @@ export default function AdminBlogManager({ showNotification, setView, courses })
             <ToolBtn onClick={() => insertTag('<strong>', '</strong>')} icon={<Bold size={16}/>} />
             <ToolBtn onClick={() => insertTag('<ul>\n<li>', '</li>\n</ul>')} label="List" />
             <div className="w-px h-6 bg-gray-300 mx-1"></div>
-            <button onClick={() => setLinkToolMode(linkToolMode === 'course' ? null : 'course')} className={`px-3 py-1 text-xs font-bold rounded flex items-center ${linkToolMode === 'course' ? 'bg-blue-600 text-white' : 'bg-white hover:bg-blue-50 text-blue-600'}`}><LinkIcon size={14} className="mr-1"/> Kurs-Link (Text)</button>
-            <button onClick={() => setLinkToolMode(linkToolMode === 'search' ? null : 'search')} className={`px-3 py-1 text-xs font-bold rounded flex items-center ${linkToolMode === 'search' ? 'bg-purple-600 text-white' : 'bg-white hover:bg-purple-50 text-purple-600'}`}><Search size={14} className="mr-1"/> Such-Link (Text)</button>
+            <button onClick={() => setLinkToolMode(linkToolMode === 'course' ? null : 'course')} className={`px-3 py-1 text-xs font-bold rounded flex items-center ${linkToolMode === 'course' ? 'bg-blue-600 text-white' : 'bg-white hover:bg-blue-50 text-blue-600'}`}><LinkIcon size={14} className="mr-1"/> Kurs-Link</button>
+            <button onClick={() => setLinkToolMode(linkToolMode === 'search' ? null : 'search')} className={`px-3 py-1 text-xs font-bold rounded flex items-center ${linkToolMode === 'search' ? 'bg-purple-600 text-white' : 'bg-white hover:bg-purple-50 text-purple-600'}`}><Search size={14} className="mr-1"/> Such-Link</button>
         </div>
 
         {/* INLINE LINK TOOLS */}
         {linkToolMode === 'course' && (
             <div className="bg-blue-50 p-3 border-x border-blue-100 flex items-center gap-2 animate-in slide-in-from-top-2">
-                <span className="text-xs font-bold text-blue-800">Kurs für Textlink:</span>
+                <span className="text-xs font-bold text-blue-800">Kurs wählen:</span>
                 <select className="flex-grow p-1 text-sm border rounded" onChange={(e) => setSelectedCourseId(e.target.value)} value={selectedCourseId}>
                     <option value="">-- Bitte wählen --</option>
                     {(courses || []).map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
@@ -167,48 +166,58 @@ export default function AdminBlogManager({ showNotification, setView, courses })
         
         <textarea id="blog-editor" placeholder="Artikel Inhalt..." className="w-full p-4 border rounded-b-lg h-[500px] font-mono text-sm leading-relaxed focus:ring-2 focus:ring-primary outline-none" value={formData.content} onChange={e => setFormData({...formData, content: e.target.value})} />
 
-        {/* --- SECTION: EMPFEHLUNGEN (CTA) --- */}
+        {/* --- SECTION: EMPFEHLUNGEN (CTA) - ERWEITERT --- */}
         <div className="mt-8 bg-orange-50 p-6 rounded-xl border border-orange-100">
             <div className="flex items-center mb-4 text-orange-800">
                 <LayoutTemplate className="w-5 h-5 mr-2" />
-                <h3 className="font-heading font-bold text-lg">Empfehlungen unter dem Artikel (Call-to-Action)</h3>
+                <h3 className="font-heading font-bold text-lg">Empfehlungen (Call-to-Action)</h3>
             </div>
             <div className="grid md:grid-cols-2 gap-8">
                 {/* 1. Einzelner Kurs */}
                 <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">Hervorgehobener Kurs (Karte)</label>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">Hervorgehobener Kurs</label>
                     <select 
-                        className="w-full p-2 border rounded bg-white"
+                        className="w-full p-2 border rounded bg-white text-sm"
                         value={formData.related_config?.course_id || ''}
                         onChange={(e) => updateRelated('course_id', e.target.value)}
                     >
                         <option value="">-- Keinen Kurs anzeigen --</option>
                         {(courses || []).map(c => <option key={c.id} value={c.id}>{c.title} ({c.price} CHF)</option>)}
                     </select>
-                    <p className="text-xs text-gray-500 mt-1">Erscheint als große Karte unter dem Text.</p>
                 </div>
 
-                {/* 2. Such Button */}
+                {/* 2. Komplexer Such Button */}
                 <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">Such-Button (z.B. "Alle Yoga Kurse")</label>
-                    <div className="space-y-2">
+                    <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center"><Filter className="w-4 h-4 mr-1"/> Such-Button Konfiguration</label>
+                    <div className="space-y-3 p-4 bg-white rounded border border-gray-200">
                         <input 
-                            type="text" placeholder="Button Text (z.B. IT Kurse in Zürich)" 
-                            className="w-full p-2 border rounded"
+                            type="text" placeholder="Button Label (z.B. 'Alle Kinder-Englisch Kurse')" 
+                            className="w-full p-2 border rounded text-sm font-bold text-primary"
                             value={formData.related_config?.search_label || ''}
                             onChange={(e) => updateRelated('search_label', e.target.value)}
                         />
-                        <div className="flex gap-2">
-                            <input 
-                                type="text" placeholder="Suchbegriff (q)" className="w-1/2 p-2 border rounded"
-                                value={formData.related_config?.search_q || ''}
-                                onChange={(e) => updateRelated('search_q', e.target.value)}
-                            />
-                            <input 
-                                type="text" placeholder="Ort (loc)" className="w-1/2 p-2 border rounded"
-                                value={formData.related_config?.search_loc || ''}
-                                onChange={(e) => updateRelated('search_loc', e.target.value)}
-                            />
+                        <div className="grid grid-cols-2 gap-2">
+                            <input type="text" placeholder="Suchbegriff (q)" className="p-2 border rounded text-sm" value={formData.related_config?.search_q || ''} onChange={(e) => updateRelated('search_q', e.target.value)} />
+                            <input type="text" placeholder="Ort (loc)" className="p-2 border rounded text-sm" value={formData.related_config?.search_loc || ''} onChange={(e) => updateRelated('search_loc', e.target.value)} />
+                        </div>
+                        
+                        {/* Dropdowns for Categories */}
+                        <div className="grid grid-cols-2 gap-2">
+                             <select className="p-2 border rounded text-sm" value={formData.related_config?.search_type || ''} onChange={(e) => updateRelated('search_type', e.target.value)}>
+                                <option value="">- Kategorie Typ -</option>
+                                {Object.entries(CATEGORY_TYPES).map(([key, label]) => <option key={key} value={key}>{key}</option>)}
+                             </select>
+                             <select className="p-2 border rounded text-sm" value={formData.related_config?.search_level || ''} onChange={(e) => updateRelated('search_level', e.target.value)}>
+                                <option value="">- Level -</option>
+                                {COURSE_LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
+                             </select>
+                        </div>
+                         <div className="grid grid-cols-2 gap-2">
+                             <select className="p-2 border rounded text-sm" value={formData.related_config?.search_age || ''} onChange={(e) => updateRelated('search_age', e.target.value)}>
+                                <option value="">- Zielgruppe -</option>
+                                {Object.keys(AGE_GROUPS).map(k => <option key={k} value={k}>{k}</option>)}
+                             </select>
+                             <input type="text" placeholder="Spezialgebiet (Key)" className="p-2 border rounded text-sm" value={formData.related_config?.search_spec || ''} onChange={(e) => updateRelated('search_spec', e.target.value)} />
                         </div>
                     </div>
                 </div>
