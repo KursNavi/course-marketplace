@@ -13,6 +13,48 @@ export const BRAND = {
 export const SWISS_CANTONS = ["Aargau", "Appenzell AI", "Appenzell AR", "Basel-Landschaft", "Basel-Stadt", "Bern", "Fribourg", "Genève", "Glarus", "Graubünden", "Jura", "Luzern", "Neuchâtel", "Nidwalden", "Obwalden", "Schaffhausen", "Schwyz", "Solothurn", "St. Gallen", "Thurgau", "Ticino", "Uri", "Valais", "Vaud", "Zug", "Zürich"];
 export const SWISS_CITIES = ["Basel", "Bern", "Biel/Bienne", "Genève", "Lausanne", "Lugano", "Luzern", "St. Gallen", "Winterthur", "Zürich"];
 
+// --- BUSINESS LOGIC (v2.1 SaaS Model) ---
+export const TIER_CONFIG = {
+  basic: {
+    label: "Basic",
+    price_year: 0,
+    course_limit: 3,
+    commission_percent: 15,
+    features: ["Standard Ranking", "External & Platform Booking", "Basic Support"],
+    description: "Ideal für Einsteiger & kleine Anbieter."
+  },
+  pro: {
+    label: "Pro",
+    price_year: 290,
+    course_limit: 10,
+    commission_percent: 12,
+    features: ["Besseres Ranking", "Lead-Formular", "Rich Media Profil", "Mehr Rubriken"],
+    description: "Für ernsthafte Anbieter, die wachsen wollen."
+  },
+  premium: {
+    label: "Premium",
+    price_year: 590,
+    course_limit: 30,
+    commission_percent: 10,
+    features: ["Top Ranking & Badges", "Newsletter Features", "Reporting Dashboard", "Priorisierter Support"],
+    description: "Maximale Sichtbarkeit für etablierte Schulen."
+  },
+  enterprise: {
+    label: "Enterprise",
+    price_year: 1190, // Startpreis
+    course_limit: 9999, // Unlimitiert
+    commission_percent: 8,
+    features: ["Unlimitiert Kurse", "Eigene Landingpage", "Account Manager", "Custom Reporting"],
+    description: "Individuelle Lösungen für Großanbieter."
+  }
+};
+
+export const SERVICE_PRICING = {
+  base_price: 75, // CHF pro Kurs (für die ersten 3)
+  discount_price: 50, // CHF pro Kurs (ab dem 4.)
+  threshold: 3 // Ab hier gilt der Rabatt
+};
+
 // --- NEW TAXONOMY CONSTANTS ---
 
 export const COURSE_LEVELS = {
