@@ -146,19 +146,34 @@ export const Footer = ({ t, setView }) => {
     e.preventDefault();
     if (!email) return;
     setStatus('loading');
+
     try {
+      console.log("Start Newsletter-Anmeldung für:", email);
       const res = await fetch('/api/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email })
       });
+
+      // Wir lesen die Antwort vorsichtig, falls es kein JSON ist (z.B. 404 HTML Seite)
+      const text = await res.text();
+      let data = {};
+      try {
+        data = JSON.parse(text);
+      } catch (parseError) {
+        console.warn("Server-Antwort war kein JSON:", text.substring(0, 50) + "...");
+      }
+
       if (res.ok) {
         setStatus('success');
         setEmail('');
+        console.log("Erfolg:", data);
       } else {
+        console.error("Newsletter Server-Fehler:", res.status, data);
         setStatus('error');
       }
     } catch (err) {
+      console.error("Newsletter Netzwerk-Fehler:", err);
       setStatus('error');
     }
   };
