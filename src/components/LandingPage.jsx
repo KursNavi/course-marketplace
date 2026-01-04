@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Footer } from './components/Footer';
 import { 
   CheckCircle, 
   Monitor,
@@ -241,16 +242,8 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* --- FOOTER --- */}
-      <footer className="bg-[#1A1A1A] text-gray-400 py-12 border-t border-gray-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <span className="text-2xl font-bold text-white block mb-4">Kurs<span className="text-blue-500">Navi</span></span>
-          <p className="mb-8 text-sm">Der Marktplatz für Bildung in der Schweiz.</p>
-          <div className="text-xs text-gray-600">
-            &copy; {new Date().getFullYear()} KursNavi Schweiz. Alle Rechte vorbehalten. | Adligenswil, Luzern
-          </div>
-        </div>
-      </footer>
+      {/* --- NEW FOOTER WITH NEWSLETTER --- */}
+      <Footer />
     </div>
   );
 };
