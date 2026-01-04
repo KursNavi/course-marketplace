@@ -80,34 +80,102 @@ const TeacherHub = ({ setView, t, user }) => {
                 </div>
             </div>
 
-            {/* Benefits Section */}
+            {/* Pricing / Packages Section */}
             <div className="py-20 max-w-7xl mx-auto px-4">
-                <div className="text-center mb-16">
-                    <h2 className="text-3xl font-bold font-heading text-dark mb-4">Warum KursNavi?</h2>
-                    <p className="text-gray-600 max-w-2xl mx-auto">Wir kümmern uns um Marketing, Zahlungen und Administration. Du kümmerst dich um deine Teilnehmer.</p>
+                <div className="text-center mb-12">
+                    <h2 className="text-3xl md:text-4xl font-bold font-heading text-dark mb-4">Wähle dein Anbieter-Paket</h2>
+                    <p className="text-gray-600 max-w-2xl mx-auto">
+                        Fair und transparent. Wähle das Paket, das zu deinem Kursvolumen passt.
+                    </p>
                 </div>
-                
-                <div className="grid md:grid-cols-3 gap-8">
-                    <div className="bg-beige p-8 rounded-2xl border border-orange-100 hover:shadow-lg transition">
-                        <div className="bg-white w-12 h-12 rounded-full flex items-center justify-center mb-6 shadow-sm">
-                            <Users className="w-6 h-6 text-primary"/>
+
+                {/* Pricing Grid */}
+                <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    
+                    {/* BASIC */}
+                    <div className="bg-white p-6 rounded-2xl border-t-4 border-green-500 shadow-lg hover:shadow-xl transition flex flex-col relative">
+                        <div className="mb-4">
+                            <h3 className="text-xl font-bold font-heading text-gray-800">Basic</h3>
+                            <div className="mt-2 text-3xl font-bold">0 CHF<span className="text-sm font-normal text-gray-500">/Jahr</span></div>
                         </div>
-                        <h3 className="text-xl font-bold mb-3 font-heading">Mehr Reichweite</h3>
-                        <p className="text-gray-600">Deine Kurse erscheinen automatisch in der lokalen Suche und in relevanten Kategorien. Erreiche neue Zielgruppen ohne Ad-Spend.</p>
+                        <ul className="space-y-3 mb-8 flex-1 text-sm text-gray-600">
+                            <li className="flex items-start"><CheckCircle className="w-4 h-4 text-green-500 mr-2 mt-1 shrink-0"/> Bis 3 aktive Kurse</li>
+                            <li className="flex items-start"><CheckCircle className="w-4 h-4 text-green-500 mr-2 mt-1 shrink-0"/> 15% Komm. (inkl. Stripe)</li>
+                            <li className="flex items-start"><CheckCircle className="w-4 h-4 text-green-500 mr-2 mt-1 shrink-0"/> Standard Listing</li>
+                            <li className="flex items-start"><CheckCircle className="w-4 h-4 text-green-500 mr-2 mt-1 shrink-0"/> Link auf eigene Website</li>
+                        </ul>
+                        <button onClick={handleCta} className="w-full py-2 border-2 border-green-500 text-green-700 font-bold rounded-lg hover:bg-green-50 transition">
+                            Basic wählen
+                        </button>
                     </div>
-                    <div className="bg-beige p-8 rounded-2xl border border-orange-100 hover:shadow-lg transition">
-                        <div className="bg-white w-12 h-12 rounded-full flex items-center justify-center mb-6 shadow-sm">
-                            <CheckCircle className="w-6 h-6 text-blue-600"/>
+
+                    {/* PRO */}
+                    <div className="bg-white p-6 rounded-2xl border-t-4 border-blue-500 shadow-lg hover:shadow-xl transition flex flex-col relative transform md:-translate-y-2">
+                        <div className="absolute top-0 right-0 bg-blue-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-lg">BELIEBT</div>
+                        <div className="mb-4">
+                            <h3 className="text-xl font-bold font-heading text-gray-800">Pro</h3>
+                            <div className="mt-2 text-3xl font-bold text-blue-600">290 CHF<span className="text-sm font-normal text-gray-500">/Jahr</span></div>
                         </div>
-                        <h3 className="text-xl font-bold mb-3 font-heading">Automatisierte Admin</h3>
-                        <p className="text-gray-600">Buchungsbestätigungen, Teilnehmerlisten und Rechnungen werden automatisch generiert. Spar dir den Papierkram.</p>
+                        <ul className="space-y-3 mb-8 flex-1 text-sm text-gray-600">
+                            <li className="flex items-start"><CheckCircle className="w-4 h-4 text-blue-500 mr-2 mt-1 shrink-0"/> Bis 10 aktive Kurse</li>
+                            <li className="flex items-start"><CheckCircle className="w-4 h-4 text-blue-500 mr-2 mt-1 shrink-0"/> 12% Komm. bei Buchung</li>
+                            <li className="flex items-start"><CheckCircle className="w-4 h-4 text-blue-500 mr-2 mt-1 shrink-0"/> Besseres Ranking</li>
+                            <li className="flex items-start"><CheckCircle className="w-4 h-4 text-blue-500 mr-2 mt-1 shrink-0"/> Kontaktformular</li>
+                            <li className="flex items-start"><CheckCircle className="w-4 h-4 text-blue-500 mr-2 mt-1 shrink-0"/> Attraktivere Darstellung</li>
+                        </ul>
+                        <button onClick={handleCta} className="w-full py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition shadow-md">
+                            Pro wählen
+                        </button>
                     </div>
-                    <div className="bg-beige p-8 rounded-2xl border border-orange-100 hover:shadow-lg transition">
-                        <div className="bg-white w-12 h-12 rounded-full flex items-center justify-center mb-6 shadow-sm">
-                            <DollarSign className="w-6 h-6 text-green-600"/>
+
+                    {/* PREMIUM */}
+                    <div className="bg-white p-6 rounded-2xl border-t-4 border-purple-500 shadow-lg hover:shadow-xl transition flex flex-col relative">
+                        <div className="mb-4">
+                            <h3 className="text-xl font-bold font-heading text-gray-800">Premium</h3>
+                            <div className="mt-2 text-3xl font-bold text-purple-600">590 CHF<span className="text-sm font-normal text-gray-500">/Jahr</span></div>
                         </div>
-                        <h3 className="text-xl font-bold mb-3 font-heading">Sichere Auszahlung</h3>
-                        <p className="text-gray-600">Kein Risiko. Wir verarbeiten Zahlungen sicher und zahlen deine Einnahmen pünktlich aus. Keine Fixkosten, nur Provision bei Erfolg.</p>
+                        <ul className="space-y-3 mb-8 flex-1 text-sm text-gray-600">
+                            <li className="flex items-start"><CheckCircle className="w-4 h-4 text-purple-500 mr-2 mt-1 shrink-0"/> Bis 30 aktive Kurse</li>
+                            <li className="flex items-start"><CheckCircle className="w-4 h-4 text-purple-500 mr-2 mt-1 shrink-0"/> 10% Komm. bei Buchung</li>
+                            <li className="flex items-start"><CheckCircle className="w-4 h-4 text-purple-500 mr-2 mt-1 shrink-0"/> <strong>Top Ranking</strong></li>
+                            <li className="flex items-start"><CheckCircle className="w-4 h-4 text-purple-500 mr-2 mt-1 shrink-0"/> Badge "Empfohlen"</li>
+                            <li className="flex items-start"><CheckCircle className="w-4 h-4 text-purple-500 mr-2 mt-1 shrink-0"/> Newsletter Präsenz</li>
+                            <li className="flex items-start"><CheckCircle className="w-4 h-4 text-purple-500 mr-2 mt-1 shrink-0"/> Reporting Dashboard</li>
+                        </ul>
+                        <button onClick={handleCta} className="w-full py-2 border-2 border-purple-500 text-purple-700 font-bold rounded-lg hover:bg-purple-50 transition">
+                            Premium wählen
+                        </button>
+                    </div>
+
+                    {/* ENTERPRISE */}
+                    <div className="bg-white p-6 rounded-2xl border-t-4 border-orange-500 shadow-lg hover:shadow-xl transition flex flex-col relative">
+                        <div className="mb-4">
+                            <h3 className="text-xl font-bold font-heading text-gray-800">Enterprise</h3>
+                            <div className="mt-2 text-3xl font-bold text-orange-600">ab 1'190 CHF<span className="text-sm font-normal text-gray-500">/Jahr</span></div>
+                        </div>
+                        <ul className="space-y-3 mb-8 flex-1 text-sm text-gray-600">
+                            <li className="flex items-start"><CheckCircle className="w-4 h-4 text-orange-500 mr-2 mt-1 shrink-0"/> <strong>Unbegrenzte Kurse</strong></li>
+                            <li className="flex items-start"><CheckCircle className="w-4 h-4 text-orange-500 mr-2 mt-1 shrink-0"/> 8% Komm. bei Buchung</li>
+                            <li className="flex items-start"><CheckCircle className="w-4 h-4 text-orange-500 mr-2 mt-1 shrink-0"/> Beste Platzierung</li>
+                            <li className="flex items-start"><CheckCircle className="w-4 h-4 text-orange-500 mr-2 mt-1 shrink-0"/> Eigene Landingpage</li>
+                            <li className="flex items-start"><CheckCircle className="w-4 h-4 text-orange-500 mr-2 mt-1 shrink-0"/> Personal Account Mgr.</li>
+                        </ul>
+                        <button onClick={handleCta} className="w-full py-2 border-2 border-orange-500 text-orange-700 font-bold rounded-lg hover:bg-orange-50 transition">
+                            Kontaktieren
+                        </button>
+                    </div>
+                </div>
+
+                {/* Service Add-on */}
+                <div className="mt-12 bg-gray-50 rounded-xl p-6 border border-gray-200 flex flex-col md:flex-row items-center justify-between gap-6">
+                    <div>
+                        <h4 className="font-bold text-lg flex items-center gap-2"><div className="bg-primary text-white p-1 rounded-md"><CheckCircle className="w-4 h-4"/></div> Kurserfassungsservice</h4>
+                        <p className="text-gray-600 text-sm mt-1">Keine Zeit für Dateneingabe? Wir übernehmen das für dich.</p>
+                        <p className="text-xs text-gray-500 mt-2">Gilt für alle Pakete (begrenzt durch jeweiliges Kurslimit).</p>
+                    </div>
+                    <div className="text-right">
+                        <span className="block text-gray-800 font-bold text-lg">75 CHF <span className="text-sm font-normal">pro Kurs</span></span>
+                        <span className="text-xs text-gray-500">ab dem 4. Kurs: 50 CHF</span>
                     </div>
                 </div>
             </div>
