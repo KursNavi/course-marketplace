@@ -1,11 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { ArrowLeft, Loader, Calendar, Plus, Trash2, Info, ExternalLink, Globe, Bold, Italic, Underline, Heading2, Heading3, List } from 'lucide-react';
+import { ArrowLeft, Loader, Calendar, Plus, Trash2, Info, ExternalLink, Globe, Bold, Italic, Underline, Heading2, Heading3, List, Lock, Crown } from 'lucide-react';
 import { KursNaviLogo } from './Layout';
 import { SWISS_CANTONS, NEW_TAXONOMY, CATEGORY_TYPES, COURSE_LEVELS, AGE_GROUPS } from '../lib/constants';
 import { supabase } from '../lib/supabase';
 
 const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotification, setEditingCourse }) => {
+    // --- GATEKEEPER LOGIC (LIMITS) ---
+    const TIER_LIMITS = { basic: 3, pro: 10, premium: 30, enterprise: 9999 };
+    const [isCheckingLimit, setIsCheckingLimit] = useState(true);
+    const [limitReached, setLimitReached] = useState(false);
+    const [currentTier, setCurrentTier] = useState('basic');
+    const [currentCount, setCurrentCount] = useState(0);
+
     // Booking & Link State (v2.1)
     const [bookingType, setBookingType] = useState('platform'); // 'platform', 'external', 'lead'
 
@@ -25,7 +32,32 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
     const [events, setEvents] = useState([{ start_date: '', location: '', max_participants: 0, canton: '', schedule_description: '' }]);
 
     useEffect(() => {
-        // 1. Load Initial Data if editing
+        // 0. GATEKEEPER CHECK
+    const checkLimits = async () => {
+        if (initialData) { setIsCheckingLimit(false); return; } // Edits are always allowed
+
+        // 1. Get User Tier (Refresh metadata)
+        const { data: { user: authUser } } = await supabase.auth.getUser();
+        const tier = authUser?.user_metadata?.package_tier || 'basic';
+        setCurrentTier(tier);
+
+        // 2. Count Active Courses
+        const { count, error } = await supabase
+            .from('courses')
+            .select('*', { count: 'exact', head: true })
+            .eq('user_id', user.id);
+
+        if (!error) {
+            setCurrentCount(count);
+            const limit = TIER_LIMITS[tier] || 3;
+            if (count >= limit) {
+                setLimitReached(true);
+            }
+        }
+        setIsCheckingLimit(false);
+    };
+    checkLimits();
+    // 1. Load Initial Data if editing
         if (initialData) {
             if (initialData.booking_type) setBookingType(initialData.booking_type); // Load Booking Type
             if (initialData.category_type) setSelectedType(initialData.category_type);
@@ -209,6 +241,46 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
         setIsSubmitting(false);
     };
 
+    // --- RENDER: LOADING OR BLOCKED STATE ---
+    if (isCheckingLimit) {
+        return <div className="flex justify-center items-center h-64"><Loader className="animate-spin text-primary w-8 h-8"/></div>;
+    }
+
+    if (limitReached && !initialData) {
+        return (
+            <div className="max-w-4xl mx-auto px-4 py-12 animate-in fade-in slide-in-from-bottom-4 duration-500 font-sans">
+                <button onClick={() => setView('dashboard')} className="flex items-center text-gray-500 hover:text-gray-900 mb-6 transition-colors">
+                    <ArrowLeft className="w-4 h-4 mr-2" /> Zurück zum Dashboard
+                </button>
+
+                <div className="bg-white p-8 rounded-2xl shadow-xl border-t-4 border-orange-500 text-center">
+                    <div className="w-16 h-16 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <Lock className="w-8 h-8" />
+                    </div>
+                    <h1 className="text-3xl font-bold text-dark font-heading mb-4">Paket-Limit erreicht</h1>
+                    <p className="text-gray-600 max-w-lg mx-auto mb-8 text-lg">
+                        Du nutzt das <strong>{currentTier.toUpperCase()}</strong> Paket. 
+                        Dein Limit liegt bei <strong>{TIER_LIMITS[currentTier]} Kursen</strong>.
+                        <br/>Du hast aktuell bereits {currentCount} Kurse online.
+                    </p>
+
+                    <div className="bg-beige p-6 rounded-xl border border-orange-200 max-w-md mx-auto mb-8">
+                        <h3 className="font-bold flex items-center justify-center gap-2 mb-2">
+                            <Crown className="w-5 h-5 text-primary"/> Upgrade nötig
+                        </h3>
+                        <p className="text-sm text-gray-600">
+                            Möchtest du mehr Kurse anbieten? Wähle ein höheres Paket, um unbegrenzt zu wachsen.
+                        </p>
+                    </div>
+
+                    <button onClick={() => setView('teacher-hub')} className="bg-primary hover:bg-orange-600 text-white px-8 py-3 rounded-full font-bold text-lg transition shadow-lg">
+                        Paket upgraden
+                    </button>
+                </div>
+            </div>
+        );
+    }
+    
     return (
     <div className="max-w-4xl mx-auto px-4 py-8 animate-in fade-in slide-in-from-bottom-4 duration-500 font-sans">
         <button onClick={() => setView('dashboard')} className="flex items-center text-gray-500 hover:text-gray-900 mb-6 transition-colors"><ArrowLeft className="w-4 h-4 mr-2" /> {t.btn_back_dash}</button>
