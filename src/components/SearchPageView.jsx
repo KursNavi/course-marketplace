@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Search, ChevronRight, User, X, Calendar, Shield, MapPin, CheckCircle, Loader } from 'lucide-react';
+import { Search, ChevronRight, User, X, Calendar, Shield, MapPin, CheckCircle, Loader, Bell, ArrowDown } from 'lucide-react';
 import { LocationDropdown, LanguageDropdown } from './Filters';
 import { Globe } from 'lucide-react';
 import { CATEGORY_TYPES, NEW_TAXONOMY, AGE_GROUPS, COURSE_LEVELS } from '../lib/constants';
@@ -157,7 +157,26 @@ const SearchPageView = ({
                       </div>
                     ))}
                   </div>
-                ) : <div className="text-center py-24 bg-white rounded-2xl border border-dashed border-gray-300"><p className="text-gray-500 text-lg font-medium">{t.no_results}</p></div>}
+                ) : (
+                  <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-gray-300 px-6">
+                    <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Bell className="w-8 h-8 text-primary" />
+                    </div>
+                    <h3 className="text-xl font-bold text-gray-900 mb-2 font-heading">
+                        Kursangebot im Aufbau
+                    </h3>
+                    <p className="text-gray-600 max-w-md mx-auto mb-6">
+                        In deiner Region bauen wir das Angebot gerade auf. <br />
+                        Melde dich unten im Footer für unseren Newsletter an, um informiert zu bleiben.
+                    </p>
+                    <button 
+                        onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })}
+                        className="text-primary font-bold hover:text-orange-700 transition flex items-center justify-center mx-auto gap-2 border border-orange-200 px-4 py-2 rounded-lg bg-orange-50 hover:bg-orange-100"
+                    >
+                        Zum Newsletter scrollen <ArrowDown className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
             </main>
         </div>
     );
