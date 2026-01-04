@@ -49,7 +49,7 @@ const AuthView = ({ setView, setUser, showNotification, lang }) => {
 
                 if (authError) throw authError;
                 if (authData?.user) { await supabase.from('profiles').insert([{ id: authData.user.id, full_name: fullName, email: email, preferred_language: lang, role: role }]); }
-                showNotification("Account created! Check your email.");
+                showNotification(t.msg_account_created);
             } else {
                 const { data, error } = await supabase.auth.signInWithPassword({ email, password });
                 if (error) throw error;
@@ -63,7 +63,7 @@ const AuthView = ({ setView, setUser, showNotification, lang }) => {
                 setUser(loggedInUser); 
                 
                 if (loggedInUser.role === 'teacher') setView('dashboard'); else setView('home');
-                showNotification("Welcome back!");
+                showNotification(t.msg_welcome_back_toast);
             }
         } catch (error) { showNotification(error.message); } finally { setLoading(false); }
     };
