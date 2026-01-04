@@ -20,7 +20,7 @@ const AuthView = ({ setView, setUser, showNotification, lang }) => {
         e.preventDefault(); setLoading(true);
         try {
             if (isSignUp) {
-                if (!agbAccepted) { throw new Error(t.legal_agree + " " + t.legal_agb); } 
+                if (!agbAccepted) { throw new Error(t.err_accept_terms); }
                 
                 // VALIDATION: Check Coupon Code for Teachers
                 if (role === 'teacher') {

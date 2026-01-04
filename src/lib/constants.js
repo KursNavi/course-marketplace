@@ -434,6 +434,7 @@ export const TRANSLATIONS = {
     lbl_invite_code: "Invite / Coupon Code",
     lbl_optional: "(Optional)",
     err_invalid_code: "Invalid Coupon Code. Access denied.",
+    err_accept_terms: "Please accept the Terms and Privacy Policy.",
     
     // AUTH LABELS
     auth_create_account: "Create Account", auth_welcome_back: "Welcome Back",
@@ -570,6 +571,7 @@ export const TRANSLATIONS = {
     lbl_invite_code: "Einladungs- / Gutscheincode",
     lbl_optional: "(Optional)",
     err_invalid_code: "Ungültiger Gutscheincode. Zugriff verweigert.",
+    err_accept_terms: "Bitte akzeptieren Sie die AGB und die Datenschutzerklärung.",
 
     // AUTH LABELS
     auth_create_account: "Konto erstellen", auth_welcome_back: "Willkommen zurück",
@@ -706,6 +708,7 @@ export const TRANSLATIONS = {
     lbl_invite_code: "Code d'invitation / Coupon",
     lbl_optional: "(Optionnel)",
     err_invalid_code: "Code coupon invalide. Accès refusé.",
+    err_accept_terms: "Veuillez accepter les conditions et la politique de confidentialité.",
 
     // AUTH LABELS
     auth_create_account: "Créer un compte", auth_welcome_back: "Bon retour",
@@ -842,6 +845,7 @@ export const TRANSLATIONS = {
     lbl_invite_code: "Codice invito / Coupon",
     lbl_optional: "(Opzionale)",
     err_invalid_code: "Codice coupon non valido. Accesso negato.",
+    err_accept_terms: "Si prega di accettare i termini e la politica sulla privacy.",
 
     // AUTH LABELS
     auth_create_account: "Crea account", auth_welcome_back: "Bentornato",
