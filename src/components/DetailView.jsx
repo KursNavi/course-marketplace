@@ -180,9 +180,34 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user }) =
                         <span className="flex items-center bg-gray-50 px-3 py-1 rounded-full"><MapPin className="w-4 h-4 mr-2"/> {course.canton}</span>
                         <span className="flex items-center bg-gray-50 px-3 py-1 rounded-full"><Clock className="w-4 h-4 mr-2"/> {course.session_count} x {course.session_length}</span>
                     </div>
-                    <div className="prose max-w-none text-gray-600">
-                        <h3 className="text-xl font-bold text-dark mb-2">{t.lbl_description}</h3>
-                        <p className="whitespace-pre-wrap mb-6">{course.description}</p>
+                    <div className="prose max-w-none text-gray-600 custom-rich-text">
+                        <h3 className="text-xl font-bold text-dark mb-4 border-b pb-2">{t.lbl_description}</h3>
+                        <div className="space-y-4 mb-8">
+                            {course.description ? course.description.split('\n').map((line, index) => {
+                                // Bold: **text**
+                                let formattedLine = line.replace(/\*\*(.*?)\*\*/g, '<strong class="text-dark font-bold">$1</strong>');
+                                // Italics: *text*
+                                formattedLine = formattedLine.replace(/\*(.*?)\*/g, '<em class="italic">$1</em>');
+                                // Underline: __text__
+                                formattedLine = formattedLine.replace(/__(.*?)__/g, '<u class="underline">$1</u>');
+                                
+                                // Bullet Points: Starts with "- " or "* "
+                                if (line.trim().startsWith('- ') || line.trim().startsWith('* ')) {
+                                    return <li key={index} className="ml-5 list-disc" dangerouslySetInnerHTML={{ __html: formattedLine.replace(/^[-*]\s/, '') }} />;
+                                }
+                                // H2: Starts with "## "
+                                if (line.startsWith('## ')) {
+                                    return <h2 key={index} className="text-2xl font-bold text-dark mt-6 mb-2" dangerouslySetInnerHTML={{ __html: formattedLine.replace(/^##\s/, '') }} />;
+                                }
+                                // H3: Starts with "### "
+                                if (line.startsWith('### ')) {
+                                    return <h3 key={index} className="text-xl font-bold text-dark mt-4 mb-2" dangerouslySetInnerHTML={{ __html: formattedLine.replace(/^###\s/, '') }} />;
+                                }
+                                // Regular Paragraph
+                                return formattedLine.trim() ? <p key={index} dangerouslySetInnerHTML={{ __html: formattedLine }} /> : <br key={index} />;
+                            }) : <p>{t.lbl_no_description}</p>}
+                        </div>
+
                         <h3 className="text-xl font-bold text-dark mb-2">{t.lbl_learn_goals}</h3>
                         <ul className="list-disc pl-5 space-y-1 mb-6">
                             {course.objectives && course.objectives.map((obj, i) => <li key={i}>{obj}</li>)}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { ArrowLeft, Loader, Calendar, Plus, Trash2, Info, ExternalLink, Globe } from 'lucide-react';
+import { ArrowLeft, Loader, Calendar, Plus, Trash2, Info, ExternalLink, Globe, Bold, Italic, Underline, Heading2, Heading3, List } from 'lucide-react';
 import { KursNaviLogo } from './Layout';
 import { SWISS_CANTONS, NEW_TAXONOMY, CATEGORY_TYPES, COURSE_LEVELS, AGE_GROUPS } from '../lib/constants';
 import { supabase } from '../lib/supabase';
@@ -406,7 +406,55 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
                     <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_website}</label><div className="relative"><ExternalLink className="absolute left-3 top-3 text-gray-400 w-5 h-5" /><input type="url" name="providerUrl" defaultValue={initialData?.provider_url} className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" /></div></div>
                 </div>
 
-                <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_description}</label><textarea required name="description" defaultValue={initialData?.description} rows="4" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none"></textarea></div>
+                <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_description}</label>
+                    <div className="border rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-primary">
+                        {/* Rich Text Toolbar */}
+                        <div className="flex flex-wrap gap-1 p-2 bg-gray-50 border-b select-none">
+                            {[
+                                { icon: <Bold className="w-4 h-4" />, tag: '**', label: 'Bold' },
+                                { icon: <Italic className="w-4 h-4" />, tag: '*', label: 'Italic' },
+                                { icon: <Underline className="w-4 h-4" />, tag: '__', label: 'Underline' },
+                                { icon: <Heading2 className="w-4 h-4" />, tag: '## ', label: 'H2', isPrefix: true },
+                                { icon: <Heading3 className="w-4 h-4" />, tag: '### ', label: 'H3', isPrefix: true },
+                                { icon: <List className="w-4 h-4" />, tag: '- ', label: 'List', isPrefix: true }
+                            ].map((btn, idx) => (
+                                <button
+                                    key={idx}
+                                    type="button"
+                                    title={btn.label}
+                                    onClick={() => {
+                                        const textarea = document.getElementsByName('description')[0];
+                                        const start = textarea.selectionStart;
+                                        const end = textarea.selectionEnd;
+                                        const text = textarea.value;
+                                        const selected = text.substring(start, end);
+                                        
+                                        let replacement = btn.isPrefix 
+                                            ? `${btn.tag}${selected}`
+                                            : `${btn.tag}${selected}${btn.tag}`;
+                                        
+                                        textarea.value = text.substring(0, start) + replacement + text.substring(end);
+                                        textarea.focus();
+                                        // Trigger a change event if needed for state managers, 
+                                        // though here we use FormData on submit.
+                                    }}
+                                    className="p-1.5 hover:bg-white hover:text-primary rounded border border-transparent hover:border-gray-200 transition-all flex items-center justify-center bg-gray-100/50"
+                                >
+                                    {btn.icon}
+                                </button>
+                            ))}
+                        </div>
+                        <textarea 
+                            required 
+                            name="description" 
+                            defaultValue={initialData?.description} 
+                            rows="6" 
+                            placeholder="Beschreibe deinen Kurs... Nutze die Symbole oben für Formatierungen."
+                            className="w-full px-4 py-3 outline-none resize-y block"
+                        ></textarea>
+                    </div>
+                </div>
                 <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_learn_goals}</label><textarea required name="objectives" defaultValue={initialData?.objectives?.join('\n')} rows="4" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" placeholder="Enter each objective on a new line..."></textarea></div>
                 <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_prereq}</label><input type="text" name="prerequisites" defaultValue={initialData?.prerequisites} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" /></div>
                 
