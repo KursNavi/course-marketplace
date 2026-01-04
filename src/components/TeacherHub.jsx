@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
-import { CheckCircle, BarChart, Users, Calendar, ArrowRight, DollarSign } from 'lucide-react';
+import { CheckCircle, BarChart, Users, Calendar, ArrowRight, DollarSign, Mail } from 'lucide-react';
 
-const TeacherHub = ({ setView, t, user }) => {
+const TeacherHub = ({ setView, t, user, showNotification }) => {
     
     // SEO: B2B Specific Meta Tags
     useEffect(() => {
@@ -26,19 +26,31 @@ const TeacherHub = ({ setView, t, user }) => {
 
     }, []);
 
-    const handleCta = (tier = 'basic') => {
-    // Save selected tier to LocalStorage so AuthView can pick it up later
-    localStorage.setItem('selectedPackage', tier);
+    const handleCta = (tier) => {
+        // 1. Wenn User NICHT eingeloggt ist -> Zum Login schicken
+        if (!user) {
+            localStorage.setItem('selectedPackage', tier);
+            setView('login');
+            window.scrollTo(0,0);
+            return;
+        }
 
-    if (user) {
-        // If already logged in, maybe redirect to settings or upgrade page? 
-        // For now, let's send them to dashboard to see their status.
-        setView('dashboard'); 
-    } else {
-        setView('login');
-    }
-    window.scrollTo(0,0);
-};
+        // 2. Wenn User eingeloggt ist -> "Soft Upgrade" Prozess starten
+        if (tier === 'basic' || tier === 'basic_default') {
+            // Basic ist Standard, einfach zum Dashboard
+            if (showNotification) showNotification("Du nutzt das Basic Paket.");
+            setView('dashboard');
+        } else {
+            // PRO / PREMIUM / ENTERPRISE -> Manuelle Anfrage via E-Mail (MVP)
+            const subject = `Upgrade Anfrage: ${tier.toUpperCase()} Paket`;
+            const body = `Hallo KursNavi Team,\n\nich möchte gerne mein Konto (${user.email}) auf das ${tier.toUpperCase()} Paket upgraden.\n\nBitte sendet mir die Rechnung und schaltet mich frei.\n\nDanke!`;
+            
+            // Mail Client öffnen
+            window.location.href = `mailto:info@kursnavi.ch?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+            
+            if (showNotification) showNotification("E-Mail Programm geöffnet. Bitte sende die Anfrage ab.");
+        }
+    };
 
     return (
         <div className="font-sans bg-white">
