@@ -4,7 +4,7 @@ import { LocationDropdown } from './Filters';
 import { NEW_TAXONOMY, CATEGORY_TYPES } from '../lib/constants';
 
 export const Home = ({ 
-  t, setView, courses, // Jetzt haben wir Zugriff auf die Kurse!
+  lang, t, setView, courses, // Jetzt haben wir Zugriff auf die Kurse!
   setSearchType, setSearchArea, setSearchSpecialty, 
   searchQuery, setSearchQuery, 
   catMenuOpen, setCatMenuOpen, catMenuRef, 
@@ -66,8 +66,8 @@ export const Home = ({
   };
 
   // Helper für Labels
-  const getTypeLabel = (key) => CATEGORY_TYPES[key]?.de || key;
-  const getAreaLabel = (type, areaKey) => NEW_TAXONOMY[type]?.[areaKey]?.label?.de || areaKey;
+  const getTypeLabel = (key) => CATEGORY_TYPES[key]?.[lang] || CATEGORY_TYPES[key]?.de || key;
+  const getAreaLabel = (type, areaKey) => NEW_TAXONOMY[type]?.[areaKey]?.label?.[lang] || NEW_TAXONOMY[type]?.[areaKey]?.label?.de || areaKey;
 
   // Auto-Select first area when type changes (optional, improves UX)
   useEffect(() => {
@@ -127,8 +127,8 @@ export const Home = ({
                         className="w-full px-4 py-3 flex items-center justify-between text-gray-700 font-medium hover:bg-gray-50 rounded-xl transition-colors"
                     >
                         <span className="flex items-center">
-                            {catMenuOpen ? 'Kategorie wählen' : t.filter_label_cat || 'Kategorie'}
-                        </span>
+                            {catMenuOpen ? t.lbl_select_cat : t.filter_label_cat || 'Kategorie'}
+                        </span>
                         <ChevronDown className={`w-4 h-4 transition-transform ${catMenuOpen ? 'rotate-180' : ''}`} />
                     </button>
 
@@ -138,7 +138,7 @@ export const Home = ({
                             
                             {/* SPALTE 1: TYP (Immer sichtbar) */}
                             <div className="w-1/4 bg-gray-50 border-r border-gray-100 py-2">
-                                <div className="px-4 py-2 text-xs font-bold text-gray-400 uppercase">Typ</div>
+                                <div className="px-4 py-2 text-xs font-bold text-gray-400 uppercase">{t.lbl_type}</div>
                                 {Object.keys(CATEGORY_TYPES).map(typeKey => (
                                     <div 
                                         key={typeKey}
@@ -154,7 +154,7 @@ export const Home = ({
 
                             {/* SPALTE 2: BEREICH (Gefiltert nach Existenz) */}
                             <div className="w-1/3 border-r border-gray-100 py-2 overflow-y-auto">
-                                <div className="px-4 py-2 text-xs font-bold text-gray-400 uppercase">Bereich</div>
+                                <div className="px-4 py-2 text-xs font-bold text-gray-400 uppercase">{t.lbl_area}</div>
                                 {visibleAreas.length > 0 ? (
                                     visibleAreas.map(areaKey => (
                                         <div
@@ -168,13 +168,13 @@ export const Home = ({
                                         </div>
                                     ))
                                 ) : (
-                                    <div className="p-4 text-xs text-gray-400 italic">Keine Kurse in dieser Kategorie verfügbar.</div>
+                                    <div className="p-4 text-xs text-gray-400 italic">{t.msg_no_courses}</div>
                                 )}
                             </div>
 
                             {/* SPALTE 3: SPEZIALGEBIET (Gefiltert nach Existenz) */}
                             <div className="flex-1 py-2 overflow-y-auto bg-gray-50/50">
-                                <div className="px-4 py-2 text-xs font-bold text-gray-400 uppercase">Spezialgebiet</div>
+                                <div className="px-4 py-2 text-xs font-bold text-gray-400 uppercase">{t.lbl_specialty}</div>
                                 {visibleSpecialties.length > 0 ? (
                                     visibleSpecialties.map(specKey => (
                                         <button
@@ -188,8 +188,8 @@ export const Home = ({
                                     ))
                                 ) : (
                                     <div className="p-4 text-xs text-gray-400 italic">
-                                        {activeArea ? "Alle Themen in diesem Bereich." : "Wähle einen Bereich."}
-                                    </div>
+                                        {activeArea ? t.msg_all_topics : t.msg_select_area}
+                                    </div>
                                 )}
                             </div>
 

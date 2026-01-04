@@ -330,11 +330,19 @@ export const TRANSLATIONS = {
     home_card_prof_sub: "Advance your career with certified skills.",
     home_card_priv_sub: "Cooking, Photography, Sports & more.",
     home_card_kids_sub: "Fun and engaging courses for children.",
-    btn_explore: "EXPLORE",
+    btn_explore: "EXPLORE",
 
-    // SEARCH FILTERS
+    // LANDING TITLES
+    landing_priv_title: "Unleash your passion.", landing_priv_sub: "Hobby Courses",
+    landing_prof_title: "Boost your career.", landing_prof_sub: "Professional Courses",
+    landing_kids_title: "Fun learning for kids.", landing_kids_sub: "Children's Courses",
+
+    // SEARCH FILTERS
     search_refine: "Refine search...",
     lbl_max_price: "Max CHF",
+    lbl_type: "Type", lbl_area: "Area", lbl_specialty: "Specialty", 
+    msg_no_courses: "No courses available.", msg_all_topics: "All topics in this area.", 
+    msg_select_area: "Select an area.", lbl_select_cat: "Select Category",
     lbl_professional_filter: "Professional",
     tooltip_pro_verified: "Professional course provider verified by KursNavi.",
 
@@ -445,11 +453,19 @@ export const TRANSLATIONS = {
     home_card_prof_sub: "Karriere fördern mit zertifizierten Skills.",
     home_card_priv_sub: "Kochen, Fotografie, Sport & mehr.",
     home_card_kids_sub: "Spaßige und spannende Kurse für Kinder.",
-    btn_explore: "ENTDECKEN",
+    btn_explore: "ENTDECKEN",
 
-    // SEARCH FILTERS
+    // LANDING TITLES
+    landing_priv_title: "Entfessle deine Leidenschaft.", landing_priv_sub: "Hobby-Kurse",
+    landing_prof_title: "Karriere-Boost.", landing_prof_sub: "Berufliche Weiterbildung",
+    landing_kids_title: "Spielerisch lernen.", landing_kids_sub: "Kinderkurse",
+
+    // SEARCH FILTERS
     search_refine: "Suche verfeinern...",
     lbl_max_price: "Max CHF",
+    lbl_type: "Typ", lbl_area: "Bereich", lbl_specialty: "Spezialgebiet", 
+    msg_no_courses: "Keine Kurse verfügbar.", msg_all_topics: "Alle Themen in diesem Bereich.", 
+    msg_select_area: "Wähle einen Bereich.", lbl_select_cat: "Kategorie wählen",
     lbl_professional_filter: "Professionell",
     tooltip_pro_verified: "Professioneller Kursanbieter, geprüft von KursNavi.",
 
@@ -559,11 +575,19 @@ export const TRANSLATIONS = {
     home_card_prof_sub: "Avancez votre carrière avec des compétences certifiées.",
     home_card_priv_sub: "Cuisine, Photographie, Sport & plus.",
     home_card_kids_sub: "Cours amusants et stimulants pour les enfants.",
-    btn_explore: "EXPLORER",
+    btn_explore: "EXPLORER",
 
-    // SEARCH FILTERS
+    // LANDING TITLES
+    landing_priv_title: "Libérez votre passion.", landing_priv_sub: "Cours de loisirs",
+    landing_prof_title: "Boostez votre carrière.", landing_prof_sub: "Formation professionnelle",
+    landing_kids_title: "Apprendre en s'amusant.", landing_kids_sub: "Cours pour enfants",
+
+    // SEARCH FILTERS
     search_refine: "Affiner la recherche...",
     lbl_max_price: "Max CHF",
+    lbl_type: "Type", lbl_area: "Domaine", lbl_specialty: "Spécialité", 
+    msg_no_courses: "Aucun cours disponible.", msg_all_topics: "Tous les sujets.", 
+    msg_select_area: "Choisissez un domaine.", lbl_select_cat: "Choisir catégorie",
     lbl_professional_filter: "Professionnel",
     tooltip_pro_verified: "Prestataire de cours professionnel vérifié par KursNavi.",
 
@@ -673,11 +697,19 @@ export const TRANSLATIONS = {
     home_card_prof_sub: "Avanza nella tua carriera con competenze certificate.",
     home_card_priv_sub: "Cucina, Fotografia, Sport & altro.",
     home_card_kids_sub: "Corsi divertenti e coinvolgenti per bambini.",
-    btn_explore: "ESPLORA",
+    btn_explore: "ESPLORA",
 
-    // SEARCH FILTERS
+    // LANDING TITLES
+    landing_priv_title: "Scatena la tua passione.", landing_priv_sub: "Corsi per il tempo libero",
+    landing_prof_title: "Spingi la tua carriera.", landing_prof_sub: "Formazione professionale",
+    landing_kids_title: "Imparare giocando.", landing_kids_sub: "Corsi per bambini",
+
+    // SEARCH FILTERS
     search_refine: "Affina la ricerca...",
     lbl_max_price: "Max CHF",
+    lbl_type: "Tipo", lbl_area: "Area", lbl_specialty: "Specialità", 
+    msg_no_courses: "Nessun corso disponibile.", msg_all_topics: "Tutti gli argomenti.", 
+    msg_select_area: "Scegli un'area.", lbl_select_cat: "Scegli categoria",
     lbl_professional_filter: "Professionale",
     tooltip_pro_verified: "Fornitore di corsi professionale verificato da KursNavi.",
 
