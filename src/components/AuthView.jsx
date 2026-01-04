@@ -11,6 +11,7 @@ const AuthView = ({ setView, setUser, showNotification, lang }) => {
     const [password, setPassword] = useState(''); 
     const [fullName, setFullName] = useState(''); 
     const [role, setRole] = useState('student');
+    const [inviteCode, setInviteCode] = useState(''); // NEW: Coupon State
     const [agbAccepted, setAgbAccepted] = useState(false);
     
     const t = TRANSLATIONS[lang] || TRANSLATIONS['de']; 
@@ -20,7 +21,20 @@ const AuthView = ({ setView, setUser, showNotification, lang }) => {
         try {
             if (isSignUp) {
                 if (!agbAccepted) { throw new Error(t.legal_agree + " " + t.legal_agb); } 
-                const { data: authData, error: authError } = await supabase.auth.signUp({ email, password, options: { data: { full_name: fullName, role: role } } });
+                
+                // NEW: Save invite_code to user metadata for Pilot Phase verification
+                const { data: authData, error: authError } = await supabase.auth.signUp({ 
+                    email, 
+                    password, 
+                    options: { 
+                        data: { 
+                            full_name: fullName, 
+                            role: role,
+                            invite_code: inviteCode 
+                        } 
+                    } 
+                });
+
                 if (authError) throw authError;
                 if (authData?.user) { await supabase.from('profiles').insert([{ id: authData.user.id, full_name: fullName, email: email, preferred_language: lang, role: role }]); }
                 showNotification("Account created! Check your email.");
@@ -47,7 +61,36 @@ const AuthView = ({ setView, setUser, showNotification, lang }) => {
             <div className="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full border border-gray-100">
                 <h2 className="text-2xl font-bold mb-6 text-center font-heading text-dark">{isSignUp ? "Create Account" : "Welcome Back"}</h2>
                 <form onSubmit={handleAuth} className="space-y-4 font-sans">
-                    {isSignUp && (<><div><label className="block text-sm font-bold text-gray-700 mb-1">Full Name</label><input required type="text" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" value={fullName} onChange={e => setFullName(e.target.value)} /></div><div><label className="block text-sm font-bold text-gray-700 mb-1">I am a...</label><div className="flex gap-4"><label className={`flex-1 p-3 border rounded-lg cursor-pointer text-center transition ${role === 'student' ? 'bg-primaryLight border-primary text-primary font-bold' : 'hover:bg-gray-50'}`}><input type="radio" className="hidden" checked={role === 'student'} onChange={() => setRole('student')} />Student</label><label className={`flex-1 p-3 border rounded-lg cursor-pointer text-center transition ${role === 'teacher' ? 'bg-primaryLight border-primary text-primary font-bold' : 'hover:bg-gray-50'}`}><input type="radio" className="hidden" checked={role === 'teacher'} onChange={() => setRole('teacher')} />Teacher</label></div></div></>)}
+                    {isSignUp && (
+                        <>
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-1">Full Name</label>
+                                <input required type="text" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" value={fullName} onChange={e => setFullName(e.target.value)} />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-1">I am a...</label>
+                                <div className="flex gap-4">
+                                    <label className={`flex-1 p-3 border rounded-lg cursor-pointer text-center transition ${role === 'student' ? 'bg-primaryLight border-primary text-primary font-bold' : 'hover:bg-gray-50'}`}>
+                                        <input type="radio" className="hidden" checked={role === 'student'} onChange={() => setRole('student')} />Student
+                                    </label>
+                                    <label className={`flex-1 p-3 border rounded-lg cursor-pointer text-center transition ${role === 'teacher' ? 'bg-primaryLight border-primary text-primary font-bold' : 'hover:bg-gray-50'}`}>
+                                        <input type="radio" className="hidden" checked={role === 'teacher'} onChange={() => setRole('teacher')} />Teacher
+                                    </label>
+                                </div>
+                            </div>
+                            {/* NEW: Invite / Coupon Code Field */}
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-1">Invite / Coupon Code <span className="text-gray-400 font-normal text-xs">(Optional)</span></label>
+                                <input 
+                                    type="text" 
+                                    placeholder="e.g. PILOT2026" 
+                                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none uppercase tracking-widest placeholder-gray-300 font-mono" 
+                                    value={inviteCode} 
+                                    onChange={e => setInviteCode(e.target.value)} 
+                                />
+                            </div>
+                        </>
+                    )}
                     <div><label className="block text-sm font-bold text-gray-700 mb-1">Email</label><input required type="email" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" value={email} onChange={e => setEmail(e.target.value)} /></div>
                     <div><label className="block text-sm font-bold text-gray-700 mb-1">Password</label><input required type="password" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" value={password} onChange={e => setPassword(e.target.value)} /></div>
                     
