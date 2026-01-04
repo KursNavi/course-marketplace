@@ -331,6 +331,18 @@ const SubscriptionSection = ({ user, currentTier }) => {
 const Dashboard = ({ user, t, setView, courses, teacherEarnings, myBookings, handleDeleteCourse, handleEditCourse, showNotification, changeLanguage, setSelectedCourse }) => {
     const [dashView, setDashView] = useState('overview'); 
     const [userTier, setUserTier] = useState('basic'); // basic, pro, premium
+    const [showSuccessModal, setShowSuccessModal] = useState(false); // NEW: Success Modal State
+
+    // NEW: Check for Payment Success in URL
+    useEffect(() => {
+        const query = new URLSearchParams(window.location.search);
+        if (query.get('payment') === 'success') {
+            setShowSuccessModal(true);
+            // URL bereinigen (damit es beim Refresh nicht nochmal kommt)
+            window.history.replaceState(null, '', window.location.pathname);
+            // Optional: Konfetti hier zünden, falls library vorhanden
+        }
+    }, []);
 
     // 1. Fetch User Tier
     useEffect(() => {
@@ -523,6 +535,28 @@ const Dashboard = ({ user, t, setView, courses, teacherEarnings, myBookings, han
                 </div>
                 )}
                 </>
+            )}
+        {/* SUCCESS MODAL OVERLAY */}
+            {showSuccessModal && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-300">
+                    <div className="bg-white rounded-2xl p-8 max-w-md w-full text-center shadow-2xl border-4 border-primary/20 transform animate-in zoom-in-95 duration-300">
+                        <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
+                            <Crown className="w-12 h-12 text-green-600 animate-bounce" />
+                        </div>
+                        <h2 className="text-3xl font-bold font-heading text-dark mb-4">Herzlichen Glückwunsch!</h2>
+                        <p className="text-gray-600 mb-8 text-lg leading-relaxed">
+                            Dein Upgrade war erfolgreich! <br/>
+                            Du hast jetzt Zugriff auf alle <strong>{userTier === 'premium' ? 'Premium' : 'Pro'}</strong> Features. <br/>
+                            <span className="text-sm text-gray-400 mt-2 block">Viel Erfolg mit deinen Kursen!</span>
+                        </p>
+                        <button 
+                            onClick={() => setShowSuccessModal(false)}
+                            className="bg-primary text-white px-10 py-4 rounded-full font-bold hover:bg-orange-600 transition w-full shadow-lg hover:shadow-orange-500/30 text-lg"
+                        >
+                            Los geht's! 🚀
+                        </button>
+                    </div>
+                </div>
             )}
         </div>
     );
