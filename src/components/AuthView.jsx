@@ -22,18 +22,22 @@ const AuthView = ({ setView, setUser, showNotification, lang }) => {
             if (isSignUp) {
                 if (!agbAccepted) { throw new Error(t.legal_agree + " " + t.legal_agb); } 
                 
-                // NEW: Save invite_code to user metadata for Pilot Phase verification
-                const { data: authData, error: authError } = await supabase.auth.signUp({ 
-                    email, 
-                    password, 
-                    options: { 
-                        data: { 
-                            full_name: fullName, 
-                            role: role,
-                            invite_code: inviteCode 
-                        } 
+                // LOGIC: Retrieve selected package from previous step (TeacherHub)
+            const selectedPackage = localStorage.getItem('selectedPackage') || 'basic';
+
+            // NEW: Save invite_code AND package_tier to user metadata
+            const { data: authData, error: authError } = await supabase.auth.signUp({ 
+                email, 
+                password, 
+                options: { 
+                    data: { 
+                        full_name: fullName, 
+                        role: role,
+                        invite_code: inviteCode,
+                        package_tier: selectedPackage // <--- Hier speichern wir das Paket!
                     } 
-                });
+                } 
+            });
 
                 if (authError) throw authError;
                 if (authData?.user) { await supabase.from('profiles').insert([{ id: authData.user.id, full_name: fullName, email: email, preferred_language: lang, role: role }]); }

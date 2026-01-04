@@ -26,14 +26,19 @@ const TeacherHub = ({ setView, t, user }) => {
 
     }, []);
 
-    const handleCta = () => {
-        if (user) {
-            setView('create');
-        } else {
-            setView('login');
-        }
-        window.scrollTo(0,0);
-    };
+    const handleCta = (tier = 'basic') => {
+    // Save selected tier to LocalStorage so AuthView can pick it up later
+    localStorage.setItem('selectedPackage', tier);
+
+    if (user) {
+        // If already logged in, maybe redirect to settings or upgrade page? 
+        // For now, let's send them to dashboard to see their status.
+        setView('dashboard'); 
+    } else {
+        setView('login');
+    }
+    window.scrollTo(0,0);
+};
 
     return (
         <div className="font-sans bg-white">
@@ -50,7 +55,7 @@ const TeacherHub = ({ setView, t, user }) => {
                             Die einfachste Plattform der Schweiz, um Kurse zu erstellen, zu verwalten und zu füllen. Keine technischen Vorkenntnisse nötig.
                         </p>
                         <div className="flex gap-4 pt-4">
-                            <button onClick={handleCta} className="bg-primary hover:bg-orange-600 text-white px-8 py-4 rounded-full font-bold text-lg transition flex items-center shadow-lg hover:shadow-orange-500/20">
+                            <button onClick={() => handleCta('basic')} className="bg-primary hover:bg-orange-600 text-white px-8 py-4 rounded-full font-bold text-lg transition flex items-center shadow-lg hover:shadow-orange-500/20">
                                 Kostenlos starten <ArrowRight className="ml-2 w-5 h-5"/>
                             </button>
                         </div>
@@ -104,7 +109,7 @@ const TeacherHub = ({ setView, t, user }) => {
                             <li className="flex items-start"><CheckCircle className="w-4 h-4 text-green-500 mr-2 mt-1 shrink-0"/> Standard Listing</li>
                             <li className="flex items-start"><CheckCircle className="w-4 h-4 text-green-500 mr-2 mt-1 shrink-0"/> Link auf eigene Website</li>
                         </ul>
-                        <button onClick={handleCta} className="w-full py-2 border-2 border-green-500 text-green-700 font-bold rounded-lg hover:bg-green-50 transition">
+                        <button onClick={() => handleCta('basic')} className="w-full py-2 border-2 border-green-500 text-green-700 font-bold rounded-lg hover:bg-green-50 transition">
                             Basic wählen
                         </button>
                     </div>
@@ -123,7 +128,7 @@ const TeacherHub = ({ setView, t, user }) => {
                             <li className="flex items-start"><CheckCircle className="w-4 h-4 text-blue-500 mr-2 mt-1 shrink-0"/> Kontaktformular</li>
                             <li className="flex items-start"><CheckCircle className="w-4 h-4 text-blue-500 mr-2 mt-1 shrink-0"/> Attraktivere Darstellung</li>
                         </ul>
-                        <button onClick={handleCta} className="w-full py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition shadow-md">
+                        <button onClick={() => handleCta('pro')} className="w-full py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition shadow-md">
                             Pro wählen
                         </button>
                     </div>
@@ -142,7 +147,7 @@ const TeacherHub = ({ setView, t, user }) => {
                             <li className="flex items-start"><CheckCircle className="w-4 h-4 text-purple-500 mr-2 mt-1 shrink-0"/> Newsletter Präsenz</li>
                             <li className="flex items-start"><CheckCircle className="w-4 h-4 text-purple-500 mr-2 mt-1 shrink-0"/> Reporting Dashboard</li>
                         </ul>
-                        <button onClick={handleCta} className="w-full py-2 border-2 border-purple-500 text-purple-700 font-bold rounded-lg hover:bg-purple-50 transition">
+                        <button onClick={() => handleCta('premium')} className="w-full py-2 border-2 border-purple-500 text-purple-700 font-bold rounded-lg hover:bg-purple-50 transition">
                             Premium wählen
                         </button>
                     </div>
@@ -160,7 +165,7 @@ const TeacherHub = ({ setView, t, user }) => {
                             <li className="flex items-start"><CheckCircle className="w-4 h-4 text-orange-500 mr-2 mt-1 shrink-0"/> Eigene Landingpage</li>
                             <li className="flex items-start"><CheckCircle className="w-4 h-4 text-orange-500 mr-2 mt-1 shrink-0"/> Personal Account Mgr.</li>
                         </ul>
-                        <button onClick={handleCta} className="w-full py-2 border-2 border-orange-500 text-orange-700 font-bold rounded-lg hover:bg-orange-50 transition">
+                        <button onClick={() => handleCta('enterprise')} className="w-full py-2 border-2 border-orange-500 text-orange-700 font-bold rounded-lg hover:bg-orange-50 transition">
                             Kontaktieren
                         </button>
                     </div>
@@ -185,7 +190,7 @@ const TeacherHub = ({ setView, t, user }) => {
                 <div className="max-w-4xl mx-auto px-4 text-center">
                     <h2 className="text-3xl md:text-4xl font-bold font-heading text-dark mb-6">Bereit, durchzustarten?</h2>
                     <p className="text-xl text-gray-600 mb-8">Erstelle heute noch deinen ersten Kurs. Es dauert weniger als 10 Minuten.</p>
-                    <button onClick={handleCta} className="bg-dark hover:bg-gray-800 text-white px-10 py-4 rounded-full font-bold text-lg transition shadow-xl">
+                    <button onClick={() => handleCta('basic')} className="bg-dark hover:bg-gray-800 text-white px-10 py-4 rounded-full font-bold text-lg transition shadow-xl">
                         Jetzt Anbieter werden
                     </button>
                 </div>
