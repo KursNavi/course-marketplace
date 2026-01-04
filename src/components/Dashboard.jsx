@@ -3,7 +3,8 @@ import { createClient } from '@supabase/supabase-js';
 import { 
     Loader, Settings, Save, Lock, CheckCircle, Clock, 
     ChevronDown, User, DollarSign, PenTool, Trash2, ArrowRight,
-    Crown, BarChart3, AlertTriangle, Bold, Italic, Underline, Heading2, Heading3, List 
+    Crown, BarChart3, AlertTriangle, Bold, Italic, Underline, Heading2, Heading3, List,
+    CreditCard, Check
 } from 'lucide-react';
 import { SWISS_CANTONS, TIER_CONFIG } from '../lib/constants';
 import { KursNaviLogo } from './Layout';
@@ -259,6 +260,73 @@ const UserProfileSection = ({ user, showNotification, setLang, t }) => {
     );
 };
 
+// --- HELPER COMPONENT: Subscription Management ---
+const SubscriptionSection = ({ user, currentTier }) => {
+    // WICHTIG: Ersetze diese Links mit deinen echten Stripe Payment Links!
+    const STRIPE_LINKS = {
+        pro: "https://buy.stripe.com/test_PRO_LINK_HERE?prefilled_email=" + user.email,
+        premium: "https://buy.stripe.com/test_PREMIUM_LINK_HERE?prefilled_email=" + user.email
+    };
+
+    const tiers = [
+        { id: 'basic', name: 'Basic', price: '0 CHF', features: ['3 Kurse', 'Standard Support', '15% Komm.'] },
+        { id: 'pro', name: 'Pro', price: '290 CHF/Jahr', features: ['10 Kurse', 'Besseres Ranking', '12% Komm.', 'Kontaktformular'] },
+        { id: 'premium', name: 'Premium', price: '590 CHF/Jahr', features: ['30 Kurse', 'Top Ranking', '10% Komm.', 'Newsletter'] }
+    ];
+
+    return (
+        <div className="space-y-6 animate-in fade-in">
+            <div className="bg-white p-8 rounded-xl border border-gray-200 shadow-sm">
+                <h2 className="text-2xl font-bold mb-2 flex items-center"><Crown className="w-6 h-6 mr-2 text-primary"/> Dein Abo-Status</h2>
+                <p className="text-gray-600 mb-6">Du nutzt aktuell das <span className="font-bold uppercase text-dark">{currentTier}</span> Paket.</p>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {tiers.map(tier => {
+                        const isCurrent = currentTier === tier.id;
+                        // Logik: Upgrade ist möglich, wenn das Tier höher ist als das aktuelle
+                        const isUpgrade = (currentTier === 'basic' && tier.id !== 'basic') || (currentTier === 'pro' && tier.id === 'premium');
+                        
+                        return (
+                            <div key={tier.id} className={`p-6 rounded-xl border-2 flex flex-col ${isCurrent ? 'border-primary bg-orange-50' : 'border-gray-100 bg-white'}`}>
+                                <div className="mb-4">
+                                    <h3 className="font-bold text-lg">{tier.name}</h3>
+                                    <div className="text-2xl font-bold text-dark">{tier.price}</div>
+                                </div>
+                                <ul className="mb-6 flex-1 space-y-2">
+                                    {tier.features.map((f, i) => (
+                                        <li key={i} className="text-sm text-gray-600 flex items-center"><Check className="w-4 h-4 mr-2 text-green-500"/> {f}</li>
+                                    ))}
+                                </ul>
+                                {isCurrent ? (
+                                    <button disabled className="w-full py-2 bg-gray-200 text-gray-500 rounded-lg font-bold cursor-default">Aktueller Plan</button>
+                                ) : isUpgrade ? (
+                                    <a href={STRIPE_LINKS[tier.id]} target="_blank" rel="noreferrer" className="block w-full text-center py-2 bg-primary text-white rounded-lg font-bold hover:bg-orange-600 transition shadow-md">
+                                        Upgrade
+                                    </a>
+                                ) : (
+                                    <button disabled className="w-full py-2 border border-gray-200 text-gray-400 rounded-lg">Nicht verfügbar</button>
+                                )}
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+            
+            <div className="bg-blue-50 p-6 rounded-xl border border-blue-100 flex items-start gap-4">
+                <CreditCard className="w-6 h-6 text-blue-600 mt-1"/>
+                <div>
+                    <h3 className="font-bold text-blue-900">Rechnungen & Verwaltung</h3>
+                    <p className="text-sm text-blue-800 mt-1">
+                        Möchtest du deine Zahlungsdaten ändern oder Rechnungen herunterladen? 
+                        <br/>
+                        <span className="text-xs text-gray-500">(Link zum Stripe Kundenportal hier einfügen)</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 // --- MAIN DASHBOARD COMPONENT ---
 const Dashboard = ({ user, t, setView, courses, teacherEarnings, myBookings, handleDeleteCourse, handleEditCourse, showNotification, changeLanguage, setSelectedCourse }) => {
     const [dashView, setDashView] = useState('overview'); 
@@ -291,7 +359,13 @@ const Dashboard = ({ user, t, setView, courses, teacherEarnings, myBookings, han
         <div className="max-w-6xl mx-auto px-4 py-8 font-sans">
             <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
                  <div><h1 className="text-3xl font-bold text-dark font-heading">{user.role === 'teacher' ? t.teacher_dash : t.student_dash}</h1><p className="text-gray-500">Welcome back, {user.name}</p></div>
-                 <div className="bg-white rounded-full p-1 border flex shadow-sm h-fit"><button onClick={() => setDashView('overview')} className={`px-4 py-2 rounded-full text-sm font-bold transition ${dashView === 'overview' ? 'bg-primary text-white shadow' : 'text-gray-500 hover:bg-gray-50'}`}>{t.dash_overview}</button><button onClick={() => setDashView('profile')} className={`px-4 py-2 rounded-full text-sm font-bold transition ${dashView === 'profile' ? 'bg-primary text-white shadow' : 'text-gray-500 hover:bg-gray-50'}`}>{t.dash_settings}</button></div>
+                 <div className="bg-white rounded-full p-1 border flex shadow-sm h-fit">
+                    <button onClick={() => setDashView('overview')} className={`px-4 py-2 rounded-full text-sm font-bold transition ${dashView === 'overview' ? 'bg-primary text-white shadow' : 'text-gray-500 hover:bg-gray-50'}`}>{t.dash_overview}</button>
+                    <button onClick={() => setDashView('profile')} className={`px-4 py-2 rounded-full text-sm font-bold transition ${dashView === 'profile' ? 'bg-primary text-white shadow' : 'text-gray-500 hover:bg-gray-50'}`}>{t.dash_settings}</button>
+                    {user.role === 'teacher' && (
+                        <button onClick={() => setDashView('subscription')} className={`px-4 py-2 rounded-full text-sm font-bold transition ${dashView === 'subscription' ? 'bg-primary text-white shadow' : 'text-gray-500 hover:bg-gray-50'}`}>Abo</button>
+                    )}
+                </div>
                 
                 {/* LOGIC: Create Button with Limit Check */}
                 {user.role === 'teacher' && dashView === 'overview' && (
@@ -312,7 +386,8 @@ const Dashboard = ({ user, t, setView, courses, teacherEarnings, myBookings, han
                 )}
             </div>
 
-            {dashView === 'profile' ? ( <UserProfileSection user={user} showNotification={showNotification} setLang={changeLanguage} t={t} /> ) : (
+            {dashView === 'profile' ? ( <UserProfileSection user={user} showNotification={showNotification} setLang={changeLanguage} t={t} /> ) : 
+             dashView === 'subscription' ? ( <SubscriptionSection user={user} currentTier={userTier} /> ) : (
                 <>
                 {user.role === 'teacher' ? (
                     <>
