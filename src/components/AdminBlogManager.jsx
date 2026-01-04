@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-// Safe Mode: Wir entfernen den externen Import und definieren Listen lokal, um Abstürze zu verhindern.
-// import { CATEGORY_TYPES, COURSE_LEVELS, AGE_GROUPS } from '../lib/constants';
+// Safe Mode: Wir definieren Listen lokal, um Abstürze zu verhindern.
 import { Save, Trash2, Edit, Plus, ArrowLeft, Bold, Search, Link as LinkIcon, X, Layout, Filter } from 'lucide-react';
 
 export default function AdminBlogManager({ showNotification, setView, courses }) {
@@ -9,7 +8,7 @@ export default function AdminBlogManager({ showNotification, setView, courses })
   const [isEditing, setIsEditing] = useState(false);
   const [linkToolMode, setLinkToolMode] = useState(null); 
   
-  // FALLBACK CONSTANTS (Damit die Seite nicht crasht, wenn der Import fehlt)
+  // FALLBACK CONSTANTS
   const LOCAL_CATEGORY_TYPES = {
       'beruflich': 'Beruflich',
       'privat_hobby': 'Privat & Hobby',
@@ -61,13 +60,11 @@ export default function AdminBlogManager({ showNotification, setView, courses })
   };
 
   const handleCreateNew = () => {
-      // Hard Reset des Formulars vor dem Öffnen
       setFormData(JSON.parse(JSON.stringify(initialFormState))); 
       setIsEditing(true);
   };
 
   const handleEdit = (article) => {
-      // Bestehende Daten laden und related_config sicherstellen
       setFormData({
           ...article,
           related_config: article.related_config || initialFormState.related_config
@@ -163,36 +160,34 @@ export default function AdminBlogManager({ showNotification, setView, courses })
   };
 
   if (isEditing) {
-    // Safety Check: Falls formData null ist (sollte nicht passieren)
     if (!formData) return <div>Lade Editor...</div>;
-    // Safety Check: Falls related_config fehlt
     const config = formData.related_config || {};
 
     return (
-      <div className="p-6 max-w-5xl mx-auto bg-white shadow-xl rounded-xl">
+      <div className="p-6 max-w-5xl mx-auto bg-white shadow-xl rounded-xl mt-6">
         <div className="flex justify-between items-center mb-6">
           <button onClick={() => setIsEditing(false)} className="flex items-center text-gray-600 hover:text-primary">
-            <ArrowLeft className="w-5 h-5 mr-1" /> Zurück
+            <ArrowLeft className="w-5 h-5 mr-1" /> Zurück zur Liste
           </button>
-          <h2 className="text-2xl font-heading font-bold">Editor</h2>
-          <button onClick={handleSave} className="flex items-center bg-primary text-white px-4 py-2 rounded-lg hover:bg-orange-600">
+          <h2 className="text-2xl font-heading font-bold">Artikel Editor</h2>
+          <button onClick={handleSave} className="flex items-center bg-primary text-white px-4 py-2 rounded-lg hover:bg-orange-600 shadow-md">
             <Save className="w-4 h-4 mr-2" /> Speichern
           </button>
         </div>
 
         {/* METADATA */}
         <div className="grid gap-4 mb-6">
-          <input type="text" placeholder="H1 Titel" className="w-full p-3 border rounded font-bold text-lg" value={formData.title || ''} onChange={e => setFormData({...formData, title: e.target.value})} />
+          <input type="text" placeholder="H1 Titel" className="w-full p-3 border rounded font-bold text-lg focus:ring-2 focus:ring-primary outline-none" value={formData.title || ''} onChange={e => setFormData({...formData, title: e.target.value})} />
           <div className="grid grid-cols-2 gap-4">
-             <input type="text" placeholder="slug-url" className="w-full p-3 border rounded font-mono text-sm" value={formData.slug || ''} onChange={e => setFormData({...formData, slug: e.target.value})} />
-             <div className="flex items-center space-x-2"><input type="checkbox" checked={formData.is_published || false} onChange={e => setFormData({...formData, is_published: e.target.checked})} /> <label>Veröffentlicht</label></div>
+             <input type="text" placeholder="slug-url" className="w-full p-3 border rounded font-mono text-sm bg-gray-50" value={formData.slug || ''} onChange={e => setFormData({...formData, slug: e.target.value})} />
+             <div className="flex items-center space-x-2 bg-gray-50 p-3 rounded border"><input type="checkbox" checked={formData.is_published || false} onChange={e => setFormData({...formData, is_published: e.target.checked})} /> <label className="font-medium">Veröffentlicht</label></div>
           </div>
-          <input type="text" placeholder="Bild URL" className="w-full p-3 border rounded" value={formData.image_url || ''} onChange={e => setFormData({...formData, image_url: e.target.value})} />
-          <textarea placeholder="Vorschau Text (Excerpt)" className="w-full p-3 border rounded h-20" value={formData.excerpt || ''} onChange={e => setFormData({...formData, excerpt: e.target.value})} />
+          <input type="text" placeholder="Bild URL (https://...)" className="w-full p-3 border rounded" value={formData.image_url || ''} onChange={e => setFormData({...formData, image_url: e.target.value})} />
+          <textarea placeholder="Vorschau Text (Excerpt) für die Blog-Übersicht..." className="w-full p-3 border rounded h-24 resize-none" value={formData.excerpt || ''} onChange={e => setFormData({...formData, excerpt: e.target.value})} />
         </div>
 
         {/* TOOLBAR */}
-        <div className="bg-gray-100 p-2 rounded-t-lg border border-b-0 flex flex-wrap gap-2 items-center">
+        <div className="bg-gray-100 p-2 rounded-t-lg border border-b-0 flex flex-wrap gap-2 items-center sticky top-0 z-10">
             <ToolBtn onClick={() => insertTag('<h2>', '</h2>')} label="H2" />
             <ToolBtn onClick={() => insertTag('<h3>', '</h3>')} label="H3" />
             <ToolBtn onClick={() => insertTag('<strong>', '</strong>')} icon={<Bold size={16}/>} />
@@ -223,13 +218,13 @@ export default function AdminBlogManager({ showNotification, setView, courses })
             </div>
         )}
         
-        <textarea id="blog-editor" placeholder="Artikel Inhalt..." className="w-full p-4 border rounded-b-lg h-[500px] font-mono text-sm leading-relaxed focus:ring-2 focus:ring-primary outline-none" value={formData.content || ''} onChange={e => setFormData({...formData, content: e.target.value})} />
+        <textarea id="blog-editor" placeholder="Artikel Inhalt (HTML erlaubt)..." className="w-full p-4 border rounded-b-lg h-[500px] font-mono text-sm leading-relaxed focus:ring-2 focus:ring-primary outline-none" value={formData.content || ''} onChange={e => setFormData({...formData, content: e.target.value})} />
 
-        {/* --- SECTION: EMPFEHLUNGEN (CTA) - ERWEITERT --- */}
+        {/* --- SECTION: EMPFEHLUNGEN (CTA) --- */}
         <div className="mt-8 bg-orange-50 p-6 rounded-xl border border-orange-100">
             <div className="flex items-center mb-4 text-orange-800">
                 <Layout className="w-5 h-5 mr-2" />
-                <h3 className="font-heading font-bold text-lg">Empfehlungen (Call-to-Action)</h3>
+                <h3 className="font-heading font-bold text-lg">Seitenleiste Empfehlungen (Call-to-Action)</h3>
             </div>
             <div className="grid md:grid-cols-2 gap-8">
                 {/* 1. Einzelner Kurs */}
@@ -243,6 +238,7 @@ export default function AdminBlogManager({ showNotification, setView, courses })
                         <option value="">-- Keinen Kurs anzeigen --</option>
                         {(courses || []).map(c => <option key={c.id} value={c.id}>{c.title} ({c.price} CHF)</option>)}
                     </select>
+                    <p className="text-xs text-gray-500 mt-1">Zeigt eine Kurskarte in der Sidebar an.</p>
                 </div>
 
                 {/* 2. Komplexer Such Button */}
@@ -260,7 +256,6 @@ export default function AdminBlogManager({ showNotification, setView, courses })
                             <input type="text" placeholder="Ort (loc)" className="p-2 border rounded text-sm" value={config.search_loc || ''} onChange={(e) => updateRelated('search_loc', e.target.value)} />
                         </div>
                         
-                        {/* Dropdowns for Categories (Local Constants Safe Mode) */}
                         <div className="grid grid-cols-2 gap-2">
                              <select className="p-2 border rounded text-sm" value={config.search_type || ''} onChange={(e) => updateRelated('search_type', e.target.value)}>
                                 <option value="">- Kategorie Typ -</option>
@@ -286,34 +281,65 @@ export default function AdminBlogManager({ showNotification, setView, courses })
     );
   }
 
+  // --- LIST VIEW ---
   return (
-    <div className="p-8 max-w-6xl mx-auto">
+    <div className="p-8 max-w-6xl mx-auto min-h-screen">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-heading font-bold text-dark">Blog Management</h1>
-        <button onClick={handleCreateNew} className="bg-primary text-white px-4 py-2 rounded flex items-center"><Plus className="w-4 h-4 mr-2" /> Neuer Artikel</button>
+        <div className="flex items-center gap-4">
+            <button 
+                onClick={() => setView('admin')} 
+                className="p-2 bg-white rounded-full hover:bg-gray-100 shadow-sm border border-gray-200 transition text-gray-600"
+                title="Zurück zum Control Room"
+            >
+                <ArrowLeft className="w-5 h-5" />
+            </button>
+            <h1 className="text-3xl font-heading font-bold text-dark">Blog Management</h1>
+        </div>
+        <button onClick={handleCreateNew} className="bg-primary text-white px-5 py-2.5 rounded-lg shadow-md hover:bg-orange-600 transition flex items-center font-bold">
+            <Plus className="w-5 h-5 mr-2" /> Neuer Artikel
+        </button>
       </div>
-      <div className="bg-white rounded-xl shadow overflow-hidden">
-        <table className="w-full text-left">
-            <thead className="bg-gray-100 border-b"><tr><th className="p-4">Titel</th><th className="p-4">Status</th><th className="p-4">Datum</th><th className="p-4 text-right">Aktionen</th></tr></thead>
-            <tbody>
-                {articles.map(art => (
-                    <tr key={art.id} className="border-b hover:bg-gray-50">
-                        <td className="p-4 font-medium">{art.title}</td>
-                        <td className="p-4">{art.is_published ? <span className="text-green-600 text-xs font-bold bg-green-100 px-2 py-1 rounded">Online</span> : <span className="text-yellow-600 text-xs font-bold bg-yellow-100 px-2 py-1 rounded">Entwurf</span>}</td>
-                        <td className="p-4 text-sm text-gray-500">{new Date(art.created_at).toLocaleDateString()}</td>
-                        <td className="p-4 text-right space-x-2">
-                            <button onClick={() => handleEdit(art)} className="p-2 text-blue-600"><Edit size={18}/></button>
-                            <button onClick={() => handleDelete(art.id)} className="p-2 text-red-600"><Trash2 size={18}/></button>
-                        </td>
+      
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        {articles.length === 0 ? (
+            <div className="p-12 text-center text-gray-500">
+                <p>Noch keine Artikel vorhanden.</p>
+            </div>
+        ) : (
+            <table className="w-full text-left">
+                <thead className="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                        <th className="p-4 font-semibold text-gray-600">Titel</th>
+                        <th className="p-4 font-semibold text-gray-600">Status</th>
+                        <th className="p-4 font-semibold text-gray-600">Erstellt am</th>
+                        <th className="p-4 text-right font-semibold text-gray-600">Aktionen</th>
                     </tr>
-                ))}
-            </tbody>
-        </table>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                    {articles.map(art => (
+                        <tr key={art.id} className="hover:bg-gray-50 transition">
+                            <td className="p-4 font-bold text-gray-800">{art.title}</td>
+                            <td className="p-4">
+                                {art.is_published ? 
+                                    <span className="text-green-700 text-xs font-bold bg-green-100 px-2 py-1 rounded-full border border-green-200">Online</span> : 
+                                    <span className="text-yellow-700 text-xs font-bold bg-yellow-100 px-2 py-1 rounded-full border border-yellow-200">Entwurf</span>
+                                }
+                            </td>
+                            <td className="p-4 text-sm text-gray-500">{new Date(art.created_at).toLocaleDateString()}</td>
+                            <td className="p-4 text-right flex justify-end gap-2">
+                                <button onClick={() => handleEdit(art)} className="p-2 text-blue-600 hover:bg-blue-50 rounded transition" title="Bearbeiten"><Edit size={18}/></button>
+                                <button onClick={() => handleDelete(art.id)} className="p-2 text-red-500 hover:bg-red-50 rounded transition" title="Löschen"><Trash2 size={18}/></button>
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        )}
       </div>
     </div>
   );
 }
 
 const ToolBtn = ({ onClick, label, icon }) => (
-    <button type="button" onClick={onClick} className="px-3 py-1 bg-white border rounded hover:bg-gray-50 text-xs font-bold flex items-center min-h-[24px]">{icon || label}</button>
+    <button type="button" onClick={onClick} className="px-3 py-1 bg-white border rounded hover:bg-gray-50 text-xs font-bold flex items-center min-h-[28px] shadow-sm text-gray-700">{icon || label}</button>
 );
