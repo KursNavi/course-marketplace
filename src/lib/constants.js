@@ -434,6 +434,14 @@ export const TRANSLATIONS = {
     lbl_invite_code: "Invite / Coupon Code",
     lbl_optional: "(Optional)",
     err_invalid_code: "Invalid Coupon Code. Access denied.",
+    
+    // AUTH LABELS
+    auth_create_account: "Create Account", auth_welcome_back: "Welcome Back",
+    auth_i_am_a: "I am a...", auth_student: "Student", auth_teacher: "Teacher",
+    lbl_email: "Email", lbl_password: "Password",
+    btn_signup: "Sign Up", btn_login: "Login",
+    auth_already_have: "Already have an account?", auth_dont_have: "Don't have an account?",
+    link_login: "Login", link_signup: "Sign Up",
   },
   de: {
     nav_explore: "Entdecken", nav_about: "Über uns", nav_contact: "Kontakt", nav_login: "Anmelden", nav_logout: "Abmelden", nav_dashboard: "Dashboard",
@@ -562,6 +570,14 @@ export const TRANSLATIONS = {
     lbl_invite_code: "Einladungs- / Gutscheincode",
     lbl_optional: "(Optional)",
     err_invalid_code: "Ungültiger Gutscheincode. Zugriff verweigert.",
+
+    // AUTH LABELS
+    auth_create_account: "Konto erstellen", auth_welcome_back: "Willkommen zurück",
+    auth_i_am_a: "Ich bin...", auth_student: "Teilnehmer", auth_teacher: "Anbieter",
+    lbl_email: "E-Mail", lbl_password: "Passwort",
+    btn_signup: "Registrieren", btn_login: "Anmelden",
+    auth_already_have: "Bereits ein Konto?", auth_dont_have: "Noch kein Konto?",
+    link_login: "Anmelden", link_signup: "Registrieren",
   },
   fr: {
     nav_explore: "Explorer", nav_about: "À propos", nav_contact: "Contact", nav_login: "Connexion", nav_logout: "Déconnexion", nav_dashboard: "Tableau de bord",
@@ -690,6 +706,14 @@ export const TRANSLATIONS = {
     lbl_invite_code: "Code d'invitation / Coupon",
     lbl_optional: "(Optionnel)",
     err_invalid_code: "Code coupon invalide. Accès refusé.",
+
+    // AUTH LABELS
+    auth_create_account: "Créer un compte", auth_welcome_back: "Bon retour",
+    auth_i_am_a: "Je suis...", auth_student: "Participant", auth_teacher: "Prestataire",
+    lbl_email: "E-mail", lbl_password: "Mot de passe",
+    btn_signup: "S'inscrire", btn_login: "Se connecter",
+    auth_already_have: "Déjà un compte ?", auth_dont_have: "Pas encore de compte ?",
+    link_login: "Se connecter", link_signup: "S'inscrire",
   },
   it: {
     nav_explore: "Esplora", nav_about: "Chi siamo", nav_contact: "Contatto", nav_login: "Accedi", nav_logout: "Esci", nav_dashboard: "Dashboard",
@@ -818,5 +842,13 @@ export const TRANSLATIONS = {
     lbl_invite_code: "Codice invito / Coupon",
     lbl_optional: "(Opzionale)",
     err_invalid_code: "Codice coupon non valido. Accesso negato.",
+
+    // AUTH LABELS
+    auth_create_account: "Crea account", auth_welcome_back: "Bentornato",
+    auth_i_am_a: "Sono un...", auth_student: "Partecipante", auth_teacher: "Fornitore",
+    lbl_email: "E-mail", lbl_password: "Password",
+    btn_signup: "Registrati", btn_login: "Accedi",
+    auth_already_have: "Hai già un account?", auth_dont_have: "Non hai un account?",
+    link_login: "Accedi", link_signup: "Registrati",
   }
 };
