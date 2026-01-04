@@ -82,16 +82,18 @@ const AuthView = ({ setView, setUser, showNotification, lang }) => {
                                     </label>
                                 </div>
                             </div>
-                            {/* NEW: Invite / Coupon Code Field */}
-                            <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-1">Invite / Coupon Code <span className="text-gray-400 font-normal text-xs">(Optional)</span></label>
-                                <input 
-                                    type="text" 
-                                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none uppercase tracking-widest font-mono" 
-                                    value={inviteCode} 
-                                    onChange={e => setInviteCode(e.target.value)} 
-                                />
-                            </div>
+                            {/* NEW: Invite / Coupon Code Field - TEACHER ONLY */}
+                            {role === 'teacher' && (
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-700 mb-1">Invite / Coupon Code <span className="text-gray-400 font-normal text-xs">(Optional)</span></label>
+                                    <input 
+                                        type="text" 
+                                        className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none uppercase tracking-widest font-mono" 
+                                        value={inviteCode} 
+                                        onChange={e => setInviteCode(e.target.value)} 
+                                    />
+                                </div>
+                            )}
                         </>
                     )}
                     <div><label className="block text-sm font-bold text-gray-700 mb-1">Email</label><input required type="email" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" value={email} onChange={e => setEmail(e.target.value)} /></div>
