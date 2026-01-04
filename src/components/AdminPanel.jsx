@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Lock, Loader, Shield, CheckCircle, Eye, ExternalLink, FileText } from 'lucide-react';
+import { Lock, Loader, Shield, CheckCircle, Eye, ExternalLink, FileText, Briefcase } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 const AdminPanel = ({ t, courses, setCourses, showNotification, fetchCourses, setView }) => {
@@ -30,8 +30,7 @@ const AdminPanel = ({ t, courses, setCourses, showNotification, fetchCourses, se
 
     const fetchProfiles = async () => {
         setLoading(true);
-        // In a real app we'd use pagination. Here we grab all.
-        const { data, error } = await supabase.from('profiles').select('*');
+        const { data, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
         if (error) {
             showNotification("Error loading users");
         } else {
@@ -63,14 +62,38 @@ const AdminPanel = ({ t, courses, setCourses, showNotification, fetchCourses, se
             setProfiles(profiles.map(p => p.id === userId ? { ...p, is_professional: newStatus, verification_status: newStatus ? 'verified' : 'pending' } : p));
             showNotification(newStatus ? "User verifiziert!" : "Verifizierung entfernt.");
             
-            // AUTOMATIC EMAIL TRIGGER (Mailto)
             if (newStatus && userEmail) {
                 const subject = "Glückwunsch: Dein Profil ist verifiziert!";
                 const body = "Hallo,\n\nwir haben deine Unterlagen geprüft und dein Profil erfolgreich verifiziert. Du hast jetzt den 'Professional' Status und das blaue Häkchen.\n\nViel Erfolg!\nDein KursNavi Team";
                 window.location.href = `mailto:${userEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
             }
-
             if (typeof fetchCourses === 'function') fetchCourses();
+        }
+    };
+
+    // --- NEU: PAKET MANUELL ÄNDERN ---
+    const changeTier = async (userId, newTier) => {
+        // Limits definieren (Muss mit TeacherForm synchron sein)
+        const limits = {
+            'free': 3,
+            'basic': 3,
+            'pro': 10,
+            'premium': 30,
+            'enterprise': 999
+        };
+        const newLimit = limits[newTier] || 3;
+
+        const { error } = await supabase.from('profiles').update({ 
+            package_tier: newTier,
+            courses_allowed: newLimit
+        }).eq('id', userId);
+
+        if (error) {
+            showNotification("Fehler beim Ändern des Pakets: " + error.message);
+        } else {
+            showNotification(`Paket auf ${newTier.toUpperCase()} geändert (Limit: ${newLimit})`);
+            // Lokale Liste updaten
+            setProfiles(profiles.map(p => p.id === userId ? { ...p, package_tier: newTier, courses_allowed: newLimit } : p));
         }
     };
 
@@ -135,9 +158,10 @@ const AdminPanel = ({ t, courses, setCourses, showNotification, fetchCourses, se
                                     <tr>
                                         <th className="px-6 py-4 font-semibold text-gray-600">{t.admin_col_name || "Name"}</th>
                                         <th className="px-6 py-4 font-semibold text-gray-600">{t.admin_col_email || "Email"}</th>
+                                        {activeTab === 'teachers' && <th className="px-6 py-4 font-semibold text-gray-600">Paket / Limit</th>}
                                         {activeTab !== 'courses' && <th className="px-6 py-4 font-semibold text-gray-600">Ort</th>}
                                         {activeTab === 'courses' && <th className="px-6 py-4 font-semibold text-gray-600">Preis</th>}
-                                        <th className="px-6 py-4 font-semibold text-gray-600">{t.admin_col_status || "Status"}</th>
+                                        <th className="px-6 py-4 font-semibold text-gray-600">{t.admin_col_status || "Verifiziert"}</th>
                                         <th className="px-6 py-4 font-semibold text-gray-600 text-right">{t.admin_col_actions || "Aktionen"}</th>
                                     </tr>
                                 </thead>
@@ -153,6 +177,29 @@ const AdminPanel = ({ t, courses, setCourses, showNotification, fetchCourses, se
                                                 )}
                                             </td>
                                             <td className="px-6 py-4 text-gray-500">{user.email}</td>
+                                            
+                                            {/* PAKET STEUERUNG */}
+                                            <td className="px-6 py-4">
+                                                <div className="flex flex-col gap-1">
+                                                    <select 
+                                                        className={`text-xs font-bold py-1 px-2 rounded border cursor-pointer outline-none ${
+                                                            user.package_tier === 'enterprise' ? 'bg-orange-100 text-orange-800 border-orange-200' :
+                                                            user.package_tier === 'premium' ? 'bg-purple-100 text-purple-800 border-purple-200' :
+                                                            user.package_tier === 'pro' ? 'bg-blue-100 text-blue-800 border-blue-200' :
+                                                            'bg-gray-100 text-gray-600 border-gray-200'
+                                                        }`}
+                                                        value={user.package_tier || 'basic'}
+                                                        onChange={(e) => changeTier(user.id, e.target.value)}
+                                                    >
+                                                        <option value="basic">Basic (Free)</option>
+                                                        <option value="pro">Pro</option>
+                                                        <option value="premium">Premium</option>
+                                                        <option value="enterprise">Enterprise</option>
+                                                    </select>
+                                                    <span className="text-[10px] text-gray-400">Limit: {user.courses_allowed || 3} Kurse</span>
+                                                </div>
+                                            </td>
+
                                             <td className="px-6 py-4">{user.city}, {user.canton}</td>
                                             <td className="px-6 py-4">
                                                 {user.is_professional ? (

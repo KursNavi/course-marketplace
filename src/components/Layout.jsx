@@ -189,7 +189,7 @@ export const Footer = ({ t, setView }) => {
         
         <div className="relative z-10 max-w-lg">
           <h3 className="text-2xl font-bold text-white font-heading mb-2">Verpasse keine neuen Kurse!</h3>
-          <p className="text-gray-400 text-sm">Erhalte wöchentlich handverlesene Kurs-Empfehlungen und exklusive Angebote direkt in dein Postfach.</p>
+          <p className="text-gray-400 text-sm">Erhalte regelmässig handverlesene Kurs-Empfehlungen, exklusive Angebote und interessante Informationen direkt in dein Postfach.</p>
         </div>
         
         <div className="relative z-10 w-full max-w-md">
