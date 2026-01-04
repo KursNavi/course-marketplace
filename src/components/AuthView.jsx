@@ -26,7 +26,7 @@ const AuthView = ({ setView, setUser, showNotification, lang }) => {
                 if (role === 'teacher') {
                     const validCode = 'PILOT2026'; // Hier definieren wir den gültigen Code
                     if (!inviteCode || inviteCode.trim().toUpperCase() !== validCode) {
-                        throw new Error("Invalid Coupon Code. Access denied.");
+                        throw new Error(t.err_invalid_code);
                     }
                 }
 
@@ -76,7 +76,7 @@ const AuthView = ({ setView, setUser, showNotification, lang }) => {
                     {isSignUp && (
                         <>
                             <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-1">Full Name / Company</label>
+                                <label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_name_company}</label>
                                 <input required type="text" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" value={fullName} onChange={e => setFullName(e.target.value)} />
                             </div>
                             <div>
@@ -93,8 +93,8 @@ const AuthView = ({ setView, setUser, showNotification, lang }) => {
                             {/* NEW: Invite / Coupon Code Field - TEACHER ONLY */}
                             {role === 'teacher' && (
                                 <div>
-                                    <label className="block text-sm font-bold text-gray-700 mb-1">Invite / Coupon Code <span className="text-gray-400 font-normal text-xs">(Optional)</span></label>
-                                    <input 
+                                    <label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_invite_code} <span className="text-gray-400 font-normal text-xs">{t.lbl_optional}</span></label>
+                                    <input
                                         type="text" 
                                         className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none uppercase tracking-widest font-mono" 
                                         value={inviteCode} 

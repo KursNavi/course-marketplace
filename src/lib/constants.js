@@ -428,6 +428,12 @@ export const TRANSLATIONS = {
     faq_q8: "Are there courses for companies or groups?", faq_a8: "Many of our tutors offer private group courses. Simply use the 'Contact' button on the course profile to ask.",
     faq_q9: "I can't find the course I want – what now?", faq_a9: "We are growing daily! Check back next week or send us a message with your wish.",
     faq_q10: "I am a provider myself. How can I list courses?", faq_a10: "Create a free profile, verify your email, and click on 'New Course' in the dashboard. It takes less than 5 minutes.",
+    
+    // AUTH NEW
+    lbl_name_company: "Full Name / Company",
+    lbl_invite_code: "Invite / Coupon Code",
+    lbl_optional: "(Optional)",
+    err_invalid_code: "Invalid Coupon Code. Access denied.",
   },
   de: {
     nav_explore: "Entdecken", nav_about: "Über uns", nav_contact: "Kontakt", nav_login: "Anmelden", nav_logout: "Abmelden", nav_dashboard: "Dashboard",
@@ -550,6 +556,12 @@ export const TRANSLATIONS = {
     faq_q8: "Gibt es auch Kurse für Firmen oder Gruppen?", faq_a8: "Viele unserer Lehrer bieten private Gruppenkurse an. Nutze einfach den 'Kontakt'-Button auf dem Kursprofil.",
     faq_q9: "Ich finde meinen gewünschten Kurs nicht – was tun?", faq_a9: "Wir wachsen täglich! Schau nächste Woche wieder vorbei oder schreib uns eine Nachricht mit deinem Wunsch.",
     faq_q10: "Ich bin selbst Kursanbieter. Wie kann ich meine Kurse listen?", faq_a10: "Erstelle ein kostenloses Profil, bestätige deine E-Mail und klicke im Dashboard auf 'Neuer Kurs'. Es dauert keine 5 Minuten.",
+
+    // AUTH NEW
+    lbl_name_company: "Vollständiger Name / Firma",
+    lbl_invite_code: "Einladungs- / Gutscheincode",
+    lbl_optional: "(Optional)",
+    err_invalid_code: "Ungültiger Gutscheincode. Zugriff verweigert.",
   },
   fr: {
     nav_explore: "Explorer", nav_about: "À propos", nav_contact: "Contact", nav_login: "Connexion", nav_logout: "Déconnexion", nav_dashboard: "Tableau de bord",
@@ -672,6 +684,12 @@ export const TRANSLATIONS = {
     faq_q8: "Y a-t-il des cours pour entreprises?", faq_a8: "Beaucoup de nos professeurs proposent des cours privés. Utilisez le bouton 'Contact'.",
     faq_q9: "Je ne trouve pas mon cours?", faq_a9: "Nous grandissons chaque jour ! Revenez la semaine prochaine.",
     faq_q10: "Je suis prestataire. Comment lister des cours?", faq_a10: "Créez un profil gratuit et cliquez sur 'Nouveau Cours' dans le tableau de bord.",
+
+    // AUTH NEW
+    lbl_name_company: "Nom complet / Entreprise",
+    lbl_invite_code: "Code d'invitation / Coupon",
+    lbl_optional: "(Optionnel)",
+    err_invalid_code: "Code coupon invalide. Accès refusé.",
   },
   it: {
     nav_explore: "Esplora", nav_about: "Chi siamo", nav_contact: "Contatto", nav_login: "Accedi", nav_logout: "Esci", nav_dashboard: "Dashboard",
@@ -794,5 +812,11 @@ export const TRANSLATIONS = {
     faq_q8: "Ci sono corsi per aziende?", faq_a8: "Molti dei nostri insegnanti offrono corsi privati. Usa il pulsante 'Contatto'.",
     faq_q9: "Non trovo il corso che cerco?", faq_a9: "Cresciamo ogni giorno! Torna la prossima settimana.",
     faq_q10: "Sono un insegnante. Come inserisco i corsi?", faq_a10: "Crea un profilo gratuito e clicca su 'Nuovo Corso' nella dashboard.",
+
+    // AUTH NEW
+    lbl_name_company: "Nome completo / Azienda",
+    lbl_invite_code: "Codice invito / Coupon",
+    lbl_optional: "(Opzionale)",
+    err_invalid_code: "Codice coupon non valido. Accesso negato.",
   }
 };
