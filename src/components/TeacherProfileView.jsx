@@ -29,9 +29,31 @@ const TeacherProfileView = ({ teacher, courses, setView, setSelectedCourse, t })
                 <div className="md:col-span-2 space-y-8">
                     <section>
                         <h2 className="text-xl font-bold mb-4 border-b pb-2">{t.lbl_bio || "Über mich"}</h2>
-                        <p className="text-gray-600 leading-relaxed whitespace-pre-wrap">
-                            {teacher.bio_text || "Dieser Lehrer hat noch keine Biografie hinterlegt."}
-                        </p>
+                        <div className="text-gray-600 leading-relaxed space-y-4 custom-rich-text">
+                            {teacher.bio_text ? teacher.bio_text.split('\n').map((line, index) => {
+                                // Bold: **text**
+                                let formattedLine = line.replace(/\*\*(.*?)\*\*/g, '<strong class="text-dark font-bold">$1</strong>');
+                                // Italics: *text*
+                                formattedLine = formattedLine.replace(/\*(.*?)\*/g, '<em class="italic">$1</em>');
+                                // Underline: __text__
+                                formattedLine = formattedLine.replace(/__(.*?)__/g, '<u class="underline">$1</u>');
+                                
+                                // Bullet Points: Starts with "- " or "* "
+                                if (line.trim().startsWith('- ') || line.trim().startsWith('* ')) {
+                                    return <li key={index} className="ml-5 list-disc" dangerouslySetInnerHTML={{ __html: formattedLine.replace(/^[-*]\s/, '') }} />;
+                                }
+                                // H2: Starts with "## "
+                                if (line.startsWith('## ')) {
+                                    return <h2 key={index} className="text-2xl font-bold text-dark mt-6 mb-2" dangerouslySetInnerHTML={{ __html: formattedLine.replace(/^##\s/, '') }} />;
+                                }
+                                // H3: Starts with "### "
+                                if (line.startsWith('### ')) {
+                                    return <h3 key={index} className="text-xl font-bold text-dark mt-4 mb-2" dangerouslySetInnerHTML={{ __html: formattedLine.replace(/^###\s/, '') }} />;
+                                }
+                                // Regular Paragraph
+                                return formattedLine.trim() ? <p key={index} dangerouslySetInnerHTML={{ __html: formattedLine }} /> : <br key={index} />;
+                            }) : <p>Dieser Lehrer hat noch keine Biografie hinterlegt.</p>}
+                        </div>
                     </section>
 
                     {teacher.certificates && teacher.certificates.length > 0 && (

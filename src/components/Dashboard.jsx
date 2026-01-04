@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { 
     Loader, Settings, Save, Lock, CheckCircle, Clock, 
     ChevronDown, User, DollarSign, PenTool, Trash2, ArrowRight,
-    Crown, BarChart3, AlertTriangle 
+    Crown, BarChart3, AlertTriangle, Bold, Italic, Underline, Heading2, Heading3, List 
 } from 'lucide-react';
 import { SWISS_CANTONS, TIER_CONFIG } from '../lib/constants';
 import { KursNaviLogo } from './Layout';
@@ -139,7 +139,52 @@ const UserProfileSection = ({ user, showNotification, setLang, t }) => {
                     <div className="space-y-4">
                         <div>
                             <label className="block text-sm font-bold text-gray-700 mb-1">Biography (About Me)</label>
-                            <textarea name="bio_text" rows="5" value={formData.bio_text} onChange={handleChange} placeholder="Tell students about your experience..." className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none bg-gray-50 focus:bg-white transition-colors"></textarea>
+                            <div className="border rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-primary">
+                                {/* Rich Text Toolbar for Profile Bio */}
+                                <div className="flex flex-wrap gap-1 p-2 bg-gray-50 border-b select-none">
+                                    {[
+                                        { icon: <Bold className="w-4 h-4" />, tag: '**', label: 'Bold' },
+                                        { icon: <Italic className="w-4 h-4" />, tag: '*', label: 'Italic' },
+                                        { icon: <Underline className="w-4 h-4" />, tag: '__', label: 'Underline' },
+                                        { icon: <Heading2 className="w-4 h-4" />, tag: '## ', label: 'H2', isPrefix: true },
+                                        { icon: <Heading3 className="w-4 h-4" />, tag: '### ', label: 'H3', isPrefix: true },
+                                        { icon: <List className="w-4 h-4" />, tag: '- ', label: 'List', isPrefix: true }
+                                    ].map((btn, idx) => (
+                                        <button
+                                            key={idx}
+                                            type="button"
+                                            title={btn.label}
+                                            onClick={() => {
+                                                const textarea = document.getElementsByName('bio_text')[0];
+                                                const start = textarea.selectionStart;
+                                                const end = textarea.selectionEnd;
+                                                const text = textarea.value;
+                                                const selected = text.substring(start, end);
+                                                
+                                                let replacement = btn.isPrefix 
+                                                    ? `${btn.tag}${selected}`
+                                                    : `${btn.tag}${selected}${btn.tag}`;
+                                                
+                                                const newValue = text.substring(0, start) + replacement + text.substring(end);
+                                                // Update local state since Dashboard uses controlled inputs
+                                                setFormData({ ...formData, bio_text: newValue });
+                                                textarea.focus();
+                                            }}
+                                            className="p-1.5 hover:bg-white hover:text-primary rounded border border-transparent hover:border-gray-200 transition-all flex items-center justify-center bg-gray-100/50"
+                                        >
+                                            {btn.icon}
+                                        </button>
+                                    ))}
+                                </div>
+                                <textarea 
+                                    name="bio_text" 
+                                    rows="5" 
+                                    value={formData.bio_text} 
+                                    onChange={handleChange} 
+                                    placeholder="Tell students about your experience... Use the tools above for formatting." 
+                                    className="w-full px-4 py-3 outline-none resize-y block bg-gray-50 focus:bg-white transition-colors"
+                                ></textarea>
+                            </div>
                         </div>
                         <div>
                             <label className="block text-sm font-bold text-gray-700 mb-1">Certificates & Qualifications</label>
