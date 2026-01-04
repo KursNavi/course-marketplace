@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { Loader } from 'lucide-react';
+import { Loader, Mail } from 'lucide-react';
 import { TRANSLATIONS } from '../lib/constants';
 import { supabase } from '../lib/supabase';
 
 const AuthView = ({ setView, setUser, showNotification, lang }) => {
     const [isSignUp, setIsSignUp] = useState(false); 
+    const [showSuccess, setShowSuccess] = useState(false); // NEW: Success Page State
     const [loading, setLoading] = useState(false); 
     const [email, setEmail] = useState(''); 
     const [password, setPassword] = useState(''); 
@@ -49,7 +50,7 @@ const AuthView = ({ setView, setUser, showNotification, lang }) => {
 
                 if (authError) throw authError;
                 if (authData?.user) { await supabase.from('profiles').insert([{ id: authData.user.id, full_name: fullName, email: email, preferred_language: lang, role: role }]); }
-                showNotification(t.msg_account_created);
+                setShowSuccess(true); // Switch to success page
             } else {
                 const { data, error } = await supabase.auth.signInWithPassword({ email, password });
                 if (error) throw error;
@@ -67,6 +68,29 @@ const AuthView = ({ setView, setUser, showNotification, lang }) => {
             }
         } catch (error) { showNotification(error.message); } finally { setLoading(false); }
     };
+    
+    // RENDER: Success Page (After Registration)
+    if (showSuccess) {
+        return (
+            <div className="min-h-[80vh] flex items-center justify-center px-4 bg-beige">
+                <div className="bg-white p-10 rounded-2xl shadow-xl max-w-md w-full border border-gray-100 text-center">
+                    <div className="flex justify-center mb-6">
+                        <div className="bg-green-100 p-4 rounded-full">
+                            <Mail className="w-12 h-12 text-green-600" />
+                        </div>
+                    </div>
+                    <h2 className="text-2xl font-bold mb-4 font-heading text-dark">{t.auth_success_title}</h2>
+                    <p className="text-gray-600 mb-8 leading-relaxed font-sans">{t.auth_success_text}</p>
+                    <button 
+                        onClick={() => { setShowSuccess(false); setIsSignUp(false); }} 
+                        className="w-full bg-primary text-white py-3 rounded-lg font-bold hover:bg-orange-600 transition font-heading"
+                    >
+                        {t.btn_go_to_login}
+                    </button>
+                </div>
+            </div>
+        );
+    }
     
     return (
         <div className="min-h-[80vh] flex items-center justify-center px-4 bg-beige">

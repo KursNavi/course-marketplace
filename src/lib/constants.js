@@ -443,8 +443,11 @@ export const TRANSLATIONS = {
     btn_signup: "Sign Up", btn_login: "Login",
     auth_already_have: "Already have an account?", auth_dont_have: "Don't have an account?",
     link_login: "Login", link_signup: "Sign Up",
-    msg_account_created: "Account created! Please check your email.",
     msg_welcome_back_toast: "Welcome back!",
+    // SUCCESS PAGE
+    auth_success_title: "Thank you for registering!",
+    auth_success_text: "We have sent a confirmation link to your email. Please check your inbox to activate your account.",
+    btn_go_to_login: "Go to Login",
   },
   de: {
     nav_explore: "Entdecken", nav_about: "Über uns", nav_contact: "Kontakt", nav_login: "Anmelden", nav_logout: "Abmelden", nav_dashboard: "Dashboard",
@@ -582,8 +585,11 @@ export const TRANSLATIONS = {
     btn_signup: "Registrieren", btn_login: "Anmelden",
     auth_already_have: "Bereits ein Konto?", auth_dont_have: "Noch kein Konto?",
     link_login: "Anmelden", link_signup: "Registrieren",
-    msg_account_created: "Konto erstellt! Bitte E-Mail prüfen.",
     msg_welcome_back_toast: "Willkommen zurück!",
+    // SUCCESS PAGE
+    auth_success_title: "Vielen Dank für deine Anmeldung!",
+    auth_success_text: "Wir haben dir einen Bestätigungslink per E-Mail gesendet. Bitte prüfe dein Postfach, um dein Konto zu aktivieren.",
+    btn_go_to_login: "Zum Login",
   },
   fr: {
     nav_explore: "Explorer", nav_about: "À propos", nav_contact: "Contact", nav_login: "Connexion", nav_logout: "Déconnexion", nav_dashboard: "Tableau de bord",
@@ -721,8 +727,11 @@ export const TRANSLATIONS = {
     btn_signup: "S'inscrire", btn_login: "Se connecter",
     auth_already_have: "Déjà un compte ?", auth_dont_have: "Pas encore de compte ?",
     link_login: "Se connecter", link_signup: "S'inscrire",
-    msg_account_created: "Compte créé ! Veuillez vérifier votre e-mail.",
     msg_welcome_back_toast: "Bon retour !",
+    // SUCCESS PAGE
+    auth_success_title: "Merci pour votre inscription !",
+    auth_success_text: "Nous avons envoyé un lien de confirmation à votre e-mail. Veuillez vérifier votre boîte de réception pour activer votre compte.",
+    btn_go_to_login: "Aller à la connexion",
   },
   it: {
     nav_explore: "Esplora", nav_about: "Chi siamo", nav_contact: "Contatto", nav_login: "Accedi", nav_logout: "Esci", nav_dashboard: "Dashboard",
@@ -860,7 +869,10 @@ export const TRANSLATIONS = {
     btn_signup: "Registrati", btn_login: "Accedi",
     auth_already_have: "Hai già un account?", auth_dont_have: "Non hai un account?",
     link_login: "Accedi", link_signup: "Registrati",
-    msg_account_created: "Account creato! Controlla la tua e-mail.",
     msg_welcome_back_toast: "Bentornato!",
+    // SUCCESS PAGE
+    auth_success_title: "Grazie per la registrazione!",
+    auth_success_text: "Abbiamo inviato un link di conferma alla tua email. Controlla la tua casella di posta per attivare il tuo account.",
+    btn_go_to_login: "Vai al login",
   }
 };
