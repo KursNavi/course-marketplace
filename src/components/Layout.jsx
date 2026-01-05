@@ -52,8 +52,8 @@ export const Navbar = ({ t, user, lang, setLang, setView, handleLogout, setShowR
               <button onClick={() => navTo('landing-prof', ['Professional'])} className="text-gray-500 hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors font-sans">{t.nav_professional}</button>
               <button onClick={() => navTo('landing-kids', ['Children'])} className="text-gray-500 hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors font-sans">{t.nav_kids}</button>
               <button onClick={() => navTo('how-it-works')} className="text-gray-500 hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors font-sans">{t.nav_howitworks}</button>
-              <button onClick={() => navTo('blog')} className="text-gray-500 hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors font-sans">Neuigkeiten</button>
-              <button onClick={() => navTo('teacher-hub')} className="text-orange-600 hover:text-primary px-3 py-2 rounded-md text-sm font-bold transition-colors font-sans">Für Anbieter</button>
+              <button onClick={() => navTo('blog')} className="text-gray-500 hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors font-sans">{t.nav_news}</button>
+              <button onClick={() => navTo('teacher-hub')} className="text-orange-600 hover:text-primary px-3 py-2 rounded-md text-sm font-bold transition-colors font-sans">{t.nav_for_providers}</button>
             </div>
           </div>
 
@@ -81,10 +81,10 @@ export const Navbar = ({ t, user, lang, setLang, setView, handleLogout, setShowR
             </div>
 
             {user ? (
-              <div className="flex items-center space-x-4">
-                <button onClick={() => navTo('dashboard')} className="flex items-center text-gray-700 hover:text-primary font-medium font-sans"><LayoutDashboard className="w-4 h-4 mr-2" />{user.role === 'teacher' ? t.nav_dashboard : t.student_dash}</button>
-                <button onClick={handleLogout} className="flex items-center text-gray-400 hover:text-red-500"><LogOut className="w-5 h-5" /></button>
-              </div>
+              <div className="flex items-center space-x-4">
+                <button onClick={() => navTo('dashboard')} className="flex items-center text-gray-700 hover:text-primary font-medium font-sans"><LayoutDashboard className="w-4 h-4 mr-2" />{t.nav_dashboard}</button>
+                <button onClick={handleLogout} className="flex items-center text-gray-400 hover:text-red-500"><LogOut className="w-5 h-5" /></button>
+              </div>
             ) : (
               <button onClick={() => navTo('login')} className="bg-dark text-white px-6 py-2.5 rounded-full text-sm font-bold hover:bg-primary transition-all duration-300 shadow-lg hover:-translate-y-0.5 font-heading">{t.nav_login}</button>
             )}
@@ -107,8 +107,8 @@ export const Navbar = ({ t, user, lang, setLang, setView, handleLogout, setShowR
             <button onClick={() => navTo('landing-prof', ['Professional'])} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-primaryLight hover:text-primary font-sans">{t.nav_professional}</button>
             <button onClick={() => navTo('landing-kids', ['Children'])} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-primaryLight hover:text-primary font-sans">{t.nav_kids}</button>
             <button onClick={() => navTo('how-it-works')} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-primaryLight hover:text-primary font-sans">{t.nav_howitworks}</button>
-            <button onClick={() => navTo('blog')} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-primaryLight hover:text-primary font-sans">Neuigkeiten</button>
-            <button onClick={() => navTo('teacher-hub')} className="block w-full text-left px-3 py-2 rounded-md text-base font-bold text-orange-600 hover:bg-orange-50 font-sans">Für Anbieter</button>
+            <button onClick={() => navTo('blog')} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-primaryLight hover:text-primary font-sans">{t.nav_news}</button>
+            <button onClick={() => navTo('teacher-hub')} className="block w-full text-left px-3 py-2 rounded-md text-base font-bold text-orange-600 hover:bg-orange-50 font-sans">{t.nav_for_providers}</button>
             
             <div className="border-t border-gray-100 my-2 pt-2">
                 <p className="px-3 text-xs font-bold text-gray-400 uppercase mb-2 font-heading">Language</p>
@@ -237,8 +237,8 @@ export const Footer = ({ t, setView }) => {
             <li onClick={() => { setView('landing-private'); window.scrollTo(0,0); }} className="hover:text-primary cursor-pointer transition-colors">{t.nav_private}</li>
             <li onClick={() => { setView('landing-prof'); window.scrollTo(0,0); }} className="hover:text-primary cursor-pointer transition-colors">{t.nav_professional}</li>
             <li onClick={() => { setView('landing-kids'); window.scrollTo(0,0); }} className="hover:text-primary cursor-pointer transition-colors">{t.nav_kids}</li>
-            <li onClick={() => { setView('blog'); window.scrollTo(0,0); }} className="hover:text-primary cursor-pointer transition-colors">Neuigkeiten</li>
-            <li onClick={() => { setView('teacher-hub'); window.scrollTo(0,0); }} className="hover:text-primary cursor-pointer transition-colors font-bold text-orange-600">Für Anbieter</li>
+            <li onClick={() => { setView('blog'); window.scrollTo(0,0); }} className="hover:text-primary cursor-pointer transition-colors">{t.nav_news}</li>
+<li onClick={() => { setView('teacher-hub'); window.scrollTo(0,0); }} className="hover:text-primary cursor-pointer transition-colors font-bold text-orange-600">{t.nav_for_providers}</li>
           </ul>
         </div>
         <div>
