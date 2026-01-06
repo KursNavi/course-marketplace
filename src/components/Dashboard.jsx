@@ -4,7 +4,7 @@ import {
     Loader, Settings, Save, Lock, CheckCircle, Clock, 
     ChevronDown, User, DollarSign, PenTool, Trash2, ArrowRight,
     Crown, BarChart3, AlertTriangle, Bold, Italic, Underline, Heading2, Heading3, List,
-    CreditCard, Check, Shield
+    CreditCard, Check, Shield, ExternalLink, Mail
 } from 'lucide-react';
 import { SWISS_CANTONS, TIER_CONFIG } from '../lib/constants';
 import { KursNaviLogo } from './Layout';
