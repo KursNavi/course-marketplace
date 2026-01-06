@@ -177,12 +177,15 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user }) =
                         >
                             <User className="w-4 h-4 mr-2"/> {course.instructor_name} (Profil ansehen)
                         </button>
-                        <span className="flex items-center bg-gray-50 px-3 py-1 rounded-full"><MapPin className="w-4 h-4 mr-2"/> {course.canton}</span>
+                        <span className="flex items-center bg-gray-50 px-3 py-1 rounded-full">
+                            <MapPin className="w-4 h-4 mr-2 text-primary"/> 
+                            {course.address || course.city || course.canton}
+                        </span>
                         <span className="flex items-center bg-gray-50 px-3 py-1 rounded-full"><Clock className="w-4 h-4 mr-2"/> {course.session_count} x {course.session_length}</span>
                     </div>
                     <div className="prose max-w-none text-gray-600 custom-rich-text">
                         <h3 className="text-xl font-bold text-dark mb-4 border-b pb-2">{t.lbl_description}</h3>
-                        <div className="space-y-4 mb-8">
+                        <div className="space-y-4 mb-12">
                             {course.description ? course.description.split('\n').map((line, index) => {
                                 // Bold: **text**
                                 let formattedLine = line.replace(/\*\*(.*?)\*\*/g, '<strong class="text-dark font-bold">$1</strong>');
@@ -209,9 +212,54 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user }) =
                         </div>
 
                         <h3 className="text-xl font-bold text-dark mb-2">{t.lbl_learn_goals}</h3>
-                        <ul className="list-disc pl-5 space-y-1 mb-6">
+                        <ul className="list-disc pl-5 space-y-1 mb-10">
                             {course.objectives && course.objectives.map((obj, i) => <li key={i}>{obj}</li>)}
                         </ul>
+
+                        {/* NEU: Erweitere Anbieter-Informationen */}
+                        <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100 mt-12">
+                            <h3 className="text-xl font-bold text-dark mb-6 flex items-center">
+                                <User className="w-5 h-5 mr-2 text-primary" /> 
+                                Über den Anbieter: {course.instructor_name}
+                            </h3>
+                            
+                            {/* Dynamische Biografie des Lehrers */}
+                            <div className="text-gray-600 mb-6 whitespace-pre-wrap italic">
+                                {course.instructor_bio || "Erfahrener Kursanbieter auf KursNavi."}
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                {/* Zertifikate */}
+                                {course.instructor_certificates && course.instructor_certificates.length > 0 && (
+                                    <div>
+                                        <h4 className="font-bold text-sm uppercase tracking-wider text-gray-500 mb-3 flex items-center">
+                                            <Shield className="w-4 h-4 mr-2 text-blue-500" /> Qualifikationen
+                                        </h4>
+                                        <ul className="space-y-2">
+                                            {course.instructor_certificates.map((cert, i) => (
+                                                <li key={i} className="text-sm flex items-start">
+                                                    <CheckCircle className="w-4 h-4 mr-2 text-green-500 shrink-0 mt-0.5" />
+                                                    {cert}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                )}
+
+                                {/* Standorte */}
+                                <div>
+                                    <h4 className="font-bold text-sm uppercase tracking-wider text-gray-500 mb-3 flex items-center">
+                                        <MapPin className="w-4 h-4 mr-2 text-primary" /> Verfügbarkeit & Standorte
+                                    </h4>
+                                    <p className="text-sm font-bold text-dark">Hauptsitz: {course.city || course.canton}</p>
+                                    {course.additional_locations && (
+                                        <p className="text-sm text-gray-600 mt-1">
+                                            Weitere Standorte: <span className="italic">{course.additional_locations}</span>
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
