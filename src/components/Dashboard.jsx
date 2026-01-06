@@ -4,7 +4,7 @@ import {
     Loader, Settings, Save, Lock, CheckCircle, Clock, 
     ChevronDown, User, DollarSign, PenTool, Trash2, ArrowRight,
     Crown, BarChart3, AlertTriangle, Bold, Italic, Underline, Heading2, Heading3, List,
-    CreditCard, Check
+    CreditCard, Check, Shield
 } from 'lucide-react';
 import { SWISS_CANTONS, TIER_CONFIG } from '../lib/constants';
 import { KursNaviLogo } from './Layout';
@@ -125,11 +125,11 @@ const UserProfileSection = ({ user, showNotification, setLang, t }) => {
     if (loading) return <div className="p-8 text-center"><Loader className="animate-spin w-8 h-8 text-primary mx-auto"/></div>;
     
     return (
-        <div className="bg-white p-6 md:p-8 rounded-xl border border-gray-200 shadow-sm animate-in fade-in">
-            <h2 className="text-xl font-bold mb-6 text-dark flex items-center"><Settings className="w-5 h-5 mr-2 text-gray-500" /> {t.profile_settings}</h2>
+    <div className="bg-white p-6 md:p-8 rounded-xl border border-gray-200 shadow-sm animate-in fade-in">
+        <h2 className="text-xl font-bold mb-6 text-dark flex items-center"><Settings className="w-5 h-5 mr-2 text-gray-500" /> {t?.profile_settings || "Profil-Einstellungen"}</h2>
             <form onSubmit={handleSave} className="space-y-6 max-w-xl">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_city}</label><input type="text" name="city" value={formData.city} onChange={handleChange} placeholder="e.g. Adligenswil" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" /></div>
+                    <div><label className="block text-sm font-bold text-gray-700 mb-1">{t?.lbl_city || "Stadt"}</label><input type="text" name="city" value={formData.city} onChange={handleChange} placeholder="e.g. Adligenswil" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" /></div>
                     <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_canton}</label><div className="relative"><select name="canton" value={formData.canton} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none appearance-none bg-white"><option value="">Select Canton</option>{SWISS_CANTONS.map(c => <option key={c} value={c}>{c}</option>)}</select><ChevronDown className="absolute right-3 top-3 text-gray-400 w-4 h-4 pointer-events-none" /></div></div>
                 </div>
                 <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_language}</label><div className="relative"><select name="preferred_language" value={formData.preferred_language} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none appearance-none bg-white"><option value="de">Deutsch (German)</option><option value="en">English</option><option value="fr">Français (French)</option><option value="it">Italiano (Italian)</option></select><ChevronDown className="absolute right-3 top-3 text-gray-400 w-4 h-4 pointer-events-none" /></div></div>
