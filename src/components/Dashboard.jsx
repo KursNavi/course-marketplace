@@ -157,11 +157,22 @@ const UserProfileSection = ({ user, showNotification, setLang, t }) => {
                     </div>
                 </div>
 
-                <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_language}</label>
+                <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_language}</label>
+                    <div className="relative">
+                        <select name="preferred_language" value={formData.preferred_language} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none appearance-none bg-white">
+                            <option value="de">Deutsch (German)</option>
+                            <option value="en">English</option>
+                            <option value="fr">Français (French)</option>
+                            <option value="it">Italiano (Italian)</option>
+                        </select>
+                        <ChevronDown className="absolute right-3 top-3 text-gray-400 w-4 h-4 pointer-events-none" />
+                    </div>
+                </div>
                 
                 {/* NEW FIELDS: Biography & Certificates */}
                 <div className="border-t pt-6 mt-6">
-                    <h3 className="text-lg font-bold mb-4 text-dark flex items-center"><User className="w-5 h-5 mr-2 text-primary" /> {t?.lbl_bio || "Über mich (Bio)"}</h3>
+                    <h3 className="text-lg font-bold mb-4 text-dark flex items-center"><User className="w-5 h-5 mr-2 text-primary" /> {t?.lbl_bio || "Über mich / uns (Bio / Anbietervorstellung)"}</h3>
                     <div className="space-y-6">
                         <div>
                             <div className="border rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-primary">
