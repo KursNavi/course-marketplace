@@ -398,7 +398,7 @@ const Dashboard = ({ user, t, setView, courses, teacherEarnings, myBookings, han
                 )}
             </div>
 
-            {dashView === 'profile' ? ( <UserProfileSection user={user} showNotification={showNotification} setLang={changeLanguage} t={t} /> ) : 
+            {dashView === 'profile' || dashView === 'settings' ? ( <UserProfileSection user={user} showNotification={showNotification} setLang={changeLanguage} t={t} /> ) : 
              dashView === 'subscription' ? ( <SubscriptionSection user={user} currentTier={userTier} /> ) : (
                 <>
                 {user.role === 'teacher' ? (
@@ -426,12 +426,12 @@ const Dashboard = ({ user, t, setView, courses, teacherEarnings, myBookings, han
                                 </div>
                                 <div className="text-right">
                                     {userTier === 'basic' && (
-                                        <button onClick={() => window.open('mailto:support@kursnavi.ch?subject=Upgrade Anfrage Pro', '_blank')} className="bg-white text-dark px-4 py-2 rounded-lg font-bold text-sm hover:bg-gray-100 transition shadow-lg">
+                                        <button onClick={() => window.open('mailto:info@kursnavi.ch?subject=Upgrade Anfrage Pro', '_blank')} className="bg-white text-dark px-4 py-2 rounded-lg font-bold text-sm hover:bg-gray-100 transition shadow-lg">
                                             Auf Pro upgraden ⭐
                                         </button>
                                     )}
                                     {userTier === 'pro' && (
-                                        <button onClick={() => window.open('mailto:support@kursnavi.ch?subject=Upgrade Anfrage Premium', '_blank')} className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-4 py-2 rounded-lg font-bold text-sm hover:shadow-lg transition">
+                                        <button onClick={() => window.open('mailto:info@kursnavi.ch?subject=Upgrade Anfrage Premium', '_blank')} className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-4 py-2 rounded-lg font-bold text-sm hover:shadow-lg transition">
                                             Auf Premium upgraden 🚀
                                         </button>
                                     )}
@@ -457,7 +457,7 @@ const Dashboard = ({ user, t, setView, courses, teacherEarnings, myBookings, han
                             </div>
                             <div className="text-right flex flex-col items-end">
                                 <span className="text-xs text-gray-400 mb-1 bg-white px-2 py-0.5 rounded border">ab 4. Kurs günstiger</span>
-                                <button onClick={() => window.open('mailto:support@kursnavi.ch?subject=Kurserfassungs-Service Anfrage', '_blank')} className="bg-white border-2 border-primary text-primary px-5 py-2 rounded-lg font-bold shadow-sm hover:bg-primary hover:text-white transition whitespace-nowrap flex items-center">
+                                <button onClick={() => window.open('mailto:info@kursnavi.ch?subject=Kurserfassungs-Service Anfrage', '_blank')} className="bg-white border-2 border-primary text-primary px-5 py-2 rounded-lg font-bold shadow-sm hover:bg-primary hover:text-white transition whitespace-nowrap flex items-center">
                                     Service buchen (ab CHF 50.-) <ArrowRight className="w-4 h-4 ml-2"/>
                                 </button>
                             </div>
