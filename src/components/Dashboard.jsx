@@ -133,13 +133,13 @@ const UserProfileSection = ({ user, showNotification, setLang, t }) => {
     return (
     <div className="bg-white p-6 md:p-8 rounded-xl border border-gray-200 shadow-sm animate-in fade-in">
         <h2 className="text-xl font-bold mb-6 text-dark flex items-center"><Settings className="w-5 h-5 mr-2 text-gray-500" /> {t?.profile_settings || "Profil-Einstellungen"}</h2>
-            <form onSubmit={handleSave} className="space-y-6 w-full">
+            <form onSubmit={handleSave} className="space-y-6 w-full max-w-none">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div><label className="block text-sm font-bold text-gray-700 mb-1">{t?.lbl_main_location || "Hauptstandort"}</label><input type="text" name="city" value={formData.city} onChange={handleChange} placeholder="" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" /></div>
                     <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_canton}</label><div className="relative"><select name="canton" value={formData.canton} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none appearance-none bg-white"><option value="">Kanton wählen</option>{SWISS_CANTONS.map(c => <option key={c} value={c}>{c}</option>)}</select><ChevronDown className="absolute right-3 top-3 text-gray-400 w-4 h-4 pointer-events-none" /></div></div>
                 </div>
                 <div><label className="block text-sm font-bold text-gray-700 mb-1">{t?.lbl_additional_locations || "Weitere Standorte"}</label><input type="text" name="additional_locations" value={formData.additional_locations || ''} onChange={handleChange} placeholder="z.B. Zürich, Bern, Luzern" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" /><p className="text-xs text-gray-400 mt-1 italic">Tipp: Falls du Kurse an verschiedenen Orten anbietest, liste diese hier auf.</p></div>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
                     <div>
                         <label className="block text-sm font-bold text-gray-700 mb-1">Unternehmens-Website</label>
@@ -169,7 +169,7 @@ const UserProfileSection = ({ user, showNotification, setLang, t }) => {
                         <ChevronDown className="absolute right-3 top-3 text-gray-400 w-4 h-4 pointer-events-none" />
                     </div>
                 </div>
-                
+
                 {/* NEW FIELDS: Biography & Certificates */}
                 <div className="border-t pt-6 mt-6">
                     <h3 className="text-lg font-bold mb-4 text-dark flex items-center"><User className="w-5 h-5 mr-2 text-primary" /> {t?.lbl_bio || "Über mich / uns (Bio / Anbietervorstellung)"}</h3>
