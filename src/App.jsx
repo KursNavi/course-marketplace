@@ -189,9 +189,30 @@ export default function KursNaviPro() {
   const fetchCourses = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase.from('courses').select('*, course_events(*, bookings(count))').order('created_at', { ascending: false });
+      // V3.0 Data Sync: Join profiles table to get instructor details (bio, certificates, additional locations)
+      const { data, error } = await supabase.from('courses').select(`
+        *,
+        course_events(*, bookings(count)),
+        instructor_profile:profiles!user_id (
+          bio_text,
+          certificates,
+          additional_locations,
+          city,
+          canton
+        )
+      `).order('created_at', { ascending: false });
+
       if (error) throw error;
-      const migratedData = (data || []).map(normalizeCourse);
+      const migratedData = (data || []).map(c => {
+          const normalized = normalizeCourse(c);
+          // Map joined profile data to flat instructor fields for the UI
+          return {
+              ...normalized,
+              instructor_bio: c.instructor_profile?.bio_text,
+              instructor_certificates: c.instructor_profile?.certificates,
+              additional_locations: c.instructor_profile?.additional_locations
+          };
+      });
       setCourses(migratedData);
       
       // Deep Link Logic (SEO Enhanced)
