@@ -30,6 +30,7 @@ const UserProfileSection = ({ user, showNotification, setLang, t }) => {
                     ...prev, 
                     city: data.city || '', 
                     canton: data.canton || '', 
+                    additional_locations: data.additional_locations || '',
                     // MAP DB TO FORM: Use bio_text to match public profile
                     bio_text: data.bio_text || '', 
                     // MAP DB ARRAY TO STRING: Join with newlines for textarea
@@ -51,10 +52,11 @@ const UserProfileSection = ({ user, showNotification, setLang, t }) => {
         // LOGIC: Convert textarea string back to array for DB
         const certArray = formData.certificates.split('\n').filter(line => line.trim() !== '');
 
-        // UPDATE: Saving to bio_text and certificates column
+        // UPDATE: Saving to bio_text, certificates and location columns
         const { error } = await supabase.from('profiles').update({ 
             city: formData.city, 
             canton: formData.canton, 
+            additional_locations: formData.additional_locations,
             bio_text: formData.bio_text, 
             certificates: certArray,
             preferred_language: formData.preferred_language 
@@ -127,19 +129,19 @@ const UserProfileSection = ({ user, showNotification, setLang, t }) => {
     return (
     <div className="bg-white p-6 md:p-8 rounded-xl border border-gray-200 shadow-sm animate-in fade-in">
         <h2 className="text-xl font-bold mb-6 text-dark flex items-center"><Settings className="w-5 h-5 mr-2 text-gray-500" /> {t?.profile_settings || "Profil-Einstellungen"}</h2>
-            <form onSubmit={handleSave} className="space-y-6 max-w-xl">
+            <form onSubmit={handleSave} className="space-y-6 w-full">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div><label className="block text-sm font-bold text-gray-700 mb-1">{t?.lbl_city || "Stadt"}</label><input type="text" name="city" value={formData.city} onChange={handleChange} placeholder="e.g. Adligenswil" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" /></div>
-                    <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_canton}</label><div className="relative"><select name="canton" value={formData.canton} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none appearance-none bg-white"><option value="">Select Canton</option>{SWISS_CANTONS.map(c => <option key={c} value={c}>{c}</option>)}</select><ChevronDown className="absolute right-3 top-3 text-gray-400 w-4 h-4 pointer-events-none" /></div></div>
+                    <div><label className="block text-sm font-bold text-gray-700 mb-1">{t?.lbl_main_location || "Hauptstandort"}</label><input type="text" name="city" value={formData.city} onChange={handleChange} placeholder="" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" /></div>
+                    <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_canton}</label><div className="relative"><select name="canton" value={formData.canton} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none appearance-none bg-white"><option value="">Kanton wählen</option>{SWISS_CANTONS.map(c => <option key={c} value={c}>{c}</option>)}</select><ChevronDown className="absolute right-3 top-3 text-gray-400 w-4 h-4 pointer-events-none" /></div></div>
                 </div>
+                <div><label className="block text-sm font-bold text-gray-700 mb-1">{t?.lbl_additional_locations || "Weitere Standorte"}</label><input type="text" name="additional_locations" value={formData.additional_locations || ''} onChange={handleChange} placeholder="z.B. Zürich, Bern, Luzern" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" /><p className="text-xs text-gray-400 mt-1 italic">Tipp: Falls du Kurse an verschiedenen Orten anbietest, liste diese hier auf.</p></div>
                 <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_language}</label><div className="relative"><select name="preferred_language" value={formData.preferred_language} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none appearance-none bg-white"><option value="de">Deutsch (German)</option><option value="en">English</option><option value="fr">Français (French)</option><option value="it">Italiano (Italian)</option></select><ChevronDown className="absolute right-3 top-3 text-gray-400 w-4 h-4 pointer-events-none" /></div></div>
                 
                 {/* NEW FIELDS: Biography & Certificates */}
                 <div className="border-t pt-6 mt-6">
-                    <h3 className="text-lg font-bold mb-4 text-dark flex items-center"><User className="w-4 h-4 mr-2" /> {t.lbl_bio || "Public Profile (Teacher Only)"}</h3>
-                    <div className="space-y-4">
+                    <h3 className="text-lg font-bold mb-4 text-dark flex items-center"><User className="w-5 h-5 mr-2 text-primary" /> {t?.lbl_bio || "Über mich (Bio)"}</h3>
+                    <div className="space-y-6">
                         <div>
-                            <label className="block text-sm font-bold text-gray-700 mb-1">Biography (About Me)</label>
                             <div className="border rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-primary">
                                 {/* Rich Text Toolbar for Profile Bio */}
                                 <div className="flex flex-wrap gap-1 p-2 bg-gray-50 border-b select-none">
@@ -187,10 +189,9 @@ const UserProfileSection = ({ user, showNotification, setLang, t }) => {
                                 ></textarea>
                             </div>
                         </div>
-                        <div>
-                            <label className="block text-sm font-bold text-gray-700 mb-1">Certificates & Qualifications</label>
-                            <div className="text-xs text-gray-500 mb-2">Enter one certificate per line. We will format them as a list.</div>
-                            <textarea name="certificates" rows="3" value={formData.certificates} onChange={handleChange} placeholder="Master in Pedagogy&#10;Certified Yoga Instructor&#10;..." className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none bg-gray-50 focus:bg-white transition-colors"></textarea>
+                        <div className="pt-4">
+                            <h3 className="text-lg font-bold mb-4 text-dark flex items-center"><PenTool className="w-5 h-5 mr-2 text-primary" /> {t?.lbl_qualifications || "Zertifikate & Qualifikationen"}</h3>
+                            <textarea name="certificates" rows="3" value={formData.certificates} onChange={handleChange} placeholder="z.B. Master in Pädagogik&#10;Dipl. Yoga Instruktor..." className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none bg-gray-50 focus:bg-white transition-colors"></textarea>
                         </div>
                     </div>
                 </div>
