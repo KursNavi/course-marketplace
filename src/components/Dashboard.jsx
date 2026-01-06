@@ -52,20 +52,26 @@ const UserProfileSection = ({ user, showNotification, setLang, t }) => {
         e.preventDefault(); setSaving(true);
         
         // LOGIC: Convert textarea string back to array for DB
-        const certArray = formData.certificates.split('\n').filter(line => line.trim() !== '');
+    const certArray = formData.certificates.split('\n').filter(line => line.trim() !== '');
 
-        // UPDATE: Saving to bio_text, certificates, locations and contact fields
-        const { error } = await supabase.from('profiles').update({ 
-            city: formData.city, 
-            canton: formData.canton, 
-            additional_locations: formData.additional_locations,
-            website_url: formData.website_url,
-            contact_email: formData.contact_email,
-            bio_text: formData.bio_text, 
-            certificates: certArray,
-            preferred_language: formData.preferred_language 
-        }).eq('id', user.id);
+    // LOGIC: Ensure Website URL starts with https:// if provided
+    let formattedUrl = formData.website_url?.trim() || '';
+    if (formattedUrl && !formattedUrl.startsWith('http://') && !formattedUrl.startsWith('https://')) {
+        formattedUrl = `https://${formattedUrl}`;
+    }
 
+    // UPDATE: Saving to bio_text, certificates, locations and contact fields
+    const { error } = await supabase.from('profiles').update({ 
+        city: formData.city, 
+        canton: formData.canton, 
+        additional_locations: formData.additional_locations,
+        website_url: formattedUrl,
+        contact_email: formData.contact_email,
+        bio_text: formData.bio_text, 
+        certificates: certArray,
+        preferred_language: formData.preferred_language 
+    }).eq('id', user.id);
+        
         if (error) { showNotification("Error saving profile"); setSaving(false); return; }
 
         if (formData.email !== user.email || formData.password) {
@@ -144,7 +150,7 @@ const UserProfileSection = ({ user, showNotification, setLang, t }) => {
                     <div>
                         <label className="block text-sm font-bold text-gray-700 mb-1">Unternehmens-Website</label>
                         <div className="relative">
-                            <input type="url" name="website_url" value={formData.website_url || ''} onChange={handleChange} placeholder="https://deine-seite.ch" className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+                            <input type="text" name="website_url" value={formData.website_url || ''} onChange={handleChange} placeholder="z.B. www.deine-seite.ch" className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
                             <ExternalLink className="absolute left-3 top-2.5 text-gray-400 w-4 h-4" />
                         </div>
                     </div>
