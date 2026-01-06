@@ -31,6 +31,8 @@ const UserProfileSection = ({ user, showNotification, setLang, t }) => {
                     city: data.city || '', 
                     canton: data.canton || '', 
                     additional_locations: data.additional_locations || '',
+                    website_url: data.website_url || '',
+                    contact_email: data.contact_email || '',
                     // MAP DB TO FORM: Use bio_text to match public profile
                     bio_text: data.bio_text || '', 
                     // MAP DB ARRAY TO STRING: Join with newlines for textarea
@@ -52,11 +54,13 @@ const UserProfileSection = ({ user, showNotification, setLang, t }) => {
         // LOGIC: Convert textarea string back to array for DB
         const certArray = formData.certificates.split('\n').filter(line => line.trim() !== '');
 
-        // UPDATE: Saving to bio_text, certificates and location columns
+        // UPDATE: Saving to bio_text, certificates, locations and contact fields
         const { error } = await supabase.from('profiles').update({ 
             city: formData.city, 
             canton: formData.canton, 
             additional_locations: formData.additional_locations,
+            website_url: formData.website_url,
+            contact_email: formData.contact_email,
             bio_text: formData.bio_text, 
             certificates: certArray,
             preferred_language: formData.preferred_language 
@@ -135,7 +139,25 @@ const UserProfileSection = ({ user, showNotification, setLang, t }) => {
                     <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_canton}</label><div className="relative"><select name="canton" value={formData.canton} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none appearance-none bg-white"><option value="">Kanton wählen</option>{SWISS_CANTONS.map(c => <option key={c} value={c}>{c}</option>)}</select><ChevronDown className="absolute right-3 top-3 text-gray-400 w-4 h-4 pointer-events-none" /></div></div>
                 </div>
                 <div><label className="block text-sm font-bold text-gray-700 mb-1">{t?.lbl_additional_locations || "Weitere Standorte"}</label><input type="text" name="additional_locations" value={formData.additional_locations || ''} onChange={handleChange} placeholder="z.B. Zürich, Bern, Luzern" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" /><p className="text-xs text-gray-400 mt-1 italic">Tipp: Falls du Kurse an verschiedenen Orten anbietest, liste diese hier auf.</p></div>
-                <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_language}</label><div className="relative"><select name="preferred_language" value={formData.preferred_language} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none appearance-none bg-white"><option value="de">Deutsch (German)</option><option value="en">English</option><option value="fr">Français (French)</option><option value="it">Italiano (Italian)</option></select><ChevronDown className="absolute right-3 top-3 text-gray-400 w-4 h-4 pointer-events-none" /></div></div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">Unternehmens-Website</label>
+                        <div className="relative">
+                            <input type="url" name="website_url" value={formData.website_url || ''} onChange={handleChange} placeholder="https://deine-seite.ch" className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+                            <ExternalLink className="absolute left-3 top-2.5 text-gray-400 w-4 h-4" />
+                        </div>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">Kontakt-Email für Anfragen</label>
+                        <div className="relative">
+                            <input type="email" name="contact_email" value={formData.contact_email || ''} onChange={handleChange} placeholder="info@deine-firma.ch" className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+                            <Mail className="absolute left-3 top-2.5 text-gray-400 w-4 h-4" />
+                        </div>
+                    </div>
+                </div>
+
+                <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_language}</label>
                 
                 {/* NEW FIELDS: Biography & Certificates */}
                 <div className="border-t pt-6 mt-6">
