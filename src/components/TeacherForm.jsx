@@ -403,7 +403,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
                 <div className="space-y-6">
                      <div>
                         <label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_title} *</label>
-                        <input required type="text" name="title" defaultValue={initialData?.title} placeholder="z.B. Traditionelles Schweizer Kochen" className="w-full px-4 py-3 text-lg border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+                        <input required type="text" name="title" defaultValue={initialData?.title} className="w-full px-4 py-3 text-lg border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
                     </div>
 
                     <div>
@@ -446,7 +446,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
 
                     <div>
                         <label className="block text-sm font-bold text-gray-700 mb-1">Keywords / Suchbegriffe (Optional)</label>
-                        <input type="text" name="keywords" defaultValue={initialData?.keywords} placeholder="z.B. Stressabbau, Rücken, Abendkurs (Kommagetrennt)" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+                        <input type="text" name="keywords" defaultValue={initialData?.keywords} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
                     </div>
                 </div>
 
