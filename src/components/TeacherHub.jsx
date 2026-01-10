@@ -43,10 +43,15 @@ const TeacherHub = ({ setView, t, user, showNotification }) => {
         } else {
             // PRO / PREMIUM / ENTERPRISE -> Manuelle Anfrage via E-Mail (MVP)
             const subject = `Upgrade Anfrage: ${tier.toUpperCase()} Paket`;
-            const body = `Hallo KursNavi Team,\n\nich möchte gerne mein Konto (${user.email}) auf das ${tier.toUpperCase()} Paket upgraden.\n\nBitte sendet mir die Rechnung und schaltet mich frei.\n\nDanke!`;
+            const userEmail = user ? user.email : 'Keine Email angegeben';
+            const body = `Hallo KursNavi Team,\n\nich möchte gerne mein Konto (${userEmail}) auf das ${tier.toUpperCase()} Paket upgraden.\n\nBitte sendet mir die Rechnung und schaltet mich frei.\n\nDanke!`;
             
-            // Mail Client öffnen
-            window.location.href = `mailto:info@kursnavi.ch?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+            // Mail Client sicherer öffnen (verhindert XML-Navigationsfehler)
+            const mailtoLink = `mailto:info@kursnavi.ch?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+            
+            const link = document.createElement('a');
+            link.href = mailtoLink;
+            link.click();
             
             if (showNotification) showNotification("E-Mail Programm geöffnet. Bitte sende die Anfrage ab.");
         }
