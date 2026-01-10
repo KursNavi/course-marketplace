@@ -41,19 +41,23 @@ const TeacherHub = ({ setView, t, user, showNotification }) => {
             if (showNotification) showNotification("Du nutzt das Basic Paket.");
             setView('dashboard');
         } else {
-            // PRO / PREMIUM / ENTERPRISE -> Manuelle Anfrage via E-Mail (MVP)
+            // PRO / PREMIUM / ENTERPRISE -> Stabilste Lösung: Manuelle E-Mail
+            // Wir verhindern automatische Links, da diese auf manchen Windows-Systemen zu XML-Fehlern führen.
             const subject = `Upgrade Anfrage: ${tier.toUpperCase()} Paket`;
-            const userEmail = user ? user.email : 'Keine Email angegeben';
-            const body = `Hallo KursNavi Team,\n\nich möchte gerne mein Konto (${userEmail}) auf das ${tier.toUpperCase()} Paket upgraden.\n\nBitte sendet mir die Rechnung und schaltet mich frei.\n\nDanke!`;
             
-            // Mail Client sicherer öffnen (verhindert XML-Navigationsfehler)
-            const mailtoLink = `mailto:info@kursnavi.ch?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+            // Adresse in Zwischenablage kopieren (UX Boost)
+            navigator.clipboard.writeText("info@kursnavi.ch").then(() => {
+                // Erfolg
+            }).catch(err => {
+                console.error('Kopieren fehlgeschlagen:', err);
+            });
             
-            const link = document.createElement('a');
-            link.href = mailtoLink;
-            link.click();
-            
-            if (showNotification) showNotification("E-Mail Programm geöffnet. Bitte sende die Anfrage ab.");
+            // Klare Anweisung an den User statt Absturzrisiko
+            if (showNotification) {
+                showNotification(`Bitte schreibe eine Mail an info@kursnavi.ch (Adresse kopiert!). Betreff: ${subject}`);
+            } else {
+                alert(`Bitte schreibe eine Mail an info@kursnavi.ch mit dem Betreff: ${subject}`);
+            }
         }
     };
 
