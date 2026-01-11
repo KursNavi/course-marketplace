@@ -189,8 +189,9 @@ export default function KursNaviPro() {
   const fetchCourses = async () => {
     try {
       setLoading(true);
-      // V3.0 Data Sync: Join profiles table to get instructor details (bio, certificates, additional locations)
-      const { data, error } = await supabase.from('courses').select(`
+            // V3.0 Data Sync: Try joining profiles table to get instructor details (bio, certificates, additional locations).
+      // Fallback: If no DB relationship exists between courses <-> profiles, load courses without the join.
+      let { data, error } = await supabase.from('courses').select(`
         *,
         course_events(*, bookings(count)),
         instructor_profile:profiles!user_id (
@@ -202,7 +203,27 @@ export default function KursNaviPro() {
         )
       `).order('created_at', { ascending: false });
 
+      const isRelationshipError =
+        error &&
+        (
+          error.code === 'PGRST200' ||
+          (error.message || '').includes("Could not find a relationship between") ||
+          (error.message || '').includes("relationship between 'courses' and 'profiles'")
+        );
+
+      if (isRelationshipError) {
+        // Fallback query without profiles join
+        const fallback = await supabase.from('courses').select(`
+          *,
+          course_events(*, bookings(count))
+        `).order('created_at', { ascending: false });
+
+        data = fallback.data;
+        error = fallback.error;
+      }
+
       if (error) throw error;
+
       const migratedData = (data || []).map(c => {
           const normalized = normalizeCourse(c);
           // Map joined profile data to flat instructor fields for the UI
@@ -280,11 +301,76 @@ export default function KursNaviPro() {
     setMyBookings(data ? data.map(booking => booking.courses).filter(Boolean) : []);
   };
 
-  const fetchTeacherEarnings = async (userId) => {
-      const { data: myCourses } = await supabase.from('courses').select('id, title, price').eq('user_id', userId);
+    const fetchTeacherEarnings = async (userId) => {
+      const { data: myCourses, error: myCoursesError } = await supabase
+        .from('courses')
+        .select('id, title, price')
+        .eq('user_id', userId);
+
+      if (myCoursesError) {
+        console.error('Error loading teacher courses:', myCoursesError.message);
+        return;
+      }
+
       if (!myCourses || myCourses.length === 0) return;
+
       const courseIds = myCourses.map(c => c.id);
-      const { data: bookings } = await supabase.from('bookings').select('*, profiles:user_id(full_name, email)').in('course_id', courseIds);
+
+      // Try join to profiles first (requires DB relationship bookings.user_id -> profiles.id)
+      let { data: bookings, error: bookingsError } = await supabase
+        .from('bookings')
+        .select('*, profiles!user_id(full_name, email)')
+        .in('course_id', courseIds);
+
+      const isRelationshipError =
+        bookingsError &&
+        (
+          bookingsError.code === 'PGRST200' ||
+          (bookingsError.message || '').includes("Could not find a relationship between") ||
+          (bookingsError.message || '').includes("relationship between 'bookings' and 'profiles'")
+        );
+
+      if (isRelationshipError) {
+        // Fallback: load bookings without join
+        const fallback = await supabase
+          .from('bookings')
+          .select('*')
+          .in('course_id', courseIds);
+
+        bookings = fallback.data;
+        bookingsError = fallback.error;
+
+        // If we got bookings, enrich with profiles in a second query
+        if (!bookingsError && bookings && bookings.length > 0) {
+          const studentIds = [...new Set(bookings.map(b => b.user_id).filter(Boolean))];
+
+          if (studentIds.length > 0) {
+            const { data: studentProfiles, error: profilesError } = await supabase
+              .from('profiles')
+              .select('id, full_name, email')
+              .in('id', studentIds);
+
+            if (!profilesError) {
+              const profileMap = new Map((studentProfiles || []).map(p => [p.id, p]));
+              bookings = bookings.map(b => ({
+                ...b,
+                profiles: profileMap.get(b.user_id) || null
+              }));
+            } else {
+              // Still return bookings, but without profile enrichment
+              bookings = bookings.map(b => ({ ...b, profiles: null }));
+            }
+          } else {
+            bookings = bookings.map(b => ({ ...b, profiles: null }));
+          }
+        }
+      }
+
+      if (bookingsError) {
+        console.error('Error loading bookings:', bookingsError.message);
+        return;
+      }
+
       if (bookings) {
           setTeacherEarnings(bookings.map(booking => {
               const course = myCourses.find(c => c.id === booking.course_id);
@@ -300,6 +386,7 @@ export default function KursNaviPro() {
           }));
       }
   };
+
 
   // Filter Logic
   const filteredCourses = courses.filter(course => {
