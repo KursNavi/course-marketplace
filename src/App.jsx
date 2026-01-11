@@ -84,6 +84,8 @@ export default function KursNaviPro() {
   // App Data State
   const [courses, setCourses] = useState([]); 
   const [myBookings, setMyBookings] = useState([]); 
+  const [savedCourses, setSavedCourses] = useState([]);
+  const [savedCourseIds, setSavedCourseIds] = useState([]);
   const [teacherEarnings, setTeacherEarnings] = useState([]);
   const [articles, setArticles] = useState([]); // Blog State
   const [selectedArticle, setSelectedArticle] = useState(null);
@@ -296,10 +298,135 @@ export default function KursNaviPro() {
       }
   };
 
-    const fetchBookings = async (userId) => {
+  const fetchBookings = async (userId) => {
     const { data } = await supabase.from('bookings').select('*, courses(*)').eq('user_id', userId);
     setMyBookings(data ? data.map(booking => booking.courses).filter(Boolean) : []);
   };
+
+  const fetchSavedCourses = async (userId) => {
+    if (!userId) { setSavedCourses([]); setSavedCourseIds([]); return; }
+
+    // Try join first (works if FK relationship is available in PostgREST)
+    let { data, error } = await supabase
+      .from('saved_courses')
+      .select('course_id, created_at, courses(*)')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    const isRelationshipError =
+      error &&
+      (
+        error.code === 'PGRST200' ||
+        (error.message || '').includes("Could not find a relationship between") ||
+        (error.message || '').includes("relationship between")
+      );
+
+    // Fallback if join is not available yet
+    if (isRelationshipError) {
+      const fallback = await supabase
+        .from('saved_courses')
+        .select('course_id, created_at')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+
+      data = fallback.data;
+      error = fallback.error;
+
+      if (!error) {
+        const ids = (data || []).map(r => r.course_id).filter(Boolean);
+        if (ids.length === 0) {
+          setSavedCourses([]);
+          setSavedCourseIds([]);
+          return;
+        }
+
+        const coursesRes = await supabase
+          .from('courses')
+          .select('*')
+          .in('id', ids);
+
+        if (!coursesRes.error) {
+          const courseMap = new Map((coursesRes.data || []).map(c => [c.id, c]));
+          const ordered = ids.map(id => courseMap.get(id)).filter(Boolean);
+          setSavedCourses(ordered);
+          setSavedCourseIds(ids);
+          return;
+        }
+      }
+    }
+
+    if (error) {
+      console.error('Error loading saved courses:', error.message);
+      setSavedCourses([]);
+      setSavedCourseIds([]);
+      return;
+    }
+
+    const ids = (data || []).map(r => r.course_id).filter(Boolean);
+    const list = (data || []).map(r => r.courses).filter(Boolean);
+    setSavedCourses(list);
+    setSavedCourseIds(ids);
+  };
+
+  const syncPendingSavedCourse = async (userId) => {
+    const pending = localStorage.getItem('pendingSavedCourseId');
+    if (!pending || !userId) return;
+
+    const courseId = Number(pending);
+    localStorage.removeItem('pendingSavedCourseId');
+
+    if (!courseId) return;
+
+    const { error } = await supabase
+      .from('saved_courses')
+      .upsert({ user_id: userId, course_id: courseId }, { onConflict: 'user_id,course_id' });
+
+    if (!error) {
+      fetchSavedCourses(userId);
+      showNotification("Kurs zur Merkliste hinzugefügt.");
+    }
+  };
+
+  const toggleSaveCourse = async (course) => {
+    if (!course?.id) return;
+
+    if (!user) {
+      localStorage.setItem('pendingSavedCourseId', String(course.id));
+      showNotification("Bitte anmelden, um Kurse zu merken.");
+      setView('login');
+      return;
+    }
+
+    const courseId = Number(course.id);
+    const isSaved = savedCourseIds.includes(courseId);
+
+    if (isSaved) {
+      const { error } = await supabase
+        .from('saved_courses')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('course_id', courseId);
+
+      if (error) {
+        showNotification("Fehler beim Entfernen: " + error.message);
+        return;
+      }
+      showNotification("Aus Merkliste entfernt.");
+    } else {
+      const { error } = await supabase
+        .from('saved_courses')
+        .upsert({ user_id: user.id, course_id: courseId }, { onConflict: 'user_id,course_id' });
+
+      if (error) {
+        showNotification("Fehler beim Merken: " + error.message);
+        return;
+      }
+      showNotification("Kurs gemerkt.");
+    }
+
+    fetchSavedCourses(user.id);
+  };
+
 
     const fetchTeacherEarnings = async (userId) => {
       const { data: myCourses, error: myCoursesError } = await supabase
@@ -519,6 +646,8 @@ export default function KursNaviPro() {
         const name = session.user.user_metadata?.full_name || session.user.email.split('@')[0];
         setUser({ id: session.user.id, email: session.user.email, role: role, name: name });
         fetchBookings(session.user.id);
+        fetchSavedCourses(session.user.id);
+        syncPendingSavedCourse(session.user.id);
         if (role === 'teacher') fetchTeacherEarnings(session.user.id);
         
         supabase.from('profiles').select('preferred_language, is_professional').eq('id', session.user.id).single()
@@ -536,8 +665,10 @@ export default function KursNaviPro() {
       if (session?.user) {
         const role = session.user.user_metadata?.role || 'student';
         const name = session.user.user_metadata?.full_name || session.user.email.split('@')[0];
-        setUser({ id: session.user.id, email: session.user.email, role: role, name: name });
+                setUser({ id: session.user.id, email: session.user.email, role: role, name: name });
         fetchBookings(session.user.id);
+        fetchSavedCourses(session.user.id);
+        syncPendingSavedCourse(session.user.id);
         if (role === 'teacher') fetchTeacherEarnings(session.user.id);
         
         supabase.from('profiles').select('preferred_language, is_professional').eq('id', session.user.id).single()
@@ -548,7 +679,7 @@ export default function KursNaviPro() {
             }
         });
       } else {
-        setUser(null); setMyBookings([]); setTeacherEarnings([]);
+        setUser(null); setMyBookings([]); setSavedCourses([]); setSavedCourseIds([]); setTeacherEarnings([]);
         if (['/dashboard', '/create-course'].includes(window.location.pathname)) setView('home');
         setLang('de'); 
       }
@@ -629,11 +760,11 @@ export default function KursNaviPro() {
       {view === 'landing-kids' && ( <LandingView title={t.landing_kids_title} subtitle={t.landing_kids_sub} variant="kids" searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearchSubmit={handleSearchSubmit} setSelectedCatPath={setSelectedCatPath} setView={setView} t={t} getCatLabel={getCatLabel} /> )}
 
       {view === 'search' && (
-          <SearchPageView courses={courses} searchQuery={searchQuery} setSearchQuery={setSearchQuery} searchType={searchType} setSearchType={setSearchType} searchArea={searchArea} setSearchArea={setSearchArea} searchSpecialty={searchSpecialty} setSearchSpecialty={setSearchSpecialty} searchAge={searchAge} setSearchAge={setSearchAge} locMode={locMode} setLocMode={setLocMode} selectedLocations={selectedLocations} setSelectedLocations={setSelectedLocations} locMenuOpen={locMenuOpen} setLocMenuOpen={setLocMenuOpen} locMenuRef={locMenuRef} loading={loading} filteredCourses={filteredCourses} setSelectedCourse={setSelectedCourse} setView={setView} t={t} getCatLabel={getCatLabel} filterDate={filterDate} setFilterDate={setFilterDate} filterPriceMax={filterPriceMax} setFilterPriceMax={setFilterPriceMax} filterLevel={filterLevel} setFilterLevel={setFilterLevel} filterPro={filterPro} setFilterPro={setFilterPro} selectedLanguage={selectedLanguage} setSelectedLanguage={setSelectedLanguage} langMenuOpen={langMenuOpen} setLangMenuOpen={setLangMenuOpen} langMenuRef={langMenuRef} />
+          <SearchPageView courses={courses} searchQuery={searchQuery} setSearchQuery={setSearchQuery} searchType={searchType} setSearchType={setSearchType} searchArea={searchArea} setSearchArea={setSearchArea} searchSpecialty={searchSpecialty} setSearchSpecialty={setSearchSpecialty} searchAge={searchAge} setSearchAge={setSearchAge} locMode={locMode} setLocMode={setLocMode} selectedLocations={selectedLocations} setSelectedLocations={setSelectedLocations} locMenuOpen={locMenuOpen} setLocMenuOpen={setLocMenuOpen} locMenuRef={locMenuRef} loading={loading} filteredCourses={filteredCourses} setSelectedCourse={setSelectedCourse} setView={setView} t={t} getCatLabel={getCatLabel} filterDate={filterDate} setFilterDate={setFilterDate} filterPriceMax={filterPriceMax} setFilterPriceMax={setFilterPriceMax} filterLevel={filterLevel} setFilterLevel={setFilterLevel} filterPro={filterPro} setFilterPro={setFilterPro} selectedLanguage={selectedLanguage} setSelectedLanguage={setSelectedLanguage} langMenuOpen={langMenuOpen} setLangMenuOpen={setLangMenuOpen} langMenuRef={langMenuRef} savedCourseIds={savedCourseIds} onToggleSaveCourse={toggleSaveCourse} />
       )}
 
       {view === 'success' && <SuccessView setView={setView} />}
-      {!loading && view === 'detail' && selectedCourse && (<DetailView course={selectedCourse} courses={courses} setView={setView} t={t} setSelectedTeacher={setSelectedTeacher} user={user} /> )}
+      {!loading && view === 'detail' && selectedCourse && (<DetailView course={selectedCourse} courses={courses} setView={setView} t={t} setSelectedTeacher={setSelectedTeacher} user={user} savedCourseIds={savedCourseIds} onToggleSaveCourse={toggleSaveCourse} showNotification={showNotification} /> )}
       {view === 'teacher-hub' && <TeacherHub setView={setView} t={t} user={user} />}
       {view === 'teacher-profile' && selectedTeacher && ( <TeacherProfileView teacher={selectedTeacher} courses={courses} setView={setView} setSelectedCourse={setSelectedCourse} t={t} getCatLabel={getCatLabel} /> )}
       {view === 'how-it-works' && <HowItWorksPage t={t} setView={setView} />}
@@ -652,7 +783,7 @@ export default function KursNaviPro() {
       {view === 'admin-blog' && <AdminBlogManager showNotification={showNotification} setView={setView} courses={courses} />}
       {view === 'blog' && <BlogList articles={articles} setView={setView} setSelectedArticle={setSelectedArticle} />}
       {view === 'blog-detail' && <BlogDetail article={selectedArticle} setView={setView} courses={courses} />}
-      {view === 'dashboard' && user && <Dashboard user={user} t={t} setView={setView} courses={courses} teacherEarnings={teacherEarnings} myBookings={myBookings} handleDeleteCourse={handleDeleteCourse} handleEditCourse={handleEditCourse} showNotification={showNotification} changeLanguage={changeLanguage} setSelectedCourse={setSelectedCourse} />}
+      {view === 'dashboard' && user && <Dashboard user={user} t={t} setView={setView} courses={courses} teacherEarnings={teacherEarnings} myBookings={myBookings} savedCourses={savedCourses} savedCourseIds={savedCourseIds} onToggleSaveCourse={toggleSaveCourse} handleDeleteCourse={handleDeleteCourse} handleEditCourse={handleEditCourse} showNotification={showNotification} changeLanguage={changeLanguage} setSelectedCourse={setSelectedCourse} />}
       {view === 'create' && user?.role === 'teacher' && <TeacherForm t={t} setView={setView} user={user} fetchCourses={fetchCourses} showNotification={showNotification} setEditingCourse={setEditingCourse} initialData={editingCourse} />}
       </div>
       

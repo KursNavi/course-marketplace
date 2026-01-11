@@ -457,7 +457,7 @@ const SubscriptionSection = ({ user, currentTier }) => {
 };
 
 // --- MAIN DASHBOARD COMPONENT ---
-const Dashboard = ({ user, t, setView, courses, teacherEarnings, myBookings, handleDeleteCourse, handleEditCourse, showNotification, changeLanguage, setSelectedCourse }) => {
+const Dashboard = ({ user, t, setView, courses, teacherEarnings, myBookings, savedCourses, savedCourseIds, onToggleSaveCourse, handleDeleteCourse, handleEditCourse, showNotification, changeLanguage, setSelectedCourse }) => {
     const [dashView, setDashView] = useState('overview'); 
     const [userTier, setUserTier] = useState('basic'); // basic, pro, premium
     const [showSuccessModal, setShowSuccessModal] = useState(false); // NEW: Success Modal State
@@ -492,8 +492,14 @@ const Dashboard = ({ user, t, setView, courses, teacherEarnings, myBookings, han
     const canCreate = courseCount < maxCourses;
     const usagePercent = Math.min(100, (courseCount / maxCourses) * 100);
 
-    const handleNavigateToCourse = (course) => { setSelectedCourse(course); setView('detail'); window.scrollTo(0,0); };
-    const handleCancelBooking = async (courseId, courseTitle) => { if (!confirm(`Are you sure you want to cancel your spot in "${courseTitle}"?`)) return; alert("Please contact support to cancel this booking."); };
+    const handleNavigateToCourse = (course) => {
+        const full = (courses || []).find(c => String(c.id) === String(course?.id)) || course;
+        setSelectedCourse(full);
+        setView('detail');
+        window.scrollTo(0, 0);
+    };
+
+ const handleCancelBooking = async (courseId, courseTitle) => { if (!confirm(`Are you sure you want to cancel your spot in "${courseTitle}"?`)) return; alert("Please contact support to cancel this booking."); };
     const calculateDeadline = (startDateString) => { if (!startDateString) return null; const start = new Date(startDateString); const deadline = new Date(start); deadline.setMonth(deadline.getMonth() - 1); return deadline; };
 
     return (
@@ -716,29 +722,99 @@ const Dashboard = ({ user, t, setView, courses, teacherEarnings, myBookings, han
                     </>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div>
-                        <h2 className="text-xl font-bold mb-4 text-dark">{t.my_bookings}</h2>
-                        <div className="space-y-4">
-                            {myBookings.length > 0 ? myBookings.map(course => {
-                                let canCancel = true; let deadlineText = "";
-                                if (course.start_date) { const deadline = calculateDeadline(course.start_date); const now = new Date(); if (now > deadline) { canCancel = false; deadlineText = `Cancellation period ended on ${deadline.toLocaleDateString()}`; } else { deadlineText = `Cancel until ${deadline.toLocaleDateString()}`; } }
-                                return (
-                                    <div key={course.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex gap-4 transition hover:shadow-md">
-                                            <img src={course.image_url} className="w-20 h-20 rounded-lg object-cover cursor-pointer hover:opacity-90 transition" onClick={() => handleNavigateToCourse(course)} />
+                        {/* LEFT: Bookings */}
+                        <div>
+                            <h2 className="text-xl font-bold mb-4 text-dark">{t.my_bookings}</h2>
+                            <div className="space-y-4">
+                                {myBookings.length > 0 ? myBookings.map(course => {
+                                    let canCancel = true; let deadlineText = "";
+                                    if (course.start_date) {
+                                        const deadline = calculateDeadline(course.start_date);
+                                        const now = new Date();
+                                        if (now > deadline) { canCancel = false; deadlineText = `Cancellation period ended on ${deadline.toLocaleDateString()}`; }
+                                        else { deadlineText = `Cancel until ${deadline.toLocaleDateString()}`; }
+                                    }
+
+                                    return (
+                                        <div key={course.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex gap-4 transition hover:shadow-md">
+                                            <img
+                                                src={course.image_url}
+                                                className="w-20 h-20 rounded-lg object-cover cursor-pointer hover:opacity-90 transition"
+                                                onClick={() => handleNavigateToCourse(course)}
+                                            />
                                             <div className="flex-grow">
-                                                <h3 className="font-bold text-dark cursor-pointer hover:text-primary transition" onClick={() => handleNavigateToCourse(course)}>{course.title}</h3>
+                                                <h3 className="font-bold text-dark cursor-pointer hover:text-primary transition" onClick={() => handleNavigateToCourse(course)}>
+                                                    {course.title}
+                                                </h3>
                                                 <p className="text-sm text-gray-500">{course.instructor_name} • {course.canton}</p>
                                                 <div className="mt-4 flex items-center justify-between">
-                                                    <div className="text-green-600 text-sm font-medium flex items-center"><CheckCircle className="w-4 h-4 mr-1" /> Confirmed</div>
-                                                    {canCancel ? ( <div className="flex flex-col items-end"><button className="text-red-500 text-sm hover:text-red-700 hover:underline font-medium" onClick={() => handleCancelBooking(course.id, course.title)}>Cancel Booking</button><span className="text-xs text-gray-400 mt-1">{deadlineText}</span></div> ) : (<div className="flex items-center text-gray-400 text-sm bg-gray-50 px-2 py-1 rounded"><Lock className="w-3 h-3 mr-1" /><span>Non-refundable</span></div>)}
+                                                    <div className="text-green-600 text-sm font-medium flex items-center">
+                                                        <CheckCircle className="w-4 h-4 mr-1" /> Confirmed
+                                                    </div>
+                                                    {canCancel ? (
+                                                        <div className="flex flex-col items-end">
+                                                            <button className="text-red-500 text-sm hover:text-red-700 hover:underline font-medium" onClick={() => handleCancelBooking(course.id, course.title)}>
+                                                                Cancel Booking
+                                                            </button>
+                                                            <span className="text-xs text-gray-400 mt-1">{deadlineText}</span>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="flex items-center text-gray-400 text-sm bg-gray-50 px-2 py-1 rounded">
+                                                            <Lock className="w-3 h-3 mr-1" /><span>Non-refundable</span>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
+                                        </div>
+                                    );
+                                }) : (
+                                    <p className="text-gray-500 italic">You haven't booked any courses yet.</p>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* RIGHT: Saved / Merkliste */}
+                        <div>
+                            <h2 className="text-xl font-bold mb-4 text-dark">Merkliste</h2>
+                            <div className="space-y-4">
+                                {(savedCourses || []).length > 0 ? (savedCourses || []).map(course => (
+                                    <div key={course.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex gap-4 transition hover:shadow-md">
+                                        <img
+                                            src={course.image_url}
+                                            className="w-20 h-20 rounded-lg object-cover cursor-pointer hover:opacity-90 transition"
+                                            onClick={() => handleNavigateToCourse(course)}
+                                        />
+                                        <div className="flex-grow">
+                                            <h3 className="font-bold text-dark cursor-pointer hover:text-primary transition" onClick={() => handleNavigateToCourse(course)}>
+                                                {course.title}
+                                            </h3>
+                                            <p className="text-sm text-gray-500">{course.instructor_name} • {course.canton}</p>
+
+                                            <div className="mt-4 flex items-center justify-between">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleNavigateToCourse(course)}
+                                                    className="text-sm font-bold text-primary hover:text-orange-700 hover:underline"
+                                                >
+                                                    Ansehen
+                                                </button>
+
+                                                <button
+                                                    type="button"
+                                                    onClick={() => onToggleSaveCourse && onToggleSaveCourse(course)}
+                                                    className="text-sm font-bold text-red-500 hover:text-red-700 hover:underline"
+                                                >
+                                                    Entfernen
+                                                </button>
+                                            </div>
+                                        </div>
                                     </div>
-                                );
-                            }) : <p className="text-gray-500 italic">You haven't booked any courses yet.</p>}
+                                )) : (
+                                    <p className="text-gray-500 italic">Du hast noch keine Kurse gemerkt.</p>
+                                )}
+                            </div>
                         </div>
                     </div>
-                </div>
                 )}
                 </>
             )}

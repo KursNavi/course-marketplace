@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Search, ChevronRight, User, X, Calendar, Shield, MapPin, CheckCircle, Loader, Bell, ArrowDown } from 'lucide-react';
+import { Search, ChevronRight, User, X, Calendar, Shield, MapPin, CheckCircle, Loader, Bell, ArrowDown, Bookmark, BookmarkCheck } from 'lucide-react';
 import { LocationDropdown, LanguageDropdown } from './Filters';
 import { Globe } from 'lucide-react';
 import { CATEGORY_TYPES, NEW_TAXONOMY, AGE_GROUPS, COURSE_LEVELS } from '../lib/constants';
@@ -14,7 +14,8 @@ const SearchPageView = ({
     locMode, setLocMode, selectedLocations, setSelectedLocations, locMenuOpen, setLocMenuOpen, locMenuRef, 
     loading, filteredCourses, setSelectedCourse, setView, 
     t, filterDate, setFilterDate, filterPriceMax, setFilterPriceMax, filterLevel, setFilterLevel, filterPro, setFilterPro,
-    selectedLanguage, setSelectedLanguage, langMenuOpen, setLangMenuOpen, langMenuRef
+    selectedLanguage, setSelectedLanguage, langMenuOpen, setLangMenuOpen, langMenuRef,
+    savedCourseIds, onToggleSaveCourse
 }) => {
 
     // --- SEO LOGIC: Zero-Result Rule ---
@@ -146,7 +147,26 @@ const SearchPageView = ({
                                 <div className="bg-white/95 backdrop-blur-sm px-2 py-1 rounded text-xs font-bold text-gray-700 shadow-sm flex items-center"><MapPin className="w-3 h-3 mr-1 text-primary" />{course.canton}</div>
                                 {course.is_pro && <div className="bg-blue-600/90 text-white px-2 py-1 rounded text-xs font-bold shadow-sm flex items-center"><CheckCircle className="w-3 h-3 mr-1" /> Pro</div>}
                             </div>
+
+                            <button
+                                type="button"
+                                title={(savedCourseIds || []).includes(course.id) ? "Aus Merkliste entfernen" : "Kurs merken"}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onToggleSaveCourse && onToggleSaveCourse(course);
+                                }}
+                                className={`absolute top-3 right-3 w-10 h-10 rounded-full shadow-sm border flex items-center justify-center transition
+                                    ${(savedCourseIds || []).includes(course.id)
+                                        ? 'bg-primary text-white border-primary'
+                                        : 'bg-white/95 text-gray-700 border-white/70 hover:bg-white'}`}
+                            >
+                                {(savedCourseIds || []).includes(course.id)
+                                    ? <BookmarkCheck className="w-5 h-5" />
+                                    : <Bookmark className="w-5 h-5" />
+                                }
+                            </button>
                         </div>
+
                         <div className="p-5">
                             <h3 className="font-bold text-lg text-dark leading-tight line-clamp-2 h-12 mb-2 font-heading">{course.title}</h3>
                             <div className="flex items-center justify-between pt-4 border-t border-gray-100">

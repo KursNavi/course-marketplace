@@ -1,10 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, User, MapPin, Clock, CheckCircle, Calendar, Shield, ExternalLink, Mail, X, Send, Map, Info, Loader } from 'lucide-react';
+import { ArrowLeft, User, MapPin, Clock, CheckCircle, Calendar, Shield, ExternalLink, Mail, X, Send, Map, Info, Loader, Bookmark, BookmarkCheck } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
-const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user }) => {
+const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, savedCourseIds, onToggleSaveCourse, showNotification }) => {
     const [showLeadModal, setShowLeadModal] = useState(false);
     const [leadStatus, setLeadStatus] = useState('idle'); // idle, submitting, success
+
+    const [showSavePrompt, setShowSavePrompt] = useState(false);
+    const [pendingExternalUrl, setPendingExternalUrl] = useState(null);
+
+    const isSaved = (savedCourseIds || []).includes(course?.id);
 
     // --- HELPER: Consistent Price Labeling ---
     const getPriceLabel = (c) => {
@@ -93,7 +98,14 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user }) =
         const type = course.booking_type || 'platform';
 
         if (type === 'external') {
-            if (course.external_link) window.open(course.external_link, '_blank');
+            if (course.external_link) {
+                if (isSaved) {
+                    window.open(course.external_link, '_blank');
+                } else {
+                    setPendingExternalUrl(course.external_link);
+                    setShowSavePrompt(true);
+                }
+            }
             return; 
         }
 
@@ -327,9 +339,19 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user }) =
             <div className="lg:col-span-1">
                 <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100 sticky top-24">
                     <div className="text-3xl font-bold text-primary font-heading mb-1">{getPriceLabel(course)}</div>
-                    <p className="text-gray-400 text-xs mb-6">
+                    <p className="text-gray-400 text-xs mb-4">
                         {course.booking_type === 'platform' ? 'pro Person inkl. MwSt.' : 'Unverbindliche Preisangabe'}
                     </p>
+
+                    <button
+                        type="button"
+                        onClick={() => onToggleSaveCourse && onToggleSaveCourse(course)}
+                        className={`w-full font-bold py-3 rounded-lg transition shadow-sm flex items-center justify-center mb-6
+                            ${isSaved ? 'bg-green-100 text-green-800 border border-green-200' : 'bg-white border border-gray-200 text-dark hover:border-primary/40 hover:bg-orange-50'}`}
+                    >
+                        {isSaved ? <BookmarkCheck className="w-4 h-4 mr-2" /> : <Bookmark className="w-4 h-4 mr-2" />}
+                        {isSaved ? 'Gemerkt' : 'Kurs merken'}
+                    </button>
                     
                     {hasEvents ? (
                         <>
@@ -435,6 +457,61 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user }) =
             </div>
         )}
 
+        {showSavePrompt && (
+            <div className="fixed inset-0 bg-dark/60 backdrop-blur-sm z-[110] flex items-center justify-center p-4 animate-in fade-in duration-200">
+                <div className="bg-white rounded-2xl p-6 max-w-md w-full relative shadow-2xl">
+                    <button
+                        onClick={() => { setShowSavePrompt(false); setPendingExternalUrl(null); }}
+                        className="absolute top-4 right-4 text-gray-400 hover:text-dark transition-colors"
+                    >
+                        <X className="w-6 h-6" />
+                    </button>
+
+                    <h3 className="text-xl font-bold mb-2 font-heading">Kurs merken?</h3>
+                    <p className="text-sm text-gray-600">
+                        Möchtest du <span className="font-bold">„{course.title}“</span> in deine Merkliste aufnehmen?
+                    </p>
+
+                    <div className="mt-6 flex flex-col sm:flex-row gap-3">
+                        <button
+                            type="button"
+                            onClick={async () => {
+                                // Wenn eingeloggt: direkt speichern
+                                if (user && onToggleSaveCourse) {
+                                    await onToggleSaveCourse(course);
+                                } else {
+                                    // Wenn ausgeloggt: für später merken, aber User nicht blockieren
+                                    localStorage.setItem('pendingSavedCourseId', String(course.id));
+                                    if (showNotification) showNotification("Kurs wird nach Login gemerkt.");
+                                }
+
+                                setShowSavePrompt(false);
+
+                                if (pendingExternalUrl) {
+                                    window.open(pendingExternalUrl, '_blank');
+                                }
+                                setPendingExternalUrl(null);
+                            }}
+                            className="flex-1 bg-primary text-white font-bold py-3 rounded-lg hover:bg-orange-600 transition flex items-center justify-center"
+                        >
+                            <Bookmark className="w-4 h-4 mr-2" /> Ja, merken
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setShowSavePrompt(false);
+                                if (pendingExternalUrl) window.open(pendingExternalUrl, '_blank');
+                                setPendingExternalUrl(null);
+                            }}
+                            className="flex-1 bg-white border border-gray-200 text-dark font-bold py-3 rounded-lg hover:bg-gray-50 transition"
+                        >
+                            Nein, weiter
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
         {showLeadModal && (
             <div className="fixed inset-0 bg-dark/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200">
                 <div className="bg-white rounded-2xl p-6 max-w-md w-full relative shadow-2xl">
@@ -444,6 +521,19 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user }) =
                             <div className="w-16 h-16 bg-green-100 text-green-500 rounded-full flex items-center justify-center mx-auto mb-4"><CheckCircle className="w-8 h-8" /></div>
                             <h3 className="text-xl font-bold font-heading mb-2">Anfrage gesendet!</h3>
                             <p className="text-gray-600">Der Anbieter wird sich bald bei dir melden.</p>
+
+                            {!isSaved && (
+                                <div className="mt-6">
+                                    <p className="text-sm text-gray-600 mb-3">Möchtest du den Kurs für später merken?</p>
+                                    <button
+                                        type="button"
+                                        onClick={() => onToggleSaveCourse && onToggleSaveCourse(course)}
+                                        className="w-full bg-primary text-white font-bold py-3 rounded-lg hover:bg-orange-600 transition flex items-center justify-center"
+                                    >
+                                        <Bookmark className="w-4 h-4 mr-2" /> Kurs merken
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     ) : (
                         <>
