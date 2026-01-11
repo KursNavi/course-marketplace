@@ -37,19 +37,43 @@ export default async function handler(req, res) {
       })
     });
 
-    // 5. Brevo Antwort verarbeiten
-    const data = await response.json();
-
-    if (!response.ok) {
-      // Brevo Fehler abfangen
-      if (data.code === 'duplicate_parameter') {
-        return res.status(200).json({ success: true, message: 'Bereits angemeldet' });
-      }
-      // Den echten Fehler von Brevo zurückgeben
-      throw new Error(`Brevo API Fehler: ${data.message || JSON.stringify(data)}`);
+        // 5. Brevo Antwort verarbeiten (wichtig: kann auch 204 No Content sein)
+    const rawText = await response.text();
+    let data = {};
+    try {
+      data = rawText ? JSON.parse(rawText) : {};
+    } catch (e) {
+      data = { message: rawText };
     }
 
-    return res.status(200).json({ success: true });
+    const isDuplicate = (payload) => {
+      const code = (payload?.code || '').toString().toLowerCase();
+      const msg = (payload?.message || '').toString().toLowerCase();
+
+      // Brevo liefert bei bestehenden Kontakten häufig "duplicate_parameter" + "Contact already exist"
+      // oder allgemein Meldungen, die "already exist" enthalten.
+      return (
+        code === 'duplicate_parameter' ||
+        msg.includes('already exist') ||
+        msg.includes('already in list')
+      );
+    };
+
+    if (!response.ok) {
+      if (isDuplicate(data)) {
+        return res.status(200).json({ success: true, already: true, message: 'Bereits angemeldet' });
+      }
+
+      // Fehler sauber ans Frontend weitergeben (kein throw -> kein 500)
+      return res.status(response.status).json({
+        success: false,
+        code: data?.code,
+        message: data?.message || 'Brevo API Fehler'
+      });
+    }
+
+    // OK (auch wenn 204, dann ist data einfach {})
+    return res.status(200).json({ success: true, already: false });
 
   } catch (error) {
     console.error('Newsletter Critical Error:', error);

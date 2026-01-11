@@ -142,11 +142,11 @@ export const Footer = ({ t, setView }) => {
     const [email, setEmail] = useState('');
   const [status, setStatus] = useState('idle'); // idle, loading, success, already, error
 
-  const isAlreadySubscribed = (statusCode, payload) => {
-    // Häufige Fälle:
-    // - 409 Conflict (klassisch für "exists")
-    // - Postgres Unique Violation: 23505
-    // - Anbieter-Messages wie "member exists", "already subscribed", "duplicate"
+    const isAlreadySubscribed = (statusCode, payload) => {
+    // Backend-Flag (unser neuer, sicherster Weg)
+    if (payload?.already === true) return true;
+
+    // Klassische Fälle
     if (statusCode === 409) return true;
 
     const code = (payload?.code || payload?.error?.code || '').toString().toLowerCase();
@@ -162,16 +162,16 @@ export const Footer = ({ t, setView }) => {
       .toString()
       .toLowerCase();
 
+    // Deutsch + Englisch, aber ohne "subscribed" als generischen Treffer
     return (
       code === '23505' ||
-      raw.includes('duplicate') ||
+      code === 'duplicate_parameter' ||
+      (raw.includes('bereits') && raw.includes('angemeldet')) ||
+      raw.includes('already exist') ||
       raw.includes('member exists') ||
       raw.includes('already subscribed') ||
-      raw.includes('already exist') ||
-      raw.includes('contact already exist') ||
-      (raw.includes('already') && (raw.includes('subscrib') || raw.includes('exist')))
+      raw.includes('duplicate')
     );
-
   };
 
     const handleSubscribe = async (e) => {
