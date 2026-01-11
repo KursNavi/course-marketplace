@@ -265,9 +265,34 @@ const UserProfileSection = ({ user, showNotification, setLang, t }) => {
                                             <p className="text-sm text-yellow-700 mb-4">Wir haben deine Dokumente erhalten. Bitte stelle sicher, dass du die Gebühr beglichen hast, damit wir die Prüfung abschliessen können.</p>
                                             
                                             <div className="flex flex-col sm:flex-row gap-3">
-                                                <a href="https://buy.stripe.com/test_3cIcN5dBF9ux4AoeoSbQY00" target="_blank" rel="noreferrer" className="bg-dark text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-black transition text-center">
-                                                    Zahlung öffnen (falls noch offen)
-                                                </a>
+                                                                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const to = "info@kursnavi.ch";
+                                                        const subject = "Verifizierung: Zahlung/Blue Check";
+                                                        const body = [
+                                                            "Hallo KursNavi Team",
+                                                            "",
+                                                            "ich möchte die Verifizierung (Blue Check) abschliessen. Bitte sendet mir die Zahlungsinfos/Rechnung.",
+                                                            "",
+                                                            `Account E-Mail: ${user?.email || ""}`,
+                                                            "",
+                                                            "Danke & Gruss"
+                                                        ].join("\n");
+
+                                                        const mailto = `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+                                                        if (navigator?.clipboard?.writeText) {
+                                                            navigator.clipboard.writeText(to).catch(() => {});
+                                                        }
+
+                                                        window.location.href = mailto;
+                                                    }}
+                                                    className="bg-dark text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-black transition text-center"
+                                                >
+                                                    Zahlung per E-Mail anfragen
+                                                </button>
+
                                                 <label className="bg-white border border-gray-300 text-gray-600 px-4 py-2 rounded-lg text-sm font-bold hover:bg-gray-50 transition text-center cursor-pointer">
                                                     Weitere Dateien hochladen
                                                     <input type="file" multiple onChange={handleDocUpload} disabled={uploadingDoc} className="hidden" />
@@ -302,11 +327,34 @@ const UserProfileSection = ({ user, showNotification, setLang, t }) => {
 
 // --- HELPER COMPONENT: Subscription Management ---
 const SubscriptionSection = ({ user, currentTier }) => {
-    // WICHTIG: Ersetze diese Links mit deinen echten Stripe Payment Links!
-    const STRIPE_LINKS = {
-        pro: "https://buy.stripe.com/test_PRO_LINK_HERE?prefilled_email=" + user.email,
-        premium: "https://buy.stripe.com/test_PREMIUM_LINK_HERE?prefilled_email=" + user.email
+    const buildUpgradeMailto = (tierId) => {
+        const planLabel = String(tierId || "").toUpperCase();
+        const to = "info@kursnavi.ch";
+        const subject = `Upgrade Anfrage: ${planLabel} Paket`;
+
+        const name =
+            user?.user_metadata?.full_name ||
+            user?.user_metadata?.name ||
+            user?.name ||
+            "";
+        const email = user?.email || "";
+
+        const body = [
+            "Hallo KursNavi Team",
+            "",
+            `ich möchte mein Abo auf "${planLabel}" erhöhen.`,
+            "",
+            "Meine Angaben:",
+            name ? `Name: ${name}` : "Name:",
+            email ? `E-Mail: ${email}` : "E-Mail:",
+            "Firma:",
+            "",
+            "Danke & Gruss"
+        ].join("\n");
+
+        return `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     };
+
 
     const tiers = [
         { id: 'basic', name: 'Basic', price: '0 CHF', features: ['3 Kurse', 'Standard Support', '15% Komm.'] },
@@ -339,11 +387,26 @@ const SubscriptionSection = ({ user, currentTier }) => {
                                 </ul>
                                 {isCurrent ? (
                                     <button disabled className="w-full py-2 bg-gray-200 text-gray-500 rounded-lg font-bold cursor-default">Aktueller Plan</button>
-                                ) : isUpgrade ? (
-                                    <a href={STRIPE_LINKS[tier.id]} target="_blank" rel="noreferrer" className="block w-full text-center py-2 bg-primary text-white rounded-lg font-bold hover:bg-orange-600 transition shadow-md">
-                                        Upgrade
-                                    </a>
+                                                                ) : isUpgrade ? (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            const mailto = buildUpgradeMailto(tier.id);
+
+                                            // Fallback/UX: Adresse kopieren, falls kein Mail-Client eingerichtet ist
+                                            if (navigator?.clipboard?.writeText) {
+                                                navigator.clipboard.writeText("info@kursnavi.ch").catch(() => {});
+                                            }
+
+                                            // Mail-App öffnen
+                                            window.location.href = mailto;
+                                        }}
+                                        className="block w-full text-center py-2 bg-primary text-white rounded-lg font-bold hover:bg-orange-600 transition shadow-md"
+                                    >
+                                        Upgrade anfragen
+                                    </button>
                                 ) : (
+
                                     <button disabled className="w-full py-2 border border-gray-200 text-gray-400 rounded-lg">Nicht verfügbar</button>
                                 )}
                             </div>
@@ -465,16 +528,66 @@ const Dashboard = ({ user, t, setView, courses, teacherEarnings, myBookings, han
                                     </div>
                                 </div>
                                 <div className="text-right">
-                                    {userTier === 'basic' && (
-                                        <button onClick={() => window.open('mailto:info@kursnavi.ch?subject=Upgrade Anfrage Pro', '_blank')} className="bg-white text-dark px-4 py-2 rounded-lg font-bold text-sm hover:bg-gray-100 transition shadow-lg">
+                                                                        {userTier === 'basic' && (
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                const to = "info@kursnavi.ch";
+                                                const subject = "Upgrade Anfrage: PRO Paket";
+                                                const body = [
+                                                    "Hallo KursNavi Team",
+                                                    "",
+                                                    'ich möchte mein Abo auf "PRO" erhöhen.',
+                                                    "",
+                                                    `Account E-Mail: ${user?.email || ""}`,
+                                                    "",
+                                                    "Danke & Gruss"
+                                                ].join("\n");
+
+                                                const mailto = `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+                                                if (navigator?.clipboard?.writeText) {
+                                                    navigator.clipboard.writeText(to).catch(() => {});
+                                                }
+
+                                                window.location.href = mailto;
+                                            }}
+                                            className="bg-white text-dark px-4 py-2 rounded-lg font-bold text-sm hover:bg-gray-100 transition shadow-lg"
+                                        >
                                             Auf Pro upgraden ⭐
                                         </button>
                                     )}
-                                    {userTier === 'pro' && (
-                                        <button onClick={() => window.open('mailto:info@kursnavi.ch?subject=Upgrade Anfrage Premium', '_blank')} className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-4 py-2 rounded-lg font-bold text-sm hover:shadow-lg transition">
+
+                                                                        {userTier === 'pro' && (
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                const to = "info@kursnavi.ch";
+                                                const subject = "Upgrade Anfrage: PREMIUM Paket";
+                                                const body = [
+                                                    "Hallo KursNavi Team",
+                                                    "",
+                                                    'ich möchte mein Abo auf "PREMIUM" erhöhen.',
+                                                    "",
+                                                    `Account E-Mail: ${user?.email || ""}`,
+                                                    "",
+                                                    "Danke & Gruss"
+                                                ].join("\n");
+
+                                                const mailto = `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+                                                if (navigator?.clipboard?.writeText) {
+                                                    navigator.clipboard.writeText(to).catch(() => {});
+                                                }
+
+                                                window.location.href = mailto;
+                                            }}
+                                            className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-4 py-2 rounded-lg font-bold text-sm hover:shadow-lg transition"
+                                        >
                                             Auf Premium upgraden 🚀
                                         </button>
                                     )}
+
                                 </div>
                             </div>
                         </div>
@@ -497,9 +610,36 @@ const Dashboard = ({ user, t, setView, courses, teacherEarnings, myBookings, han
                             </div>
                             <div className="text-right flex flex-col items-end">
                                 <span className="text-xs text-gray-400 mb-1 bg-white px-2 py-0.5 rounded border">ab 4. Kurs günstiger</span>
-                                <button onClick={() => window.open('mailto:info@kursnavi.ch?subject=Kurserfassungs-Service Anfrage', '_blank')} className="bg-white border-2 border-primary text-primary px-5 py-2 rounded-lg font-bold shadow-sm hover:bg-primary hover:text-white transition whitespace-nowrap flex items-center">
+                                                                                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        const to = "info@kursnavi.ch";
+                                        const subject = "Kurserfassungs-Service Anfrage";
+                                        const body = [
+                                            "Hallo KursNavi Team",
+                                            "",
+                                            "ich interessiere mich für den Kurserfassungs-Service.",
+                                            "Bitte meldet euch bei mir mit den nächsten Schritten.",
+                                            "",
+                                            `Account E-Mail: ${user?.email || ""}`,
+                                            "",
+                                            "Danke & Gruss"
+                                        ].join("\n");
+
+                                        const mailto = `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+                                        if (navigator?.clipboard?.writeText) {
+                                            navigator.clipboard.writeText(to).catch(() => {});
+                                        }
+
+                                        window.location.href = mailto;
+                                    }}
+                                    className="bg-white border-2 border-primary text-primary px-5 py-2 rounded-lg font-bold shadow-sm hover:bg-primary hover:text-white transition whitespace-nowrap flex items-center"
+                                >
                                     Service buchen (ab CHF 50.-) <ArrowRight className="w-4 h-4 ml-2"/>
                                 </button>
+
+
                             </div>
                         </div>
 
