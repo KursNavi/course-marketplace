@@ -16,6 +16,8 @@ const UserProfileSection = ({ user, showNotification, setLang, t }) => {
     const [saving, setSaving] = useState(false);
     const [uploadingDoc, setUploadingDoc] = useState(false);
     const [verificationStatus, setVerificationStatus] = useState('none'); // none, pending, verified
+    const isTeacher = user?.role === 'teacher';
+
     
     const [formData, setFormData] = useState({
         city: '', canton: '', bio_text: '', certificates: '', preferred_language: 'de', email: user.email, password: '', confirmPassword: ''
@@ -51,26 +53,38 @@ const UserProfileSection = ({ user, showNotification, setLang, t }) => {
     const handleSave = async (e) => {
         e.preventDefault(); setSaving(true);
         
-        // LOGIC: Convert textarea string back to array for DB
-    const certArray = formData.certificates.split('\n').filter(line => line.trim() !== '');
+          // UPDATE: Profile fields (Students vs. Teacher)
+        const profileUpdates = {
+            city: formData.city,
+            canton: formData.canton,
+            preferred_language: formData.preferred_language
+        };
 
-    // LOGIC: Ensure Website URL starts with https:// if provided
-    let formattedUrl = formData.website_url?.trim() || '';
-    if (formattedUrl && !formattedUrl.startsWith('http://') && !formattedUrl.startsWith('https://')) {
-        formattedUrl = `https://${formattedUrl}`;
-    }
+        if (isTeacher) {
+            // Convert textarea string back to array for DB
+            const certArray = (formData.certificates || '')
+                .split('\n')
+                .map(l => l.trim())
+                .filter(Boolean);
 
-    // UPDATE: Saving to bio_text, certificates, locations and contact fields
-    const { error } = await supabase.from('profiles').update({ 
-        city: formData.city, 
-        canton: formData.canton, 
-        additional_locations: formData.additional_locations,
-        website_url: formattedUrl,
-        contact_email: formData.contact_email,
-        bio_text: formData.bio_text, 
-        certificates: certArray,
-        preferred_language: formData.preferred_language 
-    }).eq('id', user.id);
+            // Ensure Website URL starts with https:// if provided
+            let formattedUrl = formData.website_url?.trim() || '';
+            if (formattedUrl && !formattedUrl.startsWith('http://') && !formattedUrl.startsWith('https://')) {
+                formattedUrl = `https://${formattedUrl}`;
+            }
+
+            profileUpdates.additional_locations = formData.additional_locations;
+            profileUpdates.website_url = formattedUrl;
+            profileUpdates.contact_email = formData.contact_email;
+            profileUpdates.bio_text = formData.bio_text;
+            profileUpdates.certificates = certArray;
+        }
+
+        const { error } = await supabase
+            .from('profiles')
+            .update(profileUpdates)
+            .eq('id', user.id);
+
         
         if (error) { showNotification("Error saving profile"); setSaving(false); return; }
 
@@ -141,27 +155,32 @@ const UserProfileSection = ({ user, showNotification, setLang, t }) => {
         <h2 className="text-xl font-bold mb-6 text-dark flex items-center"><Settings className="w-5 h-5 mr-2 text-gray-500" /> {t?.profile_settings || "Profil-Einstellungen"}</h2>
             <form onSubmit={handleSave} className="space-y-6 w-full max-w-none">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div><label className="block text-sm font-bold text-gray-700 mb-1">{t?.lbl_main_location || "Hauptstandort"}</label><input type="text" name="city" value={formData.city} onChange={handleChange} placeholder="" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" /></div>
+                    <div><label className="block text-sm font-bold text-gray-700 mb-1">{isTeacher ? (t?.lbl_main_location || "Hauptstandort") : "Standort"}</label><input type="text" name="city" value={formData.city} onChange={handleChange} placeholder="" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" /></div>
                     <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_canton}</label><div className="relative"><select name="canton" value={formData.canton} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none appearance-none bg-white"><option value="">Kanton wählen</option>{SWISS_CANTONS.map(c => <option key={c} value={c}>{c}</option>)}</select><ChevronDown className="absolute right-3 top-3 text-gray-400 w-4 h-4 pointer-events-none" /></div></div>
                 </div>
-                <div><label className="block text-sm font-bold text-gray-700 mb-1">{t?.lbl_additional_locations || "Weitere Standorte"}</label><input type="text" name="additional_locations" value={formData.additional_locations || ''} onChange={handleChange} placeholder="z.B. Zürich, Bern, Luzern" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" /><p className="text-xs text-gray-400 mt-1 italic">Tipp: Falls du Kurse an verschiedenen Orten anbietest, liste diese hier auf.</p></div>
+                {isTeacher && (
+                    <>
+                        <div><label className="block text-sm font-bold text-gray-700 mb-1">{t?.lbl_additional_locations || "Weitere Standorte"}</label><input type="text" name="additional_locations" value={formData.additional_locations || ''} onChange={handleChange} placeholder="z.B. Zürich, Bern, Luzern" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" /><p className="text-xs text-gray-400 mt-1 italic">Tipp: Falls du Kurse an verschiedenen Orten anbietest, liste diese hier auf.</p></div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
-                    <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-1">Unternehmens-Website</label>
-                        <div className="relative">
-                            <input type="text" name="website_url" value={formData.website_url || ''} onChange={handleChange} placeholder="z.B. www.deine-seite.ch" className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
-                            <ExternalLink className="absolute left-3 top-2.5 text-gray-400 w-4 h-4" />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-1">Unternehmens-Website</label>
+                                <div className="relative">
+                                    <input type="text" name="website_url" value={formData.website_url || ''} onChange={handleChange} placeholder="z.B. www.deine-seite.ch" className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+                                    <ExternalLink className="absolute left-3 top-2.5 text-gray-400 w-4 h-4" />
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-1">Kontakt-Email für Anfragen</label>
+                                <div className="relative">
+                                    <input type="email" name="contact_email" value={formData.contact_email || ''} onChange={handleChange} placeholder="info@deine-firma.ch" className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+                                    <Mail className="absolute left-3 top-2.5 text-gray-400 w-4 h-4" />
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                    <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-1">Kontakt-Email für Anfragen</label>
-                        <div className="relative">
-                            <input type="email" name="contact_email" value={formData.contact_email || ''} onChange={handleChange} placeholder="info@deine-firma.ch" className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
-                            <Mail className="absolute left-3 top-2.5 text-gray-400 w-4 h-4" />
-                        </div>
-                    </div>
-                </div>
+                    </>
+                )}
+
 
                 <div>
                     <label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_language}</label>
@@ -176,7 +195,10 @@ const UserProfileSection = ({ user, showNotification, setLang, t }) => {
                     </div>
                 </div>
 
-                {/* NEW FIELDS: Biography & Certificates */}
+                {isTeacher && (
+                    <>
+                        {/* NEW FIELDS: Biography & Certificates */}
+
                 <div className="border-t pt-6 mt-6">
                     <h3 className="text-lg font-bold mb-4 text-dark flex items-center"><User className="w-5 h-5 mr-2 text-primary" /> {t?.lbl_bio || "Über mich / uns (Bio / Anbietervorstellung)"}</h3>
                     <div className="space-y-6">
@@ -235,7 +257,11 @@ const UserProfileSection = ({ user, showNotification, setLang, t }) => {
                     </div>
                 </div>
 
+                    </>
+                )}
+
                 {/* VERIFICATION SECTION */}
+
                 {user.role === 'teacher' && (
                     <div className="border-t pt-6 mt-6">
                         <h3 className="text-lg font-bold mb-4 text-blue-600 flex items-center"><Shield className="w-4 h-4 mr-2" /> Verification & Blue Check</h3>
