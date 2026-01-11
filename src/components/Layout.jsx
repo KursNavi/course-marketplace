@@ -139,16 +139,50 @@ export const Navbar = ({ t, user, lang, setLang, setView, handleLogout, setShowR
 };
 
 export const Footer = ({ t, setView }) => {
-  const [email, setEmail] = useState('');
-  const [status, setStatus] = useState('idle'); // idle, loading, success, error
+    const [email, setEmail] = useState('');
+  const [status, setStatus] = useState('idle'); // idle, loading, success, already, error
 
-  const handleSubscribe = async (e) => {
+  const isAlreadySubscribed = (statusCode, payload) => {
+    // Häufige Fälle:
+    // - 409 Conflict (klassisch für "exists")
+    // - Postgres Unique Violation: 23505
+    // - Anbieter-Messages wie "member exists", "already subscribed", "duplicate"
+    if (statusCode === 409) return true;
+
+    const code = (payload?.code || payload?.error?.code || '').toString().toLowerCase();
+
+    const raw = (
+      payload?.message ||
+      payload?.error ||
+      payload?.detail ||
+      payload?.hint ||
+      payload?.error?.message ||
+      ''
+    )
+      .toString()
+      .toLowerCase();
+
+    return (
+      code === '23505' ||
+      raw.includes('duplicate') ||
+      raw.includes('member exists') ||
+      raw.includes('already subscribed') ||
+      raw.includes('already exist') ||
+      raw.includes('contact already exist') ||
+      (raw.includes('already') && (raw.includes('subscrib') || raw.includes('exist')))
+    );
+
+  };
+
+    const handleSubscribe = async (e) => {
     e.preventDefault();
     if (!email) return;
+
     setStatus('loading');
 
     try {
       console.log("Start Newsletter-Anmeldung für:", email);
+
       const res = await fetch('/api/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -164,10 +198,16 @@ export const Footer = ({ t, setView }) => {
         console.warn("Server-Antwort war kein JSON:", text.substring(0, 50) + "...");
       }
 
+      const already = isAlreadySubscribed(res.status, data);
+
       if (res.ok) {
-        setStatus('success');
+        setStatus(already ? 'already' : 'success');
         setEmail('');
         console.log("Erfolg:", data);
+      } else if (already) {
+        setStatus('already');
+        setEmail('');
+        console.warn("Bereits angemeldet:", res.status, data);
       } else {
         console.error("Newsletter Server-Fehler:", res.status, data);
         setStatus('error');
@@ -193,10 +233,20 @@ export const Footer = ({ t, setView }) => {
         </div>
         
         <div className="relative z-10 w-full max-w-md">
-          {status === 'success' ? (
-             <div className="bg-green-500/20 border border-green-500/50 text-green-400 px-4 py-3 rounded-xl flex items-center justify-center animate-in fade-in">
+                    {(status === 'success' || status === 'already') ? (
+             <div
+               className={`px-4 py-3 rounded-xl flex items-center justify-center animate-in fade-in border ${
+                 status === 'success'
+                   ? 'bg-green-500/20 border-green-500/50 text-green-400'
+                   : 'bg-blue-500/20 border-blue-500/50 text-blue-200'
+               }`}
+             >
                 <Check className="w-5 h-5 mr-2" />
-                <span className="font-bold">Erfolgreich angemeldet!</span>
+                <span className="font-bold">
+                  {status === 'success'
+                    ? (t?.msg_newsletter_success || 'Erfolgreich angemeldet!')
+                    : (t?.msg_newsletter_already || 'Du bist bereits angemeldet.')}
+                </span>
              </div>
           ) : (
             <form onSubmit={handleSubscribe} className="flex gap-2">
@@ -220,7 +270,12 @@ export const Footer = ({ t, setView }) => {
               </button>
             </form>
           )}
-          {status === 'error' && <p className="text-red-400 text-xs mt-2 ml-1">Hoppla, das hat nicht geklappt. Versuch es später noch einmal.</p>}
+          {status === 'error' && (
+            <p className="text-red-400 text-xs mt-2 ml-1">
+              {t?.msg_newsletter_error || 'Hoppla, das hat nicht geklappt. Versuch es später noch einmal.'}
+            </p>
+          )}
+
         </div>
       </div>
 
