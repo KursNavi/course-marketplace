@@ -5,8 +5,8 @@ import {
     Crown, BarChart3, Bold, Italic, Underline, Heading2, Heading3, List,
     CreditCard, Check, Shield, ExternalLink, Mail
 } from 'lucide-react';
-import { SWISS_CANTONS } from '../lib/constants';
-import { PLANS } from '../../constants/plan';
+import { SWISS_CANTONS } from "../lib/constants";
+import { PLANS } from "../constants/plans";
 import { KursNaviLogo } from './Layout';
 import { supabase } from '../lib/supabase';
 

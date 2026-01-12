@@ -2,13 +2,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import { CheckCircle } from 'lucide-react';
 
 // --- IMPORTS ---
-import { CATEGORY_LABELS, TRANSLATIONS, NEW_TAXONOMY, CATEGORY_TYPES, COURSE_LEVELS, AGE_GROUPS } from './lib/constants';
+import { CATEGORY_LABELS, TRANSLATIONS } from './lib/constants';
 import { supabase } from './lib/supabase';
 
 // Components
 import { Navbar, Footer } from './components/Layout';
 import { Home } from './components/Home';
-import { CategoryDropdown, LocationDropdown, LanguageDropdown } from './components/Filters';
 import LegalPage from './components/LegalPage';
 
 // Full Page Components
@@ -28,6 +27,7 @@ import SuccessView from './components/SuccessView';
 import BlogList from './components/BlogList';
 import BlogDetail from './components/BlogDetail';
 import AdminBlogManager from './components/AdminBlogManager';
+
 
 // --- MAIN APP COMPONENT ---
 export default function KursNaviPro() {
@@ -79,7 +79,7 @@ export default function KursNaviPro() {
   const [lang, setLang] = useState('de');
   const [view, setView] = useState(getInitialView);
   const [user, setUser] = useState(null); 
-  const [session, setSession] = useState(null);
+  const [, setSession] = useState(null);
   
   // App Data State
   const [courses, setCourses] = useState([]); 
@@ -140,11 +140,15 @@ export default function KursNaviPro() {
   const handleLogout = async () => { await supabase.auth.signOut(); showNotification("Logged out successfully"); setView('home'); };
 
   const handleDeleteCourse = async (courseId) => {
-    if(!confirm("Are you sure you want to delete this course?")) return;
-    setCourses(courses.filter(c => c.id !== courseId));
+    if (!window.confirm("Are you sure you want to delete this course?")) return;
+
+    setCourses(prev => prev.filter(c => c.id !== courseId));
+
     const { error } = await supabase.from('courses').delete().eq('id', courseId);
-    if (error) showNotification("Error deleting: " + error.message); else showNotification("Course deleted.");
+    if (error) showNotification("Error deleting: " + error.message);
+    else showNotification("Course deleted.");
   };
+
 
   const handleEditCourse = (course) => {
       setEditingCourse(course);
@@ -157,36 +161,64 @@ export default function KursNaviPro() {
   };
 
   // --- DATA FETCHING & FILTER LOGIC ---
+  // --- DATA FETCHING & FILTER LOGIC ---
   const normalizeCourse = (c) => {
-    if (c.category_type) return c;
+    // Bereits neues Schema?
+    if (c.category_type) {
+      const primary = c.primary_category || c.category_area || 'kurs';
+      const categories =
+        Array.isArray(c.categories) && c.categories.length > 0 ? c.categories : [primary];
+
+      return { ...c, primary_category: primary, categories };
+    }
+
     // Migration Logic for legacy courses
     let type = 'privat_hobby';
     let area = 'alltag_leben';
     let specialty = 'Sonstiges';
-    let age = ['age_26_59']; 
+    let age = ['age_26_59'];
     let level = 'all_levels';
     const oldCat = (c.category || "").toLowerCase();
 
-    if (oldCat.includes('professional') || oldCat.includes('beruflich') || oldCat.includes('business')) {
-       type = 'beruflich';
-       area = 'soft_skills'; 
-       if (oldCat.includes('business')) area = 'business_mgmt';
-       if (oldCat.includes('tech') || oldCat.includes('it') || oldCat.includes('data')) area = 'it_digital';
-       if (oldCat.includes('marketing')) area = 'marketing';
-    } 
-    else if (oldCat.includes('children') || oldCat.includes('kinder') || oldCat.includes('kids')) {
-       type = 'kinder_jugend'; area = 'freizeit_hobbys'; age = ['age_7_9', 'age_10_12'];
-       if (oldCat.includes('school') || oldCat.includes('math')) area = 'schule_lernen';
+    if (
+      oldCat.includes('professional') ||
+      oldCat.includes('beruflich') ||
+      oldCat.includes('business')
+    ) {
+      type = 'beruflich';
+      area = 'soft_skills';
+      if (oldCat.includes('business')) area = 'business_mgmt';
+      if (oldCat.includes('tech') || oldCat.includes('it') || oldCat.includes('data')) area = 'it_digital';
+      if (oldCat.includes('marketing')) area = 'marketing';
+    } else if (oldCat.includes('children') || oldCat.includes('kinder') || oldCat.includes('kids')) {
+      type = 'kinder_jugend';
+      area = 'freizeit_hobbys';
+      age = ['age_7_9', 'age_10_12'];
+      if (oldCat.includes('school') || oldCat.includes('math')) area = 'schule_lernen';
+    } else {
+      if (oldCat.includes('music') || oldCat.includes('musik') || oldCat.includes('guitar')) area = 'musik';
+      else if (oldCat.includes('sport') || oldCat.includes('yoga') || oldCat.includes('fitness')) area = 'sport_fitness';
+      else if (oldCat.includes('cook') || oldCat.includes('kochen')) area = 'kochen_genuss';
+      else if (oldCat.includes('art') || oldCat.includes('kunst')) area = 'kunst_kreativ';
+      else if (oldCat.includes('language') || oldCat.includes('sprache')) area = 'sprachen_privat';
     }
-    else {
-       if (oldCat.includes('music') || oldCat.includes('musik') || oldCat.includes('guitar')) area = 'musik'; 
-       else if (oldCat.includes('sport') || oldCat.includes('yoga') || oldCat.includes('fitness')) area = 'sport_fitness'; 
-       else if (oldCat.includes('cook') || oldCat.includes('kochen')) area = 'kochen_genuss'; 
-       else if (oldCat.includes('art') || oldCat.includes('kunst')) area = 'kunst_kreativ'; 
-       else if (oldCat.includes('language') || oldCat.includes('sprache')) area = 'sprachen_privat'; 
-    }
-    return { ...c, category_type: type, category_area: area, category_specialty: specialty, target_age_groups: age, level: level };
+
+    // Default für Multi-Kategorien
+    const primary_category = area;
+    const categories = [primary_category];
+
+    return {
+      ...c,
+      category_type: type,
+      category_area: area,
+      category_specialty: specialty,
+      target_age_groups: age,
+      level,
+      primary_category,
+      categories
+    };
   };
+
 
   const fetchCourses = async () => {
     try {
@@ -519,7 +551,12 @@ export default function KursNaviPro() {
   const filteredCourses = courses.filter(course => {
     if (!course) return false;
     let matchesType = true; if (searchType) matchesType = course.category_type === searchType;
-    let matchesArea = true; if (searchArea) matchesArea = course.category_area === searchArea;
+    let matchesArea = true;
+      if (searchArea) {
+        matchesArea =
+          course.category_area === searchArea ||
+          (Array.isArray(course.categories) && course.categories.includes(searchArea));
+      }
     let matchesSpecialty = true; if (searchSpecialty) matchesSpecialty = course.category_specialty === searchSpecialty;
     let matchesAge = true; if (searchAge) { matchesAge = course.target_age_groups && course.target_age_groups.includes(searchAge); }
     let matchesCategory = true; if (!searchType && !searchArea && selectedCatPath.length > 0) { const courseCatStr = (course.category || "").toLowerCase(); matchesCategory = selectedCatPath.every(part => courseCatStr.includes(part.toLowerCase())); }
@@ -537,7 +574,11 @@ export default function KursNaviPro() {
     const safeTitle = (course.title || "").toLowerCase(); 
     const safeInstructor = (course.instructor_name || "").toLowerCase(); 
     const safeSpecialty = (course.category_specialty || "").toLowerCase();
-    const safeArea = (course.category_area || "").toLowerCase();
+    const safeArea = (
+      (course.category_area || "") +
+      " " +
+      (Array.isArray(course.categories) ? course.categories.join(" ") : "")
+    ).toLowerCase();
     // NEU: Zugriff auf das manuelle Keyword-Feld für maximale Präzision
     const safeKeywords = (course.keywords || "").toLowerCase();
     
@@ -566,66 +607,91 @@ export default function KursNaviPro() {
 
 // --- EFFECT HOOKS ---
   useEffect(() => {
-    if (loading) return;
-    
-    // 1. Manage Window Title (SEO & UX)
-    const baseTitle = "KursNavi - Der Schweizer Kursmarktplatz";
-    const titles = {
-        'home': baseTitle,
-        'search': 'Kurse suchen & filtern | KursNavi',
-        'landing-private': 'Hobby & Freizeit Kurse | KursNavi',
-        'landing-prof': 'Weiterbildung & Karriere | KursNavi',
-        'landing-kids': 'Kinderkurse & Förderung | KursNavi',
-        'login': 'Anmelden | KursNavi',
-        'create': 'Neuen Kurs erstellen | KursNavi',
-        'dashboard': 'Mein Bereich | KursNavi',
-        'how-it-works': 'So funktioniert es | KursNavi',
-        'contact': 'Kontakt | KursNavi',
-        'about': 'Über uns | KursNavi'
-    };
-    
-    // Set title based on view map, or keep existing for dynamic pages (detail/teacher-hub handle their own)
-    if (titles[view]) {
-        document.title = titles[view];
-    }
-    // Note: DetailView and TeacherHub manage their own document.title via their own useEffect
+    fetchCourses();
+    fetchArticles();
 
-    // 2. Manage URL (Routing)
-    let path = '/';
-    const routes = {
-        'landing-private': '/private', 'landing-prof': '/professional', 'landing-kids': '/children',
-        'search': '/search', 'how-it-works': '/how-it-works', 'about': '/about', 'contact': '/contact',
-        'login': '/login', 'dashboard': '/dashboard', 'agb': '/agb', 'datenschutz': '/datenschutz',
-        'impressum': '/impressum', 'widerruf': '/widerruf-storno', 'trust': '/vertrauen-sicherheit',
-        'admin': '/control-room-2025', 'create': '/create-course', 'teacher-hub': '/teacher-hub',
-        'blog': '/blog', 'admin-blog': '/admin-blog'
-    };
-    if (routes[view]) path = routes[view];
-    else if (view === 'blog-detail' && selectedArticle) {
-        path = `/blog/${selectedArticle.slug}`;
-    }
-    else if (view === 'detail' && selectedCourse) {
-        // SEO Friendly URL Construction: /courses/{topic}/{location}/{id}-{slug}
-        const topicSlug = (selectedCourse.category_area || 'kurs').toLowerCase().replace(/_/g, '-');
-        const locSlug = (selectedCourse.canton || 'schweiz').toLowerCase();
-        const titleSlug = (selectedCourse.title || 'detail').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-        
-        path = `/courses/${topicSlug}/${locSlug}/${selectedCourse.id}-${titleSlug}`;
-    }
+    const handleUrlChange = () => setView(getInitialView());
+    window.addEventListener('popstate', handleUrlChange);
 
-    if (window.location.pathname !== path) {
-        // Use replaceState if correcting a legacy URL, otherwise pushState
-        const method = window.location.pathname.startsWith('/course/') ? 'replaceState' : 'pushState';
-        window.history[method]({ view, courseId: selectedCourse?.id }, '', path);
-    }
-  }, [view, selectedCourse, loading]);
+    return () => window.removeEventListener('popstate', handleUrlChange);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
-    fetchCourses();
-    fetchArticles();
-    const handleUrlChange = () => setView(getInitialView());
-    window.addEventListener('popstate', handleUrlChange);
-    return () => window.removeEventListener('popstate', handleUrlChange);
+    let cancelled = false;
+
+    const applySession = async (session) => {
+      if (cancelled) return;
+
+      setSession(session);
+
+      if (session?.user) {
+        const role = session.user.user_metadata?.role || 'student';
+        const name = session.user.user_metadata?.full_name || session.user.email.split('@')[0];
+
+        // Basis-User setzen
+        setUser({
+          id: session.user.id,
+          email: session.user.email,
+          role: role,
+          name: name
+        });
+
+        // Daten laden
+        fetchBookings(session.user.id);
+        fetchSavedCourses(session.user.id);
+        syncPendingSavedCourse(session.user.id);
+        if (role === 'teacher') fetchTeacherEarnings(session.user.id);
+
+        // Profil-Extras laden (preferred_language, is_professional, plan_tier)
+        const { data } = await supabase
+          .from('profiles')
+          .select('preferred_language, is_professional, plan_tier')
+          .eq('id', session.user.id)
+          .single();
+
+        if (cancelled) return;
+
+        if (data) {
+          if (data.preferred_language) setLang(data.preferred_language);
+
+          setUser((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  is_professional: data.is_professional,
+                  plan_tier: data.plan_tier || 'basic'
+                }
+              : prev
+          );
+        }
+      } else {
+        // Logout / kein User
+        setUser(null);
+        setMyBookings([]);
+        setSavedCourses([]);
+        setSavedCourseIds([]);
+        setTeacherEarnings([]);
+
+        if (['/dashboard', '/create-course'].includes(window.location.pathname)) setView('home');
+        setLang('de');
+      }
+    };
+
+    // Initiale Session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      applySession(session);
+    });
+
+    // Änderungen an Auth-Status
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      applySession(session);
+    });
+
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+    };
   }, []);
 
   useEffect(() => {
@@ -638,101 +704,81 @@ export default function KursNaviPro() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      if (session?.user) {
-        const role = session.user.user_metadata?.role || 'student';
-        const name = session.user.user_metadata?.full_name || session.user.email.split('@')[0];
-        setUser({ id: session.user.id, email: session.user.email, role: role, name: name });
-        fetchBookings(session.user.id);
-        fetchSavedCourses(session.user.id);
-        syncPendingSavedCourse(session.user.id);
-        if (role === 'teacher') fetchTeacherEarnings(session.user.id);
-        
-        supabase.from('profiles').select('preferred_language, is_professional').eq('id', session.user.id).single()
-            .then(({ data }) => {
-                if (data) {
-                    if (data.preferred_language) setLang(data.preferred_language);
-                    setUser(prev => prev ? { ...prev, is_professional: data.is_professional } : prev);
-                }
-            });
-      }
-    });
+useEffect(() => {
+  const query = new URLSearchParams(window.location.search);
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      if (session?.user) {
-        const role = session.user.user_metadata?.role || 'student';
-        const name = session.user.user_metadata?.full_name || session.user.email.split('@')[0];
-                setUser({ id: session.user.id, email: session.user.email, role: role, name: name });
-        fetchBookings(session.user.id);
-        fetchSavedCourses(session.user.id);
-        syncPendingSavedCourse(session.user.id);
-        if (role === 'teacher') fetchTeacherEarnings(session.user.id);
-        
-        supabase.from('profiles').select('preferred_language, is_professional').eq('id', session.user.id).single()
-        .then(({ data }) => {
-            if (data) {
-                if (data.preferred_language) setLang(data.preferred_language);
-                setUser(prev => prev ? { ...prev, is_professional: data.is_professional } : prev);
-            }
-        });
-      } else {
-        setUser(null); setMyBookings([]); setSavedCourses([]); setSavedCourseIds([]); setTeacherEarnings([]);
-        if (['/dashboard', '/create-course'].includes(window.location.pathname)) setView('home');
-        setLang('de'); 
-      }
-    });
-    return () => subscription.unsubscribe();
-  }, []);
+  // SEO Deep Linking: Allow complex filters /search?q=Yoga&loc=Zurich&type=kinder...
+  const qParam = query.get('q');
+  const locParam = query.get('loc');
+  const typeParam = query.get('type');
+  const areaParam = query.get('area');
+  const specParam = query.get('spec');
+  const ageParam = query.get('age');
+  const levelParam = query.get('level');
 
-  useEffect(() => {
-    const query = new URLSearchParams(window.location.search);
+  if (qParam || locParam || typeParam || areaParam || specParam || ageParam || levelParam) {
+    if (qParam) setSearchQuery(qParam);
+    if (locParam) setSelectedLocations([locParam]);
+    if (typeParam) setSearchType(typeParam);
+    if (areaParam) setSearchArea(areaParam);
+    if (specParam) setSearchSpecialty(specParam);
+    if (ageParam) setSearchAge(ageParam);
+    if (levelParam) setFilterLevel(levelParam);
 
-    // SEO Deep Linking: Allow complex filters /search?q=Yoga&loc=Zurich&type=kinder...
-    const qParam = query.get('q');
-    const locParam = query.get('loc');
-    const typeParam = query.get('type');
-    const areaParam = query.get('area');
-    const specParam = query.get('spec');
-    const ageParam = query.get('age');
-    const levelParam = query.get('level');
+    // Only switch view if not already on a specific detail/landing page
+    setView(prev => (prev !== 'detail' ? 'search' : prev));
+  }
 
-    if (qParam || locParam || typeParam || areaParam || specParam || ageParam || levelParam) {
-        if (qParam) setSearchQuery(qParam);
-        if (locParam) setSelectedLocations([locParam]);
-        if (typeParam) setSearchType(typeParam);
-        if (areaParam) setSearchArea(areaParam);
-        if (specParam) setSearchSpecialty(specParam);
-        if (ageParam) setSearchAge(ageParam);
-        if (levelParam) setFilterLevel(levelParam);
+  const sessionId = query.get('session_id');
+  if (sessionId && user) {
+    const pendingCourseId = localStorage.getItem('pendingCourseId');
 
-        // Only switch view if not already on a specific detail/landing page
-        if (view !== 'detail') setView('search');
+    if (pendingCourseId) {
+      const saveBooking = async () => {
+        const pendingEventId = localStorage.getItem('pendingEventId');
+
+        // ✅ WICHTIG: localStorage liefert Strings -> wir casten sicher auf Number
+        const courseId = Number(pendingCourseId);
+        const eventId = pendingEventId ? Number(pendingEventId) : null;
+
+        // Wenn courseId nicht sauber ist, aufräumen damit es nicht “hängen bleibt”
+        if (!Number.isFinite(courseId) || courseId <= 0) {
+          localStorage.removeItem('pendingCourseId');
+          localStorage.removeItem('pendingEventId');
+          showNotification("Fehler: Ungültige Kurs-ID (pendingCourseId).");
+          return;
+        }
+
+        const payload = {
+          user_id: user.id,
+          course_id: courseId,
+          is_paid: false,
+          status: 'confirmed'
+        };
+
+        if (eventId) payload.event_id = eventId;
+
+        const { error } = await supabase.from('bookings').insert([payload]);
+
+        if (!error) {
+          localStorage.removeItem('pendingCourseId');
+          localStorage.removeItem('pendingEventId');
+
+          showNotification("Course booked successfully!");
+          fetchBookings(user.id);
+
+          window.history.replaceState({}, document.title, "/dashboard");
+          setView('dashboard');
+        }
+      };
+
+      saveBooking();
+    } else {
+      setView('dashboard');
     }
+  }
+}, [user]);
 
-    const sessionId = query.get('session_id');
-    if (sessionId && user) {
-        const pendingCourseId = localStorage.getItem('pendingCourseId');
-        if (pendingCourseId) {
-            const saveBooking = async () => {
-                const pendingEventId = localStorage.getItem('pendingEventId');
-                const payload = { user_id: user.id, course_id: pendingCourseId, is_paid: false, status: 'confirmed' };
-                if (pendingEventId) payload.event_id = pendingEventId;
-                const { error } = await supabase.from('bookings').insert([payload]);
-                if (!error) {
-                    localStorage.removeItem('pendingCourseId'); localStorage.removeItem('pendingEventId');
-                    showNotification("Course booked successfully!");
-                    fetchBookings(user.id);
-                    window.history.replaceState({}, document.title, "/dashboard");
-                    setView('dashboard');
-                }
-            };
-            saveBooking();
-        } else { setView('dashboard'); }
-    }
-  }, [user]);
 
   // --- RENDER ---
   return (

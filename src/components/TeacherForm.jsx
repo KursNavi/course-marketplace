@@ -57,11 +57,9 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
                     return;
                 }
 
-                const { data: { user: authUser } } = await supabase.auth.getUser();
-                if (!isMounted) return; // Stop if unmounted
-
-                const tier = authUser?.user_metadata?.package_tier || 'basic';
+                const tier = user?.plan_tier || 'basic';
                 setCurrentTier(tier);
+
 
                 const { count, error } = await supabase
                     .from('courses')
@@ -214,8 +212,8 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
         if (isSubmitting) return;
 
         // 1. Core Validation
-        if (!title || !description) { alert("Titel und Beschreibung sind erforderlich."); return; }
-        if (!catType || !catArea || !catSpec) { alert("Bitte wählen Sie eine vollständige Kategorie aus."); return; }
+        if (!title || !description) { window.alert("Titel und Beschreibung sind erforderlich."); return; }
+        if (!catType || !catArea || !catSpec) { window.alert("Bitte wählen Sie eine vollständige Kategorie aus."); return; }
 
         // 2. Booking Specific Validation
         let potentialEvents = events.map(ev => ({
@@ -230,22 +228,22 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
         });
 
         if (bookingType === 'platform') {
-            if (validEvents.length === 0) { alert("Für Direktbuchungen benötigen wir mindestens einen Termin mit Datum, Strasse, Ort und Kanton."); return; }
-            if (!formData.get('price')) { alert("Ein Preis ist für Direktbuchungen erforderlich."); return; }
+            if (validEvents.length === 0) { window.alert("Für Direktbuchungen benötigen wir mindestens einen Termin mit Datum, Strasse, Ort und Kanton."); return; }
+            if (!formData.get('price')) { window.alert("Ein Preis ist für Direktbuchungen erforderlich."); return; }
         } 
         
         if (bookingType === 'lead' || bookingType === 'external') {
             const hasRegions = fallbackCantons.length > 0;
             if (validEvents.length === 0 && !hasRegions) {
-                alert("Bitte geben Sie entweder einen konkreten Termin (mit Datum) ODER mindestens einen Kanton/Region an.");
+                window.alert("Bitte geben Sie entweder einen konkreten Termin (mit Datum) ODER mindestens einen Kanton/Region an.");
                 return;
             }
 
             if (bookingType === 'external' && !formData.get('external_link')) {
-                alert("Bitte geben Sie einen externen Link an."); return;
+                window.alert("Bitte geben Sie einen externen Link an."); return;
             }
             if (bookingType === 'lead' && !contactEmail) {
-                alert("Bitte geben Sie eine Kontakt-Email an."); return;
+                window.alert("Bitte geben Sie eine Kontakt-Email an."); return;
             }
         }
 
