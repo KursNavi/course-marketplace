@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { createClient } from '@supabase/supabase-js';
 import { 
     Loader, Settings, Save, Lock, CheckCircle, Clock, 
     ChevronDown, User, DollarSign, PenTool, Trash2, ArrowRight,
-    Crown, BarChart3, AlertTriangle, Bold, Italic, Underline, Heading2, Heading3, List,
+    Crown, BarChart3, Bold, Italic, Underline, Heading2, Heading3, List,
     CreditCard, Check, Shield, ExternalLink, Mail
 } from 'lucide-react';
-import { SWISS_CANTONS, TIER_CONFIG } from '../lib/constants';
+import { SWISS_CANTONS } from '../lib/constants';
+import { PLANS } from '../../constants/plan';
 import { KursNaviLogo } from './Layout';
 import { supabase } from '../lib/supabase';
 
@@ -382,23 +382,28 @@ const SubscriptionSection = ({ user, currentTier }) => {
     };
 
 
-    const tiers = [
-        { id: 'basic', name: 'Basic', price: '0 CHF', features: ['3 Kurse', 'Standard Support', '15% Komm.'] },
-        { id: 'pro', name: 'Pro', price: '290 CHF/Jahr', features: ['10 Kurse', 'Besseres Ranking', '12% Komm.', 'Kontaktformular'] },
-        { id: 'premium', name: 'Premium', price: '590 CHF/Jahr', features: ['30 Kurse', 'Top Ranking', '10% Komm.', 'Newsletter'] }
-    ];
+    const tierOrder = ['basic', 'pro', 'premium', 'enterprise'];
+
+    const tiers = PLANS.map(p => ({
+        id: p.id,
+        name: p.title,
+        price: `${p.priceAnnualCHF} CHF/Jahr`,
+        features: (p.features || []).map(f => f.text).slice(0, 5),
+    }));
 
     return (
         <div className="space-y-6 animate-in fade-in">
             <div className="bg-white p-8 rounded-xl border border-gray-200 shadow-sm">
                 <h2 className="text-2xl font-bold mb-2 flex items-center"><Crown className="w-6 h-6 mr-2 text-primary"/> Dein Abo-Status</h2>
-                <p className="text-gray-600 mb-6">Du nutzt aktuell das <span className="font-bold uppercase text-dark">{currentTier}</span> Paket.</p>
+                <p className="text-gray-600 mb-6">
+                    Du nutzt aktuell das <span className="font-bold text-dark">{(PLANS.find(p => p.id === currentTier) || PLANS[0]).title}</span> Paket.
+                </p>
                 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                     {tiers.map(tier => {
                         const isCurrent = currentTier === tier.id;
                         // Logik: Upgrade ist möglich, wenn das Tier höher ist als das aktuelle
-                        const isUpgrade = (currentTier === 'basic' && tier.id !== 'basic') || (currentTier === 'pro' && tier.id === 'premium');
+                        const isUpgrade = tierOrder.indexOf(tier.id) > tierOrder.indexOf(currentTier);
                         
                         return (
                             <div key={tier.id} className={`p-6 rounded-xl border-2 flex flex-col ${isCurrent ? 'border-primary bg-orange-50' : 'border-gray-100 bg-white'}`}>
@@ -459,7 +464,7 @@ const SubscriptionSection = ({ user, currentTier }) => {
 // --- MAIN DASHBOARD COMPONENT ---
 const Dashboard = ({ user, t, setView, courses, teacherEarnings, myBookings, savedCourses, savedCourseIds, onToggleSaveCourse, handleDeleteCourse, handleEditCourse, showNotification, changeLanguage, setSelectedCourse }) => {
     const [dashView, setDashView] = useState('overview'); 
-    const [userTier, setUserTier] = useState('basic'); // basic, pro, premium
+    const [userTier, setUserTier] = useState('basic'); // basic, pro, premium, enterprise
     const [showSuccessModal, setShowSuccessModal] = useState(false); // NEW: Success Modal State
 
     // NEW: Check for Payment Success in URL
@@ -481,16 +486,13 @@ const Dashboard = ({ user, t, setView, courses, teacherEarnings, myBookings, sav
         }
     }, [user]);
 
-    // 2. Calculate Limits (Business Logic)
-    const currentTierConfig = TIER_CONFIG[userTier] || TIER_CONFIG['basic'];
-    const maxCourses = currentTierConfig.course_limit;
-    
+    // 2. Plan & Daten (Business Logic)
+    const currentPlan = PLANS.find(p => p.id === userTier) || PLANS[0];
+
     const totalPaidOut = user.role === 'teacher' ? teacherEarnings.filter(e => e.isPaidOut).reduce((sum, e) => sum + e.payout, 0) : 0;
     const myCourses = user.role === 'teacher' ? courses.filter(c => c.user_id === user.id) : [];
     
     const courseCount = myCourses.length;
-    const canCreate = courseCount < maxCourses;
-    const usagePercent = Math.min(100, (courseCount / maxCourses) * 100);
 
     const handleNavigateToCourse = (course) => {
         const full = (courses || []).find(c => String(c.id) === String(course?.id)) || course;
@@ -518,16 +520,11 @@ const Dashboard = ({ user, t, setView, courses, teacherEarnings, myBookings, sav
                 {user.role === 'teacher' && dashView === 'overview' && (
                     <div className="relative group">
                         <button 
-                            onClick={() => canCreate ? handleEditCourse(null) : alert(`Limit erreicht! Ihr Paket (${userTier}) erlaubt maximal ${maxCourses} Kurse. Bitte upgraden.`)} 
-                            disabled={!canCreate}
-                            className={`px-6 py-3 rounded-xl font-bold flex items-center shadow-lg transition font-heading 
-                                ${canCreate 
-                                    ? 'bg-primary text-white hover:bg-orange-600 hover:-translate-y-0.5' 
-                                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
+                            onClick={() => handleEditCourse(null)}
+                            className="px-6 py-3 rounded-xl font-bold flex items-center shadow-lg transition font-heading bg-primary text-white hover:bg-orange-600 hover:-translate-y-0.5"
                         >
-                            <KursNaviLogo className={`mr-2 w-5 h-5 ${canCreate ? 'text-white' : 'text-gray-400'}`} /> 
+                            <KursNaviLogo className="mr-2 w-5 h-5 text-white" /> 
                             {t.dash_new_course}
-                            {!canCreate && <Lock className="ml-2 w-4 h-4" />}
                         </button>
                     </div>
                 )}
@@ -545,81 +542,32 @@ const Dashboard = ({ user, t, setView, courses, teacherEarnings, myBookings, sav
                                 <div>
                                     <h3 className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-1">Dein Plan</h3>
                                     <div className="flex items-center gap-2">
-                                        {userTier === 'premium' ? <Crown className="w-6 h-6 text-yellow-400" /> : <User className="w-6 h-6 text-gray-300" />}
-                                        <span className="text-2xl font-bold capitalize">{currentTierConfig.label} Mitglied</span>
+                                        {userTier === 'basic' ? <User className="w-6 h-6 text-gray-300" /> : <Crown className="w-6 h-6 text-yellow-400" />}
+                                        <span className="text-2xl font-bold capitalize">{currentPlan.title}</span>
                                     </div>
-                                    <p className="text-xs text-gray-400 mt-1">{currentTierConfig.description}</p>
+                                    <p className="text-xs text-gray-400 mt-1">
+                                        Unbegrenzte Kurse • bis {currentPlan.maxCategoriesPerCourse} Kategorien/Kurs • {currentPlan.includedCaptureServices > 0 ? `${currentPlan.includedCaptureServices} Erfassungsservices inkl.` : 'keine Erfassungsservices inklusive'}
+                                    </p>
                                 </div>
                                 <div>
                                     <div className="flex justify-between text-sm mb-2">
-                                        <span className="text-gray-300">Kurs-Limit ({courseCount}/{userTier === 'enterprise' ? '∞' : maxCourses})</span>
-                                        <span className={`${canCreate ? 'text-green-400' : 'text-red-400'} font-bold`}>{canCreate ? 'Aktiv' : 'Limit erreicht'}</span>
+                                        <span className="text-gray-300">Aktive Kurse</span>
+                                        <span className="text-green-400 font-bold">{courseCount}</span>
                                     </div>
-                                    <div className="w-full bg-gray-700 rounded-full h-3 border border-gray-600">
-                                        <div className={`h-full rounded-full transition-all duration-500 ${canCreate ? 'bg-primary' : 'bg-red-500'}`} style={{ width: `${usagePercent}%` }}></div>
+                                    <div className="text-xs text-gray-400">
+                                        Kursanzahl ist in allen Paketen unbegrenzt.
                                     </div>
                                 </div>
                                 <div className="text-right">
-                                                                        {userTier === 'basic' && (
+                                    {userTier !== 'enterprise' && (
                                         <button
                                             type="button"
-                                            onClick={() => {
-                                                const to = "info@kursnavi.ch";
-                                                const subject = "Upgrade Anfrage: PRO Paket";
-                                                const body = [
-                                                    "Hallo KursNavi Team",
-                                                    "",
-                                                    'ich möchte mein Abo auf "PRO" erhöhen.',
-                                                    "",
-                                                    `Account E-Mail: ${user?.email || ""}`,
-                                                    "",
-                                                    "Danke & Gruss"
-                                                ].join("\n");
-
-                                                const mailto = `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-
-                                                if (navigator?.clipboard?.writeText) {
-                                                    navigator.clipboard.writeText(to).catch(() => {});
-                                                }
-
-                                                window.location.href = mailto;
-                                            }}
+                                            onClick={() => setDashView('subscription')}
                                             className="bg-white text-dark px-4 py-2 rounded-lg font-bold text-sm hover:bg-gray-100 transition shadow-lg"
                                         >
-                                            Auf Pro upgraden ⭐
+                                            Abo upgraden / verwalten
                                         </button>
                                     )}
-
-                                                                        {userTier === 'pro' && (
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                const to = "info@kursnavi.ch";
-                                                const subject = "Upgrade Anfrage: PREMIUM Paket";
-                                                const body = [
-                                                    "Hallo KursNavi Team",
-                                                    "",
-                                                    'ich möchte mein Abo auf "PREMIUM" erhöhen.',
-                                                    "",
-                                                    `Account E-Mail: ${user?.email || ""}`,
-                                                    "",
-                                                    "Danke & Gruss"
-                                                ].join("\n");
-
-                                                const mailto = `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-
-                                                if (navigator?.clipboard?.writeText) {
-                                                    navigator.clipboard.writeText(to).catch(() => {});
-                                                }
-
-                                                window.location.href = mailto;
-                                            }}
-                                            className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-4 py-2 rounded-lg font-bold text-sm hover:shadow-lg transition"
-                                        >
-                                            Auf Premium upgraden 🚀
-                                        </button>
-                                    )}
-
                                 </div>
                             </div>
                         </div>
@@ -828,7 +776,7 @@ const Dashboard = ({ user, t, setView, courses, teacherEarnings, myBookings, sav
                         <h2 className="text-3xl font-bold font-heading text-dark mb-4">Herzlichen Glückwunsch!</h2>
                         <p className="text-gray-600 mb-8 text-lg leading-relaxed">
                             Dein Upgrade war erfolgreich! <br/>
-                            Du hast jetzt Zugriff auf alle <strong>{userTier === 'premium' ? 'Premium' : 'Pro'}</strong> Features. <br/>
+                            Du hast jetzt Zugriff auf alle <strong>{currentPlan?.title || userTier}</strong> Features. <br/>
                             <span className="text-sm text-gray-400 mt-2 block">Viel Erfolg mit deinen Kursen!</span>
                         </p>
                         <button 
