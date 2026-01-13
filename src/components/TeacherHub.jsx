@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { CheckCircle, XCircle, BarChart, Users, Calendar, ArrowRight } from 'lucide-react';
+// WICHTIG: Hier nutzen wir die korrekte Mehrzahl 'plans'
 import { PLANS } from '../constants/plans';
 
 const TeacherHub = ({ setView, t, user, showNotification }) => {
@@ -28,7 +29,6 @@ const TeacherHub = ({ setView, t, user, showNotification }) => {
     }, []);
 
     const handleCta = (tier) => {
-        // 1. Wenn User NICHT eingeloggt ist -> Zum Login schicken
         if (!user) {
             localStorage.setItem('selectedPackage', tier);
             setView('login');
@@ -36,15 +36,12 @@ const TeacherHub = ({ setView, t, user, showNotification }) => {
             return;
         }
 
-        // 2. Wenn User eingeloggt ist -> "Soft Upgrade" Prozess starten
         if (tier === 'basic' || tier === 'basic_default') {
-            // Basic ist Standard, einfach zum Dashboard
             if (showNotification) showNotification("Du nutzt das Basic Paket.");
             setView('dashboard');
             return;
         }
 
-        // PRO / PREMIUM / ENTERPRISE -> Öffne vorbereitete E-Mail (mailto)
         const planLabel = String(tier || "").toUpperCase();
         const to = "info@kursnavi.ch";
         const subject = `Upgrade Anfrage: ${planLabel} Paket`;
@@ -70,7 +67,6 @@ const TeacherHub = ({ setView, t, user, showNotification }) => {
 
         const mailto = `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 
-        // UX: Fallback-Hilfe + Adresse kopieren (falls kein Mail-Client gesetzt ist)
         if (navigator?.clipboard?.writeText) {
             navigator.clipboard.writeText(to).catch(() => {});
         }
@@ -79,11 +75,9 @@ const TeacherHub = ({ setView, t, user, showNotification }) => {
             showNotification("Dein E-Mail-Programm sollte sich jetzt öffnen. Falls nicht: info@kursnavi.ch (Adresse wurde kopiert).");
         }
 
-        // Mail-App öffnen
         window.location.href = mailto;
     };
 
-    // Helper für dynamische Farben basierend auf dem Plan-Akzent
     const getColorClasses = (accent) => {
         switch (accent) {
             case 'green': return { border: 'border-green-500', text: 'text-green-600', bg: 'bg-green-600', icon: 'text-green-500', btnOutline: 'text-green-700 border-green-500 hover:bg-green-50' };
@@ -115,7 +109,6 @@ const TeacherHub = ({ setView, t, user, showNotification }) => {
                         </div>
                     </div>
                     <div className="md:w-1/2 bg-gray-800 p-8 rounded-2xl border border-gray-700 shadow-2xl">
-                        {/* Abstract UI Mockup */}
                         <div className="space-y-4">
                             <div className="flex justify-between items-center border-b border-gray-700 pb-4">
                                 <div>
@@ -148,7 +141,6 @@ const TeacherHub = ({ setView, t, user, showNotification }) => {
                     </p>
                 </div>
 
-                {/* Dynamic Pricing Grid (Source of Truth: constants/plan.js) */}
                 <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
                     {PLANS.map((plan) => {
                         const colors = getColorClasses(plan.accent);
@@ -169,7 +161,7 @@ const TeacherHub = ({ setView, t, user, showNotification }) => {
                                 <ul className="space-y-3 mb-8 flex-1 text-sm text-gray-600">
                                     {plan.features.map((feature, idx) => (
                                         <li key={idx} className={`flex items-start ${feature.dim ? 'opacity-70' : ''}`}>
-                                            {/* Logik für Haken (Check) oder Kreuz (X) */}
+                                            {/* HIER IST DIE LOGIK FÜR DAS KREUZ */}
                                             {feature.excluded ? (
                                                 <XCircle className="w-4 h-4 mr-2 mt-1 shrink-0 text-red-500" />
                                             ) : (
