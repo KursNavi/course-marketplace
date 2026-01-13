@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { CheckCircle, BarChart, Users, Calendar, ArrowRight } from 'lucide-react';
+import { CheckCircle, XCircle, BarChart, Users, Calendar, ArrowRight } from 'lucide-react';
 import { PLANS } from '../constants/plans';
 
 const TeacherHub = ({ setView, t, user, showNotification }) => {
@@ -168,9 +168,15 @@ const TeacherHub = ({ setView, t, user, showNotification }) => {
                                 </div>
                                 <ul className="space-y-3 mb-8 flex-1 text-sm text-gray-600">
                                     {plan.features.map((feature, idx) => (
-                                        <li key={idx} className={`flex items-start ${feature.dim ? 'opacity-50 italic' : ''}`}>
-                                            <CheckCircle className={`w-4 h-4 mr-2 mt-1 shrink-0 ${colors.icon}`} />
-                                            <span className={feature.isStrong ? 'font-bold text-gray-800' : ''}>
+                                        <li key={idx} className={`flex items-start ${feature.dim ? 'opacity-70' : ''}`}>
+                                            {/* Logik für Haken (Check) oder Kreuz (X) */}
+                                            {feature.excluded ? (
+                                                <XCircle className="w-4 h-4 mr-2 mt-1 shrink-0 text-red-500" />
+                                            ) : (
+                                                <CheckCircle className={`w-4 h-4 mr-2 mt-1 shrink-0 ${colors.icon}`} />
+                                            )}
+                                            
+                                            <span className={feature.isStrong ? 'font-bold text-gray-800' : (feature.excluded ? 'text-gray-500' : '')}>
                                                 {feature.text}
                                             </span>
                                         </li>

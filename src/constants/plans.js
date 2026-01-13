@@ -25,8 +25,9 @@ export const PLANS = [
       { text: "1 Kategorie pro Kurs" },
       { text: "15% Komm. (inkl. Stripe)" },
       { text: "Standard Listing" },
-      { text: "Keine Erfassungsservices inklusive", dim: true }, // Neu: Statt Link
-      { text: "Ranking-Bonus bei Direktbuchung" }, // Neu: Hinweis Buchung
+      // NEU: 'excluded: true' sorgt für das rote Kreuz statt Haken
+      { text: "Keine Erfassungsservices inklusive", dim: true, excluded: true },
+      { text: "Ranking-Bonus bei Direktbuchung" },
     ],
   },
   {
@@ -54,10 +55,11 @@ export const PLANS = [
       { text: "Unbegrenzte Kurse" },
       { text: "Bis 3 Kategorien pro Kurs" },
       { text: "12% Komm. bei Buchung" },
-      { text: "Erhöhtes Ranking" }, // Neu: Ohne Faktor-Zahl
-      { text: "Keine Erfassungsservices inklusive", dim: true }, // Neu: Statt Kontaktformular
+      { text: "Erhöhtes Ranking" },
+      // NEU: 'excluded: true' für rotes Kreuz
+      { text: "Keine Erfassungsservices inklusive", dim: true, excluded: true },
       { text: "Ranking-Bonus bei Direktbuchung" },
-      { text: "Attraktivere Darstellung" },
+      // "Attraktivere Darstellung" entfernt gemäss Screenshot
     ],
   },
   {
@@ -88,9 +90,7 @@ export const PLANS = [
       { text: "Erhöhtes Ranking", isStrong: true },
       { text: "5 Erfassungsservices inklusive", isStrong: true },
       { text: "Ranking-Bonus bei Direktbuchung" },
-      { text: 'Badge "Empfohlen"' },
-      { text: "Newsletter Präsenz" },
-      { text: "Reporting Dashboard" },
+      // Badge, Newsletter, Reporting entfernt gemäss Screenshot
     ],
   },
   {
@@ -121,9 +121,7 @@ export const PLANS = [
       { text: "Erhöhtes Ranking" },
       { text: "15 Erfassungsservices inklusive", isStrong: true },
       { text: "Ranking-Bonus bei Direktbuchung" },
-      { text: "Beste Platzierung" },
-      { text: "Eigene Landingpage" },
-      { text: "Personal Account Mgr." },
+      // Platzierung, Landingpage, Account Mgr. entfernt gemäss Screenshot
     ],
   },
 ];
