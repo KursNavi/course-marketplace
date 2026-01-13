@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
-    Loader, Settings, Save, Lock, CheckCircle, Clock, 
+    Loader, Settings, Save, Lock, CheckCircle, XCircle, Clock,
     ChevronDown, User, DollarSign, PenTool, Trash2, ArrowRight,
     Crown, BarChart3, Bold, Italic, Underline, Heading2, Heading3, List,
     CreditCard, Check, Shield, ExternalLink, Mail
@@ -388,7 +388,8 @@ const SubscriptionSection = ({ user, currentTier }) => {
         id: p.id,
         name: p.title,
         price: `${p.priceAnnualCHF} CHF/Jahr`,
-        features: (p.features || []).map(f => f.text).slice(0, 5),
+        // WICHTIG: Wir behalten das Objekt (nicht nur Text), um 'excluded' zu prüfen
+        features: (p.features || []).slice(0, 7),
     }));
 
     return (
@@ -413,7 +414,15 @@ const SubscriptionSection = ({ user, currentTier }) => {
                                 </div>
                                 <ul className="mb-6 flex-1 space-y-2">
                                     {tier.features.map((f, i) => (
-                                        <li key={i} className="text-sm text-gray-600 flex items-center"><Check className="w-4 h-4 mr-2 text-green-500"/> {f}</li>
+                                        <li key={i} className={`text-sm flex items-start ${f.excluded ? 'text-gray-400' : 'text-gray-600'}`}>
+                                            {/* Logik: Rotes Kreuz wenn excluded, sonst grüner Haken */}
+                                            {f.excluded ? (
+                                                <XCircle className="w-4 h-4 mr-2 text-red-500 shrink-0"/>
+                                            ) : (
+                                                <CheckCircle className="w-4 h-4 mr-2 text-green-500 shrink-0"/>
+                                            )}
+                                            <span>{f.text}</span>
+                                        </li>
                                     ))}
                                 </ul>
                                 {isCurrent ? (
