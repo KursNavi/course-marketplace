@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { CheckCircle, BarChart, Users, Calendar, ArrowRight } from 'lucide-react';
-import { PLANS } from '../constants/plan';
+import { PLANS } from '../constants/plans';
 
 const TeacherHub = ({ setView, t, user, showNotification }) => {
     
