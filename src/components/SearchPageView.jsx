@@ -84,6 +84,42 @@ const SearchPageView = ({
         setSelectedLocations([]); setSearchQuery(""); setFilterDate(""); setFilterPriceMax(""); setFilterLevel("All"); setFilterPro(false);
     };
 
+    // --- RANKING LOGIC (v3.0) ---
+    // Formula: Score = Plan * Booking * (0.6 + 0.4*Freshness) * (1 + RandomEpsilon)
+    const sortedCourses = React.useMemo(() => {
+        return [...filteredCourses].sort((a, b) => {
+            const getScore = (c) => {
+                // 1. Plan Factor (Fallback logic for legacy data)
+                // If plan_factor exists, use it. Else: Pro=1.2, Basic=1.0
+                const planF = c.plan_factor || (c.is_pro ? 1.2 : 1.0);
+                
+                // 2. Booking Factor (Placeholder until booking system is live)
+                // If booking_active exists use it, else default 1.0
+                const bookF = c.booking_factor || 1.0;
+
+                // 3. Freshness Score (0-1)
+                // If created_at missing, assume 0.5. Else decay over 90 days.
+                let freshScore = 0.5;
+                if (c.created_at) {
+                    const daysOld = (new Date() - new Date(c.created_at)) / (1000 * 60 * 60 * 24);
+                    freshScore = Math.max(0, 1 - (daysOld / 90));
+                }
+                const timeFactor = 0.6 + (0.4 * freshScore);
+
+                // 4. Stable Random Epsilon (-0.03 to +0.03)
+                // We use the ID char codes to create a stable seed per course so it doesn't jitter on re-render
+                const seed = (c.id || "0").toString().split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+                // Simple pseudo-random sine wave based on seed
+                const randomJitter = Math.sin(seed) * 0.03; 
+
+                // Final Multiplication
+                return planF * bookF * timeFactor * (1 + randomJitter);
+            };
+
+            return getScore(b) - getScore(a); // Sort Descending
+        });
+    }, [filteredCourses]);
+
     return (
         <div className="min-h-screen bg-beige">
             <div className="bg-white border-b pt-8 pb-4 sticky top-20 z-30 shadow-sm">
@@ -139,7 +175,7 @@ const SearchPageView = ({
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
                  {loading ? <div className="text-center py-20"><Loader className="animate-spin w-10 h-10 text-primary mx-auto" /></div> : filteredCourses.length > 0 ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-                    {filteredCourses.map(course => (
+                    {sortedCourses.map(course => (
                       <div key={course.id} onClick={() => { setSelectedCourse(course); setView('detail'); window.scrollTo(0,0); }} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer group">
                         <div className="relative h-48 overflow-hidden">
                             <img src={course.image_url} alt={course.title} className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300" />

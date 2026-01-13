@@ -10,14 +10,14 @@ export const PLANS = [
     buttonVariant: "outline",
     ctaLabel: "Basic wählen",
 
-    // --- Machine-readable Paketlogik (für App-Regeln & Ranking) ---
+    // --- Machine-readable Paketlogik (v3.0) ---
     priceAnnualCHF: 0,
-    maxCourses: Infinity, // nicht mehr limitiert
+    maxCourses: Infinity,
     maxCategoriesPerCourse: 1,
     commissionPct: 15,
     planFactor: 1.0,
     includedCaptureServices: 0,
-    bookingFactorWithKursNavi: 1.3, // Basic + KursNavi-Buchung
+    bookingFactorWithKursNavi: 1.3,
     bookingFactorWithoutKursNavi: 1.0,
 
     features: [
@@ -25,8 +25,8 @@ export const PLANS = [
       { text: "1 Kategorie pro Kurs" },
       { text: "15% Komm. (inkl. Stripe)" },
       { text: "Standard Listing" },
-      { text: "Link auf eigene Website" },
-      { text: "Optional: Direktbuchung (Rankingfaktor 1.3)" },
+      { text: "Keine Erfassungsservices inklusive", dim: true }, // Neu: Statt Link
+      { text: "Ranking-Bonus bei Direktbuchung" }, // Neu: Hinweis Buchung
     ],
   },
   {
@@ -40,24 +40,24 @@ export const PLANS = [
     buttonVariant: "solid",
     ctaLabel: "Pro wählen",
 
-    // --- Machine-readable Paketlogik (für App-Regeln & Ranking) ---
+    // --- Machine-readable Paketlogik (v3.0) ---
     priceAnnualCHF: 290,
     maxCourses: Infinity,
     maxCategoriesPerCourse: 3,
     commissionPct: 12,
     planFactor: 1.2,
     includedCaptureServices: 0,
-    bookingFactorWithKursNavi: 1.2, // Paid + KursNavi-Buchung
+    bookingFactorWithKursNavi: 1.2,
     bookingFactorWithoutKursNavi: 1.0,
 
     features: [
       { text: "Unbegrenzte Kurse" },
       { text: "Bis 3 Kategorien pro Kurs" },
       { text: "12% Komm. bei Buchung" },
-      { text: "Rankingbonus (Faktor 1.2)" },
-      { text: "Kontaktformular" },
+      { text: "Erhöhtes Ranking" }, // Neu: Ohne Faktor-Zahl
+      { text: "Keine Erfassungsservices inklusive", dim: true }, // Neu: Statt Kontaktformular
+      { text: "Ranking-Bonus bei Direktbuchung" },
       { text: "Attraktivere Darstellung" },
-      { text: "Optional: Direktbuchung (Faktor 1.2 + Extra-Filter)" },
     ],
   },
   {
@@ -71,7 +71,7 @@ export const PLANS = [
     buttonVariant: "outline",
     ctaLabel: "Premium wählen",
 
-    // --- Machine-readable Paketlogik (für App-Regeln & Ranking) ---
+    // --- Machine-readable Paketlogik (v3.0) ---
     priceAnnualCHF: 690,
     maxCourses: Infinity,
     maxCategoriesPerCourse: 3,
@@ -85,12 +85,12 @@ export const PLANS = [
       { text: "Unbegrenzte Kurse" },
       { text: "Bis 3 Kategorien pro Kurs" },
       { text: "10% Komm. bei Buchung" },
-      { text: "Rankingbonus (Faktor 1.2)", isStrong: true },
+      { text: "Erhöhtes Ranking", isStrong: true },
       { text: "5 Erfassungsservices inklusive", isStrong: true },
+      { text: "Ranking-Bonus bei Direktbuchung" },
       { text: 'Badge "Empfohlen"' },
       { text: "Newsletter Präsenz" },
       { text: "Reporting Dashboard" },
-      { text: "Optional: Direktbuchung (Faktor 1.2 + Extra-Filter)" },
     ],
   },
   {
@@ -104,7 +104,7 @@ export const PLANS = [
     buttonVariant: "outline",
     ctaLabel: "Kontaktieren",
 
-    // --- Machine-readable Paketlogik (für App-Regeln & Ranking) ---
+    // --- Machine-readable Paketlogik (v3.0) ---
     priceAnnualCHF: 1490,
     maxCourses: Infinity,
     maxCategoriesPerCourse: 5,
@@ -118,12 +118,12 @@ export const PLANS = [
       { text: "Unbegrenzte Kurse", isStrong: true },
       { text: "Bis 5 Kategorien pro Kurs" },
       { text: "8% Komm. bei Buchung" },
-      { text: "Rankingbonus (Faktor 1.2)" },
+      { text: "Erhöhtes Ranking" },
       { text: "15 Erfassungsservices inklusive", isStrong: true },
+      { text: "Ranking-Bonus bei Direktbuchung" },
       { text: "Beste Platzierung" },
       { text: "Eigene Landingpage" },
       { text: "Personal Account Mgr." },
-      { text: "Optional: Direktbuchung (Faktor 1.2 + Extra-Filter)" },
     ],
   },
 ];

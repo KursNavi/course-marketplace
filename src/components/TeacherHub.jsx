@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
-import { CheckCircle, BarChart, Users, Calendar, ArrowRight, DollarSign, Mail } from 'lucide-react';
+import { CheckCircle, BarChart, Users, Calendar, ArrowRight } from 'lucide-react';
+import { PLANS } from '../constants/plan';
 
 const TeacherHub = ({ setView, t, user, showNotification }) => {
     
@@ -26,7 +27,7 @@ const TeacherHub = ({ setView, t, user, showNotification }) => {
 
     }, []);
 
-        const handleCta = (tier) => {
+    const handleCta = (tier) => {
         // 1. Wenn User NICHT eingeloggt ist -> Zum Login schicken
         if (!user) {
             localStorage.setItem('selectedPackage', tier);
@@ -80,6 +81,17 @@ const TeacherHub = ({ setView, t, user, showNotification }) => {
 
         // Mail-App öffnen
         window.location.href = mailto;
+    };
+
+    // Helper für dynamische Farben basierend auf dem Plan-Akzent
+    const getColorClasses = (accent) => {
+        switch (accent) {
+            case 'green': return { border: 'border-green-500', text: 'text-green-600', bg: 'bg-green-600', icon: 'text-green-500', btnOutline: 'text-green-700 border-green-500 hover:bg-green-50' };
+            case 'blue': return { border: 'border-blue-500', text: 'text-blue-600', bg: 'bg-blue-600', icon: 'text-blue-500', btnSolid: 'bg-blue-600 hover:bg-blue-700 text-white' };
+            case 'purple': return { border: 'border-purple-500', text: 'text-purple-600', bg: 'bg-purple-600', icon: 'text-purple-500', btnOutline: 'text-purple-700 border-purple-500 hover:bg-purple-50' };
+            case 'orange': return { border: 'border-orange-500', text: 'text-orange-600', bg: 'bg-orange-600', icon: 'text-orange-500', btnOutline: 'text-orange-700 border-orange-500 hover:bg-orange-50' };
+            default: return { border: 'border-gray-200', text: 'text-gray-800', bg: 'bg-gray-800', icon: 'text-gray-500', btnOutline: 'text-gray-700 border-gray-300' };
+        }
     };
 
     return (
@@ -136,81 +148,43 @@ const TeacherHub = ({ setView, t, user, showNotification }) => {
                     </p>
                 </div>
 
-                {/* Pricing Grid */}
+                {/* Dynamic Pricing Grid (Source of Truth: constants/plan.js) */}
                 <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    
-                    {/* BASIC */}
-                    <div className="bg-white p-6 rounded-2xl border-t-4 border-green-500 shadow-lg hover:shadow-xl transition flex flex-col relative">
-                        <div className="mb-4">
-                            <h3 className="text-xl font-bold font-heading text-gray-800">Basic</h3>
-                            <div className="mt-2 text-3xl font-bold">0 CHF<span className="text-sm font-normal text-gray-500">/Jahr</span></div>
-                        </div>
-                        <ul className="space-y-3 mb-8 flex-1 text-sm text-gray-600">
-                            <li className="flex items-start"><CheckCircle className="w-4 h-4 text-green-500 mr-2 mt-1 shrink-0"/> Bis 3 aktive Kurse</li>
-                            <li className="flex items-start"><CheckCircle className="w-4 h-4 text-green-500 mr-2 mt-1 shrink-0"/> 15% Komm. (inkl. Stripe)</li>
-                            <li className="flex items-start"><CheckCircle className="w-4 h-4 text-green-500 mr-2 mt-1 shrink-0"/> Standard Listing</li>
-                            <li className="flex items-start"><CheckCircle className="w-4 h-4 text-green-500 mr-2 mt-1 shrink-0"/> Link auf eigene Website</li>
-                        </ul>
-                        <button onClick={() => handleCta('basic')} className="w-full py-2 border-2 border-green-500 text-green-700 font-bold rounded-lg hover:bg-green-50 transition">
-                            Basic wählen
-                        </button>
-                    </div>
-
-                    {/* PRO */}
-                    <div className="bg-white p-6 rounded-2xl border-t-4 border-blue-500 shadow-lg hover:shadow-xl transition flex flex-col relative transform md:-translate-y-2">
-                        <div className="absolute top-0 right-0 bg-blue-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-lg">BELIEBT</div>
-                        <div className="mb-4">
-                            <h3 className="text-xl font-bold font-heading text-gray-800">Pro</h3>
-                            <div className="mt-2 text-3xl font-bold text-blue-600">290 CHF<span className="text-sm font-normal text-gray-500">/Jahr</span></div>
-                        </div>
-                        <ul className="space-y-3 mb-8 flex-1 text-sm text-gray-600">
-                            <li className="flex items-start"><CheckCircle className="w-4 h-4 text-blue-500 mr-2 mt-1 shrink-0"/> Bis 10 aktive Kurse</li>
-                            <li className="flex items-start"><CheckCircle className="w-4 h-4 text-blue-500 mr-2 mt-1 shrink-0"/> 12% Komm. bei Buchung</li>
-                            <li className="flex items-start"><CheckCircle className="w-4 h-4 text-blue-500 mr-2 mt-1 shrink-0"/> Besseres Ranking</li>
-                            <li className="flex items-start"><CheckCircle className="w-4 h-4 text-blue-500 mr-2 mt-1 shrink-0"/> Kontaktformular</li>
-                            <li className="flex items-start"><CheckCircle className="w-4 h-4 text-blue-500 mr-2 mt-1 shrink-0"/> Attraktivere Darstellung</li>
-                        </ul>
-                        <button onClick={() => handleCta('pro')} className="w-full py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition shadow-md">
-                            Pro wählen
-                        </button>
-                    </div>
-
-                    {/* PREMIUM */}
-                    <div className="bg-white p-6 rounded-2xl border-t-4 border-purple-500 shadow-lg hover:shadow-xl transition flex flex-col relative">
-                        <div className="mb-4">
-                            <h3 className="text-xl font-bold font-heading text-gray-800">Premium</h3>
-                            <div className="mt-2 text-3xl font-bold text-purple-600">590 CHF<span className="text-sm font-normal text-gray-500">/Jahr</span></div>
-                        </div>
-                        <ul className="space-y-3 mb-8 flex-1 text-sm text-gray-600">
-                            <li className="flex items-start"><CheckCircle className="w-4 h-4 text-purple-500 mr-2 mt-1 shrink-0"/> Bis 30 aktive Kurse</li>
-                            <li className="flex items-start"><CheckCircle className="w-4 h-4 text-purple-500 mr-2 mt-1 shrink-0"/> 10% Komm. bei Buchung</li>
-                            <li className="flex items-start"><CheckCircle className="w-4 h-4 text-purple-500 mr-2 mt-1 shrink-0"/> <strong>Top Ranking</strong></li>
-                            <li className="flex items-start"><CheckCircle className="w-4 h-4 text-purple-500 mr-2 mt-1 shrink-0"/> Badge "Empfohlen"</li>
-                            <li className="flex items-start"><CheckCircle className="w-4 h-4 text-purple-500 mr-2 mt-1 shrink-0"/> Newsletter Präsenz</li>
-                            <li className="flex items-start"><CheckCircle className="w-4 h-4 text-purple-500 mr-2 mt-1 shrink-0"/> Reporting Dashboard</li>
-                        </ul>
-                        <button onClick={() => handleCta('premium')} className="w-full py-2 border-2 border-purple-500 text-purple-700 font-bold rounded-lg hover:bg-purple-50 transition">
-                            Premium wählen
-                        </button>
-                    </div>
-
-                    {/* ENTERPRISE */}
-                    <div className="bg-white p-6 rounded-2xl border-t-4 border-orange-500 shadow-lg hover:shadow-xl transition flex flex-col relative">
-                        <div className="mb-4">
-                            <h3 className="text-xl font-bold font-heading text-gray-800">Enterprise</h3>
-                            <div className="mt-2 text-3xl font-bold text-orange-600">ab 1'190 CHF<span className="text-sm font-normal text-gray-500">/Jahr</span></div>
-                        </div>
-                        <ul className="space-y-3 mb-8 flex-1 text-sm text-gray-600">
-                            <li className="flex items-start"><CheckCircle className="w-4 h-4 text-orange-500 mr-2 mt-1 shrink-0"/> <strong>Unbegrenzte Kurse</strong></li>
-                            <li className="flex items-start"><CheckCircle className="w-4 h-4 text-orange-500 mr-2 mt-1 shrink-0"/> 8% Komm. bei Buchung</li>
-                            <li className="flex items-start"><CheckCircle className="w-4 h-4 text-orange-500 mr-2 mt-1 shrink-0"/> Beste Platzierung</li>
-                            <li className="flex items-start"><CheckCircle className="w-4 h-4 text-orange-500 mr-2 mt-1 shrink-0"/> Eigene Landingpage</li>
-                            <li className="flex items-start"><CheckCircle className="w-4 h-4 text-orange-500 mr-2 mt-1 shrink-0"/> Personal Account Mgr.</li>
-                        </ul>
-                        <button onClick={() => handleCta('enterprise')} className="w-full py-2 border-2 border-orange-500 text-orange-700 font-bold rounded-lg hover:bg-orange-50 transition">
-                            Kontaktieren
-                        </button>
-                    </div>
+                    {PLANS.map((plan) => {
+                        const colors = getColorClasses(plan.accent);
+                        return (
+                            <div key={plan.id} className={`bg-white p-6 rounded-2xl border-t-4 shadow-lg hover:shadow-xl transition flex flex-col relative ${plan.lift ? 'transform md:-translate-y-2' : ''} ${colors.border}`}>
+                                {plan.badgeText && (
+                                    <div className={`absolute top-0 right-0 text-white text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-lg ${colors.bg}`}>
+                                        {plan.badgeText}
+                                    </div>
+                                )}
+                                <div className="mb-4">
+                                    <h3 className="text-xl font-bold font-heading text-gray-800">{plan.title}</h3>
+                                    <div className={`mt-2 text-3xl font-bold ${plan.id === 'basic' ? 'text-gray-900' : colors.text}`}>
+                                        {plan.priceText}
+                                        <span className="text-sm font-normal text-gray-500">{plan.periodText}</span>
+                                    </div>
+                                </div>
+                                <ul className="space-y-3 mb-8 flex-1 text-sm text-gray-600">
+                                    {plan.features.map((feature, idx) => (
+                                        <li key={idx} className={`flex items-start ${feature.dim ? 'opacity-50 italic' : ''}`}>
+                                            <CheckCircle className={`w-4 h-4 mr-2 mt-1 shrink-0 ${colors.icon}`} />
+                                            <span className={feature.isStrong ? 'font-bold text-gray-800' : ''}>
+                                                {feature.text}
+                                            </span>
+                                        </li>
+                                    ))}
+                                </ul>
+                                <button 
+                                    onClick={() => handleCta(plan.id)} 
+                                    className={`w-full py-2 font-bold rounded-lg transition shadow-md ${plan.buttonVariant === 'solid' ? colors.btnSolid : colors.btnOutline}`}
+                                >
+                                    {plan.ctaLabel}
+                                </button>
+                            </div>
+                        );
+                    })}
                 </div>
 
                 {/* Service Add-on */}
