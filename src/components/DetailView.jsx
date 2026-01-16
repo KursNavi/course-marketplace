@@ -253,9 +253,65 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
         return out;
     };
 
-    const relatedCourses = (courses || [])
-        .filter(c => c.id !== course.id && c.category_area === course.category_area)
-        .slice(0, 4);
+    // --- RANKING ENGINE (V3.0) ---
+    const getRankingScore = (candidate) => {
+        // 1. Plan Factor (Basic=1.0, Pro=1.2)
+        const isPro = candidate.is_pro || false;
+        const planFactor = isPro ? 1.2 : 1.0;
+
+        // 2. Booking Factor
+        // Lead/External: 1.0 | Basic+Booking: 1.3 | Pro+Booking: 1.2
+        const isBookable = candidate.booking_type === 'platform';
+        let bookingFactor = 1.0;
+        if (isBookable) {
+            bookingFactor = isPro ? 1.2 : 1.3;
+        }
+
+        // 3. Relevance (Word Match Boost)
+        let relevanceScore = 1.0; // Basis
+        const currentWords = (course.title || '').toLowerCase().split(/\s+/).filter(w => w.length > 3);
+        const candidateWords = (candidate.title || '').toLowerCase().split(/\s+/);
+        const overlap = candidateWords.filter(w => currentWords.includes(w)).length;
+        relevanceScore += Math.min(0.5, overlap * 0.1); // Max +0.5 Bonus für Text-Matches
+
+        // 4. Freshness (Newer = Better)
+        const dateCreated = candidate.created_at ? new Date(candidate.created_at) : new Date('2024-01-01');
+        const daysOld = (new Date() - dateCreated) / (1000 * 60 * 60 * 24);
+        const freshnessScore = Math.max(0, 1 - (daysOld / 365)); // 1.0 = brand new
+
+        // 5. Time Score (Next Event proximity)
+        let timeScore = 0.5; // Neutral default
+        if (candidate.course_events && candidate.course_events.length > 0) {
+            const nextEvent = candidate.course_events.find(e => new Date(e.start_date) > new Date());
+            if (nextEvent) {
+                const daysToEvent = (new Date(nextEvent.start_date) - new Date()) / (1000 * 60 * 60 * 24);
+                if (daysToEvent < 14) timeScore = 1.0;      // < 2 Weeks
+                else if (daysToEvent < 60) timeScore = 0.8; // < 2 Months
+            }
+        }
+
+        // 6. Epsilon Randomness (-0.03 to +0.03)
+        const epsilon = (Math.random() * 0.06) - 0.03;
+
+        // Final Score Calculation
+        return relevanceScore 
+            * planFactor 
+            * bookingFactor 
+            * (0.5 + 0.5 * timeScore) 
+            * (0.6 + 0.4 * freshnessScore) 
+            * (1 + epsilon);
+    };
+
+    // Filter & Sort Logic: Priority same Category -> then fill with others
+    const candidates = (courses || []).filter(c => c.id !== course.id);
+    const sameCategory = candidates.filter(c => c.category_area === course.category_area);
+    const otherCategory = candidates.filter(c => c.category_area !== course.category_area);
+
+    const rankedSame = sameCategory.map(c => ({...c, score: getRankingScore(c)})).sort((a,b) => b.score - a.score);
+    const rankedOther = otherCategory.map(c => ({...c, score: getRankingScore(c)})).sort((a,b) => b.score - a.score);
+
+    // Take all from same category, then fill up to 5 with others
+    const relatedCourses = [...rankedSame, ...rankedOther].slice(0, 5);
 
     const fallbackImage = "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=1200";
 
@@ -426,8 +482,10 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
 
         {relatedCourses.length > 0 && (
             <div className="mt-16 pt-10 border-t border-gray-200">
-                <h2 className="text-2xl font-bold font-heading text-dark mb-6">Das könnte dich auch interessieren</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <h2 className="text-2xl font-bold font-heading text-dark mb-2">Nicht der richtige Kurs?</h2>
+                <p className="text-gray-500 mb-6">Entdecke diese Alternativen aus {course.category_area ? course.category_area.replace('_', ' ') : 'unserem Angebot'}</p>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
                     {relatedCourses.map(rel => (
                          <div key={rel.id} 
                               onClick={() => { 
