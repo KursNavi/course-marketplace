@@ -9,7 +9,7 @@ import {
   TrendingUp
 } from 'lucide-react';
 
-const LandingPage = () => {
+const LandingPage = ({ setView }) => {
   // State für das Kontaktformular
   const [formData, setFormData] = useState({
     email: '',
@@ -243,7 +243,7 @@ const LandingPage = () => {
       </section>
 
       {/* --- NEW FOOTER WITH NEWSLETTER --- */}
-      <Footer />
+      <Footer setView={setView} />
     </div>
   );
 };

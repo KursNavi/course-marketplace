@@ -10,7 +10,12 @@ const KursNaviLogo = ({ className }) => (
   </svg>
 );
 
-export const Footer = () => {
+export const Footer = ({ setView }) => {
+  // Hilfsfunktion für Navigation
+  const navTo = (view, e) => {
+    e.preventDefault();
+    if (setView) setView(view);
+  };
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState('idle'); // idle, loading, success, error
 
@@ -119,12 +124,25 @@ export const Footer = () => {
           </div>
           
           <div>
-            <h4 className="font-bold text-gray-900 mb-4">Rechtliches</h4>
-            <ul className="space-y-2 text-sm text-gray-500">
-              <li><a href="#" className="hover:text-blue-600 transition-colors">Impressum</a></li>
-              <li><a href="#" className="hover:text-blue-600 transition-colors">Datenschutz</a></li>
-            </ul>
-          </div>
+  <h4 className="font-bold text-gray-900 mb-4">Rechtliches</h4>
+  <ul className="space-y-2 text-sm text-gray-500">
+    <li>
+      <button onClick={(e) => navTo('impressum', e)} className="hover:text-blue-600 transition-colors text-left">
+        Impressum
+      </button>
+    </li>
+    <li>
+      <button onClick={(e) => navTo('datenschutz', e)} className="hover:text-blue-600 transition-colors text-left">
+        Datenschutz
+      </button>
+    </li>
+    <li>
+      <button onClick={(e) => navTo('agb', e)} className="hover:text-blue-600 transition-colors text-left">
+        AGB
+      </button>
+    </li>
+  </ul>
+</div>
         </div>
 
         <div className="border-t border-gray-100 pt-8 flex flex-col md:flex-row justify-between items-center">
