@@ -222,52 +222,43 @@ export default function KursNaviPro() {
 
   const fetchCourses = async () => {
     try {
-      setLoading(true);
-            // V3.0 Data Sync: Try joining profiles table to get instructor details (bio, certificates, additional locations).
-      // Fallback: If no DB relationship exists between courses <-> profiles, load courses without the join.
-      let { data, error } = await supabase.from('courses').select(`
-        *,
-        course_events(*, bookings(count)),
-        instructor_profile:profiles!user_id (
-          bio_text,
-          certificates,
-          additional_locations,
-          city,
-          canton
-        )
-      `).order('created_at', { ascending: false });
+            setLoading(true);
 
-      const isRelationshipError =
-        error &&
-        (
-          error.code === 'PGRST200' ||
-          (error.message || '').includes("Could not find a relationship between") ||
-          (error.message || '').includes("relationship between 'courses' and 'profiles'")
-        );
+      // V3.0 Data Sync (robust): Lade Kurse + Events zuerst, Profile danach separat (kein fragiler Join)
+      const { data: courseData, error: courseError } = await supabase
+        .from('courses')
+        .select(`*, course_events(*, bookings(count))`)
+        .order('created_at', { ascending: false });
 
-      if (isRelationshipError) {
-        // Fallback query without profiles join
-        const fallback = await supabase.from('courses').select(`
-          *,
-          course_events(*, bookings(count))
-        `).order('created_at', { ascending: false });
+      if (courseError) throw courseError;
 
-        data = fallback.data;
-        error = fallback.error;
+      // Instructor-Profile in einer zweiten Query holen
+      const userIds = [...new Set((courseData || []).map(c => c.user_id).filter(Boolean))];
+
+      let profileMap = {};
+      if (userIds.length > 0) {
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('id, bio_text, certificates, additional_locations, city, canton')
+          .in('id', userIds);
+
+        if (!profileError && profileData) {
+          profileMap = Object.fromEntries(profileData.map(p => [p.id, p]));
+        }
       }
 
-      if (error) throw error;
+      const migratedData = (courseData || []).map(c => {
+        const normalized = normalizeCourse(c);
+        const prof = profileMap[c.user_id];
 
-      const migratedData = (data || []).map(c => {
-          const normalized = normalizeCourse(c);
-          // Map joined profile data to flat instructor fields for the UI
-          return {
-              ...normalized,
-              instructor_bio: c.instructor_profile?.bio_text,
-              instructor_certificates: c.instructor_profile?.certificates,
-              additional_locations: c.instructor_profile?.additional_locations
-          };
+        return {
+          ...normalized,
+          instructor_bio: prof?.bio_text,
+          instructor_certificates: prof?.certificates,
+          additional_locations: prof?.additional_locations,
+        };
       });
+
       setCourses(migratedData);
       
       // Deep Link Logic (SEO Enhanced)
