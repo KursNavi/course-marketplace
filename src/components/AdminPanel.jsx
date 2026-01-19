@@ -97,9 +97,36 @@ const AdminPanel = ({ t, courses, setCourses, showNotification, fetchCourses, se
         }
     };
 
-    // Filter Logic
-    const teachers = profiles.filter(p => p.role === 'teacher');
-    const students = profiles.filter(p => p.role === 'student' || !p.role);
+        // Filter Logic (robust, falls "role" nicht (mehr) verwendet wird)
+    const getRoleValue = (p) =>
+        (p.role ?? p.user_type ?? p.account_type ?? p.user_role ?? p.profile_type ?? '').toString().toLowerCase();
+
+    const isTeacher = (p) => {
+        const r = getRoleValue(p);
+
+        // Klar definierte Lehrer-Rollen
+        if (['teacher', 'lehrer', 'instructor', 'anbieter', 'provider'].includes(r)) return true;
+
+        // Alternative Flags (falls vorhanden)
+        if (p.is_teacher === true || p.is_instructor === true || p.is_provider === true) return true;
+
+        // Fallback: Wenn keine Rolle vorhanden ist, zeigen wir das Profil bei Lehrern,
+        // damit Du Pakete/Limit auf jeden Fall einstellen kannst.
+        if (!r) return true;
+
+        return false;
+    };
+
+    const isStudent = (p) => {
+        const r = getRoleValue(p);
+        if (['student', 'schueler', 'schüler', 'learner'].includes(r)) return true;
+        if (p.is_student === true) return true;
+        return false;
+    };
+
+    const teachers = profiles.filter(isTeacher);
+    const students = profiles.filter(isStudent);
+
 
     if (!isAuthenticated) {
         return (

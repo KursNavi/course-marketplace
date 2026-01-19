@@ -91,12 +91,48 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
             if (initialData.level) setSelectedLevel(initialData.level);
             if (initialData.language) setCourseLanguage(initialData.language);
             
-            // Restore Contact Email
-            if (initialData.contact_email) {
-                setContactEmail(initialData.contact_email);
-            } else if (user && user.email) {
-                setContactEmail(user.email);
+            // Restore Contact Email (now stored in course_private)
+(async () => {
+    try {
+        const { data: priv, error: privErr } = await supabase
+            .from('course_private')
+            .select('contact_email, address')
+            .eq('course_id', initialData.id)
+            .maybeSingle();
+
+        if (privErr) console.warn("course_private load failed:", privErr.message);
+
+        if (priv?.contact_email) {
+            setContactEmail(priv.contact_email);
+        } else if (user?.email) {
+            setContactEmail(user.email);
+        }
+
+        // Legacy fallback (falls es keinen course_events-Block gibt, aber private address existiert)
+        if ((!initialData.course_events || initialData.course_events.length === 0) && initialData.start_date && priv?.address) {
+            const loc = priv.address || '';
+            const lastComma = loc.lastIndexOf(',');
+            let street = '', city = loc;
+            if (lastComma !== -1) {
+                street = loc.substring(0, lastComma).trim();
+                city = loc.substring(lastComma + 1).trim();
             }
+            setEvents([{ start_date: initialData.start_date, street, city, max_participants: 0, canton: initialData.canton || '', schedule_description: '' }]);
+        }
+
+        // Fallback Cantons (nur falls kein course_events vorhanden)
+        if ((!initialData.course_events || initialData.course_events.length === 0) && priv?.address) {
+            const parts = priv.address.split(',').map(s => s.trim()).filter(Boolean);
+            const allAreCantons = parts.length > 0 && parts.every(p => SWISS_CANTONS.includes(p));
+            if (allAreCantons) setFallbackCantons(parts);
+            else if (initialData.canton) setFallbackCantons([initialData.canton]);
+        }
+    } catch (err) {
+        console.warn("course_private load error:", err);
+        if (user?.email) setContactEmail(user.email);
+    }
+})();
+
             
             // Reconstruct Events & Address Split
             if (initialData.course_events && initialData.course_events.length > 0) {
@@ -109,7 +145,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
                         city = loc.substring(lastComma + 1).trim();
                     }
                     return {
-                        start_date: e.start_date ? e.start_date.split('T')[0] : '', 
+                        start_date: e.start_date ? e.start_date.split('T')[0] : '',
                         street: street,
                         city: city,
                         max_participants: e.max_participants,
@@ -117,33 +153,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
                         schedule_description: e.schedule_description || ''
                     };
                 }));
-            } else if (initialData.start_date) {
-                 // Legacy fallback
-                 const loc = initialData.address || '';
-                 const lastComma = loc.lastIndexOf(',');
-                 let street = '', city = loc;
-                 if (lastComma !== -1) {
-                     street = loc.substring(0, lastComma).trim();
-                     city = loc.substring(lastComma + 1).trim();
-                 }
-                setEvents([{ start_date: initialData.start_date, street, city, max_participants: 0, canton: initialData.canton || '', schedule_description: '' }]);
             }
-
-            // Strict Parsing for Fallback Cantons
-             if (!initialData.course_events || initialData.course_events.length === 0) {
-                 if (initialData.address) {
-                     const parts = initialData.address.split(',').map(s => s.trim()).filter(Boolean);
-                     const allAreCantons = parts.length > 0 && parts.every(p => SWISS_CANTONS.includes(p));
-                     
-                     if (allAreCantons) {
-                         setFallbackCantons(parts);
-                     } else if (initialData.canton) {
-                         setFallbackCantons([initialData.canton]);
-                     }
-                 } else if (initialData.canton) {
-                     setFallbackCantons([initialData.canton]);
-                 }
-             }
 
         } else if (user && user.id) {
              if (user.email) setContactEmail(user.email);
@@ -267,22 +277,36 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
             imageUrl = publicUrl;
         }
 
-        // 4. Determine Main Location/Date for Card View
-        let mainLocation = "";
-        let mainCanton = "";
-        let mainDate = null;
-        
-        const sortedEvents = [...validEvents].sort((a, b) => a.start_date.localeCompare(b.start_date));
-        const firstEvent = sortedEvents[0];
+        // 4. Determine Main Location/Date (public label) + private address
+let publicLocationLabel = "";
+let privateAddress = "";
+let mainCanton = "";
+let mainDate = null;
 
-        if (firstEvent) {
-            mainDate = firstEvent.start_date;
-            mainLocation = firstEvent.location || fallbackCantons.join(', ');
-            mainCanton = firstEvent.canton || (fallbackCantons.length > 0 ? fallbackCantons[0] : '');
-        } else if (fallbackCantons.length > 0) {
-            mainCanton = fallbackCantons[0];
-            mainLocation = fallbackCantons.join(', ');
-        }
+const sortedEvents = [...validEvents].sort((a, b) => a.start_date.localeCompare(b.start_date));
+const firstEvent = sortedEvents[0];
+
+if (firstEvent) {
+    mainDate = firstEvent.start_date;
+    mainCanton = firstEvent.canton || (fallbackCantons.length > 0 ? fallbackCantons[0] : '');
+
+    // privateAddress: full location string (street + city), if available
+    privateAddress = firstEvent.location || "";
+
+    // publicLocationLabel: show only city (no street) for platform bookings
+    if (bookingType === 'platform') {
+        publicLocationLabel = firstEvent.city || mainCanton || "";
+    } else {
+        publicLocationLabel = mainCanton || "";
+    }
+}
+
+if (!publicLocationLabel && fallbackCantons.length > 0) {
+    mainCanton = mainCanton || fallbackCantons[0];
+    publicLocationLabel = fallbackCantons.join(', ');
+    if (!privateAddress) privateAddress = fallbackCantons.join(', ');
+}
+
 
         // 5. Build Object - Safe access guards
         const newCourse = {
@@ -297,11 +321,10 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
             category_specialty: catSpec,
             booking_type: bookingType,
             external_link: bookingType === 'external' ? formData.get('external_link') : null,
-            contact_email: bookingType === 'lead' ? contactEmail : null,
             level: level,
             target_age_groups: [], 
             canton: mainCanton, 
-            address: mainLocation, 
+            address: publicLocationLabel, // öffentliche “Label”-Location (ohne Strasse) 
             start_date: mainDate,
             image_url: imageUrl, 
             description: description, 
@@ -336,6 +359,27 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
             setIsSubmitting(false);
             return; 
         } 
+
+        // 6b. Save private fields to course_private
+        if (activeCourseId) {
+            const privatePayload = {
+                course_id: activeCourseId,
+                address: privateAddress || null,
+                contact_email: (bookingType === 'lead') ? (contactEmail || null) : null
+            };
+
+            const { error: privErr } = await supabase
+                .from('course_private')
+                .upsert(privatePayload);
+
+            if (privErr) {
+                console.error(privErr);
+                showNotification("Fehler (private Daten): " + privErr.message);
+                setIsSubmitting(false);
+                return;
+            }
+        }
+
 
         // 7. Update Events Table
         if (activeCourseId) {
