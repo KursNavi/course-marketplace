@@ -137,7 +137,7 @@ export const NEW_TAXONOMY = {
       label: { de: "Gesundheit, Pflege & Soziales", en: "Health & Social Care", fr: "Santé & Soins", it: "Salute & Assistenza" },
       specialties: [
         "Pflege & Betreuung", "Medizinische Grundlagen", "Notfallmedizin & Erste Hilfe", 
-        "Praxisorganisation", "Soziale Arbeit", "Pädagogik (beruflich)", "Sonstiges Gesundheit"
+        "Praxisorganisation", "Soziale Arbeit", "Pädagogik (beruflich)", "Komplementärmethoden & Energiearbeit", "Sonstiges Gesundheit"
       ]
     },
     sprachen_beruf: {
@@ -167,7 +167,7 @@ export const NEW_TAXONOMY = {
       label: { de: "Yoga, Entspannung & Mental", en: "Yoga & Mental Health", fr: "Yoga & Santé mentale", it: "Yoga & Salute mentale" },
       specialties: [
         "Hatha Yoga", "Vinyasa/Power Yoga", "Pilates", "Meditation & Achtsamkeit", 
-        "Atemtraining", "Stressbewältigung", "Sonstiges Yoga/Mental"
+        "Atemtraining", "Energiearbeit", "Stressbewältigung", "Sonstiges Yoga/Mental"
       ]
     },
     musik: {
