@@ -1,31 +1,80 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronDown, ChevronRight, MapPin, Globe } from 'lucide-react';
-import { CATEGORY_HIERARCHY, SWISS_CANTONS, SWISS_CITIES } from '../lib/constants';
+import { NEW_TAXONOMY, CATEGORY_TYPES, SWISS_CANTONS, SWISS_CITIES } from '../lib/constants';
 
-export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCatPath, catMenuOpen, setCatMenuOpen, t, getCatLabel, catMenuRef }) => {
-    const [lvl1, setLvl1] = useState(rootCategory); 
+export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCatPath, catMenuOpen, setCatMenuOpen, t, catMenuRef }) => {
+    // Lead Architect Update: Switch to NEW_TAXONOMY (v3.0)
+    const [lvl1, setLvl1] = useState(rootCategory || null); 
     const [lvl2, setLvl2] = useState(null);
     
-    useEffect(() => { if (rootCategory) setLvl1(rootCategory); }, [rootCategory]);
-    const availableLvl1 = rootCategory ? [rootCategory] : Object.keys(CATEGORY_HIERARCHY);
+    // Reset internal state when menu closes or root changes
+    useEffect(() => { 
+        if (!catMenuOpen) { setLvl1(rootCategory || null); setLvl2(null); }
+    }, [catMenuOpen, rootCategory]);
+
+    // Helper to get labels from the new structure (Defaulting to DE for now)
+    const getLabel = (key, level, parentKey = null) => {
+        if (!key) return "";
+        if (level === 1) return CATEGORY_TYPES[key]?.de || key;
+        if (level === 2 && parentKey) return NEW_TAXONOMY[parentKey]?.[key]?.label?.de || key;
+        return key; // Level 3 are plain strings
+    };
+
+    const availableLvl1 = rootCategory ? [rootCategory] : Object.keys(NEW_TAXONOMY);
+
+    // Display text for the main button
+    const getButtonLabel = () => {
+        if (selectedCatPath.length === 0) return t?.filter_label_cat || "Kategorie";
+        const lastItem = selectedCatPath[selectedCatPath.length - 1];
+        // Try to find label if it's a key, otherwise return item itself (for L3)
+        if (NEW_TAXONOMY[lastItem]) return CATEGORY_TYPES[lastItem].de; 
+        // Note: L2 keys are harder to reverse lookup without parent, displaying raw or lastItem is fine for now
+        return lastItem; 
+    };
 
     return (
         <div ref={catMenuRef} className="static relative z-50 text-left"> 
             <button type="button" onClick={() => setCatMenuOpen(!catMenuOpen)} className={`w-full md:w-auto px-4 py-3 border rounded-full flex items-center justify-between space-x-2 text-sm font-medium transition shadow-sm ${selectedCatPath.length > 0 ? 'bg-primary text-white border-primary' : 'bg-white text-gray-700 hover:border-gray-400'}`}>
-                <span className="truncate max-w-[150px]">{selectedCatPath.length > 0 ? getCatLabel(selectedCatPath[selectedCatPath.length-1]) : t.filter_label_cat}</span><ChevronDown className="w-4 h-4 flex-shrink-0" />
+                <span className="truncate max-w-[150px]">{getButtonLabel()}</span>
+                <ChevronDown className="w-4 h-4 flex-shrink-0" />
             </button>
             {catMenuOpen && (
-                <div className="absolute top-14 left-0 w-[300px] md:w-[600px] bg-white rounded-xl shadow-2xl border border-gray-100 p-2 flex flex-col md:flex-row h-[350px] overflow-hidden">
-                    <div className="w-full md:w-1/3 border-r overflow-y-auto">
-                        {availableLvl1.map(cat => (<div key={cat} onClick={() => { setLvl1(cat); setLvl2(null); }} className={`p-3 cursor-pointer text-sm flex justify-between items-center hover:bg-gray-50 ${lvl1 === cat ? 'font-bold text-primary bg-primaryLight' : 'text-gray-700'}`}>{getCatLabel(cat)}<ChevronRight className="w-4 h-4 text-gray-400" /></div>))}
-                        {!rootCategory && <div onClick={() => { setSelectedCatPath([]); setCatMenuOpen(false); }} className="p-3 text-xs text-gray-400 cursor-pointer hover:text-primary border-t mt-2">Clear Selection</div>}
+                <div className="absolute top-14 left-0 w-[300px] md:w-[700px] bg-white rounded-xl shadow-2xl border border-gray-100 p-0 flex flex-col md:flex-row h-[400px] overflow-hidden">
+                    
+                    {/* Level 1: TYPES (Beruflich, Privat, Kinder) */}
+                    <div className="w-full md:w-1/3 border-r overflow-y-auto bg-gray-50">
+                        {availableLvl1.map(cat => (
+                            <div key={cat} onClick={() => { setLvl1(cat); setLvl2(null); }} className={`p-4 cursor-pointer text-sm flex justify-between items-center transition ${lvl1 === cat ? 'bg-white font-bold text-primary shadow-sm' : 'text-gray-700 hover:bg-gray-100'}`}>
+                                {getLabel(cat, 1)}
+                                <ChevronRight className={`w-4 h-4 ${lvl1 === cat ? 'text-primary' : 'text-gray-300'}`} />
+                            </div>
+                        ))}
+                        {!rootCategory && <div onClick={() => { setSelectedCatPath([]); setCatMenuOpen(false); }} className="p-4 text-xs text-gray-400 cursor-pointer hover:text-primary border-t mt-2">Auswahl löschen</div>}
                     </div>
-                    <div className="w-full md:w-1/3 border-r overflow-y-auto bg-gray-50/50">
-                        {lvl1 ? Object.keys(CATEGORY_HIERARCHY[lvl1]).map(sub => (<div key={sub} onClick={() => setLvl2(sub)} className={`p-3 cursor-pointer text-sm flex justify-between items-center hover:bg-gray-100 ${lvl2 === sub ? 'font-bold text-primary' : 'text-gray-700'}`}>{getCatLabel(sub)}<ChevronRight className="w-4 h-4 text-gray-400" /></div>)) : <div className="p-4 text-xs text-gray-400">Select a category...</div>}
+
+                    {/* Level 2: AREAS (e.g. Business, Sport) */}
+                    <div className="w-full md:w-1/3 border-r overflow-y-auto bg-white">
+                        {lvl1 ? (
+                            Object.keys(NEW_TAXONOMY[lvl1] || {}).map(sub => (
+                                <div key={sub} onClick={() => setLvl2(sub)} className={`p-3 mx-2 my-1 rounded-lg cursor-pointer text-sm flex justify-between items-center transition ${lvl2 === sub ? 'bg-primaryLight font-bold text-primary' : 'text-gray-700 hover:bg-gray-50'}`}>
+                                    {getLabel(sub, 2, lvl1)}
+                                    <ChevronRight className={`w-4 h-4 ${lvl2 === sub ? 'text-primary' : 'text-gray-300'}`} />
+                                </div>
+                            ))
+                        ) : <div className="p-6 text-sm text-gray-400 italic">Wähle zuerst eine Hauptkategorie...</div>}
                     </div>
-                    <div className="w-full md:w-1/3 overflow-y-auto bg-gray-50">
-                        {lvl1 && lvl2 ? CATEGORY_HIERARCHY[lvl1][lvl2].map(item => (<div key={item} onClick={() => { setSelectedCatPath([lvl1, lvl2, item]); setCatMenuOpen(false); }} className="p-3 cursor-pointer text-sm text-gray-700 hover:text-primary hover:bg-white transition">{getCatLabel(item)}</div>)) : <div className="p-4 text-xs text-gray-400">Select a sub-category...</div>}
+
+                    {/* Level 3: SPECIALTIES (e.g. Marketing, Yoga) */}
+                    <div className="w-full md:w-1/3 overflow-y-auto bg-white">
+                        {lvl1 && lvl2 ? (
+                            (NEW_TAXONOMY[lvl1][lvl2]?.specialties || []).map(item => (
+                                <div key={item} onClick={() => { setSelectedCatPath([lvl1, lvl2, item]); setCatMenuOpen(false); }} className="p-3 mx-2 cursor-pointer text-sm text-gray-600 hover:text-primary hover:bg-gray-50 rounded transition">
+                                    {item}
+                                </div>
+                            ))
+                        ) : <div className="p-6 text-sm text-gray-400 italic">{lvl1 ? "Wähle einen Bereich..." : ""}</div>}
                     </div>
+
                 </div>
             )}
         </div>
