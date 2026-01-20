@@ -208,11 +208,6 @@ const AdminPanel = ({ t, courses, setCourses, showNotification, fetchCourses, se
     };
 
     const teachers = profiles.filter(isTeacher);
-
-    // DEBUG (temporary): zeigt, ob Profiles wirklich angekommen sind
-    console.log('[AdminPanel] profiles:', profiles);
-    console.log('[AdminPanel] teachers:', teachers);
-
     const students = profiles.filter(isStudent);
 
 
@@ -264,9 +259,6 @@ const AdminPanel = ({ t, courses, setCourses, showNotification, fetchCourses, se
                 </div>
 
                                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                    <div className="px-6 py-3 text-xs text-gray-500 border-b border-gray-100">
-                        Debug: profiles={profiles.length} | teachers={teachers.length} | activeTab={activeTab}
-                    </div>
                     {loading ? (
                         <div className="p-12 text-center"><Loader className="animate-spin mx-auto w-8 h-8 text-blue-600" /></div>
                     ) : (
