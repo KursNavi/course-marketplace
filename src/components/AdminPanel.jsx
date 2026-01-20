@@ -28,47 +28,106 @@ const AdminPanel = ({ t, courses, setCourses, showNotification, fetchCourses, se
         }
     };
 
-    const fetchProfiles = async () => {
+        const fetchProfiles = async () => {
         setLoading(true);
-        const { data, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
+
+        // 1) Try Admin API (Service Role, bypasses RLS)
+        try {
+            const res = await fetch('/api/admin/profiles', {
+                headers: { 'x-admin-secret': ADMIN_PW }
+            });
+
+            if (res.ok) {
+                const json = await res.json();
+                setProfiles(json.data || []);
+                setLoading(false);
+                return;
+            } else {
+                const txt = await res.text();
+                console.warn('Admin profiles API failed:', res.status, txt);
+            }
+        } catch (e) {
+            console.warn('Admin profiles API unreachable:', e);
+        }
+
+        // 2) Fallback: direct client query (may be empty due to RLS)
+        const { data, error } = await supabase.from('profiles').select('*');
+
         if (error) {
-            showNotification("Error loading users");
+            console.error('Error loading users:', error);
+            showNotification("Error loading users: " + error.message);
+            setProfiles([]);
         } else {
             setProfiles(data || []);
+            if (!data || data.length === 0) {
+                showNotification("Keine Profile sichtbar (wahrscheinlich RLS). Admin API aktivieren.");
+            }
         }
+
         setLoading(false);
     };
+
 
     const toggleVerify = async (userId, currentStatus, userEmail) => {
         const newStatus = !currentStatus;
         
         // 1. Profil aktualisieren & Status setzen
-        const { error: profileError } = await supabase.from('profiles').update({ 
-            is_professional: newStatus,
-            verification_status: newStatus ? 'verified' : 'pending' 
-        }).eq('id', userId);
-        
-        if (profileError) {
-            showNotification("Error updating profile.");
-            return;
+                // 1) Admin API (bypasses RLS)
+        let apiOk = false;
+        try {
+            const res = await fetch('/api/admin/set-verify', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-admin-secret': ADMIN_PW
+                },
+                body: JSON.stringify({ userId, newStatus })
+            });
+
+            if (!res.ok) {
+                const txt = await res.text();
+                throw new Error(txt || `HTTP ${res.status}`);
+            }
+            apiOk = true;
+        } catch (e) {
+            console.warn('Admin set-verify API failed, falling back:', e);
         }
 
-        // 2. ALLE Kurse dieses Lehrers gleichzeitig aktualisieren
-        const { error: courseError } = await supabase.from('courses').update({ is_pro: newStatus }).eq('user_id', userId);
-        
-        if (courseError) {
-            showNotification("Profile updated, but courses failed.");
-        } else {
-            setProfiles(profiles.map(p => p.id === userId ? { ...p, is_professional: newStatus, verification_status: newStatus ? 'verified' : 'pending' } : p));
-            showNotification(newStatus ? "User verifiziert!" : "Verifizierung entfernt.");
-            
-            if (newStatus && userEmail) {
-                const subject = "Glückwunsch: Dein Profil ist verifiziert!";
-                const body = "Hallo,\n\nwir haben deine Unterlagen geprüft und dein Profil erfolgreich verifiziert. Du hast jetzt den 'Professional' Status und das blaue Häkchen.\n\nViel Erfolg!\nDein KursNavi Team";
-                window.location.href = `mailto:${userEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        if (!apiOk) {
+            // Fallback: client updates (may fail due to RLS)
+            const { error: profileError } = await supabase.from('profiles').update({ 
+                is_professional: newStatus,
+                verification_status: newStatus ? 'verified' : 'pending' 
+            }).eq('id', userId);
+
+            if (profileError) {
+                showNotification("Error updating profile: " + profileError.message);
+                return;
             }
-            if (typeof fetchCourses === 'function') fetchCourses();
+
+            const { error: courseError } = await supabase.from('courses').update({ is_pro: newStatus }).eq('user_id', userId);
+
+            if (courseError) {
+                showNotification("Profile updated, but courses failed: " + courseError.message);
+                return;
+            }
         }
+
+        setProfiles(prev => prev.map(p => p.id === userId ? { 
+            ...p, 
+            is_professional: newStatus, 
+            verification_status: newStatus ? 'verified' : 'pending' 
+        } : p));
+
+        showNotification(newStatus ? "User verifiziert!" : "Verifizierung entfernt.");
+
+        if (newStatus && userEmail) {
+            const subject = "Glückwunsch: Dein Profil ist verifiziert!";
+            const body = "Hallo,\n\nwir haben deine Unterlagen geprüft und dein Profil erfolgreich verifiziert. Du hast jetzt den 'Professional' Status und das blaue Häkchen.\n\nViel Erfolg!\nDein KursNavi Team";
+            window.location.href = `mailto:${userEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        }
+
+        if (typeof fetchCourses === 'function') fetchCourses();
     };
 
     // --- NEU: PAKET MANUELL ÄNDERN ---
@@ -83,18 +142,42 @@ const AdminPanel = ({ t, courses, setCourses, showNotification, fetchCourses, se
         };
         const newLimit = limits[newTier] || 3;
 
-        const { error } = await supabase.from('profiles').update({ 
-            package_tier: newTier,
-            courses_allowed: newLimit
-        }).eq('id', userId);
+                // 1) Admin API (bypasses RLS)
+        let apiOk = false;
+        try {
+            const res = await fetch('/api/admin/set-tier', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-admin-secret': ADMIN_PW
+                },
+                body: JSON.stringify({ userId, package_tier: newTier, courses_allowed: newLimit })
+            });
 
-        if (error) {
-            showNotification("Fehler beim Ändern des Pakets: " + error.message);
-        } else {
-            showNotification(`Paket auf ${newTier.toUpperCase()} geändert (Limit: ${newLimit})`);
-            // Lokale Liste updaten
-            setProfiles(profiles.map(p => p.id === userId ? { ...p, package_tier: newTier, courses_allowed: newLimit } : p));
+            if (!res.ok) {
+                const txt = await res.text();
+                throw new Error(txt || `HTTP ${res.status}`);
+            }
+            apiOk = true;
+        } catch (e) {
+            console.warn('Admin set-tier API failed, falling back:', e);
         }
+
+        if (!apiOk) {
+            // Fallback: client update (may fail due to RLS)
+            const { error } = await supabase.from('profiles').update({ 
+                package_tier: newTier,
+                courses_allowed: newLimit
+            }).eq('id', userId);
+
+            if (error) {
+                showNotification("Fehler beim Ändern des Pakets: " + error.message);
+                return;
+            }
+        }
+
+        showNotification(`Paket auf ${newTier.toUpperCase()} geändert (Limit: ${newLimit})`);
+        setProfiles(prev => prev.map(p => p.id === userId ? { ...p, package_tier: newTier, courses_allowed: newLimit } : p));
     };
 
         // Filter Logic (robust, falls "role" nicht (mehr) verwendet wird)
@@ -125,6 +208,11 @@ const AdminPanel = ({ t, courses, setCourses, showNotification, fetchCourses, se
     };
 
     const teachers = profiles.filter(isTeacher);
+
+    // DEBUG (temporary): zeigt, ob Profiles wirklich angekommen sind
+    console.log('[AdminPanel] profiles:', profiles);
+    console.log('[AdminPanel] teachers:', teachers);
+
     const students = profiles.filter(isStudent);
 
 
@@ -175,7 +263,10 @@ const AdminPanel = ({ t, courses, setCourses, showNotification, fetchCourses, se
                     <button onClick={() => setActiveTab('courses')} className={`px-6 py-2 rounded-full font-bold transition ${activeTab === 'courses' ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 shadow-sm'}`}>{t.admin_tab_courses || "Kurse"}</button>
                 </div>
 
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                                <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div className="px-6 py-3 text-xs text-gray-500 border-b border-gray-100">
+                        Debug: profiles={profiles.length} | teachers={teachers.length} | activeTab={activeTab}
+                    </div>
                     {loading ? (
                         <div className="p-12 text-center"><Loader className="animate-spin mx-auto w-8 h-8 text-blue-600" /></div>
                     ) : (
