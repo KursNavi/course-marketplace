@@ -17,7 +17,7 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
         const type = c.booking_type || 'platform';
         const price = Number(c.price) || 0; 
 
-        if (type === 'lead' && price === 0) return 'Auf Anfrage';
+        if (type === 'lead' && price === 0) return 'Preis auf Anfrage';
         if (type === 'external' && price === 0) return 'Siehe Webseite';
         if (price === 0) return 'Kostenlos';
         return `CHF ${price}`;
@@ -332,7 +332,7 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
                             <MapPin className="w-3 h-3 mr-1 text-primary"/> {course.canton}
                         </span>
                         {course.booking_type === 'lead' && (
-                            <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-bold shadow-sm">Auf Anfrage</span>
+                            <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-bold shadow-sm">Preis auf Anfrage</span>
                         )}
                     </div>
                 </div>

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { Search, ChevronRight, User, X, Calendar, Shield, MapPin, CheckCircle, Loader, Bell, ArrowDown, Bookmark, BookmarkCheck } from 'lucide-react';
 import { LocationDropdown, LanguageDropdown } from './Filters';
 import { Globe } from 'lucide-react';
@@ -79,6 +79,18 @@ const SearchPageView = ({
         return key; 
     };
 
+    // --- HELPER: Consistent Price Labeling (match DetailView logic) ---
+    const getPriceLabel = (c) => {
+        if (!c) return '';
+        const type = c.booking_type || 'platform';
+        const price = Number(c.price) || 0;
+
+        if (type === 'lead' && price === 0) return 'Preis auf Anfrage';
+        if (type === 'external' && price === 0) return 'Siehe Webseite';
+        if (price === 0) return 'Kostenlos';
+        return `${t.currency} ${price}`;
+    };
+
     const resetFilters = () => {
         setSearchType(""); setSearchArea(""); setSearchSpecialty(""); setSearchAge("");
         setSelectedLocations([]); setSearchQuery(""); setFilterDate(""); setFilterPriceMax(""); setFilterLevel("All"); setFilterPro(false);
@@ -86,7 +98,7 @@ const SearchPageView = ({
 
     // --- RANKING LOGIC (v3.0) ---
     // Formula: Score = Plan * Booking * (0.6 + 0.4*Freshness) * (1 + RandomEpsilon)
-    const sortedCourses = React.useMemo(() => {
+    const sortedCourses = useMemo(() => {
         return [...filteredCourses].sort((a, b) => {
             const getScore = (c) => {
                 // 1. Plan Factor (Fallback logic for legacy data)
@@ -207,7 +219,7 @@ const SearchPageView = ({
                             <h3 className="font-bold text-lg text-dark leading-tight line-clamp-2 h-12 mb-2 font-heading">{course.title}</h3>
                             <div className="flex items-center justify-between pt-4 border-t border-gray-100">
                                <div className="flex items-center space-x-3 text-sm text-gray-500"><div className="flex items-center bg-beige px-2 py-1 rounded"><User className="w-3 h-3 text-gray-500 mr-1" />{course.instructor_name}</div></div>
-                               <span className="font-bold text-primary text-lg font-heading">{t.currency} {course.price}</span>
+                                   <span className="font-bold text-primary text-lg font-heading">{getPriceLabel(course)}</span>
                             </div>
                         </div>
                       </div>
