@@ -29,7 +29,7 @@ export default async function handler(req, res) {
     }
   }
 
-  const { userId, package_tier, courses_allowed } = parseBody(req);
+  const { userId, package_tier } = parseBody(req);
 
   if (!userId || !package_tier) {
     return res.status(400).json({ error: 'Missing userId or package_tier' });
@@ -39,7 +39,7 @@ export default async function handler(req, res) {
 
   const { data, error } = await supabaseAdmin
     .from('profiles')
-    .update({ package_tier, courses_allowed })
+    .update({ package_tier, courses_allowed: null })
     .eq('id', userId)
     .select('*')
     .single();

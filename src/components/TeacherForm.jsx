@@ -1,16 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Loader, Calendar, Plus, Trash2, ExternalLink, Globe, Bold, Italic, Underline, Heading2, Heading3, List, Lock, Mail, MapPin } from 'lucide-react';
+import { ArrowLeft, Loader, Calendar, Plus, Trash2, ExternalLink, Globe, Bold, Italic, Underline, Heading2, Heading3, List, Mail, MapPin } from 'lucide-react';
 import { KursNaviLogo } from './Layout';
 import { SWISS_CANTONS, NEW_TAXONOMY, CATEGORY_TYPES, COURSE_LEVELS } from '../lib/constants';
 import { supabase } from '../lib/supabase';
 
 const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotification, setEditingCourse }) => {
-    // --- GATEKEEPER LOGIC (LIMITS) ---
-    const TIER_LIMITS = { basic: 3, pro: 10, premium: 30, enterprise: 9999 };
-    const [isCheckingLimit, setIsCheckingLimit] = useState(true);
-    const [limitReached, setLimitReached] = useState(false);
-    const [currentTier, setCurrentTier] = useState('basic');
-    const [currentCount, setCurrentCount] = useState(0);
+    // --- LIMITS REMOVED: Unbegrenzte Kurse fuer alle ---
 
     // Booking & Link State
     const [bookingType, setBookingType] = useState('platform'); // 'platform', 'external', 'lead'
@@ -36,51 +31,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
     useEffect(() => {
         let isMounted = true; // Prevent state updates on unmounted component
 
-        const checkLimits = async () => {
-            // 1. State Reset (Clean slate)
-            if (isMounted) {
-                setLimitReached(false);
-                setCurrentCount(0);
-                // Keep tier basic until fetched
-            }
-
-            try {
-                // Edit Mode: No limit check needed
-                if (initialData) {
-                    if (isMounted) setIsCheckingLimit(false);
-                    return;
-                } 
-                
-                // No User: Stop check immediately (handled by render guard)
-                if (!user?.id) {
-                    if (isMounted) setIsCheckingLimit(false);
-                    return;
-                }
-
-                const tier = user?.plan_tier || 'basic';
-                setCurrentTier(tier);
-
-
-                const { count, error } = await supabase
-                    .from('courses')
-                    .select('*', { count: 'exact', head: true })
-                    .eq('user_id', user.id);
-
-                if (!isMounted) return; // Stop if unmounted
-
-                if (!error) {
-                    setCurrentCount(count);
-                    const limit = TIER_LIMITS[tier] || 3;
-                    if (count >= limit) setLimitReached(true);
-                }
-            } catch (err) {
-                console.error("Limit check failed:", err);
-            } finally {
-                if (isMounted) setIsCheckingLimit(false);
-            }
-        };
-
-        checkLimits();
+        // Limits entfernt: kein Gatekeeping mehr noetig
 
         // 1. Load Initial Data if editing
         if (initialData) {
@@ -92,7 +43,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
             if (initialData.language) setCourseLanguage(initialData.language);
             
             // Restore Contact Email (now stored in course_private)
-(async () => {
+;(async () => {
     try {
         const { data: priv, error: privErr } = await supabase
             .from('course_private')
@@ -405,8 +356,6 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
         setIsSubmitting(false);
     };
 
-    if (isCheckingLimit) return <div className="flex justify-center items-center h-64"><Loader className="animate-spin text-primary w-8 h-8"/></div>;
-
     // Safety Render if User Missing
     if (!user?.id && !initialData) {
         return (
@@ -418,20 +367,6 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
         );
     }
 
-    if (limitReached && !initialData) {
-        return (
-            <div className="max-w-4xl mx-auto px-4 py-12 text-center">
-                <div className="bg-white p-8 rounded-2xl shadow-xl border-t-4 border-orange-500">
-                    <Lock className="w-12 h-12 text-orange-500 mx-auto mb-4" />
-                    <h1 className="text-3xl font-bold mb-4">Paket-Limit erreicht</h1>
-                    <p className="mb-6">Du hast dein Limit von {TIER_LIMITS[currentTier]} Kursen erreicht.</p>
-                    <button onClick={() => setView('teacher-hub')} className="bg-primary text-white px-6 py-2 rounded-full font-bold">Upgrade</button>
-                    <button onClick={() => setView('dashboard')} className="block mt-4 text-gray-500 mx-auto">Zurück</button>
-                </div>
-            </div>
-        );
-    }
-    
     return (
     <div className="max-w-4xl mx-auto px-4 py-8 animate-in fade-in slide-in-from-bottom-4 duration-500 font-sans">
         <button onClick={() => setView('dashboard')} className="flex items-center text-gray-500 hover:text-gray-900 mb-6 transition-colors"><ArrowLeft className="w-4 h-4 mr-2" /> {t.btn_back_dash}</button>

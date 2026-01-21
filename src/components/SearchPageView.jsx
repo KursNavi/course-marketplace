@@ -216,10 +216,23 @@ const SearchPageView = ({
                         </div>
 
                         <div className="p-5">
-                            <h3 className="font-bold text-lg text-dark leading-tight line-clamp-2 h-12 mb-2 font-heading">{course.title}</h3>
-                            <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                               <div className="flex items-center space-x-3 text-sm text-gray-500"><div className="flex items-center bg-beige px-2 py-1 rounded"><User className="w-3 h-3 text-gray-500 mr-1" />{course.instructor_name}</div></div>
-                                   <span className="font-bold text-primary text-lg font-heading">{getPriceLabel(course)}</span>
+                            <h3 className="font-bold text-lg text-dark leading-tight line-clamp-2 h-12 mb-2 font-heading">
+                                {course.title}
+                            </h3>
+
+                            <div className="flex items-center justify-between gap-4 pt-4 border-t border-gray-100">
+                                {/* Anbieter-Badge */}
+                                <div className="min-w-0">
+                                    <div className="inline-flex items-center bg-beige px-2 py-1 rounded text-xs text-gray-500">
+                                        <User className="w-3 h-3 text-gray-500 mr-1 shrink-0" />
+                                        <span className="truncate">{course.instructor_name}</span>
+                                    </div>
+                                </div>
+
+                                {/* Preis */}
+                                <span className="ml-3 font-heading font-bold text-primary text-xs leading-tight text-right">
+                                    {getPriceLabel(course)}
+                                </span>
                             </div>
                         </div>
                       </div>

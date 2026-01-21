@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Lock, Loader, Shield, CheckCircle, Eye, ExternalLink, FileText, Briefcase } from 'lucide-react';
+import { Lock, Loader, Shield, CheckCircle, Eye, ExternalLink, FileText } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { PLANS } from '../lib/plans';
 
-const AdminPanel = ({ t, courses, setCourses, showNotification, fetchCourses, setView }) => {
+const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView }) => {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [password, setPassword] = useState("");
     const [activeTab, setActiveTab] = useState("teachers");
@@ -132,17 +133,7 @@ const AdminPanel = ({ t, courses, setCourses, showNotification, fetchCourses, se
 
     // --- NEU: PAKET MANUELL ÄNDERN ---
     const changeTier = async (userId, newTier) => {
-        // Limits definieren (Muss mit TeacherForm synchron sein)
-        const limits = {
-            'free': 3,
-            'basic': 3,
-            'pro': 10,
-            'premium': 30,
-            'enterprise': 999
-        };
-        const newLimit = limits[newTier] || 3;
-
-                // 1) Admin API (bypasses RLS)
+        // 1) Admin API (bypasses RLS)
         let apiOk = false;
         try {
             const res = await fetch('/api/admin/set-tier', {
@@ -151,7 +142,7 @@ const AdminPanel = ({ t, courses, setCourses, showNotification, fetchCourses, se
                     'Content-Type': 'application/json',
                     'x-admin-secret': ADMIN_PW
                 },
-                body: JSON.stringify({ userId, package_tier: newTier, courses_allowed: newLimit })
+                body: JSON.stringify({ userId, package_tier: newTier })
             });
 
             if (!res.ok) {
@@ -165,10 +156,10 @@ const AdminPanel = ({ t, courses, setCourses, showNotification, fetchCourses, se
 
         if (!apiOk) {
             // Fallback: client update (may fail due to RLS)
-            const { error } = await supabase.from('profiles').update({ 
-                package_tier: newTier,
-                courses_allowed: newLimit
-            }).eq('id', userId);
+            const { error } = await supabase
+                .from('profiles')
+                .update({ package_tier: newTier, courses_allowed: null })
+                .eq('id', userId);
 
             if (error) {
                 showNotification("Fehler beim Ändern des Pakets: " + error.message);
@@ -176,9 +167,12 @@ const AdminPanel = ({ t, courses, setCourses, showNotification, fetchCourses, se
             }
         }
 
-        showNotification(`Paket auf ${newTier.toUpperCase()} geändert (Limit: ${newLimit})`);
-        setProfiles(prev => prev.map(p => p.id === userId ? { ...p, package_tier: newTier, courses_allowed: newLimit } : p));
+        showNotification(`Paket auf ${newTier.toUpperCase()} geändert`);
+        setProfiles(prev => prev.map(p =>
+            p.id === userId ? { ...p, package_tier: newTier, courses_allowed: null } : p
+        ));
     };
+
 
         // Filter Logic (robust, falls "role" nicht (mehr) verwendet wird)
     const getRoleValue = (p) =>
@@ -268,7 +262,7 @@ const AdminPanel = ({ t, courses, setCourses, showNotification, fetchCourses, se
                                     <tr>
                                         <th className="px-6 py-4 font-semibold text-gray-600">{t.admin_col_name || "Name"}</th>
                                         <th className="px-6 py-4 font-semibold text-gray-600">{t.admin_col_email || "Email"}</th>
-                                        {activeTab === 'teachers' && <th className="px-6 py-4 font-semibold text-gray-600">Paket / Limit</th>}
+                                        {activeTab === 'teachers' && <th className="px-6 py-4 font-semibold text-gray-600">Paket / Kategorien</th>}
                                         {activeTab !== 'courses' && <th className="px-6 py-4 font-semibold text-gray-600">Ort</th>}
                                         {activeTab === 'courses' && <th className="px-6 py-4 font-semibold text-gray-600">Preis</th>}
                                         <th className="px-6 py-4 font-semibold text-gray-600">{t.admin_col_status || "Verifiziert"}</th>
@@ -276,76 +270,95 @@ const AdminPanel = ({ t, courses, setCourses, showNotification, fetchCourses, se
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-100">
-                                    {activeTab === 'teachers' && teachers.map(user => (
-                                        <tr key={user.id} className="hover:bg-gray-50">
-                                            <td className="px-6 py-4">
-                                                <div className="font-bold">{user.full_name}</div>
-                                                {user.certificates && user.certificates.length > 0 && (
-                                                    <div className="text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full w-fit mt-1 flex items-center font-medium">
-                                                        <Shield className="w-3 h-3 mr-1" /> {user.certificates.length} Zertifikate
+                                    {activeTab === 'teachers' && teachers.map(user => {
+                                        const planId = user.package_tier || 'basic';
+                                        const plan = PLANS.find(p => p.id === planId) || PLANS[0];
+
+                                        return (
+                                            <tr key={user.id} className="hover:bg-gray-50">
+                                                <td className="px-6 py-4">
+                                                    <div className="font-bold">{user.full_name}</div>
+                                                    {user.certificates && user.certificates.length > 0 && (
+                                                        <div className="text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full w-fit mt-1 flex items-center font-medium">
+                                                            <Shield className="w-3 h-3 mr-1" /> {user.certificates.length} Zertifikate
+                                                        </div>
+                                                    )}
+                                                </td>
+
+                                                <td className="px-6 py-4 text-gray-500">{user.email}</td>
+
+                                                {/* PAKET STEUERUNG */}
+                                                <td className="px-6 py-4">
+                                                    <div className="flex flex-col gap-1">
+                                                        <select 
+                                                            className={`text-xs font-bold py-1 px-2 rounded border cursor-pointer outline-none ${
+                                                                user.package_tier === 'enterprise' ? 'bg-orange-100 text-orange-800 border-orange-200' :
+                                                                user.package_tier === 'premium' ? 'bg-purple-100 text-purple-800 border-purple-200' :
+                                                                user.package_tier === 'pro' ? 'bg-blue-100 text-blue-800 border-blue-200' :
+                                                                'bg-gray-100 text-gray-600 border-gray-200'
+                                                            }`}
+                                                            value={user.package_tier || 'basic'}
+                                                            onChange={(e) => changeTier(user.id, e.target.value)}
+                                                        >
+                                                            <option value="basic">Basic (Free)</option>
+                                                            <option value="pro">Pro</option>
+                                                            <option value="premium">Premium</option>
+                                                            <option value="enterprise">Enterprise</option>
+                                                        </select>
+
+                                                        <span className="text-[10px] text-gray-400">
+                                                            Kurse: unbegrenzt · Kategorien/Kurs: {plan.maxCategoriesPerCourse}
+                                                        </span>
                                                     </div>
-                                                )}
-                                            </td>
-                                            <td className="px-6 py-4 text-gray-500">{user.email}</td>
-                                            
-                                            {/* PAKET STEUERUNG */}
-                                            <td className="px-6 py-4">
-                                                <div className="flex flex-col gap-1">
-                                                    <select 
-                                                        className={`text-xs font-bold py-1 px-2 rounded border cursor-pointer outline-none ${
-                                                            user.package_tier === 'enterprise' ? 'bg-orange-100 text-orange-800 border-orange-200' :
-                                                            user.package_tier === 'premium' ? 'bg-purple-100 text-purple-800 border-purple-200' :
-                                                            user.package_tier === 'pro' ? 'bg-blue-100 text-blue-800 border-blue-200' :
-                                                            'bg-gray-100 text-gray-600 border-gray-200'
+                                                </td>
+
+                                                <td className="px-6 py-4">{user.city}, {user.canton}</td>
+
+                                                <td className="px-6 py-4">
+                                                    {user.is_professional ? (
+                                                        <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-bold flex w-fit items-center">
+                                                            <CheckCircle className="w-3 h-3 mr-1"/> Verified
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-gray-400 text-sm">Standard</span>
+                                                    )}
+                                                </td>
+
+                                                <td className="px-6 py-4 text-right flex items-center justify-end gap-2">
+                                                    <button 
+                                                        onClick={() => alert(`--- LEHRER PROFIL ---\n\nBIOGRAFIE:\n${user.bio_text || 'Keine Biografie vorhanden.'}\n\nZERTIFIKATE:\n${user.certificates && user.certificates.length > 0 ? user.certificates.map(c => '- ' + c).join('\n') : 'Keine Zertifikate hochgeladen.'}`)}
+                                                        className="text-gray-500 hover:text-primary p-2 rounded-md hover:bg-gray-100 transition"
+                                                        title="Details ansehen"
+                                                    >
+                                                        <Eye className="w-4 h-4" />
+                                                    </button>
+
+                                                    {/* DOCUMENT LINK BUTTON */}
+                                                    {user.verification_docs && user.verification_docs.length > 0 && (
+                                                        <a 
+                                                            href={user.verification_docs[0]} 
+                                                            target="_blank" 
+                                                            rel="noreferrer"
+                                                            className="text-blue-500 hover:text-blue-700 p-2 rounded-md hover:bg-blue-50 transition"
+                                                            title="Verifizierungs-Dokument ansehen"
+                                                        >
+                                                            <ExternalLink className="w-4 h-4" />
+                                                        </a>
+                                                    )}
+
+                                                    <button
+                                                        onClick={() => toggleVerify(user.id, user.is_professional, user.email)}
+                                                        className={`text-xs font-bold px-3 py-1.5 rounded transition ${
+                                                            user.is_professional ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-green-50 text-green-600 hover:bg-green-100'
                                                         }`}
-                                                        value={user.package_tier || 'basic'}
-                                                        onChange={(e) => changeTier(user.id, e.target.value)}
                                                     >
-                                                        <option value="basic">Basic (Free)</option>
-                                                        <option value="pro">Pro</option>
-                                                        <option value="premium">Premium</option>
-                                                        <option value="enterprise">Enterprise</option>
-                                                    </select>
-                                                    <span className="text-[10px] text-gray-400">Limit: {user.courses_allowed || 3} Kurse</span>
-                                                </div>
-                                            </td>
+                                                        {user.is_professional ? (t.admin_btn_unverify || "Unverify") : (t.admin_btn_verify || "Verify")}
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
 
-                                            <td className="px-6 py-4">{user.city}, {user.canton}</td>
-                                            <td className="px-6 py-4">
-                                                {user.is_professional ? (
-                                                    <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-bold flex w-fit items-center"><CheckCircle className="w-3 h-3 mr-1"/> Verified</span>
-                                                ) : <span className="text-gray-400 text-sm">Standard</span>}
-                                            </td>
-                                            <td className="px-6 py-4 text-right flex items-center justify-end gap-2">
-                                                <button 
-                                                    onClick={() => alert(`--- LEHRER PROFIL ---\n\nBIOGRAFIE:\n${user.bio_text || 'Keine Biografie vorhanden.'}\n\nZERTIFIKATE:\n${user.certificates && user.certificates.length > 0 ? user.certificates.map(c => '- ' + c).join('\n') : 'Keine Zertifikate hochgeladen.'}`)}
-                                                    className="text-gray-500 hover:text-primary p-2 rounded-md hover:bg-gray-100 transition"
-                                                    title="Details ansehen"
-                                                >
-                                                    <Eye className="w-4 h-4" />
-                                                </button>
-
-                                                {/* DOCUMENT LINK BUTTON */}
-                                                {user.verification_docs && user.verification_docs.length > 0 && (
-                                                    <a 
-                                                        href={user.verification_docs[0]} 
-                                                        target="_blank" 
-                                                        rel="noreferrer"
-                                                        className="text-blue-500 hover:text-blue-700 p-2 rounded-md hover:bg-blue-50 transition"
-                                                        title="Verifizierungs-Dokument ansehen"
-                                                    >
-                                                        <ExternalLink className="w-4 h-4" />
-                                                    </a>
-                                                )}
-
-                                                <button onClick={() => toggleVerify(user.id, user.is_professional, user.email)}
-                                                    className={`text-xs font-bold px-3 py-1.5 rounded transition ${user.is_professional ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-green-50 text-green-600 hover:bg-green-100'}`}
-                                                >
-                                                    {user.is_professional ? (t.admin_btn_unverify || "Unverify") : (t.admin_btn_verify || "Verify")}
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    ))}
                                     {activeTab === 'students' && students.map(user => (
                                         <tr key={user.id} className="hover:bg-gray-50">
                                             <td className="px-6 py-4 font-bold">{user.full_name}</td>
