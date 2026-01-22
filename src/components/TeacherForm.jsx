@@ -154,15 +154,24 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
                     return;
                 }
 
-                const rawTier = (data?.package_tier || data?.plan_tier || 'basic').toString().toLowerCase();
+                const planTierRaw = (data?.plan_tier || '').toString().toLowerCase().trim();
+                const packageTierRaw = (data?.package_tier || '').toString().toLowerCase().trim();
 
-                // kleine Robustheit fuer Varianten
-                const normalisedTier =
-                    rawTier === 'enterprize' ? 'enterprise' :
-                    rawTier === 'entreprise' ? 'enterprise' :
-                    rawTier;
+                const parseTier = (s) => {
+                    if (!s) return null;
+                    if (s === 'enterprize' || s === 'entreprise' || s.includes('enterprise')) return 'enterprise';
+                    if (s.includes('premium')) return 'premium';
+                    // Achtung: "pro" matcht auch in anderen Woertern -> trotzdem ok, weil wir oben enterprise/premium vorher abfangen
+                    if (s === 'pro' || s.includes(' pro') || s.startsWith('pro') || s.includes('pro_') || s.includes('pro-') || s.includes('pro ')) return 'pro';
+                    if (s.includes('basic')) return 'basic';
+                    if (s.includes('free')) return 'free';
+                    return null;
+                };
 
-                const limit = CATEGORY_ROW_LIMITS[normalisedTier] ?? 1;
+                // Source of truth: plan_tier (auch wenn es "enterprise_annual" o.ae. ist)
+                const resolvedTier = parseTier(planTierRaw) || parseTier(packageTierRaw) || 'basic';
+
+                const limit = CATEGORY_ROW_LIMITS[resolvedTier] ?? 1;
                 setMaxCategories(limit);
 
                 // Falls jemand downgradet hat: ueberzaehlige Reihen abschneiden

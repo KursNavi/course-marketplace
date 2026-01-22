@@ -489,11 +489,30 @@ const Dashboard = ({ user, t, setView, courses, teacherEarnings, myBookings, sav
 
     // 1. Fetch User Tier
     useEffect(() => {
-        if (user.role === 'teacher') {
-            supabase.from('profiles').select('plan_tier').eq('id', user.id).single()
-            .then(({ data }) => { if (data?.plan_tier) setUserTier(data.plan_tier); });
-        }
-    }, [user]);
+        if (user.role !== 'teacher' || !user?.id) return;
+
+        const parseTier = (s) => {
+            const v = (s || '').toString().toLowerCase().trim();
+            if (!v) return null;
+            if (v === 'enterprize' || v === 'entreprise' || v.includes('enterprise')) return 'enterprise';
+            if (v.includes('premium')) return 'premium';
+            if (v === 'pro' || v.includes(' pro') || v.startsWith('pro') || v.includes('pro_') || v.includes('pro-') || v.includes('pro ')) return 'pro';
+            if (v.includes('basic')) return 'basic';
+            if (v.includes('free')) return 'basic'; // Dashboard kennt "free" nicht als Plan -> als basic behandeln
+            return null;
+        };
+
+        supabase
+            .from('profiles')
+            .select('plan_tier, package_tier')
+            .eq('id', user.id)
+            .single()
+            .then(({ data, error }) => {
+                if (error) return;
+                const resolved = parseTier(data?.plan_tier) || parseTier(data?.package_tier) || 'basic';
+                setUserTier(resolved);
+            });
+    }, [user?.id, user?.role]);
 
     // 2. Plan & Daten (Business Logic)
     const currentPlan = PLANS.find(p => p.id === userTier) || PLANS[0];
