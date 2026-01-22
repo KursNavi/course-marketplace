@@ -11,10 +11,12 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
     const [bookingType, setBookingType] = useState('platform'); // 'platform', 'external', 'lead'
     const [contactEmail, setContactEmail] = useState(''); 
 
-    // Taxonomy State
-    const [selectedType, setSelectedType] = useState('privat_hobby');
-    const [selectedArea, setSelectedArea] = useState('');
-    const [selectedSpecialty, setSelectedSpecialty] = useState('');
+    // Taxonomy State (Mehrfach-Kategorien)
+    const CATEGORY_ROW_LIMITS = { basic: 1, pro: 3, premium: 3, enterprise: 5, free: 1 };
+
+    const [categories, setCategories] = useState([{ type: 'privat_hobby', area: '', specialty: '' }]);
+    const [maxCategories, setMaxCategories] = useState(1);
+
     
     // Metadata State
     const [selectedLevel, setSelectedLevel] = useState('all_levels');
@@ -36,11 +38,25 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
         // 1. Load Initial Data if editing
         if (initialData) {
             if (initialData.booking_type) setBookingType(initialData.booking_type);
-            if (initialData.category_type) setSelectedType(initialData.category_type);
-            if (initialData.category_area) setSelectedArea(initialData.category_area);
-            if (initialData.category_specialty) setSelectedSpecialty(initialData.category_specialty);
+
+            // Kategorie(n) wiederherstellen (primary + optional)
+            if (Array.isArray(initialData.category_paths) && initialData.category_paths.length > 0) {
+                setCategories(initialData.category_paths.map(c => ({
+                    type: c?.type || 'privat_hobby',
+                    area: c?.area || '',
+                    specialty: c?.specialty || ''
+                })));
+            } else {
+                setCategories([{
+                    type: initialData.category_type || 'privat_hobby',
+                    area: initialData.category_area || '',
+                    specialty: initialData.category_specialty || ''
+                }]);
+            }
+
             if (initialData.level) setSelectedLevel(initialData.level);
             if (initialData.language) setCourseLanguage(initialData.language);
+
             
             // Restore Contact Email (now stored in course_private)
 ;(async () => {
@@ -120,13 +136,75 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
         return () => { isMounted = false; }; // CLEANUP
     }, [initialData, user]);
 
+    // Paket -> wie viele Kategorien sind erlaubt?
+    useEffect(() => {
+        let isMounted = true;
+        if (!user?.id) return;
+
+        supabase
+            .from('profiles')
+            .select('plan_tier, package_tier')
+            .eq('id', user.id)
+            .single()
+            .then(({ data, error }) => {
+                if (!isMounted) return;
+
+                if (error) {
+                    setMaxCategories(1);
+                    return;
+                }
+
+                const rawTier = (data?.package_tier || data?.plan_tier || 'basic').toString().toLowerCase();
+
+                // kleine Robustheit fuer Varianten
+                const normalisedTier =
+                    rawTier === 'enterprize' ? 'enterprise' :
+                    rawTier === 'entreprise' ? 'enterprise' :
+                    rawTier;
+
+                const limit = CATEGORY_ROW_LIMITS[normalisedTier] ?? 1;
+                setMaxCategories(limit);
+
+                // Falls jemand downgradet hat: ueberzaehlige Reihen abschneiden
+                setCategories(prev => prev.slice(0, limit));
+            });
+
+        return () => { isMounted = false; };
+    }, [user?.id]);
+
     // Helpers
     const getAreas = (type) => type && NEW_TAXONOMY[type] ? Object.keys(NEW_TAXONOMY[type]) : [];
     const getSpecialties = (type, area) => type && area && NEW_TAXONOMY[type][area] ? NEW_TAXONOMY[type][area].specialties : [];
-    
-    const handleTypeChange = (e) => {
-        setSelectedType(e.target.value);
-        setSelectedArea(''); setSelectedSpecialty(''); 
+
+    const addCategoryRow = () => {
+        if (categories.length >= maxCategories) return;
+        setCategories([...categories, { type: '', area: '', specialty: '' }]);
+    };
+
+    const removeCategoryRow = (index) => {
+        if (index === 0) return; // erste Kategorie ist Pflicht
+        setCategories(categories.filter((_, i) => i !== index));
+    };
+
+    const updateCategoryRow = (index, field, value) => {
+        setCategories(prev => {
+            const next = [...prev];
+            const row = { ...next[index] };
+
+            if (field === 'type') {
+                row.type = value;
+                row.area = '';
+                row.specialty = '';
+            } else if (field === 'area') {
+                row.area = value;
+                row.specialty = '';
+            } else {
+                row[field] = value;
+            }
+
+            next[index] = row;
+            return next;
+        });
     };
 
     const addEvent = () => setEvents([...events, { start_date: '', street: '', city: '', max_participants: 0, canton: '', schedule_description: '' }]);
@@ -164,10 +242,29 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
         const prerequisites = formData.get('prerequisites');
         const keywords = formData.get('keywords');
         
-        // Taxonomy
-        const catType = formData.get('category_type');
-        const catArea = formData.get('category_area');
-        const catSpec = formData.get('category_specialty');
+        // Taxonomy (Mehrfach-Kategorien)
+        const partialExtraCategory = categories.slice(1).some(c =>
+            (c.type || c.area || c.specialty) && !(c.type && c.area && c.specialty)
+        );
+        if (partialExtraCategory) {
+            window.alert("Bitte fuelle Zusatz-Kategorien vollständig aus oder entferne die Zeile.");
+            return;
+        }
+
+        const cleanedCategories = categories
+            .map(c => ({
+                type: (c.type || '').toString(),
+                area: (c.area || '').toString(),
+                specialty: (c.specialty || '').toString()
+            }))
+            // erste Kategorie ist Pflicht; weitere nur, wenn komplett
+            .filter((c, idx) => idx === 0 || (c.type && c.area && c.specialty));
+
+        const primaryCategory = cleanedCategories[0] || { type: '', area: '', specialty: '' };
+        const catType = primaryCategory.type;
+        const catArea = primaryCategory.area;
+        const catSpec = primaryCategory.specialty;
+
         const level = formData.get('level');
 
         if (isSubmitting) return;
@@ -270,6 +367,7 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
             category_type: catType,
             category_area: catArea,
             category_specialty: catSpec,
+            category_paths: cleanedCategories,
             booking_type: bookingType,
             external_link: bookingType === 'external' ? formData.get('external_link') : null,
             level: level,
@@ -442,26 +540,92 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                     {/* Taxonomy Box */}
                     <div className="md:col-span-2 bg-beige p-6 rounded-xl border border-orange-100 space-y-4">
                         <h3 className="font-bold text-orange-900 mb-2">Kategorie & Einordnung</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div>
-                                <span className="text-xs text-gray-500 block mb-1">Typ *</span>
-                                <select name="category_type" value={selectedType} onChange={handleTypeChange} className="w-full px-3 py-2 border rounded-lg focus:ring-primary bg-white text-sm">
-                                    {Object.keys(CATEGORY_TYPES).map(key => <option key={key} value={key}>{CATEGORY_TYPES[key].de}</option>)}
-                                </select>
-                            </div>
-                            <div>
-                                <span className="text-xs text-gray-500 block mb-1">Bereich *</span>
-                                <select name="category_area" value={selectedArea} onChange={(e) => {setSelectedArea(e.target.value); setSelectedSpecialty('');}} className="w-full px-3 py-2 border rounded-lg focus:ring-primary bg-white text-sm" disabled={!selectedType}>
-                                    <option value="">Bitte wählen...</option>
-                                    {getAreas(selectedType).map(key => <option key={key} value={key}>{NEW_TAXONOMY[selectedType][key].label.de}</option>)}
-                                </select>
-                            </div>
-                            <div>
-                                <span className="text-xs text-gray-500 block mb-1">Spezialgebiet *</span>
-                                <select name="category_specialty" value={selectedSpecialty} onChange={(e) => setSelectedSpecialty(e.target.value)} className="w-full px-3 py-2 border rounded-lg focus:ring-primary bg-white text-sm" disabled={!selectedArea}>
-                                    <option value="">Bitte wählen...</option>
-                                    {getSpecialties(selectedType, selectedArea).map(spec => <option key={spec} value={spec}>{spec}</option>)}
-                                </select>
+                        <div className="space-y-4">
+                            {categories.map((row, idx) => (
+                                <div key={idx} className="bg-white/60 p-4 rounded-lg border border-orange-200/60">
+                                    <div className="flex items-center justify-between mb-3">
+                                        <span className="text-sm font-bold text-orange-900">
+                                            Kategorie {idx + 1} {idx === 0 ? '(Pflicht)' : '(Optional)'}
+                                        </span>
+
+                                        {idx > 0 && (
+                                            <button
+                                                type="button"
+                                                onClick={() => removeCategoryRow(idx)}
+                                                className="text-red-600 text-xs hover:underline flex items-center"
+                                            >
+                                                <Trash2 className="w-3 h-3 mr-1" /> Entfernen
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div>
+                                            <span className="text-xs text-gray-500 block mb-1">Typ {idx === 0 ? '*' : ''}</span>
+                                            <select
+                                                name={`category_type_${idx}`}
+                                                value={row.type}
+                                                onChange={(e) => updateCategoryRow(idx, 'type', e.target.value)}
+                                                className="w-full px-3 py-2 border rounded-lg focus:ring-primary bg-white text-sm"
+                                                required={idx === 0}
+                                            >
+                                                {idx > 0 && <option value="">Bitte wählen...</option>}
+                                                {Object.keys(CATEGORY_TYPES).map(key => (
+                                                    <option key={key} value={key}>{CATEGORY_TYPES[key].de}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        <div>
+                                            <span className="text-xs text-gray-500 block mb-1">Bereich {idx === 0 ? '*' : ''}</span>
+                                            <select
+                                                name={`category_area_${idx}`}
+                                                value={row.area}
+                                                onChange={(e) => updateCategoryRow(idx, 'area', e.target.value)}
+                                                className="w-full px-3 py-2 border rounded-lg focus:ring-primary bg-white text-sm"
+                                                disabled={!row.type}
+                                                required={idx === 0}
+                                            >
+                                                <option value="">Bitte wählen...</option>
+                                                {row.type && getAreas(row.type).map(key => (
+                                                    <option key={key} value={key}>{NEW_TAXONOMY[row.type][key].label.de}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        <div>
+                                            <span className="text-xs text-gray-500 block mb-1">Spezialgebiet {idx === 0 ? '*' : ''}</span>
+                                            <select
+                                                name={`category_specialty_${idx}`}
+                                                value={row.specialty}
+                                                onChange={(e) => updateCategoryRow(idx, 'specialty', e.target.value)}
+                                                className="w-full px-3 py-2 border rounded-lg focus:ring-primary bg-white text-sm"
+                                                disabled={!row.area}
+                                                required={idx === 0}
+                                            >
+                                                <option value="">Bitte wählen...</option>
+                                                {row.type && row.area && getSpecialties(row.type, row.area).map(spec => (
+                                                    <option key={spec} value={spec}>{spec}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+
+                            <div className="flex items-center justify-between pt-1">
+                                <p className="text-xs text-gray-500">
+                                    Dein Paket erlaubt bis zu <span className="font-bold">{maxCategories}</span> Kategorien.
+                                </p>
+
+                                <button
+                                    type="button"
+                                    onClick={addCategoryRow}
+                                    disabled={categories.length >= maxCategories}
+                                    className="bg-white text-orange-700 border border-orange-200 px-3 py-1 rounded-full text-sm font-bold hover:bg-orange-50 flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    <Plus className="w-4 h-4 mr-1" /> Kategorie hinzufügen
+                                </button>
                             </div>
                         </div>
 
