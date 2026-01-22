@@ -465,7 +465,7 @@ const Dashboard = ({ user, t, setView, courses, teacherEarnings, myBookings, sav
     useEffect(() => {
     (async () => {
         const { data } = await supabase.auth.getUser();
-        console.log("ID_CHECK", {
+        console.warn("ID_CHECK", {
         authId: data?.user?.id,
         userId: user?.id
         });
