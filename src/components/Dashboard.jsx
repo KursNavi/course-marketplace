@@ -462,6 +462,16 @@ const Dashboard = ({ user, t, setView, courses, teacherEarnings, myBookings, sav
         }
     }, []);
 
+    useEffect(() => {
+    (async () => {
+        const { data } = await supabase.auth.getUser();
+        console.log("ID_CHECK", {
+        authId: data?.user?.id,
+        userId: user?.id
+        });
+    })();
+    }, [user?.id]);
+
     // 1. Fetch User Tier (AUTH UID + maybeSingle)
     useEffect(() => {
     if (user?.role !== 'teacher') return;
