@@ -168,14 +168,31 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
                     return null;
                 };
 
-                // Source of truth: plan_tier (auch wenn es "enterprise_annual" o.ae. ist)
-                const resolvedTier = parseTier(planTierRaw) || parseTier(packageTierRaw) || 'basic';
+                const plan = parseTier(planTierRaw) || 'basic';
+                const pkg  = parseTier(packageTierRaw) || 'basic';
+
+                // Ranking: hoeheres Paket gewinnt
+                const rank = { free: 0, basic: 0, pro: 1, premium: 2, enterprise: 3 };
+
+                let resolvedTier = (rank[pkg] > rank[plan]) ? pkg : plan;
+
+                // "free" soll bei dir wie "basic" behandelt werden (weil Dashboard/UX basic anzeigt)
+                if (resolvedTier === 'free') resolvedTier = 'basic';
+
+                console.log("TEACHERFORM_TIER_DEBUG", {
+                plan_tier: data?.plan_tier,
+                package_tier: data?.package_tier,
+                plan,
+                pkg,
+                resolvedTier
+                });
 
                 const limit = CATEGORY_ROW_LIMITS[resolvedTier] ?? 1;
                 setMaxCategories(limit);
 
                 // Falls jemand downgradet hat: ueberzaehlige Reihen abschneiden
                 setCategories(prev => prev.slice(0, limit));
+
             });
 
         return () => { isMounted = false; };
