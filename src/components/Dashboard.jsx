@@ -17,6 +17,20 @@ const UserProfileSection = ({ user, showNotification, setLang, t }) => {
     const [uploadingDoc, setUploadingDoc] = useState(false);
     const [verificationStatus, setVerificationStatus] = useState('none'); // none, pending, verified
     const isTeacher = user?.role === 'teacher';
+    const [authUid, setAuthUid] = useState(null);
+
+    useEffect(() => {
+        let cancelled = false;
+
+        (async () => {
+            const { data } = await supabase.auth.getUser();
+            if (!cancelled) setAuthUid(data?.user?.id || null);
+        })();
+
+        return () => { cancelled = true; };
+    }, []);
+
+    const uid = authUid || user?.id;
 
     
     const [formData, setFormData] = useState({
@@ -58,7 +72,8 @@ const UserProfileSection = ({ user, showNotification, setLang, t }) => {
         const { error } = await supabase
             .from('profiles')
             .update(profileUpdates)
-            .eq('id', user.id);
+            .eq('id', uid);
+
 
         
         if (error) { showNotification("Error saving profile"); setSaving(false); return; }
@@ -82,7 +97,7 @@ const UserProfileSection = ({ user, showNotification, setLang, t }) => {
 
         for (const file of files) {
             const fileExt = file.name.split('.').pop();
-            const fileName = `${user.id}_${Date.now()}.${fileExt}`;
+            const fileName = `${uid}_${Date.now()}.${fileExt}`;
             const { error: uploadError } = await supabase.storage.from('certificates').upload(fileName, file, { upsert: true });
 
             if (uploadError) {
@@ -96,14 +111,19 @@ const UserProfileSection = ({ user, showNotification, setLang, t }) => {
 
         if (newDocUrls.length > 0) {
             // Get existing docs to append
-            const { data: currentProfile } = await supabase.from('profiles').select('verification_docs').eq('id', user.id).single();
+            const { data: currentProfile } = await supabase
+                .from('profiles')
+                .select('verification_docs')
+                .eq('id', uid)
+                .single();
             const existingDocs = currentProfile?.verification_docs || [];
             const updatedDocs = [...existingDocs, ...newDocUrls];
 
             const { error: dbError } = await supabase.from('profiles').update({
                 verification_docs: updatedDocs,
                 verification_status: 'pending'
-            }).eq('id', user.id);
+            }).eq('id', uid);
+
 
             if (!dbError) {
                 // Notify Admin
@@ -450,6 +470,7 @@ const Dashboard = ({ user, t, setView, courses, teacherEarnings, myBookings, sav
     const [dashView, setDashView] = useState('overview'); 
     const [userTier, setUserTier] = useState('basic'); // basic, pro, premium, enterprise
     const [showSuccessModal, setShowSuccessModal] = useState(false); // NEW: Success Modal State
+    const [authUid, setAuthUid] = useState(null);
 
     // NEW: Check for Payment Success in URL
     useEffect(() => {
@@ -463,76 +484,77 @@ const Dashboard = ({ user, t, setView, courses, teacherEarnings, myBookings, sav
     }, []);
 
     useEffect(() => {
-    (async () => {
-        const { data } = await supabase.auth.getUser();
-        console.warn("ID_CHECK", {
-        authId: data?.user?.id,
-        userId: user?.id
-        });
-    })();
-    }, [user?.id]);
+        let cancelled = false;
+
+        (async () => {
+            const { data, error } = await supabase.auth.getUser();
+            if (error) console.warn("auth.getUser error:", error.message);
+
+            if (!cancelled) setAuthUid(data?.user?.id || null);
+        })();
+
+        return () => { cancelled = true; };
+    }, []);
+
+    const uid = authUid || user?.id;
 
     // 1. Fetch User Tier (AUTH UID + maybeSingle)
     useEffect(() => {
-    if (user?.role !== 'teacher') return;
+        if (user?.role !== 'teacher') return;
+        if (!uid) return;
 
-    let cancelled = false;
+        let cancelled = false;
 
-    (async () => {
-        const { data: authRes, error: authErr } = await supabase.auth.getUser();
-        if (authErr) {
-        console.warn("auth.getUser error:", authErr.message);
-        return;
-        }
+        (async () => {
+            const { data, error, status } = await supabase
+                .from('profiles')
+                .select('plan_tier, package_tier')
+                .eq('id', uid)
+                .maybeSingle();
 
-        const uid = authRes?.user?.id || user?.id;
+            if (cancelled) return;
 
-        const { data, error, status } = await supabase
-        .from('profiles')
-        .select('plan_tier, package_tier')
-        .eq('id', uid)
-        .maybeSingle();
+            if (error) {
+                console.warn("Tier fetch error:", { status, message: error.message, error });
+                return;
+            }
+            if (!data) {
+                console.warn("Tier fetch: no profile row visible for uid", uid);
+                return;
+            }
 
-        if (cancelled) return;
+            const parseTier = (s) => {
+                const v = (s || '').toString().toLowerCase().trim();
+                if (!v) return null;
+                if (v === 'enterprize' || v === 'entreprise' || v.includes('enterprise')) return 'enterprise';
+                if (v.includes('premium')) return 'premium';
+                if (v === 'pro' || v.includes(' pro') || v.startsWith('pro') || v.includes('pro_') || v.includes('pro-') || v.includes('pro ')) return 'pro';
+                if (v.includes('basic')) return 'basic';
+                if (v.includes('free')) return 'basic';
+                return null;
+            };
 
-        if (error) {
-        console.warn("Tier fetch error:", { status, message: error.message, error });
-        return;
-        }
-        if (!data) {
-        console.warn("Tier fetch: no profile row visible for uid", uid);
-        return;
-        }
+            const rank = { basic: 0, pro: 1, premium: 2, enterprise: 3 };
+            const plan = parseTier(data.plan_tier) || 'basic';
+            const pkg  = parseTier(data.package_tier) || 'basic';
+            const resolved = (rank[pkg] > rank[plan]) ? pkg : plan;
 
-        const parseTier = (s) => {
-        const v = (s || '').toString().toLowerCase().trim();
-        if (!v) return null;
-        if (v === 'enterprize' || v === 'entreprise' || v.includes('enterprise')) return 'enterprise';
-        if (v.includes('premium')) return 'premium';
-        if (v === 'pro' || v.includes(' pro') || v.startsWith('pro') || v.includes('pro_') || v.includes('pro-') || v.includes('pro ')) return 'pro';
-        if (v.includes('basic')) return 'basic';
-        if (v.includes('free')) return 'basic';
-        return null;
-        };
+            setUserTier(resolved);
+        })();
 
-        const rank = { basic: 0, pro: 1, premium: 2, enterprise: 3 };
-        const plan = parseTier(data.plan_tier) || 'basic';
-        const pkg  = parseTier(data.package_tier) || 'basic';
-        const resolved = (rank[pkg] > rank[plan]) ? pkg : plan;
+        return () => { cancelled = true; };
+    }, [uid, user?.role]);
 
-        setUserTier(resolved);
-    })();
-
-    return () => { cancelled = true; };
-    }, [user?.id, user?.role]);
 
 
     // 2. Plan & Daten (Business Logic)
     const currentPlan = PLANS.find(p => p.id === userTier) || PLANS[0];
 
     const totalPaidOut = user.role === 'teacher' ? teacherEarnings.filter(e => e.isPaidOut).reduce((sum, e) => sum + e.payout, 0) : 0;
-    const myCourses = user.role === 'teacher' ? courses.filter(c => c.user_id === user.id) : [];
-    
+    const myCourses = user.role === 'teacher'
+        ? (courses || []).filter(c => String(c.user_id) === String(uid))
+        : [];
+
     const courseCount = myCourses.length;
 
     const handleNavigateToCourse = (course) => {
