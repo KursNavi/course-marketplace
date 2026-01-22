@@ -12,7 +12,7 @@ import { supabase } from '../lib/supabase';
 
 // --- HELPER COMPONENT: User Profile Settings ---
 const UserProfileSection = ({ user, showNotification, setLang, t }) => {
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [uploadingDoc, setUploadingDoc] = useState(false);
     const [verificationStatus, setVerificationStatus] = useState('none'); // none, pending, verified
@@ -22,31 +22,6 @@ const UserProfileSection = ({ user, showNotification, setLang, t }) => {
     const [formData, setFormData] = useState({
         city: '', canton: '', bio_text: '', certificates: '', preferred_language: 'de', email: user.email, password: '', confirmPassword: ''
     });
-
-    useEffect(() => {
-        const fetchProfile = async () => {
-            if (!user?.id) return;
-            const { data, error } = await supabase.from('profiles').select('*').eq('id', user.id).single();
-            if (data) { 
-                setFormData(prev => ({ 
-                    ...prev, 
-                    city: data.city || '', 
-                    canton: data.canton || '', 
-                    additional_locations: data.additional_locations || '',
-                    website_url: data.website_url || '',
-                    contact_email: data.contact_email || '',
-                    // MAP DB TO FORM: Use bio_text to match public profile
-                    bio_text: data.bio_text || '', 
-                    // MAP DB ARRAY TO STRING: Join with newlines for textarea
-                    certificates: data.certificates ? data.certificates.join('\n') : '',
-                    preferred_language: data.preferred_language || 'de' 
-                }));
-                if (data.verification_status) setVerificationStatus(data.verification_status);
-            }
-            setLoading(false);
-        };
-        fetchProfile();
-    }, [user]);
 
     const handleChange = (e) => { setFormData({ ...formData, [e.target.name]: e.target.value }); };
 
@@ -487,32 +462,60 @@ const Dashboard = ({ user, t, setView, courses, teacherEarnings, myBookings, sav
         }
     }, []);
 
-    // 1. Fetch User Tier
+    // 1. Fetch User Tier (AUTH UID + maybeSingle)
     useEffect(() => {
-        if (user.role !== 'teacher' || !user?.id) return;
+    if (user?.role !== 'teacher') return;
+
+    let cancelled = false;
+
+    (async () => {
+        const { data: authRes, error: authErr } = await supabase.auth.getUser();
+        if (authErr) {
+        console.warn("auth.getUser error:", authErr.message);
+        return;
+        }
+
+        const uid = authRes?.user?.id || user?.id;
+
+        const { data, error, status } = await supabase
+        .from('profiles')
+        .select('plan_tier, package_tier')
+        .eq('id', uid)
+        .maybeSingle();
+
+        if (cancelled) return;
+
+        if (error) {
+        console.warn("Tier fetch error:", { status, message: error.message, error });
+        return;
+        }
+        if (!data) {
+        console.warn("Tier fetch: no profile row visible for uid", uid);
+        return;
+        }
 
         const parseTier = (s) => {
-            const v = (s || '').toString().toLowerCase().trim();
-            if (!v) return null;
-            if (v === 'enterprize' || v === 'entreprise' || v.includes('enterprise')) return 'enterprise';
-            if (v.includes('premium')) return 'premium';
-            if (v === 'pro' || v.includes(' pro') || v.startsWith('pro') || v.includes('pro_') || v.includes('pro-') || v.includes('pro ')) return 'pro';
-            if (v.includes('basic')) return 'basic';
-            if (v.includes('free')) return 'basic'; // Dashboard kennt "free" nicht als Plan -> als basic behandeln
-            return null;
+        const v = (s || '').toString().toLowerCase().trim();
+        if (!v) return null;
+        if (v === 'enterprize' || v === 'entreprise' || v.includes('enterprise')) return 'enterprise';
+        if (v.includes('premium')) return 'premium';
+        if (v === 'pro' || v.includes(' pro') || v.startsWith('pro') || v.includes('pro_') || v.includes('pro-') || v.includes('pro ')) return 'pro';
+        if (v.includes('basic')) return 'basic';
+        if (v.includes('free')) return 'basic';
+        return null;
         };
 
-        supabase
-            .from('profiles')
-            .select('plan_tier, package_tier')
-            .eq('id', user.id)
-            .single()
-            .then(({ data, error }) => {
-                if (error) return;
-                const resolved = parseTier(data?.plan_tier) || parseTier(data?.package_tier) || 'basic';
-                setUserTier(resolved);
-            });
+        const rank = { basic: 0, pro: 1, premium: 2, enterprise: 3 };
+        const plan = parseTier(data.plan_tier) || 'basic';
+        const pkg  = parseTier(data.package_tier) || 'basic';
+        const resolved = (rank[pkg] > rank[plan]) ? pkg : plan;
+
+        setUserTier(resolved);
+    })();
+
+    return () => { cancelled = true; };
     }, [user?.id, user?.role]);
+
 
     // 2. Plan & Daten (Business Logic)
     const currentPlan = PLANS.find(p => p.id === userTier) || PLANS[0];

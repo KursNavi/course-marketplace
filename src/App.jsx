@@ -121,6 +121,31 @@ export default function KursNaviPro() {
 
   const t = TRANSLATIONS[lang] || TRANSLATIONS['de'];
 
+  // --- SEO HELPERS (v3.1) ---
+  const BASE_URL = 'https://kursnavi.ch';
+  const slugify = (input) => {
+    return (input || '')
+      .toString()
+      .trim()
+      .toLowerCase()
+      .replace(/ä/g, 'ae')
+      .replace(/ö/g, 'oe')
+      .replace(/ü/g, 'ue')
+      .replace(/ß/g, 'ss')
+      .replace(/&/g, ' und ')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  };
+
+  const buildCoursePath = (c) => {
+    if (!c) return '/search';
+    const topic = slugify(c.primary_category || c.category_area || 'kurs');
+    const loc = slugify(c.canton || 'schweiz');
+    const title = slugify(c.title || 'detail');
+    return `/courses/${topic}/${loc}/${c.id}-${title}`;
+  };
+
+
   // --- ACTIONS & HANDLERS ---
   const changeLanguage = async (newLang) => {
     setLang(newLang);
@@ -288,17 +313,13 @@ export default function KursNaviPro() {
               setSelectedCourse(found); 
               setView('detail'); 
               
-              // --- V2.1 SEO TRAFFIC COP (Canonical Enforcer) ---
-              // Bestimmt die einzig wahre URL basierend auf primary_category (oder Fallback auf Area)
-              const primaryCat = found.primary_category || found.category_area || 'kurs';
-              const canonicalTopic = primaryCat.toLowerCase().replace(/_/g, '-');
-              const canonicalLoc = (found.canton || 'schweiz').toLowerCase();
-              const canonicalSlug = (found.title || 'detail').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-              const canonicalPath = `/courses/${canonicalTopic}/${canonicalLoc}/${found.id}-${canonicalSlug}`;
+              // --- SEO TRAFFIC COP (v3.1) ---
+              // Bestimmt die einzig wahre URL (ASCII-safe Slugs, konsistent mit Sitemap & DetailView)
+              const canonicalPath = buildCoursePath(found);
 
               // Silent Fix: Wenn die aktuelle URL nicht der Canonical entspricht (falsche Kategorie oder Legacy), korrigieren.
               if (window.location.pathname !== canonicalPath) {
-                  window.history.replaceState({ view: 'detail', courseId: found.id }, '', canonicalPath);
+                window.history.replaceState({ view: 'detail', courseId: found.id }, '', canonicalPath);
               }
           }
       }
