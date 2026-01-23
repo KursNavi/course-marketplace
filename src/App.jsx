@@ -696,10 +696,10 @@ export default function KursNaviPro() {
         syncPendingSavedCourse(session.user.id);
         if (role === 'teacher') fetchTeacherEarnings(session.user.id);
 
-        // Profil-Extras laden (preferred_language, is_professional, plan_tier)
+        // Profil-Extras laden (preferred_language, is_professional, plan_tier, role)
         const { data } = await supabase
           .from('profiles')
-          .select('preferred_language, is_professional, plan_tier')
+          .select('preferred_language, is_professional, plan_tier, role')
           .eq('id', session.user.id)
           .single();
 
@@ -712,6 +712,7 @@ export default function KursNaviPro() {
             prev
               ? {
                   ...prev,
+                  role: data.role || prev.role, // Update role from profiles table
                   is_professional: data.is_professional,
                   plan_tier: data.plan_tier || 'basic'
                 }
