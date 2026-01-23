@@ -45,20 +45,57 @@ const SearchPageView = ({
     }, [filteredCourses.length, loading]);
 
     // --- DYNAMIC FILTER LOGIC (Hide empty categories) ---
-    const availableTypes = [...new Set(courses.map(c => c.category_type).filter(Boolean))];
+    // Include ALL categories (primary + Zweitkategorien) from course_categories junction table
+    const availableTypes = [...new Set(
+        courses.flatMap(c => {
+            const types = [c.category_type];
+            if (Array.isArray(c.all_categories)) {
+                types.push(...c.all_categories.map(cat => cat.category_type));
+            }
+            return types.filter(Boolean);
+        })
+    )];
 
     const availableAreas = [...new Set(
-        courses
-        .filter(c => !searchType || c.category_type === searchType)
-        .map(c => c.category_area)
-        .filter(Boolean)
+        courses.flatMap(c => {
+            const areas = [];
+            // Include primary area if type matches or no type filter
+            if (!searchType || c.category_type === searchType) {
+                if (c.category_area) areas.push(c.category_area);
+            }
+            // Include areas from all_categories if type matches
+            if (Array.isArray(c.all_categories)) {
+                c.all_categories.forEach(cat => {
+                    if ((!searchType || cat.category_type === searchType) && cat.category_area) {
+                        areas.push(cat.category_area);
+                    }
+                });
+            }
+            return areas;
+        })
     )];
 
     const availableSpecialties = [...new Set(
-        courses
-        .filter(c => (!searchType || c.category_type === searchType) && (!searchArea || c.category_area === searchArea))
-        .map(c => c.category_specialty)
-        .filter(Boolean)
+        courses.flatMap(c => {
+            const specialties = [];
+            // Include primary specialty if filters match or no filters
+            const primaryTypeMatch = !searchType || c.category_type === searchType;
+            const primaryAreaMatch = !searchArea || c.category_area === searchArea;
+            if (primaryTypeMatch && primaryAreaMatch && c.category_specialty) {
+                specialties.push(c.category_specialty);
+            }
+            // Include specialties from all_categories if filters match
+            if (Array.isArray(c.all_categories)) {
+                c.all_categories.forEach(cat => {
+                    const typeMatch = !searchType || cat.category_type === searchType;
+                    const areaMatch = !searchArea || cat.category_area === searchArea;
+                    if (typeMatch && areaMatch && cat.category_specialty) {
+                        specialties.push(cat.category_specialty);
+                    }
+                });
+            }
+            return specialties;
+        })
     )];
 
     const availableAgeGroups = [...new Set(

@@ -272,6 +272,28 @@ export default function KursNaviPro() {
         }
       }
 
+      // Load all course categories for multi-category search support
+      const courseIds = (courseData || []).map(c => c.id).filter(Boolean);
+      let categoriesMap = {};
+
+      if (courseIds.length > 0) {
+        const { data: categoriesData, error: categoriesError } = await supabase
+          .from('course_categories')
+          .select('*')
+          .in('course_id', courseIds);
+
+        if (!categoriesError && categoriesData) {
+          // Group categories by course_id
+          categoriesMap = categoriesData.reduce((acc, cat) => {
+            if (!acc[cat.course_id]) {
+              acc[cat.course_id] = [];
+            }
+            acc[cat.course_id].push(cat);
+            return acc;
+          }, {});
+        }
+      }
+
       const migratedData = (courseData || []).map(c => {
         const normalized = normalizeCourse(c);
         const prof = profileMap[c.user_id];
@@ -281,6 +303,7 @@ export default function KursNaviPro() {
           instructor_bio: prof?.bio_text,
           instructor_certificates: prof?.certificates,
           additional_locations: prof?.additional_locations,
+          all_categories: categoriesMap[c.id] || [], // Add all categories including Zweitkategorien
         };
       });
 
@@ -562,14 +585,32 @@ export default function KursNaviPro() {
   // Filter Logic
   const filteredCourses = courses.filter(course => {
     if (!course) return false;
-    let matchesType = true; if (searchType) matchesType = course.category_type === searchType;
+
+    // Check category filters against ALL categories (primary + Zweitkategorien)
+    let matchesType = true;
+    if (searchType) {
+      // Check primary category OR any category in all_categories
+      matchesType = course.category_type === searchType ||
+        (Array.isArray(course.all_categories) &&
+         course.all_categories.some(cat => cat.category_type === searchType));
+    }
+
     let matchesArea = true;
-      if (searchArea) {
-        matchesArea =
-          course.category_area === searchArea ||
-          (Array.isArray(course.categories) && course.categories.includes(searchArea));
-      }
-    let matchesSpecialty = true; if (searchSpecialty) matchesSpecialty = course.category_specialty === searchSpecialty;
+    if (searchArea) {
+      // Check primary category OR any category in all_categories
+      matchesArea = course.category_area === searchArea ||
+        (Array.isArray(course.categories) && course.categories.includes(searchArea)) ||
+        (Array.isArray(course.all_categories) &&
+         course.all_categories.some(cat => cat.category_area === searchArea));
+    }
+
+    let matchesSpecialty = true;
+    if (searchSpecialty) {
+      // Check primary category OR any category in all_categories
+      matchesSpecialty = course.category_specialty === searchSpecialty ||
+        (Array.isArray(course.all_categories) &&
+         course.all_categories.some(cat => cat.category_specialty === searchSpecialty));
+    }
     let matchesAge = true; if (searchAge) { matchesAge = course.target_age_groups && course.target_age_groups.includes(searchAge); }
     let matchesCategory = true; if (!searchType && !searchArea && selectedCatPath.length > 0) { const courseCatStr = (course.category || "").toLowerCase(); matchesCategory = selectedCatPath.every(part => courseCatStr.includes(part.toLowerCase())); }
     

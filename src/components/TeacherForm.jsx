@@ -459,22 +459,46 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
         // 7. Update Events Table
         if (activeCourseId) {
             await supabase.from('course_events').delete().eq('course_id', activeCourseId);
-            
+
             const eventsToInsert = validEvents.map(ev => ({
                 course_id: activeCourseId,
                 start_date: ev.start_date,
                 location: ev.location,
-                canton: ev.canton || (fallbackCantons.length > 0 ? fallbackCantons[0] : null), 
+                canton: ev.canton || (fallbackCantons.length > 0 ? fallbackCantons[0] : null),
                 schedule_description: ev.schedule_description,
                 max_participants: parseInt(ev.max_participants) || 0
             }));
-            
+
             if (eventsToInsert.length > 0) {
                 await supabase.from('course_events').insert(eventsToInsert);
             }
         }
 
-        fetchCourses(); 
+        // 8. Update course_categories junction table (for Zweitkategorien support)
+        if (activeCourseId && cleanedCategories && cleanedCategories.length > 0) {
+            // Delete existing category entries
+            await supabase.from('course_categories').delete().eq('course_id', activeCourseId);
+
+            // Insert all categories (primary + secondary)
+            const categoriesToInsert = cleanedCategories.map((cat, idx) => ({
+                course_id: activeCourseId,
+                category_type: cat.type,
+                category_area: cat.area,
+                category_specialty: cat.specialty,
+                is_primary: idx === 0 // First category is primary
+            }));
+
+            const { error: catErr } = await supabase
+                .from('course_categories')
+                .insert(categoriesToInsert);
+
+            if (catErr) {
+                console.error('Error saving course categories:', catErr);
+                // Don't fail the whole operation, just log the error
+            }
+        }
+
+        fetchCourses();
         setEditingCourse(null);
         setView('dashboard'); 
         setIsSubmitting(false);
