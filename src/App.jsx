@@ -103,6 +103,11 @@ export default function KursNaviPro() {  // 1. Initial State Logic
   
   // App Data State
   const [courses, setCourses] = useState([]); 
+    const coursesRef = useRef([]);
+  
+  useEffect(() => {
+    coursesRef.current = courses;
+  }, [courses]);
   const [myBookings, setMyBookings] = useState([]); 
   const [savedCourses, setSavedCourses] = useState([]);
   const [savedCourseIds, setSavedCourseIds] = useState([]);
@@ -359,7 +364,6 @@ export default function KursNaviPro() {  // 1. Initial State Logic
               urlId = lastPart.split('-')[0];
           } else if (parts.length === 3) {
              // Programmatic Landing Page: /courses/topic/location/
-             setCategoryLocationParams({ topicSlug: parts[1], locationSlug: parts[2] });
              setView('category-location');
           } else if (parts.length >= 2) {
              // Pre-fill filters for category pages (Topic/Location)
@@ -393,7 +397,6 @@ export default function KursNaviPro() {  // 1. Initial State Logic
                       // Redirect to category-location page: /courses/topic/location/
                       const redirectPath = `/${parts[0]}/${parts[1]}/${parts[2]}/`;
                       window.history.replaceState({ view: 'category-location' }, '', redirectPath);
-                      setCategoryLocationParams({ topicSlug: parts[1], locationSlug: parts[2] });
                       setView('category-location');
                   } else {
                       // Fallback to search
@@ -747,16 +750,81 @@ export default function KursNaviPro() {  // 1. Initial State Logic
   });
   
 // --- EFFECT HOOKS ---
-  useEffect(() => {
+    useEffect(() => {
     fetchCourses();
     fetchArticles();
 
-    const handleUrlChange = () => setView(getInitialView());
-    window.addEventListener('popstate', handleUrlChange);
+    // Hält view + selectedCourse immer synchron zur URL (auch bei pushState/replaceState)
+    const syncFromUrl = () => {
+      const nextView = getInitialView();
+      const path = window.location.pathname;
 
-    return () => window.removeEventListener('popstate', handleUrlChange);
+      // 1) Detail-URL -> ID extrahieren
+      let urlId = null;
+
+      if (path.startsWith('/courses/')) {
+        const parts = path.split('/').filter(Boolean);
+        if (parts.length >= 4) {
+          const lastPart = parts[3];
+          urlId = (lastPart || '').split('-')[0];
+        }
+      } else if (path.startsWith('/course/')) {
+        urlId = path.split('/')[2];
+      }
+
+      // 2) Wenn Detail: passenden Kurs aus bereits geladenen courses suchen
+      if (urlId) {
+        const found = (coursesRef.current || []).find(c => c && c.id == urlId);
+        if (found) {
+          setSelectedCourse(found);
+          setView('detail');
+          return;
+        }
+
+        // Kurs (noch) nicht gefunden -> selectedCourse leeren, view trotzdem setzen
+        setSelectedCourse(null);
+        setView(nextView);
+        return;
+      }
+
+      // 3) Nicht-Detail: Kurs zurücksetzen und View normal setzen
+      if (nextView !== 'detail') setSelectedCourse(null);
+      setView(nextView);
+    };
+
+    // --- History patch: auch pushState/replaceState sollen Routing triggern ---
+    const originalPushState = window.history.pushState;
+    const originalReplaceState = window.history.replaceState;
+
+    window.history.pushState = function (...args) {
+      const ret = originalPushState.apply(this, args);
+      window.dispatchEvent(new Event('locationchange'));
+      return ret;
+    };
+
+    window.history.replaceState = function (...args) {
+      const ret = originalReplaceState.apply(this, args);
+      window.dispatchEvent(new Event('locationchange'));
+      return ret;
+    };
+
+    const handlePopState = () => window.dispatchEvent(new Event('locationchange'));
+
+    window.addEventListener('popstate', handlePopState);
+    window.addEventListener('locationchange', syncFromUrl);
+
+    // Initial einmal synchronisieren
+    syncFromUrl();
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener('locationchange', syncFromUrl);
+      window.history.pushState = originalPushState;
+      window.history.replaceState = originalReplaceState;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
 
   useEffect(() => {
     let cancelled = false;
@@ -966,8 +1034,39 @@ useEffect(() => {
         </ErrorBoundary>
       )}
 
-      {view === 'success' && <SuccessView setView={setView} />}
-      {!loading && view === 'detail' && selectedCourse && (<DetailView course={selectedCourse} courses={courses} setView={setView} t={t} setSelectedTeacher={setSelectedTeacher} user={user} savedCourseIds={savedCourseIds} onToggleSaveCourse={toggleSaveCourse} showNotification={showNotification} /> )}
+            {view === 'success' && <SuccessView setView={setView} />}
+
+      {!loading && view === 'detail' && selectedCourse && (
+        <DetailView
+          course={selectedCourse}
+          courses={courses}
+          setView={setView}
+          t={t}
+          setSelectedTeacher={setSelectedTeacher}
+          user={user}
+          savedCourseIds={savedCourseIds}
+          onToggleSaveCourse={toggleSaveCourse}
+          showNotification={showNotification}
+        />
+      )}
+
+      {!loading && view === 'detail' && !selectedCourse && (
+        <div className="px-6 py-16 text-center">
+          <h1 className="text-2xl font-semibold mb-3">Dieser Kurs ist nicht verfügbar.</h1>
+          <p className="text-gray-600 mb-6">Bitte gehe zurück zur Suche und wähle einen anderen Kurs.</p>
+          <button
+            className="bg-primary text-white px-5 py-3 rounded-full hover:opacity-90"
+            onClick={() => {
+              window.history.pushState({}, '', '/search');
+              setView('search');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+          >
+            Zur Suche
+          </button>
+        </div>
+      )}
+
       {view === 'teacher-hub' && <TeacherHub setView={setView} t={t} user={user} />}
       {view === 'teacher-profile' && selectedTeacher && ( <TeacherProfileView teacher={selectedTeacher} courses={courses} setView={setView} setSelectedCourse={setSelectedCourse} t={t} getCatLabel={getCatLabel} /> )}
       {view === 'how-it-works' && <HowItWorksPage t={t} setView={setView} />}
