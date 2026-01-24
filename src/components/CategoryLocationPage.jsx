@@ -31,15 +31,29 @@ export default function CategoryLocationPage({
     }
 
     // Normalize slugs back to database values
-    const location = locationSlug.charAt(0).toUpperCase() + locationSlug.slice(1);
-    const topicKey = topicSlug.replace(/-/g, '_');
+        const location = (locationSlug || '').charAt(0).toUpperCase() + (locationSlug || '').slice(1);
+        
+        // Filter courses (SAFE MODE)
+        const filteredCourses = courses.filter(c => {
+            if (!c) return false;
+            
+            // Safety Check: Location
+            const courseLocation = (c.canton || '').toLowerCase();
+            const targetLocation = (locationSlug || '').toLowerCase();
+            const matchesLocation = courseLocation === targetLocation;
 
-    // Filter courses for this category + location
-    const filteredCourses = courses.filter(c => {
-        const matchesLocation = c.canton?.toLowerCase() === locationSlug.toLowerCase();
-        const matchesTopic = c.category_area?.toLowerCase().replace(/_/g, '-') === topicSlug.toLowerCase();
-        return matchesLocation && matchesTopic;
-    });
+            // Safety Check: Topic
+            // Falls category_area fehlt, fallback auf leeren String, damit .replace() nicht abstürzt
+            const courseArea = (c.category_area || '').toLowerCase().replace(/_/g, '-');
+            const targetTopic = (topicSlug || '').toLowerCase();
+            
+            // Optional: Check auch primary_category als Fallback
+            const coursePrimary = (c.primary_category || '').toLowerCase().replace(/_/g, '-');
+            
+            const matchesTopic = courseArea === targetTopic || coursePrimary === targetTopic;
+
+            return matchesLocation && matchesTopic;
+        });
 
     // Calculate unique statistics (for pSEO)
     const stats = {
