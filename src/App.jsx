@@ -613,7 +613,6 @@ export default function KursNaviPro() {
       }
   };
 
-
   // Filter Logic
   const filteredCourses = courses.filter(course => {
     if (!course) return false;
@@ -621,51 +620,78 @@ export default function KursNaviPro() {
     // Check category filters against ALL categories (primary + Zweitkategorien)
     let matchesType = true;
     if (searchType) {
-      // Check primary category OR any category in all_categories
       matchesType = course.category_type === searchType ||
         (Array.isArray(course.all_categories) &&
-         course.all_categories.some(cat => cat.category_type === searchType));
+         course.all_categories.some(cat => cat && cat.category_type === searchType));
     }
 
     let matchesArea = true;
     if (searchArea) {
-      // Check primary category OR any category in all_categories
       matchesArea = course.category_area === searchArea ||
         (Array.isArray(course.categories) && course.categories.includes(searchArea)) ||
         (Array.isArray(course.all_categories) &&
-         course.all_categories.some(cat => cat.category_area === searchArea));
+         course.all_categories.some(cat => cat && cat.category_area === searchArea));
     }
 
     let matchesSpecialty = true;
     if (searchSpecialty) {
-      // Check primary category OR any category in all_categories
       matchesSpecialty = course.category_specialty === searchSpecialty ||
         (Array.isArray(course.all_categories) &&
-         course.all_categories.some(cat => cat.category_specialty === searchSpecialty));
+         course.all_categories.some(cat => cat && cat.category_specialty === searchSpecialty));
     }
-    let matchesAge = true; if (searchAge) { matchesAge = course.target_age_groups && course.target_age_groups.includes(searchAge); }
-    let matchesCategory = true; if (!searchType && !searchArea && selectedCatPath.length > 0) { const courseCatStr = (course.category || "").toLowerCase(); matchesCategory = selectedCatPath.every(part => courseCatStr.includes(part.toLowerCase())); }
+
+    let matchesAge = true;
+    if (searchAge) {
+        matchesAge = Array.isArray(course.target_age_groups) && course.target_age_groups.includes(searchAge);
+    }
+
+    let matchesCategory = true;
+    if (!searchType && !searchArea && Array.isArray(selectedCatPath) && selectedCatPath.length > 0) {
+        const courseCatStr = (course.category || "").toString().toLowerCase();
+        matchesCategory = selectedCatPath.every(part => part && courseCatStr.includes(part.toString().toLowerCase()));
+    }
     
     let matchesLocation = true;
     if (selectedLocations.length > 0) {
         const courseLocations = [];
         if (course.canton) courseLocations.push(course.canton);
-        if (course.course_events) { course.course_events.forEach(ev => { if (ev.canton) courseLocations.push(ev.canton); if (ev.location) courseLocations.push(ev.location); }); }
-        if (locMode === 'canton') { matchesLocation = selectedLocations.some(selLoc => courseLocations.includes(selLoc)); } 
-        else { const address = (course.address || "").toLowerCase(); const canton = (course.canton || "").toLowerCase(); const eventAddresses = course.course_events ? course.course_events.map(ev => (ev.location || "").toLowerCase()).join(" ") : ""; matchesLocation = selectedLocations.some(city => address.includes(city.toLowerCase()) || canton.includes(city.toLowerCase()) || eventAddresses.includes(city.toLowerCase())); }
+        if (Array.isArray(course.course_events)) {
+            course.course_events.forEach(ev => {
+                if (ev.canton) courseLocations.push(ev.canton);
+                if (ev.location) courseLocations.push(ev.location);
+            });
+        }
+        
+        if (locMode === 'canton') {
+            matchesLocation = selectedLocations.some(selLoc => courseLocations.includes(selLoc));
+        } else {
+            const address = (course.address || "").toString().toLowerCase();
+            const canton = (course.canton || "").toString().toLowerCase();
+            const eventAddresses = Array.isArray(course.course_events) 
+                ? course.course_events.map(ev => (ev.location || "").toString().toLowerCase()).join(" ") 
+                : "";
+            
+            matchesLocation = selectedLocations.some(city => 
+                address.includes(city.toLowerCase()) || 
+                canton.includes(city.toLowerCase()) || 
+                eventAddresses.includes(city.toLowerCase())
+            );
+        }
     }
 
-    const q = searchQuery.toLowerCase();
-    const safeTitle = (course.title || "").toLowerCase(); 
-    const safeInstructor = (course.instructor_name || "").toLowerCase(); 
-    const safeSpecialty = (course.category_specialty || "").toLowerCase();
-    const safeArea = (
-      (course.category_area || "") +
-      " " +
-      (Array.isArray(course.categories) ? course.categories.join(" ") : "")
-    ).toLowerCase();
-    // NEU: Zugriff auf das manuelle Keyword-Feld für maximale Präzision
-    const safeKeywords = (course.keywords || "").toLowerCase();
+    const q = (searchQuery || "").toLowerCase();
+    const safeTitle = (course.title || "").toString().toLowerCase(); 
+    const safeInstructor = (course.instructor_name || "").toString().toLowerCase(); 
+    const safeSpecialty = (course.category_specialty || "").toString().toLowerCase();
+    
+    // SAFETY FIX: Handle Arrays safely for search string generation
+    const safeCategories = Array.isArray(course.categories) ? course.categories.join(" ") : (course.categories || "");
+    const safeArea = ((course.category_area || "") + " " + safeCategories).toString().toLowerCase();
+    
+    // SAFETY FIX: Handle keywords if they come as an array from Supabase
+    const safeKeywords = Array.isArray(course.keywords) 
+        ? course.keywords.join(" ").toLowerCase() 
+        : (course.keywords || "").toString().toLowerCase();
     
     const matchesSearch = safeTitle.includes(q) || 
                           safeInstructor.includes(q) || 
@@ -678,7 +704,9 @@ export default function KursNaviPro() {
         const filterTime = new Date(filterDate).getTime();
         const mainDate = course.start_date ? new Date(course.start_date).getTime() : 0;
         let hasEventAfter = mainDate >= filterTime;
-        if (course.course_events && course.course_events.length > 0) { hasEventAfter = course.course_events.some(ev => new Date(ev.start_date).getTime() >= filterTime); }
+        if (Array.isArray(course.course_events) && course.course_events.length > 0) {
+            hasEventAfter = course.course_events.some(ev => new Date(ev.start_date).getTime() >= filterTime);
+        }
         matchesDate = hasEventAfter;
     }
     
@@ -689,7 +717,7 @@ export default function KursNaviPro() {
     
     return matchesType && matchesArea && matchesSpecialty && matchesAge && matchesCategory && matchesLocation && matchesSearch && matchesDate && matchesPrice && matchesLevel && matchesPro && matchesLanguage;
   });
-
+  
 // --- EFFECT HOOKS ---
   useEffect(() => {
     fetchCourses();
