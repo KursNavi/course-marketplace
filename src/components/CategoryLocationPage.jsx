@@ -21,6 +21,15 @@ export default function CategoryLocationPage({
     onToggleSaveCourse,
     t
 }) {
+    // --- GUARD: Prevent crash on initial load (empty slugs) ---
+    if (!topicSlug || !locationSlug) {
+        return (
+            <div className="min-h-screen bg-beige flex items-center justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+            </div>
+        );
+    }
+
     // Normalize slugs back to database values
     const location = locationSlug.charAt(0).toUpperCase() + locationSlug.slice(1);
     const topicKey = topicSlug.replace(/-/g, '_');
