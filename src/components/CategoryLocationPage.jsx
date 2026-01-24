@@ -51,13 +51,21 @@ export default function CategoryLocationPage({
         bookableCourses: filteredCourses.filter(c => c.booking_type === 'platform').length
     };
 
-    // Get human-readable labels
-    const topicLabel = Object.values(NEW_TAXONOMY).flatMap(type =>
-        Object.entries(type.areas || {}).map(([key, val]) => ({
-            key: key.toLowerCase().replace(/_/g, '-'),
-            label: val.label?.de || key
-        }))
-    ).find(item => item.key === topicSlug)?.label || topicSlug;
+    // Get human-readable labels (Safety check for NEW_TAXONOMY)
+    let topicLabel = topicSlug;
+    try {
+        if (NEW_TAXONOMY) {
+            const found = Object.values(NEW_TAXONOMY).flatMap(type =>
+                Object.entries(type.areas || {}).map(([key, val]) => ({
+                    key: key.toLowerCase().replace(/_/g, '-'),
+                    label: val.label?.de || key
+                }))
+            ).find(item => item.key === topicSlug);
+            if (found) topicLabel = found.label;
+        }
+    } catch (err) {
+        console.error("Taxonomy lookup error:", err);
+    }
 
     // SEO Meta Tags
     useEffect(() => {

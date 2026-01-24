@@ -100,7 +100,18 @@ export default function KursNaviPro() {
   const [selectedTeacher, setSelectedTeacher] = useState(null);
   const [editingCourse, setEditingCourse] = useState(null);
   const [notification, setNotification] = useState(null);
-  const [categoryLocationParams, setCategoryLocationParams] = useState({ topicSlug: '', locationSlug: '' });
+// --- FIX: Initialize params directly from URL to avoid white screen delay ---
+const [categoryLocationParams, setCategoryLocationParams] = useState(() => {
+  const path = window.location.pathname;
+  if (path.startsWith('/courses/')) {
+    const parts = path.split('/').filter(Boolean);
+    // Pattern: /courses/topic/location
+    if (parts.length === 3) {
+      return { topicSlug: parts[1], locationSlug: parts[2] };
+    }
+  }
+  return { topicSlug: '', locationSlug: '' };
+});
 
   // Filter States
   const [locMode, setLocMode] = useState('canton');
@@ -729,17 +740,6 @@ export default function KursNaviPro() {
     return () => window.removeEventListener('popstate', handleUrlChange);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  // --- FIX: Sync Params on View Change (Verhindert leeren Bildschirm bei Navigation) ---
-  useEffect(() => {
-    if (view === 'category-location') {
-      const parts = window.location.pathname.split('/').filter(Boolean);
-      // Pattern: /courses/topic/location
-      if (parts.length === 3) {
-        setCategoryLocationParams({ topicSlug: parts[1], locationSlug: parts[2] });
-      }
-    }
-  }, [view]);
 
   useEffect(() => {
     let cancelled = false;
