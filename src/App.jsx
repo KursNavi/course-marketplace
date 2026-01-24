@@ -730,6 +730,17 @@ export default function KursNaviPro() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // --- FIX: Sync Params on View Change (Verhindert leeren Bildschirm bei Navigation) ---
+  useEffect(() => {
+    if (view === 'category-location') {
+      const parts = window.location.pathname.split('/').filter(Boolean);
+      // Pattern: /courses/topic/location
+      if (parts.length === 3) {
+        setCategoryLocationParams({ topicSlug: parts[1], locationSlug: parts[2] });
+      }
+    }
+  }, [view]);
+
   useEffect(() => {
     let cancelled = false;
 
