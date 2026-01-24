@@ -196,11 +196,16 @@ export default function KursNaviPro() {  // 1. Initial State Logic
     document.documentElement.lang = lang;
   }, [lang]);
 
-  const getCatLabel = (key) => {
+    const getCatLabel = (key) => {
+    if (!key) return '';
     if (lang === 'en') return key;
-    const translation = CATEGORY_LABELS[key];
+
+    // ✅ Crash-Schutz: falls CATEGORY_LABELS mal undefined ist
+    const translation = (CATEGORY_LABELS || {})[key];
+
     return translation && translation[lang] ? translation[lang] : key;
   };
+
 
   const showNotification = (msg) => { setNotification(msg); setTimeout(() => setNotification(null), 3000); };
 
@@ -1020,7 +1025,7 @@ useEffect(() => {
           <SearchPageView courses={courses} searchQuery={searchQuery} setSearchQuery={setSearchQuery} searchType={searchType} setSearchType={setSearchType} searchArea={searchArea} setSearchArea={setSearchArea} searchSpecialty={searchSpecialty} setSearchSpecialty={setSearchSpecialty} searchAge={searchAge} setSearchAge={setSearchAge} locMode={locMode} setLocMode={setLocMode} selectedLocations={selectedLocations} setSelectedLocations={setSelectedLocations} locMenuOpen={locMenuOpen} setLocMenuOpen={setLocMenuOpen} locMenuRef={locMenuRef} loading={loading} filteredCourses={filteredCourses} setSelectedCourse={setSelectedCourse} setView={setView} t={t} getCatLabel={getCatLabel} filterDate={filterDate} setFilterDate={setFilterDate} filterPriceMax={filterPriceMax} setFilterPriceMax={setFilterPriceMax} filterLevel={filterLevel} setFilterLevel={setFilterLevel} filterPro={filterPro} setFilterPro={setFilterPro} selectedLanguage={selectedLanguage} setSelectedLanguage={setSelectedLanguage} langMenuOpen={langMenuOpen} setLangMenuOpen={setLangMenuOpen} langMenuRef={langMenuRef} savedCourseIds={savedCourseIds} onToggleSaveCourse={toggleSaveCourse} />
       )}
 
-      {view === 'category-location' && (
+            {view === 'category-location' && (
         <ErrorBoundary>
           <CategoryLocationPage
               topicSlug={currentLocParams.topicSlug}
@@ -1031,9 +1036,11 @@ useEffect(() => {
               savedCourseIds={savedCourseIds}
               onToggleSaveCourse={toggleSaveCourse}
               t={t}
+              getCatLabel={getCatLabel}
           />
         </ErrorBoundary>
       )}
+
 
             {view === 'success' && <SuccessView setView={setView} />}
 
