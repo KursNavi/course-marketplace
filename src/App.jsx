@@ -117,18 +117,20 @@ export default function KursNaviPro() {  // 1. Initial State Logic
   const [selectedTeacher, setSelectedTeacher] = useState(null);
   const [editingCourse, setEditingCourse] = useState(null);
   const [notification, setNotification] = useState(null);
-// --- FIX: Initialize params directly from URL to avoid white screen delay ---
-const [categoryLocationParams, setCategoryLocationParams] = useState(() => {
-  const path = window.location.pathname;
-  if (path.startsWith('/courses/')) {
-    const parts = path.split('/').filter(Boolean);
-    // Pattern: /courses/topic/location
-    if (parts.length === 3) {
-      return { topicSlug: parts[1], locationSlug: parts[2] };
+
+  // --- FIX: Derive params directly from URL on every render (No State Sync needed) ---
+  const getCategoryLocationParams = () => {
+    const path = window.location.pathname;
+    if (path.startsWith('/courses/')) {
+      const parts = path.split('/').filter(Boolean);
+      // Pattern: /courses/topic/location (Length 3: courses, topic, location)
+      if (parts.length === 3) {
+        return { topicSlug: parts[1], locationSlug: parts[2] };
+      }
     }
-  }
-  return { topicSlug: '', locationSlug: '' };
-});
+    return { topicSlug: '', locationSlug: '' };
+  };
+  const currentLocParams = getCategoryLocationParams();
 
   // Filter States
   const [locMode, setLocMode] = useState('canton');
@@ -954,8 +956,8 @@ useEffect(() => {
       {view === 'category-location' && (
         <ErrorBoundary>
           <CategoryLocationPage
-              topicSlug={categoryLocationParams.topicSlug}
-              locationSlug={categoryLocationParams.locationSlug}
+              topicSlug={currentLocParams.topicSlug}
+              locationSlug={currentLocParams.locationSlug}
               courses={courses}
               setSelectedCourse={setSelectedCourse}
               setView={setView}
