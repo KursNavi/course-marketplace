@@ -29,10 +29,27 @@ import BlogDetail from './components/BlogDetail';
 import AdminBlogManager from './components/AdminBlogManager';
 import CategoryLocationPage from './components/CategoryLocationPage';
 
+// --- DEBUG: ERROR BOUNDARY (Fängt Abstürze ab) ---
+class ErrorBoundary extends React.Component {
+  constructor(props) { super(props); this.state = { hasError: false, error: null }; }
+  static getDerivedStateFromError(error) { return { hasError: true, error }; }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="p-10 bg-white min-h-screen text-red-600 pt-32 text-center">
+          <h1 className="text-3xl font-bold mb-4">💥 APP ABGESTÜRZT</h1>
+          <p className="font-mono bg-gray-100 p-4 rounded text-left inline-block border border-red-200">
+            {this.state.error && this.state.error.toString()}
+          </p>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 // --- MAIN APP COMPONENT ---
-export default function KursNaviPro() {
-  // 1. Initial State Logic
+export default function KursNaviPro() {  // 1. Initial State Logic
   const getInitialView = () => {
       const path = window.location.pathname;
       if (path.startsWith('/control-room-2025')) return 'admin';
@@ -935,6 +952,7 @@ useEffect(() => {
       )}
 
       {view === 'category-location' && (
+        <ErrorBoundary>
           <CategoryLocationPage
               topicSlug={categoryLocationParams.topicSlug}
               locationSlug={categoryLocationParams.locationSlug}
@@ -945,6 +963,7 @@ useEffect(() => {
               onToggleSaveCourse={toggleSaveCourse}
               t={t}
           />
+        </ErrorBoundary>
       )}
 
       {view === 'success' && <SuccessView setView={setView} />}
