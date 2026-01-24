@@ -118,19 +118,17 @@ export default function KursNaviPro() {  // 1. Initial State Logic
   const [editingCourse, setEditingCourse] = useState(null);
   const [notification, setNotification] = useState(null);
 
-  // --- FIX: Derive params directly from URL on every render (No State Sync needed) ---
-  const getCategoryLocationParams = () => {
-    const path = window.location.pathname;
-    if (path.startsWith('/courses/')) {
-      const parts = path.split('/').filter(Boolean);
-      // Pattern: /courses/topic/location (Length 3: courses, topic, location)
-      if (parts.length === 3) {
-        return { topicSlug: parts[1], locationSlug: parts[2] };
-      }
-    }
-    return { topicSlug: '', locationSlug: '' };
-  };
-  const currentLocParams = getCategoryLocationParams();
+// --- FINAL FIX: Read params LIVE on every render (No useState) ---
+  // Das garantiert, dass beim Navigieren die neuen Daten sofort da sind.
+  let currentLocParams = { topicSlug: '', locationSlug: '' };
+  
+  if (window.location.pathname.startsWith('/courses/')) {
+     const parts = window.location.pathname.split('/').filter(Boolean);
+     // Pattern: /courses/topic/location (Länge 3)
+     if (parts.length === 3) {
+        currentLocParams = { topicSlug: parts[1], locationSlug: parts[2] };
+     }
+  }
 
   // Filter States
   const [locMode, setLocMode] = useState('canton');
