@@ -18,11 +18,63 @@ const SearchPageView = ({
     savedCourseIds, onToggleSaveCourse
 }) => {
 
-    // --- SEO LOGIC: Zero-Result Rule ---
+    // --- SEO LOGIC: Zero-Result Rule + Dynamic Meta Tags ---
     useEffect(() => {
         if (loading) return; // Wait for data
 
-        // Check or create meta robots tag
+        // Build dynamic title and description
+        const typeLabel = searchType ? CATEGORY_TYPES[searchType] : 'Alle Kurse';
+        const areaLabel = searchArea ? NEW_TAXONOMY[searchType]?.areas[searchArea]?.label : '';
+        const locationLabel = selectedLocations.length > 0 ? selectedLocations[0] : 'Schweiz';
+
+        const pageTitle = searchQuery
+            ? `${searchQuery} - Kurssuche | KursNavi`
+            : areaLabel
+                ? `${areaLabel} in ${locationLabel} | KursNavi`
+                : `${typeLabel} in ${locationLabel} | KursNavi`;
+
+        const pageDescription = filteredCourses.length > 0
+            ? `${filteredCourses.length} ${areaLabel || typeLabel} in ${locationLabel} finden. Jetzt vergleichen und buchen auf KursNavi.`
+            : `Finde Kurse in ${locationLabel} - Der Schweizer Kursmarktplatz für Weiterbildung, Freizeit und Kinderkurse.`;
+
+        document.title = pageTitle;
+
+        // Meta Description
+        let metaDescTag = document.querySelector('meta[name="description"]');
+        if (!metaDescTag) {
+            metaDescTag = document.createElement('meta');
+            metaDescTag.name = 'description';
+            document.head.appendChild(metaDescTag);
+        }
+        metaDescTag.content = pageDescription;
+
+        // OG Tags
+        const ogTags = {
+            'og:title': pageTitle,
+            'og:description': pageDescription,
+            'og:url': window.location.href,
+            'og:type': 'website',
+            'og:site_name': 'KursNavi',
+            'twitter:card': 'summary',
+            'twitter:title': pageTitle,
+            'twitter:description': pageDescription
+        };
+
+        Object.entries(ogTags).forEach(([property, content]) => {
+            let tag = document.querySelector(`meta[property="${property}"]`) || document.querySelector(`meta[name="${property}"]`);
+            if (!tag) {
+                tag = document.createElement('meta');
+                if (property.startsWith('twitter:')) {
+                    tag.name = property;
+                } else {
+                    tag.setAttribute('property', property);
+                }
+                document.head.appendChild(tag);
+            }
+            tag.content = content;
+        });
+
+        // Robots meta tag (Zero-Result Rule)
         let robotsMeta = document.querySelector('meta[name="robots"]');
         if (!robotsMeta) {
             robotsMeta = document.createElement('meta');
@@ -42,7 +94,7 @@ const SearchPageView = ({
         return () => {
             if (robotsMeta) robotsMeta.content = "index,follow";
         };
-    }, [filteredCourses.length, loading]);
+    }, [filteredCourses.length, loading, searchQuery, searchType, searchArea, selectedLocations]);
 
     // --- DYNAMIC FILTER LOGIC (Hide empty categories) ---
     // Include ALL categories (primary + Zweitkategorien) from course_categories junction table
@@ -126,6 +178,32 @@ const SearchPageView = ({
         if (type === 'external' && price === 0) return 'Siehe Webseite';
         if (price === 0) return 'Kostenlos';
         return `${t.currency} ${price}`;
+    };
+
+    // --- HELPER: Check if course is sold out (all events full) ---
+    const isSoldOut = (course) => {
+        if (course.booking_type !== 'platform') return false;
+
+        let events = [];
+        if (course.course_events && course.course_events.length > 0) {
+            events = course.course_events;
+        } else if (course.start_date) {
+            events = [{
+                max_participants: course.max_participants || 0,
+                bookings: course.bookings || []
+            }];
+        }
+
+        if (events.length === 0) return false;
+
+        return events.every(ev => {
+            const max = ev.max_participants || 0;
+            if (max === 0) return false; // Unlimited capacity
+            const bookedCount = Array.isArray(ev.bookings)
+                ? (ev.bookings[0]?.count || ev.bookings.length)
+                : (ev.bookings?.count || 0);
+            return bookedCount >= max;
+        });
     };
 
     const resetFilters = () => {
@@ -227,10 +305,17 @@ const SearchPageView = ({
                     {sortedCourses.map(course => (
                       <div key={course.id} onClick={() => { setSelectedCourse(course); setView('detail'); window.scrollTo(0,0); }} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer group">
                         <div className="relative h-48 overflow-hidden">
-                            <img src={course.image_url} alt={course.title} className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300" />
+                            <img
+                                src={course.image_url}
+                                alt={`${course.title} - Kurs in ${course.canton}`}
+                                loading="lazy"
+                                decoding="async"
+                                className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300"
+                            />
                             <div className="absolute top-3 left-3 flex flex-col gap-1 items-start">
                                 <div className="bg-white/95 backdrop-blur-sm px-2 py-1 rounded text-xs font-bold text-gray-700 shadow-sm flex items-center"><MapPin className="w-3 h-3 mr-1 text-primary" />{course.canton}</div>
                                 {course.is_pro && <div className="bg-blue-600/90 text-white px-2 py-1 rounded text-xs font-bold shadow-sm flex items-center"><CheckCircle className="w-3 h-3 mr-1" /> Pro</div>}
+                                {isSoldOut(course) && <div className="bg-red-500/90 text-white px-2 py-1 rounded text-xs font-bold shadow-sm">Ausgebucht</div>}
                             </div>
 
                             <button

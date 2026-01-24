@@ -21,6 +21,15 @@ export default async function handler(req, res) {
 
     if (error) throw error;
 
+    // 3. Fetch all published blog posts
+    const { data: blogPosts, error: blogError } = await supabase
+      .from('blog')
+      .select('id, slug, title, created_at')
+      .eq('is_published', true)
+      .order('created_at', { ascending: false });
+
+    if (blogError) console.warn('Blog fetch error:', blogError);
+
     const baseUrl = 'https://kursnavi.ch';
 
     // 3. Generate Static Pages XML
@@ -34,6 +43,7 @@ export default async function handler(req, res) {
       '/professional',
       '/children',
       '/teacher-hub',
+      '/blog',
       '/agb',
       '/datenschutz',
       '/impressum'
@@ -64,11 +74,24 @@ export default async function handler(req, res) {
       </url>`;
     }).join('');
 
-    // 5. Construct Final XML
+    // 5. Generate Blog Post URLs (Dynamic)
+    const blogUrls = (blogPosts || []).map((post) => {
+      const slug = post.slug || post.id;
+      return `
+      <url>
+          <loc>${baseUrl}/blog/${slug}</loc>
+          <lastmod>${new Date(post.created_at).toISOString()}</lastmod>
+          <changefreq>monthly</changefreq>
+          <priority>0.6</priority>
+      </url>`;
+    }).join('');
+
+    // 6. Construct Final XML
     const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
     <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
       ${staticPages}
       ${courseUrls}
+      ${blogUrls}
     </urlset>`;
 
     // 6. Send Response

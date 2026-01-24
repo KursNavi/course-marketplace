@@ -27,6 +27,7 @@ import SuccessView from './components/SuccessView';
 import BlogList from './components/BlogList';
 import BlogDetail from './components/BlogDetail';
 import AdminBlogManager from './components/AdminBlogManager';
+import CategoryLocationPage from './components/CategoryLocationPage';
 
 
 // --- MAIN APP COMPONENT ---
@@ -67,7 +68,9 @@ export default function KursNaviPro() {
           const parts = path.split('/').filter(Boolean); // remove empty strings
           // Pattern: courses (0) -> topic (1) -> location (2) -> id (3)
           if (parts.length >= 4) return 'detail'; 
-          // Pattern: courses (0) -> topic (1) -> location (2) (Category Page)
+          // Pattern: courses (0) -> topic (1) -> location (2) (Programmatic Landing Page)
+          if (parts.length === 3) return 'category-location';
+          // Pattern: courses (0) -> topic (1) (fallback to search)
           if (parts.length >= 2) return 'search';
       }
       // Legacy Redirect Support
@@ -97,6 +100,7 @@ export default function KursNaviPro() {
   const [selectedTeacher, setSelectedTeacher] = useState(null);
   const [editingCourse, setEditingCourse] = useState(null);
   const [notification, setNotification] = useState(null);
+  const [categoryLocationParams, setCategoryLocationParams] = useState({ topicSlug: '', locationSlug: '' });
 
   // Filter States
   const [locMode, setLocMode] = useState('canton');
@@ -153,6 +157,11 @@ export default function KursNaviPro() {
         await supabase.from('profiles').update({ preferred_language: newLang }).eq('id', user.id);
     }
   };
+
+  // --- SEO: Dynamic lang attribute ---
+  useEffect(() => {
+    document.documentElement.lang = lang;
+  }, [lang]);
 
   const getCatLabel = (key) => {
     if (lang === 'en') return key;
@@ -317,12 +326,15 @@ export default function KursNaviPro() {
           const parts = path.split('/').filter(Boolean);
           // Expecting: courses/topic/location/ID or courses/topic/location/ID-slug
           if (parts.length >= 4) {
-              const lastPart = parts[3]; 
+              const lastPart = parts[3];
               // Extract ID if it contains a slug (e.g. "123-yoga-course" -> "123")
               urlId = lastPart.split('-')[0];
+          } else if (parts.length === 3) {
+             // Programmatic Landing Page: /courses/topic/location/
+             setCategoryLocationParams({ topicSlug: parts[1], locationSlug: parts[2] });
+             setView('category-location');
           } else if (parts.length >= 2) {
              // Pre-fill filters for category pages (Topic/Location)
-             // This would need logic to map 'pottery' to searchArea, but kept simple for now:
              setView('search');
           }
       } else if (path.startsWith('/course/')) {
@@ -332,10 +344,10 @@ export default function KursNaviPro() {
 
       if (migratedData && urlId) {
           const found = migratedData.find(c => c.id == urlId);
-          if (found) { 
-              setSelectedCourse(found); 
-              setView('detail'); 
-              
+          if (found) {
+              setSelectedCourse(found);
+              setView('detail');
+
               // --- SEO TRAFFIC COP (v3.1) ---
               // Bestimmt die einzig wahre URL (ASCII-safe Slugs, konsistent mit Sitemap & DetailView)
               const canonicalPath = buildCoursePath(found);
@@ -343,6 +355,26 @@ export default function KursNaviPro() {
               // Silent Fix: Wenn die aktuelle URL nicht der Canonical entspricht (falsche Kategorie oder Legacy), korrigieren.
               if (window.location.pathname !== canonicalPath) {
                 window.history.replaceState({ view: 'detail', courseId: found.id }, '', canonicalPath);
+              }
+          } else {
+              // --- SEO: 301 Redirect for expired/missing courses ---
+              // Course not found - redirect to parent category to preserve SEO value
+              if (path.startsWith('/courses/')) {
+                  const parts = path.split('/').filter(Boolean);
+                  if (parts.length >= 3) {
+                      // Redirect to category-location page: /courses/topic/location/
+                      const redirectPath = `/${parts[0]}/${parts[1]}/${parts[2]}/`;
+                      window.history.replaceState({ view: 'category-location' }, '', redirectPath);
+                      setCategoryLocationParams({ topicSlug: parts[1], locationSlug: parts[2] });
+                      setView('category-location');
+                  } else {
+                      // Fallback to search
+                      setView('search');
+                  }
+              } else {
+                  // Legacy URL without category info - redirect to search
+                  window.history.replaceState({ view: 'search' }, '', '/search');
+                  setView('search');
               }
           }
       }
@@ -861,6 +893,19 @@ useEffect(() => {
 
       {view === 'search' && (
           <SearchPageView courses={courses} searchQuery={searchQuery} setSearchQuery={setSearchQuery} searchType={searchType} setSearchType={setSearchType} searchArea={searchArea} setSearchArea={setSearchArea} searchSpecialty={searchSpecialty} setSearchSpecialty={setSearchSpecialty} searchAge={searchAge} setSearchAge={setSearchAge} locMode={locMode} setLocMode={setLocMode} selectedLocations={selectedLocations} setSelectedLocations={setSelectedLocations} locMenuOpen={locMenuOpen} setLocMenuOpen={setLocMenuOpen} locMenuRef={locMenuRef} loading={loading} filteredCourses={filteredCourses} setSelectedCourse={setSelectedCourse} setView={setView} t={t} getCatLabel={getCatLabel} filterDate={filterDate} setFilterDate={setFilterDate} filterPriceMax={filterPriceMax} setFilterPriceMax={setFilterPriceMax} filterLevel={filterLevel} setFilterLevel={setFilterLevel} filterPro={filterPro} setFilterPro={setFilterPro} selectedLanguage={selectedLanguage} setSelectedLanguage={setSelectedLanguage} langMenuOpen={langMenuOpen} setLangMenuOpen={setLangMenuOpen} langMenuRef={langMenuRef} savedCourseIds={savedCourseIds} onToggleSaveCourse={toggleSaveCourse} />
+      )}
+
+      {view === 'category-location' && (
+          <CategoryLocationPage
+              topicSlug={categoryLocationParams.topicSlug}
+              locationSlug={categoryLocationParams.locationSlug}
+              courses={courses}
+              setSelectedCourse={setSelectedCourse}
+              setView={setView}
+              savedCourseIds={savedCourseIds}
+              onToggleSaveCourse={toggleSaveCourse}
+              t={t}
+          />
       )}
 
       {view === 'success' && <SuccessView setView={setView} />}

@@ -42,7 +42,7 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
         return html;
     };
 
-    // --- SEO & SCHEMA ---
+    // --- SEO & SCHEMA (v4.0: Critical SEO Audit Fixes) ---
     useEffect(() => {
         if (!course) return;
 
@@ -54,16 +54,116 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
         const titleSlug = (course.title || 'detail').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
         const canonicalUrl = `https://kursnavi.ch/courses/${topicSlug}/${locSlug}/${course.id}-${titleSlug}`;
 
-        // Fix 1: SEO-Smart Price Logic
+        // --- FIX 1: Dynamic Meta Description ---
+        const metaDescription = `${course.title} in ${locationLabel} - ${(course.description || '').substring(0, 155)}...`;
+        let metaDescTag = document.querySelector('meta[name="description"]');
+        if (!metaDescTag) {
+            metaDescTag = document.createElement('meta');
+            metaDescTag.name = 'description';
+            document.head.appendChild(metaDescTag);
+        }
+        metaDescTag.content = metaDescription;
+
+        // --- FIX 2: Canonical Link Tag (HTML) ---
+        let canonicalTag = document.querySelector('link[rel="canonical"]');
+        if (!canonicalTag) {
+            canonicalTag = document.createElement('link');
+            canonicalTag.rel = 'canonical';
+            document.head.appendChild(canonicalTag);
+        }
+        canonicalTag.href = canonicalUrl;
+
+        // --- FIX 2b: hreflang Tags (Multilingual) ---
+        const languages = ['de', 'fr', 'it', 'en'];
+        const baseHref = `/courses/${topicSlug}/${locSlug}/${course.id}-${titleSlug}`;
+
+        // Remove existing hreflang tags
+        document.querySelectorAll('link[rel="alternate"][hreflang]').forEach(tag => tag.remove());
+
+        // Add hreflang for each language
+        languages.forEach(langCode => {
+            const hreflangTag = document.createElement('link');
+            hreflangTag.rel = 'alternate';
+            hreflangTag.hreflang = langCode;
+            hreflangTag.href = langCode === 'de'
+                ? `https://kursnavi.ch${baseHref}`
+                : `https://kursnavi.ch/${langCode}${baseHref}`;
+            document.head.appendChild(hreflangTag);
+        });
+
+        // Add x-default
+        const xDefaultTag = document.createElement('link');
+        xDefaultTag.rel = 'alternate';
+        xDefaultTag.hreflang = 'x-default';
+        xDefaultTag.href = `https://kursnavi.ch${baseHref}`;
+        document.head.appendChild(xDefaultTag);
+
+        // --- FIX 3: Open Graph Tags (Social Sharing) ---
+        const ogTags = {
+            'og:title': `${course.title} in ${locationLabel}`,
+            'og:description': metaDescription,
+            'og:url': canonicalUrl,
+            'og:image': course.image_url || 'https://kursnavi.ch/og-default.jpg',
+            'og:type': 'website',
+            'og:site_name': 'KursNavi',
+            'twitter:card': 'summary_large_image',
+            'twitter:title': `${course.title} in ${locationLabel}`,
+            'twitter:description': metaDescription,
+            'twitter:image': course.image_url || 'https://kursnavi.ch/og-default.jpg'
+        };
+
+        Object.entries(ogTags).forEach(([property, content]) => {
+            let tag = document.querySelector(`meta[property="${property}"]`) || document.querySelector(`meta[name="${property}"]`);
+            if (!tag) {
+                tag = document.createElement('meta');
+                if (property.startsWith('twitter:')) {
+                    tag.name = property;
+                } else {
+                    tag.setAttribute('property', property);
+                }
+                document.head.appendChild(tag);
+            }
+            tag.content = content;
+        });
+
+        // --- FIX 4: SEO-Smart Price Logic ---
         const priceVal = Number(course.price);
         const isPlatform = course.booking_type === 'platform';
-        // Only set explicit price if it's > 0 OR if it's a platform course (where 0 means actually FREE)
-        // For Leads/External with 0, we omit the price property to imply "On Request" / "Varies"
         const hasValidPrice = !isNaN(priceVal) && (priceVal > 0 || isPlatform);
 
+        // --- FIX 5: Dynamic Availability Status ---
+        let availability = "https://schema.org/InStock"; // Default
+
+        // Check course_events for sold-out status
+        let rawEvents = [];
+        if (course.course_events && course.course_events.length > 0) {
+            rawEvents = course.course_events;
+        } else if (course.start_date) {
+            rawEvents = [{
+                start_date: course.start_date,
+                max_participants: 0,
+                bookings: []
+            }];
+        }
+
+        // Calculate if ALL events are full
+        const allEventsFull = rawEvents.length > 0 && rawEvents.every(ev => {
+            const max = ev.max_participants || 0;
+            if (max === 0) return false; // Unlimited
+            const bookedCount = Array.isArray(ev.bookings)
+                ? (ev.bookings[0]?.count || ev.bookings.length)
+                : (ev.bookings?.count || 0);
+            return bookedCount >= max;
+        });
+
+        if (allEventsFull) {
+            availability = "https://schema.org/SoldOut";
+        }
+
+        // --- FIX 6: Hybrid Schema (Course + EducationEvent) ---
         const schemaData = {
             "@context": "https://schema.org",
-            "@type": "Course",
+            "@type": ["Course", "EducationEvent"], // Hybrid!
             "name": course.title,
             "description": course.description,
             "provider": {
@@ -71,10 +171,19 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
                 "name": course.instructor_name,
                 "sameAs": `https://kursnavi.ch/teacher/${course.user_id}`
             },
+            "location": {
+                "@type": "Place",
+                "name": course.address || course.city || locationLabel,
+                "address": {
+                    "@type": "PostalAddress",
+                    "addressRegion": locationLabel,
+                    "addressCountry": "CH"
+                }
+            },
             "offers": {
                 "@type": "Offer",
                 "priceCurrency": "CHF",
-                "availability": "https://schema.org/InStock",
+                "availability": availability,
                 "url": canonicalUrl
             }
         };
@@ -82,14 +191,70 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
         if (hasValidPrice) {
             schemaData.offers.price = priceVal;
         }
-        
+
+        // Add Event-specific fields if we have course_events
+        if (rawEvents.length > 0 && rawEvents[0].start_date) {
+            const nextEvent = rawEvents.find(e => new Date(e.start_date) > new Date()) || rawEvents[0];
+            schemaData.startDate = nextEvent.start_date;
+
+            // Add eventSchedule for recurring courses
+            if (rawEvents.length > 1) {
+                schemaData.eventSchedule = rawEvents.map(ev => ({
+                    "@type": "Schedule",
+                    "startDate": ev.start_date,
+                    "scheduleTimezone": "Europe/Zurich"
+                }));
+            }
+        }
+
+        // Add course-specific fields
+        if (course.session_length) {
+            schemaData.timeRequired = `${course.session_count}x ${course.session_length}`;
+        }
+
+        if (course.category_area) {
+            schemaData.educationalLevel = course.category_area.replace(/_/g, ' ');
+        }
+
         const script = document.createElement('script');
         script.type = 'application/ld+json';
         script.text = JSON.stringify(schemaData);
         document.head.appendChild(script);
 
+        // --- FIX 7: BreadcrumbList Schema ---
+        const breadcrumbData = {
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+                {
+                    "@type": "ListItem",
+                    "position": 1,
+                    "name": "Home",
+                    "item": "https://kursnavi.ch"
+                },
+                {
+                    "@type": "ListItem",
+                    "position": 2,
+                    "name": course.category_area ? course.category_area.replace(/_/g, ' ') : 'Kurse',
+                    "item": `https://kursnavi.ch/courses/${topicSlug}/${locSlug}/`
+                },
+                {
+                    "@type": "ListItem",
+                    "position": 3,
+                    "name": course.title
+                }
+            ]
+        };
+
+        const breadcrumbScript = document.createElement('script');
+        breadcrumbScript.type = 'application/ld+json';
+        breadcrumbScript.text = JSON.stringify(breadcrumbData);
+        document.head.appendChild(breadcrumbScript);
+
         return () => {
+            // Cleanup
             if (script.parentNode) script.parentNode.removeChild(script);
+            if (breadcrumbScript.parentNode) breadcrumbScript.parentNode.removeChild(breadcrumbScript);
         }
     }, [course]);
     
@@ -322,10 +487,12 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-8">
                 <div className="w-full h-80 bg-gray-100 rounded-2xl overflow-hidden shadow-lg relative group">
-                    <img 
-                        src={course.image_url || fallbackImage} 
+                    <img
+                        src={course.image_url || fallbackImage}
+                        alt={`${course.title} in ${course.canton || 'Schweiz'}`}
+                        loading="eager"
+                        decoding="async"
                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
-                        alt={course.title} 
                     />
                     <div className="absolute top-4 left-4 flex gap-2">
                         <span className="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold shadow-sm flex items-center">
@@ -497,7 +664,13 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
                               className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md cursor-pointer group transition-all"
                          >
                             <div className="h-40 overflow-hidden relative">
-                                <img src={rel.image_url || fallbackImage} alt={rel.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"/>
+                                <img
+                                    src={rel.image_url || fallbackImage}
+                                    alt={`${rel.title} - Kurs in ${rel.canton}`}
+                                    loading="lazy"
+                                    decoding="async"
+                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                />
                                 <span className="absolute bottom-2 left-2 bg-white/90 px-2 py-0.5 rounded text-xs font-bold text-gray-700 flex items-center shadow-sm">
                                     <MapPin className="w-3 h-3 mr-1 text-primary"/> {rel.canton}
                                 </span>

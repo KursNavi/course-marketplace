@@ -3,9 +3,95 @@ import { Calendar, User, ArrowLeft, ArrowRight, MapPin, Search } from 'lucide-re
 
 export default function BlogDetail({ article, setView, courses }) {
   useEffect(() => {
-    if(article) {
-        document.title = `${article.title} | KursNavi Magazin`;
+    if(!article) return;
+
+    // Page Title
+    document.title = `${article.title} | KursNavi Magazin`;
+
+    // Meta Description (extract from content or use excerpt)
+    const strippedContent = article.content.replace(/<[^>]+>/g, '').substring(0, 155);
+    const metaDescription = `${strippedContent}...`;
+
+    let metaDescTag = document.querySelector('meta[name="description"]');
+    if (!metaDescTag) {
+        metaDescTag = document.createElement('meta');
+        metaDescTag.name = 'description';
+        document.head.appendChild(metaDescTag);
     }
+    metaDescTag.content = metaDescription;
+
+    // Canonical URL
+    const canonicalUrl = `https://kursnavi.ch/blog/${article.slug || article.id}`;
+    let canonicalTag = document.querySelector('link[rel="canonical"]');
+    if (!canonicalTag) {
+        canonicalTag = document.createElement('link');
+        canonicalTag.rel = 'canonical';
+        document.head.appendChild(canonicalTag);
+    }
+    canonicalTag.href = canonicalUrl;
+
+    // OG Tags
+    const ogTags = {
+        'og:title': article.title,
+        'og:description': metaDescription,
+        'og:url': canonicalUrl,
+        'og:image': article.image_url || 'https://kursnavi.ch/og-default.jpg',
+        'og:type': 'article',
+        'og:site_name': 'KursNavi',
+        'article:published_time': article.created_at,
+        'twitter:card': 'summary_large_image',
+        'twitter:title': article.title,
+        'twitter:description': metaDescription,
+        'twitter:image': article.image_url || 'https://kursnavi.ch/og-default.jpg'
+    };
+
+    Object.entries(ogTags).forEach(([property, content]) => {
+        let tag = document.querySelector(`meta[property="${property}"]`) || document.querySelector(`meta[name="${property}"]`);
+        if (!tag) {
+            tag = document.createElement('meta');
+            if (property.startsWith('twitter:')) {
+                tag.name = property;
+            } else {
+                tag.setAttribute('property', property);
+            }
+            document.head.appendChild(tag);
+        }
+        tag.content = content;
+    });
+
+    // BreadcrumbList Schema
+    const breadcrumbData = {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+            {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Home",
+                "item": "https://kursnavi.ch"
+            },
+            {
+                "@type": "ListItem",
+                "position": 2,
+                "name": "Magazin",
+                "item": "https://kursnavi.ch/blog"
+            },
+            {
+                "@type": "ListItem",
+                "position": 3,
+                "name": article.title
+            }
+        ]
+    };
+
+    let breadcrumbScript = document.querySelector('script[data-schema="breadcrumb"]');
+    if (!breadcrumbScript) {
+        breadcrumbScript = document.createElement('script');
+        breadcrumbScript.type = 'application/ld+json';
+        breadcrumbScript.setAttribute('data-schema', 'breadcrumb');
+        document.head.appendChild(breadcrumbScript);
+    }
+    breadcrumbScript.text = JSON.stringify(breadcrumbData);
   }, [article]);
 
   if (!article) return <div className="p-20 text-center">Artikel nicht gefunden.</div>;

@@ -69,6 +69,105 @@ export const Home = ({
   const getTypeLabel = (key) => CATEGORY_TYPES[key]?.[lang] || CATEGORY_TYPES[key]?.de || key;
   const getAreaLabel = (type, areaKey) => NEW_TAXONOMY[type]?.[areaKey]?.label?.[lang] || NEW_TAXONOMY[type]?.[areaKey]?.label?.de || areaKey;
 
+  // SEO Meta Tags for Home Page
+  useEffect(() => {
+    document.title = 'KursNavi - Der Schweizer Kursmarktplatz für Weiterbildung & Freizeit';
+
+    const metaDescription = 'Entdecke tausende Kurse in der Schweiz: Weiterbildung, Hobbys, Kinderkurse. Vergleiche Anbieter, buche direkt online. Dein Kursmarktplatz für alle Kantone.';
+
+    let metaDescTag = document.querySelector('meta[name="description"]');
+    if (!metaDescTag) {
+        metaDescTag = document.createElement('meta');
+        metaDescTag.name = 'description';
+        document.head.appendChild(metaDescTag);
+    }
+    metaDescTag.content = metaDescription;
+
+    // Canonical URL
+    const canonicalUrl = 'https://kursnavi.ch/';
+    let canonicalTag = document.querySelector('link[rel="canonical"]');
+    if (!canonicalTag) {
+        canonicalTag = document.createElement('link');
+        canonicalTag.rel = 'canonical';
+        document.head.appendChild(canonicalTag);
+    }
+    canonicalTag.href = canonicalUrl;
+
+    // hreflang Tags
+    const languages = ['de', 'fr', 'it', 'en'];
+    document.querySelectorAll('link[rel="alternate"][hreflang]').forEach(tag => tag.remove());
+
+    languages.forEach(langCode => {
+        const hreflangTag = document.createElement('link');
+        hreflangTag.rel = 'alternate';
+        hreflangTag.hreflang = langCode;
+        hreflangTag.href = langCode === 'de'
+            ? 'https://kursnavi.ch/'
+            : `https://kursnavi.ch/${langCode}/`;
+        document.head.appendChild(hreflangTag);
+    });
+
+    const xDefaultTag = document.createElement('link');
+    xDefaultTag.rel = 'alternate';
+    xDefaultTag.hreflang = 'x-default';
+    xDefaultTag.href = 'https://kursnavi.ch/';
+    document.head.appendChild(xDefaultTag);
+
+    // OG Tags
+    const ogTags = {
+        'og:title': 'KursNavi - Der Schweizer Kursmarktplatz',
+        'og:description': metaDescription,
+        'og:url': canonicalUrl,
+        'og:image': 'https://kursnavi.ch/og-default.svg',
+        'og:type': 'website',
+        'og:site_name': 'KursNavi',
+        'twitter:card': 'summary_large_image',
+        'twitter:title': 'KursNavi - Der Schweizer Kursmarktplatz',
+        'twitter:description': metaDescription,
+        'twitter:image': 'https://kursnavi.ch/og-default.svg'
+    };
+
+    Object.entries(ogTags).forEach(([property, content]) => {
+        let tag = document.querySelector(`meta[property="${property}"]`) || document.querySelector(`meta[name="${property}"]`);
+        if (!tag) {
+            tag = document.createElement('meta');
+            if (property.startsWith('twitter:')) {
+                tag.name = property;
+            } else {
+                tag.setAttribute('property', property);
+            }
+            document.head.appendChild(tag);
+        }
+        tag.content = content;
+    });
+
+    // Organization Schema
+    const organizationData = {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "KursNavi",
+        "url": "https://kursnavi.ch",
+        "logo": "https://kursnavi.ch/og-default.svg",
+        "description": "Der Schweizer Kursmarktplatz für Weiterbildung, Freizeit und Kinderkurse",
+        "address": {
+            "@type": "PostalAddress",
+            "addressCountry": "CH"
+        },
+        "sameAs": [
+            "https://www.linkedin.com/company/kursnavi"
+        ]
+    };
+
+    let orgScript = document.querySelector('script[data-schema="organization"]');
+    if (!orgScript) {
+        orgScript = document.createElement('script');
+        orgScript.type = 'application/ld+json';
+        orgScript.setAttribute('data-schema', 'organization');
+        document.head.appendChild(orgScript);
+    }
+    orgScript.text = JSON.stringify(organizationData);
+  }, []);
+
   // Auto-Select first area when type changes (optional, improves UX)
   useEffect(() => {
     const areas = getActiveAreas();

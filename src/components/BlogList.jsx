@@ -1,8 +1,59 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 
 export default function BlogList({ articles, setView, setSelectedArticle }) {
   // Nur veröffentlichte Artikel anzeigen
   const published = articles.filter(a => a.is_published);
+
+  // SEO Meta Tags
+  useEffect(() => {
+    document.title = 'KursNavi Magazin - Tipps & Inspiration für Weiterbildung';
+
+    const metaDescription = 'Tipps, Trends und Inspiration rund um Weiterbildung, Hobbys und Freizeit in der Schweiz. Entdecke spannende Artikel im KursNavi Magazin.';
+
+    let metaDescTag = document.querySelector('meta[name="description"]');
+    if (!metaDescTag) {
+        metaDescTag = document.createElement('meta');
+        metaDescTag.name = 'description';
+        document.head.appendChild(metaDescTag);
+    }
+    metaDescTag.content = metaDescription;
+
+    // Canonical URL
+    const canonicalUrl = 'https://kursnavi.ch/blog';
+    let canonicalTag = document.querySelector('link[rel="canonical"]');
+    if (!canonicalTag) {
+        canonicalTag = document.createElement('link');
+        canonicalTag.rel = 'canonical';
+        document.head.appendChild(canonicalTag);
+    }
+    canonicalTag.href = canonicalUrl;
+
+    // OG Tags
+    const ogTags = {
+        'og:title': 'KursNavi Magazin - Tipps & Inspiration für Weiterbildung',
+        'og:description': metaDescription,
+        'og:url': canonicalUrl,
+        'og:type': 'website',
+        'og:site_name': 'KursNavi',
+        'twitter:card': 'summary',
+        'twitter:title': 'KursNavi Magazin',
+        'twitter:description': metaDescription
+    };
+
+    Object.entries(ogTags).forEach(([property, content]) => {
+        let tag = document.querySelector(`meta[property="${property}"]`) || document.querySelector(`meta[name="${property}"]`);
+        if (!tag) {
+            tag = document.createElement('meta');
+            if (property.startsWith('twitter:')) {
+                tag.name = property;
+            } else {
+                tag.setAttribute('property', property);
+            }
+            document.head.appendChild(tag);
+        }
+        tag.content = content;
+    });
+  }, []);
 
   const handleRead = (article) => {
     setSelectedArticle(article);

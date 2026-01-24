@@ -12,5 +12,26 @@ Disallow: /api/*
 # Sitemap explizit erlauben (auch wenn /api gesperrt ist)
 Allow: /api/sitemap
 
+# SEO: Block Filter-Parameter (Index Bloat Prevention)
+# Prevent thousands of duplicate URLs from faceted navigation
+Disallow: /*?sort=*
+Disallow: /*?filter=*
+Disallow: /*?price_min=*
+Disallow: /*?price_max=*
+Disallow: /*?date=*
+Disallow: /*&sort=*
+Disallow: /*&filter=*
+Disallow: /*&price_min=*
+Disallow: /*&price_max=*
+Disallow: /*&date=*
+
+# Allow clean filter parameters that create meaningful pages
+Allow: /*?q=*
+Allow: /*?loc=*
+Allow: /*?type=*
+Allow: /*?area=*
+Allow: /*?level=*
+Allow: /*?age=*
+
 # Verweis auf die Sitemap
 Sitemap: https://kursnavi.ch/api/sitemap
