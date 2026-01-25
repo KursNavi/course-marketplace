@@ -23,8 +23,13 @@ const SearchPageView = ({
         if (loading) return; // Wait for data
 
         // Build dynamic title and description
-        const typeLabel = searchType ? CATEGORY_TYPES[searchType] : 'Alle Kurse';
-        const areaLabel = searchArea ? NEW_TAXONOMY[searchType]?.areas[searchArea]?.label : '';
+        const typeLabel = searchType ? (CATEGORY_TYPES?.[searchType]?.de || searchType) : 'Alle Kurse';
+
+        // ✅ Crash-sicher: areas kann undefined sein, label ist ein Objekt (de/en/...)
+        const areaLabel = searchArea
+            ? (NEW_TAXONOMY?.[searchType]?.areas?.[searchArea]?.label?.de || searchArea)
+            : '';
+
         const locationLabel = selectedLocations.length > 0 ? selectedLocations[0] : 'Schweiz';
 
         const pageTitle = searchQuery
@@ -154,19 +159,32 @@ const SearchPageView = ({
         courses.flatMap(c => c.target_age_groups || [])
     )];
 
-    // Helper to get Label
+        // Helper to get Label (crash-sicher)
     const getLabel = (key, scope) => {
-        if (scope === 'type' && CATEGORY_TYPES[key]) return CATEGORY_TYPES[key].de;
-        if (scope === 'age' && AGE_GROUPS[key]) return AGE_GROUPS[key].de;
-        if (scope === 'area' || scope === 'specialty') {
-             for (const typeKey in NEW_TAXONOMY) {
-                 const typeObj = NEW_TAXONOMY[typeKey];
-                 if (typeObj[key]) return typeObj[key].label.de;
-                 if (scope === 'specialty') return key; 
-             }
+        if (!key) return '';
+
+        if (scope === 'type') return CATEGORY_TYPES?.[key]?.de || key;
+        if (scope === 'age') return AGE_GROUPS?.[key]?.de || key;
+
+        if (scope === 'area') {
+            // 1) Wenn ein Typ gewählt ist: dort zuerst suchen
+            const direct = NEW_TAXONOMY?.[searchType]?.areas?.[key]?.label?.de;
+            if (direct) return direct;
+
+            // 2) Sonst: in allen Typen suchen
+            for (const typeKey of Object.keys(NEW_TAXONOMY || {})) {
+                const lbl = NEW_TAXONOMY?.[typeKey]?.areas?.[key]?.label?.de;
+                if (lbl) return lbl;
+            }
+            return key;
         }
-        return key; 
+
+        // specialties sind aktuell Plain Strings aus DB -> direkt zurückgeben
+        if (scope === 'specialty') return key;
+
+        return key;
     };
+
 
     // --- HELPER: Consistent Price Labeling (match DetailView logic) ---
     const getPriceLabel = (c) => {
@@ -303,7 +321,12 @@ const SearchPageView = ({
                  {loading ? <div className="text-center py-20"><Loader className="animate-spin w-10 h-10 text-primary mx-auto" /></div> : filteredCourses.length > 0 ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
                     {sortedCourses.map(course => (
-                      <div key={course.id} onClick={() => { setSelectedCourse(course); setView('detail'); window.scrollTo(0,0); }} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer group">
+                      <div key={course.id} onClick={() => {
+                          const topicSlug = (course.category_area || 'kurs').toLowerCase().replace(/_/g, '-');
+                          const locSlug = (course.canton || 'schweiz').toLowerCase();
+                          const titleSlug = (course.title || 'detail').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+                          window.location.href = `/courses/${topicSlug}/${locSlug}/${course.id}-${titleSlug}`;
+                      }} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer group">
                         <div className="relative h-48 overflow-hidden">
                             <img
                                 src={course.image_url}
