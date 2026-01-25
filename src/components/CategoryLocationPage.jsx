@@ -219,9 +219,15 @@ export default function CategoryLocationPage({
             <div className="bg-gradient-to-br from-primary/10 via-white to-orange-50 py-16 px-4 border-b border-gray-100">
                 <div className="max-w-6xl mx-auto">
                     <div className="flex items-center text-sm text-gray-500 mb-4">
-                        <span className="hover:text-primary cursor-pointer" onClick={() => window.location.href = '/'}>Home</span>
+                        <span className="hover:text-primary cursor-pointer" onClick={() => {
+                            setView('home');
+                            window.history.pushState({ view: 'home' }, '', '/');
+                        }}>Home</span>
                         <ChevronRight className="w-4 h-4 mx-2" />
-                        <span className="hover:text-primary cursor-pointer" onClick={() => window.location.href = '/search'}>Kurse</span>
+                        <span className="hover:text-primary cursor-pointer" onClick={() => {
+                            setView('search');
+                            window.history.pushState({ view: 'search' }, '', '/search');
+                        }}>Kurse</span>
                         <ChevronRight className="w-4 h-4 mx-2" />
                         <span className="text-dark font-medium">{topicLabel} in {location}</span>
                     </div>
@@ -290,10 +296,19 @@ export default function CategoryLocationPage({
                                     <div
                                         key={course.id}
                                         onClick={() => {
-                                            const topicSlug = (course.category_area || 'kurs').toLowerCase().replace(/_/g, '-');
-                                            const locSlug = (course.canton || 'schweiz').toLowerCase();
-                                            const titleSlug = (course.title || 'detail').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-                                            window.location.href = `/courses/${topicSlug}/${locSlug}/${course.id}-${titleSlug}`;
+                                            // SEO-friendly slug generation (matches App.jsx buildCoursePath)
+                                            const slugify = (input) => (input || '').toString().trim().toLowerCase()
+                                                .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
+                                                .replace(/&/g, ' und ').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+                                            const topic = slugify(course.primary_category || course.category_area || 'kurs');
+                                            const loc = slugify(course.canton || 'schweiz');
+                                            const title = slugify(course.title || 'detail');
+                                            const path = `/courses/${topic}/${loc}/${course.id}-${title}`;
+
+                                            // Use SPA navigation (no page reload)
+                                            setSelectedCourse(course);
+                                            setView('detail');
+                                            window.history.pushState({ view: 'detail', courseId: course.id }, '', path);
                                         }}
                                         className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-all cursor-pointer group"
                                     >

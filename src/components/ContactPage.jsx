@@ -13,7 +13,8 @@ const ContactPage = ({ t, setView, showNotification }) => {
         .then(response => response.json())
         .then(data => {
               if (typeof showNotification === 'function') showNotification(t.success_msg || "Message sent!");
-              window.location.href = '/';
+              setView('home');
+              window.history.pushState({ view: 'home' }, '', '/');
         })
         .catch(error => {
             console.error("Error:", error);
