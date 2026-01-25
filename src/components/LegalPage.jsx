@@ -11,7 +11,7 @@ const LegalPage = ({ pageKey, lang = 'de', setView }) => {
       <div className="min-h-screen bg-[#FAF5F0] flex items-center justify-center p-10">
         <div className="text-center">
           <h2 className="text-xl font-bold text-gray-800">Content not found</h2>
-          <button onClick={() => setView('home')} className="mt-4 text-[#FA6E28] font-bold">Back to Home</button>
+          <button onClick={() => window.location.href = '/'} className="mt-4 text-[#FA6E28] font-bold">Back to Home</button>
         </div>
       </div>
     );
@@ -33,7 +33,7 @@ const LegalPage = ({ pageKey, lang = 'de', setView }) => {
       <div className="max-w-4xl mx-auto bg-white shadow-xl rounded-2xl overflow-hidden border border-gray-100">
         {/* Header */}
         <div className="px-8 py-8 border-b border-gray-100 bg-white sticky top-0 z-10">
-          <button onClick={() => setView('home')} className="inline-flex items-center text-gray-400 hover:text-[#FA6E28] mb-6 transition-colors text-sm font-bold">
+          <button onClick={() => window.location.href = '/'} className="inline-flex items-center text-gray-400 hover:text-[#FA6E28] mb-6 transition-colors text-sm font-bold">
             <ArrowLeft className="w-4 h-4 mr-2" /> {langData.back_btn}
           </button>
           <div className="flex items-center gap-4">

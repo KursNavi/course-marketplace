@@ -31,22 +31,49 @@ import CategoryLocationPage from './components/CategoryLocationPage';
 
 // --- DEBUG: ERROR BOUNDARY (Fängt Abstürze ab) ---
 class ErrorBoundary extends React.Component {
-  constructor(props) { super(props); this.state = { hasError: false, error: null }; }
-  static getDerivedStateFromError(error) { return { hasError: true, error }; }
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null, errorInfo: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    this.setState({ errorInfo });
+    // Wichtig: in der Konsole sieht man oft Datei + Zeile noch klarer
+    console.error("💥 APP CRASH:", error);
+    console.error("📌 COMPONENT STACK:", errorInfo);
+  }
+
   render() {
     if (this.state.hasError) {
       return (
         <div className="p-10 bg-white min-h-screen text-red-600 pt-32 text-center">
           <h1 className="text-3xl font-bold mb-4">💥 APP ABGESTÜRZT</h1>
-          <p className="font-mono bg-gray-100 p-4 rounded text-left inline-block border border-red-200">
-            {this.state.error && this.state.error.toString()}
-          </p>
+
+          <div className="max-w-4xl mx-auto text-left">
+            <p className="font-mono bg-gray-100 p-4 rounded border border-red-200 whitespace-pre-wrap">
+              {this.state.error?.toString()}
+              {"\n\n"}
+              {this.state.error?.stack ? this.state.error.stack : ""}
+              {"\n\n"}
+              {this.state.errorInfo?.componentStack ? this.state.errorInfo.componentStack : ""}
+            </p>
+
+            <p className="text-gray-600 mt-4">
+              Tipp: Öffne auch “Untersuchen → Console” und kopiere den obersten roten Fehler inkl. Datei/Zeile.
+            </p>
+          </div>
         </div>
       );
     }
+
     return this.props.children;
   }
 }
+
 
 // --- MAIN APP COMPONENT ---
 export default function KursNaviPro() {  // 1. Initial State Logic

@@ -482,7 +482,7 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
 
     return (
     <div className="max-w-7xl mx-auto px-4 py-8 font-sans animate-in fade-in duration-500">
-        <button onClick={() => setView('search')} className="flex items-center text-gray-500 hover:text-primary mb-6 transition-colors"><ArrowLeft className="w-4 h-4 mr-2"/> Zurück zur Suche</button>
+        <button onClick={() => window.location.href = '/search'} className="flex items-center text-gray-500 hover:text-primary mb-6 transition-colors"><ArrowLeft className="w-4 h-4 mr-2"/> Zurück zur Suche</button>
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-8">

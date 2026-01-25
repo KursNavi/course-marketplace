@@ -219,9 +219,9 @@ export default function CategoryLocationPage({
             <div className="bg-gradient-to-br from-primary/10 via-white to-orange-50 py-16 px-4 border-b border-gray-100">
                 <div className="max-w-6xl mx-auto">
                     <div className="flex items-center text-sm text-gray-500 mb-4">
-                        <span className="hover:text-primary cursor-pointer" onClick={() => setView('home')}>Home</span>
+                        <span className="hover:text-primary cursor-pointer" onClick={() => window.location.href = '/'}>Home</span>
                         <ChevronRight className="w-4 h-4 mx-2" />
-                        <span className="hover:text-primary cursor-pointer" onClick={() => setView('search')}>Kurse</span>
+                        <span className="hover:text-primary cursor-pointer" onClick={() => window.location.href = '/search'}>Kurse</span>
                         <ChevronRight className="w-4 h-4 mx-2" />
                         <span className="text-dark font-medium">{topicLabel} in {location}</span>
                     </div>
@@ -290,9 +290,10 @@ export default function CategoryLocationPage({
                                     <div
                                         key={course.id}
                                         onClick={() => {
-                                            setSelectedCourse(course);
-                                            setView('detail');
-                                            window.scrollTo(0, 0);
+                                            const topicSlug = (course.category_area || 'kurs').toLowerCase().replace(/_/g, '-');
+                                            const locSlug = (course.canton || 'schweiz').toLowerCase();
+                                            const titleSlug = (course.title || 'detail').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+                                            window.location.href = `/courses/${topicSlug}/${locSlug}/${course.id}-${titleSlug}`;
                                         }}
                                         className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-all cursor-pointer group"
                                     >
