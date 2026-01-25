@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { CheckCircle } from 'lucide-react';
 
 // --- IMPORTS ---
-import { CATEGORY_LABELS, TRANSLATIONS } from './lib/constants';
+import { CATEGORY_LABELS, TRANSLATIONS, NEW_TAXONOMY, CATEGORY_TYPES } from './lib/constants';
 import { supabase } from './lib/supabase';
 
 // Components
@@ -224,15 +224,31 @@ export default function KursNaviPro() {  // 1. Initial State Logic
   }, [lang]);
 
     const getCatLabel = (key) => {
-    if (!key) return '';
-    if (lang === 'en') return key;
+      if (!key) return '';
 
-    // ✅ Crash-Schutz: falls CATEGORY_LABELS mal undefined ist
-    const translation = (CATEGORY_LABELS || {})[key];
+      // 1. Priorität: Legacy Labels (Flache Liste) prüfen
+      const legacyTranslation = (CATEGORY_LABELS || {})[key];
+      if (legacyTranslation && legacyTranslation[lang]) return legacyTranslation[lang];
 
-    return translation && translation[lang] ? translation[lang] : key;
-  };
+      // 2. Priorität: Kategorie-Typen prüfen (z.B. "beruflich")
+      if (CATEGORY_TYPES && CATEGORY_TYPES[key]) {
+          return CATEGORY_TYPES[key][lang] || CATEGORY_TYPES[key]['de'];
+      }
 
+      // 3. Priorität: Neue Taxonomie durchsuchen (z.B. "sport_fitness_beruf")
+      if (NEW_TAXONOMY) {
+          for (const typeKey in NEW_TAXONOMY) {
+              const areas = NEW_TAXONOMY[typeKey];
+              // Prüfen, ob der Key in diesem Bereich existiert
+              if (areas && areas[key] && areas[key].label) {
+                  return areas[key].label[lang] || areas[key].label['de'];
+              }
+          }
+      }
+
+      // Fallback: Einfach den Key anzeigen (besser als nichts)
+      return key;
+    };
 
   const showNotification = (msg) => { setNotification(msg); setTimeout(() => setNotification(null), 3000); };
 
