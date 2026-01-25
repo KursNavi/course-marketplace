@@ -813,9 +813,23 @@ export default function KursNaviPro() {  // 1. Initial State Logic
           return;
         }
 
-        // Kurs (noch) nicht gefunden -> selectedCourse leeren, view trotzdem setzen
+        // Kurs nicht gefunden -> 301 Redirect zur parent category-location page
+        if (path.startsWith('/courses/')) {
+          const parts = path.split('/').filter(Boolean);
+          if (parts.length >= 4) {
+            // Redirect to /courses/topic/location/
+            const redirectPath = `/${parts[0]}/${parts[1]}/${parts[2]}/`;
+            window.history.replaceState({ view: 'category-location' }, '', redirectPath);
+            setSelectedCourse(null);
+            setView('category-location');
+            return;
+          }
+        }
+
+        // Fallback: Kurs nicht gefunden und keine category -> zur Suche
         setSelectedCourse(null);
-        setView(nextView);
+        setView('search');
+        window.history.replaceState({ view: 'search' }, '', '/search');
         return;
       }
 
