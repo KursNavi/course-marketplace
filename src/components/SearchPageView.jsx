@@ -322,10 +322,19 @@ const SearchPageView = ({
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
                     {sortedCourses.map(course => (
                       <div key={course.id} onClick={() => {
-                          const topicSlug = (course.category_area || 'kurs').toLowerCase().replace(/_/g, '-');
-                          const locSlug = (course.canton || 'schweiz').toLowerCase();
-                          const titleSlug = (course.title || 'detail').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-                          window.location.href = `/courses/${topicSlug}/${locSlug}/${course.id}-${titleSlug}`;
+                          // SEO-friendly slug generation (matches App.jsx buildCoursePath)
+                          const slugify = (input) => (input || '').toString().trim().toLowerCase()
+                              .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
+                              .replace(/&/g, ' und ').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+                          const topic = slugify(course.primary_category || course.category_area || 'kurs');
+                          const loc = slugify(course.canton || 'schweiz');
+                          const title = slugify(course.title || 'detail');
+                          const path = `/courses/${topic}/${loc}/${course.id}-${title}`;
+
+                          // Use SPA navigation (no page reload)
+                          setSelectedCourse(course);
+                          setView('detail');
+                          window.history.pushState({ view: 'detail', courseId: course.id }, '', path);
                       }} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer group">
                         <div className="relative h-48 overflow-hidden">
                             <img
