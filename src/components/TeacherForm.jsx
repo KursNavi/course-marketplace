@@ -628,6 +628,14 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
 
                                         <div>
                                             <span className="text-xs text-gray-500 block mb-1">Bereich {idx === 0 ? '*' : ''}</span>
+                                            {/* DEBUG START */}
+                                            {idx === 0 && row.type === 'beruflich' && (
+                                                <div className="text-xs text-red-500 bg-red-50 p-2 mb-2">
+                                                    DEBUG: Verfügbare Bereiche für "beruflich":
+                                                    <pre>{JSON.stringify(Object.keys(NEW_TAXONOMY['beruflich'] || {}), null, 2)}</pre>
+                                                </div>
+                                            )}
+                                            {/* DEBUG END */}
                                             <select
                                                 name={`category_area_${idx}`}
                                                 value={row.area}
