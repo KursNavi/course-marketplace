@@ -1,35 +1,44 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronDown, ChevronRight, MapPin, Globe } from 'lucide-react';
 import { NEW_TAXONOMY, CATEGORY_TYPES, SWISS_CANTONS, SWISS_CITIES } from '../lib/constants';
+import { useTaxonomy } from '../hooks/useTaxonomy';
 
 export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCatPath, catMenuOpen, setCatMenuOpen, t, catMenuRef }) => {
-    // Lead Architect Update: Switch to NEW_TAXONOMY (v3.0)
-    const [lvl1, setLvl1] = useState(rootCategory || null); 
+    // Load taxonomy from DB (with fallback to constants.js)
+    const { taxonomy, types } = useTaxonomy();
+
+    const [lvl1, setLvl1] = useState(rootCategory || null);
     const [lvl2, setLvl2] = useState(null);
-    
+
     // Reset internal state when menu closes or root changes
-    useEffect(() => { 
+    useEffect(() => {
         if (!catMenuOpen) { setLvl1(rootCategory || null); setLvl2(null); }
     }, [catMenuOpen, rootCategory]);
+
+    // Use taxonomy from DB or fallback to constants
+    const activeTaxonomy = taxonomy || NEW_TAXONOMY;
+    const activeTypes = types.length > 0
+        ? Object.fromEntries(types.map(t => [t.id, { de: t.label_de, en: t.label_en, fr: t.label_fr, it: t.label_it }]))
+        : CATEGORY_TYPES;
 
     // Helper to get labels from the new structure (Defaulting to DE for now)
     const getLabel = (key, level, parentKey = null) => {
         if (!key) return "";
-        if (level === 1) return CATEGORY_TYPES[key]?.de || key;
-        if (level === 2 && parentKey) return NEW_TAXONOMY[parentKey]?.[key]?.label?.de || key;
+        if (level === 1) return activeTypes[key]?.de || key;
+        if (level === 2 && parentKey) return activeTaxonomy[parentKey]?.[key]?.label?.de || key;
         return key; // Level 3 are plain strings
     };
 
-    const availableLvl1 = rootCategory ? [rootCategory] : Object.keys(NEW_TAXONOMY);
+    const availableLvl1 = rootCategory ? [rootCategory] : Object.keys(activeTaxonomy);
 
     // Display text for the main button
     const getButtonLabel = () => {
         if (selectedCatPath.length === 0) return t?.filter_label_cat || "Kategorie";
         const lastItem = selectedCatPath[selectedCatPath.length - 1];
         // Try to find label if it's a key, otherwise return item itself (for L3)
-        if (NEW_TAXONOMY[lastItem]) return CATEGORY_TYPES[lastItem].de; 
+        if (activeTaxonomy[lastItem]) return activeTypes[lastItem]?.de || lastItem;
         // Note: L2 keys are harder to reverse lookup without parent, displaying raw or lastItem is fine for now
-        return lastItem; 
+        return lastItem;
     };
 
     return (
@@ -55,7 +64,7 @@ export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCat
                     {/* Level 2: AREAS (e.g. Business, Sport) */}
                     <div className="w-full md:w-1/3 border-r overflow-y-auto bg-white">
                         {lvl1 ? (
-                            Object.keys(NEW_TAXONOMY[lvl1] || {}).map(sub => (
+                            Object.keys(activeTaxonomy[lvl1] || {}).map(sub => (
                                 <div key={sub} onClick={() => setLvl2(sub)} className={`p-3 mx-2 my-1 rounded-lg cursor-pointer text-sm flex justify-between items-center transition ${lvl2 === sub ? 'bg-primaryLight font-bold text-primary' : 'text-gray-700 hover:bg-gray-50'}`}>
                                     {getLabel(sub, 2, lvl1)}
                                     <ChevronRight className={`w-4 h-4 ${lvl2 === sub ? 'text-primary' : 'text-gray-300'}`} />
@@ -67,7 +76,7 @@ export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCat
                     {/* Level 3: SPECIALTIES (e.g. Marketing, Yoga) */}
                     <div className="w-full md:w-1/3 overflow-y-auto bg-white">
                         {lvl1 && lvl2 ? (
-                            (NEW_TAXONOMY[lvl1][lvl2]?.specialties || []).map(item => (
+                            (activeTaxonomy[lvl1]?.[lvl2]?.specialties || []).map(item => (
                                 <div key={item} onClick={() => { setSelectedCatPath([lvl1, lvl2, item]); setCatMenuOpen(false); }} className="p-3 mx-2 cursor-pointer text-sm text-gray-600 hover:text-primary hover:bg-gray-50 rounded transition">
                                     {item}
                                 </div>

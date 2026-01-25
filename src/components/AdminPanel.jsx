@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Lock, Loader, Shield, CheckCircle, Eye, ExternalLink, FileText } from 'lucide-react';
+import { Lock, Loader, Shield, CheckCircle, Eye, ExternalLink, FileText, FolderTree } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { PLANS } from '../lib/plans';
+import AdminCategoryManager from './AdminCategoryManager';
 
 const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView }) => {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -250,9 +251,21 @@ const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView }) => 
                     <button onClick={() => setActiveTab('teachers')} className={`px-6 py-2 rounded-full font-bold transition ${activeTab === 'teachers' ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 shadow-sm'}`}>{t.admin_tab_teachers || "Lehrer"}</button>
                     <button onClick={() => setActiveTab('students')} className={`px-6 py-2 rounded-full font-bold transition ${activeTab === 'students' ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 shadow-sm'}`}>{t.admin_tab_students || "Studenten"}</button>
                     <button onClick={() => setActiveTab('courses')} className={`px-6 py-2 rounded-full font-bold transition ${activeTab === 'courses' ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 shadow-sm'}`}>{t.admin_tab_courses || "Kurse"}</button>
+                    <button onClick={() => setActiveTab('categories')} className={`px-6 py-2 rounded-full font-bold transition flex items-center gap-2 ${activeTab === 'categories' ? 'bg-orange-500 text-white' : 'bg-white text-gray-600 shadow-sm'}`}>
+                        <FolderTree className="w-4 h-4" /> Kategorien
+                    </button>
                 </div>
 
-                                <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                                {/* Categories Tab - separate rendering */}
+                {activeTab === 'categories' && (
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                        <AdminCategoryManager showNotification={showNotification} />
+                    </div>
+                )}
+
+                {/* Other Tabs - Table View */}
+                {activeTab !== 'categories' && (
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                     {loading ? (
                         <div className="p-12 text-center"><Loader className="animate-spin mx-auto w-8 h-8 text-blue-600" /></div>
                     ) : (
@@ -384,6 +397,7 @@ const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView }) => 
                         </div>
                     )}
                 </div>
+                )}
             </div>
         </div>
     );

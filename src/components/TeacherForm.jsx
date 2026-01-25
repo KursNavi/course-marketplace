@@ -3,9 +3,13 @@ import { ArrowLeft, Loader, Calendar, Plus, Trash2, ExternalLink, Globe, Bold, I
 import { KursNaviLogo } from './Layout';
 import { SWISS_CANTONS, NEW_TAXONOMY, CATEGORY_TYPES, COURSE_LEVELS } from '../lib/constants';
 import { supabase } from '../lib/supabase';
+import { useTaxonomy } from '../hooks/useTaxonomy';
 
 const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotification, setEditingCourse }) => {
     // --- LIMITS REMOVED: Unbegrenzte Kurse fuer alle ---
+
+    // Load taxonomy from DB (with fallback to constants.js)
+    const { taxonomy, types } = useTaxonomy();
 
     // Booking & Link State
     const [bookingType, setBookingType] = useState('platform'); // 'platform', 'external', 'lead'
@@ -198,9 +202,19 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
         return () => { isMounted = false; };
     }, [user?.id]);
 
-    // Helpers
-    const getAreas = (type) => type && NEW_TAXONOMY[type] ? Object.keys(NEW_TAXONOMY[type]) : [];
-    const getSpecialties = (type, area) => type && area && NEW_TAXONOMY[type][area] ? NEW_TAXONOMY[type][area].specialties : [];
+    // Helpers - use taxonomy from DB (via hook) with fallback to constants
+    const getAreas = (type) => {
+        if (taxonomy && type && taxonomy[type]) {
+            return Object.keys(taxonomy[type]);
+        }
+        return type && NEW_TAXONOMY[type] ? Object.keys(NEW_TAXONOMY[type]) : [];
+    };
+    const getSpecialties = (type, area) => {
+        if (taxonomy && type && area && taxonomy[type]?.[area]) {
+            return taxonomy[type][area].specialties || [];
+        }
+        return type && area && NEW_TAXONOMY[type]?.[area] ? NEW_TAXONOMY[type][area].specialties : [];
+    };
 
     const addCategoryRow = () => {
         if (categories.length >= maxCategories) return;
@@ -620,8 +634,8 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                                                 required={idx === 0}
                                             >
                                                 {idx > 0 && <option value="">Bitte wählen...</option>}
-                                                {Object.keys(CATEGORY_TYPES).map(key => (
-                                                    <option key={key} value={key}>{CATEGORY_TYPES[key].de}</option>
+                                                {(types.length > 0 ? types : Object.keys(CATEGORY_TYPES).map(id => ({ id, label_de: CATEGORY_TYPES[id].de }))).map(type => (
+                                                    <option key={type.id} value={type.id}>{type.label_de}</option>
                                                 ))}
                                             </select>
                                         </div>
@@ -637,9 +651,12 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                                                 required={idx === 0}
                                             >
                                                 <option value="">Bitte wählen...</option>
-                                                {row.type && getAreas(row.type).map(key => (
-                                                    <option key={key} value={key}>{NEW_TAXONOMY[row.type][key].label.de}</option>
-                                                ))}
+                                                {row.type && getAreas(row.type).map(key => {
+                                                    const label = taxonomy?.[row.type]?.[key]?.label?.de
+                                                        || NEW_TAXONOMY[row.type]?.[key]?.label?.de
+                                                        || key;
+                                                    return <option key={key} value={key}>{label}</option>;
+                                                })}
                                             </select>
                                         </div>
 
