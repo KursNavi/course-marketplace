@@ -12,7 +12,6 @@ const LegalPage = ({ pageKey, lang = 'de', setView }) => {
         <div className="text-center">
           <h2 className="text-xl font-bold text-gray-800">Content not found</h2>
           <button onClick={() => {
-            setView('home');
             window.history.pushState({ view: 'home' }, '', '/');
           }} className="mt-4 text-[#FA6E28] font-bold">Back to Home</button>
         </div>
@@ -37,7 +36,6 @@ const LegalPage = ({ pageKey, lang = 'de', setView }) => {
         {/* Header */}
         <div className="px-8 py-8 border-b border-gray-100 bg-white sticky top-0 z-10">
           <button onClick={() => {
-            setView('home');
             window.history.pushState({ view: 'home' }, '', '/');
           }} className="inline-flex items-center text-gray-400 hover:text-[#FA6E28] mb-6 transition-colors text-sm font-bold">
             <ArrowLeft className="w-4 h-4 mr-2" /> {langData.back_btn}

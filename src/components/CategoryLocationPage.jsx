@@ -220,12 +220,10 @@ export default function CategoryLocationPage({
                 <div className="max-w-6xl mx-auto">
                     <div className="flex items-center text-sm text-gray-500 mb-4">
                         <span className="hover:text-primary cursor-pointer" onClick={() => {
-                            setView('home');
                             window.history.pushState({ view: 'home' }, '', '/');
                         }}>Home</span>
                         <ChevronRight className="w-4 h-4 mx-2" />
                         <span className="hover:text-primary cursor-pointer" onClick={() => {
-                            setView('search');
                             window.history.pushState({ view: 'search' }, '', '/search');
                         }}>Kurse</span>
                         <ChevronRight className="w-4 h-4 mx-2" />
@@ -305,9 +303,7 @@ export default function CategoryLocationPage({
                                             const title = slugify(course.title || 'detail');
                                             const path = `/courses/${topic}/${loc}/${course.id}-${title}`;
 
-                                            // Use SPA navigation (no page reload)
-                                            setSelectedCourse(course);
-                                            setView('detail');
+                                            // Use SPA navigation - pushState triggers syncFromUrl in App.jsx
                                             window.history.pushState({ view: 'detail', courseId: course.id }, '', path);
                                         }}
                                         className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-all cursor-pointer group"

@@ -483,7 +483,6 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
     return (
     <div className="max-w-7xl mx-auto px-4 py-8 font-sans animate-in fade-in duration-500">
         <button onClick={() => {
-            setView('search');
             window.history.pushState({ view: 'search' }, '', '/search');
         }} className="flex items-center text-gray-500 hover:text-primary mb-6 transition-colors"><ArrowLeft className="w-4 h-4 mr-2"/> Zurück zur Suche</button>
         

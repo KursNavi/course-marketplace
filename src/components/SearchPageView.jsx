@@ -331,9 +331,7 @@ const SearchPageView = ({
                           const title = slugify(course.title || 'detail');
                           const path = `/courses/${topic}/${loc}/${course.id}-${title}`;
 
-                          // Use SPA navigation (no page reload)
-                          setSelectedCourse(course);
-                          setView('detail');
+                          // Use SPA navigation - pushState triggers syncFromUrl in App.jsx
                           window.history.pushState({ view: 'detail', courseId: course.id }, '', path);
                       }} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer group">
                         <div className="relative h-48 overflow-hidden">
