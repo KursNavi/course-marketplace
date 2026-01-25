@@ -322,6 +322,7 @@ const SearchPageView = ({
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
                     {sortedCourses.map(course => (
                       <div key={course.id} onClick={() => {
+                          console.log('🖱️ Course card clicked:', course.id, course.title);
                           // SEO-friendly slug generation (matches App.jsx buildCoursePath)
                           const slugify = (input) => (input || '').toString().trim().toLowerCase()
                               .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
@@ -331,6 +332,7 @@ const SearchPageView = ({
                           const title = slugify(course.title || 'detail');
                           const path = `/courses/${topic}/${loc}/${course.id}-${title}`;
 
+                          console.log('🔗 Generated path:', path);
                           // Use SPA navigation - pushState triggers syncFromUrl in App.jsx
                           window.history.pushState({ view: 'detail', courseId: course.id }, '', path);
                       }} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer group">

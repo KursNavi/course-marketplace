@@ -89,13 +89,36 @@ export const CATEGORY_TYPES = {
 // In a real app, we would fill all translations.
 export const NEW_TAXONOMY = {
   beruflich: {
+    sport_fitness_beruf: {
+      label: { de: "Sport & Fitness (Berufsausbildung)", en: "Sports & Fitness (Pro)", fr: "Sport & Fitness (Pro)", it: "Sport & Fitness (Pro)" },
+      specialties: [
+        "Fitness Trainer Ausbildung", "Personal Trainer Ausbildung", "Group Fitness Instructor", 
+        "Functional Training", "Workout & Body Toning", "Rücken & Core Trainer", 
+        "Outdoor & Bootcamp Coach", "Sportmanagement", "Sonstiges Sport (Profi)"
+      ]
+    },
+    gesundheit_beruf: {
+      label: { de: "Gesundheit, Pflege & Prävention", en: "Health, Care & Prevention", fr: "Santé, Soins & Prévention", it: "Salute, Cura & Prevenzione" },
+      specialties: [
+        "Gesundheitsförderung & Prävention", "Spezialist Bewegungsförderung", "Medical Fitness", 
+        "Pflege & Betreuung", "Medizinische Grundlagen", "Notfallmedizin & Erste Hilfe", 
+        "Praxisorganisation", "Soziale Arbeit", "Komplementärmethoden", "Sonstiges Gesundheit"
+      ]
+    },
+    bildung_pruefung: {
+      label: { de: "Bildung & Prüfungsvorbereitung", en: "Education & Exam Prep", fr: "Éducation & Prép. Examens", it: "Istruzione & Prep. Esami" },
+      specialties: [
+        "Vorbereitung Berufsprüfung (BP)", "Eidg. Fachausweis Vorbereitung", "Ausbilder / SVEB", 
+        "Lerncoaching (Beruflich)", "Erwachsenenbildung", "Sonstige Prüfungsvorbereitung"
+      ]
+    },
     business_mgmt: {
       label: { de: "Business, Management & Leadership", en: "Business & Management", fr: "Affaires & Gestion", it: "Affari & Gestione" },
       specialties: [
         "Unternehmensstrategie & Geschäftsmodelle", "Projektmanagement klassisch", "Agiles Projekt- & Produktmanagement", 
-        "Prozessmanagement & Lean", "Leadership & Teamführung", "Change- & Transformationsmanagement", 
-        "Organisationsentwicklung", "Innovation & Entrepreneurship", "Nachhaltigkeit & CSR", 
-        "Unternehmensgründung", "Governance & Compliance", "Sonstiges Business"
+        "Prozessmanagement & Lean", "Leadership & Teamführung", "Verkauf & Administration (Fitness/Gewerbe)",
+        "Change- & Transformationsmanagement", "Organisationsentwicklung", "Innovation & Entrepreneurship", 
+        "Nachhaltigkeit & CSR", "Unternehmensgründung", "Governance & Compliance", "Sonstiges Business"
       ]
     },
     hr_recht: {
@@ -131,13 +154,6 @@ export const NEW_TAXONOMY = {
       specialties: [
         "Bauleitung & Planung", "CAD & BIM", "Energie & Gebäudetechnik", "Facility Management", 
         "Logistik & Supply Chain", "Arbeitssicherheit", "Immobilienbewirtschaftung", "Sonstiges Industrie/Bau"
-      ]
-    },
-    gesundheit_beruf: {
-      label: { de: "Gesundheit, Pflege & Soziales", en: "Health & Social Care", fr: "Santé & Soins", it: "Salute & Assistenza" },
-      specialties: [
-        "Pflege & Betreuung", "Medizinische Grundlagen", "Notfallmedizin & Erste Hilfe", 
-        "Praxisorganisation", "Soziale Arbeit", "Pädagogik (beruflich)", "Komplementärmethoden & Energiearbeit", "Sonstiges Gesundheit"
       ]
     },
     sprachen_beruf: {
