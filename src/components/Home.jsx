@@ -51,17 +51,17 @@ export const Home = ({
 
   const handleSearch = (e) => {
     e.preventDefault();
-    setView('search'); 
+    window.history.pushState({ view: 'search' }, '', '/search');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleCategorySelect = (typeKey, areaKey, specialtyKey) => {
     setSearchType(typeKey);
     setSearchArea(areaKey || "");
-    setSearchSpecialty(specialtyKey || ""); 
-    
+    setSearchSpecialty(specialtyKey || "");
+
     setCatMenuOpen(false);
-    setView('search');
+    window.history.pushState({ view: 'search' }, '', '/search');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -322,7 +322,7 @@ export const Home = ({
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           
-          <div onClick={() => { setSearchType('privat_hobby'); setView('search'); window.scrollTo(0,0); }} className="group relative h-80 rounded-2xl overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
+          <div onClick={() => { setSearchType('privat_hobby'); window.history.pushState({ view: 'search' }, '', '/search'); window.scrollTo(0,0); }} className="group relative h-80 rounded-2xl overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
             <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?auto=format&fit=crop&q=80&w=2000")' }}></div>
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
             <div className="absolute bottom-0 left-0 p-6">
@@ -334,7 +334,7 @@ export const Home = ({
             </div>
           </div>
 
-          <div onClick={() => { setSearchType('beruflich'); setView('search'); window.scrollTo(0,0); }} className="group relative h-80 rounded-2xl overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
+          <div onClick={() => { setSearchType('beruflich'); window.history.pushState({ view: 'search' }, '', '/search'); window.scrollTo(0,0); }} className="group relative h-80 rounded-2xl overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
             <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=2670&auto=format&fit=crop")' }}></div>
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
             <div className="absolute bottom-0 left-0 p-6">
@@ -346,7 +346,7 @@ export const Home = ({
             </div>
           </div>
 
-          <div onClick={() => { setSearchType('kinder_jugend'); setView('search'); window.scrollTo(0,0); }} className="group relative h-80 rounded-2xl overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
+          <div onClick={() => { setSearchType('kinder_jugend'); window.history.pushState({ view: 'search' }, '', '/search'); window.scrollTo(0,0); }} className="group relative h-80 rounded-2xl overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
             <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1503676260728-1c00da094a0b?q=80&w=2622&auto=format&fit=crop")' }}></div>
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
             <div className="absolute bottom-0 left-0 p-6">

@@ -26,11 +26,41 @@ export const Navbar = ({ t, user, lang, setLang, setView, handleLogout, setShowR
     { code: 'en', label: 'English', short: 'EN' },
   ];
 
+  // Helper: Convert view name to URL path
+  const getUrlForView = (viewName) => {
+    const urlMap = {
+      'home': '/',
+      'search': '/search',
+      'landing-private': '/private',
+      'landing-prof': '/professional',
+      'landing-kids': '/children',
+      'how-it-works': '/how-it-works',
+      'blog': '/blog',
+      'teacher-hub': '/teacher-hub',
+      'contact': '/contact',
+      'about': '/about',
+      'agb': '/agb',
+      'datenschutz': '/datenschutz',
+      'impressum': '/impressum',
+      'widerruf': '/widerruf-storno',
+      'trust': '/vertrauen-sicherheit',
+      'login': '/login',
+      'dashboard': '/dashboard',
+      'create': '/create-course',
+      'admin': '/control-room-2025',
+      'admin-blog': '/admin-blog'
+    };
+    return urlMap[viewName] || '/';
+  };
+
   const navTo = (viewName, catPath = []) => {
-    setView(viewName);
+    const url = getUrlForView(viewName);
+    console.log('🔘 navTo called:', viewName, '→', url);
     if (setSelectedCatPath) setSelectedCatPath(catPath);
     setMobileMenuOpen(false);
     window.scrollTo(0, 0);
+    // Use pushState - syncFromUrl in App.jsx will handle setView
+    window.history.pushState({ view: viewName }, '', url);
   };
 
   return (
@@ -141,6 +171,38 @@ export const Navbar = ({ t, user, lang, setLang, setView, handleLogout, setShowR
 export const Footer = ({ t, setView }) => {
     const [email, setEmail] = useState('');
   const [status, setStatus] = useState('idle'); // idle, loading, success, already, error
+
+  // Helper: Convert view name to URL path (same as in Navbar)
+  const getUrlForView = (viewName) => {
+    const urlMap = {
+      'home': '/',
+      'search': '/search',
+      'landing-private': '/private',
+      'landing-prof': '/professional',
+      'landing-kids': '/children',
+      'how-it-works': '/how-it-works',
+      'blog': '/blog',
+      'teacher-hub': '/teacher-hub',
+      'contact': '/contact',
+      'about': '/about',
+      'agb': '/agb',
+      'datenschutz': '/datenschutz',
+      'impressum': '/impressum',
+      'widerruf': '/widerruf-storno',
+      'trust': '/vertrauen-sicherheit',
+      'login': '/login',
+      'dashboard': '/dashboard'
+    };
+    return urlMap[viewName] || '/';
+  };
+
+  const navTo = (viewName) => {
+    const url = getUrlForView(viewName);
+    console.log('🔘 Footer navTo called:', viewName, '→', url);
+    window.scrollTo(0, 0);
+    // Use pushState - syncFromUrl in App.jsx will handle setView
+    window.history.pushState({ view: viewName }, '', url);
+  };
 
     const isAlreadySubscribed = (statusCode, payload) => {
     // Backend-Flag (unser neuer, sicherster Weg)
@@ -289,27 +351,27 @@ export const Footer = ({ t, setView }) => {
         <div>
           <h4 className="font-heading font-bold text-dark mb-4">{t.footer_discover}</h4>
           <ul className="space-y-2 text-sm text-gray-500 font-sans">
-            <li onClick={() => { setView('landing-private'); window.scrollTo(0,0); }} className="hover:text-primary cursor-pointer transition-colors">{t.nav_private}</li>
-            <li onClick={() => { setView('landing-prof'); window.scrollTo(0,0); }} className="hover:text-primary cursor-pointer transition-colors">{t.nav_professional}</li>
-            <li onClick={() => { setView('landing-kids'); window.scrollTo(0,0); }} className="hover:text-primary cursor-pointer transition-colors">{t.nav_kids}</li>
-            <li onClick={() => { setView('blog'); window.scrollTo(0,0); }} className="hover:text-primary cursor-pointer transition-colors">{t.nav_news}</li>
-<li onClick={() => { setView('teacher-hub'); window.scrollTo(0,0); }} className="hover:text-primary cursor-pointer transition-colors font-bold text-orange-600">{t.nav_for_providers}</li>
+            <li onClick={() => navTo('landing-private')} className="hover:text-primary cursor-pointer transition-colors">{t.nav_private}</li>
+            <li onClick={() => navTo('landing-prof')} className="hover:text-primary cursor-pointer transition-colors">{t.nav_professional}</li>
+            <li onClick={() => navTo('landing-kids')} className="hover:text-primary cursor-pointer transition-colors">{t.nav_kids}</li>
+            <li onClick={() => navTo('blog')} className="hover:text-primary cursor-pointer transition-colors">{t.nav_news}</li>
+            <li onClick={() => navTo('teacher-hub')} className="hover:text-primary cursor-pointer transition-colors font-bold text-orange-600">{t.nav_for_providers}</li>
           </ul>
         </div>
         <div>
           <h4 className="font-heading font-bold text-dark mb-4">{t.footer_support}</h4>
           <ul className="space-y-2 text-sm text-gray-500 font-sans">
-            <li onClick={() => { setView('how-it-works'); window.scrollTo(0,0); }} className="hover:text-primary cursor-pointer transition-colors">{t.nav_howitworks}</li>
-            <li onClick={() => { setView('contact'); window.scrollTo(0,0); }} className="hover:text-primary cursor-pointer transition-colors">{t.nav_contact}</li>
-            <li onClick={() => { setView('about'); window.scrollTo(0,0); }} className="hover:text-primary cursor-pointer transition-colors">{t.nav_about}</li>
+            <li onClick={() => navTo('how-it-works')} className="hover:text-primary cursor-pointer transition-colors">{t.nav_howitworks}</li>
+            <li onClick={() => navTo('contact')} className="hover:text-primary cursor-pointer transition-colors">{t.nav_contact}</li>
+            <li onClick={() => navTo('about')} className="hover:text-primary cursor-pointer transition-colors">{t.nav_about}</li>
           </ul>
         </div>
         <div>
           <h4 className="font-heading font-bold text-dark mb-4">{t.footer_legal_header}</h4>
           <ul className="space-y-2 text-sm text-gray-500 font-sans">
-            <li onClick={() => { setView('agb'); window.scrollTo(0,0); }} className="hover:text-primary cursor-pointer transition-colors">{t.legal_agb}</li>
-            <li onClick={() => { setView('datenschutz'); window.scrollTo(0,0); }} className="hover:text-primary cursor-pointer transition-colors">{t.footer_privacy}</li>
-            <li onClick={() => { setView('impressum'); window.scrollTo(0,0); }} className="hover:text-primary cursor-pointer transition-colors">{t.footer_legal}</li>
+            <li onClick={() => navTo('agb')} className="hover:text-primary cursor-pointer transition-colors">{t.legal_agb}</li>
+            <li onClick={() => navTo('datenschutz')} className="hover:text-primary cursor-pointer transition-colors">{t.footer_privacy}</li>
+            <li onClick={() => navTo('impressum')} className="hover:text-primary cursor-pointer transition-colors">{t.footer_legal}</li>
           </ul>
         </div>
       </div>
