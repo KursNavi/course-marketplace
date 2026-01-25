@@ -34,8 +34,49 @@ const UserProfileSection = ({ user, showNotification, setLang, t }) => {
 
     
     const [formData, setFormData] = useState({
-        city: '', canton: '', bio_text: '', certificates: '', preferred_language: 'de', email: user.email, password: '', confirmPassword: ''
+        city: '', canton: '', bio_text: '', certificates: '', preferred_language: 'de', email: user.email, password: '', confirmPassword: '',
+        additional_locations: '', website_url: '', contact_email: ''
     });
+
+    // Load existing profile data on mount
+    useEffect(() => {
+        if (!uid) return;
+        let cancelled = false;
+        setLoading(true);
+
+        (async () => {
+            const { data, error } = await supabase
+                .from('profiles')
+                .select('city, canton, bio_text, certificates, preferred_language, additional_locations, website_url, contact_email, verification_status')
+                .eq('id', uid)
+                .single();
+
+            if (cancelled) return;
+            setLoading(false);
+
+            if (error) {
+                console.warn('Failed to load profile:', error.message);
+                return;
+            }
+
+            if (data) {
+                setFormData(prev => ({
+                    ...prev,
+                    city: data.city || '',
+                    canton: data.canton || '',
+                    bio_text: data.bio_text || '',
+                    certificates: Array.isArray(data.certificates) ? data.certificates.join('\n') : '',
+                    preferred_language: data.preferred_language || 'de',
+                    additional_locations: data.additional_locations || '',
+                    website_url: data.website_url || '',
+                    contact_email: data.contact_email || ''
+                }));
+                setVerificationStatus(data.verification_status || 'none');
+            }
+        })();
+
+        return () => { cancelled = true; };
+    }, [uid]);
 
     const handleChange = (e) => { setFormData({ ...formData, [e.target.name]: e.target.value }); };
 
