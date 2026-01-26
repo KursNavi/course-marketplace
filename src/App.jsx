@@ -875,6 +875,36 @@ export default function KursNaviPro() {  // 1. Initial State Logic
       if (nextView !== 'detail') setSelectedCourse(null);
       console.log('✅ Setting view to:', nextView);
       setView(nextView);
+
+      // 4) Parse URL query parameters for search filters
+      const query = new URLSearchParams(window.location.search);
+      const typeParam = query.get('type');
+      const areaParam = query.get('area');
+      const specParam = query.get('spec');
+      const qParam = query.get('q');
+      const locParam = query.get('loc');
+      const levelParam = query.get('level');
+
+      // Reset filters first when navigating to search, then apply URL params
+      if (nextView === 'search') {
+        // Only reset if no params are provided (clean /search navigation)
+        if (!typeParam && !areaParam && !specParam && !qParam && !locParam && !levelParam) {
+          setSearchType("");
+          setSearchArea("");
+          setSearchSpecialty("");
+        } else {
+          // Apply URL params
+          if (typeParam) setSearchType(typeParam);
+          else setSearchType("");
+          if (areaParam) setSearchArea(areaParam);
+          else setSearchArea("");
+          if (specParam) setSearchSpecialty(specParam);
+          else setSearchSpecialty("");
+          if (qParam) setSearchQuery(qParam);
+          if (locParam) setSelectedLocations([locParam]);
+          if (levelParam) setFilterLevel(levelParam);
+        }
+      }
     };
 
     // --- History patch: auch pushState/replaceState sollen Routing triggern ---
