@@ -122,7 +122,7 @@ export const LanguageDropdown = ({ selectedLanguage, setSelectedLanguage, langMe
             <button type="button" onClick={() => setLangMenuOpen(!langMenuOpen)} className={`w-full md:w-auto px-4 py-3 border rounded-full flex items-center justify-between space-x-2 text-sm font-medium transition shadow-sm ${selectedLanguage ? 'bg-primary text-white border-primary' : 'bg-white text-gray-700 hover:border-gray-400'}`}>
                 <div className="flex items-center">
                     <Globe className="w-4 h-4 mr-2" />
-                    <span>{selectedLanguage || (t?.filter_label_lang || "Sprache")}</span>
+                    <span>{selectedLanguage || (t?.filter_label_lang || "Kurssprache")}</span>
                 </div>
                 <ChevronDown className="w-4 h-4" />
             </button>

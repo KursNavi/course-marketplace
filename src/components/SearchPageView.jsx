@@ -317,10 +317,8 @@ const SearchPageView = ({
                          <label className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg border cursor-pointer transition select-none ${filterPro ? 'bg-blue-50 border-blue-200' : 'bg-white border-gray-200'}`} title={t.tooltip_pro_verified}><input type="checkbox" checked={filterPro} onChange={(e) => setFilterPro(e.target.checked)} className="rounded text-primary focus:ring-primary" /><span className={`text-sm font-medium ${filterPro ? 'text-blue-700' : 'text-gray-600'}`}>{t.lbl_professional_filter}</span><Shield className="w-3 h-3 text-blue-500" /></label>
                     </div>
                 </div>
-                 {(searchType || searchArea || selectedLocations.length > 0 || selectedLanguage) && (
+                 {(selectedLocations.length > 0 || selectedLanguage) && (
                     <div className="max-w-7xl mx-auto px-4 pt-2 flex gap-2 flex-wrap">
-                        {searchType && <span className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-md font-bold flex items-center">{getLabel(searchType, 'type')}</span>}
-                        {searchArea && <span className="text-xs bg-orange-50 text-orange-700 px-2 py-1 rounded-md flex items-center"><ChevronRight className="w-3 h-3 mr-1"/> {getLabel(searchArea, 'area')}</span>}
                         {selectedLanguage && <span onClick={() => setSelectedLanguage(null)} className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-purple-200 flex items-center"><Globe className="w-3 h-3 mr-1"/> {selectedLanguage} <X className="w-3 h-3 ml-1 opacity-50" /></span>}
                         {selectedLocations.map((loc, i) => (<span key={i} onClick={() => setSelectedLocations(selectedLocations.filter(l => l !== loc))} className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-blue-200 flex items-center">{loc} <X className="w-3 h-3 ml-1 opacity-50" /></span>))}
                     </div>
