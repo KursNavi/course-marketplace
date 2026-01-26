@@ -593,7 +593,7 @@ const Dashboard = ({ user, t, setView, courses, teacherEarnings, myBookings, sav
 
     const totalPaidOut = user.role === 'teacher' ? teacherEarnings.filter(e => e.isPaidOut).reduce((sum, e) => sum + e.payout, 0) : 0;
     const myCourses = user.role === 'teacher'
-        ? (courses || []).filter(c => String(c.user_id) === String(uid))
+        ? (courses || []).filter(c => String(c.user_id) === String(uid)).sort((a, b) => a.title.localeCompare(b.title, 'de'))
         : [];
 
     const courseCount = myCourses.length;
