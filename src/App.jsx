@@ -172,10 +172,10 @@ export default function KursNaviPro() {  // 1. Initial State Logic
   const [searchType, setSearchType] = useState("");
   const [searchArea, setSearchArea] = useState("");
   const [searchSpecialty, setSearchSpecialty] = useState("");
-  const [searchAge, setSearchAge] = useState("");
   const [catMenuOpen, setCatMenuOpen] = useState(false);
   const [selectedCatPath, setSelectedCatPath] = useState([]);
-  const [filterDate, setFilterDate] = useState("");
+  const [filterDateFrom, setFilterDateFrom] = useState("");
+  const [filterDateTo, setFilterDateTo] = useState("");
   const [filterPriceMax, setFilterPriceMax] = useState("");
   const [filterLevel, setFilterLevel] = useState("All");
   const [filterPro, setFilterPro] = useState(false);
@@ -719,10 +719,6 @@ export default function KursNaviPro() {  // 1. Initial State Logic
          course.all_categories.some(cat => cat && cat.category_specialty === searchSpecialty));
     }
 
-    let matchesAge = true;
-    if (searchAge) {
-        matchesAge = Array.isArray(course.target_age_groups) && course.target_age_groups.includes(searchAge);
-    }
 
     let matchesCategory = true;
     if (!searchType && !searchArea && Array.isArray(selectedCatPath) && selectedCatPath.length > 0) {
@@ -778,23 +774,38 @@ export default function KursNaviPro() {  // 1. Initial State Logic
                           safeArea.includes(q) ||
                           safeKeywords.includes(q);
     
-    let matchesDate = true; 
-    if (filterDate) {
-        const filterTime = new Date(filterDate).getTime();
-        const mainDate = course.start_date ? new Date(course.start_date).getTime() : 0;
-        let hasEventAfter = mainDate >= filterTime;
-        if (Array.isArray(course.course_events) && course.course_events.length > 0) {
-            hasEventAfter = course.course_events.some(ev => new Date(ev.start_date).getTime() >= filterTime);
+    // Date filter: Von-Bis Bereich
+    // Kurse MIT Datum im Zeitraum werden angezeigt
+    // Kurse OHNE Datum werden auch angezeigt (könnten im Zeitraum liegen)
+    let matchesDate = true;
+    if (filterDateFrom || filterDateTo) {
+        const fromTime = filterDateFrom ? new Date(filterDateFrom).getTime() : 0;
+        const toTime = filterDateTo ? new Date(filterDateTo).getTime() : Infinity;
+
+        // Hole alle relevanten Daten des Kurses
+        const courseDates = [];
+        if (course.start_date) courseDates.push(new Date(course.start_date).getTime());
+        if (Array.isArray(course.course_events)) {
+            course.course_events.forEach(ev => {
+                if (ev.start_date) courseDates.push(new Date(ev.start_date).getTime());
+            });
         }
-        matchesDate = hasEventAfter;
+
+        // Kurs hat keine Daten -> wird angezeigt (könnte im Zeitraum sein)
+        if (courseDates.length === 0) {
+            matchesDate = true;
+        } else {
+            // Kurs hat mindestens ein Datum im Zeitraum
+            matchesDate = courseDates.some(d => d >= fromTime && d <= toTime);
+        }
     }
-    
+
     let matchesPrice = true; if (filterPriceMax) matchesPrice = (course.price || 0) <= Number(filterPriceMax);
     let matchesLevel = true; if (filterLevel !== 'All') matchesLevel = course.level === filterLevel;
     let matchesPro = true; if (filterPro) matchesPro = course.is_pro === true;
     let matchesLanguage = true; if (selectedLanguage) matchesLanguage = course.language === selectedLanguage;
-    
-    return matchesType && matchesArea && matchesSpecialty && matchesAge && matchesCategory && matchesLocation && matchesSearch && matchesDate && matchesPrice && matchesLevel && matchesPro && matchesLanguage;
+
+    return matchesType && matchesArea && matchesSpecialty && matchesCategory && matchesLocation && matchesSearch && matchesDate && matchesPrice && matchesLevel && matchesPro && matchesLanguage;
   });
   
 // --- EFFECT HOOKS ---
@@ -1012,16 +1023,14 @@ useEffect(() => {
   const typeParam = query.get('type');
   const areaParam = query.get('area');
   const specParam = query.get('spec');
-  const ageParam = query.get('age');
   const levelParam = query.get('level');
 
-  if (qParam || locParam || typeParam || areaParam || specParam || ageParam || levelParam) {
+  if (qParam || locParam || typeParam || areaParam || specParam || levelParam) {
     if (qParam) setSearchQuery(qParam);
     if (locParam) setSelectedLocations([locParam]);
     if (typeParam) setSearchType(typeParam);
     if (areaParam) setSearchArea(areaParam);
     if (specParam) setSearchSpecialty(specParam);
-    if (ageParam) setSearchAge(ageParam);
     if (levelParam) setFilterLevel(levelParam);
 
     // Only switch view if not already on a specific detail/landing page
@@ -1106,7 +1115,7 @@ useEffect(() => {
       {view === 'landing-kids' && ( <LandingView title={t.landing_kids_title} subtitle={t.landing_kids_sub} variant="kids" searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearchSubmit={handleSearchSubmit} setSelectedCatPath={setSelectedCatPath} setView={setView} t={t} getCatLabel={getCatLabel} /> )}
 
       {view === 'search' && (
-          <SearchPageView courses={courses} searchQuery={searchQuery} setSearchQuery={setSearchQuery} searchType={searchType} setSearchType={setSearchType} searchArea={searchArea} setSearchArea={setSearchArea} searchSpecialty={searchSpecialty} setSearchSpecialty={setSearchSpecialty} searchAge={searchAge} setSearchAge={setSearchAge} locMode={locMode} setLocMode={setLocMode} selectedLocations={selectedLocations} setSelectedLocations={setSelectedLocations} locMenuOpen={locMenuOpen} setLocMenuOpen={setLocMenuOpen} locMenuRef={locMenuRef} loading={loading} filteredCourses={filteredCourses} setSelectedCourse={setSelectedCourse} setView={setView} t={t} getCatLabel={getCatLabel} filterDate={filterDate} setFilterDate={setFilterDate} filterPriceMax={filterPriceMax} setFilterPriceMax={setFilterPriceMax} filterLevel={filterLevel} setFilterLevel={setFilterLevel} filterPro={filterPro} setFilterPro={setFilterPro} selectedLanguage={selectedLanguage} setSelectedLanguage={setSelectedLanguage} langMenuOpen={langMenuOpen} setLangMenuOpen={setLangMenuOpen} langMenuRef={langMenuRef} savedCourseIds={savedCourseIds} onToggleSaveCourse={toggleSaveCourse} />
+          <SearchPageView courses={courses} searchQuery={searchQuery} setSearchQuery={setSearchQuery} searchType={searchType} setSearchType={setSearchType} searchArea={searchArea} setSearchArea={setSearchArea} searchSpecialty={searchSpecialty} setSearchSpecialty={setSearchSpecialty} locMode={locMode} setLocMode={setLocMode} selectedLocations={selectedLocations} setSelectedLocations={setSelectedLocations} locMenuOpen={locMenuOpen} setLocMenuOpen={setLocMenuOpen} locMenuRef={locMenuRef} loading={loading} filteredCourses={filteredCourses} setSelectedCourse={setSelectedCourse} setView={setView} t={t} getCatLabel={getCatLabel} filterDateFrom={filterDateFrom} setFilterDateFrom={setFilterDateFrom} filterDateTo={filterDateTo} setFilterDateTo={setFilterDateTo} filterPriceMax={filterPriceMax} setFilterPriceMax={setFilterPriceMax} filterLevel={filterLevel} setFilterLevel={setFilterLevel} filterPro={filterPro} setFilterPro={setFilterPro} selectedLanguage={selectedLanguage} setSelectedLanguage={setSelectedLanguage} langMenuOpen={langMenuOpen} setLangMenuOpen={setLangMenuOpen} langMenuRef={langMenuRef} savedCourseIds={savedCourseIds} onToggleSaveCourse={toggleSaveCourse} />
       )}
 
             {view === 'category-location' && (
