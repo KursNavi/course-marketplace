@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ChevronRight, ChevronDown, Plus, Trash2, Edit2, Save, X, Loader, AlertTriangle, FolderTree } from 'lucide-react';
 import { invalidateTaxonomyCache } from '../hooks/useTaxonomy';
 
@@ -25,10 +25,22 @@ const AdminCategoryManager = ({ showNotification }) => {
     const [deleteModal, setDeleteModal] = useState(null); // { entity, id, name, courseCount, reassignOptions }
     const [reassignTo, setReassignTo] = useState('');
 
+    // Refs for input focus
+    const specialtyInputRef = useRef(null);
+    const areaInputRef = useRef(null);
+    const typeInputRef = useRef(null);
+
     // Load taxonomy data
     useEffect(() => {
         loadTaxonomy();
     }, []);
+
+    // Maintain focus on input fields during typing
+    useEffect(() => {
+        if (addingTo?.entity === 'specialty' && specialtyInputRef.current) {
+            specialtyInputRef.current.focus();
+        }
+    }, [newItemData.name, addingTo]);
 
     const loadTaxonomy = async () => {
         setLoading(true);
@@ -413,6 +425,7 @@ const AdminCategoryManager = ({ showNotification }) => {
                                             <div className="bg-green-50 p-3 ml-8 border-l-2 border-green-300">
                                                 <div className="flex gap-2">
                                                     <input
+                                                        ref={specialtyInputRef}
                                                         placeholder="Name des Spezialgebiets"
                                                         value={newItemData.name}
                                                         onChange={(e) => setNewItemData(prev => ({ ...prev, name: e.target.value }))}
