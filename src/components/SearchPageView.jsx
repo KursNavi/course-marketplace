@@ -25,9 +25,9 @@ const SearchPageView = ({
         // Build dynamic title and description
         const typeLabel = searchType ? (CATEGORY_TYPES?.[searchType]?.de || searchType) : 'Alle Kurse';
 
-        // ✅ Crash-sicher: areas kann undefined sein, label ist ein Objekt (de/en/...)
+        // ✅ Crash-sicher: label ist ein Objekt (de/en/...)
         const areaLabel = searchArea
-            ? (NEW_TAXONOMY?.[searchType]?.areas?.[searchArea]?.label?.de || searchArea)
+            ? (NEW_TAXONOMY?.[searchType]?.[searchArea]?.label?.de || searchArea)
             : '';
 
         const locationLabel = selectedLocations.length > 0 ? selectedLocations[0] : 'Schweiz';
@@ -168,12 +168,12 @@ const SearchPageView = ({
 
         if (scope === 'area') {
             // 1) Wenn ein Typ gewählt ist: dort zuerst suchen
-            const direct = NEW_TAXONOMY?.[searchType]?.areas?.[key]?.label?.de;
+            const direct = NEW_TAXONOMY?.[searchType]?.[key]?.label?.de;
             if (direct) return direct;
 
             // 2) Sonst: in allen Typen suchen
             for (const typeKey of Object.keys(NEW_TAXONOMY || {})) {
-                const lbl = NEW_TAXONOMY?.[typeKey]?.areas?.[key]?.label?.de;
+                const lbl = NEW_TAXONOMY?.[typeKey]?.[key]?.label?.de;
                 if (lbl) return lbl;
             }
             return key;
