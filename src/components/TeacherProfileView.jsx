@@ -18,9 +18,23 @@ const TeacherProfileView = ({ teacher, courses, setView, setSelectedCourse, t })
                         </div>
                         <h1 className="text-2xl font-bold text-dark">{teacher.full_name}</h1>
                         <p className="text-gray-500 text-sm mb-2">{teacher.city}, {teacher.canton}</p>
-                        {teacher.additional_locations && (
-                            <p className="text-gray-400 text-xs mb-4">Weitere Standorte: {teacher.additional_locations}</p>
-                        )}
+                        {teacher.additional_locations && (() => {
+                            let locations = [];
+                            try {
+                                const parsed = JSON.parse(teacher.additional_locations);
+                                if (Array.isArray(parsed)) locations = parsed;
+                            } catch {
+                                // Legacy comma string
+                                locations = teacher.additional_locations.split(',').map(s => ({ city: s.trim(), canton: '' }));
+                            }
+                            const filtered = locations.filter(l => l.city);
+                            if (filtered.length === 0) return null;
+                            return (
+                                <p className="text-gray-400 text-xs mb-4">
+                                    Weitere Standorte: {filtered.map(l => l.canton ? `${l.city} (${l.canton})` : l.city).join(', ')}
+                                </p>
+                            );
+                        })()}
                         {teacher.is_professional && (
                             <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-bold inline-flex items-center">
                                 <CheckCircle className="w-3 h-3 mr-1" /> Professional

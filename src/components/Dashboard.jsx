@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
     Loader, Settings, Save, Lock, CheckCircle, XCircle, Clock,
-    ChevronDown, User, DollarSign, PenTool, Trash2, ArrowRight,
+    ChevronDown, User, DollarSign, PenTool, Trash2, ArrowRight, Plus, MapPin,
     Crown, BarChart3, Bold, Italic, Underline, Heading2, Heading3, List,
     CreditCard, Check, Shield, ExternalLink, Mail
 } from 'lucide-react';
@@ -35,8 +35,9 @@ const UserProfileSection = ({ user, showNotification, setLang, t }) => {
     
     const [formData, setFormData] = useState({
         full_name: '', city: '', canton: '', bio_text: '', certificates: '', preferred_language: 'de', email: user.email, password: '', confirmPassword: '',
-        additional_locations: '', website_url: '', contact_email: ''
+        website_url: '', contact_email: ''
     });
+    const [additionalLocations, setAdditionalLocations] = useState([]);
 
     // Load existing profile data on mount
     useEffect(() => {
@@ -68,10 +69,20 @@ const UserProfileSection = ({ user, showNotification, setLang, t }) => {
                     bio_text: data.bio_text || '',
                     certificates: Array.isArray(data.certificates) ? data.certificates.join('\n') : '',
                     preferred_language: data.preferred_language || 'de',
-                    additional_locations: data.additional_locations || '',
                     website_url: data.website_url || '',
                     contact_email: data.contact_email || ''
                 }));
+                // Parse additional_locations (JSON array or legacy comma string)
+                if (data.additional_locations) {
+                    try {
+                        const parsed = JSON.parse(data.additional_locations);
+                        if (Array.isArray(parsed)) setAdditionalLocations(parsed);
+                    } catch {
+                        // Legacy: comma-separated string -> convert to structured format
+                        const items = data.additional_locations.split(',').map(s => s.trim()).filter(Boolean);
+                        setAdditionalLocations(items.map(city => ({ city, canton: '' })));
+                    }
+                }
                 setVerificationStatus(data.verification_status || 'none');
             }
         })();
@@ -105,7 +116,8 @@ const UserProfileSection = ({ user, showNotification, setLang, t }) => {
                 formattedUrl = `https://${formattedUrl}`;
             }
 
-            profileUpdates.additional_locations = formData.additional_locations;
+            const validLocations = additionalLocations.filter(loc => loc.city.trim());
+            profileUpdates.additional_locations = validLocations.length > 0 ? JSON.stringify(validLocations) : '';
             profileUpdates.website_url = formattedUrl;
             profileUpdates.contact_email = formData.contact_email;
             profileUpdates.bio_text = formData.bio_text;
@@ -203,7 +215,60 @@ const UserProfileSection = ({ user, showNotification, setLang, t }) => {
                 </div>
                 {isTeacher && (
                     <>
-                        <div><label className="block text-sm font-bold text-gray-700 mb-1">{t?.lbl_additional_locations || "Weitere Standorte"}</label><input type="text" name="additional_locations" value={formData.additional_locations || ''} onChange={handleChange} placeholder="z.B. Zürich, Bern, Luzern" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" /><p className="text-xs text-gray-400 mt-1 italic">Tipp: Falls du Kurse an verschiedenen Orten anbietest, liste diese hier auf.</p></div>
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center">
+                                <MapPin className="w-4 h-4 mr-1 text-gray-400" />
+                                {t?.lbl_additional_locations || "Weitere Standorte"}
+                            </label>
+                            <div className="space-y-2">
+                                {additionalLocations.map((loc, idx) => (
+                                    <div key={idx} className="flex items-center gap-2">
+                                        <input
+                                            type="text"
+                                            value={loc.city}
+                                            onChange={(e) => {
+                                                const updated = [...additionalLocations];
+                                                updated[idx] = { ...updated[idx], city: e.target.value };
+                                                setAdditionalLocations(updated);
+                                            }}
+                                            placeholder="Stadt / Ort"
+                                            className="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none"
+                                        />
+                                        <div className="relative">
+                                            <select
+                                                value={loc.canton}
+                                                onChange={(e) => {
+                                                    const updated = [...additionalLocations];
+                                                    updated[idx] = { ...updated[idx], canton: e.target.value };
+                                                    setAdditionalLocations(updated);
+                                                }}
+                                                className="w-40 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none appearance-none bg-white"
+                                            >
+                                                <option value="">Kanton</option>
+                                                {SWISS_CANTONS.map(c => <option key={c} value={c}>{c}</option>)}
+                                            </select>
+                                            <ChevronDown className="absolute right-3 top-3 text-gray-400 w-4 h-4 pointer-events-none" />
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => setAdditionalLocations(additionalLocations.filter((_, i) => i !== idx))}
+                                            className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                                            title="Standort entfernen"
+                                        >
+                                            <XCircle className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setAdditionalLocations([...additionalLocations, { city: '', canton: '' }])}
+                                className="mt-2 text-sm font-bold text-primary hover:text-orange-600 flex items-center gap-1 transition"
+                            >
+                                <Plus className="w-4 h-4" /> Standort hinzufügen
+                            </button>
+                            <p className="text-xs text-gray-400 mt-1 italic">Tipp: Falls du Kurse an verschiedenen Orten anbietest, liste diese hier auf.</p>
+                        </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
                             <div>
