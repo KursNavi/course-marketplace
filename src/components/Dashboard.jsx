@@ -34,7 +34,7 @@ const UserProfileSection = ({ user, showNotification, setLang, t }) => {
 
     
     const [formData, setFormData] = useState({
-        city: '', canton: '', bio_text: '', certificates: '', preferred_language: 'de', email: user.email, password: '', confirmPassword: '',
+        full_name: '', city: '', canton: '', bio_text: '', certificates: '', preferred_language: 'de', email: user.email, password: '', confirmPassword: '',
         additional_locations: '', website_url: '', contact_email: ''
     });
 
@@ -47,7 +47,7 @@ const UserProfileSection = ({ user, showNotification, setLang, t }) => {
         (async () => {
             const { data, error } = await supabase
                 .from('profiles')
-                .select('city, canton, bio_text, certificates, preferred_language, additional_locations, website_url, contact_email, verification_status')
+                .select('full_name, city, canton, bio_text, certificates, preferred_language, additional_locations, website_url, contact_email, verification_status')
                 .eq('id', uid)
                 .single();
 
@@ -62,6 +62,7 @@ const UserProfileSection = ({ user, showNotification, setLang, t }) => {
             if (data) {
                 setFormData(prev => ({
                     ...prev,
+                    full_name: data.full_name || '',
                     city: data.city || '',
                     canton: data.canton || '',
                     bio_text: data.bio_text || '',
@@ -85,6 +86,7 @@ const UserProfileSection = ({ user, showNotification, setLang, t }) => {
         
           // UPDATE: Profile fields (Students vs. Teacher)
         const profileUpdates = {
+            full_name: formData.full_name,
             city: formData.city,
             canton: formData.canton,
             preferred_language: formData.preferred_language
@@ -190,6 +192,11 @@ const UserProfileSection = ({ user, showNotification, setLang, t }) => {
     <div className="bg-white p-6 md:p-8 rounded-xl border border-gray-200 shadow-sm animate-in fade-in">
         <h2 className="text-xl font-bold mb-6 text-dark flex items-center"><Settings className="w-5 h-5 mr-2 text-gray-500" /> {t?.profile_settings || "Profil-Einstellungen"}</h2>
             <form onSubmit={handleSave} className="space-y-6 w-full max-w-none">
+                <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-1">{isTeacher ? "Anbieter- / Anzeigename" : "Name"}</label>
+                    <input type="text" name="full_name" value={formData.full_name} onChange={handleChange} placeholder="z.B. Max Mustermann oder Firma GmbH" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+                    {isTeacher && <p className="text-xs text-gray-400 mt-1 italic">Dieser Name wird auf deinem Profil und bei deinen Kursen angezeigt.</p>}
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div><label className="block text-sm font-bold text-gray-700 mb-1">{isTeacher ? (t?.lbl_main_location || "Hauptstandort") : "Standort"}</label><input type="text" name="city" value={formData.city} onChange={handleChange} placeholder="" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" /></div>
                     <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_canton}</label><div className="relative"><select name="canton" value={formData.canton} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none appearance-none bg-white"><option value="">Kanton wählen</option>{SWISS_CANTONS.map(c => <option key={c} value={c}>{c}</option>)}</select><ChevronDown className="absolute right-3 top-3 text-gray-400 w-4 h-4 pointer-events-none" /></div></div>

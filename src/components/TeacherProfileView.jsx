@@ -17,7 +17,10 @@ const TeacherProfileView = ({ teacher, courses, setView, setSelectedCourse, t })
                             {teacher.full_name?.charAt(0)}
                         </div>
                         <h1 className="text-2xl font-bold text-dark">{teacher.full_name}</h1>
-                        <p className="text-gray-500 text-sm mb-4">{teacher.city}, {teacher.canton}</p>
+                        <p className="text-gray-500 text-sm mb-2">{teacher.city}, {teacher.canton}</p>
+                        {teacher.additional_locations && (
+                            <p className="text-gray-400 text-xs mb-4">Weitere Standorte: {teacher.additional_locations}</p>
+                        )}
                         {teacher.is_professional && (
                             <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-bold inline-flex items-center">
                                 <CheckCircle className="w-3 h-3 mr-1" /> Professional
