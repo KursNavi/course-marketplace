@@ -749,7 +749,9 @@ export default function KursNaviPro() {  // 1. Initial State Logic
         }
         
         if (locMode === 'canton') {
-            matchesLocation = selectedLocations.some(selLoc => courseLocations.includes(selLoc));
+            // Online courses are available everywhere - show them when any canton is selected
+            const isOnlineCourse = courseLocations.includes('Online');
+            matchesLocation = isOnlineCourse || selectedLocations.some(selLoc => courseLocations.includes(selLoc));
         } else {
             const address = (course.address || "").toString().toLowerCase();
             const canton = (course.canton || "").toString().toLowerCase();
