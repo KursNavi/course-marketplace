@@ -129,11 +129,13 @@ export default function KursNaviPro() {  // 1. Initial State Logic
   const [, setSession] = useState(null);
   
   // App Data State
-  const [courses, setCourses] = useState([]); 
+  const [courses, setCourses] = useState([]);
     const coursesRef = useRef([]);
-  
+    const coursesLoadedRef = useRef(false);
+
   useEffect(() => {
     coursesRef.current = courses;
+    if (courses.length > 0) coursesLoadedRef.current = true;
   }, [courses]);
   const [myBookings, setMyBookings] = useState([]); 
   const [savedCourses, setSavedCourses] = useState([]);
@@ -852,6 +854,14 @@ export default function KursNaviPro() {  // 1. Initial State Logic
           console.log('✅ Setting selectedCourse and view=detail');
           setSelectedCourse(found);
           setView('detail');
+          return;
+        }
+
+        // Kurs nicht gefunden - aber nur redirect wenn Kurse bereits geladen wurden
+        // (sonst Race Condition bei Ctrl+Click / neuem Tab)
+        if (!coursesLoadedRef.current) {
+          console.log('⏳ Courses not loaded yet, waiting...');
+          setView('detail'); // Temporär detail setzen, wird nach Laden korrigiert
           return;
         }
 
