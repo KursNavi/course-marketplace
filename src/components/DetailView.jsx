@@ -502,9 +502,6 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
                         <span className="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold shadow-sm flex items-center">
                             <MapPin className="w-3 h-3 mr-1 text-primary"/> {course.canton}
                         </span>
-                        {course.booking_type === 'lead' && (
-                            <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-bold shadow-sm">Preis auf Anfrage</span>
-                        )}
                     </div>
                 </div>
 
