@@ -1,5 +1,6 @@
 import React from 'react';
 import { ArrowLeft, CheckCircle, Shield } from 'lucide-react';
+import { formatPriceCHF } from '../lib/formatPrice';
 
 const TeacherProfileView = ({ teacher, courses, setView, setSelectedCourse, t }) => {
     const teacherCourses = courses.filter(c => c.user_id === teacher.id);
@@ -94,7 +95,7 @@ const TeacherProfileView = ({ teacher, courses, setView, setSelectedCourse, t })
                                     <img src={course.image_url} className="w-full h-32 object-cover" />
                                     <div className="p-4">
                                         <h3 className="font-bold text-sm line-clamp-1">{course.title}</h3>
-                                        <p className="text-primary font-bold text-sm mt-2">CHF {course.price}</p>
+                                        <p className="text-primary font-bold text-sm mt-2">CHF {formatPriceCHF(course.price)}</p>
                                     </div>
                                 </div>
                             ))}

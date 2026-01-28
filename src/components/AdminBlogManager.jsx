@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { formatPriceCHF } from '../lib/formatPrice';
 // Safe Mode: Wir definieren Listen lokal, um Abstürze zu verhindern.
 import { Save, Trash2, Edit, Plus, ArrowLeft, Bold, Search, Link as LinkIcon, X, Layout, Filter } from 'lucide-react';
 
@@ -236,7 +237,7 @@ export default function AdminBlogManager({ showNotification, setView, courses })
                         onChange={(e) => updateRelated('course_id', e.target.value)}
                     >
                         <option value="">-- Keinen Kurs anzeigen --</option>
-                        {(courses || []).map(c => <option key={c.id} value={c.id}>{c.title} ({c.price} CHF)</option>)}
+                        {(courses || []).map(c => <option key={c.id} value={c.id}>{c.title} ({formatPriceCHF(c.price)} CHF)</option>)}
                     </select>
                     <p className="text-xs text-gray-500 mt-1">Zeigt eine Kurskarte in der Sidebar an.</p>
                 </div>

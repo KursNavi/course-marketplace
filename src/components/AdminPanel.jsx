@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Lock, Loader, Shield, CheckCircle, Eye, ExternalLink, FileText, FolderTree } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { PLANS } from '../lib/plans';
+import { formatPriceCHF } from '../lib/formatPrice';
 import AdminCategoryManager from './AdminCategoryManager';
 
 const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView }) => {
@@ -385,7 +386,7 @@ const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView }) => 
                                         <tr key={course.id} className="hover:bg-gray-50">
                                             <td className="px-6 py-4 font-bold">{course.title}</td>
                                             <td className="px-6 py-4 text-gray-500">{course.instructor_name}</td>
-                                            <td className="px-6 py-4">CHF {course.price}</td>
+                                            <td className="px-6 py-4">CHF {formatPriceCHF(course.price)}</td>
                                             <td className="px-6 py-4 text-sm text-gray-500">{new Date(course.created_at).toLocaleDateString()}</td>
                                             <td className="px-6 py-4 text-right">
                                                 <button className="text-blue-500 hover:underline text-sm mr-3">Edit</button>

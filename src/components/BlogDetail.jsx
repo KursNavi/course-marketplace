@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { Calendar, User, ArrowLeft, ArrowRight, MapPin, Search } from 'lucide-react';
+import { formatPriceCHF } from '../lib/formatPrice';
 
 export default function BlogDetail({ article, setView, courses }) {
   useEffect(() => {
@@ -170,7 +171,7 @@ export default function BlogDetail({ article, setView, courses }) {
                                         <div className="text-xs font-bold text-primary uppercase mb-1">Empfohlener Kurs</div>
                                         <h4 className="text-xl font-bold text-dark mb-2">{linkedCourse.title}</h4>
                                         <div className="flex items-center justify-center sm:justify-start text-gray-500 text-sm mb-4">
-                                            <MapPin className="w-4 h-4 mr-1" /> {linkedCourse.canton} | CHF {linkedCourse.price}
+                                            <MapPin className="w-4 h-4 mr-1" /> {linkedCourse.canton} | CHF {formatPriceCHF(linkedCourse.price)}
                                         </div>
                                         <button 
                                             onClick={() => window.location.href = `/courses/topic/loc/${linkedCourse.id}`} 

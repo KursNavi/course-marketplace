@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, User, MapPin, Clock, CheckCircle, Calendar, Shield, ExternalLink, Mail, X, Send, Map, Info, Loader, Bookmark, BookmarkCheck } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { formatPriceCHF } from '../lib/formatPrice';
 
 const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, savedCourseIds, onToggleSaveCourse, showNotification }) => {
     const [showLeadModal, setShowLeadModal] = useState(false);
@@ -20,7 +21,7 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
         if (type === 'lead' && price === 0) return 'Preis auf Anfrage';
         if (type === 'external' && price === 0) return 'Siehe Webseite';
         if (price === 0) return 'Kostenlos';
-        return `CHF ${price}`;
+        return `CHF ${formatPriceCHF(price)}`;
     };
 
     // --- SECURITY: XSS Protection & Parsing ---

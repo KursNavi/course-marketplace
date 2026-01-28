@@ -3,6 +3,7 @@ import { Search, ChevronRight, User, X, Calendar, Shield, MapPin, CheckCircle, L
 import { LocationDropdown, LanguageDropdown } from './Filters';
 import { Globe } from 'lucide-react';
 import { CATEGORY_TYPES, NEW_TAXONOMY, AGE_GROUPS, COURSE_LEVELS } from '../lib/constants';
+import { formatPriceCHF } from '../lib/formatPrice';
 
 const SearchPageView = ({
     courses,
@@ -217,7 +218,7 @@ const SearchPageView = ({
         if (type === 'lead' && price === 0) return 'Preis auf Anfrage';
         if (type === 'external' && price === 0) return 'Siehe Webseite';
         if (price === 0) return 'Kostenlos';
-        return `${t.currency} ${price}`;
+        return `${t.currency} ${formatPriceCHF(price)}`;
     };
 
     // --- HELPER: Check if course is sold out (all events full) ---

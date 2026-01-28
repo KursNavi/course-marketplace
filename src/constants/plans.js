@@ -96,7 +96,7 @@ export const PLANS = [
   {
     id: "enterprise",
     title: "Enterprise",
-    priceText: "1490 CHF",
+    priceText: "1'490 CHF",
     periodText: "/Jahr",
     accent: "orange",
     badgeText: null,

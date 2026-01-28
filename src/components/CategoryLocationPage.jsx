@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { MapPin, TrendingUp, Clock, Award, ChevronRight, Bookmark, BookmarkCheck } from 'lucide-react';
 import { NEW_TAXONOMY, CATEGORY_TYPES } from '../lib/constants';
+import { formatPriceCHF } from '../lib/formatPrice';
 
 /**
  * Programmatic SEO Landing Page for Topic/Location combinations
@@ -85,7 +86,7 @@ export default function CategoryLocationPage({
     useEffect(() => {
         const pageTitle = `${topicLabel} in ${location} - ${stats.totalCourses} Kurse vergleichen | KursNavi`;
         const pageDescription = stats.totalCourses > 0
-            ? `${stats.totalCourses} ${topicLabel}-Kurse in ${location} ab CHF ${stats.avgPrice}. Vergleiche ${stats.providers} Anbieter und buche direkt online.`
+            ? `${stats.totalCourses} ${topicLabel}-Kurse in ${location} ab CHF ${formatPriceCHF(stats.avgPrice)}. Vergleiche ${stats.providers} Anbieter und buche direkt online.`
             : `Finde ${topicLabel}-Kurse in ${location}. Vergleiche Anbieter, Preise und Termine auf KursNavi.`;
 
         document.title = pageTitle;
@@ -208,7 +209,7 @@ export default function CategoryLocationPage({
         if (type === 'lead' && price === 0) return 'Preis auf Anfrage';
         if (type === 'external' && price === 0) return 'Siehe Webseite';
         if (price === 0) return 'Kostenlos';
-        return `CHF ${price}`;
+        return `CHF ${formatPriceCHF(price)}`;
     };
 
     const fallbackImage = "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=1200";
@@ -265,7 +266,7 @@ export default function CategoryLocationPage({
                                     <Clock className="w-5 h-5 text-primary mr-2" />
                                     <span className="text-gray-500 text-sm">Ø Preis</span>
                                 </div>
-                                <div className="text-3xl font-bold text-dark">CHF {stats.avgPrice}</div>
+                                <div className="text-3xl font-bold text-dark">CHF {formatPriceCHF(stats.avgPrice)}</div>
                             </div>
 
                             <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">

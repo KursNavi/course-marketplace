@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { 
+import { formatPriceCHF } from '../lib/formatPrice';
+import {
     Loader, Settings, Save, Lock, CheckCircle, XCircle, Clock,
     ChevronDown, User, DollarSign, PenTool, Trash2, ArrowRight, Plus, MapPin,
     Crown, BarChart3, Bold, Italic, Underline, Heading2, Heading3, List,
@@ -495,7 +496,7 @@ const SubscriptionSection = ({ user, currentTier }) => {
     const tiers = PLANS.map(p => ({
         id: p.id,
         name: p.title,
-        price: `${p.priceAnnualCHF} CHF/Jahr`,
+        price: `${formatPriceCHF(p.priceAnnualCHF)} CHF/Jahr`,
         // WICHTIG: Wir behalten das Objekt (nicht nur Text), um 'excluded' zu prüfen
         features: (p.features || []).slice(0, 7),
     }));
@@ -801,7 +802,7 @@ const Dashboard = ({ user, t, setView, courses, teacherEarnings, myBookings, sav
 
                         {/* STATS & LISTS */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                            <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm flex items-center"><div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4"><DollarSign className="text-green-600" /></div><div><p className="text-sm text-gray-500">Einnahmen (Platform)</p><p className="text-2xl font-bold text-dark">CHF {totalPaidOut.toFixed(2)}</p></div></div>
+                            <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm flex items-center"><div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4"><DollarSign className="text-green-600" /></div><div><p className="text-sm text-gray-500">Einnahmen (Platform)</p><p className="text-2xl font-bold text-dark">CHF {formatPriceCHF(totalPaidOut.toFixed(2))}</p></div></div>
                             <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm flex items-center"><div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-4"><User className="text-blue-600" /></div><div><p className="text-sm text-gray-500">Buchungen Total</p><p className="text-2xl font-bold text-dark">{teacherEarnings.length}</p></div></div>
                             <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm flex items-center"><div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mr-4"><Clock className="text-purple-600" /></div><div><p className="text-sm text-gray-500">Aktive Kurse</p><p className="text-2xl font-bold text-dark">{courseCount}</p></div></div>
                         </div>
@@ -812,7 +813,7 @@ const Dashboard = ({ user, t, setView, courses, teacherEarnings, myBookings, sav
                                 <div className="overflow-x-auto">
                                     <table className="w-full text-left">
                                             <thead className="bg-beige border-b border-gray-200"><tr><th className="px-6 py-4 font-semibold text-gray-600">Datum</th><th className="px-6 py-4 font-semibold text-gray-600">Kurs</th><th className="px-6 py-4 font-semibold text-gray-600">Schüler</th><th className="px-6 py-4 font-semibold text-gray-600">Auszahlung (Netto)</th><th className="px-6 py-4 font-semibold text-gray-600">Status</th></tr></thead>
-                                            <tbody className="divide-y divide-gray-100">{teacherEarnings.map(earning => (<tr key={earning.id} className="hover:bg-gray-50"><td className="px-6 py-4 text-sm text-gray-500">{earning.date}</td><td className="px-6 py-4 font-medium text-dark">{earning.courseTitle}</td><td className="px-6 py-4 text-gray-700">{earning.studentName}</td><td className="px-6 py-4 font-bold text-dark">CHF {earning.payout.toFixed(2)}</td><td className="px-6 py-4">{earning.isPaidOut ? <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Bezahlt</span> : <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Offen</span>}</td></tr>))}</tbody>
+                                            <tbody className="divide-y divide-gray-100">{teacherEarnings.map(earning => (<tr key={earning.id} className="hover:bg-gray-50"><td className="px-6 py-4 text-sm text-gray-500">{earning.date}</td><td className="px-6 py-4 font-medium text-dark">{earning.courseTitle}</td><td className="px-6 py-4 text-gray-700">{earning.studentName}</td><td className="px-6 py-4 font-bold text-dark">CHF {formatPriceCHF(earning.payout.toFixed(2))}</td><td className="px-6 py-4">{earning.isPaidOut ? <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Bezahlt</span> : <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Offen</span>}</td></tr>))}</tbody>
                                     </table>
                                 </div>
                              ) : <div className="p-8 text-center text-gray-500">Noch keine Buchungen über die Plattform.</div>}
@@ -832,7 +833,7 @@ const Dashboard = ({ user, t, setView, courses, teacherEarnings, myBookings, sav
                                                             {course.booking_type || 'platform'}
                                                         </span>
                                                     </td>
-                                                    <td className="px-6 py-4 font-medium">CHF {course.price}</td>
+                                                    <td className="px-6 py-4 font-medium">CHF {formatPriceCHF(course.price)}</td>
                                                     <td className="px-6 py-4 flex gap-2">
                                                         <button onClick={() => handleEditCourse(course)} className="text-blue-500 hover:text-blue-700 bg-blue-50 p-2 rounded-full"><PenTool className="w-4 h-4" /></button>
                                                         <button onClick={() => handleDeleteCourse(course.id)} className="text-red-500 hover:text-red-700 bg-red-50 p-2 rounded-full"><Trash2 className="w-4 h-4" /></button>
