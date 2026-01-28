@@ -291,29 +291,18 @@ export default function CategoryLocationPage({
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {filteredCourses.map(course => {
                                 const isSaved = (savedCourseIds || []).includes(course.id);
+                                const slugify = (input) => (input || '').toString().trim().toLowerCase()
+                                    .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
+                                    .replace(/&/g, ' und ').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+                                const coursePath = `/courses/${slugify(course.primary_category || course.category_area || 'kurs')}/${slugify(course.canton || 'schweiz')}/${course.id}-${slugify(course.title || 'detail')}`;
                                 return (
                                     <a
                                         key={course.id}
-                                        href={(() => {
-                                            const slugify = (input) => (input || '').toString().trim().toLowerCase()
-                                                .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
-                                                .replace(/&/g, ' und ').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-                                            const topic = slugify(course.primary_category || course.category_area || 'kurs');
-                                            const loc = slugify(course.canton || 'schweiz');
-                                            const title = slugify(course.title || 'detail');
-                                            return `/courses/${topic}/${loc}/${course.id}-${title}`;
-                                        })()}
+                                        href={coursePath}
                                         onClick={(e) => {
                                             if (e.ctrlKey || e.metaKey) return;
                                             e.preventDefault();
-                                            const slugify = (input) => (input || '').toString().trim().toLowerCase()
-                                                .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
-                                                .replace(/&/g, ' und ').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-                                            const topic = slugify(course.primary_category || course.category_area || 'kurs');
-                                            const loc = slugify(course.canton || 'schweiz');
-                                            const title = slugify(course.title || 'detail');
-                                            const path = `/courses/${topic}/${loc}/${course.id}-${title}`;
-                                            window.history.pushState({ view: 'detail', courseId: course.id }, '', path);
+                                            window.history.pushState({ view: 'detail', courseId: course.id }, '', coursePath);
                                         }}
                                         className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-all cursor-pointer group"
                                         style={{textDecoration: 'none', color: 'inherit'}}
