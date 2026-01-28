@@ -593,11 +593,6 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                     </div>
 
                     <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_prereq} (Voraussetzungen)</label>
-                        <textarea name="prerequisites" defaultValue={initialData?.prerequisites} rows="3" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" placeholder="z.B. Eigener Laptop, Grundkenntnisse in..." />
-                    </div>
-
-                    <div>
                         <label className="block text-sm font-bold text-gray-700 mb-1">Keywords / Suchbegriffe (Optional)</label>
                         <input type="text" name="keywords" defaultValue={initialData?.keywords} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
                     </div>
@@ -747,6 +742,13 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                                 </div>
                             </div>
                         </div>
+
+                        {selectedLevel !== 'beginner' && selectedLevel !== 'all_levels' && (
+                            <div className="mt-4 pt-4 border-t border-orange-200/50">
+                                <span className="text-xs text-gray-500 block mb-1">Voraussetzungen</span>
+                                <textarea name="prerequisites" defaultValue={initialData?.prerequisites} rows="2" className="w-full px-3 py-2 border rounded-lg focus:ring-primary bg-white text-sm" placeholder="z.B. Eigener Laptop, Grundkenntnisse in..." />
+                            </div>
+                        )}
                     </div>
                 </div>
 
