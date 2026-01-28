@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, User, MapPin, Clock, CheckCircle, Calendar, Shield, ExternalLink, Mail, X, Send, Map, Info, Loader, Bookmark, BookmarkCheck } from 'lucide-react';
+import { ArrowLeft, User, MapPin, Clock, CheckCircle, Calendar, Shield, ExternalLink, Mail, X, Send, Map, Info, Loader, Bookmark, BookmarkCheck, ChevronRight } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { formatPriceCHF } from '../lib/formatPrice';
+import { useTaxonomy } from '../hooks/useTaxonomy';
 
 const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, savedCourseIds, onToggleSaveCourse, showNotification }) => {
     const [showLeadModal, setShowLeadModal] = useState(false);
@@ -10,7 +11,50 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
     const [showSavePrompt, setShowSavePrompt] = useState(false);
     const [pendingExternalUrl, setPendingExternalUrl] = useState(null);
 
+    const { taxonomy, getTypeLabel, getAreaLabel } = useTaxonomy();
+
     const isSaved = (savedCourseIds || []).includes(course?.id);
+
+    // Build category breadcrumb path
+    const getCategoryBreadcrumb = () => {
+        if (!course || !taxonomy) return [];
+        const crumbs = [];
+        const lang = 'de';
+
+        // Level 1: Type
+        if (course.category_type) {
+            crumbs.push({
+                label: getTypeLabel(course.category_type, lang),
+                filter: { type: course.category_type }
+            });
+        }
+
+        // Level 2: Area
+        if (course.category_type && course.category_area) {
+            crumbs.push({
+                label: getAreaLabel(course.category_type, course.category_area, lang),
+                filter: { type: course.category_type, area: course.category_area }
+            });
+        }
+
+        // Level 3: Specialty
+        if (course.category_specialty) {
+            crumbs.push({
+                label: course.category_specialty,
+                filter: { type: course.category_type, area: course.category_area, specialty: course.category_specialty }
+            });
+        }
+
+        // Level 4: Focus
+        if (course.category_focus) {
+            crumbs.push({
+                label: course.category_focus,
+                filter: { type: course.category_type, area: course.category_area, specialty: course.category_specialty, focus: course.category_focus }
+            });
+        }
+
+        return crumbs;
+    };
 
     // --- HELPER: Consistent Price Labeling ---
     const getPriceLabel = (c) => {
@@ -561,35 +605,47 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
                             : (Number(course.price) > 0 ? 'Unverbindliche Preisangabe' : '')}
                     </p>
 
-                    <div className="border-t border-gray-100 pt-4 mb-4 space-y-2 text-sm">
+                    <div className="border-t border-gray-100 pt-4 mb-4 space-y-3">
                         <button
                             onClick={async () => {
                                 const { data } = await supabase.from('profiles').select('*').eq('id', course.user_id).single();
                                 if (data) { setSelectedTeacher(data); setView('teacher-profile'); window.scrollTo(0,0); }
                             }}
-                            className="flex items-center text-gray-600 hover:text-primary transition-colors w-full"
+                            className="flex items-center text-gray-700 hover:text-primary transition-colors w-full group"
                         >
-                            <User className="w-4 h-4 mr-2 text-gray-400 shrink-0"/>
-                            <span className="underline decoration-gray-300 hover:decoration-primary truncate">{course.instructor_name}</span>
+                            <User className="w-5 h-5 mr-3 text-gray-400 shrink-0"/>
+                            <span className="font-medium group-hover:underline">{course.instructor_name}</span>
                         </button>
-                        <div className="flex items-center text-gray-600">
-                            <MapPin className="w-4 h-4 mr-2 text-gray-400 shrink-0"/>
-                            <span className="truncate">{course.address || course.city || course.canton}</span>
+                        <div className="flex items-center text-gray-700">
+                            <MapPin className="w-5 h-5 mr-3 text-gray-400 shrink-0"/>
+                            <span>{course.address || course.city || course.canton}</span>
                         </div>
-                        {course.category_area && (
-                            <a
-                                href={`/search?category=${encodeURIComponent(course.category_area)}`}
-                                onClick={(e) => {
-                                    if (e.ctrlKey || e.metaKey) return;
-                                    e.preventDefault();
-                                    window.history.pushState({ view: 'search', category: course.category_area }, '', `/search?category=${encodeURIComponent(course.category_area)}`);
-                                    window.dispatchEvent(new PopStateEvent('popstate'));
-                                }}
-                                className="flex items-center text-gray-600 hover:text-primary transition-colors"
-                            >
-                                <span className="w-4 h-4 mr-2 text-gray-400 shrink-0 flex items-center justify-center text-xs">📚</span>
-                                <span className="underline decoration-gray-300 hover:decoration-primary">{course.category_area.replace(/_/g, ' ')}</span>
-                            </a>
+                        {getCategoryBreadcrumb().length > 0 && (
+                            <div className="flex items-start text-gray-700">
+                                <span className="w-5 h-5 mr-3 text-gray-400 shrink-0 flex items-center justify-center">📚</span>
+                                <div className="flex flex-wrap items-center gap-1">
+                                    {getCategoryBreadcrumb().map((crumb, idx, arr) => (
+                                        <span key={idx} className="flex items-center">
+                                            <a
+                                                href={`/search?${new URLSearchParams(crumb.filter).toString()}`}
+                                                onClick={(e) => {
+                                                    if (e.ctrlKey || e.metaKey) return;
+                                                    e.preventDefault();
+                                                    const params = new URLSearchParams(crumb.filter).toString();
+                                                    window.history.pushState({ view: 'search', ...crumb.filter }, '', `/search?${params}`);
+                                                    window.dispatchEvent(new PopStateEvent('popstate'));
+                                                }}
+                                                className="hover:text-primary hover:underline transition-colors"
+                                            >
+                                                {crumb.label}
+                                            </a>
+                                            {idx < arr.length - 1 && (
+                                                <ChevronRight className="w-3 h-3 mx-1 text-gray-400" />
+                                            )}
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
                         )}
                     </div>
 
