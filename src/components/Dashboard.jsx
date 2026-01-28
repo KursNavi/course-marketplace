@@ -12,7 +12,7 @@ import { KursNaviLogo } from './Layout';
 import { supabase } from '../lib/supabase';
 
 // --- HELPER COMPONENT: User Profile Settings ---
-const UserProfileSection = ({ user, showNotification, setLang, t }) => {
+const UserProfileSection = ({ user, setUser, showNotification, setLang, t }) => {
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [uploadingDoc, setUploadingDoc] = useState(false);
@@ -134,13 +134,33 @@ const UserProfileSection = ({ user, showNotification, setLang, t }) => {
         
         if (error) { showNotification("Error saving profile"); setSaving(false); return; }
 
+        // Update auth metadata with new name
+        if (formData.full_name) {
+            await supabase.auth.updateUser({
+                data: { full_name: formData.full_name }
+            });
+        }
+
+        // For teachers: update instructor_name on all their courses
+        if (isTeacher && formData.full_name) {
+            await supabase
+                .from('courses')
+                .update({ instructor_name: formData.full_name })
+                .eq('user_id', uid);
+        }
+
         if (formData.email !== user.email || formData.password) {
             if (formData.password && formData.password !== formData.confirmPassword) { showNotification("Passwords do not match!"); setSaving(false); return; }
             const updates = {}; if (formData.email !== user.email) updates.email = formData.email; if (formData.password) updates.password = formData.password;
             const { error: authError } = await supabase.auth.updateUser(updates);
             if (authError) { showNotification("Error updating account: " + authError.message); } else { showNotification(t.msg_auth_success); }
         } else { showNotification("Profile saved successfully!"); }
-        
+
+        // Update local user state with new name
+        if (formData.full_name && setUser) {
+            setUser(prev => prev ? { ...prev, name: formData.full_name } : prev);
+        }
+
         setLang(formData.preferred_language); setSaving(false);
     };
 
@@ -580,7 +600,7 @@ const SubscriptionSection = ({ user, currentTier }) => {
 };
 
 // --- MAIN DASHBOARD COMPONENT ---
-const Dashboard = ({ user, t, setView, courses, teacherEarnings, myBookings, savedCourses, savedCourseIds, onToggleSaveCourse, handleDeleteCourse, handleEditCourse, showNotification, changeLanguage, setSelectedCourse }) => {
+const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBookings, savedCourses, savedCourseIds, onToggleSaveCourse, handleDeleteCourse, handleEditCourse, showNotification, changeLanguage, setSelectedCourse }) => {
     const [dashView, setDashView] = useState('overview'); 
     const [userTier, setUserTier] = useState('basic'); // basic, pro, premium, enterprise
     const [showSuccessModal, setShowSuccessModal] = useState(false); // NEW: Success Modal State
@@ -695,7 +715,7 @@ const Dashboard = ({ user, t, setView, courses, teacherEarnings, myBookings, sav
                 
             </div>
 
-            {dashView === 'profile' || dashView === 'settings' ? ( <UserProfileSection user={user} showNotification={showNotification} setLang={changeLanguage} t={t} /> ) : 
+            {dashView === 'profile' || dashView === 'settings' ? ( <UserProfileSection user={user} setUser={setUser} showNotification={showNotification} setLang={changeLanguage} t={t} /> ) : 
              dashView === 'subscription' ? ( <SubscriptionSection user={user} currentTier={userTier} /> ) : (
                 <>
                 {user.role === 'teacher' ? (

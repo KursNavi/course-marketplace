@@ -1003,10 +1003,10 @@ export default function KursNaviPro() {  // 1. Initial State Logic
         syncPendingSavedCourse(session.user.id);
         if (role === 'teacher') fetchTeacherEarnings(session.user.id);
 
-        // Profil-Extras laden (preferred_language, is_professional, plan_tier, role)
+        // Profil-Extras laden (preferred_language, is_professional, plan_tier, role, full_name)
         const { data } = await supabase
           .from('profiles')
-          .select('preferred_language, is_professional, plan_tier, role')
+          .select('preferred_language, is_professional, plan_tier, role, full_name')
           .eq('id', session.user.id)
           .single();
 
@@ -1021,7 +1021,8 @@ export default function KursNaviPro() {  // 1. Initial State Logic
                   ...prev,
                   role: data.role || prev.role, // Update role from profiles table
                   is_professional: data.is_professional,
-                  plan_tier: data.plan_tier || 'basic'
+                  plan_tier: data.plan_tier || 'basic',
+                  name: data.full_name || prev.name // Use profile name if available
                 }
               : prev
           );
@@ -1239,7 +1240,7 @@ useEffect(() => {
       {view === 'admin-blog' && <AdminBlogManager showNotification={showNotification} setView={setView} courses={courses} />}
       {view === 'blog' && <BlogList articles={articles} setView={setView} setSelectedArticle={setSelectedArticle} />}
       {view === 'blog-detail' && <BlogDetail article={selectedArticle} setView={setView} courses={courses} />}
-      {view === 'dashboard' && user && <Dashboard user={user} t={t} setView={setView} courses={courses} teacherEarnings={teacherEarnings} myBookings={myBookings} savedCourses={savedCourses} savedCourseIds={savedCourseIds} onToggleSaveCourse={toggleSaveCourse} handleDeleteCourse={handleDeleteCourse} handleEditCourse={handleEditCourse} showNotification={showNotification} changeLanguage={changeLanguage} setSelectedCourse={setSelectedCourse} />}
+      {view === 'dashboard' && user && <Dashboard user={user} setUser={setUser} t={t} setView={setView} courses={courses} teacherEarnings={teacherEarnings} myBookings={myBookings} savedCourses={savedCourses} savedCourseIds={savedCourseIds} onToggleSaveCourse={toggleSaveCourse} handleDeleteCourse={handleDeleteCourse} handleEditCourse={handleEditCourse} showNotification={showNotification} changeLanguage={changeLanguage} setSelectedCourse={setSelectedCourse} />}
       {view === 'create' && user?.role === 'teacher' && <TeacherForm t={t} setView={setView} user={user} fetchCourses={fetchCourses} showNotification={showNotification} setEditingCourse={setEditingCourse} initialData={editingCourse} />}
       </div>
       
