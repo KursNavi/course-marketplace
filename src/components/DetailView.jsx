@@ -646,10 +646,11 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
                         </div>
                     )}
 
-                    <div className="space-y-3 text-xs text-gray-500 border-t pt-4">
-                        <div className="flex items-center"><Shield className="w-4 h-4 mr-3 text-green-600"/> Verifizierter Anbieter</div>
-                        <div className="flex items-center"><CheckCircle className="w-4 h-4 mr-3 text-blue-600"/> Sichere Abwicklung</div>
-                    </div>
+                    {course.instructor_verified && (
+                        <div className="space-y-3 text-xs text-gray-500 border-t pt-4">
+                            <div className="flex items-center"><Shield className="w-4 h-4 mr-3 text-green-600"/> Verifizierter Anbieter</div>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

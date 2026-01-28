@@ -357,7 +357,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
       if (userIds.length > 0) {
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
-          .select('id, bio_text, certificates, additional_locations, city, canton')
+          .select('id, bio_text, certificates, additional_locations, city, canton, verification_status')
           .in('id', userIds);
 
         if (!profileError && profileData) {
@@ -396,6 +396,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
           instructor_bio: prof?.bio_text,
           instructor_certificates: prof?.certificates,
           additional_locations: prof?.additional_locations,
+          instructor_verified: prof?.verification_status === 'verified',
           all_categories: categoriesMap[c.id] || [], // Add all categories including Zweitkategorien
         };
       });
