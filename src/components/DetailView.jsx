@@ -620,6 +620,12 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
                             <MapPin className="w-5 h-5 mr-3 text-gray-400 shrink-0"/>
                             <span>{course.address || course.city || course.canton}</span>
                         </div>
+                        {course.session_length && (
+                            <div className="flex items-center text-gray-700">
+                                <Clock className="w-5 h-5 mr-3 text-gray-400 shrink-0"/>
+                                <span>{course.session_count ? `${course.session_count}x ` : ''}{course.session_length}</span>
+                            </div>
+                        )}
                         {getCategoryBreadcrumb().length > 0 && (
                             <div className="flex items-start text-gray-700">
                                 <span className="w-5 h-5 mr-3 text-gray-400 shrink-0 flex items-center justify-center">📚</span>
