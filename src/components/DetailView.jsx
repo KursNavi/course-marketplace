@@ -565,15 +565,6 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
                         )}
                     </div>
 
-                    {course.session_length && (
-                        <div className="flex flex-wrap gap-4 text-sm text-gray-600 mb-8 pb-8 border-b border-gray-100">
-                            <span className="flex items-center px-3 py-1.5 -ml-3">
-                                <Clock className="w-4 h-4 mr-2 text-gray-400"/>
-                                {course.session_count ? `${course.session_count}x ` : ''}{course.session_length}
-                            </span>
-                        </div>
-                    )}
-
                     <div className="prose max-w-none text-gray-600 custom-rich-text">
                         <h3 className="text-xl font-bold text-dark mb-4">{t.lbl_description}</h3>
                         {renderDescription(course.description)}
