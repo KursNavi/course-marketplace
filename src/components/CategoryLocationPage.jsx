@@ -292,10 +292,20 @@ export default function CategoryLocationPage({
                             {filteredCourses.map(course => {
                                 const isSaved = (savedCourseIds || []).includes(course.id);
                                 return (
-                                    <div
+                                    <a
                                         key={course.id}
-                                        onClick={() => {
-                                            // SEO-friendly slug generation (matches App.jsx buildCoursePath)
+                                        href={(() => {
+                                            const slugify = (input) => (input || '').toString().trim().toLowerCase()
+                                                .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
+                                                .replace(/&/g, ' und ').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+                                            const topic = slugify(course.primary_category || course.category_area || 'kurs');
+                                            const loc = slugify(course.canton || 'schweiz');
+                                            const title = slugify(course.title || 'detail');
+                                            return `/courses/${topic}/${loc}/${course.id}-${title}`;
+                                        })()}
+                                        onClick={(e) => {
+                                            if (e.ctrlKey || e.metaKey) return;
+                                            e.preventDefault();
                                             const slugify = (input) => (input || '').toString().trim().toLowerCase()
                                                 .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
                                                 .replace(/&/g, ' und ').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
@@ -303,11 +313,10 @@ export default function CategoryLocationPage({
                                             const loc = slugify(course.canton || 'schweiz');
                                             const title = slugify(course.title || 'detail');
                                             const path = `/courses/${topic}/${loc}/${course.id}-${title}`;
-
-                                            // Use SPA navigation - pushState triggers syncFromUrl in App.jsx
                                             window.history.pushState({ view: 'detail', courseId: course.id }, '', path);
                                         }}
                                         className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-all cursor-pointer group"
+                                        style={{textDecoration: 'none', color: 'inherit'}}
                                     >
                                         <div className="h-48 overflow-hidden relative">
                                             <img
@@ -342,7 +351,7 @@ export default function CategoryLocationPage({
                                                 <span className="font-bold text-primary text-lg">{getPriceLabel(course)}</span>
                                             </div>
                                         </div>
-                                    </div>
+                                    </a>
                                 );
                             })}
                         </div>

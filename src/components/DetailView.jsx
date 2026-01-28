@@ -659,14 +659,18 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
                     {relatedCourses.map(rel => (
-                         <div key={rel.id} 
-                              onClick={() => { 
+                         <a key={rel.id}
+                              href={`/courses/${(rel.category_area || 'kurs').toLowerCase().replace(/_/g, '-')}/${(rel.canton || 'schweiz').toLowerCase()}/${rel.id}-${(rel.title || 'detail').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`}
+                              onClick={(e) => {
+                                  if (e.ctrlKey || e.metaKey) return;
+                                  e.preventDefault();
                                   const topicSlug = (rel.category_area || 'kurs').toLowerCase().replace(/_/g, '-');
                                   const locSlug = (rel.canton || 'schweiz').toLowerCase();
                                   const titleSlug = (rel.title || 'detail').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
                                   window.location.href = `/courses/${topicSlug}/${locSlug}/${rel.id}-${titleSlug}`;
-                              }} 
+                              }}
                               className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md cursor-pointer group transition-all"
+                              style={{textDecoration: 'none', color: 'inherit'}}
                          >
                             <div className="h-40 overflow-hidden relative">
                                 <img
@@ -687,7 +691,7 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
                                     <span className="font-bold text-primary">{getPriceLabel(rel)}</span>
                                 </div>
                             </div>
-                         </div>
+                         </a>
                     ))}
                 </div>
             </div>

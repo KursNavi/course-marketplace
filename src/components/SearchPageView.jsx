@@ -360,9 +360,19 @@ const SearchPageView = ({
                  {loading ? <div className="text-center py-20"><Loader className="animate-spin w-10 h-10 text-primary mx-auto" /></div> : filteredCourses.length > 0 ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
                     {sortedCourses.map(course => (
-                      <div key={course.id} onClick={() => {
+                      <a key={course.id} href={(() => {
+                          const slugify = (input) => (input || '').toString().trim().toLowerCase()
+                              .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
+                              .replace(/&/g, ' und ').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+                          const topic = slugify(course.primary_category || course.category_area || 'kurs');
+                          const loc = slugify(course.canton || 'schweiz');
+                          const title = slugify(course.title || 'detail');
+                          return `/courses/${topic}/${loc}/${course.id}-${title}`;
+                      })()} onClick={(e) => {
+                          // Allow Ctrl+Click / Cmd+Click to open in new tab natively
+                          if (e.ctrlKey || e.metaKey) return;
+                          e.preventDefault();
                           console.log('🖱️ Course card clicked:', course.id, course.title);
-                          // SEO-friendly slug generation (matches App.jsx buildCoursePath)
                           const slugify = (input) => (input || '').toString().trim().toLowerCase()
                               .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
                               .replace(/&/g, ' und ').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
@@ -374,7 +384,7 @@ const SearchPageView = ({
                           console.log('🔗 Generated path:', path);
                           // Use SPA navigation - pushState triggers syncFromUrl in App.jsx
                           window.history.pushState({ view: 'detail', courseId: course.id }, '', path);
-                      }} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer group">
+                      }} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer group" style={{textDecoration: 'none', color: 'inherit'}}>
                         <div className="relative h-48 overflow-hidden">
                             <img
                                 src={course.image_url}
@@ -428,7 +438,7 @@ const SearchPageView = ({
                                 </span>
                             </div>
                         </div>
-                      </div>
+                      </a>
                     ))}
                   </div>
                 ) : (
