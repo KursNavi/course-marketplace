@@ -521,28 +521,14 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
                         )}
                     </div>
 
-                    <div className="flex flex-wrap gap-4 text-sm text-gray-600 mb-8 pb-8 border-b border-gray-100">
-                        <button 
-                            onClick={async () => {
-                                const { data } = await supabase.from('profiles').select('*').eq('id', course.user_id).single();
-                                if (data) { setSelectedTeacher(data); setView('teacher-profile'); window.scrollTo(0,0); }
-                            }}
-                            className="flex items-center hover:bg-orange-50 px-3 py-1.5 rounded-lg -ml-3 transition-colors cursor-pointer"
-                        >
-                            <User className="w-4 h-4 mr-2 text-gray-400"/> 
-                            <span className="underline decoration-gray-300 hover:decoration-primary">{course.instructor_name}</span>
-                        </button>
-                        <span className="flex items-center px-3 py-1.5">
-                            <MapPin className="w-4 h-4 mr-2 text-gray-400"/> 
-                            {course.address || course.city || course.canton}
-                        </span>
-                        {course.session_length && (
-                            <span className="flex items-center px-3 py-1.5">
+                    {course.session_length && (
+                        <div className="flex flex-wrap gap-4 text-sm text-gray-600 mb-8 pb-8 border-b border-gray-100">
+                            <span className="flex items-center px-3 py-1.5 -ml-3">
                                 <Clock className="w-4 h-4 mr-2 text-gray-400"/>
                                 {course.session_count ? `${course.session_count}x ` : ''}{course.session_length}
                             </span>
-                        )}
-                    </div>
+                        </div>
+                    )}
 
                     <div className="prose max-w-none text-gray-600 custom-rich-text">
                         <h3 className="text-xl font-bold text-dark mb-4">{t.lbl_description}</h3>
@@ -574,6 +560,38 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
                             ? 'pro Person inkl. MwSt.'
                             : (Number(course.price) > 0 ? 'Unverbindliche Preisangabe' : '')}
                     </p>
+
+                    <div className="border-t border-gray-100 pt-4 mb-4 space-y-2 text-sm">
+                        <button
+                            onClick={async () => {
+                                const { data } = await supabase.from('profiles').select('*').eq('id', course.user_id).single();
+                                if (data) { setSelectedTeacher(data); setView('teacher-profile'); window.scrollTo(0,0); }
+                            }}
+                            className="flex items-center text-gray-600 hover:text-primary transition-colors w-full"
+                        >
+                            <User className="w-4 h-4 mr-2 text-gray-400 shrink-0"/>
+                            <span className="underline decoration-gray-300 hover:decoration-primary truncate">{course.instructor_name}</span>
+                        </button>
+                        <div className="flex items-center text-gray-600">
+                            <MapPin className="w-4 h-4 mr-2 text-gray-400 shrink-0"/>
+                            <span className="truncate">{course.address || course.city || course.canton}</span>
+                        </div>
+                        {course.category_area && (
+                            <a
+                                href={`/search?category=${encodeURIComponent(course.category_area)}`}
+                                onClick={(e) => {
+                                    if (e.ctrlKey || e.metaKey) return;
+                                    e.preventDefault();
+                                    window.history.pushState({ view: 'search', category: course.category_area }, '', `/search?category=${encodeURIComponent(course.category_area)}`);
+                                    window.dispatchEvent(new PopStateEvent('popstate'));
+                                }}
+                                className="flex items-center text-gray-600 hover:text-primary transition-colors"
+                            >
+                                <span className="w-4 h-4 mr-2 text-gray-400 shrink-0 flex items-center justify-center text-xs">📚</span>
+                                <span className="underline decoration-gray-300 hover:decoration-primary">{course.category_area.replace(/_/g, ' ')}</span>
+                            </a>
+                        )}
+                    </div>
 
                     <button
                         type="button"
