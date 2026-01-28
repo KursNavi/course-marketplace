@@ -11,6 +11,7 @@ const AdminCategoryManager = ({ showNotification }) => {
     const [areas, setAreas] = useState([]);
     const [specialties, setSpecialties] = useState([]);
     const [focuses, setFocuses] = useState([]);
+    const [courseCounts, setCourseCounts] = useState({ types: {}, areas: {}, specialties: {}, focuses: {} });
 
     // UI State
     const [expandedTypes, setExpandedTypes] = useState({});
@@ -60,6 +61,7 @@ const AdminCategoryManager = ({ showNotification }) => {
             setAreas(data.areas || []);
             setSpecialties(data.specialties || []);
             setFocuses(data.focuses || []);
+            setCourseCounts(data.courseCounts || { types: {}, areas: {}, specialties: {}, focuses: {} });
         } catch (err) {
             console.error(err);
             showNotification('Fehler beim Laden der Kategorien');
@@ -355,6 +357,9 @@ const AdminCategoryManager = ({ showNotification }) => {
                                         <EditableField entity="type" id={type.id} field="label_de" value={type.label_de} />
                                     </span>
                                     <span className="text-xs text-gray-400 font-mono">{type.id}</span>
+                                    <span className={`text-xs px-1.5 py-0.5 rounded-full ${courseCounts.types[type.id] ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                                        {courseCounts.types[type.id] || 0} Kurse
+                                    </span>
                                 </div>
                                 <div className="text-xs text-gray-500 flex gap-3 mt-0.5">
                                     <span>EN: <EditableField entity="type" id={type.id} field="label_en" value={type.label_en} /></span>
@@ -423,6 +428,9 @@ const AdminCategoryManager = ({ showNotification }) => {
                                                         <EditableField entity="area" id={area.id} field="label_de" value={area.label_de} />
                                                     </span>
                                                     <span className="text-xs text-gray-400 font-mono">{area.id}</span>
+                                                    <span className={`text-xs px-1.5 py-0.5 rounded-full ${courseCounts.areas[area.id] ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                                                        {courseCounts.areas[area.id] || 0}
+                                                    </span>
                                                 </div>
                                             </div>
                                             <button
@@ -486,6 +494,9 @@ const AdminCategoryManager = ({ showNotification }) => {
                                                                 <span className="flex-1 text-sm text-gray-700">
                                                                     <EditableField entity="specialty" id={spec.id} field="name" value={spec.name} />
                                                                 </span>
+                                                                <span className={`text-xs px-1.5 py-0.5 rounded-full ${courseCounts.specialties[spec.name] ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                                                                    {courseCounts.specialties[spec.name] || 0}
+                                                                </span>
                                                                 {hasFocuses && (
                                                                     <span className="text-xs text-gray-400">{specFocuses.length} Fokus</span>
                                                                 )}
@@ -535,6 +546,9 @@ const AdminCategoryManager = ({ showNotification }) => {
                                                                             <span className="w-1 h-1 bg-purple-300 rounded-full"></span>
                                                                             <span className="flex-1 text-xs text-gray-600">
                                                                                 <EditableField entity="focus" id={f.id} field="name" value={f.name} />
+                                                                            </span>
+                                                                            <span className={`text-xs px-1 py-0.5 rounded ${courseCounts.focuses[f.name] ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'}`}>
+                                                                                {courseCounts.focuses[f.name] || 0}
                                                                             </span>
                                                                             <button
                                                                                 onClick={() => initiateDelete('focus', f.id, f.name)}

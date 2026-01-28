@@ -38,11 +38,59 @@ export default async function handler(req, res) {
             // focuses table may not exist yet — graceful fallback
             const focuses = focusesRes.error ? [] : (focusesRes.data || []);
 
+            // Fetch course counts for all categories
+            const courseCounts = { types: {}, areas: {}, specialties: {}, focuses: {} };
+
+            // Count courses per type
+            const { data: typeCounts } = await supabaseAdmin
+                .from('course_categories')
+                .select('category_type')
+                .not('category_type', 'is', null);
+            if (typeCounts) {
+                typeCounts.forEach(row => {
+                    courseCounts.types[row.category_type] = (courseCounts.types[row.category_type] || 0) + 1;
+                });
+            }
+
+            // Count courses per area
+            const { data: areaCounts } = await supabaseAdmin
+                .from('course_categories')
+                .select('category_area')
+                .not('category_area', 'is', null);
+            if (areaCounts) {
+                areaCounts.forEach(row => {
+                    courseCounts.areas[row.category_area] = (courseCounts.areas[row.category_area] || 0) + 1;
+                });
+            }
+
+            // Count courses per specialty
+            const { data: specialtyCounts } = await supabaseAdmin
+                .from('course_categories')
+                .select('category_specialty')
+                .not('category_specialty', 'is', null);
+            if (specialtyCounts) {
+                specialtyCounts.forEach(row => {
+                    courseCounts.specialties[row.category_specialty] = (courseCounts.specialties[row.category_specialty] || 0) + 1;
+                });
+            }
+
+            // Count courses per focus
+            const { data: focusCounts } = await supabaseAdmin
+                .from('course_categories')
+                .select('category_focus')
+                .not('category_focus', 'is', null);
+            if (focusCounts) {
+                focusCounts.forEach(row => {
+                    courseCounts.focuses[row.category_focus] = (courseCounts.focuses[row.category_focus] || 0) + 1;
+                });
+            }
+
             return res.status(200).json({
                 types: typesRes.data || [],
                 areas: areasRes.data || [],
                 specialties: specialtiesRes.data || [],
-                focuses
+                focuses,
+                courseCounts
             });
         } catch (err) {
             return res.status(500).json({ error: err.message });
