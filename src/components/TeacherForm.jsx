@@ -11,9 +11,24 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
     // Load taxonomy from DB (with fallback to constants.js)
     const { taxonomy, types, getFocuses } = useTaxonomy();
 
+    // Track unsaved changes
+    const [isDirty, setIsDirty] = useState(false);
+
     // Booking & Link State
     const [bookingType, setBookingType] = useState('platform'); // 'platform', 'external', 'lead'
-    const [contactEmail, setContactEmail] = useState(''); 
+    const [contactEmail, setContactEmail] = useState('');
+
+    // Form Field State (controlled inputs to preserve data on validation errors / tab switches)
+    const [title, setTitle] = useState('');
+    const [description, setDescription] = useState('');
+    const [objectives, setObjectives] = useState('');
+    const [keywords, setKeywords] = useState('');
+    const [prerequisites, setPrerequisites] = useState('');
+    const [externalLink, setExternalLink] = useState('');
+    const [price, setPrice] = useState('');
+    const [sessionCount, setSessionCount] = useState('');
+    const [sessionLength, setSessionLength] = useState('');
+    const [providerUrl, setProviderUrl] = useState(''); 
 
     // Taxonomy State (Mehrfach-Kategorien)
     const CATEGORY_ROW_LIMITS = { basic: 1, pro: 3, premium: 3, enterprise: 5, free: 1 };
@@ -42,6 +57,18 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
         // 1. Load Initial Data if editing
         if (initialData) {
             if (initialData.booking_type) setBookingType(initialData.booking_type);
+
+            // Initialize controlled form fields from existing course data
+            if (initialData.title) setTitle(initialData.title);
+            if (initialData.description) setDescription(initialData.description);
+            if (initialData.objectives) setObjectives(initialData.objectives.join('\n'));
+            if (initialData.keywords) setKeywords(initialData.keywords);
+            if (initialData.prerequisites) setPrerequisites(initialData.prerequisites);
+            if (initialData.external_link) setExternalLink(initialData.external_link);
+            if (initialData.price !== undefined && initialData.price !== null) setPrice(String(initialData.price));
+            if (initialData.session_count) setSessionCount(String(initialData.session_count));
+            if (initialData.session_length) setSessionLength(initialData.session_length);
+            if (initialData.provider_url) setProviderUrl(initialData.provider_url);
 
             // Kategorie(n) wiederherstellen (primary + optional)
             if (Array.isArray(initialData.category_paths) && initialData.category_paths.length > 0) {
@@ -204,6 +231,33 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
         return () => { isMounted = false; };
     }, [user?.id]);
 
+    // Warn user when leaving with unsaved changes (browser back/close)
+    useEffect(() => {
+        const handleBeforeUnload = (e) => {
+            if (isDirty) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        };
+
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }, [isDirty]);
+
+    // Handle back navigation with unsaved changes warning
+    const handleBack = () => {
+        if (isDirty) {
+            const confirmed = window.confirm('Du hast ungespeicherte Änderungen. Möchtest du wirklich zurückgehen? Deine Änderungen gehen verloren.');
+            if (!confirmed) return;
+        }
+        setView('dashboard');
+    };
+
+    // Mark form as dirty when any field changes
+    const markDirty = () => {
+        if (!isDirty) setIsDirty(true);
+    };
+
     // Helpers - use taxonomy from DB (via hook) with fallback to constants
     const getAreas = (type) => {
         if (taxonomy && type && taxonomy[type]) {
@@ -284,13 +338,13 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
         }
 
         const formData = new FormData(e.target);
-        
-        // Metadata
-        const title = formData.get('title');
-        const description = formData.get('description');
-        const objectivesList = formData.get('objectives').split('\n').filter(line => line.trim() !== '');
-        const prerequisites = formData.get('prerequisites');
-        const keywords = formData.get('keywords');
+
+        // Metadata (use controlled state values)
+        const titleVal = title;
+        const descriptionVal = description;
+        const objectivesList = objectives.split('\n').filter(line => line.trim() !== '');
+        const prerequisitesVal = prerequisites;
+        const keywordsVal = keywords;
         
         // Taxonomy (Mehrfach-Kategorien)
         const partialExtraCategory = categories.slice(1).some(c =>
@@ -322,7 +376,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
         if (isSubmitting) return;
 
         // 1. Core Validation
-        if (!title || !description) { window.alert("Titel und Beschreibung sind erforderlich."); return; }
+        if (!titleVal || !descriptionVal) { window.alert("Titel und Beschreibung sind erforderlich."); return; }
         if (!catType || !catArea || !catSpec) { window.alert("Bitte wählen Sie eine vollständige Kategorie aus."); return; }
 
         // 2. Booking Specific Validation
@@ -349,7 +403,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
                 return;
             }
 
-            if (bookingType === 'external' && !formData.get('external_link')) {
+            if (bookingType === 'external' && !externalLink) {
                 window.alert("Bitte geben Sie einen externen Link an."); return;
             }
             if (bookingType === 'lead' && !contactEmail) {
@@ -410,11 +464,11 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
 
         // 5. Build Object - Safe access guards
         const newCourse = {
-            title: title, 
-            instructor_name: user?.name || initialData?.instructor_name || '', 
-            price: Number(formData.get('price')) || 0,
+            title: titleVal,
+            instructor_name: user?.name || initialData?.instructor_name || '',
+            price: Number(price) || 0,
             language: formData.get('language'),
-            rating: initialData?.rating || 0, 
+            rating: initialData?.rating || 0,
             category: `${catType} | ${catArea}`,
             category_type: catType,
             category_area: catArea,
@@ -422,20 +476,20 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
             category_focus: catFocus || null,
             category_paths: cleanedCategories,
             booking_type: bookingType,
-            external_link: bookingType === 'external' ? formData.get('external_link') : null,
+            external_link: bookingType === 'external' ? externalLink : null,
             level: level,
-            target_age_groups: [], 
-            canton: mainCanton, 
-            address: publicLocationLabel, // öffentliche “Label”-Location (ohne Strasse) 
+            target_age_groups: [],
+            canton: mainCanton,
+            address: publicLocationLabel, // öffentliche "Label"-Location (ohne Strasse)
             start_date: mainDate,
-            image_url: imageUrl, 
-            description: description, 
-            keywords: keywords,
-            objectives: objectivesList, 
-            prerequisites: prerequisites,
-            session_count: formData.get('sessionCount') ? Number(formData.get('sessionCount')) : null, 
-            session_length: formData.get('sessionLength') || '', 
-            provider_url: formData.get('providerUrl'), 
+            image_url: imageUrl,
+            description: descriptionVal,
+            keywords: keywordsVal,
+            objectives: objectivesList,
+            prerequisites: prerequisitesVal,
+            session_count: sessionCount ? Number(sessionCount) : null,
+            session_length: sessionLength || '',
+            provider_url: providerUrl,
             user_id: user?.id || initialData?.user_id,
             is_pro: user?.is_professional ?? initialData?.is_pro ?? false
         };
@@ -545,7 +599,7 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
 
     return (
     <div className="max-w-4xl mx-auto px-4 py-8 animate-in fade-in slide-in-from-bottom-4 duration-500 font-sans">
-        <button onClick={() => setView('dashboard')} className="flex items-center text-gray-500 hover:text-gray-900 mb-6 transition-colors"><ArrowLeft className="w-4 h-4 mr-2" /> {t.btn_back_dash}</button>
+        <button onClick={handleBack} className="flex items-center text-gray-500 hover:text-gray-900 mb-6 transition-colors"><ArrowLeft className="w-4 h-4 mr-2" /> {t.btn_back_dash}</button>
         <div className="bg-white p-8 rounded-2xl shadow-xl border border-gray-200">
             <div className="mb-8 border-b pb-4"><h1 className="text-3xl font-bold text-dark font-heading">{initialData ? t.edit_course : t.create_course}</h1></div>
             
@@ -556,7 +610,7 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                 <div className="space-y-6">
                      <div>
                         <label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_title} *</label>
-                        <input required type="text" name="title" defaultValue={initialData?.title} className="w-full px-4 py-3 text-lg border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+                        <input required type="text" name="title" value={title} onChange={(e) => { setTitle(e.target.value); markDirty(); }} className="w-full px-4 py-3 text-lg border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
                     </div>
 
                     <div>
@@ -573,28 +627,30 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                                 ].map((btn, idx) => (
                                     <button key={idx} type="button" onClick={() => {
                                             const textarea = document.getElementsByName('description')[0];
-                                            const start = textarea.selectionStart; const end = textarea.selectionEnd; const text = textarea.value;
+                                            const start = textarea.selectionStart; const end = textarea.selectionEnd; const text = description;
                                             const selected = text.substring(start, end);
                                             let replacement = btn.isPrefix ? `${btn.tag}${selected}` : `${btn.tag}${selected}${btn.tag}`;
-                                            textarea.value = text.substring(0, start) + replacement + text.substring(end);
-                                            textarea.focus();
+                                            const newValue = text.substring(0, start) + replacement + text.substring(end);
+                                            setDescription(newValue);
+                                            markDirty();
+                                            setTimeout(() => textarea.focus(), 0);
                                         }} className="p-1.5 hover:bg-white hover:text-primary rounded text-gray-600">
                                         {btn.icon}
                                     </button>
                                 ))}
                             </div>
-                            <textarea required name="description" defaultValue={initialData?.description} rows="6" placeholder="Beschreibe deinen Kurs..." className="w-full px-4 py-3 outline-none resize-y block"></textarea>
+                            <textarea required name="description" value={description} onChange={(e) => { setDescription(e.target.value); markDirty(); }} rows="6" placeholder="Beschreibe deinen Kurs..." className="w-full px-4 py-3 outline-none resize-y block"></textarea>
                         </div>
                     </div>
 
                     <div>
                         <label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_learn_goals}</label>
-                        <textarea required name="objectives" defaultValue={initialData?.objectives?.join('\n')} rows="4" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" placeholder="Ein Ziel pro Zeile..."></textarea>
+                        <textarea required name="objectives" value={objectives} onChange={(e) => { setObjectives(e.target.value); markDirty(); }} rows="4" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" placeholder="Ein Ziel pro Zeile..."></textarea>
                     </div>
 
                     <div>
                         <label className="block text-sm font-bold text-gray-700 mb-1">Keywords / Suchbegriffe (Optional)</label>
-                        <input type="text" name="keywords" defaultValue={initialData?.keywords} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+                        <input type="text" name="keywords" value={keywords} onChange={(e) => { setKeywords(e.target.value); markDirty(); }} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
                     </div>
                 </div>
 
@@ -746,7 +802,7 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                         {selectedLevel !== 'beginner' && selectedLevel !== 'all_levels' && (
                             <div className="mt-4 pt-4 border-t border-orange-200/50">
                                 <span className="text-xs text-gray-500 block mb-1">Voraussetzungen</span>
-                                <textarea name="prerequisites" defaultValue={initialData?.prerequisites} rows="2" className="w-full px-3 py-2 border rounded-lg focus:ring-primary bg-white text-sm" placeholder="z.B. Eigener Laptop, Grundkenntnisse in..." />
+                                <textarea name="prerequisites" value={prerequisites} onChange={(e) => { setPrerequisites(e.target.value); markDirty(); }} rows="2" className="w-full px-3 py-2 border rounded-lg focus:ring-primary bg-white text-sm" placeholder="z.B. Eigener Laptop, Grundkenntnisse in..." />
                             </div>
                         )}
                     </div>
@@ -795,26 +851,26 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                                     <label className="block text-sm font-bold text-gray-700 mb-1">Link zur Buchungsseite *</label>
                                     <div className="relative">
                                         <ExternalLink className="absolute left-3 top-2.5 text-gray-400 w-4 h-4" />
-                                        <input required type="url" name="external_link" defaultValue={initialData?.external_link} placeholder="https://meine-seite.ch/kurs-buchen" className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+                                        <input required type="url" name="external_link" value={externalLink} onChange={(e) => { setExternalLink(e.target.value); markDirty(); }} placeholder="https://meine-seite.ch/kurs-buchen" className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
                                     </div>
                                 </div>
                             )}
 
                             <div>
                                 <label className="block text-sm font-bold text-gray-700 mb-1">Preis (CHF) {bookingType === 'platform' && '*'}</label>
-                                <input required={bookingType === 'platform'} type="number" name="price" defaultValue={initialData?.price} placeholder={bookingType !== 'platform' ? "Optional" : "0.00"} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+                                <input required={bookingType === 'platform'} type="number" name="price" value={price} onChange={(e) => { setPrice(e.target.value); markDirty(); }} placeholder={bookingType !== 'platform' ? "Optional" : "0.00"} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
                             </div>
                             <div>
                                 <label className="block text-sm font-bold text-gray-700 mb-1">Anzahl Lektionen</label>
-                                <input type="number" name="sessionCount" defaultValue={initialData?.session_count || ''} placeholder="z.B. 5" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+                                <input type="number" name="sessionCount" value={sessionCount} onChange={(e) => { setSessionCount(e.target.value); markDirty(); }} placeholder="z.B. 5" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
                             </div>
                             <div>
                                 <label className="block text-sm font-bold text-gray-700 mb-1">Lektionsdauer {bookingType === 'platform' && '*'}</label>
-                                <input required={bookingType === 'platform'} type="text" name="sessionLength" defaultValue={initialData?.session_length} placeholder="z.B. 2 Stunden" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+                                <input required={bookingType === 'platform'} type="text" name="sessionLength" value={sessionLength} onChange={(e) => { setSessionLength(e.target.value); markDirty(); }} placeholder="z.B. 2 Stunden" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
                             </div>
                             <div>
                                 <label className="block text-sm font-bold text-gray-700 mb-1">Webseite (Optional)</label>
-                                <input type="url" name="providerUrl" defaultValue={initialData?.provider_url} placeholder="https://..." className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+                                <input type="url" name="providerUrl" value={providerUrl} onChange={(e) => { setProviderUrl(e.target.value); markDirty(); }} placeholder="https://..." className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
                             </div>
                         </div>
 
