@@ -570,7 +570,9 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
                 <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100 sticky top-24">
                     <div className="text-3xl font-bold text-primary font-heading mb-1">{getPriceLabel(course)}</div>
                     <p className="text-gray-400 text-xs mb-4">
-                        {course.booking_type === 'platform' ? 'pro Person inkl. MwSt.' : 'Unverbindliche Preisangabe'}
+                        {course.booking_type === 'platform'
+                            ? 'pro Person inkl. MwSt.'
+                            : (Number(course.price) > 0 ? 'Unverbindliche Preisangabe' : '')}
                     </p>
 
                     <button
