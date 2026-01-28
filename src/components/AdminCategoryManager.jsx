@@ -10,16 +10,18 @@ const AdminCategoryManager = ({ showNotification }) => {
     const [types, setTypes] = useState([]);
     const [areas, setAreas] = useState([]);
     const [specialties, setSpecialties] = useState([]);
+    const [focuses, setFocuses] = useState([]);
 
     // UI State
     const [expandedTypes, setExpandedTypes] = useState({});
     const [expandedAreas, setExpandedAreas] = useState({});
+    const [expandedSpecialties, setExpandedSpecialties] = useState({});
     const [editingItem, setEditingItem] = useState(null); // { entity, id, field }
     const [editValue, setEditValue] = useState('');
 
     // Add new item state
-    const [addingTo, setAddingTo] = useState(null); // { entity: 'type'|'area'|'specialty', parentId?: string }
-    const [newItemData, setNewItemData] = useState({ id: '', label_de: '', label_en: '', label_fr: '', label_it: '' });
+    const [addingTo, setAddingTo] = useState(null); // { entity: 'type'|'area'|'specialty'|'focus', parentId?: string|number }
+    const [newItemData, setNewItemData] = useState({ id: '', label_de: '', label_en: '', label_fr: '', label_it: '', name: '' });
 
     // Delete modal state
     const [deleteModal, setDeleteModal] = useState(null); // { entity, id, name, courseCount, reassignOptions }
@@ -27,6 +29,7 @@ const AdminCategoryManager = ({ showNotification }) => {
 
     // Refs for input focus
     const specialtyInputRef = useRef(null);
+    const focusInputRef = useRef(null);
     const areaInputRef = useRef(null);
     const typeInputRef = useRef(null);
 
@@ -39,6 +42,9 @@ const AdminCategoryManager = ({ showNotification }) => {
     useEffect(() => {
         if (addingTo?.entity === 'specialty' && specialtyInputRef.current) {
             specialtyInputRef.current.focus();
+        }
+        if (addingTo?.entity === 'focus' && focusInputRef.current) {
+            focusInputRef.current.focus();
         }
     }, [newItemData.name, addingTo]);
 
@@ -53,6 +59,7 @@ const AdminCategoryManager = ({ showNotification }) => {
             setTypes(data.types || []);
             setAreas(data.areas || []);
             setSpecialties(data.specialties || []);
+            setFocuses(data.focuses || []);
         } catch (err) {
             console.error(err);
             showNotification('Fehler beim Laden der Kategorien');
@@ -87,6 +94,7 @@ const AdminCategoryManager = ({ showNotification }) => {
     // Toggle expansion
     const toggleType = (id) => setExpandedTypes(prev => ({ ...prev, [id]: !prev[id] }));
     const toggleArea = (id) => setExpandedAreas(prev => ({ ...prev, [id]: !prev[id] }));
+    const toggleSpecialty = (id) => setExpandedSpecialties(prev => ({ ...prev, [id]: !prev[id] }));
 
     // Start editing
     const startEdit = (entity, id, field, currentValue) => {
@@ -146,6 +154,12 @@ const AdminCategoryManager = ({ showNotification }) => {
                     return;
                 }
                 await apiCall('create', 'specialty', { area_id: addingTo.parentId, name: newItemData.name });
+            } else if (addingTo.entity === 'focus') {
+                if (!newItemData.name) {
+                    showNotification('Name erforderlich');
+                    return;
+                }
+                await apiCall('create', 'focus', { specialty_id: addingTo.parentId, name: newItemData.name });
             }
 
             await loadTaxonomy();
@@ -165,7 +179,14 @@ const AdminCategoryManager = ({ showNotification }) => {
 
             // Get reassign options
             let reassignOptions = [];
-            if (entity === 'specialty') {
+            if (entity === 'focus') {
+                const focusItem = focuses.find(f => f.id === id);
+                if (focusItem) {
+                    reassignOptions = focuses
+                        .filter(f => f.specialty_id === focusItem.specialty_id && f.id !== id)
+                        .map(f => ({ id: f.id, label: f.name }));
+                }
+            } else if (entity === 'specialty') {
                 const spec = specialties.find(s => s.id === id);
                 if (spec) {
                     reassignOptions = specialties
@@ -195,8 +216,8 @@ const AdminCategoryManager = ({ showNotification }) => {
     const confirmDelete = async () => {
         if (!deleteModal) return;
 
-        // If courses exist and no reassign target selected, require selection
-        if (deleteModal.courseCount > 0 && !reassignTo) {
+        // If courses exist and no reassign target selected, require selection (except for focus which can just clear)
+        if (deleteModal.courseCount > 0 && !reassignTo && deleteModal.entity !== 'focus') {
             showNotification('Bitte wähle eine Ziel-Kategorie für die Kurse');
             return;
         }
@@ -445,21 +466,93 @@ const AdminCategoryManager = ({ showNotification }) => {
                                         {/* Specialties */}
                                         {expandedAreas[area.id] && (
                                             <div className="ml-12 py-1 bg-gray-50">
-                                                {specialties.filter(s => s.area_id === area.id).map(spec => (
-                                                    <div key={spec.id} className="flex items-center gap-2 px-3 py-1 hover:bg-white group">
-                                                        <span className="w-1.5 h-1.5 bg-gray-300 rounded-full"></span>
-                                                        <span className="flex-1 text-sm text-gray-700">
-                                                            <EditableField entity="specialty" id={spec.id} field="name" value={spec.name} />
-                                                        </span>
-                                                        <button
-                                                            onClick={() => initiateDelete('specialty', spec.id, spec.name)}
-                                                            className="p-1 text-red-400 opacity-0 group-hover:opacity-100 hover:bg-red-50 rounded transition-opacity"
-                                                            title="Löschen"
-                                                        >
-                                                            <Trash2 className="w-3 h-3" />
-                                                        </button>
-                                                    </div>
-                                                ))}
+                                                {specialties.filter(s => s.area_id === area.id).map(spec => {
+                                                    const specFocuses = focuses.filter(f => f.specialty_id === spec.id);
+                                                    const hasFocuses = specFocuses.length > 0;
+
+                                                    return (
+                                                        <div key={spec.id}>
+                                                            <div className="flex items-center gap-2 px-3 py-1 hover:bg-white group">
+                                                                {/* Toggle for focuses */}
+                                                                <button
+                                                                    onClick={() => toggleSpecialty(spec.id)}
+                                                                    className="p-0.5 hover:bg-gray-200 rounded"
+                                                                >
+                                                                    {expandedSpecialties[spec.id]
+                                                                        ? <ChevronDown className="w-3 h-3 text-gray-400" />
+                                                                        : <ChevronRight className="w-3 h-3 text-gray-400" />
+                                                                    }
+                                                                </button>
+                                                                <span className="flex-1 text-sm text-gray-700">
+                                                                    <EditableField entity="specialty" id={spec.id} field="name" value={spec.name} />
+                                                                </span>
+                                                                {hasFocuses && (
+                                                                    <span className="text-xs text-gray-400">{specFocuses.length} Fokus</span>
+                                                                )}
+                                                                <button
+                                                                    onClick={() => startAdd('focus', spec.id)}
+                                                                    className="p-1 text-green-500 opacity-0 group-hover:opacity-100 hover:bg-green-50 rounded transition-opacity"
+                                                                    title="Fokus hinzufügen"
+                                                                >
+                                                                    <Plus className="w-3 h-3" />
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => initiateDelete('specialty', spec.id, spec.name)}
+                                                                    className="p-1 text-red-400 opacity-0 group-hover:opacity-100 hover:bg-red-50 rounded transition-opacity"
+                                                                    title="Löschen"
+                                                                >
+                                                                    <Trash2 className="w-3 h-3" />
+                                                                </button>
+                                                            </div>
+
+                                                            {/* Add Focus Form */}
+                                                            {addingTo?.entity === 'focus' && addingTo?.parentId === spec.id && (
+                                                                <div className="bg-purple-50 p-2 ml-8 border-l-2 border-purple-300">
+                                                                    <div className="flex gap-2">
+                                                                        <input
+                                                                            ref={focusInputRef}
+                                                                            placeholder="Name des Fokus"
+                                                                            value={newItemData.name}
+                                                                            onChange={(e) => setNewItemData(prev => ({ ...prev, name: e.target.value }))}
+                                                                            className="flex-1 px-2 py-1 border rounded text-sm"
+                                                                            onKeyDown={(e) => e.key === 'Enter' && saveNewItem()}
+                                                                        />
+                                                                        <button onClick={saveNewItem} disabled={saving} className="px-3 py-1 bg-purple-600 text-white rounded text-sm">
+                                                                            +
+                                                                        </button>
+                                                                        <button onClick={() => setAddingTo(null)} className="px-3 py-1 bg-gray-200 rounded text-sm">
+                                                                            ×
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            )}
+
+                                                            {/* Focuses (Level 4) */}
+                                                            {expandedSpecialties[spec.id] && (
+                                                                <div className="ml-16 py-0.5 bg-purple-50/30">
+                                                                    {specFocuses.map(f => (
+                                                                        <div key={f.id} className="flex items-center gap-2 px-3 py-0.5 hover:bg-white group/focus">
+                                                                            <span className="w-1 h-1 bg-purple-300 rounded-full"></span>
+                                                                            <span className="flex-1 text-xs text-gray-600">
+                                                                                <EditableField entity="focus" id={f.id} field="name" value={f.name} />
+                                                                            </span>
+                                                                            <button
+                                                                                onClick={() => initiateDelete('focus', f.id, f.name)}
+                                                                                className="p-0.5 text-red-400 opacity-0 group-hover/focus:opacity-100 hover:bg-red-50 rounded transition-opacity"
+                                                                                title="Löschen"
+                                                                            >
+                                                                                <Trash2 className="w-2.5 h-2.5" />
+                                                                            </button>
+                                                                        </div>
+                                                                    ))}
+                                                                    {specFocuses.length === 0 && (
+                                                                        <div className="px-3 py-1 text-xs text-gray-400 italic">Keine Fokus-Einträge</div>
+                                                                    )}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })}
                                                 {specialties.filter(s => s.area_id === area.id).length === 0 && (
                                                     <div className="px-3 py-2 text-xs text-gray-400 italic">Keine Spezialgebiete</div>
                                                 )}
@@ -494,27 +587,45 @@ const AdminCategoryManager = ({ showNotification }) => {
                             {deleteModal.courseCount > 0 && (
                                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
                                     <p className="text-yellow-800 font-medium mb-2">
-                                        ⚠️ {deleteModal.courseCount} Kurs(e) sind dieser Kategorie zugeordnet.
+                                        {deleteModal.courseCount} Kurs(e) sind dieser Kategorie zugeordnet.
                                     </p>
-                                    <p className="text-sm text-yellow-700 mb-3">
-                                        Bitte wähle eine Kategorie, zu der die Kurse verschoben werden sollen:
-                                    </p>
-                                    <select
-                                        value={reassignTo}
-                                        onChange={(e) => setReassignTo(e.target.value)}
-                                        className="w-full px-3 py-2 border border-yellow-300 rounded bg-white"
-                                    >
-                                        <option value="">-- Ziel-Kategorie wählen --</option>
-                                        {deleteModal.reassignOptions.map(opt => (
-                                            <option key={opt.id} value={opt.id}>{opt.label}</option>
-                                        ))}
-                                    </select>
+                                    {deleteModal.entity === 'focus' ? (
+                                        <p className="text-sm text-yellow-700">
+                                            Der Fokus wird von den betroffenen Kursen entfernt (auf leer gesetzt).
+                                            {deleteModal.reassignOptions.length > 0 && (
+                                                <>
+                                                    <br />Oder wähle einen anderen Fokus:
+                                                </>
+                                            )}
+                                        </p>
+                                    ) : (
+                                        <p className="text-sm text-yellow-700 mb-3">
+                                            Bitte wähle eine Kategorie, zu der die Kurse verschoben werden sollen:
+                                        </p>
+                                    )}
+                                    {deleteModal.reassignOptions.length > 0 && (
+                                        <select
+                                            value={reassignTo}
+                                            onChange={(e) => setReassignTo(e.target.value)}
+                                            className="w-full px-3 py-2 border border-yellow-300 rounded bg-white mt-2"
+                                        >
+                                            <option value="">{deleteModal.entity === 'focus' ? '-- Fokus entfernen (leer setzen) --' : '-- Ziel-Kategorie wählen --'}</option>
+                                            {deleteModal.reassignOptions.map(opt => (
+                                                <option key={opt.id} value={opt.id}>{opt.label}</option>
+                                            ))}
+                                        </select>
+                                    )}
                                 </div>
                             )}
 
-                            {deleteModal.entity !== 'specialty' && (
+                            {deleteModal.entity !== 'specialty' && deleteModal.entity !== 'focus' && (
                                 <p className="text-sm text-gray-500 mb-4">
                                     Hinweis: Alle untergeordneten Kategorien werden ebenfalls gelöscht.
+                                </p>
+                            )}
+                            {deleteModal.entity === 'specialty' && (
+                                <p className="text-sm text-gray-500 mb-4">
+                                    Hinweis: Alle zugehörigen Fokus-Einträge werden ebenfalls gelöscht.
                                 </p>
                             )}
 
@@ -527,7 +638,7 @@ const AdminCategoryManager = ({ showNotification }) => {
                                 </button>
                                 <button
                                     onClick={confirmDelete}
-                                    disabled={saving || (deleteModal.courseCount > 0 && !reassignTo)}
+                                    disabled={saving || (deleteModal.courseCount > 0 && !reassignTo && deleteModal.entity !== 'focus')}
                                     className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     {saving ? <Loader className="w-4 h-4 animate-spin" /> : 'Löschen'}

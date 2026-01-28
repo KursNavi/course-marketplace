@@ -21,24 +21,28 @@ export default async function handler(req, res) {
     const { method } = req;
 
     // ============================================
-    // GET: Load entire taxonomy
+    // GET: Load entire taxonomy (including Level 4: focuses)
     // ============================================
     if (method === 'GET') {
         try {
-            const [typesRes, areasRes, specialtiesRes] = await Promise.all([
+            const [typesRes, areasRes, specialtiesRes, focusesRes] = await Promise.all([
                 supabaseAdmin.from('taxonomy_types').select('*').order('sort_order'),
                 supabaseAdmin.from('taxonomy_areas').select('*').order('sort_order'),
-                supabaseAdmin.from('taxonomy_specialties').select('*').order('sort_order')
+                supabaseAdmin.from('taxonomy_specialties').select('*').order('sort_order'),
+                supabaseAdmin.from('taxonomy_focus').select('*').order('sort_order')
             ]);
 
             if (typesRes.error) throw typesRes.error;
             if (areasRes.error) throw areasRes.error;
             if (specialtiesRes.error) throw specialtiesRes.error;
+            // focuses table may not exist yet — graceful fallback
+            const focuses = focusesRes.error ? [] : (focusesRes.data || []);
 
             return res.status(200).json({
                 types: typesRes.data || [],
                 areas: areasRes.data || [],
-                specialties: specialtiesRes.data || []
+                specialties: specialtiesRes.data || [],
+                focuses
             });
         } catch (err) {
             return res.status(500).json({ error: err.message });
@@ -93,6 +97,18 @@ export default async function handler(req, res) {
                     if (error) throw error;
                     return res.status(200).json({ success: true });
                 }
+
+                if (entity === 'focus') {
+                    const { specialty_id, name, sort_order } = data;
+                    if (!specialty_id || !name) {
+                        return res.status(400).json({ error: 'specialty_id and name required' });
+                    }
+                    const { error } = await supabaseAdmin
+                        .from('taxonomy_focus')
+                        .insert({ specialty_id, name, sort_order: sort_order || 0 });
+                    if (error) throw error;
+                    return res.status(200).json({ success: true });
+                }
             }
 
             // --- UPDATE ---
@@ -144,12 +160,80 @@ export default async function handler(req, res) {
                     if (error) throw error;
                     return res.status(200).json({ success: true });
                 }
+
+                if (entity === 'focus') {
+                    const { id, name, sort_order } = data;
+                    if (!id) return res.status(400).json({ error: 'id required' });
+                    const updates = {};
+                    if (name !== undefined) updates.name = name;
+                    if (sort_order !== undefined) updates.sort_order = sort_order;
+                    const { error } = await supabaseAdmin
+                        .from('taxonomy_focus')
+                        .update(updates)
+                        .eq('id', id);
+                    if (error) throw error;
+                    return res.status(200).json({ success: true });
+                }
             }
 
             // --- DELETE with REASSIGN ---
             if (action === 'delete') {
                 const { id, reassign_to } = data;
                 if (!id) return res.status(400).json({ error: 'id required' });
+
+                if (entity === 'focus') {
+                    // Get the focus name first
+                    const { data: focusData, error: fetchErr } = await supabaseAdmin
+                        .from('taxonomy_focus')
+                        .select('name, specialty_id')
+                        .eq('id', id)
+                        .single();
+                    if (fetchErr) throw fetchErr;
+
+                    const oldName = focusData.name;
+
+                    // If reassign_to is provided, update courses first
+                    if (reassign_to) {
+                        const { data: newFocus } = await supabaseAdmin
+                            .from('taxonomy_focus')
+                            .select('name')
+                            .eq('id', reassign_to)
+                            .single();
+
+                        if (newFocus) {
+                            // Update course_categories junction table
+                            await supabaseAdmin
+                                .from('course_categories')
+                                .update({ category_focus: newFocus.name })
+                                .eq('category_focus', oldName);
+
+                            // Update courses table
+                            await supabaseAdmin
+                                .from('courses')
+                                .update({ category_focus: newFocus.name })
+                                .eq('category_focus', oldName);
+                        }
+                    } else {
+                        // No reassign — clear focus from courses
+                        await supabaseAdmin
+                            .from('course_categories')
+                            .update({ category_focus: null })
+                            .eq('category_focus', oldName);
+
+                        await supabaseAdmin
+                            .from('courses')
+                            .update({ category_focus: null })
+                            .eq('category_focus', oldName);
+                    }
+
+                    // Delete the focus
+                    const { error } = await supabaseAdmin
+                        .from('taxonomy_focus')
+                        .delete()
+                        .eq('id', id);
+                    if (error) throw error;
+                    return res.status(200).json({ success: true });
+                }
 
                 if (entity === 'specialty') {
                     // Get the specialty name first
@@ -186,7 +270,7 @@ export default async function handler(req, res) {
                         }
                     }
 
-                    // Delete the specialty
+                    // Delete the specialty (cascades to focuses)
                     const { error } = await supabaseAdmin
                         .from('taxonomy_specialties')
                         .delete()
@@ -222,7 +306,7 @@ export default async function handler(req, res) {
                             .eq('category_area', id);
                     }
 
-                    // Delete area (cascades to specialties)
+                    // Delete area (cascades to specialties and focuses)
                     const { error } = await supabaseAdmin
                         .from('taxonomy_areas')
                         .delete()
@@ -247,7 +331,7 @@ export default async function handler(req, res) {
                             .eq('category_type', id);
                     }
 
-                    // Delete type (cascades to areas and specialties)
+                    // Delete type (cascades to areas, specialties and focuses)
                     const { error } = await supabaseAdmin
                         .from('taxonomy_types')
                         .delete()
@@ -260,6 +344,23 @@ export default async function handler(req, res) {
             // --- COUNT COURSES (for delete confirmation) ---
             if (action === 'count_courses') {
                 let count = 0;
+
+                if (entity === 'focus') {
+                    // Get focus name
+                    const { data: focusItem } = await supabaseAdmin
+                        .from('taxonomy_focus')
+                        .select('name')
+                        .eq('id', data.id)
+                        .single();
+
+                    if (focusItem) {
+                        const { count: c } = await supabaseAdmin
+                            .from('course_categories')
+                            .select('*', { count: 'exact', head: true })
+                            .eq('category_focus', focusItem.name);
+                        count = c || 0;
+                    }
+                }
 
                 if (entity === 'specialty') {
                     // Get specialty name

@@ -10,6 +10,7 @@ const SearchPageView = ({
     searchType, setSearchType,
     searchArea, setSearchArea,
     searchSpecialty, setSearchSpecialty,
+    searchFocus, setSearchFocus,
     locMode, setLocMode, selectedLocations, setSelectedLocations, locMenuOpen, setLocMenuOpen, locMenuRef,
     loading, filteredCourses, setSelectedCourse, setView,
     t, filterDateFrom, setFilterDateFrom, filterDateTo, setFilterDateTo, filterPriceMax, setFilterPriceMax, filterLevel, setFilterLevel, filterPro, setFilterPro,
@@ -154,6 +155,28 @@ const SearchPageView = ({
         })
     )];
 
+    const availableFocuses = [...new Set(
+        courses.flatMap(c => {
+            const focuses = [];
+            const primaryTypeMatch = !searchType || c.category_type === searchType;
+            const primaryAreaMatch = !searchArea || c.category_area === searchArea;
+            const primarySpecMatch = !searchSpecialty || c.category_specialty === searchSpecialty;
+            if (primaryTypeMatch && primaryAreaMatch && primarySpecMatch && c.category_focus) {
+                focuses.push(c.category_focus);
+            }
+            if (Array.isArray(c.all_categories)) {
+                c.all_categories.forEach(cat => {
+                    const typeMatch = !searchType || cat.category_type === searchType;
+                    const areaMatch = !searchArea || cat.category_area === searchArea;
+                    const specMatch = !searchSpecialty || cat.category_specialty === searchSpecialty;
+                    if (typeMatch && areaMatch && specMatch && cat.category_focus) {
+                        focuses.push(cat.category_focus);
+                    }
+                });
+            }
+            return focuses;
+        })
+    )];
 
         // Helper to get Label (crash-sicher)
     const getLabel = (key, scope) => {
@@ -177,6 +200,9 @@ const SearchPageView = ({
 
         // specialties sind aktuell Plain Strings aus DB -> direkt zurückgeben
         if (scope === 'specialty') return key;
+
+        // focuses sind Plain Strings aus DB -> direkt zurückgeben
+        if (scope === 'focus') return key;
 
         return key;
     };
@@ -221,7 +247,7 @@ const SearchPageView = ({
     };
 
     const resetFilters = () => {
-        setSearchType(""); setSearchArea(""); setSearchSpecialty("");
+        setSearchType(""); setSearchArea(""); setSearchSpecialty(""); setSearchFocus("");
         setSelectedLocations([]); setSearchQuery(""); setFilterDateFrom(""); setFilterDateTo(""); setFilterPriceMax(""); setFilterLevel("All"); setFilterPro(false);
     };
 
@@ -290,17 +316,21 @@ const SearchPageView = ({
 
                     {/* NEW TAXONOMY FILTERS */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                        <select value={searchType} onChange={(e) => { setSearchType(e.target.value); setSearchArea(""); setSearchSpecialty(""); }} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                        <select value={searchType} onChange={(e) => { setSearchType(e.target.value); setSearchArea(""); setSearchSpecialty(""); setSearchFocus(""); }} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary">
                             <option value="">Alle Kategorien</option>
                             {availableTypes.map(type => (<option key={type} value={type}>{getLabel(type, 'type')}</option>))}
                         </select>
-                        <select value={searchArea} onChange={(e) => { setSearchArea(e.target.value); setSearchSpecialty(""); }} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50" disabled={!searchType}>
+                        <select value={searchArea} onChange={(e) => { setSearchArea(e.target.value); setSearchSpecialty(""); setSearchFocus(""); }} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50" disabled={!searchType}>
                             <option value="">Alle Bereiche</option>
                             {availableAreas.map(area => (<option key={area} value={area}>{getLabel(area, 'area')}</option>))}
                         </select>
-                        <select value={searchSpecialty} onChange={(e) => setSearchSpecialty(e.target.value)} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50" disabled={!searchArea}>
+                        <select value={searchSpecialty} onChange={(e) => { setSearchSpecialty(e.target.value); setSearchFocus(""); }} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50" disabled={!searchArea}>
                             <option value="">Alle Themen</option>
                             {availableSpecialties.map(spec => (<option key={spec} value={spec}>{spec}</option>))}
+                        </select>
+                        <select value={searchFocus || ""} onChange={(e) => setSearchFocus(e.target.value)} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50" disabled={!searchSpecialty || availableFocuses.length === 0}>
+                            <option value="">Alle Fokus</option>
+                            {availableFocuses.map(f => (<option key={f} value={f}>{f}</option>))}
                         </select>
                     </div>
 

@@ -9,10 +9,11 @@ export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCat
 
     const [lvl1, setLvl1] = useState(rootCategory || null);
     const [lvl2, setLvl2] = useState(null);
+    const [lvl3, setLvl3] = useState(null);
 
     // Reset internal state when menu closes or root changes
     useEffect(() => {
-        if (!catMenuOpen) { setLvl1(rootCategory || null); setLvl2(null); }
+        if (!catMenuOpen) { setLvl1(rootCategory || null); setLvl2(null); setLvl3(null); }
     }, [catMenuOpen, rootCategory]);
 
     // Use taxonomy from DB or fallback to constants
@@ -26,34 +27,48 @@ export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCat
         if (!key) return "";
         if (level === 1) return activeTypes[key]?.de || key;
         if (level === 2 && parentKey) return activeTaxonomy[parentKey]?.[key]?.label?.de || key;
-        return key; // Level 3 are plain strings
+        return key; // Level 3+4 are plain strings
     };
 
     const availableLvl1 = rootCategory ? [rootCategory] : Object.keys(activeTaxonomy);
+
+    // Get focuses for the selected specialty
+    const currentFocuses = (lvl1 && lvl2 && lvl3)
+        ? (activeTaxonomy[lvl1]?.[lvl2]?.specialtyFocuses?.[lvl3] || [])
+        : [];
 
     // Display text for the main button
     const getButtonLabel = () => {
         if (selectedCatPath.length === 0) return t?.filter_label_cat || "Kategorie";
         const lastItem = selectedCatPath[selectedCatPath.length - 1];
-        // Try to find label if it's a key, otherwise return item itself (for L3)
         if (activeTaxonomy[lastItem]) return activeTypes[lastItem]?.de || lastItem;
-        // Note: L2 keys are harder to reverse lookup without parent, displaying raw or lastItem is fine for now
         return lastItem;
     };
 
+    // Handle specialty click: if focuses exist, show them; otherwise select directly
+    const handleSpecialtyClick = (item) => {
+        const focuses = activeTaxonomy[lvl1]?.[lvl2]?.specialtyFocuses?.[item] || [];
+        if (focuses.length > 0) {
+            setLvl3(item);
+        } else {
+            setSelectedCatPath([lvl1, lvl2, item]);
+            setCatMenuOpen(false);
+        }
+    };
+
     return (
-        <div ref={catMenuRef} className="static relative z-50 text-left"> 
+        <div ref={catMenuRef} className="static relative z-50 text-left">
             <button type="button" onClick={() => setCatMenuOpen(!catMenuOpen)} className={`w-full md:w-auto px-4 py-3 border rounded-full flex items-center justify-between space-x-2 text-sm font-medium transition shadow-sm ${selectedCatPath.length > 0 ? 'bg-primary text-white border-primary' : 'bg-white text-gray-700 hover:border-gray-400'}`}>
                 <span className="truncate max-w-[150px]">{getButtonLabel()}</span>
                 <ChevronDown className="w-4 h-4 flex-shrink-0" />
             </button>
             {catMenuOpen && (
-                <div className="absolute top-14 left-0 w-[300px] md:w-[700px] bg-white rounded-xl shadow-2xl border border-gray-100 p-0 flex flex-col md:flex-row h-[400px] overflow-hidden">
-                    
+                <div className={`absolute top-14 left-0 w-[300px] ${currentFocuses.length > 0 ? 'md:w-[900px]' : 'md:w-[700px]'} bg-white rounded-xl shadow-2xl border border-gray-100 p-0 flex flex-col md:flex-row h-[400px] overflow-hidden`}>
+
                     {/* Level 1: TYPES (Beruflich, Privat, Kinder) */}
-                    <div className="w-full md:w-1/3 border-r overflow-y-auto bg-gray-50">
+                    <div className={`w-full ${currentFocuses.length > 0 ? 'md:w-1/4' : 'md:w-1/3'} border-r overflow-y-auto bg-gray-50`}>
                         {availableLvl1.map(cat => (
-                            <div key={cat} onClick={() => { setLvl1(cat); setLvl2(null); }} className={`p-4 cursor-pointer text-sm flex justify-between items-center transition ${lvl1 === cat ? 'bg-white font-bold text-primary shadow-sm' : 'text-gray-700 hover:bg-gray-100'}`}>
+                            <div key={cat} onClick={() => { setLvl1(cat); setLvl2(null); setLvl3(null); }} className={`p-4 cursor-pointer text-sm flex justify-between items-center transition ${lvl1 === cat ? 'bg-white font-bold text-primary shadow-sm' : 'text-gray-700 hover:bg-gray-100'}`}>
                                 {getLabel(cat, 1)}
                                 <ChevronRight className={`w-4 h-4 ${lvl1 === cat ? 'text-primary' : 'text-gray-300'}`} />
                             </div>
@@ -62,10 +77,10 @@ export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCat
                     </div>
 
                     {/* Level 2: AREAS (e.g. Business, Sport) */}
-                    <div className="w-full md:w-1/3 border-r overflow-y-auto bg-white">
+                    <div className={`w-full ${currentFocuses.length > 0 ? 'md:w-1/4' : 'md:w-1/3'} border-r overflow-y-auto bg-white`}>
                         {lvl1 ? (
                             Object.keys(activeTaxonomy[lvl1] || {}).map(sub => (
-                                <div key={sub} onClick={() => setLvl2(sub)} className={`p-3 mx-2 my-1 rounded-lg cursor-pointer text-sm flex justify-between items-center transition ${lvl2 === sub ? 'bg-primaryLight font-bold text-primary' : 'text-gray-700 hover:bg-gray-50'}`}>
+                                <div key={sub} onClick={() => { setLvl2(sub); setLvl3(null); }} className={`p-3 mx-2 my-1 rounded-lg cursor-pointer text-sm flex justify-between items-center transition ${lvl2 === sub ? 'bg-primaryLight font-bold text-primary' : 'text-gray-700 hover:bg-gray-50'}`}>
                                     {getLabel(sub, 2, lvl1)}
                                     <ChevronRight className={`w-4 h-4 ${lvl2 === sub ? 'text-primary' : 'text-gray-300'}`} />
                                 </div>
@@ -74,15 +89,34 @@ export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCat
                     </div>
 
                     {/* Level 3: SPECIALTIES (e.g. Marketing, Yoga) */}
-                    <div className="w-full md:w-1/3 overflow-y-auto bg-white">
+                    <div className={`w-full ${currentFocuses.length > 0 ? 'md:w-1/4' : 'md:w-1/3'} ${currentFocuses.length > 0 ? 'border-r' : ''} overflow-y-auto bg-white`}>
                         {lvl1 && lvl2 ? (
-                            (activeTaxonomy[lvl1]?.[lvl2]?.specialties || []).map(item => (
-                                <div key={item} onClick={() => { setSelectedCatPath([lvl1, lvl2, item]); setCatMenuOpen(false); }} className="p-3 mx-2 cursor-pointer text-sm text-gray-600 hover:text-primary hover:bg-gray-50 rounded transition">
-                                    {item}
-                                </div>
-                            ))
+                            (activeTaxonomy[lvl1]?.[lvl2]?.specialties || []).map(item => {
+                                const hasFocuses = (activeTaxonomy[lvl1]?.[lvl2]?.specialtyFocuses?.[item] || []).length > 0;
+                                return (
+                                    <div key={item} onClick={() => handleSpecialtyClick(item)} className={`p-3 mx-2 cursor-pointer text-sm flex justify-between items-center rounded transition ${lvl3 === item ? 'bg-primaryLight font-bold text-primary' : 'text-gray-600 hover:text-primary hover:bg-gray-50'}`}>
+                                        {item}
+                                        {hasFocuses && <ChevronRight className={`w-4 h-4 ${lvl3 === item ? 'text-primary' : 'text-gray-300'}`} />}
+                                    </div>
+                                );
+                            })
                         ) : <div className="p-6 text-sm text-gray-400 italic">{lvl1 ? "Wähle einen Bereich..." : ""}</div>}
                     </div>
+
+                    {/* Level 4: FOCUSES (e.g. Akustikgitarre, E-Gitarre) */}
+                    {currentFocuses.length > 0 && (
+                        <div className="w-full md:w-1/4 overflow-y-auto bg-white">
+                            {/* Option to select just the specialty without a specific focus */}
+                            <div onClick={() => { setSelectedCatPath([lvl1, lvl2, lvl3]); setCatMenuOpen(false); }} className="p-3 mx-2 cursor-pointer text-sm text-gray-400 hover:text-primary hover:bg-gray-50 rounded transition italic">
+                                Alle {lvl3}
+                            </div>
+                            {currentFocuses.map(focus => (
+                                <div key={focus} onClick={() => { setSelectedCatPath([lvl1, lvl2, lvl3, focus]); setCatMenuOpen(false); }} className="p-3 mx-2 cursor-pointer text-sm text-gray-600 hover:text-primary hover:bg-gray-50 rounded transition">
+                                    {focus}
+                                </div>
+                            ))}
+                        </div>
+                    )}
 
                 </div>
             )}

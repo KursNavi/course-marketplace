@@ -3,17 +3,18 @@ import { Search, ArrowRight, ChevronRight, ChevronDown } from 'lucide-react';
 import { LocationDropdown } from './Filters'; 
 import { NEW_TAXONOMY, CATEGORY_TYPES } from '../lib/constants';
 
-export const Home = ({ 
+export const Home = ({
   lang, t, setView, courses, // Jetzt haben wir Zugriff auf die Kurse!
-  setSearchType, setSearchArea, setSearchSpecialty, 
-  searchQuery, setSearchQuery, 
-  catMenuOpen, setCatMenuOpen, catMenuRef, 
-  locMode, setLocMode, selectedLocations, setSelectedLocations, locMenuOpen, setLocMenuOpen, locMenuRef 
+  setSearchType, setSearchArea, setSearchSpecialty, setSearchFocus,
+  searchQuery, setSearchQuery,
+  catMenuOpen, setCatMenuOpen, catMenuRef,
+  locMode, setLocMode, selectedLocations, setSelectedLocations, locMenuOpen, setLocMenuOpen, locMenuRef
 }) => {
-  
+
   // State für das Mega-Menü
   const [activeType, setActiveType] = useState('privat_hobby'); // Spalte 1 Auswahl
   const [activeArea, setActiveArea] = useState(null);           // Spalte 2 Auswahl
+  const [activeSpecialty, setActiveSpecialty] = useState(null);  // Spalte 3 Auswahl
 
   // --- LOGIK: Nur Kategorien mit Kursen anzeigen ---
   
@@ -44,8 +45,21 @@ export const Home = ({
     return specKeys;
   };
 
+  // 4. Welche Focuses (Level 4) im aktiven Spezialgebiet haben Kurse?
+  const getActiveFocuses = () => {
+    if (!courses || courses.length === 0 || !activeArea || !activeSpecialty) return [];
+
+    const relevantCourses = courses.filter(c =>
+      c.category_type === activeType && c.category_area === activeArea && c.category_specialty === activeSpecialty
+    );
+
+    const focusKeys = [...new Set(relevantCourses.map(c => c.category_focus).filter(Boolean))];
+    return focusKeys;
+  };
+
   const visibleAreas = getActiveAreas();
   const visibleSpecialties = getActiveSpecialties();
+  const visibleFocuses = getActiveFocuses();
 
   // --- ACTIONS ---
 
@@ -55,10 +69,11 @@ export const Home = ({
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleCategorySelect = (typeKey, areaKey, specialtyKey) => {
+  const handleCategorySelect = (typeKey, areaKey, specialtyKey, focusKey) => {
     setSearchType(typeKey);
     setSearchArea(areaKey || "");
     setSearchSpecialty(specialtyKey || "");
+    setSearchFocus(focusKey || "");
 
     setCatMenuOpen(false);
     window.history.pushState({ view: 'search' }, '', '/search');
@@ -173,6 +188,7 @@ export const Home = ({
     const areas = getActiveAreas();
     if (areas.length > 0 && !areas.includes(activeArea)) {
         setActiveArea(areas[0]);
+        setActiveSpecialty(null);
     }
   }, [activeType, courses]);
 
@@ -231,18 +247,18 @@ export const Home = ({
                         <ChevronDown className={`w-4 h-4 transition-transform ${catMenuOpen ? 'rotate-180' : ''}`} />
                     </button>
 
-                    {/* MEGA MENU (3 SPALTEN) */}
+                    {/* MEGA MENU (3-4 SPALTEN) */}
                     {catMenuOpen && (
-                        <div className="absolute top-full left-0 mt-2 w-[800px] -ml-0 md:-ml-0 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden flex z-50 text-left h-[450px]">
+                        <div className={`absolute top-full left-0 mt-2 ${visibleFocuses.length > 0 ? 'w-[1000px]' : 'w-[800px]'} -ml-0 md:-ml-0 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden flex z-50 text-left h-[450px]`}>
                             
                             {/* SPALTE 1: TYP (Immer sichtbar) */}
-                            <div className="w-1/4 bg-gray-50 border-r border-gray-100 py-2">
+                            <div className={`${visibleFocuses.length > 0 ? 'w-1/5' : 'w-1/4'} bg-gray-50 border-r border-gray-100 py-2`}>
                                 <div className="px-4 py-2 text-xs font-bold text-gray-400 uppercase">{t.lbl_type}</div>
                                 {Object.keys(CATEGORY_TYPES).map(typeKey => (
-                                    <div 
+                                    <div
                                         key={typeKey}
-                                        onMouseEnter={() => setActiveType(typeKey)}
-                                        onClick={() => handleCategorySelect(typeKey)} // Klick auf Typ filtert nur Typ
+                                        onMouseEnter={() => { setActiveType(typeKey); setActiveSpecialty(null); }}
+                                        onClick={() => handleCategorySelect(typeKey)}
                                         className={`px-4 py-3 cursor-pointer text-sm font-bold flex justify-between items-center transition-colors ${activeType === typeKey ? 'bg-white text-primary border-l-4 border-primary shadow-sm' : 'text-gray-600 hover:bg-gray-200'}`}
                                     >
                                         {getTypeLabel(typeKey)}
@@ -252,13 +268,13 @@ export const Home = ({
                             </div>
 
                             {/* SPALTE 2: BEREICH (Gefiltert nach Existenz) */}
-                            <div className="w-1/3 border-r border-gray-100 py-2 overflow-y-auto">
+                            <div className={`${visibleFocuses.length > 0 ? 'w-1/4' : 'w-1/3'} border-r border-gray-100 py-2 overflow-y-auto`}>
                                 <div className="px-4 py-2 text-xs font-bold text-gray-400 uppercase">{t.lbl_area}</div>
                                 {visibleAreas.length > 0 ? (
                                     visibleAreas.map(areaKey => (
                                         <div
                                             key={areaKey}
-                                            onMouseEnter={() => setActiveArea(areaKey)}
+                                            onMouseEnter={() => { setActiveArea(areaKey); setActiveSpecialty(null); }}
                                             onClick={() => handleCategorySelect(activeType, areaKey)}
                                             className={`px-4 py-2 cursor-pointer text-sm flex justify-between items-center transition-colors ${activeArea === areaKey ? 'text-primary font-bold bg-orange-50' : 'text-gray-700 hover:bg-gray-50'}`}
                                         >
@@ -272,25 +288,52 @@ export const Home = ({
                             </div>
 
                             {/* SPALTE 3: SPEZIALGEBIET (Gefiltert nach Existenz) */}
-                            <div className="flex-1 py-2 overflow-y-auto bg-gray-50/50">
+                            <div className={`${visibleFocuses.length > 0 ? 'w-1/4 border-r border-gray-100' : 'flex-1'} py-2 overflow-y-auto bg-gray-50/50`}>
                                 <div className="px-4 py-2 text-xs font-bold text-gray-400 uppercase">{t.lbl_specialty}</div>
                                 {visibleSpecialties.length > 0 ? (
-                                    visibleSpecialties.map(specKey => (
-                                        <button
-                                            key={specKey}
-                                            onClick={() => handleCategorySelect(activeType, activeArea, specKey)}
-                                            className="w-full text-left px-4 py-2 hover:bg-orange-100 text-sm text-gray-600 hover:text-primary transition-colors flex items-center group"
-                                        >
-                                            <span className="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-primary mr-2 transition-colors"></span>
-                                            {specKey}
-                                        </button>
-                                    ))
+                                    visibleSpecialties.map(specKey => {
+                                        const hasFocuses = courses && courses.some(c =>
+                                            c.category_type === activeType && c.category_area === activeArea &&
+                                            c.category_specialty === specKey && c.category_focus
+                                        );
+                                        return (
+                                            <button
+                                                key={specKey}
+                                                onMouseEnter={() => setActiveSpecialty(specKey)}
+                                                onClick={() => handleCategorySelect(activeType, activeArea, specKey)}
+                                                className={`w-full text-left px-4 py-2 text-sm transition-colors flex items-center justify-between group ${activeSpecialty === specKey ? 'bg-orange-100 text-primary font-bold' : 'text-gray-600 hover:bg-orange-100 hover:text-primary'}`}
+                                            >
+                                                <span className="flex items-center">
+                                                    <span className={`w-1.5 h-1.5 rounded-full mr-2 transition-colors ${activeSpecialty === specKey ? 'bg-primary' : 'bg-gray-300 group-hover:bg-primary'}`}></span>
+                                                    {specKey}
+                                                </span>
+                                                {hasFocuses && <ChevronRight className={`w-3 h-3 ${activeSpecialty === specKey ? 'text-primary' : 'text-gray-300'}`} />}
+                                            </button>
+                                        );
+                                    })
                                 ) : (
                                     <div className="p-4 text-xs text-gray-400 italic">
                                         {activeArea ? t.msg_all_topics : t.msg_select_area}
                                     </div>
                                 )}
                             </div>
+
+                            {/* SPALTE 4: FOKUS (Nur sichtbar wenn vorhanden) */}
+                            {visibleFocuses.length > 0 && (
+                                <div className="flex-1 py-2 overflow-y-auto">
+                                    <div className="px-4 py-2 text-xs font-bold text-gray-400 uppercase">{t.lbl_focus || 'Fokus'}</div>
+                                    {visibleFocuses.map(focusKey => (
+                                        <button
+                                            key={focusKey}
+                                            onClick={() => handleCategorySelect(activeType, activeArea, activeSpecialty, focusKey)}
+                                            className="w-full text-left px-4 py-2 hover:bg-orange-100 text-sm text-gray-600 hover:text-primary transition-colors flex items-center group"
+                                        >
+                                            <span className="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-primary mr-2 transition-colors"></span>
+                                            {focusKey}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
 
                         </div>
                     )}

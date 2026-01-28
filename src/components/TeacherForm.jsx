@@ -9,7 +9,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
     // --- LIMITS REMOVED: Unbegrenzte Kurse fuer alle ---
 
     // Load taxonomy from DB (with fallback to constants.js)
-    const { taxonomy, types } = useTaxonomy();
+    const { taxonomy, types, getFocuses } = useTaxonomy();
 
     // Booking & Link State
     const [bookingType, setBookingType] = useState('platform'); // 'platform', 'external', 'lead'
@@ -18,7 +18,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
     // Taxonomy State (Mehrfach-Kategorien)
     const CATEGORY_ROW_LIMITS = { basic: 1, pro: 3, premium: 3, enterprise: 5, free: 1 };
 
-    const [categories, setCategories] = useState([{ type: 'privat_hobby', area: '', specialty: '' }]);
+    const [categories, setCategories] = useState([{ type: 'privat_hobby', area: '', specialty: '', focus: '' }]);
     const [maxCategories, setMaxCategories] = useState(1);
 
     
@@ -48,13 +48,15 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
                 setCategories(initialData.category_paths.map(c => ({
                     type: c?.type || 'privat_hobby',
                     area: c?.area || '',
-                    specialty: c?.specialty || ''
+                    specialty: c?.specialty || '',
+                    focus: c?.focus || ''
                 })));
             } else {
                 setCategories([{
                     type: initialData.category_type || 'privat_hobby',
                     area: initialData.category_area || '',
-                    specialty: initialData.category_specialty || ''
+                    specialty: initialData.category_specialty || '',
+                    focus: initialData.category_focus || ''
                 }]);
             }
 
@@ -215,10 +217,13 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
         }
         return type && area && NEW_TAXONOMY[type]?.[area] ? NEW_TAXONOMY[type][area].specialties : [];
     };
+    const getFocusOptions = (type, area, specialty) => {
+        return getFocuses(type, area, specialty);
+    };
 
     const addCategoryRow = () => {
         if (categories.length >= maxCategories) return;
-        setCategories([...categories, { type: '', area: '', specialty: '' }]);
+        setCategories([...categories, { type: '', area: '', specialty: '', focus: '' }]);
     };
 
     const removeCategoryRow = (index) => {
@@ -235,9 +240,14 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
                 row.type = value;
                 row.area = '';
                 row.specialty = '';
+                row.focus = '';
             } else if (field === 'area') {
                 row.area = value;
                 row.specialty = '';
+                row.focus = '';
+            } else if (field === 'specialty') {
+                row.specialty = value;
+                row.focus = '';
             } else {
                 row[field] = value;
             }
@@ -295,15 +305,17 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
             .map(c => ({
                 type: (c.type || '').toString(),
                 area: (c.area || '').toString(),
-                specialty: (c.specialty || '').toString()
+                specialty: (c.specialty || '').toString(),
+                focus: (c.focus || '').toString()
             }))
             // erste Kategorie ist Pflicht; weitere nur, wenn komplett
             .filter((c, idx) => idx === 0 || (c.type && c.area && c.specialty));
 
-        const primaryCategory = cleanedCategories[0] || { type: '', area: '', specialty: '' };
+        const primaryCategory = cleanedCategories[0] || { type: '', area: '', specialty: '', focus: '' };
         const catType = primaryCategory.type;
         const catArea = primaryCategory.area;
         const catSpec = primaryCategory.specialty;
+        const catFocus = primaryCategory.focus;
 
         const level = formData.get('level');
 
@@ -407,6 +419,7 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
             category_type: catType,
             category_area: catArea,
             category_specialty: catSpec,
+            category_focus: catFocus || null,
             category_paths: cleanedCategories,
             booking_type: bookingType,
             external_link: bookingType === 'external' ? formData.get('external_link') : null,
@@ -499,6 +512,7 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                 category_type: cat.type,
                 category_area: cat.area,
                 category_specialty: cat.specialty,
+                category_focus: cat.focus || null,
                 is_primary: idx === 0 // First category is primary
             }));
 
@@ -623,7 +637,7 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                                         )}
                                     </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                                         <div>
                                             <span className="text-xs text-gray-500 block mb-1">Typ {idx === 0 ? '*' : ''}</span>
                                             <select
@@ -673,6 +687,22 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                                                 <option value="">Bitte wählen...</option>
                                                 {row.type && row.area && getSpecialties(row.type, row.area).map(spec => (
                                                     <option key={spec} value={spec}>{spec}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        <div>
+                                            <span className="text-xs text-gray-500 block mb-1">Fokus</span>
+                                            <select
+                                                name={`category_focus_${idx}`}
+                                                value={row.focus}
+                                                onChange={(e) => updateCategoryRow(idx, 'focus', e.target.value)}
+                                                className="w-full px-3 py-2 border rounded-lg focus:ring-primary bg-white text-sm"
+                                                disabled={!row.specialty || getFocusOptions(row.type, row.area, row.specialty).length === 0}
+                                            >
+                                                <option value="">Optional...</option>
+                                                {row.type && row.area && row.specialty && getFocusOptions(row.type, row.area, row.specialty).map(f => (
+                                                    <option key={f} value={f}>{f}</option>
                                                 ))}
                                             </select>
                                         </div>

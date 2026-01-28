@@ -172,6 +172,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
   const [searchType, setSearchType] = useState("");
   const [searchArea, setSearchArea] = useState("");
   const [searchSpecialty, setSearchSpecialty] = useState("");
+  const [searchFocus, setSearchFocus] = useState("");
   const [catMenuOpen, setCatMenuOpen] = useState(false);
   const [selectedCatPath, setSelectedCatPath] = useState([]);
   const [filterDateFrom, setFilterDateFrom] = useState("");
@@ -719,6 +720,12 @@ export default function KursNaviPro() {  // 1. Initial State Logic
          course.all_categories.some(cat => cat && cat.category_specialty === searchSpecialty));
     }
 
+    let matchesFocus = true;
+    if (searchFocus) {
+      matchesFocus = course.category_focus === searchFocus ||
+        (Array.isArray(course.all_categories) &&
+         course.all_categories.some(cat => cat && cat.category_focus === searchFocus));
+    }
 
     let matchesCategory = true;
     if (!searchType && !searchArea && Array.isArray(selectedCatPath) && selectedCatPath.length > 0) {
@@ -805,7 +812,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
     let matchesPro = true; if (filterPro) matchesPro = course.is_pro === true;
     let matchesLanguage = true; if (selectedLanguage) matchesLanguage = course.language === selectedLanguage;
 
-    return matchesType && matchesArea && matchesSpecialty && matchesCategory && matchesLocation && matchesSearch && matchesDate && matchesPrice && matchesLevel && matchesPro && matchesLanguage;
+    return matchesType && matchesArea && matchesSpecialty && matchesFocus && matchesCategory && matchesLocation && matchesSearch && matchesDate && matchesPrice && matchesLevel && matchesPro && matchesLanguage;
   });
   
 // --- EFFECT HOOKS ---
@@ -881,6 +888,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
       const typeParam = query.get('type');
       const areaParam = query.get('area');
       const specParam = query.get('spec');
+      const focusParam = query.get('focus');
       const qParam = query.get('q');
       const locParam = query.get('loc');
       const levelParam = query.get('level');
@@ -888,10 +896,11 @@ export default function KursNaviPro() {  // 1. Initial State Logic
       // Reset filters first when navigating to search, then apply URL params
       if (nextView === 'search') {
         // Only reset if no params are provided (clean /search navigation)
-        if (!typeParam && !areaParam && !specParam && !qParam && !locParam && !levelParam) {
+        if (!typeParam && !areaParam && !specParam && !focusParam && !qParam && !locParam && !levelParam) {
           setSearchType("");
           setSearchArea("");
           setSearchSpecialty("");
+          setSearchFocus("");
         } else {
           // Apply URL params
           if (typeParam) setSearchType(typeParam);
@@ -900,6 +909,8 @@ export default function KursNaviPro() {  // 1. Initial State Logic
           else setSearchArea("");
           if (specParam) setSearchSpecialty(specParam);
           else setSearchSpecialty("");
+          if (focusParam) setSearchFocus(focusParam);
+          else setSearchFocus("");
           if (qParam) setSearchQuery(qParam);
           if (locParam) setSelectedLocations([locParam]);
           if (levelParam) setFilterLevel(levelParam);
@@ -1053,14 +1064,16 @@ useEffect(() => {
   const typeParam = query.get('type');
   const areaParam = query.get('area');
   const specParam = query.get('spec');
+  const focusParam = query.get('focus');
   const levelParam = query.get('level');
 
-  if (qParam || locParam || typeParam || areaParam || specParam || levelParam) {
+  if (qParam || locParam || typeParam || areaParam || specParam || focusParam || levelParam) {
     if (qParam) setSearchQuery(qParam);
     if (locParam) setSelectedLocations([locParam]);
     if (typeParam) setSearchType(typeParam);
     if (areaParam) setSearchArea(areaParam);
     if (specParam) setSearchSpecialty(specParam);
+    if (focusParam) setSearchFocus(focusParam);
     if (levelParam) setFilterLevel(levelParam);
 
     // Only switch view if not already on a specific detail/landing page
@@ -1137,7 +1150,7 @@ useEffect(() => {
       )}
 
       {!loading && view === 'home' && (
-              <Home lang={lang} t={t} courses={courses} setView={setView} setSearchType={setSearchType} setSearchArea={setSearchArea} setSearchSpecialty={setSearchSpecialty} setSelectedCatPath={setSelectedCatPath} searchQuery={searchQuery} setSearchQuery={setSearchQuery} catMenuOpen={catMenuOpen} setCatMenuOpen={setCatMenuOpen} catMenuRef={catMenuRef} locMode={locMode} setLocMode={setLocMode} selectedLocations={selectedLocations} setSelectedLocations={setSelectedLocations} locMenuOpen={locMenuOpen} setLocMenuOpen={setLocMenuOpen} locMenuRef={locMenuRef} getCatLabel={getCatLabel} />
+              <Home lang={lang} t={t} courses={courses} setView={setView} setSearchType={setSearchType} setSearchArea={setSearchArea} setSearchSpecialty={setSearchSpecialty} setSearchFocus={setSearchFocus} setSelectedCatPath={setSelectedCatPath} searchQuery={searchQuery} setSearchQuery={setSearchQuery} catMenuOpen={catMenuOpen} setCatMenuOpen={setCatMenuOpen} catMenuRef={catMenuRef} locMode={locMode} setLocMode={setLocMode} selectedLocations={selectedLocations} setSelectedLocations={setSelectedLocations} locMenuOpen={locMenuOpen} setLocMenuOpen={setLocMenuOpen} locMenuRef={locMenuRef} getCatLabel={getCatLabel} />
         )}
         
       {view === 'landing-private' && ( <LandingView title={t.landing_priv_title} subtitle={t.landing_priv_sub} variant="private" searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearchSubmit={handleSearchSubmit} setSelectedCatPath={setSelectedCatPath} setView={setView} t={t} getCatLabel={getCatLabel} /> )}
@@ -1145,7 +1158,7 @@ useEffect(() => {
       {view === 'landing-kids' && ( <LandingView title={t.landing_kids_title} subtitle={t.landing_kids_sub} variant="kids" searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearchSubmit={handleSearchSubmit} setSelectedCatPath={setSelectedCatPath} setView={setView} t={t} getCatLabel={getCatLabel} /> )}
 
       {view === 'search' && (
-          <SearchPageView courses={courses} searchQuery={searchQuery} setSearchQuery={setSearchQuery} searchType={searchType} setSearchType={setSearchType} searchArea={searchArea} setSearchArea={setSearchArea} searchSpecialty={searchSpecialty} setSearchSpecialty={setSearchSpecialty} locMode={locMode} setLocMode={setLocMode} selectedLocations={selectedLocations} setSelectedLocations={setSelectedLocations} locMenuOpen={locMenuOpen} setLocMenuOpen={setLocMenuOpen} locMenuRef={locMenuRef} loading={loading} filteredCourses={filteredCourses} setSelectedCourse={setSelectedCourse} setView={setView} t={t} getCatLabel={getCatLabel} filterDateFrom={filterDateFrom} setFilterDateFrom={setFilterDateFrom} filterDateTo={filterDateTo} setFilterDateTo={setFilterDateTo} filterPriceMax={filterPriceMax} setFilterPriceMax={setFilterPriceMax} filterLevel={filterLevel} setFilterLevel={setFilterLevel} filterPro={filterPro} setFilterPro={setFilterPro} selectedLanguage={selectedLanguage} setSelectedLanguage={setSelectedLanguage} langMenuOpen={langMenuOpen} setLangMenuOpen={setLangMenuOpen} langMenuRef={langMenuRef} savedCourseIds={savedCourseIds} onToggleSaveCourse={toggleSaveCourse} />
+          <SearchPageView courses={courses} searchQuery={searchQuery} setSearchQuery={setSearchQuery} searchType={searchType} setSearchType={setSearchType} searchArea={searchArea} setSearchArea={setSearchArea} searchSpecialty={searchSpecialty} setSearchSpecialty={setSearchSpecialty} searchFocus={searchFocus} setSearchFocus={setSearchFocus} locMode={locMode} setLocMode={setLocMode} selectedLocations={selectedLocations} setSelectedLocations={setSelectedLocations} locMenuOpen={locMenuOpen} setLocMenuOpen={setLocMenuOpen} locMenuRef={locMenuRef} loading={loading} filteredCourses={filteredCourses} setSelectedCourse={setSelectedCourse} setView={setView} t={t} getCatLabel={getCatLabel} filterDateFrom={filterDateFrom} setFilterDateFrom={setFilterDateFrom} filterDateTo={filterDateTo} setFilterDateTo={setFilterDateTo} filterPriceMax={filterPriceMax} setFilterPriceMax={setFilterPriceMax} filterLevel={filterLevel} setFilterLevel={setFilterLevel} filterPro={filterPro} setFilterPro={setFilterPro} selectedLanguage={selectedLanguage} setSelectedLanguage={setSelectedLanguage} langMenuOpen={langMenuOpen} setLangMenuOpen={setLangMenuOpen} langMenuRef={langMenuRef} savedCourseIds={savedCourseIds} onToggleSaveCourse={toggleSaveCourse} />
       )}
 
             {view === 'category-location' && (

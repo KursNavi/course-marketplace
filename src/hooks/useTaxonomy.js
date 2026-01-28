@@ -10,6 +10,7 @@ const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 /**
  * Hook to load taxonomy from database with fallback to constants.js
  * Returns the taxonomy in the same format as NEW_TAXONOMY for compatibility
+ * Hierarchy: Type → Area → Specialty → Focus (Level 4)
  */
 export function useTaxonomy() {
     const [loading, setLoading] = useState(true);
@@ -18,6 +19,7 @@ export function useTaxonomy() {
     const [types, setTypes] = useState([]);
     const [areas, setAreas] = useState([]);
     const [specialties, setSpecialties] = useState([]);
+    const [focuses, setFocuses] = useState([]);
 
     const loadTaxonomy = useCallback(async (forceRefresh = false) => {
         // Check cache first
@@ -26,6 +28,7 @@ export function useTaxonomy() {
             setTypes(taxonomyCache.types);
             setAreas(taxonomyCache.areas);
             setSpecialties(taxonomyCache.specialties);
+            setFocuses(taxonomyCache.focuses || []);
             setLoading(false);
             return;
         }
@@ -33,11 +36,12 @@ export function useTaxonomy() {
         try {
             setLoading(true);
 
-            // Load from database
-            const [typesRes, areasRes, specialtiesRes] = await Promise.all([
+            // Load from database (including Level 4: focuses)
+            const [typesRes, areasRes, specialtiesRes, focusesRes] = await Promise.all([
                 supabase.from('taxonomy_types').select('*').order('sort_order'),
                 supabase.from('taxonomy_areas').select('*').order('sort_order'),
-                supabase.from('taxonomy_specialties').select('*').order('sort_order')
+                supabase.from('taxonomy_specialties').select('*').order('sort_order'),
+                supabase.from('taxonomy_focus').select('*').order('sort_order')
             ]);
 
             // Check if we have data
@@ -48,10 +52,18 @@ export function useTaxonomy() {
                 const dbTypes = typesRes.data;
                 const dbAreas = areasRes.data;
                 const dbSpecialties = specialtiesRes.data;
+                const dbFocuses = (focusesRes.error ? [] : focusesRes.data) || [];
 
                 // Build compatible structure like NEW_TAXONOMY
                 const builtTaxonomy = {};
                 const categoryTypes = {};
+
+                // Build a map: specialty_id -> focus names
+                const focusBySpecialtyId = {};
+                dbFocuses.forEach(f => {
+                    if (!focusBySpecialtyId[f.specialty_id]) focusBySpecialtyId[f.specialty_id] = [];
+                    focusBySpecialtyId[f.specialty_id].push(f.name);
+                });
 
                 dbTypes.forEach(type => {
                     categoryTypes[type.id] = {
@@ -68,8 +80,18 @@ export function useTaxonomy() {
                     typeAreas.forEach(area => {
                         // Find specialties for this area
                         const areaSpecs = dbSpecialties
-                            .filter(s => s.area_id === area.id)
-                            .map(s => s.name);
+                            .filter(s => s.area_id === area.id);
+
+                        const specialtyNames = areaSpecs.map(s => s.name);
+
+                        // Build specialtyFocuses map: { specialtyName: [focus1, focus2, ...] }
+                        const specialtyFocuses = {};
+                        areaSpecs.forEach(s => {
+                            const fList = focusBySpecialtyId[s.id];
+                            if (fList && fList.length > 0) {
+                                specialtyFocuses[s.name] = fList;
+                            }
+                        });
 
                         builtTaxonomy[type.id][area.id] = {
                             label: {
@@ -78,7 +100,8 @@ export function useTaxonomy() {
                                 fr: area.label_fr || area.label_de,
                                 it: area.label_it || area.label_de
                             },
-                            specialties: areaSpecs
+                            specialties: specialtyNames,
+                            specialtyFocuses
                         };
                     });
                 });
@@ -89,7 +112,8 @@ export function useTaxonomy() {
                     categoryTypes,
                     types: dbTypes,
                     areas: dbAreas,
-                    specialties: dbSpecialties
+                    specialties: dbSpecialties,
+                    focuses: dbFocuses
                 };
                 cacheTimestamp = Date.now();
 
@@ -97,6 +121,7 @@ export function useTaxonomy() {
                 setTypes(dbTypes);
                 setAreas(dbAreas);
                 setSpecialties(dbSpecialties);
+                setFocuses(dbFocuses);
                 setError(null);
             } else {
                 // Fallback to constants.js
@@ -145,7 +170,8 @@ export function useTaxonomy() {
                     categoryTypes: CATEGORY_TYPES,
                     types: fallbackTypes,
                     areas: fallbackAreas,
-                    specialties: fallbackSpecialties
+                    specialties: fallbackSpecialties,
+                    focuses: []
                 };
                 cacheTimestamp = Date.now();
 
@@ -153,6 +179,7 @@ export function useTaxonomy() {
                 setTypes(fallbackTypes);
                 setAreas(fallbackAreas);
                 setSpecialties(fallbackSpecialties);
+                setFocuses([]);
             }
         } catch (err) {
             console.error('Error loading taxonomy:', err);
@@ -179,6 +206,12 @@ export function useTaxonomy() {
     const getSpecialties = useCallback((typeId, areaId) => {
         if (!taxonomy || !typeId || !areaId) return [];
         return taxonomy[typeId]?.[areaId]?.specialties || [];
+    }, [taxonomy]);
+
+    // Helper: Get focuses for a specialty
+    const getFocuses = useCallback((typeId, areaId, specialtyName) => {
+        if (!taxonomy || !typeId || !areaId || !specialtyName) return [];
+        return taxonomy[typeId]?.[areaId]?.specialtyFocuses?.[specialtyName] || [];
     }, [taxonomy]);
 
     // Helper: Get area label
@@ -208,8 +241,10 @@ export function useTaxonomy() {
         types,
         areas,
         specialties,
+        focuses,
         getAreas,
         getSpecialties,
+        getFocuses,
         getAreaLabel,
         getTypeLabel,
         refresh
