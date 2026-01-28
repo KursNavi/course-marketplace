@@ -693,18 +693,6 @@ const Dashboard = ({ user, t, setView, courses, teacherEarnings, myBookings, sav
                     )}
                 </div>
                 
-                {/* LOGIC: Create Button with Limit Check */}
-                {user.role === 'teacher' && dashView === 'overview' && (
-                    <div className="relative group">
-                        <button 
-                            onClick={() => handleEditCourse(null)}
-                            className="px-6 py-3 rounded-xl font-bold flex items-center shadow-lg transition font-heading bg-primary text-white hover:bg-orange-600 hover:-translate-y-0.5"
-                        >
-                            <KursNaviLogo className="mr-2 w-5 h-5 text-white" /> 
-                            {t.dash_new_course}
-                        </button>
-                    </div>
-                )}
             </div>
 
             {dashView === 'profile' || dashView === 'settings' ? ( <UserProfileSection user={user} showNotification={showNotification} setLang={changeLanguage} t={t} /> ) : 
@@ -819,7 +807,16 @@ const Dashboard = ({ user, t, setView, courses, teacherEarnings, myBookings, sav
                              ) : <div className="p-8 text-center text-gray-500">Noch keine Buchungen über die Plattform.</div>}
                         </div>
 
-                        <h2 className="text-xl font-bold mb-4 font-heading text-dark">Meine Kurse verwalten</h2>
+                        <div className="flex items-center justify-between mb-4">
+                            <h2 className="text-xl font-bold font-heading text-dark">Meine Kurse verwalten</h2>
+                            <button
+                                onClick={() => handleEditCourse(null)}
+                                className="px-5 py-2.5 rounded-xl font-bold flex items-center shadow-lg transition font-heading bg-primary text-white hover:bg-orange-600 hover:-translate-y-0.5"
+                            >
+                                <KursNaviLogo className="mr-2 w-5 h-5 text-white" />
+                                {t.dash_new_course}
+                            </button>
+                        </div>
                         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                             {myCourses.length > 0 ? (
                                 <div className="overflow-x-auto">
