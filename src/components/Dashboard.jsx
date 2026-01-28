@@ -841,7 +841,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                                             {course.booking_type || 'platform'}
                                                         </span>
                                                     </td>
-                                                    <td className="px-6 py-4 font-medium">CHF {formatPriceCHF(course.price)}</td>
+                                                    <td className="px-6 py-4 font-medium">{course.price ? `CHF ${formatPriceCHF(course.price)}` : <span className="text-gray-400 italic">Kein Preis angegeben</span>}</td>
                                                     <td className="px-6 py-4 flex gap-2">
                                                         <button onClick={() => handleEditCourse(course)} className="text-blue-500 hover:text-blue-700 bg-blue-50 p-2 rounded-full"><PenTool className="w-4 h-4" /></button>
                                                         <button onClick={() => handleDeleteCourse(course.id)} className="text-red-500 hover:text-red-700 bg-red-50 p-2 rounded-full"><Trash2 className="w-4 h-4" /></button>
