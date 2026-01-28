@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo } from 'react';
-import { Search, ChevronRight, User, X, Calendar, Shield, MapPin, CheckCircle, Loader, Bell, ArrowDown, Bookmark, BookmarkCheck } from 'lucide-react';
+import { Search, ChevronRight, User, X, Calendar, Shield, MapPin, CheckCircle, Loader, Bell, ArrowDown, Bookmark, BookmarkCheck, CreditCard } from 'lucide-react';
 import { LocationDropdown, LanguageDropdown } from './Filters';
 import { Globe } from 'lucide-react';
 import { CATEGORY_TYPES, NEW_TAXONOMY, AGE_GROUPS, COURSE_LEVELS } from '../lib/constants';
@@ -14,7 +14,7 @@ const SearchPageView = ({
     searchFocus, setSearchFocus,
     locMode, setLocMode, selectedLocations, setSelectedLocations, locMenuOpen, setLocMenuOpen, locMenuRef,
     loading, filteredCourses, setSelectedCourse, setView,
-    t, filterDateFrom, setFilterDateFrom, filterDateTo, setFilterDateTo, filterPriceMax, setFilterPriceMax, filterLevel, setFilterLevel, filterPro, setFilterPro,
+    t, filterDateFrom, setFilterDateFrom, filterDateTo, setFilterDateTo, filterPriceMax, setFilterPriceMax, filterLevel, setFilterLevel, filterPro, setFilterPro, filterDirectBooking, setFilterDirectBooking,
     selectedLanguage, setSelectedLanguage, langMenuOpen, setLangMenuOpen, langMenuRef,
     savedCourseIds, onToggleSaveCourse
 }) => {
@@ -249,7 +249,7 @@ const SearchPageView = ({
 
     const resetFilters = () => {
         setSearchType(""); setSearchArea(""); setSearchSpecialty(""); setSearchFocus("");
-        setSelectedLocations([]); setSearchQuery(""); setFilterDateFrom(""); setFilterDateTo(""); setFilterPriceMax(""); setFilterLevel("All"); setFilterPro(false);
+        setSelectedLocations([]); setSearchQuery(""); setFilterDateFrom(""); setFilterDateTo(""); setFilterPriceMax(""); setFilterLevel("All"); setFilterPro(false); setFilterDirectBooking(false);
     };
 
     // --- RANKING LOGIC (v3.1) ---
@@ -346,6 +346,7 @@ const SearchPageView = ({
                         <div className="flex items-center space-x-2 bg-white px-3 py-1.5 rounded-lg border border-gray-200"><span className="text-sm text-gray-500">{t.lbl_max_price}</span><input type="number" placeholder="Any" value={filterPriceMax} onChange={(e) => setFilterPriceMax(e.target.value)} className="w-16 bg-transparent text-sm outline-none text-gray-600" /></div>
                         <select value={filterLevel} onChange={(e) => setFilterLevel(e.target.value)} className="bg-white border border-gray-200 rounded-lg px-3 py-1.5 text-sm outline-none text-gray-600"><option value="All">{t.opt_all_levels}</option>{Object.keys(COURSE_LEVELS).map(k => <option key={k} value={k}>{COURSE_LEVELS[k].de}</option>)}</select>
                          <label className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg border cursor-pointer transition select-none ${filterPro ? 'bg-blue-50 border-blue-200' : 'bg-white border-gray-200'}`} title={t.tooltip_pro_verified}><input type="checkbox" checked={filterPro} onChange={(e) => setFilterPro(e.target.checked)} className="rounded text-primary focus:ring-primary" /><span className={`text-sm font-medium ${filterPro ? 'text-blue-700' : 'text-gray-600'}`}>{t.lbl_professional_filter}</span><Shield className="w-3 h-3 text-blue-500" /></label>
+                         <label className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg border cursor-pointer transition select-none ${filterDirectBooking ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200'}`} title={t.tooltip_direct_booking}><input type="checkbox" checked={filterDirectBooking} onChange={(e) => setFilterDirectBooking(e.target.checked)} className="rounded text-primary focus:ring-primary" /><span className={`text-sm font-medium ${filterDirectBooking ? 'text-green-700' : 'text-gray-600'}`}>{t.lbl_direct_booking_filter}</span><CreditCard className="w-3 h-3 text-green-500" /></label>
                     </div>
                 </div>
                  {(selectedLocations.length > 0 || selectedLanguage) && (

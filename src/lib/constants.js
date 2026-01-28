@@ -363,6 +363,8 @@ export const TRANSLATIONS = {
     msg_select_area: "Select an area.", lbl_select_cat: "Select Category",
     lbl_professional_filter: "Professional",
     tooltip_pro_verified: "Professional course provider verified by KursNavi.",
+    lbl_direct_booking_filter: "Direct Booking",
+    tooltip_direct_booking: "Book and pay directly on KursNavi.",
 
     // Form Labels
     edit_course: "Edit Course", edit_course_sub: "Update your course details.",
@@ -508,6 +510,8 @@ export const TRANSLATIONS = {
     msg_select_area: "Wähle einen Bereich.", lbl_select_cat: "Kategorie wählen",
     lbl_professional_filter: "Professionell",
     tooltip_pro_verified: "Professioneller Kursanbieter, geprüft von KursNavi.",
+    lbl_direct_booking_filter: "Direktbuchung",
+    tooltip_direct_booking: "Direkt auf KursNavi buchen und bezahlen.",
 
     edit_course: "Kurs bearbeiten", edit_course_sub: "Details aktualisieren.",
     create_course: "Kurs erstellen", create_course_sub: "Teile dein Wissen.",
@@ -652,6 +656,8 @@ export const TRANSLATIONS = {
     msg_select_area: "Choisissez un domaine.", lbl_select_cat: "Choisir catégorie",
     lbl_professional_filter: "Professionnel",
     tooltip_pro_verified: "Prestataire de cours professionnel vérifié par KursNavi.",
+    lbl_direct_booking_filter: "Réservation directe",
+    tooltip_direct_booking: "Réserver et payer directement sur KursNavi.",
 
     edit_course: "Modifier le cours", edit_course_sub: "Mettre à jour les détails.",
     create_course: "Créer un cours", create_course_sub: "Partagez vos compétences.",
@@ -796,6 +802,8 @@ export const TRANSLATIONS = {
     msg_select_area: "Scegli un'area.", lbl_select_cat: "Scegli categoria",
     lbl_professional_filter: "Professionale",
     tooltip_pro_verified: "Fornitore di corsi professionale verificato da KursNavi.",
+    lbl_direct_booking_filter: "Prenotazione diretta",
+    tooltip_direct_booking: "Prenota e paga direttamente su KursNavi.",
 
     edit_course: "Modifica corso", edit_course_sub: "Aggiorna i dettagli.",
     create_course: "Crea corso", create_course_sub: "Condividi le tue abilità.",

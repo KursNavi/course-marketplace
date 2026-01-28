@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, ArrowRight, ChevronRight, ChevronDown } from 'lucide-react';
+import { Search, ArrowRight, ChevronRight, ChevronDown, CreditCard } from 'lucide-react';
 import { LocationDropdown } from './Filters'; 
 import { NEW_TAXONOMY, CATEGORY_TYPES } from '../lib/constants';
 
@@ -8,7 +8,8 @@ export const Home = ({
   setSearchType, setSearchArea, setSearchSpecialty, setSearchFocus,
   searchQuery, setSearchQuery,
   catMenuOpen, setCatMenuOpen, catMenuRef,
-  locMode, setLocMode, selectedLocations, setSelectedLocations, locMenuOpen, setLocMenuOpen, locMenuRef
+  locMode, setLocMode, selectedLocations, setSelectedLocations, locMenuOpen, setLocMenuOpen, locMenuRef,
+  filterDirectBooking, setFilterDirectBooking
 }) => {
 
   // State für das Mega-Menü
@@ -347,17 +348,26 @@ export const Home = ({
 
                 {/* LOCATION DROPDOWN */}
                 <div className="flex-1 bg-white rounded-xl">
-                    <LocationDropdown 
-                        locMode={locMode} 
-                        setLocMode={setLocMode} 
-                        selectedLocations={selectedLocations} 
-                        setSelectedLocations={setSelectedLocations} 
-                        locMenuOpen={locMenuOpen} 
-                        setLocMenuOpen={setLocMenuOpen} 
-                        locMenuRef={locMenuRef} 
-                        t={t} 
+                    <LocationDropdown
+                        locMode={locMode}
+                        setLocMode={setLocMode}
+                        selectedLocations={selectedLocations}
+                        setSelectedLocations={setSelectedLocations}
+                        locMenuOpen={locMenuOpen}
+                        setLocMenuOpen={setLocMenuOpen}
+                        locMenuRef={locMenuRef}
+                        t={t}
                     />
                 </div>
+            </div>
+
+            {/* Row 3: Direct Booking Filter */}
+            <div className="flex justify-center mt-3">
+                <label className={`flex items-center space-x-2 px-4 py-2 rounded-xl cursor-pointer transition select-none ${filterDirectBooking ? 'bg-green-500/90 border-green-400' : 'bg-white/20 border-white/30'} border backdrop-blur-sm`} title={t.tooltip_direct_booking}>
+                    <input type="checkbox" checked={filterDirectBooking} onChange={(e) => setFilterDirectBooking(e.target.checked)} className="rounded text-green-500 focus:ring-green-400 bg-white/80" />
+                    <span className={`text-sm font-medium ${filterDirectBooking ? 'text-white' : 'text-white/90'}`}>{t.lbl_direct_booking_filter}</span>
+                    <CreditCard className={`w-4 h-4 ${filterDirectBooking ? 'text-white' : 'text-white/80'}`} />
+                </label>
             </div>
           </div>
 
