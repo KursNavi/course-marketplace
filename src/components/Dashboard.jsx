@@ -4,7 +4,7 @@ import {
     Loader, Settings, Save, Lock, CheckCircle, XCircle, Clock,
     ChevronDown, User, DollarSign, PenTool, Trash2, ArrowRight, Plus, MapPin,
     Crown, BarChart3, Bold, Italic, Underline, Heading2, Heading3, List,
-    CreditCard, Check, Shield, ExternalLink, Mail
+    CreditCard, Check, Shield, ExternalLink
 } from 'lucide-react';
 import { SWISS_CANTONS } from "../lib/constants";
 import { PLANS } from "../constants/plans";
@@ -36,7 +36,7 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t }) => 
     
     const [formData, setFormData] = useState({
         full_name: '', city: '', canton: '', bio_text: '', certificates: '', preferred_language: 'de', email: user.email, password: '', confirmPassword: '',
-        website_url: '', contact_email: ''
+        website_url: ''
     });
     const [additionalLocations, setAdditionalLocations] = useState([]);
 
@@ -49,7 +49,7 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t }) => 
         (async () => {
             const { data, error } = await supabase
                 .from('profiles')
-                .select('full_name, city, canton, bio_text, certificates, preferred_language, additional_locations, website_url, contact_email, verification_status')
+                .select('full_name, city, canton, bio_text, certificates, preferred_language, additional_locations, website_url, verification_status')
                 .eq('id', uid)
                 .single();
 
@@ -70,8 +70,7 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t }) => 
                     bio_text: data.bio_text || '',
                     certificates: Array.isArray(data.certificates) ? data.certificates.join('\n') : '',
                     preferred_language: data.preferred_language || 'de',
-                    website_url: data.website_url || '',
-                    contact_email: data.contact_email || ''
+                    website_url: data.website_url || ''
                 }));
                 // Parse additional_locations (JSON array or legacy comma string)
                 if (data.additional_locations) {
@@ -120,7 +119,6 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t }) => 
             const validLocations = additionalLocations.filter(loc => loc.city.trim());
             profileUpdates.additional_locations = validLocations.length > 0 ? JSON.stringify(validLocations) : '';
             profileUpdates.website_url = formattedUrl;
-            profileUpdates.contact_email = formData.contact_email;
             profileUpdates.bio_text = formData.bio_text;
             profileUpdates.certificates = certArray;
         }
@@ -291,19 +289,12 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t }) => 
                             <p className="text-xs text-gray-400 mt-1 italic">Tipp: Falls du Kurse an verschiedenen Orten anbietest, liste diese hier auf.</p>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+                        <div className="pt-2">
                             <div>
                                 <label className="block text-sm font-bold text-gray-700 mb-1">Unternehmens-Website</label>
                                 <div className="relative">
                                     <input type="text" name="website_url" value={formData.website_url || ''} onChange={handleChange} placeholder="z.B. www.deine-seite.ch" className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
                                     <ExternalLink className="absolute left-3 top-2.5 text-gray-400 w-4 h-4" />
-                                </div>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-1">Kontakt-Email für Anfragen</label>
-                                <div className="relative">
-                                    <input type="email" name="contact_email" value={formData.contact_email || ''} onChange={handleChange} placeholder="info@deine-firma.ch" className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
-                                    <Mail className="absolute left-3 top-2.5 text-gray-400 w-4 h-4" />
                                 </div>
                             </div>
                         </div>
