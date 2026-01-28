@@ -15,6 +15,11 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
 
     const isSaved = (savedCourseIds || []).includes(course?.id);
 
+    // Scroll to top when course changes
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, [course?.id]);
+
     // Build category breadcrumb path
     const getCategoryBreadcrumb = () => {
         if (!course || !taxonomy) return [];
