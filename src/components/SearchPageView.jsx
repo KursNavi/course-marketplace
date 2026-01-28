@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo } from 'react';
-import { Search, ChevronRight, User, X, Calendar, Shield, MapPin, CheckCircle, Loader, Bell, ArrowDown, Bookmark, BookmarkCheck, CreditCard } from 'lucide-react';
+import { Search, ChevronRight, User, X, Calendar, Shield, MapPin, CheckCircle, Loader, Bell, ArrowDown, Bookmark, BookmarkCheck, CreditCard, Info } from 'lucide-react';
 import { LocationDropdown, LanguageDropdown } from './Filters';
 import { Globe } from 'lucide-react';
 import { CATEGORY_TYPES, NEW_TAXONOMY, AGE_GROUPS, COURSE_LEVELS } from '../lib/constants';
@@ -346,7 +346,19 @@ const SearchPageView = ({
                         <div className="flex items-center space-x-2 bg-white px-3 py-1.5 rounded-lg border border-gray-200"><span className="text-sm text-gray-500">{t.lbl_max_price}</span><input type="number" placeholder="Any" value={filterPriceMax} onChange={(e) => setFilterPriceMax(e.target.value)} className="w-16 bg-transparent text-sm outline-none text-gray-600" /></div>
                         <select value={filterLevel} onChange={(e) => setFilterLevel(e.target.value)} className="bg-white border border-gray-200 rounded-lg px-3 py-1.5 text-sm outline-none text-gray-600"><option value="All">{t.opt_all_levels}</option>{Object.keys(COURSE_LEVELS).map(k => <option key={k} value={k}>{COURSE_LEVELS[k].de}</option>)}</select>
                          <label className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg border cursor-pointer transition select-none ${filterPro ? 'bg-blue-50 border-blue-200' : 'bg-white border-gray-200'}`} title={t.tooltip_pro_verified}><input type="checkbox" checked={filterPro} onChange={(e) => setFilterPro(e.target.checked)} className="rounded text-primary focus:ring-primary" /><span className={`text-sm font-medium ${filterPro ? 'text-blue-700' : 'text-gray-600'}`}>{t.lbl_professional_filter}</span><Shield className="w-3 h-3 text-blue-500" /></label>
-                         <label className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg border cursor-pointer transition select-none ${filterDirectBooking ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200'}`} title={t.tooltip_direct_booking}><input type="checkbox" checked={filterDirectBooking} onChange={(e) => setFilterDirectBooking(e.target.checked)} className="rounded text-primary focus:ring-primary" /><span className={`text-sm font-medium ${filterDirectBooking ? 'text-green-700' : 'text-gray-600'}`}>{t.lbl_direct_booking_filter}</span><CreditCard className="w-3 h-3 text-green-500" /></label>
+                         <div className="relative group">
+                            <label className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg border cursor-pointer transition select-none ${filterDirectBooking ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200'}`}>
+                                <input type="checkbox" checked={filterDirectBooking} onChange={(e) => setFilterDirectBooking(e.target.checked)} className="rounded text-primary focus:ring-primary" />
+                                <span className={`text-sm font-medium ${filterDirectBooking ? 'text-green-700' : 'text-gray-600'}`}>{t.lbl_direct_booking_filter}</span>
+                                <CreditCard className="w-3 h-3 text-green-500" />
+                                <Info className="w-3 h-3 text-gray-400 group-hover:text-green-500 transition-colors" />
+                            </label>
+                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-lg">
+                                <div className="font-semibold mb-1">{t.lbl_direct_booking_filter}</div>
+                                <div className="text-gray-300">{t.tooltip_direct_booking_long || t.tooltip_direct_booking}</div>
+                                <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                            </div>
+                         </div>
                     </div>
                 </div>
                  {(selectedLocations.length > 0 || selectedLanguage) && (

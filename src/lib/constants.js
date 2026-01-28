@@ -365,6 +365,7 @@ export const TRANSLATIONS = {
     tooltip_pro_verified: "Professional course provider verified by KursNavi.",
     lbl_direct_booking_filter: "Direct Booking",
     tooltip_direct_booking: "Book and pay directly on KursNavi.",
+    tooltip_direct_booking_long: "These courses can be booked and paid directly on our platform - no external website or contact form needed.",
 
     // Form Labels
     edit_course: "Edit Course", edit_course_sub: "Update your course details.",
@@ -512,6 +513,7 @@ export const TRANSLATIONS = {
     tooltip_pro_verified: "Professioneller Kursanbieter, geprüft von KursNavi.",
     lbl_direct_booking_filter: "Direktbuchung",
     tooltip_direct_booking: "Direkt auf KursNavi buchen und bezahlen.",
+    tooltip_direct_booking_long: "Diese Kurse können direkt auf unserer Plattform gebucht und bezahlt werden - ohne externe Webseite oder Kontaktformular.",
 
     edit_course: "Kurs bearbeiten", edit_course_sub: "Details aktualisieren.",
     create_course: "Kurs erstellen", create_course_sub: "Teile dein Wissen.",
@@ -658,6 +660,7 @@ export const TRANSLATIONS = {
     tooltip_pro_verified: "Prestataire de cours professionnel vérifié par KursNavi.",
     lbl_direct_booking_filter: "Réservation directe",
     tooltip_direct_booking: "Réserver et payer directement sur KursNavi.",
+    tooltip_direct_booking_long: "Ces cours peuvent être réservés et payés directement sur notre plateforme - sans site externe ni formulaire de contact.",
 
     edit_course: "Modifier le cours", edit_course_sub: "Mettre à jour les détails.",
     create_course: "Créer un cours", create_course_sub: "Partagez vos compétences.",
@@ -804,6 +807,7 @@ export const TRANSLATIONS = {
     tooltip_pro_verified: "Fornitore di corsi professionale verificato da KursNavi.",
     lbl_direct_booking_filter: "Prenotazione diretta",
     tooltip_direct_booking: "Prenota e paga direttamente su KursNavi.",
+    tooltip_direct_booking_long: "Questi corsi possono essere prenotati e pagati direttamente sulla nostra piattaforma - senza sito esterno o modulo di contatto.",
 
     edit_course: "Modifica corso", edit_course_sub: "Aggiorna i dettagli.",
     create_course: "Crea corso", create_course_sub: "Condividi le tue abilità.",

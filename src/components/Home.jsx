@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, ArrowRight, ChevronRight, ChevronDown, CreditCard } from 'lucide-react';
+import { Search, ArrowRight, ChevronRight, ChevronDown, CreditCard, Info } from 'lucide-react';
 import { LocationDropdown } from './Filters'; 
 import { NEW_TAXONOMY, CATEGORY_TYPES } from '../lib/constants';
 
@@ -363,11 +363,19 @@ export const Home = ({
 
             {/* Row 3: Direct Booking Filter */}
             <div className="flex justify-center mt-3">
-                <label className={`flex items-center space-x-2 px-4 py-2 rounded-xl cursor-pointer transition select-none ${filterDirectBooking ? 'bg-green-500/90 border-green-400' : 'bg-white/20 border-white/30'} border backdrop-blur-sm`} title={t.tooltip_direct_booking}>
-                    <input type="checkbox" checked={filterDirectBooking} onChange={(e) => setFilterDirectBooking(e.target.checked)} className="rounded text-green-500 focus:ring-green-400 bg-white/80" />
-                    <span className={`text-sm font-medium ${filterDirectBooking ? 'text-white' : 'text-white/90'}`}>{t.lbl_direct_booking_filter}</span>
-                    <CreditCard className={`w-4 h-4 ${filterDirectBooking ? 'text-white' : 'text-white/80'}`} />
-                </label>
+                <div className="relative group">
+                    <label className={`flex items-center space-x-2 px-4 py-2 rounded-xl cursor-pointer transition select-none ${filterDirectBooking ? 'bg-green-500/90 border-green-400' : 'bg-white/20 border-white/30'} border backdrop-blur-sm`}>
+                        <input type="checkbox" checked={filterDirectBooking} onChange={(e) => setFilterDirectBooking(e.target.checked)} className="rounded text-green-500 focus:ring-green-400 bg-white/80" />
+                        <span className={`text-sm font-medium ${filterDirectBooking ? 'text-white' : 'text-white/90'}`}>{t.lbl_direct_booking_filter}</span>
+                        <CreditCard className={`w-4 h-4 ${filterDirectBooking ? 'text-white' : 'text-white/80'}`} />
+                        <Info className={`w-4 h-4 ${filterDirectBooking ? 'text-white/70' : 'text-white/60'} group-hover:text-white transition-colors`} />
+                    </label>
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none w-64 text-center z-50 shadow-lg">
+                        <div className="font-semibold mb-1">{t.lbl_direct_booking_filter}</div>
+                        <div className="text-gray-300">{t.tooltip_direct_booking_long || t.tooltip_direct_booking}</div>
+                        <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                    </div>
+                </div>
             </div>
           </div>
 
