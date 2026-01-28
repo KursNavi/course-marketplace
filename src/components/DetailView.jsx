@@ -485,7 +485,11 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
     <div className="max-w-7xl mx-auto px-4 py-8 font-sans animate-in fade-in duration-500">
         <button onClick={() => {
             console.log('🔙 Back button clicked in DetailView');
-            window.history.pushState({ view: 'search' }, '', '/search');
+            if (window.history.length > 1) {
+                window.history.back();
+            } else {
+                window.history.pushState({ view: 'search' }, '', '/search');
+            }
         }} className="flex items-center text-gray-500 hover:text-primary mb-6 transition-colors"><ArrowLeft className="w-4 h-4 mr-2"/> Zurück zur Suche</button>
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
