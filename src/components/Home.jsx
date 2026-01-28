@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, ArrowRight, ChevronRight, ChevronDown, CreditCard, Info } from 'lucide-react';
+import { Search, ArrowRight, ChevronRight, ChevronDown, CreditCard, Info, Shield } from 'lucide-react';
 import { LocationDropdown } from './Filters'; 
 import { NEW_TAXONOMY, CATEGORY_TYPES } from '../lib/constants';
 
@@ -9,7 +9,7 @@ export const Home = ({
   searchQuery, setSearchQuery,
   catMenuOpen, setCatMenuOpen, catMenuRef,
   locMode, setLocMode, selectedLocations, setSelectedLocations, locMenuOpen, setLocMenuOpen, locMenuRef,
-  filterDirectBooking, setFilterDirectBooking
+  filterPro, setFilterPro, filterDirectBooking, setFilterDirectBooking
 }) => {
 
   // State für das Mega-Menü
@@ -361,8 +361,14 @@ export const Home = ({
                 </div>
             </div>
 
-            {/* Row 3: Direct Booking Filter */}
-            <div className="flex justify-center mt-3">
+            {/* Row 3: Filter Checkboxes */}
+            <div className="flex justify-center gap-3 mt-3 flex-wrap">
+                <label className={`flex items-center space-x-2 px-4 py-2 rounded-xl cursor-pointer transition select-none ${filterPro ? 'bg-blue-500/90 border-blue-400' : 'bg-white/20 border-white/30'} border backdrop-blur-sm`} title={t.tooltip_pro_verified_long || t.tooltip_pro_verified}>
+                    <input type="checkbox" checked={filterPro} onChange={(e) => setFilterPro(e.target.checked)} className="rounded text-blue-500 focus:ring-blue-400 bg-white/80" />
+                    <span className={`text-sm font-medium ${filterPro ? 'text-white' : 'text-white/90'}`}>{t.lbl_professional_filter}</span>
+                    <Shield className={`w-4 h-4 ${filterPro ? 'text-white' : 'text-white/80'}`} />
+                    <Info className={`w-4 h-4 ${filterPro ? 'text-white/70' : 'text-white/60'} hover:text-white transition-colors`} />
+                </label>
                 <label className={`flex items-center space-x-2 px-4 py-2 rounded-xl cursor-pointer transition select-none ${filterDirectBooking ? 'bg-green-500/90 border-green-400' : 'bg-white/20 border-white/30'} border backdrop-blur-sm`} title={t.tooltip_direct_booking_long || t.tooltip_direct_booking}>
                     <input type="checkbox" checked={filterDirectBooking} onChange={(e) => setFilterDirectBooking(e.target.checked)} className="rounded text-green-500 focus:ring-green-400 bg-white/80" />
                     <span className={`text-sm font-medium ${filterDirectBooking ? 'text-white' : 'text-white/90'}`}>{t.lbl_direct_booking_filter}</span>
