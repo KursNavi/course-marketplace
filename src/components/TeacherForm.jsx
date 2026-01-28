@@ -433,7 +433,7 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
             keywords: keywords,
             objectives: objectivesList, 
             prerequisites: prerequisites,
-            session_count: Number(formData.get('sessionCount')) || 1, 
+            session_count: formData.get('sessionCount') ? Number(formData.get('sessionCount')) : null, 
             session_length: formData.get('sessionLength') || '', 
             provider_url: formData.get('providerUrl'), 
             user_id: user?.id || initialData?.user_id,
@@ -803,8 +803,8 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                                 <input required={bookingType === 'platform'} type="number" name="price" defaultValue={initialData?.price} placeholder={bookingType !== 'platform' ? "Optional" : "0.00"} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
                             </div>
                             <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-1">Anzahl Lektionen {bookingType === 'platform' && '*'}</label>
-                                <input required={bookingType === 'platform'} type="number" name="sessionCount" defaultValue={initialData?.session_count || 1} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+                                <label className="block text-sm font-bold text-gray-700 mb-1">Anzahl Lektionen</label>
+                                <input type="number" name="sessionCount" defaultValue={initialData?.session_count || ''} placeholder="z.B. 5" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
                             </div>
                             <div>
                                 <label className="block text-sm font-bold text-gray-700 mb-1">Lektionsdauer {bookingType === 'platform' && '*'}</label>

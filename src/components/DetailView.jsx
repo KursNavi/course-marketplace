@@ -210,7 +210,9 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
 
         // Add course-specific fields
         if (course.session_length) {
-            schemaData.timeRequired = `${course.session_count}x ${course.session_length}`;
+            schemaData.timeRequired = course.session_count
+                ? `${course.session_count}x ${course.session_length}`
+                : course.session_length;
         }
 
         if (course.category_area) {
@@ -536,8 +538,8 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
                         </span>
                         {course.session_length && (
                             <span className="flex items-center px-3 py-1.5">
-                                <Clock className="w-4 h-4 mr-2 text-gray-400"/> 
-                                {course.session_count}x {course.session_length}
+                                <Clock className="w-4 h-4 mr-2 text-gray-400"/>
+                                {course.session_count ? `${course.session_count}x ` : ''}{course.session_length}
                             </span>
                         )}
                     </div>
