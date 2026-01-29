@@ -591,10 +591,260 @@ const SubscriptionSection = ({ user, currentTier }) => {
 };
 
 // --- MAIN DASHBOARD COMPONENT ---
+// --- CAPTURE SERVICE BOOKING MODAL ---
+const CaptureServiceModal = ({ isOpen, onClose, user, includedServices, usedServices, showNotification }) => {
+    const [courses, setCourses] = useState([{ url: '', notes: '' }]);
+    const [isLoading, setIsLoading] = useState(false);
+
+    // Preisberechnung: 75 CHF für die ersten 3, dann 50 CHF
+    // Abzüglich der noch verfügbaren inkludierten Services (von vorne angerechnet)
+    const calculatePrice = () => {
+        const totalCourses = courses.length;
+        const availableServices = Math.max(0, includedServices - usedServices);
+
+        // Preise für alle Kurse berechnen (ohne Rabatt)
+        const prices = [];
+        for (let i = 0; i < totalCourses; i++) {
+            prices.push(i < 3 ? 75 : 50);
+        }
+
+        // Die ersten "availableServices" werden abgezogen (sind kostenlos)
+        const paidPrices = prices.slice(availableServices);
+        const total = paidPrices.reduce((sum, p) => sum + p, 0);
+
+        return {
+            total,
+            freeCount: Math.min(availableServices, totalCourses),
+            paidCount: Math.max(0, totalCourses - availableServices),
+            breakdown: prices,
+            paidBreakdown: paidPrices
+        };
+    };
+
+    const pricing = calculatePrice();
+
+    const addCourse = () => {
+        setCourses([...courses, { url: '', notes: '' }]);
+    };
+
+    const removeCourse = (index) => {
+        if (courses.length > 1) {
+            setCourses(courses.filter((_, i) => i !== index));
+        }
+    };
+
+    const updateCourse = (index, field, value) => {
+        const updated = [...courses];
+        updated[index][field] = value;
+        setCourses(updated);
+    };
+
+    const handleSubmit = async () => {
+        // Validierung: Alle URLs müssen ausgefüllt sein
+        const invalidCourses = courses.filter(c => !c.url.trim());
+        if (invalidCourses.length > 0) {
+            showNotification('Bitte fülle alle URL-Felder aus.', 'error');
+            return;
+        }
+
+        setIsLoading(true);
+
+        try {
+            const response = await fetch('/api/create-capture-service-checkout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    userId: user?.id,
+                    userEmail: user?.email,
+                    courses: courses,
+                    totalAmount: pricing.total,
+                    freeCount: pricing.freeCount,
+                    paidCount: pricing.paidCount
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.url) {
+                window.location.href = data.url;
+            } else if (data.success && pricing.total === 0) {
+                // Komplett kostenlos - direkt bestätigen
+                showNotification('Erfassungsservice erfolgreich gebucht!', 'success');
+                onClose();
+            } else {
+                throw new Error(data.error || 'Checkout konnte nicht erstellt werden');
+            }
+        } catch (error) {
+            console.error('Checkout error:', error);
+            showNotification('Fehler beim Erstellen des Checkouts: ' + error.message, 'error');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                {/* Header */}
+                <div className="bg-gradient-to-r from-orange-100 to-amber-50 p-6 border-b">
+                    <div className="flex justify-between items-start">
+                        <div>
+                            <h2 className="text-2xl font-bold text-dark font-heading">Kurserfassungs-Service buchen</h2>
+                            <p className="text-gray-600 mt-1">Wir erfassen deine Kurse professionell mit SEO-Optimierung</p>
+                        </div>
+                        <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+                    </div>
+                </div>
+
+                {/* Info Banner */}
+                {includedServices > 0 && (
+                    <div className="bg-green-50 border-b border-green-100 px-6 py-3">
+                        <p className="text-green-800 text-sm flex items-center">
+                            <CheckCircle className="w-4 h-4 mr-2" />
+                            <span>
+                                <strong>{Math.max(0, includedServices - usedServices)}</strong> von {includedServices} inkludierten Services noch verfügbar
+                                {usedServices > 0 && <span className="text-green-600"> ({usedServices} bereits genutzt)</span>}
+                            </span>
+                        </p>
+                    </div>
+                )}
+
+                {/* Course Form */}
+                <div className="p-6 space-y-4">
+                    <p className="text-sm text-gray-500 mb-4">
+                        Gib für jeden Kurs die URL an (z.B. Link zu deiner Website oder einem PDF).
+                        Im Notizfeld kannst du zusätzliche Informationen angeben.
+                    </p>
+
+                    {courses.map((course, index) => (
+                        <div key={index} className="border border-gray-200 rounded-xl p-4 bg-gray-50 relative">
+                            <div className="flex justify-between items-center mb-3">
+                                <span className="font-semibold text-dark">
+                                    Kurs {index + 1}
+                                    {index < pricing.freeCount ? (
+                                        <span className="ml-2 text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Inklusive</span>
+                                    ) : (
+                                        <span className="ml-2 text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full">
+                                            CHF {pricing.breakdown[index]}
+                                        </span>
+                                    )}
+                                </span>
+                                {courses.length > 1 && (
+                                    <button
+                                        onClick={() => removeCourse(index)}
+                                        className="text-red-400 hover:text-red-600 text-sm flex items-center"
+                                    >
+                                        <Trash2 className="w-4 h-4 mr-1" /> Entfernen
+                                    </button>
+                                )}
+                            </div>
+                            <div className="space-y-3">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        URL zum Kurs <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="url"
+                                        value={course.url}
+                                        onChange={(e) => updateCourse(index, 'url', e.target.value)}
+                                        placeholder="https://deine-website.ch/kurs oder PDF-Link"
+                                        className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary focus:border-transparent"
+                                        required
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Notizen (optional)
+                                    </label>
+                                    <textarea
+                                        value={course.notes}
+                                        onChange={(e) => updateCourse(index, 'notes', e.target.value)}
+                                        placeholder="Zusätzliche Informationen zum Kurs..."
+                                        rows={2}
+                                        className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+
+                    <button
+                        onClick={addCourse}
+                        className="w-full border-2 border-dashed border-gray-300 rounded-xl py-3 text-gray-500 hover:border-primary hover:text-primary transition flex items-center justify-center"
+                    >
+                        <Plus className="w-5 h-5 mr-2" /> Weiteren Kurs hinzufügen
+                    </button>
+                </div>
+
+                {/* Pricing Summary */}
+                <div className="bg-gray-50 border-t px-6 py-4">
+                    <div className="space-y-2 text-sm">
+                        <div className="flex justify-between text-gray-600">
+                            <span>Anzahl Kurse:</span>
+                            <span>{courses.length}</span>
+                        </div>
+                        {pricing.freeCount > 0 && (
+                            <div className="flex justify-between text-green-600">
+                                <span>Davon inklusive:</span>
+                                <span>-{pricing.freeCount} Kurse (CHF 0.-)</span>
+                            </div>
+                        )}
+                        {pricing.paidCount > 0 && (
+                            <div className="flex justify-between text-gray-600">
+                                <span>Kostenpflichtig ({pricing.paidCount} Kurse):</span>
+                                <span>{pricing.paidBreakdown.map(p => `CHF ${p}`).join(' + ')}</span>
+                            </div>
+                        )}
+                        <div className="flex justify-between font-bold text-lg pt-2 border-t">
+                            <span>Total:</span>
+                            <span className="text-primary">CHF {pricing.total}.-</span>
+                        </div>
+                    </div>
+                    <p className="text-xs text-gray-400 mt-2">
+                        Preise: CHF 75.- pro Kurs (1-3), CHF 50.- ab dem 4. Kurs
+                    </p>
+                </div>
+
+                {/* Actions */}
+                <div className="p-6 border-t flex gap-3">
+                    <button
+                        onClick={onClose}
+                        className="flex-1 px-6 py-3 border border-gray-300 rounded-xl font-semibold text-gray-700 hover:bg-gray-50 transition"
+                    >
+                        Abbrechen
+                    </button>
+                    <button
+                        onClick={handleSubmit}
+                        disabled={isLoading}
+                        className="flex-1 px-6 py-3 bg-primary text-white rounded-xl font-semibold hover:bg-primary/90 transition flex items-center justify-center disabled:opacity-50"
+                    >
+                        {isLoading ? (
+                            <Loader className="w-5 h-5 animate-spin" />
+                        ) : pricing.total === 0 ? (
+                            <>Kostenlos buchen</>
+                        ) : (
+                            <>
+                                <CreditCard className="w-5 h-5 mr-2" />
+                                Zur Zahlung (CHF {pricing.total}.-)
+                            </>
+                        )}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// --- MAIN DASHBOARD COMPONENT ---
 const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBookings, savedCourses, savedCourseIds, onToggleSaveCourse, handleDeleteCourse, handleEditCourse, showNotification, changeLanguage, setSelectedCourse }) => {
-    const [dashView, setDashView] = useState('overview'); 
+    const [dashView, setDashView] = useState('overview');
     const [userTier, setUserTier] = useState('basic'); // basic, pro, premium, enterprise
     const [showSuccessModal, setShowSuccessModal] = useState(false); // NEW: Success Modal State
+    const [showCaptureServiceModal, setShowCaptureServiceModal] = useState(false); // Capture Service Modal
+    const [showCaptureSuccessModal, setShowCaptureSuccessModal] = useState(false); // Capture Service Success Modal
+    const [usedCaptureServices, setUsedCaptureServices] = useState(0); // Genutzte Erfassungsservices
     const [authUid, setAuthUid] = useState(null);
 
     // NEW: Check for Payment Success in URL
@@ -602,9 +852,12 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
         const query = new URLSearchParams(window.location.search);
         if (query.get('payment') === 'success') {
             setShowSuccessModal(true);
-            // URL bereinigen (damit es beim Refresh nicht nochmal kommt)
             window.history.replaceState(null, '', window.location.pathname);
-            // Optional: Konfetti hier zünden, falls library vorhanden
+        }
+        // Capture Service Success
+        if (query.get('capture_service') === 'success') {
+            setShowCaptureSuccessModal(true);
+            window.history.replaceState(null, '', window.location.pathname);
         }
     }, []);
 
@@ -633,7 +886,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
         (async () => {
             const { data, error, status } = await supabase
                 .from('profiles')
-                .select('plan_tier, package_tier')
+                .select('plan_tier, package_tier, used_capture_services')
                 .eq('id', uid)
                 .maybeSingle();
 
@@ -665,6 +918,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
             const resolved = (rank[pkg] > rank[plan]) ? pkg : plan;
 
             setUserTier(resolved);
+            setUsedCaptureServices(data.used_capture_services || 0);
         })();
 
         return () => { cancelled = true; };
@@ -766,36 +1020,13 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                             </div>
                             <div className="text-right flex flex-col items-end">
                                 <span className="text-xs text-gray-400 mb-1 bg-white px-2 py-0.5 rounded border">ab 4. Kurs günstiger</span>
-                                                                                                <button
+                                <button
                                     type="button"
-                                    onClick={() => {
-                                        const to = "info@kursnavi.ch";
-                                        const subject = "Kurserfassungs-Service Anfrage";
-                                        const body = [
-                                            "Hallo KursNavi Team",
-                                            "",
-                                            "ich interessiere mich für den Kurserfassungs-Service.",
-                                            "Bitte meldet euch bei mir mit den nächsten Schritten.",
-                                            "",
-                                            `Account E-Mail: ${user?.email || ""}`,
-                                            "",
-                                            "Danke & Gruss"
-                                        ].join("\n");
-
-                                        const mailto = `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-
-                                        if (navigator?.clipboard?.writeText) {
-                                            navigator.clipboard.writeText(to).catch(() => {});
-                                        }
-
-                                        window.location.href = mailto;
-                                    }}
+                                    onClick={() => setShowCaptureServiceModal(true)}
                                     className="bg-white border-2 border-primary text-primary px-5 py-2 rounded-lg font-bold shadow-sm hover:bg-primary hover:text-white transition whitespace-nowrap flex items-center"
                                 >
                                     Service buchen (ab CHF 50.-) <ArrowRight className="w-4 h-4 ml-2"/>
                                 </button>
-
-
                             </div>
                         </div>
 
@@ -964,11 +1195,45 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                             Du hast jetzt Zugriff auf alle <strong>{currentPlan?.title || userTier}</strong> Features. <br/>
                             <span className="text-sm text-gray-400 mt-2 block">Viel Erfolg mit deinen Kursen!</span>
                         </p>
-                        <button 
+                        <button
                             onClick={() => setShowSuccessModal(false)}
                             className="bg-primary text-white px-10 py-4 rounded-full font-bold hover:bg-orange-600 transition w-full shadow-lg hover:shadow-orange-500/30 text-lg"
                         >
                             Los geht's! 🚀
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* CAPTURE SERVICE BOOKING MODAL */}
+            <CaptureServiceModal
+                isOpen={showCaptureServiceModal}
+                onClose={() => setShowCaptureServiceModal(false)}
+                user={user}
+                includedServices={currentPlan?.includedCaptureServices || 0}
+                usedServices={usedCaptureServices}
+                showNotification={showNotification}
+            />
+
+            {/* CAPTURE SERVICE SUCCESS MODAL */}
+            {showCaptureSuccessModal && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-300">
+                    <div className="bg-white rounded-2xl p-8 max-w-md w-full text-center shadow-2xl border-4 border-green-200 transform animate-in zoom-in-95 duration-300">
+                        <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
+                            <CheckCircle className="w-12 h-12 text-green-600" />
+                        </div>
+                        <h2 className="text-3xl font-bold font-heading text-dark mb-4">Erfolgreich gebucht!</h2>
+                        <p className="text-gray-600 mb-8 text-lg leading-relaxed">
+                            Dein Kurserfassungs-Service wurde erfolgreich gebucht.<br/>
+                            <span className="text-sm text-gray-400 mt-2 block">
+                                Unser Team wird sich innerhalb von 2-3 Werktagen bei dir melden.
+                            </span>
+                        </p>
+                        <button
+                            onClick={() => setShowCaptureSuccessModal(false)}
+                            className="bg-green-600 text-white px-10 py-4 rounded-full font-bold hover:bg-green-700 transition w-full shadow-lg text-lg"
+                        >
+                            Verstanden
                         </button>
                     </div>
                 </div>

@@ -240,7 +240,7 @@ export default async function handler(req, res) {
 
     // 6. Send TEACHER Email
     if (course) {
-        const teacherEmail = "btrespondek@gmail.com"; 
+        const teacherEmail = "btrespondek@gmail.com";
         let teacherLang = 'de';
         const tTexts = EMAIL_TRANSLATIONS[teacherLang];
 
@@ -252,6 +252,97 @@ export default async function handler(req, res) {
                 html: generateEmailHtml(tTexts.teacher_title, tTexts.teacher_body(customerEmail, courseTitle, courseDate), tTexts.cta_view)
             });
         } catch (tError) { console.error('Teacher Email Failed:', tError); }
+    }
+  }
+
+  // --- CAPTURE SERVICE PAYMENT HANDLING ---
+  if (event.type === 'checkout.session.completed') {
+    const session = event.data.object;
+    const metadata = session.metadata || {};
+
+    // Prüfe ob es eine Capture-Service-Zahlung ist
+    if (metadata.type === 'capture_service') {
+        const userId = metadata.userId;
+        const requestId = metadata.requestId;
+        const courseCount = parseInt(metadata.courseCount || '0', 10);
+        const customerEmail = session.customer_details?.email;
+
+        console.log(`🎯 Processing Capture Service Payment: User ${userId}, ${courseCount} courses`);
+
+        // 1. Update Request Status
+        if (requestId && requestId !== 'new') {
+            const { error: updateError } = await supabase
+                .from('capture_service_requests')
+                .update({
+                    status: 'paid',
+                    paid_at: new Date().toISOString(),
+                    stripe_session_id: session.id
+                })
+                .eq('id', requestId);
+
+            if (updateError) {
+                console.error('❌ Failed to update capture_service_requests:', updateError);
+            }
+        }
+
+        // 2. Update used_capture_services in profiles
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('used_capture_services')
+            .eq('id', userId)
+            .single();
+
+        const currentUsed = profile?.used_capture_services || 0;
+
+        const { error: profileError } = await supabase
+            .from('profiles')
+            .update({
+                used_capture_services: currentUsed + courseCount
+            })
+            .eq('id', userId);
+
+        if (profileError) {
+            console.error('❌ Failed to update used_capture_services:', profileError);
+        }
+
+        // 3. Send Confirmation Email to User
+        try {
+            await resend.emails.send({
+                from: 'KursNavi <onboarding@resend.dev>',
+                to: customerEmail,
+                subject: 'Kurserfassungs-Service bestätigt',
+                html: generateEmailHtml(
+                    'Deine Bestellung ist eingegangen! 🎉',
+                    `<p>Vielen Dank für deine Bestellung des Kurserfassungs-Services.</p>
+                     <p>Wir erfassen <strong>${courseCount} Kurs(e)</strong> für dich mit professioneller SEO-Optimierung, Bild-Bearbeitung und Qualitäts-Check.</p>
+                     <p>Unser Team wird sich innerhalb von 2-3 Werktagen bei dir melden.</p>`,
+                    'Zum Dashboard'
+                )
+            });
+            console.log("✅ Capture service confirmation email sent.");
+        } catch (emailError) {
+            console.error('Capture service email failed:', emailError);
+        }
+
+        // 4. Notify Admin
+        try {
+            await resend.emails.send({
+                from: 'KursNavi <onboarding@resend.dev>',
+                to: 'info@kursnavi.ch',
+                subject: `🎯 Neuer Erfassungsservice: ${courseCount} Kurse`,
+                html: generateEmailHtml(
+                    'Neuer Kurserfassungs-Service Auftrag',
+                    `<p><strong>Kunde:</strong> ${customerEmail}</p>
+                     <p><strong>Anzahl Kurse:</strong> ${courseCount}</p>
+                     <p><strong>Request ID:</strong> ${requestId || 'N/A'}</p>
+                     <p><strong>Betrag:</strong> CHF ${(session.amount_total / 100).toFixed(2)}</p>`,
+                    'Admin Panel öffnen',
+                    'https://kursnavi.ch/admin'
+                )
+            });
+        } catch (adminEmailError) {
+            console.error('Admin notification failed:', adminEmailError);
+        }
     }
   }
 
