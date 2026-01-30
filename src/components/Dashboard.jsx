@@ -888,7 +888,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
         (async () => {
             const { data, error, status } = await supabase
                 .from('profiles')
-                .select('package_tier, used_capture_services')
+                .select('package_tier')
                 .eq('id', uid)
                 .maybeSingle();
 
@@ -917,7 +917,6 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
             const resolved = parseTier(data.package_tier);
             console.log("DASHBOARD_TIER_RESOLVED", { raw: data.package_tier, resolved });
             setUserTier(resolved);
-            setUsedCaptureServices(data.used_capture_services || 0);
         })();
 
         return () => { cancelled = true; };

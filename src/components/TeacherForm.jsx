@@ -680,11 +680,13 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
     const addCategoryRow = () => {
         if (categories.length >= maxCategories) return;
         setCategories([...categories, { type: '', area: '', specialty: '', focus: '' }]);
+        markDirty();
     };
 
     const removeCategoryRow = (index) => {
         if (index === 0) return; // erste Kategorie ist Pflicht
         setCategories(categories.filter((_, i) => i !== index));
+        markDirty();
     };
 
     const updateCategoryRow = (index, field, value) => {
@@ -711,19 +713,22 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
             next[index] = row;
             return next;
         });
+        markDirty();
     };
 
-    const addEvent = () => setEvents([...events, { start_date: '', street: '', city: '', max_participants: 0, canton: '', schedule_description: '' }]);
-    const removeEvent = (index) => setEvents(events.filter((_, i) => i !== index));
+    const addEvent = () => { setEvents([...events, { start_date: '', street: '', city: '', max_participants: 0, canton: '', schedule_description: '' }]); markDirty(); };
+    const removeEvent = (index) => { setEvents(events.filter((_, i) => i !== index)); markDirty(); };
     const updateEvent = (index, field, value) => {
         const newEvents = [...events];
         newEvents[index][field] = value;
         setEvents(newEvents);
+        markDirty();
     };
 
     const toggleFallbackCanton = (c) => {
         if (fallbackCantons.includes(c)) setFallbackCantons(fallbackCantons.filter(x => x !== c));
         else setFallbackCantons([...fallbackCantons, c]);
+        markDirty();
     }
 
     // UX Logic: Has the user entered a Valid Date?
@@ -1203,7 +1208,7 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 pt-4 border-t border-orange-200/50">
                              <div>
                                 <span className="text-xs text-gray-500 block mb-1">Niveau</span>
-                                <select name="level" value={selectedLevel} onChange={(e) => setSelectedLevel(e.target.value)} className="w-full px-3 py-2 border rounded-lg focus:ring-primary bg-white text-sm">
+                                <select name="level" value={selectedLevel} onChange={(e) => { setSelectedLevel(e.target.value); markDirty(); }} className="w-full px-3 py-2 border rounded-lg focus:ring-primary bg-white text-sm">
                                     {Object.keys(COURSE_LEVELS).map(key => <option key={key} value={key}>{COURSE_LEVELS[key].de}</option>)}
                                 </select>
                             </div>
@@ -1211,7 +1216,7 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                                 <span className="text-xs text-gray-500 block mb-1">Sprache</span>
                                 <div className="relative">
                                     <Globe className="absolute left-2.5 top-2 text-gray-400 w-4 h-4" />
-                                    <select name="language" value={courseLanguage} onChange={(e) => setCourseLanguage(e.target.value)} className="w-full pl-9 pr-3 py-2 border rounded-lg focus:ring-primary bg-white text-sm">
+                                    <select name="language" value={courseLanguage} onChange={(e) => { setCourseLanguage(e.target.value); markDirty(); }} className="w-full pl-9 pr-3 py-2 border rounded-lg focus:ring-primary bg-white text-sm">
                                         <option value="Deutsch">Deutsch</option>
                                         <option value="Französisch">Französisch</option>
                                         <option value="Italienisch">Italienisch</option>
@@ -1240,15 +1245,15 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <label className={`cursor-pointer border p-4 rounded-xl transition relative overflow-hidden ${bookingType === 'platform' ? 'border-primary bg-orange-50 ring-1 ring-primary' : 'hover:bg-gray-50'}`}>
                                 {bookingType === 'platform' && <div className="absolute top-0 right-0 bg-primary text-white text-[10px] px-2 py-0.5 rounded-bl">Empfohlen</div>}
-                                <div className="flex items-center mb-2"><input type="radio" name="bookingType" value="platform" checked={bookingType === 'platform'} onChange={() => setBookingType('platform')} className="mr-2 accent-primary"/> <span className="font-bold">Direktbuchung</span></div>
+                                <div className="flex items-center mb-2"><input type="radio" name="bookingType" value="platform" checked={bookingType === 'platform'} onChange={() => { setBookingType('platform'); markDirty(); }} className="mr-2 accent-primary"/> <span className="font-bold">Direktbuchung</span></div>
                                 <p className="text-xs text-gray-500">Zahlung via KursNavi.</p>
                             </label>
                             <label className={`cursor-pointer border p-4 rounded-xl transition ${bookingType === 'lead' ? 'border-primary bg-orange-50 ring-1 ring-primary' : 'hover:bg-gray-50'}`}>
-                                <div className="flex items-center mb-2"><input type="radio" name="bookingType" value="lead" checked={bookingType === 'lead'} onChange={() => setBookingType('lead')} className="mr-2 accent-primary"/> <span className="font-bold">Anfrage (Lead)</span></div>
+                                <div className="flex items-center mb-2"><input type="radio" name="bookingType" value="lead" checked={bookingType === 'lead'} onChange={() => { setBookingType('lead'); markDirty(); }} className="mr-2 accent-primary"/> <span className="font-bold">Anfrage (Lead)</span></div>
                                 <p className="text-xs text-gray-500">Kontaktformular.</p>
                             </label>
                             <label className={`cursor-pointer border p-4 rounded-xl transition ${bookingType === 'external' ? 'border-primary bg-orange-50 ring-1 ring-primary' : 'hover:bg-gray-50'}`}>
-                                <div className="flex items-center mb-2"><input type="radio" name="bookingType" value="external" checked={bookingType === 'external'} onChange={() => setBookingType('external')} className="mr-2 accent-primary"/> <span className="font-bold">Externer Link</span></div>
+                                <div className="flex items-center mb-2"><input type="radio" name="bookingType" value="external" checked={bookingType === 'external'} onChange={() => { setBookingType('external'); markDirty(); }} className="mr-2 accent-primary"/> <span className="font-bold">Externer Link</span></div>
                                 <p className="text-xs text-gray-500">Eigene Webseite.</p>
                             </label>
                         </div>
