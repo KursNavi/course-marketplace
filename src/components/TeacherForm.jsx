@@ -4,6 +4,7 @@ import { KursNaviLogo } from './Layout';
 import { SWISS_CANTONS, NEW_TAXONOMY, CATEGORY_TYPES, COURSE_LEVELS } from '../lib/constants';
 import { supabase } from '../lib/supabase';
 import { useTaxonomy } from '../hooks/useTaxonomy';
+import { computeImageHash, getExistingImageByHash, uploadImageWithHash, getUserCourseImages } from '../lib/imageUtils';
 import imageCompression from 'browser-image-compression';
 
 // --- Image Compression Helper ---
@@ -459,9 +460,10 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
     const [loadingImages, setLoadingImages] = useState(false);
     const [selectedExistingImage, setSelectedExistingImage] = useState(null);
 
-    // Flag to track if draft was loaded (to prevent initialData from overwriting it)
+    // Flag to track if form has been initialized (to prevent initialData from overwriting user changes)
     // Using useRef so the flag persists across re-renders without triggering updates
-    const draftLoadedRef = useRef(!!draft);
+    // This is set to true after draft is loaded OR after initialData is loaded
+    const hasInitializedRef = useRef(!!draft);
 
     // Scroll to top when editing a different course
     useEffect(() => {
@@ -531,11 +533,12 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
 
         // Limits entfernt: kein Gatekeeping mehr noetig
 
-        // Skip loading initialData if we already have a draft loaded
+        // Skip loading initialData if form has already been initialized
+        // (either from draft or from previous initialData load)
         // The ref persists across re-renders, so this prevents initialData from
-        // overwriting the draft when dependencies change
-        if (draftLoadedRef.current) {
-            // Draft was loaded, initialization is complete
+        // overwriting user changes when dependencies change
+        if (hasInitializedRef.current) {
+            // Already initialized, skip loading
             initCompleteRef.current = true;
             return;
         }
@@ -580,46 +583,56 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
 
             
             // Restore Contact Email (now stored in course_private)
-;(async () => {
-    try {
-        const { data: priv, error: privErr } = await supabase
-            .from('course_private')
-            .select('contact_email, address')
-            .eq('course_id', initialData.id)
-            .maybeSingle();
+            // IMPORTANT: Check isMounted AND that user hasn't made changes before any state updates
+            (async () => {
+                try {
+                    const { data: priv, error: privErr } = await supabase
+                        .from('course_private')
+                        .select('contact_email, address')
+                        .eq('course_id', initialData.id)
+                        .maybeSingle();
 
-        if (privErr) console.warn("course_private load failed:", privErr.message);
+                    // Check if component is still mounted AND user hasn't made changes yet
+                    // If user has edited (isDirty), don't overwrite their changes with async data
+                    if (!isMounted || formDataRef.current?.isDirty) return;
 
-        if (priv?.contact_email) {
-            setContactEmail(priv.contact_email);
-        } else if (user?.email) {
-            setContactEmail(user.email);
-        }
+                    if (privErr) console.warn("course_private load failed:", privErr.message);
 
-        // Legacy fallback (falls es keinen course_events-Block gibt, aber private address existiert)
-        if ((!initialData.course_events || initialData.course_events.length === 0) && initialData.start_date && priv?.address) {
-            const loc = priv.address || '';
-            const lastComma = loc.lastIndexOf(',');
-            let street = '', city = loc;
-            if (lastComma !== -1) {
-                street = loc.substring(0, lastComma).trim();
-                city = loc.substring(lastComma + 1).trim();
-            }
-            setEvents([{ start_date: initialData.start_date, street, city, max_participants: 0, canton: initialData.canton || '', schedule_description: '' }]);
-        }
+                    if (priv?.contact_email) {
+                        setContactEmail(priv.contact_email);
+                    } else if (user?.email) {
+                        setContactEmail(user.email);
+                    }
 
-        // Fallback Cantons (nur falls kein course_events vorhanden)
-        if ((!initialData.course_events || initialData.course_events.length === 0) && priv?.address) {
-            const parts = priv.address.split(',').map(s => s.trim()).filter(Boolean);
-            const allAreCantons = parts.length > 0 && parts.every(p => SWISS_CANTONS.includes(p));
-            if (allAreCantons) setFallbackCantons(parts);
-            else if (initialData.canton) setFallbackCantons([initialData.canton]);
-        }
-    } catch (err) {
-        console.warn("course_private load error:", err);
-        if (user?.email) setContactEmail(user.email);
-    }
-})();
+                    // Re-check isDirty after each async operation in case user edited while we were processing
+                    if (formDataRef.current?.isDirty) return;
+
+                    // Legacy fallback (falls es keinen course_events-Block gibt, aber private address existiert)
+                    if ((!initialData.course_events || initialData.course_events.length === 0) && initialData.start_date && priv?.address) {
+                        const loc = priv.address || '';
+                        const lastComma = loc.lastIndexOf(',');
+                        let street = '', city = loc;
+                        if (lastComma !== -1) {
+                            street = loc.substring(0, lastComma).trim();
+                            city = loc.substring(lastComma + 1).trim();
+                        }
+                        if (isMounted && !formDataRef.current?.isDirty) {
+                            setEvents([{ start_date: initialData.start_date, street, city, max_participants: 0, canton: initialData.canton || '', schedule_description: '' }]);
+                        }
+                    }
+
+                    // Fallback Cantons (nur falls kein course_events vorhanden)
+                    if (isMounted && !formDataRef.current?.isDirty && (!initialData.course_events || initialData.course_events.length === 0) && priv?.address) {
+                        const parts = priv.address.split(',').map(s => s.trim()).filter(Boolean);
+                        const allAreCantons = parts.length > 0 && parts.every(p => SWISS_CANTONS.includes(p));
+                        if (allAreCantons) setFallbackCantons(parts);
+                        else if (initialData.canton) setFallbackCantons([initialData.canton]);
+                    }
+                } catch (err) {
+                    console.warn("course_private load error:", err);
+                    if (isMounted && !formDataRef.current?.isDirty && user?.email) setContactEmail(user.email);
+                }
+            })();
 
             
             // Reconstruct Events & Address Split
@@ -647,23 +660,24 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
              if (user.email) setContactEmail(user.email);
              supabase.from('profiles').select('preferred_language').eq('id', user.id).single()
              .then(({ data }) => {
-                 if (data?.preferred_language && isMounted) {
+                 // Only update if component is mounted AND user hasn't made changes
+                 if (data?.preferred_language && isMounted && !formDataRef.current?.isDirty) {
                     const map = { de: 'Deutsch', fr: 'Französisch', it: 'Italienisch', en: 'Englisch' };
                     if (map[data.preferred_language]) setCourseLanguage(map[data.preferred_language]);
                  }
              });
         }
 
+        // Mark form as initialized to prevent re-loading initialData on prop changes
+        hasInitializedRef.current = true;
+
         // Mark initialization as complete after initial data loading
-        // Use setTimeout to ensure all synchronous state updates have been processed
-        // This prevents the draft from being saved during the initialization phase
-        const initTimer = setTimeout(() => {
-            initCompleteRef.current = true;
-        }, 0);
+        // This is set synchronously at the end of the effect, after all state updates have been queued
+        // The useLayoutEffect that saves drafts runs AFTER the re-render, so this is safe
+        initCompleteRef.current = true;
 
         return () => {
             isMounted = false;
-            clearTimeout(initTimer);
         }; // CLEANUP
     }, [initialData, user]);
 
@@ -706,9 +720,16 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
     }, [user?.id]);
 
     // Warn user when leaving with unsaved changes (browser back/close)
+    // Also attempt to save draft before unload
     useEffect(() => {
         const handleBeforeUnload = (e) => {
-            if (isDirty) {
+            if (formDataRef.current?.isDirty) {
+                // Attempt to save draft before page unload
+                try {
+                    sessionStorage.setItem(formDataRef.current.draftKey, JSON.stringify(formDataRef.current.draftData));
+                } catch (err) {
+                    // Ignore errors during unload
+                }
                 e.preventDefault();
                 e.returnValue = '';
             }
@@ -716,7 +737,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
 
         window.addEventListener('beforeunload', handleBeforeUnload);
         return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-    }, [isDirty]);
+    }, []);
 
     // Handle back navigation with unsaved changes warning
     const handleBack = () => {
@@ -824,38 +845,20 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
         }
     };
 
-    // Load existing images from storage bucket for reuse (only user's own images)
+    // Load existing images from user's courses for reuse
     const loadExistingImages = async () => {
         setLoadingImages(true);
         try {
             const currentUserId = user?.id || initialData?.user_id;
 
-            const { data, error } = await supabase.storage.from('course-images').list('', {
-                limit: 100,
-                sortBy: { column: 'created_at', order: 'desc' }
-            });
+            // Hole alle Bilder die in Kursen des Users verwendet werden
+            const userImages = await getUserCourseImages(currentUserId);
 
-            if (error) {
-                console.error('Fehler beim Laden der Bilder:', error);
-                showNotification('Fehler beim Laden der Bilderbibliothek');
-                return;
-            }
-
-            // Filter only user's own images (filename starts with their userId)
-            const imageFiles = (data || []).filter(file =>
-                file.name &&
-                /\.(jpg|jpeg|png|gif|webp)$/i.test(file.name) &&
-                file.name.startsWith(`${currentUserId}_`)
-            );
-
-            const imagesWithUrls = imageFiles.map(file => {
-                const { data: { publicUrl } } = supabase.storage.from('course-images').getPublicUrl(file.name);
-                return {
-                    name: file.name,
-                    url: publicUrl,
-                    created_at: file.created_at
-                };
-            });
+            const imagesWithUrls = userImages.map(img => ({
+                name: img.url.split('/').pop(), // Extrahiere Dateiname aus URL
+                url: img.url,
+                usedBy: img.usedBy // Anzahl Kurse die dieses Bild verwenden
+            }));
 
             setExistingImages(imagesWithUrls);
         } catch (err) {
@@ -979,20 +982,27 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
         } else {
             const imageFile = formData.get('courseImage');
             if (imageFile && imageFile.size > 0) {
-                // Neues Bild komprimieren und hochladen
+                // Neues Bild komprimieren
                 const compressedFile = await compressImage(imageFile);
-                const currentUserId = user?.id || initialData?.user_id;
-                const fileName = `${currentUserId}_${Date.now()}.jpg`;
-                const { error: uploadError } = await supabase.storage.from('course-images').upload(fileName, compressedFile);
 
-                if (uploadError) {
-                    showNotification("Bild-Upload fehlgeschlagen: " + uploadError.message);
-                    setIsSubmitting(false);
-                    return;
+                // Hash berechnen für Deduplizierung
+                const imageHash = await computeImageHash(compressedFile);
+
+                // Prüfen ob Bild mit diesem Hash bereits existiert
+                const existingUrl = await getExistingImageByHash(imageHash);
+                if (existingUrl) {
+                    // Bild existiert bereits - wiederverwenden
+                    imageUrl = existingUrl;
+                } else {
+                    // Neues Bild mit Hash als Dateiname hochladen
+                    try {
+                        imageUrl = await uploadImageWithHash(compressedFile, imageHash);
+                    } catch (uploadError) {
+                        showNotification("Bild-Upload fehlgeschlagen: " + uploadError.message);
+                        setIsSubmitting(false);
+                        return;
+                    }
                 }
-
-                const { data: { publicUrl } } = supabase.storage.from('course-images').getPublicUrl(fileName);
-                imageUrl = publicUrl;
             }
         }
 

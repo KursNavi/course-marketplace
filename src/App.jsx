@@ -4,6 +4,7 @@ import { CheckCircle } from 'lucide-react';
 // --- IMPORTS ---
 import { CATEGORY_LABELS, TRANSLATIONS, NEW_TAXONOMY, CATEGORY_TYPES } from './lib/constants';
 import { supabase } from './lib/supabase';
+import { isImageUsedByOtherCourses, deleteImageFromStorage } from './lib/imageUtils';
 
 // Components
 import { Navbar, Footer } from './components/Layout';
@@ -266,11 +267,28 @@ export default function KursNaviPro() {  // 1. Initial State Logic
   const handleDeleteCourse = async (courseId) => {
     if (!window.confirm("Are you sure you want to delete this course?")) return;
 
+    // Hole Kurs-Daten vor dem Löschen um die image_url zu bekommen
+    const courseToDelete = courses.find(c => c.id === courseId);
+    const imageUrl = courseToDelete?.image_url;
+
     setCourses(prev => prev.filter(c => c.id !== courseId));
 
     const { error } = await supabase.from('courses').delete().eq('id', courseId);
-    if (error) showNotification("Error deleting: " + error.message);
-    else showNotification("Course deleted.");
+    if (error) {
+      showNotification("Error deleting: " + error.message);
+      return;
+    }
+
+    // Prüfe ob das Bild noch von anderen Kursen verwendet wird
+    if (imageUrl) {
+      const isUsed = await isImageUsedByOtherCourses(imageUrl, courseId);
+      if (!isUsed) {
+        // Bild wird nicht mehr verwendet - aus Storage löschen
+        await deleteImageFromStorage(imageUrl);
+      }
+    }
+
+    showNotification("Course deleted.");
   };
 
   const handleUpdateCourseStatus = async (courseId, newStatus) => {

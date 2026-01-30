@@ -1320,7 +1320,20 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                                                 </span>
                                                             )}
                                                         </div>
-                                                        <div className="text-xs text-gray-400">{course.canton}</div>
+                                                        <div className="text-xs text-gray-400 flex flex-wrap items-center gap-x-2">
+                                                            {course.category_type && (
+                                                                <span className="text-gray-500">{course.category_type}</span>
+                                                            )}
+                                                            {course.category_type && (course.course_events?.length > 0 || course.canton) && (
+                                                                <span className="text-gray-300">•</span>
+                                                            )}
+                                                            <span className="flex items-center gap-1">
+                                                                <MapPin className="w-3 h-3" />
+                                                                {course.course_events && course.course_events.length > 0
+                                                                    ? [...new Set(course.course_events.map(e => e.canton).filter(Boolean))].join(', ') || course.canton
+                                                                    : course.canton}
+                                                            </span>
+                                                        </div>
                                                     </td>
                                                     <td className="px-6 py-4">
                                                         {course.status === 'draft' && (
