@@ -1069,7 +1069,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                         <span className="text-2xl font-bold capitalize">{currentPlan.title}</span>
                                     </div>
                                     <p className="text-xs text-gray-400 mt-1">
-                                        Unbegrenzte Kurse • bis {currentPlan.maxCategoriesPerCourse} Kategorien/Kurs • {currentPlan.includedCaptureServices > 0 ? `${currentPlan.includedCaptureServices} Erfassungsservices inkl.` : 'keine Erfassungsservices inklusive'}
+                                        {currentPlan.maxPrioCourses === Infinity ? 'Unbegrenzte Prio-Kurse' : `${currentPlan.maxPrioCourses} Prio-Kurse`} • bis {currentPlan.maxCategoriesPerCourse} Kategorien/Kurs • {currentPlan.includedCaptureServices > 0 ? `${currentPlan.includedCaptureServices} Erfassungsservices inkl.` : 'keine Erfassungsservices inklusive'}
                                     </p>
                                 </div>
                                 <div>
