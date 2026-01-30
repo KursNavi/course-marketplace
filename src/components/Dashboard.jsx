@@ -1003,18 +1003,21 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
         }
         setPrioCourseIds(newPrioIds);
 
-        // DB Update via RPC function (more reliable than direct update with RLS)
-        const { error } = await supabase.rpc('toggle_course_prio', {
-            course_id: courseId,
-            new_prio_status: !isCurrentlyPrio
-        });
+        // DB Update - direkt mit user_id Filter für Sicherheit
+        const { error } = await supabase
+            .from('courses')
+            .update({ is_prio: !isCurrentlyPrio })
+            .eq('id', courseId)
+            .eq('user_id', currentUid);
 
         if (error) {
-            console.error("Failed to update prio status:", error.message, { courseId, currentUid, error });
-            showNotification("Fehler beim Aktualisieren des Prio-Status");
+            console.error("Failed to update prio status:", error);
+            // Zeige den genauen Fehler an
+            showNotification(`Fehler: ${error.message || error.code || 'Unbekannter Fehler'}`);
             // Rollback
             setPrioCourseIds(prioCourseIds);
         } else {
+            showNotification("Prio-Status aktualisiert!");
             console.log("Prio status updated successfully", { courseId, newStatus: !isCurrentlyPrio });
         }
     };
