@@ -409,6 +409,18 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
     // Course Status (draft/published/paused)
     const [courseStatus, setCourseStatus] = useState(draft?.courseStatus || 'draft'); // Default: new courses start as draft
 
+    // Image Preview State (for showing newly selected image before save)
+    const [imagePreview, setImagePreview] = useState(null);
+
+    // Cleanup image preview URL on unmount to prevent memory leaks
+    useEffect(() => {
+        return () => {
+            if (imagePreview) {
+                URL.revokeObjectURL(imagePreview);
+            }
+        };
+    }, [imagePreview]);
+
     // Schedule State
     const [events, setEvents] = useState(draft?.events || [{ start_date: '', street: '', city: '', max_participants: 0, canton: '', schedule_description: '' }]);
 
@@ -768,6 +780,20 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
         markDirty();
     }
 
+    // Handle image file selection - show preview immediately
+    const handleImageChange = (e) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            // Revoke previous preview URL to avoid memory leaks
+            if (imagePreview) {
+                URL.revokeObjectURL(imagePreview);
+            }
+            const previewUrl = URL.createObjectURL(file);
+            setImagePreview(previewUrl);
+            markDirty();
+        }
+    };
+
     // UX Logic: Has the user entered a Valid Date?
     const hasDatedEvents = events.some(ev => !!ev.start_date);
 
@@ -1114,8 +1140,21 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                     <div className="md:col-span-2">
                         <label className="block text-sm font-bold text-gray-700 mb-1">Kursbild</label>
                         <div className="flex items-center gap-4 bg-gray-50 p-4 rounded-xl border border-dashed border-gray-300">
-                            {initialData?.image_url && <img src={initialData.image_url} className="w-20 h-20 rounded-lg object-cover shadow-sm" alt="Current" />}
-                            <input type="file" name="courseImage" accept="image/*" className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-white hover:file:bg-orange-600 cursor-pointer" />
+                            {(imagePreview || initialData?.image_url) && (
+                                <div className="relative">
+                                    <img
+                                        src={imagePreview || initialData.image_url}
+                                        className="w-20 h-20 rounded-lg object-cover shadow-sm"
+                                        alt="Kursbildvorschau"
+                                    />
+                                    {imagePreview && (
+                                        <span className="absolute -top-1 -right-1 bg-green-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold">
+                                            Neu
+                                        </span>
+                                    )}
+                                </div>
+                            )}
+                            <input type="file" name="courseImage" accept="image/*" onChange={handleImageChange} className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-white hover:file:bg-orange-600 cursor-pointer" />
                         </div>
                     </div>
 
