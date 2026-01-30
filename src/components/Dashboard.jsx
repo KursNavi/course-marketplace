@@ -1364,9 +1364,13 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                                     <td className="px-6 py-4">
                                                         <div className="flex flex-col gap-1">
                                                             {(() => {
-                                                                // Collect all unique locations from events + fallback canton
+                                                                // Collect all unique locations from:
+                                                                // 1. course_events cantons
+                                                                // 2. address field (comma-separated, e.g. "Online, Thurgau")
+                                                                // 3. canton field (fallback)
                                                                 const eventCantons = course.course_events?.map(e => e.canton).filter(Boolean) || [];
-                                                                const allLocations = [...new Set([...eventCantons, course.canton].filter(Boolean))];
+                                                                const addressLocations = course.address?.split(',').map(s => s.trim()).filter(Boolean) || [];
+                                                                const allLocations = [...new Set([...eventCantons, ...addressLocations, course.canton].filter(Boolean))];
                                                                 return allLocations.length > 0 ? allLocations.map((c, i) => (
                                                                     <span key={i} className="text-sm text-gray-700 flex items-center gap-1">
                                                                         <MapPin className="w-3 h-3 text-gray-400" /> {c}
