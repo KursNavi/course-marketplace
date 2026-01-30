@@ -6,7 +6,7 @@ import {
     Crown, BarChart3, Bold, Italic, Underline, Heading2, Heading3, List,
     CreditCard, Check, Shield, ExternalLink, Play, Pause, FileEdit, Info, Star
 } from 'lucide-react';
-import { SWISS_CANTONS } from "../lib/constants";
+import { SWISS_CANTONS, CATEGORY_TYPES, NEW_TAXONOMY, CATEGORY_LABELS } from "../lib/constants";
 import { PLANS } from "../constants/plans";
 import { KursNaviLogo } from './Layout';
 import { supabase } from '../lib/supabase';
@@ -837,6 +837,39 @@ const CaptureServiceModal = ({ isOpen, onClose, user, includedServices, usedServ
     );
 };
 
+// --- Helper: Get human-readable category label ---
+const getCategoryLabel = (key, lang = 'de') => {
+    if (!key) return '';
+
+    // 1. Check legacy labels
+    const legacyTranslation = (CATEGORY_LABELS || {})[key];
+    if (legacyTranslation && legacyTranslation[lang]) return legacyTranslation[lang];
+
+    // 2. Check category types (e.g. "beruflich")
+    if (CATEGORY_TYPES && CATEGORY_TYPES[key]) {
+        return CATEGORY_TYPES[key][lang] || CATEGORY_TYPES[key]['de'];
+    }
+
+    // 3. Search in NEW_TAXONOMY (e.g. "sport_fitness_beruf")
+    if (NEW_TAXONOMY) {
+        for (const typeKey in NEW_TAXONOMY) {
+            const areas = NEW_TAXONOMY[typeKey];
+            if (areas && areas[key] && areas[key].label) {
+                return areas[key].label[lang] || areas[key].label['de'];
+            }
+            // Also check specialties
+            for (const areaKey in areas) {
+                const specialties = areas[areaKey]?.specialties || [];
+                if (specialties.includes(key)) {
+                    return key; // Specialties don't have labels, use key
+                }
+            }
+        }
+    }
+
+    return key;
+};
+
 // --- MAIN DASHBOARD COMPONENT ---
 const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBookings, savedCourses, savedCourseIds, onToggleSaveCourse, handleDeleteCourse, handleEditCourse, handleUpdateCourseStatus, showNotification, changeLanguage, setSelectedCourse }) => {
     const [dashView, setDashView] = useState('overview');
@@ -1322,16 +1355,19 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                                             )}
                                                         </div>
                                                         <div className="text-xs text-gray-500 mt-0.5">
-                                                            {[course.category_type, course.category_area, course.category_specialty, course.category_focus].filter(Boolean).join(' › ')}
+                                                            {[course.category_type, course.category_area, course.category_specialty, course.category_focus]
+                                                                .filter(Boolean)
+                                                                .map(key => getCategoryLabel(key))
+                                                                .join(' › ')}
                                                         </div>
                                                     </td>
                                                     <td className="px-6 py-4">
                                                         <div className="flex flex-col gap-1">
                                                             {(() => {
-                                                                const cantons = course.course_events && course.course_events.length > 0
-                                                                    ? [...new Set(course.course_events.map(e => e.canton).filter(Boolean))]
-                                                                    : (course.canton ? [course.canton] : []);
-                                                                return cantons.length > 0 ? cantons.map((c, i) => (
+                                                                // Collect all unique locations from events + fallback canton
+                                                                const eventCantons = course.course_events?.map(e => e.canton).filter(Boolean) || [];
+                                                                const allLocations = [...new Set([...eventCantons, course.canton].filter(Boolean))];
+                                                                return allLocations.length > 0 ? allLocations.map((c, i) => (
                                                                     <span key={i} className="text-sm text-gray-700 flex items-center gap-1">
                                                                         <MapPin className="w-3 h-3 text-gray-400" /> {c}
                                                                     </span>
