@@ -351,59 +351,124 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
     // Load taxonomy from DB (with fallback to constants.js)
     const { taxonomy, types, getFocuses } = useTaxonomy();
 
+    // Draft persistence key - unique per course (or 'new' for new courses)
+    const draftKey = `teacherForm_draft_${initialData?.id || 'new'}`;
+
+    // Helper to load draft from sessionStorage
+    const loadDraft = () => {
+        try {
+            const saved = sessionStorage.getItem(draftKey);
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                // Only use draft if it's for the same course
+                if (parsed.courseId === (initialData?.id || 'new')) {
+                    return parsed;
+                }
+            }
+        } catch (e) {
+            console.warn('Failed to load draft:', e);
+        }
+        return null;
+    };
+
+    // Load draft on initial render
+    const draft = loadDraft();
+
     // Track unsaved changes
-    const [isDirty, setIsDirty] = useState(false);
+    const [isDirty, setIsDirty] = useState(!!draft);
 
     // Booking & Link State
-    const [bookingType, setBookingType] = useState('platform'); // 'platform', 'external', 'lead'
-    const [contactEmail, setContactEmail] = useState('');
+    const [bookingType, setBookingType] = useState(draft?.bookingType || 'platform'); // 'platform', 'external', 'lead'
+    const [contactEmail, setContactEmail] = useState(draft?.contactEmail || '');
 
     // Form Field State (controlled inputs to preserve data on validation errors / tab switches)
-    const [title, setTitle] = useState('');
-    const [description, setDescription] = useState('');
-    const [objectives, setObjectives] = useState('');
-    const [keywords, setKeywords] = useState('');
-    const [prerequisites, setPrerequisites] = useState('');
-    const [externalLink, setExternalLink] = useState('');
-    const [price, setPrice] = useState('');
-    const [sessionCount, setSessionCount] = useState('');
-    const [sessionLength, setSessionLength] = useState('');
-    const [providerUrl, setProviderUrl] = useState(''); 
+    const [title, setTitle] = useState(draft?.title || '');
+    const [description, setDescription] = useState(draft?.description || '');
+    const [objectives, setObjectives] = useState(draft?.objectives || '');
+    const [keywords, setKeywords] = useState(draft?.keywords || '');
+    const [prerequisites, setPrerequisites] = useState(draft?.prerequisites || '');
+    const [externalLink, setExternalLink] = useState(draft?.externalLink || '');
+    const [price, setPrice] = useState(draft?.price || '');
+    const [sessionCount, setSessionCount] = useState(draft?.sessionCount || '');
+    const [sessionLength, setSessionLength] = useState(draft?.sessionLength || '');
+    const [providerUrl, setProviderUrl] = useState(draft?.providerUrl || '');
 
     // Taxonomy State (Mehrfach-Kategorien)
     const CATEGORY_ROW_LIMITS = { basic: 1, pro: 3, premium: 3, enterprise: 5, free: 1 };
 
-    const [categories, setCategories] = useState([{ type: 'privat_hobby', area: '', specialty: '', focus: '' }]);
+    const [categories, setCategories] = useState(draft?.categories || [{ type: 'privat_hobby', area: '', specialty: '', focus: '' }]);
     const [maxCategories, setMaxCategories] = useState(1);
 
-    
+
     // Metadata State
-    const [selectedLevel, setSelectedLevel] = useState('all_levels');
-    const [courseLanguage, setCourseLanguage] = useState('Deutsch');
+    const [selectedLevel, setSelectedLevel] = useState(draft?.selectedLevel || 'all_levels');
+    const [courseLanguage, setCourseLanguage] = useState(draft?.courseLanguage || 'Deutsch');
 
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Course Status (draft/published/paused)
-    const [courseStatus, setCourseStatus] = useState('draft'); // Default: new courses start as draft
+    const [courseStatus, setCourseStatus] = useState(draft?.courseStatus || 'draft'); // Default: new courses start as draft
 
     // Schedule State
-    const [events, setEvents] = useState([{ start_date: '', street: '', city: '', max_participants: 0, canton: '', schedule_description: '' }]);
-    
+    const [events, setEvents] = useState(draft?.events || [{ start_date: '', street: '', city: '', max_participants: 0, canton: '', schedule_description: '' }]);
+
     // Fallback Regions
-    const [fallbackCantons, setFallbackCantons] = useState([]);
+    const [fallbackCantons, setFallbackCantons] = useState(draft?.fallbackCantons || []);
 
     // Category Suggestion Modal State
     const [showCategorySuggestionModal, setShowCategorySuggestionModal] = useState(false);
+
+    // Flag to track if initial data has been loaded (to prevent draft being overwritten)
+    const [initialDataLoaded, setInitialDataLoaded] = useState(!!draft);
 
     // Scroll to top when editing a different course
     useEffect(() => {
         window.scrollTo(0, 0);
     }, [initialData?.id]);
 
+    // Save draft to sessionStorage when form changes
+    useEffect(() => {
+        if (!isDirty) return; // Don't save if no changes made
+
+        const draftData = {
+            courseId: initialData?.id || 'new',
+            bookingType,
+            contactEmail,
+            title,
+            description,
+            objectives,
+            keywords,
+            prerequisites,
+            externalLink,
+            price,
+            sessionCount,
+            sessionLength,
+            providerUrl,
+            categories,
+            selectedLevel,
+            courseLanguage,
+            courseStatus,
+            events,
+            fallbackCantons
+        };
+
+        try {
+            sessionStorage.setItem(draftKey, JSON.stringify(draftData));
+        } catch (e) {
+            console.warn('Failed to save draft:', e);
+        }
+    }, [isDirty, draftKey, bookingType, contactEmail, title, description, objectives, keywords, prerequisites, externalLink, price, sessionCount, sessionLength, providerUrl, categories, selectedLevel, courseLanguage, courseStatus, events, fallbackCantons, initialData?.id]);
+
     useEffect(() => {
         let isMounted = true; // Prevent state updates on unmounted component
 
         // Limits entfernt: kein Gatekeeping mehr noetig
+
+        // Skip loading initialData if we already have a draft loaded
+        if (initialDataLoaded) {
+            setInitialDataLoaded(false); // Reset flag for future edits
+            return;
+        }
 
         // 1. Load Initial Data if editing
         if (initialData) {
@@ -602,6 +667,12 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
         if (isDirty) {
             const confirmed = window.confirm('Du hast ungespeicherte Änderungen. Möchtest du wirklich zurückgehen? Deine Änderungen gehen verloren.');
             if (!confirmed) return;
+            // User chose to discard changes - clear draft
+            try {
+                sessionStorage.removeItem(draftKey);
+            } catch (e) {
+                console.warn('Failed to clear draft:', e);
+            }
         }
         setView('dashboard');
     };
@@ -934,9 +1005,17 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
             }
         }
 
+        // Clear draft after successful save
+        try {
+            sessionStorage.removeItem(draftKey);
+        } catch (e) {
+            console.warn('Failed to clear draft:', e);
+        }
+        setIsDirty(false);
+
         fetchCourses();
         setEditingCourse(null);
-        setView('dashboard'); 
+        setView('dashboard');
         setIsSubmitting(false);
     };
 
