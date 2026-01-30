@@ -4,6 +4,29 @@ import { KursNaviLogo } from './Layout';
 import { SWISS_CANTONS, NEW_TAXONOMY, CATEGORY_TYPES, COURSE_LEVELS } from '../lib/constants';
 import { supabase } from '../lib/supabase';
 import { useTaxonomy } from '../hooks/useTaxonomy';
+import imageCompression from 'browser-image-compression';
+
+// --- Image Compression Helper ---
+const compressImage = async (file) => {
+    // Nur Bilder komprimieren, die grösser als 500KB sind
+    if (file.size <= 500 * 1024) {
+        return file;
+    }
+
+    const options = {
+        maxSizeMB: 0.5,           // Max 500KB
+        maxWidthOrHeight: 1200,   // Max 1200px Breite/Höhe
+        useWebWorker: true,
+        fileType: 'image/jpeg'    // Konvertiert zu JPEG für bessere Komprimierung
+    };
+
+    try {
+        return await imageCompression(file, options);
+    } catch (error) {
+        console.warn('Bildkomprimierung fehlgeschlagen, Original wird verwendet:', error);
+        return file;
+    }
+};
 
 // --- Category Suggestion Modal Component ---
 const CategorySuggestionModal = ({ isOpen, onClose, taxonomy, types, showNotification, userEmail }) => {
@@ -883,13 +906,14 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
 
         setIsSubmitting(true);
 
-        // 3. Image Upload
+        // 3. Image Upload (mit automatischer Komprimierung)
         let imageUrl = initialData?.image_url || "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=600";
         const imageFile = formData.get('courseImage');
         if (imageFile && imageFile.size > 0) {
-            const fileExt = imageFile.name.split('.').pop();
-            const fileName = `${Date.now()}.${fileExt}`;
-            const { error: uploadError } = await supabase.storage.from('course-images').upload(fileName, imageFile);
+            // Bild komprimieren bevor Upload
+            const compressedFile = await compressImage(imageFile);
+            const fileName = `${Date.now()}.jpg`;
+            const { error: uploadError } = await supabase.storage.from('course-images').upload(fileName, compressedFile);
             
             if (uploadError) {
                 showNotification("Bild-Upload fehlgeschlagen: " + uploadError.message);
