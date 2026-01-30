@@ -1271,6 +1271,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                                         <th className="px-4 py-4 font-semibold text-gray-600 text-center w-16">Prio</th>
                                                     )}
                                                     <th className="px-6 py-4 font-semibold text-gray-600">Kurs</th>
+                                                    <th className="px-6 py-4 font-semibold text-gray-600">Standorte</th>
                                                     <th className="px-6 py-4 font-semibold text-gray-600">Status</th>
                                                     <th className="px-6 py-4 font-semibold text-gray-600">Typ</th>
                                                     <th className="px-6 py-4 font-semibold text-gray-600">Preis</th>
@@ -1320,19 +1321,22 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                                                 </span>
                                                             )}
                                                         </div>
-                                                        <div className="text-xs text-gray-400 flex flex-wrap items-center gap-x-2">
-                                                            {course.category_type && (
-                                                                <span className="text-gray-500">{course.category_type}</span>
-                                                            )}
-                                                            {course.category_type && (course.course_events?.length > 0 || course.canton) && (
-                                                                <span className="text-gray-300">•</span>
-                                                            )}
-                                                            <span className="flex items-center gap-1">
-                                                                <MapPin className="w-3 h-3" />
-                                                                {course.course_events && course.course_events.length > 0
-                                                                    ? [...new Set(course.course_events.map(e => e.canton).filter(Boolean))].join(', ') || course.canton
-                                                                    : course.canton}
-                                                            </span>
+                                                        <div className="text-xs text-gray-500 mt-0.5">
+                                                            {[course.category_type, course.category_area, course.category_specialty, course.category_focus].filter(Boolean).join(' › ')}
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <div className="flex flex-col gap-1">
+                                                            {(() => {
+                                                                const cantons = course.course_events && course.course_events.length > 0
+                                                                    ? [...new Set(course.course_events.map(e => e.canton).filter(Boolean))]
+                                                                    : (course.canton ? [course.canton] : []);
+                                                                return cantons.length > 0 ? cantons.map((c, i) => (
+                                                                    <span key={i} className="text-sm text-gray-700 flex items-center gap-1">
+                                                                        <MapPin className="w-3 h-3 text-gray-400" /> {c}
+                                                                    </span>
+                                                                )) : <span className="text-gray-400 text-sm italic">—</span>;
+                                                            })()}
                                                         </div>
                                                     </td>
                                                     <td className="px-6 py-4">
