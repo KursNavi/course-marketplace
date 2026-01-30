@@ -888,14 +888,14 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
         (async () => {
             const { data, error, status } = await supabase
                 .from('profiles')
-                .select('plan_tier, package_tier, used_capture_services')
+                .select('package_tier, used_capture_services')
                 .eq('id', uid)
                 .maybeSingle();
 
             if (cancelled) return;
 
             if (error) {
-                console.warn("Tier fetch error:", { status, message: error.message, error });
+                console.warn("Tier fetch error:", status, error.message, error.code, error.details);
                 return;
             }
             if (!data) {
@@ -903,22 +903,19 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                 return;
             }
 
+            console.log("DASHBOARD_TIER_DEBUG", { uid, package_tier: data.package_tier, data });
+
             const parseTier = (s) => {
                 const v = (s || '').toString().toLowerCase().trim();
-                if (!v) return null;
-                if (v === 'enterprize' || v === 'entreprise' || v.includes('enterprise')) return 'enterprise';
+                if (!v) return 'basic';
+                if (v.includes('enterprise')) return 'enterprise';
                 if (v.includes('premium')) return 'premium';
-                if (v === 'pro' || v.includes(' pro') || v.startsWith('pro') || v.includes('pro_') || v.includes('pro-') || v.includes('pro ')) return 'pro';
-                if (v.includes('basic')) return 'basic';
-                if (v.includes('free')) return 'basic';
-                return null;
+                if (v === 'pro' || v.startsWith('pro')) return 'pro';
+                return 'basic';
             };
 
-            const rank = { basic: 0, pro: 1, premium: 2, enterprise: 3 };
-            const plan = parseTier(data.plan_tier) || 'basic';
-            const pkg  = parseTier(data.package_tier) || 'basic';
-            const resolved = (rank[pkg] > rank[plan]) ? pkg : plan;
-
+            const resolved = parseTier(data.package_tier);
+            console.log("DASHBOARD_TIER_RESOLVED", { raw: data.package_tier, resolved });
             setUserTier(resolved);
             setUsedCaptureServices(data.used_capture_services || 0);
         })();

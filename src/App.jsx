@@ -1032,10 +1032,10 @@ export default function KursNaviPro() {  // 1. Initial State Logic
         syncPendingSavedCourse(session.user.id);
         if (role === 'teacher') fetchTeacherEarnings(session.user.id);
 
-        // Profil-Extras laden (preferred_language, is_professional, plan_tier, package_tier, role, full_name)
+        // Profil-Extras laden
         const { data } = await supabase
           .from('profiles')
-          .select('preferred_language, is_professional, plan_tier, package_tier, role, full_name')
+          .select('preferred_language, is_professional, package_tier, role, full_name')
           .eq('id', session.user.id)
           .single();
 
@@ -1044,31 +1044,24 @@ export default function KursNaviPro() {  // 1. Initial State Logic
         if (data) {
           if (data.preferred_language) setLang(data.preferred_language);
 
-          // Paket-Logik: Höheres Paket zwischen plan_tier und package_tier wählen
+          // Paket normalisieren
           const parseTier = (s) => {
             const v = (s || '').toString().toLowerCase().trim();
-            if (!v) return null;
-            if (v === 'enterprize' || v === 'entreprise' || v.includes('enterprise')) return 'enterprise';
+            if (!v) return 'basic';
+            if (v.includes('enterprise')) return 'enterprise';
             if (v.includes('premium')) return 'premium';
-            if (v === 'pro' || v.includes(' pro') || v.startsWith('pro') || v.includes('pro_') || v.includes('pro-') || v.includes('pro ')) return 'pro';
-            if (v.includes('basic')) return 'basic';
-            if (v.includes('free')) return 'basic';
-            return null;
+            if (v === 'pro' || v.startsWith('pro')) return 'pro';
+            return 'basic';
           };
-
-          const rank = { basic: 0, pro: 1, premium: 2, enterprise: 3 };
-          const planTier = parseTier(data.plan_tier) || 'basic';
-          const pkgTier = parseTier(data.package_tier) || 'basic';
-          const resolvedTier = (rank[pkgTier] > rank[planTier]) ? pkgTier : planTier;
 
           setUser((prev) =>
             prev
               ? {
                   ...prev,
-                  role: data.role || prev.role, // Update role from profiles table
+                  role: data.role || prev.role,
                   is_professional: data.is_professional,
-                  plan_tier: resolvedTier,
-                  name: data.full_name || prev.name // Use profile name if available
+                  plan_tier: parseTier(data.package_tier),
+                  name: data.full_name || prev.name
                 }
               : prev
           );

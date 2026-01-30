@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, Loader, Calendar, Plus, Trash2, ExternalLink, Globe, Bold, Italic, Underline, Heading2, Heading3, List, Mail, MapPin, Lightbulb, X, Send, ChevronDown } from 'lucide-react';
 import { KursNaviLogo } from './Layout';
 import { SWISS_CANTONS, NEW_TAXONOMY, CATEGORY_TYPES, COURSE_LEVELS } from '../lib/constants';
@@ -418,8 +418,9 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
     // Category Suggestion Modal State
     const [showCategorySuggestionModal, setShowCategorySuggestionModal] = useState(false);
 
-    // Flag to track if initial data has been loaded (to prevent draft being overwritten)
-    const [initialDataLoaded, setInitialDataLoaded] = useState(!!draft);
+    // Flag to track if draft was loaded (to prevent initialData from overwriting it)
+    // Using useRef so the flag persists across re-renders without triggering updates
+    const draftLoadedRef = useRef(!!draft);
 
     // Scroll to top when editing a different course
     useEffect(() => {
@@ -465,8 +466,9 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
         // Limits entfernt: kein Gatekeeping mehr noetig
 
         // Skip loading initialData if we already have a draft loaded
-        if (initialDataLoaded) {
-            setInitialDataLoaded(false); // Reset flag for future edits
+        // The ref persists across re-renders, so this prevents initialData from
+        // overwriting the draft when dependencies change
+        if (draftLoadedRef.current) {
             return;
         }
 
@@ -594,7 +596,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
 
         supabase
             .from('profiles')
-            .select('plan_tier, package_tier')
+            .select('package_tier')
             .eq('id', user.id)
             .single()
             .then(({ data, error }) => {
@@ -605,45 +607,21 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
                     return;
                 }
 
-                const planTierRaw = (data?.plan_tier || '').toString().toLowerCase().trim();
-                const packageTierRaw = (data?.package_tier || '').toString().toLowerCase().trim();
-
                 const parseTier = (s) => {
-                    if (!s) return null;
-                    if (s === 'enterprize' || s === 'entreprise' || s.includes('enterprise')) return 'enterprise';
-                    if (s.includes('premium')) return 'premium';
-                    // Achtung: "pro" matcht auch in anderen Woertern -> trotzdem ok, weil wir oben enterprise/premium vorher abfangen
-                    if (s === 'pro' || s.includes(' pro') || s.startsWith('pro') || s.includes('pro_') || s.includes('pro-') || s.includes('pro ')) return 'pro';
-                    if (s.includes('basic')) return 'basic';
-                    if (s.includes('free')) return 'free';
-                    return null;
+                    const v = (s || '').toString().toLowerCase().trim();
+                    if (!v) return 'basic';
+                    if (v.includes('enterprise')) return 'enterprise';
+                    if (v.includes('premium')) return 'premium';
+                    if (v === 'pro' || v.startsWith('pro')) return 'pro';
+                    return 'basic';
                 };
 
-                const plan = parseTier(planTierRaw) || 'basic';
-                const pkg  = parseTier(packageTierRaw) || 'basic';
-
-                // Ranking: hoeheres Paket gewinnt
-                const rank = { free: 0, basic: 0, pro: 1, premium: 2, enterprise: 3 };
-
-                let resolvedTier = (rank[pkg] > rank[plan]) ? pkg : plan;
-
-                // "free" soll bei dir wie "basic" behandelt werden (weil Dashboard/UX basic anzeigt)
-                if (resolvedTier === 'free') resolvedTier = 'basic';
-
-                console.log("TEACHERFORM_TIER_DEBUG", {
-                plan_tier: data?.plan_tier,
-                package_tier: data?.package_tier,
-                plan,
-                pkg,
-                resolvedTier
-                });
-
+                const resolvedTier = parseTier(data?.package_tier);
                 const limit = CATEGORY_ROW_LIMITS[resolvedTier] ?? 1;
                 setMaxCategories(limit);
 
                 // Falls jemand downgradet hat: ueberzaehlige Reihen abschneiden
                 setCategories(prev => prev.slice(0, limit));
-
             });
 
         return () => { isMounted = false; };
