@@ -824,10 +824,12 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
         }
     };
 
-    // Load existing images from storage bucket for reuse
+    // Load existing images from storage bucket for reuse (only user's own images)
     const loadExistingImages = async () => {
         setLoadingImages(true);
         try {
+            const currentUserId = user?.id || initialData?.user_id;
+
             const { data, error } = await supabase.storage.from('course-images').list('', {
                 limit: 100,
                 sortBy: { column: 'created_at', order: 'desc' }
@@ -839,9 +841,11 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
                 return;
             }
 
-            // Filter only image files and get public URLs
+            // Filter only user's own images (filename starts with their userId)
             const imageFiles = (data || []).filter(file =>
-                file.name && /\.(jpg|jpeg|png|gif|webp)$/i.test(file.name)
+                file.name &&
+                /\.(jpg|jpeg|png|gif|webp)$/i.test(file.name) &&
+                file.name.startsWith(`${currentUserId}_`)
             );
 
             const imagesWithUrls = imageFiles.map(file => {
@@ -977,7 +981,8 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
             if (imageFile && imageFile.size > 0) {
                 // Neues Bild komprimieren und hochladen
                 const compressedFile = await compressImage(imageFile);
-                const fileName = `${Date.now()}.jpg`;
+                const currentUserId = user?.id || initialData?.user_id;
+                const fileName = `${currentUserId}_${Date.now()}.jpg`;
                 const { error: uploadError } = await supabase.storage.from('course-images').upload(fileName, compressedFile);
 
                 if (uploadError) {
@@ -1614,9 +1619,9 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                         <X className="w-6 h-6" />
                     </button>
 
-                    <h3 className="text-xl font-bold mb-2">Bilderbibliothek</h3>
+                    <h3 className="text-xl font-bold mb-2">Deine Bilder</h3>
                     <p className="text-sm text-gray-600 mb-4">
-                        Wähle ein bereits hochgeladenes Bild aus, um Speicherplatz zu sparen.
+                        Wähle ein Bild aus, das du bereits hochgeladen hast.
                     </p>
 
                     <div className="flex-1 overflow-y-auto">
@@ -1627,7 +1632,7 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                         ) : existingImages.length === 0 ? (
                             <div className="text-center py-12 text-gray-500">
                                 <Images className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                                <p>Noch keine Bilder in der Bibliothek.</p>
+                                <p>Du hast noch keine Bilder hochgeladen.</p>
                                 <p className="text-sm mt-1">Lade dein erstes Kursbild hoch!</p>
                             </div>
                         ) : (
