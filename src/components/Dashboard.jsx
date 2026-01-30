@@ -1003,11 +1003,11 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
         }
         setPrioCourseIds(newPrioIds);
 
-        // DB Update - nur mit course ID (user_id wird durch RLS Policy geprüft)
-        const { error } = await supabase
-            .from('courses')
-            .update({ is_prio: !isCurrentlyPrio })
-            .eq('id', courseId);
+        // DB Update via RPC function (more reliable than direct update with RLS)
+        const { error } = await supabase.rpc('toggle_course_prio', {
+            course_id: courseId,
+            new_prio_status: !isCurrentlyPrio
+        });
 
         if (error) {
             console.error("Failed to update prio status:", error.message, { courseId, currentUid, error });
