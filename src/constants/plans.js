@@ -10,9 +10,10 @@ export const PLANS = [
     buttonVariant: "outline",
     ctaLabel: "Basic wählen",
 
-    // --- Machine-readable Paketlogik (v3.0) ---
+    // --- Machine-readable Paketlogik (v3.1) ---
     priceAnnualCHF: 0,
     maxCourses: Infinity,
+    maxPrioCourses: 0,
     maxCategoriesPerCourse: 1,
     commissionPct: 15,
     planFactor: 1.0,
@@ -22,10 +23,10 @@ export const PLANS = [
 
     features: [
       { text: "Unbegrenzte Kurse" },
+      { text: "Keine Prio-Kurse", dim: true, excluded: true },
       { text: "1 Kategorie pro Kurs" },
       { text: "15% Komm. (inkl. Stripe)" },
       { text: "Standard Listing" },
-      // NEU: 'excluded: true' sorgt für das rote Kreuz statt Haken
       { text: "Keine Erfassungsservices inklusive", dim: true, excluded: true },
       { text: "Ranking-Bonus bei Direktbuchung" },
     ],
@@ -41,9 +42,10 @@ export const PLANS = [
     buttonVariant: "solid",
     ctaLabel: "Pro wählen",
 
-    // --- Machine-readable Paketlogik (v3.0) ---
+    // --- Machine-readable Paketlogik (v3.1) ---
     priceAnnualCHF: 290,
     maxCourses: Infinity,
+    maxPrioCourses: 5,
     maxCategoriesPerCourse: 3,
     commissionPct: 12,
     planFactor: 1.2,
@@ -53,13 +55,12 @@ export const PLANS = [
 
     features: [
       { text: "Unbegrenzte Kurse" },
+      { text: "5 Prio-Kurse", isStrong: true },
       { text: "Bis 3 Kategorien pro Kurs" },
       { text: "12% Komm. bei Buchung" },
       { text: "Erhöhtes Ranking" },
-      // NEU: 'excluded: true' für rotes Kreuz
       { text: "Keine Erfassungsservices inklusive", dim: true, excluded: true },
       { text: "Ranking-Bonus bei Direktbuchung" },
-      // "Attraktivere Darstellung" entfernt gemäss Screenshot
     ],
   },
   {
@@ -73,9 +74,10 @@ export const PLANS = [
     buttonVariant: "outline",
     ctaLabel: "Premium wählen",
 
-    // --- Machine-readable Paketlogik (v3.0) ---
+    // --- Machine-readable Paketlogik (v3.1) ---
     priceAnnualCHF: 690,
     maxCourses: Infinity,
+    maxPrioCourses: 15,
     maxCategoriesPerCourse: 3,
     commissionPct: 10,
     planFactor: 1.2,
@@ -85,12 +87,12 @@ export const PLANS = [
 
     features: [
       { text: "Unbegrenzte Kurse" },
+      { text: "15 Prio-Kurse", isStrong: true },
       { text: "Bis 3 Kategorien pro Kurs" },
       { text: "10% Komm. bei Buchung" },
       { text: "Erhöhtes Ranking", isStrong: true },
       { text: "5 Erfassungsservices inklusive", isStrong: true },
       { text: "Ranking-Bonus bei Direktbuchung" },
-      // Badge, Newsletter, Reporting entfernt gemäss Screenshot
     ],
   },
   {
@@ -104,9 +106,10 @@ export const PLANS = [
     buttonVariant: "outline",
     ctaLabel: "Kontaktieren",
 
-    // --- Machine-readable Paketlogik (v3.0) ---
+    // --- Machine-readable Paketlogik (v3.1) ---
     priceAnnualCHF: 1490,
     maxCourses: Infinity,
+    maxPrioCourses: Infinity,
     maxCategoriesPerCourse: 5,
     commissionPct: 8,
     planFactor: 1.2,
@@ -116,12 +119,12 @@ export const PLANS = [
 
     features: [
       { text: "Unbegrenzte Kurse", isStrong: true },
+      { text: "Unbegrenzte Prio-Kurse", isStrong: true },
       { text: "Bis 5 Kategorien pro Kurs" },
       { text: "8% Komm. bei Buchung" },
       { text: "Erhöhtes Ranking" },
       { text: "15 Erfassungsservices inklusive", isStrong: true },
       { text: "Ranking-Bonus bei Direktbuchung" },
-      // Platzierung, Landingpage, Account Mgr. entfernt gemäss Screenshot
     ],
   },
 ];

@@ -4,7 +4,7 @@ import {
     Loader, Settings, Save, Lock, CheckCircle, XCircle, Clock,
     ChevronDown, User, DollarSign, PenTool, Trash2, ArrowRight, Plus, MapPin,
     Crown, BarChart3, Bold, Italic, Underline, Heading2, Heading3, List,
-    CreditCard, Check, Shield, ExternalLink, Play, Pause, FileEdit
+    CreditCard, Check, Shield, ExternalLink, Play, Pause, FileEdit, Info, Star
 } from 'lucide-react';
 import { SWISS_CANTONS } from "../lib/constants";
 import { PLANS } from "../constants/plans";
@@ -846,6 +846,8 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
     const [showCaptureSuccessModal, setShowCaptureSuccessModal] = useState(false); // Capture Service Success Modal
     const [usedCaptureServices, setUsedCaptureServices] = useState(0); // Genutzte Erfassungsservices
     const [authUid, setAuthUid] = useState(null);
+    const [prioCourseIds, setPrioCourseIds] = useState(new Set()); // Prio-Kurse IDs
+    const [showPrioInfo, setShowPrioInfo] = useState(false); // Info-Tooltip anzeigen
 
     // NEW: Check for Payment Success in URL
     useEffect(() => {
@@ -924,9 +926,94 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
         return () => { cancelled = true; };
     }, [uid, user?.role]);
 
+    // 2. Fetch Prio-Kurse Status aus der DB und setze Default-Auswahl
+    useEffect(() => {
+        if (user?.role !== 'teacher') return;
+        if (!uid) return;
 
+        let cancelled = false;
 
-    // 2. Plan & Daten (Business Logic)
+        (async () => {
+            const { data, error } = await supabase
+                .from('courses')
+                .select('id, is_prio, created_at')
+                .eq('user_id', uid)
+                .order('created_at', { ascending: true });
+
+            if (cancelled) return;
+
+            if (error) {
+                console.warn("Prio courses fetch error:", error.message);
+                return;
+            }
+
+            if (data) {
+                const prioIds = new Set(data.filter(c => c.is_prio).map(c => c.id));
+
+                // Default-Auswahl: Wenn noch keine Prio-Kurse markiert sind,
+                // die ältesten Kurse (bis maxPrioCourses) automatisch als Prio setzen
+                const plan = PLANS.find(p => p.id === userTier) || PLANS[0];
+                const maxPrio = plan?.maxPrioCourses || 0;
+
+                if (prioIds.size === 0 && data.length > maxPrio && maxPrio > 0 && maxPrio !== Infinity) {
+                    // Sortiert nach created_at (ascending) - die ältesten zuerst
+                    const oldestCourseIds = data.slice(0, maxPrio).map(c => c.id);
+
+                    // Update in DB
+                    for (const courseId of oldestCourseIds) {
+                        await supabase
+                            .from('courses')
+                            .update({ is_prio: true })
+                            .eq('id', courseId)
+                            .eq('user_id', uid);
+                    }
+
+                    setPrioCourseIds(new Set(oldestCourseIds));
+                } else {
+                    setPrioCourseIds(prioIds);
+                }
+            }
+        })();
+
+        return () => { cancelled = true; };
+    }, [uid, user?.role, userTier]);
+
+    // Handler: Toggle Prio-Status eines Kurses
+    const handleTogglePrio = async (courseId, isCurrentlyPrio) => {
+        const maxPrio = currentPlan?.maxPrioCourses || 0;
+        const currentPrioCount = prioCourseIds.size;
+
+        // Wenn wir hinzufügen wollen und das Limit erreicht ist
+        if (!isCurrentlyPrio && currentPrioCount >= maxPrio && maxPrio !== Infinity) {
+            showNotification(`Du hast bereits ${maxPrio} Prio-Kurse ausgewählt (Maximum für ${currentPlan?.title}).`);
+            return;
+        }
+
+        // Optimistic Update
+        const newPrioIds = new Set(prioCourseIds);
+        if (isCurrentlyPrio) {
+            newPrioIds.delete(courseId);
+        } else {
+            newPrioIds.add(courseId);
+        }
+        setPrioCourseIds(newPrioIds);
+
+        // DB Update
+        const { error } = await supabase
+            .from('courses')
+            .update({ is_prio: !isCurrentlyPrio })
+            .eq('id', courseId)
+            .eq('user_id', uid);
+
+        if (error) {
+            console.error("Failed to update prio status:", error.message);
+            showNotification("Fehler beim Aktualisieren des Prio-Status");
+            // Rollback
+            setPrioCourseIds(prioCourseIds);
+        }
+    };
+
+    // 3. Plan & Daten (Business Logic)
     const currentPlan = PLANS.find(p => p.id === userTier) || PLANS[0];
 
     const totalPaidOut = user.role === 'teacher' ? teacherEarnings.filter(e => e.isPaidOut).reduce((sum, e) => sum + e.payout, 0) : 0;
@@ -1059,14 +1146,129 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                 {t.dash_new_course}
                             </button>
                         </div>
+
+                        {/* Prio-Kurse Management Section */}
+                        {currentPlan?.maxPrioCourses > 0 && myCourses.length > 0 && (
+                            <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-xl p-4 mb-4">
+                                <div className="flex items-center justify-between flex-wrap gap-3">
+                                    <div className="flex items-center gap-3">
+                                        <div className="bg-yellow-100 p-2 rounded-full">
+                                            <Star className="w-5 h-5 text-yellow-600" />
+                                        </div>
+                                        <div>
+                                            <div className="font-bold text-dark flex items-center gap-2">
+                                                Prio-Kurse
+                                                <div className="relative">
+                                                    <button
+                                                        type="button"
+                                                        onMouseEnter={() => setShowPrioInfo(true)}
+                                                        onMouseLeave={() => setShowPrioInfo(false)}
+                                                        onClick={() => setShowPrioInfo(!showPrioInfo)}
+                                                        className="text-gray-400 hover:text-gray-600 transition"
+                                                    >
+                                                        <Info className="w-4 h-4" />
+                                                    </button>
+                                                    {showPrioInfo && (
+                                                        <div className="absolute left-0 top-6 z-50 w-72 bg-dark text-white text-xs p-3 rounded-lg shadow-xl">
+                                                            <p className="font-bold mb-1">Was sind Prio-Kurse?</p>
+                                                            <p>Prio-Kurse erhalten einen Ranking-Bonus und werden in den Suchergebnissen höher angezeigt. Die Anzahl der verfügbaren Prio-Slots hängt von deinem Abo ab.</p>
+                                                            {myCourses.length > (currentPlan?.maxPrioCourses || 0) && (
+                                                                <p className="mt-2 text-yellow-300">Wähle unten aus, welche deiner Kurse priorisiert werden sollen.</p>
+                                                            )}
+                                                            <div className="absolute -top-1.5 left-2 w-3 h-3 bg-dark transform rotate-45"></div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <p className="text-sm text-gray-600">
+                                                {currentPlan?.maxPrioCourses === Infinity ? (
+                                                    <span className="text-green-600 font-medium">Unbegrenzte Prio-Kurse (Enterprise)</span>
+                                                ) : myCourses.length <= currentPlan?.maxPrioCourses ? (
+                                                    <span className="text-green-600">Alle deine Kurse sind automatisch Prio-Kurse</span>
+                                                ) : (
+                                                    <span>Wähle aus, welche Kurse priorisiert werden sollen</span>
+                                                )}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <div className={`px-4 py-2 rounded-lg font-bold text-sm ${
+                                            prioCourseIds.size >= (currentPlan?.maxPrioCourses || 0) && currentPlan?.maxPrioCourses !== Infinity
+                                                ? 'bg-orange-100 text-orange-700 border border-orange-200'
+                                                : 'bg-green-100 text-green-700 border border-green-200'
+                                        }`}>
+                                            {currentPlan?.maxPrioCourses === Infinity ? (
+                                                <span>{prioCourseIds.size} Prio-Kurse aktiv</span>
+                                            ) : (
+                                                <span>{prioCourseIds.size} / {currentPlan?.maxPrioCourses} Prio-Slots verwendet</span>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                             {myCourses.length > 0 ? (
                                 <div className="overflow-x-auto">
                                     <table className="w-full text-left">
-                                            <thead className="bg-beige border-b border-gray-200"><tr><th className="px-6 py-4 font-semibold text-gray-600">Kurs</th><th className="px-6 py-4 font-semibold text-gray-600">Status</th><th className="px-6 py-4 font-semibold text-gray-600">Typ</th><th className="px-6 py-4 font-semibold text-gray-600">Preis</th><th className="px-6 py-4 font-semibold text-gray-600">Aktionen</th></tr></thead>
-                                            <tbody className="divide-y divide-gray-100">{myCourses.map(course => (
-                                                <tr key={course.id} className="hover:bg-gray-50">
-                                                    <td className="px-6 py-4"><div className="font-bold text-dark">{course.title}</div><div className="text-xs text-gray-400">{course.canton}</div></td>
+                                            <thead className="bg-beige border-b border-gray-200">
+                                                <tr>
+                                                    {/* Prio-Spalte nur anzeigen wenn: Plan hat Prio-Slots UND mehr Kurse als Slots */}
+                                                    {currentPlan?.maxPrioCourses > 0 && myCourses.length > (currentPlan?.maxPrioCourses || 0) && currentPlan?.maxPrioCourses !== Infinity && (
+                                                        <th className="px-4 py-4 font-semibold text-gray-600 text-center w-16">Prio</th>
+                                                    )}
+                                                    <th className="px-6 py-4 font-semibold text-gray-600">Kurs</th>
+                                                    <th className="px-6 py-4 font-semibold text-gray-600">Status</th>
+                                                    <th className="px-6 py-4 font-semibold text-gray-600">Typ</th>
+                                                    <th className="px-6 py-4 font-semibold text-gray-600">Preis</th>
+                                                    <th className="px-6 py-4 font-semibold text-gray-600">Aktionen</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-gray-100">{myCourses.map(course => {
+                                                const isPrio = prioCourseIds.has(course.id);
+                                                const showPrioCheckbox = currentPlan?.maxPrioCourses > 0 && myCourses.length > (currentPlan?.maxPrioCourses || 0) && currentPlan?.maxPrioCourses !== Infinity;
+                                                const canEnablePrio = isPrio || prioCourseIds.size < (currentPlan?.maxPrioCourses || 0);
+
+                                                return (
+                                                <tr key={course.id} className={`hover:bg-gray-50 ${isPrio && showPrioCheckbox ? 'bg-yellow-50/50' : ''}`}>
+                                                    {/* Prio Checkbox */}
+                                                    {showPrioCheckbox && (
+                                                        <td className="px-4 py-4 text-center">
+                                                            <label className="relative inline-flex items-center cursor-pointer">
+                                                                <input
+                                                                    type="checkbox"
+                                                                    checked={isPrio}
+                                                                    onChange={() => handleTogglePrio(course.id, isPrio)}
+                                                                    disabled={!canEnablePrio && !isPrio}
+                                                                    className="sr-only peer"
+                                                                />
+                                                                <div className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-all
+                                                                    ${isPrio
+                                                                        ? 'bg-yellow-400 border-yellow-500'
+                                                                        : canEnablePrio
+                                                                            ? 'bg-white border-gray-300 hover:border-yellow-400'
+                                                                            : 'bg-gray-100 border-gray-200 cursor-not-allowed'
+                                                                    }`}
+                                                                >
+                                                                    {isPrio && <Star className="w-4 h-4 text-white fill-white" />}
+                                                                </div>
+                                                            </label>
+                                                        </td>
+                                                    )}
+                                                    <td className="px-6 py-4">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="font-bold text-dark">{course.title}</div>
+                                                            {/* Prio-Badge wenn alle Kurse automatisch Prio sind ODER wenn Kurs als Prio markiert ist */}
+                                                            {((currentPlan?.maxPrioCourses > 0 && myCourses.length <= (currentPlan?.maxPrioCourses || 0)) ||
+                                                              (currentPlan?.maxPrioCourses === Infinity) ||
+                                                              (showPrioCheckbox && isPrio)) && (
+                                                                <span className="text-xs px-1.5 py-0.5 rounded bg-yellow-100 text-yellow-700 border border-yellow-200 flex items-center gap-0.5">
+                                                                    <Star className="w-3 h-3 fill-yellow-500" /> Prio
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <div className="text-xs text-gray-400">{course.canton}</div>
+                                                    </td>
                                                     <td className="px-6 py-4">
                                                         {course.status === 'draft' && (
                                                             <span className="text-xs px-2 py-1 rounded font-bold bg-yellow-100 text-yellow-700 border border-yellow-200">Entwurf</span>
@@ -1103,7 +1305,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                                         <button onClick={() => handleDeleteCourse(course.id)} className="text-red-500 hover:text-red-700 bg-red-50 p-2 rounded-full" title="Löschen"><Trash2 className="w-4 h-4" /></button>
                                                     </td>
                                                 </tr>
-                                            ))}</tbody>
+                                            )})}</tbody>
                                     </table>
                                 </div>
                             ) : <div className="p-8 text-center text-gray-500">Du hast noch keine Kurse erstellt.</div>}
