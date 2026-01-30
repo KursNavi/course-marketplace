@@ -1017,7 +1017,6 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
             // Rollback
             setPrioCourseIds(prioCourseIds);
         } else {
-            showNotification("Prio-Status aktualisiert!");
             console.log("Prio status updated successfully", { courseId, newStatus: !isCurrentlyPrio });
         }
     };
