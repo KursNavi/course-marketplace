@@ -932,9 +932,8 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
         (async () => {
             const { data, error } = await supabase
                 .from('courses')
-                .select('id, is_prio, created_at')
-                .eq('user_id', uid)
-                .order('created_at', { ascending: true });
+                .select('id, is_prio, created_at, title')
+                .eq('user_id', uid);
 
             if (cancelled) return;
 
@@ -946,6 +945,11 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
             if (data) {
                 const prioIds = new Set(data.filter(c => c.is_prio).map(c => c.id));
                 const allCourseIds = data.map(c => c.id);
+
+                // Alphabetisch sortierte Kurse (für Auswahl bei Limit)
+                const sortedByTitle = [...data].sort((a, b) =>
+                    (a.title || '').localeCompare(b.title || '', 'de')
+                );
 
                 const plan = PLANS.find(p => p.id === userTier) || PLANS[0];
                 const maxPrio = plan?.maxPrioCourses || 0;
@@ -964,21 +968,48 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                     }
                     setPrioCourseIds(new Set(allCourseIds));
                 }
-                // Default-Auswahl: Wenn noch keine Prio-Kurse markiert sind,
-                // die ältesten Kurse (bis maxPrioCourses) automatisch als Prio setzen
-                else if (prioIds.size === 0 && data.length > maxPrio && maxPrio > 0) {
-                    // Sortiert nach created_at (ascending) - die ältesten zuerst
-                    const oldestCourseIds = data.slice(0, maxPrio).map(c => c.id);
+                // Downgrade: Mehr Prio-Kurse als erlaubt -> nur die ersten X (alphabetisch) behalten
+                else if (prioIds.size > maxPrio && maxPrio > 0) {
+                    // Die ersten maxPrio Kurse (alphabetisch) als Prio behalten
+                    const allowedPrioIds = new Set(sortedByTitle.slice(0, maxPrio).map(c => c.id));
 
-                    // Update in DB (RLS Policy stellt sicher, dass nur eigene Kurse aktualisiert werden)
-                    for (const courseId of oldestCourseIds) {
+                    // Kurse die jetzt nicht mehr Prio sein dürfen
+                    const toRemovePrio = [...prioIds].filter(id => !allowedPrioIds.has(id));
+                    // Kurse die Prio werden müssen (falls sie es noch nicht sind)
+                    const toAddPrio = [...allowedPrioIds].filter(id => !prioIds.has(id));
+
+                    // Prio entfernen
+                    for (const courseId of toRemovePrio) {
+                        await supabase
+                            .from('courses')
+                            .update({ is_prio: false })
+                            .eq('id', courseId);
+                    }
+                    // Prio hinzufügen
+                    for (const courseId of toAddPrio) {
                         await supabase
                             .from('courses')
                             .update({ is_prio: true })
                             .eq('id', courseId);
                     }
 
-                    setPrioCourseIds(new Set(oldestCourseIds));
+                    setPrioCourseIds(allowedPrioIds);
+                }
+                // Default-Auswahl: Wenn noch keine Prio-Kurse markiert sind,
+                // die ersten Kurse (alphabetisch, bis maxPrioCourses) automatisch als Prio setzen
+                else if (prioIds.size === 0 && data.length > maxPrio && maxPrio > 0) {
+                    // Alphabetisch sortiert - die ersten X auswählen
+                    const selectedCourseIds = sortedByTitle.slice(0, maxPrio).map(c => c.id);
+
+                    // Update in DB (RLS Policy stellt sicher, dass nur eigene Kurse aktualisiert werden)
+                    for (const courseId of selectedCourseIds) {
+                        await supabase
+                            .from('courses')
+                            .update({ is_prio: true })
+                            .eq('id', courseId);
+                    }
+
+                    setPrioCourseIds(new Set(selectedCourseIds));
                 } else {
                     setPrioCourseIds(prioIds);
                 }
