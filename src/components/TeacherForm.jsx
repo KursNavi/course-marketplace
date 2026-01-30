@@ -1,9 +1,349 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Loader, Calendar, Plus, Trash2, ExternalLink, Globe, Bold, Italic, Underline, Heading2, Heading3, List, Mail, MapPin } from 'lucide-react';
+import { ArrowLeft, Loader, Calendar, Plus, Trash2, ExternalLink, Globe, Bold, Italic, Underline, Heading2, Heading3, List, Mail, MapPin, Lightbulb, X, Send, ChevronDown } from 'lucide-react';
 import { KursNaviLogo } from './Layout';
 import { SWISS_CANTONS, NEW_TAXONOMY, CATEGORY_TYPES, COURSE_LEVELS } from '../lib/constants';
 import { supabase } from '../lib/supabase';
 import { useTaxonomy } from '../hooks/useTaxonomy';
+
+// --- Category Suggestion Modal Component ---
+const CategorySuggestionModal = ({ isOpen, onClose, taxonomy, types, showNotification, userEmail }) => {
+    const [suggestionType, setSuggestionType] = useState('single'); // 'single' = neues Level unter bestehender Kategorie, 'path' = kompletter Pfad
+    const [selectedType, setSelectedType] = useState('');
+    const [selectedArea, setSelectedArea] = useState('');
+    const [selectedSpecialty, setSelectedSpecialty] = useState('');
+
+    // Neue Kategorie-Eingaben
+    const [newArea, setNewArea] = useState('');
+    const [newSpecialty, setNewSpecialty] = useState('');
+    const [newFocus, setNewFocus] = useState('');
+    const [additionalNotes, setAdditionalNotes] = useState('');
+
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const getAreas = (type) => {
+        if (taxonomy && type && taxonomy[type]) {
+            return Object.keys(taxonomy[type]);
+        }
+        return type && NEW_TAXONOMY[type] ? Object.keys(NEW_TAXONOMY[type]) : [];
+    };
+
+    const getSpecialties = (type, area) => {
+        if (taxonomy && type && area && taxonomy[type]?.[area]) {
+            return taxonomy[type][area].specialties || [];
+        }
+        return type && area && NEW_TAXONOMY[type]?.[area] ? NEW_TAXONOMY[type][area].specialties : [];
+    };
+
+    const resetForm = () => {
+        setSuggestionType('single');
+        setSelectedType('');
+        setSelectedArea('');
+        setSelectedSpecialty('');
+        setNewArea('');
+        setNewSpecialty('');
+        setNewFocus('');
+        setAdditionalNotes('');
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+
+        // Validierung
+        if (!selectedType) {
+            alert('Bitte wähle einen Kategorietyp aus.');
+            return;
+        }
+
+        if (suggestionType === 'single') {
+            // Mindestens ein neues Feld muss ausgefüllt sein
+            if (!newArea && !newSpecialty && !newFocus) {
+                alert('Bitte fülle mindestens ein neues Kategorie-Feld aus.');
+                return;
+            }
+            // Wenn newFocus, dann muss specialty existieren
+            if (newFocus && !selectedSpecialty && !newSpecialty) {
+                alert('Für einen neuen Fokus (Level 4) benötigst du ein Spezialgebiet (Level 3).');
+                return;
+            }
+            // Wenn newSpecialty, dann muss area existieren
+            if (newSpecialty && !selectedArea && !newArea) {
+                alert('Für ein neues Spezialgebiet (Level 3) benötigst du einen Bereich (Level 2).');
+                return;
+            }
+        } else {
+            // Kompletter Pfad: mindestens Level 2 muss ausgefüllt sein
+            if (!newArea) {
+                alert('Bitte gib mindestens einen neuen Bereich (Level 2) an.');
+                return;
+            }
+        }
+
+        setIsSubmitting(true);
+
+        // Build message
+        const typeLabel = (types.find(t => t.id === selectedType)?.label_de) || selectedType;
+
+        let messageLines = [
+            '=== Neuer Kategorie-Vorschlag ===',
+            '',
+            `Vorschlagstyp: ${suggestionType === 'path' ? 'Kompletter neuer Pfad' : 'Neue Unterkategorie'}`,
+            '',
+            `Kategorietyp (Level 1): ${typeLabel}`,
+            ''
+        ];
+
+        if (suggestionType === 'single') {
+            if (selectedArea) messageLines.push(`Bestehender Bereich (Level 2): ${selectedArea}`);
+            if (newArea) messageLines.push(`NEUER Bereich (Level 2): ${newArea}`);
+            if (selectedSpecialty) messageLines.push(`Bestehendes Spezialgebiet (Level 3): ${selectedSpecialty}`);
+            if (newSpecialty) messageLines.push(`NEUES Spezialgebiet (Level 3): ${newSpecialty}`);
+            if (newFocus) messageLines.push(`NEUER Fokus (Level 4): ${newFocus}`);
+        } else {
+            messageLines.push(`NEUER Bereich (Level 2): ${newArea}`);
+            if (newSpecialty) messageLines.push(`NEUES Spezialgebiet (Level 3): ${newSpecialty}`);
+            if (newFocus) messageLines.push(`NEUER Fokus (Level 4): ${newFocus}`);
+        }
+
+        if (additionalNotes) {
+            messageLines.push('');
+            messageLines.push(`Zusätzliche Anmerkungen: ${additionalNotes}`);
+        }
+
+        messageLines.push('');
+        messageLines.push(`Eingesendet von: ${userEmail || 'Unbekannt'}`);
+
+        const message = messageLines.join('\n');
+
+        try {
+            const response = await fetch("https://formsubmit.co/ajax/info@kursnavi.ch", {
+                method: "POST",
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    _subject: `Kategorie-Vorschlag: ${newArea || newSpecialty || newFocus}`,
+                    message: message,
+                    email: userEmail || ''
+                })
+            });
+
+            if (response.ok) {
+                showNotification('Vielen Dank! Dein Kategorie-Vorschlag wurde gesendet.');
+                resetForm();
+                onClose();
+            } else {
+                throw new Error('Senden fehlgeschlagen');
+            }
+        } catch (err) {
+            console.error('Category suggestion error:', err);
+            showNotification('Fehler beim Senden. Bitte versuche es später erneut.');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-xl w-full max-h-[90vh] overflow-y-auto">
+                {/* Header */}
+                <div className="bg-gradient-to-r from-purple-100 to-indigo-50 p-6 border-b sticky top-0">
+                    <div className="flex justify-between items-start">
+                        <div className="flex items-center gap-3">
+                            <div className="bg-white p-2 rounded-full shadow-sm">
+                                <Lightbulb className="w-6 h-6 text-purple-600" />
+                            </div>
+                            <div>
+                                <h2 className="text-xl font-bold text-dark font-heading">Kategorie vorschlagen</h2>
+                                <p className="text-gray-600 text-sm mt-1">Fehlt eine passende Kategorie? Schlage sie uns vor!</p>
+                            </div>
+                        </div>
+                        <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl leading-none p-1">
+                            <X className="w-6 h-6" />
+                        </button>
+                    </div>
+                </div>
+
+                {/* Form */}
+                <form onSubmit={handleSubmit} className="p-6 space-y-6">
+                    {/* Suggestion Type */}
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-3">Was möchtest du vorschlagen?</label>
+                        <div className="grid grid-cols-2 gap-3">
+                            <label className={`cursor-pointer border-2 p-4 rounded-xl transition ${suggestionType === 'single' ? 'border-purple-500 bg-purple-50' : 'border-gray-200 hover:bg-gray-50'}`}>
+                                <div className="flex items-center mb-1">
+                                    <input type="radio" name="suggestionType" value="single" checked={suggestionType === 'single'} onChange={() => setSuggestionType('single')} className="mr-2 accent-purple-600"/>
+                                    <span className="font-bold text-sm">Neue Unterkategorie</span>
+                                </div>
+                                <p className="text-xs text-gray-500">z.B. neuer Fokus unter bestehendem Spezialgebiet</p>
+                            </label>
+                            <label className={`cursor-pointer border-2 p-4 rounded-xl transition ${suggestionType === 'path' ? 'border-purple-500 bg-purple-50' : 'border-gray-200 hover:bg-gray-50'}`}>
+                                <div className="flex items-center mb-1">
+                                    <input type="radio" name="suggestionType" value="path" checked={suggestionType === 'path'} onChange={() => setSuggestionType('path')} className="mr-2 accent-purple-600"/>
+                                    <span className="font-bold text-sm">Kompletter Pfad</span>
+                                </div>
+                                <p className="text-xs text-gray-500">Neuer Bereich mit Spezialgebiet und Fokus</p>
+                            </label>
+                        </div>
+                    </div>
+
+                    {/* Level 1: Category Type (always required) */}
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">Kategorietyp (Level 1) *</label>
+                        <div className="relative">
+                            <select
+                                value={selectedType}
+                                onChange={(e) => { setSelectedType(e.target.value); setSelectedArea(''); setSelectedSpecialty(''); }}
+                                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 outline-none appearance-none bg-white"
+                                required
+                            >
+                                <option value="">Bitte wählen...</option>
+                                {(types.length > 0 ? types : Object.keys(CATEGORY_TYPES).map(id => ({ id, label_de: CATEGORY_TYPES[id].de }))).map(type => (
+                                    <option key={type.id} value={type.id}>{type.label_de}</option>
+                                ))}
+                            </select>
+                            <ChevronDown className="absolute right-3 top-2.5 text-gray-400 w-5 h-5 pointer-events-none" />
+                        </div>
+                    </div>
+
+                    {suggestionType === 'single' && selectedType && (
+                        <>
+                            {/* Level 2: Existing Area Selection */}
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-1">Bestehender Bereich (Level 2)</label>
+                                <p className="text-xs text-gray-500 mb-2">Optional - wähle einen bestehenden Bereich, wenn du darunter etwas hinzufügen möchtest.</p>
+                                <div className="relative">
+                                    <select
+                                        value={selectedArea}
+                                        onChange={(e) => { setSelectedArea(e.target.value); setSelectedSpecialty(''); }}
+                                        className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 outline-none appearance-none bg-white"
+                                    >
+                                        <option value="">-- Keinen auswählen (neuen Bereich vorschlagen) --</option>
+                                        {getAreas(selectedType).map(key => {
+                                            const label = taxonomy?.[selectedType]?.[key]?.label?.de || NEW_TAXONOMY[selectedType]?.[key]?.label?.de || key;
+                                            return <option key={key} value={key}>{label}</option>;
+                                        })}
+                                    </select>
+                                    <ChevronDown className="absolute right-3 top-2.5 text-gray-400 w-5 h-5 pointer-events-none" />
+                                </div>
+                            </div>
+
+                            {/* Level 3: Existing Specialty Selection (only if area selected) */}
+                            {selectedArea && (
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-700 mb-1">Bestehendes Spezialgebiet (Level 3)</label>
+                                    <p className="text-xs text-gray-500 mb-2">Optional - wähle ein bestehendes Spezialgebiet, wenn du einen Fokus hinzufügen möchtest.</p>
+                                    <div className="relative">
+                                        <select
+                                            value={selectedSpecialty}
+                                            onChange={(e) => setSelectedSpecialty(e.target.value)}
+                                            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 outline-none appearance-none bg-white"
+                                        >
+                                            <option value="">-- Keines auswählen (neues Spezialgebiet vorschlagen) --</option>
+                                            {getSpecialties(selectedType, selectedArea).map(spec => (
+                                                <option key={spec} value={spec}>{spec}</option>
+                                            ))}
+                                        </select>
+                                        <ChevronDown className="absolute right-3 top-2.5 text-gray-400 w-5 h-5 pointer-events-none" />
+                                    </div>
+                                </div>
+                            )}
+                        </>
+                    )}
+
+                    {/* New Category Inputs */}
+                    <div className="bg-purple-50 p-4 rounded-xl border border-purple-100 space-y-4">
+                        <h4 className="font-bold text-purple-900 text-sm">Dein Vorschlag</h4>
+
+                        {/* New Area (Level 2) - show if no existing area selected OR if path mode */}
+                        {(suggestionType === 'path' || !selectedArea) && (
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-1">
+                                    Neuer Bereich (Level 2) {suggestionType === 'path' && '*'}
+                                </label>
+                                <input
+                                    type="text"
+                                    value={newArea}
+                                    onChange={(e) => setNewArea(e.target.value)}
+                                    placeholder="z.B. Digitale Kunst"
+                                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 outline-none"
+                                    required={suggestionType === 'path'}
+                                />
+                            </div>
+                        )}
+
+                        {/* New Specialty (Level 3) - show if area exists (selected or new) and no specialty selected */}
+                        {(selectedArea || newArea || suggestionType === 'path') && !selectedSpecialty && (
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-1">Neues Spezialgebiet (Level 3)</label>
+                                <input
+                                    type="text"
+                                    value={newSpecialty}
+                                    onChange={(e) => setNewSpecialty(e.target.value)}
+                                    placeholder="z.B. 3D-Modellierung"
+                                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 outline-none"
+                                />
+                            </div>
+                        )}
+
+                        {/* New Focus (Level 4) - show if specialty exists (selected or new) */}
+                        {(selectedSpecialty || newSpecialty) && (
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-1">Neuer Fokus (Level 4)</label>
+                                <input
+                                    type="text"
+                                    value={newFocus}
+                                    onChange={(e) => setNewFocus(e.target.value)}
+                                    placeholder="z.B. Blender, ZBrush"
+                                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 outline-none"
+                                />
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Additional Notes */}
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">Zusätzliche Anmerkungen (optional)</label>
+                        <textarea
+                            value={additionalNotes}
+                            onChange={(e) => setAdditionalNotes(e.target.value)}
+                            rows={3}
+                            placeholder="z.B. Warum diese Kategorie gebraucht wird, ähnliche Kategorien..."
+                            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 outline-none resize-none"
+                        />
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex gap-3 pt-2">
+                        <button
+                            type="button"
+                            onClick={() => { resetForm(); onClose(); }}
+                            className="flex-1 px-6 py-3 border border-gray-300 rounded-xl font-semibold text-gray-700 hover:bg-gray-50 transition"
+                        >
+                            Abbrechen
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={isSubmitting}
+                            className="flex-1 px-6 py-3 bg-purple-600 text-white rounded-xl font-semibold hover:bg-purple-700 transition flex items-center justify-center disabled:opacity-50"
+                        >
+                            {isSubmitting ? (
+                                <Loader className="w-5 h-5 animate-spin" />
+                            ) : (
+                                <>
+                                    <Send className="w-4 h-4 mr-2" />
+                                    Vorschlag senden
+                                </>
+                            )}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+};
 
 const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotification, setEditingCourse }) => {
     // --- LIMITS REMOVED: Unbegrenzte Kurse fuer alle ---
@@ -51,6 +391,9 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
     
     // Fallback Regions
     const [fallbackCantons, setFallbackCantons] = useState([]);
+
+    // Category Suggestion Modal State
+    const [showCategorySuggestionModal, setShowCategorySuggestionModal] = useState(false);
 
     // Scroll to top when editing a different course
     useEffect(() => {
@@ -786,6 +1129,18 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                                     <Plus className="w-4 h-4 mr-1" /> Kategorie hinzufügen
                                 </button>
                             </div>
+
+                            {/* Category Suggestion Button */}
+                            <div className="pt-3 border-t border-orange-200/50 mt-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowCategorySuggestionModal(true)}
+                                    className="text-sm text-purple-600 hover:text-purple-800 font-medium flex items-center gap-1.5 hover:underline transition"
+                                >
+                                    <Lightbulb className="w-4 h-4" />
+                                    Kategorie fehlt? Neue vorschlagen
+                                </button>
+                            </div>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 pt-4 border-t border-orange-200/50">
@@ -993,6 +1348,16 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                 </div>
             </form>
         </div>
+
+        {/* Category Suggestion Modal */}
+        <CategorySuggestionModal
+            isOpen={showCategorySuggestionModal}
+            onClose={() => setShowCategorySuggestionModal(false)}
+            taxonomy={taxonomy}
+            types={types}
+            showNotification={showNotification}
+            userEmail={user?.email}
+        />
     </div>
     );
 };
