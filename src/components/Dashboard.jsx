@@ -945,13 +945,28 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
 
             if (data) {
                 const prioIds = new Set(data.filter(c => c.is_prio).map(c => c.id));
+                const allCourseIds = data.map(c => c.id);
 
-                // Default-Auswahl: Wenn noch keine Prio-Kurse markiert sind,
-                // die ältesten Kurse (bis maxPrioCourses) automatisch als Prio setzen
                 const plan = PLANS.find(p => p.id === userTier) || PLANS[0];
                 const maxPrio = plan?.maxPrioCourses || 0;
 
-                if (prioIds.size === 0 && data.length > maxPrio && maxPrio > 0 && maxPrio !== Infinity) {
+                // Enterprise: Alle Kurse sind automatisch Prio
+                if (maxPrio === Infinity) {
+                    // Alle Kurse die noch nicht Prio sind, auf Prio setzen
+                    const nonPrioIds = allCourseIds.filter(id => !prioIds.has(id));
+                    if (nonPrioIds.length > 0) {
+                        for (const courseId of nonPrioIds) {
+                            await supabase
+                                .from('courses')
+                                .update({ is_prio: true })
+                                .eq('id', courseId);
+                        }
+                    }
+                    setPrioCourseIds(new Set(allCourseIds));
+                }
+                // Default-Auswahl: Wenn noch keine Prio-Kurse markiert sind,
+                // die ältesten Kurse (bis maxPrioCourses) automatisch als Prio setzen
+                else if (prioIds.size === 0 && data.length > maxPrio && maxPrio > 0) {
                     // Sortiert nach created_at (ascending) - die ältesten zuerst
                     const oldestCourseIds = data.slice(0, maxPrio).map(c => c.id);
 
@@ -1199,19 +1214,18 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                             </p>
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-2">
-                                        <div className={`px-4 py-2 rounded-lg font-bold text-sm ${
-                                            prioCourseIds.size >= (currentPlan?.maxPrioCourses || 0) && currentPlan?.maxPrioCourses !== Infinity
-                                                ? 'bg-orange-100 text-orange-700 border border-orange-200'
-                                                : 'bg-green-100 text-green-700 border border-green-200'
-                                        }`}>
-                                            {currentPlan?.maxPrioCourses === Infinity ? (
-                                                <span>{prioCourseIds.size} Prio-Kurse aktiv</span>
-                                            ) : (
+                                    {/* Zähler nur für nicht-Enterprise-User anzeigen */}
+                                    {currentPlan?.maxPrioCourses !== Infinity && (
+                                        <div className="flex items-center gap-2">
+                                            <div className={`px-4 py-2 rounded-lg font-bold text-sm ${
+                                                prioCourseIds.size >= (currentPlan?.maxPrioCourses || 0)
+                                                    ? 'bg-orange-100 text-orange-700 border border-orange-200'
+                                                    : 'bg-green-100 text-green-700 border border-green-200'
+                                            }`}>
                                                 <span>{prioCourseIds.size} / {currentPlan?.maxPrioCourses} Prio-Slots verwendet</span>
-                                            )}
+                                            </div>
                                         </div>
-                                    </div>
+                                    )}
                                 </div>
                             </div>
                         )}
