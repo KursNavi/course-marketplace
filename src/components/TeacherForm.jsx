@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
-import { ArrowLeft, Loader, Calendar, Plus, Trash2, ExternalLink, Globe, Bold, Italic, Underline, Heading2, Heading3, List, Mail, MapPin, Lightbulb, X, Send, ChevronDown } from 'lucide-react';
+import { ArrowLeft, Loader, Calendar, Plus, Trash2, ExternalLink, Globe, Bold, Italic, Underline, Heading2, Heading3, List, Mail, MapPin, Lightbulb, X, Send, ChevronDown, Images, Check } from 'lucide-react';
 import { KursNaviLogo } from './Layout';
 import { SWISS_CANTONS, NEW_TAXONOMY, CATEGORY_TYPES, COURSE_LEVELS } from '../lib/constants';
 import { supabase } from '../lib/supabase';
@@ -453,6 +453,12 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
     // Category Suggestion Modal State
     const [showCategorySuggestionModal, setShowCategorySuggestionModal] = useState(false);
 
+    // Image Library State (for reusing existing images)
+    const [showImageLibrary, setShowImageLibrary] = useState(false);
+    const [existingImages, setExistingImages] = useState([]);
+    const [loadingImages, setLoadingImages] = useState(false);
+    const [selectedExistingImage, setSelectedExistingImage] = useState(null);
+
     // Flag to track if draft was loaded (to prevent initialData from overwriting it)
     // Using useRef so the flag persists across re-renders without triggering updates
     const draftLoadedRef = useRef(!!draft);
@@ -813,8 +819,61 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
             }
             const previewUrl = URL.createObjectURL(file);
             setImagePreview(previewUrl);
+            setSelectedExistingImage(null); // Clear any selected existing image
             markDirty();
         }
+    };
+
+    // Load existing images from storage bucket for reuse
+    const loadExistingImages = async () => {
+        setLoadingImages(true);
+        try {
+            const { data, error } = await supabase.storage.from('course-images').list('', {
+                limit: 100,
+                sortBy: { column: 'created_at', order: 'desc' }
+            });
+
+            if (error) {
+                console.error('Fehler beim Laden der Bilder:', error);
+                showNotification('Fehler beim Laden der Bilderbibliothek');
+                return;
+            }
+
+            // Filter only image files and get public URLs
+            const imageFiles = (data || []).filter(file =>
+                file.name && /\.(jpg|jpeg|png|gif|webp)$/i.test(file.name)
+            );
+
+            const imagesWithUrls = imageFiles.map(file => {
+                const { data: { publicUrl } } = supabase.storage.from('course-images').getPublicUrl(file.name);
+                return {
+                    name: file.name,
+                    url: publicUrl,
+                    created_at: file.created_at
+                };
+            });
+
+            setExistingImages(imagesWithUrls);
+        } catch (err) {
+            console.error('Fehler:', err);
+            showNotification('Fehler beim Laden der Bilder');
+        } finally {
+            setLoadingImages(false);
+        }
+    };
+
+    // Open image library modal
+    const openImageLibrary = () => {
+        setShowImageLibrary(true);
+        loadExistingImages();
+    };
+
+    // Select an existing image
+    const selectExistingImage = (image) => {
+        setSelectedExistingImage(image.url);
+        setImagePreview(null); // Clear any new image preview
+        setShowImageLibrary(false);
+        markDirty();
     };
 
     // UX Logic: Has the user entered a Valid Date?
@@ -906,23 +965,30 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
 
         setIsSubmitting(true);
 
-        // 3. Image Upload (mit automatischer Komprimierung)
+        // 3. Image Upload (mit automatischer Komprimierung) oder bestehendes Bild verwenden
         let imageUrl = initialData?.image_url || "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=600";
-        const imageFile = formData.get('courseImage');
-        if (imageFile && imageFile.size > 0) {
-            // Bild komprimieren bevor Upload
-            const compressedFile = await compressImage(imageFile);
-            const fileName = `${Date.now()}.jpg`;
-            const { error: uploadError } = await supabase.storage.from('course-images').upload(fileName, compressedFile);
-            
-            if (uploadError) {
-                showNotification("Bild-Upload fehlgeschlagen: " + uploadError.message);
-                setIsSubmitting(false);
-                return;
+
+        // Priorität: 1. Neues hochgeladenes Bild, 2. Aus Bibliothek gewähltes Bild, 3. Bestehendes Bild
+        if (selectedExistingImage) {
+            // Bestehendes Bild aus Bibliothek verwenden (spart Speicherplatz!)
+            imageUrl = selectedExistingImage;
+        } else {
+            const imageFile = formData.get('courseImage');
+            if (imageFile && imageFile.size > 0) {
+                // Neues Bild komprimieren und hochladen
+                const compressedFile = await compressImage(imageFile);
+                const fileName = `${Date.now()}.jpg`;
+                const { error: uploadError } = await supabase.storage.from('course-images').upload(fileName, compressedFile);
+
+                if (uploadError) {
+                    showNotification("Bild-Upload fehlgeschlagen: " + uploadError.message);
+                    setIsSubmitting(false);
+                    return;
+                }
+
+                const { data: { publicUrl } } = supabase.storage.from('course-images').getPublicUrl(fileName);
+                imageUrl = publicUrl;
             }
-            
-            const { data: { publicUrl } } = supabase.storage.from('course-images').getPublicUrl(fileName);
-            imageUrl = publicUrl;
         }
 
         // 4. Determine Main Location/Date (public label) + private address
@@ -1163,11 +1229,11 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div className="md:col-span-2">
                         <label className="block text-sm font-bold text-gray-700 mb-1">Kursbild</label>
-                        <div className="flex items-center gap-4 bg-gray-50 p-4 rounded-xl border border-dashed border-gray-300">
-                            {(imagePreview || initialData?.image_url) && (
-                                <div className="relative">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-gray-50 p-4 rounded-xl border border-dashed border-gray-300">
+                            {(imagePreview || selectedExistingImage || initialData?.image_url) && (
+                                <div className="relative shrink-0">
                                     <img
-                                        src={imagePreview || initialData.image_url}
+                                        src={imagePreview || selectedExistingImage || initialData.image_url}
                                         className="w-20 h-20 rounded-lg object-cover shadow-sm"
                                         alt="Kursbildvorschau"
                                     />
@@ -1176,10 +1242,26 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                                             Neu
                                         </span>
                                     )}
+                                    {selectedExistingImage && !imagePreview && (
+                                        <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold">
+                                            Bibliothek
+                                        </span>
+                                    )}
                                 </div>
                             )}
-                            <input type="file" name="courseImage" accept="image/*" onChange={handleImageChange} className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-white hover:file:bg-orange-600 cursor-pointer" />
+                            <div className="flex flex-col sm:flex-row gap-3 w-full">
+                                <input type="file" name="courseImage" accept="image/*" onChange={handleImageChange} className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-white hover:file:bg-orange-600 cursor-pointer" />
+                                <button
+                                    type="button"
+                                    onClick={openImageLibrary}
+                                    className="shrink-0 flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-full text-sm font-medium text-gray-700 hover:bg-gray-100 hover:border-gray-400 transition"
+                                >
+                                    <Images className="w-4 h-4" />
+                                    Aus Bibliothek
+                                </button>
+                            </div>
                         </div>
+                        <p className="text-xs text-gray-500 mt-1">Lade ein neues Bild hoch oder wähle ein bereits hochgeladenes aus der Bibliothek.</p>
                     </div>
 
                     {/* Taxonomy Box */}
@@ -1520,6 +1602,75 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
             showNotification={showNotification}
             userEmail={user?.email}
         />
+
+        {/* Image Library Modal */}
+        {showImageLibrary && (
+            <div className="fixed inset-0 bg-dark/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200">
+                <div className="bg-white rounded-2xl p-6 max-w-3xl w-full max-h-[80vh] flex flex-col relative shadow-2xl">
+                    <button
+                        onClick={() => setShowImageLibrary(false)}
+                        className="absolute top-4 right-4 text-gray-400 hover:text-dark transition-colors"
+                    >
+                        <X className="w-6 h-6" />
+                    </button>
+
+                    <h3 className="text-xl font-bold mb-2">Bilderbibliothek</h3>
+                    <p className="text-sm text-gray-600 mb-4">
+                        Wähle ein bereits hochgeladenes Bild aus, um Speicherplatz zu sparen.
+                    </p>
+
+                    <div className="flex-1 overflow-y-auto">
+                        {loadingImages ? (
+                            <div className="flex items-center justify-center py-12">
+                                <Loader className="w-8 h-8 text-primary animate-spin" />
+                            </div>
+                        ) : existingImages.length === 0 ? (
+                            <div className="text-center py-12 text-gray-500">
+                                <Images className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                                <p>Noch keine Bilder in der Bibliothek.</p>
+                                <p className="text-sm mt-1">Lade dein erstes Kursbild hoch!</p>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
+                                {existingImages.map((image) => (
+                                    <button
+                                        key={image.name}
+                                        type="button"
+                                        onClick={() => selectExistingImage(image)}
+                                        className={`relative aspect-square rounded-lg overflow-hidden border-2 transition hover:opacity-90 ${
+                                            selectedExistingImage === image.url
+                                                ? 'border-primary ring-2 ring-primary/30'
+                                                : 'border-transparent hover:border-gray-300'
+                                        }`}
+                                    >
+                                        <img
+                                            src={image.url}
+                                            alt={image.name}
+                                            className="w-full h-full object-cover"
+                                        />
+                                        {selectedExistingImage === image.url && (
+                                            <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
+                                                <Check className="w-8 h-8 text-primary" />
+                                            </div>
+                                        )}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="flex justify-end gap-3 mt-4 pt-4 border-t">
+                        <button
+                            type="button"
+                            onClick={() => setShowImageLibrary(false)}
+                            className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition"
+                        >
+                            Abbrechen
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
     </div>
     );
 };
