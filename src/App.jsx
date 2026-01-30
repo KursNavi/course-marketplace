@@ -227,6 +227,11 @@ export default function KursNaviPro() {  // 1. Initial State Logic
     document.documentElement.lang = lang;
   }, [lang]);
 
+  // --- Scroll to top on view change ---
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [view]);
+
     const getCatLabel = (key) => {
       if (!key) return '';
 
@@ -268,6 +273,20 @@ export default function KursNaviPro() {  // 1. Initial State Logic
     else showNotification("Course deleted.");
   };
 
+  const handleUpdateCourseStatus = async (courseId, newStatus) => {
+    // Update local state immediately for responsive UI
+    setCourses(prev => prev.map(c => c.id === courseId ? { ...c, status: newStatus } : c));
+
+    const { error } = await supabase.from('courses').update({ status: newStatus }).eq('id', courseId);
+    if (error) {
+      showNotification("Fehler: " + error.message);
+      // Revert on error
+      setCourses(prev => prev.map(c => c.id === courseId ? { ...c, status: c.status } : c));
+    } else {
+      const statusLabels = { draft: 'Entwurf', published: 'Veröffentlicht', paused: 'Pausiert' };
+      showNotification(`Kurs-Status: ${statusLabels[newStatus] || newStatus}`);
+    }
+  };
 
   const handleEditCourse = (course) => {
       setEditingCourse(course);
@@ -700,6 +719,11 @@ export default function KursNaviPro() {  // 1. Initial State Logic
   // Filter Logic
   const filteredCourses = courses.filter(course => {
     if (!course) return false;
+
+    // Status filter: Only show published courses OR user's own courses
+    const isOwner = user?.id && String(course.user_id) === String(user.id);
+    const isPublished = course.status === 'published' || !course.status; // backward compat for existing courses
+    if (!isPublished && !isOwner) return false;
 
     // Check category filters against ALL categories (primary + Zweitkategorien)
     let matchesType = true;
@@ -1245,7 +1269,7 @@ useEffect(() => {
       {view === 'admin-blog' && <AdminBlogManager showNotification={showNotification} setView={setView} courses={courses} />}
       {view === 'blog' && <BlogList articles={articles} setView={setView} setSelectedArticle={setSelectedArticle} />}
       {view === 'blog-detail' && <BlogDetail article={selectedArticle} setView={setView} courses={courses} />}
-      {view === 'dashboard' && user && <Dashboard user={user} setUser={setUser} t={t} setView={setView} courses={courses} teacherEarnings={teacherEarnings} myBookings={myBookings} savedCourses={savedCourses} savedCourseIds={savedCourseIds} onToggleSaveCourse={toggleSaveCourse} handleDeleteCourse={handleDeleteCourse} handleEditCourse={handleEditCourse} showNotification={showNotification} changeLanguage={changeLanguage} setSelectedCourse={setSelectedCourse} />}
+      {view === 'dashboard' && user && <Dashboard user={user} setUser={setUser} t={t} setView={setView} courses={courses} teacherEarnings={teacherEarnings} myBookings={myBookings} savedCourses={savedCourses} savedCourseIds={savedCourseIds} onToggleSaveCourse={toggleSaveCourse} handleDeleteCourse={handleDeleteCourse} handleEditCourse={handleEditCourse} handleUpdateCourseStatus={handleUpdateCourseStatus} showNotification={showNotification} changeLanguage={changeLanguage} setSelectedCourse={setSelectedCourse} />}
       {view === 'create' && user?.role === 'teacher' && <TeacherForm t={t} setView={setView} user={user} fetchCourses={fetchCourses} showNotification={showNotification} setEditingCourse={setEditingCourse} initialData={editingCourse} />}
       </div>
       

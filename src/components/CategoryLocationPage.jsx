@@ -22,6 +22,11 @@ export default function CategoryLocationPage({
     onToggleSaveCourse,
     t
 }) {
+    // Scroll to top when category/location changes
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, [topicSlug, locationSlug]);
+
     // --- GUARD: Prevent crash on initial load (empty slugs) ---
     if (!topicSlug || !locationSlug) {
         return (

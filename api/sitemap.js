@@ -12,11 +12,12 @@ export default async function handler(req, res) {
   const supabase = createClient(supabaseUrl, supabaseKey);
 
   try {
-    // 2. Fetch all active courses
+    // 2. Fetch all published courses (exclude drafts and paused)
     // FIX: Removed 'updated_at' because it does not exist in the DB schema
     const { data: courses, error } = await supabase
       .from('courses')
       .select('id, title, category_area, canton, created_at')
+      .or('status.eq.published,status.is.null') // Include published + legacy courses without status
       .order('created_at', { ascending: false });
 
     if (error) throw error;

@@ -42,12 +42,20 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
     const [courseLanguage, setCourseLanguage] = useState('Deutsch');
 
     const [isSubmitting, setIsSubmitting] = useState(false);
-    
+
+    // Course Status (draft/published/paused)
+    const [courseStatus, setCourseStatus] = useState('draft'); // Default: new courses start as draft
+
     // Schedule State
     const [events, setEvents] = useState([{ start_date: '', street: '', city: '', max_participants: 0, canton: '', schedule_description: '' }]);
     
     // Fallback Regions
     const [fallbackCantons, setFallbackCantons] = useState([]);
+
+    // Scroll to top when editing a different course
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, [initialData?.id]);
 
     useEffect(() => {
         let isMounted = true; // Prevent state updates on unmounted component
@@ -89,6 +97,8 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
 
             if (initialData.level) setSelectedLevel(initialData.level);
             if (initialData.language) setCourseLanguage(initialData.language);
+            // Load course status (default to 'published' for existing courses without status)
+            setCourseStatus(initialData.status || 'published');
 
             
             // Restore Contact Email (now stored in course_private)
@@ -491,7 +501,8 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
             session_length: sessionLength || '',
             provider_url: providerUrl,
             user_id: user?.id || initialData?.user_id,
-            is_pro: user?.is_professional ?? initialData?.is_pro ?? false
+            is_pro: user?.is_professional ?? initialData?.is_pro ?? false,
+            status: courseStatus
         };
 
         // 6. DB Operations
@@ -943,6 +954,34 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                             </div>
                         </div>
 
+                    </div>
+                </div>
+
+                {/* --- STATUS SECTION --- */}
+                <div className="bg-gray-50 p-6 rounded-xl border border-gray-100">
+                    <h3 className="text-lg font-bold text-dark mb-4">Veröffentlichungs-Status</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <label className={`cursor-pointer border-2 p-4 rounded-xl transition relative ${courseStatus === 'draft' ? 'border-yellow-400 bg-yellow-50' : 'border-gray-200 hover:bg-gray-50'}`}>
+                            <div className="flex items-center mb-2">
+                                <input type="radio" name="courseStatus" value="draft" checked={courseStatus === 'draft'} onChange={() => { setCourseStatus('draft'); setIsDirty(true); }} className="mr-2 accent-yellow-500"/>
+                                <span className="font-bold">Entwurf</span>
+                            </div>
+                            <p className="text-xs text-gray-500">Kurs ist nur für dich sichtbar. Kann jederzeit veröffentlicht werden.</p>
+                        </label>
+                        <label className={`cursor-pointer border-2 p-4 rounded-xl transition relative ${courseStatus === 'published' ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:bg-gray-50'}`}>
+                            <div className="flex items-center mb-2">
+                                <input type="radio" name="courseStatus" value="published" checked={courseStatus === 'published'} onChange={() => { setCourseStatus('published'); setIsDirty(true); }} className="mr-2 accent-green-500"/>
+                                <span className="font-bold">Veröffentlicht</span>
+                            </div>
+                            <p className="text-xs text-gray-500">Kurs ist öffentlich sichtbar und kann gebucht werden.</p>
+                        </label>
+                        <label className={`cursor-pointer border-2 p-4 rounded-xl transition relative ${courseStatus === 'paused' ? 'border-orange-400 bg-orange-50' : 'border-gray-200 hover:bg-gray-50'}`}>
+                            <div className="flex items-center mb-2">
+                                <input type="radio" name="courseStatus" value="paused" checked={courseStatus === 'paused'} onChange={() => { setCourseStatus('paused'); setIsDirty(true); }} className="mr-2 accent-orange-500"/>
+                                <span className="font-bold">Pausiert</span>
+                            </div>
+                            <p className="text-xs text-gray-500">Vorübergehend versteckt. Kann schnell wieder aktiviert werden.</p>
+                        </label>
                     </div>
                 </div>
 

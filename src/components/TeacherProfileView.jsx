@@ -1,8 +1,13 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { ArrowLeft, CheckCircle, Shield } from 'lucide-react';
 import { formatPriceCHF } from '../lib/formatPrice';
 
 const TeacherProfileView = ({ teacher, courses, setView, setSelectedCourse, t }) => {
+    // Scroll to top when teacher changes
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, [teacher?.id]);
+
     const teacherCourses = courses.filter(c => c.user_id === teacher.id);
 
     return (

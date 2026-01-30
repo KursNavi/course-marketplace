@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, User, MapPin, Clock, CheckCircle, Calendar, Shield, ExternalLink, Mail, X, Send, Map, Info, Loader, Bookmark, BookmarkCheck, ChevronRight } from 'lucide-react';
+import { ArrowLeft, User, MapPin, Clock, CheckCircle, Calendar, Shield, ExternalLink, Mail, X, Send, Map, Info, Loader, Bookmark, BookmarkCheck, ChevronRight, AlertCircle, PauseCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { formatPriceCHF } from '../lib/formatPrice';
 import { useTaxonomy } from '../hooks/useTaxonomy';
@@ -542,7 +542,27 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
                 window.history.pushState({ view: 'search' }, '', '/search');
             }
         }} className="flex items-center text-gray-500 hover:text-primary mb-6 transition-colors"><ArrowLeft className="w-4 h-4 mr-2"/> Zurück zur Suche</button>
-        
+
+        {/* Status Banner for Draft/Paused courses (only visible to owner) */}
+        {user?.id && String(course.user_id) === String(user.id) && course.status === 'draft' && (
+            <div className="bg-yellow-100 border border-yellow-300 text-yellow-800 px-4 py-3 rounded-xl mb-6 flex items-center">
+                <AlertCircle className="w-5 h-5 mr-3 shrink-0" />
+                <div>
+                    <span className="font-bold">Entwurf</span>
+                    <span className="ml-2">– Dieser Kurs ist nur für dich sichtbar. Veröffentliche ihn im Dashboard.</span>
+                </div>
+            </div>
+        )}
+        {user?.id && String(course.user_id) === String(user.id) && course.status === 'paused' && (
+            <div className="bg-orange-100 border border-orange-300 text-orange-800 px-4 py-3 rounded-xl mb-6 flex items-center">
+                <PauseCircle className="w-5 h-5 mr-3 shrink-0" />
+                <div>
+                    <span className="font-bold">Pausiert</span>
+                    <span className="ml-2">– Dieser Kurs ist aktuell nicht öffentlich sichtbar.</span>
+                </div>
+            </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-8">
                 <div className="w-full h-80 bg-gray-100 rounded-2xl overflow-hidden shadow-lg relative group">

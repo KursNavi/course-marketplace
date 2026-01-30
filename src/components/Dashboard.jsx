@@ -4,7 +4,7 @@ import {
     Loader, Settings, Save, Lock, CheckCircle, XCircle, Clock,
     ChevronDown, User, DollarSign, PenTool, Trash2, ArrowRight, Plus, MapPin,
     Crown, BarChart3, Bold, Italic, Underline, Heading2, Heading3, List,
-    CreditCard, Check, Shield, ExternalLink
+    CreditCard, Check, Shield, ExternalLink, Play, Pause, FileEdit
 } from 'lucide-react';
 import { SWISS_CANTONS } from "../lib/constants";
 import { PLANS } from "../constants/plans";
@@ -838,7 +838,7 @@ const CaptureServiceModal = ({ isOpen, onClose, user, includedServices, usedServ
 };
 
 // --- MAIN DASHBOARD COMPONENT ---
-const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBookings, savedCourses, savedCourseIds, onToggleSaveCourse, handleDeleteCourse, handleEditCourse, showNotification, changeLanguage, setSelectedCourse }) => {
+const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBookings, savedCourses, savedCourseIds, onToggleSaveCourse, handleDeleteCourse, handleEditCourse, handleUpdateCourseStatus, showNotification, changeLanguage, setSelectedCourse }) => {
     const [dashView, setDashView] = useState('overview');
     const [userTier, setUserTier] = useState('basic'); // basic, pro, premium, enterprise
     const [showSuccessModal, setShowSuccessModal] = useState(false); // NEW: Success Modal State
@@ -1063,10 +1063,24 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                             {myCourses.length > 0 ? (
                                 <div className="overflow-x-auto">
                                     <table className="w-full text-left">
-                                            <thead className="bg-beige border-b border-gray-200"><tr><th className="px-6 py-4 font-semibold text-gray-600">Kurs</th><th className="px-6 py-4 font-semibold text-gray-600">Typ</th><th className="px-6 py-4 font-semibold text-gray-600">Preis</th><th className="px-6 py-4 font-semibold text-gray-600">Aktionen</th></tr></thead>
+                                            <thead className="bg-beige border-b border-gray-200"><tr><th className="px-6 py-4 font-semibold text-gray-600">Kurs</th><th className="px-6 py-4 font-semibold text-gray-600">Status</th><th className="px-6 py-4 font-semibold text-gray-600">Typ</th><th className="px-6 py-4 font-semibold text-gray-600">Preis</th><th className="px-6 py-4 font-semibold text-gray-600">Aktionen</th></tr></thead>
                                             <tbody className="divide-y divide-gray-100">{myCourses.map(course => (
                                                 <tr key={course.id} className="hover:bg-gray-50">
                                                     <td className="px-6 py-4"><div className="font-bold text-dark">{course.title}</div><div className="text-xs text-gray-400">{course.canton}</div></td>
+                                                    <td className="px-6 py-4">
+                                                        {course.status === 'draft' && (
+                                                            <span className="text-xs px-2 py-1 rounded font-bold bg-yellow-100 text-yellow-700 border border-yellow-200">Entwurf</span>
+                                                        )}
+                                                        {course.status === 'published' && (
+                                                            <span className="text-xs px-2 py-1 rounded font-bold bg-green-100 text-green-700 border border-green-200">Online</span>
+                                                        )}
+                                                        {course.status === 'paused' && (
+                                                            <span className="text-xs px-2 py-1 rounded font-bold bg-orange-100 text-orange-700 border border-orange-200">Pausiert</span>
+                                                        )}
+                                                        {!course.status && (
+                                                            <span className="text-xs px-2 py-1 rounded font-bold bg-green-100 text-green-700 border border-green-200">Online</span>
+                                                        )}
+                                                    </td>
                                                     <td className="px-6 py-4">
                                                         <span className={`text-xs px-2 py-1 rounded font-bold uppercase ${course.booking_type === 'platform' ? 'bg-green-100 text-green-700' : (course.booking_type === 'external' ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700')}`}>
                                                             {course.booking_type || 'platform'}
@@ -1074,8 +1088,19 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                                     </td>
                                                     <td className="px-6 py-4 font-medium">{course.price ? `CHF ${formatPriceCHF(course.price)}` : <span className="text-gray-400 italic">Kein Preis angegeben</span>}</td>
                                                     <td className="px-6 py-4 flex gap-2">
-                                                        <button onClick={() => handleEditCourse(course)} className="text-blue-500 hover:text-blue-700 bg-blue-50 p-2 rounded-full"><PenTool className="w-4 h-4" /></button>
-                                                        <button onClick={() => handleDeleteCourse(course.id)} className="text-red-500 hover:text-red-700 bg-red-50 p-2 rounded-full"><Trash2 className="w-4 h-4" /></button>
+                                                        {/* Quick Publish/Pause Toggle */}
+                                                        {(course.status === 'draft' || course.status === 'paused') && (
+                                                            <button onClick={() => handleUpdateCourseStatus(course.id, 'published')} className="text-green-600 hover:text-green-700 bg-green-50 p-2 rounded-full" title="Veröffentlichen">
+                                                                <Play className="w-4 h-4" />
+                                                            </button>
+                                                        )}
+                                                        {(course.status === 'published' || !course.status) && (
+                                                            <button onClick={() => handleUpdateCourseStatus(course.id, 'paused')} className="text-orange-500 hover:text-orange-700 bg-orange-50 p-2 rounded-full" title="Pausieren">
+                                                                <Pause className="w-4 h-4" />
+                                                            </button>
+                                                        )}
+                                                        <button onClick={() => handleEditCourse(course)} className="text-blue-500 hover:text-blue-700 bg-blue-50 p-2 rounded-full" title="Bearbeiten"><PenTool className="w-4 h-4" /></button>
+                                                        <button onClick={() => handleDeleteCourse(course.id)} className="text-red-500 hover:text-red-700 bg-red-50 p-2 rounded-full" title="Löschen"><Trash2 className="w-4 h-4" /></button>
                                                     </td>
                                                 </tr>
                                             ))}</tbody>

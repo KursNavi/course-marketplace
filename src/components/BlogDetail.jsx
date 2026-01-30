@@ -3,6 +3,11 @@ import { Calendar, User, ArrowLeft, ArrowRight, MapPin, Search } from 'lucide-re
 import { formatPriceCHF } from '../lib/formatPrice';
 
 export default function BlogDetail({ article, setView, courses }) {
+  // Scroll to top when article changes
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [article?.id]);
+
   useEffect(() => {
     if(!article) return;
 
