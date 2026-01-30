@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { ArrowLeft, Loader, Calendar, Plus, Trash2, ExternalLink, Globe, Bold, Italic, Underline, Heading2, Heading3, List, Mail, MapPin, Lightbulb, X, Send, ChevronDown } from 'lucide-react';
 import { KursNaviLogo } from './Layout';
 import { SWISS_CANTONS, NEW_TAXONOMY, CATEGORY_TYPES, COURSE_LEVELS } from '../lib/constants';
@@ -430,8 +430,12 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
     // Ref to hold current form data for cleanup
     const formDataRef = useRef(null);
 
-    // Save draft to sessionStorage when form changes
-    useEffect(() => {
+    // Track if initial data loading is complete (to avoid saving draft during initialization)
+    const initCompleteRef = useRef(false);
+
+    // Use useLayoutEffect to update ref SYNCHRONOUSLY after render (before unmount cleanup runs)
+    // This ensures formDataRef always has the latest values when the component unmounts
+    useLayoutEffect(() => {
         const draftData = {
             courseId: initialData?.id || 'new',
             bookingType,
@@ -454,15 +458,17 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
             fallbackCantons
         };
 
-        // Always update the ref so cleanup can use it
+        // Always update the ref synchronously so cleanup can use it
         formDataRef.current = { draftKey, draftData, isDirty };
 
-        if (!isDirty) return; // Don't save if no changes made
-
-        try {
-            sessionStorage.setItem(draftKey, JSON.stringify(draftData));
-        } catch (e) {
-            console.warn('Failed to save draft:', e);
+        // Save draft immediately when dirty AND initialization is complete
+        // This prevents saving during the initial data loading phase
+        if (isDirty && initCompleteRef.current) {
+            try {
+                sessionStorage.setItem(draftKey, JSON.stringify(draftData));
+            } catch (e) {
+                console.warn('Failed to save draft:', e);
+            }
         }
     }, [isDirty, draftKey, bookingType, contactEmail, title, description, objectives, keywords, prerequisites, externalLink, price, sessionCount, sessionLength, providerUrl, categories, selectedLevel, courseLanguage, courseStatus, events, fallbackCantons, initialData?.id]);
 
@@ -488,6 +494,8 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
         // The ref persists across re-renders, so this prevents initialData from
         // overwriting the draft when dependencies change
         if (draftLoadedRef.current) {
+            // Draft was loaded, initialization is complete
+            initCompleteRef.current = true;
             return;
         }
 
@@ -605,7 +613,17 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
              });
         }
 
-        return () => { isMounted = false; }; // CLEANUP
+        // Mark initialization as complete after initial data loading
+        // Use setTimeout to ensure all synchronous state updates have been processed
+        // This prevents the draft from being saved during the initialization phase
+        const initTimer = setTimeout(() => {
+            initCompleteRef.current = true;
+        }, 0);
+
+        return () => {
+            isMounted = false;
+            clearTimeout(initTimer);
+        }; // CLEANUP
     }, [initialData, user]);
 
     // Paket -> wie viele Kategorien sind erlaubt?
