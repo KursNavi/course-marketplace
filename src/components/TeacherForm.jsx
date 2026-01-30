@@ -427,10 +427,11 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
         window.scrollTo(0, 0);
     }, [initialData?.id]);
 
+    // Ref to hold current form data for cleanup
+    const formDataRef = useRef(null);
+
     // Save draft to sessionStorage when form changes
     useEffect(() => {
-        if (!isDirty) return; // Don't save if no changes made
-
         const draftData = {
             courseId: initialData?.id || 'new',
             bookingType,
@@ -453,12 +454,30 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
             fallbackCantons
         };
 
+        // Always update the ref so cleanup can use it
+        formDataRef.current = { draftKey, draftData, isDirty };
+
+        if (!isDirty) return; // Don't save if no changes made
+
         try {
             sessionStorage.setItem(draftKey, JSON.stringify(draftData));
         } catch (e) {
             console.warn('Failed to save draft:', e);
         }
     }, [isDirty, draftKey, bookingType, contactEmail, title, description, objectives, keywords, prerequisites, externalLink, price, sessionCount, sessionLength, providerUrl, categories, selectedLevel, courseLanguage, courseStatus, events, fallbackCantons, initialData?.id]);
+
+    // Save draft on unmount (safety net for fast tab switches)
+    useEffect(() => {
+        return () => {
+            if (formDataRef.current?.isDirty) {
+                try {
+                    sessionStorage.setItem(formDataRef.current.draftKey, JSON.stringify(formDataRef.current.draftData));
+                } catch (e) {
+                    console.warn('Failed to save draft on unmount:', e);
+                }
+            }
+        };
+    }, []);
 
     useEffect(() => {
         let isMounted = true; // Prevent state updates on unmounted component

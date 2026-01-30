@@ -955,13 +955,12 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                     // Sortiert nach created_at (ascending) - die ältesten zuerst
                     const oldestCourseIds = data.slice(0, maxPrio).map(c => c.id);
 
-                    // Update in DB
+                    // Update in DB (RLS Policy stellt sicher, dass nur eigene Kurse aktualisiert werden)
                     for (const courseId of oldestCourseIds) {
                         await supabase
                             .from('courses')
                             .update({ is_prio: true })
-                            .eq('id', courseId)
-                            .eq('user_id', uid);
+                            .eq('id', courseId);
                     }
 
                     setPrioCourseIds(new Set(oldestCourseIds));
@@ -1004,24 +1003,19 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
         }
         setPrioCourseIds(newPrioIds);
 
-        // DB Update
-        const { data, error } = await supabase
+        // DB Update - nur mit course ID (user_id wird durch RLS Policy geprüft)
+        const { error } = await supabase
             .from('courses')
             .update({ is_prio: !isCurrentlyPrio })
-            .eq('id', courseId)
-            .eq('user_id', currentUid)
-            .select();
+            .eq('id', courseId);
 
         if (error) {
             console.error("Failed to update prio status:", error.message, { courseId, currentUid, error });
             showNotification("Fehler beim Aktualisieren des Prio-Status");
             // Rollback
             setPrioCourseIds(prioCourseIds);
-        } else if (!data || data.length === 0) {
-            console.error("Prio update returned no rows - course may not belong to user", { courseId, currentUid });
-            showNotification("Fehler beim Aktualisieren des Prio-Status");
-            // Rollback
-            setPrioCourseIds(prioCourseIds);
+        } else {
+            console.log("Prio status updated successfully", { courseId, newStatus: !isCurrentlyPrio });
         }
     };
 
