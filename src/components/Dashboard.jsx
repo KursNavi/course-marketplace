@@ -976,6 +976,16 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
 
     // Handler: Toggle Prio-Status eines Kurses
     const handleTogglePrio = async (courseId, isCurrentlyPrio) => {
+        // Frische UID holen, um sicherzustellen dass wir die aktuelle Auth-UID haben
+        const { data: authData } = await supabase.auth.getUser();
+        const currentUid = authData?.user?.id || uid;
+
+        if (!currentUid) {
+            console.error("handleTogglePrio: No user ID available");
+            showNotification("Bitte melde dich erneut an");
+            return;
+        }
+
         const maxPrio = currentPlan?.maxPrioCourses || 0;
         const currentPrioCount = prioCourseIds.size;
 
@@ -995,14 +1005,20 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
         setPrioCourseIds(newPrioIds);
 
         // DB Update
-        const { error } = await supabase
+        const { data, error } = await supabase
             .from('courses')
             .update({ is_prio: !isCurrentlyPrio })
             .eq('id', courseId)
-            .eq('user_id', uid);
+            .eq('user_id', currentUid)
+            .select();
 
         if (error) {
-            console.error("Failed to update prio status:", error.message);
+            console.error("Failed to update prio status:", error.message, { courseId, currentUid, error });
+            showNotification("Fehler beim Aktualisieren des Prio-Status");
+            // Rollback
+            setPrioCourseIds(prioCourseIds);
+        } else if (!data || data.length === 0) {
+            console.error("Prio update returned no rows - course may not belong to user", { courseId, currentUid });
             showNotification("Fehler beim Aktualisieren des Prio-Status");
             // Rollback
             setPrioCourseIds(prioCourseIds);
