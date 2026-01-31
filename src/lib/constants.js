@@ -333,15 +333,15 @@ export const TRANSLATIONS = {
     
     // ADMIN
     admin_login_title: "KursNavi Control Room", admin_pass_placeholder: "Enter Access Code", admin_btn_access: "Access System",
-    admin_tab_teachers: "Teachers", admin_tab_students: "Students", admin_tab_courses: "Courses",
+    admin_tab_teachers: "Course Providers", admin_tab_students: "Learners", admin_tab_courses: "Courses",
     admin_col_name: "Name", admin_col_email: "Email", admin_col_status: "Status", admin_col_actions: "Actions",
     admin_btn_verify: "Verify Pro", admin_btn_unverify: "Remove Pro", admin_verified: "Verified Pro",
     
     // HOME PAGE
     home_headline: "Navigate Your Future with KursNavi",
     home_subhead: "Discover courses, gain new skills, and unlock your potential with expert-led learning tailored to your goals.",
-    home_verified_tutors: "Verified Tutors",
-    home_students: "Students",
+    home_verified_tutors: "Verified Providers",
+    home_students: "Learners",
     home_rating: "Rating",
     home_path_title: "Choose Your Path",
     home_path_sub: "Explore our most popular learning directions",
@@ -375,23 +375,23 @@ export const TRANSLATIONS = {
     lbl_cat_class: "Category Classification", lbl_type: "Type", lbl_area: "Area", lbl_specialty: "Specialty",
     lbl_price: "Price (CHF)", lbl_canton: "Canton", lbl_specific_address: "Specific Address",
     lbl_session_count: "Session Count", lbl_session_length: "Session Length", lbl_start_date: "Start Date",
-    lbl_website: "Provider Website (Optional)", lbl_learn_goals: "What will students learn?", lbl_prereq: "Prerequisites",
+    lbl_website: "Provider Website (Optional)", lbl_learn_goals: "What will learners learn?", lbl_prereq: "Prerequisites",
     btn_update: "Update Course", btn_back_dash: "Back to Dashboard",
     opt_all_levels: "All Levels", opt_beginner: "Beginner", opt_advanced: "Advanced",
     opt_adults: "Adults", opt_teens: "Teens", opt_kids: "Kids",
 
     form_title: "List a Course", success_msg: "Grüezi! Action successful.", currency: "CHF", admin_panel: "Admin Control Center",
-    teacher_dash: "Teacher Dashboard", student_dash: "My Learning", login_title: "Welcome Back", my_bookings: "My Bookings",
+    teacher_dash: "Provider Dashboard", student_dash: "My Learning", login_title: "Welcome Back", my_bookings: "My Bookings",
     lbl_objectives: "What you will learn", lbl_prerequisites: "Prerequisites", lbl_description: "About this course", lbl_address: "Location",
     lbl_duration: "Duration", lbl_sessions: "sessions",
-    how_it_works: "How it Works", for_students: "For Students", for_tutors: "For Tutors",
+    how_it_works: "How it Works", for_students: "For Learners", for_tutors: "For Course Providers",
     student_step_1: "Discover", student_desc_1: "Browse hundreds of unique local courses.",
     student_step_2: "Book", student_desc_2: "Secure your spot instantly with our payment protection.",
     student_step_3: "Learn", student_desc_3: "Meet your local expert and start learning.",
     tutor_step_1: "List", tutor_desc_1: "Create a profile and list your skills for free.",
     tutor_step_2: "Schedule", tutor_desc_2: "Set your own dates, location, and class size.",
     tutor_step_3: "Earn", tutor_desc_3: "Get paid automatically 24h after the course starts.",
-    cta_title: "Become a Tutor", cta_subtitle: "Share your skills and knowledge with students across Switzerland. Set your own schedule and prices.", cta_btn: "Get Started",
+    cta_title: "Become a Course Provider", cta_subtitle: "Share your skills and knowledge with learners across Switzerland. Set your own schedule and prices.", cta_btn: "Get Started",
     
     // FOOTER
     footer_terms: "Terms & Conditions", footer_privacy: "Data Protection", footer_legal: "Legal Notice", footer_madein: "Made in Switzerland", footer_rights: "All rights reserved.",
@@ -440,14 +440,14 @@ export const TRANSLATIONS = {
 
     // FAQ
     faq_title: "Frequently Asked Questions",
-    faq_q1: "What exactly is KursNavi?", faq_a1: "KursNavi is Switzerland's local course marketplace. We connect people who want to learn (students) with local experts (tutors) for face-to-face courses.",
-    faq_q2: "Is the course search free for me?", faq_a2: "Yes! searching and contacting tutors is 100% free for students. You only pay the course fee when you book.",
+    faq_q1: "What exactly is KursNavi?", faq_a1: "KursNavi is Switzerland's local course marketplace. We connect people who want to learn (learners) with local experts (course providers) for face-to-face courses.",
+    faq_q2: "Is the course search free for me?", faq_a2: "Yes! searching and contacting course providers is 100% free for learners. You only pay the course fee when you book.",
     faq_q3: "How do I book a course?", faq_a3: "Simply choose a course, click 'Book', and pay securely online. You will receive an instant confirmation.",
-    faq_q4: "Do I need to register to book?", faq_a4: "Yes, you need a free account so that the tutor can contact you and we can send you the booking confirmation.",
+    faq_q4: "Do I need to register to book?", faq_a4: "Yes, you need a free account so that the course provider can contact you and we can send you the booking confirmation.",
     faq_q5: "How do I pay for the course?", faq_a5: "We accept all major credit cards and TWINT (via Stripe). Your payment is held securely until the course starts.",
     faq_q6: "Are the course providers verified?", faq_a6: "We check the identity of all providers. Providers with the 'Blue Check' have also submitted diplomas/certificates, which we have manually verified.",
     faq_q7: "Can I cancel a booking?", faq_a7: "Yes. Cancellation conditions depend on the start date. You can see the details directly in your booking dashboard.",
-    faq_q8: "Are there courses for companies or groups?", faq_a8: "Many of our tutors offer private group courses. Simply use the 'Contact' button on the course profile to ask.",
+    faq_q8: "Are there courses for companies or groups?", faq_a8: "Many of our course providers offer private group courses. Simply use the 'Contact' button on the course profile to ask.",
     faq_q9: "I can't find the course I want – what now?", faq_a9: "We are growing daily! Check back next week or send us a message with your wish.",
     faq_q10: "I am a provider myself. How can I list courses?", faq_a10: "Create a free profile, verify your email, and click on 'New Course' in the dashboard. It takes less than 5 minutes.",
     
@@ -460,7 +460,7 @@ export const TRANSLATIONS = {
     
     // AUTH LABELS
     auth_create_account: "Create Account", auth_welcome_back: "Welcome Back",
-    auth_i_am_a: "I am a...", auth_student: "Student", auth_teacher: "Teacher",
+    auth_i_am_a: "I am a...", auth_student: "Learner", auth_teacher: "Course Provider",
     lbl_email: "Email", lbl_password: "Password",
     btn_signup: "Sign Up", btn_login: "Login",
     auth_already_have: "Already have an account?", auth_dont_have: "Don't have an account?",
@@ -482,15 +482,15 @@ export const TRANSLATIONS = {
     
     // ADMIN
     admin_login_title: "KursNavi Kommandozentrale", admin_pass_placeholder: "Zugangscode eingeben", admin_btn_access: "System öffnen",
-    admin_tab_teachers: "Lehrer", admin_tab_students: "Schüler", admin_tab_courses: "Kurse",
+    admin_tab_teachers: "Kursanbieter", admin_tab_students: "Lernende", admin_tab_courses: "Kurse",
     admin_col_name: "Name", admin_col_email: "E-Mail", admin_col_status: "Status", admin_col_actions: "Aktionen",
     admin_btn_verify: "Verifizieren (Pro)", admin_btn_unverify: "Pro entfernen", admin_verified: "Verifizierter Pro",
 
     // HOME PAGE
     home_headline: "Gestalte deine Zukunft mit KursNavi",
     home_subhead: "Entdecke Kurse, lerne neue Fähigkeiten und entfalte dein Potenzial mit Experten, die dich weiterbringen.",
-    home_verified_tutors: "Geprüfte Lehrer",
-    home_students: "Schüler",
+    home_verified_tutors: "Geprüfte Kursanbieter",
+    home_students: "Lernende",
     home_rating: "Bewertung",
     home_path_title: "Wähle deinen Weg",
     home_path_sub: "Entdecke unsere beliebtesten Lernbereiche",
@@ -529,18 +529,18 @@ export const TRANSLATIONS = {
     opt_adults: "Erwachsene", opt_teens: "Jugendliche", opt_kids: "Kinder",
 
     form_title: "Kurs anbieten", success_msg: "Erfolgreich!", currency: "CHF", admin_panel: "Admin Konsole",
-    teacher_dash: "Lehrer Dashboard", student_dash: "Meine Kurse",
+    teacher_dash: "Kursanbieter Dashboard", student_dash: "Meine Kurse",
     login_title: "Willkommen", my_bookings: "Meine Buchungen",
     lbl_description: "Beschreibung", lbl_address: "Standort", lbl_duration: "Dauer", lbl_sessions: "Lektionen",
     lbl_objectives: "Was du lernst", lbl_prerequisites: "Voraussetzungen",
-    how_it_works: "So funktioniert's", for_students: "Für Schüler", for_tutors: "Für Lehrer",
+    how_it_works: "So funktioniert's", for_students: "Für Lernende", for_tutors: "Für Kursanbieter",
     student_step_1: "Entdecken", student_desc_1: "Durchsuche hunderte lokale Kurse.",
     student_step_2: "Buchen", student_desc_2: "Sichere deinen Platz sofort.",
     student_step_3: "Lernen", student_desc_3: "Triff Experten und lerne Neues.",
     tutor_step_1: "Erstellen", tutor_desc_1: "Erstelle dein Profil kostenlos.",
     tutor_step_2: "Planen", tutor_desc_2: "Bestimme Datum, Ort und Preis.",
     tutor_step_3: "Verdienen", tutor_desc_3: "Automatische Auszahlung nach Kursbeginn.",
-    cta_title: "Werde Kursleiter", cta_subtitle: "Teile dein Wissen in der ganzen Schweiz. Bestimme deinen eigenen Zeitplan.", cta_btn: "Loslegen",
+    cta_title: "Werde Kursanbieter", cta_subtitle: "Teile dein Wissen in der ganzen Schweiz. Bestimme deinen eigenen Zeitplan.", cta_btn: "Loslegen",
     
     // FOOTER
     footer_terms: "AGB", footer_privacy: "Datenschutz", footer_legal: "Impressum", footer_madein: "Made in Switzerland", footer_rights: "Alle Rechte vorbehalten.",
@@ -591,11 +591,11 @@ export const TRANSLATIONS = {
     faq_q1: "Was genau ist KursNavi?", faq_a1: "KursNavi ist der Schweizer Marktplatz für lokale Kurse. Wir verbinden Menschen, die lernen wollen, mit Experten vor Ort für Präsenzkurse.",
     faq_q2: "Ist die Kurssuche für mich kostenlos?", faq_a2: "Ja! Die Suche ist zu 100% kostenlos. Du zahlst nur den Kurspreis bei einer Buchung.",
     faq_q3: "Wie buche ich einen Kurs?", faq_a3: "Wähle einfach einen Kurs, klicke auf 'Buchen' und zahle sicher online. Du erhältst sofort eine Bestätigung.",
-    faq_q4: "Muss ich mich für eine Buchung registrieren?", faq_a4: "Ja, du benötigst einen kostenlosen Account, damit der Lehrer dich kontaktieren kann und wir dir die Buchungsbestätigung senden können.",
+    faq_q4: "Muss ich mich für eine Buchung registrieren?", faq_a4: "Ja, du benötigst einen kostenlosen Account, damit der Kursanbieter dich kontaktieren kann und wir dir die Buchungsbestätigung senden können.",
     faq_q5: "Wie bezahle ich den Kurs?", faq_a5: "Wir akzeptieren alle gängigen Kreditkarten und TWINT (via Stripe). Deine Zahlung wird sicher verwahrt.",
     faq_q6: "Sind die Kursanbieter auf KursNavi geprüft?", faq_a6: "Wir prüfen die Identität aller Anbieter. Anbieter mit dem 'Blauen Haken' haben zudem Diplome/Zertifikate eingereicht, die wir manuell geprüft haben.",
     faq_q7: "Kann ich eine Buchung stornieren?", faq_a7: "Ja. Die Stornierungsbedingungen hängen vom Startdatum ab. Details siehst du direkt in deinem Buchungs-Dashboard.",
-    faq_q8: "Gibt es auch Kurse für Firmen oder Gruppen?", faq_a8: "Viele unserer Lehrer bieten private Gruppenkurse an. Nutze einfach den 'Kontakt'-Button auf dem Kursprofil.",
+    faq_q8: "Gibt es auch Kurse für Firmen oder Gruppen?", faq_a8: "Viele unserer Kursanbieter bieten private Gruppenkurse an. Nutze einfach den 'Kontakt'-Button auf dem Kursprofil.",
     faq_q9: "Ich finde meinen gewünschten Kurs nicht – was tun?", faq_a9: "Wir wachsen täglich! Schau nächste Woche wieder vorbei oder schreib uns eine Nachricht mit deinem Wunsch.",
     faq_q10: "Ich bin selbst Kursanbieter. Wie kann ich meine Kurse listen?", faq_a10: "Erstelle ein kostenloses Profil, bestätige deine E-Mail und klicke im Dashboard auf 'Neuer Kurs'. Es dauert keine 5 Minuten.",
 
@@ -608,7 +608,7 @@ export const TRANSLATIONS = {
 
     // AUTH LABELS
     auth_create_account: "Konto erstellen", auth_welcome_back: "Willkommen zurück",
-    auth_i_am_a: "Ich bin...", auth_student: "Teilnehmer", auth_teacher: "Anbieter",
+    auth_i_am_a: "Ich bin...", auth_student: "Lernende/r", auth_teacher: "Kursanbieter",
     lbl_email: "E-Mail", lbl_password: "Passwort",
     btn_signup: "Registrieren", btn_login: "Anmelden",
     auth_already_have: "Bereits ein Konto?", auth_dont_have: "Noch kein Konto?",
@@ -630,15 +630,15 @@ export const TRANSLATIONS = {
     
     // ADMIN
     admin_login_title: "Centre de Contrôle KursNavi", admin_pass_placeholder: "Entrer le code", admin_btn_access: "Accéder au système",
-    admin_tab_teachers: "Professeurs", admin_tab_students: "Étudiants", admin_tab_courses: "Cours",
+    admin_tab_teachers: "Prestataires", admin_tab_students: "Apprenants", admin_tab_courses: "Cours",
     admin_col_name: "Nom", admin_col_email: "E-mail", admin_col_status: "Statut", admin_col_actions: "Actions",
     admin_btn_verify: "Vérifier Pro", admin_btn_unverify: "Retirer Pro", admin_verified: "Pro Vérifié",
 
     // HOME PAGE
     home_headline: "Naviguez vers votre avenir avec KursNavi",
     home_subhead: "Découvrez des cours, acquérez de nouvelles compétences et libérez votre potentiel avec des experts.",
-    home_verified_tutors: "Professeurs vérifiés",
-    home_students: "Étudiants",
+    home_verified_tutors: "Prestataires vérifiés",
+    home_students: "Apprenants",
     home_rating: "Évaluation",
     home_path_title: "Choisissez votre voie",
     home_path_sub: "Explorez nos domaines d'apprentissage les plus populaires",
@@ -677,18 +677,18 @@ export const TRANSLATIONS = {
     opt_adults: "Adultes", opt_teens: "Ados", opt_kids: "Enfants",
 
     form_title: "Proposer un cours", success_msg: "Succès!", currency: "CHF", admin_panel: "Panneau d'administration",
-    teacher_dash: "Tableau de bord", student_dash: "Mes apprentissages",
+    teacher_dash: "Tableau de bord Prestataire", student_dash: "Mes apprentissages",
     login_title: "Bienvenue", my_bookings: "Mes réservations",
     lbl_description: "Description", lbl_address: "Lieu", lbl_duration: "Durée", lbl_sessions: "sessions",
     lbl_objectives: "Ce que vous apprendrez", lbl_prerequisites: "Prérequis",
-    how_it_works: "Comment ça marche", for_students: "Pour Étudiants", for_tutors: "Pour Professeurs",
+    how_it_works: "Comment ça marche", for_students: "Pour Apprenants", for_tutors: "Pour Prestataires",
     student_step_1: "Découvrir", student_desc_1: "Parcourez des centaines de cours.",
     student_step_2: "Réserver", student_desc_2: "Réservez votre place instantanément.",
     student_step_3: "Apprendre", student_desc_3: "Rencontrez des experts locaux.",
     tutor_step_1: "Créer", tutor_desc_1: "Créez votre profil gratuitement.",
     tutor_step_2: "Planifier", tutor_desc_2: "Définissez dates, lieux et prix.",
     tutor_step_3: "Gagner", tutor_desc_3: "Paiement automatique après le cours.",
-    cta_title: "Devenez Professeur", cta_subtitle: "Partagez vos compétences à travers la Suisse.", cta_btn: "Commencer",
+    cta_title: "Devenez Prestataire", cta_subtitle: "Partagez vos compétences à travers la Suisse.", cta_btn: "Commencer",
     
     // FOOTER
     footer_terms: "CGV", footer_privacy: "Confidentialité", footer_legal: "Mentions légales", footer_madein: "Fabriqué en Suisse", footer_rights: "Droits réservés.",
@@ -736,14 +736,14 @@ export const TRANSLATIONS = {
 
     // FAQ
     faq_title: "Questions Fréquentes (FAQ)",
-    faq_q1: "Qu'est-ce que KursNavi exactement?", faq_a1: "KursNavi est la place de marché suisse pour les cours locaux. Nous connectons les étudiants aux experts locaux.",
+    faq_q1: "Qu'est-ce que KursNavi exactement?", faq_a1: "KursNavi est la place de marché suisse pour les cours locaux. Nous connectons les apprenants aux experts locaux (prestataires de cours).",
     faq_q2: "La recherche de cours est-elle gratuite?", faq_a2: "Oui ! La recherche est 100% gratuite. Vous ne payez que le prix du cours lors de la réservation.",
     faq_q3: "Comment réserver un cours?", faq_a3: "Choisissez un cours, cliquez sur 'Réserver' et payez en toute sécurité en ligne.",
-    faq_q4: "Dois-je m'inscrire pour réserver?", faq_a4: "Oui, vous avez besoin d'un compte gratuit pour que le professeur puisse vous contacter.",
+    faq_q4: "Dois-je m'inscrire pour réserver?", faq_a4: "Oui, vous avez besoin d'un compte gratuit pour que le prestataire puisse vous contacter.",
     faq_q5: "Comment payer le cours?", faq_a5: "Nous acceptons les cartes de crédit et TWINT. Votre paiement est sécurisé.",
     faq_q6: "Les prestataires sont-ils vérifiés?", faq_a6: "Nous vérifions l'identité de tous. Ceux avec la 'Coche Bleue' ont soumis des diplômes vérifiés manuellement.",
     faq_q7: "Puis-je annuler une réservation?", faq_a7: "Oui. Les conditions dépendent de la date de début. Voir votre tableau de bord.",
-    faq_q8: "Y a-t-il des cours pour entreprises?", faq_a8: "Beaucoup de nos professeurs proposent des cours privés. Utilisez le bouton 'Contact'.",
+    faq_q8: "Y a-t-il des cours pour entreprises?", faq_a8: "Beaucoup de nos prestataires proposent des cours privés. Utilisez le bouton 'Contact'.",
     faq_q9: "Je ne trouve pas mon cours?", faq_a9: "Nous grandissons chaque jour ! Revenez la semaine prochaine.",
     faq_q10: "Je suis prestataire. Comment lister des cours?", faq_a10: "Créez un profil gratuit et cliquez sur 'Nouveau Cours' dans le tableau de bord.",
 
@@ -756,7 +756,7 @@ export const TRANSLATIONS = {
 
     // AUTH LABELS
     auth_create_account: "Créer un compte", auth_welcome_back: "Bon retour",
-    auth_i_am_a: "Je suis...", auth_student: "Participant", auth_teacher: "Prestataire",
+    auth_i_am_a: "Je suis...", auth_student: "Apprenant", auth_teacher: "Prestataire de cours",
     lbl_email: "E-mail", lbl_password: "Mot de passe",
     btn_signup: "S'inscrire", btn_login: "Se connecter",
     auth_already_have: "Déjà un compte ?", auth_dont_have: "Pas encore de compte ?",
@@ -778,15 +778,15 @@ export const TRANSLATIONS = {
     
     // ADMIN
     admin_login_title: "Centro di Controllo KursNavi", admin_pass_placeholder: "Inserisci codice", admin_btn_access: "Accedi al sistema",
-    admin_tab_teachers: "Insegnanti", admin_tab_students: "Studenti", admin_tab_courses: "Corsi",
+    admin_tab_teachers: "Fornitori", admin_tab_students: "Apprendenti", admin_tab_courses: "Corsi",
     admin_col_name: "Nome", admin_col_email: "E-mail", admin_col_status: "Stato", admin_col_actions: "Azioni",
     admin_btn_verify: "Verifica Pro", admin_btn_unverify: "Rimuovi Pro", admin_verified: "Pro Verificato",
 
     // HOME PAGE
     home_headline: "Naviga il tuo futuro con KursNavi",
     home_subhead: "Scopri corsi, acquisisci nuove competenze e sblocca il tuo potenziale con esperti.",
-    home_verified_tutors: "Tutor verificati",
-    home_students: "Studenti",
+    home_verified_tutors: "Fornitori verificati",
+    home_students: "Apprendenti",
     home_rating: "Valutazione",
     home_path_title: "Scegli il tuo percorso",
     home_path_sub: "Esplora i nostri percorsi di apprendimento più popolari",
@@ -825,18 +825,18 @@ export const TRANSLATIONS = {
     opt_adults: "Adulti", opt_teens: "Adolescenti", opt_kids: "Bambini",
 
     form_title: "Offri un corso", success_msg: "Fatto!", currency: "CHF", admin_panel: "Pannello di Amministrazione",
-    teacher_dash: "Dashboard Insegnante", student_dash: "I miei corsi",
+    teacher_dash: "Dashboard Fornitore", student_dash: "I miei corsi",
     login_title: "Benvenuto", my_bookings: "Le mie prenotazioni",
     lbl_description: "Descrizione", lbl_address: "Luogo", lbl_duration: "Durata", lbl_sessions: "sessioni",
     lbl_objectives: "Cosa imparerai", lbl_prerequisites: "Prerequisiti",
-    how_it_works: "Come funziona", for_students: "Per Studenti", for_tutors: "Per Insegnanti",
+    how_it_works: "Come funziona", for_students: "Per Apprendenti", for_tutors: "Per Fornitori di Corsi",
     student_step_1: "Scopri", student_desc_1: "Sfoglia centinaia di corsi locali unici.",
     student_step_2: "Prenota", student_desc_2: "Assicura il tuo posto istantaneamente.",
     student_step_3: "Impara", student_desc_3: "Incontra esperti locali e impara.",
     tutor_step_1: "Crea", tutor_desc_1: "Crea il tuo profilo gratuitamente.",
     tutor_step_2: "Pianifica", tutor_desc_2: "Imposta date, luogo e prezzo.",
     tutor_step_3: "Guadagna", tutor_desc_3: "Pagamento automatico dopo il corso.",
-    cta_title: "Diventa Insegnante", cta_subtitle: "Condividi le tue competenze in tutta la Svizzera.", cta_btn: "Inizia",
+    cta_title: "Diventa Fornitore di Corsi", cta_subtitle: "Condividi le tue competenze in tutta la Svizzera.", cta_btn: "Inizia",
     
     // FOOTER
     footer_terms: "Termini", footer_privacy: "Privacy", footer_legal: "Note legali", footer_madein: "Made in Switzerland", footer_rights: "Tutti i diritti riservati.",
@@ -884,16 +884,16 @@ export const TRANSLATIONS = {
 
     // FAQ
     faq_title: "Domande Frequenti (FAQ)",
-    faq_q1: "Cos'è esattamente KursNavi?", faq_a1: "KursNavi è il mercato svizzero per i corsi locali. Mettiamo in contatto studenti ed esperti locali.",
+    faq_q1: "Cos'è esattamente KursNavi?", faq_a1: "KursNavi è il mercato svizzero per i corsi locali. Mettiamo in contatto apprendenti ed esperti locali (fornitori di corsi).",
     faq_q2: "La ricerca dei corsi è gratuita?", faq_a2: "Sì! La ricerca è gratuita al 100%. Paghi solo il costo del corso al momento della prenotazione.",
     faq_q3: "Come prenotare un corso?", faq_a3: "Scegli un corso, clicca su 'Prenota' e paga in modo sicuro online.",
-    faq_q4: "Devo registrarmi per prenotare?", faq_a4: "Sì, hai bisogno di un account gratuito in modo che l'insegnante possa contattarti.",
+    faq_q4: "Devo registrarmi per prenotare?", faq_a4: "Sì, hai bisogno di un account gratuito in modo che il fornitore del corso possa contattarti.",
     faq_q5: "Come pago il corso?", faq_a5: "Accettiamo carte di credito e TWINT. Il tuo pagamento è al sicuro.",
     faq_q6: "I fornitori sono verificati?", faq_a6: "Verifichiamo l'identità di tutti. Quelli con la 'Spunta Blu' hanno diplomi verificati manualmente.",
     faq_q7: "Posso cancellare una prenotazione?", faq_a7: "Sì. Le condizioni dipendono dalla data di inizio. Vedi la tua dashboard.",
-    faq_q8: "Ci sono corsi per aziende?", faq_a8: "Molti dei nostri insegnanti offrono corsi privati. Usa il pulsante 'Contatto'.",
+    faq_q8: "Ci sono corsi per aziende?", faq_a8: "Molti dei nostri fornitori offrono corsi privati. Usa il pulsante 'Contatto'.",
     faq_q9: "Non trovo il corso che cerco?", faq_a9: "Cresciamo ogni giorno! Torna la prossima settimana.",
-    faq_q10: "Sono un insegnante. Come inserisco i corsi?", faq_a10: "Crea un profilo gratuito e clicca su 'Nuovo Corso' nella dashboard.",
+    faq_q10: "Sono un fornitore di corsi. Come inserisco i corsi?", faq_a10: "Crea un profilo gratuito e clicca su 'Nuovo Corso' nella dashboard.",
 
     // AUTH NEW
     lbl_name_company: "Nome completo / Azienda",
@@ -904,7 +904,7 @@ export const TRANSLATIONS = {
 
     // AUTH LABELS
     auth_create_account: "Crea account", auth_welcome_back: "Bentornato",
-    auth_i_am_a: "Sono un...", auth_student: "Partecipante", auth_teacher: "Fornitore",
+    auth_i_am_a: "Sono un...", auth_student: "Apprendente", auth_teacher: "Fornitore di corsi",
     lbl_email: "E-mail", lbl_password: "Password",
     btn_signup: "Registrati", btn_login: "Accedi",
     auth_already_have: "Hai già un account?", auth_dont_have: "Non hai un account?",
