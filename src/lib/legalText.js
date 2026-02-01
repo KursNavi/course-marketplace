@@ -9,11 +9,11 @@ export const LEGAL_CONTENT = {
       sections: [
         {
           heading: "1. Geltungsbereich",
-          text: "1.1 Diese Allgemeinen Geschäftsbedingungen (AGB) regeln die Nutzung der unter der Domain www.kursnavi.ch betriebenen Online-Plattform KursNavi (nachfolgend „Plattform“) durch registrierte und nicht registrierte Nutzerinnen und Nutzer („Teilnehmer“) sowie Kursanbieter („Anbieter“).\n1.2 Betreiberin der Plattform ist die LifeSkills360 GmbH, Talrain 25, 6043 Adligenswil, Schweiz (nachfolgend „LifeSkills360“, „wir“, „uns“).\n1.3 Abweichende Bedingungen von Teilnehmern oder Anbietern gelten nur, wenn sie von LifeSkills360 ausdrücklich schriftlich bestätigt wurden."
+          text: "1.1 Diese Allgemeinen Geschäftsbedingungen (AGB) regeln die Nutzung der unter der Domain www.kursnavi.ch betriebenen Online-Plattform KursNavi (nachfolgend „Plattform“) durch registrierte und nicht registrierte Nutzerinnen und Nutzer („Teilnehmer“) sowie Kursanbieter („Anbieter“).\n1.2 Betreiber der Plattform ist die LifeSkills360 GmbH, Talrain 25, 6043 Adligenswil, Schweiz (nachfolgend „LifeSkills360“, „wir“, „uns“).\n1.3 Abweichende Bedingungen von Teilnehmern oder Anbietern gelten nur, wenn sie von LifeSkills360 ausdrücklich schriftlich bestätigt wurden."
         },
         {
-          heading: "2. Plattform, Betreiberin und Rolle von LifeSkills360",
-          text: "2.1 KursNavi ist eine Online-Plattform, auf der Anbieter offline stattfindende Kurse und Weiterbildungen präsentieren und Teilnehmer solche Kurse suchen, buchen und bezahlen können.\n2.2 LifeSkills360 stellt die technische Infrastruktur der Plattform zur Verfügung und unterstützt die Abwicklung von Buchungen und Zahlungen.\n2.3 LifeSkills360 ist in der Regel Vermittlerin zwischen Teilnehmern und Anbietern. Der Kursvertrag kommt grundsätzlich direkt zwischen Teilnehmer und Anbieter zustande.\n2.4 Soweit LifeSkills360 Zahlungen entgegennimmt oder abwickelt, erfolgt dies als technischer Dienstleister. Die Gelder werden abzüglich einer Plattformgebühr an den Anbieter weitergeleitet.\n2.5 Die Verantwortung für Inhalt, Durchführung und Qualität der Kurse liegt beim jeweiligen Anbieter."
+          heading: "2. Plattform, Betreiber und Rolle von LifeSkills360",
+          text: "2.1 KursNavi ist eine Online-Plattform, auf der Anbieter offline stattfindende Kurse und Weiterbildungen präsentieren und Teilnehmer solche Kurse suchen, buchen und bezahlen können.\n2.2 LifeSkills360 stellt die technische Infrastruktur der Plattform zur Verfügung und unterstützt die Abwicklung von Buchungen und Zahlungen.\n2.3 LifeSkills360 ist in der Regel Vermittler zwischen Teilnehmern und Anbietern. Der Kursvertrag kommt grundsätzlich direkt zwischen Teilnehmer und Anbieter zustande.\n2.4 Soweit LifeSkills360 Zahlungen entgegennimmt oder abwickelt, erfolgt dies als technischer Dienstleister. Die Gelder werden abzüglich einer Plattformgebühr an den Anbieter weitergeleitet.\n2.5 Die Verantwortung für Inhalt, Durchführung und Qualität der Kurse liegt beim jeweiligen Anbieter."
         },
         {
           heading: "3. Registrierung und Nutzerkonto",
@@ -117,7 +117,7 @@ export const LEGAL_CONTENT = {
       company: "LifeSkills360 GmbH",
       sections: [
         {
-          heading: "Betreiberin",
+          heading: "Betreiber",
           text: "LifeSkills360 GmbH\nTalrain 25\n6043 Adligenswil\nSchweiz"
         },
         {
