@@ -490,10 +490,13 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t }) => 
                                             type="button"
                                             onClick={async () => {
                                                 try {
-                                                    const response = await fetch('/api/create-connect-dashboard-link', {
+                                                    const response = await fetch('/api/stripe-management', {
                                                         method: 'POST',
                                                         headers: { 'Content-Type': 'application/json' },
-                                                        body: JSON.stringify({ accountId: stripeConnectAccountId })
+                                                        body: JSON.stringify({
+                                                            action: 'connect_dashboard_link',
+                                                            accountId: stripeConnectAccountId
+                                                        })
                                                     });
                                                     const data = await response.json();
 
@@ -528,10 +531,11 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t }) => 
                                             type="button"
                                             onClick={async () => {
                                                 try {
-                                                    const response = await fetch('/api/create-connect-account', {
+                                                    const response = await fetch('/api/stripe-management', {
                                                         method: 'POST',
                                                         headers: { 'Content-Type': 'application/json' },
                                                         body: JSON.stringify({
+                                                            action: 'create_connect_account',
                                                             userId: uid,
                                                             userEmail: user.email
                                                         })
@@ -582,10 +586,13 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t }) => 
                                                     return;
                                                 }
 
-                                                const response = await fetch('/api/create-customer-portal', {
+                                                const response = await fetch('/api/stripe-management', {
                                                     method: 'POST',
                                                     headers: { 'Content-Type': 'application/json' },
-                                                    body: JSON.stringify({ customerId: stripeCustomerId })
+                                                    body: JSON.stringify({
+                                                        action: 'create_customer_portal',
+                                                        customerId: stripeCustomerId
+                                                    })
                                                 });
                                                 const data = await response.json();
 
