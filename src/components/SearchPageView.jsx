@@ -16,7 +16,7 @@ const SearchPageView = ({
     loading, filteredCourses, setSelectedCourse, setView,
     t, filterDateFrom, setFilterDateFrom, filterDateTo, setFilterDateTo, filterPriceMax, setFilterPriceMax, filterLevel, setFilterLevel, filterPro, setFilterPro, filterDirectBooking, setFilterDirectBooking,
     selectedLanguage, setSelectedLanguage, langMenuOpen, setLangMenuOpen, langMenuRef,
-    selectedDeliveryType, setSelectedDeliveryType, deliveryMenuOpen, setDeliveryMenuOpen, deliveryMenuRef,
+    selectedDeliveryTypes, setSelectedDeliveryTypes, deliveryMenuOpen, setDeliveryMenuOpen, deliveryMenuRef,
     savedCourseIds, onToggleSaveCourse
 }) => {
 
@@ -315,8 +315,8 @@ const SearchPageView = ({
                         </div>
                         <LocationDropdown locMode={locMode} setLocMode={setLocMode} selectedLocations={selectedLocations} setSelectedLocations={setSelectedLocations} locMenuOpen={locMenuOpen} setLocMenuOpen={setLocMenuOpen} locMenuRef={locMenuRef} t={t} />
                         <LanguageDropdown selectedLanguage={selectedLanguage} setSelectedLanguage={setSelectedLanguage} langMenuOpen={langMenuOpen} setLangMenuOpen={setLangMenuOpen} langMenuRef={langMenuRef} t={t} />
-                        <DeliveryTypeFilter selectedDeliveryType={selectedDeliveryType} setSelectedDeliveryType={setSelectedDeliveryType} deliveryMenuOpen={deliveryMenuOpen} setDeliveryMenuOpen={setDeliveryMenuOpen} deliveryMenuRef={deliveryMenuRef} t={t} />
-                        <button onClick={() => { resetFilters(); setSelectedLanguage(null); setSelectedDeliveryType(null); }} className="p-2 text-gray-400 hover:text-red-500 rounded-full hover:bg-gray-100 transition" title="Reset Filters"><X className="w-6 h-6" /></button>
+                        <DeliveryTypeFilter selectedDeliveryTypes={selectedDeliveryTypes} setSelectedDeliveryTypes={setSelectedDeliveryTypes} deliveryMenuOpen={deliveryMenuOpen} setDeliveryMenuOpen={setDeliveryMenuOpen} deliveryMenuRef={deliveryMenuRef} t={t} />
+                        <button onClick={() => { resetFilters(); setSelectedLanguage(null); setSelectedDeliveryTypes([]); }} className="p-2 text-gray-400 hover:text-red-500 rounded-full hover:bg-gray-100 transition" title="Reset Filters"><X className="w-6 h-6" /></button>
                     </div>
 
                     {/* NEW TAXONOMY FILTERS */}

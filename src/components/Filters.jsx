@@ -179,43 +179,47 @@ export const LanguageDropdown = ({ selectedLanguage, setSelectedLanguage, langMe
     );
 };
 
-export const DeliveryTypeFilter = ({ selectedDeliveryType, setSelectedDeliveryType, deliveryMenuOpen, setDeliveryMenuOpen, deliveryMenuRef, t }) => {
+export const DeliveryTypeFilter = ({ selectedDeliveryTypes, setSelectedDeliveryTypes, deliveryMenuOpen, setDeliveryMenuOpen, deliveryMenuRef, t }) => {
+    const toggleDeliveryType = (type) => {
+        if (selectedDeliveryTypes.includes(type)) {
+            setSelectedDeliveryTypes(selectedDeliveryTypes.filter(t => t !== type));
+        } else {
+            setSelectedDeliveryTypes([...selectedDeliveryTypes, type]);
+        }
+    };
+
     return (
         <div ref={deliveryMenuRef} className="static relative z-50 text-left">
             <button
                 type="button"
                 onClick={() => setDeliveryMenuOpen(!deliveryMenuOpen)}
-                className={`w-full md:w-auto px-4 py-3 border rounded-full flex items-center justify-between space-x-2 text-sm font-medium transition shadow-sm ${selectedDeliveryType ? 'bg-primary text-white border-primary' : 'bg-white text-gray-700 hover:border-gray-400'}`}
+                className={`w-full md:w-auto px-4 py-3 border rounded-full flex items-center justify-between space-x-2 text-sm font-medium transition shadow-sm ${selectedDeliveryTypes.length > 0 ? 'bg-primary text-white border-primary' : 'bg-white text-gray-700 hover:border-gray-400'}`}
             >
                 <div className="flex items-center">
                     <Monitor className="w-4 h-4 mr-2" />
-                    <span>{selectedDeliveryType ? DELIVERY_TYPES[selectedDeliveryType].de : "Kursformat"}</span>
+                    <span>{selectedDeliveryTypes.length > 0 ? `${selectedDeliveryTypes.length} selected` : "Kursformat"}</span>
                 </div>
                 <ChevronDown className="w-4 h-4" />
             </button>
             {deliveryMenuOpen && (
-                <div className="absolute top-14 left-0 w-[250px] bg-white rounded-xl shadow-2xl border border-gray-100 p-2 overflow-hidden">
-                    {Object.keys(DELIVERY_TYPES).map(key => (
-                        <div
-                            key={key}
-                            onClick={() => {
-                                setSelectedDeliveryType(key === selectedDeliveryType ? null : key);
-                                setDeliveryMenuOpen(false);
-                            }}
-                            className={`p-3 cursor-pointer text-sm flex justify-between items-center hover:bg-gray-50 rounded ${selectedDeliveryType === key ? 'font-bold text-primary bg-primaryLight' : 'text-gray-700'}`}
-                        >
-                            {DELIVERY_TYPES[key].de}
-                            {selectedDeliveryType === key && <ChevronRight className="w-4 h-4 text-primary" />}
-                        </div>
-                    ))}
-                    {selectedDeliveryType && (
-                        <div
-                            onClick={() => { setSelectedDeliveryType(null); setDeliveryMenuOpen(false); }}
-                            className="p-3 text-xs text-gray-400 cursor-pointer hover:text-primary border-t mt-2"
-                        >
-                            Auswahl löschen
-                        </div>
-                    )}
+                <div className="absolute top-14 left-0 w-[250px] bg-white rounded-xl shadow-2xl border border-gray-100 p-4">
+                    <div className="space-y-1">
+                        {Object.keys(DELIVERY_TYPES).map(key => (
+                            <label key={key} className="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    checked={selectedDeliveryTypes.includes(key)}
+                                    onChange={() => toggleDeliveryType(key)}
+                                    className="rounded border-gray-300 text-primary focus:ring-primary"
+                                />
+                                <span className="text-sm text-gray-700">{DELIVERY_TYPES[key].de}</span>
+                            </label>
+                        ))}
+                    </div>
+                    <div className="pt-3 mt-3 border-t flex justify-between items-center">
+                        <button onClick={() => setSelectedDeliveryTypes([])} className="text-xs text-gray-400 hover:text-red-500">Clear</button>
+                        <button onClick={() => setDeliveryMenuOpen(false)} className="text-xs font-bold text-primary">Done</button>
+                    </div>
                 </div>
             )}
         </div>

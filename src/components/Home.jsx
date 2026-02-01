@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Search, ArrowRight, ChevronRight, ChevronDown, CreditCard, Info, Shield } from 'lucide-react';
-import { LocationDropdown } from './Filters'; 
+import { LocationDropdown, DeliveryTypeFilter } from './Filters';
 import { NEW_TAXONOMY, CATEGORY_TYPES } from '../lib/constants';
 
 export const Home = ({
@@ -9,7 +9,8 @@ export const Home = ({
   searchQuery, setSearchQuery,
   catMenuOpen, setCatMenuOpen, catMenuRef,
   locMode, setLocMode, selectedLocations, setSelectedLocations, locMenuOpen, setLocMenuOpen, locMenuRef,
-  filterPro, setFilterPro, filterDirectBooking, setFilterDirectBooking
+  filterPro, setFilterPro, filterDirectBooking, setFilterDirectBooking,
+  selectedDeliveryTypes, setSelectedDeliveryTypes, deliveryMenuOpen, setDeliveryMenuOpen, deliveryMenuRef
 }) => {
 
   // State für das Mega-Menü
@@ -356,6 +357,18 @@ export const Home = ({
                         locMenuOpen={locMenuOpen}
                         setLocMenuOpen={setLocMenuOpen}
                         locMenuRef={locMenuRef}
+                        t={t}
+                    />
+                </div>
+
+                {/* DELIVERY TYPE FILTER */}
+                <div className="flex-1 bg-white rounded-xl">
+                    <DeliveryTypeFilter
+                        selectedDeliveryTypes={selectedDeliveryTypes}
+                        setSelectedDeliveryTypes={setSelectedDeliveryTypes}
+                        deliveryMenuOpen={deliveryMenuOpen}
+                        setDeliveryMenuOpen={setDeliveryMenuOpen}
+                        deliveryMenuRef={deliveryMenuRef}
                         t={t}
                     />
                 </div>
