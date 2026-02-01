@@ -321,7 +321,7 @@ const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView }) => 
                                                         </select>
 
                                                         <span className="text-[10px] text-gray-400">
-                                                            Kurse: unbegrenzt · Kategorien/Kurs: {plan.maxCategoriesPerCourse}
+                                                            Prio-Kurse: {plan.maxPrioCourses === Infinity ? 'unbegrenzt' : plan.maxPrioCourses} · Kategorien/Kurs: {plan.maxCategoriesPerCourse}
                                                         </span>
                                                     </div>
                                                 </td>
