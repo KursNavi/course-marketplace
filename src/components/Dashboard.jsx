@@ -464,6 +464,54 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t }) => 
                     </div>
                 )}
 
+                {/* BILLING MANAGEMENT - Only for teachers */}
+                {isTeacher && (
+                    <div className="border-t pt-6 mt-6">
+                        <h3 className="text-lg font-bold mb-4 text-dark flex items-center">
+                            <CreditCard className="w-4 h-4 mr-2" /> Rechnungen & Zahlungsdaten
+                        </h3>
+                        <div className="bg-blue-50 p-6 rounded-xl border border-blue-100">
+                            <div className="flex items-start gap-4">
+                                <CreditCard className="w-6 h-6 text-blue-600 mt-1 shrink-0"/>
+                                <div className="flex-1">
+                                    <h4 className="font-bold text-blue-900 mb-2">Rechnungen & Verwaltung</h4>
+                                    <p className="text-sm text-blue-800 mb-4">
+                                        Verwalte deine Zahlungsdaten und lade Rechnungen herunter.
+                                    </p>
+                                    <button
+                                        type="button"
+                                        onClick={async () => {
+                                            try {
+                                                // TODO: Get stripe_customer_id from user profile
+                                                // For now, show a message
+                                                showNotification("Stripe Customer Portal wird eingerichtet. Bitte kontaktiere info@kursnavi.ch für Rechnungen.");
+
+                                                /* Future implementation:
+                                                const response = await fetch('/api/create-customer-portal', {
+                                                    method: 'POST',
+                                                    headers: { 'Content-Type': 'application/json' },
+                                                    body: JSON.stringify({ customerId: user.stripe_customer_id })
+                                                });
+                                                const data = await response.json();
+                                                if (data.url) {
+                                                    window.location.href = data.url;
+                                                }
+                                                */
+                                            } catch (error) {
+                                                console.error('Error opening customer portal:', error);
+                                                showNotification("Fehler beim Öffnen des Kundenportals");
+                                            }
+                                        }}
+                                        className="bg-primary text-white px-6 py-2 rounded-lg font-bold hover:bg-orange-600 transition shadow-md text-sm"
+                                    >
+                                        Zahlungsdaten verwalten
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 <div className="border-t pt-6 mt-6"><h3 className="text-lg font-bold mb-4 text-dark flex items-center"><Lock className="w-4 h-4 mr-2" /> {t.lbl_account_security}</h3><div className="space-y-4"><div><label className="block text-sm font-bold text-gray-700 mb-1">Email</label><input type="email" name="email" value={formData.email} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none bg-gray-50" /></div><div className="grid grid-cols-1 md:grid-cols-2 gap-6"><div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_new_password}</label><input type="password" name="password" value={formData.password} onChange={handleChange} placeholder="******" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" /></div><div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_confirm_password}</label><input type="password" name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} placeholder="******" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" /></div></div></div></div>
                 <div className="pt-2"><button type="submit" disabled={saving} className="bg-primary text-white px-6 py-3 rounded-lg font-bold hover:bg-orange-600 transition flex items-center shadow-md disabled:opacity-50">{saving ? <Loader className="animate-spin w-5 h-5 mr-2" /> : <Save className="w-5 h-5 mr-2" />}{t.btn_save}</button></div>
             </form>
@@ -572,18 +620,6 @@ const SubscriptionSection = ({ user, currentTier }) => {
                             </div>
                         );
                     })}
-                </div>
-            </div>
-            
-            <div className="bg-blue-50 p-6 rounded-xl border border-blue-100 flex items-start gap-4">
-                <CreditCard className="w-6 h-6 text-blue-600 mt-1"/>
-                <div>
-                    <h3 className="font-bold text-blue-900">Rechnungen & Verwaltung</h3>
-                    <p className="text-sm text-blue-800 mt-1">
-                        Möchtest du deine Zahlungsdaten ändern oder Rechnungen herunterladen? 
-                        <br/>
-                        <span className="text-xs text-gray-500">(Link zum Stripe Kundenportal hier einfügen)</span>
-                    </p>
                 </div>
             </div>
         </div>
