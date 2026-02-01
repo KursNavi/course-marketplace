@@ -346,5 +346,34 @@ export default async function handler(req, res) {
     }
   }
 
+  // --- STRIPE CONNECT ACCOUNT UPDATES ---
+  if (event.type === 'account.updated') {
+    const account = event.data.object;
+    const accountId = account.id;
+
+    console.log(`🔗 Stripe Connect Account Updated: ${accountId}`);
+
+    // Check if account has completed onboarding
+    const chargesEnabled = account.charges_enabled;
+    const payoutsEnabled = account.payouts_enabled;
+    const detailsSubmitted = account.details_submitted;
+
+    const onboardingComplete = chargesEnabled && payoutsEnabled && detailsSubmitted;
+
+    // Update profile in database
+    const { error: updateError } = await supabase
+      .from('profiles')
+      .update({
+        stripe_connect_onboarding_complete: onboardingComplete
+      })
+      .eq('stripe_connect_account_id', accountId);
+
+    if (updateError) {
+      console.error('❌ Failed to update Connect onboarding status:', updateError);
+    } else {
+      console.log(`✅ Connect onboarding status updated: ${onboardingComplete}`);
+    }
+  }
+
   res.status(200).json({ received: true });
 }

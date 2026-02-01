@@ -4,7 +4,7 @@ import {
     Loader, Settings, Save, Lock, CheckCircle, XCircle, Clock,
     ChevronDown, User, DollarSign, PenTool, Trash2, ArrowRight, Plus, MapPin,
     Crown, BarChart3, Bold, Italic, Underline, Heading2, Heading3, List,
-    CreditCard, Check, Shield, ExternalLink, Play, Pause, FileEdit, Info, Star
+    CreditCard, Check, Shield, ExternalLink, Play, Pause, FileEdit, Info, Star, AlertCircle
 } from 'lucide-react';
 import { SWISS_CANTONS, CATEGORY_TYPES, NEW_TAXONOMY, CATEGORY_LABELS } from "../lib/constants";
 import { PLANS } from "../constants/plans";
@@ -40,6 +40,8 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t }) => 
     });
     const [additionalLocations, setAdditionalLocations] = useState([]);
     const [stripeCustomerId, setStripeCustomerId] = useState(null);
+    const [stripeConnectAccountId, setStripeConnectAccountId] = useState(null);
+    const [stripeConnectOnboardingComplete, setStripeConnectOnboardingComplete] = useState(false);
 
     // Load existing profile data on mount
     useEffect(() => {
@@ -50,7 +52,7 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t }) => 
         (async () => {
             const { data, error } = await supabase
                 .from('profiles')
-                .select('full_name, city, canton, bio_text, certificates, preferred_language, additional_locations, website_url, verification_status, stripe_customer_id')
+                .select('full_name, city, canton, bio_text, certificates, preferred_language, additional_locations, website_url, verification_status, stripe_customer_id, stripe_connect_account_id, stripe_connect_onboarding_complete')
                 .eq('id', uid)
                 .single();
 
@@ -86,6 +88,8 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t }) => 
                 }
                 setVerificationStatus(data.verification_status || 'none');
                 setStripeCustomerId(data.stripe_customer_id || null);
+                setStripeConnectAccountId(data.stripe_connect_account_id || null);
+                setStripeConnectOnboardingComplete(data.stripe_connect_onboarding_complete || false);
             }
         })();
 
@@ -466,8 +470,97 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t }) => 
                     </div>
                 )}
 
-                {/* BILLING MANAGEMENT - Only for teachers */}
+                {/* STRIPE CONNECT - Auszahlungen für Anbieter */}
                 {isTeacher && (
+                    <div className="border-t pt-6 mt-6">
+                        <h3 className="text-lg font-bold mb-4 text-dark flex items-center">
+                            <CreditCard className="w-4 h-4 mr-2" /> Auszahlungen einrichten
+                        </h3>
+
+                        {stripeConnectOnboardingComplete ? (
+                            <div className="bg-green-50 p-6 rounded-xl border border-green-200">
+                                <div className="flex items-start gap-4">
+                                    <CheckCircle className="w-6 h-6 text-green-600 mt-1 shrink-0"/>
+                                    <div className="flex-1">
+                                        <h4 className="font-bold text-green-900 mb-2">Auszahlungen aktiviert</h4>
+                                        <p className="text-sm text-green-800 mb-4">
+                                            Dein Auszahlungskonto ist eingerichtet. Du kannst jetzt Zahlungen von Kursbuchungen empfangen.
+                                        </p>
+                                        <button
+                                            type="button"
+                                            onClick={async () => {
+                                                try {
+                                                    const response = await fetch('/api/create-connect-dashboard-link', {
+                                                        method: 'POST',
+                                                        headers: { 'Content-Type': 'application/json' },
+                                                        body: JSON.stringify({ accountId: stripeConnectAccountId })
+                                                    });
+                                                    const data = await response.json();
+
+                                                    if (data.url) {
+                                                        window.open(data.url, '_blank');
+                                                    } else {
+                                                        showNotification("Fehler beim Öffnen des Dashboards");
+                                                    }
+                                                } catch (error) {
+                                                    console.error('Error opening connect dashboard:', error);
+                                                    showNotification("Fehler beim Öffnen des Dashboards");
+                                                }
+                                            }}
+                                            className="bg-green-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-green-700 transition shadow-md text-sm"
+                                        >
+                                            Auszahlungs-Dashboard öffnen
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="bg-orange-50 p-6 rounded-xl border border-orange-200">
+                                <div className="flex items-start gap-4">
+                                    <AlertCircle className="w-6 h-6 text-orange-600 mt-1 shrink-0"/>
+                                    <div className="flex-1">
+                                        <h4 className="font-bold text-orange-900 mb-2">Bankverbindung hinterlegen</h4>
+                                        <p className="text-sm text-orange-800 mb-4">
+                                            Um Zahlungen von Kursbuchungen zu empfangen, musst du deine Bankdaten bei Stripe hinterlegen.
+                                            Dies ist einmalig und dauert nur wenige Minuten.
+                                        </p>
+                                        <button
+                                            type="button"
+                                            onClick={async () => {
+                                                try {
+                                                    const response = await fetch('/api/create-connect-account', {
+                                                        method: 'POST',
+                                                        headers: { 'Content-Type': 'application/json' },
+                                                        body: JSON.stringify({
+                                                            userId: uid,
+                                                            userEmail: user.email
+                                                        })
+                                                    });
+                                                    const data = await response.json();
+
+                                                    if (data.url) {
+                                                        window.location.href = data.url;
+                                                    } else {
+                                                        showNotification("Fehler beim Erstellen des Onboarding-Links");
+                                                    }
+                                                } catch (error) {
+                                                    console.error('Error creating connect account:', error);
+                                                    showNotification("Fehler beim Erstellen des Kontos");
+                                                }
+                                            }}
+                                            className="bg-primary text-white px-6 py-2 rounded-lg font-bold hover:bg-orange-600 transition shadow-md text-sm"
+                                        >
+                                            Jetzt einrichten
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* BILLING MANAGEMENT - Only for teachers with customer ID */}
+                {isTeacher && stripeCustomerId && (
                     <div className="border-t pt-6 mt-6">
                         <h3 className="text-lg font-bold mb-4 text-dark flex items-center">
                             <CreditCard className="w-4 h-4 mr-2" /> Rechnungen & Zahlungsdaten
