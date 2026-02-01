@@ -13,6 +13,13 @@ export const BRAND = {
 export const SWISS_CANTONS = ["Online", "Aargau", "Appenzell AI", "Appenzell AR", "Basel-Landschaft", "Basel-Stadt", "Bern", "Fribourg", "Genève", "Glarus", "Graubünden", "Jura", "Liechtenstein", "Luzern", "Neuchâtel", "Nidwalden", "Obwalden", "Schaffhausen", "Schwyz", "Solothurn", "St. Gallen", "Thurgau", "Ticino", "Uri", "Valais", "Vaud", "Zug", "Zürich"];
 export const SWISS_CITIES = ["Basel", "Bern", "Biel/Bienne", "Genève", "Lausanne", "Lugano", "Luzern", "St. Gallen", "Winterthur", "Zürich"];
 
+// --- DELIVERY TYPES ---
+export const DELIVERY_TYPES = {
+  presence: { de: "Präsenz (vor Ort)", en: "In-Person", fr: "En présentiel", it: "In presenza" },
+  online_live: { de: "Online Live (Zoom, etc.)", en: "Online Live", fr: "En ligne en direct", it: "Online dal vivo" },
+  self_study: { de: "Selbststudium (asynchron)", en: "Self-Study (async)", fr: "Auto-apprentissage", it: "Autostudio" }
+};
+
 // --- BUSINESS LOGIC (v2.1 SaaS Model) ---
 export const TIER_CONFIG = {
   basic: {

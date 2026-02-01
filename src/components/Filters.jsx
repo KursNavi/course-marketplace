@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronDown, ChevronRight, MapPin, Globe } from 'lucide-react';
-import { NEW_TAXONOMY, CATEGORY_TYPES, SWISS_CANTONS, SWISS_CITIES } from '../lib/constants';
+import { ChevronDown, ChevronRight, MapPin, Globe, Monitor } from 'lucide-react';
+import { NEW_TAXONOMY, CATEGORY_TYPES, SWISS_CANTONS, SWISS_CITIES, DELIVERY_TYPES } from '../lib/constants';
 import { useTaxonomy } from '../hooks/useTaxonomy';
 
 export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCatPath, catMenuOpen, setCatMenuOpen, t, catMenuRef }) => {
@@ -170,6 +170,49 @@ export const LanguageDropdown = ({ selectedLanguage, setSelectedLanguage, langMe
                     ))}
                     {selectedLanguage && (
                         <div onClick={() => { setSelectedLanguage(null); setLangMenuOpen(false); }} className="p-3 text-xs text-gray-400 cursor-pointer hover:text-primary border-t mt-2">
+                            Auswahl löschen
+                        </div>
+                    )}
+                </div>
+            )}
+        </div>
+    );
+};
+
+export const DeliveryTypeFilter = ({ selectedDeliveryType, setSelectedDeliveryType, deliveryMenuOpen, setDeliveryMenuOpen, deliveryMenuRef, t }) => {
+    return (
+        <div ref={deliveryMenuRef} className="static relative z-50 text-left">
+            <button
+                type="button"
+                onClick={() => setDeliveryMenuOpen(!deliveryMenuOpen)}
+                className={`w-full md:w-auto px-4 py-3 border rounded-full flex items-center justify-between space-x-2 text-sm font-medium transition shadow-sm ${selectedDeliveryType ? 'bg-primary text-white border-primary' : 'bg-white text-gray-700 hover:border-gray-400'}`}
+            >
+                <div className="flex items-center">
+                    <Monitor className="w-4 h-4 mr-2" />
+                    <span>{selectedDeliveryType ? DELIVERY_TYPES[selectedDeliveryType].de : "Kursformat"}</span>
+                </div>
+                <ChevronDown className="w-4 h-4" />
+            </button>
+            {deliveryMenuOpen && (
+                <div className="absolute top-14 left-0 w-[250px] bg-white rounded-xl shadow-2xl border border-gray-100 p-2 overflow-hidden">
+                    {Object.keys(DELIVERY_TYPES).map(key => (
+                        <div
+                            key={key}
+                            onClick={() => {
+                                setSelectedDeliveryType(key === selectedDeliveryType ? null : key);
+                                setDeliveryMenuOpen(false);
+                            }}
+                            className={`p-3 cursor-pointer text-sm flex justify-between items-center hover:bg-gray-50 rounded ${selectedDeliveryType === key ? 'font-bold text-primary bg-primaryLight' : 'text-gray-700'}`}
+                        >
+                            {DELIVERY_TYPES[key].de}
+                            {selectedDeliveryType === key && <ChevronRight className="w-4 h-4 text-primary" />}
+                        </div>
+                    ))}
+                    {selectedDeliveryType && (
+                        <div
+                            onClick={() => { setSelectedDeliveryType(null); setDeliveryMenuOpen(false); }}
+                            className="p-3 text-xs text-gray-400 cursor-pointer hover:text-primary border-t mt-2"
+                        >
                             Auswahl löschen
                         </div>
                     )}

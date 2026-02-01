@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { ArrowLeft, Loader, Calendar, Plus, Trash2, ExternalLink, Globe, Bold, Italic, Underline, Heading2, Heading3, List, Mail, MapPin, Lightbulb, X, Send, ChevronDown, Images, Check } from 'lucide-react';
 import { KursNaviLogo } from './Layout';
-import { SWISS_CANTONS, NEW_TAXONOMY, CATEGORY_TYPES, COURSE_LEVELS } from '../lib/constants';
+import { SWISS_CANTONS, NEW_TAXONOMY, CATEGORY_TYPES, COURSE_LEVELS, DELIVERY_TYPES } from '../lib/constants';
 import { supabase } from '../lib/supabase';
 import { useTaxonomy } from '../hooks/useTaxonomy';
 import { computeImageHash, getExistingImageByHash, uploadImageWithHash, getUserCourseImages } from '../lib/imageUtils';
@@ -427,6 +427,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
     // Metadata State
     const [selectedLevel, setSelectedLevel] = useState(draft?.selectedLevel || 'all_levels');
     const [courseLanguage, setCourseLanguage] = useState(draft?.courseLanguage || 'Deutsch');
+    const [deliveryType, setDeliveryType] = useState(draft?.deliveryType || 'presence');
 
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -496,6 +497,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
             categories,
             selectedLevel,
             courseLanguage,
+            deliveryType,
             courseStatus,
             events,
             fallbackCantons
@@ -513,7 +515,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
                 console.warn('Failed to save draft:', e);
             }
         }
-    }, [isDirty, draftKey, bookingType, contactEmail, title, description, objectives, keywords, prerequisites, externalLink, price, sessionCount, sessionLength, providerUrl, categories, selectedLevel, courseLanguage, courseStatus, events, fallbackCantons, initialData?.id]);
+    }, [isDirty, draftKey, bookingType, contactEmail, title, description, objectives, keywords, prerequisites, externalLink, price, sessionCount, sessionLength, providerUrl, categories, selectedLevel, courseLanguage, deliveryType, courseStatus, events, fallbackCantons, initialData?.id]);
 
     // Save draft on unmount (safety net for fast tab switches)
     useEffect(() => {
@@ -578,6 +580,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
 
             if (initialData.level) setSelectedLevel(initialData.level);
             if (initialData.language) setCourseLanguage(initialData.language);
+            if (initialData.delivery_type) setDeliveryType(initialData.delivery_type);
             // Load course status (default to 'published' for existing courses without status)
             setCourseStatus(initialData.status || 'published');
 
@@ -1053,6 +1056,7 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
             booking_type: bookingType,
             external_link: bookingType === 'external' ? externalLink : null,
             level: level,
+            delivery_type: deliveryType,
             target_age_groups: [],
             canton: mainCanton,
             address: publicLocationLabel, // öffentliche "Label"-Location (ohne Strasse)
@@ -1402,7 +1406,7 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 pt-4 border-t border-orange-200/50">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4 pt-4 border-t border-orange-200/50">
                              <div>
                                 <span className="text-xs text-gray-500 block mb-1">Niveau</span>
                                 <select name="level" value={selectedLevel} onChange={(e) => { setSelectedLevel(e.target.value); markDirty(); }} className="w-full px-3 py-2 border rounded-lg focus:ring-primary bg-white text-sm">
@@ -1421,6 +1425,12 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                                         <option value="Andere">Andere</option>
                                     </select>
                                 </div>
+                            </div>
+                            <div>
+                                <span className="text-xs text-gray-500 block mb-1">Kursformat</span>
+                                <select name="delivery_type" value={deliveryType} onChange={(e) => { setDeliveryType(e.target.value); markDirty(); }} className="w-full px-3 py-2 border rounded-lg focus:ring-primary bg-white text-sm">
+                                    {Object.keys(DELIVERY_TYPES).map(key => <option key={key} value={key}>{DELIVERY_TYPES[key].de}</option>)}
+                                </select>
                             </div>
                         </div>
 
