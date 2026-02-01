@@ -874,7 +874,7 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
                     ) : (
                         <>
                             <h3 className="text-xl font-bold mb-1 font-heading">Kurs unverbindlich anfragen</h3>
-                            <p className="text-xs text-gray-500 mb-6">Deine Anfrage geht direkt an {course.instructor_name}.</p>
+                            <p className="text-xs text-gray-500 mb-6">Passe die Nachricht mit deinen Fragen an. Deine Anfrage geht direkt an {course.instructor_name}.</p>
                             <form onSubmit={handleLeadSubmit} className="space-y-4">
                                 <div><label className="block text-xs font-bold text-gray-500 uppercase mb-1">Dein Name</label><input name="name" required defaultValue={user?.name || ''} className="w-full p-3 bg-gray-50 rounded-lg border border-transparent focus:bg-white focus:border-primary outline-none transition" /></div>
                                 <div><label className="block text-xs font-bold text-gray-500 uppercase mb-1">Deine Email</label><input name="email" type="email" required defaultValue={user?.email || ''} className="w-full p-3 bg-gray-50 rounded-lg border border-transparent focus:bg-white focus:border-primary outline-none transition" /></div>
