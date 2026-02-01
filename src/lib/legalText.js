@@ -33,7 +33,7 @@ export const LEGAL_CONTENT = {
         },
         {
           heading: "7. Widerruf, Stornierung & Kursabsage",
-          text: "7.1 EU-Verbraucher: Bei Freizeitbetätigungen mit spezifischem Termin besteht häufig kein gesetzliches Widerrufsrecht.\n7.2 Schweiz: Es besteht kein gesetzliches Widerrufsrecht für Kursbuchungen.\n7.3 Stornobedingungen (falls nicht anders im Kurs vermerkt):\n• Bis 14 Tage vor Kursbeginn: 100 % Rückerstattung\n• 13 bis 7 Tage vor Kursbeginn: 50 % Rückerstattung\n• Weniger als 7 Tage: keine Rückerstattung\n7.4 Absage durch Anbieter: Bereits geleistete Zahlungen werden vollumfänglich erstattet."
+          text: "7.1 EU-Verbraucher: Bei Freizeitbetätigungen mit spezifischem Termin besteht häufig kein gesetzliches Widerrufsrecht.\n7.2 Schweiz: Es besteht kein gesetzliches Widerrufsrecht für Kursbuchungen.\n7.3 Stornobedingungen (falls nicht anders im Kurs vermerkt):\n• Bis 30 Tage vor Kursbeginn: kostenloser Rücktritt möglich\n• Weniger als 30 Tage vor Kursbeginn: Die Stornobedingungen liegen im Ermessen des jeweiligen Anbieters. Bitte kontaktieren Sie den Anbieter direkt.\n7.4 Absage durch Anbieter: Bereits geleistete Zahlungen werden vollumfänglich erstattet."
         },
         {
           heading: "8. Bewertungen und Inhalte",
@@ -169,7 +169,7 @@ export const LEGAL_CONTENT = {
         },
         {
           heading: "7. Withdrawal, Cancellation & Course Cancellation",
-          text: "7.1 EU Consumers: For leisure activities with a specific date, there is often no statutory right of withdrawal.\n7.2 Switzerland: There is no statutory right of withdrawal for course bookings.\n7.3 Cancellation Conditions (unless stated otherwise in the course):\n• Up to 14 days before course start: 100% refund\n• 13 to 7 days before course start: 50% refund\n• Less than 7 days: no refund\n7.4 Cancellation by Provider: Payments already made will be fully refunded."
+          text: "7.1 EU Consumers: For leisure activities with a specific date, there is often no statutory right of withdrawal.\n7.2 Switzerland: There is no statutory right of withdrawal for course bookings.\n7.3 Cancellation Conditions (unless stated otherwise in the course):\n• Up to 30 days before course start: free cancellation possible\n• Less than 30 days before course start: Cancellation conditions are at the discretion of the respective provider. Please contact the provider directly.\n7.4 Cancellation by Provider: Payments already made will be fully refunded."
         },
         {
           heading: "8. Reviews and Content",
@@ -305,7 +305,7 @@ export const LEGAL_CONTENT = {
         },
         {
           heading: "7. Rétractation, Annulation & Annulation de Cours",
-          text: "7.1 Consommateurs UE : Pour les activités de loisirs à date précise, il n'existe souvent aucun droit légal de rétractation.\n7.2 Suisse : Il n'existe aucun droit légal de rétractation pour les réservations de cours.\n7.3 Conditions d'annulation (sauf indication contraire dans le cours) :\n• Jusqu'à 14 jours avant le début du cours : remboursement à 100 %\n• 13 à 7 jours avant le début du cours : remboursement à 50 %\n• Moins de 7 jours : aucun remboursement\n7.4 Annulation par le Prestataire : Les paiements déjà effectués seront intégralement remboursés."
+          text: "7.1 Consommateurs UE : Pour les activités de loisirs à date précise, il n'existe souvent aucun droit légal de rétractation.\n7.2 Suisse : Il n'existe aucun droit légal de rétractation pour les réservations de cours.\n7.3 Conditions d'annulation (sauf indication contraire dans le cours) :\n• Jusqu'à 30 jours avant le début du cours : annulation gratuite possible\n• Moins de 30 jours avant le début du cours : Les conditions d'annulation sont à la discrétion du prestataire concerné. Veuillez contacter le prestataire directement.\n7.4 Annulation par le Prestataire : Les paiements déjà effectués seront intégralement remboursés."
         },
         {
           heading: "8. Évaluations et Contenu",
@@ -441,7 +441,7 @@ export const LEGAL_CONTENT = {
         },
         {
           heading: "7. Recesso, Cancellazione e Annullamento del Corso",
-          text: "7.1 Consumatori UE: Per le attività ricreative con una data specifica, spesso non esiste alcun diritto legale di recesso.\n7.2 Svizzera: Non esiste alcun diritto legale di recesso per le prenotazioni dei corsi.\n7.3 Condizioni di cancellazione (se non diversamente indicato nel corso):\n• Fino a 14 giorni prima dell'inizio del corso: rimborso del 100%\n• Da 13 a 7 giorni prima dell'inizio del corso: rimborso del 50%\n• Meno di 7 giorni: nessun rimborso\n7.4 Cancellazione da parte del Fornitore: I pagamenti già effettuati saranno completamente rimborsati."
+          text: "7.1 Consumatori UE: Per le attività ricreative con una data specifica, spesso non esiste alcun diritto legale di recesso.\n7.2 Svizzera: Non esiste alcun diritto legale di recesso per le prenotazioni dei corsi.\n7.3 Condizioni di cancellazione (se non diversamente indicato nel corso):\n• Fino a 30 giorni prima dell'inizio del corso: cancellazione gratuita possibile\n• Meno di 30 giorni prima dell'inizio del corso: Le condizioni di cancellazione sono a discrezione del rispettivo fornitore. Si prega di contattare direttamente il fornitore.\n7.4 Cancellazione da parte del Fornitore: I pagamenti già effettuati saranno completamente rimborsati."
         },
         {
           heading: "8. Recensioni e Contenuti",
