@@ -31,8 +31,33 @@ export default async function handler(req, res) {
 
         // Speichere Anfrage in Supabase (wenn Service Key vorhanden)
         let requestId = null;
+        let customerId = null;
         if (supabaseUrl && supabaseServiceKey) {
             const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+            // Get or create Stripe customer
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('stripe_customer_id')
+                .eq('id', userId)
+                .single();
+
+            if (profile?.stripe_customer_id) {
+                customerId = profile.stripe_customer_id;
+            } else {
+                // Create new Stripe customer
+                const customer = await stripe.customers.create({
+                    email: userEmail,
+                    metadata: { userId },
+                });
+                customerId = customer.id;
+
+                // Store customer ID in database
+                await supabase
+                    .from('profiles')
+                    .update({ stripe_customer_id: customerId })
+                    .eq('id', userId);
+            }
 
             const { data: insertData, error: insertError } = await supabase
                 .from('capture_service_requests')
@@ -92,6 +117,7 @@ export default async function handler(req, res) {
         if (totalAmount > 0) {
             const session = await stripe.checkout.sessions.create({
                 payment_method_types: ['card'],
+                customer: customerId,
                 line_items: [
                     {
                         price_data: {
@@ -110,7 +136,6 @@ export default async function handler(req, res) {
                 mode: 'payment',
                 success_url: `${req.headers.origin}/dashboard?capture_service=success&request_id=${requestId || 'new'}`,
                 cancel_url: `${req.headers.origin}/dashboard?capture_service=cancelled`,
-                customer_email: userEmail,
                 metadata: {
                     userId,
                     requestId: requestId || '',

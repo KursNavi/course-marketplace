@@ -39,6 +39,7 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t }) => 
         website_url: ''
     });
     const [additionalLocations, setAdditionalLocations] = useState([]);
+    const [stripeCustomerId, setStripeCustomerId] = useState(null);
 
     // Load existing profile data on mount
     useEffect(() => {
@@ -49,7 +50,7 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t }) => 
         (async () => {
             const { data, error } = await supabase
                 .from('profiles')
-                .select('full_name, city, canton, bio_text, certificates, preferred_language, additional_locations, website_url, verification_status')
+                .select('full_name, city, canton, bio_text, certificates, preferred_language, additional_locations, website_url, verification_status, stripe_customer_id')
                 .eq('id', uid)
                 .single();
 
@@ -84,6 +85,7 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t }) => 
                     }
                 }
                 setVerificationStatus(data.verification_status || 'none');
+                setStripeCustomerId(data.stripe_customer_id || null);
             }
         })();
 
@@ -482,21 +484,28 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t }) => 
                                         type="button"
                                         onClick={async () => {
                                             try {
-                                                // TODO: Get stripe_customer_id from user profile
-                                                // For now, show a message
-                                                showNotification("Stripe Customer Portal wird eingerichtet. Bitte kontaktiere info@kursnavi.ch für Rechnungen.");
+                                                if (!stripeCustomerId) {
+                                                    showNotification("Du hast noch keine Zahlungen getätigt. Der Zugang zum Kundenportal ist nach der ersten Zahlung verfügbar.");
+                                                    return;
+                                                }
 
-                                                /* Future implementation:
                                                 const response = await fetch('/api/create-customer-portal', {
                                                     method: 'POST',
                                                     headers: { 'Content-Type': 'application/json' },
-                                                    body: JSON.stringify({ customerId: user.stripe_customer_id })
+                                                    body: JSON.stringify({ customerId: stripeCustomerId })
                                                 });
                                                 const data = await response.json();
+
+                                                if (data.error) {
+                                                    showNotification("Fehler: " + data.error);
+                                                    return;
+                                                }
+
                                                 if (data.url) {
                                                     window.location.href = data.url;
+                                                } else {
+                                                    showNotification("Fehler beim Öffnen des Kundenportals");
                                                 }
-                                                */
                                             } catch (error) {
                                                 console.error('Error opening customer portal:', error);
                                                 showNotification("Fehler beim Öffnen des Kundenportals");

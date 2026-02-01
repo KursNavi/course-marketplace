@@ -341,17 +341,18 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
         }
 
         try {
-            const response = await fetch('/api/create-checkout-session', { 
-                method: 'POST', 
-                headers: { 'Content-Type': 'application/json' }, 
-                body: JSON.stringify({ 
-                    courseId: course.id, 
-                    courseTitle: course.title, 
-                    coursePrice: Number(course.price) || 0, 
-                    courseImage: course.image_url, 
+            const response = await fetch('/api/create-checkout-session', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    courseId: course.id,
+                    courseTitle: course.title,
+                    coursePrice: Number(course.price) || 0,
+                    courseImage: course.image_url,
                     userId: user.id,
-                    eventId: courseEvent?.id 
-                }) 
+                    userEmail: user.email,
+                    eventId: courseEvent?.id
+                })
             });
             const data = await response.json();
             if (data.error) throw new Error(data.error);
