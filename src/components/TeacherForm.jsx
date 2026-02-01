@@ -375,8 +375,9 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
     // Load taxonomy from DB (with fallback to constants.js)
     const { taxonomy, types, getFocuses } = useTaxonomy();
 
-    // Draft persistence key - unique per course (or 'new' for new courses)
-    const draftKey = `teacherForm_draft_${initialData?.id || 'new'}`;
+    // Draft persistence key - unique per course and user
+    // Include user.id to prevent drafts from being shared between different providers
+    const draftKey = `teacherForm_draft_${user?.id || 'unknown'}_${initialData?.id || 'new'}`;
 
     // Helper to load draft from sessionStorage
     const loadDraft = () => {
