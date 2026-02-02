@@ -68,7 +68,6 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
         const price = Number(c.price) || 0; 
 
         if (type === 'lead' && price === 0) return 'Preis auf Anfrage';
-        if (type === 'external' && price === 0) return 'Siehe Webseite';
         if (price === 0) return 'Kostenlos';
         return `CHF ${formatPriceCHF(price)}`;
     };
@@ -313,18 +312,6 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
     // --- SMART BOOKING HANDLER ---
     const handleBookingAction = async (courseEvent = null) => {
         const type = course.booking_type || 'platform';
-
-        if (type === 'external') {
-            if (course.external_link) {
-                if (isSaved) {
-                    window.open(course.external_link, '_blank');
-                } else {
-                    setPendingExternalUrl(course.external_link);
-                    setShowSavePrompt(true);
-                }
-            }
-            return; 
-        }
 
         if (type === 'lead') {
             setShowLeadModal(true);
@@ -707,11 +694,9 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
                                                     ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
                                                     : 'bg-primary text-white hover:bg-orange-600 shadow-sm hover:shadow active:scale-95'}`}
                                         >
-                                            {course.booking_type === 'external' && <ExternalLink className="w-4 h-4 mr-2" />}
                                             {course.booking_type === 'lead' && <Mail className="w-4 h-4 mr-2" />}
-                                            {(ev.isFull && course.booking_type === 'platform') ? 'Ausgebucht' : 
-                                             (course.booking_type === 'external' ? 'Zur Anbieter-Webseite' : 
-                                             (course.booking_type === 'lead' ? 'Anfrage senden' : t.btn_book || 'Jetzt Buchen'))}
+                                            {(ev.isFull && course.booking_type === 'platform') ? 'Ausgebucht' :
+                                             (course.booking_type === 'lead' ? 'Anfrage senden' : t.btn_book || 'Jetzt Buchen')}
                                         </button>
                                     </div>
                                 ))}
@@ -734,8 +719,7 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
                                         ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
                                         : 'bg-primary text-white hover:bg-orange-600'}`}
                             >
-                                {course.booking_type === 'external' ? <><ExternalLink className="w-4 h-4 mr-2"/> Zur Anbieter-Webseite</> : 
-                                 (course.booking_type === 'platform' ? 'Derzeit nicht buchbar' : <><Mail className="w-4 h-4 mr-2"/> Anfrage senden</>)}
+                                {course.booking_type === 'platform' ? 'Derzeit nicht buchbar' : <><Mail className="w-4 h-4 mr-2"/> Anfrage senden</>}
                             </button>
                         </div>
                     )}

@@ -1539,8 +1539,8 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                                         )}
                                                     </td>
                                                     <td className="px-6 py-4">
-                                                        <span className={`text-xs px-2 py-1 rounded font-bold uppercase ${course.booking_type === 'platform' ? 'bg-green-100 text-green-700' : (course.booking_type === 'external' ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700')}`}>
-                                                            {course.booking_type || 'platform'}
+                                                        <span className={`text-xs px-2 py-1 rounded font-bold uppercase ${course.booking_type === 'platform' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
+                                                            {course.booking_type === 'lead' ? 'Lead' : (course.booking_type || 'platform')}
                                                         </span>
                                                     </td>
                                                     <td className="px-6 py-4 font-medium">{course.price ? `CHF ${formatPriceCHF(course.price)}` : <span className="text-gray-400 italic">Kein Preis angegeben</span>}</td>

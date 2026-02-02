@@ -212,7 +212,6 @@ export default function CategoryLocationPage({
         const type = c.booking_type || 'platform';
         const price = Number(c.price) || 0;
         if (type === 'lead' && price === 0) return 'Preis auf Anfrage';
-        if (type === 'external' && price === 0) return 'Siehe Webseite';
         if (price === 0) return 'Kostenlos';
         return `CHF ${formatPriceCHF(price)}`;
     };

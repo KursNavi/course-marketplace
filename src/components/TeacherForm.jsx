@@ -403,7 +403,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
     const [isDirty, setIsDirty] = useState(!!draft);
 
     // Booking & Link State
-    const [bookingType, setBookingType] = useState(draft?.bookingType || 'platform'); // 'platform', 'external', 'lead'
+    const [bookingType, setBookingType] = useState(draft?.bookingType || 'platform'); // 'platform' or 'lead'
     const [contactEmail, setContactEmail] = useState(draft?.contactEmail || '');
 
     // Form Field State (controlled inputs to preserve data on validation errors / tab switches)
@@ -412,7 +412,6 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
     const [objectives, setObjectives] = useState(draft?.objectives || '');
     const [keywords, setKeywords] = useState(draft?.keywords || '');
     const [prerequisites, setPrerequisites] = useState(draft?.prerequisites || '');
-    const [externalLink, setExternalLink] = useState(draft?.externalLink || '');
     const [price, setPrice] = useState(draft?.price || '');
     const [sessionCount, setSessionCount] = useState(draft?.sessionCount || '');
     const [sessionLength, setSessionLength] = useState(draft?.sessionLength || '');
@@ -490,7 +489,6 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
             objectives,
             keywords,
             prerequisites,
-            externalLink,
             price,
             sessionCount,
             sessionLength,
@@ -516,7 +514,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
                 console.warn('Failed to save draft:', e);
             }
         }
-    }, [isDirty, draftKey, bookingType, contactEmail, title, description, objectives, keywords, prerequisites, externalLink, price, sessionCount, sessionLength, providerUrl, categories, selectedLevel, courseLanguage, deliveryType, courseStatus, events, fallbackCantons, initialData?.id]);
+    }, [isDirty, draftKey, bookingType, contactEmail, title, description, objectives, keywords, prerequisites, price, sessionCount, sessionLength, providerUrl, categories, selectedLevel, courseLanguage, deliveryType, courseStatus, events, fallbackCantons, initialData?.id]);
 
     // Save draft on unmount (safety net for fast tab switches)
     useEffect(() => {
@@ -556,7 +554,6 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
             if (initialData.objectives) setObjectives(initialData.objectives.join('\n'));
             if (initialData.keywords) setKeywords(initialData.keywords);
             if (initialData.prerequisites) setPrerequisites(initialData.prerequisites);
-            if (initialData.external_link) setExternalLink(initialData.external_link);
             if (initialData.price !== undefined && initialData.price !== null) setPrice(String(initialData.price));
             if (initialData.session_count) setSessionCount(String(initialData.session_count));
             if (initialData.session_length) setSessionLength(initialData.session_length);
@@ -959,17 +956,14 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
             if (!formData.get('price')) { window.alert("Ein Preis ist für Direktbuchungen erforderlich."); return; }
         } 
         
-        if (bookingType === 'lead' || bookingType === 'external') {
+        if (bookingType === 'lead') {
             const hasRegions = fallbackCantons.length > 0;
             if (validEvents.length === 0 && !hasRegions) {
                 window.alert("Bitte geben Sie entweder einen konkreten Termin (mit Datum) ODER mindestens einen Kanton/Region an.");
                 return;
             }
 
-            if (bookingType === 'external' && !externalLink) {
-                window.alert("Bitte geben Sie einen externen Link an."); return;
-            }
-            if (bookingType === 'lead' && !contactEmail) {
+            if (!contactEmail) {
                 window.alert("Bitte geben Sie eine Kontakt-Email an."); return;
             }
         }
@@ -1055,7 +1049,7 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
             category_focus: catFocus || null,
             category_paths: cleanedCategories,
             booking_type: bookingType,
-            external_link: bookingType === 'external' ? externalLink : null,
+            external_link: null,
             level: level,
             delivery_type: deliveryType,
             target_age_groups: [],
@@ -1450,7 +1444,7 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                 <div className="bg-white rounded-xl space-y-6">
                     <div>
                         <h3 className="text-lg font-bold text-dark mb-4">Buchungs-Optionen</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <label className={`cursor-pointer border p-4 rounded-xl transition relative overflow-hidden ${bookingType === 'platform' ? 'border-primary bg-orange-50 ring-1 ring-primary' : 'hover:bg-gray-50'}`}>
                                 {bookingType === 'platform' && <div className="absolute top-0 right-0 bg-primary text-white text-[10px] px-2 py-0.5 rounded-bl">Empfohlen</div>}
                                 <div className="flex items-center mb-2"><input type="radio" name="bookingType" value="platform" checked={bookingType === 'platform'} onChange={() => { setBookingType('platform'); markDirty(); }} className="mr-2 accent-primary"/> <span className="font-bold">Direktbuchung</span></div>
@@ -1459,10 +1453,6 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                             <label className={`cursor-pointer border p-4 rounded-xl transition ${bookingType === 'lead' ? 'border-primary bg-orange-50 ring-1 ring-primary' : 'hover:bg-gray-50'}`}>
                                 <div className="flex items-center mb-2"><input type="radio" name="bookingType" value="lead" checked={bookingType === 'lead'} onChange={() => { setBookingType('lead'); markDirty(); }} className="mr-2 accent-primary"/> <span className="font-bold">Anfrage (Lead)</span></div>
                                 <p className="text-xs text-gray-500">Kontaktformular.</p>
-                            </label>
-                            <label className={`cursor-pointer border p-4 rounded-xl transition ${bookingType === 'external' ? 'border-primary bg-orange-50 ring-1 ring-primary' : 'hover:bg-gray-50'}`}>
-                                <div className="flex items-center mb-2"><input type="radio" name="bookingType" value="external" checked={bookingType === 'external'} onChange={() => { setBookingType('external'); markDirty(); }} className="mr-2 accent-primary"/> <span className="font-bold">Externer Link</span></div>
-                                <p className="text-xs text-gray-500">Eigene Webseite.</p>
                             </label>
                         </div>
                     </div>
@@ -1482,16 +1472,7 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                                     <p className="text-xs text-gray-500 mt-1">An diese Adresse werden Kundenanfragen gesendet.</p>
                                 </div>
                             )}
-                            {bookingType === 'external' && (
-                                <div className="md:col-span-2">
-                                    <label className="block text-sm font-bold text-gray-700 mb-1">Link zur Buchungsseite *</label>
-                                    <div className="relative">
-                                        <ExternalLink className="absolute left-3 top-2.5 text-gray-400 w-4 h-4" />
-                                        <input required type="url" name="external_link" value={externalLink} onChange={(e) => { setExternalLink(e.target.value); markDirty(); }} placeholder="https://meine-seite.ch/kurs-buchen" className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
-                                    </div>
-                                </div>
-                            )}
-
+    
                             <div>
                                 <label className="block text-sm font-bold text-gray-700 mb-1">Preis (CHF) {bookingType === 'platform' && '*'}</label>
                                 <input required={bookingType === 'platform'} type="number" name="price" value={price} onChange={(e) => { setPrice(e.target.value); markDirty(); }} placeholder={bookingType !== 'platform' ? "Optional" : "0.00"} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
