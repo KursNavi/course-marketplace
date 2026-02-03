@@ -623,11 +623,16 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
                     }
 
                     // Fallback Cantons (nur falls kein course_events vorhanden)
-                    if (isMounted && !formDataRef.current?.isDirty && (!initialData.course_events || initialData.course_events.length === 0) && priv?.address) {
-                        const parts = priv.address.split(',').map(s => s.trim()).filter(Boolean);
-                        const allAreCantons = parts.length > 0 && parts.every(p => SWISS_CANTONS.includes(p));
-                        if (allAreCantons) setFallbackCantons(parts);
-                        else if (initialData.canton) setFallbackCantons([initialData.canton]);
+                    if (isMounted && !formDataRef.current?.isDirty && (!initialData.course_events || initialData.course_events.length === 0)) {
+                        if (priv?.address) {
+                            const parts = priv.address.split(',').map(s => s.trim()).filter(Boolean);
+                            const allAreCantons = parts.length > 0 && parts.every(p => SWISS_CANTONS.includes(p));
+                            if (allAreCantons) setFallbackCantons(parts);
+                            else if (initialData.canton) setFallbackCantons([initialData.canton]);
+                        } else if (initialData.canton) {
+                            // Kein course_private vorhanden, aber canton in courses gesetzt
+                            setFallbackCantons([initialData.canton]);
+                        }
                     }
                 } catch (err) {
                     console.warn("course_private load error:", err);
