@@ -124,7 +124,7 @@ export async function deleteImageFromStorage(imageUrl) {
 /**
  * Holt alle Bilder die von Kursen eines bestimmten Users verwendet werden
  * @param {string} userId - Die User ID
- * @returns {Array} Array von {url, usedBy: number} Objekten
+ * @returns {Array} Array von {url, usedBy: number, courseIds: string[]} Objekten
  */
 export async function getUserCourseImages(userId) {
     const { data: courses, error } = await supabase
@@ -144,11 +144,46 @@ export async function getUserCourseImages(userId) {
         }
 
         if (imageMap.has(url)) {
-            imageMap.get(url).usedBy++;
+            const entry = imageMap.get(url);
+            entry.usedBy++;
+            entry.courseIds.push(course.id);
         } else {
-            imageMap.set(url, { url, usedBy: 1 });
+            imageMap.set(url, { url, usedBy: 1, courseIds: [course.id] });
         }
     }
 
     return Array.from(imageMap.values());
+}
+
+/**
+ * Löscht ein Bild aus der Bibliothek und setzt betroffene Kurse auf das Default-Bild
+ * @param {string} imageUrl - Die URL des Bildes
+ * @param {string[]} courseIds - Die IDs der Kurse die dieses Bild verwenden
+ * @returns {Object} { success: boolean, updatedCourses: number, error?: string }
+ */
+export async function deleteImageFromLibrary(imageUrl, courseIds = []) {
+    const DEFAULT_IMAGE = "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=600";
+
+    try {
+        // 1. Setze alle betroffenen Kurse auf das Default-Bild
+        if (courseIds.length > 0) {
+            const { error: updateError } = await supabase
+                .from('courses')
+                .update({ image_url: DEFAULT_IMAGE })
+                .in('id', courseIds);
+
+            if (updateError) {
+                console.error('Fehler beim Aktualisieren der Kurse:', updateError);
+                return { success: false, updatedCourses: 0, error: 'Kurse konnten nicht aktualisiert werden' };
+            }
+        }
+
+        // 2. Lösche das Bild aus dem Storage
+        await deleteImageFromStorage(imageUrl);
+
+        return { success: true, updatedCourses: courseIds.length };
+    } catch (error) {
+        console.error('Fehler beim Löschen des Bildes:', error);
+        return { success: false, updatedCourses: 0, error: error.message };
+    }
 }

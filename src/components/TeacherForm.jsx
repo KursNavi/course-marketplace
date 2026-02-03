@@ -4,7 +4,7 @@ import { KursNaviLogo } from './Layout';
 import { SWISS_CANTONS, NEW_TAXONOMY, CATEGORY_TYPES, COURSE_LEVELS, DELIVERY_TYPES } from '../lib/constants';
 import { supabase } from '../lib/supabase';
 import { useTaxonomy } from '../hooks/useTaxonomy';
-import { computeImageHash, getExistingImageByHash, uploadImageWithHash, getUserCourseImages } from '../lib/imageUtils';
+import { computeImageHash, getExistingImageByHash, uploadImageWithHash, getUserCourseImages, deleteImageFromLibrary } from '../lib/imageUtils';
 import imageCompression from 'browser-image-compression';
 
 // --- Image Compression Helper ---
@@ -460,6 +460,8 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
     const [existingImages, setExistingImages] = useState([]);
     const [loadingImages, setLoadingImages] = useState(false);
     const [selectedExistingImage, setSelectedExistingImage] = useState(null);
+    const [imageToDelete, setImageToDelete] = useState(null);
+    const [isDeletingImage, setIsDeletingImage] = useState(false);
 
     // Flag to track if form has been initialized (to prevent initialData from overwriting user changes)
     // Using useRef so the flag persists across re-renders without triggering updates
@@ -887,6 +889,40 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
         setImagePreview(null); // Clear any new image preview
         setShowImageLibrary(false);
         markDirty();
+    };
+
+    // Confirm image deletion
+    const confirmDeleteImage = async () => {
+        if (!imageToDelete) return;
+
+        setIsDeletingImage(true);
+        try {
+            const result = await deleteImageFromLibrary(imageToDelete.url, imageToDelete.courseIds || []);
+
+            if (result.success) {
+                // Remove from local state
+                setExistingImages(prev => prev.filter(img => img.url !== imageToDelete.url));
+
+                // If the deleted image was selected, clear the selection
+                if (selectedExistingImage === imageToDelete.url) {
+                    setSelectedExistingImage(null);
+                }
+
+                if (result.updatedCourses > 0) {
+                    showNotification(`Bild gelöscht. ${result.updatedCourses} Kurs${result.updatedCourses > 1 ? 'e verwenden' : ' verwendet'} jetzt das Standardbild.`);
+                } else {
+                    showNotification('Bild erfolgreich gelöscht.');
+                }
+            } else {
+                showNotification('Fehler beim Löschen: ' + (result.error || 'Unbekannter Fehler'));
+            }
+        } catch (error) {
+            console.error('Error deleting image:', error);
+            showNotification('Fehler beim Löschen des Bildes.');
+        } finally {
+            setIsDeletingImage(false);
+            setImageToDelete(null);
+        }
     };
 
     // UX Logic: Has the user entered a Valid Date?
@@ -1645,27 +1681,44 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                         ) : (
                             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
                                 {existingImages.map((image) => (
-                                    <button
-                                        key={image.name}
-                                        type="button"
-                                        onClick={() => selectExistingImage(image)}
-                                        className={`relative aspect-square rounded-lg overflow-hidden border-2 transition hover:opacity-90 ${
-                                            selectedExistingImage === image.url
-                                                ? 'border-primary ring-2 ring-primary/30'
-                                                : 'border-transparent hover:border-gray-300'
-                                        }`}
-                                    >
-                                        <img
-                                            src={image.url}
-                                            alt={image.name}
-                                            className="w-full h-full object-cover"
-                                        />
-                                        {selectedExistingImage === image.url && (
-                                            <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
-                                                <Check className="w-8 h-8 text-primary" />
-                                            </div>
-                                        )}
-                                    </button>
+                                    <div key={image.name} className="relative group">
+                                        <button
+                                            type="button"
+                                            onClick={() => selectExistingImage(image)}
+                                            className={`relative aspect-square rounded-lg overflow-hidden border-2 transition hover:opacity-90 w-full ${
+                                                selectedExistingImage === image.url
+                                                    ? 'border-primary ring-2 ring-primary/30'
+                                                    : 'border-transparent hover:border-gray-300'
+                                            }`}
+                                        >
+                                            <img
+                                                src={image.url}
+                                                alt={image.name}
+                                                className="w-full h-full object-cover"
+                                            />
+                                            {selectedExistingImage === image.url && (
+                                                <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
+                                                    <Check className="w-8 h-8 text-primary" />
+                                                </div>
+                                            )}
+                                            {image.usedBy > 0 && (
+                                                <div className="absolute bottom-1 left-1 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded-full">
+                                                    {image.usedBy}x
+                                                </div>
+                                            )}
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setImageToDelete(image);
+                                            }}
+                                            className="absolute -top-1.5 -right-1.5 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
+                                            title="Bild löschen"
+                                        >
+                                            <Trash2 className="w-3.5 h-3.5" />
+                                        </button>
+                                    </div>
                                 ))}
                             </div>
                         )}
@@ -1678,6 +1731,61 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                             className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition"
                         >
                             Abbrechen
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
+
+        {/* Image Delete Confirmation Dialog */}
+        {imageToDelete && (
+            <div className="fixed inset-0 bg-dark/60 backdrop-blur-sm z-[110] flex items-center justify-center p-4 animate-in fade-in duration-200">
+                <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl">
+                    <h3 className="text-lg font-bold mb-3">Bild löschen?</h3>
+
+                    <div className="flex gap-4 mb-4">
+                        <img
+                            src={imageToDelete.url}
+                            alt="Zu löschendes Bild"
+                            className="w-20 h-20 rounded-lg object-cover shrink-0"
+                        />
+                        <div className="text-sm text-gray-600">
+                            {imageToDelete.usedBy > 0 ? (
+                                <>
+                                    <p className="text-amber-600 font-medium mb-2">
+                                        ⚠️ Dieses Bild wird von {imageToDelete.usedBy} Kurs{imageToDelete.usedBy > 1 ? 'en' : ''} verwendet.
+                                    </p>
+                                    <p>
+                                        Nach dem Löschen {imageToDelete.usedBy > 1 ? 'werden diese Kurse' : 'wird dieser Kurs'} das Standardbild anzeigen.
+                                    </p>
+                                </>
+                            ) : (
+                                <p>Dieses Bild wird von keinem Kurs verwendet und kann sicher gelöscht werden.</p>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="flex justify-end gap-3">
+                        <button
+                            type="button"
+                            onClick={() => setImageToDelete(null)}
+                            disabled={isDeletingImage}
+                            className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition disabled:opacity-50"
+                        >
+                            Abbrechen
+                        </button>
+                        <button
+                            type="button"
+                            onClick={confirmDeleteImage}
+                            disabled={isDeletingImage}
+                            className="px-4 py-2 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded-lg transition flex items-center gap-2 disabled:opacity-50"
+                        >
+                            {isDeletingImage ? (
+                                <Loader className="w-4 h-4 animate-spin" />
+                            ) : (
+                                <Trash2 className="w-4 h-4" />
+                            )}
+                            Löschen
                         </button>
                     </div>
                 </div>

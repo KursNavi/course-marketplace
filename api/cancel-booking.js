@@ -52,6 +52,16 @@ const generateEmailHtml = (title, bodyHtml, ctaText) => `
 `;
 
 export default async function handler(req, res) {
+  // DISABLED: Cancellation via platform is no longer allowed.
+  // Cancellation, refund or rescheduling must be arranged directly between provider and learner.
+  return res.status(403).json({
+    error: 'Cancellation via the platform is not possible. Please contact the course provider directly.',
+    error_de: 'Eine Stornierung über die Plattform ist nicht möglich. Bitte kontaktieren Sie den Kursanbieter direkt.',
+    error_fr: 'L\'annulation via la plateforme n\'est pas possible. Veuillez contacter le prestataire de cours directement.',
+    error_it: 'La cancellazione tramite la piattaforma non è possibile. Si prega di contattare direttamente il fornitore del corso.'
+  });
+
+  /* ORIGINAL CODE - DISABLED
   if (req.method !== 'POST') {
     return res.status(405).send('Method Not Allowed');
   }
@@ -104,4 +114,5 @@ export default async function handler(req, res) {
     console.error('Cancellation Error:', error);
     return res.status(500).json({ error: error.message });
   }
+  END OF DISABLED CODE */
 }

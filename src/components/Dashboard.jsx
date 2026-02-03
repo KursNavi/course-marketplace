@@ -1262,8 +1262,6 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
         window.scrollTo(0, 0);
     };
 
- const handleCancelBooking = async (courseId, courseTitle) => { if (!confirm(`Are you sure you want to cancel your spot in "${courseTitle}"?`)) return; alert("Please contact support to cancel this booking."); };
-    const calculateDeadline = (startDateString) => { if (!startDateString) return null; const start = new Date(startDateString); const deadline = new Date(start); deadline.setMonth(deadline.getMonth() - 1); return deadline; };
 
     return (
         <div className="max-w-6xl mx-auto px-4 py-8 font-sans">
@@ -1572,16 +1570,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                         <div>
                             <h2 className="text-xl font-bold mb-4 text-dark">{t.my_bookings}</h2>
                             <div className="space-y-4">
-                                {myBookings.length > 0 ? myBookings.map(course => {
-                                    let canCancel = true; let deadlineText = "";
-                                    if (course.start_date) {
-                                        const deadline = calculateDeadline(course.start_date);
-                                        const now = new Date();
-                                        if (now > deadline) { canCancel = false; deadlineText = `Cancellation period ended on ${deadline.toLocaleDateString()}`; }
-                                        else { deadlineText = `Cancel until ${deadline.toLocaleDateString()}`; }
-                                    }
-
-                                    return (
+                                {myBookings.length > 0 ? myBookings.map(course => (
                                         <div key={course.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex gap-4 transition hover:shadow-md">
                                             <img
                                                 src={course.image_url}
@@ -1593,28 +1582,18 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                                     {course.title}
                                                 </h3>
                                                 <p className="text-sm text-gray-500">{course.instructor_name} • {course.canton}</p>
-                                                <div className="mt-4 flex items-center justify-between">
+                                                <div className="mt-3 flex items-center">
                                                     <div className="text-green-600 text-sm font-medium flex items-center">
-                                                        <CheckCircle className="w-4 h-4 mr-1" /> Confirmed
+                                                        <CheckCircle className="w-4 h-4 mr-1" /> {t.booking_confirmed || 'Confirmed'}
                                                     </div>
-                                                    {canCancel ? (
-                                                        <div className="flex flex-col items-end">
-                                                            <button className="text-red-500 text-sm hover:text-red-700 hover:underline font-medium" onClick={() => handleCancelBooking(course.id, course.title)}>
-                                                                Cancel Booking
-                                                            </button>
-                                                            <span className="text-xs text-gray-400 mt-1">{deadlineText}</span>
-                                                        </div>
-                                                    ) : (
-                                                        <div className="flex items-center text-gray-400 text-sm bg-gray-50 px-2 py-1 rounded">
-                                                            <Lock className="w-3 h-3 mr-1" /><span>Non-refundable</span>
-                                                        </div>
-                                                    )}
                                                 </div>
+                                                <p className="text-xs text-gray-400 mt-2 leading-relaxed">
+                                                    {t.no_cancellation_hint || 'Cancellation, refund or rescheduling is at the discretion of the provider. Please contact the provider directly.'}
+                                                </p>
                                             </div>
                                         </div>
-                                    );
-                                }) : (
-                                    <p className="text-gray-500 italic">You haven't booked any courses yet.</p>
+                                    )) : (
+                                    <p className="text-gray-500 italic">{t.no_bookings_yet || "You haven't booked any courses yet."}</p>
                                 )}
                             </div>
                         </div>
