@@ -20,6 +20,15 @@ export const DELIVERY_TYPES = {
   self_study: { de: "Selbststudium (asynchron)", en: "Self-Study (async)", fr: "Auto-apprentissage", it: "Autostudio" }
 };
 
+// --- COURSE LANGUAGES ---
+export const COURSE_LANGUAGES = {
+  Deutsch: { de: "Deutsch", en: "German", fr: "Allemand", it: "Tedesco" },
+  Französisch: { de: "Französisch", en: "French", fr: "Français", it: "Francese" },
+  Italienisch: { de: "Italienisch", en: "Italian", fr: "Italien", it: "Italiano" },
+  Englisch: { de: "Englisch", en: "English", fr: "Anglais", it: "Inglese" },
+  Andere: { de: "Andere", en: "Other", fr: "Autre", it: "Altro" }
+};
+
 // --- BUSINESS LOGIC (v2.1 SaaS Model) ---
 export const TIER_CONFIG = {
   basic: {

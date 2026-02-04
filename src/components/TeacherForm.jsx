@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { ArrowLeft, Loader, Calendar, Plus, Trash2, ExternalLink, Globe, Bold, Italic, Underline, Heading2, Heading3, List, Mail, MapPin, Lightbulb, X, Send, ChevronDown, Images, Check } from 'lucide-react';
 import { KursNaviLogo } from './Layout';
-import { SWISS_CANTONS, NEW_TAXONOMY, CATEGORY_TYPES, COURSE_LEVELS, DELIVERY_TYPES } from '../lib/constants';
+import { SWISS_CANTONS, NEW_TAXONOMY, CATEGORY_TYPES, COURSE_LEVELS, DELIVERY_TYPES, COURSE_LANGUAGES } from '../lib/constants';
 import { supabase } from '../lib/supabase';
 import { useTaxonomy } from '../hooks/useTaxonomy';
 import { computeImageHash, getExistingImageByHash, uploadImageWithHash, getUserCourseImages, deleteImageFromLibrary } from '../lib/imageUtils';
@@ -381,12 +381,25 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
 
     // Helper to load draft from sessionStorage
     const loadDraft = () => {
+        // Only load drafts for existing courses being edited
+        // For new courses (initialData === null), always start with a fresh form
+        // This prevents old drafts from interfering when creating new courses
+        if (!initialData?.id) {
+            // Clear any stale 'new' draft to ensure clean state
+            try {
+                sessionStorage.removeItem(draftKey);
+            } catch (e) {
+                console.warn('Failed to clear stale draft:', e);
+            }
+            return null;
+        }
+
         try {
             const saved = sessionStorage.getItem(draftKey);
             if (saved) {
                 const parsed = JSON.parse(saved);
                 // Only use draft if it's for the same course
-                if (parsed.courseId === (initialData?.id || 'new')) {
+                if (parsed.courseId === initialData.id) {
                     return parsed;
                 }
             }
@@ -426,7 +439,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
 
     // Metadata State
     const [selectedLevel, setSelectedLevel] = useState(draft?.selectedLevel || 'all_levels');
-    const [courseLanguage, setCourseLanguage] = useState(draft?.courseLanguage || 'Deutsch');
+    const [courseLanguages, setCourseLanguages] = useState(draft?.courseLanguages || ['Deutsch']);
     const [deliveryType, setDeliveryType] = useState(draft?.deliveryType || 'presence');
 
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -497,7 +510,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
             providerUrl,
             categories,
             selectedLevel,
-            courseLanguage,
+            courseLanguages,
             deliveryType,
             courseStatus,
             events,
@@ -516,7 +529,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
                 console.warn('Failed to save draft:', e);
             }
         }
-    }, [isDirty, draftKey, bookingType, contactEmail, title, description, objectives, keywords, prerequisites, price, sessionCount, sessionLength, providerUrl, categories, selectedLevel, courseLanguage, deliveryType, courseStatus, events, fallbackCantons, initialData?.id]);
+    }, [isDirty, draftKey, bookingType, contactEmail, title, description, objectives, keywords, prerequisites, price, sessionCount, sessionLength, providerUrl, categories, selectedLevel, courseLanguages, deliveryType, courseStatus, events, fallbackCantons, initialData?.id]);
 
     // Save draft on unmount (safety net for fast tab switches)
     useEffect(() => {
@@ -579,7 +592,12 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
             }
 
             if (initialData.level) setSelectedLevel(initialData.level);
-            if (initialData.language) setCourseLanguage(initialData.language);
+            // Support both old 'language' (string) and new 'languages' (array) field
+            if (initialData.languages && Array.isArray(initialData.languages) && initialData.languages.length > 0) {
+                setCourseLanguages(initialData.languages);
+            } else if (initialData.language) {
+                setCourseLanguages([initialData.language]);
+            }
             if (initialData.delivery_type) setDeliveryType(initialData.delivery_type);
             // Load course status (default to 'published' for existing courses without status)
             setCourseStatus(initialData.status || 'published');
@@ -671,7 +689,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
                  // Only update if component is mounted AND user hasn't made changes
                  if (data?.preferred_language && isMounted && !formDataRef.current?.isDirty) {
                     const map = { de: 'Deutsch', fr: 'Französisch', it: 'Italienisch', en: 'Englisch' };
-                    if (map[data.preferred_language]) setCourseLanguage(map[data.preferred_language]);
+                    if (map[data.preferred_language]) setCourseLanguages([map[data.preferred_language]]);
                  }
              });
         }
@@ -759,6 +777,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
                 console.warn('Failed to clear draft:', e);
             }
         }
+        setEditingCourse(null);
         setView('dashboard');
     };
 
@@ -1081,7 +1100,8 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
             title: titleVal,
             instructor_name: user?.name || initialData?.instructor_name || '',
             price: Number(price) || 0,
-            language: formData.get('language'),
+            languages: courseLanguages, // New: array of languages
+            language: courseLanguages[0] || 'Deutsch', // Backwards compatibility: primary language
             rating: initialData?.rating || 0,
             category: `${catType} | ${catArea}`,
             category_type: catType,
@@ -1450,16 +1470,36 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                                 </select>
                             </div>
                             <div>
-                                <span className="text-xs text-gray-500 block mb-1">Sprache</span>
+                                <span className="text-xs text-gray-500 block mb-1">Kurssprache(n)</span>
                                 <div className="relative">
-                                    <Globe className="absolute left-2.5 top-2 text-gray-400 w-4 h-4" />
-                                    <select name="language" value={courseLanguage} onChange={(e) => { setCourseLanguage(e.target.value); markDirty(); }} className="w-full pl-9 pr-3 py-2 border rounded-lg focus:ring-primary bg-white text-sm">
-                                        <option value="Deutsch">Deutsch</option>
-                                        <option value="Französisch">Französisch</option>
-                                        <option value="Italienisch">Italienisch</option>
-                                        <option value="Englisch">Englisch</option>
-                                        <option value="Andere">Andere</option>
-                                    </select>
+                                    <Globe className="absolute left-2.5 top-2.5 text-gray-400 w-4 h-4 pointer-events-none" />
+                                    <div className="w-full pl-9 pr-3 py-2 border rounded-lg bg-white text-sm min-h-[38px]">
+                                        <div className="flex flex-wrap gap-1">
+                                            {Object.keys(COURSE_LANGUAGES).map(lang => (
+                                                <label key={lang} className="inline-flex items-center cursor-pointer">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={courseLanguages.includes(lang)}
+                                                        onChange={(e) => {
+                                                            if (e.target.checked) {
+                                                                setCourseLanguages([...courseLanguages, lang]);
+                                                            } else {
+                                                                // Mindestens eine Sprache muss ausgewählt sein
+                                                                if (courseLanguages.length > 1) {
+                                                                    setCourseLanguages(courseLanguages.filter(l => l !== lang));
+                                                                }
+                                                            }
+                                                            markDirty();
+                                                        }}
+                                                        className="sr-only"
+                                                    />
+                                                    <span className={`px-2 py-0.5 rounded-full text-xs transition ${courseLanguages.includes(lang) ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+                                                        {COURSE_LANGUAGES[lang].de}
+                                                    </span>
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             <div>

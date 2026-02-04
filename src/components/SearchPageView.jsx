@@ -15,7 +15,7 @@ const SearchPageView = ({
     locMode, setLocMode, selectedLocations, setSelectedLocations, locMenuOpen, setLocMenuOpen, locMenuRef,
     loading, filteredCourses, setSelectedCourse, setView,
     t, filterDateFrom, setFilterDateFrom, filterDateTo, setFilterDateTo, filterPriceMax, setFilterPriceMax, filterLevel, setFilterLevel, filterPro, setFilterPro, filterDirectBooking, setFilterDirectBooking,
-    selectedLanguage, setSelectedLanguage, langMenuOpen, setLangMenuOpen, langMenuRef,
+    selectedLanguages, setSelectedLanguages, langMenuOpen, setLangMenuOpen, langMenuRef,
     selectedDeliveryTypes, setSelectedDeliveryTypes, deliveryMenuOpen, setDeliveryMenuOpen, deliveryMenuRef,
     savedCourseIds, onToggleSaveCourse
 }) => {
@@ -313,9 +313,9 @@ const SearchPageView = ({
                             <input type="text" placeholder={t.search_refine} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-10 pr-4 py-3 bg-beige border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-colors" />
                         </div>
                         <LocationDropdown locMode={locMode} setLocMode={setLocMode} selectedLocations={selectedLocations} setSelectedLocations={setSelectedLocations} locMenuOpen={locMenuOpen} setLocMenuOpen={setLocMenuOpen} locMenuRef={locMenuRef} t={t} />
-                        <LanguageDropdown selectedLanguage={selectedLanguage} setSelectedLanguage={setSelectedLanguage} langMenuOpen={langMenuOpen} setLangMenuOpen={setLangMenuOpen} langMenuRef={langMenuRef} t={t} />
+                        <LanguageDropdown selectedLanguages={selectedLanguages} setSelectedLanguages={setSelectedLanguages} langMenuOpen={langMenuOpen} setLangMenuOpen={setLangMenuOpen} langMenuRef={langMenuRef} t={t} />
                         <DeliveryTypeFilter selectedDeliveryTypes={selectedDeliveryTypes} setSelectedDeliveryTypes={setSelectedDeliveryTypes} deliveryMenuOpen={deliveryMenuOpen} setDeliveryMenuOpen={setDeliveryMenuOpen} deliveryMenuRef={deliveryMenuRef} t={t} />
-                        <button onClick={() => { resetFilters(); setSelectedLanguage(null); setSelectedDeliveryTypes([]); }} className="p-2 text-gray-400 hover:text-red-500 rounded-full hover:bg-gray-100 transition" title="Reset Filters"><X className="w-6 h-6" /></button>
+                        <button onClick={() => { resetFilters(); setSelectedLanguages([]); setSelectedDeliveryTypes([]); }} className="p-2 text-gray-400 hover:text-red-500 rounded-full hover:bg-gray-100 transition" title="Reset Filters"><X className="w-6 h-6" /></button>
                     </div>
 
                     {/* NEW TAXONOMY FILTERS */}
@@ -362,9 +362,9 @@ const SearchPageView = ({
                          </label>
                     </div>
                 </div>
-                 {(selectedLocations.length > 0 || selectedLanguage) && (
+                 {(selectedLocations.length > 0 || selectedLanguages.length > 0) && (
                     <div className="max-w-7xl mx-auto px-4 pt-2 flex gap-2 flex-wrap">
-                        {selectedLanguage && <span onClick={() => setSelectedLanguage(null)} className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-purple-200 flex items-center"><Globe className="w-3 h-3 mr-1"/> {selectedLanguage} <X className="w-3 h-3 ml-1 opacity-50" /></span>}
+                        {selectedLanguages.map((lang, i) => (<span key={`lang-${i}`} onClick={() => setSelectedLanguages(selectedLanguages.filter(l => l !== lang))} className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-purple-200 flex items-center"><Globe className="w-3 h-3 mr-1"/> {lang} <X className="w-3 h-3 ml-1 opacity-50" /></span>))}
                         {selectedLocations.map((loc, i) => (<span key={i} onClick={() => setSelectedLocations(selectedLocations.filter(l => l !== loc))} className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-blue-200 flex items-center">{loc} <X className="w-3 h-3 ml-1 opacity-50" /></span>))}
                     </div>
                  )}
