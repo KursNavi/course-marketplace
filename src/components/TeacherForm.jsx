@@ -1100,8 +1100,7 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
             title: titleVal,
             instructor_name: user?.name || initialData?.instructor_name || '',
             price: Number(price) || 0,
-            languages: courseLanguages, // New: array of languages
-            language: courseLanguages[0] || 'Deutsch', // Backwards compatibility: primary language
+            languages: courseLanguages, // Array of languages
             rating: initialData?.rating || 0,
             category: `${catType} | ${catArea}`,
             category_type: catType,
