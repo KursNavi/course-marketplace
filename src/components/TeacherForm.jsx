@@ -1268,15 +1268,44 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                                     { icon: <Heading3 className="w-4 h-4" />, tag: '### ', label: 'H3', isPrefix: true },
                                     { icon: <List className="w-4 h-4" />, tag: '- ', label: 'List', isPrefix: true }
                                 ].map((btn, idx) => (
-                                    <button key={idx} type="button" onClick={() => {
+                                    <button key={idx} type="button" onMouseDown={(e) => {
+                                            e.preventDefault(); // Prevent textarea from losing focus
                                             const textarea = document.getElementsByName('description')[0];
-                                            const start = textarea.selectionStart; const end = textarea.selectionEnd; const text = description;
+                                            const start = textarea.selectionStart;
+                                            const end = textarea.selectionEnd;
+                                            const text = description;
                                             const selected = text.substring(start, end);
-                                            let replacement = btn.isPrefix ? `${btn.tag}${selected}` : `${btn.tag}${selected}${btn.tag}`;
+                                            let replacement, newCursorPos;
+
+                                            if (btn.isPrefix) {
+                                                // For H2, H3, List - add prefix at line start
+                                                if (selected) {
+                                                    replacement = `${btn.tag}${selected}`;
+                                                    newCursorPos = start + replacement.length;
+                                                } else {
+                                                    replacement = btn.tag;
+                                                    newCursorPos = start + btn.tag.length;
+                                                }
+                                            } else {
+                                                // For Bold, Italic, Underline - wrap selection
+                                                if (selected) {
+                                                    replacement = `${btn.tag}${selected}${btn.tag}`;
+                                                    newCursorPos = start + replacement.length;
+                                                } else {
+                                                    replacement = `${btn.tag}${btn.tag}`;
+                                                    newCursorPos = start + btn.tag.length; // Place cursor between tags
+                                                }
+                                            }
+
                                             const newValue = text.substring(0, start) + replacement + text.substring(end);
                                             setDescription(newValue);
                                             markDirty();
-                                            setTimeout(() => textarea.focus(), 0);
+
+                                            // Restore focus and cursor position
+                                            setTimeout(() => {
+                                                textarea.focus();
+                                                textarea.setSelectionRange(newCursorPos, newCursorPos);
+                                            }, 0);
                                         }} className="p-1.5 hover:bg-white hover:text-primary rounded text-gray-600">
                                         {btn.icon}
                                     </button>
