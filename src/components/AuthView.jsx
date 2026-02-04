@@ -12,7 +12,6 @@ const AuthView = ({ setView, setUser, showNotification, lang }) => {
     const [password, setPassword] = useState(''); 
     const [fullName, setFullName] = useState(''); 
     const [role, setRole] = useState('student');
-    const [inviteCode, setInviteCode] = useState(''); // NEW: Coupon State
     const [agbAccepted, setAgbAccepted] = useState(false);
     
     const t = TRANSLATIONS[lang] || TRANSLATIONS['de']; 
@@ -23,29 +22,19 @@ const AuthView = ({ setView, setUser, showNotification, lang }) => {
             if (isSignUp) {
                 if (!agbAccepted) { throw new Error(t.err_accept_terms); }
                 
-                // VALIDATION: Check Coupon Code for Teachers
-                if (role === 'teacher' && inviteCode.trim() !== '') {
-                    const validCode = 'PILOT2026'; // Hier definieren wir den gültigen Code
-                    if (inviteCode.trim().toUpperCase() !== validCode) {
-                        throw new Error(t.err_invalid_code);
-                    }
-                }
-
                 // LOGIC: Retrieve selected package from previous step (TeacherHub)
             const selectedPackage = localStorage.getItem('selectedPackage') || 'basic';
 
-            // NEW: Save invite_code AND package_tier to user metadata
-            const { data: authData, error: authError } = await supabase.auth.signUp({ 
-                email, 
-                password, 
-                options: { 
-                    data: { 
-                        full_name: fullName, 
+            const { data: authData, error: authError } = await supabase.auth.signUp({
+                email,
+                password,
+                options: {
+                    data: {
+                        full_name: fullName,
                         role: role,
-                        invite_code: inviteCode,
-                        package_tier: selectedPackage // <--- Hier speichern wir das Paket!
-                    } 
-                } 
+                        package_tier: selectedPackage
+                    }
+                }
             });
 
                 if (authError) throw authError;
@@ -114,18 +103,6 @@ const AuthView = ({ setView, setUser, showNotification, lang }) => {
                                     </label>
                                 </div>
                             </div>
-                            {/* NEW: Invite / Coupon Code Field - TEACHER ONLY */}
-                            {role === 'teacher' && (
-                                <div>
-                                    <label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_invite_code} <span className="text-gray-400 font-normal text-xs">{t.lbl_optional}</span></label>
-                                    <input
-                                        type="text" 
-                                        className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none uppercase tracking-widest font-mono" 
-                                        value={inviteCode} 
-                                        onChange={e => setInviteCode(e.target.value)} 
-                                    />
-                                </div>
-                            )}
                         </>
                     )}
                     <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_email}</label><input required type="email" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" value={email} onChange={e => setEmail(e.target.value)} /></div>
