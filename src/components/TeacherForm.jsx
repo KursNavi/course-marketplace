@@ -794,6 +794,38 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
         if (!isDirty) setIsDirty(true);
     };
 
+    // Handler for description formatting buttons
+    const applyDescriptionFormat = (tag, isPrefix) => {
+        const textarea = descriptionRef.current;
+        if (!textarea) return;
+
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const text = textarea.value;
+        const selected = text.substring(start, end);
+
+        let newText, cursorPos;
+
+        if (isPrefix) {
+            // For headings and lists - add prefix
+            newText = text.substring(0, start) + tag + selected + text.substring(end);
+            cursorPos = start + tag.length + selected.length;
+        } else {
+            // For bold, italic, underline - wrap with tags
+            newText = text.substring(0, start) + tag + selected + tag + text.substring(end);
+            cursorPos = selected ? start + tag.length + selected.length + tag.length : start + tag.length;
+        }
+
+        setDescription(newText);
+        markDirty();
+
+        // Need to wait for React to update the DOM, then set cursor
+        requestAnimationFrame(() => {
+            textarea.focus();
+            textarea.setSelectionRange(cursorPos, cursorPos);
+        });
+    };
+
     // Helpers - use taxonomy from DB (via hook) with fallback to constants
     const getAreas = (type) => {
         if (taxonomy && type && taxonomy[type]) {
@@ -1276,45 +1308,13 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                                     { icon: <Heading3 className="w-4 h-4" />, tag: '### ', label: 'H3', isPrefix: true },
                                     { icon: <List className="w-4 h-4" />, tag: '- ', label: 'List', isPrefix: true }
                                 ].map((btn, idx) => (
-                                    <button key={idx} type="button" onMouseDown={(e) => {
-                                            e.preventDefault(); // Prevent textarea from losing focus
-                                            const textarea = descriptionRef.current;
-                                            if (!textarea) return;
-
-                                            const start = textarea.selectionStart;
-                                            const end = textarea.selectionEnd;
-                                            const text = textarea.value; // Read directly from DOM
-                                            const selected = text.substring(start, end);
-                                            let replacement, newCursorPos;
-
-                                            if (btn.isPrefix) {
-                                                if (selected) {
-                                                    replacement = `${btn.tag}${selected}`;
-                                                    newCursorPos = start + replacement.length;
-                                                } else {
-                                                    replacement = btn.tag;
-                                                    newCursorPos = start + btn.tag.length;
-                                                }
-                                            } else {
-                                                if (selected) {
-                                                    replacement = `${btn.tag}${selected}${btn.tag}`;
-                                                    newCursorPos = start + replacement.length;
-                                                } else {
-                                                    replacement = `${btn.tag}${btn.tag}`;
-                                                    newCursorPos = start + btn.tag.length;
-                                                }
-                                            }
-
-                                            const newValue = text.substring(0, start) + replacement + text.substring(end);
-
-                                            // Update both DOM and React state
-                                            textarea.value = newValue;
-                                            setDescription(newValue);
-                                            markDirty();
-
-                                            // Restore cursor position
-                                            textarea.setSelectionRange(newCursorPos, newCursorPos);
-                                        }} className="p-1.5 hover:bg-white hover:text-primary rounded text-gray-600">
+                                    <button
+                                        key={idx}
+                                        type="button"
+                                        onMouseDown={(e) => e.preventDefault()}
+                                        onClick={() => applyDescriptionFormat(btn.tag, btn.isPrefix)}
+                                        className="p-1.5 hover:bg-white hover:text-primary rounded text-gray-600"
+                                    >
                                         {btn.icon}
                                     </button>
                                 ))}
