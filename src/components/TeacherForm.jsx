@@ -492,6 +492,9 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
     // Track if initial data loading is complete (to avoid saving draft during initialization)
     const initCompleteRef = useRef(false);
 
+    // Ref for description textarea to reliably get selection
+    const descriptionRef = useRef(null);
+
     // Use useLayoutEffect to update ref SYNCHRONOUSLY after render (before unmount cleanup runs)
     // This ensures formDataRef always has the latest values when the component unmounts
     useLayoutEffect(() => {
@@ -1275,15 +1278,16 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                                 ].map((btn, idx) => (
                                     <button key={idx} type="button" onMouseDown={(e) => {
                                             e.preventDefault(); // Prevent textarea from losing focus
-                                            const textarea = document.getElementsByName('description')[0];
+                                            const textarea = descriptionRef.current;
+                                            if (!textarea) return;
+
                                             const start = textarea.selectionStart;
                                             const end = textarea.selectionEnd;
-                                            const text = description;
+                                            const text = textarea.value; // Read directly from DOM
                                             const selected = text.substring(start, end);
                                             let replacement, newCursorPos;
 
                                             if (btn.isPrefix) {
-                                                // For H2, H3, List - add prefix at line start
                                                 if (selected) {
                                                     replacement = `${btn.tag}${selected}`;
                                                     newCursorPos = start + replacement.length;
@@ -1292,31 +1296,30 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                                                     newCursorPos = start + btn.tag.length;
                                                 }
                                             } else {
-                                                // For Bold, Italic, Underline - wrap selection
                                                 if (selected) {
                                                     replacement = `${btn.tag}${selected}${btn.tag}`;
                                                     newCursorPos = start + replacement.length;
                                                 } else {
                                                     replacement = `${btn.tag}${btn.tag}`;
-                                                    newCursorPos = start + btn.tag.length; // Place cursor between tags
+                                                    newCursorPos = start + btn.tag.length;
                                                 }
                                             }
 
                                             const newValue = text.substring(0, start) + replacement + text.substring(end);
+
+                                            // Update both DOM and React state
+                                            textarea.value = newValue;
                                             setDescription(newValue);
                                             markDirty();
 
-                                            // Restore focus and cursor position
-                                            setTimeout(() => {
-                                                textarea.focus();
-                                                textarea.setSelectionRange(newCursorPos, newCursorPos);
-                                            }, 0);
+                                            // Restore cursor position
+                                            textarea.setSelectionRange(newCursorPos, newCursorPos);
                                         }} className="p-1.5 hover:bg-white hover:text-primary rounded text-gray-600">
                                         {btn.icon}
                                     </button>
                                 ))}
                             </div>
-                            <textarea required name="description" value={description} onChange={(e) => { setDescription(e.target.value); markDirty(); }} rows="6" placeholder="Beschreibe deinen Kurs..." className="w-full px-4 py-3 outline-none resize-y block"></textarea>
+                            <textarea ref={descriptionRef} required name="description" value={description} onChange={(e) => { setDescription(e.target.value); markDirty(); }} rows="6" placeholder="Beschreibe deinen Kurs..." className="w-full px-4 py-3 outline-none resize-y block"></textarea>
                         </div>
                     </div>
 
