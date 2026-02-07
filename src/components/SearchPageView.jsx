@@ -2,7 +2,7 @@ import React, { useEffect, useMemo } from 'react';
 import { Search, ChevronRight, User, X, Calendar, Shield, MapPin, CheckCircle, Loader, Bell, ArrowDown, Bookmark, BookmarkCheck, CreditCard, Info } from 'lucide-react';
 import { LocationDropdown, LanguageDropdown, DeliveryTypeFilter } from './Filters';
 import { Globe } from 'lucide-react';
-import { CATEGORY_TYPES, NEW_TAXONOMY, AGE_GROUPS, COURSE_LEVELS } from '../lib/constants';
+import { CATEGORY_TYPES, NEW_TAXONOMY, AGE_GROUPS, COURSE_LEVELS, DELIVERY_TYPES } from '../lib/constants';
 import { formatPriceCHF } from '../lib/formatPrice';
 
 const SearchPageView = ({
@@ -420,6 +420,21 @@ const SearchPageView = ({
                             <h3 className="font-bold text-lg text-dark leading-tight line-clamp-2 h-12 mb-2 font-heading">
                                 {course.title}
                             </h3>
+
+                            {/* Kursformat-Badges */}
+                            {(() => {
+                                const types = course.delivery_types || (course.delivery_type ? [course.delivery_type] : []);
+                                if (types.length === 0) return null;
+                                return (
+                                    <div className="flex flex-wrap gap-1 mb-3">
+                                        {types.map(type => (
+                                            <span key={type} className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">
+                                                {DELIVERY_TYPES[type]?.de?.split(' ')[0] || type}
+                                            </span>
+                                        ))}
+                                    </div>
+                                );
+                            })()}
 
                             <div className="flex items-center justify-between gap-4 pt-4 border-t border-gray-100">
                                 {/* Anbieter-Badge */}

@@ -440,7 +440,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
     // Metadata State
     const [selectedLevel, setSelectedLevel] = useState(draft?.selectedLevel || 'all_levels');
     const [courseLanguages, setCourseLanguages] = useState(draft?.courseLanguages || ['Deutsch']);
-    const [deliveryType, setDeliveryType] = useState(draft?.deliveryType || 'presence');
+    const [deliveryTypes, setDeliveryTypes] = useState(draft?.deliveryTypes || ['presence']);
 
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -511,7 +511,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
             categories,
             selectedLevel,
             courseLanguages,
-            deliveryType,
+            deliveryTypes,
             courseStatus,
             events,
             fallbackCantons
@@ -529,7 +529,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
                 console.warn('Failed to save draft:', e);
             }
         }
-    }, [isDirty, draftKey, bookingType, contactEmail, title, description, objectives, keywords, prerequisites, price, sessionCount, sessionLength, providerUrl, categories, selectedLevel, courseLanguages, deliveryType, courseStatus, events, fallbackCantons, initialData?.id]);
+    }, [isDirty, draftKey, bookingType, contactEmail, title, description, objectives, keywords, prerequisites, price, sessionCount, sessionLength, providerUrl, categories, selectedLevel, courseLanguages, deliveryTypes, courseStatus, events, fallbackCantons, initialData?.id]);
 
     // Save draft on unmount (safety net for fast tab switches)
     useEffect(() => {
@@ -598,7 +598,12 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
             } else if (initialData.language) {
                 setCourseLanguages([initialData.language]);
             }
-            if (initialData.delivery_type) setDeliveryType(initialData.delivery_type);
+            // Support both old 'delivery_type' (string) and new 'delivery_types' (array) field
+            if (initialData.delivery_types && Array.isArray(initialData.delivery_types) && initialData.delivery_types.length > 0) {
+                setDeliveryTypes(initialData.delivery_types);
+            } else if (initialData.delivery_type) {
+                setDeliveryTypes([initialData.delivery_type]);
+            }
             // Load course status (default to 'published' for existing courses without status)
             setCourseStatus(initialData.status || 'published');
 
@@ -1111,7 +1116,7 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
             booking_type: bookingType,
             external_link: null,
             level: level,
-            delivery_type: deliveryType,
+            delivery_types: deliveryTypes,
             target_age_groups: [],
             canton: mainCanton,
             address: publicLocationLabel, // öffentliche "Label"-Location (ohne Strasse)
@@ -1531,10 +1536,32 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                                 </div>
                             </div>
                             <div>
-                                <span className="text-xs text-gray-500 block mb-1">Kursformat</span>
-                                <select name="delivery_type" value={deliveryType} onChange={(e) => { setDeliveryType(e.target.value); markDirty(); }} className="w-full px-3 py-2 border rounded-lg focus:ring-primary bg-white text-sm">
-                                    {Object.keys(DELIVERY_TYPES).map(key => <option key={key} value={key}>{DELIVERY_TYPES[key].de}</option>)}
-                                </select>
+                                <span className="text-xs text-gray-500 block mb-1">Kursformat (Mehrfachauswahl möglich)</span>
+                                <div className="flex flex-wrap gap-2 mt-1">
+                                    {Object.keys(DELIVERY_TYPES).map(key => (
+                                        <label key={key} className="cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={deliveryTypes.includes(key)}
+                                                onChange={(e) => {
+                                                    if (e.target.checked) {
+                                                        setDeliveryTypes([...deliveryTypes, key]);
+                                                    } else {
+                                                        // Mindestens ein Format muss ausgewählt bleiben
+                                                        if (deliveryTypes.length > 1) {
+                                                            setDeliveryTypes(deliveryTypes.filter(t => t !== key));
+                                                        }
+                                                    }
+                                                    markDirty();
+                                                }}
+                                                className="sr-only"
+                                            />
+                                            <span className={`px-3 py-1.5 rounded-full text-sm transition ${deliveryTypes.includes(key) ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+                                                {DELIVERY_TYPES[key].de}
+                                            </span>
+                                        </label>
+                                    ))}
+                                </div>
                             </div>
                         </div>
 

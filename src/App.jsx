@@ -870,7 +870,10 @@ export default function KursNaviPro() {  // 1. Initial State Logic
     let matchesDirectBooking = true; if (filterDirectBooking) matchesDirectBooking = course.booking_type === 'platform';
     let matchesDeliveryType = true;
     if (selectedDeliveryTypes.length > 0) {
-        matchesDeliveryType = selectedDeliveryTypes.includes(course.delivery_type);
+        // Support both old 'delivery_type' (string) and new 'delivery_types' (array)
+        const courseDeliveryTypes = course.delivery_types || (course.delivery_type ? [course.delivery_type] : ['presence']);
+        // Course matches if ANY of its delivery types matches ANY of the selected filter types
+        matchesDeliveryType = selectedDeliveryTypes.some(filterType => courseDeliveryTypes.includes(filterType));
     }
 
     return matchesType && matchesArea && matchesSpecialty && matchesFocus && matchesCategory && matchesLocation && matchesSearch && matchesDate && matchesPrice && matchesLevel && matchesPro && matchesLanguage && matchesDirectBooking && matchesDeliveryType;
