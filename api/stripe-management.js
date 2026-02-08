@@ -35,7 +35,12 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error('Stripe Management Error:', error);
-    res.status(500).json({ error: error.message });
+    // Return more detailed error info for debugging
+    res.status(500).json({
+      error: error.message,
+      type: error.type || 'unknown',
+      code: error.code || null
+    });
   }
 }
 
@@ -79,9 +84,18 @@ async function handleConnectAccount(stripe, params, req, res) {
   let accountId;
 
   if (profile?.stripe_connect_account_id) {
-    // Use existing account
-    accountId = profile.stripe_connect_account_id;
-  } else {
+    // Verify the existing account is still valid
+    try {
+      await stripe.accounts.retrieve(profile.stripe_connect_account_id);
+      accountId = profile.stripe_connect_account_id;
+    } catch (retrieveError) {
+      // Account no longer exists or is invalid - create a new one
+      console.log('Existing Connect account invalid, creating new one:', retrieveError.message);
+      accountId = null;
+    }
+  }
+
+  if (!accountId) {
     // Create new Connect account
     const account = await stripe.accounts.create({
       type: 'express',

@@ -530,6 +530,10 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t }) => 
                                         <button
                                             type="button"
                                             onClick={async () => {
+                                                if (!uid || !user?.email) {
+                                                    showNotification("Bitte melde dich erneut an und versuche es nochmal.");
+                                                    return;
+                                                }
                                                 try {
                                                     const response = await fetch('/api/stripe-management', {
                                                         method: 'POST',
@@ -545,7 +549,8 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t }) => 
                                                     if (data.url) {
                                                         window.location.href = data.url;
                                                     } else {
-                                                        showNotification("Fehler beim Erstellen des Onboarding-Links");
+                                                        console.error('Stripe connect error:', data);
+                                                        showNotification(data.error || "Fehler beim Erstellen des Onboarding-Links");
                                                     }
                                                 } catch (error) {
                                                     console.error('Error creating connect account:', error);
