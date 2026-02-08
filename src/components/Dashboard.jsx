@@ -43,6 +43,38 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t }) => 
     const [stripeConnectAccountId, setStripeConnectAccountId] = useState(null);
     const [stripeConnectOnboardingComplete, setStripeConnectOnboardingComplete] = useState(false);
 
+    // Check for Stripe Connect return and update status
+    useEffect(() => {
+        if (!uid) return;
+        const urlParams = new URLSearchParams(window.location.search);
+        const connectStatus = urlParams.get('connect');
+
+        if (connectStatus === 'success') {
+            // User returned from Stripe onboarding - check and update status
+            (async () => {
+                try {
+                    const response = await fetch('/api/stripe-management', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            action: 'check_connect_status',
+                            userId: uid
+                        })
+                    });
+                    const data = await response.json();
+                    if (data.onboardingComplete) {
+                        setStripeConnectOnboardingComplete(true);
+                        showNotification("Auszahlungskonto erfolgreich eingerichtet!", "success");
+                    }
+                } catch (error) {
+                    console.error('Error checking connect status:', error);
+                }
+                // Clean up URL
+                window.history.replaceState({}, '', window.location.pathname);
+            })();
+        }
+    }, [uid]);
+
     // Load existing profile data on mount
     useEffect(() => {
         if (!uid) return;

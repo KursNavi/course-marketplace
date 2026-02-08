@@ -29,6 +29,9 @@ export default async function handler(req, res) {
       case 'connect_dashboard_link':
         return await handleConnectDashboard(stripe, params, res);
 
+      case 'check_connect_status':
+        return await handleCheckConnectStatus(stripe, params, res);
+
       default:
         return res.status(400).json({ error: 'Invalid action' });
     }
@@ -142,4 +145,48 @@ async function handleConnectDashboard(stripe, params, res) {
   const loginLink = await stripe.accounts.createLoginLink(accountId);
 
   return res.status(200).json({ url: loginLink.url });
+}
+
+// Check Connect Account Status and update database
+async function handleCheckConnectStatus(stripe, params, res) {
+  const { userId } = params;
+
+  if (!userId) {
+    return res.status(400).json({ error: 'User ID is required' });
+  }
+
+  // Initialize Supabase client
+  const SUPABASE_URL = "https://nplxmpfasgpumpiddjfl.supabase.co";
+  const SERVICE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5wbHhtcGZhc2dwdW1waWRkamZsIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NDMzOTk0MiwiZXhwIjoyMDc5OTE1OTQyfQ.5BeY8BkISy_hexNUzx0nDTDNbU5N-Hg4jdeOnHufffw";
+  const supabase = createClient(SUPABASE_URL, SERVICE_KEY);
+
+  // Get the user's Connect account ID
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('stripe_connect_account_id')
+    .eq('id', userId)
+    .single();
+
+  if (!profile?.stripe_connect_account_id) {
+    return res.status(400).json({ error: 'No Connect account found', onboardingComplete: false });
+  }
+
+  // Retrieve account status from Stripe
+  const account = await stripe.accounts.retrieve(profile.stripe_connect_account_id);
+
+  // Check if onboarding is complete (details_submitted is the key indicator)
+  const onboardingComplete = account.details_submitted === true;
+
+  // Update database
+  await supabase
+    .from('profiles')
+    .update({ stripe_connect_onboarding_complete: onboardingComplete })
+    .eq('id', userId);
+
+  return res.status(200).json({
+    onboardingComplete,
+    chargesEnabled: account.charges_enabled,
+    payoutsEnabled: account.payouts_enabled,
+    detailsSubmitted: account.details_submitted
+  });
 }
