@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
-import { ArrowLeft, Loader, Calendar, Plus, Trash2, ExternalLink, Globe, Bold, Italic, Underline, Heading2, Heading3, List, Mail, MapPin, Lightbulb, X, Send, ChevronDown, Images, Check } from 'lucide-react';
+import { ArrowLeft, Loader, Calendar, Plus, Trash2, ExternalLink, Globe, Mail, MapPin, Lightbulb, X, Send, ChevronDown, Images, Check } from 'lucide-react';
 import { KursNaviLogo } from './Layout';
 import { SWISS_CANTONS, NEW_TAXONOMY, CATEGORY_TYPES, COURSE_LEVELS, DELIVERY_TYPES, COURSE_LANGUAGES } from '../lib/constants';
 import { supabase } from '../lib/supabase';
@@ -492,9 +492,6 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
     // Track if initial data loading is complete (to avoid saving draft during initialization)
     const initCompleteRef = useRef(false);
 
-    // Ref for description textarea to reliably get selection
-    const descriptionRef = useRef(null);
-
     // Use useLayoutEffect to update ref SYNCHRONOUSLY after render (before unmount cleanup runs)
     // This ensures formDataRef always has the latest values when the component unmounts
     useLayoutEffect(() => {
@@ -792,38 +789,6 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
     // Mark form as dirty when any field changes
     const markDirty = () => {
         if (!isDirty) setIsDirty(true);
-    };
-
-    // Handler for description formatting buttons
-    const applyDescriptionFormat = (tag, isPrefix) => {
-        const textarea = descriptionRef.current;
-        if (!textarea) return;
-
-        const start = textarea.selectionStart;
-        const end = textarea.selectionEnd;
-        const text = textarea.value;
-        const selected = text.substring(start, end);
-
-        let newText, cursorPos;
-
-        if (isPrefix) {
-            // For headings and lists - add prefix
-            newText = text.substring(0, start) + tag + selected + text.substring(end);
-            cursorPos = start + tag.length + selected.length;
-        } else {
-            // For bold, italic, underline - wrap with tags
-            newText = text.substring(0, start) + tag + selected + tag + text.substring(end);
-            cursorPos = selected ? start + tag.length + selected.length + tag.length : start + tag.length;
-        }
-
-        setDescription(newText);
-        markDirty();
-
-        // Need to wait for React to update the DOM, then set cursor
-        requestAnimationFrame(() => {
-            textarea.focus();
-            textarea.setSelectionRange(cursorPos, cursorPos);
-        });
     };
 
     // Helpers - use taxonomy from DB (via hook) with fallback to constants
@@ -1298,29 +1263,7 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
 
                     <div>
                         <label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_description} *</label>
-                        <div className="border rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-primary">
-                            <div className="flex flex-wrap gap-1 p-2 bg-gray-50 border-b select-none">
-                                {[
-                                    { icon: <Bold className="w-4 h-4" />, tag: '**', label: 'Bold' },
-                                    { icon: <Italic className="w-4 h-4" />, tag: '*', label: 'Italic' },
-                                    { icon: <Underline className="w-4 h-4" />, tag: '__', label: 'Underline' },
-                                    { icon: <Heading2 className="w-4 h-4" />, tag: '## ', label: 'H2', isPrefix: true },
-                                    { icon: <Heading3 className="w-4 h-4" />, tag: '### ', label: 'H3', isPrefix: true },
-                                    { icon: <List className="w-4 h-4" />, tag: '- ', label: 'List', isPrefix: true }
-                                ].map((btn, idx) => (
-                                    <button
-                                        key={idx}
-                                        type="button"
-                                        onMouseDown={(e) => e.preventDefault()}
-                                        onClick={() => applyDescriptionFormat(btn.tag, btn.isPrefix)}
-                                        className="p-1.5 hover:bg-white hover:text-primary rounded text-gray-600"
-                                    >
-                                        {btn.icon}
-                                    </button>
-                                ))}
-                            </div>
-                            <textarea ref={descriptionRef} required name="description" value={description} onChange={(e) => { setDescription(e.target.value); markDirty(); }} rows="6" placeholder="Beschreibe deinen Kurs..." className="w-full px-4 py-3 outline-none resize-y block"></textarea>
-                        </div>
+                        <textarea required name="description" value={description} onChange={(e) => { setDescription(e.target.value); markDirty(); }} rows="6" placeholder="Beschreibe deinen Kurs..." className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary outline-none resize-y block"></textarea>
                     </div>
 
                     <div>
