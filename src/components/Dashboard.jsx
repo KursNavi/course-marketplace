@@ -1560,17 +1560,11 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                                         </div>
                                                     </td>
                                                     <td className="px-6 py-4">
-                                                        {course.status === 'draft' && (
+                                                        {(course.status === 'draft' || course.status === 'paused') && (
                                                             <span className="text-xs px-2 py-1 rounded font-bold bg-yellow-100 text-yellow-700 border border-yellow-200">Entwurf</span>
                                                         )}
-                                                        {course.status === 'published' && (
-                                                            <span className="text-xs px-2 py-1 rounded font-bold bg-green-100 text-green-700 border border-green-200">Online</span>
-                                                        )}
-                                                        {course.status === 'paused' && (
-                                                            <span className="text-xs px-2 py-1 rounded font-bold bg-orange-100 text-orange-700 border border-orange-200">Pausiert</span>
-                                                        )}
-                                                        {!course.status && (
-                                                            <span className="text-xs px-2 py-1 rounded font-bold bg-green-100 text-green-700 border border-green-200">Online</span>
+                                                        {(course.status === 'published' || !course.status) && (
+                                                            <span className="text-xs px-2 py-1 rounded font-bold bg-green-100 text-green-700 border border-green-200">Veröffentlicht</span>
                                                         )}
                                                     </td>
                                                     <td className="px-6 py-4">
@@ -1587,7 +1581,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                                             </button>
                                                         )}
                                                         {(course.status === 'published' || !course.status) && (
-                                                            <button onClick={() => handleUpdateCourseStatus(course.id, 'paused')} className="text-orange-500 hover:text-orange-700 bg-orange-50 p-2 rounded-full" title="Pausieren">
+                                                            <button onClick={() => handleUpdateCourseStatus(course.id, 'draft')} className="text-yellow-600 hover:text-yellow-700 bg-yellow-50 p-2 rounded-full" title="Als Entwurf speichern">
                                                                 <Pause className="w-4 h-4" />
                                                             </button>
                                                         )}

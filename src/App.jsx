@@ -304,7 +304,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
       // Revert on error
       setCourses(prev => prev.map(c => c.id === courseId ? { ...c, status: c.status } : c));
     } else {
-      const statusLabels = { draft: 'Entwurf', published: 'Veröffentlicht', paused: 'Pausiert' };
+      const statusLabels = { draft: 'Entwurf', published: 'Veröffentlicht' };
       showNotification(`Kurs-Status: ${statusLabels[newStatus] || newStatus}`);
     }
   };

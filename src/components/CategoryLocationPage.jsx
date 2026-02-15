@@ -42,7 +42,11 @@ export default function CategoryLocationPage({
         // Filter courses (SAFE MODE)
         const filteredCourses = courses.filter(c => {
             if (!c) return false;
-            
+
+            // Status filter: Only show published courses (no drafts on pSEO pages)
+            const isPublished = c.status === 'published' || !c.status; // backward compat
+            if (!isPublished) return false;
+
             // Safety Check: Location
             const courseLocation = (c.canton || '').toLowerCase();
             const targetLocation = (locationSlug || '').toLowerCase();
@@ -52,10 +56,10 @@ export default function CategoryLocationPage({
             // Falls category_area fehlt, fallback auf leeren String, damit .replace() nicht abstürzt
             const courseArea = (c.category_area || '').toLowerCase().replace(/_/g, '-');
             const targetTopic = (topicSlug || '').toLowerCase();
-            
+
             // Optional: Check auch primary_category als Fallback
             const coursePrimary = (c.primary_category || '').toLowerCase().replace(/_/g, '-');
-            
+
             const matchesTopic = courseArea === targetTopic || coursePrimary === targetTopic;
 
             return matchesLocation && matchesTopic;
