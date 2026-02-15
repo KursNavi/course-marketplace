@@ -126,7 +126,7 @@ export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCat
 
 export const LocationDropdown = ({ locMode, setLocMode, selectedLocations, setSelectedLocations, locMenuOpen, setLocMenuOpen, locMenuRef, t }) => {
     const toggleLoc = (loc) => { if (selectedLocations.includes(loc)) setSelectedLocations(selectedLocations.filter(l => l !== loc)); else setSelectedLocations([...selectedLocations, loc]); };
-    const displayList = locMode === 'canton' ? SWISS_CANTONS : SWISS_CITIES;
+    const displayList = locMode === 'canton' ? SWISS_CANTONS.filter(c => c !== "Ausland") : SWISS_CITIES;
     return (
         <div ref={locMenuRef} className="static relative z-50 text-left">
             <button type="button" onClick={() => setLocMenuOpen(!locMenuOpen)} className={`w-full md:w-auto px-4 py-3 border rounded-full flex items-center justify-between space-x-2 text-sm font-medium transition shadow-sm ${selectedLocations.length > 0 ? 'bg-primary text-white border-primary' : 'bg-white text-gray-700 hover:border-gray-400'}`}>

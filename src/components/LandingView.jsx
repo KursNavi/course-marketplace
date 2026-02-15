@@ -38,8 +38,8 @@ const LandingView = ({ title, subtitle, variant, searchQuery, setSearchQuery, ha
                     <h1 className="text-4xl md:text-6xl font-heading font-bold mb-4 drop-shadow-md animate-in fade-in slide-in-from-bottom-4 duration-700">{title}</h1>
                     <p className="text-xl md:text-2xl text-gray-100 mb-10 max-w-2xl mx-auto drop-shadow-sm font-light">{subtitle}</p>
                     <div className="max-w-xl mx-auto relative group">
-                        <input 
-                            type="text" 
+                        <input
+                            type="text"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             placeholder={t.search_placeholder}
@@ -49,6 +49,7 @@ const LandingView = ({ title, subtitle, variant, searchQuery, setSearchQuery, ha
                         <button onClick={handleSearchSubmit} className="absolute right-2 top-2 bg-primary text-white p-2.5 rounded-full hover:bg-orange-600 transition shadow-md group-hover:scale-105">
                             <Search className="w-6 h-6" />
                         </button>
+                        <p className="text-xs text-white/70 mt-2 text-center">{t.search_hint_boolean || 'Tipp: Kombiniere Begriffe mit AND oder OR (z.B. "Yoga AND Zürich")'}</p>
                     </div>
                 </div>
             </div>

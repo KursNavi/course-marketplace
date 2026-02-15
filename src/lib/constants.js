@@ -10,7 +10,7 @@ export const BRAND = {
 };
 
 // --- DATA LISTS ---
-export const SWISS_CANTONS = ["Aargau", "Appenzell AI", "Appenzell AR", "Basel-Landschaft", "Basel-Stadt", "Bern", "Fribourg", "Genève", "Glarus", "Graubünden", "Jura", "Liechtenstein", "Luzern", "Neuchâtel", "Nidwalden", "Obwalden", "Schaffhausen", "Schwyz", "Solothurn", "St. Gallen", "Thurgau", "Ticino", "Uri", "Valais", "Vaud", "Zug", "Zürich", "Ausland"];
+export const SWISS_CANTONS = ["Online", "Aargau", "Appenzell AI", "Appenzell AR", "Basel-Landschaft", "Basel-Stadt", "Bern", "Fribourg", "Genève", "Glarus", "Graubünden", "Jura", "Liechtenstein", "Luzern", "Neuchâtel", "Nidwalden", "Obwalden", "Schaffhausen", "Schwyz", "Solothurn", "St. Gallen", "Thurgau", "Ticino", "Uri", "Valais", "Vaud", "Zug", "Zürich", "Ausland"];
 export const SWISS_CITIES = ["Basel", "Bern", "Biel/Bienne", "Genève", "Lausanne", "Lugano", "Luzern", "St. Gallen", "Winterthur", "Zürich"];
 
 // --- DELIVERY TYPES ---
@@ -344,7 +344,7 @@ export const TRANSLATIONS = {
     nav_dashboard: "My Area", 
     nav_news: "News", 
     nav_for_providers: "For Providers",hero_title: "Discover courses near you.", hero_subtitle: "From yodeling in Appenzell to coding in Zürich. Learn locally.",
-    search_placeholder: "What do you want to learn?", filter_label_cat: "Category", filter_label_loc: "Location", btn_search: "Search",
+    search_placeholder: "What do you want to learn?", filter_label_cat: "Category", filter_label_loc: "Location", btn_search: "Search", search_hint_boolean: "Tip: Combine terms with AND or OR (e.g. \"Yoga AND Zurich\")",
     no_results: "No courses found matching criteria.", btn_book: "Book Course", btn_pay: "Pay & Book", btn_publish: "Publish Course", btn_send: "Send Message",
     
     // ADMIN
@@ -495,7 +495,7 @@ export const TRANSLATIONS = {
     nav_dashboard: "Mein Bereich", 
     nav_news: "Neuigkeiten", 
     nav_for_providers: "Für Anbieter",hero_title: "Finde Kurse in deiner Nähe.", hero_subtitle: "Vom Jodeln bis zum Programmieren.",
-    search_placeholder: "Was möchtest du lernen?", filter_label_cat: "Kategorie", filter_label_loc: "Ort", btn_search: "Suchen",
+    search_placeholder: "Was möchtest du lernen?", filter_label_cat: "Kategorie", filter_label_loc: "Ort", btn_search: "Suchen", search_hint_boolean: "Tipp: Kombiniere Begriffe mit AND oder OR (z.B. \"Yoga AND Zürich\")",
     no_results: "Keine Kurse gefunden.", btn_book: "Kurs buchen", btn_pay: "Bezahlen & Buchen", btn_publish: "Veröffentlichen", btn_send: "Senden",
     
     // ADMIN
@@ -645,7 +645,7 @@ export const TRANSLATIONS = {
     nav_dashboard: "Mon Espace", 
     nav_news: "Actualités", 
     nav_for_providers: "Pour Prestataires",hero_title: "Découvrez des cours.", hero_subtitle: "Apprenez localement.",
-    search_placeholder: "Que voulez-vous apprendre?", filter_label_cat: "Catégorie", filter_label_loc: "Lieu", btn_search: "Rechercher",
+    search_placeholder: "Que voulez-vous apprendre?", filter_label_cat: "Catégorie", filter_label_loc: "Lieu", btn_search: "Rechercher", search_hint_boolean: "Astuce: Combinez les termes avec AND ou OR (ex. \"Yoga AND Zurich\")",
     no_results: "Aucun cours trouvé.", btn_book: "Réserver", btn_pay: "Payer et réserver", btn_publish: "Publier", btn_send: "Envoyer",
     
     // ADMIN
@@ -795,7 +795,7 @@ export const TRANSLATIONS = {
     nav_dashboard: "Mia Area", 
     nav_news: "Novità", 
     nav_for_providers: "Per Fornitori",hero_title: "Scopri corsi vicino a te.", hero_subtitle: "Dallo jodel a Appenzello alla programmazione a Zurigo.",
-    search_placeholder: "Cosa vuoi imparare?", filter_label_cat: "Categoria", filter_label_loc: "Luogo", btn_search: "Cerca",
+    search_placeholder: "Cosa vuoi imparare?", filter_label_cat: "Categoria", filter_label_loc: "Luogo", btn_search: "Cerca", search_hint_boolean: "Suggerimento: Combina i termini con AND o OR (es. \"Yoga AND Zurigo\")",
     no_results: "Nessun corso trovato.", btn_book: "Prenota", btn_pay: "Paga & Prenota", btn_publish: "Pubblica", btn_send: "Invia",
     
     // ADMIN

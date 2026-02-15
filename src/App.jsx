@@ -812,25 +812,43 @@ export default function KursNaviPro() {  // 1. Initial State Logic
         }
     }
 
-    const q = (searchQuery || "").toLowerCase();
-    const safeTitle = (course.title || "").toString().toLowerCase(); 
-    const safeInstructor = (course.instructor_name || "").toString().toLowerCase(); 
-    const safeSpecialty = (course.category_specialty || "").toString().toLowerCase();
-    
-    // SAFETY FIX: Handle Arrays safely for search string generation
-    const safeCategories = Array.isArray(course.categories) ? course.categories.join(" ") : (course.categories || "");
-    const safeArea = ((course.category_area || "") + " " + safeCategories).toString().toLowerCase();
-    
-    // SAFETY FIX: Handle keywords if they come as an array from Supabase
-    const safeKeywords = Array.isArray(course.keywords) 
-        ? course.keywords.join(" ").toLowerCase() 
+    // Boolean search with AND/OR operators
+    // Supported: "term1 AND term2", "term1 OR term2", "term1 term2" (implicit AND)
+    const rawQuery = (searchQuery || "").trim();
+
+    // Build searchable text from: Anbietername, Kursname, Keywords, Standort, Kategorien (Level 3+4)
+    const safeTitle = (course.title || "").toString().toLowerCase();
+    const safeInstructor = (course.instructor_name || "").toString().toLowerCase();
+    const safeKeywords = Array.isArray(course.keywords)
+        ? course.keywords.join(" ").toLowerCase()
         : (course.keywords || "").toString().toLowerCase();
-    
-    const matchesSearch = safeTitle.includes(q) || 
-                          safeInstructor.includes(q) || 
-                          safeSpecialty.includes(q) || 
-                          safeArea.includes(q) ||
-                          safeKeywords.includes(q);
+    const safeCanton = (course.canton || "").toString().toLowerCase();
+    const safeAddress = (course.address || "").toString().toLowerCase();
+    const eventLocations = Array.isArray(course.course_events)
+        ? course.course_events.map(ev => `${ev.canton || ""} ${ev.location || ""}`).join(" ").toLowerCase()
+        : "";
+    // Level 3 (Specialty) and Level 4 (Focus) categories
+    const safeSpecialty = (course.category_specialty || "").toString().toLowerCase();
+    const safeFocus = (course.category_focus || "").toString().toLowerCase();
+
+    const searchableText = `${safeTitle} ${safeInstructor} ${safeKeywords} ${safeCanton} ${safeAddress} ${eventLocations} ${safeSpecialty} ${safeFocus}`;
+
+    let matchesSearch = true;
+    if (rawQuery) {
+        // Parse Boolean operators (case-insensitive)
+        // Split by OR first, then handle AND within each OR clause
+        const orClauses = rawQuery.split(/\s+OR\s+/i);
+
+        matchesSearch = orClauses.some(orClause => {
+            // Split by AND (explicit or implicit via spaces)
+            const andTerms = orClause.split(/\s+AND\s+/i)
+                .flatMap(part => part.trim().split(/\s+/))
+                .filter(term => term.length > 0);
+
+            // All AND terms must match
+            return andTerms.every(term => searchableText.includes(term.toLowerCase()));
+        });
+    }
     
     // Date filter: Von-Bis Bereich
     // Kurse MIT Datum im Zeitraum werden angezeigt

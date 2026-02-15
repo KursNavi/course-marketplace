@@ -1648,7 +1648,7 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                                         <MapPin className="w-4 h-4"/> Keine fixen Termine? Wähle deine Region(en):
                                     </h4>
                                     <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto">
-                                        {SWISS_CANTONS.map(c => (
+                                        {SWISS_CANTONS.filter(c => c !== "Ausland").map(c => (
                                             <button key={c} type="button" onClick={() => toggleFallbackCanton(c)} className={`px-3 py-1 rounded-full text-xs font-medium border transition-all ${fallbackCantons.includes(c) ? 'bg-orange-500 text-white border-orange-600 shadow-md transform scale-105' : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'}`}>
                                                 {c}
                                             </button>
@@ -1685,7 +1685,7 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                                                 <label className="text-xs font-bold text-gray-500 uppercase">Kanton {bookingType === 'platform' && '*'}</label>
                                                 <select required={bookingType === 'platform'} value={ev.canton} onChange={e => updateEvent(i, 'canton', e.target.value)} className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white">
                                                     <option value="">Wählen...</option>
-                                                    {SWISS_CANTONS.map(c => <option key={c} value={c}>{c}</option>)}
+                                                    {SWISS_CANTONS.filter(c => c !== "Ausland").map(c => <option key={c} value={c}>{c}</option>)}
                                                 </select>
                                             </div>
                                             <div className="md:col-span-2">

@@ -225,18 +225,21 @@ export const Home = ({
           <div className="max-w-3xl mx-auto bg-white/10 backdrop-blur-md p-6 rounded-3xl border border-white/20 shadow-2xl relative">
             
             {/* Row 1: Search Bar */}
-            <form onSubmit={handleSearch} className="relative flex items-center mb-4">
-                <Search className="absolute left-4 text-gray-400 w-5 h-5 z-10" />
-                <input 
-                type="text" 
-                placeholder={t.search_placeholder}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-12 pr-4 py-4 rounded-xl text-dark font-sans shadow-sm focus:outline-none focus:ring-2 focus:ring-primary text-lg placeholder-gray-500 bg-white"
-                />
-                <button type="submit" className="absolute right-2 bg-primary hover:bg-orange-600 text-white px-6 py-2 rounded-lg font-bold transition-colors duration-300">
-                {t.btn_search}
-                </button>
+            <form onSubmit={handleSearch} className="relative flex flex-col mb-4">
+                <div className="relative flex items-center">
+                    <Search className="absolute left-4 text-gray-400 w-5 h-5 z-10" />
+                    <input
+                    type="text"
+                    placeholder={t.search_placeholder}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-12 pr-4 py-4 rounded-xl text-dark font-sans shadow-sm focus:outline-none focus:ring-2 focus:ring-primary text-lg placeholder-gray-500 bg-white"
+                    />
+                    <button type="submit" className="absolute right-2 bg-primary hover:bg-orange-600 text-white px-6 py-2 rounded-lg font-bold transition-colors duration-300">
+                    {t.btn_search}
+                    </button>
+                </div>
+                <p className="text-xs text-white/70 mt-1.5 ml-1">{t.search_hint_boolean || 'Tipp: Kombiniere Begriffe mit AND oder OR (z.B. "Yoga AND Zürich")'}</p>
             </form>
 
             {/* Row 2: Filters */}

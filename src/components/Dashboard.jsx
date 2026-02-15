@@ -271,7 +271,7 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t }) => 
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div><label className="block text-sm font-bold text-gray-700 mb-1">{isTeacher ? (t?.lbl_main_location || "Hauptstandort") : "Standort"}</label><input type="text" name="city" value={formData.city} onChange={handleChange} placeholder="" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" /></div>
-                    <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_canton}</label><div className="relative"><select name="canton" value={formData.canton} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none appearance-none bg-white"><option value="">Kanton wählen</option>{SWISS_CANTONS.map(c => <option key={c} value={c}>{c}</option>)}</select><ChevronDown className="absolute right-3 top-3 text-gray-400 w-4 h-4 pointer-events-none" /></div></div>
+                    <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_canton}</label><div className="relative"><select name="canton" value={formData.canton} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none appearance-none bg-white"><option value="">Kanton wählen</option>{SWISS_CANTONS.filter(c => c !== "Online").map(c => <option key={c} value={c}>{c}</option>)}</select><ChevronDown className="absolute right-3 top-3 text-gray-400 w-4 h-4 pointer-events-none" /></div></div>
                 </div>
                 {isTeacher && (
                     <>
@@ -305,7 +305,7 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t }) => 
                                                 className="w-40 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none appearance-none bg-white"
                                             >
                                                 <option value="">Kanton</option>
-                                                {SWISS_CANTONS.map(c => <option key={c} value={c}>{c}</option>)}
+                                                {SWISS_CANTONS.filter(c => c !== "Online").map(c => <option key={c} value={c}>{c}</option>)}
                                             </select>
                                             <ChevronDown className="absolute right-3 top-3 text-gray-400 w-4 h-4 pointer-events-none" />
                                         </div>
