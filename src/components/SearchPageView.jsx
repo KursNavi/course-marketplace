@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo } from 'react';
-import { Search, ChevronRight, User, X, Calendar, Shield, MapPin, CheckCircle, Loader, Bell, ArrowDown, Bookmark, BookmarkCheck, CreditCard, Info } from 'lucide-react';
+import { Search, ChevronRight, User, X, Calendar, Shield, MapPin, CheckCircle, Loader, Bell, ArrowDown, Bookmark, BookmarkCheck, CreditCard, Info, EyeOff } from 'lucide-react';
 import { LocationDropdown, LanguageDropdown, DeliveryTypeFilter } from './Filters';
 import { Globe } from 'lucide-react';
 import { CATEGORY_TYPES, NEW_TAXONOMY, AGE_GROUPS, COURSE_LEVELS, DELIVERY_TYPES } from '../lib/constants';
@@ -17,7 +17,8 @@ const SearchPageView = ({
     t, filterDateFrom, setFilterDateFrom, filterDateTo, setFilterDateTo, filterPriceMax, setFilterPriceMax, filterLevel, setFilterLevel, filterPro, setFilterPro, filterDirectBooking, setFilterDirectBooking,
     selectedLanguages, setSelectedLanguages, langMenuOpen, setLangMenuOpen, langMenuRef,
     selectedDeliveryTypes, setSelectedDeliveryTypes, deliveryMenuOpen, setDeliveryMenuOpen, deliveryMenuRef,
-    savedCourseIds, onToggleSaveCourse
+    savedCourseIds, onToggleSaveCourse,
+    user
 }) => {
 
     // --- SEO LOGIC: Zero-Result Rule + Dynamic Meta Tags ---
@@ -393,6 +394,10 @@ const SearchPageView = ({
                                 className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300"
                             />
                             <div className="absolute top-3 left-3 flex flex-col gap-1 items-start">
+                                {/* Draft badge - only visible to course owner */}
+                                {user?.id && String(course.user_id) === String(user.id) && (course.status === 'draft' || course.status === 'paused') && (
+                                    <div className="bg-yellow-500/95 text-white px-2 py-1 rounded text-xs font-bold shadow-sm flex items-center"><EyeOff className="w-3 h-3 mr-1" /> Entwurf</div>
+                                )}
                                 {course.instructor_verified && <div className="bg-blue-600/90 text-white px-2 py-1 rounded text-xs font-bold shadow-sm flex items-center"><CheckCircle className="w-3 h-3 mr-1" /> Pro</div>}
                                 {isSoldOut(course) && <div className="bg-red-500/90 text-white px-2 py-1 rounded text-xs font-bold shadow-sm">Ausgebucht</div>}
                             </div>
