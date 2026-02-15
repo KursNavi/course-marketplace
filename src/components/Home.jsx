@@ -8,7 +8,7 @@ export const Home = ({
   setSearchType, setSearchArea, setSearchSpecialty, setSearchFocus,
   searchQuery, setSearchQuery,
   catMenuOpen, setCatMenuOpen, catMenuRef,
-  locMode, setLocMode, selectedLocations, setSelectedLocations, locMenuOpen, setLocMenuOpen, locMenuRef,
+  selectedLocations, setSelectedLocations, locMenuOpen, setLocMenuOpen, locMenuRef,
   filterPro, setFilterPro, filterDirectBooking, setFilterDirectBooking,
   selectedDeliveryTypes, setSelectedDeliveryTypes, deliveryMenuOpen, setDeliveryMenuOpen, deliveryMenuRef
 }) => {
@@ -353,8 +353,6 @@ export const Home = ({
                 {/* LOCATION DROPDOWN */}
                 <div className="flex-1 bg-white rounded-xl">
                     <LocationDropdown
-                        locMode={locMode}
-                        setLocMode={setLocMode}
                         selectedLocations={selectedLocations}
                         setSelectedLocations={setSelectedLocations}
                         locMenuOpen={locMenuOpen}

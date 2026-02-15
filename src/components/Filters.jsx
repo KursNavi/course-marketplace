@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronDown, ChevronRight, MapPin, Globe, Monitor } from 'lucide-react';
-import { NEW_TAXONOMY, CATEGORY_TYPES, SWISS_CANTONS, SWISS_CITIES, DELIVERY_TYPES, COURSE_LANGUAGES } from '../lib/constants';
+import { NEW_TAXONOMY, CATEGORY_TYPES, SWISS_CANTONS, DELIVERY_TYPES, COURSE_LANGUAGES } from '../lib/constants';
 import { useTaxonomy } from '../hooks/useTaxonomy';
 
 export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCatPath, catMenuOpen, setCatMenuOpen, t, catMenuRef }) => {
@@ -124,9 +124,9 @@ export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCat
     );
 };
 
-export const LocationDropdown = ({ locMode, setLocMode, selectedLocations, setSelectedLocations, locMenuOpen, setLocMenuOpen, locMenuRef, t }) => {
+export const LocationDropdown = ({ selectedLocations, setSelectedLocations, locMenuOpen, setLocMenuOpen, locMenuRef, t }) => {
     const toggleLoc = (loc) => { if (selectedLocations.includes(loc)) setSelectedLocations(selectedLocations.filter(l => l !== loc)); else setSelectedLocations([...selectedLocations, loc]); };
-    const displayList = locMode === 'canton' ? SWISS_CANTONS.filter(c => c !== "Ausland") : SWISS_CITIES;
+    const displayList = SWISS_CANTONS.filter(c => c !== "Ausland");
     return (
         <div ref={locMenuRef} className="static relative z-50 text-left">
             <button type="button" onClick={() => setLocMenuOpen(!locMenuOpen)} className={`w-full md:w-auto px-4 py-3 border rounded-full flex items-center justify-between space-x-2 text-sm font-medium transition shadow-sm ${selectedLocations.length > 0 ? 'bg-primary text-white border-primary' : 'bg-white text-gray-700 hover:border-gray-400'}`}>
@@ -134,10 +134,6 @@ export const LocationDropdown = ({ locMode, setLocMode, selectedLocations, setSe
             </button>
             {locMenuOpen && (
                 <div className="absolute top-14 left-0 w-[300px] bg-white rounded-xl shadow-2xl border border-gray-100 p-4">
-                    <div className="flex bg-gray-100 p-1 rounded-lg mb-4">
-                        <button onClick={() => { setLocMode('canton'); setSelectedLocations([]); }} className={`flex-1 py-1 text-sm font-medium rounded-md transition ${locMode === 'canton' ? 'bg-white shadow text-primary' : 'text-gray-500'}`}>Cantons</button>
-                        <button onClick={() => { setLocMode('city'); setSelectedLocations([]); }} className={`flex-1 py-1 text-sm font-medium rounded-md transition ${locMode === 'city' ? 'bg-white shadow text-primary' : 'text-gray-500'}`}>Cities</button>
-                    </div>
                     <div className="max-h-[250px] overflow-y-auto space-y-1">
                         {displayList.map(loc => (<label key={loc} className="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded cursor-pointer"><input type="checkbox" checked={selectedLocations.includes(loc)} onChange={() => toggleLoc(loc)} className="rounded border-gray-300 text-primary focus:ring-primary" /><span className="text-sm text-gray-700">{loc}</span></label>))}
                     </div>
