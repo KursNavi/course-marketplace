@@ -449,7 +449,7 @@ export const TRANSLATIONS = {
 
     profile_settings: "Profile Settings", lbl_city: "My City / Town", lbl_bio: "About Me (Bio)", lbl_language: "Preferred Language",
     profile_lang_note: "We will use this for emails and website content.", btn_save: "Save Changes",
-    dash_overview: "Overview", dash_profile: "My Profile", dash_settings: "Profile Settings", dash_new_course: "New Course",
+    dash_overview: "Courses", dash_profile: "My Profile", dash_settings: "Profile", dash_new_course: "New Course",
     lbl_account_security: "Account Security", lbl_new_password: "New Password", lbl_confirm_password: "Confirm Password",
     lbl_update_auth: "Update Login Details", msg_auth_success: "Account details updated!",
     
@@ -599,7 +599,7 @@ export const TRANSLATIONS = {
 
     profile_settings: "Profileinstellungen", lbl_city: "Meine Stadt / Ort", lbl_bio: "Über mich (Bio)", lbl_language: "Bevorzugte Sprache",
     profile_lang_note: "Wir verwenden dies für E-Mails und Webseiteninhalte.", btn_save: "Speichern",
-    dash_overview: "Übersicht", dash_profile: "Mein Profil", dash_settings: "Einstellungen", dash_new_course: "Neuer Kurs",
+    dash_overview: "Kursangebot", dash_profile: "Mein Profil", dash_settings: "Profil", dash_new_course: "Neuer Kurs",
     lbl_account_security: "Konto & Sicherheit", lbl_new_password: "Neues Passwort", lbl_confirm_password: "Passwort bestätigen",
     lbl_update_auth: "Zugangsdaten aktualisieren", msg_auth_success: "Konto aktualisiert!",
 
@@ -749,7 +749,7 @@ export const TRANSLATIONS = {
 
     profile_settings: "Paramètres du profil", lbl_city: "Ma Ville / Localité", lbl_bio: "À propos de moi", lbl_language: "Langue préférée",
     profile_lang_note: "Nous utiliserons ceci pour les e-mails.", btn_save: "Enregistrer",
-    dash_overview: "Aperçu", dash_profile: "Mon Profil", dash_settings: "Paramètres", dash_new_course: "Nouveau Cours",
+    dash_overview: "Offre de cours", dash_profile: "Mon Profil", dash_settings: "Profil", dash_new_course: "Nouveau Cours",
     lbl_account_security: "Compte et Sécurité", lbl_new_password: "Nouveau mot de passe", lbl_confirm_password: "Confirmer",
     lbl_update_auth: "Mettre à jour", msg_auth_success: "Compte mis à jour !",
 
@@ -899,7 +899,7 @@ export const TRANSLATIONS = {
 
     profile_settings: "Impostazioni Profilo", lbl_city: "La mia Città", lbl_bio: "Su di me (Bio)", lbl_language: "Lingua preferita",
     profile_lang_note: "Useremo questa lingua per email e sito web.", btn_save: "Salva modifiche",
-    dash_overview: "Panoramica", dash_profile: "Il mio Profilo", dash_settings: "Impostazioni", dash_new_course: "Nuovo Corso",
+    dash_overview: "Offerta corsi", dash_profile: "Il mio Profilo", dash_settings: "Profilo", dash_new_course: "Nuovo Corso",
     lbl_account_security: "Sicurezza Account", lbl_new_password: "Nuova Password", lbl_confirm_password: "Conferma",
     lbl_update_auth: "Aggiorna Account", msg_auth_success: "Account aggiornato!",
 
