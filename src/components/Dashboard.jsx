@@ -4,7 +4,8 @@ import {
     Loader, Settings, Save, Lock, CheckCircle, XCircle, Clock,
     ChevronDown, User, DollarSign, PenTool, Trash2, ArrowRight, Plus, MapPin,
     Crown, BarChart3, Bold, Italic, Underline, Heading2, Heading3, List,
-    CreditCard, Check, Shield, ExternalLink, Play, Pause, FileEdit, Info, Star, AlertCircle
+    CreditCard, Check, Shield, ExternalLink, Play, Pause, FileEdit, Info, Star, AlertCircle,
+    Eye, EyeOff
 } from 'lucide-react';
 import { SWISS_CANTONS, CATEGORY_TYPES, NEW_TAXONOMY, CATEGORY_LABELS } from "../lib/constants";
 import { PLANS } from "../constants/plans";
@@ -42,6 +43,8 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t }) => 
     const [stripeCustomerId, setStripeCustomerId] = useState(null);
     const [stripeConnectAccountId, setStripeConnectAccountId] = useState(null);
     const [stripeConnectOnboardingComplete, setStripeConnectOnboardingComplete] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     // Check for Stripe Connect return and update status
     useEffect(() => {
@@ -658,7 +661,7 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t }) => 
                     </div>
                 )}
 
-                <div className="border-t pt-6 mt-6"><h3 className="text-lg font-bold mb-4 text-dark flex items-center"><Lock className="w-4 h-4 mr-2" /> {t.lbl_account_security}</h3><div className="space-y-4"><div><label className="block text-sm font-bold text-gray-700 mb-1">Email</label><input type="email" name="email" value={formData.email} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none bg-gray-50" /></div><div className="grid grid-cols-1 md:grid-cols-2 gap-6"><div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_new_password}</label><input type="password" name="password" value={formData.password} onChange={handleChange} placeholder="******" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" /></div><div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_confirm_password}</label><input type="password" name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} placeholder="******" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" /></div></div></div></div>
+                <div className="border-t pt-6 mt-6"><h3 className="text-lg font-bold mb-4 text-dark flex items-center"><Lock className="w-4 h-4 mr-2" /> {t.lbl_account_security}</h3><div className="space-y-4"><div><label className="block text-sm font-bold text-gray-700 mb-1">Email</label><input type="email" name="email" value={formData.email} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none bg-gray-50" /></div><div className="grid grid-cols-1 md:grid-cols-2 gap-6"><div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_new_password}</label><div className="relative"><input type={showPassword ? "text" : "password"} name="password" value={formData.password} onChange={handleChange} placeholder="******" className="w-full px-4 py-2 pr-10 border rounded-lg focus:ring-2 focus:ring-primary outline-none" /><button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700">{showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}</button></div></div><div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_confirm_password}</label><div className="relative"><input type={showConfirmPassword ? "text" : "password"} name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} placeholder="******" className="w-full px-4 py-2 pr-10 border rounded-lg focus:ring-2 focus:ring-primary outline-none" /><button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700">{showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}</button></div></div></div></div></div>
                 <div className="pt-2"><button type="submit" disabled={saving} className="bg-primary text-white px-6 py-3 rounded-lg font-bold hover:bg-orange-600 transition flex items-center shadow-md disabled:opacity-50">{saving ? <Loader className="animate-spin w-5 h-5 mr-2" /> : <Save className="w-5 h-5 mr-2" />}{t.btn_save}</button></div>
             </form>
         </div>
