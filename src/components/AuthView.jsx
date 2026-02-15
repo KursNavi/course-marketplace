@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { Loader, Mail } from 'lucide-react';
+import { Loader, Mail, Eye, EyeOff } from 'lucide-react';
 import { TRANSLATIONS } from '../lib/constants';
 import { supabase } from '../lib/supabase';
 
@@ -8,8 +8,11 @@ const AuthView = ({ setView, setUser, showNotification, lang }) => {
     const [isSignUp, setIsSignUp] = useState(false); 
     const [showSuccess, setShowSuccess] = useState(false); // NEW: Success Page State
     const [loading, setLoading] = useState(false); 
-    const [email, setEmail] = useState(''); 
-    const [password, setPassword] = useState(''); 
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [fullName, setFullName] = useState(''); 
     const [role, setRole] = useState('student');
     const [agbAccepted, setAgbAccepted] = useState(false);
@@ -20,6 +23,7 @@ const AuthView = ({ setView, setUser, showNotification, lang }) => {
         e.preventDefault(); setLoading(true);
         try {
             if (isSignUp) {
+                if (password !== confirmPassword) { throw new Error(t.err_passwords_mismatch); }
                 if (!agbAccepted) { throw new Error(t.err_accept_terms); }
                 
                 // LOGIC: Retrieve selected package from previous step (TeacherHub)
@@ -106,7 +110,26 @@ const AuthView = ({ setView, setUser, showNotification, lang }) => {
                         </>
                     )}
                     <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_email}</label><input required type="email" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" value={email} onChange={e => setEmail(e.target.value)} /></div>
-                    <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_password}</label><input required type="password" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" value={password} onChange={e => setPassword(e.target.value)} /></div>
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_password}</label>
+                        <div className="relative">
+                            <input required type={showPassword ? "text" : "password"} className="w-full px-4 py-2 pr-10 border rounded-lg focus:ring-2 focus:ring-primary outline-none" value={password} onChange={e => setPassword(e.target.value)} />
+                            <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700">
+                                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                            </button>
+                        </div>
+                    </div>
+                    {isSignUp && (
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_confirm_password}</label>
+                            <div className="relative">
+                                <input required type={showConfirmPassword ? "text" : "password"} className="w-full px-4 py-2 pr-10 border rounded-lg focus:ring-2 focus:ring-primary outline-none" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} />
+                                <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700">
+                                    {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                                </button>
+                            </div>
+                        </div>
+                    )}
                     
                     {isSignUp && (
                         <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg border border-gray-100">

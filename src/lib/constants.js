@@ -478,7 +478,8 @@ export const TRANSLATIONS = {
     // AUTH LABELS
     auth_create_account: "Create Account", auth_welcome_back: "Welcome Back",
     auth_i_am_a: "I am a...", auth_student: "Learner", auth_teacher: "Course Provider",
-    lbl_email: "Email", lbl_password: "Password",
+    lbl_email: "Email", lbl_password: "Password", lbl_confirm_password: "Confirm Password",
+    err_passwords_mismatch: "Passwords do not match.",
     btn_signup: "Sign Up", btn_login: "Login",
     auth_already_have: "Already have an account?", auth_dont_have: "Don't have an account?",
     link_login: "Login", link_signup: "Sign Up",
@@ -627,7 +628,8 @@ export const TRANSLATIONS = {
     // AUTH LABELS
     auth_create_account: "Konto erstellen", auth_welcome_back: "Willkommen zurück",
     auth_i_am_a: "Ich bin...", auth_student: "Lernende/r", auth_teacher: "Kursanbieter",
-    lbl_email: "E-Mail", lbl_password: "Passwort",
+    lbl_email: "E-Mail", lbl_password: "Passwort", lbl_confirm_password: "Passwort bestätigen",
+    err_passwords_mismatch: "Passwörter stimmen nicht überein.",
     btn_signup: "Registrieren", btn_login: "Anmelden",
     auth_already_have: "Bereits ein Konto?", auth_dont_have: "Noch kein Konto?",
     link_login: "Anmelden", link_signup: "Registrieren",
@@ -776,7 +778,8 @@ export const TRANSLATIONS = {
     // AUTH LABELS
     auth_create_account: "Créer un compte", auth_welcome_back: "Bon retour",
     auth_i_am_a: "Je suis...", auth_student: "Apprenant", auth_teacher: "Prestataire de cours",
-    lbl_email: "E-mail", lbl_password: "Mot de passe",
+    lbl_email: "E-mail", lbl_password: "Mot de passe", lbl_confirm_password: "Confirmer le mot de passe",
+    err_passwords_mismatch: "Les mots de passe ne correspondent pas.",
     btn_signup: "S'inscrire", btn_login: "Se connecter",
     auth_already_have: "Déjà un compte ?", auth_dont_have: "Pas encore de compte ?",
     link_login: "Se connecter", link_signup: "S'inscrire",
@@ -925,7 +928,8 @@ export const TRANSLATIONS = {
     // AUTH LABELS
     auth_create_account: "Crea account", auth_welcome_back: "Bentornato",
     auth_i_am_a: "Sono un...", auth_student: "Apprendente", auth_teacher: "Fornitore di corsi",
-    lbl_email: "E-mail", lbl_password: "Password",
+    lbl_email: "E-mail", lbl_password: "Password", lbl_confirm_password: "Conferma password",
+    err_passwords_mismatch: "Le password non corrispondono.",
     btn_signup: "Registrati", btn_login: "Accedi",
     auth_already_have: "Hai già un account?", auth_dont_have: "Non hai un account?",
     link_login: "Accedi", link_signup: "Registrati",
