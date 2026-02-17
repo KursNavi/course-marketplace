@@ -53,7 +53,7 @@ CREATE UNIQUE INDEX idx_bookings_user_event_unique
 
 CREATE TABLE IF NOT EXISTS ticket_periods (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  course_id UUID NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
+  course_id BIGINT NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
   period_start TIMESTAMPTZ NOT NULL,
   period_end TIMESTAMPTZ NOT NULL,
   sold_count INTEGER DEFAULT 0,
@@ -69,7 +69,7 @@ CREATE INDEX IF NOT EXISTS idx_ticket_periods_active ON ticket_periods(course_id
 -- =============================================
 
 -- Function: Get or create current ticket period
-CREATE OR REPLACE FUNCTION get_or_create_ticket_period(p_course_id UUID)
+CREATE OR REPLACE FUNCTION get_or_create_ticket_period(p_course_id BIGINT)
 RETURNS ticket_periods AS $$
 DECLARE
   current_period ticket_periods;
@@ -94,7 +94,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Function: Check ticket availability (for UI + pre-checkout)
-CREATE OR REPLACE FUNCTION check_ticket_availability(p_course_id UUID)
+CREATE OR REPLACE FUNCTION check_ticket_availability(p_course_id BIGINT)
 RETURNS TABLE(available BOOLEAN, remaining INTEGER, period_end TIMESTAMPTZ) AS $$
 DECLARE
   course_limit INTEGER;
@@ -117,7 +117,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Function: Reserve ticket (with row lock)
-CREATE OR REPLACE FUNCTION reserve_ticket(p_course_id UUID)
+CREATE OR REPLACE FUNCTION reserve_ticket(p_course_id BIGINT)
 RETURNS TABLE(success BOOLEAN, period_id UUID) AS $$
 DECLARE
   course_limit INTEGER;
