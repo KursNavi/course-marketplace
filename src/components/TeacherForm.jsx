@@ -412,8 +412,11 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
     // Load draft on initial render
     const draft = loadDraft();
 
-    // Track unsaved changes
-    const [isDirty, setIsDirty] = useState(!!draft);
+    // Track unsaved changes - start with false, only set true when user actually makes changes
+    const [isDirty, setIsDirty] = useState(false);
+
+    // Modal for unsaved changes warning
+    const [showUnsavedChangesModal, setShowUnsavedChangesModal] = useState(false);
 
     // Booking & Link State
     const [bookingType, setBookingType] = useState(draft?.bookingType || 'platform'); // 'platform' or 'lead'
@@ -773,15 +776,21 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
     // Handle back navigation with unsaved changes warning
     const handleBack = () => {
         if (isDirty) {
-            const confirmed = window.confirm('Du hast ungespeicherte Änderungen. Möchtest du wirklich zurückgehen? Deine Änderungen gehen verloren.');
-            if (!confirmed) return;
-            // User chose to discard changes - clear draft
-            try {
-                sessionStorage.removeItem(draftKey);
-            } catch (e) {
-                console.warn('Failed to clear draft:', e);
-            }
+            setShowUnsavedChangesModal(true);
+            return;
         }
+        setEditingCourse(null);
+        setView('dashboard');
+    };
+
+    // Confirm discard changes and navigate back
+    const confirmDiscardChanges = () => {
+        try {
+            sessionStorage.removeItem(draftKey);
+        } catch (e) {
+            console.warn('Failed to clear draft:', e);
+        }
+        setShowUnsavedChangesModal(false);
         setEditingCourse(null);
         setView('dashboard');
     };
@@ -1820,6 +1829,34 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                                 <Trash2 className="w-4 h-4" />
                             )}
                             Löschen
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
+
+        {/* Unsaved Changes Confirmation Modal */}
+        {showUnsavedChangesModal && (
+            <div className="fixed inset-0 bg-dark/60 backdrop-blur-sm z-[110] flex items-center justify-center p-4 animate-in fade-in duration-200">
+                <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl">
+                    <h3 className="text-lg font-bold mb-3">Ungespeicherte Änderungen</h3>
+                    <p className="text-gray-600 mb-6">
+                        Du hast ungespeicherte Änderungen. Möchtest du wirklich zurückgehen? Deine Änderungen gehen verloren.
+                    </p>
+                    <div className="flex justify-end gap-3">
+                        <button
+                            type="button"
+                            onClick={() => setShowUnsavedChangesModal(false)}
+                            className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition"
+                        >
+                            Abbrechen
+                        </button>
+                        <button
+                            type="button"
+                            onClick={confirmDiscardChanges}
+                            className="px-4 py-2 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded-lg transition"
+                        >
+                            Änderungen verwerfen
                         </button>
                     </div>
                 </div>
