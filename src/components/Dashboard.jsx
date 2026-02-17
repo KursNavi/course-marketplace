@@ -1018,7 +1018,7 @@ const getCategoryLabel = (key, lang = 'de') => {
 };
 
 // --- MAIN DASHBOARD COMPONENT ---
-const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBookings, savedCourses, savedCourseIds, onToggleSaveCourse, handleDeleteCourse, handleEditCourse, handleUpdateCourseStatus, showNotification, changeLanguage, setSelectedCourse }) => {
+const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBookings, savedCourses, savedCourseIds, onToggleSaveCourse, handleDeleteCourse, handleEditCourse, handleUpdateCourseStatus, showNotification, changeLanguage, setSelectedCourse, refreshBookings }) => {
     const [dashView, setDashView] = useState('overview');
     const [userTier, setUserTier] = useState('basic'); // basic, pro, premium, enterprise
     const [showSuccessModal, setShowSuccessModal] = useState(false); // NEW: Success Modal State
@@ -1028,6 +1028,43 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
     const [authUid, setAuthUid] = useState(null);
     const [prioCourseIds, setPrioCourseIds] = useState(new Set()); // Prio-Kurse IDs
     const [showPrioInfo, setShowPrioInfo] = useState(false); // Info-Tooltip anzeigen
+    const [refundingBookingId, setRefundingBookingId] = useState(null); // Track which booking is being refunded
+
+    // Handle booking refund
+    const handleRefundBooking = async (bookingId, userId) => {
+        if (!bookingId || !userId) return;
+        if (refundingBookingId) return; // Prevent double-clicks
+
+        if (!window.confirm('Möchtest du diese Buchung wirklich stornieren? Der Betrag wird auf deine ursprüngliche Zahlungsmethode zurückerstattet.')) {
+            return;
+        }
+
+        setRefundingBookingId(bookingId);
+        try {
+            const response = await fetch('/api/refund-booking', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ bookingId, userId })
+            });
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Refund fehlgeschlagen');
+            }
+
+            showNotification('Buchung erfolgreich storniert. Die Rückerstattung wird innerhalb von 5-10 Werktagen auf deiner Zahlungsmethode erscheinen.');
+
+            // Refresh bookings list
+            if (refreshBookings) {
+                await refreshBookings(userId);
+            }
+        } catch (error) {
+            console.error('Refund error:', error);
+            showNotification(error.message || 'Stornierung fehlgeschlagen. Bitte versuche es später erneut.');
+        } finally {
+            setRefundingBookingId(null);
+        }
+    };
 
     // NEW: Check for Payment Success in URL
     useEffect(() => {
@@ -1533,8 +1570,14 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                                         )}
                                                     </td>
                                                     <td className="px-6 py-4">
-                                                        <span className={`text-xs px-2 py-1 rounded font-bold uppercase ${course.booking_type === 'platform' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
-                                                            {course.booking_type === 'lead' ? 'Lead' : (course.booking_type || 'platform')}
+                                                        <span className={`text-xs px-2 py-1 rounded font-bold uppercase ${
+                                                            course.booking_type === 'platform' ? 'bg-green-100 text-green-700' :
+                                                            course.booking_type === 'platform_flex' ? 'bg-purple-100 text-purple-700' :
+                                                            'bg-orange-100 text-orange-700'
+                                                        }`}>
+                                                            {course.booking_type === 'lead' ? 'Lead' :
+                                                             course.booking_type === 'platform_flex' ? 'Flexibel' :
+                                                             (course.booking_type || 'Direkt')}
                                                         </span>
                                                     </td>
                                                     <td className="px-6 py-4 font-medium">{course.price ? `CHF ${formatPriceCHF(course.price)}` : <span className="text-gray-400 italic">Kein Preis angegeben</span>}</td>
@@ -1566,30 +1609,68 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                         <div>
                             <h2 className="text-xl font-bold mb-4 text-dark">{t.my_bookings}</h2>
                             <div className="space-y-4">
-                                {myBookings.length > 0 ? myBookings.map(course => (
-                                        <div key={course.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex gap-4 transition hover:shadow-md">
+                                {myBookings.length > 0 ? myBookings.map(booking => {
+                                    // Check if refund is available
+                                    const canRefund = booking.auto_refund_until && new Date() < new Date(booking.auto_refund_until);
+                                    const isFlexBooking = booking.booking_type === 'platform_flex';
+
+                                    return (
+                                        <div key={booking.booking_id || booking.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex gap-4 transition hover:shadow-md">
                                             <img
-                                                src={course.image_url}
+                                                src={booking.image_url}
                                                 className="w-20 h-20 rounded-lg object-cover cursor-pointer hover:opacity-90 transition"
-                                                onClick={() => handleNavigateToCourse(course)}
+                                                onClick={() => handleNavigateToCourse(booking)}
                                             />
                                             <div className="flex-grow">
-                                                <h3 className="font-bold text-dark cursor-pointer hover:text-primary transition" onClick={() => handleNavigateToCourse(course)}>
-                                                    {course.title}
-                                                </h3>
-                                                <p className="text-sm text-gray-500">{course.instructor_name} • {course.canton}</p>
-                                                <div className="mt-3 flex items-center">
+                                                <div className="flex items-start justify-between">
+                                                    <h3 className="font-bold text-dark cursor-pointer hover:text-primary transition" onClick={() => handleNavigateToCourse(booking)}>
+                                                        {booking.title}
+                                                    </h3>
+                                                    {isFlexBooking && (
+                                                        <span className="text-[10px] font-bold bg-purple-100 text-purple-700 px-2 py-0.5 rounded">Flexibel</span>
+                                                    )}
+                                                </div>
+                                                <p className="text-sm text-gray-500">{booking.instructor_name} • {booking.canton}</p>
+
+                                                {/* Event info for platform bookings, or flex message */}
+                                                {isFlexBooking ? (
+                                                    <p className="text-xs text-purple-600 mt-2">Termin wird direkt mit dem Anbieter vereinbart</p>
+                                                ) : booking.event ? (
+                                                    <p className="text-xs text-gray-500 mt-2">
+                                                        {booking.event.start_date && new Date(booking.event.start_date).toLocaleDateString('de-CH')}
+                                                        {booking.event.location && ` • ${booking.event.location}`}
+                                                    </p>
+                                                ) : null}
+
+                                                <div className="mt-3 flex items-center justify-between">
                                                     <div className="text-green-600 text-sm font-medium flex items-center">
-                                                        <CheckCircle className="w-4 h-4 mr-1" /> {t.booking_confirmed || 'Confirmed'}
+                                                        <CheckCircle className="w-4 h-4 mr-1" /> {t.booking_confirmed || 'Bestätigt'}
                                                     </div>
                                                 </div>
-                                                <p className="text-xs text-gray-400 mt-2 leading-relaxed">
-                                                    {t.no_cancellation_hint || 'Cancellation, refund or rescheduling is at the discretion of the provider. Please contact the provider directly.'}
-                                                </p>
+
+                                                {/* Refund section */}
+                                                {canRefund ? (
+                                                    <div className="mt-3 pt-3 border-t border-gray-100">
+                                                        <button
+                                                            onClick={() => handleRefundBooking(booking.booking_id, user.id)}
+                                                            className="text-xs text-red-600 hover:text-red-700 hover:underline font-medium"
+                                                        >
+                                                            Buchung stornieren
+                                                        </button>
+                                                        <p className="text-[10px] text-gray-400 mt-1">
+                                                            Kostenlose Stornierung bis {new Date(booking.auto_refund_until).toLocaleDateString('de-CH', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                                        </p>
+                                                    </div>
+                                                ) : (
+                                                    <p className="text-xs text-gray-400 mt-2 leading-relaxed">
+                                                        {t.no_cancellation_hint || 'Stornierung, Rückerstattung oder Umbuchung nach Absprache mit dem Anbieter.'}
+                                                    </p>
+                                                )}
                                             </div>
                                         </div>
-                                    )) : (
-                                    <p className="text-gray-500 italic">{t.no_bookings_yet || "You haven't booked any courses yet."}</p>
+                                    );
+                                }) : (
+                                    <p className="text-gray-500 italic">{t.no_bookings_yet || "Du hast noch keine Kurse gebucht."}</p>
                                 )}
                             </div>
                         </div>

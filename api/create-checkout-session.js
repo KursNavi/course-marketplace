@@ -16,7 +16,7 @@ export default async function handler(req, res) {
     // ----------------------------------
 
     const stripe = new Stripe(secretKey);
-    const { courseId, courseTitle, coursePrice, userId, courseImage, userEmail } = req.body;
+    const { courseId, courseTitle, coursePrice, userId, courseImage, userEmail, eventId } = req.body;
 
     // Initialize Supabase client
     const supabase = createClient(
@@ -24,10 +24,80 @@ export default async function handler(req, res) {
       process.env.SUPABASE_SERVICE_ROLE_KEY
     );
 
-    // Get or create Stripe customer
+    // 1. Load course to check booking_type and validate
+    const { data: course, error: courseError } = await supabase
+      .from('courses')
+      .select('id, booking_type, ticket_limit_30d, price')
+      .eq('id', courseId)
+      .single();
+
+    if (courseError || !course) {
+      return res.status(400).json({ error: 'Kurs nicht gefunden' });
+    }
+
+    if (course.booking_type === 'lead') {
+      return res.status(400).json({ error: 'Dieser Kurs ist nicht online buchbar' });
+    }
+
+    // 2. Event capacity check (only for platform)
+    if (course.booking_type === 'platform') {
+      if (!eventId) {
+        return res.status(400).json({ error: 'Event-ID erforderlich für Direktbuchung' });
+      }
+
+      // Get event with booking count
+      const { data: eventData, error: eventError } = await supabase
+        .from('course_events')
+        .select('id, max_participants')
+        .eq('id', eventId)
+        .single();
+
+      if (eventError || !eventData) {
+        return res.status(400).json({ error: 'Event nicht gefunden' });
+      }
+
+      // Count confirmed bookings for this event
+      const { count: bookedCount } = await supabase
+        .from('bookings')
+        .select('*', { count: 'exact', head: true })
+        .eq('event_id', eventId)
+        .eq('status', 'confirmed');
+
+      if (eventData.max_participants > 0 && bookedCount >= eventData.max_participants) {
+        return res.status(400).json({ error: 'Dieser Termin ist ausgebucht' });
+      }
+
+      // Duplicate check: User has already booked this event?
+      const { data: existingBooking } = await supabase
+        .from('bookings')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('event_id', eventId)
+        .eq('status', 'confirmed')
+        .single();
+
+      if (existingBooking) {
+        return res.status(400).json({ error: 'Du hast diesen Termin bereits gebucht' });
+      }
+    }
+
+    // 3. Ticket limit check (for platform + platform_flex)
+    if (course.ticket_limit_30d) {
+      const { data: availability } = await supabase.rpc('check_ticket_availability', {
+        p_course_id: courseId
+      });
+
+      if (!availability?.[0]?.available) {
+        return res.status(400).json({
+          error: 'Kontingent erschöpft. Bitte später erneut versuchen.',
+          period_end: availability?.[0]?.period_end
+        });
+      }
+    }
+
+    // 4. Get or create Stripe customer
     let customerId;
 
-    // Check if user already has a Stripe customer ID
     const { data: profile } = await supabase
       .from('profiles')
       .select('stripe_customer_id')
@@ -37,20 +107,19 @@ export default async function handler(req, res) {
     if (profile?.stripe_customer_id) {
       customerId = profile.stripe_customer_id;
     } else {
-      // Create new Stripe customer
       const customer = await stripe.customers.create({
         email: userEmail,
         metadata: { userId },
       });
       customerId = customer.id;
 
-      // Store customer ID in database
       await supabase
         .from('profiles')
         .update({ stripe_customer_id: customerId })
         .eq('id', userId);
     }
 
+    // 5. Create Stripe checkout session with v2 metadata
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       customer: customerId,
@@ -68,15 +137,14 @@ export default async function handler(req, res) {
         },
       ],
       mode: 'payment',
-
-      // FIX: Redirect to the ROOT path (/?...) instead of /success
-      // This ensures Vercel loads your App, and your App detects the payment.
       success_url: `${req.headers.origin}/?session_id={CHECKOUT_SESSION_ID}`,
-
-      // FIX: Redirect cancel to the homepage too, to avoid 404s there
-      cancel_url: `${req.headers.origin}/`,
-
-      metadata: { courseId, userId },
+      cancel_url: `${req.headers.origin}/course/${courseId}`,
+      metadata: {
+        courseId,
+        userId,
+        eventId: eventId || '',
+        bookingType: course.booking_type
+      },
     });
 
     res.status(200).json({ id: session.id, url: session.url });

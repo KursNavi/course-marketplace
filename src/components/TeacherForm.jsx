@@ -419,8 +419,9 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
     const [showUnsavedChangesModal, setShowUnsavedChangesModal] = useState(false);
 
     // Booking & Link State
-    const [bookingType, setBookingType] = useState(draft?.bookingType || 'platform'); // 'platform' or 'lead'
+    const [bookingType, setBookingType] = useState(draft?.bookingType || 'platform'); // 'platform', 'platform_flex', or 'lead'
     const [contactEmail, setContactEmail] = useState(draft?.contactEmail || '');
+    const [ticketLimit30d, setTicketLimit30d] = useState(draft?.ticketLimit30d || '');
 
     // Form Field State (controlled inputs to preserve data on validation errors / tab switches)
     const [title, setTitle] = useState(draft?.title || '');
@@ -502,6 +503,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
             courseId: initialData?.id || 'new',
             bookingType,
             contactEmail,
+            ticketLimit30d,
             title,
             description,
             objectives,
@@ -532,7 +534,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
                 console.warn('Failed to save draft:', e);
             }
         }
-    }, [isDirty, draftKey, bookingType, contactEmail, title, description, objectives, keywords, prerequisites, price, sessionCount, sessionLength, providerUrl, categories, selectedLevel, courseLanguages, deliveryTypes, courseStatus, events, fallbackCantons, initialData?.id]);
+    }, [isDirty, draftKey, bookingType, contactEmail, ticketLimit30d, title, description, objectives, keywords, prerequisites, price, sessionCount, sessionLength, providerUrl, categories, selectedLevel, courseLanguages, deliveryTypes, courseStatus, events, fallbackCantons, initialData?.id]);
 
     // Save draft on unmount (safety net for fast tab switches)
     useEffect(() => {
@@ -565,6 +567,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
         // 1. Load Initial Data if editing
         if (initialData) {
             if (initialData.booking_type) setBookingType(initialData.booking_type);
+            if (initialData.ticket_limit_30d !== undefined && initialData.ticket_limit_30d !== null) setTicketLimit30d(String(initialData.ticket_limit_30d));
 
             // Initialize controlled form fields from existing course data
             if (initialData.title) setTitle(initialData.title);
@@ -1020,16 +1023,25 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
         }));
 
         let validEvents = potentialEvents.filter(ev => {
-            if (!ev.start_date) return false; 
-            if (bookingType === 'platform') return ev.city && ev.street && ev.canton; 
-            return true; 
+            if (!ev.start_date) return false;
+            if (bookingType === 'platform') return ev.city && ev.street && ev.canton;
+            return true;
         });
 
         if (bookingType === 'platform') {
             if (validEvents.length === 0) { window.alert("Für Direktbuchungen benötigen wir mindestens einen Termin mit Datum, Strasse, Ort und Kanton."); return; }
             if (!formData.get('price')) { window.alert("Ein Preis ist für Direktbuchungen erforderlich."); return; }
-        } 
-        
+        }
+
+        if (bookingType === 'platform_flex') {
+            const hasRegions = fallbackCantons.length > 0;
+            if (!hasRegions) {
+                window.alert("Für flexible Buchungen benötigen wir mindestens einen Kanton/Region.");
+                return;
+            }
+            if (!formData.get('price')) { window.alert("Ein Preis ist für flexible Buchungen erforderlich."); return; }
+        }
+
         if (bookingType === 'lead') {
             const hasRegions = fallbackCantons.length > 0;
             if (validEvents.length === 0 && !hasRegions) {
@@ -1123,6 +1135,7 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
             category_focus: catFocus || null,
             category_paths: cleanedCategories,
             booking_type: bookingType,
+            ticket_limit_30d: ticketLimit30d ? Number(ticketLimit30d) : null,
             external_link: null,
             level: level,
             delivery_types: deliveryTypes,
@@ -1535,15 +1548,19 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                 <div className="bg-white rounded-xl space-y-6">
                     <div>
                         <h3 className="text-lg font-bold text-dark mb-4">Buchungs-Optionen</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <label className={`cursor-pointer border p-4 rounded-xl transition relative overflow-hidden ${bookingType === 'platform' ? 'border-primary bg-orange-50 ring-1 ring-primary' : 'hover:bg-gray-50'}`}>
                                 {bookingType === 'platform' && <div className="absolute top-0 right-0 bg-primary text-white text-[10px] px-2 py-0.5 rounded-bl">Empfohlen</div>}
                                 <div className="flex items-center mb-2"><input type="radio" name="bookingType" value="platform" checked={bookingType === 'platform'} onChange={() => { setBookingType('platform'); markDirty(); }} className="mr-2 accent-primary"/> <span className="font-bold">Direktbuchung</span></div>
-                                <p className="text-xs text-gray-500">Zahlung via KursNavi.</p>
+                                <p className="text-xs text-gray-500">Mit festem Termin. Zahlung via KursNavi.</p>
+                            </label>
+                            <label className={`cursor-pointer border p-4 rounded-xl transition relative overflow-hidden ${bookingType === 'platform_flex' ? 'border-primary bg-orange-50 ring-1 ring-primary' : 'hover:bg-gray-50'}`}>
+                                <div className="flex items-center mb-2"><input type="radio" name="bookingType" value="platform_flex" checked={bookingType === 'platform_flex'} onChange={() => { setBookingType('platform_flex'); markDirty(); }} className="mr-2 accent-primary"/> <span className="font-bold">Flexibel</span></div>
+                                <p className="text-xs text-gray-500">Termin wird nach Buchung vereinbart. Zahlung via KursNavi.</p>
                             </label>
                             <label className={`cursor-pointer border p-4 rounded-xl transition ${bookingType === 'lead' ? 'border-primary bg-orange-50 ring-1 ring-primary' : 'hover:bg-gray-50'}`}>
                                 <div className="flex items-center mb-2"><input type="radio" name="bookingType" value="lead" checked={bookingType === 'lead'} onChange={() => { setBookingType('lead'); markDirty(); }} className="mr-2 accent-primary"/> <span className="font-bold">Anfrage (Lead)</span></div>
-                                <p className="text-xs text-gray-500">Kontaktformular.</p>
+                                <p className="text-xs text-gray-500">Kontaktformular. Keine Zahlung.</p>
                             </label>
                         </div>
                     </div>
@@ -1563,23 +1580,30 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                                     <p className="text-xs text-gray-500 mt-1">An diese Adresse werden Kundenanfragen gesendet.</p>
                                 </div>
                             )}
-    
+
                             <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-1">Preis (CHF) {bookingType === 'platform' && '*'}</label>
-                                <input required={bookingType === 'platform'} type="number" name="price" value={price} onChange={(e) => { setPrice(e.target.value); markDirty(); }} placeholder={bookingType !== 'platform' ? "Optional" : "0.00"} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+                                <label className="block text-sm font-bold text-gray-700 mb-1">Preis (CHF) {(bookingType === 'platform' || bookingType === 'platform_flex') && '*'}</label>
+                                <input required={bookingType === 'platform' || bookingType === 'platform_flex'} type="number" name="price" value={price} onChange={(e) => { setPrice(e.target.value); markDirty(); }} placeholder={bookingType === 'lead' ? "Optional" : "0.00"} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
                             </div>
                             <div>
                                 <label className="block text-sm font-bold text-gray-700 mb-1">Anzahl Lektionen</label>
                                 <input type="number" name="sessionCount" value={sessionCount} onChange={(e) => { setSessionCount(e.target.value); markDirty(); }} placeholder="z.B. 5" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
                             </div>
                             <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-1">Lektionsdauer {bookingType === 'platform' && '*'}</label>
-                                <input required={bookingType === 'platform'} type="text" name="sessionLength" value={sessionLength} onChange={(e) => { setSessionLength(e.target.value); markDirty(); }} placeholder="z.B. 2 Stunden" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+                                <label className="block text-sm font-bold text-gray-700 mb-1">Lektionsdauer {(bookingType === 'platform' || bookingType === 'platform_flex') && '*'}</label>
+                                <input required={bookingType === 'platform' || bookingType === 'platform_flex'} type="text" name="sessionLength" value={sessionLength} onChange={(e) => { setSessionLength(e.target.value); markDirty(); }} placeholder="z.B. 2 Stunden" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
                             </div>
                             <div>
                                 <label className="block text-sm font-bold text-gray-700 mb-1">Webseite (Optional)</label>
                                 <input type="url" name="providerUrl" value={providerUrl} onChange={(e) => { setProviderUrl(e.target.value); markDirty(); }} placeholder="https://..." className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
                             </div>
+                            {(bookingType === 'platform' || bookingType === 'platform_flex') && (
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-700 mb-1">Max. Buchungen pro 30 Tage</label>
+                                    <input type="number" min="1" name="ticketLimit30d" value={ticketLimit30d} onChange={(e) => { setTicketLimit30d(e.target.value); markDirty(); }} placeholder="Leer = unbegrenzt" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+                                    <p className="text-xs text-gray-500 mt-1">Begrenzt die Anzahl Buchungen in 30 Tagen. Nach Ablauf wird das Kontingent zurückgesetzt.</p>
+                                </div>
+                            )}
                         </div>
 
                         {/* B: DATES & LOCATIONS */}
@@ -1587,17 +1611,20 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                              <div className="flex justify-between items-center mb-4">
                                 <div>
                                     <h3 className="text-lg font-bold text-blue-900 flex items-center"><Calendar className="w-5 h-5 mr-2" /> Termine & Standorte</h3>
-                                    {bookingType !== 'platform' && <p className="text-xs text-blue-700">Datum optional. Wenn keine fixen Termine, bitte Region wählen.</p>}
+                                    {bookingType === 'platform_flex' && <p className="text-xs text-blue-700">Flexible Buchung: Wähle deine Region(en). Der Termin wird nach der Buchung vereinbart.</p>}
+                                    {bookingType === 'lead' && <p className="text-xs text-blue-700">Datum optional. Wenn keine fixen Termine, bitte Region wählen.</p>}
                                     {bookingType === 'platform' && <p className="text-xs text-blue-700">Datum, Ort und Zeit sind für Direktbuchungen erforderlich.</p>}
                                 </div>
-                                <button type="button" onClick={addEvent} className="bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-bold hover:bg-blue-700 flex items-center"><Plus className="w-4 h-4 mr-1"/> Termin hinzufügen</button>
+                                {bookingType !== 'platform_flex' && (
+                                    <button type="button" onClick={addEvent} className="bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-bold hover:bg-blue-700 flex items-center"><Plus className="w-4 h-4 mr-1"/> Termin hinzufügen</button>
+                                )}
                             </div>
 
-                            {/* Fallback Region Selector */}
-                            {bookingType !== 'platform' && !hasDatedEvents && (
+                            {/* Fallback Region Selector - for platform_flex always show, for others only when no dated events */}
+                            {(bookingType === 'platform_flex' || (bookingType !== 'platform' && !hasDatedEvents)) && (
                                 <div className="mb-6 bg-white p-5 rounded-lg border-2 border-orange-200 shadow-sm animate-in fade-in">
                                     <h4 className="font-bold text-orange-900 flex items-center gap-2 mb-3">
-                                        <MapPin className="w-4 h-4"/> Keine fixen Termine? Wähle deine Region(en):
+                                        <MapPin className="w-4 h-4"/> {bookingType === 'platform_flex' ? 'Wähle deine Region(en) *' : 'Keine fixen Termine? Wähle deine Region(en):'}
                                     </h4>
                                     <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto">
                                         {SWISS_CANTONS.filter(c => c !== "Ausland").map(c => (
@@ -1606,10 +1633,12 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                                             </button>
                                         ))}
                                     </div>
-                                    <p className="text-xs text-gray-400 mt-2">Diese Regionen werden in der Suche verwendet.</p>
+                                    <p className="text-xs text-gray-400 mt-2">{bookingType === 'platform_flex' ? 'Der Termin wird nach der Buchung direkt mit dem Teilnehmer vereinbart.' : 'Diese Regionen werden in der Suche verwendet.'}</p>
                                 </div>
                             )}
 
+                            {/* Event list - hide for platform_flex since they don't need events */}
+                            {bookingType !== 'platform_flex' && (
                             <div className="space-y-4">
                                 {events.map((ev, i) => (
                                     <div key={i} className="bg-white p-4 rounded-lg shadow-sm flex flex-col gap-4 border border-gray-200">
@@ -1649,6 +1678,7 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                                     </div>
                                 ))}
                             </div>
+                            )}
                         </div>
 
                     </div>

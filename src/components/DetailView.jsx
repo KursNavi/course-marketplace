@@ -11,6 +11,11 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
     const [showSavePrompt, setShowSavePrompt] = useState(false);
     const [pendingExternalUrl, setPendingExternalUrl] = useState(null);
 
+    // Ticket availability state (for platform/platform_flex with ticket_limit_30d)
+    const [ticketAvailable, setTicketAvailable] = useState(true);
+    const [ticketRemaining, setTicketRemaining] = useState(null);
+    const [ticketPeriodEnd, setTicketPeriodEnd] = useState(null);
+
     const { taxonomy, getTypeLabel, getAreaLabel } = useTaxonomy();
 
     const isSaved = (savedCourseIds || []).includes(course?.id);
@@ -19,6 +24,24 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
     useEffect(() => {
         window.scrollTo(0, 0);
     }, [course?.id]);
+
+    // Load ticket availability for courses with ticket_limit_30d
+    useEffect(() => {
+        if (course?.ticket_limit_30d && (course.booking_type === 'platform' || course.booking_type === 'platform_flex')) {
+            supabase.rpc('check_ticket_availability', { p_course_id: course.id })
+                .then(({ data, error }) => {
+                    if (!error && data?.[0]) {
+                        setTicketAvailable(data[0].available);
+                        setTicketRemaining(data[0].remaining);
+                        setTicketPeriodEnd(data[0].period_end);
+                    }
+                });
+        } else {
+            setTicketAvailable(true);
+            setTicketRemaining(null);
+            setTicketPeriodEnd(null);
+        }
+    }, [course?.id, course?.ticket_limit_30d, course?.booking_type]);
 
     // Build category breadcrumb path
     const getCategoryBreadcrumb = () => {
@@ -318,13 +341,20 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
             return;
         }
 
-        if (type === 'platform' && !courseEvent) return; 
+        // For platform: event is required
+        if (type === 'platform' && !courseEvent) return;
 
-        if (!user) { 
+        // For platform_flex: no event needed, but check ticket availability
+        if (type === 'platform_flex' && !ticketAvailable) {
+            showNotification && showNotification('Dieses Angebot ist derzeit ausgebucht. Bitte später erneut versuchen.');
+            return;
+        }
+
+        if (!user) {
             localStorage.setItem('pendingCourseId', course.id);
             if (courseEvent?.id) localStorage.setItem('pendingEventId', courseEvent.id);
-            setView('login'); 
-            return; 
+            setView('login');
+            return;
         }
 
         try {
@@ -338,15 +368,15 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
                     courseImage: course.image_url,
                     userId: user.id,
                     userEmail: user.email,
-                    eventId: courseEvent?.id
+                    eventId: courseEvent?.id || null
                 })
             });
             const data = await response.json();
             if (data.error) throw new Error(data.error);
-            window.location.href = data.url; 
-        } catch (error) { 
-            console.warn("Backend error (Simulated):", error);
-            alert("Checkout Simulation (Dev Mode)");
+            window.location.href = data.url;
+        } catch (error) {
+            console.warn("Checkout error:", error);
+            showNotification && showNotification(error.message || 'Ein Fehler ist aufgetreten');
         }
     };
 
@@ -466,7 +496,7 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
 
         // 2. Booking Factor
         // Lead/External: 1.0 | Basic+Booking: 1.3 | Pro+Booking: 1.2
-        const isBookable = candidate.booking_type === 'platform';
+        const isBookable = candidate.booking_type === 'platform' || candidate.booking_type === 'platform_flex';
         let bookingFactor = 1.0;
         if (isBookable) {
             bookingFactor = isPro ? 1.2 : 1.3;
@@ -590,7 +620,7 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
                 <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100 sticky top-24">
                     <div className="text-3xl font-bold text-primary font-heading mb-1">{getPriceLabel(course)}</div>
                     <p className="text-gray-400 text-xs mb-4">
-                        {course.booking_type === 'platform'
+                        {(course.booking_type === 'platform' || course.booking_type === 'platform_flex')
                             ? 'pro Person inkl. MwSt.'
                             : (Number(course.price) > 0 ? 'Unverbindliche Preisangabe' : '')}
                     </p>
@@ -696,21 +726,47 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
                     ) : (
                         <div className="bg-gray-50 rounded-xl p-5 border border-gray-200 mb-6 text-center">
                             <Map className="w-8 h-8 text-gray-400 mx-auto mb-3" />
-                            <h3 className="font-bold text-dark text-sm mb-2">Flexible Verfügbarkeit</h3>
-                            <p className="text-xs text-gray-500 mb-4">Dieser Kurs hat keine festen Termine oder findet an flexiblen Orten statt.</p>
+                            <h3 className="font-bold text-dark text-sm mb-2">
+                                {course.booking_type === 'platform_flex' ? 'Flexibler Termin' : 'Flexible Verfügbarkeit'}
+                            </h3>
+                            <p className="text-xs text-gray-500 mb-4">
+                                {course.booking_type === 'platform_flex'
+                                    ? 'Der genaue Termin wird nach der Buchung direkt mit dem Anbieter vereinbart.'
+                                    : 'Dieser Kurs hat keine festen Termine oder findet an flexiblen Orten statt.'}
+                            </p>
                             {course.address && course.address.length > 2 && (
-                                <div className="text-xs font-medium text-gray-700 bg-white p-2 rounded border border-gray-200 mb-4">Regionen: {course.address}</div>
+                                <div className="text-xs font-medium text-gray-700 bg-white p-2 rounded border border-gray-200 mb-4">
+                                    {course.booking_type === 'platform_flex' ? 'Ort: ' : 'Regionen: '}{course.address}
+                                </div>
                             )}
-                            
-                            <button 
-                                onClick={() => course.booking_type !== 'platform' && handleBookingAction()}
-                                disabled={course.booking_type === 'platform'}
+
+                            {/* Ticket availability info for platform_flex */}
+                            {course.booking_type === 'platform_flex' && course.ticket_limit_30d && (
+                                <div className={`text-xs p-2 rounded border mb-4 ${ticketAvailable ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700'}`}>
+                                    {ticketAvailable
+                                        ? (ticketRemaining !== null ? `Noch ${ticketRemaining} Plätze verfügbar` : 'Plätze verfügbar')
+                                        : 'Derzeit ausgebucht'}
+                                    {ticketPeriodEnd && ticketAvailable && (
+                                        <span className="block text-[10px] mt-1">
+                                            Reset am {new Date(ticketPeriodEnd).toLocaleDateString('de-CH')}
+                                        </span>
+                                    )}
+                                </div>
+                            )}
+
+                            <button
+                                onClick={() => (course.booking_type === 'platform_flex' || course.booking_type === 'lead') && handleBookingAction()}
+                                disabled={course.booking_type === 'platform' || (course.booking_type === 'platform_flex' && !ticketAvailable)}
                                 className={`w-full font-bold py-3 rounded-lg transition shadow-sm flex items-center justify-center
-                                    ${course.booking_type === 'platform' 
-                                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                                    ${course.booking_type === 'platform' || (course.booking_type === 'platform_flex' && !ticketAvailable)
+                                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                                         : 'bg-primary text-white hover:bg-orange-600'}`}
                             >
-                                {course.booking_type === 'platform' ? 'Derzeit nicht buchbar' : <><Mail className="w-4 h-4 mr-2"/> Anfrage senden</>}
+                                {course.booking_type === 'platform'
+                                    ? 'Derzeit nicht buchbar'
+                                    : course.booking_type === 'platform_flex'
+                                        ? (ticketAvailable ? `Jetzt buchen (${getPriceLabel(course)})` : 'Ausgebucht')
+                                        : <><Mail className="w-4 h-4 mr-2"/> Anfrage senden</>}
                             </button>
                         </div>
                     )}

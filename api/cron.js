@@ -67,90 +67,228 @@ export default async function handler(req, res) {
   const resend = new Resend(RESEND_KEY);
 
   try {
-    // 1. Calculate Search Window (Today + 1 Month +/- 5 Days)
     const today = new Date();
+    const nowISO = today.toISOString();
+    let emailsSent = 0;
+    let processedBookings = 0;
+
+    // ============================================
+    // PART 1: platform_flex bookings (payout after 7 days from payment)
+    // ============================================
+    const { data: flexBookings } = await supabase
+      .from('bookings')
+      .select('*, courses(*)')
+      .eq('booking_type', 'platform_flex')
+      .eq('is_paid', false)
+      .eq('status', 'confirmed')
+      .lte('payout_eligible_at', nowISO);
+
+    if (flexBookings && flexBookings.length > 0) {
+      // Group by course for batch processing
+      const flexByCourse = {};
+      for (const booking of flexBookings) {
+        const courseId = booking.course_id;
+        if (!flexByCourse[courseId]) {
+          flexByCourse[courseId] = { course: booking.courses, bookings: [] };
+        }
+        flexByCourse[courseId].bookings.push(booking);
+      }
+
+      for (const courseId of Object.keys(flexByCourse)) {
+        const { course, bookings } = flexByCourse[courseId];
+        if (!course) continue;
+
+        // Fetch teacher info
+        let teacherEmail = ADMIN_EMAIL;
+        let teacherLang = 'de';
+        if (course.user_id) {
+          const { data: teacherProfile } = await supabase.from('profiles').select('email, language').eq('id', course.user_id).single();
+          if (teacherProfile?.email) teacherEmail = teacherProfile.email;
+          if (teacherProfile?.language) teacherLang = teacherProfile.language;
+        }
+
+        const t = EMAIL_TRANSLATIONS[teacherLang] || EMAIL_TRANSLATIONS['de'];
+
+        // Fetch student names
+        const userIds = bookings.map(b => b.user_id);
+        const { data: profiles } = await supabase.from('profiles').select('id, full_name, email').in('id', userIds);
+
+        const listHtml = bookings.map(booking => {
+          const profile = profiles?.find(p => p.id === booking.user_id);
+          return `<li>${profile?.full_name || 'Teilnehmer'} (${profile?.email || 'Keine Email'})</li>`;
+        }).join('');
+
+        // Calculate payout
+        const totalRevenue = bookings.reduce((sum, b) => sum + (course.price || 0), 0);
+        const payoutAmount = totalRevenue * 0.85;
+
+        // Mark as paid
+        const bookingIds = bookings.map(b => b.id);
+        await supabase.from('bookings').update({ is_paid: true }).in('id', bookingIds);
+        processedBookings += bookingIds.length;
+
+        // Send email
+        try {
+          await resend.emails.send({
+            from: 'KursNavi <onboarding@resend.dev>',
+            to: teacherEmail,
+            bcc: ADMIN_EMAIL,
+            subject: `${t.subject}${course.title} (Flexible Buchungen)`,
+            html: generateEmailHtml(t.title, t.body(course.title, payoutAmount.toFixed(2), listHtml), t.cta)
+          });
+          emailsSent++;
+        } catch (emailError) {
+          console.error(`Failed to send flex payout email to ${teacherEmail}:`, emailError);
+        }
+      }
+    }
+
+    // ============================================
+    // PART 2: platform bookings (payout 25-35 days before event)
+    // ============================================
     const startWindowDate = new Date(today);
-    startWindowDate.setDate(today.getDate() + 25); 
+    startWindowDate.setDate(today.getDate() + 25);
     const startWindow = `${startWindowDate.toISOString().split('T')[0]}T00:00:00`;
 
     const endWindowDate = new Date(today);
-    endWindowDate.setDate(today.getDate() + 35); 
+    endWindowDate.setDate(today.getDate() + 35);
     const endWindow = `${endWindowDate.toISOString().split('T')[0]}T23:59:59`;
 
-    // 2. Find Courses
-    const { data: courses } = await supabase.from('courses').select('*').gte('start_date', startWindow).lte('start_date', endWindow);
+    // Find events in the payout window
+    const { data: events } = await supabase
+      .from('course_events')
+      .select('*, courses(*)')
+      .gte('start_date', startWindow)
+      .lte('start_date', endWindow);
 
-    if (!courses || courses.length === 0) {
-      return res.status(200).json({ message: "No courses found in window." });
-    }
+    if (events && events.length > 0) {
+      for (const event of events) {
+        const course = event.courses;
+        if (!course) continue;
 
-    let emailsSent = 0;
-
-    for (const course of courses) {
-        
-        // 3. Find Unpaid Bookings
-        const { data: bookings } = await supabase.from('bookings').select('*').eq('course_id', course.id);
+        // Find unpaid confirmed bookings for this event
+        const { data: bookings } = await supabase
+          .from('bookings')
+          .select('*')
+          .eq('event_id', event.id)
+          .eq('status', 'confirmed')
+          .eq('is_paid', false);
 
         if (!bookings || bookings.length === 0) continue;
 
-        const unpaidBookings = bookings.filter(b => b.is_paid !== true);
-        if (unpaidBookings.length === 0) continue;
-
-        // 4. FETCH TEACHER EMAIL & LANGUAGE
-        let teacherEmail = ADMIN_EMAIL; 
-        let teacherLang = 'en';
-
+        // Fetch teacher info
+        let teacherEmail = ADMIN_EMAIL;
+        let teacherLang = 'de';
         if (course.user_id) {
-            const { data: teacherProfile } = await supabase.from('profiles').select('email, language').eq('id', course.user_id).single();
-            if (teacherProfile) {
-                if (teacherProfile.email) teacherEmail = teacherProfile.email;
-                if (teacherProfile.language) teacherLang = teacherProfile.language;
-            }
+          const { data: teacherProfile } = await supabase.from('profiles').select('email, language').eq('id', course.user_id).single();
+          if (teacherProfile?.email) teacherEmail = teacherProfile.email;
+          if (teacherProfile?.language) teacherLang = teacherProfile.language;
         }
-        
-        const t = EMAIL_TRANSLATIONS[teacherLang] || EMAIL_TRANSLATIONS['en'];
 
-        // 5. Fetch Student Names
-        const userIds = unpaidBookings.map(b => b.user_id);
+        const t = EMAIL_TRANSLATIONS[teacherLang] || EMAIL_TRANSLATIONS['de'];
+
+        // Fetch student names
+        const userIds = bookings.map(b => b.user_id);
         const { data: profiles } = await supabase.from('profiles').select('id, full_name, email').in('id', userIds);
 
-        const listHtml = unpaidBookings.map(booking => {
-            const profile = profiles?.find(p => p.id === booking.user_id);
-            const name = profile?.full_name || 'Guest Student';
-            const email = profile?.email || 'No Email';
-            return `<li>${name} (${email})</li>`;
+        const listHtml = bookings.map(booking => {
+          const profile = profiles?.find(p => p.id === booking.user_id);
+          return `<li>${profile?.full_name || 'Teilnehmer'} (${profile?.email || 'Keine Email'})</li>`;
         }).join('');
 
-        // 6. Calculate Payout
-        const totalRevenue = unpaidBookings.length * course.price;
+        // Calculate payout
+        const totalRevenue = bookings.length * (course.price || 0);
         const payoutAmount = totalRevenue * 0.85;
 
-        // 7. Mark as Paid
-        const bookingIds = unpaidBookings.map(b => b.id);
+        // Mark as paid
+        const bookingIds = bookings.map(b => b.id);
         await supabase.from('bookings').update({ is_paid: true }).in('id', bookingIds);
+        processedBookings += bookingIds.length;
 
-        // 8. Send Email
+        // Send email
         try {
-            await resend.emails.send({
-                from: 'KursNavi <onboarding@resend.dev>',
-                to: teacherEmail, 
-                bcc: ADMIN_EMAIL, 
-                subject: `${t.subject} ${course.title}`,
-                html: generateEmailHtml(t.title, t.body(course.title, payoutAmount, listHtml), t.cta)
-            });
-            emailsSent++;
+          await resend.emails.send({
+            from: 'KursNavi <onboarding@resend.dev>',
+            to: teacherEmail,
+            bcc: ADMIN_EMAIL,
+            subject: `${t.subject}${course.title}`,
+            html: generateEmailHtml(t.title, t.body(course.title, payoutAmount.toFixed(2), listHtml), t.cta)
+          });
+          emailsSent++;
         } catch (emailError) {
-            console.error(`Failed to send email to ${teacherEmail}:`, emailError);
+          console.error(`Failed to send payout email to ${teacherEmail}:`, emailError);
         }
+      }
+    }
+
+    // Also handle legacy bookings (old format without event_id)
+    const { data: legacyCourses } = await supabase.from('courses').select('*').gte('start_date', startWindow).lte('start_date', endWindow);
+
+    if (legacyCourses && legacyCourses.length > 0) {
+      for (const course of legacyCourses) {
+        // Find unpaid bookings without event_id (legacy)
+        const { data: bookings } = await supabase
+          .from('bookings')
+          .select('*')
+          .eq('course_id', course.id)
+          .is('event_id', null)
+          .eq('is_paid', false);
+
+        if (!bookings || bookings.length === 0) continue;
+
+        // Only process if status is confirmed or null (legacy bookings may not have status)
+        const validBookings = bookings.filter(b => !b.status || b.status === 'confirmed');
+        if (validBookings.length === 0) continue;
+
+        let teacherEmail = ADMIN_EMAIL;
+        let teacherLang = 'de';
+        if (course.user_id) {
+          const { data: teacherProfile } = await supabase.from('profiles').select('email, language').eq('id', course.user_id).single();
+          if (teacherProfile?.email) teacherEmail = teacherProfile.email;
+          if (teacherProfile?.language) teacherLang = teacherProfile.language;
+        }
+
+        const t = EMAIL_TRANSLATIONS[teacherLang] || EMAIL_TRANSLATIONS['de'];
+
+        const userIds = validBookings.map(b => b.user_id);
+        const { data: profiles } = await supabase.from('profiles').select('id, full_name, email').in('id', userIds);
+
+        const listHtml = validBookings.map(booking => {
+          const profile = profiles?.find(p => p.id === booking.user_id);
+          return `<li>${profile?.full_name || 'Teilnehmer'} (${profile?.email || 'Keine Email'})</li>`;
+        }).join('');
+
+        const totalRevenue = validBookings.length * (course.price || 0);
+        const payoutAmount = totalRevenue * 0.85;
+
+        const bookingIds = validBookings.map(b => b.id);
+        await supabase.from('bookings').update({ is_paid: true }).in('id', bookingIds);
+        processedBookings += bookingIds.length;
+
+        try {
+          await resend.emails.send({
+            from: 'KursNavi <onboarding@resend.dev>',
+            to: teacherEmail,
+            bcc: ADMIN_EMAIL,
+            subject: `${t.subject}${course.title}`,
+            html: generateEmailHtml(t.title, t.body(course.title, payoutAmount.toFixed(2), listHtml), t.cta)
+          });
+          emailsSent++;
+        } catch (emailError) {
+          console.error(`Failed to send legacy payout email to ${teacherEmail}:`, emailError);
+        }
+      }
     }
 
     return res.status(200).json({
       success: true,
       message: "Payouts Processed",
-      emailsSent: emailsSent
+      emailsSent: emailsSent,
+      processedBookings: processedBookings
     });
 
   } catch (error) {
+    console.error('Cron error:', error);
     return res.status(500).json({ success: false, error: error.message });
   }
 }

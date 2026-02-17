@@ -63,30 +63,74 @@ const EMAIL_TRANSLATIONS = {
     student_subject: "Booking Confirmed: ",
     student_title: "You're in! 🎉",
     student_body: (course, date) => `Great news! You have successfully booked <strong>${course}</strong>.<br><br>The course starts on: <strong>${date}</strong>.<br>Your invoice is attached to this email.`,
+    student_body_flex: (course, location) => `Great news! You have successfully booked <strong>${course}</strong>.<br><br>Location: <strong>${location}</strong><br>The exact date will be arranged directly with the provider.<br>Your invoice is attached to this email.`,
     teacher_subject: "New Student: ",
     teacher_title: "New Booking Received 🚀",
     teacher_body: (email, course, date) => `<strong>${email}</strong> has just booked a spot in <strong>${course}</strong>.<br>Start Date: ${date}.`,
+    teacher_body_flex: (email, course, location) => `<strong>${email}</strong> has just booked a spot in <strong>${course}</strong>.<br>Location: ${location}.<br>Please contact the student to arrange a date.`,
+    overbooking_subject: "Automatic Refund - ",
+    overbooking_title: "Automatic Refund",
+    overbooking_body: (course, price) => `Unfortunately, the course "<strong>${course}</strong>" was already fully booked at the time of your booking.<br><br>The amount of CHF ${price} has been automatically refunded to your original payment method.<br><br>We apologize for the inconvenience.`,
     cta_view: "Go to Dashboard"
   },
   de: {
     student_subject: "Buchung bestätigt: ",
     student_title: "Du bist dabei! 🎉",
     student_body: (course, date) => `Gute Nachrichten! Du hast dich erfolgreich für <strong>${course}</strong> angemeldet.<br><br>Der Kurs beginnt am: <strong>${date}</strong>.<br>Deine Rechnung findest du im Anhang dieser E-Mail.`,
+    student_body_flex: (course, location) => `Gute Nachrichten! Du hast dich erfolgreich für <strong>${course}</strong> angemeldet.<br><br>Ort: <strong>${location}</strong><br>Der genaue Termin wird direkt mit dem Anbieter vereinbart.<br>Deine Rechnung findest du im Anhang dieser E-Mail.`,
     teacher_subject: "Neuer Schüler: ",
     teacher_title: "Neue Buchung erhalten 🚀",
     teacher_body: (email, course, date) => `<strong>${email}</strong> hat sich gerade für <strong>${course}</strong> angemeldet.<br>Kursbeginn: ${date}.`,
+    teacher_body_flex: (email, course, location) => `<strong>${email}</strong> hat sich gerade für <strong>${course}</strong> angemeldet.<br>Ort: ${location}.<br>Bitte kontaktiere den Teilnehmer, um einen Termin zu vereinbaren.`,
+    overbooking_subject: "Automatische Rückerstattung - ",
+    overbooking_title: "Automatische Rückerstattung",
+    overbooking_body: (course, price) => `Leider war der Kurs "<strong>${course}</strong>" zum Zeitpunkt deiner Buchung bereits ausgebucht.<br><br>Der Betrag von CHF ${price} wurde automatisch auf deine ursprüngliche Zahlungsmethode zurückerstattet.<br><br>Wir entschuldigen uns für die Unannehmlichkeiten.`,
     cta_view: "Zum Dashboard"
   },
   fr: {
     student_subject: "Réservation confirmée : ",
     student_title: "C'est confirmé ! 🎉",
     student_body: (course, date) => `Excellente nouvelle ! Vous êtes inscrit à <strong>${course}</strong>.<br><br>Le cours commence le : <strong>${date}</strong>.<br>Votre facture est jointe à cet e-mail.`,
+    student_body_flex: (course, location) => `Excellente nouvelle ! Vous êtes inscrit à <strong>${course}</strong>.<br><br>Lieu : <strong>${location}</strong><br>La date exacte sera convenue directement avec le prestataire.<br>Votre facture est jointe à cet e-mail.`,
     teacher_subject: "Nouvel étudiant : ",
     teacher_title: "Nouvelle réservation 🚀",
     teacher_body: (email, course, date) => `<strong>${email}</strong> vient de réserver une place pour <strong>${course}</strong>.<br>Date de début : ${date}.`,
+    teacher_body_flex: (email, course, location) => `<strong>${email}</strong> vient de réserver une place pour <strong>${course}</strong>.<br>Lieu : ${location}.<br>Veuillez contacter l'étudiant pour convenir d'une date.`,
+    overbooking_subject: "Remboursement automatique - ",
+    overbooking_title: "Remboursement automatique",
+    overbooking_body: (course, price) => `Malheureusement, le cours "<strong>${course}</strong>" était déjà complet au moment de votre réservation.<br><br>Le montant de CHF ${price} a été automatiquement remboursé sur votre méthode de paiement d'origine.<br><br>Nous nous excusons pour ce désagrément.`,
     cta_view: "Voir le tableau de bord"
   }
 };
+
+// --- 3.1 AUTO-REFUND CALCULATION ---
+function calculateAutoRefundUntil(paidAt, eventStartAt, bookingType) {
+  if (bookingType === 'lead') {
+    return null;
+  }
+
+  const paidDate = new Date(paidAt);
+  const sevenDaysAfterPayment = new Date(paidDate.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+  if (bookingType === 'platform_flex') {
+    return sevenDaysAfterPayment;
+  }
+
+  // platform with event
+  if (bookingType === 'platform' && eventStartAt) {
+    const eventDate = new Date(eventStartAt);
+    const sevenDaysBeforeEvent = new Date(eventDate.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+    // Event in less than 7 days → no auto-refund
+    if (sevenDaysBeforeEvent <= paidDate) {
+      return null;
+    }
+
+    return sevenDaysAfterPayment < sevenDaysBeforeEvent ? sevenDaysAfterPayment : sevenDaysBeforeEvent;
+  }
+
+  return null;
+}
 
 // --- 4. PDF INVOICE GENERATOR ---
 const generateInvoicePDF = async (invoiceData) => {
@@ -180,78 +224,198 @@ export default async function handler(req, res) {
 
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object;
-    const userId = session.metadata.userId;
-    const courseId = session.metadata.courseId;
-    const customerEmail = session.customer_details.email;
-    const amountTotal = session.amount_total; // in cents
+    const metadata = session.metadata || {};
 
-    console.log(`💰 Processing Booking: User ${userId} -> Course ${courseId}`);
+    // Skip if this is a capture_service payment (handled separately below)
+    if (metadata.type === 'capture_service') {
+      // Will be handled in the capture service section
+    } else if (metadata.courseId) {
+      // --- COURSE BOOKING HANDLING (v2) ---
+      const userId = metadata.userId;
+      const courseId = metadata.courseId;
+      const eventId = metadata.eventId || null;
+      const bookingType = metadata.bookingType || 'platform';
+      const customerEmail = session.customer_details?.email;
+      const amountTotal = session.amount_total;
 
-    // 1. Save Booking
-    const { error: bookingError } = await supabase.from('bookings').insert([{ user_id: userId, course_id: courseId }]);
-    if (bookingError) {
-        console.error('❌ Database Rejected Booking:', bookingError);
-        return res.status(500).json({ error: "Database Insert Failed", details: bookingError });
-    }
+      console.log(`💰 Processing Booking v2: User ${userId} -> Course ${courseId} (${bookingType})`);
 
-    // 2. Get Course Info
-    const { data: course } = await supabase.from('courses').select('title, start_date, user_id').eq('id', courseId).single();
-    const courseTitle = course ? course.title : 'Course';
-    const courseDate = course ? new Date(course.start_date).toLocaleDateString('de-CH') : 'TBA';
+      // 1. Idempotency check: Already processed?
+      const { data: existingBooking } = await supabase
+        .from('bookings')
+        .select('id')
+        .eq('stripe_checkout_session_id', session.id)
+        .single();
 
-    // 3. Determine Language
-    let studentLang = 'de';
-    if (userId) {
-        const { data: profile } = await supabase.from('profiles').select('language').eq('id', userId).single();
-        if (profile && profile.language) studentLang = profile.language;
-    }
-    const sTexts = EMAIL_TRANSLATIONS[studentLang] || EMAIL_TRANSLATIONS['de'];
+      if (existingBooking) {
+        console.log('⏭️ Booking already processed, skipping');
+        return res.status(200).json({ received: true, note: 'Already processed' });
+      }
 
-    // 4. GENERATE PDF INVOICE
-    let pdfBuffer = null;
-    try {
-        pdfBuffer = await generateInvoicePDF({
-            courseTitle: courseTitle,
-            amount: amountTotal,
-            customerEmail: customerEmail
+      // 2. Get course and event info
+      const { data: course } = await supabase
+        .from('courses')
+        .select('title, city, canton, user_id, ticket_limit_30d')
+        .eq('id', courseId)
+        .single();
+
+      let eventStartAt = null;
+      let eventLocation = null;
+      if (eventId) {
+        const { data: eventData } = await supabase
+          .from('course_events')
+          .select('start_date, location, city')
+          .eq('id', eventId)
+          .single();
+        eventStartAt = eventData?.start_date;
+        eventLocation = eventData?.location || eventData?.city;
+      }
+
+      const courseTitle = course?.title || 'Kurs';
+      const courseLocation = eventLocation || course?.city || course?.canton || '';
+      const courseDate = eventStartAt ? new Date(eventStartAt).toLocaleDateString('de-CH') : 'TBA';
+
+      // 3. Reserve ticket (with lock) for platform/platform_flex
+      let periodId = null;
+      if (bookingType !== 'lead' && course?.ticket_limit_30d) {
+        const { data: ticketResult, error: ticketError } = await supabase.rpc('reserve_ticket', {
+          p_course_id: courseId
         });
-    } catch (pdfErr) {
+
+        if (ticketError || !ticketResult?.[0]?.success) {
+          console.log('❌ Ticket limit reached, auto-refunding');
+
+          // Auto-refund
+          try {
+            await stripe.refunds.create({ payment_intent: session.payment_intent });
+          } catch (refundErr) {
+            console.error('Stripe refund failed:', refundErr);
+          }
+
+          // Send overbooking email to user
+          let studentLang = 'de';
+          if (userId) {
+            const { data: profile } = await supabase.from('profiles').select('language').eq('id', userId).single();
+            if (profile?.language) studentLang = profile.language;
+          }
+          const sTexts = EMAIL_TRANSLATIONS[studentLang] || EMAIL_TRANSLATIONS['de'];
+
+          try {
+            await resend.emails.send({
+              from: 'KursNavi <onboarding@resend.dev>',
+              to: customerEmail,
+              subject: `${sTexts.overbooking_subject}${courseTitle}`,
+              html: generateEmailHtml(
+                sTexts.overbooking_title,
+                sTexts.overbooking_body(courseTitle, (amountTotal / 100).toFixed(2)),
+                sTexts.cta_view
+              )
+            });
+          } catch (emailErr) {
+            console.error('Overbooking email failed:', emailErr);
+          }
+
+          return res.status(200).json({ received: true, note: 'Ticket unavailable, auto-refunded' });
+        }
+        periodId = ticketResult[0].period_id;
+      }
+
+      // 4. Calculate timestamps
+      const paidAt = new Date();
+      const autoRefundUntil = calculateAutoRefundUntil(paidAt, eventStartAt, bookingType);
+      const payoutEligibleAt = new Date(paidAt.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+      // 5. Create booking
+      const { error: insertError } = await supabase.from('bookings').insert({
+        user_id: userId,
+        course_id: courseId,
+        event_id: eventId || null,
+        status: 'confirmed',
+        booking_type: bookingType,
+        paid_at: paidAt.toISOString(),
+        auto_refund_until: autoRefundUntil?.toISOString() || null,
+        payout_eligible_at: payoutEligibleAt.toISOString(),
+        stripe_payment_intent_id: session.payment_intent,
+        stripe_checkout_session_id: session.id,
+        ticket_period_id: periodId
+      });
+
+      if (insertError) {
+        // Duplicate via unique constraint? → idempotent ignore
+        if (insertError.code === '23505') {
+          console.log('⏭️ Duplicate booking detected, ignoring');
+          return res.status(200).json({ received: true, note: 'Duplicate, ignored' });
+        }
+        console.error('❌ Database Rejected Booking:', insertError);
+        return res.status(500).json({ error: "Database Insert Failed", details: insertError });
+      }
+
+      // 6. Determine language for emails
+      let studentLang = 'de';
+      if (userId) {
+        const { data: profile } = await supabase.from('profiles').select('language').eq('id', userId).single();
+        if (profile?.language) studentLang = profile.language;
+      }
+      const sTexts = EMAIL_TRANSLATIONS[studentLang] || EMAIL_TRANSLATIONS['de'];
+
+      // 7. Generate PDF Invoice
+      let pdfBuffer = null;
+      try {
+        pdfBuffer = await generateInvoicePDF({
+          courseTitle: courseTitle,
+          amount: amountTotal,
+          customerEmail: customerEmail
+        });
+      } catch (pdfErr) {
         console.error("PDF Generation Failed:", pdfErr);
-    }
+      }
 
-    // 5. Send STUDENT Email (With Attachment)
-    try {
-        const emailParams = {
-            from: 'KursNavi <onboarding@resend.dev>', // TODO: Verifiziere deine Domain in Resend für "noreply@kursnavi.ch"
-            to: customerEmail,
-            subject: `${sTexts.student_subject} ${courseTitle}`,
-            html: generateEmailHtml(sTexts.student_title, sTexts.student_body(courseTitle, courseDate), sTexts.cta_view),
-            attachments: pdfBuffer ? [
-                {
-                    filename: 'Rechnung_KursNavi.pdf',
-                    content: pdfBuffer
-                }
-            ] : []
-        };
-        
-        await resend.emails.send(emailParams);
+      // 8. Send STUDENT Email (adapted for flex)
+      try {
+        const emailBody = bookingType === 'platform_flex'
+          ? sTexts.student_body_flex(courseTitle, courseLocation)
+          : sTexts.student_body(courseTitle, courseDate);
+
+        await resend.emails.send({
+          from: 'KursNavi <onboarding@resend.dev>',
+          to: customerEmail,
+          subject: `${sTexts.student_subject}${courseTitle}`,
+          html: generateEmailHtml(sTexts.student_title, emailBody, sTexts.cta_view),
+          attachments: pdfBuffer ? [{
+            filename: 'Rechnung_KursNavi.pdf',
+            content: pdfBuffer
+          }] : []
+        });
         console.log("✅ Student email sent with invoice.");
-    } catch (e) { console.error('Student Email Failed:', e); }
+      } catch (e) { console.error('Student Email Failed:', e); }
 
-    // 6. Send TEACHER Email
-    if (course) {
-        const teacherEmail = "btrespondek@gmail.com";
-        let teacherLang = 'de';
-        const tTexts = EMAIL_TRANSLATIONS[teacherLang];
+      // 9. Send TEACHER Email
+      if (course?.user_id) {
+        const { data: teacherProfile } = await supabase
+          .from('profiles')
+          .select('email, language')
+          .eq('id', course.user_id)
+          .single();
+
+        const teacherEmail = teacherProfile?.email || 'btrespondek@gmail.com';
+        const teacherLang = teacherProfile?.language || 'de';
+        const tTexts = EMAIL_TRANSLATIONS[teacherLang] || EMAIL_TRANSLATIONS['de'];
 
         try {
-            await resend.emails.send({
-                from: 'KursNavi <onboarding@resend.dev>',
-                to: teacherEmail,
-                subject: `${tTexts.teacher_subject} ${courseTitle}`,
-                html: generateEmailHtml(tTexts.teacher_title, tTexts.teacher_body(customerEmail, courseTitle, courseDate), tTexts.cta_view)
-            });
+          const teacherBody = bookingType === 'platform_flex'
+            ? tTexts.teacher_body_flex(customerEmail, courseTitle, courseLocation)
+            : tTexts.teacher_body(customerEmail, courseTitle, courseDate);
+
+          await resend.emails.send({
+            from: 'KursNavi <onboarding@resend.dev>',
+            to: teacherEmail,
+            subject: `${tTexts.teacher_subject}${courseTitle}`,
+            html: generateEmailHtml(tTexts.teacher_title, teacherBody, tTexts.cta_view)
+          });
         } catch (tError) { console.error('Teacher Email Failed:', tError); }
+      }
+
+      console.log(`✅ Booking v2 completed: ${bookingType}`);
     }
   }
 
