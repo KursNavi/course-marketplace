@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
-import { ArrowLeft, Loader, Calendar, Plus, Trash2, ExternalLink, Globe, Mail, MapPin, Lightbulb, X, Send, ChevronDown, Images, Check } from 'lucide-react';
+import { ArrowLeft, Loader, Calendar, Plus, Trash2, ExternalLink, Globe, MapPin, Lightbulb, X, Send, ChevronDown, Images, Check } from 'lucide-react';
 import { KursNaviLogo } from './Layout';
 import { SWISS_CANTONS, NEW_TAXONOMY, CATEGORY_TYPES, COURSE_LEVELS, DELIVERY_TYPES, COURSE_LANGUAGES } from '../lib/constants';
 import { supabase } from '../lib/supabase';
@@ -420,7 +420,6 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
 
     // Booking & Link State
     const [bookingType, setBookingType] = useState(draft?.bookingType || 'platform'); // 'platform', 'platform_flex', or 'lead'
-    const [contactEmail, setContactEmail] = useState(draft?.contactEmail || '');
     const [ticketLimit30d, setTicketLimit30d] = useState(draft?.ticketLimit30d || '');
 
     // Form Field State (controlled inputs to preserve data on validation errors / tab switches)
@@ -502,7 +501,6 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
         const draftData = {
             courseId: initialData?.id || 'new',
             bookingType,
-            contactEmail,
             ticketLimit30d,
             title,
             description,
@@ -534,7 +532,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
                 console.warn('Failed to save draft:', e);
             }
         }
-    }, [isDirty, draftKey, bookingType, contactEmail, ticketLimit30d, title, description, objectives, keywords, prerequisites, price, sessionCount, sessionLength, providerUrl, categories, selectedLevel, courseLanguages, deliveryTypes, courseStatus, events, fallbackCantons, initialData?.id]);
+    }, [isDirty, draftKey, bookingType, ticketLimit30d, title, description, objectives, keywords, prerequisites, price, sessionCount, sessionLength, providerUrl, categories, selectedLevel, courseLanguages, deliveryTypes, courseStatus, events, fallbackCantons, initialData?.id]);
 
     // Save draft on unmount (safety net for fast tab switches)
     useEffect(() => {
@@ -613,14 +611,14 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
             // Load course status (default to 'published' for existing courses without status)
             setCourseStatus(initialData.status || 'published');
 
-            
-            // Restore Contact Email (now stored in course_private)
+
+            // Load private course data (address for legacy fallback)
             // IMPORTANT: Check isMounted AND that user hasn't made changes before any state updates
             (async () => {
                 try {
                     const { data: priv, error: privErr } = await supabase
                         .from('course_private')
-                        .select('contact_email, address')
+                        .select('address')
                         .eq('course_id', initialData.id)
                         .maybeSingle();
 
@@ -629,15 +627,6 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
                     if (!isMounted || formDataRef.current?.isDirty) return;
 
                     if (privErr) console.warn("course_private load failed:", privErr.message);
-
-                    if (priv?.contact_email) {
-                        setContactEmail(priv.contact_email);
-                    } else if (user?.email) {
-                        setContactEmail(user.email);
-                    }
-
-                    // Re-check isDirty after each async operation in case user edited while we were processing
-                    if (formDataRef.current?.isDirty) return;
 
                     // Legacy fallback (falls es keinen course_events-Block gibt, aber private address existiert)
                     if ((!initialData.course_events || initialData.course_events.length === 0) && initialData.start_date && priv?.address) {
@@ -667,7 +656,6 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
                     }
                 } catch (err) {
                     console.warn("course_private load error:", err);
-                    if (isMounted && !formDataRef.current?.isDirty && user?.email) setContactEmail(user.email);
                 }
             })();
 
@@ -1048,10 +1036,6 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
                 window.alert("Bitte geben Sie entweder einen konkreten Termin (mit Datum) ODER mindestens einen Kanton/Region an.");
                 return;
             }
-
-            if (!contactEmail) {
-                window.alert("Bitte geben Sie eine Kontakt-Email an."); return;
-            }
         }
 
         setIsSubmitting(true);
@@ -1182,8 +1166,7 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
         if (activeCourseId) {
             const privatePayload = {
                 course_id: activeCourseId,
-                address: privateAddress || null,
-                contact_email: (bookingType === 'lead') ? (contactEmail || null) : null
+                address: privateAddress || null
             };
 
             const { error: privErr } = await supabase
@@ -1568,19 +1551,8 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                     {/* DYNAMIC FIELDS */}
                     <div className="animate-in fade-in slide-in-from-top-4 duration-300">
                         
-                        {/* A: CONTACT / LINK FIELDS */}
+                        {/* A: PRICE / LINK FIELDS */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                            {bookingType === 'lead' && (
-                                <div className="md:col-span-2">
-                                    <label className="block text-sm font-bold text-gray-700 mb-1">Email für Anfragen *</label>
-                                    <div className="relative">
-                                        <Mail className="absolute left-3 top-2.5 text-gray-400 w-4 h-4" />
-                                        <input required type="email" name="contact_email" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} placeholder="ihre@email.ch" className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
-                                    </div>
-                                    <p className="text-xs text-gray-500 mt-1">An diese Adresse werden Kundenanfragen gesendet.</p>
-                                </div>
-                            )}
-
                             <div>
                                 <label className="block text-sm font-bold text-gray-700 mb-1">Preis (CHF) {(bookingType === 'platform' || bookingType === 'platform_flex') && '*'}</label>
                                 <input required={bookingType === 'platform' || bookingType === 'platform_flex'} type="number" name="price" value={price} onChange={(e) => { setPrice(e.target.value); markDirty(); }} placeholder={bookingType === 'lead' ? "Optional" : "0.00"} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
