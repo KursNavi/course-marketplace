@@ -473,7 +473,7 @@ const SearchPageView = ({
                                 </div>
 
                                 {/* Preis */}
-                                <span className="ml-3 font-heading font-bold text-primary text-xs leading-tight text-right">
+                                <span className="ml-3 font-heading font-bold text-primary text-xs leading-tight text-right w-[70px] shrink-0">
                                     {getPriceLabel(course)}
                                 </span>
                             </div>
