@@ -94,13 +94,18 @@ export function useTaxonomy() {
                 }
             };
 
-            // Find areas for this type
-            const typeAreas = dbAreas.filter(a => a.type_id === type.id);
-            typeAreas.forEach(area => {
-                // Find specialties for this area
-                const areaSpecs = dbSpecialties.filter(s => s.area_id === area.id);
+            // Find areas for this type and sort alphabetically by label
+            const typeAreas = dbAreas
+                .filter(a => a.type_id === type.id)
+                .sort((a, b) => (a.label_de || '').localeCompare(b.label_de || '', 'de'));
 
-                // Build specialty objects with their focuses
+            typeAreas.forEach(area => {
+                // Find specialties for this area and sort alphabetically by label
+                const areaSpecs = dbSpecialties
+                    .filter(s => s.area_id === area.id)
+                    .sort((a, b) => (a.label_de || '').localeCompare(b.label_de || '', 'de'));
+
+                // Build specialty objects with their focuses (sorted)
                 const specialtyObjects = areaSpecs.map(s => ({
                     id: s.id,
                     slug: s.slug,
@@ -108,7 +113,8 @@ export function useTaxonomy() {
                     label_en: s.label_en || s.label_de,
                     label_fr: s.label_fr || s.label_de,
                     label_it: s.label_it || s.label_de,
-                    focuses: focusBySpecialtyId[s.id] || []
+                    focuses: (focusBySpecialtyId[s.id] || [])
+                        .sort((a, b) => (a.label_de || '').localeCompare(b.label_de || '', 'de'))
                 }));
 
                 const areaData = {
@@ -119,20 +125,23 @@ export function useTaxonomy() {
                         fr: area.label_fr || area.label_de,
                         it: area.label_it || area.label_de
                     },
-                    specialties: specialtyObjects.map(s => s.label_de), // For backward compatibility
-                    specialtyObjects, // New: full objects with IDs
+                    specialties: specialtyObjects.map(s => s.label_de), // For backward compatibility (already sorted)
+                    specialtyObjects, // New: full objects with IDs (already sorted)
                     specialtyFocuses: Object.fromEntries(
                         specialtyObjects.map(s => [s.label_de, s.focuses.map(f => f.label_de)])
                     )
                 };
 
-                // Store by numeric ID
+                // Store by numeric ID only - slug is stored in _areaIds for lookup
                 typeData[area.id] = areaData;
                 // Also store by slug for backward compatibility with legacy course data
                 if (area.slug) {
                     typeData[area.slug] = areaData;
                 }
             });
+
+            // Store ordered area IDs for getAreas() - only numeric IDs, no duplicates
+            typeData._areaIds = typeAreas.map(a => a.id);
 
             // Store type by numeric ID
             builtTaxonomy[type.id] = typeData;
@@ -194,7 +203,7 @@ export function useTaxonomy() {
         });
 
         dbTypes.forEach(type => {
-            builtTaxonomy[type.id] = {
+            const typeData = {
                 _meta: type,
                 label: {
                     de: type.label_de,
@@ -204,20 +213,29 @@ export function useTaxonomy() {
                 }
             };
 
-            const typeAreas = dbAreas.filter(a => a.type_id === type.id);
+            // Sort areas alphabetically by label
+            const typeAreas = dbAreas
+                .filter(a => a.type_id === type.id)
+                .sort((a, b) => (a.label_de || '').localeCompare(b.label_de || '', 'de'));
+
             typeAreas.forEach(area => {
-                const areaSpecs = dbSpecialties.filter(s => s.area_id === area.id);
+                // Sort specialties alphabetically by name
+                const areaSpecs = dbSpecialties
+                    .filter(s => s.area_id === area.id)
+                    .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'de'));
+
                 const specialtyNames = areaSpecs.map(s => s.name);
 
                 const specialtyFocuses = {};
                 areaSpecs.forEach(s => {
                     const fList = focusBySpecialtyId[s.id];
                     if (fList && fList.length > 0) {
-                        specialtyFocuses[s.name] = fList;
+                        // Sort focuses alphabetically
+                        specialtyFocuses[s.name] = [...fList].sort((a, b) => a.localeCompare(b, 'de'));
                     }
                 });
 
-                builtTaxonomy[type.id][area.id] = {
+                typeData[area.id] = {
                     _meta: area,
                     label: {
                         de: area.label_de,
@@ -229,6 +247,10 @@ export function useTaxonomy() {
                     specialtyFocuses
                 };
             });
+
+            // Store ordered area IDs
+            typeData._areaIds = typeAreas.map(a => a.id);
+            builtTaxonomy[type.id] = typeData;
         });
 
         taxonomyCache = {
@@ -265,35 +287,61 @@ export function useTaxonomy() {
 
         const fallbackAreas = [];
         const fallbackSpecialties = [];
-        let areaSort = 0;
         let specSort = 0;
 
+        // Build taxonomy with _areaIds for consistent getAreas() behavior
+        const builtTaxonomy = {};
+
         Object.entries(NEW_TAXONOMY).forEach(([typeId, typeAreas]) => {
-            Object.entries(typeAreas).forEach(([areaId, areaData]) => {
+            builtTaxonomy[typeId] = {
+                label: CATEGORY_TYPES[typeId] ? {
+                    de: CATEGORY_TYPES[typeId].de,
+                    en: CATEGORY_TYPES[typeId].en,
+                    fr: CATEGORY_TYPES[typeId].fr,
+                    it: CATEGORY_TYPES[typeId].it
+                } : { de: typeId }
+            };
+
+            // Sort areas alphabetically by label
+            const sortedAreaEntries = Object.entries(typeAreas)
+                .sort(([, a], [, b]) => (a.label?.de || '').localeCompare(b.label?.de || '', 'de'));
+
+            const areaIds = [];
+            sortedAreaEntries.forEach(([areaId, areaData]) => {
+                areaIds.push(areaId);
                 fallbackAreas.push({
                     id: areaId,
                     type_id: typeId,
                     label_de: areaData.label.de,
                     label_en: areaData.label.en,
                     label_fr: areaData.label.fr,
-                    label_it: areaData.label.it,
-                    sort_order: areaSort++
+                    label_it: areaData.label.it
                 });
 
-                areaData.specialties.forEach((name, idx) => {
+                // Sort specialties alphabetically
+                const sortedSpecialties = [...areaData.specialties].sort((a, b) => a.localeCompare(b, 'de'));
+
+                sortedSpecialties.forEach((name) => {
                     fallbackSpecialties.push({
                         id: specSort++,
                         area_id: areaId,
                         name,
-                        label_de: name,
-                        sort_order: idx
+                        label_de: name
                     });
                 });
+
+                builtTaxonomy[typeId][areaId] = {
+                    label: areaData.label,
+                    specialties: sortedSpecialties,
+                    specialtyFocuses: areaData.specialtyFocuses || {}
+                };
             });
+
+            builtTaxonomy[typeId]._areaIds = areaIds;
         });
 
         taxonomyCache = {
-            taxonomy: NEW_TAXONOMY,
+            taxonomy: builtTaxonomy,
             types: fallbackTypes,
             areas: fallbackAreas,
             specialties: fallbackSpecialties,
@@ -302,7 +350,7 @@ export function useTaxonomy() {
         };
         cacheTimestamp = Date.now();
 
-        setTaxonomy(NEW_TAXONOMY);
+        setTaxonomy(builtTaxonomy);
         setTypes(fallbackTypes);
         setAreas(fallbackAreas);
         setSpecialties(fallbackSpecialties);
@@ -314,13 +362,30 @@ export function useTaxonomy() {
         loadTaxonomy();
     }, [loadTaxonomy]);
 
-    // Helper: Get areas for a type (returns area IDs)
+    // Helper: Get areas for a type (returns area IDs, sorted alphabetically)
     const getAreas = useCallback((typeId) => {
         if (!taxonomy || !typeId) return [];
         const typeData = taxonomy[typeId];
         if (!typeData) return [];
-        // Return all keys except _meta and label
-        return Object.keys(typeData).filter(k => k !== '_meta' && k !== 'label');
+
+        // If we have pre-sorted _areaIds (v2), use those to avoid duplicates
+        if (typeData._areaIds) {
+            return typeData._areaIds;
+        }
+
+        // Fallback for legacy: filter out special keys and sort by label
+        const areaKeys = Object.keys(typeData).filter(k =>
+            k !== '_meta' && k !== 'label' && k !== '_areaIds' &&
+            // Only include numeric IDs or slugs that don't have a corresponding numeric entry
+            (typeof k === 'number' || !typeData[k]?._meta?.id || String(typeData[k]._meta.id) === k)
+        );
+
+        // Sort by label alphabetically
+        return areaKeys.sort((a, b) => {
+            const labelA = typeData[a]?.label?.de || '';
+            const labelB = typeData[b]?.label?.de || '';
+            return labelA.localeCompare(labelB, 'de');
+        });
     }, [taxonomy]);
 
     // Helper: Get specialties for an area (returns specialty names/labels)
