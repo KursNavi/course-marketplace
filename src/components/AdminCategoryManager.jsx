@@ -109,8 +109,24 @@ const AdminCategoryManager = ({ showNotification }) => {
         if (!editingItem || !editValue.trim()) return;
 
         try {
+            // Find the item to get numericId if available (for consolidated schema)
+            let itemData = { id: editingItem.id };
+            if (editingItem.entity === 'type') {
+                const item = types.find(t => t.id === editingItem.id);
+                if (item?.numericId) itemData.numericId = item.numericId;
+            } else if (editingItem.entity === 'area') {
+                const item = areas.find(a => a.id === editingItem.id);
+                if (item?.numericId) itemData.numericId = item.numericId;
+            } else if (editingItem.entity === 'specialty') {
+                const item = specialties.find(s => s.id === editingItem.id);
+                if (item?.numericId) itemData.numericId = item.numericId;
+            } else if (editingItem.entity === 'focus') {
+                const item = focuses.find(f => f.id === editingItem.id);
+                if (item?.numericId) itemData.numericId = item.numericId;
+            }
+
             await apiCall('update', editingItem.entity, {
-                id: editingItem.id,
+                ...itemData,
                 [editingItem.field]: editValue.trim()
             });
             await loadTaxonomy();
@@ -175,40 +191,55 @@ const AdminCategoryManager = ({ showNotification }) => {
     // Delete item
     const initiateDelete = async (entity, id, name) => {
         try {
+            // Find item to get numericId for consolidated schema
+            let numericId = null;
+            if (entity === 'type') {
+                numericId = types.find(t => t.id === id)?.numericId;
+            } else if (entity === 'area') {
+                numericId = areas.find(a => a.id === id)?.numericId;
+            } else if (entity === 'specialty') {
+                numericId = specialties.find(s => s.id === id)?.numericId;
+            } else if (entity === 'focus') {
+                numericId = focuses.find(f => f.id === id)?.numericId;
+            }
+
             // Count affected courses
-            const res = await apiCall('count_courses', entity, { id });
+            const res = await apiCall('count_courses', entity, { id, numericId });
             const courseCount = res.count || 0;
 
-            // Get reassign options
+            // Get reassign options (use numericId for consolidated schema)
             let reassignOptions = [];
             if (entity === 'focus') {
                 const focusItem = focuses.find(f => f.id === id);
                 if (focusItem) {
+                    const parentId = focusItem.level3_id || focusItem.specialty_id;
                     reassignOptions = focuses
-                        .filter(f => f.specialty_id === focusItem.specialty_id && f.id !== id)
-                        .map(f => ({ id: f.id, label: f.name }));
+                        .filter(f => (f.level3_id === parentId || f.specialty_id === parentId) && f.id !== id)
+                        .map(f => ({ id: f.numericId || f.id, label: f.name || f.label_de }));
                 }
             } else if (entity === 'specialty') {
                 const spec = specialties.find(s => s.id === id);
                 if (spec) {
+                    const parentId = spec.level2_id || spec.area_id;
                     reassignOptions = specialties
-                        .filter(s => s.area_id === spec.area_id && s.id !== id)
-                        .map(s => ({ id: s.id, label: s.name }));
+                        .filter(s => (s.level2_id === parentId || s.area_id === parentId) && s.id !== id)
+                        .map(s => ({ id: s.numericId || s.id, label: s.name || s.label_de }));
                 }
             } else if (entity === 'area') {
                 const area = areas.find(a => a.id === id);
                 if (area) {
+                    const parentId = area.level1_id || area.type_id;
                     reassignOptions = areas
-                        .filter(a => a.type_id === area.type_id && a.id !== id)
-                        .map(a => ({ id: a.id, label: a.label_de }));
+                        .filter(a => (a.level1_id === parentId || a.type_id === parentId) && a.id !== id)
+                        .map(a => ({ id: a.numericId || a.id, label: a.label_de }));
                 }
             } else if (entity === 'type') {
                 reassignOptions = types
                     .filter(t => t.id !== id)
-                    .map(t => ({ id: t.id, label: t.label_de }));
+                    .map(t => ({ id: t.numericId || t.id, label: t.label_de }));
             }
 
-            setDeleteModal({ entity, id, name, courseCount, reassignOptions });
+            setDeleteModal({ entity, id, numericId, name, courseCount, reassignOptions });
             setReassignTo('');
         } catch (err) {
             showNotification('Fehler: ' + err.message);
@@ -227,6 +258,7 @@ const AdminCategoryManager = ({ showNotification }) => {
         try {
             await apiCall('delete', deleteModal.entity, {
                 id: deleteModal.id,
+                numericId: deleteModal.numericId,
                 reassign_to: reassignTo || null
             });
             await loadTaxonomy();

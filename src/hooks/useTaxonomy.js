@@ -9,9 +9,9 @@ const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
 /**
  * Hook to load taxonomy from database with fallback to constants.js
- * Supports both v2 (numeric IDs) and legacy (text IDs) table structures
+ * Supports consolidated schema (taxonomy_level1/2/3/4) with legacy fallback
  * Returns the taxonomy in a normalized format for components
- * Hierarchy: Type → Area → Specialty → Focus (Level 4)
+ * Hierarchy: Level1 (Type) → Level2 (Area) → Level3 (Specialty) → Level4 (Focus)
  */
 export function useTaxonomy() {
     const [loading, setLoading] = useState(true);
@@ -21,7 +21,7 @@ export function useTaxonomy() {
     const [areas, setAreas] = useState([]);
     const [specialties, setSpecialties] = useState([]);
     const [focuses, setFocuses] = useState([]);
-    const [isV2, setIsV2] = useState(false); // Track which schema we're using
+    const [schemaVersion, setSchemaVersion] = useState(null); // 'consolidated', 'v2', 'legacy'
 
     const loadTaxonomy = useCallback(async (forceRefresh = false) => {
         // Check cache first
@@ -31,7 +31,7 @@ export function useTaxonomy() {
             setAreas(taxonomyCache.areas);
             setSpecialties(taxonomyCache.specialties);
             setFocuses(taxonomyCache.focuses || []);
-            setIsV2(taxonomyCache.isV2 || false);
+            setSchemaVersion(taxonomyCache.schemaVersion || 'legacy');
             setLoading(false);
             return;
         }
@@ -39,15 +39,21 @@ export function useTaxonomy() {
         try {
             setLoading(true);
 
-            // Try to load from v2 tables first (numeric IDs)
-            const v2TypesRes = await supabase.from('taxonomy_types_v2').select('*').order('sort_order');
+            // Try consolidated schema first (taxonomy_level1/2/3/4)
+            const consolidatedRes = await supabase.from('taxonomy_level1').select('*').order('sort_order');
 
-            if (v2TypesRes.data?.length > 0 && !v2TypesRes.error) {
-                // V2 schema exists - use it
-                await loadV2Taxonomy();
+            if (consolidatedRes.data?.length > 0 && !consolidatedRes.error) {
+                await loadConsolidatedTaxonomy();
             } else {
-                // Fall back to legacy schema (text IDs)
-                await loadLegacyTaxonomy();
+                // Try v2 schema (taxonomy_types_v2 etc.)
+                const v2TypesRes = await supabase.from('taxonomy_types_v2').select('*').order('sort_order');
+
+                if (v2TypesRes.data?.length > 0 && !v2TypesRes.error) {
+                    await loadV2Taxonomy();
+                } else {
+                    // Fall back to legacy schema (text IDs)
+                    await loadLegacyTaxonomy();
+                }
             }
         } catch (err) {
             console.error('Error loading taxonomy:', err);
@@ -59,7 +65,170 @@ export function useTaxonomy() {
         }
     }, []);
 
-    // Load from v2 tables (numeric IDs)
+    // Load from consolidated tables (taxonomy_level1/2/3/4)
+    const loadConsolidatedTaxonomy = async () => {
+        const [level1Res, level2Res, level3Res, level4Res] = await Promise.all([
+            supabase.from('taxonomy_level1').select('*').eq('is_active', true).order('sort_order'),
+            supabase.from('taxonomy_level2').select('*').eq('is_active', true).order('sort_order'),
+            supabase.from('taxonomy_level3').select('*').eq('is_active', true).order('sort_order'),
+            supabase.from('taxonomy_level4').select('*').eq('is_active', true).order('sort_order')
+        ]);
+
+        const dbLevel1 = level1Res.data || [];
+        const dbLevel2 = level2Res.data || [];
+        const dbLevel3 = level3Res.data || [];
+        const dbLevel4 = level4Res.data || [];
+
+        // Build taxonomy structure
+        const builtTaxonomy = {};
+
+        // Build focus lookup: level3_id -> focus objects
+        const focusByLevel3Id = {};
+        dbLevel4.forEach(f => {
+            if (!focusByLevel3Id[f.level3_id]) focusByLevel3Id[f.level3_id] = [];
+            focusByLevel3Id[f.level3_id].push(f);
+        });
+
+        dbLevel1.forEach(level1 => {
+            const typeData = {
+                _meta: { ...level1, id: level1.id },
+                label: {
+                    de: level1.label_de,
+                    en: level1.label_en || level1.label_de,
+                    fr: level1.label_fr || level1.label_de,
+                    it: level1.label_it || level1.label_de
+                }
+            };
+
+            // Find level2 items for this level1 and sort alphabetically
+            const level1Areas = dbLevel2
+                .filter(a => a.level1_id === level1.id)
+                .sort((a, b) => (a.label_de || '').localeCompare(b.label_de || '', 'de'));
+
+            level1Areas.forEach(level2 => {
+                // Find level3 items for this level2 and sort alphabetically
+                const level2Specs = dbLevel3
+                    .filter(s => s.level2_id === level2.id)
+                    .sort((a, b) => (a.label_de || '').localeCompare(b.label_de || '', 'de'));
+
+                // Build specialty objects with their focuses (sorted)
+                const specialtyObjects = level2Specs.map(s => ({
+                    id: s.id,
+                    slug: s.slug,
+                    label_de: s.label_de,
+                    label_en: s.label_en || s.label_de,
+                    label_fr: s.label_fr || s.label_de,
+                    label_it: s.label_it || s.label_de,
+                    focuses: (focusByLevel3Id[s.id] || [])
+                        .sort((a, b) => (a.label_de || '').localeCompare(b.label_de || '', 'de'))
+                }));
+
+                const areaData = {
+                    _meta: { ...level2, id: level2.id },
+                    label: {
+                        de: level2.label_de,
+                        en: level2.label_en || level2.label_de,
+                        fr: level2.label_fr || level2.label_de,
+                        it: level2.label_it || level2.label_de
+                    },
+                    specialties: specialtyObjects.map(s => s.label_de), // For backward compatibility
+                    specialtyObjects, // Full objects with IDs
+                    specialtyFocuses: Object.fromEntries(
+                        specialtyObjects.map(s => [s.label_de, s.focuses.map(f => f.label_de)])
+                    )
+                };
+
+                // Store by numeric ID
+                typeData[level2.id] = areaData;
+                // Also store by slug for backward compatibility
+                if (level2.slug) {
+                    typeData[level2.slug] = areaData;
+                }
+            });
+
+            // Store ordered area IDs for getAreas()
+            typeData._areaIds = level1Areas.map(a => a.id);
+
+            // Store type by numeric ID
+            builtTaxonomy[level1.id] = typeData;
+            // Also store by slug for backward compatibility
+            if (level1.slug) {
+                builtTaxonomy[level1.slug] = typeData;
+            }
+        });
+
+        // Map to types/areas/specialties format for compatibility
+        const mappedTypes = dbLevel1.map(t => ({
+            id: t.id,
+            slug: t.slug,
+            label_de: t.label_de,
+            label_en: t.label_en,
+            label_fr: t.label_fr,
+            label_it: t.label_it,
+            icon: t.icon,
+            sort_order: t.sort_order
+        }));
+
+        const mappedAreas = dbLevel2.map(a => ({
+            id: a.id,
+            type_id: a.level1_id,
+            level1_id: a.level1_id,
+            slug: a.slug,
+            label_de: a.label_de,
+            label_en: a.label_en,
+            label_fr: a.label_fr,
+            label_it: a.label_it,
+            icon: a.icon,
+            sort_order: a.sort_order
+        }));
+
+        const mappedSpecialties = dbLevel3.map(s => ({
+            id: s.id,
+            area_id: s.level2_id,
+            level2_id: s.level2_id,
+            slug: s.slug,
+            name: s.label_de, // Legacy compatibility
+            label_de: s.label_de,
+            label_en: s.label_en,
+            label_fr: s.label_fr,
+            label_it: s.label_it,
+            sort_order: s.sort_order
+        }));
+
+        const mappedFocuses = dbLevel4.map(f => ({
+            id: f.id,
+            specialty_id: f.level3_id,
+            level3_id: f.level3_id,
+            slug: f.slug,
+            name: f.label_de, // Legacy compatibility
+            label_de: f.label_de,
+            label_en: f.label_en,
+            label_fr: f.label_fr,
+            label_it: f.label_it,
+            sort_order: f.sort_order
+        }));
+
+        // Update cache
+        taxonomyCache = {
+            taxonomy: builtTaxonomy,
+            types: mappedTypes,
+            areas: mappedAreas,
+            specialties: mappedSpecialties,
+            focuses: mappedFocuses,
+            schemaVersion: 'consolidated'
+        };
+        cacheTimestamp = Date.now();
+
+        setTaxonomy(builtTaxonomy);
+        setTypes(mappedTypes);
+        setAreas(mappedAreas);
+        setSpecialties(mappedSpecialties);
+        setFocuses(mappedFocuses);
+        setSchemaVersion('consolidated');
+        setError(null);
+    };
+
+    // Load from v2 tables (numeric IDs) - legacy support
     const loadV2Taxonomy = async () => {
         const [typesRes, areasRes, specialtiesRes, focusesRes] = await Promise.all([
             supabase.from('taxonomy_types_v2').select('*').eq('is_active', true).order('sort_order'),
@@ -85,7 +254,7 @@ export function useTaxonomy() {
 
         dbTypes.forEach(type => {
             const typeData = {
-                _meta: type, // Store full type object
+                _meta: type,
                 label: {
                     de: type.label_de,
                     en: type.label_en || type.label_de,
@@ -118,34 +287,28 @@ export function useTaxonomy() {
                 }));
 
                 const areaData = {
-                    _meta: area, // Store full area object
+                    _meta: area,
                     label: {
                         de: area.label_de,
                         en: area.label_en || area.label_de,
                         fr: area.label_fr || area.label_de,
                         it: area.label_it || area.label_de
                     },
-                    specialties: specialtyObjects.map(s => s.label_de), // For backward compatibility (already sorted)
-                    specialtyObjects, // New: full objects with IDs (already sorted)
+                    specialties: specialtyObjects.map(s => s.label_de),
+                    specialtyObjects,
                     specialtyFocuses: Object.fromEntries(
                         specialtyObjects.map(s => [s.label_de, s.focuses.map(f => f.label_de)])
                     )
                 };
 
-                // Store by numeric ID only - slug is stored in _areaIds for lookup
                 typeData[area.id] = areaData;
-                // Also store by slug for backward compatibility with legacy course data
                 if (area.slug) {
                     typeData[area.slug] = areaData;
                 }
             });
 
-            // Store ordered area IDs for getAreas() - only numeric IDs, no duplicates
             typeData._areaIds = typeAreas.map(a => a.id);
-
-            // Store type by numeric ID
             builtTaxonomy[type.id] = typeData;
-            // Also store by slug for backward compatibility with legacy course data
             if (type.slug) {
                 builtTaxonomy[type.slug] = typeData;
             }
@@ -158,7 +321,7 @@ export function useTaxonomy() {
             areas: dbAreas,
             specialties: dbSpecialties,
             focuses: dbFocuses,
-            isV2: true
+            schemaVersion: 'v2'
         };
         cacheTimestamp = Date.now();
 
@@ -167,7 +330,7 @@ export function useTaxonomy() {
         setAreas(dbAreas);
         setSpecialties(dbSpecialties);
         setFocuses(dbFocuses);
-        setIsV2(true);
+        setSchemaVersion('v2');
         setError(null);
     };
 
@@ -230,7 +393,6 @@ export function useTaxonomy() {
                 areaSpecs.forEach(s => {
                     const fList = focusBySpecialtyId[s.id];
                     if (fList && fList.length > 0) {
-                        // Sort focuses alphabetically
                         specialtyFocuses[s.name] = [...fList].sort((a, b) => a.localeCompare(b, 'de'));
                     }
                 });
@@ -248,7 +410,6 @@ export function useTaxonomy() {
                 };
             });
 
-            // Store ordered area IDs
             typeData._areaIds = typeAreas.map(a => a.id);
             builtTaxonomy[type.id] = typeData;
         });
@@ -259,7 +420,7 @@ export function useTaxonomy() {
             areas: dbAreas,
             specialties: dbSpecialties,
             focuses: dbFocuses,
-            isV2: false
+            schemaVersion: 'legacy'
         };
         cacheTimestamp = Date.now();
 
@@ -268,7 +429,7 @@ export function useTaxonomy() {
         setAreas(dbAreas);
         setSpecialties(dbSpecialties);
         setFocuses(dbFocuses);
-        setIsV2(false);
+        setSchemaVersion('legacy');
         setError(null);
     };
 
@@ -289,7 +450,6 @@ export function useTaxonomy() {
         const fallbackSpecialties = [];
         let specSort = 0;
 
-        // Build taxonomy with _areaIds for consistent getAreas() behavior
         const builtTaxonomy = {};
 
         Object.entries(NEW_TAXONOMY).forEach(([typeId, typeAreas]) => {
@@ -346,7 +506,7 @@ export function useTaxonomy() {
             areas: fallbackAreas,
             specialties: fallbackSpecialties,
             focuses: [],
-            isV2: false
+            schemaVersion: 'fallback'
         };
         cacheTimestamp = Date.now();
 
@@ -355,7 +515,7 @@ export function useTaxonomy() {
         setAreas(fallbackAreas);
         setSpecialties(fallbackSpecialties);
         setFocuses([]);
-        setIsV2(false);
+        setSchemaVersion('fallback');
     };
 
     useEffect(() => {
@@ -368,19 +528,17 @@ export function useTaxonomy() {
         const typeData = taxonomy[typeId];
         if (!typeData) return [];
 
-        // If we have pre-sorted _areaIds (v2), use those to avoid duplicates
+        // If we have pre-sorted _areaIds, use those to avoid duplicates
         if (typeData._areaIds) {
             return typeData._areaIds;
         }
 
-        // Fallback for legacy: filter out special keys and sort by label
+        // Fallback: filter out special keys and sort by label
         const areaKeys = Object.keys(typeData).filter(k =>
             k !== '_meta' && k !== 'label' && k !== '_areaIds' &&
-            // Only include numeric IDs or slugs that don't have a corresponding numeric entry
             (typeof k === 'number' || !typeData[k]?._meta?.id || String(typeData[k]._meta.id) === k)
         );
 
-        // Sort by label alphabetically
         return areaKeys.sort((a, b) => {
             const labelA = typeData[a]?.label?.de || '';
             const labelB = typeData[b]?.label?.de || '';
@@ -394,7 +552,7 @@ export function useTaxonomy() {
         return taxonomy[typeId]?.[areaId]?.specialties || [];
     }, [taxonomy]);
 
-    // Helper: Get specialty objects with IDs (v2 only)
+    // Helper: Get specialty objects with IDs
     const getSpecialtyObjects = useCallback((typeId, areaId) => {
         if (!taxonomy || !typeId || !areaId) return [];
         return taxonomy[typeId]?.[areaId]?.specialtyObjects || [];
@@ -414,11 +572,8 @@ export function useTaxonomy() {
 
     // Helper: Get type label
     const getTypeLabel = useCallback((typeId, lang = 'de') => {
-        // For v2, typeId is numeric - find by id
-        // For legacy, typeId is string - find by id
-        const type = types.find(t => t.id === typeId || t.id === Number(typeId));
+        const type = types.find(t => t.id === typeId || t.id === Number(typeId) || t.slug === typeId);
         if (!type) {
-            // Try taxonomy structure
             if (taxonomy?.[typeId]?.label) {
                 return taxonomy[typeId].label[lang] || taxonomy[typeId].label.de || typeId;
             }
@@ -427,25 +582,53 @@ export function useTaxonomy() {
         return type[`label_${lang}`] || type.label_de || typeId;
     }, [types, taxonomy]);
 
-    // Helper: Get area by ID (for v2)
+    // Helper: Get area by ID
     const getAreaById = useCallback((areaId) => {
         return areas.find(a => a.id === areaId || a.id === Number(areaId));
     }, [areas]);
 
-    // Helper: Get specialty by ID (for v2)
+    // Helper: Get specialty by ID
     const getSpecialtyById = useCallback((specialtyId) => {
         return specialties.find(s => s.id === specialtyId || s.id === Number(specialtyId));
     }, [specialties]);
 
-    // Helper: Get focus by ID (for v2)
+    // Helper: Get focus by ID
     const getFocusById = useCallback((focusId) => {
         return focuses.find(f => f.id === focusId || f.id === Number(focusId));
     }, [focuses]);
 
     // Helper: Get type by ID
     const getTypeById = useCallback((typeId) => {
-        return types.find(t => t.id === typeId || t.id === Number(typeId));
+        return types.find(t => t.id === typeId || t.id === Number(typeId) || t.slug === typeId);
     }, [types]);
+
+    // Helper: Get full path for a level3 ID (returns { level1, level2, level3, level4 })
+    const getFullPath = useCallback((level3Id, level4Id = null) => {
+        const specialty = specialties.find(s => s.id === level3Id || s.id === Number(level3Id));
+        if (!specialty) return null;
+
+        const areaId = specialty.area_id || specialty.level2_id;
+        const area = areas.find(a => a.id === areaId);
+        if (!area) return null;
+
+        const typeId = area.type_id || area.level1_id;
+        const type = types.find(t => t.id === typeId);
+        if (!type) return null;
+
+        const focus = level4Id ? focuses.find(f => f.id === level4Id || f.id === Number(level4Id)) : null;
+
+        return {
+            level1: type,
+            level2: area,
+            level3: specialty,
+            level4: focus,
+            // Legacy aliases
+            type,
+            area,
+            specialty,
+            focus
+        };
+    }, [types, areas, specialties, focuses]);
 
     // Force refresh cache
     const refresh = useCallback(() => {
@@ -462,7 +645,9 @@ export function useTaxonomy() {
         areas,
         specialties,
         focuses,
-        isV2, // Components can check this to know which schema is active
+        schemaVersion,
+        // Legacy alias for backward compatibility
+        isV2: schemaVersion === 'v2' || schemaVersion === 'consolidated',
         // Helpers
         getAreas,
         getSpecialties,
@@ -474,6 +659,7 @@ export function useTaxonomy() {
         getSpecialtyById,
         getFocusById,
         getTypeById,
+        getFullPath,
         refresh
     };
 }

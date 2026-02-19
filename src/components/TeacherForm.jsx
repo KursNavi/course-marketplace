@@ -833,33 +833,49 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
         return getFocuses(type, area, specialty);
     };
 
-    // Helper: Get numeric IDs for a category (v2 schema)
+    // Helper: Get numeric IDs for a category (v2/consolidated schema)
     const getCategoryIds = (typeKey, areaKey, specialtyLabel, focusLabel) => {
-        if (!isV2) return { type_id: null, area_id: null, specialty_id: null, focus_id: null };
+        if (!isV2) return { type_id: null, area_id: null, specialty_id: null, focus_id: null, level3_id: null, level4_id: null };
 
-        // Type ID - typeKey in v2 is already numeric
+        // Type ID - typeKey in v2 is already numeric or slug
         const typeId = typeof typeKey === 'number' ? typeKey :
             types.find(t => t.id === typeKey || t.slug === typeKey)?.id || null;
 
-        // Area ID - areaKey in v2 is already numeric
+        // Area ID - areaKey in v2 is already numeric or slug
         const areaId = typeof areaKey === 'number' ? areaKey :
             areas.find(a => a.id === areaKey || a.slug === areaKey)?.id || null;
 
-        // Specialty ID - find by label in the area
+        // Specialty ID (Level 3) - find by label in the area
         let specialtyId = null;
         if (areaId && specialtyLabel) {
-            const spec = specialties.find(s => s.area_id === areaId && s.label_de === specialtyLabel);
+            // Check both area_id and level2_id for compatibility
+            const spec = specialties.find(s =>
+                (s.area_id === areaId || s.level2_id === areaId) &&
+                (s.label_de === specialtyLabel || s.name === specialtyLabel)
+            );
             specialtyId = spec?.id || null;
         }
 
-        // Focus ID - find by label in the specialty
+        // Focus ID (Level 4) - find by label in the specialty
         let focusId = null;
         if (specialtyId && focusLabel) {
-            const focus = focuses.find(f => f.specialty_id === specialtyId && f.label_de === focusLabel);
+            // Check both specialty_id and level3_id for compatibility
+            const focus = focuses.find(f =>
+                (f.specialty_id === specialtyId || f.level3_id === specialtyId) &&
+                (f.label_de === focusLabel || f.name === focusLabel)
+            );
             focusId = focus?.id || null;
         }
 
-        return { type_id: typeId, area_id: areaId, specialty_id: specialtyId, focus_id: focusId };
+        return {
+            type_id: typeId,
+            area_id: areaId,
+            specialty_id: specialtyId,
+            focus_id: focusId,
+            // Consolidated schema aliases
+            level3_id: specialtyId,
+            level4_id: focusId
+        };
     };
 
     const addCategoryRow = () => {
@@ -1175,11 +1191,14 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
             category_area: catArea,
             category_specialty: catSpec,
             category_focus: catFocus || null,
-            // New numeric ID fields (v2 schema)
+            // V2 numeric ID fields (legacy v2 schema)
             category_type_id: primaryIds.type_id,
             category_area_id: primaryIds.area_id,
             category_specialty_id: primaryIds.specialty_id,
             category_focus_id: primaryIds.focus_id,
+            // Consolidated schema fields (new)
+            category_level3_id: primaryIds.level3_id,
+            category_level4_id: primaryIds.level4_id,
             category_paths: cleanedCategories,
             booking_type: bookingType,
             ticket_limit_30d: ticketLimit30d ? Number(ticketLimit30d) : null,
@@ -1263,13 +1282,12 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
             }
         }
 
-        // 8. Update course_categories junction table (for Zweitkategorien support)
+        // 8. Update course_categories junction tables (for Zweitkategorien support)
         if (activeCourseId && cleanedCategories && cleanedCategories.length > 0) {
-            // Delete existing category entries
+            // 8a. Legacy junction table (course_categories) - keep for backward compatibility
             await supabase.from('course_categories').delete().eq('course_id', activeCourseId);
 
-            // Insert all categories (primary + secondary) with both legacy text and new numeric IDs
-            const categoriesToInsert = cleanedCategories.map((cat, idx) => {
+            const legacyCategoriesToInsert = cleanedCategories.map((cat, idx) => {
                 const catIds = getCategoryIds(cat.type, cat.area, cat.specialty, cat.focus);
                 return {
                     course_id: activeCourseId,
@@ -1278,22 +1296,47 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                     category_area: cat.area,
                     category_specialty: cat.specialty,
                     category_focus: cat.focus || null,
-                    // New numeric ID fields (v2 schema)
+                    // V2 numeric ID fields
                     type_id: catIds.type_id,
                     area_id: catIds.area_id,
                     specialty_id: catIds.specialty_id,
                     focus_id: catIds.focus_id,
-                    is_primary: idx === 0 // First category is primary
+                    is_primary: idx === 0
                 };
             });
 
-            const { error: catErr } = await supabase
+            const { error: legacyCatErr } = await supabase
                 .from('course_categories')
-                .insert(categoriesToInsert);
+                .insert(legacyCategoriesToInsert);
 
-            if (catErr) {
-                console.error('Error saving course categories:', catErr);
-                // Don't fail the whole operation, just log the error
+            if (legacyCatErr) {
+                console.error('Error saving legacy course categories:', legacyCatErr);
+            }
+
+            // 8b. New consolidated junction table (course_category_assignments)
+            await supabase.from('course_category_assignments').delete().eq('course_id', activeCourseId);
+
+            // Filter categories that have valid level3_id
+            const consolidatedCategories = cleanedCategories
+                .map((cat, idx) => {
+                    const catIds = getCategoryIds(cat.type, cat.area, cat.specialty, cat.focus);
+                    return {
+                        course_id: activeCourseId,
+                        level3_id: catIds.level3_id,
+                        level4_id: catIds.level4_id || null,
+                        is_primary: idx === 0
+                    };
+                })
+                .filter(cat => cat.level3_id != null);
+
+            if (consolidatedCategories.length > 0) {
+                const { error: newCatErr } = await supabase
+                    .from('course_category_assignments')
+                    .insert(consolidatedCategories);
+
+                if (newCatErr) {
+                    console.error('Error saving course category assignments:', newCatErr);
+                }
             }
         }
 

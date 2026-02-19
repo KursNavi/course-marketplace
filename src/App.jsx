@@ -395,24 +395,53 @@ export default function KursNaviPro() {  // 1. Initial State Logic
       }
 
       // Load all course categories for multi-category search support
+      // Try both new (course_category_assignments) and legacy (course_categories) tables
       const courseIds = (courseData || []).map(c => c.id).filter(Boolean);
       let categoriesMap = {};
 
       if (courseIds.length > 0) {
-        const { data: categoriesData, error: categoriesError } = await supabase
-          .from('course_categories')
+        // Try new consolidated junction table first (with v_course_full_categories view)
+        const { data: newCategoriesData, error: newCategoriesError } = await supabase
+          .from('v_course_full_categories')
           .select('*')
           .in('course_id', courseIds);
 
-        if (!categoriesError && categoriesData) {
-          // Group categories by course_id
-          categoriesMap = categoriesData.reduce((acc, cat) => {
+        if (!newCategoriesError && newCategoriesData && newCategoriesData.length > 0) {
+          // Map consolidated view data to legacy format for backward compatibility
+          categoriesMap = newCategoriesData.reduce((acc, cat) => {
             if (!acc[cat.course_id]) {
               acc[cat.course_id] = [];
             }
-            acc[cat.course_id].push(cat);
+            acc[cat.course_id].push({
+              course_id: cat.course_id,
+              category_type: cat.level1_slug,
+              category_area: cat.level2_slug,
+              category_specialty: cat.level3_label_de,
+              category_focus: cat.level4_label_de || null,
+              type_id: cat.level1_id,
+              area_id: cat.level2_id,
+              specialty_id: cat.level3_id,
+              focus_id: cat.level4_id,
+              is_primary: cat.is_primary
+            });
             return acc;
           }, {});
+        } else {
+          // Fallback to legacy junction table
+          const { data: categoriesData, error: categoriesError } = await supabase
+            .from('course_categories')
+            .select('*')
+            .in('course_id', courseIds);
+
+          if (!categoriesError && categoriesData) {
+            categoriesMap = categoriesData.reduce((acc, cat) => {
+              if (!acc[cat.course_id]) {
+                acc[cat.course_id] = [];
+              }
+              acc[cat.course_id].push(cat);
+              return acc;
+            }, {});
+          }
         }
       }
 
