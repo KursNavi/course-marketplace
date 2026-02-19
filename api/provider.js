@@ -114,6 +114,8 @@ export default async function handler(req, res) {
       };
 
       // Fetch all courses for this provider
+      console.log(`[Provider API] Fetching courses for provider.id: "${provider.id}" (type: ${typeof provider.id})`);
+
       const { data: courses, error: courseError } = await supabase
         .from('courses')
         .select(`id, title, description, price, category_type, category_area,
@@ -122,6 +124,9 @@ export default async function handler(req, res) {
         .order('created_at', { ascending: false });
 
       console.log(`[Provider API] Provider ${provider.slug}: Found ${courses?.length || 0} courses, error: ${courseError?.message || 'none'}`);
+      if (courses && courses.length > 0) {
+        console.log(`[Provider API] First course user_id: "${courses[0].user_id}" (type: ${typeof courses[0].user_id})`);
+      }
 
       // Filter for published courses (status = 'published' OR status is null/undefined for legacy)
       const publishedCourses = (courses || []).filter(c => {
@@ -201,12 +206,19 @@ export default async function handler(req, res) {
         ...(provider.website_url && { sameAs: [provider.website_url] })
       };
 
+      console.log(`[Provider API] Returning ${publishedCourses?.length || 0} published courses`);
+
       return res.status(200).json({
         provider: publicProfile,
         entitlements,
         courses: publishedCourses || [],
         seo: seoMeta,
-        schema: schemaOrg
+        schema: schemaOrg,
+        _debug: {
+          totalCoursesFound: courses?.length || 0,
+          publishedCoursesCount: publishedCourses?.length || 0,
+          providerId: provider.id
+        }
       });
     }
 
