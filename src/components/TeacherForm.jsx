@@ -245,7 +245,7 @@ const CategorySuggestionModal = ({ isOpen, onClose, taxonomy, types, showNotific
                                         className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 outline-none appearance-none bg-white"
                                     >
                                         <option value="">-- Keinen auswählen (neuen Bereich vorschlagen) --</option>
-                                        {getAreas(selectedType).map(key => {
+                                        {getAreasLocal(selectedType).map(key => {
                                             const label = taxonomy?.[selectedType]?.[key]?.label?.de || NEW_TAXONOMY[selectedType]?.[key]?.label?.de || key;
                                             return <option key={key} value={key}>{label}</option>;
                                         })}
@@ -266,7 +266,7 @@ const CategorySuggestionModal = ({ isOpen, onClose, taxonomy, types, showNotific
                                             className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 outline-none appearance-none bg-white"
                                         >
                                             <option value="">-- Keines auswählen (neues Spezialgebiet vorschlagen) --</option>
-                                            {getSpecialties(selectedType, selectedArea).map(spec => (
+                                            {getSpecialtiesLocal(selectedType, selectedArea).map(spec => (
                                                 <option key={spec} value={spec}>{spec}</option>
                                             ))}
                                         </select>
@@ -792,14 +792,38 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
     };
 
     // Helpers - use taxonomy from DB (via hook) with fallback to constants
-    const getAreas = (type) => {
-        if (taxonomy && type && taxonomy[type]) {
-            // Filter out _meta and label keys
-            return Object.keys(taxonomy[type]).filter(k => k !== '_meta' && k !== 'label');
+    const getAreasLocal = (type) => {
+        if (!taxonomy || !type || !taxonomy[type]) {
+            return type && NEW_TAXONOMY[type] ? Object.keys(NEW_TAXONOMY[type]) : [];
         }
-        return type && NEW_TAXONOMY[type] ? Object.keys(NEW_TAXONOMY[type]) : [];
+
+        const typeData = taxonomy[type];
+
+        // Use pre-sorted _areaIds if available (no duplicates, already sorted)
+        if (typeData._areaIds) {
+            return typeData._areaIds;
+        }
+
+        // Fallback: filter out special keys, avoid duplicates, sort alphabetically
+        const seen = new Set();
+        const areaKeys = Object.keys(typeData).filter(k => {
+            if (k === '_meta' || k === 'label' || k === '_areaIds') return false;
+            // Get the canonical ID to avoid duplicates (slug vs numeric ID)
+            const meta = typeData[k]?._meta;
+            const canonicalId = meta?.id ?? k;
+            if (seen.has(canonicalId)) return false;
+            seen.add(canonicalId);
+            return true;
+        });
+
+        // Sort by label alphabetically
+        return areaKeys.sort((a, b) => {
+            const labelA = typeData[a]?.label?.de || '';
+            const labelB = typeData[b]?.label?.de || '';
+            return labelA.localeCompare(labelB, 'de');
+        });
     };
-    const getSpecialties = (type, area) => {
+    const getSpecialtiesLocal = (type, area) => {
         if (taxonomy && type && area && taxonomy[type]?.[area]) {
             return taxonomy[type][area].specialties || [];
         }
@@ -1421,7 +1445,7 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                                                 required={idx === 0}
                                             >
                                                 <option value="">Bitte wählen...</option>
-                                                {row.type && getAreas(row.type).map(key => {
+                                                {row.type && getAreasLocal(row.type).map(key => {
                                                     const label = taxonomy?.[row.type]?.[key]?.label?.de
                                                         || NEW_TAXONOMY[row.type]?.[key]?.label?.de
                                                         || key;
@@ -1441,7 +1465,7 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                                                 required={idx === 0}
                                             >
                                                 <option value="">Bitte wählen...</option>
-                                                {row.type && row.area && getSpecialties(row.type, row.area).map(spec => (
+                                                {row.type && row.area && getSpecialtiesLocal(row.type, row.area).map(spec => (
                                                     <option key={spec} value={spec}>{spec}</option>
                                                 ))}
                                             </select>
