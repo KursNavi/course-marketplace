@@ -431,9 +431,23 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
         .getPublicUrl(fileName);
 
       const fieldName = type === 'logo' ? 'logo_url' : 'cover_image_url';
-      setProfileData(prev => ({ ...prev, [fieldName]: urlData.publicUrl }));
+      const publicUrl = urlData.publicUrl;
 
-      showNotification?.('Bild hochgeladen', 'success');
+      // Update local state
+      setProfileData(prev => ({ ...prev, [fieldName]: publicUrl }));
+
+      // Also save directly to database
+      const { error: dbError } = await supabase
+        .from('profiles')
+        .update({ [fieldName]: publicUrl })
+        .eq('id', user.id);
+
+      if (dbError) {
+        console.warn('Could not save image URL to database:', dbError.message);
+        showNotification?.('Bild hochgeladen (bitte Profil speichern)', 'warning');
+      } else {
+        showNotification?.('Bild hochgeladen und gespeichert', 'success');
+      }
     } catch (err) {
       console.error('Error uploading image:', err);
       showNotification?.('Fehler beim Hochladen: ' + (err.message || 'Unbekannter Fehler'), 'error');
