@@ -55,6 +55,9 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  // Course statistics for the public profile hint
+  const [courseStats, setCourseStats] = useState({ total: 0, published: 0, draft: 0 });
+
   // Slug validation
   const [slugValidation, setSlugValidation] = useState({
     checking: false,
@@ -157,6 +160,18 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
             const items = data.additional_locations.split(',').map(s => s.trim()).filter(Boolean);
             setAdditionalLocations(items.map(city => ({ city, canton: '' })));
           }
+        }
+
+        // Load course statistics for visibility hint
+        const { data: courses } = await supabase
+          .from('courses')
+          .select('id, status')
+          .eq('user_id', user.id);
+
+        if (courses) {
+          const published = courses.filter(c => c.status === 'published' || c.status === null || c.status === undefined).length;
+          const draft = courses.filter(c => c.status === 'draft' || c.status === 'paused').length;
+          setCourseStats({ total: courses.length, published, draft });
         }
       } catch (err) {
         console.error('Error loading profile:', err);
@@ -511,6 +526,45 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
               isPublished ? 'Offline nehmen' : 'Jetzt veröffentlichen'
             )}
           </button>
+        </div>
+      )}
+
+      {/* Course visibility warning - show when profile is published but no courses are visible */}
+      {isEligible && isPublished && courseStats.total > 0 && courseStats.published === 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-amber-500 mt-0.5" />
+            <div>
+              <p className="font-medium text-amber-800">
+                Keine veröffentlichten Kurse sichtbar
+              </p>
+              <p className="text-sm text-amber-700 mt-1">
+                Sie haben {courseStats.draft} Kurs{courseStats.draft !== 1 ? 'e' : ''} als Entwurf gespeichert.
+                Auf Ihrem öffentlichen Profil werden nur veröffentlichte Kurse angezeigt.
+              </p>
+              <p className="text-sm text-amber-700 mt-2">
+                <strong>Tipp:</strong> Gehen Sie zu "Meine Kurse" und ändern Sie den Status auf "Veröffentlicht",
+                damit Ihre Kurse auf Ihrem Profil erscheinen.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Course stats info - show when profile is published and some courses are visible */}
+      {isEligible && isPublished && courseStats.published > 0 && (
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+          <div className="flex items-start gap-3">
+            <Info className="w-5 h-5 text-blue-500 mt-0.5" />
+            <div>
+              <p className="text-sm text-blue-700">
+                <strong>{courseStats.published}</strong> {courseStats.published === 1 ? 'Kurs wird' : 'Kurse werden'} auf Ihrem öffentlichen Profil angezeigt.
+                {courseStats.draft > 0 && (
+                  <span className="text-blue-600"> ({courseStats.draft} weitere{courseStats.draft === 1 ? 'r' : ''} als Entwurf)</span>
+                )}
+              </p>
+            </div>
+          </div>
         </div>
       )}
 

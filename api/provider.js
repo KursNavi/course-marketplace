@@ -113,14 +113,57 @@ export default async function handler(req, res) {
         homepageLinkRel: tier === 'enterprise' ? 'sponsored noopener' : 'nofollow noopener'
       };
 
-      // Fetch courses
-      const { data: courses } = await supabase
+      // Fetch all courses for this provider
+      const { data: courses, error: courseError } = await supabase
         .from('courses')
         .select(`id, title, description, price, category_type, category_area,
-          category_specialty, canton, city, booking_type, image_url, created_at`)
+          category_specialty, canton, city, booking_type, image_url, created_at, status`)
         .eq('user_id', provider.id)
-        .or('status.eq.published,status.is.null')
         .order('created_at', { ascending: false });
+
+      // If no courses found, also try text-based comparison (for type mismatch issues)
+      let allCourses = courses || [];
+      if (allCourses.length === 0 && !courseError) {
+        // Debug: Get a few courses and check their user_id type
+        const { data: sampleCourses } = await supabase
+          .from('courses')
+          .select('id, user_id, instructor_name')
+          .limit(3);
+
+        console.log(`[Provider API DEBUG] Provider ID: "${provider.id}" (type: ${typeof provider.id})`);
+        console.log(`[Provider API DEBUG] Sample courses user_ids:`, sampleCourses?.map(c => ({
+          id: c.id,
+          user_id: c.user_id,
+          user_id_type: typeof c.user_id,
+          instructor: c.instructor_name
+        })));
+
+        // Try filtering all courses and matching in JS
+        const { data: allCoursesForMatching } = await supabase
+          .from('courses')
+          .select(`id, title, description, price, category_type, category_area,
+            category_specialty, canton, city, booking_type, image_url, created_at, status, user_id`)
+          .order('created_at', { ascending: false });
+
+        // Match by string comparison (handles type mismatches)
+        const providerIdStr = String(provider.id);
+        allCourses = (allCoursesForMatching || []).filter(c =>
+          String(c.user_id) === providerIdStr
+        );
+        console.log(`[Provider API DEBUG] After string matching: ${allCourses.length} courses`);
+      }
+
+      // Filter for published courses (including legacy courses with null status)
+      const publishedCourses = allCourses.filter(c =>
+        c.status === 'published' || c.status === null || c.status === undefined
+      );
+
+      // Debug: Show status distribution
+      const statusDist = allCourses.reduce((acc, c) => {
+        acc[c.status || 'null'] = (acc[c.status || 'null'] || 0) + 1;
+        return acc;
+      }, {});
+      console.log(`[Provider API] Total: ${allCourses.length}, Published: ${publishedCourses.length}, Status: ${JSON.stringify(statusDist)}`);
 
       // Get user's account email for public display (if enabled)
       let contactEmail = null;
@@ -166,7 +209,7 @@ export default async function handler(req, res) {
         isVerified: provider.verification_status === 'verified',
         certificates: provider.certificates || [],
         publishedAt: provider.profile_published_at,
-        courseCount: courses?.length || 0
+        courseCount: publishedCourses?.length || 0
       };
 
       const seoMeta = {
@@ -195,7 +238,7 @@ export default async function handler(req, res) {
       return res.status(200).json({
         provider: publicProfile,
         entitlements,
-        courses: courses || [],
+        courses: publishedCourses || [],
         seo: seoMeta,
         schema: schemaOrg
       });
@@ -449,8 +492,83 @@ export default async function handler(req, res) {
       });
     }
 
+    // ============================================
+    // ACTION: debug - Debug course matching (temporary)
+    // ============================================
+    if (action === 'debug') {
+      const { slug: debugSlug } = req.query;
+
+      if (!debugSlug) {
+        return res.status(400).json({ error: 'Missing slug parameter' });
+      }
+
+      // Get provider
+      const { data: debugProvider } = await supabase
+        .from('profiles')
+        .select('id, full_name, slug, package_tier')
+        .eq('slug', debugSlug)
+        .single();
+
+      if (!debugProvider) {
+        return res.status(404).json({ error: 'Provider not found' });
+      }
+
+      // Get courses with user_id match
+      const { data: directCourses } = await supabase
+        .from('courses')
+        .select('id, title, status, user_id')
+        .eq('user_id', debugProvider.id)
+        .limit(10);
+
+      // Get sample of all courses
+      const { data: sampleCourses } = await supabase
+        .from('courses')
+        .select('id, title, user_id, instructor_name, status')
+        .limit(20);
+
+      // Find courses matching provider name in instructor_name
+      const matchingByName = (sampleCourses || []).filter(c =>
+        c.instructor_name?.toLowerCase().includes(debugProvider.full_name?.toLowerCase()?.split(' ')[0] || '')
+      );
+
+      return res.status(200).json({
+        provider: {
+          id: debugProvider.id,
+          id_type: typeof debugProvider.id,
+          full_name: debugProvider.full_name,
+          slug: debugProvider.slug,
+          package_tier: debugProvider.package_tier
+        },
+        directMatchCourses: {
+          count: directCourses?.length || 0,
+          courses: directCourses?.map(c => ({
+            id: c.id,
+            title: c.title,
+            status: c.status,
+            user_id: c.user_id,
+            user_id_type: typeof c.user_id,
+            match: String(c.user_id) === String(debugProvider.id)
+          }))
+        },
+        sampleCourses: sampleCourses?.slice(0, 5).map(c => ({
+          id: c.id,
+          title: c.title,
+          user_id: c.user_id,
+          user_id_type: typeof c.user_id,
+          instructor_name: c.instructor_name,
+          status: c.status
+        })),
+        coursesMatchingByName: matchingByName.map(c => ({
+          id: c.id,
+          title: c.title,
+          user_id: c.user_id,
+          match: String(c.user_id) === String(debugProvider.id)
+        }))
+      });
+    }
+
     // Unknown action
-    return res.status(400).json({ error: 'Unknown action. Use: profile, directory, or validate-slug' });
+    return res.status(400).json({ error: 'Unknown action. Use: profile, directory, validate-slug, or debug' });
 
   } catch (error) {
     console.error('Provider API error:', error);
