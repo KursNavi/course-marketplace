@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Search, ArrowRight, ChevronRight, ChevronDown, CreditCard, Info, Shield } from 'lucide-react';
 import { LocationDropdown, DeliveryTypeFilter } from './Filters';
 import { NEW_TAXONOMY, CATEGORY_TYPES } from '../lib/constants';
+import { useTaxonomy } from '../hooks/useTaxonomy';
 import { BASE_URL } from '../lib/siteConfig';
 
 export const Home = ({
@@ -13,6 +14,9 @@ export const Home = ({
   filterPro, setFilterPro, filterDirectBooking, setFilterDirectBooking,
   selectedDeliveryTypes, setSelectedDeliveryTypes, deliveryMenuOpen, setDeliveryMenuOpen, deliveryMenuRef
 }) => {
+
+  // Load taxonomy from DB (with fallback to constants.js)
+  const { taxonomy, types, getTypeLabel: dbGetTypeLabel, getAreaLabel: dbGetAreaLabel } = useTaxonomy();
 
   // State für das Mega-Menü
   const [activeType, setActiveType] = useState('privat_hobby'); // Spalte 1 Auswahl
@@ -89,9 +93,22 @@ export const Home = ({
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Helper für Labels
-  const getTypeLabel = (key) => CATEGORY_TYPES[key]?.[lang] || CATEGORY_TYPES[key]?.de || key;
-  const getAreaLabel = (type, areaKey) => NEW_TAXONOMY[type]?.[areaKey]?.label?.[lang] || NEW_TAXONOMY[type]?.[areaKey]?.label?.de || areaKey;
+  // Helper für Labels - use DB taxonomy first, then fallback to constants
+  const getTypeLabel = (key) => {
+    // Try DB taxonomy first
+    const dbLabel = dbGetTypeLabel(key, lang);
+    if (dbLabel && dbLabel !== key) return dbLabel;
+    // Fallback to constants
+    return CATEGORY_TYPES[key]?.[lang] || CATEGORY_TYPES[key]?.de || key;
+  };
+
+  const getAreaLabel = (type, areaKey) => {
+    // Try DB taxonomy first
+    const dbLabel = dbGetAreaLabel(type, areaKey, lang);
+    if (dbLabel && dbLabel !== areaKey) return dbLabel;
+    // Fallback to constants
+    return NEW_TAXONOMY[type]?.[areaKey]?.label?.[lang] || NEW_TAXONOMY[type]?.[areaKey]?.label?.de || areaKey;
+  };
 
   // SEO Meta Tags for Home Page
   useEffect(() => {

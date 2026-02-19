@@ -11,6 +11,7 @@ import { SWISS_CANTONS, CATEGORY_TYPES, NEW_TAXONOMY, CATEGORY_LABELS } from "..
 import { PLANS } from "../constants/plans";
 import { KursNaviLogo } from './Layout';
 import { supabase } from '../lib/supabase';
+import { useTaxonomy } from '../hooks/useTaxonomy';
 import ProviderProfileEditor from './ProviderProfileEditor';
 
 // --- HELPER COMPONENT: User Profile Settings ---
@@ -986,8 +987,32 @@ const CaptureServiceModal = ({ isOpen, onClose, user, includedServices, usedServ
 };
 
 // --- Helper: Get human-readable category label ---
-const getCategoryLabel = (key, lang = 'de') => {
+// Now accepts optional dbTaxonomy parameter to look up labels from DB first
+const getCategoryLabel = (key, lang = 'de', dbTaxonomy = null) => {
     if (!key) return '';
+
+    // 0. Check DB taxonomy first (if provided)
+    if (dbTaxonomy) {
+        // Check types (level 1)
+        for (const typeKey in dbTaxonomy) {
+            if (typeKey === key) {
+                // This is a type key - we need the types array for this
+                // Types are handled separately via getTypeLabel
+            }
+            // Check areas (level 2)
+            const areas = dbTaxonomy[typeKey];
+            if (areas && areas[key] && areas[key].label) {
+                return areas[key].label[lang] || areas[key].label['de'];
+            }
+            // Check specialties (level 3)
+            for (const areaKey in areas) {
+                const specialties = areas[areaKey]?.specialties || [];
+                if (specialties.includes(key)) {
+                    return key; // Specialties are stored by name
+                }
+            }
+        }
+    }
 
     // 1. Check legacy labels
     const legacyTranslation = (CATEGORY_LABELS || {})[key];
@@ -1030,6 +1055,9 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
     const [prioCourseIds, setPrioCourseIds] = useState(new Set()); // Prio-Kurse IDs
     const [showPrioInfo, setShowPrioInfo] = useState(false); // Info-Tooltip anzeigen
     const [refundingBookingId, setRefundingBookingId] = useState(null); // Track which booking is being refunded
+
+    // Load taxonomy from DB for category labels
+    const { taxonomy: dbTaxonomy, types: dbTypes, getTypeLabel: dbGetTypeLabel } = useTaxonomy();
 
     // Handle booking refund
     const handleRefundBooking = async (bookingId, userId) => {
@@ -1546,7 +1574,13 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                                         <div className="text-xs text-gray-500 mt-0.5">
                                                             {[course.category_type, course.category_area, course.category_specialty, course.category_focus]
                                                                 .filter(Boolean)
-                                                                .map(key => getCategoryLabel(key))
+                                                                .map(key => {
+                                                                    // For type keys, use the DB type label
+                                                                    if (key === course.category_type && dbTypes?.length > 0) {
+                                                                        return dbGetTypeLabel(key, 'de');
+                                                                    }
+                                                                    return getCategoryLabel(key, 'de', dbTaxonomy);
+                                                                })
                                                                 .join(' › ')}
                                                         </div>
                                                     </td>

@@ -373,7 +373,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
     // --- LIMITS REMOVED: Unbegrenzte Kurse fuer alle ---
 
     // Load taxonomy from DB (with fallback to constants.js)
-    const { taxonomy, types, getFocuses } = useTaxonomy();
+    const { taxonomy, types, areas, specialties, focuses, getFocuses, isV2, getSpecialtyObjects } = useTaxonomy();
 
     // Draft persistence key - unique per course and user
     // Include user.id to prevent drafts from being shared between different providers
@@ -794,7 +794,8 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
     // Helpers - use taxonomy from DB (via hook) with fallback to constants
     const getAreas = (type) => {
         if (taxonomy && type && taxonomy[type]) {
-            return Object.keys(taxonomy[type]);
+            // Filter out _meta and label keys
+            return Object.keys(taxonomy[type]).filter(k => k !== '_meta' && k !== 'label');
         }
         return type && NEW_TAXONOMY[type] ? Object.keys(NEW_TAXONOMY[type]) : [];
     };
@@ -806,6 +807,35 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
     };
     const getFocusOptions = (type, area, specialty) => {
         return getFocuses(type, area, specialty);
+    };
+
+    // Helper: Get numeric IDs for a category (v2 schema)
+    const getCategoryIds = (typeKey, areaKey, specialtyLabel, focusLabel) => {
+        if (!isV2) return { type_id: null, area_id: null, specialty_id: null, focus_id: null };
+
+        // Type ID - typeKey in v2 is already numeric
+        const typeId = typeof typeKey === 'number' ? typeKey :
+            types.find(t => t.id === typeKey || t.slug === typeKey)?.id || null;
+
+        // Area ID - areaKey in v2 is already numeric
+        const areaId = typeof areaKey === 'number' ? areaKey :
+            areas.find(a => a.id === areaKey || a.slug === areaKey)?.id || null;
+
+        // Specialty ID - find by label in the area
+        let specialtyId = null;
+        if (areaId && specialtyLabel) {
+            const spec = specialties.find(s => s.area_id === areaId && s.label_de === specialtyLabel);
+            specialtyId = spec?.id || null;
+        }
+
+        // Focus ID - find by label in the specialty
+        let focusId = null;
+        if (specialtyId && focusLabel) {
+            const focus = focuses.find(f => f.specialty_id === specialtyId && f.label_de === focusLabel);
+            focusId = focus?.id || null;
+        }
+
+        return { type_id: typeId, area_id: areaId, specialty_id: specialtyId, focus_id: focusId };
     };
 
     const addCategoryRow = () => {
@@ -1106,6 +1136,9 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
 
 
         // 5. Build Object - Safe access guards
+        // Get numeric IDs for v2 schema
+        const primaryIds = getCategoryIds(catType, catArea, catSpec, catFocus);
+
         const newCourse = {
             title: titleVal,
             instructor_name: user?.name || initialData?.instructor_name || '',
@@ -1113,10 +1146,16 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
             languages: courseLanguages, // Array of languages
             rating: initialData?.rating || 0,
             category: `${catType} | ${catArea}`,
+            // Legacy text fields (keep for backward compatibility)
             category_type: catType,
             category_area: catArea,
             category_specialty: catSpec,
             category_focus: catFocus || null,
+            // New numeric ID fields (v2 schema)
+            category_type_id: primaryIds.type_id,
+            category_area_id: primaryIds.area_id,
+            category_specialty_id: primaryIds.specialty_id,
+            category_focus_id: primaryIds.focus_id,
             category_paths: cleanedCategories,
             booking_type: bookingType,
             ticket_limit_30d: ticketLimit30d ? Number(ticketLimit30d) : null,
@@ -1205,15 +1244,24 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
             // Delete existing category entries
             await supabase.from('course_categories').delete().eq('course_id', activeCourseId);
 
-            // Insert all categories (primary + secondary)
-            const categoriesToInsert = cleanedCategories.map((cat, idx) => ({
-                course_id: activeCourseId,
-                category_type: cat.type,
-                category_area: cat.area,
-                category_specialty: cat.specialty,
-                category_focus: cat.focus || null,
-                is_primary: idx === 0 // First category is primary
-            }));
+            // Insert all categories (primary + secondary) with both legacy text and new numeric IDs
+            const categoriesToInsert = cleanedCategories.map((cat, idx) => {
+                const catIds = getCategoryIds(cat.type, cat.area, cat.specialty, cat.focus);
+                return {
+                    course_id: activeCourseId,
+                    // Legacy text fields
+                    category_type: cat.type,
+                    category_area: cat.area,
+                    category_specialty: cat.specialty,
+                    category_focus: cat.focus || null,
+                    // New numeric ID fields (v2 schema)
+                    type_id: catIds.type_id,
+                    area_id: catIds.area_id,
+                    specialty_id: catIds.specialty_id,
+                    focus_id: catIds.focus_id,
+                    is_primary: idx === 0 // First category is primary
+                };
+            });
 
             const { error: catErr } = await supabase
                 .from('course_categories')
