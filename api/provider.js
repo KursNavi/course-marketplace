@@ -121,49 +121,15 @@ export default async function handler(req, res) {
         .eq('user_id', provider.id)
         .order('created_at', { ascending: false });
 
-      // If no courses found, also try text-based comparison (for type mismatch issues)
-      let allCourses = courses || [];
-      if (allCourses.length === 0 && !courseError) {
-        // Debug: Get a few courses and check their user_id type
-        const { data: sampleCourses } = await supabase
-          .from('courses')
-          .select('id, user_id, instructor_name')
-          .limit(3);
+      console.log(`[Provider API] Provider ${provider.slug}: Found ${courses?.length || 0} courses, error: ${courseError?.message || 'none'}`);
 
-        console.log(`[Provider API DEBUG] Provider ID: "${provider.id}" (type: ${typeof provider.id})`);
-        console.log(`[Provider API DEBUG] Sample courses user_ids:`, sampleCourses?.map(c => ({
-          id: c.id,
-          user_id: c.user_id,
-          user_id_type: typeof c.user_id,
-          instructor: c.instructor_name
-        })));
+      // Filter for published courses (status = 'published' OR status is null/undefined for legacy)
+      const publishedCourses = (courses || []).filter(c => {
+        const isPublished = c.status === 'published' || c.status === null || c.status === undefined;
+        return isPublished;
+      });
 
-        // Try filtering all courses and matching in JS
-        const { data: allCoursesForMatching } = await supabase
-          .from('courses')
-          .select(`id, title, description, price, category_type, category_area,
-            category_specialty, canton, city, booking_type, image_url, created_at, status, user_id`)
-          .order('created_at', { ascending: false });
-
-        // Match by string comparison (handles type mismatches)
-        const providerIdStr = String(provider.id);
-        allCourses = (allCoursesForMatching || []).filter(c =>
-          String(c.user_id) === providerIdStr
-        );
-        console.log(`[Provider API DEBUG] After string matching: ${allCourses.length} courses`);
-      }
-
-      // Filter for published courses (including legacy courses with null status)
-      const publishedCourses = allCourses.filter(c =>
-        c.status === 'published' || c.status === null || c.status === undefined
-      );
-
-      // Debug: Show status distribution
-      const statusDist = allCourses.reduce((acc, c) => {
-        acc[c.status || 'null'] = (acc[c.status || 'null'] || 0) + 1;
-        return acc;
-      }, {});
-      console.log(`[Provider API] Total: ${allCourses.length}, Published: ${publishedCourses.length}, Status: ${JSON.stringify(statusDist)}`);
+      console.log(`[Provider API] Published courses: ${publishedCourses.length}`);
 
       // Get user's account email for public display (if enabled)
       let contactEmail = null;
