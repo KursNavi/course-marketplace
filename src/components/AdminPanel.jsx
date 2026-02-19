@@ -36,7 +36,7 @@ const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView }) => 
 
         // 1) Try Admin API (Service Role, bypasses RLS)
         try {
-            const res = await fetch('/api/admin/profiles', {
+            const res = await fetch('/api/admin?action=profiles', {
                 headers: { 'x-admin-secret': ADMIN_PW }
             });
 
@@ -78,13 +78,13 @@ const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView }) => 
                 // 1) Admin API (bypasses RLS)
         let apiOk = false;
         try {
-            const res = await fetch('/api/admin/set-verify', {
+            const res = await fetch('/api/admin', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'x-admin-secret': ADMIN_PW
                 },
-                body: JSON.stringify({ userId, newStatus })
+                body: JSON.stringify({ action: 'set-verify', userId, newStatus })
             });
 
             if (!res.ok) {
@@ -138,13 +138,13 @@ const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView }) => 
         // 1) Admin API (bypasses RLS)
         let apiOk = false;
         try {
-            const res = await fetch('/api/admin/set-tier', {
+            const res = await fetch('/api/admin', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'x-admin-secret': ADMIN_PW
                 },
-                body: JSON.stringify({ userId, package_tier: newTier })
+                body: JSON.stringify({ action: 'set-tier', userId, package_tier: newTier })
             });
 
             if (!res.ok) {

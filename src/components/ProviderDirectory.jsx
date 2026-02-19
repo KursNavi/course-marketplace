@@ -43,7 +43,7 @@ export default function ProviderDirectory({ t, setView }) {
       if (selectedCanton) params.append('canton', selectedCanton);
       if (verifiedOnly) params.append('verified', 'true');
 
-      const response = await fetch(`/api/providers/directory?${params}`);
+      const response = await fetch(`/api/provider?action=directory&${params}`);
       const data = await response.json();
 
       if (!response.ok) {

@@ -119,10 +119,10 @@ export default function ProviderProfileEditor({ user, showNotification }) {
     setSlugValidation({ ...slugValidation, checking: true });
 
     try {
-      const response = await fetch('/api/provider/validate-slug', {
+      const response = await fetch('/api/provider', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slug, providerId: user.id })
+        body: JSON.stringify({ action: 'validate-slug', slug, providerId: user.id })
       });
 
       const data = await response.json();

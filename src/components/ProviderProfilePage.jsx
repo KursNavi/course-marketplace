@@ -45,7 +45,7 @@ export default function ProviderProfilePage({ t, setView, setSelectedCourse }) {
     const fetchProvider = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`/api/provider/${slug}`);
+        const response = await fetch(`/api/provider?action=profile&slug=${slug}`);
         const data = await response.json();
 
         if (!response.ok) {
@@ -62,7 +62,7 @@ export default function ProviderProfilePage({ t, setView, setSelectedCourse }) {
           setRedirect(data);
           window.history.replaceState({}, '', `/anbieter/${data.newSlug}`);
           // Fetch the actual provider data
-          const newResponse = await fetch(`/api/provider/${data.newSlug}`);
+          const newResponse = await fetch(`/api/provider?action=profile&slug=${data.newSlug}`);
           const newData = await newResponse.json();
           if (newResponse.ok && !newData.redirect) {
             setProvider(newData.provider);
