@@ -140,13 +140,18 @@ export default async function handler(req, res) {
       let courses = [];
       if (allCoursesRaw && allCoursesRaw.length > 0) {
         const courseIdList = allCoursesRaw.map(c => c.id);
-        const { data: fullCourses } = await supabase
+        const { data: fullCourses, error: fullError } = await supabase
           .from('courses')
           .select(`id, title, description, price, category_type, category_area,
-            category_specialty, canton, city, booking_type, image_url, created_at, status`)
+            category_specialty, canton, booking_type, image_url, created_at, status`)
           .in('id', courseIdList)
           .order('created_at', { ascending: false });
+
+        if (fullError) {
+          console.error(`[Provider API] Error loading full courses:`, fullError.message);
+        }
         courses = fullCourses || [];
+        console.log(`[Provider API] Loaded ${courses.length} full courses`);
       }
 
       // Filter for published courses (status = 'published' OR status is null/undefined for legacy)
