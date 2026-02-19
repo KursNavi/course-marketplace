@@ -91,13 +91,14 @@ export const Navbar = ({ t, user, lang, setLang, setView, handleLogout, setShowR
 
           {/* RIGHT SIDE */}
           <div className="hidden md:flex items-center space-x-4">
+            {/* Language switcher temporarily hidden for launch (German only)
             <div className="relative">
                 <button onClick={() => setLangMenuOpen(!langMenuOpen)} className="flex items-center space-x-1 text-gray-500 hover:text-primary p-2 rounded-full transition hover:bg-primaryLight">
                     <Globe className="w-5 h-5" />
                     <span className="font-bold text-xs uppercase font-sans">{lang}</span>
                     <ChevronDown className="w-3 h-3" />
                 </button>
-                
+
                 {langMenuOpen && (
                     <>
                     <div className="fixed inset-0 z-10" onClick={() => setLangMenuOpen(false)}></div>
@@ -111,6 +112,7 @@ export const Navbar = ({ t, user, lang, setLang, setView, handleLogout, setShowR
                     </>
                 )}
             </div>
+            */}
 
             {user ? (
               <div className="flex items-center space-x-4">
@@ -143,6 +145,7 @@ export const Navbar = ({ t, user, lang, setLang, setView, handleLogout, setShowR
             <button onClick={() => navTo('provider-directory')} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-primaryLight hover:text-primary font-sans">{t.nav_providers || 'Anbieter'}</button>
             <button onClick={() => navTo('teacher-hub')} className="block w-full text-left px-3 py-2 rounded-md text-base font-bold text-orange-600 hover:bg-orange-50 font-sans">{t.nav_for_providers}</button>
             
+            {/* Language switcher temporarily hidden for launch (German only)
             <div className="border-t border-gray-100 my-2 pt-2">
                 <p className="px-3 text-xs font-bold text-gray-400 uppercase mb-2 font-heading">Language</p>
                 <div className="grid grid-cols-2 gap-2 px-3">
@@ -153,6 +156,7 @@ export const Navbar = ({ t, user, lang, setLang, setView, handleLogout, setShowR
                     ))}
                 </div>
             </div>
+            */}
 
             <div className="border-t border-gray-100 my-2 pt-2">
                 {user ? (
