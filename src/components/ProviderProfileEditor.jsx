@@ -85,57 +85,44 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
       try {
         setLoading(true);
 
-        // First, try to load with all fields including show_email_publicly
+        // Base columns that always exist
+        const baseColumns = `
+          full_name, city, canton, bio_text, certificates,
+          preferred_language, website_url, additional_locations,
+          verification_status, package_tier
+        `;
+
+        // Optional columns from migration (may not exist yet)
+        const optionalColumns = ['slug', 'logo_url', 'cover_image_url', 'show_email_publicly', 'profile_published_at', 'last_slug_change_at'];
+
+        // Try with all columns first
         let { data, error } = await supabase
           .from('profiles')
-          .select(`
-            full_name,
-            city,
-            canton,
-            bio_text,
-            certificates,
-            preferred_language,
-            website_url,
-            additional_locations,
-            verification_status,
-            slug,
-            logo_url,
-            cover_image_url,
-            show_email_publicly,
-            profile_published_at,
-            last_slug_change_at,
-            package_tier
-          `)
+          .select(`${baseColumns}, ${optionalColumns.join(', ')}`)
           .eq('id', user.id)
           .single();
 
-        // If the query fails (possibly due to missing column), try without show_email_publicly
+        // If query fails, try with just base columns
         if (error) {
-          console.warn('Full query failed, trying without show_email_publicly:', error.message);
+          console.warn('Full query failed, trying with base columns only:', error.message);
           const fallback = await supabase
             .from('profiles')
-            .select(`
-              full_name,
-              city,
-              canton,
-              bio_text,
-              certificates,
-              preferred_language,
-              website_url,
-              additional_locations,
-              verification_status,
-              slug,
-              logo_url,
-              cover_image_url,
-              profile_published_at,
-              last_slug_change_at,
-              package_tier
-            `)
+            .select(baseColumns)
             .eq('id', user.id)
             .single();
 
           if (fallback.error) throw fallback.error;
-          data = { ...fallback.data, show_email_publicly: false };
+
+          // Set defaults for missing optional columns
+          data = {
+            ...fallback.data,
+            slug: '',
+            logo_url: '',
+            cover_image_url: '',
+            show_email_publicly: false,
+            profile_published_at: null,
+            last_slug_change_at: null
+          };
         }
 
         setProfileData({
@@ -280,21 +267,39 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
         profileUpdates.slug = newSlug;
       }
 
-      // Try to update with all fields
+      // Try to update with all fields, with progressive fallback for missing columns
       let { error } = await supabase
         .from('profiles')
         .update(profileUpdates)
         .eq('id', user.id);
 
-      // If update fails (possibly due to missing show_email_publicly column), try without it
+      // If update fails, try removing potentially missing columns one by one
       if (error) {
-        console.warn('Full update failed, trying without show_email_publicly:', error.message);
-        delete profileUpdates.show_email_publicly;
-        const fallback = await supabase
-          .from('profiles')
-          .update(profileUpdates)
-          .eq('id', user.id);
-        if (fallback.error) throw fallback.error;
+        console.warn('Full update failed:', error.message);
+
+        // List of columns that might not exist yet (from migration)
+        const optionalColumns = ['show_email_publicly', 'logo_url', 'cover_image_url'];
+        let lastError = error;
+
+        for (const col of optionalColumns) {
+          if (profileUpdates[col] !== undefined) {
+            delete profileUpdates[col];
+            console.warn(`Retrying without ${col}`);
+
+            const retry = await supabase
+              .from('profiles')
+              .update(profileUpdates)
+              .eq('id', user.id);
+
+            if (!retry.error) {
+              lastError = null;
+              break;
+            }
+            lastError = retry.error;
+          }
+        }
+
+        if (lastError) throw lastError;
       }
 
       // Update local state
