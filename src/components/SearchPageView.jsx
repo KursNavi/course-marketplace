@@ -104,67 +104,7 @@ const SearchPageView = ({
         };
     }, [filteredCourses.length, loading, searchQuery, searchType, searchArea, selectedLocations]);
 
-    // --- DYNAMIC FILTER LOGIC (Hide empty categories) ---
-    // Use ONLY all_categories from junction table (new consolidated schema)
-    // No fallback to legacy columns - this eliminates duplicates
-    const availableTypes = [...new Set(
-        courses.flatMap(c => {
-            if (Array.isArray(c.all_categories) && c.all_categories.length > 0) {
-                return c.all_categories.map(cat => cat.category_type).filter(Boolean);
-            }
-            return []; // No fallback - courses without assignments show under "Alle Kategorien"
-        })
-    )];
-
-    const availableAreas = [...new Set(
-        courses.flatMap(c => {
-            const areas = [];
-            if (Array.isArray(c.all_categories) && c.all_categories.length > 0) {
-                c.all_categories.forEach(cat => {
-                    if ((!searchType || cat.category_type === searchType) && cat.category_area) {
-                        areas.push(cat.category_area);
-                    }
-                });
-            }
-            return areas; // No fallback
-        })
-    )];
-
-    const availableSpecialties = [...new Set(
-        courses.flatMap(c => {
-            const specialties = [];
-            if (Array.isArray(c.all_categories) && c.all_categories.length > 0) {
-                c.all_categories.forEach(cat => {
-                    const typeMatch = !searchType || cat.category_type === searchType;
-                    const areaMatch = !searchArea || cat.category_area === searchArea;
-                    if (typeMatch && areaMatch && cat.category_specialty) {
-                        specialties.push(cat.category_specialty);
-                    }
-                });
-            }
-            return specialties; // No fallback
-        })
-    )];
-
-    const availableFocuses = [...new Set(
-        courses.flatMap(c => {
-            const focuses = [];
-            if (Array.isArray(c.all_categories) && c.all_categories.length > 0) {
-                c.all_categories.forEach(cat => {
-                    const typeMatch = !searchType || cat.category_type === searchType;
-                    const areaMatch = !searchArea || cat.category_area === searchArea;
-                    const specMatch = !searchSpecialty || cat.category_specialty === searchSpecialty;
-                    if (typeMatch && areaMatch && specMatch && cat.category_focus) {
-                        focuses.push(cat.category_focus);
-                    }
-                });
-            }
-            return focuses; // No fallback
-        })
-    )];
-
-    // Helper to get Label (crash-sicher)
-    // Builds a lookup map from all_categories for fast label retrieval
+    // Helper: Build label lookup map from all_categories (before filter logic)
     const labelMap = React.useMemo(() => {
         const map = { types: {}, areas: {} };
         courses.forEach(c => {
@@ -181,6 +121,80 @@ const SearchPageView = ({
         });
         return map;
     }, [courses]);
+
+    // --- DYNAMIC FILTER LOGIC (Hide empty categories) ---
+    // Use ONLY all_categories from junction table (new consolidated schema)
+
+    // Fixed order for Level 1 (Types): Professionell, Privat, Kinder
+    const typeOrder = ['professionell', 'privat', 'kinder'];
+    const availableTypes = [...new Set(
+        courses.flatMap(c => {
+            if (Array.isArray(c.all_categories) && c.all_categories.length > 0) {
+                return c.all_categories.map(cat => cat.category_type).filter(Boolean);
+            }
+            return [];
+        })
+    )].sort((a, b) => {
+        const aIdx = typeOrder.indexOf(a);
+        const bIdx = typeOrder.indexOf(b);
+        if (aIdx !== -1 && bIdx !== -1) return aIdx - bIdx;
+        if (aIdx !== -1) return -1;
+        if (bIdx !== -1) return 1;
+        return a.localeCompare(b, 'de');
+    });
+
+    // Level 2-4: Alphabetically sorted by label
+    const availableAreas = [...new Set(
+        courses.flatMap(c => {
+            const areas = [];
+            if (Array.isArray(c.all_categories) && c.all_categories.length > 0) {
+                c.all_categories.forEach(cat => {
+                    if ((!searchType || cat.category_type === searchType) && cat.category_area) {
+                        areas.push(cat.category_area);
+                    }
+                });
+            }
+            return areas;
+        })
+    )].sort((a, b) => {
+        // Sort by label (German alphabetical)
+        const labelA = labelMap.areas[a] || a;
+        const labelB = labelMap.areas[b] || b;
+        return labelA.localeCompare(labelB, 'de');
+    });
+
+    const availableSpecialties = [...new Set(
+        courses.flatMap(c => {
+            const specialties = [];
+            if (Array.isArray(c.all_categories) && c.all_categories.length > 0) {
+                c.all_categories.forEach(cat => {
+                    const typeMatch = !searchType || cat.category_type === searchType;
+                    const areaMatch = !searchArea || cat.category_area === searchArea;
+                    if (typeMatch && areaMatch && cat.category_specialty) {
+                        specialties.push(cat.category_specialty);
+                    }
+                });
+            }
+            return specialties;
+        })
+    )].sort((a, b) => a.localeCompare(b, 'de')); // Already labels, sort alphabetically
+
+    const availableFocuses = [...new Set(
+        courses.flatMap(c => {
+            const focuses = [];
+            if (Array.isArray(c.all_categories) && c.all_categories.length > 0) {
+                c.all_categories.forEach(cat => {
+                    const typeMatch = !searchType || cat.category_type === searchType;
+                    const areaMatch = !searchArea || cat.category_area === searchArea;
+                    const specMatch = !searchSpecialty || cat.category_specialty === searchSpecialty;
+                    if (typeMatch && areaMatch && specMatch && cat.category_focus) {
+                        focuses.push(cat.category_focus);
+                    }
+                });
+            }
+            return focuses;
+        })
+    )].sort((a, b) => a.localeCompare(b, 'de')); // Already labels, sort alphabetically
 
     const getLabel = (key, scope) => {
         if (!key) return '';
