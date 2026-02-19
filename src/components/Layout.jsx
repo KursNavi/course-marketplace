@@ -48,7 +48,8 @@ export const Navbar = ({ t, user, lang, setLang, setView, handleLogout, setShowR
       'dashboard': '/dashboard',
       'create': '/create-course',
       'admin': '/control-room-2025',
-      'admin-blog': '/admin-blog'
+      'admin-blog': '/admin-blog',
+      'provider-directory': '/anbieter'
     };
     return urlMap[viewName] || '/';
   };
@@ -83,6 +84,7 @@ export const Navbar = ({ t, user, lang, setLang, setView, handleLogout, setShowR
               <button onClick={() => { window.scrollTo(0, 0); window.history.pushState({ view: 'search' }, '', '/search?type=kinder_jugend'); }} className="text-gray-500 hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors font-sans">{t.nav_kids}</button>
               <button onClick={() => navTo('how-it-works')} className="text-gray-500 hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors font-sans">{t.nav_howitworks}</button>
               <button onClick={() => navTo('blog')} className="text-gray-500 hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors font-sans">{t.nav_news}</button>
+              <button onClick={() => navTo('provider-directory')} className="text-gray-500 hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors font-sans">{t.nav_providers || 'Anbieter'}</button>
               <button onClick={() => navTo('teacher-hub')} className="text-orange-600 hover:text-primary px-3 py-2 rounded-md text-sm font-bold transition-colors font-sans">{t.nav_for_providers}</button>
             </div>
           </div>
@@ -138,6 +140,7 @@ export const Navbar = ({ t, user, lang, setLang, setView, handleLogout, setShowR
             <button onClick={() => { setMobileMenuOpen(false); window.scrollTo(0, 0); window.history.pushState({ view: 'search' }, '', '/search?type=kinder_jugend'); }} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-primaryLight hover:text-primary font-sans">{t.nav_kids}</button>
             <button onClick={() => navTo('how-it-works')} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-primaryLight hover:text-primary font-sans">{t.nav_howitworks}</button>
             <button onClick={() => navTo('blog')} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-primaryLight hover:text-primary font-sans">{t.nav_news}</button>
+            <button onClick={() => navTo('provider-directory')} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-primaryLight hover:text-primary font-sans">{t.nav_providers || 'Anbieter'}</button>
             <button onClick={() => navTo('teacher-hub')} className="block w-full text-left px-3 py-2 rounded-md text-base font-bold text-orange-600 hover:bg-orange-50 font-sans">{t.nav_for_providers}</button>
             
             <div className="border-t border-gray-100 my-2 pt-2">
@@ -191,7 +194,8 @@ export const Footer = ({ t, setView }) => {
       'widerruf': '/widerruf-storno',
       'trust': '/vertrauen-sicherheit',
       'login': '/login',
-      'dashboard': '/dashboard'
+      'dashboard': '/dashboard',
+      'provider-directory': '/anbieter'
     };
     return urlMap[viewName] || '/';
   };
@@ -355,6 +359,7 @@ export const Footer = ({ t, setView }) => {
             <li onClick={() => { window.scrollTo(0, 0); window.history.pushState({ view: 'search' }, '', '/search?type=beruflich'); }} className="hover:text-primary cursor-pointer transition-colors">{t.nav_professional}</li>
             <li onClick={() => { window.scrollTo(0, 0); window.history.pushState({ view: 'search' }, '', '/search?type=kinder_jugend'); }} className="hover:text-primary cursor-pointer transition-colors">{t.nav_kids}</li>
             <li onClick={() => navTo('blog')} className="hover:text-primary cursor-pointer transition-colors">{t.nav_news}</li>
+            <li onClick={() => navTo('provider-directory')} className="hover:text-primary cursor-pointer transition-colors">{t.nav_providers || 'Anbieter-Verzeichnis'}</li>
             <li onClick={() => navTo('teacher-hub')} className="hover:text-primary cursor-pointer transition-colors font-bold text-orange-600">{t.nav_for_providers}</li>
           </ul>
         </div>
