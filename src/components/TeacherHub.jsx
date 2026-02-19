@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { CheckCircle, XCircle, BarChart, Users, Calendar, ArrowRight } from 'lucide-react';
 // WICHTIG: Hier nutzen wir die korrekte Mehrzahl 'plans'
 import { PLANS } from '../constants/plans';
+import { BASE_URL } from '../lib/siteConfig';
 
 const TeacherHub = ({ setView, t, user, showNotification }) => {
     
@@ -24,7 +25,7 @@ const TeacherHub = ({ setView, t, user, showNotification }) => {
             linkCanonical.rel = "canonical";
             document.head.appendChild(linkCanonical);
         }
-        linkCanonical.href = "https://kursnavi.ch/teacher-hub";
+        linkCanonical.href = `${BASE_URL}/teacher-hub`;
 
     }, []);
 

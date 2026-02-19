@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { Calendar, User, ArrowLeft, ArrowRight, MapPin, Search } from 'lucide-react';
 import { formatPriceCHF } from '../lib/formatPrice';
+import { BASE_URL } from '../lib/siteConfig';
 
 export default function BlogDetail({ article, setView, courses }) {
   // Scroll to top when article changes
@@ -27,7 +28,7 @@ export default function BlogDetail({ article, setView, courses }) {
     metaDescTag.content = metaDescription;
 
     // Canonical URL
-    const canonicalUrl = `https://kursnavi.ch/blog/${article.slug || article.id}`;
+    const canonicalUrl = `${BASE_URL}/blog/${article.slug || article.id}`;
     let canonicalTag = document.querySelector('link[rel="canonical"]');
     if (!canonicalTag) {
         canonicalTag = document.createElement('link');
@@ -41,14 +42,14 @@ export default function BlogDetail({ article, setView, courses }) {
         'og:title': article.title,
         'og:description': metaDescription,
         'og:url': canonicalUrl,
-        'og:image': article.image_url || 'https://kursnavi.ch/og-default.jpg',
+        'og:image': article.image_url || `${BASE_URL}/og-default.jpg`,
         'og:type': 'article',
         'og:site_name': 'KursNavi',
         'article:published_time': article.created_at,
         'twitter:card': 'summary_large_image',
         'twitter:title': article.title,
         'twitter:description': metaDescription,
-        'twitter:image': article.image_url || 'https://kursnavi.ch/og-default.jpg'
+        'twitter:image': article.image_url || `${BASE_URL}/og-default.jpg`
     };
 
     Object.entries(ogTags).forEach(([property, content]) => {
@@ -74,13 +75,13 @@ export default function BlogDetail({ article, setView, courses }) {
                 "@type": "ListItem",
                 "position": 1,
                 "name": "Home",
-                "item": "https://kursnavi.ch"
+                "item": BASE_URL
             },
             {
                 "@type": "ListItem",
                 "position": 2,
                 "name": "Magazin",
-                "item": "https://kursnavi.ch/blog"
+                "item": `${BASE_URL}/blog`
             },
             {
                 "@type": "ListItem",

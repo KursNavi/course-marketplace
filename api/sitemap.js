@@ -31,9 +31,33 @@ export default async function handler(req, res) {
 
     if (blogError) console.warn('Blog fetch error:', blogError);
 
-    const baseUrl = 'https://kursnavi.ch';
+    const baseUrl = (process.env.VITE_SITE_URL || 'https://kursnavi.ch').replace(/\/$/, '');
 
-    // 3. Generate Static Pages XML
+    // 4. Fetch eligible providers (Pro+ with published profile and courses)
+    const { data: providers, error: providerError } = await supabase
+      .from('profiles')
+      .select('id, slug, profile_published_at')
+      .not('profile_published_at', 'is', null)
+      .not('slug', 'is', null)
+      .in('package_tier', ['pro', 'premium', 'enterprise']);
+
+    if (providerError) console.warn('Provider fetch error:', providerError);
+
+    // Filter providers: only include those with at least 1 published course
+    let eligibleProviders = [];
+    if (providers && providers.length > 0) {
+      const providerIds = providers.map(p => p.id);
+      const { data: providerCourses } = await supabase
+        .from('courses')
+        .select('user_id')
+        .in('user_id', providerIds)
+        .or('status.eq.published,status.is.null');
+
+      const providersWithCourses = new Set((providerCourses || []).map(c => c.user_id));
+      eligibleProviders = providers.filter(p => providersWithCourses.has(p.id));
+    }
+
+    // 5. Generate Static Pages XML
     const staticPages = [
       '',
       '/search',
@@ -45,6 +69,7 @@ export default async function handler(req, res) {
       '/children',
       '/teacher-hub',
       '/blog',
+      '/anbieter',
       '/agb',
       '/datenschutz',
       '/impressum'
@@ -57,7 +82,7 @@ export default async function handler(req, res) {
       </url>`;
     }).join('');
 
-    // 4. Generate Course URLs (Dynamic)
+    // 6. Generate Course URLs (Dynamic)
     const courseUrls = (courses || []).map((course) => {
       const topicSlug = (course.category_area || 'kurs').toLowerCase().replace(/_/g, '-');
       const locSlug = (course.canton || 'schweiz').toLowerCase();
@@ -75,7 +100,7 @@ export default async function handler(req, res) {
       </url>`;
     }).join('');
 
-    // 5. Generate Blog Post URLs (Dynamic)
+    // 6. Generate Blog Post URLs (Dynamic)
     const blogUrls = (blogPosts || []).map((post) => {
       const slug = post.slug || post.id;
       return `
@@ -87,12 +112,24 @@ export default async function handler(req, res) {
       </url>`;
     }).join('');
 
-    // 6. Construct Final XML
+    // 7. Generate Provider URLs (Dynamic)
+    const providerUrls = (eligibleProviders || []).map((provider) => {
+      return `
+      <url>
+          <loc>${baseUrl}/anbieter/${provider.slug}</loc>
+          <lastmod>${new Date(provider.profile_published_at).toISOString()}</lastmod>
+          <changefreq>weekly</changefreq>
+          <priority>0.6</priority>
+      </url>`;
+    }).join('');
+
+    // 9. Construct Final XML
     const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
     <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
       ${staticPages}
       ${courseUrls}
       ${blogUrls}
+      ${providerUrls}
     </urlset>`;
 
     // 6. Send Response

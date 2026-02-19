@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Search, ArrowRight, ChevronRight, ChevronDown, CreditCard, Info, Shield } from 'lucide-react';
 import { LocationDropdown, DeliveryTypeFilter } from './Filters';
 import { NEW_TAXONOMY, CATEGORY_TYPES } from '../lib/constants';
+import { BASE_URL } from '../lib/siteConfig';
 
 export const Home = ({
   lang, t, setView, courses, // Jetzt haben wir Zugriff auf die Kurse!
@@ -107,7 +108,7 @@ export const Home = ({
     metaDescTag.content = metaDescription;
 
     // Canonical URL
-    const canonicalUrl = 'https://kursnavi.ch/';
+    const canonicalUrl = `${BASE_URL}/`;
     let canonicalTag = document.querySelector('link[rel="canonical"]');
     if (!canonicalTag) {
         canonicalTag = document.createElement('link');
@@ -125,15 +126,15 @@ export const Home = ({
         hreflangTag.rel = 'alternate';
         hreflangTag.hreflang = langCode;
         hreflangTag.href = langCode === 'de'
-            ? 'https://kursnavi.ch/'
-            : `https://kursnavi.ch/${langCode}/`;
+            ? `${BASE_URL}/`
+            : `${BASE_URL}/${langCode}/`;
         document.head.appendChild(hreflangTag);
     });
 
     const xDefaultTag = document.createElement('link');
     xDefaultTag.rel = 'alternate';
     xDefaultTag.hreflang = 'x-default';
-    xDefaultTag.href = 'https://kursnavi.ch/';
+    xDefaultTag.href = `${BASE_URL}/`;
     document.head.appendChild(xDefaultTag);
 
     // OG Tags
@@ -141,13 +142,13 @@ export const Home = ({
         'og:title': 'KursNavi - Der Schweizer Kursmarktplatz',
         'og:description': metaDescription,
         'og:url': canonicalUrl,
-        'og:image': 'https://kursnavi.ch/og-default.svg',
+        'og:image': `${BASE_URL}/og-default.svg`,
         'og:type': 'website',
         'og:site_name': 'KursNavi',
         'twitter:card': 'summary_large_image',
         'twitter:title': 'KursNavi - Der Schweizer Kursmarktplatz',
         'twitter:description': metaDescription,
-        'twitter:image': 'https://kursnavi.ch/og-default.svg'
+        'twitter:image': `${BASE_URL}/og-default.svg`
     };
 
     Object.entries(ogTags).forEach(([property, content]) => {
@@ -169,8 +170,8 @@ export const Home = ({
         "@context": "https://schema.org",
         "@type": "Organization",
         "name": "KursNavi",
-        "url": "https://kursnavi.ch",
-        "logo": "https://kursnavi.ch/og-default.svg",
+        "url": BASE_URL,
+        "logo": `${BASE_URL}/og-default.svg`,
         "description": "Der Schweizer Kursmarktplatz für Weiterbildung, Freizeit und Kinderkurse",
         "address": {
             "@type": "PostalAddress",

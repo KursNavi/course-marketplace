@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { BASE_URL } from '../lib/siteConfig';
 
 export default function BlogList({ articles, setView, setSelectedArticle }) {
   // Nur veröffentlichte Artikel anzeigen
@@ -19,7 +20,7 @@ export default function BlogList({ articles, setView, setSelectedArticle }) {
     metaDescTag.content = metaDescription;
 
     // Canonical URL
-    const canonicalUrl = 'https://kursnavi.ch/blog';
+    const canonicalUrl = `${BASE_URL}/blog`;
     let canonicalTag = document.querySelector('link[rel="canonical"]');
     if (!canonicalTag) {
         canonicalTag = document.createElement('link');

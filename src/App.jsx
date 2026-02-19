@@ -5,6 +5,7 @@ import { CheckCircle } from 'lucide-react';
 import { CATEGORY_LABELS, TRANSLATIONS, NEW_TAXONOMY, CATEGORY_TYPES } from './lib/constants';
 import { supabase } from './lib/supabase';
 import { isImageUsedByOtherCourses, deleteImageFromStorage } from './lib/imageUtils';
+import { BASE_URL, slugify as siteSlugify, buildCoursePath as siteBuildCoursePath } from './lib/siteConfig';
 
 // Components
 import { Navbar, Footer } from './components/Layout';
@@ -29,6 +30,8 @@ import BlogList from './components/BlogList';
 import BlogDetail from './components/BlogDetail';
 import AdminBlogManager from './components/AdminBlogManager';
 import CategoryLocationPage from './components/CategoryLocationPage';
+import ProviderDirectory from './components/ProviderDirectory';
+import ProviderProfilePage from './components/ProviderProfilePage';
 
 // --- DEBUG: ERROR BOUNDARY (Fängt Abstürze ab) ---
 class ErrorBoundary extends React.Component {
@@ -107,6 +110,10 @@ export default function KursNaviPro() {  // 1. Initial State Logic
       // BLOG ROUTING
       if (path === '/blog') return 'blog';
       if (path.startsWith('/blog/')) return 'blog-detail';
+
+      // PROVIDER DIRECTORY & PROFILE ROUTING
+      if (path === '/anbieter') return 'provider-directory';
+      if (path.startsWith('/anbieter/')) return 'provider-profile';
 
       // SEO Routing: Check for new structure /courses/topic/location/id
       if (path.startsWith('/courses/')) {
@@ -192,29 +199,11 @@ export default function KursNaviPro() {  // 1. Initial State Logic
 
   const t = TRANSLATIONS[lang] || TRANSLATIONS['de'];
 
-  // --- SEO HELPERS (v3.1) ---
-  const BASE_URL = 'https://kursnavi.ch';
-  const slugify = (input) => {
-    return (input || '')
-      .toString()
-      .trim()
-      .toLowerCase()
-      .replace(/ä/g, 'ae')
-      .replace(/ö/g, 'oe')
-      .replace(/ü/g, 'ue')
-      .replace(/ß/g, 'ss')
-      .replace(/&/g, ' und ')
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '');
-  };
-
-  const buildCoursePath = (c) => {
-    if (!c) return '/search';
-    const topic = slugify(c.primary_category || c.category_area || 'kurs');
-    const loc = slugify(c.canton || 'schweiz');
-    const title = slugify(c.title || 'detail');
-    return `/courses/${topic}/${loc}/${c.id}-${title}`;
-  };
+  // --- SEO HELPERS (v3.1) - Now imported from siteConfig ---
+  // BASE_URL, siteSlugify, siteBuildCoursePath imported at top
+  // Local aliases for backwards compatibility within this file
+  const slugify = siteSlugify;
+  const buildCoursePath = siteBuildCoursePath;
 
 
   // --- ACTIONS & HANDLERS ---
@@ -1331,6 +1320,8 @@ useEffect(() => {
       {view === 'admin-blog' && <AdminBlogManager showNotification={showNotification} setView={setView} courses={courses} />}
       {view === 'blog' && <BlogList articles={articles} setView={setView} setSelectedArticle={setSelectedArticle} />}
       {view === 'blog-detail' && <BlogDetail article={selectedArticle} setView={setView} courses={courses} />}
+      {view === 'provider-directory' && <ProviderDirectory t={t} setView={setView} />}
+      {view === 'provider-profile' && <ProviderProfilePage t={t} setView={setView} setSelectedCourse={setSelectedCourse} />}
       {view === 'dashboard' && user && <Dashboard user={user} setUser={setUser} t={t} setView={setView} courses={courses} teacherEarnings={teacherEarnings} myBookings={myBookings} savedCourses={savedCourses} savedCourseIds={savedCourseIds} onToggleSaveCourse={toggleSaveCourse} handleDeleteCourse={handleDeleteCourse} handleEditCourse={handleEditCourse} handleUpdateCourseStatus={handleUpdateCourseStatus} showNotification={showNotification} changeLanguage={changeLanguage} setSelectedCourse={setSelectedCourse} refreshBookings={fetchBookings} />}
       {view === 'create' && user?.role === 'teacher' && <TeacherForm key={editingCourse?.id || 'new'} t={t} setView={setView} user={user} fetchCourses={fetchCourses} showNotification={showNotification} setEditingCourse={setEditingCourse} initialData={editingCourse} />}
       </div>

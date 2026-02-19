@@ -67,7 +67,7 @@ export async function uploadImageWithHash(file, hash) {
 /**
  * Prüft ob ein Bild noch von anderen Kursen verwendet wird
  * @param {string} imageUrl - Die URL des Bildes
- * @param {string} excludeCourseId - Die ID des zu löschenden Kurses (ausschließen)
+ * @param {string} excludeCourseId - Die ID des zu löschenden Kurses (ausschliessen)
  * @returns {boolean} true wenn das Bild noch von anderen Kursen verwendet wird
  */
 export async function isImageUsedByOtherCourses(imageUrl, excludeCourseId) {

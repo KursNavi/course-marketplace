@@ -3,6 +3,7 @@ import { ArrowLeft, User, MapPin, Clock, CheckCircle, Calendar, Shield, External
 import { supabase } from '../lib/supabase';
 import { formatPriceCHF } from '../lib/formatPrice';
 import { useTaxonomy } from '../hooks/useTaxonomy';
+import { BASE_URL } from '../lib/siteConfig';
 
 const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, savedCourseIds, onToggleSaveCourse, showNotification }) => {
     const [showLeadModal, setShowLeadModal] = useState(false);
@@ -124,7 +125,7 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
         const topicSlug = (course.category_area || 'kurs').toLowerCase().replace(/_/g, '-');
         const locSlug = (course.canton || 'schweiz').toLowerCase();
         const titleSlug = (course.title || 'detail').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-        const canonicalUrl = `https://kursnavi.ch/courses/${topicSlug}/${locSlug}/${course.id}-${titleSlug}`;
+        const canonicalUrl = `${BASE_URL}/courses/${topicSlug}/${locSlug}/${course.id}-${titleSlug}`;
 
         // --- FIX 1: Dynamic Meta Description ---
         const metaDescription = `${course.title} in ${locationLabel} - ${(course.description || '').substring(0, 155)}...`;
@@ -158,8 +159,8 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
             hreflangTag.rel = 'alternate';
             hreflangTag.hreflang = langCode;
             hreflangTag.href = langCode === 'de'
-                ? `https://kursnavi.ch${baseHref}`
-                : `https://kursnavi.ch/${langCode}${baseHref}`;
+                ? `${BASE_URL}${baseHref}`
+                : `${BASE_URL}/${langCode}${baseHref}`;
             document.head.appendChild(hreflangTag);
         });
 
@@ -167,7 +168,7 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
         const xDefaultTag = document.createElement('link');
         xDefaultTag.rel = 'alternate';
         xDefaultTag.hreflang = 'x-default';
-        xDefaultTag.href = `https://kursnavi.ch${baseHref}`;
+        xDefaultTag.href = `${BASE_URL}${baseHref}`;
         document.head.appendChild(xDefaultTag);
 
         // --- FIX 3: Open Graph Tags (Social Sharing) ---
@@ -175,13 +176,13 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
             'og:title': `${course.title} in ${locationLabel}`,
             'og:description': metaDescription,
             'og:url': canonicalUrl,
-            'og:image': course.image_url || 'https://kursnavi.ch/og-default.jpg',
+            'og:image': course.image_url || `${BASE_URL}/og-default.jpg`,
             'og:type': 'website',
             'og:site_name': 'KursNavi',
             'twitter:card': 'summary_large_image',
             'twitter:title': `${course.title} in ${locationLabel}`,
             'twitter:description': metaDescription,
-            'twitter:image': course.image_url || 'https://kursnavi.ch/og-default.jpg'
+            'twitter:image': course.image_url || `${BASE_URL}/og-default.jpg`
         };
 
         Object.entries(ogTags).forEach(([property, content]) => {
@@ -241,7 +242,7 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
             "provider": {
                 "@type": "Organization",
                 "name": course.instructor_name,
-                "sameAs": `https://kursnavi.ch/teacher/${course.user_id}`
+                "sameAs": `${BASE_URL}/teacher/${course.user_id}`
             },
             "location": {
                 "@type": "Place",
@@ -304,13 +305,13 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
                     "@type": "ListItem",
                     "position": 1,
                     "name": "Home",
-                    "item": "https://kursnavi.ch"
+                    "item": BASE_URL
                 },
                 {
                     "@type": "ListItem",
                     "position": 2,
                     "name": course.category_area ? course.category_area.replace(/_/g, ' ') : 'Kurse',
-                    "item": `https://kursnavi.ch/courses/${topicSlug}/${locSlug}/`
+                    "item": `${BASE_URL}/courses/${topicSlug}/${locSlug}/`
                 },
                 {
                     "@type": "ListItem",

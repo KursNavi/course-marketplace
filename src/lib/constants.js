@@ -61,7 +61,7 @@ export const TIER_CONFIG = {
     course_limit: 9999, // Unlimitiert
     commission_percent: 8,
     features: ["Unlimitiert Kurse", "Eigene Landingpage", "Account Manager", "Custom Reporting"],
-    description: "Individuelle Lösungen für Großanbieter."
+    description: "Individuelle Lösungen für Grossanbieter."
   }
 };
 
@@ -325,7 +325,7 @@ export const CATEGORY_LABELS = {
   "Soft Skills": { de: "Soft Skills", fr: "Compétences Douces", it: "Soft Skills" },
   "Industry Specific": { de: "Branchenspezifisch", fr: "Spécifique à l'industrie", it: "Settore Specifico" },
   "Academic Support": { de: "Nachhilfe", fr: "Soutien scolaire", it: "Supporto Accademico" },
-  "Creative & Fun": { de: "Kreativ & Spaß", fr: "Créatif & Ludique", it: "Creativo & Divertimento" },
+  "Creative & Fun": { de: "Kreativ & Spass", fr: "Créatif & Ludique", it: "Creativo & Divertimento" },
   "Guitar": { de: "Gitarre", fr: "Guitare", it: "Chitarra" },
   "Piano": { de: "Klavier", fr: "Piano", it: "Pianoforte" },
   "Vocals": { de: "Gesang", fr: "Chant", it: "Canto" },
@@ -514,7 +514,7 @@ export const TRANSLATIONS = {
     home_path_sub: "Entdecke unsere beliebtesten Lernbereiche",
     home_card_prof_sub: "Karriere fördern mit zertifizierten Skills.",
     home_card_priv_sub: "Kochen, Fotografie, Sport & mehr.",
-    home_card_kids_sub: "Spaßige und spannende Kurse für Kinder.",
+    home_card_kids_sub: "Spassige und spannende Kurse für Kinder.",
     btn_explore: "ENTDECKEN",
 
     // LANDING TITLES

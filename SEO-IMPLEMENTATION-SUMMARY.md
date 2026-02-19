@@ -530,7 +530,7 @@ useEffect(() => {
 
 **Blocked:**
 - `/dashboard`, `/create-course`, `/login`, `/success`
-- `/api/*` (außer `/api/sitemap`)
+- `/api/*` (ausser `/api/sitemap`)
 - Filter-Parameter: `?sort=`, `?filter=`, `?price_min=`, `?price_max=`, `?date=`
 
 **Allowed:**
@@ -610,7 +610,7 @@ npm run build
 
 ## 📝 **MAINTENANCE GUIDE**
 
-### **Regelmäßige Checks:**
+### **Regelmässige Checks:**
 
 **Wöchentlich:**
 - Google Search Console → Coverage Report

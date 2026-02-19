@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { MapPin, TrendingUp, Clock, Award, ChevronRight, Bookmark, BookmarkCheck } from 'lucide-react';
 import { NEW_TAXONOMY, CATEGORY_TYPES } from '../lib/constants';
 import { formatPriceCHF } from '../lib/formatPrice';
+import { BASE_URL } from '../lib/siteConfig';
 
 /**
  * Programmatic SEO Landing Page for Topic/Location combinations
@@ -110,7 +111,7 @@ export default function CategoryLocationPage({
         metaDescTag.content = pageDescription;
 
         // Canonical URL
-        const canonicalUrl = `https://kursnavi.ch/courses/${topicSlug}/${locationSlug}/`;
+        const canonicalUrl = `${BASE_URL}/courses/${topicSlug}/${locationSlug}/`;
         let canonicalTag = document.querySelector('link[rel="canonical"]');
         if (!canonicalTag) {
             canonicalTag = document.createElement('link');
@@ -129,15 +130,15 @@ export default function CategoryLocationPage({
             hreflangTag.rel = 'alternate';
             hreflangTag.hreflang = langCode;
             hreflangTag.href = langCode === 'de'
-                ? `https://kursnavi.ch${basePath}`
-                : `https://kursnavi.ch/${langCode}${basePath}`;
+                ? `${BASE_URL}${basePath}`
+                : `${BASE_URL}/${langCode}${basePath}`;
             document.head.appendChild(hreflangTag);
         });
 
         const xDefaultTag = document.createElement('link');
         xDefaultTag.rel = 'alternate';
         xDefaultTag.hreflang = 'x-default';
-        xDefaultTag.href = `https://kursnavi.ch${basePath}`;
+        xDefaultTag.href = `${BASE_URL}${basePath}`;
         document.head.appendChild(xDefaultTag);
 
         // OG Tags
@@ -184,13 +185,13 @@ export default function CategoryLocationPage({
                     "@type": "ListItem",
                     "position": 1,
                     "name": "Home",
-                    "item": "https://kursnavi.ch"
+                    "item": BASE_URL
                 },
                 {
                     "@type": "ListItem",
                     "position": 2,
                     "name": "Kurse",
-                    "item": "https://kursnavi.ch/search"
+                    "item": `${BASE_URL}/search`
                 },
                 {
                     "@type": "ListItem",
