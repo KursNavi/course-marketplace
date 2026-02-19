@@ -114,32 +114,30 @@ export default async function handler(req, res) {
       };
 
       // Fetch all courses for this provider
-      console.log(`[Provider API] Fetching courses for provider.id: "${provider.id}" (type: ${typeof provider.id})`);
+      // Using EXACT same approach as debug endpoint which works
+      console.log(`[Provider API] Fetching courses for provider.id: "${provider.id}"`);
 
-      // First, let's check what user_id values exist in courses for debugging
-      const { data: sampleCourses } = await supabase
+      // Step 1: Get course IDs using simple query (like debug endpoint)
+      const { data: courseIds, error: idError } = await supabase
         .from('courses')
-        .select('id, user_id')
-        .limit(5);
-      console.log(`[Provider API] Sample courses user_ids:`, sampleCourses?.map(c => ({ id: c.id, user_id: c.user_id, type: typeof c.user_id })));
+        .select('id')
+        .eq('user_id', provider.id);
 
-      const { data: courses, error: courseError } = await supabase
-        .from('courses')
-        .select(`id, title, description, price, category_type, category_area,
-          category_specialty, canton, city, booking_type, image_url, created_at, status, user_id`)
-        .eq('user_id', provider.id)
-        .order('created_at', { ascending: false });
+      console.log(`[Provider API] Found ${courseIds?.length || 0} course IDs, error: ${idError?.message || 'none'}`);
 
-      console.log(`[Provider API] Provider ${provider.slug}: Found ${courses?.length || 0} courses, error: ${courseError?.message || 'none'}`);
-      if (courses && courses.length > 0) {
-        console.log(`[Provider API] First course user_id: "${courses[0].user_id}" (type: ${typeof courses[0].user_id})`);
-      } else {
-        // Try fetching ALL courses to see what's there
-        const { data: allCourses } = await supabase
+      // Step 2: If we found courses, fetch full details
+      let courses = [];
+      if (courseIds && courseIds.length > 0) {
+        const ids = courseIds.map(c => c.id);
+        const { data: fullCourses, error: fullError } = await supabase
           .from('courses')
-          .select('id, user_id')
-          .limit(20);
-        console.log(`[Provider API] NO COURSES FOUND. All courses sample:`, allCourses?.map(c => `${c.id}:${c.user_id}`));
+          .select(`id, title, description, price, category_type, category_area,
+            category_specialty, canton, city, booking_type, image_url, created_at, status`)
+          .in('id', ids)
+          .order('created_at', { ascending: false });
+
+        courses = fullCourses || [];
+        console.log(`[Provider API] Loaded ${courses.length} full courses, error: ${fullError?.message || 'none'}`);
       }
 
       // Filter for published courses (status = 'published' OR status is null/undefined for legacy)
