@@ -135,6 +135,21 @@ export default async function handler(req, res) {
       // Default cover image for non-Enterprise or if not set
       const defaultCoverImage = "https://images.unsplash.com/photo-1557683316-973673baf926?auto=format&fit=crop&q=80&w=1200&h=400";
 
+      // Parse additional_locations (stored as JSON string in DB)
+      let additionalLocations = [];
+      if (provider.additional_locations) {
+        try {
+          const parsed = JSON.parse(provider.additional_locations);
+          if (Array.isArray(parsed)) {
+            additionalLocations = parsed;
+          }
+        } catch {
+          // If not valid JSON, try comma-separated format
+          const items = provider.additional_locations.split(',').map(s => s.trim()).filter(Boolean);
+          additionalLocations = items.map(city => ({ city, canton: '' }));
+        }
+      }
+
       // Build response
       const publicProfile = {
         id: provider.id,
@@ -147,7 +162,7 @@ export default async function handler(req, res) {
         showEmailPublicly: provider.show_email_publicly || false,
         contactEmail: contactEmail,
         location: { city: provider.city, canton: provider.canton },
-        additionalLocations: provider.additional_locations || [],
+        additionalLocations: additionalLocations,
         isVerified: provider.verification_status === 'verified',
         certificates: provider.certificates || [],
         publishedAt: provider.profile_published_at,
