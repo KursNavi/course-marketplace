@@ -188,9 +188,12 @@ CREATE TABLE IF NOT EXISTS course_category_assignments (
     level3_id INT NOT NULL REFERENCES taxonomy_level3(id) ON DELETE CASCADE,
     level4_id INT REFERENCES taxonomy_level4(id) ON DELETE SET NULL,
     is_primary BOOLEAN DEFAULT false,
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    UNIQUE(course_id, level3_id, COALESCE(level4_id, 0))
+    created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Unique index that treats NULL level4_id as a distinct value
+CREATE UNIQUE INDEX IF NOT EXISTS idx_cca_unique_assignment
+ON course_category_assignments(course_id, level3_id, COALESCE(level4_id, 0));
 
 CREATE INDEX IF NOT EXISTS idx_cca_course_id ON course_category_assignments(course_id);
 CREATE INDEX IF NOT EXISTS idx_cca_level3_id ON course_category_assignments(level3_id);
@@ -213,6 +216,7 @@ CREATE POLICY "cca_delete" ON course_category_assignments FOR DELETE USING (true
 -- ============================================
 
 -- Insert from old junction table where we have valid specialty_id
+-- Use WHERE NOT EXISTS to handle the unique constraint
 INSERT INTO course_category_assignments (course_id, level3_id, level4_id, is_primary)
 SELECT
     cc.course_id,
@@ -221,9 +225,15 @@ SELECT
     cc.is_primary
 FROM course_categories cc
 WHERE cc.specialty_id IS NOT NULL
-ON CONFLICT (course_id, level3_id, COALESCE(level4_id, 0)) DO NOTHING;
+AND NOT EXISTS (
+    SELECT 1 FROM course_category_assignments cca
+    WHERE cca.course_id = cc.course_id
+    AND cca.level3_id = cc.specialty_id
+    AND COALESCE(cca.level4_id, 0) = COALESCE(cc.focus_id, 0)
+);
 
 -- Also ensure primary categories from courses table are in junction
+-- First insert missing entries
 INSERT INTO course_category_assignments (course_id, level3_id, level4_id, is_primary)
 SELECT
     c.id AS course_id,
@@ -232,7 +242,21 @@ SELECT
     true AS is_primary
 FROM courses c
 WHERE c.category_level3_id IS NOT NULL
-ON CONFLICT (course_id, level3_id, COALESCE(level4_id, 0)) DO UPDATE SET is_primary = true;
+AND NOT EXISTS (
+    SELECT 1 FROM course_category_assignments cca
+    WHERE cca.course_id = c.id
+    AND cca.level3_id = c.category_level3_id
+    AND COALESCE(cca.level4_id, 0) = COALESCE(c.category_level4_id, 0)
+);
+
+-- Then update existing entries to mark as primary
+UPDATE course_category_assignments cca
+SET is_primary = true
+FROM courses c
+WHERE cca.course_id = c.id
+AND cca.level3_id = c.category_level3_id
+AND COALESCE(cca.level4_id, 0) = COALESCE(c.category_level4_id, 0)
+AND c.category_level3_id IS NOT NULL;
 
 -- ============================================
 -- STEP 9: Create Materialized View for fast queries
