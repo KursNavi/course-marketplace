@@ -60,8 +60,8 @@ export default async function handler(req, res) {
       const { data: provider, error: providerError } = await supabase
         .from('profiles')
         .select(`
-          id, full_name, slug, provider_description, logo_url, cover_image_url,
-          public_contact_email, profile_published_at, website_url, city, canton,
+          id, full_name, slug, logo_url, cover_image_url,
+          show_email_publicly, profile_published_at, website_url, city, canton,
           additional_locations, verification_status, package_tier, bio_text, certificates
         `)
         .eq('slug', slug)
@@ -99,16 +99,30 @@ export default async function handler(req, res) {
         .or('status.eq.published,status.is.null')
         .order('created_at', { ascending: false });
 
+      // Get user's account email for public display (if enabled)
+      let contactEmail = null;
+      if (provider.show_email_publicly) {
+        // Fetch email from auth.users using service role
+        const { data: userData, error: userError } = await supabase.auth.admin.getUserById(provider.id);
+        if (!userError && userData?.user?.email) {
+          contactEmail = userData.user.email;
+        }
+      }
+
+      // Default cover image for non-Enterprise or if not set
+      const defaultCoverImage = "https://images.unsplash.com/photo-1557683316-973673baf926?auto=format&fit=crop&q=80&w=1200&h=400";
+
       // Build response
       const publicProfile = {
         id: provider.id,
         name: provider.full_name,
         slug: provider.slug,
-        description: provider.provider_description || provider.bio_text,
+        description: provider.bio_text,
         logoUrl: provider.logo_url,
-        coverImageUrl: entitlements.hasCoverImage ? provider.cover_image_url : null,
+        coverImageUrl: entitlements.hasCoverImage ? (provider.cover_image_url || defaultCoverImage) : defaultCoverImage,
         websiteUrl: provider.website_url,
-        contactEmail: provider.public_contact_email,
+        showEmailPublicly: provider.show_email_publicly || false,
+        contactEmail: contactEmail,
         location: { city: provider.city, canton: provider.canton },
         additionalLocations: provider.additional_locations || [],
         isVerified: provider.verification_status === 'verified',
@@ -119,7 +133,7 @@ export default async function handler(req, res) {
 
       const seoMeta = {
         title: `${provider.full_name} - Kursanbieter | KursNavi`,
-        description: (provider.provider_description || provider.bio_text || '').substring(0, 155) + '...',
+        description: (provider.bio_text || '').substring(0, 155) + '...',
         canonicalUrl: `${baseUrl}/anbieter/${provider.slug}`,
         ogImage: provider.logo_url || `${baseUrl}/og-default.jpg`
       };
@@ -130,7 +144,7 @@ export default async function handler(req, res) {
         name: provider.full_name,
         url: `${baseUrl}/anbieter/${provider.slug}`,
         logo: provider.logo_url,
-        description: provider.provider_description || provider.bio_text,
+        description: provider.bio_text,
         address: {
           '@type': 'PostalAddress',
           addressLocality: provider.city,

@@ -219,8 +219,8 @@ export default function ProviderProfilePage({ t, setView, setSelectedCourse }) {
 
   return (
     <div className="min-h-screen bg-beige pt-24 pb-16">
-      {/* Cover Image (Enterprise only) */}
-      {entitlements?.hasCoverImage && provider.coverImageUrl && (
+      {/* Cover Image (always shown - uses default if not custom) */}
+      {provider.coverImageUrl && (
         <div className="w-full h-48 md:h-64 lg:h-80 relative">
           <img
             src={provider.coverImageUrl}
@@ -339,17 +339,23 @@ export default function ProviderProfilePage({ t, setView, setSelectedCourse }) {
               )}
 
               {/* Contact CTA */}
-              <button
-                onClick={() => {
-                  // Could open a contact modal or scroll to a contact form
-                  // For now, link to contact page with provider context
-                  setView('contact');
-                }}
-                className="flex items-center justify-center px-4 py-2.5 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 transition-colors"
-              >
-                <Mail className="w-4 h-4 mr-2" />
-                Kontakt aufnehmen
-              </button>
+              {provider.contactEmail ? (
+                <a
+                  href={`mailto:${provider.contactEmail}`}
+                  className="flex items-center justify-center px-4 py-2.5 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 transition-colors"
+                >
+                  <Mail className="w-4 h-4 mr-2" />
+                  E-Mail senden
+                </a>
+              ) : (
+                <button
+                  onClick={() => setView('contact')}
+                  className="flex items-center justify-center px-4 py-2.5 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 transition-colors"
+                >
+                  <Mail className="w-4 h-4 mr-2" />
+                  Kontakt aufnehmen
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -488,17 +494,43 @@ export default function ProviderProfilePage({ t, setView, setSelectedCourse }) {
                     </div>
                   </div>
                 )}
+
+                {/* Public Email (if enabled) */}
+                {provider.contactEmail && (
+                  <div className="flex items-start gap-3">
+                    <Mail className="w-5 h-5 text-orange-500 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <a
+                        href={`mailto:${provider.contactEmail}`}
+                        className="font-medium text-gray-900 hover:text-orange-600 transition-colors"
+                      >
+                        {provider.contactEmail}
+                      </a>
+                      <p className="text-sm text-gray-500">E-Mail Kontakt</p>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* CTA */}
               <div className="mt-6 pt-6 border-t border-gray-100">
-                <button
-                  onClick={() => setView('contact')}
-                  className="w-full flex items-center justify-center px-4 py-3 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 transition-colors"
-                >
-                  <Mail className="w-4 h-4 mr-2" />
-                  Kontakt aufnehmen
-                </button>
+                {provider.contactEmail ? (
+                  <a
+                    href={`mailto:${provider.contactEmail}`}
+                    className="w-full flex items-center justify-center px-4 py-3 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 transition-colors"
+                  >
+                    <Mail className="w-4 h-4 mr-2" />
+                    E-Mail senden
+                  </a>
+                ) : (
+                  <button
+                    onClick={() => setView('contact')}
+                    className="w-full flex items-center justify-center px-4 py-3 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 transition-colors"
+                  >
+                    <Mail className="w-4 h-4 mr-2" />
+                    Kontakt aufnehmen
+                  </button>
+                )}
               </div>
             </div>
           </div>

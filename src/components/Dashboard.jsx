@@ -12,7 +12,6 @@ import { PLANS } from "../constants/plans";
 import { KursNaviLogo } from './Layout';
 import { supabase } from '../lib/supabase';
 import ProviderProfileEditor from './ProviderProfileEditor';
-import { hasPublicProfile } from '../lib/entitlements';
 
 // --- HELPER COMPONENT: User Profile Settings ---
 const UserProfileSection = ({ user, setUser, showNotification, setLang, t }) => {
@@ -1312,17 +1311,19 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                     <button onClick={() => setDashView('overview')} className={`px-4 py-2 rounded-full text-sm font-bold transition ${dashView === 'overview' ? 'bg-primary text-white shadow' : 'text-gray-500 hover:bg-gray-50'}`}>{t.dash_overview}</button>
                     <button onClick={() => setDashView('profile')} className={`px-4 py-2 rounded-full text-sm font-bold transition ${dashView === 'profile' ? 'bg-primary text-white shadow' : 'text-gray-500 hover:bg-gray-50'}`}>{t.dash_settings}</button>
                     {user.role === 'teacher' && (
-                        <>
-                        <button onClick={() => setDashView('public-profile')} className={`px-4 py-2 rounded-full text-sm font-bold transition ${dashView === 'public-profile' ? 'bg-primary text-white shadow' : 'text-gray-500 hover:bg-gray-50'}`}>Öffentliches Profil</button>
                         <button onClick={() => setDashView('subscription')} className={`px-4 py-2 rounded-full text-sm font-bold transition ${dashView === 'subscription' ? 'bg-primary text-white shadow' : 'text-gray-500 hover:bg-gray-50'}`}>Abo</button>
-                        </>
                     )}
                 </div>
                 
             </div>
 
-            {dashView === 'profile' || dashView === 'settings' ? ( <UserProfileSection user={user} setUser={setUser} showNotification={showNotification} setLang={changeLanguage} t={t} /> ) :
-             dashView === 'public-profile' ? ( <ProviderProfileEditor user={user} showNotification={showNotification} /> ) :
+            {dashView === 'profile' || dashView === 'settings' ? (
+                user.role === 'teacher' ? (
+                    <ProviderProfileEditor user={user} setUser={setUser} showNotification={showNotification} setLang={changeLanguage} t={t} />
+                ) : (
+                    <UserProfileSection user={user} setUser={setUser} showNotification={showNotification} setLang={changeLanguage} t={t} />
+                )
+             ) :
              dashView === 'subscription' ? ( <SubscriptionSection user={user} currentTier={userTier} /> ) : (
                 <>
                 {user.role === 'teacher' ? (

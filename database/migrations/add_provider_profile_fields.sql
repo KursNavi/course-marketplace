@@ -28,6 +28,10 @@ ALTER TABLE profiles ADD COLUMN IF NOT EXISTS cover_image_url TEXT;
 -- Prevents spam by separating account email from public contact
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS public_contact_email TEXT;
 
+-- Toggle to show profile email publicly (instead of contact form only)
+-- true = show email, false = contact form only
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS show_email_publicly BOOLEAN DEFAULT false;
+
 -- Gate for public visibility: NULL = not published, timestamp = published
 -- Provider must explicitly publish their profile
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS profile_published_at TIMESTAMPTZ;
