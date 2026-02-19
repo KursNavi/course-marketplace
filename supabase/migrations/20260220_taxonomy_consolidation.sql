@@ -184,7 +184,7 @@ AND category_level4_id IS NULL;
 
 CREATE TABLE IF NOT EXISTS course_category_assignments (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    course_id UUID NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
+    course_id BIGINT NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
     level3_id INT NOT NULL REFERENCES taxonomy_level3(id) ON DELETE CASCADE,
     level4_id INT REFERENCES taxonomy_level4(id) ON DELETE SET NULL,
     is_primary BOOLEAN DEFAULT false,

@@ -95,6 +95,11 @@ export const AGE_GROUPS = {
 };
 
 export const CATEGORY_TYPES = {
+  // New consolidated schema slugs
+  professionell: { de: "Professionell", en: "Professional", fr: "Professionnel", it: "Professionale" },
+  privat: { de: "Privat", en: "Private", fr: "Privé", it: "Privato" },
+  kinder: { de: "Kinder", en: "Children", fr: "Enfants", it: "Bambini" },
+  // Legacy slugs (for backward compatibility during transition)
   beruflich: { de: "Berufliche Weiterbildung", en: "Professional Development", fr: "Formation professionnelle", it: "Formazione professionale" },
   privat_hobby: { de: "Privat & Hobby", en: "Private & Hobby", fr: "Privé & Loisirs", it: "Privato & Hobby" },
   kinder_jugend: { de: "Kinder & Jugendliche", en: "Kids & Teens", fr: "Enfants & Ados", it: "Bambini & Adolescenti" }

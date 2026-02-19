@@ -105,47 +105,35 @@ const SearchPageView = ({
     }, [filteredCourses.length, loading, searchQuery, searchType, searchArea, selectedLocations]);
 
     // --- DYNAMIC FILTER LOGIC (Hide empty categories) ---
-    // Include ALL categories (primary + Zweitkategorien) from course_categories junction table
+    // Use ONLY all_categories from junction table (new consolidated schema)
+    // No fallback to legacy columns - this eliminates duplicates
     const availableTypes = [...new Set(
         courses.flatMap(c => {
-            const types = [c.category_type];
-            if (Array.isArray(c.all_categories)) {
-                types.push(...c.all_categories.map(cat => cat.category_type));
+            if (Array.isArray(c.all_categories) && c.all_categories.length > 0) {
+                return c.all_categories.map(cat => cat.category_type).filter(Boolean);
             }
-            return types.filter(Boolean);
+            return []; // No fallback - courses without assignments show under "Alle Kategorien"
         })
     )];
 
     const availableAreas = [...new Set(
         courses.flatMap(c => {
             const areas = [];
-            // Include primary area if type matches or no type filter
-            if (!searchType || c.category_type === searchType) {
-                if (c.category_area) areas.push(c.category_area);
-            }
-            // Include areas from all_categories if type matches
-            if (Array.isArray(c.all_categories)) {
+            if (Array.isArray(c.all_categories) && c.all_categories.length > 0) {
                 c.all_categories.forEach(cat => {
                     if ((!searchType || cat.category_type === searchType) && cat.category_area) {
                         areas.push(cat.category_area);
                     }
                 });
             }
-            return areas;
+            return areas; // No fallback
         })
     )];
 
     const availableSpecialties = [...new Set(
         courses.flatMap(c => {
             const specialties = [];
-            // Include primary specialty if filters match or no filters
-            const primaryTypeMatch = !searchType || c.category_type === searchType;
-            const primaryAreaMatch = !searchArea || c.category_area === searchArea;
-            if (primaryTypeMatch && primaryAreaMatch && c.category_specialty) {
-                specialties.push(c.category_specialty);
-            }
-            // Include specialties from all_categories if filters match
-            if (Array.isArray(c.all_categories)) {
+            if (Array.isArray(c.all_categories) && c.all_categories.length > 0) {
                 c.all_categories.forEach(cat => {
                     const typeMatch = !searchType || cat.category_type === searchType;
                     const areaMatch = !searchArea || cat.category_area === searchArea;
@@ -154,20 +142,14 @@ const SearchPageView = ({
                     }
                 });
             }
-            return specialties;
+            return specialties; // No fallback
         })
     )];
 
     const availableFocuses = [...new Set(
         courses.flatMap(c => {
             const focuses = [];
-            const primaryTypeMatch = !searchType || c.category_type === searchType;
-            const primaryAreaMatch = !searchArea || c.category_area === searchArea;
-            const primarySpecMatch = !searchSpecialty || c.category_specialty === searchSpecialty;
-            if (primaryTypeMatch && primaryAreaMatch && primarySpecMatch && c.category_focus) {
-                focuses.push(c.category_focus);
-            }
-            if (Array.isArray(c.all_categories)) {
+            if (Array.isArray(c.all_categories) && c.all_categories.length > 0) {
                 c.all_categories.forEach(cat => {
                     const typeMatch = !searchType || cat.category_type === searchType;
                     const areaMatch = !searchArea || cat.category_area === searchArea;
@@ -177,18 +159,45 @@ const SearchPageView = ({
                     }
                 });
             }
-            return focuses;
+            return focuses; // No fallback
         })
     )];
 
-        // Helper to get Label (crash-sicher)
+    // Helper to get Label (crash-sicher)
+    // Builds a lookup map from all_categories for fast label retrieval
+    const labelMap = React.useMemo(() => {
+        const map = { types: {}, areas: {} };
+        courses.forEach(c => {
+            if (Array.isArray(c.all_categories)) {
+                c.all_categories.forEach(cat => {
+                    if (cat.category_type && cat.category_type_label) {
+                        map.types[cat.category_type] = cat.category_type_label;
+                    }
+                    if (cat.category_area && cat.category_area_label) {
+                        map.areas[cat.category_area] = cat.category_area_label;
+                    }
+                });
+            }
+        });
+        return map;
+    }, [courses]);
+
     const getLabel = (key, scope) => {
         if (!key) return '';
 
-        if (scope === 'type') return CATEGORY_TYPES?.[key]?.de || key;
+        if (scope === 'type') {
+            // First check labelMap from all_categories (new schema)
+            if (labelMap.types[key]) return labelMap.types[key];
+            // Fallback to CATEGORY_TYPES constant
+            return CATEGORY_TYPES?.[key]?.de || key;
+        }
         if (scope === 'age') return AGE_GROUPS?.[key]?.de || key;
 
         if (scope === 'area') {
+            // First check labelMap from all_categories (new schema)
+            if (labelMap.areas[key]) return labelMap.areas[key];
+
+            // Fallback to NEW_TAXONOMY constant
             // 1) Wenn ein Typ gewählt ist: dort zuerst suchen
             const direct = NEW_TAXONOMY?.[searchType]?.[key]?.label?.de;
             if (direct) return direct;
@@ -201,10 +210,8 @@ const SearchPageView = ({
             return key;
         }
 
-        // specialties sind aktuell Plain Strings aus DB -> direkt zurückgeben
+        // specialties und focuses sind bereits Labels aus DB
         if (scope === 'specialty') return key;
-
-        // focuses sind Plain Strings aus DB -> direkt zurückgeben
         if (scope === 'focus') return key;
 
         return key;

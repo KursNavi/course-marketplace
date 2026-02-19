@@ -415,7 +415,9 @@ export default function KursNaviPro() {  // 1. Initial State Logic
             acc[cat.course_id].push({
               course_id: cat.course_id,
               category_type: cat.level1_slug,
+              category_type_label: cat.level1_label_de,
               category_area: cat.level2_slug,
+              category_area_label: cat.level2_label_de,
               category_specialty: cat.level3_label_de,
               category_focus: cat.level4_label_de || null,
               type_id: cat.level1_id,
