@@ -84,7 +84,9 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
     const loadProfile = async () => {
       try {
         setLoading(true);
-        const { data, error } = await supabase
+
+        // First, try to load with all fields including show_email_publicly
+        let { data, error } = await supabase
           .from('profiles')
           .select(`
             full_name,
@@ -107,7 +109,34 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
           .eq('id', user.id)
           .single();
 
-        if (error) throw error;
+        // If the query fails (possibly due to missing column), try without show_email_publicly
+        if (error) {
+          console.warn('Full query failed, trying without show_email_publicly:', error.message);
+          const fallback = await supabase
+            .from('profiles')
+            .select(`
+              full_name,
+              city,
+              canton,
+              bio_text,
+              certificates,
+              preferred_language,
+              website_url,
+              additional_locations,
+              verification_status,
+              slug,
+              logo_url,
+              cover_image_url,
+              profile_published_at,
+              last_slug_change_at,
+              package_tier
+            `)
+            .eq('id', user.id)
+            .single();
+
+          if (fallback.error) throw fallback.error;
+          data = { ...fallback.data, show_email_publicly: false };
+        }
 
         setProfileData({
           full_name: data.full_name || '',
@@ -251,12 +280,22 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
         profileUpdates.slug = newSlug;
       }
 
-      const { error } = await supabase
+      // Try to update with all fields
+      let { error } = await supabase
         .from('profiles')
         .update(profileUpdates)
         .eq('id', user.id);
 
-      if (error) throw error;
+      // If update fails (possibly due to missing show_email_publicly column), try without it
+      if (error) {
+        console.warn('Full update failed, trying without show_email_publicly:', error.message);
+        delete profileUpdates.show_email_publicly;
+        const fallback = await supabase
+          .from('profiles')
+          .update(profileUpdates)
+          .eq('id', user.id);
+        if (fallback.error) throw fallback.error;
+      }
 
       // Update local state
       if (profileUpdates.slug) {

@@ -57,7 +57,11 @@ export default async function handler(req, res) {
       }
 
       // Fetch provider by slug
-      const { data: provider, error: providerError } = await supabase
+      // Try with show_email_publicly first, fallback without it if column doesn't exist yet
+      let provider;
+      let providerError;
+
+      const fullQuery = await supabase
         .from('profiles')
         .select(`
           id, full_name, slug, logo_url, cover_image_url,
@@ -66,6 +70,25 @@ export default async function handler(req, res) {
         `)
         .eq('slug', slug)
         .single();
+
+      if (fullQuery.error) {
+        // Fallback query without show_email_publicly
+        const fallbackQuery = await supabase
+          .from('profiles')
+          .select(`
+            id, full_name, slug, logo_url, cover_image_url,
+            profile_published_at, website_url, city, canton,
+            additional_locations, verification_status, package_tier, bio_text, certificates
+          `)
+          .eq('slug', slug)
+          .single();
+
+        provider = fallbackQuery.data ? { ...fallbackQuery.data, show_email_publicly: false } : null;
+        providerError = fallbackQuery.error;
+      } else {
+        provider = fullQuery.data;
+        providerError = null;
+      }
 
       if (providerError || !provider) {
         return res.status(404).json({ error: 'Provider not found' });
