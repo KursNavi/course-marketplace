@@ -412,16 +412,17 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
       setUploading(true);
 
       const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}/${type}_${Date.now()}.${fileExt}`;
+      // Use existing course-images bucket with providers/ prefix
+      const fileName = `providers/${user.id}/${type}_${Date.now()}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
-        .from('provider-images')
+        .from('course-images')
         .upload(fileName, file, { upsert: true });
 
       if (uploadError) throw uploadError;
 
       const { data: urlData } = supabase.storage
-        .from('provider-images')
+        .from('course-images')
         .getPublicUrl(fileName);
 
       const fieldName = type === 'logo' ? 'logo_url' : 'cover_image_url';
@@ -430,7 +431,7 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
       showNotification?.('Bild hochgeladen', 'success');
     } catch (err) {
       console.error('Error uploading image:', err);
-      showNotification?.('Fehler beim Hochladen', 'error');
+      showNotification?.('Fehler beim Hochladen: ' + (err.message || 'Unbekannter Fehler'), 'error');
     } finally {
       setUploading(false);
     }
