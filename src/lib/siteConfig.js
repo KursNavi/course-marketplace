@@ -4,8 +4,18 @@
  * Used for canonical URLs, sitemaps, and SEO
  */
 
-// Base URL from environment, with fallback for production
-export const SITE_URL = import.meta.env.VITE_SITE_URL || 'https://kursnavi.ch';
+// Base URL: Use current origin in browser, fallback to env variable or production URL
+// This ensures Vercel preview deployments show correct URLs
+const getBaseUrl = () => {
+  // In browser context, use current origin (works for Vercel previews)
+  if (typeof window !== 'undefined') {
+    return window.location.origin;
+  }
+  // In server/build context, use env variable or production fallback
+  return (import.meta.env.VITE_SITE_URL || 'https://kursnavi.ch').replace(/\/$/, '');
+};
+
+export const SITE_URL = getBaseUrl();
 
 // Remove trailing slash if present
 export const BASE_URL = SITE_URL.replace(/\/$/, '');
