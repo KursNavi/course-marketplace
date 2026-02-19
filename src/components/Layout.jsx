@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { Menu, X, Globe, LogOut, LayoutDashboard, ChevronDown, Mail, ArrowRight, Check, Loader2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Menu, X, Globe, LogOut, LayoutDashboard, ChevronDown, Mail, ArrowRight, Check, Loader2, Briefcase, Palette, Smile } from 'lucide-react';
+import { SEGMENT_CONFIG } from '../lib/constants';
 
 // BRANDING: The "Compass & Book" Logo [Source: 9]
 // Recreated as SVG: A 4-point star (compass) floating above an abstract open book.
@@ -17,6 +18,45 @@ export const KursNaviLogo = ({ className }) => (
 export const Navbar = ({ t, user, lang, setLang, setView, handleLogout, setShowResults, setSelectedCatPath }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [langMenuOpen, setLangMenuOpen] = useState(false);
+  const [activeSegment, setActiveSegment] = useState(null);
+
+  // Detect active segment from URL
+  useEffect(() => {
+    const updateActiveSegment = () => {
+      const params = new URLSearchParams(window.location.search);
+      const type = params.get('type');
+      const path = window.location.pathname;
+
+      // Only show active segment on search page
+      if (path === '/search' && type) {
+        setActiveSegment(type);
+      } else {
+        setActiveSegment(null);
+      }
+    };
+
+    updateActiveSegment();
+    window.addEventListener('popstate', updateActiveSegment);
+
+    // Also listen for pushState (custom event approach)
+    const originalPushState = window.history.pushState;
+    window.history.pushState = function(...args) {
+      originalPushState.apply(this, args);
+      updateActiveSegment();
+    };
+
+    return () => {
+      window.removeEventListener('popstate', updateActiveSegment);
+      window.history.pushState = originalPushState;
+    };
+  }, []);
+
+  // Segment navigation buttons config
+  const segmentButtons = [
+    { key: 'privat_hobby', label: t.nav_private, Icon: Palette, config: SEGMENT_CONFIG.privat_hobby },
+    { key: 'beruflich', label: t.nav_professional, Icon: Briefcase, config: SEGMENT_CONFIG.beruflich },
+    { key: 'kinder_jugend', label: t.nav_kids, Icon: Smile, config: SEGMENT_CONFIG.kinder_jugend },
+  ];
 
   // Using text codes instead of flags for Windows compatibility
   const languages = [
@@ -79,9 +119,23 @@ export const Navbar = ({ t, user, lang, setLang, setView, handleLogout, setShowR
             </div>
             
             <div className="hidden md:ml-10 md:flex md:space-x-8">
-              <button onClick={() => { window.scrollTo(0, 0); window.history.pushState({ view: 'search' }, '', '/search?type=privat_hobby'); }} className="text-gray-500 hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors font-sans">{t.nav_private}</button>
-              <button onClick={() => { window.scrollTo(0, 0); window.history.pushState({ view: 'search' }, '', '/search?type=beruflich'); }} className="text-gray-500 hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors font-sans">{t.nav_professional}</button>
-              <button onClick={() => { window.scrollTo(0, 0); window.history.pushState({ view: 'search' }, '', '/search?type=kinder_jugend'); }} className="text-gray-500 hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors font-sans">{t.nav_kids}</button>
+              {segmentButtons.map(({ key, label, Icon, config }) => {
+                const isActive = activeSegment === key;
+                return (
+                  <button
+                    key={key}
+                    onClick={() => { window.scrollTo(0, 0); window.history.pushState({ view: 'search' }, '', `/search?type=${key}`); }}
+                    className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 font-sans ${
+                      isActive
+                        ? `${config.bgLight} ${config.text} border-b-2 ${config.border}`
+                        : `text-gray-500 hover:text-gray-700`
+                    }`}
+                  >
+                    <Icon className={`w-4 h-4 mr-1.5 ${isActive ? config.text : 'text-gray-400'}`} />
+                    {label}
+                  </button>
+                );
+              })}
               <button onClick={() => navTo('how-it-works')} className="text-gray-500 hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors font-sans">{t.nav_howitworks}</button>
               <button onClick={() => navTo('blog')} className="text-gray-500 hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors font-sans">{t.nav_news}</button>
               <button onClick={() => navTo('provider-directory')} className="text-gray-500 hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors font-sans">{t.nav_providers || 'Anbieter'}</button>
@@ -137,9 +191,23 @@ export const Navbar = ({ t, user, lang, setLang, setView, handleLogout, setShowR
       {mobileMenuOpen && (
         <div className="md:hidden bg-white border-t border-gray-100 absolute w-full left-0 shadow-xl h-screen overflow-y-auto pb-20">
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-            <button onClick={() => { setMobileMenuOpen(false); window.scrollTo(0, 0); window.history.pushState({ view: 'search' }, '', '/search?type=privat_hobby'); }} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-primaryLight hover:text-primary font-sans">{t.nav_private}</button>
-            <button onClick={() => { setMobileMenuOpen(false); window.scrollTo(0, 0); window.history.pushState({ view: 'search' }, '', '/search?type=beruflich'); }} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-primaryLight hover:text-primary font-sans">{t.nav_professional}</button>
-            <button onClick={() => { setMobileMenuOpen(false); window.scrollTo(0, 0); window.history.pushState({ view: 'search' }, '', '/search?type=kinder_jugend'); }} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-primaryLight hover:text-primary font-sans">{t.nav_kids}</button>
+            {segmentButtons.map(({ key, label, Icon, config }) => {
+              const isActive = activeSegment === key;
+              return (
+                <button
+                  key={key}
+                  onClick={() => { setMobileMenuOpen(false); window.scrollTo(0, 0); window.history.pushState({ view: 'search' }, '', `/search?type=${key}`); }}
+                  className={`flex items-center w-full text-left px-3 py-3 rounded-lg text-base font-medium transition-all font-sans ${
+                    isActive
+                      ? `${config.bgLight} ${config.text} ${config.border} border-l-4`
+                      : `text-gray-700 hover:${config.bgLight}`
+                  }`}
+                >
+                  <Icon className={`w-5 h-5 mr-3 ${isActive ? config.text : 'text-gray-400'}`} />
+                  {label}
+                </button>
+              );
+            })}
             <button onClick={() => navTo('how-it-works')} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-primaryLight hover:text-primary font-sans">{t.nav_howitworks}</button>
             <button onClick={() => navTo('blog')} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-primaryLight hover:text-primary font-sans">{t.nav_news}</button>
             <button onClick={() => navTo('provider-directory')} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-primaryLight hover:text-primary font-sans">{t.nav_providers || 'Anbieter'}</button>

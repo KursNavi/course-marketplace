@@ -105,6 +105,103 @@ export const CATEGORY_TYPES = {
   kinder_jugend: { de: "Kinder & Jugendliche", en: "Kids & Teens", fr: "Enfants & Ados", it: "Bambini & Adolescenti" }
 };
 
+// --- SEGMENT VISUAL CONFIG ---
+// Visual styling for the three main category segments
+export const SEGMENT_CONFIG = {
+  // Professionell / Beruflich - Blue theme
+  professionell: {
+    icon: Briefcase,
+    label: { de: "Professionell", en: "Professional", fr: "Professionnel", it: "Professionale" },
+    color: 'blue',
+    bgLight: 'bg-blue-50',
+    bgSolid: 'bg-blue-500',
+    text: 'text-blue-600',
+    textDark: 'text-blue-700',
+    border: 'border-blue-500',
+    borderLight: 'border-blue-200',
+    ring: 'ring-blue-500',
+    gradient: 'from-blue-600/70 to-blue-900/90',
+    hoverBg: 'hover:bg-blue-50'
+  },
+  beruflich: {
+    icon: Briefcase,
+    label: { de: "Berufliche Weiterbildung", en: "Professional Development", fr: "Formation professionnelle", it: "Formazione professionale" },
+    color: 'blue',
+    bgLight: 'bg-blue-50',
+    bgSolid: 'bg-blue-500',
+    text: 'text-blue-600',
+    textDark: 'text-blue-700',
+    border: 'border-blue-500',
+    borderLight: 'border-blue-200',
+    ring: 'ring-blue-500',
+    gradient: 'from-blue-600/70 to-blue-900/90',
+    hoverBg: 'hover:bg-blue-50'
+  },
+  // Privat / Privat & Hobby - Orange theme (brand color)
+  privat: {
+    icon: Palette,
+    label: { de: "Privat & Hobby", en: "Private & Hobby", fr: "Privé & Loisirs", it: "Privato & Hobby" },
+    color: 'primary',
+    bgLight: 'bg-primaryLight',
+    bgSolid: 'bg-primary',
+    text: 'text-primary',
+    textDark: 'text-orange-700',
+    border: 'border-primary',
+    borderLight: 'border-orange-200',
+    ring: 'ring-primary',
+    gradient: 'from-orange-500/70 to-orange-800/90',
+    hoverBg: 'hover:bg-primaryLight'
+  },
+  privat_hobby: {
+    icon: Palette,
+    label: { de: "Privat & Hobby", en: "Private & Hobby", fr: "Privé & Loisirs", it: "Privato & Hobby" },
+    color: 'primary',
+    bgLight: 'bg-primaryLight',
+    bgSolid: 'bg-primary',
+    text: 'text-primary',
+    textDark: 'text-orange-700',
+    border: 'border-primary',
+    borderLight: 'border-orange-200',
+    ring: 'ring-primary',
+    gradient: 'from-orange-500/70 to-orange-800/90',
+    hoverBg: 'hover:bg-primaryLight'
+  },
+  // Kinder / Kinder & Jugend - Green theme
+  kinder: {
+    icon: Smile,
+    label: { de: "Kinder & Jugend", en: "Kids & Teens", fr: "Enfants & Ados", it: "Bambini & Adolescenti" },
+    color: 'emerald',
+    bgLight: 'bg-emerald-50',
+    bgSolid: 'bg-emerald-500',
+    text: 'text-emerald-600',
+    textDark: 'text-emerald-700',
+    border: 'border-emerald-500',
+    borderLight: 'border-emerald-200',
+    ring: 'ring-emerald-500',
+    gradient: 'from-emerald-500/70 to-emerald-800/90',
+    hoverBg: 'hover:bg-emerald-50'
+  },
+  kinder_jugend: {
+    icon: Smile,
+    label: { de: "Kinder & Jugend", en: "Kids & Teens", fr: "Enfants & Ados", it: "Bambini & Adolescenti" },
+    color: 'emerald',
+    bgLight: 'bg-emerald-50',
+    bgSolid: 'bg-emerald-500',
+    text: 'text-emerald-600',
+    textDark: 'text-emerald-700',
+    border: 'border-emerald-500',
+    borderLight: 'border-emerald-200',
+    ring: 'ring-emerald-500',
+    gradient: 'from-emerald-500/70 to-emerald-800/90',
+    hoverBg: 'hover:bg-emerald-50'
+  }
+};
+
+// Helper to get segment config with fallback
+export const getSegmentConfig = (typeKey) => {
+  return SEGMENT_CONFIG[typeKey] || SEGMENT_CONFIG.privat;
+};
+
 // The Structure: Type -> Area (Level 1) -> Specialties (Level 2)
 // Note: Labels currently DE only for deep levels, EN/FR/IT default to DE key or generic. 
 // In a real app, we would fill all translations.

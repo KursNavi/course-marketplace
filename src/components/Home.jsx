@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Search, ArrowRight, ChevronRight, ChevronDown, CreditCard, Info, Shield } from 'lucide-react';
+import { Search, ArrowRight, ChevronRight, ChevronDown, CreditCard, Info, Shield, Briefcase, Palette, Smile } from 'lucide-react';
 import { LocationDropdown, DeliveryTypeFilter } from './Filters';
-import { NEW_TAXONOMY, CATEGORY_TYPES } from '../lib/constants';
+import { NEW_TAXONOMY, CATEGORY_TYPES, SEGMENT_CONFIG } from '../lib/constants';
 import { useTaxonomy } from '../hooks/useTaxonomy';
 import { BASE_URL } from '../lib/siteConfig';
 
@@ -278,26 +278,38 @@ export const Home = ({
 
                     {/* MEGA MENU (3-4 SPALTEN) */}
                     {catMenuOpen && (
-                        <div className={`absolute top-full left-0 mt-2 ${visibleFocuses.length > 0 ? 'w-[1000px]' : 'w-[800px]'} -ml-0 md:-ml-0 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden flex z-50 text-left h-[450px]`}>
-                            
-                            {/* SPALTE 1: TYP (Immer sichtbar) */}
-                            <div className={`${visibleFocuses.length > 0 ? 'w-1/5' : 'w-1/4'} bg-gray-50 border-r border-gray-100 py-2`}>
-                                <div className="px-4 py-2 text-xs font-bold text-gray-400 uppercase">{t.lbl_type}</div>
-                                {Object.keys(CATEGORY_TYPES).map(typeKey => (
-                                    <div
-                                        key={typeKey}
-                                        onMouseEnter={() => { setActiveType(typeKey); setActiveSpecialty(null); }}
-                                        onClick={() => handleCategorySelect(typeKey)}
-                                        className={`px-4 py-3 cursor-pointer text-sm font-bold flex justify-between items-center transition-colors ${activeType === typeKey ? 'bg-white text-primary border-l-4 border-primary shadow-sm' : 'text-gray-600 hover:bg-gray-200'}`}
-                                    >
-                                        {getTypeLabel(typeKey)}
-                                        {activeType === typeKey && <ChevronRight className="w-3 h-3" />}
-                                    </div>
-                                ))}
+                        <div className={`absolute top-full left-0 mt-2 ${visibleFocuses.length > 0 ? 'w-[1000px]' : 'w-[800px]'} -ml-0 md:-ml-0 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden z-50 text-left`}>
+
+                            {/* TOP ROW: SEGMENT ICON TABS */}
+                            <div className="flex border-b border-gray-200 bg-gray-50">
+                                {[
+                                  { key: 'privat_hobby', label: t.nav_private || 'Privat & Hobby', Icon: Palette, config: SEGMENT_CONFIG.privat_hobby },
+                                  { key: 'beruflich', label: t.nav_professional || 'Beruflich', Icon: Briefcase, config: SEGMENT_CONFIG.beruflich },
+                                  { key: 'kinder_jugend', label: t.nav_kids || 'Kinder & Jugend', Icon: Smile, config: SEGMENT_CONFIG.kinder_jugend },
+                                ].map(({ key, label, Icon, config }) => {
+                                    const isActive = activeType === key;
+                                    return (
+                                        <button
+                                            key={key}
+                                            onClick={() => { setActiveType(key); setActiveArea(null); setActiveSpecialty(null); }}
+                                            className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-bold transition-all ${
+                                                isActive
+                                                    ? `${config.bgLight} ${config.text} border-b-3 ${config.border}`
+                                                    : 'text-gray-500 hover:bg-gray-100'
+                                            }`}
+                                        >
+                                            <Icon className={`w-5 h-5 ${isActive ? config.text : 'text-gray-400'}`} />
+                                            <span className="hidden sm:inline">{label}</span>
+                                        </button>
+                                    );
+                                })}
                             </div>
 
-                            {/* SPALTE 2: BEREICH (Gefiltert nach Existenz) */}
-                            <div className={`${visibleFocuses.length > 0 ? 'w-1/4' : 'w-1/3'} border-r border-gray-100 py-2 overflow-y-auto`}>
+                            {/* CONTENT ROWS */}
+                            <div className="flex h-[400px]">
+
+                            {/* SPALTE 1: BEREICH / Themenwelt (Gefiltert nach Existenz) */}
+                            <div className={`${visibleFocuses.length > 0 ? 'w-1/4' : 'w-1/3'} border-r border-gray-100 py-2 overflow-y-auto bg-gray-50`}>
                                 <div className="px-4 py-2 text-xs font-bold text-gray-400 uppercase">{t.lbl_area}</div>
                                 {visibleAreas.length > 0 ? (
                                     visibleAreas.map(areaKey => (
@@ -316,7 +328,7 @@ export const Home = ({
                                 )}
                             </div>
 
-                            {/* SPALTE 3: SPEZIALGEBIET (Gefiltert nach Existenz) */}
+                            {/* SPALTE 2: SPEZIALGEBIET / Fachgebiet (Gefiltert nach Existenz) */}
                             <div className={`${visibleFocuses.length > 0 ? 'w-1/4 border-r border-gray-100' : 'flex-1'} py-2 overflow-y-auto bg-gray-50/50`}>
                                 <div className="px-4 py-2 text-xs font-bold text-gray-400 uppercase">{t.lbl_specialty}</div>
                                 {visibleSpecialties.length > 0 ? (
@@ -347,7 +359,7 @@ export const Home = ({
                                 )}
                             </div>
 
-                            {/* SPALTE 4: FOKUS (Nur sichtbar wenn vorhanden) */}
+                            {/* SPALTE 3: FOKUS (Nur sichtbar wenn vorhanden) */}
                             {visibleFocuses.length > 0 && (
                                 <div className="flex-1 py-2 overflow-y-auto">
                                     <div className="px-4 py-2 text-xs font-bold text-gray-400 uppercase">{t.lbl_focus || 'Fokus'}</div>
@@ -364,6 +376,7 @@ export const Home = ({
                                 </div>
                             )}
 
+                            </div>{/* End CONTENT ROWS flex */}
                         </div>
                     )}
                 </div>
@@ -419,38 +432,50 @@ export const Home = ({
         <p className="text-gray-500 text-center mb-12 font-sans">{t.home_path_sub}</p>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          
+
+          {/* PRIVAT & HOBBY - Orange */}
           <div onClick={() => { setSearchType('privat_hobby'); window.history.pushState({ view: 'search' }, '', '/search?type=privat_hobby'); window.scrollTo(0,0); }} className="group relative h-80 rounded-2xl overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
             <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?auto=format&fit=crop&q=80&w=2000")' }}></div>
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+            <div className="absolute inset-0 bg-gradient-to-t from-orange-700/90 via-orange-600/40 to-orange-500/20"></div>
+            <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm rounded-full p-3">
+              <Palette className="w-6 h-6 text-white" />
+            </div>
             <div className="absolute bottom-0 left-0 p-6">
               <h3 className="text-2xl font-bold text-white font-heading mb-1">{t.nav_private}</h3>
-              <p className="text-gray-300 text-sm font-sans mb-4">{t.home_card_priv_sub}</p>
-              <span className="inline-flex items-center text-primary font-bold text-sm uppercase tracking-wider group-hover:text-white transition-colors">
+              <p className="text-orange-100 text-sm font-sans mb-4">{t.home_card_priv_sub}</p>
+              <span className="inline-flex items-center text-white font-bold text-sm uppercase tracking-wider group-hover:text-orange-200 transition-colors">
                 {t.btn_explore} <ArrowRight className="w-4 h-4 ml-2" />
               </span>
             </div>
           </div>
 
+          {/* BERUFLICH - Blue */}
           <div onClick={() => { setSearchType('beruflich'); window.history.pushState({ view: 'search' }, '', '/search?type=beruflich'); window.scrollTo(0,0); }} className="group relative h-80 rounded-2xl overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
             <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=2670&auto=format&fit=crop")' }}></div>
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+            <div className="absolute inset-0 bg-gradient-to-t from-blue-800/90 via-blue-600/40 to-blue-500/20"></div>
+            <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm rounded-full p-3">
+              <Briefcase className="w-6 h-6 text-white" />
+            </div>
             <div className="absolute bottom-0 left-0 p-6">
               <h3 className="text-2xl font-bold text-white font-heading mb-1">{t.nav_professional}</h3>
-              <p className="text-gray-300 text-sm font-sans mb-4">{t.home_card_prof_sub}</p>
-              <span className="inline-flex items-center text-primary font-bold text-sm uppercase tracking-wider group-hover:text-white transition-colors">
+              <p className="text-blue-100 text-sm font-sans mb-4">{t.home_card_prof_sub}</p>
+              <span className="inline-flex items-center text-white font-bold text-sm uppercase tracking-wider group-hover:text-blue-200 transition-colors">
                 {t.btn_explore} <ArrowRight className="w-4 h-4 ml-2" />
               </span>
             </div>
           </div>
 
+          {/* KINDER & JUGEND - Green */}
           <div onClick={() => { setSearchType('kinder_jugend'); window.history.pushState({ view: 'search' }, '', '/search?type=kinder_jugend'); window.scrollTo(0,0); }} className="group relative h-80 rounded-2xl overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
             <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1503676260728-1c00da094a0b?q=80&w=2622&auto=format&fit=crop")' }}></div>
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+            <div className="absolute inset-0 bg-gradient-to-t from-emerald-800/90 via-emerald-600/40 to-emerald-500/20"></div>
+            <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm rounded-full p-3">
+              <Smile className="w-6 h-6 text-white" />
+            </div>
             <div className="absolute bottom-0 left-0 p-6">
               <h3 className="text-2xl font-bold text-white font-heading mb-1">{t.nav_kids}</h3>
-              <p className="text-gray-300 text-sm font-sans mb-4">{t.home_card_kids_sub}</p>
-              <span className="inline-flex items-center text-primary font-bold text-sm uppercase tracking-wider group-hover:text-white transition-colors">
+              <p className="text-emerald-100 text-sm font-sans mb-4">{t.home_card_kids_sub}</p>
+              <span className="inline-flex items-center text-white font-bold text-sm uppercase tracking-wider group-hover:text-emerald-200 transition-colors">
                 {t.btn_explore} <ArrowRight className="w-4 h-4 ml-2" />
               </span>
             </div>
