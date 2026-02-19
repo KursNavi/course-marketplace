@@ -157,10 +157,62 @@ export default async function handler(req, res) {
         return res.status(405).json({ error: 'Method not allowed' });
       }
 
-      const { canton, city, verified, limit: limitParam, offset: offsetParam } = req.query;
+      const {
+        canton, city, verified,
+        category_type, category_area,
+        q: searchQuery,
+        limit: limitParam, offset: offsetParam
+      } = req.query;
       const limit = Math.min(parseInt(limitParam) || 50, 100);
       const offset = parseInt(offsetParam) || 0;
 
+      // Step 1: If category or search filter is active, find matching provider IDs via courses first
+      let filteredProviderIds = null;
+
+      if (category_type || category_area || searchQuery) {
+        let courseQuery = supabase
+          .from('courses')
+          .select('user_id')
+          .or('status.eq.published,status.is.null');
+
+        // Category filters
+        if (category_type) {
+          courseQuery = courseQuery.eq('category_type', category_type);
+        }
+        if (category_area) {
+          courseQuery = courseQuery.eq('category_area', category_area);
+        }
+
+        // Text search in course title and description
+        if (searchQuery) {
+          const searchTerm = `%${searchQuery}%`;
+          courseQuery = courseQuery.or(`title.ilike.${searchTerm},description.ilike.${searchTerm}`);
+        }
+
+        const { data: matchingCourses, error: courseError } = await courseQuery;
+        if (courseError) throw courseError;
+
+        // Extract unique provider IDs
+        filteredProviderIds = [...new Set((matchingCourses || []).map(c => c.user_id))];
+
+        // If no courses match, return empty result
+        if (filteredProviderIds.length === 0) {
+          return res.status(200).json({
+            providers: [],
+            pagination: { total: 0, limit, offset, hasMore: false },
+            filters: {
+              canton: canton || null,
+              city: city || null,
+              verified: verified === 'true',
+              category_type: category_type || null,
+              category_area: category_area || null,
+              q: searchQuery || null
+            }
+          });
+        }
+      }
+
+      // Step 2: Query providers
       let query = supabase
         .from('profiles')
         .select(`id, full_name, slug, provider_description, logo_url, city, canton,
@@ -169,6 +221,12 @@ export default async function handler(req, res) {
         .in('package_tier', ['pro', 'premium', 'enterprise'])
         .not('slug', 'is', null);
 
+      // If we have filtered provider IDs from course search, apply them
+      if (filteredProviderIds !== null) {
+        query = query.in('id', filteredProviderIds);
+      }
+
+      // Location filters
       if (canton) query = query.eq('canton', canton);
       if (city) query = query.ilike('city', `%${city}%`);
       if (verified === 'true') query = query.eq('verification_status', 'verified');
@@ -178,19 +236,27 @@ export default async function handler(req, res) {
       const { data: providers, error, count } = await query;
       if (error) throw error;
 
-      // Get course counts
+      // Step 3: Get course counts and categories for each provider
       const providerIds = (providers || []).map(p => p.id);
       let courseCounts = {};
+      let providerCategories = {};
 
       if (providerIds.length > 0) {
         const { data: courseData } = await supabase
           .from('courses')
-          .select('user_id')
+          .select('user_id, category_type, category_area')
           .in('user_id', providerIds)
           .or('status.eq.published,status.is.null');
 
         (courseData || []).forEach(c => {
           courseCounts[c.user_id] = (courseCounts[c.user_id] || 0) + 1;
+
+          // Collect unique categories per provider
+          if (!providerCategories[c.user_id]) {
+            providerCategories[c.user_id] = { types: new Set(), areas: new Set() };
+          }
+          if (c.category_type) providerCategories[c.user_id].types.add(c.category_type);
+          if (c.category_area) providerCategories[c.user_id].areas.add(c.category_area);
         });
       }
 
@@ -206,6 +272,10 @@ export default async function handler(req, res) {
           tier: p.package_tier,
           isFeatured: p.package_tier === 'enterprise',
           courseCount: courseCounts[p.id] || 0,
+          categories: {
+            types: providerCategories[p.id] ? Array.from(providerCategories[p.id].types) : [],
+            areas: providerCategories[p.id] ? Array.from(providerCategories[p.id].areas) : []
+          },
           publishedAt: p.profile_published_at
         }))
         .sort((a, b) => {
@@ -219,7 +289,14 @@ export default async function handler(req, res) {
       return res.status(200).json({
         providers: results,
         pagination: { total: count || 0, limit, offset, hasMore: offset + limit < (count || 0) },
-        filters: { canton: canton || null, city: city || null, verified: verified === 'true' }
+        filters: {
+          canton: canton || null,
+          city: city || null,
+          verified: verified === 'true',
+          category_type: category_type || null,
+          category_area: category_area || null,
+          q: searchQuery || null
+        }
       });
     }
 

@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Search, MapPin, Filter, CheckCircle, Loader, ChevronDown, X } from 'lucide-react';
 import { SWISS_CANTONS } from '../lib/constants';
 import { BASE_URL } from '../lib/siteConfig';
+import { useTaxonomy } from '../hooks/useTaxonomy';
 import ProviderCard from './ProviderCard';
 
 /**
@@ -9,7 +10,8 @@ import ProviderCard from './ProviderCard';
  * Public directory listing of Pro+ providers with published profiles
  *
  * Features:
- * - Filter by canton, verification status
+ * - Filter by canton, category (type/area), text search
+ * - Categories derived from provider's courses
  * - SEO: Meta tags, canonical URL, schema.org
  * - Pagination/Load more
  */
@@ -18,8 +20,15 @@ export default function ProviderDirectory({ t, setView }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Taxonomy for category filters
+  const { types, areas, getTypeLabel, getAreaLabel, loading: taxonomyLoading } = useTaxonomy();
+
   // Filters
   const [selectedCanton, setSelectedCanton] = useState('');
+  const [selectedType, setSelectedType] = useState('');
+  const [selectedArea, setSelectedArea] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchInput, setSearchInput] = useState(''); // Controlled input
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
 
@@ -29,8 +38,13 @@ export default function ProviderDirectory({ t, setView }) {
   const [totalCount, setTotalCount] = useState(0);
   const LIMIT = 24;
 
+  // Get areas for selected type
+  const filteredAreas = selectedType
+    ? areas.filter(a => a.type_id === selectedType)
+    : [];
+
   // Fetch providers from API
-  const fetchProviders = async (resetOffset = false) => {
+  const fetchProviders = useCallback(async (resetOffset = false) => {
     try {
       setLoading(true);
       const currentOffset = resetOffset ? 0 : offset;
@@ -41,6 +55,9 @@ export default function ProviderDirectory({ t, setView }) {
       });
 
       if (selectedCanton) params.append('canton', selectedCanton);
+      if (selectedType) params.append('category_type', selectedType);
+      if (selectedArea) params.append('category_area', selectedArea);
+      if (searchQuery) params.append('q', searchQuery);
       if (verifiedOnly) params.append('verified', 'true');
 
       const response = await fetch(`/api/provider?action=directory&${params}`);
@@ -67,12 +84,23 @@ export default function ProviderDirectory({ t, setView }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [offset, selectedCanton, selectedType, selectedArea, searchQuery, verifiedOnly]);
 
   // Initial fetch and on filter change
   useEffect(() => {
     fetchProviders(true);
-  }, [selectedCanton, verifiedOnly]);
+  }, [selectedCanton, selectedType, selectedArea, searchQuery, verifiedOnly]);
+
+  // Handle search submit
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    setSearchQuery(searchInput.trim());
+  };
+
+  // Reset area when type changes
+  useEffect(() => {
+    setSelectedArea('');
+  }, [selectedType]);
 
   // SEO: Set meta tags
   useEffect(() => {
@@ -138,10 +166,19 @@ export default function ProviderDirectory({ t, setView }) {
   // Clear all filters
   const clearFilters = () => {
     setSelectedCanton('');
+    setSelectedType('');
+    setSelectedArea('');
+    setSearchQuery('');
+    setSearchInput('');
     setVerifiedOnly(false);
   };
 
-  const activeFilterCount = (selectedCanton ? 1 : 0) + (verifiedOnly ? 1 : 0);
+  const activeFilterCount =
+    (selectedCanton ? 1 : 0) +
+    (selectedType ? 1 : 0) +
+    (selectedArea ? 1 : 0) +
+    (searchQuery ? 1 : 0) +
+    (verifiedOnly ? 1 : 0);
 
   return (
     <div className="min-h-screen bg-beige pt-24 pb-16">
@@ -156,15 +193,79 @@ export default function ProviderDirectory({ t, setView }) {
           </p>
         </div>
 
+        {/* Search Bar */}
+        <form onSubmit={handleSearchSubmit} className="mb-6">
+          <div className="relative max-w-2xl mx-auto">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <input
+              type="text"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              placeholder="Anbieter suchen (z.B. Yoga, Kochen, Programmieren...)"
+              className="w-full pl-12 pr-24 py-3.5 bg-white border border-gray-200 rounded-xl text-base shadow-sm focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
+            />
+            <button
+              type="submit"
+              className="absolute right-2 top-1/2 -translate-y-1/2 px-4 py-2 bg-orange-500 text-white rounded-lg text-sm font-medium hover:bg-orange-600 transition-colors"
+            >
+              Suchen
+            </button>
+          </div>
+          {searchQuery && (
+            <p className="text-center text-sm text-gray-500 mt-2">
+              Suche nach: <span className="font-medium text-gray-700">"{searchQuery}"</span>
+              <button
+                type="button"
+                onClick={() => { setSearchQuery(''); setSearchInput(''); }}
+                className="ml-2 text-orange-500 hover:text-orange-600"
+              >
+                (zurücksetzen)
+              </button>
+            </p>
+          )}
+        </form>
+
         {/* Filter Bar */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-8">
-          <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
+          <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center flex-wrap">
+            {/* Category Type Filter */}
+            <div className="relative w-full sm:w-auto">
+              <select
+                value={selectedType}
+                onChange={(e) => setSelectedType(e.target.value)}
+                className="w-full sm:w-48 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm appearance-none cursor-pointer focus:outline-none focus:border-orange-400"
+              >
+                <option value="">Alle Kategorien</option>
+                {types.map(type => (
+                  <option key={type.id} value={type.id}>{type.label_de}</option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+            </div>
+
+            {/* Category Area Filter (dependent on Type) */}
+            {selectedType && filteredAreas.length > 0 && (
+              <div className="relative w-full sm:w-auto">
+                <select
+                  value={selectedArea}
+                  onChange={(e) => setSelectedArea(e.target.value)}
+                  className="w-full sm:w-48 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm appearance-none cursor-pointer focus:outline-none focus:border-orange-400"
+                >
+                  <option value="">Alle Bereiche</option>
+                  {filteredAreas.map(area => (
+                    <option key={area.id} value={area.id}>{area.label_de}</option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+              </div>
+            )}
+
             {/* Canton Filter */}
-            <div className="relative flex-1 w-full md:w-auto">
+            <div className="relative w-full sm:w-auto">
               <select
                 value={selectedCanton}
                 onChange={(e) => setSelectedCanton(e.target.value)}
-                className="w-full md:w-64 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm appearance-none cursor-pointer focus:outline-none focus:border-orange-400"
+                className="w-full sm:w-48 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm appearance-none cursor-pointer focus:outline-none focus:border-orange-400"
               >
                 <option value="">Alle Kantone</option>
                 {SWISS_CANTONS.filter(c => c !== 'Online' && c !== 'Ausland').map(canton => (
@@ -184,7 +285,7 @@ export default function ProviderDirectory({ t, setView }) {
               />
               <span className="flex items-center text-sm text-gray-700">
                 <CheckCircle className="w-4 h-4 mr-1 text-blue-500" />
-                Nur verifizierte Anbieter
+                Nur verifizierte
               </span>
             </label>
 
@@ -195,12 +296,12 @@ export default function ProviderDirectory({ t, setView }) {
                 className="flex items-center text-sm text-gray-500 hover:text-gray-700"
               >
                 <X className="w-4 h-4 mr-1" />
-                Filter zurücksetzen
+                Filter zurücksetzen ({activeFilterCount})
               </button>
             )}
 
             {/* Results Count */}
-            <div className="md:ml-auto text-sm text-gray-500">
+            <div className="lg:ml-auto text-sm text-gray-500">
               {totalCount} {totalCount === 1 ? 'Anbieter' : 'Anbieter'} gefunden
             </div>
           </div>
