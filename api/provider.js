@@ -479,56 +479,40 @@ export default async function handler(req, res) {
         return res.status(404).json({ error: 'Provider not found' });
       }
 
-      // Get courses with user_id match
-      const { data: directCourses } = await supabase
+      // Get ALL courses with user_id match (no limit)
+      const { data: allCourses, error: courseError } = await supabase
         .from('courses')
         .select('id, title, status, user_id')
-        .eq('user_id', debugProvider.id)
-        .limit(10);
+        .eq('user_id', debugProvider.id);
 
-      // Get sample of all courses
-      const { data: sampleCourses } = await supabase
-        .from('courses')
-        .select('id, title, user_id, instructor_name, status')
-        .limit(20);
-
-      // Find courses matching provider name in instructor_name
-      const matchingByName = (sampleCourses || []).filter(c =>
-        c.instructor_name?.toLowerCase().includes(debugProvider.full_name?.toLowerCase()?.split(' ')[0] || '')
+      // Filter published courses
+      const publishedCourses = (allCourses || []).filter(c =>
+        c.status === 'published' || c.status === null || c.status === undefined
       );
+
+      // Status distribution
+      const statusDist = (allCourses || []).reduce((acc, c) => {
+        const key = c.status || 'null';
+        acc[key] = (acc[key] || 0) + 1;
+        return acc;
+      }, {});
 
       return res.status(200).json({
         provider: {
           id: debugProvider.id,
-          id_type: typeof debugProvider.id,
           full_name: debugProvider.full_name,
           slug: debugProvider.slug,
           package_tier: debugProvider.package_tier
         },
-        directMatchCourses: {
-          count: directCourses?.length || 0,
-          courses: directCourses?.map(c => ({
-            id: c.id,
-            title: c.title,
-            status: c.status,
-            user_id: c.user_id,
-            user_id_type: typeof c.user_id,
-            match: String(c.user_id) === String(debugProvider.id)
-          }))
-        },
-        sampleCourses: sampleCourses?.slice(0, 5).map(c => ({
+        courseError: courseError?.message || null,
+        totalCourses: allCourses?.length || 0,
+        publishedCourses: publishedCourses.length,
+        statusDistribution: statusDist,
+        allCourses: (allCourses || []).map(c => ({
           id: c.id,
-          title: c.title,
-          user_id: c.user_id,
-          user_id_type: typeof c.user_id,
-          instructor_name: c.instructor_name,
-          status: c.status
-        })),
-        coursesMatchingByName: matchingByName.map(c => ({
-          id: c.id,
-          title: c.title,
-          user_id: c.user_id,
-          match: String(c.user_id) === String(debugProvider.id)
+          title: c.title.substring(0, 50),
+          status: c.status,
+          isPublished: c.status === 'published' || c.status === null || c.status === undefined
         }))
       });
     }
