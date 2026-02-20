@@ -351,7 +351,7 @@ const SearchPageView = ({
                     <div className="relative py-8 md:py-10">
                         <div className="max-w-7xl mx-auto px-4">
                             {/* Breadcrumb row */}
-                            <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center mb-4">
                                 <div className="flex items-center text-sm">
                                     <activeSegmentConfig.icon className={`w-4 h-4 mr-2 ${activeSegmentConfig.text}`} />
                                     <span className={`font-medium ${activeSegmentConfig.text}`}>{getLabel(searchType, 'type')}</span>
@@ -368,12 +368,6 @@ const SearchPageView = ({
                                         </>
                                     )}
                                 </div>
-                                <button
-                                    onClick={() => { setSearchType(''); setSearchArea(''); setSearchSpecialty(''); setSearchFocus(''); }}
-                                    className="flex items-center text-gray-500 hover:text-gray-700 text-sm"
-                                >
-                                    <X className="w-4 h-4 mr-1" /> Zurücksetzen
-                                </button>
                             </div>
 
                             {/* Hero text */}
