@@ -388,19 +388,22 @@ const SearchPageView = ({
                     </div>
                 </div>
             )}
-            <div className="bg-white border-b pt-8 pb-4 sticky top-20 z-30 shadow-sm">
+            <div className="bg-white border-b pt-6 pb-4 sticky top-20 z-30 shadow-sm">
                 <div className="max-w-7xl mx-auto px-4 space-y-4">
-                    <div className="flex flex-col md:flex-row gap-4 items-center">
-                        <div className="relative flex-grow w-full md:w-auto pb-4">
+                    {/* Search row */}
+                    <div className="flex flex-col md:flex-row gap-3 items-stretch">
+                        <div className="relative flex-grow w-full md:w-auto">
                             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                            <input type="text" placeholder={t.search_refine} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-10 pr-4 py-3 bg-beige border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-colors" />
-                            <p className="absolute -bottom-1 left-3 text-xs text-gray-500">{t.search_hint_boolean || 'Tipp: Kombiniere Begriffe mit AND oder OR'}</p>
+                            <input type="text" placeholder={t.search_refine} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full h-[42px] pl-10 pr-4 bg-beige border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-colors" />
                         </div>
-                        <LocationDropdown selectedLocations={selectedLocations} setSelectedLocations={setSelectedLocations} locMenuOpen={locMenuOpen} setLocMenuOpen={setLocMenuOpen} locMenuRef={locMenuRef} t={t} />
-                        <LanguageDropdown selectedLanguages={selectedLanguages} setSelectedLanguages={setSelectedLanguages} langMenuOpen={langMenuOpen} setLangMenuOpen={setLangMenuOpen} langMenuRef={langMenuRef} t={t} />
-                        <DeliveryTypeFilter selectedDeliveryTypes={selectedDeliveryTypes} setSelectedDeliveryTypes={setSelectedDeliveryTypes} deliveryMenuOpen={deliveryMenuOpen} setDeliveryMenuOpen={setDeliveryMenuOpen} deliveryMenuRef={deliveryMenuRef} t={t} />
-                        <button onClick={() => { resetFilters(); setSelectedLanguages([]); setSelectedDeliveryTypes([]); }} className="p-2 text-gray-400 hover:text-red-500 rounded-full hover:bg-gray-100 transition" title="Reset Filters"><X className="w-6 h-6" /></button>
+                        <div className="flex items-center gap-2">
+                            <LocationDropdown selectedLocations={selectedLocations} setSelectedLocations={setSelectedLocations} locMenuOpen={locMenuOpen} setLocMenuOpen={setLocMenuOpen} locMenuRef={locMenuRef} t={t} />
+                            <LanguageDropdown selectedLanguages={selectedLanguages} setSelectedLanguages={setSelectedLanguages} langMenuOpen={langMenuOpen} setLangMenuOpen={setLangMenuOpen} langMenuRef={langMenuRef} t={t} />
+                            <DeliveryTypeFilter selectedDeliveryTypes={selectedDeliveryTypes} setSelectedDeliveryTypes={setSelectedDeliveryTypes} deliveryMenuOpen={deliveryMenuOpen} setDeliveryMenuOpen={setDeliveryMenuOpen} deliveryMenuRef={deliveryMenuRef} t={t} />
+                            <button onClick={() => { resetFilters(); setSelectedLanguages([]); setSelectedDeliveryTypes([]); }} className="h-[42px] w-[42px] flex items-center justify-center text-gray-400 hover:text-red-500 rounded-full hover:bg-gray-100 transition" title="Reset Filters"><X className="w-5 h-5" /></button>
+                        </div>
                     </div>
+                    <p className="text-xs text-gray-500 -mt-2 ml-3">{t.search_hint_boolean || 'Tipp: Kombiniere Begriffe mit AND oder OR'}</p>
 
                     {/* TAXONOMY FILTERS (Level 2-4) - Level 1 is selected via Navbar */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
