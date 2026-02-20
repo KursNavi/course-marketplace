@@ -5,6 +5,17 @@ import { Globe } from 'lucide-react';
 import { CATEGORY_TYPES, NEW_TAXONOMY, AGE_GROUPS, COURSE_LEVELS, DELIVERY_TYPES, SEGMENT_CONFIG } from '../lib/constants';
 import { formatPriceCHF } from '../lib/formatPrice';
 
+// Map URL slugs to database slugs (URL uses legacy slugs, DB uses new consolidated slugs)
+const URL_TO_DB_TYPE = {
+    'beruflich': 'professionell',
+    'privat_hobby': 'privat',
+    'kinder_jugend': 'kinder',
+    // Also support direct mapping if already using new slugs
+    'professionell': 'professionell',
+    'privat': 'privat',
+    'kinder': 'kinder'
+};
+
 const SearchPageView = ({
     courses,
     searchQuery, setSearchQuery,
@@ -143,13 +154,16 @@ const SearchPageView = ({
         return a.localeCompare(b, 'de');
     });
 
+    // Map URL slug to DB slug for filtering
+    const dbSearchType = searchType ? (URL_TO_DB_TYPE[searchType] || searchType) : '';
+
     // Level 2-4: Alphabetically sorted by label
     const availableAreas = [...new Set(
         courses.flatMap(c => {
             const areas = [];
             if (Array.isArray(c.all_categories) && c.all_categories.length > 0) {
                 c.all_categories.forEach(cat => {
-                    if ((!searchType || cat.category_type === searchType) && cat.category_area) {
+                    if ((!dbSearchType || cat.category_type === dbSearchType) && cat.category_area) {
                         areas.push(cat.category_area);
                     }
                 });
@@ -168,7 +182,7 @@ const SearchPageView = ({
             const specialties = [];
             if (Array.isArray(c.all_categories) && c.all_categories.length > 0) {
                 c.all_categories.forEach(cat => {
-                    const typeMatch = !searchType || cat.category_type === searchType;
+                    const typeMatch = !dbSearchType || cat.category_type === dbSearchType;
                     const areaMatch = !searchArea || cat.category_area === searchArea;
                     if (typeMatch && areaMatch && cat.category_specialty) {
                         specialties.push(cat.category_specialty);
@@ -184,7 +198,7 @@ const SearchPageView = ({
             const focuses = [];
             if (Array.isArray(c.all_categories) && c.all_categories.length > 0) {
                 c.all_categories.forEach(cat => {
-                    const typeMatch = !searchType || cat.category_type === searchType;
+                    const typeMatch = !dbSearchType || cat.category_type === dbSearchType;
                     const areaMatch = !searchArea || cat.category_area === searchArea;
                     const specMatch = !searchSpecialty || cat.category_specialty === searchSpecialty;
                     if (typeMatch && areaMatch && specMatch && cat.category_focus) {
