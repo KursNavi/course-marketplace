@@ -430,7 +430,7 @@ const SearchPageView = ({
                         </select>
                         <select value={searchFocus || ""} onChange={(e) => setSearchFocus(e.target.value)} className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 ${searchSpecialty && availableFocuses.length > 0 ? 'bg-white border-gray-200' : 'bg-gray-50 border-gray-200'} ${!searchFocus ? 'text-gray-400' : 'text-gray-900'}`} disabled={!searchSpecialty || availableFocuses.length === 0}>
                             <option value="" className="text-gray-400">{searchFocus ? `— Alle Fokus-Themen —` : (t.lbl_focus || 'Fokus')}</option>
-                            {availableFocuses.map(f => (<option key={f} value={f}>{f}</option>))}
+                            {availableFocuses.map(f => (<option key={f} value={f} className="text-gray-900">{f}</option>))}
                         </select>
                     </div>
 
