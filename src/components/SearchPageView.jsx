@@ -421,15 +421,15 @@ const SearchPageView = ({
                     {/* TAXONOMY FILTERS (Level 2-4) - Level 1 is selected via Navbar */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                         <select value={searchArea} onChange={(e) => { setSearchArea(e.target.value); setSearchSpecialty(""); setSearchFocus(""); }} className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 ${searchType ? 'bg-white border-gray-200' : 'bg-gray-50 border-gray-200'}`} disabled={!searchType}>
-                            <option value="">{t.lbl_area || 'Themenwelt'}</option>
+                            <option value="">{searchArea ? `Alle Themenwelten` : (t.lbl_area || 'Themenwelt')}</option>
                             {availableAreas.map(area => (<option key={area} value={area}>{getLabel(area, 'area')}</option>))}
                         </select>
                         <select value={searchSpecialty} onChange={(e) => { setSearchSpecialty(e.target.value); setSearchFocus(""); }} className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 ${searchArea ? 'bg-white border-gray-200' : 'bg-gray-50 border-gray-200'}`} disabled={!searchArea}>
-                            <option value="">{t.lbl_specialty || 'Fachgebiet'}</option>
+                            <option value="">{searchSpecialty ? `Alle Fachgebiete` : (t.lbl_specialty || 'Fachgebiet')}</option>
                             {availableSpecialties.map(spec => (<option key={spec} value={spec}>{spec}</option>))}
                         </select>
                         <select value={searchFocus || ""} onChange={(e) => setSearchFocus(e.target.value)} className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 ${searchSpecialty && availableFocuses.length > 0 ? 'bg-white border-gray-200' : 'bg-gray-50 border-gray-200'}`} disabled={!searchSpecialty || availableFocuses.length === 0}>
-                            <option value="">{t.lbl_focus || 'Fokus'}</option>
+                            <option value="">{searchFocus ? `Alle Fokus-Themen` : (t.lbl_focus || 'Fokus')}</option>
                             {availableFocuses.map(f => (<option key={f} value={f}>{f}</option>))}
                         </select>
                     </div>
