@@ -334,32 +334,63 @@ const SearchPageView = ({
 
     return (
         <div className="min-h-screen bg-beige">
-            {/* SEGMENT BANNER - shows active segment with colored background */}
+            {/* SEGMENT HERO - shows active segment with background image, title and subtitle */}
             {activeSegmentConfig && (
-                <div className={`${activeSegmentConfig.bgSolid} text-white py-3`}>
-                    <div className="max-w-7xl mx-auto px-4 flex items-center justify-between">
-                        <div className="flex items-center">
-                            <activeSegmentConfig.icon className="w-5 h-5 mr-3" />
-                            <span className="font-bold">{getLabel(searchType, 'type')}</span>
-                            {searchArea && (
-                                <>
-                                    <ChevronRight className="w-4 h-4 mx-2 opacity-70" />
-                                    <span className="opacity-90">{getLabel(searchArea, 'area')}</span>
-                                </>
-                            )}
-                            {searchSpecialty && (
-                                <>
-                                    <ChevronRight className="w-4 h-4 mx-2 opacity-70" />
-                                    <span className="opacity-90">{searchSpecialty}</span>
-                                </>
-                            )}
+                <div className="relative overflow-hidden">
+                    {/* Background Image - very subtle */}
+                    {activeSegmentConfig.heroBg && (
+                        <div
+                            className="absolute inset-0 bg-cover bg-center opacity-[0.06]"
+                            style={{ backgroundImage: `url("${activeSegmentConfig.heroBg}")` }}
+                        />
+                    )}
+                    {/* Colored overlay */}
+                    <div className={`absolute inset-0 ${activeSegmentConfig.bgLight} opacity-80`} />
+
+                    {/* Content */}
+                    <div className="relative py-8 md:py-10">
+                        <div className="max-w-7xl mx-auto px-4">
+                            {/* Breadcrumb row */}
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center text-sm">
+                                    <activeSegmentConfig.icon className={`w-4 h-4 mr-2 ${activeSegmentConfig.text}`} />
+                                    <span className={`font-medium ${activeSegmentConfig.text}`}>{getLabel(searchType, 'type')}</span>
+                                    {searchArea && (
+                                        <>
+                                            <ChevronRight className="w-4 h-4 mx-2 text-gray-400" />
+                                            <span className="text-gray-600">{getLabel(searchArea, 'area')}</span>
+                                        </>
+                                    )}
+                                    {searchSpecialty && (
+                                        <>
+                                            <ChevronRight className="w-4 h-4 mx-2 text-gray-400" />
+                                            <span className="text-gray-600">{searchSpecialty}</span>
+                                        </>
+                                    )}
+                                </div>
+                                <button
+                                    onClick={() => { setSearchType(''); setSearchArea(''); setSearchSpecialty(''); setSearchFocus(''); }}
+                                    className="flex items-center text-gray-500 hover:text-gray-700 text-sm"
+                                >
+                                    <X className="w-4 h-4 mr-1" /> Zurücksetzen
+                                </button>
+                            </div>
+
+                            {/* Hero text */}
+                            <div className="flex items-center gap-6">
+                                <div className={`hidden md:flex items-center justify-center w-16 h-16 rounded-2xl ${activeSegmentConfig.bgSolid} shadow-lg`}>
+                                    <activeSegmentConfig.icon className="w-8 h-8 text-white" />
+                                </div>
+                                <div>
+                                    <h1 className={`text-2xl md:text-3xl font-bold font-heading ${activeSegmentConfig.textDark}`}>
+                                        {activeSegmentConfig.heroTitle?.de || getLabel(searchType, 'type')}
+                                    </h1>
+                                    <p className="text-gray-600 mt-1">
+                                        {activeSegmentConfig.heroSubtitle?.de || ''}
+                                    </p>
+                                </div>
+                            </div>
                         </div>
-                        <button
-                            onClick={() => { setSearchType(''); setSearchArea(''); setSearchSpecialty(''); setSearchFocus(''); }}
-                            className="flex items-center text-white/80 hover:text-white text-sm"
-                        >
-                            <X className="w-4 h-4 mr-1" /> Filter zurücksetzen
-                        </button>
                     </div>
                 </div>
             )}

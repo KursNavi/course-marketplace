@@ -126,6 +126,9 @@ export const SEGMENT_CONFIG = {
   beruflich: {
     icon: Briefcase,
     label: { de: "Berufliche Weiterbildung", en: "Professional Development", fr: "Formation professionnelle", it: "Formazione professionale" },
+    heroTitle: { de: "Investiere in deine Karriere", en: "Invest in your career" },
+    heroSubtitle: { de: "Weiterbildungen und Fachkurse von erfahrenen Anbietern", en: "Training courses from experienced providers" },
+    heroBg: "https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&q=80&w=2000",
     color: 'blue',
     bgLight: 'bg-blue-50',
     bgSolid: 'bg-blue-500',
@@ -155,6 +158,9 @@ export const SEGMENT_CONFIG = {
   privat_hobby: {
     icon: Palette,
     label: { de: "Privat & Hobby", en: "Private & Hobby", fr: "Privé & Loisirs", it: "Privato & Hobby" },
+    heroTitle: { de: "Entdecke neue Leidenschaften", en: "Discover new passions" },
+    heroSubtitle: { de: "Kurse für Hobbys, Kreativität und persönliches Wachstum", en: "Courses for hobbies, creativity and personal growth" },
+    heroBg: "https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?auto=format&fit=crop&q=80&w=2000",
     color: 'primary',
     bgLight: 'bg-primaryLight',
     bgSolid: 'bg-primary',
@@ -184,6 +190,9 @@ export const SEGMENT_CONFIG = {
   kinder_jugend: {
     icon: Smile,
     label: { de: "Kinder & Jugend", en: "Kids & Teens", fr: "Enfants & Ados", it: "Bambini & Adolescenti" },
+    heroTitle: { de: "Fördern & Begeistern", en: "Nurture & Inspire" },
+    heroSubtitle: { de: "Altersgerechte Kurse für Kinder und Jugendliche", en: "Age-appropriate courses for children and teens" },
+    heroBg: "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&q=80&w=2000",
     color: 'emerald',
     bgLight: 'bg-emerald-50',
     bgSolid: 'bg-emerald-500',
