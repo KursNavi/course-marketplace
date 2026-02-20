@@ -377,33 +377,7 @@ const SearchPageView = ({
                         <button onClick={() => { resetFilters(); setSelectedLanguages([]); setSelectedDeliveryTypes([]); }} className="p-2 text-gray-400 hover:text-red-500 rounded-full hover:bg-gray-100 transition" title="Reset Filters"><X className="w-6 h-6" /></button>
                     </div>
 
-                    {/* SEGMENT ICON TABS (Level 1) */}
-                    <div className="flex flex-wrap gap-2 mb-3">
-                        {[
-                            { key: 'privat_hobby', label: t.nav_private || 'Privat & Hobby', Icon: Palette, config: SEGMENT_CONFIG.privat_hobby },
-                            { key: 'beruflich', label: t.nav_professional || 'Beruflich', Icon: Briefcase, config: SEGMENT_CONFIG.beruflich },
-                            { key: 'kinder_jugend', label: t.nav_kids || 'Kinder & Jugend', Icon: Smile, config: SEGMENT_CONFIG.kinder_jugend },
-                        ].map(({ key, label, Icon, config }) => {
-                            const isActive = searchType === key;
-                            return (
-                                <button
-                                    key={key}
-                                    onClick={() => { setSearchType(isActive ? '' : key); setSearchArea(""); setSearchSpecialty(""); setSearchFocus(""); }}
-                                    className={`flex items-center px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
-                                        isActive
-                                            ? `${config.bgSolid} text-white shadow-md`
-                                            : `bg-white border border-gray-200 text-gray-600 hover:border-gray-300 hover:shadow-sm`
-                                    }`}
-                                >
-                                    <Icon className={`w-4 h-4 mr-2 ${isActive ? 'text-white' : 'text-gray-400'}`} />
-                                    {label}
-                                    {isActive && <X className="w-3 h-3 ml-2 opacity-70" />}
-                                </button>
-                            );
-                        })}
-                    </div>
-
-                    {/* TAXONOMY FILTERS (Level 2-4) */}
+                    {/* TAXONOMY FILTERS (Level 2-4) - Level 1 is selected via Navbar */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                         <select value={searchArea} onChange={(e) => { setSearchArea(e.target.value); setSearchSpecialty(""); setSearchFocus(""); }} className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 ${searchType ? 'bg-white border-gray-200' : 'bg-gray-50 border-gray-200'}`} disabled={!searchType}>
                             <option value="">{t.lbl_area || 'Themenwelt'}</option>
