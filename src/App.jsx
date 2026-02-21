@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { CheckCircle } from 'lucide-react';
 
+// Build: 2026-02-21-v2 - Category paths fix for TeacherForm
 // --- IMPORTS ---
 import { CATEGORY_LABELS, TRANSLATIONS, NEW_TAXONOMY, CATEGORY_TYPES } from './lib/constants';
 import { supabase } from './lib/supabase';
