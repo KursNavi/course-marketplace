@@ -579,7 +579,14 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
             if (initialData.provider_url) setProviderUrl(initialData.provider_url);
 
             // Kategorie(n) wiederherstellen (primary + optional)
+            console.log('[TeacherForm] Loading categories from initialData:', {
+                category_paths: initialData.category_paths,
+                category_type: initialData.category_type,
+                category_area: initialData.category_area,
+                all_categories: initialData.all_categories
+            });
             if (Array.isArray(initialData.category_paths) && initialData.category_paths.length > 0) {
+                console.log('[TeacherForm] Using category_paths:', initialData.category_paths);
                 setCategories(initialData.category_paths.map(c => ({
                     type: c?.type || 'privat_hobby',
                     area: c?.area || '',

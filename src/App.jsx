@@ -458,13 +458,25 @@ export default function KursNaviPro() {  // 1. Initial State Logic
         // Build category_paths for TeacherForm compatibility
         // NOTE: type uses SLUG, area uses NUMERIC ID (because getAreasLocal returns _areaIds),
         // specialty and focus use LABELS (because dropdowns display labels)
-        const categoryPaths = courseCategories.map(cat => ({
-          type: cat.category_type,           // slug (e.g., "professionell")
-          area: cat.area_id,                 // numeric ID (e.g., 22) - getAreasLocal returns IDs
-          specialty: cat.category_specialty_label || cat.category_specialty || '', // label (e.g., "Hauswirtschaft")
-          focus: cat.category_focus_label || cat.category_focus || '',             // label (e.g., "Bäuerliche Hauswirtschaft")
-          is_primary: cat.is_primary
-        }));
+        // Build: 2026-02-21-v3 - Added debug logging
+        const categoryPaths = courseCategories.map(cat => {
+          console.log('[App.jsx] Building categoryPath for course', c.id, ':', {
+            raw_cat: cat,
+            type: cat.category_type,
+            area_id: cat.area_id,
+            specialty_label: cat.category_specialty_label,
+            specialty_slug: cat.category_specialty,
+            focus_label: cat.category_focus_label,
+            focus_slug: cat.category_focus
+          });
+          return {
+            type: cat.category_type,           // slug (e.g., "professionell")
+            area: cat.area_id,                 // numeric ID (e.g., 22) - getAreasLocal returns IDs
+            specialty: cat.category_specialty_label || cat.category_specialty || '', // label (e.g., "Hauswirtschaft")
+            focus: cat.category_focus_label || cat.category_focus || '',             // label (e.g., "Bäuerliche Hauswirtschaft")
+            is_primary: cat.is_primary
+          };
+        });
 
         return {
           ...normalized,
