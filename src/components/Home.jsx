@@ -19,7 +19,7 @@ export const Home = ({
   const { taxonomy, types, getTypeLabel: dbGetTypeLabel, getAreaLabel: dbGetAreaLabel } = useTaxonomy();
 
   // State für das Mega-Menü
-  const [activeType, setActiveType] = useState('privat_hobby'); // Spalte 1 Auswahl
+  const [activeType, setActiveType] = useState('beruflich'); // Spalte 1 Auswahl
   const [activeArea, setActiveArea] = useState(null);           // Spalte 2 Auswahl
   const [activeSpecialty, setActiveSpecialty] = useState(null);  // Spalte 3 Auswahl
 
@@ -283,8 +283,8 @@ export const Home = ({
                             {/* TOP ROW: SEGMENT ICON TABS */}
                             <div className="flex border-b border-gray-200 bg-gray-50">
                                 {[
-                                  { key: 'privat_hobby', label: t.nav_private || 'Privat & Hobby', Icon: Palette, config: SEGMENT_CONFIG.privat_hobby },
                                   { key: 'beruflich', label: t.nav_professional || 'Beruflich', Icon: Briefcase, config: SEGMENT_CONFIG.beruflich },
+                                  { key: 'privat_hobby', label: t.nav_private || 'Privat & Hobby', Icon: Palette, config: SEGMENT_CONFIG.privat_hobby },
                                   { key: 'kinder_jugend', label: t.nav_kids || 'Kinder & Jugend', Icon: Smile, config: SEGMENT_CONFIG.kinder_jugend },
                                 ].map(({ key, label, Icon, config }) => {
                                     const isActive = activeType === key;
@@ -433,22 +433,6 @@ export const Home = ({
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
 
-          {/* PRIVAT & HOBBY - Orange */}
-          <div onClick={() => { setSearchType('privat_hobby'); window.history.pushState({ view: 'search' }, '', '/search?type=privat_hobby'); window.scrollTo(0,0); }} className="group relative h-80 rounded-2xl overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
-            <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?auto=format&fit=crop&q=80&w=2000")' }}></div>
-            <div className="absolute inset-0 bg-gradient-to-t from-orange-700/90 via-orange-600/40 to-orange-500/20"></div>
-            <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm rounded-full p-3">
-              <Palette className="w-6 h-6 text-white" />
-            </div>
-            <div className="absolute bottom-0 left-0 p-6">
-              <h3 className="text-2xl font-bold text-white font-heading mb-1">{t.nav_private}</h3>
-              <p className="text-orange-100 text-sm font-sans mb-4">{t.home_card_priv_sub}</p>
-              <span className="inline-flex items-center text-white font-bold text-sm uppercase tracking-wider group-hover:text-orange-200 transition-colors">
-                {t.btn_explore} <ArrowRight className="w-4 h-4 ml-2" />
-              </span>
-            </div>
-          </div>
-
           {/* BERUFLICH - Blue */}
           <div onClick={() => { setSearchType('beruflich'); window.history.pushState({ view: 'search' }, '', '/search?type=beruflich'); window.scrollTo(0,0); }} className="group relative h-80 rounded-2xl overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
             <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=2670&auto=format&fit=crop")' }}></div>
@@ -460,6 +444,22 @@ export const Home = ({
               <h3 className="text-2xl font-bold text-white font-heading mb-1">{t.nav_professional}</h3>
               <p className="text-blue-100 text-sm font-sans mb-4">{t.home_card_prof_sub}</p>
               <span className="inline-flex items-center text-white font-bold text-sm uppercase tracking-wider group-hover:text-blue-200 transition-colors">
+                {t.btn_explore} <ArrowRight className="w-4 h-4 ml-2" />
+              </span>
+            </div>
+          </div>
+
+          {/* PRIVAT & HOBBY - Orange */}
+          <div onClick={() => { setSearchType('privat_hobby'); window.history.pushState({ view: 'search' }, '', '/search?type=privat_hobby'); window.scrollTo(0,0); }} className="group relative h-80 rounded-2xl overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
+            <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?auto=format&fit=crop&q=80&w=2000")' }}></div>
+            <div className="absolute inset-0 bg-gradient-to-t from-orange-700/90 via-orange-600/40 to-orange-500/20"></div>
+            <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm rounded-full p-3">
+              <Palette className="w-6 h-6 text-white" />
+            </div>
+            <div className="absolute bottom-0 left-0 p-6">
+              <h3 className="text-2xl font-bold text-white font-heading mb-1">{t.nav_private}</h3>
+              <p className="text-orange-100 text-sm font-sans mb-4">{t.home_card_priv_sub}</p>
+              <span className="inline-flex items-center text-white font-bold text-sm uppercase tracking-wider group-hover:text-orange-200 transition-colors">
                 {t.btn_explore} <ArrowRight className="w-4 h-4 ml-2" />
               </span>
             </div>

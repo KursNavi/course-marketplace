@@ -53,8 +53,8 @@ export const Navbar = ({ t, user, lang, setLang, setView, handleLogout, setShowR
 
   // Segment navigation buttons config
   const segmentButtons = [
-    { key: 'privat_hobby', label: t.nav_private, Icon: Palette, config: SEGMENT_CONFIG.privat_hobby },
     { key: 'beruflich', label: t.nav_professional, Icon: Briefcase, config: SEGMENT_CONFIG.beruflich },
+    { key: 'privat_hobby', label: t.nav_private, Icon: Palette, config: SEGMENT_CONFIG.privat_hobby },
     { key: 'kinder_jugend', label: t.nav_kids, Icon: Smile, config: SEGMENT_CONFIG.kinder_jugend },
   ];
 
@@ -422,8 +422,8 @@ export const Footer = ({ t, setView }) => {
         <div>
           <h4 className="font-heading font-bold text-dark mb-4">{t.footer_discover}</h4>
           <ul className="space-y-2 text-sm text-gray-500 font-sans">
-            <li onClick={() => { window.scrollTo(0, 0); window.history.pushState({ view: 'search' }, '', '/search?type=privat_hobby'); }} className="hover:text-primary cursor-pointer transition-colors">{t.nav_private}</li>
             <li onClick={() => { window.scrollTo(0, 0); window.history.pushState({ view: 'search' }, '', '/search?type=beruflich'); }} className="hover:text-primary cursor-pointer transition-colors">{t.nav_professional}</li>
+            <li onClick={() => { window.scrollTo(0, 0); window.history.pushState({ view: 'search' }, '', '/search?type=privat_hobby'); }} className="hover:text-primary cursor-pointer transition-colors">{t.nav_private}</li>
             <li onClick={() => { window.scrollTo(0, 0); window.history.pushState({ view: 'search' }, '', '/search?type=kinder_jugend'); }} className="hover:text-primary cursor-pointer transition-colors">{t.nav_kids}</li>
             <li onClick={() => navTo('blog')} className="hover:text-primary cursor-pointer transition-colors">{t.nav_news}</li>
             <li onClick={() => navTo('provider-directory')} className="hover:text-primary cursor-pointer transition-colors">{t.nav_providers || 'Anbieter-Verzeichnis'}</li>
