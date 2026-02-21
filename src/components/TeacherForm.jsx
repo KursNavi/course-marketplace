@@ -482,7 +482,10 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
     // Flag to track if form has been initialized (to prevent initialData from overwriting user changes)
     // Using useRef so the flag persists across re-renders without triggering updates
     // This is set to true after draft is loaded OR after initialData is loaded
-    const hasInitializedRef = useRef(!!draft);
+    const hasInitializedRef = useRef(false);
+
+    // Track which course ID was initialized
+    const initializedCourseIdRef = useRef(null);
 
     // Scroll to top when editing a different course
     useEffect(() => {
@@ -552,21 +555,28 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
 
         // Limits entfernt: kein Gatekeeping mehr noetig
 
+        const currentCourseId = initialData?.id || 'new';
         console.log('[TeacherForm] useEffect triggered:', {
             hasInitialized: hasInitializedRef.current,
+            initializedCourseId: initializedCourseIdRef.current,
+            currentCourseId: currentCourseId,
             initialDataId: initialData?.id,
             category_paths: initialData?.category_paths
         });
 
-        // Skip loading initialData if form has already been initialized
-        // (either from draft or from previous initialData load)
-        // The ref persists across re-renders, so this prevents initialData from
-        // overwriting user changes when dependencies change
-        if (hasInitializedRef.current) {
-            // Already initialized, skip loading
-            console.log('[TeacherForm] Skipping - already initialized');
+        // Skip loading initialData if form has already been initialized FOR THIS COURSE
+        // Reset if we're editing a different course
+        if (hasInitializedRef.current && initializedCourseIdRef.current === currentCourseId) {
+            // Already initialized for this course, skip loading
+            console.log('[TeacherForm] Skipping - already initialized for course', currentCourseId);
             initCompleteRef.current = true;
             return;
+        }
+
+        // Reset for new course
+        if (initializedCourseIdRef.current !== currentCourseId) {
+            console.log('[TeacherForm] New course detected, resetting initialization');
+            hasInitializedRef.current = false;
         }
 
         // 1. Load Initial Data if editing
@@ -709,6 +719,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
 
         // Mark form as initialized to prevent re-loading initialData on prop changes
         hasInitializedRef.current = true;
+        initializedCourseIdRef.current = initialData?.id || 'new';
 
         // Mark initialization as complete after initial data loading
         // This is set synchronously at the end of the effect, after all state updates have been queued
