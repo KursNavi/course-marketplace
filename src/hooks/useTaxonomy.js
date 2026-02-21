@@ -524,6 +524,7 @@ export function useTaxonomy() {
     };
 
     // Load course counts per category from course_category_assignments
+    // Only counts PUBLISHED courses
     const loadCourseCounts = useCallback(async (level2Data, level3Data) => {
         // Check cache first
         if (courseCountsCache && (Date.now() - courseCountsCacheTimestamp < CACHE_DURATION)) {
@@ -532,10 +533,12 @@ export function useTaxonomy() {
         }
 
         try {
-            // Get all assignments from junction table
+            // Get assignments only for published courses
+            // Join with courses table to filter by status
             const { data: assignments, error } = await supabase
                 .from('course_category_assignments')
-                .select('level3_id, level4_id');
+                .select('level3_id, level4_id, courses!inner(status)')
+                .eq('courses.status', 'published');
 
             if (error || !assignments) {
                 console.error('Error loading course counts:', error);
