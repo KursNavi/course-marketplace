@@ -5,7 +5,7 @@ import { useTaxonomy } from '../hooks/useTaxonomy';
 
 export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCatPath, catMenuOpen, setCatMenuOpen, t, catMenuRef }) => {
     // Load taxonomy from DB (with fallback to constants.js)
-    const { taxonomy, types } = useTaxonomy();
+    const { taxonomy, types, courseCounts } = useTaxonomy();
 
     const [lvl1, setLvl1] = useState(rootCategory || null);
     const [lvl2, setLvl2] = useState(null);
@@ -31,11 +31,12 @@ export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCat
     };
 
     // Get Level 1 types - use types array if available (from DB), otherwise filter object keys
+    // Only show types that have at least one course
     const availableLvl1 = rootCategory
         ? [rootCategory]
         : (types.length > 0
-            ? types.map(t => t.id)  // Use numeric IDs from types array
-            : Object.keys(activeTaxonomy).filter(k => !isNaN(Number(k))));
+            ? types.map(t => t.id).filter(id => (courseCounts.level1[id] || 0) > 0)
+            : Object.keys(activeTaxonomy).filter(k => !isNaN(Number(k)) && (courseCounts.level1[k] || 0) > 0));
 
     // Get focuses for the selected specialty
     const currentFocuses = (lvl1 && lvl2 && lvl3)
@@ -92,7 +93,10 @@ export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCat
                     <div className={`w-full ${currentFocuses.length > 0 ? 'md:w-1/4' : 'md:w-1/3'} border-r overflow-y-auto bg-white`}>
                         {lvl1 ? (
                             // Use _areaIds for ordered numeric IDs, filter out internal keys
-                            (activeTaxonomy[lvl1]?._areaIds || Object.keys(activeTaxonomy[lvl1] || {}).filter(k => !k.startsWith('_') && !isNaN(Number(k)))).map(areaId => (
+                            // Only show areas that have at least one course
+                            (activeTaxonomy[lvl1]?._areaIds || Object.keys(activeTaxonomy[lvl1] || {}).filter(k => !k.startsWith('_') && !isNaN(Number(k))))
+                                .filter(areaId => (courseCounts.level2[areaId] || 0) > 0)
+                                .map(areaId => (
                                 <div key={areaId} onClick={() => { setLvl2(areaId); setLvl3(null); }} className={`p-3 mx-2 my-1 rounded-lg cursor-pointer text-sm flex justify-between items-center transition ${lvl2 === areaId ? 'bg-primaryLight font-bold text-primary' : 'text-gray-700 hover:bg-gray-50'}`}>
                                     {getLabel(areaId, 2, lvl1)}
                                     <ChevronRight className={`w-4 h-4 ${lvl2 === areaId ? 'text-primary' : 'text-gray-300'}`} />
@@ -104,15 +108,29 @@ export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCat
                     {/* Level 3: SPECIALTIES (e.g. Marketing, Yoga) */}
                     <div className={`w-full ${currentFocuses.length > 0 ? 'md:w-1/4' : 'md:w-1/3'} ${currentFocuses.length > 0 ? 'border-r' : ''} overflow-y-auto bg-white`}>
                         {lvl1 && lvl2 ? (
-                            (activeTaxonomy[lvl1]?.[lvl2]?.specialties || []).map(item => {
-                                const hasFocuses = (activeTaxonomy[lvl1]?.[lvl2]?.specialtyFocuses?.[item] || []).length > 0;
-                                return (
-                                    <div key={item} onClick={() => handleSpecialtyClick(item)} className={`p-3 mx-2 cursor-pointer text-sm flex justify-between items-center rounded transition ${lvl3 === item ? 'bg-primaryLight font-bold text-primary' : 'text-gray-600 hover:text-primary hover:bg-gray-50'}`}>
-                                        {item}
-                                        {hasFocuses && <ChevronRight className={`w-4 h-4 ${lvl3 === item ? 'text-primary' : 'text-gray-300'}`} />}
-                                    </div>
-                                );
-                            })
+                            // Use specialtyObjects if available (has IDs for filtering), otherwise fall back to specialties (no filtering)
+                            activeTaxonomy[lvl1]?.[lvl2]?.specialtyObjects?.length > 0
+                                ? activeTaxonomy[lvl1][lvl2].specialtyObjects
+                                    .filter(spec => (courseCounts.level3[spec.id] || 0) > 0)
+                                    .map(spec => {
+                                        const item = spec.label_de;
+                                        const hasFocuses = (activeTaxonomy[lvl1]?.[lvl2]?.specialtyFocuses?.[item] || []).length > 0;
+                                        return (
+                                            <div key={spec.id} onClick={() => handleSpecialtyClick(item)} className={`p-3 mx-2 cursor-pointer text-sm flex justify-between items-center rounded transition ${lvl3 === item ? 'bg-primaryLight font-bold text-primary' : 'text-gray-600 hover:text-primary hover:bg-gray-50'}`}>
+                                                {item}
+                                                {hasFocuses && <ChevronRight className={`w-4 h-4 ${lvl3 === item ? 'text-primary' : 'text-gray-300'}`} />}
+                                            </div>
+                                        );
+                                    })
+                                : (activeTaxonomy[lvl1]?.[lvl2]?.specialties || []).map(item => {
+                                    const hasFocuses = (activeTaxonomy[lvl1]?.[lvl2]?.specialtyFocuses?.[item] || []).length > 0;
+                                    return (
+                                        <div key={item} onClick={() => handleSpecialtyClick(item)} className={`p-3 mx-2 cursor-pointer text-sm flex justify-between items-center rounded transition ${lvl3 === item ? 'bg-primaryLight font-bold text-primary' : 'text-gray-600 hover:text-primary hover:bg-gray-50'}`}>
+                                            {item}
+                                            {hasFocuses && <ChevronRight className={`w-4 h-4 ${lvl3 === item ? 'text-primary' : 'text-gray-300'}`} />}
+                                        </div>
+                                    );
+                                })
                         ) : <div className="p-6 text-sm text-gray-400 italic">{lvl1 ? "Wähle einen Bereich..." : ""}</div>}
                     </div>
 

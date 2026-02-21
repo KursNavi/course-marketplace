@@ -7,6 +7,10 @@ let taxonomyCache = null;
 let cacheTimestamp = 0;
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
+// Cache for course counts
+let courseCountsCache = null;
+let courseCountsCacheTimestamp = 0;
+
 /**
  * Hook to load taxonomy from database with fallback to constants.js
  * Supports consolidated schema (taxonomy_level1/2/3/4) with legacy fallback
@@ -22,6 +26,7 @@ export function useTaxonomy() {
     const [specialties, setSpecialties] = useState([]);
     const [focuses, setFocuses] = useState([]);
     const [schemaVersion, setSchemaVersion] = useState(null); // 'consolidated', 'v2', 'legacy'
+    const [courseCounts, setCourseCounts] = useState({ level1: {}, level2: {}, level3: {}, level4: {} });
 
     const loadTaxonomy = useCallback(async (forceRefresh = false) => {
         // Check cache first
@@ -518,9 +523,92 @@ export function useTaxonomy() {
         setSchemaVersion('fallback');
     };
 
+    // Load course counts per category from course_category_assignments
+    const loadCourseCounts = useCallback(async (level2Data, level3Data) => {
+        // Check cache first
+        if (courseCountsCache && (Date.now() - courseCountsCacheTimestamp < CACHE_DURATION)) {
+            setCourseCounts(courseCountsCache);
+            return courseCountsCache;
+        }
+
+        try {
+            // Get all assignments from junction table
+            const { data: assignments, error } = await supabase
+                .from('course_category_assignments')
+                .select('level3_id, level4_id');
+
+            if (error || !assignments) {
+                console.error('Error loading course counts:', error);
+                return { level1: {}, level2: {}, level3: {}, level4: {} };
+            }
+
+            // Build lookup maps
+            const level3ToLevel2 = {};
+            const level2ToLevel1 = {};
+
+            level3Data?.forEach(s => {
+                level3ToLevel2[s.id] = s.level2_id || s.area_id;
+            });
+
+            level2Data?.forEach(a => {
+                level2ToLevel1[a.id] = a.level1_id || a.type_id;
+            });
+
+            // Count per level3 (specialty)
+            const level3Counts = {};
+            const level4Counts = {};
+
+            assignments.forEach(a => {
+                level3Counts[a.level3_id] = (level3Counts[a.level3_id] || 0) + 1;
+                if (a.level4_id) {
+                    level4Counts[a.level4_id] = (level4Counts[a.level4_id] || 0) + 1;
+                }
+            });
+
+            // Aggregate up to level2 and level1
+            const level2Counts = {};
+            const level1Counts = {};
+
+            Object.entries(level3Counts).forEach(([level3Id, count]) => {
+                const level2Id = level3ToLevel2[level3Id];
+                if (level2Id) {
+                    level2Counts[level2Id] = (level2Counts[level2Id] || 0) + count;
+                    const level1Id = level2ToLevel1[level2Id];
+                    if (level1Id) {
+                        level1Counts[level1Id] = (level1Counts[level1Id] || 0) + count;
+                    }
+                }
+            });
+
+            const counts = {
+                level1: level1Counts,
+                level2: level2Counts,
+                level3: level3Counts,
+                level4: level4Counts
+            };
+
+            // Update cache
+            courseCountsCache = counts;
+            courseCountsCacheTimestamp = Date.now();
+
+            setCourseCounts(counts);
+            return counts;
+        } catch (err) {
+            console.error('Error loading course counts:', err);
+            return { level1: {}, level2: {}, level3: {}, level4: {} };
+        }
+    }, []);
+
     useEffect(() => {
         loadTaxonomy();
     }, [loadTaxonomy]);
+
+    // Load course counts after taxonomy is loaded
+    useEffect(() => {
+        if (areas.length > 0 && specialties.length > 0) {
+            loadCourseCounts(areas, specialties);
+        }
+    }, [areas, specialties, loadCourseCounts]);
 
     // Helper: Get areas for a type (returns area IDs, sorted alphabetically)
     const getAreas = useCallback((typeId) => {
@@ -660,7 +748,9 @@ export function useTaxonomy() {
         getFocusById,
         getTypeById,
         getFullPath,
-        refresh
+        refresh,
+        // Course counts per category level (by numeric ID)
+        courseCounts
     };
 }
 
