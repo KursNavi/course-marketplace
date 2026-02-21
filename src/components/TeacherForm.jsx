@@ -552,12 +552,19 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
 
         // Limits entfernt: kein Gatekeeping mehr noetig
 
+        console.log('[TeacherForm] useEffect triggered:', {
+            hasInitialized: hasInitializedRef.current,
+            initialDataId: initialData?.id,
+            category_paths: initialData?.category_paths
+        });
+
         // Skip loading initialData if form has already been initialized
         // (either from draft or from previous initialData load)
         // The ref persists across re-renders, so this prevents initialData from
         // overwriting user changes when dependencies change
         if (hasInitializedRef.current) {
             // Already initialized, skip loading
+            console.log('[TeacherForm] Skipping - already initialized');
             initCompleteRef.current = true;
             return;
         }
