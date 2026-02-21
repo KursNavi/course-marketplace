@@ -9,6 +9,8 @@ import {
 } from 'lucide-react';
 import { SWISS_CANTONS, CATEGORY_TYPES, NEW_TAXONOMY, CATEGORY_LABELS } from "../lib/constants";
 import { PLANS } from "../constants/plans";
+
+const fallbackImage = "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=600";
 import { KursNaviLogo } from './Layout';
 import { supabase } from '../lib/supabase';
 import { useTaxonomy } from '../hooks/useTaxonomy';
@@ -1705,7 +1707,8 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                 {(savedCourses || []).length > 0 ? (savedCourses || []).map(course => (
                                     <div key={course.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex gap-4 transition hover:shadow-md">
                                         <img
-                                            src={course.image_url}
+                                            src={course.image_url || fallbackImage}
+                                            alt={course.title}
                                             className="w-20 h-20 rounded-lg object-cover cursor-pointer hover:opacity-90 transition"
                                             onClick={() => handleNavigateToCourse(course)}
                                         />

@@ -30,7 +30,12 @@ export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCat
         return key; // Level 3+4 are plain strings
     };
 
-    const availableLvl1 = rootCategory ? [rootCategory] : Object.keys(activeTaxonomy);
+    // Get Level 1 types - use types array if available (from DB), otherwise filter object keys
+    const availableLvl1 = rootCategory
+        ? [rootCategory]
+        : (types.length > 0
+            ? types.map(t => t.id)  // Use numeric IDs from types array
+            : Object.keys(activeTaxonomy).filter(k => !isNaN(Number(k))));
 
     // Get focuses for the selected specialty
     const currentFocuses = (lvl1 && lvl2 && lvl3)
@@ -86,10 +91,11 @@ export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCat
                     {/* Level 2: AREAS (e.g. Business, Sport) */}
                     <div className={`w-full ${currentFocuses.length > 0 ? 'md:w-1/4' : 'md:w-1/3'} border-r overflow-y-auto bg-white`}>
                         {lvl1 ? (
-                            Object.keys(activeTaxonomy[lvl1] || {}).map(sub => (
-                                <div key={sub} onClick={() => { setLvl2(sub); setLvl3(null); }} className={`p-3 mx-2 my-1 rounded-lg cursor-pointer text-sm flex justify-between items-center transition ${lvl2 === sub ? 'bg-primaryLight font-bold text-primary' : 'text-gray-700 hover:bg-gray-50'}`}>
-                                    {getLabel(sub, 2, lvl1)}
-                                    <ChevronRight className={`w-4 h-4 ${lvl2 === sub ? 'text-primary' : 'text-gray-300'}`} />
+                            // Use _areaIds for ordered numeric IDs, filter out internal keys
+                            (activeTaxonomy[lvl1]?._areaIds || Object.keys(activeTaxonomy[lvl1] || {}).filter(k => !k.startsWith('_') && !isNaN(Number(k)))).map(areaId => (
+                                <div key={areaId} onClick={() => { setLvl2(areaId); setLvl3(null); }} className={`p-3 mx-2 my-1 rounded-lg cursor-pointer text-sm flex justify-between items-center transition ${lvl2 === areaId ? 'bg-primaryLight font-bold text-primary' : 'text-gray-700 hover:bg-gray-50'}`}>
+                                    {getLabel(areaId, 2, lvl1)}
+                                    <ChevronRight className={`w-4 h-4 ${lvl2 === areaId ? 'text-primary' : 'text-gray-300'}`} />
                                 </div>
                             ))
                         ) : <div className="p-6 text-sm text-gray-400 italic">Wähle zuerst eine Hauptkategorie...</div>}

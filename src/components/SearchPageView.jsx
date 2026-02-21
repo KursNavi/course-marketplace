@@ -5,6 +5,8 @@ import { Globe } from 'lucide-react';
 import { CATEGORY_TYPES, NEW_TAXONOMY, AGE_GROUPS, COURSE_LEVELS, DELIVERY_TYPES, SEGMENT_CONFIG } from '../lib/constants';
 import { formatPriceCHF } from '../lib/formatPrice';
 
+const fallbackImage = "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=600";
+
 // Map URL slugs to database slugs (URL uses legacy slugs, DB uses new consolidated slugs)
 const URL_TO_DB_TYPE = {
     'beruflich': 'professionell',
@@ -491,7 +493,7 @@ const SearchPageView = ({
                       }} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer group" style={{textDecoration: 'none', color: 'inherit'}}>
                         <div className="relative h-48 overflow-hidden">
                             <img
-                                src={course.image_url}
+                                src={course.image_url || fallbackImage}
                                 alt={`${course.title} - Kurs in ${course.canton}`}
                                 loading="lazy"
                                 decoding="async"

@@ -2,6 +2,8 @@ import React, { useEffect } from 'react';
 import { ArrowLeft, CheckCircle, Shield } from 'lucide-react';
 import { formatPriceCHF } from '../lib/formatPrice';
 
+const fallbackImage = "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=600";
+
 const TeacherProfileView = ({ teacher, courses, setView, setSelectedCourse, t }) => {
     // Scroll to top when teacher changes
     useEffect(() => {
@@ -97,7 +99,7 @@ const TeacherProfileView = ({ teacher, courses, setView, setSelectedCourse, t })
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                             {teacherCourses.map(course => (
                                 <div key={course.id} onClick={() => { setSelectedCourse(course); setView('detail'); window.scrollTo(0,0); }} className="bg-white rounded-xl border border-gray-100 overflow-hidden hover:shadow-md cursor-pointer transition">
-                                    <img src={course.image_url} className="w-full h-32 object-cover" />
+                                    <img src={course.image_url || fallbackImage} className="w-full h-32 object-cover" alt={course.title} />
                                     <div className="p-4">
                                         <h3 className="font-bold text-sm line-clamp-1">{course.title}</h3>
                                         <p className="text-primary font-bold text-sm mt-2">CHF {formatPriceCHF(course.price)}</p>
