@@ -23,18 +23,26 @@ function parseBody(req) {
   }
 }
 
+// UUID v4 validation helper
+function isValidUUID(str) {
+  if (!str || typeof str !== 'string') return false;
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(str);
+}
+
 export default async function handler(req, res) {
   // Check environment
   if (!supabaseUrl || !serviceKey) {
     return res.status(500).json({ error: 'Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY' });
   }
 
-  // Auth check
-  if (adminSecret) {
-    const incoming = req.headers['x-admin-secret'];
-    if (incoming !== adminSecret) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
+  // Auth check - REQUIRED
+  if (!adminSecret) {
+    return res.status(500).json({ error: 'ADMIN_CONSOLE_SECRET not configured' });
+  }
+  const incoming = req.headers['x-admin-secret'];
+  if (!incoming || incoming !== adminSecret) {
+    return res.status(401).json({ error: 'Unauthorized' });
   }
 
   const supabaseAdmin = createClient(supabaseUrl, serviceKey);
@@ -72,6 +80,15 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'Missing userId or package_tier' });
       }
 
+      if (!isValidUUID(userId)) {
+        return res.status(400).json({ error: 'Invalid userId format' });
+      }
+
+      const validTiers = ['basic', 'pro', 'premium', 'enterprise'];
+      if (!validTiers.includes(package_tier.toLowerCase())) {
+        return res.status(400).json({ error: 'Invalid package_tier' });
+      }
+
       const { data, error } = await supabaseAdmin
         .from('profiles')
         .update({ package_tier, courses_allowed: null })
@@ -96,6 +113,10 @@ export default async function handler(req, res) {
 
       if (!userId || typeof newStatus !== 'boolean') {
         return res.status(400).json({ error: 'Missing userId or newStatus(boolean)' });
+      }
+
+      if (!isValidUUID(userId)) {
+        return res.status(400).json({ error: 'Invalid userId format' });
       }
 
       // 1) Update profile

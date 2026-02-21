@@ -201,22 +201,16 @@ export default async function handler(req, res) {
     return res.status(405).send('Method Not Allowed');
   }
 
-  const STRIPE_KEY = "sk_test_51R0pfBHd3CotzjPe3A6BLp4K0JvGqpncNIWoqcuOAnEgCCVo35hMJPqJJEc2QSqa3L0MyKBPuMCiFyynGjhnJvjr00iYuBK9fk";
-  const SUPABASE_URL = "https://nplxmpfasgpumpiddjfl.supabase.co";
-  const WEBHOOK_SECRET = "whsec_y42SCCQu6MAPO9yU3LANjFFaPvMEGW8d"; 
-  const SERVICE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5wbHhtcGZhc2dwdW1waWRkamZsIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NDMzOTk0MiwiZXhwIjoyMDc5OTE1OTQyfQ.5BeY8BkISy_hexNUzx0nDTDNbU5N-Hg4jdeOnHufffw";
-  const RESEND_KEY = "re_PWCFaKxw_LPBudxuw5WoRiefvdJSPnnds"; 
-
-  const stripe = new Stripe(STRIPE_KEY);
-  const supabase = createClient(SUPABASE_URL, SERVICE_KEY);
-  const resend = new Resend(RESEND_KEY);
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+  const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+  const resend = new Resend(process.env.RESEND_API_KEY);
 
   const buf = await buffer(req);
   const sig = req.headers['stripe-signature'];
 
   let event;
   try {
-    event = stripe.webhooks.constructEvent(buf, sig, WEBHOOK_SECRET);
+    event = stripe.webhooks.constructEvent(buf, sig, process.env.STRIPE_WEBHOOK_SECRET);
   } catch (err) {
     console.error(`Webhook Error: ${err.message}`);
     return res.status(400).send(`Webhook Error: ${err.message}`);
@@ -238,8 +232,6 @@ export default async function handler(req, res) {
       const customerEmail = session.customer_details?.email;
       const amountTotal = session.amount_total;
 
-      console.log(`💰 Processing Booking v2: User ${userId} -> Course ${courseId} (${bookingType})`);
-
       // 1. Idempotency check: Already processed?
       const { data: existingBooking } = await supabase
         .from('bookings')
@@ -248,7 +240,6 @@ export default async function handler(req, res) {
         .single();
 
       if (existingBooking) {
-        console.log('⏭️ Booking already processed, skipping');
         return res.status(200).json({ received: true, note: 'Already processed' });
       }
 
@@ -283,8 +274,6 @@ export default async function handler(req, res) {
         });
 
         if (ticketError || !ticketResult?.[0]?.success) {
-          console.log('❌ Ticket limit reached, auto-refunding');
-
           // Auto-refund
           try {
             await stripe.refunds.create({ payment_intent: session.payment_intent });
@@ -343,10 +332,9 @@ export default async function handler(req, res) {
       if (insertError) {
         // Duplicate via unique constraint? → idempotent ignore
         if (insertError.code === '23505') {
-          console.log('⏭️ Duplicate booking detected, ignoring');
           return res.status(200).json({ received: true, note: 'Duplicate, ignored' });
         }
-        console.error('❌ Database Rejected Booking:', insertError);
+        console.error('Database Rejected Booking:', insertError);
         return res.status(500).json({ error: "Database Insert Failed", details: insertError });
       }
 
@@ -386,7 +374,6 @@ export default async function handler(req, res) {
             content: pdfBuffer
           }] : []
         });
-        console.log("✅ Student email sent with invoice.");
       } catch (e) { console.error('Student Email Failed:', e); }
 
       // 9. Send TEACHER Email
@@ -414,8 +401,6 @@ export default async function handler(req, res) {
           });
         } catch (tError) { console.error('Teacher Email Failed:', tError); }
       }
-
-      console.log(`✅ Booking v2 completed: ${bookingType}`);
     }
   }
 
@@ -431,8 +416,6 @@ export default async function handler(req, res) {
         const courseCount = parseInt(metadata.courseCount || '0', 10);
         const customerEmail = session.customer_details?.email;
 
-        console.log(`🎯 Processing Capture Service Payment: User ${userId}, ${courseCount} courses`);
-
         // 1. Update Request Status
         if (requestId && requestId !== 'new') {
             const { error: updateError } = await supabase
@@ -445,7 +428,7 @@ export default async function handler(req, res) {
                 .eq('id', requestId);
 
             if (updateError) {
-                console.error('❌ Failed to update capture_service_requests:', updateError);
+                console.error('Failed to update capture_service_requests:', updateError);
             }
         }
 
@@ -466,7 +449,7 @@ export default async function handler(req, res) {
             .eq('id', userId);
 
         if (profileError) {
-            console.error('❌ Failed to update used_capture_services:', profileError);
+            console.error('Failed to update used_capture_services:', profileError);
         }
 
         // 3. Send Confirmation Email to User
@@ -483,7 +466,6 @@ export default async function handler(req, res) {
                     'Zum Dashboard'
                 )
             });
-            console.log("✅ Capture service confirmation email sent.");
         } catch (emailError) {
             console.error('Capture service email failed:', emailError);
         }
@@ -515,8 +497,6 @@ export default async function handler(req, res) {
     const account = event.data.object;
     const accountId = account.id;
 
-    console.log(`🔗 Stripe Connect Account Updated: ${accountId}`);
-
     // Check if account has completed onboarding
     const chargesEnabled = account.charges_enabled;
     const payoutsEnabled = account.payouts_enabled;
@@ -533,9 +513,7 @@ export default async function handler(req, res) {
       .eq('stripe_connect_account_id', accountId);
 
     if (updateError) {
-      console.error('❌ Failed to update Connect onboarding status:', updateError);
-    } else {
-      console.log(`✅ Connect onboarding status updated: ${onboardingComplete}`);
+      console.error('Failed to update Connect onboarding status:', updateError);
     }
   }
 

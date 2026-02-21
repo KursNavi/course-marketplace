@@ -52,6 +52,7 @@ export default function BlogDetail({ article, setView, courses }) {
         'twitter:image': article.image_url || `${BASE_URL}/og-default.jpg`
     };
 
+    const createdTags = [];
     Object.entries(ogTags).forEach(([property, content]) => {
         let tag = document.querySelector(`meta[property="${property}"]`) || document.querySelector(`meta[name="${property}"]`);
         if (!tag) {
@@ -62,6 +63,7 @@ export default function BlogDetail({ article, setView, courses }) {
                 tag.setAttribute('property', property);
             }
             document.head.appendChild(tag);
+            createdTags.push(tag);
         }
         tag.content = content;
     });
@@ -92,13 +94,23 @@ export default function BlogDetail({ article, setView, courses }) {
     };
 
     let breadcrumbScript = document.querySelector('script[data-schema="breadcrumb"]');
+    let createdBreadcrumbScript = false;
     if (!breadcrumbScript) {
         breadcrumbScript = document.createElement('script');
         breadcrumbScript.type = 'application/ld+json';
         breadcrumbScript.setAttribute('data-schema', 'breadcrumb');
         document.head.appendChild(breadcrumbScript);
+        createdBreadcrumbScript = true;
     }
     breadcrumbScript.text = JSON.stringify(breadcrumbData);
+
+    // Cleanup: Remove created tags when component unmounts or article changes
+    return () => {
+        createdTags.forEach(tag => tag.remove());
+        if (createdBreadcrumbScript && breadcrumbScript) {
+            breadcrumbScript.remove();
+        }
+    };
   }, [article]);
 
   if (!article) return <div className="p-20 text-center">Artikel nicht gefunden.</div>;

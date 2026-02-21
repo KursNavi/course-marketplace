@@ -94,27 +94,33 @@ export default async function handler(req, res) {
         flexByCourse[courseId].bookings.push(booking);
       }
 
+      // Batch fetch all teacher profiles to avoid N+1
+      const teacherIds = [...new Set(Object.values(flexByCourse).map(g => g.course?.user_id).filter(Boolean))];
+      const allStudentIds = [...new Set(flexBookings.map(b => b.user_id))];
+
+      const { data: teacherProfiles } = teacherIds.length > 0
+        ? await supabase.from('profiles').select('id, email, language').in('id', teacherIds)
+        : { data: [] };
+      const { data: studentProfiles } = allStudentIds.length > 0
+        ? await supabase.from('profiles').select('id, full_name, email').in('id', allStudentIds)
+        : { data: [] };
+
+      const teacherMap = (teacherProfiles || []).reduce((m, p) => { m[p.id] = p; return m; }, {});
+      const studentMap = (studentProfiles || []).reduce((m, p) => { m[p.id] = p; return m; }, {});
+
       for (const courseId of Object.keys(flexByCourse)) {
         const { course, bookings } = flexByCourse[courseId];
         if (!course) continue;
 
-        // Fetch teacher info
-        let teacherEmail = ADMIN_EMAIL;
-        let teacherLang = 'de';
-        if (course.user_id) {
-          const { data: teacherProfile } = await supabase.from('profiles').select('email, language').eq('id', course.user_id).single();
-          if (teacherProfile?.email) teacherEmail = teacherProfile.email;
-          if (teacherProfile?.language) teacherLang = teacherProfile.language;
-        }
+        // Get teacher info from batch
+        const teacherProfile = course.user_id ? teacherMap[course.user_id] : null;
+        const teacherEmail = teacherProfile?.email || ADMIN_EMAIL;
+        const teacherLang = teacherProfile?.language || 'de';
 
         const t = EMAIL_TRANSLATIONS[teacherLang] || EMAIL_TRANSLATIONS['de'];
 
-        // Fetch student names
-        const userIds = bookings.map(b => b.user_id);
-        const { data: profiles } = await supabase.from('profiles').select('id, full_name, email').in('id', userIds);
-
         const listHtml = bookings.map(booking => {
-          const profile = profiles?.find(p => p.id === booking.user_id);
+          const profile = studentMap[booking.user_id];
           return `<li>${profile?.full_name || 'Teilnehmer'} (${profile?.email || 'Keine Email'})</li>`;
         }).join('');
 
@@ -162,37 +168,52 @@ export default async function handler(req, res) {
       .lte('start_date', endWindow);
 
     if (events && events.length > 0) {
+      // Batch fetch all bookings for all events at once
+      const eventIds = events.map(e => e.id);
+      const { data: allEventBookings } = await supabase
+        .from('bookings')
+        .select('*')
+        .in('event_id', eventIds)
+        .eq('status', 'confirmed')
+        .eq('is_paid', false);
+
+      // Group bookings by event
+      const bookingsByEvent = (allEventBookings || []).reduce((acc, b) => {
+        if (!acc[b.event_id]) acc[b.event_id] = [];
+        acc[b.event_id].push(b);
+        return acc;
+      }, {});
+
+      // Batch fetch all teacher and student profiles
+      const eventTeacherIds = [...new Set(events.map(e => e.courses?.user_id).filter(Boolean))];
+      const eventStudentIds = [...new Set((allEventBookings || []).map(b => b.user_id))];
+
+      const { data: eventTeacherProfiles } = eventTeacherIds.length > 0
+        ? await supabase.from('profiles').select('id, email, language').in('id', eventTeacherIds)
+        : { data: [] };
+      const { data: eventStudentProfiles } = eventStudentIds.length > 0
+        ? await supabase.from('profiles').select('id, full_name, email').in('id', eventStudentIds)
+        : { data: [] };
+
+      const eventTeacherMap = (eventTeacherProfiles || []).reduce((m, p) => { m[p.id] = p; return m; }, {});
+      const eventStudentMap = (eventStudentProfiles || []).reduce((m, p) => { m[p.id] = p; return m; }, {});
+
       for (const event of events) {
         const course = event.courses;
         if (!course) continue;
 
-        // Find unpaid confirmed bookings for this event
-        const { data: bookings } = await supabase
-          .from('bookings')
-          .select('*')
-          .eq('event_id', event.id)
-          .eq('status', 'confirmed')
-          .eq('is_paid', false);
+        const bookings = bookingsByEvent[event.id] || [];
+        if (bookings.length === 0) continue;
 
-        if (!bookings || bookings.length === 0) continue;
-
-        // Fetch teacher info
-        let teacherEmail = ADMIN_EMAIL;
-        let teacherLang = 'de';
-        if (course.user_id) {
-          const { data: teacherProfile } = await supabase.from('profiles').select('email, language').eq('id', course.user_id).single();
-          if (teacherProfile?.email) teacherEmail = teacherProfile.email;
-          if (teacherProfile?.language) teacherLang = teacherProfile.language;
-        }
+        // Get teacher info from batch
+        const teacherProfile = course.user_id ? eventTeacherMap[course.user_id] : null;
+        const teacherEmail = teacherProfile?.email || ADMIN_EMAIL;
+        const teacherLang = teacherProfile?.language || 'de';
 
         const t = EMAIL_TRANSLATIONS[teacherLang] || EMAIL_TRANSLATIONS['de'];
 
-        // Fetch student names
-        const userIds = bookings.map(b => b.user_id);
-        const { data: profiles } = await supabase.from('profiles').select('id, full_name, email').in('id', userIds);
-
         const listHtml = bookings.map(booking => {
-          const profile = profiles?.find(p => p.id === booking.user_id);
+          const profile = eventStudentMap[booking.user_id];
           return `<li>${profile?.full_name || 'Teilnehmer'} (${profile?.email || 'Keine Email'})</li>`;
         }).join('');
 

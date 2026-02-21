@@ -84,19 +84,9 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // --- CREDENTIALS ---
-  const part1 = "sk_test_51R0pfBHd3CotzjPe3A6BLp4K0JvGqpnc";
-  const part2 = "NIWoqcuOAnEgCCVo35hMJPqJJEc2QSqa3L0MyKBPuMCi";
-  const part3 = "FyynGjhnJvjr00iYuBK9fk";
-  const STRIPE_KEY = part1 + part2 + part3;
-
-  const SUPABASE_URL = "https://nplxmpfasgpumpiddjfl.supabase.co";
-  const SERVICE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5wbHhtcGZhc2dwdW1waWRkamZsIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NDMzOTk0MiwiZXhwIjoyMDc5OTE1OTQyfQ.5BeY8BkISy_hexNUzx0nDTDNbU5N-Hg4jdeOnHufffw";
-  const RESEND_KEY = "re_PWCFaKxw_LPBudxuw5WoRiefvdJSPnnds";
-
-  const stripe = new Stripe(STRIPE_KEY);
-  const supabase = createClient(SUPABASE_URL, SERVICE_KEY);
-  const resend = new Resend(RESEND_KEY);
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+  const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+  const resend = new Resend(process.env.RESEND_API_KEY);
 
   try {
     const { bookingId, userId } = req.body;

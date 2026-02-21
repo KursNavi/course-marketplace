@@ -58,9 +58,16 @@ export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCat
 
     return (
         <div ref={catMenuRef} className="static relative z-50 text-left">
-            <button type="button" onClick={() => setCatMenuOpen(!catMenuOpen)} className={`w-full md:w-auto px-4 py-3 border rounded-full flex items-center justify-between space-x-2 text-sm font-medium transition shadow-sm ${selectedCatPath.length > 0 ? 'bg-primary text-white border-primary' : 'bg-white text-gray-700 hover:border-gray-400'}`}>
+            <button
+                type="button"
+                onClick={() => setCatMenuOpen(!catMenuOpen)}
+                aria-label="Kategorie auswählen"
+                aria-expanded={catMenuOpen}
+                aria-haspopup="listbox"
+                className={`w-full md:w-auto px-4 py-3 border rounded-full flex items-center justify-between space-x-2 text-sm font-medium transition shadow-sm ${selectedCatPath.length > 0 ? 'bg-primary text-white border-primary' : 'bg-white text-gray-700 hover:border-gray-400'}`}
+            >
                 <span className="truncate max-w-[150px]">{getButtonLabel()}</span>
-                <ChevronDown className="w-4 h-4 flex-shrink-0" />
+                <ChevronDown className="w-4 h-4 flex-shrink-0" aria-hidden="true" />
             </button>
             {catMenuOpen && (
                 <div className={`absolute top-14 left-0 w-[300px] ${currentFocuses.length > 0 ? 'md:w-[900px]' : 'md:w-[700px]'} bg-white rounded-xl shadow-2xl border border-gray-100 p-0 flex flex-col md:flex-row h-[400px] overflow-hidden`}>
@@ -129,8 +136,15 @@ export const LocationDropdown = ({ selectedLocations, setSelectedLocations, locM
     const displayList = SWISS_CANTONS.filter(c => c !== "Ausland");
     return (
         <div ref={locMenuRef} className="static relative z-50 text-left">
-            <button type="button" onClick={() => setLocMenuOpen(!locMenuOpen)} className={`w-full md:w-auto px-4 py-3 border rounded-full flex items-center justify-between space-x-2 text-sm font-medium transition shadow-sm ${selectedLocations.length > 0 ? 'bg-primary text-white border-primary' : 'bg-white text-gray-700 hover:border-gray-400'}`}>
-                 <div className="flex items-center"><MapPin className="w-4 h-4 mr-2" /><span>{selectedLocations.length > 0 ? `${selectedLocations.length} selected` : t.filter_label_loc}</span></div><ChevronDown className="w-4 h-4" />
+            <button
+                type="button"
+                onClick={() => setLocMenuOpen(!locMenuOpen)}
+                aria-label="Standort auswählen"
+                aria-expanded={locMenuOpen}
+                aria-haspopup="listbox"
+                className={`w-full md:w-auto px-4 py-3 border rounded-full flex items-center justify-between space-x-2 text-sm font-medium transition shadow-sm ${selectedLocations.length > 0 ? 'bg-primary text-white border-primary' : 'bg-white text-gray-700 hover:border-gray-400'}`}
+            >
+                 <div className="flex items-center"><MapPin className="w-4 h-4 mr-2" aria-hidden="true" /><span>{selectedLocations.length > 0 ? `${selectedLocations.length} selected` : t.filter_label_loc}</span></div><ChevronDown className="w-4 h-4" aria-hidden="true" />
             </button>
             {locMenuOpen && (
                 <div className="absolute top-14 left-0 w-[300px] bg-white rounded-xl shadow-2xl border border-gray-100 p-4">
@@ -158,13 +172,16 @@ export const LanguageDropdown = ({ selectedLanguages, setSelectedLanguages, lang
             <button
                 type="button"
                 onClick={() => setLangMenuOpen(!langMenuOpen)}
+                aria-label="Kurssprache auswählen"
+                aria-expanded={langMenuOpen}
+                aria-haspopup="listbox"
                 className={`w-full md:w-auto px-4 py-3 border rounded-full flex items-center justify-between space-x-2 text-sm font-medium transition shadow-sm ${selectedLanguages.length > 0 ? 'bg-primary text-white border-primary' : 'bg-white text-gray-700 hover:border-gray-400'}`}
             >
                 <div className="flex items-center">
-                    <Globe className="w-4 h-4 mr-2" />
+                    <Globe className="w-4 h-4 mr-2" aria-hidden="true" />
                     <span>{selectedLanguages.length > 0 ? `${selectedLanguages.length} ${t?.filter_lang_selected || "ausgewählt"}` : (t?.filter_label_lang || "Kurssprache")}</span>
                 </div>
-                <ChevronDown className="w-4 h-4" />
+                <ChevronDown className="w-4 h-4" aria-hidden="true" />
             </button>
             {langMenuOpen && (
                 <div className="absolute top-14 left-0 w-[250px] bg-white rounded-xl shadow-2xl border border-gray-100 p-4">
@@ -205,13 +222,16 @@ export const DeliveryTypeFilter = ({ selectedDeliveryTypes, setSelectedDeliveryT
             <button
                 type="button"
                 onClick={() => setDeliveryMenuOpen(!deliveryMenuOpen)}
+                aria-label="Kursformat auswählen"
+                aria-expanded={deliveryMenuOpen}
+                aria-haspopup="listbox"
                 className={`w-full md:w-auto px-4 py-3 border rounded-full flex items-center justify-between space-x-2 text-sm font-medium transition shadow-sm ${selectedDeliveryTypes.length > 0 ? 'bg-primary text-white border-primary' : 'bg-white text-gray-700 hover:border-gray-400'}`}
             >
                 <div className="flex items-center">
-                    <Monitor className="w-4 h-4 mr-2" />
+                    <Monitor className="w-4 h-4 mr-2" aria-hidden="true" />
                     <span>{selectedDeliveryTypes.length > 0 ? `${selectedDeliveryTypes.length} selected` : "Kursformat"}</span>
                 </div>
-                <ChevronDown className="w-4 h-4" />
+                <ChevronDown className="w-4 h-4" aria-hidden="true" />
             </button>
             {deliveryMenuOpen && (
                 <div className="absolute top-14 left-0 w-[250px] bg-white rounded-xl shadow-2xl border border-gray-100 p-4">

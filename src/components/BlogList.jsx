@@ -41,6 +41,7 @@ export default function BlogList({ articles, setView, setSelectedArticle }) {
         'twitter:description': metaDescription
     };
 
+    const createdTags = [];
     Object.entries(ogTags).forEach(([property, content]) => {
         let tag = document.querySelector(`meta[property="${property}"]`) || document.querySelector(`meta[name="${property}"]`);
         if (!tag) {
@@ -51,9 +52,15 @@ export default function BlogList({ articles, setView, setSelectedArticle }) {
                 tag.setAttribute('property', property);
             }
             document.head.appendChild(tag);
+            createdTags.push(tag);
         }
         tag.content = content;
     });
+
+    // Cleanup: Remove created tags when component unmounts
+    return () => {
+        createdTags.forEach(tag => tag.remove());
+    };
   }, []);
 
   const handleRead = (article) => {

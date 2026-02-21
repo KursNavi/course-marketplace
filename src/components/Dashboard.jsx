@@ -1149,8 +1149,6 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                 return;
             }
 
-            console.log("DASHBOARD_TIER_DEBUG", { uid, package_tier: data.package_tier, data });
-
             const parseTier = (s) => {
                 const v = (s || '').toString().toLowerCase().trim();
                 if (!v) return 'basic';
@@ -1161,7 +1159,6 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
             };
 
             const resolved = parseTier(data.package_tier);
-            console.log("DASHBOARD_TIER_RESOLVED", { raw: data.package_tier, resolved });
             setUserTier(resolved);
         })();
 
@@ -1308,8 +1305,6 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
             showNotification(`Fehler: ${error.message || error.code || 'Unbekannter Fehler'}`);
             // Rollback
             setPrioCourseIds(prioCourseIds);
-        } else {
-            console.log("Prio status updated successfully", { courseId, newStatus: !isCurrentlyPrio });
         }
     };
 
@@ -1570,18 +1565,6 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                                                     <Star className="w-3 h-3 fill-yellow-500" /> Prio
                                                                 </span>
                                                             )}
-                                                        </div>
-                                                        <div className="text-xs text-gray-500 mt-0.5">
-                                                            {[course.category_type, course.category_area, course.category_specialty, course.category_focus]
-                                                                .filter(Boolean)
-                                                                .map(key => {
-                                                                    // For type keys, use the DB type label
-                                                                    if (key === course.category_type && dbTypes?.length > 0) {
-                                                                        return dbGetTypeLabel(key, 'de');
-                                                                    }
-                                                                    return getCategoryLabel(key, 'de', dbTaxonomy);
-                                                                })
-                                                                .join(' › ')}
                                                         </div>
                                                     </td>
                                                     <td className="px-6 py-4">

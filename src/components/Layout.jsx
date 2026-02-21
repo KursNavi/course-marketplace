@@ -96,7 +96,6 @@ export const Navbar = ({ t, user, lang, setLang, setView, handleLogout, setShowR
 
   const navTo = (viewName, catPath = []) => {
     const url = getUrlForView(viewName);
-    console.log('🔘 navTo called:', viewName, '→', url);
     if (setSelectedCatPath) setSelectedCatPath(catPath);
     setMobileMenuOpen(false);
     window.scrollTo(0, 0);
@@ -274,7 +273,6 @@ export const Footer = ({ t, setView }) => {
 
   const navTo = (viewName) => {
     const url = getUrlForView(viewName);
-    console.log('🔘 Footer navTo called:', viewName, '→', url);
     window.scrollTo(0, 0);
     // Use pushState - syncFromUrl in App.jsx will handle setView
     window.history.pushState({ view: viewName }, '', url);
@@ -319,8 +317,6 @@ export const Footer = ({ t, setView }) => {
     setStatus('loading');
 
     try {
-      console.log("Start Newsletter-Anmeldung für:", email);
-
       const res = await fetch('/api/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -341,7 +337,6 @@ export const Footer = ({ t, setView }) => {
       if (res.ok) {
         setStatus(already ? 'already' : 'success');
         setEmail('');
-        console.log("Erfolg:", data);
       } else if (already) {
         setStatus('already');
         setEmail('');

@@ -79,6 +79,7 @@ const SearchPageView = ({
             'twitter:description': pageDescription
         };
 
+        const createdTags = [];
         Object.entries(ogTags).forEach(([property, content]) => {
             let tag = document.querySelector(`meta[property="${property}"]`) || document.querySelector(`meta[name="${property}"]`);
             if (!tag) {
@@ -89,16 +90,19 @@ const SearchPageView = ({
                     tag.setAttribute('property', property);
                 }
                 document.head.appendChild(tag);
+                createdTags.push(tag);
             }
             tag.content = content;
         });
 
         // Robots meta tag (Zero-Result Rule)
         let robotsMeta = document.querySelector('meta[name="robots"]');
+        let createdRobotsMeta = false;
         if (!robotsMeta) {
             robotsMeta = document.createElement('meta');
             robotsMeta.name = "robots";
             document.head.appendChild(robotsMeta);
+            createdRobotsMeta = true;
         }
 
         if (filteredCourses.length === 0) {
@@ -109,9 +113,14 @@ const SearchPageView = ({
             robotsMeta.content = "index,follow";
         }
 
-        // Cleanup: Reset to index on unmount to avoid polluting other pages
+        // Cleanup: Remove created tags and reset robots on unmount
         return () => {
-            if (robotsMeta) robotsMeta.content = "index,follow";
+            createdTags.forEach(tag => tag.remove());
+            if (createdRobotsMeta && robotsMeta) {
+                robotsMeta.remove();
+            } else if (robotsMeta) {
+                robotsMeta.content = "index,follow";
+            }
         };
     }, [filteredCourses.length, loading, searchQuery, searchType, searchArea, selectedLocations]);
 

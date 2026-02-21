@@ -7,15 +7,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    // --- BYPASSING VERCEL VARIABLES ---
-    const part1 = "sk_test_51R0pfBHd3CotzjPe3A6BLp4K0JvGqpnc";
-    const part2 = "NIWoqcuOAnEgCCVo35hMJPqJJEc2QSqa3L0MyKBPuMCi";
-    const part3 = "FyynGjhnJvjr00iYuBK9fk";
-
-    const secretKey = part1 + part2 + part3;
-    // ----------------------------------
-
-    const stripe = new Stripe(secretKey);
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
     const { action, ...params } = req.body;
 
     // Route based on action
@@ -72,9 +64,10 @@ async function handleConnectAccount(stripe, params, req, res) {
   }
 
   // Initialize Supabase client
-  const SUPABASE_URL = "https://nplxmpfasgpumpiddjfl.supabase.co";
-  const SERVICE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5wbHhtcGZhc2dwdW1waWRkamZsIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NDMzOTk0MiwiZXhwIjoyMDc5OTE1OTQyfQ.5BeY8BkISy_hexNUzx0nDTDNbU5N-Hg4jdeOnHufffw";
-  const supabase = createClient(SUPABASE_URL, SERVICE_KEY);
+  const supabase = createClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+  );
 
   // Check if user already has a Connect account
   const { data: profile } = await supabase
@@ -156,9 +149,10 @@ async function handleCheckConnectStatus(stripe, params, res) {
   }
 
   // Initialize Supabase client
-  const SUPABASE_URL = "https://nplxmpfasgpumpiddjfl.supabase.co";
-  const SERVICE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5wbHhtcGZhc2dwdW1waWRkamZsIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NDMzOTk0MiwiZXhwIjoyMDc5OTE1OTQyfQ.5BeY8BkISy_hexNUzx0nDTDNbU5N-Hg4jdeOnHufffw";
-  const supabase = createClient(SUPABASE_URL, SERVICE_KEY);
+  const supabase = createClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+  );
 
   // Get the user's Connect account ID
   const { data: profile } = await supabase

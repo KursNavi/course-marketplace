@@ -7,15 +7,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    // --- BYPASSING VERCEL VARIABLES ---
-    const part1 = "sk_test_51R0pfBHd3CotzjPe3A6BLp4K0JvGqpnc";
-    const part2 = "NIWoqcuOAnEgCCVo35hMJPqJJEc2QSqa3L0MyKBPuMCi";
-    const part3 = "FyynGjhnJvjr00iYuBK9fk";
-
-    const secretKey = part1 + part2 + part3;
-    // ----------------------------------
-
-    const stripe = new Stripe(secretKey);
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
     const { courseId, courseTitle, coursePrice, userId, courseImage, userEmail, eventId } = req.body;
 
     // Initialize Supabase client

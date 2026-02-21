@@ -554,7 +554,6 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
     return (
     <div className="max-w-7xl mx-auto px-4 py-8 font-sans animate-in fade-in duration-500">
         <button onClick={() => {
-            console.log('🔙 Back button clicked in DetailView');
             if (window.history.length > 1) {
                 window.history.back();
             } else {

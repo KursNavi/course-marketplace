@@ -922,11 +922,8 @@ export default function KursNaviPro() {  // 1. Initial State Logic
 
     // Hält view + selectedCourse immer synchron zur URL (auch bei pushState/replaceState)
     const syncFromUrl = () => {
-      console.log('🔄 syncFromUrl CALLED');
       const nextView = getInitialView();
       const path = window.location.pathname;
-      console.log('📍 Current path:', path);
-      console.log('📍 Next view from getInitialView:', nextView);
 
       // 1) Detail-URL -> ID extrahieren
       let urlId = null;
@@ -941,15 +938,10 @@ export default function KursNaviPro() {  // 1. Initial State Logic
         urlId = path.split('/')[2];
       }
 
-      console.log('🔍 Extracted urlId:', urlId);
-      console.log('📦 Courses in ref:', coursesRef.current?.length || 0);
-
       // 2) Wenn Detail: passenden Kurs aus bereits geladenen courses suchen
       if (urlId) {
         const found = (coursesRef.current || []).find(c => c && c.id == urlId);
-        console.log('🔍 Course found:', found ? `Yes (ID: ${found.id})` : 'No');
         if (found) {
-          console.log('✅ Setting selectedCourse and view=detail');
           setSelectedCourse(found);
           setView('detail');
           return;
@@ -958,7 +950,6 @@ export default function KursNaviPro() {  // 1. Initial State Logic
         // Kurs nicht gefunden - aber nur redirect wenn Kurse bereits geladen wurden
         // (sonst Race Condition bei Ctrl+Click / neuem Tab)
         if (!coursesLoadedRef.current) {
-          console.log('⏳ Courses not loaded yet, waiting...');
           setView('detail'); // Temporär detail setzen, wird nach Laden korrigiert
           return;
         }
@@ -969,7 +960,6 @@ export default function KursNaviPro() {  // 1. Initial State Logic
           if (parts.length >= 4) {
             // Redirect to /courses/topic/location/
             const redirectPath = `/${parts[0]}/${parts[1]}/${parts[2]}/`;
-            console.log('⚠️ Course not found, redirecting to:', redirectPath);
             window.history.replaceState({ view: 'category-location' }, '', redirectPath);
             setSelectedCourse(null);
             setView('category-location');
@@ -978,7 +968,6 @@ export default function KursNaviPro() {  // 1. Initial State Logic
         }
 
         // Fallback: Kurs nicht gefunden und keine category -> zur Suche
-        console.log('⚠️ Course not found, fallback to search');
         setSelectedCourse(null);
         setView('search');
         window.history.replaceState({ view: 'search' }, '', '/search');
@@ -986,11 +975,9 @@ export default function KursNaviPro() {  // 1. Initial State Logic
       }
 
       // 3) Nicht-Detail: Kurs zurücksetzen und View normal setzen
-      console.log('✅ Non-detail view, clearing selectedCourse');
       if (nextView !== 'detail') setSelectedCourse(null);
       // When navigating directly to /create-course, ensure editingCourse is null for a fresh form
       if (nextView === 'create') setEditingCourse(null);
-      console.log('✅ Setting view to:', nextView);
       setView(nextView);
 
       // 4) Parse URL query parameters for search filters
@@ -1033,34 +1020,25 @@ export default function KursNaviPro() {  // 1. Initial State Logic
     const originalReplaceState = window.history.replaceState;
 
     window.history.pushState = function (...args) {
-      console.log('🚀 pushState called with:', args[2]); // Log the URL
       const ret = originalPushState.apply(this, args);
-      console.log('📢 Dispatching locationchange event');
       window.dispatchEvent(new Event('locationchange'));
       return ret;
     };
 
     window.history.replaceState = function (...args) {
-      console.log('🔄 replaceState called with:', args[2]); // Log the URL
       const ret = originalReplaceState.apply(this, args);
-      console.log('📢 Dispatching locationchange event');
       window.dispatchEvent(new Event('locationchange'));
       return ret;
     };
 
     const handlePopState = () => {
-      console.log('⬅️ popstate event (back/forward button)');
       window.dispatchEvent(new Event('locationchange'));
     };
 
     window.addEventListener('popstate', handlePopState);
-    window.addEventListener('locationchange', () => {
-      console.log('🎯 locationchange event received');
-      syncFromUrl();
-    });
+    window.addEventListener('locationchange', syncFromUrl);
 
     // Initial einmal synchronisieren
-    console.log('🏁 Initial sync on mount');
     syncFromUrl();
 
     return () => {
@@ -1072,10 +1050,6 @@ export default function KursNaviPro() {  // 1. Initial State Logic
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Debug: Log state changes
-  useEffect(() => {
-    console.log('🎨 STATE CHANGED - view:', view, '| selectedCourse:', selectedCourse ? `ID ${selectedCourse.id}` : 'null');
-  }, [view, selectedCourse]);
 
   useEffect(() => {
     let cancelled = false;

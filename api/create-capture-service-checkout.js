@@ -7,17 +7,10 @@ export default async function handler(req, res) {
     }
 
     try {
-        // --- STRIPE KEY ---
-        const part1 = "sk_test_51R0pfBHd3CotzjPe3A6BLp4K0JvGqpnc";
-        const part2 = "NIWoqcuOAnEgCCVo35hMJPqJJEc2QSqa3L0MyKBPuMCi";
-        const part3 = "FyynGjhnJvjr00iYuBK9fk";
-        const secretKey = part1 + part2 + part3;
-
-        // --- SUPABASE ---
-        const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+        const supabaseUrl = process.env.SUPABASE_URL;
         const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-        const stripe = new Stripe(secretKey);
+        const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
         const { userId, userEmail, courses, totalAmount, freeCount, paidCount } = req.body;
 
         // Validierung

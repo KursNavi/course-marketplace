@@ -114,27 +114,12 @@ export default async function handler(req, res) {
       };
 
       // Fetch all courses for this provider
-      // COPY EXACT CODE FROM DEBUG ENDPOINT
       const providerId = provider.id;
-      console.log(`[Provider API Profile] Using providerId: "${providerId}"`);
 
-      // Use EXACT same query as debug endpoint
-      const { data: allCoursesRaw, error: courseQueryError } = await supabase
+      const { data: allCoursesRaw } = await supabase
         .from('courses')
         .select('id, title, status, user_id')
         .eq('user_id', providerId);
-
-      console.log(`[Provider API Profile] Raw query result: ${allCoursesRaw?.length || 0} courses, error: ${courseQueryError?.message || 'none'}`);
-
-      // If no courses found with UUID, try to find any courses to debug
-      if (!allCoursesRaw || allCoursesRaw.length === 0) {
-        // Check what user_id values exist in the courses table
-        const { data: sampleCourses } = await supabase
-          .from('courses')
-          .select('id, user_id')
-          .limit(5);
-        console.log(`[Provider API Profile] SAMPLE user_ids from courses:`, JSON.stringify(sampleCourses?.map(c => c.user_id)));
-      }
 
       // Now fetch full course details for display
       let courses = [];
@@ -148,10 +133,9 @@ export default async function handler(req, res) {
           .order('created_at', { ascending: false });
 
         if (fullError) {
-          console.error(`[Provider API] Error loading full courses:`, fullError.message);
+          console.error('Error loading full courses:', fullError.message);
         }
         courses = fullCourses || [];
-        console.log(`[Provider API] Loaded ${courses.length} full courses`);
       }
 
       // Filter for published courses (status = 'published' OR status is null/undefined for legacy)
@@ -159,8 +143,6 @@ export default async function handler(req, res) {
         const isPublished = c.status === 'published' || c.status === null || c.status === undefined;
         return isPublished;
       });
-
-      console.log(`[Provider API] Published courses: ${publishedCourses.length}`);
 
       // Get user's account email for public display (if enabled)
       let contactEmail = null;
@@ -231,8 +213,6 @@ export default async function handler(req, res) {
         },
         ...(provider.website_url && { sameAs: [provider.website_url] })
       };
-
-      console.log(`[Provider API] Returning ${publishedCourses?.length || 0} published courses`);
 
       return res.status(200).json({
         provider: publicProfile,
@@ -407,7 +387,18 @@ export default async function handler(req, res) {
         return res.status(405).json({ error: 'Method not allowed' });
       }
 
-      const { slug, providerId } = req.body;
+      const { slug, providerId, authToken } = req.body;
+
+      // Verify user is authenticated and owns this provider ID
+      if (!providerId || !authToken) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      // Verify the auth token matches the provider
+      const { data: authUser, error: authError } = await supabase.auth.getUser(authToken);
+      if (authError || !authUser?.user || authUser.user.id !== providerId) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
 
       if (!slug) {
         return res.status(400).json({ valid: false, error: 'Slug is required' });
@@ -497,9 +488,19 @@ export default async function handler(req, res) {
     }
 
     // ============================================
-    // ACTION: debug - Debug course matching (temporary)
+    // ACTION: debug - Debug course matching (admin only)
     // ============================================
     if (action === 'debug') {
+      // Require admin secret for debug endpoint
+      const adminSecret = process.env.ADMIN_CONSOLE_SECRET;
+      if (!adminSecret) {
+        return res.status(500).json({ error: 'Debug endpoint not configured' });
+      }
+      const incoming = req.headers['x-admin-secret'];
+      if (!incoming || incoming !== adminSecret) {
+        return res.status(401).json({ error: 'Unauthorized - admin access required' });
+      }
+
       const { slug: debugSlug } = req.query;
 
       if (!debugSlug) {

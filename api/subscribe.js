@@ -5,11 +5,17 @@ export default async function handler(req, res) {
   }
 
   try {
-    // 2. E-Mail extrahieren
+    // 2. E-Mail extrahieren und validieren
     const { email } = req.body;
-    if (!email || !email.includes('@')) {
+
+    // Robuste Email-Validierung
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email || typeof email !== 'string' || !emailRegex.test(email.trim())) {
       return res.status(400).json({ error: 'Ungültige E-Mail Adresse' });
     }
+
+    // Sanitize email
+    const sanitizedEmail = email.trim().toLowerCase();
 
     // 3. API Key prüfen
     const BREVO_KEY = process.env.BREVO_API_KEY;
@@ -21,8 +27,6 @@ export default async function handler(req, res) {
     // ID 5 ist deine Liste. Stelle sicher, dass Liste mit ID 5 in Brevo existiert!
     const LIST_ID = 5; 
 
-    console.log(`Versuche Anmeldung für ${email} bei Liste ${LIST_ID}...`);
-
     const response = await fetch('https://api.brevo.com/v3/contacts', {
       method: 'POST',
       headers: {
@@ -31,7 +35,7 @@ export default async function handler(req, res) {
         'accept': 'application/json'
       },
       body: JSON.stringify({
-        email: email,
+        email: sanitizedEmail,
         listIds: [LIST_ID],
         updateEnabled: true
       })
