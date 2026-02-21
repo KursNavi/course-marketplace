@@ -5,7 +5,7 @@ import { useTaxonomy } from '../hooks/useTaxonomy';
 
 export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCatPath, catMenuOpen, setCatMenuOpen, t, catMenuRef }) => {
     // Load taxonomy from DB (with fallback to constants.js)
-    const { taxonomy, types, courseCounts } = useTaxonomy();
+    const { taxonomy, types, areas, courseCounts } = useTaxonomy();
 
     const [lvl1, setLvl1] = useState(rootCategory || null);
     const [lvl2, setLvl2] = useState(null);
@@ -26,7 +26,14 @@ export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCat
     const getLabel = (key, level, parentKey = null) => {
         if (!key) return "";
         if (level === 1) return activeTypes[key]?.de || key;
-        if (level === 2 && parentKey) return activeTaxonomy[parentKey]?.[key]?.label?.de || key;
+        if (level === 2) {
+            // First try to find the area in the areas array (from DB)
+            const area = areas.find(a => a.id === key || a.id === Number(key));
+            if (area?.label_de) return area.label_de;
+            // Fallback to taxonomy structure
+            if (parentKey) return activeTaxonomy[parentKey]?.[key]?.label?.de || key;
+            return key;
+        }
         return key; // Level 3+4 are plain strings
     };
 
