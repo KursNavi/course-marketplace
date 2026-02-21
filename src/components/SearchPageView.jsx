@@ -146,11 +146,16 @@ const SearchPageView = ({
 
     // --- DYNAMIC FILTER LOGIC (Hide empty categories) ---
     // Use ONLY all_categories from junction table (new consolidated schema)
+    // Only consider published courses for available categories
+    const publishedCourses = useMemo(() =>
+        courses.filter(c => c.status === 'published' || !c.status),
+        [courses]
+    );
 
     // Fixed order for Level 1 (Types): Professionell, Privat, Kinder
     const typeOrder = ['professionell', 'privat', 'kinder'];
     const availableTypes = [...new Set(
-        courses.flatMap(c => {
+        publishedCourses.flatMap(c => {
             if (Array.isArray(c.all_categories) && c.all_categories.length > 0) {
                 return c.all_categories.map(cat => cat.category_type).filter(Boolean);
             }
@@ -170,7 +175,7 @@ const SearchPageView = ({
 
     // Level 2-4: Alphabetically sorted by label
     const availableAreas = [...new Set(
-        courses.flatMap(c => {
+        publishedCourses.flatMap(c => {
             const areas = [];
             if (Array.isArray(c.all_categories) && c.all_categories.length > 0) {
                 c.all_categories.forEach(cat => {
@@ -189,7 +194,7 @@ const SearchPageView = ({
     });
 
     const availableSpecialties = [...new Set(
-        courses.flatMap(c => {
+        publishedCourses.flatMap(c => {
             const specialties = [];
             if (Array.isArray(c.all_categories) && c.all_categories.length > 0) {
                 c.all_categories.forEach(cat => {
@@ -206,7 +211,7 @@ const SearchPageView = ({
     )].sort((a, b) => a.localeCompare(b, 'de')); // Already labels, sort alphabetically
 
     const availableFocuses = [...new Set(
-        courses.flatMap(c => {
+        publishedCourses.flatMap(c => {
             const focuses = [];
             if (Array.isArray(c.all_categories) && c.all_categories.length > 0) {
                 c.all_categories.forEach(cat => {
