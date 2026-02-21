@@ -418,8 +418,10 @@ export default function KursNaviPro() {  // 1. Initial State Logic
               category_type_label: cat.level1_label_de,
               category_area: cat.level2_slug,
               category_area_label: cat.level2_label_de,
-              category_specialty: cat.level3_label_de,
-              category_focus: cat.level4_label_de || null,
+              category_specialty: cat.level3_slug,
+              category_specialty_label: cat.level3_label_de,
+              category_focus: cat.level4_slug || null,
+              category_focus_label: cat.level4_label_de || null,
               type_id: cat.level1_id,
               area_id: cat.level2_id,
               specialty_id: cat.level3_id,
@@ -450,6 +452,18 @@ export default function KursNaviPro() {  // 1. Initial State Logic
       const migratedData = (courseData || []).map(c => {
         const normalized = normalizeCourse(c);
         const prof = profileMap[c.user_id];
+        const courseCategories = categoriesMap[c.id] || [];
+
+        // Build category_paths for TeacherForm compatibility
+        // NOTE: type uses SLUG, area uses NUMERIC ID (because getAreasLocal returns _areaIds),
+        // specialty and focus use LABELS (because dropdowns display labels)
+        const categoryPaths = courseCategories.map(cat => ({
+          type: cat.category_type,           // slug (e.g., "professionell")
+          area: cat.area_id,                 // numeric ID (e.g., 22) - getAreasLocal returns IDs
+          specialty: cat.category_specialty_label || cat.category_specialty || '', // label (e.g., "Hauswirtschaft")
+          focus: cat.category_focus_label || cat.category_focus || '',             // label (e.g., "Bäuerliche Hauswirtschaft")
+          is_primary: cat.is_primary
+        }));
 
         return {
           ...normalized,
@@ -457,7 +471,8 @@ export default function KursNaviPro() {  // 1. Initial State Logic
           instructor_certificates: prof?.certificates,
           additional_locations: prof?.additional_locations,
           instructor_verified: prof?.verification_status === 'verified',
-          all_categories: categoriesMap[c.id] || [], // Add all categories including Zweitkategorien
+          all_categories: courseCategories, // Add all categories including Zweitkategorien
+          category_paths: categoryPaths, // Add category_paths for TeacherForm
         };
       });
 
