@@ -22,17 +22,31 @@ export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCat
         ? Object.fromEntries(types.map(t => [t.id, { de: t.label_de, en: t.label_en, fr: t.label_fr, it: t.label_it }]))
         : CATEGORY_TYPES;
 
+    // Helper to format slug to readable label (e.g. "bildung_soziales" -> "Bildung & Soziales")
+    const formatSlugToLabel = (slug) => {
+        if (!slug || typeof slug !== 'string') return slug;
+        return slug
+            .split('_')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' ')
+            .replace(/ Und /g, ' & ');
+    };
+
     // Helper to get labels from the new structure (Defaulting to DE for now)
     const getLabel = (key, level, parentKey = null) => {
         if (!key) return "";
-        if (level === 1) return activeTypes[key]?.de || key;
+        if (level === 1) return activeTypes[key]?.de || formatSlugToLabel(key);
         if (level === 2) {
             // First try to find the area in the areas array (from DB)
-            const area = areas.find(a => a.id === key || a.id === Number(key));
+            const area = areas.find(a => a.id === key || a.id === Number(key) || a.slug === key);
             if (area?.label_de) return area.label_de;
             // Fallback to taxonomy structure
-            if (parentKey) return activeTaxonomy[parentKey]?.[key]?.label?.de || key;
-            return key;
+            if (parentKey) {
+                const taxonomyLabel = activeTaxonomy[parentKey]?.[key]?.label?.de;
+                if (taxonomyLabel) return taxonomyLabel;
+            }
+            // Last resort: format slug to readable label
+            return formatSlugToLabel(key);
         }
         return key; // Level 3+4 are plain strings
     };
