@@ -5,12 +5,7 @@ import { useTaxonomy } from '../hooks/useTaxonomy';
 
 export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCatPath, catMenuOpen, setCatMenuOpen, t, catMenuRef }) => {
     // Load taxonomy from DB
-    const { types, areas, specialties, focuses, courseCounts, schemaVersion } = useTaxonomy();
-
-    // Debug: Log the loaded taxonomy data
-    console.log('[Filters] schemaVersion:', schemaVersion);
-    console.log('[Filters] types:', types.length, types.map(t => t.label_de));
-    console.log('[Filters] areas sample:', areas.slice(0, 5).map(a => ({ id: a.id, label_de: a.label_de })));
+    const { types, areas, specialties, focuses, courseCounts } = useTaxonomy();
 
     const [lvl1, setLvl1] = useState(rootCategory || null);
     const [lvl2, setLvl2] = useState(null);

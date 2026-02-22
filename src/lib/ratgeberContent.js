@@ -777,26 +777,36 @@ export const RATGEBER_CONTENT = {
   'beruflich/karriere/spezialisierung-vs-generalisierung': `
     <p class="lead">Die Antwort ist nicht Schwarz-Weiss: Das T-Shaped-Profil – tiefe Spezialisierung in EINEM Bereich plus breites Wissen in 3-5 Komplementärfeldern – ist 2026 der sicherste Weg zu stabilen Karriereerfolg und Marktfähigkeit.</p>
 
-    <h2>Das Arbeitsmarkt-Paradoxon 2026</h2>
+    <img src="https://images.unsplash.com/photo-1552664730-d307ca884978?w=800&q=80" alt="Spezialisierung vs Generalisierung im Beruf" class="article-image" />
+
+    <h2>📊 Das Arbeitsmarkt-Paradoxon 2026</h2>
     <p>Auf der einen Seite fordern Unternehmen Generalisten mit branchenübergreifendem Wissen. Auf der anderen Seite werden Spezialisten mit Tiefenwissen bevorzugt eingestellt und befördert. Das ist kein Widerspruch – sondern eine klare Botschaft: Du brauchst beides.</p>
 
-    <h2>Spezialisierung: Vorteile und Risiken</h2>
-    <h3>Vorteile:</h3>
-    <ul>
-      <li>Höhere Fachkompetenz und Tiefenwissen</li>
-      <li>Bessere Verhandlungsposition bei Gehalt (spezialisiertes Know-how ist rarer)</li>
-      <li>Klare Expertise-Positionierung auf dem Markt</li>
-    </ul>
-    <h3>Risiken:</h3>
-    <ul>
-      <li>Schweinezyklus-Risiko: Regelmässige Überangebote auf gesättigtem Markt</li>
-      <li>Geringere Flexibilität bei Branchenumschwüngen</li>
-      <li>Berufliche Mobilität ist eingeschränkt (Sektor-Bindung)</li>
-    </ul>
+    <h2>🔬 Spezialisierung: Vorteile und Risiken</h2>
 
-    <h2>Generalisierung: Vorteile und Risiken</h2>
-    <h3>Vorteile:</h3>
-    <ul>
+    <div class="tip-box">
+      <h3>✅ Vorteile der Spezialisierung</h3>
+      <ul>
+        <li>Höhere Fachkompetenz und Tiefenwissen</li>
+        <li>Bessere Verhandlungsposition bei Gehalt (spezialisiertes Know-how ist rarer)</li>
+        <li>Klare Expertise-Positionierung auf dem Markt</li>
+      </ul>
+    </div>
+
+    <div class="warning-box">
+      <h3>⚠️ Risiken der Spezialisierung</h3>
+      <ul>
+        <li>Schweinezyklus-Risiko: Regelmässige Überangebote auf gesättigtem Markt</li>
+        <li>Geringere Flexibilität bei Branchenumschwüngen</li>
+        <li>Berufliche Mobilität ist eingeschränkt (Sektor-Bindung)</li>
+      </ul>
+    </div>
+
+    <h2>🌐 Generalisierung: Vorteile und Risiken</h2>
+
+    <div class="tip-box">
+      <h3>✅ Vorteile der Generalisierung</h3>
+      <ul>
       <li>Flexibilität bei Branchenwechsel</li>
       <li>Bessere Chancen bei unerwarteten Marktveränderungen</li>
       <li>2025 zeigten mehr als 50% der gekündigten Schweizer einen erfolgreichen Branchenwechsel</li>
@@ -1210,16 +1220,26 @@ export const RATGEBER_CONTENT = {
   'beruflich/future-skills/micro-credentials': `
     <p class="lead">Ein 4-Jahres-Studium dauert zu lange. Ein eintägiges Seminar ist zu oberflächlich. Micro-Credentials sind der Mittelweg: überprüfbare Qualifikationen, die man in Wochen erwerben kann und die auf Arbeitsmarkt-Demande abgestimmt sind. In der Schweiz sind sie 2026 im Momentum.</p>
 
-    <h2>Was ist ein Micro-Credential eigentlich?</h2>
-    <p>Ein Micro-Credential ist ein digitales Zertifikat, das bestätigt, dass Du eine konkrete, klar definierte Kompetenz beherrschst. Beispiele: "Prompt Engineering für Marketing", "ESG-Reporting", "Digitale Sicherheit im Homeoffice". Anders als klassische Diplome sind Micro-Credentials:</p>
-    <ul>
-      <li><strong>Flexibel:</strong> Vereinbar mit Vollzeitarbeit</li>
-      <li><strong>Schnell:</strong> 3-12 Wochen, nicht Jahre</li>
-      <li><strong>Spezifisch:</strong> Fokus auf konkrete Marktanforderungen</li>
-      <li><strong>Stackbar:</strong> Können zu grösseren Qualifikationen kombiniert werden</li>
-    </ul>
+    <img src="https://images.unsplash.com/photo-1531297484001-80022131f5a1?w=800&h=400&fit=crop" alt="Digitale Zertifikate und Micro-Credentials" class="article-image" />
 
-    <h2>Wo bekommst Du Micro-Credentials in der Schweiz?</h2>
+    <div class="info-box">
+      <strong>Definition:</strong> Micro-Credentials sind kompakte, digital verifizierbare Nachweise für spezifische Kompetenzen – anerkannt von Arbeitgebern und oft stackbar zu grösseren Qualifikationen.
+    </div>
+
+    <h2>🎓 Was ist ein Micro-Credential eigentlich?</h2>
+    <p>Ein Micro-Credential ist ein digitales Zertifikat, das bestätigt, dass Du eine konkrete, klar definierte Kompetenz beherrschst. Beispiele: "Prompt Engineering für Marketing", "ESG-Reporting", "Digitale Sicherheit im Homeoffice".</p>
+
+    <div class="checklist">
+      <h4>Vorteile von Micro-Credentials:</h4>
+      <ul>
+        <li>✅ <strong>Flexibel:</strong> Vereinbar mit Vollzeitarbeit</li>
+        <li>✅ <strong>Schnell:</strong> 3-12 Wochen, nicht Jahre</li>
+        <li>✅ <strong>Spezifisch:</strong> Fokus auf konkrete Marktanforderungen</li>
+        <li>✅ <strong>Stackbar:</strong> Können zu grösseren Qualifikationen kombiniert werden</li>
+      </ul>
+    </div>
+
+    <h2>🇨🇭 Wo bekommst Du Micro-Credentials in der Schweiz?</h2>
     <p>Das Angebot wächst. ZHAW, diverse Fachhochschulen und spezialisierte Weiterbildungsanbieter experimentieren bereits. Bis 2026/27 wird das Angebot deutlich ausgebaut.</p>
     <table>
       <thead>
@@ -1232,25 +1252,46 @@ export const RATGEBER_CONTENT = {
       </tbody>
     </table>
 
-    <h2>Wie hilft Dir das im Jobmarkt?</h2>
-    <p>Micro-Credentials beweisen Arbeitgebern konkret: Du kannst diesen einen Skill. Das ist transparenter und glaubwürdiger als "Interesse an KI" im CV. Kombinierst Du mehrere Micro-Credentials, baust Du Dir ein Portfolio auf, das zeigt, dass Du seriös an Deiner Weiterbildung arbeitest.</p>
+    <h2>💼 Wie hilft Dir das im Jobmarkt?</h2>
+    <p>Micro-Credentials beweisen Arbeitgebern konkret: Du kannst diesen einen Skill. Das ist transparenter und glaubwürdiger als "Interesse an KI" im CV.</p>
 
-    <p><strong>Finde jetzt Kurse mit anerkannten Micro-Credentials auf KursNavi.</strong></p>
+    <div class="tip-box">
+      <strong>Strategie-Tipp:</strong> Kombinierst Du mehrere Micro-Credentials, baust Du Dir ein Portfolio auf, das zeigt, dass Du seriös an Deiner Weiterbildung arbeitest. Wähle Credentials, die sich gegenseitig ergänzen.
+    </div>
+
+    <div class="warning-box">
+      <strong>Achtung:</strong> Nicht alle Micro-Credentials sind gleich anerkannt. Achte auf akkreditierte Anbieter und prüfe, ob das Zertifikat in Deiner Branche Relevanz hat.
+    </div>
+
+    <div class="cta-box">
+      <h3>📜 Sichere Dir anerkannte Qualifikationen</h3>
+      <p>Finde jetzt Kurse mit anerkannten Micro-Credentials auf KursNavi. Von Technologie bis Management – entdecke flexible Weiterbildungen, die zu Deinem Leben passen!</p>
+    </div>
   `,
 
   'beruflich/future-skills/new-work-hybride-fuehrung': `
     <p class="lead">Führung 2026 funktioniert nicht mehr wie vor zehn Jahren. Remote und Hybrid Work haben die Spielregeln verändert. Moderne Leader müssen Coaches sein, nicht Controller – und das ist eine völlig andere Fähigkeitsmenge.</p>
 
-    <h2>Welche vier Rollen hat ein moderner Leader?</h2>
-    <p>Das C.A.R.E-Modell beschreibt, wie sich Führung heute tatsächlich anfühlt:</p>
-    <ul>
-      <li><strong>Champion:</strong> Für Dein Team einstehen – Ressourcen akquirieren, Hindernisse aus dem Weg räumen</li>
-      <li><strong>Catalyst:</strong> Zusammenarbeit und Innovationskultur initiieren</li>
-      <li><strong>Coach:</strong> Individuelle Entwicklung und Mentoring</li>
-      <li><strong>Conductor:</strong> Kulturelle Kohäsion und Balance zwischen Autonomie und Zusammenhalt</li>
-    </ul>
+    <img src="https://images.unsplash.com/photo-1551434678-e076c223a692?w=800&h=400&fit=crop" alt="Hybride Führung und New Work" class="article-image" />
 
-    <h2>Welche Kompetenzen brauchst Du als Führungskraft?</h2>
+    <div class="info-box">
+      <strong>Paradigmenwechsel:</strong> Erfolgreiche Führung basiert heute auf Vertrauen, Empowerment und klarer Kommunikation – nicht auf Kontrolle und Präsenzpflicht.
+    </div>
+
+    <h2>🎯 Welche vier Rollen hat ein moderner Leader?</h2>
+    <p>Das C.A.R.E-Modell beschreibt, wie sich Führung heute tatsächlich anfühlt:</p>
+
+    <div class="checklist">
+      <h4>Das C.A.R.E-Modell für moderne Führung:</h4>
+      <ul>
+        <li>✅ <strong>Champion:</strong> Für Dein Team einstehen – Ressourcen akquirieren, Hindernisse aus dem Weg räumen</li>
+        <li>✅ <strong>Catalyst:</strong> Zusammenarbeit und Innovationskultur initiieren</li>
+        <li>✅ <strong>Coach:</strong> Individuelle Entwicklung und Mentoring</li>
+        <li>✅ <strong>Conductor:</strong> Kulturelle Kohäsion und Balance zwischen Autonomie und Zusammenhalt</li>
+      </ul>
+    </div>
+
+    <h2>💡 Welche Kompetenzen brauchst Du als Führungskraft?</h2>
     <p>Hier eine Orientierungsliste:</p>
     <table>
       <thead>
@@ -1264,24 +1305,45 @@ export const RATGEBER_CONTENT = {
       </tbody>
     </table>
 
-    <p><strong>Auf KursNavi lassen sich Führungskurse und New-Work-Trainings in der Nähe entdecken.</strong></p>
+    <div class="tip-box">
+      <strong>Praxis-Tipp:</strong> Starte mit regelmässigen 1:1-Gesprächen mit Deinen Teammitgliedern. Diese persönliche Zeit schafft Vertrauen und hilft Dir, individuelle Bedürfnisse besser zu verstehen.
+    </div>
+
+    <div class="warning-box">
+      <strong>Häufiger Fehler:</strong> Viele Führungskräfte unterschätzen den Aufwand für Kommunikation in hybriden Teams. Plane bewusst mehr Zeit für Abstimmung und informellen Austausch ein.
+    </div>
+
+    <div class="cta-box">
+      <h3>🚀 Werde zur modernen Führungskraft</h3>
+      <p>Auf KursNavi lassen sich Führungskurse und New-Work-Trainings in der Nähe entdecken. Entwickle Deine Leadership-Skills für die hybride Arbeitswelt!</p>
+    </div>
   `,
 
   'beruflich/future-skills/adaptive-skills': `
     <p class="lead">Auf dem Schweizer Arbeitsmarkt 2026 gilt eine neue Regel: Wer sich am schnellsten und geschicktesten adaptiert, gewinnt – nicht wer am fleissigsten ist. 40% aller Skills müssen bis 2030 erneuert werden. Adaptive Skills sind die neuen Job Security.</p>
 
-    <h2>Welche Kernkompetenzen gehören zu Adaptive Skills?</h2>
-    <p>Adaptive Skills sind nicht eine einzelne Fähigkeit – sie sind ein Bündel:</p>
-    <ul>
-      <li><strong>Resilienz:</strong> Umgang mit Unsicherheit, Lernen aus Rückschlägen</li>
-      <li><strong>Flexibilität:</strong> Bereitschaft zur beruflichen Neuorientierung</li>
-      <li><strong>Agilität:</strong> Schnelle Reaktion auf Veränderungen, experimentelles Denken</li>
-      <li><strong>Lebenslanges Lernen:</strong> Intrinsische Motivation, kontinuierliche Weiterentwicklung</li>
-      <li><strong>Kritisches Denken:</strong> Evaluierung von Information und Trends</li>
-      <li><strong>Kommunikation & Kollaboration:</strong> Effektive Zusammenarbeit über Grenzen</li>
-    </ul>
+    <img src="https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&h=400&fit=crop" alt="Adaptive Skills und Zukunftskompetenz" class="article-image" />
 
-    <h2>Warum gerade jetzt?</h2>
+    <div class="info-box">
+      <strong>Kernbotschaft:</strong> 40% aller Skills müssen bis 2030 erneuert werden. Adaptivität ist nicht mehr nur wünschenswert – sie ist überlebensnotwendig für Deine Karriere.
+    </div>
+
+    <h2>🔮 Welche Kernkompetenzen gehören zu Adaptive Skills?</h2>
+    <p>Adaptive Skills sind nicht eine einzelne Fähigkeit – sie sind ein Bündel:</p>
+
+    <div class="checklist">
+      <h4>Die 6 Säulen adaptiver Kompetenz:</h4>
+      <ul>
+        <li>✅ <strong>Resilienz:</strong> Umgang mit Unsicherheit, Lernen aus Rückschlägen</li>
+        <li>✅ <strong>Flexibilität:</strong> Bereitschaft zur beruflichen Neuorientierung</li>
+        <li>✅ <strong>Agilität:</strong> Schnelle Reaktion auf Veränderungen, experimentelles Denken</li>
+        <li>✅ <strong>Lebenslanges Lernen:</strong> Intrinsische Motivation, kontinuierliche Weiterentwicklung</li>
+        <li>✅ <strong>Kritisches Denken:</strong> Evaluierung von Information und Trends</li>
+        <li>✅ <strong>Kommunikation & Kollaboration:</strong> Effektive Zusammenarbeit über Grenzen</li>
+      </ul>
+    </div>
+
+    <h2>⚡ Warum gerade jetzt?</h2>
     <p>Mehrere Trends treffen 2026 zusammen:</p>
     <table>
       <thead>
@@ -1295,10 +1357,21 @@ export const RATGEBER_CONTENT = {
       </tbody>
     </table>
 
-    <h2>Wie entwickelst Du Adaptive Skills?</h2>
-    <p>Es gibt keine klassische "Prüfung" für Adaptive Skills. Du entwickelst sie durch Reflexion, kleine Projekte, Feedback-Gespräche, und den Willen, regelmässig aus Deiner Komfortzone herauszugehen. Viele spezialisierte Weiterbildungen unterstützen diese Entwicklung – von Coaching bis Executive Education.</p>
+    <h2>🛠️ Wie entwickelst Du Adaptive Skills?</h2>
+    <p>Es gibt keine klassische "Prüfung" für Adaptive Skills. Du entwickelst sie durch Reflexion, kleine Projekte, Feedback-Gespräche, und den Willen, regelmässig aus Deiner Komfortzone herauszugehen.</p>
 
-    <p><strong>Wer seine adaptiven Kompetenzen trainieren möchte, findet auf KursNavi zukunftsorientierte Weiterbildungen.</strong></p>
+    <div class="tip-box">
+      <strong>Entwicklungs-Tipp:</strong> Starte mit kleinen Experimenten: Übernimm ein Projekt ausserhalb Deines gewohnten Bereichs, lerne eine neue Software oder bitte um ehrliches Feedback von Kolleginnen und Kollegen.
+    </div>
+
+    <div class="warning-box">
+      <strong>Denkfehler vermeiden:</strong> Adaptive Skills entwickeln sich nicht von allein. Ohne bewusste Reflexion und Übung verharren viele in ihrer Komfortzone – selbst wenn sie meinen, flexibel zu sein.
+    </div>
+
+    <div class="cta-box">
+      <h3>🎯 Trainiere Deine Zukunftskompetenzen</h3>
+      <p>Wer seine adaptiven Kompetenzen trainieren möchte, findet auf KursNavi zukunftsorientierte Weiterbildungen – von Coaching bis Executive Education. Starte jetzt in Deine adaptive Zukunft!</p>
+    </div>
   `,
 
   // ============================================
