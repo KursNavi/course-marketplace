@@ -494,7 +494,7 @@ export const Home = ({
                       <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center group-hover/card:bg-blue-200 transition-colors">
                         <ClusterIcon className="w-4 h-4 text-blue-600" />
                       </div>
-                      <span className="text-xs font-medium text-gray-700 group-hover/card:text-blue-700 leading-tight pt-0.5">
+                      <span className="text-xs font-medium text-gray-700 group-hover/card:text-blue-700 leading-tight flex items-center min-h-[2rem]">
                         {cluster.label[lang] || cluster.label.de}
                       </span>
                     </a>
@@ -539,7 +539,7 @@ export const Home = ({
                       <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center group-hover/card:bg-orange-200 transition-colors">
                         <ClusterIcon className="w-4 h-4 text-orange-600" />
                       </div>
-                      <span className="text-xs font-medium text-gray-700 group-hover/card:text-orange-700 leading-tight pt-0.5">
+                      <span className="text-xs font-medium text-gray-700 group-hover/card:text-orange-700 leading-tight flex items-center min-h-[2rem]">
                         {cluster.label[lang] || cluster.label.de}
                       </span>
                     </a>
@@ -584,7 +584,7 @@ export const Home = ({
                       <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center group-hover/card:bg-emerald-200 transition-colors">
                         <ClusterIcon className="w-4 h-4 text-emerald-600" />
                       </div>
-                      <span className="text-xs font-medium text-gray-700 group-hover/card:text-emerald-700 leading-tight pt-0.5">
+                      <span className="text-xs font-medium text-gray-700 group-hover/card:text-emerald-700 leading-tight flex items-center min-h-[2rem]">
                         {cluster.label[lang] || cluster.label.de}
                       </span>
                     </a>
