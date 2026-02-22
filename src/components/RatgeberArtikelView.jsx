@@ -2,6 +2,7 @@ import React from 'react';
 import { ArrowLeft, ChevronRight, BookOpen, Clock, Share2 } from 'lucide-react';
 import { findArticle, RATGEBER_STRUCTURE } from '../lib/ratgeberStructure';
 import { SEGMENT_CONFIG } from '../lib/constants';
+import { RATGEBER_CONTENT } from '../lib/ratgeberContent';
 
 /**
  * RatgeberArtikelView
@@ -129,8 +130,12 @@ const RatgeberArtikelView = ({ lang = 'de' }) => {
     }
   };
 
+  // Get article content from ratgeberContent.js
+  const contentKey = `${categorySlug}/${clusterSlug}/${articleSlug}`;
+  const articleContent = RATGEBER_CONTENT[contentKey] || null;
+
   // Check if article has content
-  const hasContent = articleData.content !== null;
+  const hasContent = articleContent !== null;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -171,10 +176,10 @@ const RatgeberArtikelView = ({ lang = 'de' }) => {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 md:p-12">
           {hasContent ? (
-            // Render actual content (Markdown or HTML)
+            // Render actual content (HTML from ratgeberContent.js)
             <div
-              className="prose prose-lg max-w-none prose-headings:font-heading prose-headings:text-gray-900 prose-p:text-gray-600 prose-a:text-primary"
-              dangerouslySetInnerHTML={{ __html: articleData.content }}
+              className="prose prose-lg max-w-none prose-headings:font-heading prose-headings:text-gray-900 prose-p:text-gray-600 prose-a:text-primary prose-table:border-collapse prose-th:bg-gray-100 prose-th:p-3 prose-th:text-left prose-td:p-3 prose-td:border prose-td:border-gray-200"
+              dangerouslySetInnerHTML={{ __html: articleContent }}
             />
           ) : (
             // Placeholder for articles without content

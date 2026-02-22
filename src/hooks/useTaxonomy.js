@@ -29,23 +29,14 @@ export function useTaxonomy() {
     const [courseCounts, setCourseCounts] = useState({ level1: {}, level2: {}, level3: {}, level4: {} });
 
     const loadTaxonomy = useCallback(async (forceRefresh = false) => {
-        // Check cache first
-        if (!forceRefresh && taxonomyCache && (Date.now() - cacheTimestamp < CACHE_DURATION)) {
-            setTaxonomy(taxonomyCache.taxonomy);
-            setTypes(taxonomyCache.types);
-            setAreas(taxonomyCache.areas);
-            setSpecialties(taxonomyCache.specialties);
-            setFocuses(taxonomyCache.focuses || []);
-            setSchemaVersion(taxonomyCache.schemaVersion || 'legacy');
-            setLoading(false);
-            return;
-        }
+        // TEMPORARILY DISABLE CACHE to debug taxonomy issues
+        // TODO: Re-enable cache after fixing the issue
+        console.log('[useTaxonomy] Cache disabled for debugging - always loading fresh from DB');
 
         try {
             setLoading(true);
 
             // ONLY use consolidated schema (taxonomy_level1/2/3/4)
-            // Skip legacy tables completely to avoid confusion
             console.log('[useTaxonomy] Loading consolidated taxonomy from taxonomy_level1/2/3/4...');
             await loadConsolidatedTaxonomy();
         } catch (err) {
@@ -214,6 +205,10 @@ export function useTaxonomy() {
             schemaVersion: 'consolidated'
         };
         cacheTimestamp = Date.now();
+
+        // DEBUG: Log what we're setting
+        console.log('[useTaxonomy] Setting areas:', mappedAreas.map(a => ({ id: a.id, slug: a.slug, label_de: a.label_de })));
+        console.log('[useTaxonomy] builtTaxonomy[1]._areaIds:', builtTaxonomy[1]?._areaIds);
 
         setTaxonomy(builtTaxonomy);
         setTypes(mappedTypes);
