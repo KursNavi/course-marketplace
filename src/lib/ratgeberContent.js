@@ -1693,6 +1693,390 @@ export const RATGEBER_CONTENT = {
     <p>Lies die AGB und Stornobedingungen BEVOR du buchst. Bei teuren Kursen lohnt sich eine Seminar-Versicherung. Achte auf flexible Anbieter mit fairen Bedingungen.</p>
 
     <p><strong>Auf KursNavi findest du detaillierte Stornobedingungen für jeden Kurs – keine Überraschungen mehr.</strong></p>
+  `,
+
+  // ============================================
+  // PRIVAT & HOBBY > KREATIVITÄT & AUSDRUCK (Soziale Hobbys)
+  // ============================================
+  'privat-hobby/kreativitaet/neu-in-der-stadt': `
+    <p class="lead">In einer neuen Stadt angekommen? Hobbykurse sind der schnellste Weg zu echten Kontakten und Freundschaften mit Gleichgesinnten.</p>
+
+    <h2>Wie finde ich den richtigen Kurs zum Anschluss?</h2>
+    <ul>
+      <li>Regelmässige Kurse wählen – nicht nur Einmalangebote</li>
+      <li>Kurse mit Konversationsmöglichkeiten (Sport, Kochen, Sprachen)</li>
+      <li>Kleinere Gruppen sind besser (8-15 Personen)</li>
+      <li>Früh ankommen, später gehen – Zeit für Gespräche</li>
+    </ul>
+
+    <h2>Konkrete Plattformen in der Schweiz</h2>
+    <table>
+      <thead>
+        <tr><th>Plattform</th><th>Was es bietet</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Spontacts</td><td>Neue Leute kennenlernen, viele Aktivitäten</td></tr>
+        <tr><td>kurs-finden.ch</td><td>Lokale Hobby- und Freizeitkurse</td></tr>
+        <tr><td>EventFrog.ch</td><td>Kurse und Veranstaltungen in der Region</td></tr>
+      </tbody>
+    </table>
+
+    <p><strong>Nutze KursNavi, um schnell Dein neues Hobby und neue Kontakte in Deiner Stadt zu finden.</strong></p>
+  `,
+
+  'privat-hobby/kreativitaet/introvertiert-hobbys': `
+    <p class="lead">Die besten Hobbys für Introvertierte sind solche, die du allein geniesst – ohne Druck, nebenher zu reden oder deine Energie zu teilen.</p>
+
+    <h2>Vorteile von Solo-Hobbys</h2>
+    <ul>
+      <li>Volle Kontrolle über Tempo und Umgebung</li>
+      <li>Tiefe und intensiver Fokus möglich</li>
+      <li>Keine sozialen Erwartungen</li>
+      <li>Flow-Erlebnisse ohne Ablenkung</li>
+      <li>Energie bleibt erhalten</li>
+    </ul>
+
+    <h2>Die besten Solo-Hobbys für Introvertierte</h2>
+    <table>
+      <thead>
+        <tr><th>Hobby</th><th>Warum es passt</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Lesen</td><td>Tiefe, Eintauchen, Flucht</td></tr>
+        <tr><td>Schreiben/Journaling</td><td>Selbsterkundung, Kreativität</td></tr>
+        <tr><td>Digitale Kunst</td><td>Kreativ, allein, konzentriert</td></tr>
+        <tr><td>Fotographie</td><td>Erkundung ohne Sozialdruck</td></tr>
+        <tr><td>Handwerk (Nähen, Stricken)</td><td>Meditativ, beruhigend</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Solo + optionales Soziales</h2>
+    <p>Viele Introvertierte finden ein Gleichgewicht: 80 Prozent allein, 20 Prozent in einer Gruppe. Dies bietet das Beste aus beiden Welten.</p>
+
+    <p><strong>Auf KursNavi kannst Du gezielt nach kleineren Gruppen oder Solo-Aktivitäten filtern.</strong></p>
+  `,
+
+  'privat-hobby/kreativitaet/kurse-alleine-besuchen': `
+    <p class="lead">Introversion ist keine Angststörung – und Introvertierte besuchen problemlos Kurse allein. Hier sind bewährte Tipps für weniger Nervosität.</p>
+
+    <h2>Was ist der Unterschied?</h2>
+    <p>Introvertiert sein bedeutet, dass du Energie aus deinem Innenleben ziehst – nicht, dass du Angst vor Menschen hast. Introvertierte können problemlos allein Kurse besuchen.</p>
+    <p>Soziale Angst ist eine echte Angststörung, die behandelt werden sollte. Wenn dich Angst stark beeinträchtigt, suche professionelle Hilfe.</p>
+
+    <h2>Praktische Tipps für dich</h2>
+    <ul>
+      <li>Wähle aktivitätsorientierte Kurse (Yoga, Malen, Handwerk)</li>
+      <li>Kleinere Gruppen sind weniger überwältigend</li>
+      <li>Besuche die Location vorher, wenn möglich</li>
+      <li>Stelle dich dem Kursleiter vor – das nimmt Druck ab</li>
+      <li>Konzentriere dich auf die Aktivität, nicht auf Perfektionismus</li>
+    </ul>
+
+    <h2>Ideale Formate für Introvertierte</h2>
+    <ul>
+      <li>Yoga-Klassen (still, konzentriert)</li>
+      <li>Mal- oder Zeichenkurse (Fokus auf Kunst)</li>
+      <li>Schreib-Workshops (introspektiv)</li>
+      <li>Tanz-Anfängerkurse (Bewegung schafft Leichtigkeit)</li>
+    </ul>
+
+    <p><strong>KursNavi zeigt Dir kleinere und grossgruppen-freundliche Kurse.</strong></p>
+  `,
+
+  'privat-hobby/kreativitaet/hobbykurse-date-idee': `
+    <p class="lead">Ein klassisches Dinner-Date kann langweilig sein. Ein gemeinsamer Kurs? Das schafft gemeinsame Erinnerungen, Teamwork und echte Gespräche.</p>
+
+    <h2>Welche Kurse funktionieren für ein Date?</h2>
+    <table>
+      <thead>
+        <tr><th>Kurstyp</th><th>Warum es funktioniert</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Kochkurs</td><td>Teamwork, kulinarische Belohnung, lustig</td></tr>
+        <tr><td>Tanzunterricht</td><td>Körperliche Nähe, Musik, Spass</td></tr>
+        <tr><td>Kunstkurs</td><td>Kreativ, entspannt, keine Leistung nötig</td></tr>
+        <tr><td>Handwerk-Workshop</td><td>Teamwork, konkretes Ergebnis</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Planung eines Hobby-Dates</h2>
+    <p><strong>Vor dem Kurs:</strong> Wähle einen Kurs, der zu beiden Interessen passt.</p>
+    <p><strong>Nach dem Kurs:</strong> Geht zusammen essen und diskutiert das Gelernte. Gemeinsames Lachen über Fehler schafft Intimität.</p>
+
+    <p><strong>Schau auf KursNavi nach spannenden Paar-Kursen in Eurer Nähe.</strong></p>
+  `,
+
+  'privat-hobby/kreativitaet/hobbys-senioren': `
+    <p class="lead">90 Prozent der Schweizer Senioren haben regelmässige Hobbys – und das aus gutem Grund. Hobbys sind der beste Schutz gegen Einsamkeit und Burnout im Ruhestand.</p>
+
+    <h2>Warum sind Hobbys im Alter so wichtig?</h2>
+    <ul>
+      <li>Schützen vor Vereinsamung und Depression</li>
+      <li>Halten körperlich und geistig fit</li>
+      <li>Bieten regelmässige soziale Kontakte</li>
+      <li>Geben Struktur und Routine</li>
+      <li>Ermöglichen neue Freundschaften</li>
+    </ul>
+
+    <h2>Beliebte Hobbys für Senioren</h2>
+    <table>
+      <thead>
+        <tr><th>Hobby</th><th>Warum es passt</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Wandern & Spazieren</td><td>Niedrige Intensität, effektive Bewegung</td></tr>
+        <tr><td>Kunstkurse</td><td>Kreativ, entspannt, sozial</td></tr>
+        <tr><td>Tanzkurse</td><td>Körperlich aktivierend, sozial, motivierend</td></tr>
+        <tr><td>Vereine & Clubs</td><td>Kontinuierliche Kontakte, Gemeinschaft</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Häufige Hürden überwinden</h2>
+    <ul>
+      <li><strong>"Bin zu alt dafür"</strong> → Anfängerkurse speziell für Senioren</li>
+      <li><strong>"Kenne niemanden"</strong> → Vereine sind ideal zum Kennenlernen</li>
+      <li><strong>"Zu teuer"</strong> → Seniorenrabatte und Gemeindekurse nutzen</li>
+      <li><strong>"Keine Energie"</strong> → Hobbys mit sozialem Element motivieren mehr</li>
+    </ul>
+
+    <p><strong>Erkunde auf KursNavi Hobbys speziell für Deine Altersgruppe.</strong></p>
+  `,
+
+  'privat-hobby/kreativitaet/hobbys-studierende': `
+    <p class="lead">Studierende haben wenig Geld – aber Zugang zu unschlagbar günstigen Hobbykursen. Hier sind die besten Tipps.</p>
+
+    <h2>Warum sind Hobbys im Studium wichtig?</h2>
+    <ul>
+      <li>Stressabbau und Mental-Health-Schutz</li>
+      <li>Work-Life-Balance gegen Burnout</li>
+      <li>Soziale Integration und neue Freunde</li>
+      <li>Identitätsbildung und Persönlichkeitsentwicklung</li>
+    </ul>
+
+    <h2>Budget-freundliche Optionen</h2>
+    <table>
+      <thead>
+        <tr><th>Option</th><th>Kosten</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Uni-Sportangebot</td><td>CHF 100-300/Semester</td></tr>
+        <tr><td>Uni-Clubs und Vereine</td><td>CHF 0-50/Jahr</td></tr>
+        <tr><td>Gemeinde-Sportkurse</td><td>CHF 30-80/Kurs</td></tr>
+        <tr><td>Wandern & Natur</td><td>Kostenlos</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Sharing Economy für Studis</h2>
+    <p>Sharely und Leihbar helfen dir, Ausrüstung auszuleihen statt zu kaufen. Das spart hunderte Franken pro Jahr.</p>
+
+    <p><strong>Finde auf KursNavi günstige Kurse und Workshops speziell für Dein Budget.</strong></p>
+  `,
+
+  // ============================================
+  // PRIVAT & HOBBY > WOHLBEFINDEN & BUDGET
+  // ============================================
+  'privat-hobby/wohlbefinden/guenstige-alternativen': `
+    <p class="lead">Nicht jeder kann sich Premium-Fitnessstudios oder teure Sprachschulen leisten. Hier sind die besten kostenlosen und günstigen Alternativen.</p>
+
+    <h2>Die Top-10 der günstigsten Hobbys</h2>
+    <table>
+      <thead>
+        <tr><th>Hobby</th><th>Jahresbudget</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Wandern/Spazieren</td><td>CHF 0-100</td></tr>
+        <tr><td>Lesen (Bibliothek)</td><td>CHF 0</td></tr>
+        <tr><td>Schreiben/Journaling</td><td>CHF 10-50</td></tr>
+        <tr><td>Fotographie (Smartphone)</td><td>CHF 0</td></tr>
+        <tr><td>Programmieren (kostenlose Plattformen)</td><td>CHF 0</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Günstige Alternativen zu teuren Kursen</h2>
+    <ul>
+      <li>Volkshochschule statt Private Akademie (50-70% günstiger)</li>
+      <li>YouTube-Tutorials statt Privatlehrer</li>
+      <li>Uni-Sportangebote statt Fitnessstudio</li>
+      <li>Community-Center statt Premium-Tanzschule</li>
+      <li>Sprachaustausch-Tandem statt Sprachschule</li>
+    </ul>
+
+    <h2>Die "Budget-Hobby-Mischung"</h2>
+    <p>Statt alle Hobbys Premium zu kaufen: Wähle 1 Premium-Hobby, das dir am meisten bedeutet, und 2-3 Budget-Hobbys. Ersparnis: CHF 5'000+/Jahr.</p>
+
+    <p><strong>Entdecke auf KursNavi die besten günstigen Kurse in Deiner Region.</strong></p>
+  `,
+
+  'privat-hobby/wohlbefinden/ausruestung-mieten': `
+    <p class="lead">Teure Ausrüstung vor dem Kauf zu testen ist klug. Die Sharing Economy macht das erschwinglich.</p>
+
+    <h2>Wann mieten, wann kaufen?</h2>
+    <table>
+      <thead>
+        <tr><th>Situation</th><th>Empfehlung</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Erstes Mal ausprobieren</td><td>Mieten – testen, ob es gefällt</td></tr>
+        <tr><td>Gelegentlich (2-4x/Jahr)</td><td>Mieten – Kosten deutlich niedriger</td></tr>
+        <tr><td>Regelmässig (monatlich)</td><td>Kaufen – Break-Even nach wenigen Monaten</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Plattformen in der Schweiz</h2>
+    <ul>
+      <li><strong>Leihbar.ch</strong> – Subscription-basierte Leihe für alles</li>
+      <li><strong>Sharely.ch</strong> – Peer-to-Peer Sharing mit 40'000 Nutzern</li>
+      <li><strong>Createlab.ch</strong> – Spezialisiert auf Outdoor-Ausrüstung</li>
+      <li><strong>Lokale Verleiher</strong> – Ski, Fahrräder, Musikinstrumente</li>
+    </ul>
+
+    <h2>Break-Even-Beispiele</h2>
+    <ul>
+      <li><strong>Ski/Snowboard:</strong> Nach 3-4 Saisonen rentiert sich der Kauf</li>
+      <li><strong>Mountainbike:</strong> Nach 8-12 Ausflügen</li>
+      <li><strong>Fotokamera:</strong> Nach ca. 12 Wochen regelmässiger Nutzung</li>
+    </ul>
+
+    <p><strong>Viele Kursanbieter auf KursNavi stellen die nötige Ausrüstung zur Verfügung.</strong></p>
+  `,
+
+  'privat-hobby/wohlbefinden/minimum-viable-gear': `
+    <p class="lead">Viele Menschen kaufen teure Ausrüstung, bevor sie sicher sind, dass ihnen das Hobby gefällt. Der "Minimum Viable Gear"-Ansatz spart Geld und Reue.</p>
+
+    <h2>Was ist Minimum Viable Gear?</h2>
+    <ul>
+      <li>Das absolute Minimum an Equipment zum Starten</li>
+      <li>Funktioniert gut genug für Anfänger</li>
+      <li>Viel billiger als Premium-Ausrüstung</li>
+      <li>Upgrade später, wenn du sicher bist</li>
+    </ul>
+
+    <h2>Praktische Beispiele</h2>
+    <table>
+      <thead>
+        <tr><th>Hobby</th><th>Minimum Viable Gear</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Yoga</td><td>Billige Yoga-Matte (CHF 15-20)</td></tr>
+        <tr><td>Malen</td><td>Acrylfarben-Set + Pinsel (CHF 25)</td></tr>
+        <tr><td>Gitarre</td><td>Anfänger-Akustikgitarre (CHF 80-150)</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Die Psychologie dahinter</h2>
+    <ul>
+      <li>Finanzielle Hürde ist tief – geringes Risiko</li>
+      <li>Du testest das Hobby wirklich, ohne Overcommitment</li>
+      <li>Upgrade erfolgt gezielt, nicht "alles auf einmal"</li>
+      <li>Viele Premium-Sachen werden nie benutzt – warum?</li>
+      <li>Erst Erfahrung sammeln, dann upgraden</li>
+    </ul>
+
+    <p><strong>KursNavi zeigt Dir Kurse, die ohne viel Equipment auskommen.</strong></p>
+  `,
+
+  'privat-hobby/wohlbefinden/50-30-20-freizeitplanung': `
+    <p class="lead">Die 50-30-20-Regel hilft dir, dein Budget für Freizeit und Hobbys sinnvoll zu planen – ohne schlechtes Gewissen.</p>
+
+    <h2>Was ist die 50-30-20-Regel?</h2>
+    <p>Eine einfache Budgetierungsmethode:</p>
+    <ul>
+      <li><strong>50%</strong> – Grundbedürfnisse (Miete, Essen, Versicherungen)</li>
+      <li><strong>30%</strong> – Wünsche (Freizeit, Hobbys, Unterhaltung)</li>
+      <li><strong>20%</strong> – Sparen und Schuldenabbau</li>
+    </ul>
+
+    <h2>Wie viel für Hobbys?</h2>
+    <p>Bei einem Schweizer Durchschnittseinkommen von CHF 6'500 netto bedeutet das:</p>
+    <table>
+      <thead>
+        <tr><th>Kategorie</th><th>Betrag/Monat</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Grundbedürfnisse (50%)</td><td>CHF 3'250</td></tr>
+        <tr><td>Wünsche inkl. Hobbys (30%)</td><td>CHF 1'950</td></tr>
+        <tr><td>Sparen (20%)</td><td>CHF 1'300</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Hobby-Budget smart aufteilen</h2>
+    <ul>
+      <li>1 "Premium-Hobby" mit höherem Investment</li>
+      <li>2-3 günstige oder kostenlose Hobbys als Ausgleich</li>
+      <li>Jährliche Ausgaben auf Monate verteilen (z.B. Ski-Abo)</li>
+    </ul>
+
+    <p><strong>KursNavi hilft dir, ein Hobby-Budget einzuhalten – mit transparenten Preisen und Rabatten.</strong></p>
+  `,
+
+  'privat-hobby/wohlbefinden/hobby-vollkosten': `
+    <p class="lead">Die Kursgebühr ist nur ein Teil der Kosten. Lerne, die wahren Vollkosten eines Hobbys zu berechnen.</p>
+
+    <h2>Was sind Vollkosten?</h2>
+    <p>Die tatsächlichen Gesamtkosten eines Hobbys umfassen mehr als die offensichtlichen Ausgaben:</p>
+
+    <h2>Kostenarten im Überblick</h2>
+    <table>
+      <thead>
+        <tr><th>Kostenart</th><th>Beispiele</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Direkte Kosten</td><td>Kursgebühren, Mitgliedschaften</td></tr>
+        <tr><td>Ausrüstung</td><td>Erstanschaffung, Ersatzteile, Upgrades</td></tr>
+        <tr><td>Verbrauchsmaterial</td><td>Farben, Stoffe, Saiten, etc.</td></tr>
+        <tr><td>Transport</td><td>Anfahrt, Parkgebühren</td></tr>
+        <tr><td>Versteckte Kosten</td><td>Prüfungsgebühren, Versicherungen</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Beispielrechnung: Malkurs</h2>
+    <ul>
+      <li>Kursgebühr (8 Wochen): CHF 320</li>
+      <li>Farben und Pinsel: CHF 80</li>
+      <li>Leinwände: CHF 60</li>
+      <li>Anfahrt (8x): CHF 40</li>
+      <li><strong>Vollkosten: CHF 500</strong> (vs. CHF 320 Kursgebühr)</li>
+    </ul>
+
+    <p><strong>KursNavi zeigt Vollkosten transparent – keine versteckten Gebühren, nur ehrliche Preisangaben.</strong></p>
+  `,
+
+  'privat-hobby/wohlbefinden/krankenkassenbeitraege-kurse': `
+    <p class="lead">Wusstest du, dass viele Schweizer Krankenkassen Beiträge an Präventionskurse zahlen? So holst du dir Geld zurück.</p>
+
+    <h2>Welche Kurse werden erstattet?</h2>
+    <p>Die meisten Zusatzversicherungen decken:</p>
+    <ul>
+      <li>Fitnesskurse und Sportkurse</li>
+      <li>Yoga, Pilates, Tai Chi</li>
+      <li>Schwimmkurse</li>
+      <li>Ernährungsberatung</li>
+      <li>Stressmanagement und Entspannung</li>
+      <li>Rauchentwöhnung</li>
+    </ul>
+
+    <h2>Wie hoch sind die Beiträge?</h2>
+    <table>
+      <thead>
+        <tr><th>Versicherung</th><th>Typischer Beitrag</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Grundversicherung</td><td>CHF 0 (keine Prävention)</td></tr>
+        <tr><td>Zusatzversicherung Basic</td><td>CHF 200-300/Jahr</td></tr>
+        <tr><td>Zusatzversicherung Premium</td><td>CHF 500-1000/Jahr</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Schritt für Schritt zur Erstattung</h2>
+    <ol>
+      <li>Prüfe deine Zusatzversicherung (Police oder Kundenportal)</li>
+      <li>Wähle einen anerkannten Kurs/Anbieter</li>
+      <li>Bezahle den Kurs und sammle die Quittung</li>
+      <li>Reiche die Rechnung bei der Krankenkasse ein</li>
+      <li>Erhalte die Rückerstattung (meist innert 2-4 Wochen)</li>
+    </ol>
+
+    <p><strong>KursNavi hilft dir, Kurse zu finden, die deine Krankenkasse erstattet – Transparenz von Anfang an.</strong></p>
   `
 };
 

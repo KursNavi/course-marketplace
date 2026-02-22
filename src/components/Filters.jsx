@@ -119,10 +119,8 @@ export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCat
                     {/* Level 2: AREAS (e.g. Business, Sport) */}
                     <div className={`w-full ${currentFocuses.length > 0 ? 'md:w-1/4' : 'md:w-1/3'} border-r overflow-y-auto bg-white`}>
                         {lvl1 ? (
-                            // Use _areaIds for ordered numeric IDs, filter out internal keys
-                            // Only show areas that have at least one course
-                            // Check both numeric and string keys for courseCounts lookup
-                            (activeTaxonomy[lvl1]?._areaIds || Object.keys(activeTaxonomy[lvl1] || {}).filter(k => !k.startsWith('_') && !isNaN(Number(k))))
+                            // Use _areaIds for ordered numeric IDs - these contain only numeric IDs from DB
+                            (activeTaxonomy[lvl1]?._areaIds || [])
                                 .filter(areaId => (courseCounts.level2[areaId] || courseCounts.level2[String(areaId)] || 0) > 0)
                                 .map(areaId => (
                                 <div key={areaId} onClick={() => { setLvl2(areaId); setLvl3(null); }} className={`p-3 mx-2 my-1 rounded-lg cursor-pointer text-sm flex justify-between items-center transition ${lvl2 === areaId ? 'bg-primaryLight font-bold text-primary' : 'text-gray-700 hover:bg-gray-50'}`}>
