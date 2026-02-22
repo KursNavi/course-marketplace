@@ -40,6 +40,12 @@ export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCat
             // Find area by numeric ID in areas array (most reliable source)
             const keyNum = typeof key === 'number' ? key : parseInt(key, 10);
             const area = areas.find(a => a.id === keyNum);
+
+            // Debug: Log what we found
+            if (!area) {
+                console.log('[getLabel] Area NOT FOUND for key:', key, 'keyNum:', keyNum, 'areas.length:', areas.length);
+            }
+
             if (area?.label_de) {
                 return area.label_de;
             }
