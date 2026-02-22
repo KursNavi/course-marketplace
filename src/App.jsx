@@ -821,6 +821,17 @@ export default function KursNaviPro() {  // 1. Initial State Logic
         (Array.isArray(course.categories) && course.categories.includes(searchArea)) ||
         (Array.isArray(course.all_categories) &&
          course.all_categories.some(cat => cat && cat.category_area === searchArea));
+
+      // Debug: Log area filter for published courses
+      if (course.status === 'published') {
+        console.log('[Filter Debug] Area check:', {
+          courseId: course.id,
+          searchArea,
+          courseArea: course.category_area,
+          matchesArea,
+          allCategoryAreas: course.all_categories?.map(c => c.category_area)
+        });
+      }
     }
 
     let matchesSpecialty = true;
