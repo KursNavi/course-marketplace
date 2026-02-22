@@ -832,6 +832,21 @@ export default function KursNaviPro() {  // 1. Initial State Logic
            cat.category_specialty === searchSpecialty ||
            cat.category_specialty_label === searchSpecialty
          )));
+
+      // Debug: Log when specialty filter fails
+      if (!matchesSpecialty && course.status === 'published') {
+        console.log('[Filter Debug] Specialty mismatch:', {
+          courseId: course.id,
+          courseTitle: course.title,
+          searchSpecialty,
+          courseSpecialty: course.category_specialty,
+          allCategories: course.all_categories?.map(c => ({
+            specialty: c.category_specialty,
+            specialty_label: c.category_specialty_label,
+            area: c.category_area
+          }))
+        });
+      }
     }
 
     let matchesFocus = true;

@@ -41,19 +41,22 @@ export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCat
     // Helper to get labels from the new structure (Defaulting to DE for now)
     const getLabel = (key, level, parentKey = null) => {
         if (!key) return "";
-        if (level === 1) return activeTypes[key]?.de || formatSlugToLabel(key);
+        if (level === 1) return activeTypes[key]?.de || formatSlugToLabel(String(key));
         if (level === 2) {
             // First try to find the area in the areas array (from DB)
             const area = areas.find(a => a.id === key || a.id === Number(key) || a.slug === key);
             // Only use label_de if it's not a slug
             if (area?.label_de && !isSlug(area.label_de)) return area.label_de;
+            // If area has a slug, format that
+            if (area?.slug) return formatSlugToLabel(area.slug);
             // Fallback to taxonomy structure
             if (parentKey) {
                 const taxonomyLabel = activeTaxonomy[parentKey]?.[key]?.label?.de;
                 if (taxonomyLabel && !isSlug(taxonomyLabel)) return taxonomyLabel;
             }
-            // Last resort: format slug to readable label
-            return formatSlugToLabel(key);
+            // Last resort: format slug to readable label (key might be slug or ID)
+            const keyStr = String(key);
+            return isSlug(keyStr) ? formatSlugToLabel(keyStr) : keyStr;
         }
         return key; // Level 3+4 are plain strings
     };
