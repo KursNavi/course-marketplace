@@ -153,6 +153,20 @@ const SearchPageView = ({
         [courses]
     );
 
+    // Debug: Check if Landwirtschaft courses are in publishedCourses
+    React.useEffect(() => {
+        const landwirtschaftCourses = publishedCourses.filter(c =>
+            Array.isArray(c.all_categories) &&
+            c.all_categories.some(cat => cat.category_area === 'landwirtschaft')
+        );
+        console.log('[SearchPageView] Landwirtschaft courses in publishedCourses:', landwirtschaftCourses.map(c => ({
+            id: c.id,
+            title: c.title,
+            status: c.status,
+            all_categories: c.all_categories
+        })));
+    }, [publishedCourses]);
+
     // Fixed order for Level 1 (Types): Professionell, Privat, Kinder
     const typeOrder = ['professionell', 'privat', 'kinder'];
     const availableTypes = [...new Set(

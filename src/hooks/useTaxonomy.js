@@ -44,22 +44,10 @@ export function useTaxonomy() {
         try {
             setLoading(true);
 
-            // Try consolidated schema first (taxonomy_level1/2/3/4)
-            const consolidatedRes = await supabase.from('taxonomy_level1').select('*').order('sort_order');
-
-            if (consolidatedRes.data?.length > 0 && !consolidatedRes.error) {
-                await loadConsolidatedTaxonomy();
-            } else {
-                // Try v2 schema (taxonomy_types_v2 etc.)
-                const v2TypesRes = await supabase.from('taxonomy_types_v2').select('*').order('sort_order');
-
-                if (v2TypesRes.data?.length > 0 && !v2TypesRes.error) {
-                    await loadV2Taxonomy();
-                } else {
-                    // Fall back to legacy schema (text IDs)
-                    await loadLegacyTaxonomy();
-                }
-            }
+            // ONLY use consolidated schema (taxonomy_level1/2/3/4)
+            // Skip legacy tables completely to avoid confusion
+            console.log('[useTaxonomy] Loading consolidated taxonomy from taxonomy_level1/2/3/4...');
+            await loadConsolidatedTaxonomy();
         } catch (err) {
             console.error('Error loading taxonomy:', err);
             setError(err.message);
@@ -83,6 +71,9 @@ export function useTaxonomy() {
         const dbLevel2 = level2Res.data || [];
         const dbLevel3 = level3Res.data || [];
         const dbLevel4 = level4Res.data || [];
+
+        // Debug: Log what we loaded from DB
+        console.log('[useTaxonomy] Loaded from taxonomy_level2:', dbLevel2.map(a => ({ id: a.id, slug: a.slug, label_de: a.label_de })));
 
         // Build taxonomy structure
         const builtTaxonomy = {};

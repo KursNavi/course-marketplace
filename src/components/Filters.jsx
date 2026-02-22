@@ -7,14 +7,14 @@ export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCat
     // Load taxonomy from DB (with fallback to constants.js)
     const { taxonomy, types, areas, courseCounts } = useTaxonomy();
 
-    // Debug: Log courseCounts when dropdown opens
+    // Debug: Log areas and taxonomy when dropdown opens
     React.useEffect(() => {
         if (catMenuOpen) {
-            console.log('[CategoryDropdown] courseCounts:', courseCounts);
-            console.log('[CategoryDropdown] Level2 id=22 (Landwirtschaft):', courseCounts.level2?.[22]);
-            console.log('[CategoryDropdown] Level3 id=63 (Naturkunde):', courseCounts.level3?.[63]);
+            console.log('[CategoryDropdown] areas from hook:', areas.map(a => ({ id: a.id, slug: a.slug, label_de: a.label_de })));
+            console.log('[CategoryDropdown] activeTaxonomy[1]?._areaIds:', activeTaxonomy[1]?._areaIds);
+            console.log('[CategoryDropdown] activeTaxonomy[1] keys:', activeTaxonomy[1] ? Object.keys(activeTaxonomy[1]) : 'undefined');
         }
-    }, [catMenuOpen, courseCounts]);
+    }, [catMenuOpen, areas, activeTaxonomy]);
 
     const [lvl1, setLvl1] = useState(rootCategory || null);
     const [lvl2, setLvl2] = useState(null);
