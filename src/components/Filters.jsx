@@ -47,6 +47,10 @@ export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCat
             // This is the most reliable source - it's the raw DB data
             const keyNum = typeof key === 'string' ? parseInt(key, 10) : key;
             const keyStr = String(key);
+
+            // Debug: Log what we're looking for
+            console.log('[getLabel] Looking for area:', { key, keyNum, keyStr, areasCount: areas.length });
+
             const area = areas.find(a =>
                 a.id === key ||
                 a.id === keyNum ||
@@ -55,7 +59,10 @@ export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCat
                 a.slug === keyStr
             );
 
+            console.log('[getLabel] Found area:', area ? { id: area.id, slug: area.slug, label_de: area.label_de } : 'NOT FOUND');
+
             if (area?.label_de && !isSlug(area.label_de)) {
+                console.log('[getLabel] Returning from areas array:', area.label_de);
                 return area.label_de;
             }
 
