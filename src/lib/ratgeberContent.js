@@ -211,7 +211,9 @@ export const RATGEBER_CONTENT = {
   'beruflich/finanzierung/kantonale-stipendien-vergleich': `
     <p class="lead">Kantonale Stipendien sind finanzielle Zuschüsse oder zinslose Darlehen für Berufstätige in Weiterbildung – allerdings mit sehr unterschiedlichen Bedingungen und Höchstbeträgen zwischen den Kantonen.</p>
 
-    <h2>Unterschied: Bundesbeiträge vs. Kantonale Stipendien</h2>
+    <img src="https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=800&q=80" alt="Kantonale Stipendien und Finanzierung in der Schweiz" class="article-image" />
+
+    <h2>📊 Unterschied: Bundesbeiträge vs. Kantonale Stipendien</h2>
     <table>
       <thead>
         <tr><th>Merkmal</th><th>Bundesbeiträge (50%-Regel)</th><th>Kantonale Stipendien</th></tr>
@@ -226,7 +228,12 @@ export const RATGEBER_CONTENT = {
       </tbody>
     </table>
 
-    <h2>Kanton Zürich: Liberal und schnell</h2>
+    <div class="info-box">
+      <h3>💡 Gut zu wissen</h3>
+      <p>Kantonale Stipendien und Bundesbeiträge können kombiniert werden! So maximierst Du Deine Förderung.</p>
+    </div>
+
+    <h2>🏙️ Kanton Zürich: Liberal und schnell</h2>
     <p><strong>Zuständigkeit: Amt für Berufsbildung</strong></p>
     <p>Weiterbildungsstipendien für Berufstätige (auch Lernende über 25 Jahre möglich). Finanzielle Bedürftigkeit nachgewiesen auf Basis Familien-Einkommen.</p>
     <ul>
@@ -234,9 +241,18 @@ export const RATGEBER_CONTENT = {
       <li>Darlehen: CHF 5'000–20'000 (für grössere Lücken)</li>
       <li>Kombinationen möglich (Zuschuss + Darlehen)</li>
     </ul>
-    <p><strong>Besonderheiten:</strong> Auch für ältere Lernende und Umschulungen, Kombination mit Bundesbeiträgen möglich, Online-Antrag verfügbar, Antragsfrist: 2–4 Wochen vor Kursbeginn</p>
 
-    <h2>Kanton Bern: Stringent und zinsfrei</h2>
+    <div class="tip-box">
+      <h3>✅ Pluspunkte Zürich</h3>
+      <ul>
+        <li>Auch für ältere Lernende und Umschulungen</li>
+        <li>Kombination mit Bundesbeiträgen möglich</li>
+        <li>Online-Antrag verfügbar</li>
+        <li>Antragsfrist: 2–4 Wochen vor Kursbeginn</li>
+      </ul>
+    </div>
+
+    <h2>🏔️ Kanton Bern: Stringent und zinsfrei</h2>
     <p><strong>Zuständigkeit: Bildungs- und Kulturdirektion (BKD), Stipendienamt</strong></p>
     <p>Fokus auf anerkannte Weiterbildungen. Finanzielle Bedürftigkeit wird strenger geprüft als in Zürich.</p>
     <ul>
@@ -244,18 +260,29 @@ export const RATGEBER_CONTENT = {
       <li>Darlehen: CHF 10'000–30'000 (zinslos, über 5–10 Jahre tilgbar)</li>
       <li>Darlehenszinsen: 0 % (sehr attraktiv!)</li>
     </ul>
+
+    <div class="tip-box">
+      <h3>💰 Berner Vorteil: Zinslose Darlehen!</h3>
+      <p>Der Kanton Bern bietet als einer der wenigen Kantone <strong>komplett zinsfreie Bildungsdarlehen</strong>. Das kann über die Laufzeit mehrere tausend Franken sparen.</p>
+    </div>
+
     <p><strong>Besonderheiten:</strong> Keine starre Altersobergrenze, strengere Prüfung der Vermögensverhältnisse, Antragsfrist: mind. 1 Monat vor Kursbeginn</p>
 
-    <h2>Kanton Basel-Stadt: Restriktiv, nur formale Bildung</h2>
+    <h2>🏛️ Kanton Basel-Stadt: Restriktiv, nur formale Bildung</h2>
     <p><strong>Zuständigkeit: Amt für Sozialhilfe, Bereich Stipendien</strong></p>
-    <p><strong>WARNUNG:</strong> Viele private Weiterbildungen werden NICHT gefördert. Fokus auf anerkannte formale Ausbildungen.</p>
+
+    <div class="warning-box">
+      <h3>⚠️ Achtung bei Basel-Stadt</h3>
+      <p>Viele private Weiterbildungen werden <strong>NICHT</strong> gefördert. Der Fokus liegt auf anerkannten formalen Ausbildungen. Prüfe VOR der Anmeldung, ob Dein Kurs förderfähig ist!</p>
+    </div>
+
     <ul>
       <li>Zuschuss: CHF 1'000–2'500/Jahr (niedrig)</li>
       <li>Darlehen: CHF 3'000–10'000</li>
       <li>Antragsfrist: 2–3 Monate vor Kursbeginn</li>
     </ul>
 
-    <h2>Vergleichstabelle</h2>
+    <h2>📋 Vergleichstabelle</h2>
     <table>
       <thead>
         <tr><th>Kriterium</th><th>Zürich</th><th>Bern</th><th>Basel-Stadt</th></tr>
@@ -269,63 +296,83 @@ export const RATGEBER_CONTENT = {
       </tbody>
     </table>
 
-    <h2>Checkliste: Stipendium erfolgreich beantragen</h2>
-    <ul>
-      <li>Wohnsitz-Kanton bestätigen (dort Antrag stellen)</li>
-      <li>Finanzielle Bedürftigkeit klären (Einkommensnachweise vorbereiten)</li>
-      <li>Kursnachweise sammeln (Angebot, Kostenschätzung)</li>
-      <li>Antragsfrist im Kalender eintragen (nicht zu spät!)</li>
-      <li>Formular und Anforderungen auf Kantonsamt abklären</li>
-      <li>Alle Dokumente vollständig einreichen</li>
-    </ul>
+    <h2>✅ Checkliste: Stipendium erfolgreich beantragen</h2>
+    <div class="checklist">
+      <ul>
+        <li>Wohnsitz-Kanton bestätigen (dort Antrag stellen)</li>
+        <li>Finanzielle Bedürftigkeit klären (Einkommensnachweise vorbereiten)</li>
+        <li>Kursnachweise sammeln (Angebot, Kostenschätzung)</li>
+        <li>Antragsfrist im Kalender eintragen (nicht zu spät!)</li>
+        <li>Formular und Anforderungen auf Kantonsamt abklären</li>
+        <li>Alle Dokumente vollständig einreichen</li>
+      </ul>
+    </div>
+
+    <div class="cta-box">
+      <h3>🎓 Finde Deine Weiterbildung auf KursNavi</h3>
+      <p>Vergleiche Kurse mit transparenten Kostenangaben und finde die passende Finanzierung für Deine Weiterbildung.</p>
+    </div>
   `,
 
   'beruflich/finanzierung/weiterbildungsvereinbarungen': `
     <p class="lead">Ein Weiterbildungsvertrag zwischen Dir und Deinem Arbeitgeber regelt, wer die Kosten trägt und wie lange Du an die Firma gebunden bist. Zu lange Bindungsfristen (über 3 Jahre) sind oft rechtlich ungültig – kenne Deine Rechte.</p>
 
-    <h2>Rechtliche Grundlagen: Was ist erlaubt?</h2>
+    <img src="https://images.unsplash.com/photo-1521791136064-7986c2920216?w=800&q=80" alt="Vertragsverhandlung und Weiterbildungsvereinbarung" class="article-image" />
+
+    <h2>⚖️ Rechtliche Grundlagen: Was ist erlaubt?</h2>
     <p>Es gibt KEINE spezifischen Gesetze für Weiterbildungsverträge im Schweizer Obligationenrecht. Stattdessen gelten Vertragfreiheit und die Prinzipien von Treu und Glauben. Das bedeutet:</p>
-    <ul>
-      <li>Vereinbarungen sind möglich, aber müssen verhältnismässig sein</li>
-      <li>Bindungsfristen über 3 Jahre werden oft als zu restriktiv beurteilt</li>
-      <li>Eine strikte Rückzahlungsklausel ohne Reduktion ist oft ungültig</li>
-    </ul>
 
-    <h2>Muss-Elemente eines gültigen Vertrags</h2>
+    <div class="info-box">
+      <h3>📚 Wichtige Grundsätze</h3>
+      <ul>
+        <li>Vereinbarungen sind möglich, aber müssen verhältnismässig sein</li>
+        <li>Bindungsfristen über 3 Jahre werden oft als zu restriktiv beurteilt</li>
+        <li>Eine strikte Rückzahlungsklausel ohne Reduktion ist oft ungültig</li>
+      </ul>
+    </div>
 
-    <h3>1. Zeitpunkt der Unterzeichnung</h3>
-    <ul>
-      <li>MUSS vor Kursbeginn abgeschlossen werden</li>
-      <li>Nachträgliche Änderungen sind problematisch</li>
-    </ul>
+    <h2>📝 Muss-Elemente eines gültigen Vertrags</h2>
 
-    <h3>2. Konkrete Betragsfestlegung</h3>
+    <h3>1️⃣ Zeitpunkt der Unterzeichnung</h3>
+
+    <div class="warning-box">
+      <h3>⚠️ Kritischer Zeitpunkt</h3>
+      <p>Der Vertrag <strong>MUSS vor Kursbeginn</strong> abgeschlossen werden. Nachträgliche Änderungen sind rechtlich problematisch und können den gesamten Vertrag ungültig machen.</p>
+    </div>
+
+    <h3>2️⃣ Konkrete Betragsfestlegung</h3>
     <ul>
       <li>Exakte Summe in CHF (z.B. 'CHF 12'100', nicht 'angemessener Beitrag')</li>
       <li>Kostenzusammenstellung aufgelistet</li>
     </ul>
 
-    <h3>3. Klare Bindungsdauer</h3>
+    <h3>3️⃣ Klare Bindungsdauer</h3>
     <ul>
       <li>Empfohlen: 1–3 Jahre nach Kursende</li>
       <li>Maximum: 3 Jahre (längere Bindung oft als ungültig beurteilt)</li>
       <li>Zeitlich begrenzt, NICHT 'bis zum Ende der Anstellung'</li>
     </ul>
 
-    <h3>4. Degressive Rückzahlungsverpflichtung</h3>
-    <ul>
-      <li>Betrag muss sich über die Zeit reduzieren</li>
-      <li>Beispiel: Jahr 1 = 100 %, Jahr 2 = 66 %, Jahr 3 = 33 %</li>
-    </ul>
+    <h3>4️⃣ Degressive Rückzahlungsverpflichtung</h3>
 
-    <h3>5. Unterschriften beider Parteien</h3>
+    <div class="tip-box">
+      <h3>💡 Faire Rückzahlung</h3>
+      <p>Der Betrag muss sich über die Zeit reduzieren. Beispiel:</p>
+      <ul>
+        <li>Jahr 1 = 100 %</li>
+        <li>Jahr 2 = 66 %</li>
+        <li>Jahr 3 = 33 %</li>
+      </ul>
+    </div>
+
+    <h3>5️⃣ Unterschriften beider Parteien</h3>
     <ul>
       <li>Arbeitgeber + Arbeitnehmer unterzeichnen</li>
       <li>Datum erforderlich</li>
       <li>Jede Partei erhält ein Original</li>
     </ul>
 
-    <h2>Gültige Bindungsfristen nach Szenario</h2>
+    <h2>📅 Gültige Bindungsfristen nach Szenario</h2>
     <table>
       <thead>
         <tr><th>Szenario</th><th>Max. Bindung</th><th>Grund</th></tr>
@@ -339,8 +386,10 @@ export const RATGEBER_CONTENT = {
       </tbody>
     </table>
 
-    <h2>Beispiel: Gültige Rückzahlungsklausel</h2>
-    <p><strong>Rückzahlungsvereinbarung Fachausweis-Kurs (CHF 15'000)</strong></p>
+    <h2>💰 Beispiel: Gültige Rückzahlungsklausel</h2>
+
+    <div class="info-box">
+      <h3>📋 Rückzahlungsvereinbarung Fachausweis-Kurs (CHF 15'000)</h3>
     <ul>
       <li>Kursgebühren: CHF 10'000</li>
       <li>Lehrmittel: CHF 1'000</li>
@@ -349,15 +398,16 @@ export const RATGEBER_CONTENT = {
       <li><strong>TOTAL Arbeitgeber-Beitrag: CHF 12'100</strong></li>
     </ul>
 
-    <p><strong>Bindungsdauer: 36 Monate nach Kursabschluss</strong></p>
-    <ul>
-      <li>Monat 1–12: 100 % (CHF 12'100 bei Kündigung)</li>
-      <li>Monat 13–24: 66 % (CHF 7'986 bei Kündigung)</li>
-      <li>Monat 25–36: 33 % (CHF 3'993 bei Kündigung)</li>
-      <li>Monat 37+: 0 % (keine Rückzahlung)</li>
-    </ul>
+      <p><strong>Bindungsdauer: 36 Monate nach Kursabschluss</strong></p>
+      <ul>
+        <li>Monat 1–12: 100 % (CHF 12'100 bei Kündigung)</li>
+        <li>Monat 13–24: 66 % (CHF 7'986 bei Kündigung)</li>
+        <li>Monat 25–36: 33 % (CHF 3'993 bei Kündigung)</li>
+        <li>Monat 37+: 0 % (keine Rückzahlung)</li>
+      </ul>
+    </div>
 
-    <h2>Was NICHT in einen gültigen Vertrag gehört</h2>
+    <h2>🚫 Was NICHT in einen gültigen Vertrag gehört</h2>
     <table>
       <thead>
         <tr><th>Element</th><th>Grund für Ungültigkeit</th><th>Legalität</th></tr>
@@ -370,45 +420,63 @@ export const RATGEBER_CONTENT = {
       </tbody>
     </table>
 
-    <h2>Checkliste: VOR Unterzeichnung prüfen</h2>
-    <ul>
-      <li>Zeitpunkt? Unterzeichnet VOR Kursbeginn (nicht nachher)</li>
-      <li>Betrag klar? Exakte CHF-Summe</li>
-      <li>Bindung realistisch? Max. 3 Jahre, degressive Reduktion</li>
-      <li>Kündigungsschutz? Klausel: 'Kein Rückzahlungsanspruch bei AG-Kündigung'</li>
-      <li>Originalbelege erforderlich? Ja, zur Verifizierung</li>
-      <li>Unterschriften vollständig? Beide Parteien + Datum</li>
-      <li>Kopie bekommen? WICHTIG: Immer eine signierte Kopie verlangen</li>
-    </ul>
+    <h2>✅ Checkliste: VOR Unterzeichnung prüfen</h2>
+    <div class="checklist">
+      <ul>
+        <li>Zeitpunkt? Unterzeichnet VOR Kursbeginn (nicht nachher)</li>
+        <li>Betrag klar? Exakte CHF-Summe</li>
+        <li>Bindung realistisch? Max. 3 Jahre, degressive Reduktion</li>
+        <li>Kündigungsschutz? Klausel: 'Kein Rückzahlungsanspruch bei AG-Kündigung'</li>
+        <li>Originalbelege erforderlich? Ja, zur Verifizierung</li>
+        <li>Unterschriften vollständig? Beide Parteien + Datum</li>
+        <li>Kopie bekommen? WICHTIG: Immer eine signierte Kopie verlangen</li>
+      </ul>
+    </div>
+
+    <div class="cta-box">
+      <h3>🎓 Die richtige Weiterbildung für Deine Karriere</h3>
+      <p>Auf KursNavi findest Du Weiterbildungen mit klaren Kostenangaben – perfekt für Deine Verhandlung mit dem Arbeitgeber.</p>
+    </div>
   `,
 
   'beruflich/finanzierung/steuer-hack-weiterbildung': `
     <p class="lead">Mit intelligenter Dokumentation und kantonalen Maximalabzügen kannst Du bis zu CHF 19'100 pro Jahr geltend machen – und damit Deine Steuerlast um CHF 3'000–5'700 senken. Viele Kosten werden vergessen.</p>
 
-    <h2>Was ist steuerlich abzugsfähig?</h2>
+    <img src="https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=800&q=80" alt="Steuern sparen durch Weiterbildungskosten" class="article-image" />
+
+    <div class="tip-box">
+      <h3>💰 Maximale Ersparnis</h3>
+      <p>Mit dem richtigen Vorgehen kannst Du <strong>CHF 3'000–5'700</strong> Steuern pro Jahr sparen. Der Schlüssel: Vollständige Dokumentation aller abzugsfähigen Kosten.</p>
+    </div>
+
+    <h2>📋 Was ist steuerlich abzugsfähig?</h2>
     <p>Alle 'beruflich orientierten' Weiterbildungskosten sind abzugsfähig – also Kurse und Schulungen, die Deine aktuelle oder zukünftige Erwerbstätigkeit fördern.</p>
 
-    <h3>JA – Vollständig abzugsfähig:</h3>
-    <ul>
-      <li>Kurs- und Vorbereitungsgebühren</li>
-      <li>Prüfungsgebühren (eidgenössische und private Zertifikate)</li>
-      <li>Lernmaterialien (Skripte, Bücher, Fachzeitschriften)</li>
-      <li>Reisekosten zum Kurs (ÖV, Auto CHF 0,70/km, Parkgebühren)</li>
-      <li>Unterkunft bei auswärtigen Kursen</li>
-      <li>Mehrkosten Verpflegung (Zusatz zu normalem Lebensunterhalt)</li>
-      <li>Zinsen eines Bildungsdarlehens (nicht die Tilgung!)</li>
-    </ul>
+    <div class="info-box">
+      <h3>✅ JA – Vollständig abzugsfähig:</h3>
+      <ul>
+        <li>Kurs- und Vorbereitungsgebühren</li>
+        <li>Prüfungsgebühren (eidgenössische und private Zertifikate)</li>
+        <li>Lernmaterialien (Skripte, Bücher, Fachzeitschriften)</li>
+        <li>Reisekosten zum Kurs (ÖV, Auto CHF 0,70/km, Parkgebühren)</li>
+        <li>Unterkunft bei auswärtigen Kursen</li>
+        <li>Mehrkosten Verpflegung (Zusatz zu normalem Lebensunterhalt)</li>
+        <li>Zinsen eines Bildungsdarlehens (nicht die Tilgung!)</li>
+      </ul>
+    </div>
 
-    <h3>NEIN – Nicht abzugsfähig:</h3>
-    <ul>
-      <li>Reisekosten zum Wohnort (privat)</li>
-      <li>Verpflegung am heimischen Wohnort (Normalleben)</li>
-      <li>Kinderbetreuung (separate Regel)</li>
-      <li>Verdienstausfälle/Opportunitätskosten</li>
-      <li>Hobby- und Freizeitkurse (z.B. Malerei, Yoga)</li>
-    </ul>
+    <div class="warning-box">
+      <h3>❌ NEIN – Nicht abzugsfähig:</h3>
+      <ul>
+        <li>Reisekosten zum Wohnort (privat)</li>
+        <li>Verpflegung am heimischen Wohnort (Normalleben)</li>
+        <li>Kinderbetreuung (separate Regel)</li>
+        <li>Verdienstausfälle/Opportunitätskosten</li>
+        <li>Hobby- und Freizeitkurse (z.B. Malerei, Yoga)</li>
+      </ul>
+    </div>
 
-    <h2>Kantonale Maximalabzüge 2025/2026</h2>
+    <h2>🏛️ Kantonale Maximalabzüge 2025/2026</h2>
     <table>
       <thead>
         <tr><th>Kanton</th><th>Max. Jahresabzug</th><th>Hinweise</th></tr>
@@ -423,105 +491,134 @@ export const RATGEBER_CONTENT = {
       </tbody>
     </table>
 
-    <h2>Strategische Tipps pro Kanton</h2>
+    <div class="tip-box">
+      <h3>🎯 Basel-Stadt: Höchster Abzug!</h3>
+      <p>Mit <strong>CHF 19'100</strong> bietet Basel-Stadt den höchsten Weiterbildungsabzug der Vergleichskantone. Prüfe, ob sich ein Umzug lohnt!</p>
+    </div>
 
-    <h3>Zürich – CHF 12'000–12'400 Abzug</h3>
+    <h2>🗺️ Strategische Tipps pro Kanton</h2>
+
+    <h3>🏙️ Zürich – CHF 12'000–12'400 Abzug</h3>
     <ul>
       <li>Reisekosten grosszügig kalkulieren (ÖV-Abos, Jahrestickets)</li>
       <li>Mehrkosten Verpflegung liberal dokumentieren (auch Café CHF 8)</li>
       <li>Unterkunftskosten bei Wochenend-Kursen</li>
     </ul>
 
-    <h3>Bern – CHF 12'000–15'000 Abzug</h3>
+    <h3>🏔️ Bern – CHF 12'000–15'000 Abzug</h3>
     <ul>
       <li>Berufsausbildungs-Definition grosszügig (auch Sprachkurse)</li>
       <li>Vollständige Darlehens-Zinsen abzugsfähig (auch Privatdarlehen)</li>
       <li>Zinsen-Vereinbarung schriftlich festhalten</li>
     </ul>
 
-    <h3>Basel-Stadt – CHF 19'100 Abzug (!)</h3>
+    <h3>🏛️ Basel-Stadt – CHF 19'100 Abzug (!)</h3>
     <ul>
       <li>Mega-Vorteil: Fast alle Schweizer Weiterbildungskosten passen darunter</li>
       <li>Auch 'bildungsferne' Kurse teilweise anerkannt</li>
       <li>Mit Steuerberater kalkulieren, ob Kosten auf mehrere Jahre splitten sinnvoll</li>
     </ul>
 
-    <h2>Praktisches Auflistungs-Beispiel</h2>
-    <p><strong>STEUER-ÜBERSICHT: 18-Monats Fachausweis</strong></p>
+    <h2>📊 Praktisches Auflistungs-Beispiel</h2>
 
-    <h3>Direkte Bildungskosten:</h3>
-    <ul>
-      <li>Kursgebühren: CHF 10'000</li>
-      <li>Prüfungsgebühr: CHF 600</li>
-      <li>Lehrmaterial & Bücher: CHF 900</li>
-      <li>Lerngruppen-Unterkunft (3 Wochenenden): CHF 1'800</li>
-    </ul>
+    <div class="info-box">
+      <h3>💼 STEUER-ÜBERSICHT: 18-Monats Fachausweis</h3>
 
-    <h3>Reisekosten:</h3>
-    <ul>
-      <li>ÖV-Tickets (30 Tage à CHF 18): CHF 540</li>
-      <li>Parkgebühren: CHF 200</li>
-    </ul>
+      <p><strong>Direkte Bildungskosten:</strong></p>
+      <ul>
+        <li>Kursgebühren: CHF 10'000</li>
+        <li>Prüfungsgebühr: CHF 600</li>
+        <li>Lehrmaterial & Bücher: CHF 900</li>
+        <li>Lerngruppen-Unterkunft (3 Wochenenden): CHF 1'800</li>
+      </ul>
 
-    <h3>Verpflegung & Sonstiges:</h3>
-    <ul>
-      <li>Mehrkosten auswärts (3 Wochenenden): CHF 600</li>
-      <li>Bildungsdarlehen-Zinsen (EDUCA SWISS 1,5 %): CHF 400</li>
-    </ul>
+      <p><strong>Reisekosten:</strong></p>
+      <ul>
+        <li>ÖV-Tickets (30 Tage à CHF 18): CHF 540</li>
+        <li>Parkgebühren: CHF 200</li>
+      </ul>
 
-    <p><strong>TOTAL ABZUGSBERECHTIGTE KOSTEN: CHF 15'040</strong></p>
-    <p><strong>Steuern sparen (bei 30 % Grenzsteuersatz): CHF 4'512</strong></p>
+      <p><strong>Verpflegung & Sonstiges:</strong></p>
+      <ul>
+        <li>Mehrkosten auswärts (3 Wochenenden): CHF 600</li>
+        <li>Bildungsdarlehen-Zinsen (EDUCA SWISS 1,5 %): CHF 400</li>
+      </ul>
 
-    <h2>Checkliste: Belege sammeln und ordnen</h2>
-    <ul>
-      <li>Alle Originalbelege scannen (PDF speichern)</li>
-      <li>Nach Kategorien sortieren (Ordner digital + physisch)</li>
-      <li>Excel-Tabelle mit Belegnummer, Datum, Betrag, Kategorie</li>
-      <li>Min. 7 Jahre aufbewahren</li>
-      <li>Fahrkarten-Abos monatlich kopieren</li>
-      <li>Restaurantbelege mit Datum & Ort sammeln</li>
-      <li>Darlehensvertrag speichern (für Zinsen)</li>
-    </ul>
+      <p><strong>TOTAL ABZUGSBERECHTIGTE KOSTEN: CHF 15'040</strong></p>
+      <p><strong>🎯 Steuern sparen (bei 30 % Grenzsteuersatz): CHF 4'512</strong></p>
+    </div>
+
+    <h2>✅ Checkliste: Belege sammeln und ordnen</h2>
+    <div class="checklist">
+      <ul>
+        <li>Alle Originalbelege scannen (PDF speichern)</li>
+        <li>Nach Kategorien sortieren (Ordner digital + physisch)</li>
+        <li>Excel-Tabelle mit Belegnummer, Datum, Betrag, Kategorie</li>
+        <li>Min. 7 Jahre aufbewahren</li>
+        <li>Fahrkarten-Abos monatlich kopieren</li>
+        <li>Restaurantbelege mit Datum & Ort sammeln</li>
+        <li>Darlehensvertrag speichern (für Zinsen)</li>
+      </ul>
+    </div>
+
+    <div class="cta-box">
+      <h3>🎓 Investiere in Deine Zukunft</h3>
+      <p>Auf KursNavi findest Du Weiterbildungen mit transparenten Preisen – so kannst Du Deine Steuerersparnis optimal planen.</p>
+    </div>
   `,
 
   'beruflich/finanzierung/alternative-finanzierungswege': `
     <p class="lead">Neben Bundesbeiträgen und kantonalen Stipendien gibt es Bildungsdarlehen mit günstigen Konditionen und spezialisierte Stiftungen – eine Kombination mehrerer Quellen senkt oft Deine finanzielle Belastung erheblich.</p>
 
-    <h2>EDUCA SWISS: Günstige Bildungsdarlehen</h2>
+    <img src="https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?w=800&q=80" alt="Alternative Finanzierungswege für Weiterbildung" class="article-image" />
+
+    <div class="info-box">
+      <h3>💡 Wusstest Du?</h3>
+      <p>Durch die Kombination mehrerer Finanzierungsquellen können viele Weiterbildungsteilnehmende ihre Eigenkosten auf <strong>unter 30%</strong> der Gesamtkosten reduzieren!</p>
+    </div>
+
+    <h2>🏦 EDUCA SWISS: Günstige Bildungsdarlehen</h2>
     <p>EDUCA SWISS ist eine Schweizer Stiftung für Bildungsförderung mit einem revolutionären Darlehens-Produkt.</p>
 
-    <h3>Kernprodukte:</h3>
-    <ul>
-      <li>Zinsrate: 1,5–3,25 % (je nach Bonität)</li>
-      <li>Darlehen-Höhe: CHF 5'000–50'000</li>
-      <li>Tilgungsdauer: 5–15 Jahre (flexibel wählbar)</li>
-      <li>Rückzahlungsstart: Während oder nach der Ausbildung</li>
-      <li>Besonderheit: Mit Rückzahlungen ermöglichst Du anderen die Ausbildung (Rolling System)</li>
-    </ul>
+    <div class="tip-box">
+      <h3>✅ Kernprodukte EDUCA SWISS</h3>
+      <ul>
+        <li>Zinsrate: 1,5–3,25 % (je nach Bonität)</li>
+        <li>Darlehen-Höhe: CHF 5'000–50'000</li>
+        <li>Tilgungsdauer: 5–15 Jahre (flexibel wählbar)</li>
+        <li>Rückzahlungsstart: Während oder nach der Ausbildung</li>
+        <li>Besonderheit: Mit Rückzahlungen ermöglichst Du anderen die Ausbildung (Rolling System)</li>
+      </ul>
+    </div>
 
-    <h3>Vergleich mit Markt-Alternativen:</h3>
-    <ul>
-      <li>Hausbank-Darlehen: 3,5–5,5 % Zinsen</li>
-      <li>Kreditkarte: 10–15 % (hohes Risiko)</li>
-      <li><strong>EDUCA SWISS: 1,5–3,25 % → Deutlich günstiger</strong></li>
-    </ul>
+    <h3>📊 Vergleich mit Markt-Alternativen:</h3>
+    <table>
+      <thead>
+        <tr><th>Finanzierungsart</th><th>Zinssatz</th><th>Bewertung</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Hausbank-Darlehen</td><td>3,5–5,5 %</td><td>Mittel</td></tr>
+        <tr><td>Kreditkarte</td><td>10–15 %</td><td>⚠️ Hohes Risiko</td></tr>
+        <tr><td><strong>EDUCA SWISS</strong></td><td><strong>1,5–3,25 %</strong></td><td>✅ Beste Option</td></tr>
+      </tbody>
+    </table>
 
-    <h2>Bewerbungsprozess bei EDUCA SWISS</h2>
+    <h2>📝 Bewerbungsprozess bei EDUCA SWISS</h2>
 
-    <h3>Schritt 1: Online-Anfrage</h3>
+    <h3>1️⃣ Schritt 1: Online-Anfrage</h3>
     <ul>
       <li>Formular auf educaswiss.ch ausfüllen</li>
       <li>Grundangaben: Name, Ausbildungsziel, Budget, Kanton</li>
     </ul>
 
-    <h3>Schritt 2: Kostenlose Beratung</h3>
+    <h3>2️⃣ Schritt 2: Kostenlose Beratung</h3>
     <ul>
       <li>EDUCA SWISS-Fachperson kontaktiert innerhalb 2–3 Wochen</li>
       <li>Analyse des Budgetplans</li>
       <li>Erfolgschancen evaluieren</li>
     </ul>
 
-    <h3>Schritt 3: Darlehensantrag</h3>
+    <h3>3️⃣ Schritt 3: Darlehensantrag</h3>
     <ul>
       <li>Detailliertes Finanzierungs-Dossier</li>
       <li>Personalausweis-Kopie</li>
@@ -530,44 +627,50 @@ export const RATGEBER_CONTENT = {
       <li>Evtl. Sicherheitengespräch (bei höheren Beträgen)</li>
     </ul>
 
-    <h3>Schritt 4: Bewilligung & Auszahlung</h3>
+    <h3>4️⃣ Schritt 4: Bewilligung & Auszahlung</h3>
     <ul>
       <li>Darlehensvertrag unterzeichnen</li>
       <li>Auszahlung: Direkt an Kursanbieter oder Teilnehmer</li>
       <li>Bearbeitungszeit: 2–4 Wochen</li>
     </ul>
 
-    <h2>Pluspunkte und Minuspunkte EDUCA SWISS</h2>
+    <h2>⚖️ Pluspunkte und Minuspunkte EDUCA SWISS</h2>
 
-    <h3>Pluspunkte:</h3>
-    <ul>
-      <li>Kostenlose vorherige Beratung</li>
-      <li>Keine versteckten Gebühren</li>
-      <li>Sehr günstige Zinsen (einzigartig am Markt)</li>
-      <li>Flexibles Rückzahlungsmodell</li>
-      <li>Soziale Mission (andere profitieren von Rückzahlungen)</li>
-    </ul>
+    <div class="tip-box">
+      <h3>✅ Pluspunkte</h3>
+      <ul>
+        <li>Kostenlose vorherige Beratung</li>
+        <li>Keine versteckten Gebühren</li>
+        <li>Sehr günstige Zinsen (einzigartig am Markt)</li>
+        <li>Flexibles Rückzahlungsmodell</li>
+        <li>Soziale Mission (andere profitieren von Rückzahlungen)</li>
+      </ul>
+    </div>
 
-    <h3>Minuspunkte:</h3>
-    <ul>
-      <li>Längere Bearbeitungszeit als Hausbank</li>
-      <li>Sicherheiten können verlangt werden</li>
-      <li>Nicht alle Bildungstypen förderfähig (Hobbykosten nicht)</li>
-      <li>Maximum CHF 50'000 (ggf. nicht ausreichend)</li>
-    </ul>
+    <div class="warning-box">
+      <h3>⚠️ Minuspunkte</h3>
+      <ul>
+        <li>Längere Bearbeitungszeit als Hausbank</li>
+        <li>Sicherheiten können verlangt werden</li>
+        <li>Nicht alle Bildungstypen förderfähig (Hobbykosten nicht)</li>
+        <li>Maximum CHF 50'000 (ggf. nicht ausreichend)</li>
+      </ul>
+    </div>
 
-    <h2>Stiftungen & Private Bildungsfonds</h2>
+    <h2>🏛️ Stiftungen & Private Bildungsfonds</h2>
     <p>Die Schweiz hat über 13'000 gemeinnützige Stiftungen; ca. 20,8 % sind im Bildungsbereich tätig. Viele Stiftungen vergeben Zuschüsse (nicht Darlehen!) speziell für Weiterbildung.</p>
 
-    <h3>Typen von Bildungsfonds/Stiftungen:</h3>
-    <ul>
-      <li>Branchenspezifische Fonds (z.B. Bankenfonds, Handwerk-Stiftungen)</li>
-      <li>Kantonale Stiftungen (z.B. Berner Wirtschaftsfonds)</li>
-      <li>Zielgruppen-Stiftungen (Frauen in MINT, Migrantinnen, Alleinerziehende)</li>
-      <li>Zweckgebundene Fonds (z.B. für spezifische Berufe)</li>
-    </ul>
+    <div class="info-box">
+      <h3>📚 Typen von Bildungsfonds/Stiftungen</h3>
+      <ul>
+        <li><strong>Branchenspezifische Fonds</strong> (z.B. Bankenfonds, Handwerk-Stiftungen)</li>
+        <li><strong>Kantonale Stiftungen</strong> (z.B. Berner Wirtschaftsfonds)</li>
+        <li><strong>Zielgruppen-Stiftungen</strong> (Frauen in MINT, Migrantinnen, Alleinerziehende)</li>
+        <li><strong>Zweckgebundene Fonds</strong> (z.B. für spezifische Berufe)</li>
+      </ul>
+    </div>
 
-    <h3>Stiftungen finden: Online-Datenbanken</h3>
+    <h3>🔍 Stiftungen finden: Online-Datenbanken</h3>
     <ul>
       <li>SwissFoundations - Stiftungssuche (swissfoundations.ch)</li>
       <li>Spheriq - Stiftungen für Bildung (spheriq.ch)</li>
@@ -575,29 +678,42 @@ export const RATGEBER_CONTENT = {
       <li>Branchenverbände (SVEB, VSSM, etc.) haben oft Empfehlungen</li>
     </ul>
 
-    <h2>Kombination mehrerer Finanzierungsquellen</h2>
-    <p><strong>Beispiel: Fachausweis CHF 15'000 finanzieren</strong></p>
-    <ul>
-      <li>Eigen-Ersparnisse: CHF 4'000 (26 %)</li>
-      <li>Arbeitgeber-Beitrag: CHF 3'000 (20 %, verhandelt)</li>
-      <li>Kantonales Stipendium: CHF 2'000 (13 %, Zuschuss)</li>
-      <li>EDUCA SWISS Darlehen: CHF 4'000 (27 %, 1,5 % Zinsen)</li>
-      <li>Branchenfonds-Zuschuss: CHF 2'000 (13 %, einmalig)</li>
-    </ul>
-    <p><strong>Resultat: Nur CHF 4'000 Eigeneinsatz + kleine Darlehen</strong></p>
+    <h2>🎯 Kombination mehrerer Finanzierungsquellen</h2>
 
-    <h2>Checkliste: Alternative Finanzierung nutzen</h2>
-    <p><strong>VOR Kursbeginn:</strong></p>
-    <ul>
-      <li>Vollständiges Budget erstellen (mit Nebenkosten)</li>
-      <li>Kantonales Stipendienamt kontaktieren (Fristen!)</li>
-      <li>EDUCA SWISS-Anfrage stellen (2–4 Wochen einplanen)</li>
-      <li>Branchenfonds recherchieren (SwissFoundations)</li>
-      <li>Arbeitgeber um Beteiligung anfragen</li>
-      <li>Reihenfolge planen: Zuschüsse ZUERST, dann Darlehen</li>
-    </ul>
+    <div class="info-box">
+      <h3>💰 Beispiel: Fachausweis CHF 15'000 finanzieren</h3>
+      <table>
+        <thead>
+          <tr><th>Finanzierungsquelle</th><th>Betrag</th><th>Anteil</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Eigen-Ersparnisse</td><td>CHF 4'000</td><td>26 %</td></tr>
+          <tr><td>Arbeitgeber-Beitrag</td><td>CHF 3'000</td><td>20 %</td></tr>
+          <tr><td>Kantonales Stipendium</td><td>CHF 2'000</td><td>13 %</td></tr>
+          <tr><td>EDUCA SWISS Darlehen</td><td>CHF 4'000</td><td>27 %</td></tr>
+          <tr><td>Branchenfonds-Zuschuss</td><td>CHF 2'000</td><td>13 %</td></tr>
+        </tbody>
+      </table>
+      <p><strong>🎯 Resultat: Nur CHF 4'000 Eigeneinsatz + kleines Darlehen!</strong></p>
+    </div>
 
-    <p><strong>Wer passende Finanzierungsmöglichkeiten nutzen möchte, findet auf KursNavi zu jedem Kurs die Informationen zu Kosten und Förderungen.</strong></p>
+    <h2>✅ Checkliste: Alternative Finanzierung nutzen</h2>
+    <div class="checklist">
+      <p><strong>VOR Kursbeginn:</strong></p>
+      <ul>
+        <li>Vollständiges Budget erstellen (mit Nebenkosten)</li>
+        <li>Kantonales Stipendienamt kontaktieren (Fristen!)</li>
+        <li>EDUCA SWISS-Anfrage stellen (2–4 Wochen einplanen)</li>
+        <li>Branchenfonds recherchieren (SwissFoundations)</li>
+        <li>Arbeitgeber um Beteiligung anfragen</li>
+        <li>Reihenfolge planen: Zuschüsse ZUERST, dann Darlehen</li>
+      </ul>
+    </div>
+
+    <div class="cta-box">
+      <h3>🎓 Finde Deine Weiterbildung auf KursNavi</h3>
+      <p>Wer passende Finanzierungsmöglichkeiten nutzen möchte, findet auf KursNavi zu jedem Kurs die Informationen zu Kosten und Förderungen.</p>
+    </div>
   `,
 
   // ============================================

@@ -16,7 +16,7 @@ export const Home = ({
 }) => {
 
   // Load taxonomy from DB (with fallback to constants.js)
-  const { taxonomy, types, getTypeLabel: dbGetTypeLabel, getAreaLabel: dbGetAreaLabel } = useTaxonomy();
+  const { taxonomy, types, areas, getTypeLabel: dbGetTypeLabel, getAreaLabel: dbGetAreaLabel } = useTaxonomy();
 
   // State für das Mega-Menü
   const [activeType, setActiveType] = useState('beruflich'); // Spalte 1 Auswahl
@@ -103,7 +103,12 @@ export const Home = ({
   };
 
   const getAreaLabel = (type, areaKey) => {
-    // Try DB taxonomy first
+    // First, try to find area by slug in the areas array (most reliable)
+    const areaBySlug = areas.find(a => a.slug === areaKey);
+    if (areaBySlug) {
+      return areaBySlug[`label_${lang}`] || areaBySlug.label_de || areaKey;
+    }
+    // Try DB taxonomy lookup
     const dbLabel = dbGetAreaLabel(type, areaKey, lang);
     if (dbLabel && dbLabel !== areaKey) return dbLabel;
     // Fallback to constants
