@@ -43,8 +43,14 @@ export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCat
         if (!key) return "";
         if (level === 1) return activeTypes[key]?.de || formatSlugToLabel(String(key));
         if (level === 2) {
-            // First try to find the area in the areas array (from DB)
-            // Compare with both string and number versions of key
+            // FIRST: Try to get label directly from activeTaxonomy structure
+            // This is the most reliable source as it's built from DB data
+            if (parentKey && activeTaxonomy[parentKey]?.[key]?.label?.de) {
+                const label = activeTaxonomy[parentKey][key].label.de;
+                if (!isSlug(label)) return label;
+            }
+
+            // SECOND: Try to find the area in the areas array (from DB)
             const keyNum = typeof key === 'string' ? parseInt(key, 10) : key;
             const keyStr = String(key);
             const area = areas.find(a =>
@@ -55,21 +61,10 @@ export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCat
                 a.slug === keyStr
             );
 
-            // DEBUG: Log what we're looking for and what we found
-            console.log(`[getLabel] key=${key}, keyNum=${keyNum}, areas.length=${areas.length}, found area:`, area);
-
-            // Only use label_de if it's not a slug
             if (area?.label_de && !isSlug(area.label_de)) return area.label_de;
-            // If area has a slug, format that
             if (area?.slug) return formatSlugToLabel(area.slug);
-            // Fallback to taxonomy structure - check both key formats
-            if (parentKey) {
-                const taxonomyLabel = activeTaxonomy[parentKey]?.[key]?.label?.de
-                    || activeTaxonomy[parentKey]?.[keyNum]?.label?.de
-                    || activeTaxonomy[parentKey]?.[keyStr]?.label?.de;
-                if (taxonomyLabel && !isSlug(taxonomyLabel)) return taxonomyLabel;
-            }
-            // Last resort: format slug to readable label (key might be slug or ID)
+
+            // Last resort: format key as slug if it looks like one
             return isSlug(keyStr) ? formatSlugToLabel(keyStr) : keyStr;
         }
         return key; // Level 3+4 are plain strings
