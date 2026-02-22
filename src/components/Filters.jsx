@@ -43,14 +43,8 @@ export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCat
         if (!key) return "";
         if (level === 1) return activeTypes[key]?.de || formatSlugToLabel(String(key));
         if (level === 2) {
-            // FIRST: Try to get label directly from activeTaxonomy structure
-            // This is the most reliable source as it's built from DB data
-            if (parentKey && activeTaxonomy[parentKey]?.[key]?.label?.de) {
-                const label = activeTaxonomy[parentKey][key].label.de;
-                if (!isSlug(label)) return label;
-            }
-
-            // SECOND: Try to find the area in the areas array (from DB)
+            // FIRST: Try to find the area in the areas array (from DB)
+            // This is the most reliable source - it's the raw DB data
             const keyNum = typeof key === 'string' ? parseInt(key, 10) : key;
             const keyStr = String(key);
             const area = areas.find(a =>
@@ -61,7 +55,17 @@ export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCat
                 a.slug === keyStr
             );
 
-            if (area?.label_de && !isSlug(area.label_de)) return area.label_de;
+            if (area?.label_de && !isSlug(area.label_de)) {
+                return area.label_de;
+            }
+
+            // SECOND: Try to get label from activeTaxonomy structure
+            if (parentKey && activeTaxonomy[parentKey]?.[key]?.label?.de) {
+                const label = activeTaxonomy[parentKey][key].label.de;
+                if (!isSlug(label)) return label;
+            }
+
+            // Third: Try slug from area
             if (area?.slug) return formatSlugToLabel(area.slug);
 
             // Last resort: format key as slug if it looks like one

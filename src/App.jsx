@@ -820,11 +820,22 @@ export default function KursNaviPro() {  // 1. Initial State Logic
     if (!isPublished && !isOwner) return false;
 
     // Check category filters against ALL categories (primary + Zweitkategorien)
+    // Map URL slugs to database slugs (URL uses legacy slugs like 'beruflich', DB uses 'professionell')
+    const URL_TO_DB_TYPE = {
+      'beruflich': 'professionell',
+      'privat_hobby': 'privat',
+      'kinder_jugend': 'kinder',
+      'professionell': 'professionell',
+      'privat': 'privat',
+      'kinder': 'kinder'
+    };
+    const dbSearchType = searchType ? (URL_TO_DB_TYPE[searchType] || searchType) : '';
+
     let matchesType = true;
-    if (searchType) {
-      matchesType = course.category_type === searchType ||
+    if (dbSearchType) {
+      matchesType = course.category_type === dbSearchType ||
         (Array.isArray(course.all_categories) &&
-         course.all_categories.some(cat => cat && cat.category_type === searchType));
+         course.all_categories.some(cat => cat && cat.category_type === dbSearchType));
     }
 
     let matchesArea = true;
@@ -833,17 +844,6 @@ export default function KursNaviPro() {  // 1. Initial State Logic
         (Array.isArray(course.categories) && course.categories.includes(searchArea)) ||
         (Array.isArray(course.all_categories) &&
          course.all_categories.some(cat => cat && cat.category_area === searchArea));
-
-      // Debug: Log area filter for published courses
-      if (course.status === 'published') {
-        console.log('[Filter Debug] Area check:', {
-          courseId: course.id,
-          searchArea,
-          courseArea: course.category_area,
-          matchesArea,
-          allCategoryAreas: course.all_categories?.map(c => c.category_area)
-        });
-      }
     }
 
     let matchesSpecialty = true;
@@ -855,21 +855,6 @@ export default function KursNaviPro() {  // 1. Initial State Logic
            cat.category_specialty === searchSpecialty ||
            cat.category_specialty_label === searchSpecialty
          )));
-
-      // Debug: Log when specialty filter fails
-      if (!matchesSpecialty && course.status === 'published') {
-        console.log('[Filter Debug] Specialty mismatch:', {
-          courseId: course.id,
-          courseTitle: course.title,
-          searchSpecialty,
-          courseSpecialty: course.category_specialty,
-          allCategories: course.all_categories?.map(c => ({
-            specialty: c.category_specialty,
-            specialty_label: c.category_specialty_label,
-            area: c.category_area
-          }))
-        });
-      }
     }
 
     let matchesFocus = true;

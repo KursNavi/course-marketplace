@@ -897,6 +897,404 @@ export const RATGEBER_CONTENT = {
     <p><strong>Lösung:</strong> Konkrete Outcomes definieren. Nicht 'Ich mache einen Kurs, um Soft Skills zu verbessern.' Sondern: 'Nach 3 Monaten kann ich Projekt-Reports in 1 Page zusammenfassen und Kunden-Präsentationen leiten (macht aktuell Kolleg:in).'</p>
 
     <p><strong>Finde jetzt Soft-Skills-Kurse auf KursNavi – passende Angebote in Deiner Region.</strong></p>
+  `,
+
+  // ============================================
+  // BERUFLICH > ZUKUNFTSTRENDS
+  // ============================================
+  'beruflich/zukunftstrends/ai-literacy-arbeitsplatz': `
+    <p class="lead">KI-Skills sind 2026 am Schweizer Arbeitsmarkt keine Optionalität mehr – sie sind betriebliche Realität. Wer nicht versteht, wie ChatGPT, Claude, Copilot und ähnliche Tools funktionieren, wird in vielen Branchen schnell vom Arbeitsmarkt abgehängt. Gute Nachricht: Diese Fähigkeiten sind lernbar.</p>
+
+    <h2>Welche KI-Tools solltest Du können?</h2>
+    <p>Das Spektrum der relevanten Tools ist heute breiter denn je:</p>
+    <table>
+      <thead>
+        <tr><th>KI-Tool</th><th>Kernfunktion</th><th>Einsatz</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>ChatGPT / Claude</td><td>Generative Text, Brainstorming</td><td>Marketing, Content, Planung</td></tr>
+        <tr><td>Copilot / Gemini</td><td>Code-Assistenz, Problem-Lösung</td><td>IT, Entwicklung, Automation</td></tr>
+        <tr><td>Canva AI / Midjourney</td><td>Visuelle Inhalte generieren</td><td>Design, Marketing, Präsentation</td></tr>
+        <tr><td>Zapier / Make</td><td>Workflow-Automatisierung</td><td>Business-Prozesse, Integration</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Wie schreibst Du effektive Prompts?</h2>
+    <p>Prompt Engineering – die Fähigkeit, KI gezielt zu instruieren – ist die neue Kernkompetenz. Effektive Prompts enthalten:</p>
+    <ul>
+      <li><strong>Kontext und Ziel:</strong> Wozu brauchst Du die Information?</li>
+      <li><strong>Spezifizität:</strong> Je präziser, desto besser das Resultat</li>
+      <li><strong>Iteratives Feedback:</strong> Erste Antwort? Dann optimieren</li>
+      <li><strong>Kritisches Denken:</strong> KI-Output auf Fehler und Bias prüfen</li>
+    </ul>
+
+    <p><strong>Finde jetzt AI-Kurse und Digital-Skills-Programme auf KursNavi.</strong></p>
+  `,
+
+  'beruflich/zukunftstrends/digital-literacy-generationen': `
+    <p class="lead">Digital Literacy ist nicht mehr ein "Senioren-Problem" – es ist ein generationenübergreifendes Thema. Gleichzeitig gibt es gute Nachrichten: Die digitale Kluft in der Schweiz wird kleiner, und es entstehen niederschwellige Lernmöglichkeiten für alle.</p>
+
+    <h2>Wer braucht Digital Literacy?</h2>
+    <p>Die digitale Spaltung hat mehrere Dimensionen:</p>
+    <table>
+      <thead>
+        <tr><th>Zielgruppe</th><th>Herausforderung</th><th>Bedarf</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>65+ Jahre</td><td>Unsicherheit, Technikangst, KI-Distanz</td><td>Grundkompetenz, KI-Einführung</td></tr>
+        <tr><td>Arbeitnehmende</td><td>Neue Work-Tools, KI-Integration</td><td>Berufliche digitale Skills</td></tr>
+        <tr><td>Junge Menschen</td><td>Cyber-Sicherheit, digitale Überreizung</td><td>Kritisches Denken, Sicherheit</td></tr>
+        <tr><td>Migrantinnen/Migranten</td><td>Sprache + digitale Kompetenz</td><td>Niederschwelliger Zugang</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Was bietet die Schweiz?</h2>
+    <p>Es gibt mittlerweile etablierte Strukturen für Digital Literacy:</p>
+    <ul>
+      <li><strong>ADIS (Alliance for Digital Inclusion):</strong> Koordiniert digitale Inklusion. Gegründet November 2024.</li>
+      <li><strong>Digital Cafés:</strong> Niederschwellige Orte für Austausch und Fragen</li>
+      <li><strong>Generationenprogramme:</strong> Junge Menschen mentorieren Ältere</li>
+      <li><strong>Online-Plattformen:</strong> Seniorengerecht designte Portale und Apps</li>
+    </ul>
+
+    <p><strong>Auf KursNavi gibt es für jede Altersgruppe passende Digital-Literacy-Kurse und IT-Grundlagen-Trainings.</strong></p>
+  `,
+
+  'beruflich/zukunftstrends/green-skills-nachhaltigkeit': `
+    <p class="lead">Die Schweiz hat sich zur CO₂-Neutralität bis 2050 verpflichtet – und das hat Folgen für den Arbeitsmarkt. Unternehmen suchen dringend nach Menschen, die verstehen, wie nachhaltige Geschäftsmodelle funktionieren. Green Skills sind nicht mehr Nischen-Know-how; sie sind ein Differenzierungsfaktor im CV.</p>
+
+    <h2>Was bedeutet Green Skills konkret?</h2>
+    <p>Green Skills umfassen Kompetenzen in folgenden Bereichen:</p>
+    <ul>
+      <li><strong>ESG-Integration:</strong> Environmental, Social, Governance Standards in der Unternehmensführung</li>
+      <li><strong>Kreislaufwirtschaft:</strong> Von linearen zu zirkulären Produktionsweisen</li>
+      <li><strong>Nachhaltigkeitsberichterstattung:</strong> Messung und Kommunikation von Sustainability-Zielen</li>
+      <li><strong>Regulatorisches Wissen:</strong> Compliance mit neuen Nachhaltigkeitsgesetzen (etwa der EU-Taxonomie)</li>
+    </ul>
+
+    <h2>Welche Weiterbildungen gibt es in der Schweiz?</h2>
+    <p>Schweizer Hochschulen und Fachinstitutionen bieten spezialisierte Programme an:</p>
+    <table>
+      <thead>
+        <tr><th>Angebot</th><th>Institution</th><th>Format</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>CAS Nachhaltigkeitsmanagement</td><td>OST (Ostschweizer FH)</td><td>Berufsbegleitend, 1-2 Jahre</td></tr>
+        <tr><td>NDS Nachhaltigkeit</td><td>Diverse FH / Universitäten</td><td>Spezialisierungsprogramm</td></tr>
+        <tr><td>Executive Programme</td><td>Universität St. Gallen (HSG)</td><td>Leadership-fokussiert</td></tr>
+        <tr><td>OdA Umwelt Kurse</td><td>Branchenverbände</td><td>Modular, kurzzeitig</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Wo liegen die Karrierechancen?</h2>
+    <p>Unternehmen brauchen Sustainability Manager, CSR-Officer, ESG-Beraterinnen und Nachhaltigkeitsleitung. Der Arbeitsmarkt für Green Skills ist dynamisch und wächst kontinuierlich. Besonders attraktiv ist die Kombination von Green Skills mit anderen Domänen – etwa "Green Skills + KI-Literacy" oder "Green Skills + Digitale Transformation".</p>
+
+    <p><strong>Wer sich beruflich in Nachhaltigkeit weiterentwickeln möchte, findet auf KursNavi spezialisierte Angebote.</strong></p>
+  `,
+
+  'beruflich/zukunftstrends/micro-credentials-cv': `
+    <p class="lead">Ein 4-Jahres-Studium dauert zu lange. Ein eintägiges Seminar ist zu oberflächlich. Micro-Credentials sind der Mittelweg: überprüfbare Qualifikationen, die man in Wochen erwerben kann und die auf Arbeitsmarkt-Demande abgestimmt sind. In der Schweiz sind sie 2026 im Momentum.</p>
+
+    <h2>Was ist ein Micro-Credential eigentlich?</h2>
+    <p>Ein Micro-Credential ist ein digitales Zertifikat, das bestätigt, dass Du eine konkrete, klar definierte Kompetenz beherrschst. Beispiele: "Prompt Engineering für Marketing", "ESG-Reporting", "Digitale Sicherheit im Homeoffice". Anders als klassische Diplome sind Micro-Credentials:</p>
+    <ul>
+      <li><strong>Flexibel:</strong> Vereinbar mit Vollzeitarbeit</li>
+      <li><strong>Schnell:</strong> 3-12 Wochen, nicht Jahre</li>
+      <li><strong>Spezifisch:</strong> Fokus auf konkrete Marktanforderungen</li>
+      <li><strong>Stackbar:</strong> Können zu grösseren Qualifikationen kombiniert werden</li>
+    </ul>
+
+    <h2>Wo bekommst Du Micro-Credentials in der Schweiz?</h2>
+    <p>Das Angebot wächst. ZHAW, diverse Fachhochschulen und spezialisierte Weiterbildungsanbieter experimentieren bereits. Bis 2026/27 wird das Angebot deutlich ausgebaut.</p>
+    <table>
+      <thead>
+        <tr><th>Anbieter</th><th>Fokus</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>ZHAW</td><td>Technologie, Management</td><td>Bereits Angebote</td></tr>
+        <tr><td>Diverse FH</td><td>Modulare Micro-Degrees</td><td>In Entwicklung</td></tr>
+        <tr><td>Online-Plattformen</td><td>Breites Spektrum</td><td>International aktiv</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Wie hilft Dir das im Jobmarkt?</h2>
+    <p>Micro-Credentials beweisen Arbeitgebern konkret: Du kannst diesen einen Skill. Das ist transparenter und glaubwürdiger als "Interesse an KI" im CV. Kombinierst Du mehrere Micro-Credentials, baust Du Dir ein Portfolio auf, das zeigt, dass Du seriös an Deiner Weiterbildung arbeitest.</p>
+
+    <p><strong>Finde jetzt Kurse mit anerkannten Micro-Credentials auf KursNavi.</strong></p>
+  `,
+
+  'beruflich/zukunftstrends/new-work-hybride-fuehrung': `
+    <p class="lead">Führung 2026 funktioniert nicht mehr wie vor zehn Jahren. Remote und Hybrid Work haben die Spielregeln verändert. Moderne Leader müssen Coaches sein, nicht Controller – und das ist eine völlig andere Fähigkeitsmenge.</p>
+
+    <h2>Welche vier Rollen hat ein moderner Leader?</h2>
+    <p>Das C.A.R.E-Modell beschreibt, wie sich Führung heute tatsächlich anfühlt:</p>
+    <ul>
+      <li><strong>Champion:</strong> Für Dein Team einstehen – Ressourcen akquirieren, Hindernisse aus dem Weg räumen</li>
+      <li><strong>Catalyst:</strong> Zusammenarbeit und Innovationskultur initiieren</li>
+      <li><strong>Coach:</strong> Individuelle Entwicklung und Mentoring</li>
+      <li><strong>Conductor:</strong> Kulturelle Kohäsion und Balance zwischen Autonomie und Zusammenhalt</li>
+    </ul>
+
+    <h2>Welche Kompetenzen brauchst Du als Führungskraft?</h2>
+    <p>Hier eine Orientierungsliste:</p>
+    <table>
+      <thead>
+        <tr><th>Kompetenz</th><th>Was bedeutet das konkret?</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Digitale Führung</td><td>Remote Teams steuern, Async-Kommunikation, Videokonferenzen moderieren</td></tr>
+        <tr><td>Emotionale Intelligenz</td><td>Empathie, Selbstreflexion, Vertrauensaufbau, Umgang mit Unsicherheit</td></tr>
+        <tr><td>Adaptivität</td><td>Schnelle Anpassung, Fehlertoleranz, kontinuierliches Lernen</td></tr>
+        <tr><td>KI-Verständnis</td><td>Grundkenntnisse über KI-Chancen und -Grenzen, verantwortungsvoller Einsatz</td></tr>
+      </tbody>
+    </table>
+
+    <p><strong>Auf KursNavi lassen sich Führungskurse und New-Work-Trainings in der Nähe entdecken.</strong></p>
+  `,
+
+  'beruflich/zukunftstrends/adaptive-skills-2026': `
+    <p class="lead">Auf dem Schweizer Arbeitsmarkt 2026 gilt eine neue Regel: Wer sich am schnellsten und geschicktesten adaptiert, gewinnt – nicht wer am fleissigsten ist. 40% aller Skills müssen bis 2030 erneuert werden. Adaptive Skills sind die neuen Job Security.</p>
+
+    <h2>Welche Kernkompetenzen gehören zu Adaptive Skills?</h2>
+    <p>Adaptive Skills sind nicht eine einzelne Fähigkeit – sie sind ein Bündel:</p>
+    <ul>
+      <li><strong>Resilienz:</strong> Umgang mit Unsicherheit, Lernen aus Rückschlägen</li>
+      <li><strong>Flexibilität:</strong> Bereitschaft zur beruflichen Neuorientierung</li>
+      <li><strong>Agilität:</strong> Schnelle Reaktion auf Veränderungen, experimentelles Denken</li>
+      <li><strong>Lebenslanges Lernen:</strong> Intrinsische Motivation, kontinuierliche Weiterentwicklung</li>
+      <li><strong>Kritisches Denken:</strong> Evaluierung von Information und Trends</li>
+      <li><strong>Kommunikation & Kollaboration:</strong> Effektive Zusammenarbeit über Grenzen</li>
+    </ul>
+
+    <h2>Warum gerade jetzt?</h2>
+    <p>Mehrere Trends treffen 2026 zusammen:</p>
+    <table>
+      <thead>
+        <tr><th>Trend</th><th>Auswirkung</th><th>Anforderung</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>KI-Integration</td><td>60% der Jobs verändern sich</td><td>Kontinuierliches Lernen</td></tr>
+        <tr><td>Hybrid Work</td><td>Neue Zusammenarbeitsformen</td><td>Flexible Adaptivität</td></tr>
+        <tr><td>Schnellere Zyklen</td><td>Kompetenzen veralten schneller</td><td>Lerngeschwindigkeit</td></tr>
+        <tr><td>Generationenmix</td><td>Unterschiedliche Erwartungen</td><td>Empathie & Offenheit</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Wie entwickelst Du Adaptive Skills?</h2>
+    <p>Es gibt keine klassische "Prüfung" für Adaptive Skills. Du entwickelst sie durch Reflexion, kleine Projekte, Feedback-Gespräche, und den Willen, regelmässig aus Deiner Komfortzone herauszugehen. Viele spezialisierte Weiterbildungen unterstützen diese Entwicklung – von Coaching bis Executive Education.</p>
+
+    <p><strong>Wer seine adaptiven Kompetenzen trainieren möchte, findet auf KursNavi zukunftsorientierte Weiterbildungen.</strong></p>
+  `,
+
+  // ============================================
+  // BERUFLICH > BILDUNGSSYSTEM SCHWEIZ
+  // ============================================
+  'beruflich/bildungssystem/schweizer-bildungssystem-ueberblick': `
+    <p class="lead">Das Schweizer Bildungssystem ist für seine Durchlässigkeit berühmt – doch was bedeutet das konkret? Eine klare Übersicht über Wege, Stufen und Chancen für Ihre berufliche Entwicklung.</p>
+
+    <h2>Wie ist das Schweizer Bildungssystem strukturiert?</h2>
+    <p>Das System gliedert sich in drei Hauptstufen: Sekundarstufe II (nach der Obligatorschule), Tertiärstufe B (Berufsbildung) und Tertiärstufe A (Hochschulen). Etwa zwei Drittel der Jugendlichen wählen die duale Berufsausbildung (Lehre), die Schule und Praxis verbindet und zum Eidgenössischen Fähigkeitszeugnis (EFZ) führt. Andere folgen gymnasialer oder Berufsmaturität.</p>
+
+    <h2>Was ist Durchlässigkeit und warum ist sie wichtig?</h2>
+    <p>Durchlässigkeit bedeutet: Man ist nicht auf einen Weg festgelegt. Nach einer Berufsausbildung kann man sich weiterbilden, spezialisieren oder an die Hochschule wechseln – je nach Abschluss und Zielen. Besonders die Berufsmaturität spielt eine Schlüsselrolle, da sie direkten Zugang zur Fachhochschule oder via Passerelle zur Universität öffnet.</p>
+
+    <h2>Überblick: Die Einstiegsvoraussetzungen nach Sekundarstufe II</h2>
+    <table>
+      <thead>
+        <tr><th>Abschluss</th><th>Nächste Möglichkeiten</th><th>Besonderheit</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>EFZ (Lehre)</td><td>HF, BP, HFP</td><td>Praktisch, schneller Berufseinstieg</td></tr>
+        <tr><td>Berufsmaturität (BM)</td><td>FH oder Uni (via Passerelle)</td><td>Flexibler Übergang ins Hochschulsystem</td></tr>
+        <tr><td>Gymnasiale Maturität</td><td>Universität oder FH</td><td>Theoretisch, wissenschaftliche Orientierung</td></tr>
+      </tbody>
+    </table>
+  `,
+
+  'beruflich/bildungssystem/hoehere-berufsbildung-vs-hochschule': `
+    <p class="lead">HF oder FH/Uni? – Diese Frage stellen sich viele Berufstätige. Der Unterschied liegt nicht in der Qualität, sondern in der Ausrichtung und Zielsetzung. Ein ehrlicher Vergleich.</p>
+
+    <h2>Was ist höhere Berufsbildung (HF/BP/HFP)?</h2>
+    <p>Höhere Fachschulen (HF), Berufsprüfungen (BP) und Höhere Fachprüfungen (HFP) bilden die Tertiärstufe B. Sie sind praxisorientiert, spezialisiert und richten sich an Menschen mit Berufserfahrung. HF-Diplome dauern 2–4 Jahre (berufsbegleitend möglich), sind günstig und führen direkt zu besseren Jobs. Das HF-Diplom ist auf NQR-Stufe 6 klassifiziert – gleichwertig mit akademischen Bachelorabschlüssen.</p>
+
+    <h2>Was unterscheidet Fachhochschule (FH) und Universität (Uni)?</h2>
+    <p>Fachhochschulen kombinieren angewandte Forschung mit beruflicher Praxis. Universitäten betreiben Grundlagenforschung und sind theoretisch orientiert. Beide vergeben Bachelor- und Masterabschlüsse. Der Unterschied: An der FH lernen Sie konkrete Anwendungen; an der Uni verstehen Sie theoretische Grundlagen und Forschungskompetenzen.</p>
+
+    <h2>Vergleichstabelle: HF, FH und Universität auf einen Blick</h2>
+    <table>
+      <thead>
+        <tr><th>Kriterium</th><th>HF/BP</th><th>FH</th><th>Universität</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Fokus</td><td>Praktische Fachkompetenz</td><td>Angewandte Forschung + Praxis</td><td>Grundlagenforschung + Theorie</td></tr>
+        <tr><td>Eintritt</td><td>EFZ genügt</td><td>Berufsmaturität</td><td>Gymnasiale Maturität</td></tr>
+        <tr><td>Dauer</td><td>2–4 Jahre</td><td>3 Jahre (BA), 2 Jahre (MA)</td><td>3 Jahre (BA), 2 Jahre (MA)</td></tr>
+        <tr><td>Format</td><td>Berufsbegleitend/Vollzeit</td><td>Vorlesungen, Projekte</td><td>Vorlesungen, Seminare</td></tr>
+        <tr><td>Karriereziel</td><td>Spezialist/Führung im Fach</td><td>Angewandter Beruf</td><td>Akademische/Forschungs-Karriere</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Welcher Weg passt zu mir?</h2>
+    <p>Wählen Sie HF/BP, wenn Sie spezialisierte Fachkompetenz schnell erlangen und arbeiten möchten. Berufserfahrung ist kein Hindernis – sondern Voraussetzung. Wählen Sie FH, wenn Sie Theorie und Praxis kombinieren möchten und bereits Berufsmaturität haben. Wählen Sie Universität, wenn Sie akademische oder Forschungsziele haben oder bereits gymnasiale Maturität besitzen.</p>
+  `,
+
+  'beruflich/bildungssystem/ects-cas-das-mas': `
+    <p class="lead">Ob CAS, DAS oder MAS – alle diese Weiterbildungen arbeiten mit ECTS-Punkten. Aber was bedeutet das konkret, und wieviel Lernaufwand steckt dahinter?</p>
+
+    <h2>Was ist 1 ECTS-Punkt?</h2>
+    <p>1 ECTS (European Credit Transfer System) = etwa 25–30 Lernstunden. Das klingt technisch, bedeutet aber einfach: Ein ECTS-Punkt repräsentiert Ihre gesamte Arbeitsleistung – Unterricht, Selbststudium, Hausaufgaben, Prüfungsvorbereitung. Dieses System ermöglicht, dass Kurse europaweit vergleichbar sind.</p>
+
+    <h2>Die drei Stufen: CAS, DAS, MAS</h2>
+
+    <h3>CAS (Certificate of Advanced Studies)</h3>
+    <p><strong>Minimum: 10 ECTS-Punkte | Dauer: Wenige Monate bis 1 Jahr</strong></p>
+    <p>Ein CAS ist ein spezialisiertes Zertifikat für schnelle Weiterqualifikation. Beispiel: "CAS Digital Marketing" dauert ca. 250–300 Lernstunden verteilt über 6–8 Monate. CAS-Module können kombiniert werden – mehrere CAS ergeben einen DAS.</p>
+
+    <h3>DAS (Diploma of Advanced Studies)</h3>
+    <p><strong>Minimum: 30 ECTS-Punkte | Dauer: 1–2 Jahre (berufsbegleitend)</strong></p>
+    <p>Ein DAS ist umfassender als ein CAS. Oft besteht es aus 3 CAS-Modulen (je 10 ECTS) plus Zusatzprojekten. Beispiel: "DAS Führung und Management" = 750–900 Lernstunden, häufig mit Fallstudien und Gruppenprojekten.</p>
+
+    <h3>MAS (Master of Advanced Studies)</h3>
+    <p><strong>Minimum: 60 ECTS-Punkte | Dauer: 2–3 Jahre (berufsbegleitend)</strong></p>
+    <p>Ein MAS ist die höchste Weiterbildungsstufe – vergleichbar mit akademischen Master-Abschlüssen. Beispiel: "MAS Health Technology Management" = 1500–1800 Lernstunden, endet mit Master-Thesis. Der Zugang setzt üblicherweise einen Hochschulabschluss oder äquivalente Berufserfahrung voraus.</p>
+
+    <h2>ECTS-Übersicht: CAS, DAS, MAS auf einen Blick</h2>
+    <table>
+      <thead>
+        <tr><th>Format</th><th>ECTS</th><th>Lernstunden</th><th>Dauer</th><th>Zielgruppe</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>CAS</td><td>10</td><td>250–300</td><td>6–8 Mo.</td><td>Spezialisierung schnell</td></tr>
+        <tr><td>DAS</td><td>30</td><td>750–900</td><td>1–2 Jahre</td><td>Führungskräfte</td></tr>
+        <tr><td>MAS</td><td>60</td><td>1500–1800</td><td>2–3 Jahre</td><td>Spezialist/innen</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Modularität: Bausteine kombinieren</h2>
+    <p>Ein häufiges Modell: Sie machen erst einen CAS (10 ECTS), dann einen zweiten (10 ECTS), dann einen dritten – zusammen 30 ECTS = DAS. Später können Sie noch weitere Kurse belegen und ergänzen bis 60 ECTS für einen MAS. Das System ist flexibel: Sie entscheiden, wann Sie weitermachen und spezialisieren.</p>
+
+    <h2>Arbeitsmarkt und NQR-Klassifikation</h2>
+    <p>Arbeitgeber verstehen ECTS-Punkte – sie zeigen, wie viel Sie gelernt haben. Im Nationalen Qualifikationsrahmen (NQR) werden CAS/DAS/MAS wie folgt klassifiziert: CAS auf NQR 5, DAS auf NQR 6–7, MAS auf NQR 7. Das heisst: Ein MAS ist gleichwertig mit akademischen Master-Abschlüssen – international vergleichbar.</p>
+  `,
+
+  'beruflich/bildungssystem/professional-bachelor-master': `
+    <p class="lead">Ab 2025/2026 können Absolventinnen und Absolventen von Höheren Fachschulen und Berufsprüfungen neue Titel führen – "Professional Bachelor" und "Professional Master". Das stärkt die Sichtbarkeit beruflicher Qualifikationen weltweit.</p>
+
+    <h2>Was sind die neuen Titel?</h2>
+    <p>Der Titel "Professional Bachelor" ist für HF- und BP-Absolventinnen und Absolventen da. Statt "Diplomierte/r Betriebswirtschafter/in HF" heisst es neu "Professional Bachelor in Business Administration". Der "Professional Master" gilt für HFP-Absolventinnen und Absolventen – zum Beispiel "Professional Master in Financial Planning". Diese Titel sind international verständlich und signalisieren: Hier ist hochqualifizierte Fachkompetenz.</p>
+
+    <h2>Warum diese Reform?</h2>
+    <table>
+      <thead>
+        <tr><th>Grund</th><th>Nutzen für Sie</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Internationale Vergleichbarkeit</td><td>Im Ausland sofort verständlich; erleichtert Jobsuche europaweit</td></tr>
+        <tr><td>Bessere Sichtbarkeit</td><td>CV und Online-Profile (LinkedIn) werden klarer; mehr Anerkennung</td></tr>
+        <tr><td>Europäische Standards</td><td>Professional Bachelor/Master folgen dem EQR (Europäischen Qualifikationsrahmen)</td></tr>
+        <tr><td>Berufliche Anerkennung</td><td>Macht klar: Das ist gleichwertiger Abschluss, nicht "nur" Berufsbildung</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Professional Bachelor vs. akademischer Bachelor – wo ist der Unterschied?</h2>
+    <p>Der Titel enthält das Wort "Professional" – das ist wichtig. Ein "Professional Bachelor of Science" ist nicht identisch mit einem "Bachelor of Science" von Universität oder Fachhochschule. Aber: Beide sind gleichwertig auf dem Arbeitsmarkt und international anerkannt. Der Zusatz "Professional" signalisiert bloss: Dies ist berufsbildende, nicht akademische Ausbildung – was ein Plus ist, nicht ein Minus.</p>
+
+    <h2>Wann kann ich den Titel führen?</h2>
+    <p>Die Titelzusätze sind seit Dezember 2025 gesetzlich verankert. Die Umsetzung an den Schulen erfolgt schrittweise – ab 2026/2027 werden viele Absolventinnen und Absolventen die neuen Titel verwenden können. Alte Titel ("Dipl. HF") bleiben gültig, aber die neuen Titel sind weltweit besser verständlich.</p>
+  `,
+
+  'beruflich/bildungssystem/anerkennung-auslaendischer-diplome': `
+    <p class="lead">Sie haben im Ausland studiert und möchten nun in der Schweiz arbeiten? Hier ist der konkrete Prozess zur Diplomanerkennung – von Anfrage bis Entscheid.</p>
+
+    <h2>Wer ist zuständig?</h2>
+    <p>Das SBFI (Staatssekretariat für Bildung, Forschung und Innovation) ist die zentrale Stelle für die Anerkennung ausländischer Diplome. Das Verfahren ist individualisiert und dauert in der Regel 4–6 Monate. Die Online-Plattform anerkennung.swiss ist Ihr Einstiegspunkt.</p>
+
+    <h2>Reglementierte vs. nicht-reglementierte Berufe – das ist entscheidend</h2>
+
+    <h3>Reglementierte Berufe</h3>
+    <p>Ärzte, Zahnärzte, Pflegefachpersonen, Apotheker/innen, Ingenieure, Architekten, Psychologen – das sind Berufe mit gesetzlicher Regelung. Hier ist eine offizielle Anerkennung zwingend erforderlich, um arbeiten zu dürfen.</p>
+
+    <h3>Nicht-reglementierte Berufe</h3>
+    <p>Betriebsökonomen, IT-Spezialisten, Marketing-Manager, viele Handwerksberufe – diese sind nicht gesetzlich geregelt. Eine offizielle Anerkennung ist nicht zwingend, aber für Bewerbungen und Karriere oft hilfreich.</p>
+
+    <h2>Der Prozess: Schritt für Schritt</h2>
+
+    <h3>Schritt 1: Vorabklärung</h3>
+    <p>Sie füllen ein Antragsformular aus (auf anerkennung.swiss). Kosten: ca. CHF 550 für eine allgemeine Gleichwertigkeitsprüfung. Das SBFI teilt Ihnen mit, was als nächstes zu tun ist.</p>
+
+    <h3>Schritt 2: Diplomprüfung</h3>
+    <p>Das SBFI vergleicht Ihr ausländisches Diplom mit dem Schweizer Äquivalent. Fragen: Wie lange dauerte Ihre Ausbildung? Welche Inhalte? Ist die Institution anerkannt?</p>
+
+    <h3>Schritt 3: Entscheid</h3>
+    <p>Das SBFI teilt mit: Diplom gleichwertig – ODER Ausgleichsmassnahmen notwendig.</p>
+
+    <h2>Ausgleichsmassnahmen: Die Optionen</h2>
+    <table>
+      <thead>
+        <tr><th>Massnahme</th><th>Beschreibung</th><th>Dauer & Kosten</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Eignungsprüfung</td><td>Schriftliche/mündliche Prüfung zu fehlenden Inhalten</td><td>2–6 Monate, CHF 600–1500</td></tr>
+        <tr><td>Anpassungslehrgang</td><td>Zusatzkurs bei Schweizer Institution</td><td>3–12 Monate, CHF 1000–3000+</td></tr>
+        <tr><td>Kombination</td><td>Zusatzausbildung + Eignungsprüfung</td><td>6–24 Monate, CHF 2000–5000+</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Einfacher oder schwieriger?</h2>
+    <p><strong>Einfacher:</strong> Diplome aus EU/EWR-Ländern (harmonisierte Systeme), mit bilateralen Abkommen oder von akkreditierten Institutionen.</p>
+    <p><strong>Schwieriger:</strong> Nicht-harmonisierte Länder, sehr spezialisierte Berufe, grössere inhaltliche Unterschiede zum Schweizer System.</p>
+
+    <h2>Praktische Tipps</h2>
+    <ol>
+      <li><strong>Klären Sie früh:</strong> Bereits bei Jobsuche prüfen, nicht erst nach Zusage.</li>
+      <li><strong>Originaldokumente:</strong> Original-Diplom + Transkript; ggf. beglaubigen lassen.</li>
+      <li><strong>Sprache:</strong> Für reglementierte Berufe oft B2–C1 erforderlich (getestet).</li>
+      <li><strong>Übergangslösungen:</strong> Manche Berufe erlauben temporäre Ausübung während Anerkennung läuft.</li>
+      <li><strong>Netzwerk:</strong> Berufsverbände können informelle Anerkennung beschleunigen.</li>
+    </ol>
+  `,
+
+  'beruflich/bildungssystem/qualitaetslabels-eduqua': `
+    <p class="lead">eduQua ist das einzige schweizweit anerkannte Qualitätslabel für Weiterbildungsanbieter. Doch was bedeutet dieses Siegel konkret – und woran erkennen Sie wirklich gute Kurse?</p>
+
+    <h2>Was ist eduQua?</h2>
+    <p>eduQua ist das zentrale Qualitätslabel für Weiterbildungsanbieter in der Schweiz. Es wird vom SVEB (Schweizer Verband für Weiterbildung) vergeben und ist eine unabhängige Zertifizierung. Über 1000 Schulen, Institute und Akademien sind eduQua-zertifiziert – das Label ist die wichtigste Orientierungshilfe für Qualität in der Erwachsenenbildung.</p>
+
+    <h2>Auf welchen Kriterien basiert eduQua?</h2>
+    <table>
+      <thead>
+        <tr><th>Kriterium</th><th>Was wird überprüft?</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Angebote</td><td>Sind die Kurse bedarfsgerecht, transparent und lernzielorientiert?</td></tr>
+        <tr><td>Kommunikation</td><td>Sind Infos klar, verlässlich und erreichbar?</td></tr>
+        <tr><td>Dienstleistung</td><td>Ist die Durchführung professionell und zielgerichtet?</td></tr>
+        <tr><td>Dozierende</td><td>Haben Kursleitende ausreichende Kompetenzen?</td></tr>
+        <tr><td>Lernerfolg</td><td>Werden Lernziele erreicht?</td></tr>
+        <tr><td>Qualitätsentwicklung</td><td>Gibt es systematische Verbesserungsmechanismen?</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Unterschied zwischen eduQua und anderen Labeln</h2>
+    <p>ISO 9001 ist ein allgemeines Qualitätsmanagementsystem – technisch stringent, aber nicht auf Weiterbildung ausgerichtet. Hochschulakkreditierungen sind spezialisiert, aber nur für akademische Institutionen. eduQua ist das einzige Label, das Erwachsenenbildung und Weiterbildung systematisch bewertet – mit Fokus auf Lernziele und Kundenzufriedenheit.</p>
+
+    <h2>Was eduQua aussagt – und was nicht</h2>
+    <p><strong>eduQua sagt aus:</strong></p>
+    <ul>
+      <li>Der Anbieter erfüllt standardisierte Qualitätskriterien</li>
+      <li>Es gibt systematische Qualitätssicherung</li>
+      <li>Die Kundenzufriedenheit wird gemessen und verbessert</li>
+    </ul>
+
+    <p><strong>eduQua sagt nicht aus:</strong></p>
+    <ul>
+      <li>Ein Kurs ist "besser" als andere</li>
+      <li>Ein eduQua-Kurs ist automatisch besser als ein nicht-zertifizierter</li>
+      <li>Der Preis ist gerechtfertigt</li>
+    </ul>
+
+    <h2>Gültigkeit und aktuelle Norm: eduQua:2021</h2>
+    <p>Ein eduQua-Zertifikat ist 3 Jahre gültig. Die aktuelle Norm ist eduQua:2021 – sie betont Lernergebnisse, Digitalisierung, Inklusion und Nachhaltigkeit stärker. Viele Anbieter nutzen noch die ältere Norm; der Übergang läuft bis Juni 2025.</p>
   `
 };
 

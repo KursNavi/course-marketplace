@@ -29,15 +29,22 @@ export function useTaxonomy() {
     const [courseCounts, setCourseCounts] = useState({ level1: {}, level2: {}, level3: {}, level4: {} });
 
     const loadTaxonomy = useCallback(async (forceRefresh = false) => {
-        // TEMPORARILY DISABLE CACHE to debug taxonomy issues
-        // TODO: Re-enable cache after fixing the issue
-        console.log('[useTaxonomy] Cache disabled for debugging - always loading fresh from DB');
+        // Check cache first
+        if (!forceRefresh && taxonomyCache && (Date.now() - cacheTimestamp < CACHE_DURATION)) {
+            setTaxonomy(taxonomyCache.taxonomy);
+            setTypes(taxonomyCache.types);
+            setAreas(taxonomyCache.areas);
+            setSpecialties(taxonomyCache.specialties);
+            setFocuses(taxonomyCache.focuses || []);
+            setSchemaVersion(taxonomyCache.schemaVersion || 'legacy');
+            setLoading(false);
+            return;
+        }
 
         try {
             setLoading(true);
 
-            // ONLY use consolidated schema (taxonomy_level1/2/3/4)
-            console.log('[useTaxonomy] Loading consolidated taxonomy from taxonomy_level1/2/3/4...');
+            // Load from consolidated schema (taxonomy_level1/2/3/4)
             await loadConsolidatedTaxonomy();
         } catch (err) {
             console.error('Error loading taxonomy:', err);
@@ -62,9 +69,6 @@ export function useTaxonomy() {
         const dbLevel2 = level2Res.data || [];
         const dbLevel3 = level3Res.data || [];
         const dbLevel4 = level4Res.data || [];
-
-        // Debug: Log what we loaded from DB
-        console.log('[useTaxonomy] Loaded from taxonomy_level2:', dbLevel2.map(a => ({ id: a.id, slug: a.slug, label_de: a.label_de })));
 
         // Build taxonomy structure
         const builtTaxonomy = {};
@@ -205,10 +209,6 @@ export function useTaxonomy() {
             schemaVersion: 'consolidated'
         };
         cacheTimestamp = Date.now();
-
-        // DEBUG: Log what we're setting
-        console.log('[useTaxonomy] Setting areas:', mappedAreas.map(a => ({ id: a.id, slug: a.slug, label_de: a.label_de })));
-        console.log('[useTaxonomy] builtTaxonomy[1]._areaIds:', builtTaxonomy[1]?._areaIds);
 
         setTaxonomy(builtTaxonomy);
         setTypes(mappedTypes);
