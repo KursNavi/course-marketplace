@@ -32,6 +32,12 @@ export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCat
             .replace(/ Und /g, ' & ');
     };
 
+    // Check if a string looks like a slug (contains underscores or is all lowercase with no spaces)
+    const isSlug = (str) => {
+        if (!str || typeof str !== 'string') return false;
+        return str.includes('_') || (str === str.toLowerCase() && !str.includes(' '));
+    };
+
     // Helper to get labels from the new structure (Defaulting to DE for now)
     const getLabel = (key, level, parentKey = null) => {
         if (!key) return "";
@@ -39,11 +45,12 @@ export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCat
         if (level === 2) {
             // First try to find the area in the areas array (from DB)
             const area = areas.find(a => a.id === key || a.id === Number(key) || a.slug === key);
-            if (area?.label_de) return area.label_de;
+            // Only use label_de if it's not a slug
+            if (area?.label_de && !isSlug(area.label_de)) return area.label_de;
             // Fallback to taxonomy structure
             if (parentKey) {
                 const taxonomyLabel = activeTaxonomy[parentKey]?.[key]?.label?.de;
-                if (taxonomyLabel) return taxonomyLabel;
+                if (taxonomyLabel && !isSlug(taxonomyLabel)) return taxonomyLabel;
             }
             // Last resort: format slug to readable label
             return formatSlugToLabel(key);
