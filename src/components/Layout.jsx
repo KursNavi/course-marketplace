@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Menu, X, Globe, LogOut, LayoutDashboard, ChevronDown, Mail, ArrowRight, Check, Loader2, Briefcase, Palette, Smile } from 'lucide-react';
 import { SEGMENT_CONFIG } from '../lib/constants';
+import { MegaMenu, MobileMenuCategory } from './MegaMenu';
 
 // BRANDING: The "Compass & Book" Logo [Source: 9]
 // Recreated as SVG: A 4-point star (compass) floating above an abstract open book.
@@ -15,7 +16,7 @@ export const KursNaviLogo = ({ className }) => (
   </svg>
 );
 
-export const Navbar = ({ t, user, lang, setLang, setView, handleLogout, setShowResults, setSelectedCatPath }) => {
+export const Navbar = ({ t, user, lang = 'de', setLang, setView, handleLogout, setShowResults, setSelectedCatPath }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [langMenuOpen, setLangMenuOpen] = useState(false);
   const [activeSegment, setActiveSegment] = useState(null);
@@ -117,22 +118,19 @@ export const Navbar = ({ t, user, lang, setLang, setView, handleLogout, setShowR
               </span>
             </div>
             
-            <div className="hidden md:ml-10 md:flex md:space-x-8">
+            <div className="hidden md:ml-10 md:flex md:space-x-6 md:items-center">
               {segmentButtons.map(({ key, label, Icon, config }) => {
                 const isActive = activeSegment === key;
                 return (
-                  <button
+                  <MegaMenu
                     key={key}
-                    onClick={() => { window.scrollTo(0, 0); window.history.pushState({ view: 'search' }, '', `/search?type=${key}`); }}
-                    className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 font-sans ${
-                      isActive
-                        ? `${config.bgLight} ${config.text} border-b-2 ${config.border}`
-                        : `text-gray-500 hover:text-gray-700`
-                    }`}
-                  >
-                    <Icon className={`w-4 h-4 mr-1.5 ${isActive ? config.text : 'text-gray-400'}`} />
-                    {label}
-                  </button>
+                    categoryKey={key}
+                    label={label}
+                    Icon={Icon}
+                    config={config}
+                    isActive={isActive}
+                    lang={lang}
+                  />
                 );
               })}
               <button onClick={() => navTo('how-it-works')} className="text-gray-500 hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors font-sans">{t.nav_howitworks}</button>
@@ -189,29 +187,29 @@ export const Navbar = ({ t, user, lang, setLang, setView, handleLogout, setShowR
       {/* MOBILE MENU */}
       {mobileMenuOpen && (
         <div className="md:hidden bg-white border-t border-gray-100 absolute w-full left-0 shadow-xl h-screen overflow-y-auto pb-20">
-          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+          <div className="pt-2 pb-3">
             {segmentButtons.map(({ key, label, Icon, config }) => {
               const isActive = activeSegment === key;
               return (
-                <button
+                <MobileMenuCategory
                   key={key}
-                  onClick={() => { setMobileMenuOpen(false); window.scrollTo(0, 0); window.history.pushState({ view: 'search' }, '', `/search?type=${key}`); }}
-                  className={`flex items-center w-full text-left px-3 py-3 rounded-lg text-base font-medium transition-all font-sans ${
-                    isActive
-                      ? `${config.bgLight} ${config.text} ${config.border} border-l-4`
-                      : `text-gray-700 hover:${config.bgLight}`
-                  }`}
-                >
-                  <Icon className={`w-5 h-5 mr-3 ${isActive ? config.text : 'text-gray-400'}`} />
-                  {label}
-                </button>
+                  categoryKey={key}
+                  label={label}
+                  Icon={Icon}
+                  config={config}
+                  isActive={isActive}
+                  lang={lang}
+                  onClose={() => setMobileMenuOpen(false)}
+                />
               );
             })}
+            <div className="px-2 space-y-1 mt-2">
             <button onClick={() => navTo('how-it-works')} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-primaryLight hover:text-primary font-sans">{t.nav_howitworks}</button>
             <button onClick={() => navTo('blog')} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-primaryLight hover:text-primary font-sans">{t.nav_news}</button>
             <button onClick={() => navTo('provider-directory')} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-primaryLight hover:text-primary font-sans">{t.nav_providers || 'Anbieter'}</button>
             <button onClick={() => navTo('teacher-hub')} className="block w-full text-left px-3 py-2 rounded-md text-base font-bold text-orange-600 hover:bg-orange-50 font-sans">{t.nav_for_providers}</button>
-            
+            </div>
+
             {/* Language switcher temporarily hidden for launch (German only)
             <div className="border-t border-gray-100 my-2 pt-2">
                 <p className="px-3 text-xs font-bold text-gray-400 uppercase mb-2 font-heading">Language</p>

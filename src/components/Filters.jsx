@@ -7,6 +7,15 @@ export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCat
     // Load taxonomy from DB (with fallback to constants.js)
     const { taxonomy, types, areas, courseCounts } = useTaxonomy();
 
+    // Debug: Log courseCounts when dropdown opens
+    React.useEffect(() => {
+        if (catMenuOpen) {
+            console.log('[CategoryDropdown] courseCounts:', courseCounts);
+            console.log('[CategoryDropdown] Level2 id=22 (Landwirtschaft):', courseCounts.level2?.[22]);
+            console.log('[CategoryDropdown] Level3 id=63 (Naturkunde):', courseCounts.level3?.[63]);
+        }
+    }, [catMenuOpen, courseCounts]);
+
     const [lvl1, setLvl1] = useState(rootCategory || null);
     const [lvl2, setLvl2] = useState(null);
     const [lvl3, setLvl3] = useState(null);
@@ -44,18 +53,28 @@ export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCat
         if (level === 1) return activeTypes[key]?.de || formatSlugToLabel(String(key));
         if (level === 2) {
             // First try to find the area in the areas array (from DB)
-            const area = areas.find(a => a.id === key || a.id === Number(key) || a.slug === key);
+            // Compare with both string and number versions of key
+            const keyNum = typeof key === 'string' ? parseInt(key, 10) : key;
+            const keyStr = String(key);
+            const area = areas.find(a =>
+                a.id === key ||
+                a.id === keyNum ||
+                a.id === keyStr ||
+                a.slug === key ||
+                a.slug === keyStr
+            );
             // Only use label_de if it's not a slug
             if (area?.label_de && !isSlug(area.label_de)) return area.label_de;
             // If area has a slug, format that
             if (area?.slug) return formatSlugToLabel(area.slug);
-            // Fallback to taxonomy structure
+            // Fallback to taxonomy structure - check both key formats
             if (parentKey) {
-                const taxonomyLabel = activeTaxonomy[parentKey]?.[key]?.label?.de;
+                const taxonomyLabel = activeTaxonomy[parentKey]?.[key]?.label?.de
+                    || activeTaxonomy[parentKey]?.[keyNum]?.label?.de
+                    || activeTaxonomy[parentKey]?.[keyStr]?.label?.de;
                 if (taxonomyLabel && !isSlug(taxonomyLabel)) return taxonomyLabel;
             }
             // Last resort: format slug to readable label (key might be slug or ID)
-            const keyStr = String(key);
             return isSlug(keyStr) ? formatSlugToLabel(keyStr) : keyStr;
         }
         return key; // Level 3+4 are plain strings
