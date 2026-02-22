@@ -12,8 +12,7 @@ let courseCountsCache = null;
 let courseCountsCacheTimestamp = 0;
 
 /**
- * Hook to load taxonomy from database with fallback to constants.js
- * Supports consolidated schema (taxonomy_level1/2/3/4) with legacy fallback
+ * Hook to load taxonomy from database (taxonomy_level1/2/3/4 tables)
  * Returns the taxonomy in a normalized format for components
  * Hierarchy: Level1 (Type) → Level2 (Area) → Level3 (Specialty) → Level4 (Focus)
  */
@@ -25,7 +24,7 @@ export function useTaxonomy() {
     const [areas, setAreas] = useState([]);
     const [specialties, setSpecialties] = useState([]);
     const [focuses, setFocuses] = useState([]);
-    const [schemaVersion, setSchemaVersion] = useState(null); // 'consolidated', 'v2', 'legacy'
+    const [schemaVersion, setSchemaVersion] = useState(null); // 'consolidated' or 'fallback'
     const [courseCounts, setCourseCounts] = useState({ level1: {}, level2: {}, level3: {}, level4: {} });
 
     const loadTaxonomy = useCallback(async (forceRefresh = false) => {
@@ -36,7 +35,7 @@ export function useTaxonomy() {
             setAreas(taxonomyCache.areas);
             setSpecialties(taxonomyCache.specialties);
             setFocuses(taxonomyCache.focuses || []);
-            setSchemaVersion(taxonomyCache.schemaVersion || 'legacy');
+            setSchemaVersion(taxonomyCache.schemaVersion || 'consolidated');
             setLoading(false);
             return;
         }
@@ -216,211 +215,6 @@ export function useTaxonomy() {
         setSpecialties(mappedSpecialties);
         setFocuses(mappedFocuses);
         setSchemaVersion('consolidated');
-        setError(null);
-    };
-
-    // Load from v2 tables (numeric IDs) - legacy support
-    const loadV2Taxonomy = async () => {
-        const [typesRes, areasRes, specialtiesRes, focusesRes] = await Promise.all([
-            supabase.from('taxonomy_types_v2').select('*').eq('is_active', true).order('sort_order'),
-            supabase.from('taxonomy_areas_v2').select('*').eq('is_active', true).order('sort_order'),
-            supabase.from('taxonomy_specialties_v2').select('*').eq('is_active', true).order('sort_order'),
-            supabase.from('taxonomy_focus_v2').select('*').eq('is_active', true).order('sort_order')
-        ]);
-
-        const dbTypes = typesRes.data || [];
-        const dbAreas = areasRes.data || [];
-        const dbSpecialties = specialtiesRes.data || [];
-        const dbFocuses = focusesRes.data || [];
-
-        // Build taxonomy structure keyed by numeric ID
-        const builtTaxonomy = {};
-
-        // Build focus lookup: specialty_id -> focus objects
-        const focusBySpecialtyId = {};
-        dbFocuses.forEach(f => {
-            if (!focusBySpecialtyId[f.specialty_id]) focusBySpecialtyId[f.specialty_id] = [];
-            focusBySpecialtyId[f.specialty_id].push(f);
-        });
-
-        dbTypes.forEach(type => {
-            const typeData = {
-                _meta: type,
-                label: {
-                    de: type.label_de,
-                    en: type.label_en || type.label_de,
-                    fr: type.label_fr || type.label_de,
-                    it: type.label_it || type.label_de
-                }
-            };
-
-            // Find areas for this type and sort alphabetically by label
-            const typeAreas = dbAreas
-                .filter(a => a.type_id === type.id)
-                .sort((a, b) => (a.label_de || '').localeCompare(b.label_de || '', 'de'));
-
-            typeAreas.forEach(area => {
-                // Find specialties for this area and sort alphabetically by label
-                const areaSpecs = dbSpecialties
-                    .filter(s => s.area_id === area.id)
-                    .sort((a, b) => (a.label_de || '').localeCompare(b.label_de || '', 'de'));
-
-                // Build specialty objects with their focuses (sorted)
-                const specialtyObjects = areaSpecs.map(s => ({
-                    id: s.id,
-                    slug: s.slug,
-                    label_de: s.label_de,
-                    label_en: s.label_en || s.label_de,
-                    label_fr: s.label_fr || s.label_de,
-                    label_it: s.label_it || s.label_de,
-                    focuses: (focusBySpecialtyId[s.id] || [])
-                        .sort((a, b) => (a.label_de || '').localeCompare(b.label_de || '', 'de'))
-                }));
-
-                const areaData = {
-                    _meta: area,
-                    label: {
-                        de: area.label_de,
-                        en: area.label_en || area.label_de,
-                        fr: area.label_fr || area.label_de,
-                        it: area.label_it || area.label_de
-                    },
-                    specialties: specialtyObjects.map(s => s.label_de),
-                    specialtyObjects,
-                    specialtyFocuses: Object.fromEntries(
-                        specialtyObjects.map(s => [s.label_de, s.focuses.map(f => f.label_de)])
-                    )
-                };
-
-                typeData[area.id] = areaData;
-                if (area.slug) {
-                    typeData[area.slug] = areaData;
-                }
-            });
-
-            typeData._areaIds = typeAreas.map(a => a.id);
-            builtTaxonomy[type.id] = typeData;
-            if (type.slug) {
-                builtTaxonomy[type.slug] = typeData;
-            }
-        });
-
-        // Update cache
-        taxonomyCache = {
-            taxonomy: builtTaxonomy,
-            types: dbTypes,
-            areas: dbAreas,
-            specialties: dbSpecialties,
-            focuses: dbFocuses,
-            schemaVersion: 'v2'
-        };
-        cacheTimestamp = Date.now();
-
-        setTaxonomy(builtTaxonomy);
-        setTypes(dbTypes);
-        setAreas(dbAreas);
-        setSpecialties(dbSpecialties);
-        setFocuses(dbFocuses);
-        setSchemaVersion('v2');
-        setError(null);
-    };
-
-    // Load from legacy tables (text IDs)
-    const loadLegacyTaxonomy = async () => {
-        const [typesRes, areasRes, specialtiesRes, focusesRes] = await Promise.all([
-            supabase.from('taxonomy_types').select('*').order('sort_order'),
-            supabase.from('taxonomy_areas').select('*').order('sort_order'),
-            supabase.from('taxonomy_specialties').select('*').order('sort_order'),
-            supabase.from('taxonomy_focus').select('*').order('sort_order')
-        ]);
-
-        const hasDBData = typesRes.data?.length > 0;
-
-        if (!hasDBData || typesRes.error || areasRes.error || specialtiesRes.error) {
-            loadConstantsFallback();
-            return;
-        }
-
-        const dbTypes = typesRes.data;
-        const dbAreas = areasRes.data;
-        const dbSpecialties = specialtiesRes.data;
-        const dbFocuses = (focusesRes.error ? [] : focusesRes.data) || [];
-
-        // Build compatible structure
-        const builtTaxonomy = {};
-
-        // Build focus lookup: specialty_id -> focus names
-        const focusBySpecialtyId = {};
-        dbFocuses.forEach(f => {
-            if (!focusBySpecialtyId[f.specialty_id]) focusBySpecialtyId[f.specialty_id] = [];
-            focusBySpecialtyId[f.specialty_id].push(f.name);
-        });
-
-        dbTypes.forEach(type => {
-            const typeData = {
-                _meta: type,
-                label: {
-                    de: type.label_de,
-                    en: type.label_en || type.label_de,
-                    fr: type.label_fr || type.label_de,
-                    it: type.label_it || type.label_de
-                }
-            };
-
-            // Sort areas alphabetically by label
-            const typeAreas = dbAreas
-                .filter(a => a.type_id === type.id)
-                .sort((a, b) => (a.label_de || '').localeCompare(b.label_de || '', 'de'));
-
-            typeAreas.forEach(area => {
-                // Sort specialties alphabetically by name
-                const areaSpecs = dbSpecialties
-                    .filter(s => s.area_id === area.id)
-                    .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'de'));
-
-                const specialtyNames = areaSpecs.map(s => s.name);
-
-                const specialtyFocuses = {};
-                areaSpecs.forEach(s => {
-                    const fList = focusBySpecialtyId[s.id];
-                    if (fList && fList.length > 0) {
-                        specialtyFocuses[s.name] = [...fList].sort((a, b) => a.localeCompare(b, 'de'));
-                    }
-                });
-
-                typeData[area.id] = {
-                    _meta: area,
-                    label: {
-                        de: area.label_de,
-                        en: area.label_en || area.label_de,
-                        fr: area.label_fr || area.label_de,
-                        it: area.label_it || area.label_de
-                    },
-                    specialties: specialtyNames,
-                    specialtyFocuses
-                };
-            });
-
-            typeData._areaIds = typeAreas.map(a => a.id);
-            builtTaxonomy[type.id] = typeData;
-        });
-
-        taxonomyCache = {
-            taxonomy: builtTaxonomy,
-            types: dbTypes,
-            areas: dbAreas,
-            specialties: dbSpecialties,
-            focuses: dbFocuses,
-            schemaVersion: 'legacy'
-        };
-        cacheTimestamp = Date.now();
-
-        setTaxonomy(builtTaxonomy);
-        setTypes(dbTypes);
-        setAreas(dbAreas);
-        setSpecialties(dbSpecialties);
-        setFocuses(dbFocuses);
-        setSchemaVersion('legacy');
         setError(null);
     };
 

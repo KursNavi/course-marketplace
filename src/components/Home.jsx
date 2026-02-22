@@ -476,22 +476,30 @@ export const Home = ({
               </div>
             </div>
             {/* Ratgeber Links - Beruflich */}
-            <div className="mt-4 px-1">
-              <div className="flex items-center gap-2 mb-2">
+            <div className="mt-5">
+              <div className="flex items-center gap-2 mb-3">
                 <BookOpen className="w-4 h-4 text-blue-600" />
                 <span className="text-sm font-semibold text-gray-700">{t.ratgeber_title || 'Ratgeber'}</span>
               </div>
-              <div className="flex flex-wrap gap-2">
-                {Object.values(RATGEBER_STRUCTURE.beruflich.clusters).map(cluster => (
-                  <a
-                    key={cluster.slug}
-                    href={`/ratgeber/${RATGEBER_STRUCTURE.beruflich.slug}/${cluster.slug}`}
-                    onClick={(e) => { e.preventDefault(); window.history.pushState({}, '', `/ratgeber/${RATGEBER_STRUCTURE.beruflich.slug}/${cluster.slug}`); window.scrollTo(0,0); window.dispatchEvent(new PopStateEvent('popstate')); }}
-                    className="text-xs px-3 py-1.5 rounded-full bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors border border-blue-100"
-                  >
-                    {cluster.label[lang] || cluster.label.de}
-                  </a>
-                ))}
+              <div className="grid grid-cols-2 gap-2">
+                {Object.values(RATGEBER_STRUCTURE.beruflich.clusters).map(cluster => {
+                  const ClusterIcon = cluster.icon;
+                  return (
+                    <a
+                      key={cluster.slug}
+                      href={`/ratgeber/${RATGEBER_STRUCTURE.beruflich.slug}/${cluster.slug}`}
+                      onClick={(e) => { e.preventDefault(); window.history.pushState({}, '', `/ratgeber/${RATGEBER_STRUCTURE.beruflich.slug}/${cluster.slug}`); window.scrollTo(0,0); window.dispatchEvent(new PopStateEvent('popstate')); }}
+                      className="group/card flex items-start gap-2 p-3 rounded-xl bg-white border border-blue-100 hover:border-blue-300 hover:shadow-md transition-all duration-200"
+                    >
+                      <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center group-hover/card:bg-blue-200 transition-colors">
+                        <ClusterIcon className="w-4 h-4 text-blue-600" />
+                      </div>
+                      <span className="text-xs font-medium text-gray-700 group-hover/card:text-blue-700 leading-tight pt-0.5">
+                        {cluster.label[lang] || cluster.label.de}
+                      </span>
+                    </a>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -513,22 +521,30 @@ export const Home = ({
               </div>
             </div>
             {/* Ratgeber Links - Privat & Hobby */}
-            <div className="mt-4 px-1">
-              <div className="flex items-center gap-2 mb-2">
+            <div className="mt-5">
+              <div className="flex items-center gap-2 mb-3">
                 <BookOpen className="w-4 h-4 text-orange-600" />
                 <span className="text-sm font-semibold text-gray-700">{t.ratgeber_title || 'Ratgeber'}</span>
               </div>
-              <div className="flex flex-wrap gap-2">
-                {Object.values(RATGEBER_STRUCTURE.privat_hobby.clusters).map(cluster => (
-                  <a
-                    key={cluster.slug}
-                    href={`/ratgeber/${RATGEBER_STRUCTURE.privat_hobby.slug}/${cluster.slug}`}
-                    onClick={(e) => { e.preventDefault(); window.history.pushState({}, '', `/ratgeber/${RATGEBER_STRUCTURE.privat_hobby.slug}/${cluster.slug}`); window.scrollTo(0,0); window.dispatchEvent(new PopStateEvent('popstate')); }}
-                    className="text-xs px-3 py-1.5 rounded-full bg-orange-50 text-orange-700 hover:bg-orange-100 transition-colors border border-orange-100"
-                  >
-                    {cluster.label[lang] || cluster.label.de}
-                  </a>
-                ))}
+              <div className="grid grid-cols-2 gap-2">
+                {Object.values(RATGEBER_STRUCTURE.privat_hobby.clusters).map(cluster => {
+                  const ClusterIcon = cluster.icon;
+                  return (
+                    <a
+                      key={cluster.slug}
+                      href={`/ratgeber/${RATGEBER_STRUCTURE.privat_hobby.slug}/${cluster.slug}`}
+                      onClick={(e) => { e.preventDefault(); window.history.pushState({}, '', `/ratgeber/${RATGEBER_STRUCTURE.privat_hobby.slug}/${cluster.slug}`); window.scrollTo(0,0); window.dispatchEvent(new PopStateEvent('popstate')); }}
+                      className="group/card flex items-start gap-2 p-3 rounded-xl bg-white border border-orange-100 hover:border-orange-300 hover:shadow-md transition-all duration-200"
+                    >
+                      <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center group-hover/card:bg-orange-200 transition-colors">
+                        <ClusterIcon className="w-4 h-4 text-orange-600" />
+                      </div>
+                      <span className="text-xs font-medium text-gray-700 group-hover/card:text-orange-700 leading-tight pt-0.5">
+                        {cluster.label[lang] || cluster.label.de}
+                      </span>
+                    </a>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -550,22 +566,30 @@ export const Home = ({
               </div>
             </div>
             {/* Ratgeber Links - Kinder & Jugend */}
-            <div className="mt-4 px-1">
-              <div className="flex items-center gap-2 mb-2">
+            <div className="mt-5">
+              <div className="flex items-center gap-2 mb-3">
                 <BookOpen className="w-4 h-4 text-emerald-600" />
                 <span className="text-sm font-semibold text-gray-700">{t.ratgeber_title || 'Ratgeber'}</span>
               </div>
-              <div className="flex flex-wrap gap-2">
-                {Object.values(RATGEBER_STRUCTURE.kinder_jugend.clusters).map(cluster => (
-                  <a
-                    key={cluster.slug}
-                    href={`/ratgeber/${RATGEBER_STRUCTURE.kinder_jugend.slug}/${cluster.slug}`}
-                    onClick={(e) => { e.preventDefault(); window.history.pushState({}, '', `/ratgeber/${RATGEBER_STRUCTURE.kinder_jugend.slug}/${cluster.slug}`); window.scrollTo(0,0); window.dispatchEvent(new PopStateEvent('popstate')); }}
-                    className="text-xs px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors border border-emerald-100"
-                  >
-                    {cluster.label[lang] || cluster.label.de}
-                  </a>
-                ))}
+              <div className="grid grid-cols-2 gap-2">
+                {Object.values(RATGEBER_STRUCTURE.kinder_jugend.clusters).map(cluster => {
+                  const ClusterIcon = cluster.icon;
+                  return (
+                    <a
+                      key={cluster.slug}
+                      href={`/ratgeber/${RATGEBER_STRUCTURE.kinder_jugend.slug}/${cluster.slug}`}
+                      onClick={(e) => { e.preventDefault(); window.history.pushState({}, '', `/ratgeber/${RATGEBER_STRUCTURE.kinder_jugend.slug}/${cluster.slug}`); window.scrollTo(0,0); window.dispatchEvent(new PopStateEvent('popstate')); }}
+                      className="group/card flex items-start gap-2 p-3 rounded-xl bg-white border border-emerald-100 hover:border-emerald-300 hover:shadow-md transition-all duration-200"
+                    >
+                      <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center group-hover/card:bg-emerald-200 transition-colors">
+                        <ClusterIcon className="w-4 h-4 text-emerald-600" />
+                      </div>
+                      <span className="text-xs font-medium text-gray-700 group-hover/card:text-emerald-700 leading-tight pt-0.5">
+                        {cluster.label[lang] || cluster.label.de}
+                      </span>
+                    </a>
+                  );
+                })}
               </div>
             </div>
           </div>

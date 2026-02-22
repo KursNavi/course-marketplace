@@ -1996,18 +1996,25 @@ export const RATGEBER_CONTENT = {
   'privat-hobby/qualitaet/kursbeschreibungen-richtig-lesen': `
     <p class="lead">Eine gute Kursbeschreibung sagt dir exakt, was du lernen wirst – und was nicht. Hier lernst du, die richtigen Fragen zu stellen.</p>
 
-    <h2>Was sollte eine gute Kursbeschreibung enthalten?</h2>
-    <ul>
-      <li>Konkrete Lernziele (nicht nur "Entdecken Sie Ihre Künstlerische Seite")</li>
-      <li>Zielgruppe und notwendige Voraussetzungen</li>
-      <li>Gesamtdauer und Anzahl der Sitzungen</li>
-      <li>Spezifische Daten und Uhrzeiten</li>
-      <li>Name und Qualifikation des Dozenten/der Dozentin</li>
-      <li>Genaue Gebühren – Materialkosten inbegriffen?</li>
-      <li>Storno- und Rücktrittsbedingungen</li>
-    </ul>
+    <img src="https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=800&h=400&fit=crop" alt="Dokumente analysieren und vergleichen" class="article-image" />
 
-    <h2>Marketing-Sprache erkennen</h2>
+    <h2>📋 Was sollte eine gute Kursbeschreibung enthalten?</h2>
+    <div class="checklist">
+      <ul>
+        <li>Konkrete Lernziele (nicht nur "Entdecken Sie Ihre Künstlerische Seite")</li>
+        <li>Zielgruppe und notwendige Voraussetzungen</li>
+        <li>Gesamtdauer und Anzahl der Sitzungen</li>
+        <li>Spezifische Daten und Uhrzeiten</li>
+        <li>Name und Qualifikation des Dozenten/der Dozentin</li>
+        <li>Genaue Gebühren – Materialkosten inbegriffen?</li>
+        <li>Storno- und Rücktrittsbedingungen</li>
+      </ul>
+    </div>
+
+    <h2>🔍 Marketing-Sprache erkennen</h2>
+    <div class="warning-box">
+      <strong>Achtung vor vager Sprache!</strong> Seriöse Anbieter kommunizieren konkret und messbar. Vage Versprechen sind oft ein Zeichen für mangelnde Substanz.
+    </div>
     <table>
       <thead>
         <tr><th>Marketing (vage)</th><th>Konkret (verlässlich)</th></tr>
@@ -2018,24 +2025,38 @@ export const RATGEBER_CONTENT = {
       </tbody>
     </table>
 
-    <p><strong>Auf KursNavi sind Kursbeschreibungen standardisiert und leicht vergleichbar.</strong></p>
+    <div class="tip-box">
+      <strong>Tipp:</strong> Frage bei unklaren Beschreibungen immer direkt beim Anbieter nach. Seriöse Kursleiter beantworten gerne konkrete Fragen zu Inhalten und Lernzielen.
+    </div>
+
+    <div class="cta-box">
+      <strong>KursNavi-Empfehlung:</strong> Auf KursNavi sind Kursbeschreibungen standardisiert und leicht vergleichbar. Nutze unsere Filterfunktionen, um Kurse mit vollständigen Angaben zu finden.
+    </div>
   `,
 
   'privat-hobby/qualitaet/qualitaetscheck-kursanbieter': `
     <p class="lead">Ein seriöser Kursanbieter lässt sich in wenigen Minuten erkennen – wenn Du weisst, worauf Du achten musst. Dieser Artikel zeigt Dir die wichtigsten Merkmale.</p>
 
-    <h2>Auf welche Merkmale sollte ich achten?</h2>
-    <p>Professionelle Kursanbieter haben mehrere Gemeinsamkeiten:</p>
-    <ul>
-      <li>Website ist modern, keine Bugs oder Fehler</li>
-      <li>Klare, detaillierte Kursbeschreibungen mit Lernzielen</li>
-      <li>Transparente Preisangaben – kein Kleingedrucktes</li>
-      <li>Qualifikationen des Dozenten/der Dozentin ersichtlich</li>
-      <li>Kundenfreundliche Storno- und Rücktrittsbedingungen</li>
-      <li>Authentische Bewertungen (kein perfekter Score)</li>
-    </ul>
+    <img src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&h=400&fit=crop" alt="Qualitätsprüfung und Analyse am Computer" class="article-image" />
 
-    <h2>Qualitätsmerkmale im Überblick</h2>
+    <h2>✅ Auf welche Merkmale sollte ich achten?</h2>
+    <p>Professionelle Kursanbieter haben mehrere Gemeinsamkeiten:</p>
+    <div class="checklist">
+      <ul>
+        <li>Website ist modern, keine Bugs oder Fehler</li>
+        <li>Klare, detaillierte Kursbeschreibungen mit Lernzielen</li>
+        <li>Transparente Preisangaben – kein Kleingedrucktes</li>
+        <li>Qualifikationen des Dozenten/der Dozentin ersichtlich</li>
+        <li>Kundenfreundliche Storno- und Rücktrittsbedingungen</li>
+        <li>Authentische Bewertungen (kein perfekter Score)</li>
+      </ul>
+    </div>
+
+    <div class="tip-box">
+      <strong>Tipp:</strong> Investiere 5 Minuten in die Recherche des Anbieters, bevor du buchst. Das spart dir später Zeit und Ärger.
+    </div>
+
+    <h2>📊 Qualitätsmerkmale im Überblick</h2>
     <table>
       <thead>
         <tr><th>Merkmal</th><th>Was bedeutet das?</th></tr>
@@ -2048,31 +2069,47 @@ export const RATGEBER_CONTENT = {
       </tbody>
     </table>
 
-    <p><strong>KursNavi zeigt Dir nur geprüfte Kursanbieter mit transparenten Bewertungen.</strong></p>
+    <div class="info-box">
+      <strong>Gut zu wissen:</strong> Ein perfekter 5-Sterne-Score ist oft ein Warnsignal. Authentische Bewertungen zeigen auch mal Kritikpunkte.
+    </div>
+
+    <div class="cta-box">
+      <strong>KursNavi-Empfehlung:</strong> KursNavi zeigt Dir nur geprüfte Kursanbieter mit transparenten Bewertungen. Alle Anbieter werden nach unseren Qualitätsstandards überprüft.
+    </div>
   `,
 
   'privat-hobby/qualitaet/offline-vs-online': `
     <p class="lead">Die Forschung ist eindeutig: Für praktische Fähigkeiten und soziale Integration schlägt Präsenzunterricht Online-Kurse. Aber nicht immer.</p>
 
-    <h2>Welches Format passt zu meinem Hobby?</h2>
+    <img src="https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=800&h=400&fit=crop" alt="Vergleich verschiedener Lernformate" class="article-image" />
 
-    <h3>Offline/Präsenz wählen wenn:</h3>
-    <ul>
-      <li>Du praktische Fähigkeiten lernst (Malerei, Tanz, Sport, Handwerk)</li>
-      <li>Dir der soziale Kontakt wichtig ist</li>
-      <li>Du intensive persönliche Betreuung brauchst</li>
-      <li>Du dich durch Bildschirme leicht ablenken lässt</li>
-    </ul>
+    <h2>🎯 Welches Format passt zu meinem Hobby?</h2>
 
-    <h3>Online wählen wenn:</h3>
-    <ul>
-      <li>Du zeitlich flexibel sein musst</li>
-      <li>Lange Anfahrtswege wegfallen sollen</li>
-      <li>Du unabhängig und im eigenen Tempo lernen möchtest</li>
-      <li>Kostenersparnis wichtig ist</li>
-    </ul>
+    <h3>🏫 Offline/Präsenz wählen wenn:</h3>
+    <div class="checklist">
+      <ul>
+        <li>Du praktische Fähigkeiten lernst (Malerei, Tanz, Sport, Handwerk)</li>
+        <li>Dir der soziale Kontakt wichtig ist</li>
+        <li>Du intensive persönliche Betreuung brauchst</li>
+        <li>Du dich durch Bildschirme leicht ablenken lässt</li>
+      </ul>
+    </div>
 
-    <h2>Vergleich: Vorteile und Nachteile</h2>
+    <h3>💻 Online wählen wenn:</h3>
+    <div class="checklist">
+      <ul>
+        <li>Du zeitlich flexibel sein musst</li>
+        <li>Lange Anfahrtswege wegfallen sollen</li>
+        <li>Du unabhängig und im eigenen Tempo lernen möchtest</li>
+        <li>Kostenersparnis wichtig ist</li>
+      </ul>
+    </div>
+
+    <div class="info-box">
+      <strong>Hybride Formate:</strong> Immer mehr Anbieter kombinieren Online- und Präsenzelemente. So profitierst du von beiden Welten – flexible Theorie online, praktische Übungen vor Ort.
+    </div>
+
+    <h2>⚖️ Vergleich: Vorteile und Nachteile</h2>
     <table>
       <thead>
         <tr><th>Präsenz</th><th>Online</th></tr>
@@ -2084,61 +2121,91 @@ export const RATGEBER_CONTENT = {
       </tbody>
     </table>
 
-    <p>Auf KursNavi findest du sowohl Online- als auch Präsenzkurse. Die Bewertungen zeigen dir, welches Format für dein Hobby am besten funktioniert.</p>
+    <div class="tip-box">
+      <strong>Tipp:</strong> Lies die Bewertungen aufmerksam – dort erfährst du, ob das gewählte Format für das jeweilige Hobby gut funktioniert.
+    </div>
 
-    <p><strong>Filtere auf KursNavi nach Deinem bevorzugten Format.</strong></p>
+    <div class="cta-box">
+      <strong>KursNavi-Empfehlung:</strong> Auf KursNavi findest du sowohl Online- als auch Präsenzkurse. Nutze unsere Filteroptionen, um nach deinem bevorzugten Format zu suchen.
+    </div>
   `,
 
   'privat-hobby/qualitaet/bewertungen-kontext': `
     <p class="lead">Nicht jede 5-Sterne-Bewertung ist echt, und nicht jede 1-Stern-Bewertung ist fair. Lerne, Kursbewertungen richtig zu interpretieren.</p>
 
-    <h2>Woran erkennst du echte Bewertungen?</h2>
-    <ul>
-      <li><strong>Spezifische Details:</strong> Echte Bewertungen nennen konkrete Aspekte (Dozent, Raum, Materialien)</li>
-      <li><strong>Ausgewogene Perspektive:</strong> Auch positive Bewertungen erwähnen kleinere Kritikpunkte</li>
-      <li><strong>Realistische Sprache:</strong> Übertreibungen wie "der beste Kurs meines Lebens" sind oft Fake</li>
-      <li><strong>Verifizierte Teilnahme:</strong> Plattformen wie KursNavi verifizieren, dass Bewertende tatsächlich teilgenommen haben</li>
-    </ul>
+    <img src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&h=400&fit=crop" alt="Bewertungen analysieren und einordnen" class="article-image" />
 
-    <h2>Red Flags bei Bewertungen</h2>
-    <ul>
-      <li>Alle Bewertungen sind 5 Sterne – unrealistisch</li>
-      <li>Sehr ähnliche Formulierungen in verschiedenen Bewertungen</li>
-      <li>Keine konkreten Details, nur allgemeines Lob</li>
-      <li>Bewertungen alle am gleichen Tag geschrieben</li>
-    </ul>
+    <h2>✅ Woran erkennst du echte Bewertungen?</h2>
+    <div class="checklist">
+      <ul>
+        <li><strong>Spezifische Details:</strong> Echte Bewertungen nennen konkrete Aspekte (Dozent, Raum, Materialien)</li>
+        <li><strong>Ausgewogene Perspektive:</strong> Auch positive Bewertungen erwähnen kleinere Kritikpunkte</li>
+        <li><strong>Realistische Sprache:</strong> Übertreibungen wie "der beste Kurs meines Lebens" sind oft Fake</li>
+        <li><strong>Verifizierte Teilnahme:</strong> Plattformen wie KursNavi verifizieren, dass Bewertende tatsächlich teilgenommen haben</li>
+      </ul>
+    </div>
 
-    <h2>Was du aus negativen Bewertungen lernen kannst</h2>
+    <h2>⚠️ Red Flags bei Bewertungen</h2>
+    <div class="warning-box">
+      <strong>Vorsicht bei diesen Anzeichen:</strong>
+      <ul>
+        <li>Alle Bewertungen sind 5 Sterne – unrealistisch</li>
+        <li>Sehr ähnliche Formulierungen in verschiedenen Bewertungen</li>
+        <li>Keine konkreten Details, nur allgemeines Lob</li>
+        <li>Bewertungen alle am gleichen Tag geschrieben</li>
+      </ul>
+    </div>
+
+    <h2>🔍 Was du aus negativen Bewertungen lernen kannst</h2>
     <p>Negative Bewertungen sind oft informativer als positive. Achte auf wiederkehrende Kritikpunkte – wenn mehrere Personen das Gleiche bemängeln, ist es wahrscheinlich berechtigt. Einzelne negative Bewertungen können auch persönliche Präferenzen widerspiegeln.</p>
 
-    <p><strong>KursNavi-Bewertungen sind verifiziert und moderiert. Du siehst echte Erfahrungen von echten Kursteilnehmern.</strong></p>
+    <div class="tip-box">
+      <strong>Tipp:</strong> Lies sowohl die besten als auch die schlechtesten Bewertungen. Die Wahrheit liegt oft dazwischen.
+    </div>
+
+    <div class="cta-box">
+      <strong>KursNavi-Empfehlung:</strong> KursNavi-Bewertungen sind verifiziert und moderiert. Du siehst echte Erfahrungen von echten Kursteilnehmern – transparent und verlässlich.
+    </div>
   `,
 
   'privat-hobby/qualitaet/red-flags-hobbykurse': `
     <p class="lead">Manche Kursanbieter sind unseriös oder halten nicht, was sie versprechen. Diese Warnsignale solltest du kennen.</p>
 
-    <h2>Die wichtigsten Red Flags</h2>
-    <ul>
-      <li><strong>Keine Preistransparenz:</strong> Kosten werden erst nach Anmeldung genannt oder versteckte Gebühren tauchen auf</li>
-      <li><strong>Unrealistische Versprechen:</strong> "In 2 Stunden zum Profi" oder "Garantierter Erfolg"</li>
-      <li><strong>Druck zur schnellen Buchung:</strong> "Nur noch 2 Plätze!" wenn es nicht stimmt</li>
-      <li><strong>Keine Stornobedingungen:</strong> Oder extrem restriktive Bedingungen im Kleingedruckten</li>
-      <li><strong>Unklare Dozenten-Qualifikation:</strong> Keine Infos, wer den Kurs leitet</li>
-      <li><strong>Keine echten Bewertungen:</strong> Nur Testimonials auf der eigenen Website</li>
-    </ul>
+    <img src="https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=800&h=400&fit=crop" alt="Warnsignale bei Kursanbietern erkennen" class="article-image" />
 
-    <h2>Warnsignale bei der Kommunikation</h2>
-    <ul>
-      <li>Keine Antwort auf Nachfragen oder sehr lange Reaktionszeiten</li>
-      <li>Ausweichende Antworten auf konkrete Fragen</li>
-      <li>Aggressive Verkaufstaktiken</li>
-      <li>Unprofessionelle E-Mails (Rechtschreibfehler, keine Signatur)</li>
-    </ul>
+    <h2>🚩 Die wichtigsten Red Flags</h2>
+    <div class="warning-box">
+      <strong>Finger weg bei diesen Warnsignalen:</strong>
+      <ul>
+        <li><strong>Keine Preistransparenz:</strong> Kosten werden erst nach Anmeldung genannt oder versteckte Gebühren tauchen auf</li>
+        <li><strong>Unrealistische Versprechen:</strong> "In 2 Stunden zum Profi" oder "Garantierter Erfolg"</li>
+        <li><strong>Druck zur schnellen Buchung:</strong> "Nur noch 2 Plätze!" wenn es nicht stimmt</li>
+        <li><strong>Keine Stornobedingungen:</strong> Oder extrem restriktive Bedingungen im Kleingedruckten</li>
+        <li><strong>Unklare Dozenten-Qualifikation:</strong> Keine Infos, wer den Kurs leitet</li>
+        <li><strong>Keine echten Bewertungen:</strong> Nur Testimonials auf der eigenen Website</li>
+      </ul>
+    </div>
 
-    <h2>Was du tun kannst</h2>
+    <h2>⚠️ Warnsignale bei der Kommunikation</h2>
+    <div class="checklist">
+      <ul>
+        <li>Keine Antwort auf Nachfragen oder sehr lange Reaktionszeiten</li>
+        <li>Ausweichende Antworten auf konkrete Fragen</li>
+        <li>Aggressive Verkaufstaktiken</li>
+        <li>Unprofessionelle E-Mails (Rechtschreibfehler, keine Signatur)</li>
+      </ul>
+    </div>
+
+    <h2>🛡️ Was du tun kannst</h2>
     <p>Recherchiere den Anbieter: Google den Namen + "Erfahrungen" oder "Bewertungen". Prüfe, ob der Anbieter auf vertrauenswürdigen Plattformen gelistet ist. Frage im Zweifelsfall direkt nach – seriöse Anbieter antworten gerne und transparent.</p>
 
-    <p><strong>Mit KursNavi-Bewertungen erkennst du sofort, ob andere Kursteilnehmer Red Flags erlebt haben. Transparenz schützt dich.</strong></p>
+    <div class="tip-box">
+      <strong>Tipp:</strong> Vertraue deinem Bauchgefühl. Wenn etwas zu gut klingt, um wahr zu sein, ist es das meistens auch.
+    </div>
+
+    <div class="cta-box">
+      <strong>KursNavi-Empfehlung:</strong> Mit KursNavi-Bewertungen erkennst du sofort, ob andere Kursteilnehmer Red Flags erlebt haben. Transparenz schützt dich vor unseriösen Anbietern.
+    </div>
   `,
 
   'privat-hobby/qualitaet/storno-ruecktritt-rechte': `
@@ -2389,7 +2456,9 @@ export const RATGEBER_CONTENT = {
   'privat-hobby/kosten-nutzen/ausruestung-mieten-statt-kaufen': `
     <p class="lead">Teure Ausrüstung vor dem Kauf zu testen ist klug. Die Sharing Economy macht das erschwinglich.</p>
 
-    <h2>Wann mieten, wann kaufen?</h2>
+    <img src="https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=800&h=400&fit=crop" alt="Ausrüstung mieten und teilen" class="article-image" />
+
+    <h2>🤔 Wann mieten, wann kaufen?</h2>
     <table>
       <thead>
         <tr><th>Situation</th><th>Empfehlung</th></tr>
@@ -2401,22 +2470,34 @@ export const RATGEBER_CONTENT = {
       </tbody>
     </table>
 
-    <h2>Plattformen in der Schweiz</h2>
-    <ul>
-      <li><strong>Leihbar.ch</strong> – Subscription-basierte Leihe für alles</li>
-      <li><strong>Sharely.ch</strong> – Peer-to-Peer Sharing mit 40'000 Nutzern</li>
-      <li><strong>Createlab.ch</strong> – Spezialisiert auf Outdoor-Ausrüstung</li>
-      <li><strong>Lokale Verleiher</strong> – Ski, Fahrräder, Musikinstrumente</li>
-    </ul>
+    <div class="tip-box">
+      <strong>💡 Profi-Tipp:</strong> Vor dem Kauf immer mindestens 2-3 Mal mieten. So findest du heraus, ob das Hobby wirklich zu dir passt und welche Ausrüstung du brauchst.
+    </div>
 
-    <h2>Break-Even-Beispiele</h2>
+    <h2>🇨🇭 Plattformen in der Schweiz</h2>
+    <div class="checklist">
+      <ul>
+        <li><strong>Leihbar.ch</strong> – Subscription-basierte Leihe für alles</li>
+        <li><strong>Sharely.ch</strong> – Peer-to-Peer Sharing mit 40'000 Nutzern</li>
+        <li><strong>Createlab.ch</strong> – Spezialisiert auf Outdoor-Ausrüstung</li>
+        <li><strong>Lokale Verleiher</strong> – Ski, Fahrräder, Musikinstrumente</li>
+      </ul>
+    </div>
+
+    <h2>📊 Break-Even-Beispiele</h2>
     <ul>
       <li><strong>Ski/Snowboard:</strong> Nach 3-4 Saisonen rentiert sich der Kauf</li>
       <li><strong>Mountainbike:</strong> Nach 8-12 Ausflügen</li>
       <li><strong>Fotokamera:</strong> Nach ca. 12 Wochen regelmässiger Nutzung</li>
     </ul>
 
-    <p><strong>Viele Kursanbieter auf KursNavi stellen die nötige Ausrüstung zur Verfügung.</strong></p>
+    <div class="info-box">
+      <strong>Gut zu wissen:</strong> Bei vielen Verleihern kannst du die Mietkosten beim späteren Kauf anrechnen lassen!
+    </div>
+
+    <div class="cta-box">
+      <strong>🎯 KursNavi-Empfehlung:</strong> Viele Kursanbieter auf KursNavi stellen die nötige Ausrüstung zur Verfügung – spare dir die Anschaffungskosten und starte direkt durch!
+    </div>
   `,
 
   'privat-hobby/kosten-nutzen/minimum-viable-gear': `
@@ -2491,10 +2572,16 @@ export const RATGEBER_CONTENT = {
   'privat-hobby/kosten-nutzen/hobby-vollkosten-modell': `
     <p class="lead">Die Kursgebühr ist nur ein Teil der Kosten. Lerne, die wahren Vollkosten eines Hobbys zu berechnen.</p>
 
-    <h2>Was sind Vollkosten?</h2>
+    <img src="https://images.unsplash.com/photo-1579621970795-87facc2f976d?w=800&h=400&fit=crop" alt="Budgetplanung und Kostenberechnung" class="article-image" />
+
+    <h2>💰 Was sind Vollkosten?</h2>
     <p>Die tatsächlichen Gesamtkosten eines Hobbys umfassen mehr als die offensichtlichen Ausgaben:</p>
 
-    <h2>Kostenarten im Überblick</h2>
+    <div class="info-box">
+      <strong>Definition:</strong> Vollkosten umfassen alle direkten und indirekten Ausgaben, die mit einem Hobby verbunden sind – von der Kursgebühr bis zur Anfahrt.
+    </div>
+
+    <h2>📊 Kostenarten im Überblick</h2>
     <table>
       <thead>
         <tr><th>Kostenart</th><th>Beispiele</th></tr>
@@ -2508,16 +2595,24 @@ export const RATGEBER_CONTENT = {
       </tbody>
     </table>
 
-    <h2>Beispielrechnung: Malkurs</h2>
-    <ul>
-      <li>Kursgebühr (8 Wochen): CHF 320</li>
-      <li>Farben und Pinsel: CHF 80</li>
-      <li>Leinwände: CHF 60</li>
-      <li>Anfahrt (8x): CHF 40</li>
-      <li><strong>Vollkosten: CHF 500</strong> (vs. CHF 320 Kursgebühr)</li>
-    </ul>
+    <h2>🧮 Beispielrechnung: Malkurs</h2>
+    <div class="checklist">
+      <ul>
+        <li>Kursgebühr (8 Wochen): CHF 320</li>
+        <li>Farben und Pinsel: CHF 80</li>
+        <li>Leinwände: CHF 60</li>
+        <li>Anfahrt (8x): CHF 40</li>
+        <li><strong>Vollkosten: CHF 500</strong> (vs. CHF 320 Kursgebühr)</li>
+      </ul>
+    </div>
 
-    <p><strong>KursNavi zeigt Vollkosten transparent – keine versteckten Gebühren, nur ehrliche Preisangaben.</strong></p>
+    <div class="warning-box">
+      <strong>Achtung:</strong> Die versteckten Kosten machen oft 30-50% der Gesamtkosten aus. Plane sie von Anfang an ein!
+    </div>
+
+    <div class="cta-box">
+      <strong>🎯 KursNavi-Empfehlung:</strong> KursNavi zeigt Vollkosten transparent – keine versteckten Gebühren, nur ehrliche Preisangaben. Vergleiche jetzt Kurse mit allen Kosten auf einen Blick!
+    </div>
   `,
 
   'privat-hobby/kosten-nutzen/krankenkassenbeitraege-kurse': `
