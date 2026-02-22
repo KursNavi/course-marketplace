@@ -118,13 +118,15 @@ export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCat
                     {/* Level 2: AREAS (e.g. Business, Sport) */}
                     <div className={`w-full ${currentFocuses.length > 0 ? 'md:w-1/4' : 'md:w-1/3'} border-r overflow-y-auto bg-white`}>
                         {lvl1 ? (
-                            // Use _areaIds for ordered numeric IDs - these contain only numeric IDs from DB
-                            (activeTaxonomy[lvl1]?._areaIds || [])
-                                .filter(areaId => (courseCounts.level2[areaId] || courseCounts.level2[String(areaId)] || 0) > 0)
-                                .map(areaId => (
-                                <div key={areaId} onClick={() => { setLvl2(areaId); setLvl3(null); }} className={`p-3 mx-2 my-1 rounded-lg cursor-pointer text-sm flex justify-between items-center transition ${lvl2 === areaId ? 'bg-primaryLight font-bold text-primary' : 'text-gray-700 hover:bg-gray-50'}`}>
-                                    {getLabel(areaId, 2)}
-                                    <ChevronRight className={`w-4 h-4 ${lvl2 === areaId ? 'text-primary' : 'text-gray-300'}`} />
+                            // Filter areas by level1 and course count, then render
+                            areas
+                                .filter(area => area.level1_id === lvl1 || area.type_id === lvl1)
+                                .filter(area => (courseCounts.level2[area.id] || 0) > 0)
+                                .sort((a, b) => (a.label_de || '').localeCompare(b.label_de || '', 'de'))
+                                .map(area => (
+                                <div key={area.id} onClick={() => { setLvl2(area.id); setLvl3(null); }} className={`p-3 mx-2 my-1 rounded-lg cursor-pointer text-sm flex justify-between items-center transition ${lvl2 === area.id ? 'bg-primaryLight font-bold text-primary' : 'text-gray-700 hover:bg-gray-50'}`}>
+                                    {area.label_de}
+                                    <ChevronRight className={`w-4 h-4 ${lvl2 === area.id ? 'text-primary' : 'text-gray-300'}`} />
                                 </div>
                             ))
                         ) : <div className="p-6 text-sm text-gray-400 italic">Wähle zuerst eine Hauptkategorie...</div>}
