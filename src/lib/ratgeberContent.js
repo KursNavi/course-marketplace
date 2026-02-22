@@ -902,7 +902,7 @@ export const RATGEBER_CONTENT = {
   // ============================================
   // BERUFLICH > ZUKUNFTSTRENDS
   // ============================================
-  'beruflich/zukunftstrends/ai-literacy-arbeitsplatz': `
+  'beruflich/future-skills/ai-literacy-arbeitsplatz': `
     <p class="lead">KI-Skills sind 2026 am Schweizer Arbeitsmarkt keine Optionalität mehr – sie sind betriebliche Realität. Wer nicht versteht, wie ChatGPT, Claude, Copilot und ähnliche Tools funktionieren, wird in vielen Branchen schnell vom Arbeitsmarkt abgehängt. Gute Nachricht: Diese Fähigkeiten sind lernbar.</p>
 
     <h2>Welche KI-Tools solltest Du können?</h2>
@@ -931,7 +931,7 @@ export const RATGEBER_CONTENT = {
     <p><strong>Finde jetzt AI-Kurse und Digital-Skills-Programme auf KursNavi.</strong></p>
   `,
 
-  'beruflich/zukunftstrends/digital-literacy-generationen': `
+  'beruflich/future-skills/digital-literacy-generationen': `
     <p class="lead">Digital Literacy ist nicht mehr ein "Senioren-Problem" – es ist ein generationenübergreifendes Thema. Gleichzeitig gibt es gute Nachrichten: Die digitale Kluft in der Schweiz wird kleiner, und es entstehen niederschwellige Lernmöglichkeiten für alle.</p>
 
     <h2>Wer braucht Digital Literacy?</h2>
@@ -960,7 +960,7 @@ export const RATGEBER_CONTENT = {
     <p><strong>Auf KursNavi gibt es für jede Altersgruppe passende Digital-Literacy-Kurse und IT-Grundlagen-Trainings.</strong></p>
   `,
 
-  'beruflich/zukunftstrends/green-skills-nachhaltigkeit': `
+  'beruflich/future-skills/green-skills': `
     <p class="lead">Die Schweiz hat sich zur CO₂-Neutralität bis 2050 verpflichtet – und das hat Folgen für den Arbeitsmarkt. Unternehmen suchen dringend nach Menschen, die verstehen, wie nachhaltige Geschäftsmodelle funktionieren. Green Skills sind nicht mehr Nischen-Know-how; sie sind ein Differenzierungsfaktor im CV.</p>
 
     <h2>Was bedeutet Green Skills konkret?</h2>
@@ -992,7 +992,7 @@ export const RATGEBER_CONTENT = {
     <p><strong>Wer sich beruflich in Nachhaltigkeit weiterentwickeln möchte, findet auf KursNavi spezialisierte Angebote.</strong></p>
   `,
 
-  'beruflich/zukunftstrends/micro-credentials-cv': `
+  'beruflich/future-skills/micro-credentials': `
     <p class="lead">Ein 4-Jahres-Studium dauert zu lange. Ein eintägiges Seminar ist zu oberflächlich. Micro-Credentials sind der Mittelweg: überprüfbare Qualifikationen, die man in Wochen erwerben kann und die auf Arbeitsmarkt-Demande abgestimmt sind. In der Schweiz sind sie 2026 im Momentum.</p>
 
     <h2>Was ist ein Micro-Credential eigentlich?</h2>
@@ -1023,7 +1023,7 @@ export const RATGEBER_CONTENT = {
     <p><strong>Finde jetzt Kurse mit anerkannten Micro-Credentials auf KursNavi.</strong></p>
   `,
 
-  'beruflich/zukunftstrends/new-work-hybride-fuehrung': `
+  'beruflich/future-skills/new-work-hybride-fuehrung': `
     <p class="lead">Führung 2026 funktioniert nicht mehr wie vor zehn Jahren. Remote und Hybrid Work haben die Spielregeln verändert. Moderne Leader müssen Coaches sein, nicht Controller – und das ist eine völlig andere Fähigkeitsmenge.</p>
 
     <h2>Welche vier Rollen hat ein moderner Leader?</h2>
@@ -1052,7 +1052,7 @@ export const RATGEBER_CONTENT = {
     <p><strong>Auf KursNavi lassen sich Führungskurse und New-Work-Trainings in der Nähe entdecken.</strong></p>
   `,
 
-  'beruflich/zukunftstrends/adaptive-skills-2026': `
+  'beruflich/future-skills/adaptive-skills': `
     <p class="lead">Auf dem Schweizer Arbeitsmarkt 2026 gilt eine neue Regel: Wer sich am schnellsten und geschicktesten adaptiert, gewinnt – nicht wer am fleissigsten ist. 40% aller Skills müssen bis 2030 erneuert werden. Adaptive Skills sind die neuen Job Security.</p>
 
     <h2>Welche Kernkompetenzen gehören zu Adaptive Skills?</h2>
@@ -1138,7 +1138,7 @@ export const RATGEBER_CONTENT = {
     <p>Wählen Sie HF/BP, wenn Sie spezialisierte Fachkompetenz schnell erlangen und arbeiten möchten. Berufserfahrung ist kein Hindernis – sondern Voraussetzung. Wählen Sie FH, wenn Sie Theorie und Praxis kombinieren möchten und bereits Berufsmaturität haben. Wählen Sie Universität, wenn Sie akademische oder Forschungsziele haben oder bereits gymnasiale Maturität besitzen.</p>
   `,
 
-  'beruflich/bildungssystem/ects-cas-das-mas': `
+  'beruflich/bildungssystem/ects-punkte-cas-das-mas': `
     <p class="lead">Ob CAS, DAS oder MAS – alle diese Weiterbildungen arbeiten mit ECTS-Punkten. Aber was bedeutet das konkret, und wieviel Lernaufwand steckt dahinter?</p>
 
     <h2>Was ist 1 ECTS-Punkt?</h2>
@@ -1610,7 +1610,7 @@ export const RATGEBER_CONTENT = {
     <p><strong>Filtere auf KursNavi nach Deinem bevorzugten Format.</strong></p>
   `,
 
-  'privat-hobby/qualitaet/bewertungen-kritisch-lesen': `
+  'privat-hobby/qualitaet/bewertungen-kontext': `
     <p class="lead">Nicht jede 5-Sterne-Bewertung ist echt, und nicht jede 1-Stern-Bewertung ist fair. Lerne, Kursbewertungen richtig zu interpretieren.</p>
 
     <h2>Woran erkennst du echte Bewertungen?</h2>
@@ -1724,7 +1724,7 @@ export const RATGEBER_CONTENT = {
     <p><strong>Nutze KursNavi, um schnell Dein neues Hobby und neue Kontakte in Deiner Stadt zu finden.</strong></p>
   `,
 
-  'privat-hobby/lebensphasen/introvertiert-hobbys': `
+  'privat-hobby/lebensphasen/introvertiert-hobbys-alleine': `
     <p class="lead">Die besten Hobbys für Introvertierte sind solche, die du allein geniesst – ohne Druck, nebenher zu reden oder deine Energie zu teilen.</p>
 
     <h2>Vorteile von Solo-Hobbys</h2>
@@ -1907,7 +1907,7 @@ export const RATGEBER_CONTENT = {
     <p><strong>Entdecke auf KursNavi die besten günstigen Kurse in Deiner Region.</strong></p>
   `,
 
-  'privat-hobby/kosten-nutzen/ausruestung-mieten': `
+  'privat-hobby/kosten-nutzen/ausruestung-mieten-statt-kaufen': `
     <p class="lead">Teure Ausrüstung vor dem Kauf zu testen ist klug. Die Sharing Economy macht das erschwinglich.</p>
 
     <h2>Wann mieten, wann kaufen?</h2>
@@ -2009,7 +2009,7 @@ export const RATGEBER_CONTENT = {
     <p><strong>KursNavi hilft dir, ein Hobby-Budget einzuhalten – mit transparenten Preisen und Rabatten.</strong></p>
   `,
 
-  'privat-hobby/kosten-nutzen/hobby-vollkosten': `
+  'privat-hobby/kosten-nutzen/hobby-vollkosten-modell': `
     <p class="lead">Die Kursgebühr ist nur ein Teil der Kosten. Lerne, die wahren Vollkosten eines Hobbys zu berechnen.</p>
 
     <h2>Was sind Vollkosten?</h2>

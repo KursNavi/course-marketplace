@@ -4,8 +4,8 @@ import { SWISS_CANTONS, DELIVERY_TYPES, COURSE_LANGUAGES } from '../lib/constant
 import { useTaxonomy } from '../hooks/useTaxonomy';
 
 export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCatPath, catMenuOpen, setCatMenuOpen, t, catMenuRef }) => {
-    // Load taxonomy from DB - NO FALLBACK to constants.js (different structure)
-    const { taxonomy, types, areas, courseCounts } = useTaxonomy();
+    // Load taxonomy from DB
+    const { types, areas, specialties, focuses, courseCounts } = useTaxonomy();
 
     const [lvl1, setLvl1] = useState(rootCategory || null);
     const [lvl2, setLvl2] = useState(null);
@@ -16,8 +16,6 @@ export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCat
         if (!catMenuOpen) { setLvl1(rootCategory || null); setLvl2(null); setLvl3(null); }
     }, [catMenuOpen, rootCategory]);
 
-    // Use taxonomy from DB only - no fallback (NEW_TAXONOMY has different structure)
-    const activeTaxonomy = taxonomy || {};
     const activeTypes = types.length > 0
         ? Object.fromEntries(types.map(t => [t.id, { de: t.label_de, en: t.label_en, fr: t.label_fr, it: t.label_it }]))
         : {};
@@ -37,35 +35,35 @@ export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCat
         return activeTypes[typeId]?.de || formatSlugToLabel(String(typeId));
     };
 
-    // Get Level 1 types - use types array if available (from DB), otherwise filter object keys
-    // Only show types that have at least one course
-    // Check both numeric and string keys for courseCounts lookup
+    // Get Level 1 types from DB, filtered by course count
     const availableLvl1 = rootCategory
         ? [rootCategory]
-        : (types.length > 0
-            ? types.map(t => t.id).filter(id => (courseCounts.level1[id] || courseCounts.level1[String(id)] || 0) > 0)
-            : Object.keys(activeTaxonomy).filter(k => !isNaN(Number(k)) && (courseCounts.level1[k] || courseCounts.level1[Number(k)] || 0) > 0));
+        : types.map(t => t.id).filter(id => (courseCounts.level1[id] || courseCounts.level1[String(id)] || 0) > 0);
 
-    // Get focuses for the selected specialty
-    const currentFocuses = (lvl1 && lvl2 && lvl3)
-        ? (activeTaxonomy[lvl1]?.[lvl2]?.specialtyFocuses?.[lvl3] || [])
+    // Get focuses for the selected specialty (lvl3 is the specialty label)
+    const selectedSpecialty = lvl3 ? specialties.find(s => s.label_de === lvl3) : null;
+    const currentFocuses = selectedSpecialty
+        ? focuses.filter(f => f.level3_id === selectedSpecialty.id || f.specialty_id === selectedSpecialty.id).map(f => f.label_de)
         : [];
 
     // Display text for the main button
     const getButtonLabel = () => {
         if (selectedCatPath.length === 0) return t?.filter_label_cat || "Kategorie";
         const lastItem = selectedCatPath[selectedCatPath.length - 1];
-        if (activeTaxonomy[lastItem]) return activeTypes[lastItem]?.de || lastItem;
+        // Try to find the label for the last item
+        const typeLabel = activeTypes[lastItem]?.de;
+        if (typeLabel) return typeLabel;
         return lastItem;
     };
 
     // Handle specialty click: if focuses exist, show them; otherwise select directly
-    const handleSpecialtyClick = (item) => {
-        const focuses = activeTaxonomy[lvl1]?.[lvl2]?.specialtyFocuses?.[item] || [];
-        if (focuses.length > 0) {
-            setLvl3(item);
+    const handleSpecialtyClick = (specialtyLabel) => {
+        const specialty = specialties.find(s => s.label_de === specialtyLabel);
+        const hasFocuses = specialty && focuses.some(f => f.level3_id === specialty.id || f.specialty_id === specialty.id);
+        if (hasFocuses) {
+            setLvl3(specialtyLabel);
         } else {
-            setSelectedCatPath([lvl1, lvl2, item]);
+            setSelectedCatPath([lvl1, lvl2, specialtyLabel]);
             setCatMenuOpen(false);
         }
     };
@@ -117,27 +115,17 @@ export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCat
                     {/* Level 3: SPECIALTIES (e.g. Marketing, Yoga) */}
                     <div className={`w-full ${currentFocuses.length > 0 ? 'md:w-1/4' : 'md:w-1/3'} ${currentFocuses.length > 0 ? 'border-r' : ''} overflow-y-auto bg-white`}>
                         {lvl1 && lvl2 ? (
-                            // Use specialtyObjects if available (has IDs for filtering), otherwise fall back to specialties (no filtering)
-                            // Check both numeric and string keys for courseCounts lookup
-                            activeTaxonomy[lvl1]?.[lvl2]?.specialtyObjects?.length > 0
-                                ? activeTaxonomy[lvl1][lvl2].specialtyObjects
-                                    .filter(spec => (courseCounts.level3[spec.id] || courseCounts.level3[String(spec.id)] || 0) > 0)
-                                    .map(spec => {
-                                        const item = spec.label_de;
-                                        const hasFocuses = (activeTaxonomy[lvl1]?.[lvl2]?.specialtyFocuses?.[item] || []).length > 0;
-                                        return (
-                                            <div key={spec.id} onClick={() => handleSpecialtyClick(item)} className={`p-3 mx-2 cursor-pointer text-sm flex justify-between items-center rounded transition ${lvl3 === item ? 'bg-primaryLight font-bold text-primary' : 'text-gray-600 hover:text-primary hover:bg-gray-50'}`}>
-                                                {item}
-                                                {hasFocuses && <ChevronRight className={`w-4 h-4 ${lvl3 === item ? 'text-primary' : 'text-gray-300'}`} />}
-                                            </div>
-                                        );
-                                    })
-                                : (activeTaxonomy[lvl1]?.[lvl2]?.specialties || []).map(item => {
-                                    const hasFocuses = (activeTaxonomy[lvl1]?.[lvl2]?.specialtyFocuses?.[item] || []).length > 0;
+                            // Filter specialties by level2 and course count, then render
+                            specialties
+                                .filter(spec => spec.level2_id === lvl2 || spec.area_id === lvl2)
+                                .filter(spec => (courseCounts.level3[spec.id] || 0) > 0)
+                                .sort((a, b) => (a.label_de || '').localeCompare(b.label_de || '', 'de'))
+                                .map(spec => {
+                                    const hasFocuses = focuses.some(f => f.level3_id === spec.id || f.specialty_id === spec.id);
                                     return (
-                                        <div key={item} onClick={() => handleSpecialtyClick(item)} className={`p-3 mx-2 cursor-pointer text-sm flex justify-between items-center rounded transition ${lvl3 === item ? 'bg-primaryLight font-bold text-primary' : 'text-gray-600 hover:text-primary hover:bg-gray-50'}`}>
-                                            {item}
-                                            {hasFocuses && <ChevronRight className={`w-4 h-4 ${lvl3 === item ? 'text-primary' : 'text-gray-300'}`} />}
+                                        <div key={spec.id} onClick={() => handleSpecialtyClick(spec.label_de)} className={`p-3 mx-2 cursor-pointer text-sm flex justify-between items-center rounded transition ${lvl3 === spec.label_de ? 'bg-primaryLight font-bold text-primary' : 'text-gray-600 hover:text-primary hover:bg-gray-50'}`}>
+                                            {spec.label_de}
+                                            {hasFocuses && <ChevronRight className={`w-4 h-4 ${lvl3 === spec.label_de ? 'text-primary' : 'text-gray-300'}`} />}
                                         </div>
                                     );
                                 })
