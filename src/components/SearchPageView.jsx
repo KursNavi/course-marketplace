@@ -146,9 +146,10 @@ const SearchPageView = ({
 
     // --- DYNAMIC FILTER LOGIC (Hide empty categories) ---
     // Use ONLY all_categories from junction table (new consolidated schema)
-    // Only consider published courses for available categories
+    // Only consider explicitly published courses for available categories
+    // Note: Courses without status are legacy and should be excluded from category dropdowns
     const publishedCourses = useMemo(() =>
-        courses.filter(c => c.status === 'published' || !c.status),
+        courses.filter(c => c.status === 'published'),
         [courses]
     );
 
