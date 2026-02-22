@@ -2077,6 +2077,388 @@ export const RATGEBER_CONTENT = {
     </ol>
 
     <p><strong>KursNavi hilft dir, Kurse zu finden, die deine Krankenkasse erstattet – Transparenz von Anfang an.</strong></p>
+  `,
+
+  // ============================================
+  // KINDER & JUGEND > ELTERNRATGEBER
+  // ============================================
+  'kinder-jugend/elternratgeber/aufsichtspflicht-schweizer-kurse': `
+    <p class="lead">Die Aufsichtspflicht in Kursen ist rechtlich klar geregelt: Eltern delegieren die Verantwortung beim Kurs-Check-in an die Institution, und der Kursanbieter trägt die volle Obhutspflicht bis zur Übergabe.</p>
+
+    <h2>Wer trägt die Verantwortung während des Kurses?</h2>
+    <p>Gemäss Art. 333 ZGB (Zivilgesetzbuch) haftet das Familienhaupt für Schäden eines unmündigen Kindes – es sei denn, es kann nachweisen, dass es angemessene Beaufsichtigung geleistet hat. Sobald Sie Ihr Kind jedoch in einen Kurs geben, delegieren Sie diese Aufsicht an die Kursleitung. Die Institution trägt dann die sogenannte Obhutspflicht, was eine Garantenstellung für die physische und mentale Integrität des Kindes bedeutet.</p>
+
+    <h2>Welche Anforderungen hat ein Kursanbieter konkret zu erfüllen?</h2>
+    <p>Die Obhutspflicht umfasst mehrere konkrete Massnahmen:</p>
+    <table>
+      <thead>
+        <tr><th>Aufgabe</th><th>Umsetzung</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Gefahrenbeurteilung</td><td>Gefahren im Kursraum identifizieren und minimieren</td></tr>
+        <tr><td>Kontinuierliche Überwachung</td><td>Alle Kinder im Sichtbereich halten</td></tr>
+        <tr><td>Intervention</td><td>Sofortige Reaktion bei Gefahren oder Fehlverhalten</td></tr>
+        <tr><td>Dokumentation</td><td>Vorfälle und Verletzungen festhalten</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Wie unterscheidet sich die Haftung nach Alter des Kindes?</h2>
+    <p>Kinder unter 7 Jahren sind in aller Regel nicht urteilsfähig – der Kursanbieter trägt die vollständige Verantwortung. Zwischen 7 und 14 Jahren hängt die Urteilsfähigkeit vom Einzelfall und der Komplexität der Situation ab. Ab etwa 14 Jahren wird Urteilsfähigkeit typischerweise angenommen. Dies bedeutet aber nicht, dass Kursanbieter weniger Aufsicht leisten müssen – die Aufsichtsintensität muss immer dem Alter und Entwicklungsstand angepasst sein.</p>
+
+    <h2>Checkliste für Eltern</h2>
+    <ul>
+      <li>Anbieter hat schriftlich Aufsichtsübertragung bestätigt</li>
+      <li>Klare Regel zu Ausstiegspunkten (Abholen durch Eltern, Zeiten)</li>
+      <li>Versicherungsdeckung und Haftungsgrenzen offengelegt</li>
+      <li>Notfallkontakte und Eskalationsmechanismen vorhanden</li>
+      <li>Kursleiter-zu-Kind-Verhältnis bekannt</li>
+      <li>Sicherheitskonzept transparent dargestellt</li>
+    </ul>
+  `,
+
+  'kinder-jugend/elternratgeber/versicherungsschutz-kindersport': `
+    <p class="lead">Das Schweizer Versicherungssystem ist komplex: Unfallversicherung (UVG) deckt medizinische Kosten, Betriebshaftpflicht des Anbieters deckt Schäden durch sein Verschulden. Wer zahlt wirklich? Eine klare Übersicht.</p>
+
+    <h2>Was ist UVG und wer ist versichert?</h2>
+    <p>Das Bundesgesetz über die Unfallversicherung (UVG) ist eine obligatorische Versicherung. Ihr Kind ist automatisch über Ihre Grundversicherung versichert – Sie müssen nichts extra zahlen. Die UVG deckt medizinische Kosten nach Unfällen: Arzt, Spital, Physiotherapie, alles 100%. Auch Invaliditätsrenten sind enthalten, falls Ihr Kind dauerhaft geschädigt ist.</p>
+
+    <table>
+      <thead>
+        <tr><th>Person</th><th>UVG</th><th>Betriebshaftpflicht</th><th>Kosten-Abdeckung</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Kinder</td><td>Ja, automatisch</td><td>Falls Anbieter schuldig</td><td>Arzt, Spital, Reha</td></tr>
+        <tr><td>Angestellte</td><td>Ja, Pflicht</td><td>Separate Versicherung</td><td>Unfall während Arbeit</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Was ist die Betriebshaftpflicht des Anbieters?</h2>
+    <p>Eine Betriebshaftpflichtversicherung zahlt Schadensersatz, wenn der Anbieter durch Fahrlässigkeit einen Schaden verursacht. Beispiel: Der Kursleiter versorgt Erste-Hilfe-Material unsorgfältig, das Kind schneidet sich an einem unsicheren Objekt. Die UVG zahlt die Arztkosten, aber die Haftpflicht des Anbieters zahlt zusätzlich Schmerzensgeld oder Invaliditätsrenten. Eine gute Betriebshaftpflicht sollte mindestens CHF 1 Million pro Unfall decken, besser CHF 5 Millionen.</p>
+
+    <h2>Was ist NICHT durch UVG oder Haftpflicht gedeckt?</h2>
+    <p>Die UVG zahlt NICHT für Verdienstentgang von Eltern (wenn Sie arbeitsunfähig werden). Die Haftpflicht zahlt NICHT bei grober Fahrlässigkeit oder Vorsatz.</p>
+
+    <h2>Checkliste: Das sollten Sie vor Anmeldung klären</h2>
+    <ul>
+      <li>Mein Kind ist durch UVG automatisch versichert</li>
+      <li>Anbieter hat Betriebshaftpflicht-Versicherung (fragen!)</li>
+      <li>Deckungssumme ist mind. CHF 1 Mio pro Unfall</li>
+      <li>Anbieter kann mir die Versicherungsbedingungen zeigen</li>
+      <li>Ich kenne die Grenzen: UVG deckelt Verdienstentgang nicht</li>
+      <li>Optional: Ich erkundige mich nach privater Zusatz-Versicherung</li>
+    </ul>
+  `,
+
+  'kinder-jugend/elternratgeber/kinderschutz-safeguarding': `
+    <p class="lead">Ein gutes Safeguarding-Konzept bedeutet präventive Massnahmen gegen alle Formen der Kindesgefährdung – von Missbrauch über emotionale Vernachlässigung bis zu sicherheitsrelevanten Lücken. Eltern sollten gezielt nachfragen, bevor sie ihr Kind anmelden.</p>
+
+    <h2>Was ist Safeguarding?</h2>
+    <p>Safeguarding ist präventiv und umfassend: Es zielt auf alle Formen der Gefährdung ab (physisch, emotional, sexuell, Vernachlässigung) und setzt VOR einem Schaden an. Child Protection reagiert dagegen auf bereits eingetretene Schäden. Eltern sollten Anbieter wählen, die Safeguarding-Massnahmen proaktiv umsetzen.</p>
+
+    <h2>Welche Mindeststandards sollte ein Kursanbieter erfüllen?</h2>
+    <p>Nach Kinderschutz Schweiz sind diese vier Säulen essentiell:</p>
+    <ul>
+      <li><strong>Führungskultur:</strong> Klare Null-Toleranz-Policy zu Missbrauch und Vernachlässigung</li>
+      <li><strong>Prävention:</strong> Sorgfältige Einstellung (Referenzen, Hintergrundchecks), Aufsichtsstrukturen (nie allein mit einem Kind)</li>
+      <li><strong>Meldeverfahren:</strong> Klare Eskalationskette bei Verdacht, benannte Vertrauensperson</li>
+      <li><strong>Transparenz:</strong> Regelmässige Eltern-Information, Zugang zu Sicherheitskonzept</li>
+    </ul>
+
+    <h2>Welche Warnsignale sollten Eltern ernst nehmen?</h2>
+    <ul>
+      <li>Kind möchte plötzlich nicht mehr zum Kurs gehen</li>
+      <li>Regressives Verhalten (jünger wirken), Schlafstörungen oder Alpträume</li>
+      <li>Kursleiter unterbindet Elternkommunikation</li>
+      <li>Allein-Situationen zwischen Kursleiter und Kind sind Standard</li>
+      <li>Anbieter hat keine schriftliche Safeguarding-Policy</li>
+    </ul>
+
+    <h2>Checkliste: So prüfen Sie das Safeguarding-Konzept</h2>
+    <table>
+      <thead>
+        <tr><th>Bereich</th><th>Das sollte vorhanden sein</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Schriftliches Konzept</td><td>Safeguarding Policy liegt vor, nicht nur mündliche Zusagen</td></tr>
+        <tr><td>Personal-Schulung</td><td>Alle Kursleitenden haben Kinderschutz-Training absolviert</td></tr>
+        <tr><td>Hintergrund-Checks</td><td>Referenzen und Vorstrafen-Auszug sind Teil des Einstellungsprozesses</td></tr>
+        <tr><td>Melde-Prozess</td><td>Klare Eskalationskette, Vertrauensperson benannt</td></tr>
+        <tr><td>Transparente Kommunikation</td><td>Eltern werden regelmässig informiert, Vorfälle kommuniziert</td></tr>
+      </tbody>
+    </table>
+  `,
+
+  'kinder-jugend/elternratgeber/datenschutz-fotos-videos': `
+    <p class="lead">Fotos und Videos sind Personendaten – und das neue Datenschutzgesetz (DSG 2023) stellt klare Regeln auf. Eltern sollten wissen: Sie sind nicht verpflichtet, Fotos zu erlauben. Und Einwilligung ohne schriftliche Zustimmung ist nicht gültig.</p>
+
+    <h2>Was sagt das Datenschutzgesetz?</h2>
+    <p>Nach Art. 5 DSG sind Fotos und Videos Personendaten. Das heisst: Jeder Mensch hat das Recht, selbst zu entscheiden, ob er oder sie fotografiert oder gefilmt wird. Das "Recht am eigenen Bild" ist verfassungsrechtlich geschützt. Kinder unter etwa 13 Jahren können diese Entscheidung nicht selbst treffen – die Eltern entscheiden für sie. Ab ca. 13 Jahren können urteilsfähige Kinder selbst bestimmen.</p>
+
+    <h2>Was ist eine gültige Einwilligung?</h2>
+    <p>Eine Einwilligung ist nur gültig, wenn sie:</p>
+    <ul>
+      <li>Schriftlich vorliegt (nicht mündlich)</li>
+      <li>Freiwillig gegeben wird (keine Bedingung für die Kursteilnahme)</li>
+      <li>Spezifisch ist (z.B. "Fotos nur für Eltern-Feedback", nicht "beliebig")</li>
+      <li>Jederzeit widerrufen werden kann</li>
+      <li>Dokumentiert wird (Anbieter muss das Formular aufbewahren)</li>
+    </ul>
+
+    <h2>Unterschied: Private Nutzung vs. Social Media</h2>
+    <table>
+      <thead>
+        <tr><th>Nutzung</th><th>Speicherdauer & Anforderung</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Eltern-Feedback</td><td>1–2 Monate nach Kurs, dann löschen</td></tr>
+        <tr><td>Archiv</td><td>1 Jahr, dann gelöscht (password-geschützt)</td></tr>
+        <tr><td>Website</td><td>So lange wie publiziert, mind. 1x/Jahr überprüft</td></tr>
+        <tr><td>Social Media</td><td>Mit separater Einwilligung, max. 2 Jahre</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Checkliste: Fragen Sie vor der Anmeldung</h2>
+    <ul>
+      <li>Werden Fotos/Videos gemacht und wofür?</li>
+      <li>Wo werden diese gespeichert? (Cloud, privat, Website)</li>
+      <li>Wie lange werden sie behalten?</li>
+      <li>Ist die Speicherung verschlüsselt und passwortgeschützt?</li>
+      <li>Kann ich mein Kind abmelden (Fotos verweigern)?</li>
+      <li>Kann ich die Einwilligung jederzeit zurückziehen?</li>
+    </ul>
+  `,
+
+  'kinder-jugend/elternratgeber/sicherheit-im-kursraum': `
+    <p class="lead">Raumsicherheit ist mehr als nur "Kanten abrunden". Es geht um Brandschutz, Hygiene, altersgerechte Einrichtung und klare Notfall-Strukturen. Diese Checkliste hilft Ihnen, einen Kursraum wirklich zu bewerten.</p>
+
+    <h2>Was muss ich beim Brandschutz überprüfen?</h2>
+    <p>Der Kursraum muss dem VKF-Standard (Vereinigung Kantonaler Feuerversicherungen) entsprechen:</p>
+    <table>
+      <thead>
+        <tr><th>Aspekt</th><th>Standard</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Fluchtwege</td><td>Min. 2 Ausgänge bei >50 Personen, max. 50m bis zur Aussenluft</td></tr>
+        <tr><td>Fluchttüren</td><td>Öffnen sich von innen ohne Schlüssel</td></tr>
+        <tr><td>Notbeleuchtung</td><td>Rettungsschilder + Orientierungsbeleuchtung bei Stromausfall</td></tr>
+        <tr><td>Feuerlöscher</td><td>Mind. 6kg, regelmässig inspiziert (2x/Jahr)</td></tr>
+        <tr><td>Evakuierungsübung</td><td>Mind. 1x/Jahr, besser 2x/Jahr, Ziel: <3 Min.</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Raumeinrichtung nach Altersgruppen</h2>
+    <h3>Für Kleinkinder (3–5 Jahre):</h3>
+    <ul>
+      <li>Tische 40–45cm hoch, Stühle 25–30cm Sitzhöhe</li>
+      <li>Keine Kleinteile <1,25cm</li>
+      <li>Kanten abgerundet, Regale gegen Umkippen gesichert</li>
+      <li>Steckdosen mit Schutzvorrichtung</li>
+    </ul>
+
+    <h3>Für Schulkinder (6–11 Jahre):</h3>
+    <ul>
+      <li>Min. 4–5 m² pro Kind</li>
+      <li>Tische 60–75cm hoch, Stühle 35–45cm mit Rückenlehne</li>
+      <li>Erste-Hilfe-Set leicht erreichbar</li>
+      <li>Evakuierungsplan sichtbar</li>
+    </ul>
+
+    <h2>Checkliste zum Mitnehmen</h2>
+    <ul>
+      <li>Evakuierungsplan sichtbar und verständlich</li>
+      <li>Erste-Hilfe-Set vorhanden und leicht erreichbar</li>
+      <li>Notfall-Telefonnummern ausgehängt</li>
+      <li>Raum ist sauber und gut belüftet</li>
+      <li>Möbel sind altersgerecht und stabil</li>
+      <li>Toiletten sind sauber und kindgerecht</li>
+    </ul>
+  `,
+
+  'kinder-jugend/elternratgeber/erste-hilfe-notfallplaene': `
+    <p class="lead">Anbieter MÜSSEN offenlegen, wer im Notfall handelt – und Eltern müssen wissen, wie. Eine transparente Erste-Hilfe-Organisation ist keine Frage des "Vertrauens", sondern der rechtlichen Verpflichtung.</p>
+
+    <h2>Was muss ein Kursanbieter zur Transparenz zeigen?</h2>
+    <p>Die Aushänge im Kursraum müssen folgende Infos enthalten:</p>
+    <ul>
+      <li>Notfall-Telefonnummern: 144 (Rettung), 112 (Feuerwehr/Polizei), 145 (Giftnotruf)</li>
+      <li>Namen und Qualifikationen des Personals mit Erste-Hilfe-Zertifikat</li>
+      <li>Evakuierungsplan mit Fluchtwegen und Sammelplatz</li>
+      <li>Ablaufdatum des Erste-Hilfe-Zertifikats</li>
+      <li>Adresse des nächstgelegenen Spitals</li>
+    </ul>
+
+    <h2>Welche Erste-Hilfe-Ausbildung ist für Kursleiter nötig?</h2>
+    <p>Das Zertifikat muss speziell auf Kindernotfälle ausgerichtet sein und regelmässig aufgefrischt werden. Offizielle Schweizer Anbieter sind Red Cross Education, Samariter Schweiz und Notfallhandling.ch. Die Auffrischung sollte mindestens jährlich erfolgen.</p>
+
+    <h2>Was sollen Eltern im Notfall erfahren?</h2>
+    <table>
+      <thead>
+        <tr><th>Frage</th><th>Anbieter sollte klären</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Werde ich sofort benachrichtigt?</td><td>Klare Benachrichtigungsprozedur (zeitnah, mit wem zuerst)</td></tr>
+        <tr><td>Wer fährt mit zum Spital?</td><td>Begleitung durch geschulte Person + Notfallkontakte mitgeben</td></tr>
+        <tr><td>Wer zahlt die Kosten?</td><td>Hinweis auf Unfallversicherung und mögliche Haftpflicht des Anbieters</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Worauf bei Wasserkursen besonders achten?</h2>
+    <ul>
+      <li>Mindestens eine Person mit Rettungsschwimmer-Diplom</li>
+      <li>Beaufsichtigung 1:10 oder besser (eine Person pro zehn Kinder)</li>
+      <li>Rettungsausrüstung (Haken, Seil, Rettungsring) muss sichtbar und sofort erreichbar sein</li>
+      <li>Wasserqualität wird täglich getestet</li>
+    </ul>
+  `,
+
+  // ============================================
+  // KINDER & JUGEND > ENTWICKLUNGSFÖRDERUNG
+  // ============================================
+  'kinder-jugend/entwicklung/interessen-check-kinder': `
+    <p class="lead">Die meisten Eltern kennen ihre Kinder – doch wissen sie wirklich, was sie fasziniert? Ein strukturierter Interessen-Check hilft Dir, authentische Leidenschaften von oberflächlichen Trends zu unterscheiden.</p>
+
+    <h2>Welche Methoden gibt es, um Kinder-Interessen zu erfassen?</h2>
+    <p>Offene Gespräche sind wichtiger als Beobachtung allein. Stelle Fragen wie:</p>
+    <ul>
+      <li>"Was macht dir am meisten Spass?"</li>
+      <li>"Womit spielst du am liebsten?"</li>
+      <li>"Was würdest du gerne ausprobieren?"</li>
+    </ul>
+    <p>Vertiefe dann die beobachteten Aktivitäten: "Warum gefällt dir das?" "Was interessiert dich daran besonders?"</p>
+
+    <h2>Checkliste: Interessen nach Alter</h2>
+    <table>
+      <thead>
+        <tr><th>Alter</th><th>Typische Interessen</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>4–6 Jahre</td><td>Bewegung, Klettern, Malen, Naturerkundung, Rollenspiele</td></tr>
+        <tr><td>7–10 Jahre</td><td>Spezialisierte Sportarten, Handwerkliches, Experimente, Kunst, Freundschaften</td></tr>
+        <tr><td>11+ Jahre</td><td>Spezialisierte Hobbys, Identität, Peer-Aktivitäten, Digital, gesellschaftliche Themen</td></tr>
+      </tbody>
+    </table>
+
+    <p><strong>Mit KursNavi findest du spielend leicht die passenden Kurse für dein Kind.</strong></p>
+  `,
+
+  'kinder-jugend/entwicklung/intrinsische-motivation': `
+    <p class="lead">Wie verwandelst du ein "Ich muss zum Kurs" in ein "Ich will zum Kurs"? Die Antwort liegt in den vier Säulen der Motivation.</p>
+
+    <h2>Das Vier-Säulen-Modell</h2>
+    <ul>
+      <li><strong>Säule 1: Autonomie</strong> – Dein Kind hat Wahlfreiheit und Kontrolle. Praktisch: "Welcher Kurs interessiert dich? Wir können zwischen A und B wählen."</li>
+      <li><strong>Säule 2: Kompetenz</strong> – Es erlebt Fortschritt und Fähigkeitsaufbau. Praktisch: Zwischenziele setzen, Fortschritt sichtbar machen ("Du bist schneller geworden!").</li>
+      <li><strong>Säule 3: Zugehörigkeit</strong> – Es fühlt sich Teil einer Gemeinschaft. Praktisch: Positive Beziehungen zu Trainer/-innen und Peers aufbauen.</li>
+      <li><strong>Säule 4: Sinn</strong> – Es versteht, warum diese Aktivität wichtig ist. Praktisch: "Schwimmen ist wichtig für deine Sicherheit" oder "Du wolltest Freunde finden".</li>
+    </ul>
+
+    <h2>Der Intrinsic Motivation Readiness Test</h2>
+    <p>Vor Anmeldung: Beantworte für jede Säule:</p>
+    <ul>
+      <li><strong>Autonomie:</strong> Wünscht sich mein Kind diese Aktivität selbst?</li>
+      <li><strong>Kompetenz:</strong> Passt der Schwierigkeitslevel?</li>
+      <li><strong>Zugehörigkeit:</strong> Ist der Trainer kinderfreundlich?</li>
+      <li><strong>Sinn:</strong> Kann mein Kind den Wert verstehen?</li>
+    </ul>
+    <p>Mehr als eine "Nein"-Antwort? Überdenke den Kurs oder bereite ihn besser vor.</p>
+  `,
+
+  'kinder-jugend/entwicklung/motivation-ohne-zwang': `
+    <p class="lead">Viele Eltern kämpfen mit einem Dilemma: Wie motiviere ich mein Kind, einen Kurs weiterzumachen, wenn die erste Begeisterung verflogen ist – ohne es zu drangsalieren?</p>
+
+    <h2>Intrinsische vs. extrinsische Motivation</h2>
+    <p>Intrinsische Motivation kommt von innen: Dein Kind möchte aus eigenem Antrieb etwas tun. Extrinsische Motivation kommt von aussen: Belohnungen, Lob oder Druck. Das Problem: Übermässige externe Belohnung kann intrinsische Motivation untergraben – ein Phänomen, das Psychologen den "Korruptionseffekt" nennen.</p>
+    <p>Die gute Nachricht: Du kannst intrinsische Motivation fördern – durch Autonomie, Kompetenzaufbau und Zugehörigkeit.</p>
+
+    <h2>Vier Säulen der Motivationsförderung</h2>
+    <table>
+      <thead>
+        <tr><th>Säule</th><th>Praktische Umsetzung</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Autonomie</td><td>"Möchtest du diesen Kurs weitermachen? Das ist DEINE Entscheidung."</td></tr>
+        <tr><td>Kompetenz</td><td>Kleine Erfolge zeigen: "Schau, du kannst schon 50m schwimmen!"</td></tr>
+        <tr><td>Zugehörigkeit</td><td>Freundschaften in der Gruppe: "Hast du wieder deine Freunde dort getroffen?"</td></tr>
+        <tr><td>Sinn</td><td>Langfristige Bedeutung: "Schwimmen ist wichtig für deine Sicherheit."</td></tr>
+      </tbody>
+    </table>
+
+    <p><strong>KursNavi unterstützt dich mit intelligenten Filtern und einer übersichtlichen Kursauswahl.</strong></p>
+  `,
+
+  'kinder-jugend/entwicklung/schnupperstunden-nutzen': `
+    <p class="lead">Schnupperstunden sind der Schlüssel zu besseren Kursentscheidungen. Sie senken Angst, klären Erwartungen und verhindern, dass dein Kind monatelang einen falschen Kurs besucht.</p>
+
+    <h2>Warum Schnupperstunden so wertvoll sind</h2>
+    <p>Sie ermöglichen es deinem Kind:</p>
+    <ul>
+      <li>Die Umgebung, Trainer/-in und andere Kinder kennenzulernen (Angstabbau)</li>
+      <li>Realistische Erwartungen zu entwickeln (Fantasie vs. Realität)</li>
+      <li>Zu prüfen, ob der Unterrichtsstil passt</li>
+      <li>Erste Freundschaften entstehen zu lassen</li>
+    </ul>
+
+    <h2>Die 5-Schritt-Methode für Schnupperstunden</h2>
+    <ol>
+      <li><strong>Ankündigung:</strong> "Nächsten Samstag schaue ich mir einen Karatekurs an. Du kannst zuschauen oder mitmachen, wie du dich fühlst."</li>
+      <li><strong>Während der Stunde:</strong> Eltern bleiben im Hintergrund; Zuschauen ist völlig OK</li>
+      <li><strong>Nach der Stunde:</strong> Offenes Gespräch ohne Druck ("Wie war dein Erlebnis?")</li>
+      <li><strong>Mehrfache Schnupperstunden:</strong> Bei Unsicherheit ist ein zweiter Besuch wertvoll</li>
+      <li><strong>Übergang:</strong> Langsame Integration (1–2x pro Woche statt sofort 4x)</li>
+    </ol>
+
+    <p><strong>Mit KursNavi findest du spielend leicht Kurse mit Schnupperstunden für dein Kind.</strong></p>
+  `,
+
+  'kinder-jugend/entwicklung/hobby-wechsel-kinder': `
+    <p class="lead">Hobby-Hopping ist völlig normal – besonders bei Grundschulkindern. Die Frage ist nicht, ob dein Kind das Hobby wechselt, sondern wie du Entscheidungen intelligent triffst.</p>
+
+    <h2>Ist Hobby-Wechsel Schaden oder Nutzen?</h2>
+    <p>Hobby-Wechsel ist in der Regel nützlich: Kinder erkunden verschiedene Aktivitäten, lernen sich selbst besser kennen und sammeln vielfältige Kompetenzen. Das ist phänomenal!</p>
+    <p>Aber es braucht eine Grenze: <strong>Die 3-Monats-Regel.</strong> Gib deinem Kind minimum 3 Monate, um ein Hobby kennenzulernen. Zu schnelle Wechsel verhindern wichtige Lernprozesse: das Überwinden von Anfangshürden, das Erleben von Erfolgen, neue Freundschaften.</p>
+
+    <h2>Entscheidungshilfe: Weitermachen oder Aufhören?</h2>
+    <table>
+      <thead>
+        <tr><th>Signale für Weitermachen</th><th>Signale für Wechsel</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Erste 2–4 Wochen Unsicherheit</td><td>Konsistente Ablehnung nach 3 Monaten</td></tr>
+        <tr><td>Zunehmende Erfolgserlebnisse</td><td>Neue, stärkere Interessen entstanden</td></tr>
+        <tr><td>Neue Freundschaften</td><td>Ungeeignete Lernumgebung oder Trainer</td></tr>
+        <tr><td>Motivation kehrt nach Unlust zurück</td><td>Körperliche oder emotionale Überforderung</td></tr>
+      </tbody>
+    </table>
+
+    <p><strong>KursNavi unterstützt dich mit intelligenten Filtern bei der Kurswahl.</strong></p>
+  `,
+
+  'kinder-jugend/entwicklung/peer-group-einfluss': `
+    <p class="lead">Die Frage, die viele Eltern stellen: Macht mein Kind diesen Kurs wirklich, weil es ihn mag – oder nur, weil Freunde gehen? Peer-Einfluss ist entwicklungsgerecht, aber es braucht Balance.</p>
+
+    <h2>Wann ist Peer-Einfluss dominant?</h2>
+    <ul>
+      <li><strong>Bei 6–10 Jahren:</strong> Moderate Bedeutung</li>
+      <li><strong>Mit 10–14 Jahren:</strong> Zunehmend wichtig</li>
+      <li><strong>Ab 14 Jahren:</strong> Maximaler Einfluss</li>
+    </ul>
+    <p>Trotzdem: Bei wichtigen Entscheidungen bleiben Eltern zentrale Ansprechpartner.</p>
+
+    <p>Das "Akademischer Coolness"-Phänomen ist real: Gewisse Kurse gelten als uncool (Programmieren = nur für Nerds), andere haben Prestige (Skateboarding, Streetdance). Kinder können gegen ihre echten Interessen handeln, um Akzeptanz zu gewinnen.</p>
+
+    <h2>Strategien zur Moderierung von Peer-Einfluss</h2>
+    <table>
+      <thead>
+        <tr><th>Strategie</th><th>Aktion</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Echte Interessen identifizieren</td><td>"Magst du das wirklich oder machst du es für deine Freunde?"</td></tr>
+        <tr><td>Offene Kommunikation</td><td>Regelmässige, nicht-moralisierende Gespräche</td></tr>
+        <tr><td>Diversität fördern</td><td>Ein Kurs, den dein Kind liebt; einer für Freunde als Kompromiss</td></tr>
+        <tr><td>Werteklarheit</td><td>"In unserer Familie nutzen wir unsere Talente."</td></tr>
+        <tr><td>Neue Peer-Konstellationen</td><td>Andere Kurse ermöglichen neue Freundschaften</td></tr>
+      </tbody>
+    </table>
   `
 };
 

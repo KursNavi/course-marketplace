@@ -122,6 +122,7 @@ export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCat
 
                     {/* Level 2: AREAS (e.g. Business, Sport) */}
                     <div className={`w-full ${currentFocuses.length > 0 ? 'md:w-1/4' : 'md:w-1/3'} border-r overflow-y-auto bg-white`}>
+                        {lvl1 && console.log('[DEBUG] lvl1:', lvl1, '_areaIds:', activeTaxonomy[lvl1]?._areaIds, 'keys:', Object.keys(activeTaxonomy[lvl1] || {}))}
                         {lvl1 ? (
                             // Use _areaIds for ordered numeric IDs - these contain only numeric IDs from DB
                             (activeTaxonomy[lvl1]?._areaIds || [])
