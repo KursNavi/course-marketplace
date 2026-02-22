@@ -54,6 +54,10 @@ export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCat
                 a.slug === key ||
                 a.slug === keyStr
             );
+
+            // DEBUG: Log what we're looking for and what we found
+            console.log(`[getLabel] key=${key}, keyNum=${keyNum}, areas.length=${areas.length}, found area:`, area);
+
             // Only use label_de if it's not a slug
             if (area?.label_de && !isSlug(area.label_de)) return area.label_de;
             // If area has a slug, format that
