@@ -22,6 +22,120 @@
   background: #FAF5F0; 
 }
 ::-webkit-scrollbar-thumb {
-  background: #FA6E28; 
+  background: #FA6E28;
   border-radius: 4px;
+}
+
+/* Ratgeber Article Styling */
+.prose-ratgeber {
+  @apply text-gray-700 leading-relaxed;
+}
+
+.prose-ratgeber .lead {
+  @apply text-xl text-gray-600 font-medium leading-relaxed mb-8 pb-6 border-b border-gray-100;
+}
+
+.prose-ratgeber h2 {
+  @apply text-2xl font-bold text-gray-900 mt-10 mb-4 font-heading;
+}
+
+.prose-ratgeber h3 {
+  @apply text-xl font-bold text-gray-800 mt-8 mb-3 font-heading;
+}
+
+.prose-ratgeber p {
+  @apply text-gray-600 mb-4 leading-relaxed;
+}
+
+.prose-ratgeber ul, .prose-ratgeber ol {
+  @apply my-4 ml-6 space-y-2;
+}
+
+.prose-ratgeber ul {
+  @apply list-disc;
+}
+
+.prose-ratgeber ol {
+  @apply list-decimal;
+}
+
+.prose-ratgeber li {
+  @apply text-gray-600 leading-relaxed;
+}
+
+.prose-ratgeber strong {
+  @apply text-gray-800 font-semibold;
+}
+
+.prose-ratgeber table {
+  @apply w-full my-6 border-collapse rounded-xl overflow-hidden shadow-sm;
+}
+
+.prose-ratgeber thead {
+  @apply bg-gray-100;
+}
+
+.prose-ratgeber th {
+  @apply px-4 py-3 text-left text-sm font-bold text-gray-700 border-b border-gray-200;
+}
+
+.prose-ratgeber td {
+  @apply px-4 py-3 text-sm text-gray-600 border-b border-gray-100;
+}
+
+.prose-ratgeber tbody tr:hover {
+  @apply bg-gray-50;
+}
+
+.prose-ratgeber tbody tr:last-child td {
+  @apply border-b-0;
+}
+
+.prose-ratgeber blockquote {
+  @apply border-l-4 border-primary pl-6 py-2 my-6 bg-orange-50 rounded-r-lg italic text-gray-700;
+}
+
+.prose-ratgeber a {
+  @apply text-primary font-medium hover:underline;
+}
+
+.prose-ratgeber .info-box {
+  @apply bg-blue-50 border border-blue-200 rounded-xl p-6 my-6;
+}
+
+.prose-ratgeber .tip-box {
+  @apply bg-emerald-50 border border-emerald-200 rounded-xl p-6 my-6;
+}
+
+.prose-ratgeber .warning-box {
+  @apply bg-amber-50 border border-amber-200 rounded-xl p-6 my-6;
+}
+
+.prose-ratgeber .cta-box {
+  @apply bg-gradient-to-r from-primary/10 to-orange-100 rounded-xl p-6 my-8 text-center;
+}
+
+.prose-ratgeber .article-image {
+  @apply w-full rounded-xl my-8 shadow-md;
+}
+
+.prose-ratgeber .image-caption {
+  @apply text-sm text-gray-500 text-center mt-2 italic;
+}
+
+.prose-ratgeber .checklist {
+  @apply bg-gray-50 rounded-xl p-6 my-6;
+}
+
+.prose-ratgeber .checklist li {
+  @apply flex items-start gap-3 py-2;
+}
+
+.prose-ratgeber .checklist li::before {
+  content: "✓";
+  @apply text-emerald-500 font-bold flex-shrink-0;
+}
+
+.prose-ratgeber .highlight {
+  @apply bg-yellow-100 px-1 rounded;
 }

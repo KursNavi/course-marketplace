@@ -12,8 +12,15 @@ export const RATGEBER_CONTENT = {
   'beruflich/finanzierung/vollkostenrechnung-weiterbildung': `
     <p class="lead">Eine geplante Weiterbildung kostet meist 30–50 % mehr als nur die Kursgebühren allein – wer Nebenkosten unterschätzt, läuft Gefahr, die Finanzierung zu scheitern oder in finanzielle Schwierigkeiten zu geraten.</p>
 
+    <img src="https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=800&q=80" alt="Budgetplanung und Kostenrechnung für Weiterbildung" class="article-image" />
+
     <h2>Warum eine Vollkostenrechnung essentiell ist</h2>
     <p>Viele Berufstätige denken bei Weiterbildungskosten nur an die Kursgebühren. Aber wer nach einem Fachausweis für CHF 10'000 kalkuliert, verkennt oft Reisekosten, Unterkunft, Lernmaterial und Prüfungsgebühren. Eine realistische Budgetplanung verhindert Überraschungen und schafft psychologische Sicherheit.</p>
+
+    <div class="warning-box">
+      <h3>⚠️ Häufiger Fehler</h3>
+      <p>Die meisten Teilnehmenden unterschätzen die Gesamtkosten um <strong>30–50%</strong>. Eine sorgfältige Planung verhindert böse Überraschungen.</p>
+    </div>
 
     <h2>Direkte Kurskosten im Überblick</h2>
     <table>
@@ -29,28 +36,28 @@ export const RATGEBER_CONTENT = {
 
     <h2>Oft unterschätzte Nebenkosten</h2>
 
-    <h3>Reisekosten</h3>
+    <h3>🚆 Reisekosten</h3>
     <ul>
       <li>Öffentlicher Verkehr: CHF 8–20 pro Kurstag</li>
       <li>Auto: ca. CHF 0,70/km (Pauschalsatz)</li>
-      <li>Jahresbudget (200 Kurstage): CHF 1'600 – 4'000</li>
+      <li>Jahresbudget (200 Kurstage): <strong>CHF 1'600 – 4'000</strong></li>
     </ul>
 
-    <h3>Unterkunft bei auswärtigen Kursen</h3>
+    <h3>🏨 Unterkunft bei auswärtigen Kursen</h3>
     <ul>
       <li>Mehrkosten Verpflegung: CHF 15–25/Tag</li>
       <li>Hotel/Unterkunft: CHF 80–150/Nacht</li>
-      <li>Jahresbudget (50 Übernachtungen): CHF 4'000 – 9'000</li>
+      <li>Jahresbudget (50 Übernachtungen): <strong>CHF 4'000 – 9'000</strong></li>
     </ul>
 
-    <h3>Lernmaterialien & Fachliteratur</h3>
+    <h3>📚 Lernmaterialien & Fachliteratur</h3>
     <ul>
       <li>Skripte und Unterlagen: CHF 300–800</li>
       <li>Fachliteratur: CHF 200–600</li>
       <li>Softwarelizenzen: CHF 100–500</li>
     </ul>
 
-    <h3>Prüfungsgebühren</h3>
+    <h3>📝 Prüfungsgebühren</h3>
     <ul>
       <li>Fachausweis-Prüfung: CHF 300–800</li>
       <li>Höheres Diplom-Prüfung: CHF 500–1'200</li>
@@ -59,50 +66,61 @@ export const RATGEBER_CONTENT = {
     <h2>Opportunitätskosten: Die versteckten Kosten</h2>
     <p>Neben direkten Ausgaben entstehen auch versteckte Kosten durch:</p>
     <ul>
-      <li>Verdienstausfälle durch Kurstage (Selbstständige: CHF 5'000–15'000/Jahr)</li>
-      <li>Entgangene Beförderungen und Gehaltsplus-Verzögerung</li>
-      <li>Stress, Burnout-Risiko und Familienbelastung</li>
+      <li><strong>Verdienstausfälle</strong> durch Kurstage (Selbstständige: CHF 5'000–15'000/Jahr)</li>
+      <li><strong>Entgangene Beförderungen</strong> und Gehaltsplus-Verzögerung</li>
+      <li><strong>Stress</strong>, Burnout-Risiko und Familienbelastung</li>
     </ul>
 
-    <h2>Praktisches Budgetbeispiel: Fachausweis über 18 Monate</h2>
-
-    <h3>Direkte Kosten:</h3>
-    <ul>
-      <li>Kursgebühren: CHF 10'000</li>
-      <li>Prüfungsgebühr: CHF 600</li>
-      <li>Lernmaterial: CHF 900</li>
-    </ul>
-    <p><strong>Subtotal direkt: CHF 11'500</strong></p>
-
-    <h3>Nebenkosten:</h3>
-    <ul>
-      <li>Reisekosten (30 Kurstage à CHF 15 ÖV): CHF 450</li>
-      <li>Unterkunft (8 Nächte à CHF 120): CHF 960</li>
-      <li>Mehrkosten Verpflegung: CHF 600</li>
-      <li>Reserve für Unvorhergesehenes: CHF 490</li>
-    </ul>
-
-    <p><strong>Gesamtbudget Teilnehmer: CHF 14'000</strong></p>
-    <p><strong>Netto nach 50% Bundesbeitrag: CHF 4'500 – 9'500</strong></p>
+    <div class="info-box">
+      <h3>💰 Praktisches Budgetbeispiel: Fachausweis über 18 Monate</h3>
+      <p><strong>Direkte Kosten:</strong></p>
+      <ul>
+        <li>Kursgebühren: CHF 10'000</li>
+        <li>Prüfungsgebühr: CHF 600</li>
+        <li>Lernmaterial: CHF 900</li>
+      </ul>
+      <p><strong>Subtotal direkt: CHF 11'500</strong></p>
+      <p><strong>Nebenkosten:</strong></p>
+      <ul>
+        <li>Reisekosten (30 Kurstage à CHF 15 ÖV): CHF 450</li>
+        <li>Unterkunft (8 Nächte à CHF 120): CHF 960</li>
+        <li>Mehrkosten Verpflegung: CHF 600</li>
+        <li>Reserve für Unvorhergesehenes: CHF 490</li>
+      </ul>
+      <p><strong>Gesamtbudget: CHF 14'000</strong></p>
+      <p><strong>Netto nach 50% Bundesbeitrag: CHF 4'500 – 9'500</strong></p>
+    </div>
 
     <h2>Checkliste: Kostenplanung richtig machen</h2>
-    <ul>
-      <li>Alle Kostenposten recherchieren (Kurs, Prüfung, Material)</li>
-      <li>Reisekosten detailliert berechnen (Anzahl Kurstage × Tagessatz)</li>
-      <li>Unterkunftskosten einplanen (bei auswärtigen Kursen)</li>
-      <li>Opportunitätskosten kalkulieren (Verdienstausfälle)</li>
-      <li>Puffer einrechnen (mind. 10 % der Summe)</li>
-      <li>Bundesbeitrag und Stipendien miteinrechnen</li>
-    </ul>
+    <div class="checklist">
+      <ul>
+        <li>Alle Kostenposten recherchieren (Kurs, Prüfung, Material)</li>
+        <li>Reisekosten detailliert berechnen (Anzahl Kurstage × Tagessatz)</li>
+        <li>Unterkunftskosten einplanen (bei auswärtigen Kursen)</li>
+        <li>Opportunitätskosten kalkulieren (Verdienstausfälle)</li>
+        <li>Puffer einrechnen (mind. 10 % der Summe)</li>
+        <li>Bundesbeitrag und Stipendien miteinrechnen</li>
+      </ul>
+    </div>
 
-    <p><strong>Wer den nächsten Schritt machen möchte, findet auf KursNavi passende Angebote in der Nähe.</strong></p>
+    <div class="cta-box">
+      <h3>🎓 Passende Weiterbildung finden</h3>
+      <p>Finde auf KursNavi die perfekte Weiterbildung mit transparenten Kostenangaben.</p>
+    </div>
   `,
 
   'beruflich/finanzierung/bundesbeitraege-50-prozent': `
     <p class="lead">Nach bestandener eidgenössischer Prüfung (Berufsprüfung oder Höhere Fachprüfung) kann der Bund bis zu 50 % der Kurskosten zurückerstatten – eine einmalige, nicht rückzahlbare Subvention für Deine Weiterbildung.</p>
 
+    <img src="https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?w=800&q=80" alt="Schweizer Bundesbeiträge für Weiterbildung" class="article-image" />
+
     <h2>Wie funktioniert die 50%-Regel?</h2>
-    <p>Das Bundesgesetz über Berufsbildung (BBG) sieht vor, dass der Bund (über das Staatssekretariat für Bildung, Forschung und Innovation SBFI) Weiterbildungskosten für anerkannte eidgenössische Prüfungen mit bis zu 50 % unterstützt. Dies ist ein einmaliger Zuschuss (keine Rückzahlung nötig) nach erfolgreichem Prüfungsabschluss.</p>
+    <p>Das Bundesgesetz über Berufsbildung (BBG) sieht vor, dass der Bund (über das Staatssekretariat für Bildung, Forschung und Innovation SBFI) Weiterbildungskosten für anerkannte eidgenössische Prüfungen mit bis zu 50 % unterstützt. Dies ist ein <strong>einmaliger Zuschuss</strong> (keine Rückzahlung nötig) nach erfolgreichem Prüfungsabschluss.</p>
+
+    <div class="tip-box">
+      <h3>💡 Das Wichtigste auf einen Blick</h3>
+      <p>Der Bundesbeitrag ist ein <strong>Geschenk</strong> – keine Rückzahlung erforderlich! Du erhältst bis zu CHF 10'500 zurück, wenn du deine Prüfung bestehst.</p>
+    </div>
 
     <h2>Maximale Bundesbeiträge nach Prüfungstyp</h2>
     <table>
@@ -110,51 +128,57 @@ export const RATGEBER_CONTENT = {
         <tr><th>Prüfungstyp</th><th>Abkürzung</th><th>Max. Beitrag</th><th>Deckungsgrad</th></tr>
       </thead>
       <tbody>
-        <tr><td>Berufsprüfung</td><td>BP (Fachausweis)</td><td>CHF 9'500</td><td>50 % Kursgebühren</td></tr>
-        <tr><td>Höhere Fachprüfung</td><td>HFP (Diplom)</td><td>CHF 10'500</td><td>50 % Kursgebühren</td></tr>
+        <tr><td>Berufsprüfung</td><td>BP (Fachausweis)</td><td><strong>CHF 9'500</strong></td><td>50 % Kursgebühren</td></tr>
+        <tr><td>Höhere Fachprüfung</td><td>HFP (Diplom)</td><td><strong>CHF 10'500</strong></td><td>50 % Kursgebühren</td></tr>
         <tr><td>Höhere Fachschulen</td><td>HF (Diploma)</td><td>variabel</td><td>Schulfinanzierung</td></tr>
       </tbody>
     </table>
 
     <h2>Wichtig: Nur anerkannte Kurse</h2>
 
-    <h3>Der Bund zahlt NICHT für:</h3>
-    <ul>
-      <li>Universitätsabschlüsse (Bachelor, Master)</li>
-      <li>Berufsmatura-Vorbereitung</li>
-      <li>Private Kurse ohne eidgenössisches Prüfungsziel</li>
-      <li>Sprachkurse und Hobbykurse</li>
-    </ul>
+    <div class="warning-box">
+      <h3>❌ Der Bund zahlt NICHT für:</h3>
+      <ul>
+        <li>Universitätsabschlüsse (Bachelor, Master)</li>
+        <li>Berufsmatura-Vorbereitung</li>
+        <li>Private Kurse ohne eidgenössisches Prüfungsziel</li>
+        <li>Sprachkurse und Hobbykurse</li>
+      </ul>
+    </div>
 
-    <h3>Der Bund zahlt FÜR:</h3>
-    <ul>
-      <li>Vorbereitungskurse auf Berufsprüfung (BP)</li>
-      <li>Vorbereitungskurse auf Höhere Fachprüfung (HFP)</li>
-    </ul>
+    <div class="tip-box">
+      <h3>✅ Der Bund zahlt FÜR:</h3>
+      <ul>
+        <li>Vorbereitungskurse auf Berufsprüfung (BP)</li>
+        <li>Vorbereitungskurse auf Höhere Fachprüfung (HFP)</li>
+      </ul>
+    </div>
 
     <h2>Schritt-für-Schritt: So beantragst Du den Bundesbeitrag</h2>
 
-    <h3>Schritt 1: Vor Kursbeginn prüfen</h3>
+    <h3>📋 Schritt 1: Vor Kursbeginn prüfen</h3>
     <ul>
       <li>Ist der Kurs auf der SBFI-Kursliste eingetragen?</li>
       <li>Gibt es ein offizielles Prüfungsreglement?</li>
     </ul>
 
-    <h3>Schritt 2: Nach bestandener Prüfung (WICHTIG!)</h3>
+    <h3>⚠️ Schritt 2: Nach bestandener Prüfung (WICHTIG!)</h3>
     <ul>
-      <li>Frist: Max. 2 Jahre nach Prüfung (danach wird der Antrag abgelehnt!)</li>
+      <li><strong>Frist: Max. 2 Jahre nach Prüfung</strong> (danach wird der Antrag abgelehnt!)</li>
       <li>Einreichung: Beim kantonalen Amt für Berufsbildung oder beim SBFI</li>
     </ul>
 
-    <h3>Schritt 3: Erforderliche Unterlagen zusammenstellen</h3>
-    <ul>
-      <li>Bestätigter Prüfungsausweis (mit Prüfungsnote und Datum)</li>
-      <li>Originalrechnung(en) des Kursanbieters</li>
-      <li>Zahlungsnachweis (Kontoauszug, Quittung)</li>
-      <li>Kursbestätigung (Anwesenheit)</li>
-    </ul>
+    <h3>📄 Schritt 3: Erforderliche Unterlagen zusammenstellen</h3>
+    <div class="checklist">
+      <ul>
+        <li>Bestätigter Prüfungsausweis (mit Prüfungsnote und Datum)</li>
+        <li>Originalrechnung(en) des Kursanbieters</li>
+        <li>Zahlungsnachweis (Kontoauszug, Quittung)</li>
+        <li>Kursbestätigung (Anwesenheit)</li>
+      </ul>
+    </div>
 
-    <h3>Schritt 4: Auszahlung</h3>
+    <h3>💰 Schritt 4: Auszahlung</h3>
     <ul>
       <li>Der Bund überweist direkt auf Dein Bankkonto</li>
       <li>Auszahlung dauert 4–8 Wochen nach Antragstellung</li>
@@ -163,13 +187,13 @@ export const RATGEBER_CONTENT = {
     <h2>Häufige Fehler und wie Du sie vermeidest</h2>
     <table>
       <thead>
-        <tr><th>Fehler</th><th>Folge</th><th>Vermeidung</th></tr>
+        <tr><th>❌ Fehler</th><th>Folge</th><th>✅ Vermeidung</th></tr>
       </thead>
       <tbody>
-        <tr><td>Antrag zu spät einreichen (nach 2 Jahren)</td><td>Antrag wird abgelehnt</td><td>Dokumentation sofort speichern, Frist im Kalender eintragen</td></tr>
-        <tr><td>Kurs auf nicht-anerkanntem Anbieter</td><td>Kein Bundesbeitrag trotz hoher Kosten</td><td>VOR Kursbeginn auf SBFI-Liste checken</td></tr>
-        <tr><td>Beleg: 'Zahlungsauftrag' statt 'Quittung'</td><td>Antrag unvollständig, Verzögerung</td><td>Originalquittung vom Kursanbieter fordern</td></tr>
-        <tr><td>Kurskosten vom Arbeitgeber bezahlt</td><td>Abzug wird zu hoch angesetzt</td><td>Mit Arbeitgeber splitten: Wer zahlt wie viel?</td></tr>
+        <tr><td>Antrag zu spät einreichen</td><td>Antrag wird abgelehnt</td><td>Frist im Kalender eintragen</td></tr>
+        <tr><td>Nicht-anerkannter Anbieter</td><td>Kein Bundesbeitrag</td><td>VOR Kursbeginn auf SBFI-Liste checken</td></tr>
+        <tr><td>Zahlungsauftrag statt Quittung</td><td>Antrag unvollständig</td><td>Originalquittung fordern</td></tr>
+        <tr><td>Arbeitgeber hat voll bezahlt</td><td>Kein eigener Anspruch</td><td>Kostenaufteilung vereinbaren</td></tr>
       </tbody>
     </table>
 
@@ -2413,24 +2437,48 @@ export const RATGEBER_CONTENT = {
   'kinder/interessen/hobby-wechsel-aufgeben': `
     <p class="lead">Hobby-Hopping ist völlig normal – besonders bei Grundschulkindern. Die Frage ist nicht, ob dein Kind das Hobby wechselt, sondern wie du Entscheidungen intelligent triffst.</p>
 
+    <img src="https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=800&q=80" alt="Kind beim Ausprobieren verschiedener Aktivitäten" class="article-image" />
+
     <h2>Ist Hobby-Wechsel Schaden oder Nutzen?</h2>
-    <p>Hobby-Wechsel ist in der Regel nützlich: Kinder erkunden verschiedene Aktivitäten, lernen sich selbst besser kennen und sammeln vielfältige Kompetenzen. Das ist phänomenal!</p>
-    <p>Aber es braucht eine Grenze: <strong>Die 3-Monats-Regel.</strong> Gib deinem Kind minimum 3 Monate, um ein Hobby kennenzulernen. Zu schnelle Wechsel verhindern wichtige Lernprozesse: das Überwinden von Anfangshürden, das Erleben von Erfolgen, neue Freundschaften.</p>
+    <p>Hobby-Wechsel ist in der Regel <strong>nützlich</strong>: Kinder erkunden verschiedene Aktivitäten, lernen sich selbst besser kennen und sammeln vielfältige Kompetenzen. Das ist ein wichtiger Teil der kindlichen Entwicklung!</p>
+
+    <div class="tip-box">
+      <h3>💡 Die 3-Monats-Regel</h3>
+      <p>Gib deinem Kind mindestens <strong>3 Monate</strong>, um ein Hobby kennenzulernen. Zu schnelle Wechsel verhindern wichtige Lernprozesse:</p>
+      <ul>
+        <li>Das Überwinden von Anfangshürden</li>
+        <li>Das Erleben von Erfolgen</li>
+        <li>Den Aufbau neuer Freundschaften</li>
+      </ul>
+    </div>
 
     <h2>Entscheidungshilfe: Weitermachen oder Aufhören?</h2>
+    <p>Nicht jede Unlust bedeutet, dass ein Hobby beendet werden sollte. Hier sind klare Signale für deine Entscheidung:</p>
+
     <table>
       <thead>
-        <tr><th>Signale für Weitermachen</th><th>Signale für Wechsel</th></tr>
+        <tr><th>✅ Signale für Weitermachen</th><th>🔄 Signale für Wechsel</th></tr>
       </thead>
       <tbody>
         <tr><td>Erste 2–4 Wochen Unsicherheit</td><td>Konsistente Ablehnung nach 3 Monaten</td></tr>
         <tr><td>Zunehmende Erfolgserlebnisse</td><td>Neue, stärkere Interessen entstanden</td></tr>
-        <tr><td>Neue Freundschaften</td><td>Ungeeignete Lernumgebung oder Trainer</td></tr>
-        <tr><td>Motivation kehrt nach Unlust zurück</td><td>Körperliche oder emotionale Überforderung</td></tr>
+        <tr><td>Neue Freundschaften im Kurs</td><td>Ungeeignete Lernumgebung oder Trainer</td></tr>
+        <tr><td>Motivation kehrt nach kurzer Unlust zurück</td><td>Körperliche oder emotionale Überforderung</td></tr>
       </tbody>
     </table>
 
-    <p><strong>KursNavi unterstützt dich mit intelligenten Filtern bei der Kurswahl.</strong></p>
+    <h2>So führst du das Gespräch mit deinem Kind</h2>
+    <p>Ein offenes Gespräch hilft, die wahren Gründe zu verstehen:</p>
+    <ul>
+      <li><strong>«Was gefällt dir am Kurs?»</strong> – Positive Aspekte herausfinden</li>
+      <li><strong>«Was würdest du ändern?»</strong> – Konkrete Probleme identifizieren</li>
+      <li><strong>«Gibt es etwas anderes, das du lieber machen würdest?»</strong> – Alternativen erkunden</li>
+    </ul>
+
+    <div class="cta-box">
+      <h3>🎯 Das passende Hobby finden</h3>
+      <p>KursNavi unterstützt dich mit intelligenten Filtern bei der Kurswahl – finde Angebote, die wirklich zu deinem Kind passen.</p>
+    </div>
   `,
 
   'kinder/interessen/peer-group-einfluss': `

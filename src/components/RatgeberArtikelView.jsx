@@ -178,7 +178,7 @@ const RatgeberArtikelView = ({ lang = 'de' }) => {
           {hasContent ? (
             // Render actual content (HTML from ratgeberContent.js)
             <div
-              className="prose prose-lg max-w-none prose-headings:font-heading prose-headings:text-gray-900 prose-p:text-gray-600 prose-a:text-primary prose-table:border-collapse prose-th:bg-gray-100 prose-th:p-3 prose-th:text-left prose-td:p-3 prose-td:border prose-td:border-gray-200"
+              className="prose-ratgeber"
               dangerouslySetInnerHTML={{ __html: articleContent }}
             />
           ) : (

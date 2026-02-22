@@ -47,7 +47,8 @@ export function useTaxonomy() {
             // Load from consolidated schema (taxonomy_level1/2/3/4)
             await loadConsolidatedTaxonomy();
         } catch (err) {
-            console.error('Error loading taxonomy:', err);
+            console.error('[useTaxonomy] Error loading taxonomy:', err);
+            console.error('[useTaxonomy] Full error details:', JSON.stringify(err, null, 2));
             setError(err.message);
             // Ultimate fallback to constants
             loadConstantsFallback();
@@ -58,6 +59,7 @@ export function useTaxonomy() {
 
     // Load from consolidated tables (taxonomy_level1/2/3/4)
     const loadConsolidatedTaxonomy = async () => {
+        console.log('[useTaxonomy] Loading from consolidated tables...');
         const [level1Res, level2Res, level3Res, level4Res] = await Promise.all([
             supabase.from('taxonomy_level1').select('*').eq('is_active', true).order('sort_order'),
             supabase.from('taxonomy_level2').select('*').eq('is_active', true).order('sort_order'),
@@ -65,10 +67,19 @@ export function useTaxonomy() {
             supabase.from('taxonomy_level4').select('*').eq('is_active', true).order('sort_order')
         ]);
 
+        // Check for errors
+        if (level1Res.error) console.error('[useTaxonomy] level1 error:', level1Res.error);
+        if (level2Res.error) console.error('[useTaxonomy] level2 error:', level2Res.error);
+        if (level3Res.error) console.error('[useTaxonomy] level3 error:', level3Res.error);
+        if (level4Res.error) console.error('[useTaxonomy] level4 error:', level4Res.error);
+
         const dbLevel1 = level1Res.data || [];
         const dbLevel2 = level2Res.data || [];
         const dbLevel3 = level3Res.data || [];
         const dbLevel4 = level4Res.data || [];
+
+        console.log('[useTaxonomy] Loaded:', { level1: dbLevel1.length, level2: dbLevel2.length, level3: dbLevel3.length, level4: dbLevel4.length });
+        console.log('[useTaxonomy] Level2 samples:', dbLevel2.slice(0, 3).map(a => ({ id: a.id, slug: a.slug, label_de: a.label_de })));
 
         // Build taxonomy structure
         const builtTaxonomy = {};
@@ -426,7 +437,8 @@ export function useTaxonomy() {
 
     // Fallback to constants.js
     const loadConstantsFallback = () => {
-        console.warn('Using fallback taxonomy from constants.js');
+        console.warn('[useTaxonomy] FALLBACK: Using constants.js because DB load failed!');
+        console.trace('[useTaxonomy] Fallback stack trace:');
 
         const fallbackTypes = Object.entries(CATEGORY_TYPES).map(([id, labels], idx) => ({
             id,
