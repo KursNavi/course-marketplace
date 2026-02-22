@@ -1295,6 +1295,404 @@ export const RATGEBER_CONTENT = {
 
     <h2>Gültigkeit und aktuelle Norm: eduQua:2021</h2>
     <p>Ein eduQua-Zertifikat ist 3 Jahre gültig. Die aktuelle Norm ist eduQua:2021 – sie betont Lernergebnisse, Digitalisierung, Inklusion und Nachhaltigkeit stärker. Viele Anbieter nutzen noch die ältere Norm; der Übergang läuft bis Juni 2025.</p>
+  `,
+
+  // ============================================
+  // PRIVAT & HOBBY > HOBBY-INSPIRATION
+  // ============================================
+  'privat-hobby/hobby-inspiration/hobby-finden-selbstanalyse': `
+    <p class="lead">Wer systematisch die vier Säulen Zeit, Energie, soziale Vorlieben und Budget analysiert, findet das richtige Hobby – und senkt Einstiegshürden massiv.</p>
+
+    <h2>Warum die richtige Hobby-Wahl so wichtig ist</h2>
+    <p>Hobbys sind keine Nebensache. Wer aktiv ein Hobby ausübt, berichtet deutlich niedrigere Stresswerte und stärkt das eigene Selbstwirksamkeitserleben – das Gefühl, etwas selbst beeinflussen zu können. Besonders hilfreich ist das für beruflich gestresste Menschen: Ein Hobby dient als Gegengewicht zu Job-Ohnmacht. Doch nur wenn das Hobby wirklich passt, entfaltet sich dieser Effekt.</p>
+
+    <h2>Welche vier Säulen entscheiden über die richtige Wahl?</h2>
+    <ul>
+      <li><strong>Zeit:</strong> Wie viel verfügbare Freizeit hast du pro Woche? In der Schweiz arbeitet man überdurchschnittlich viel – fast ein Drittel aller Erwerbstätigen klagen über Zeitstress. Faustregel: Hobbys brauchen regelmässige Zeit (mindestens 1–2x pro Woche für Kurse).</li>
+      <li><strong>Energie:</strong> Bist du Morgen- oder Abend-Typ? Nach einem stressigen Tag ist leichte, genussvolle Aktivität oft besser als Hochlast-Formate. Zwei Drittel der Schweizer berichten häufigen Stress – daher sollte dein Hobby Energie geben, nicht nehmen.</li>
+      <li><strong>Soziale Vorlieben:</strong> Lernst du lieber allein, in kleinen Gruppen oder in grösseren Kursen? Solo-Aktivitäten wie Zeichnen oder Yoga fördern Selbsterleben; kleine Gruppen bieten Sicherheit; Grossgruppen geben externe Motivation.</li>
+      <li><strong>Budget:</strong> Realistische Kosten variieren in der Schweiz zwischen CHF 50–500 pro Kurs. Micro-Hobbies (CHF 0–30) bieten kostengünstige Alternativen für knappe Budgets.</li>
+    </ul>
+
+    <h2>Praktischer Selbstanalyse-Check: Die Checkliste</h2>
+    <table>
+      <thead>
+        <tr><th>Kriterium</th><th>Deine Antwort</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Verfügbare Zeit pro Woche (h)</td><td>_____</td></tr>
+        <tr><td>Optimal: morgens / nachmittags / abends?</td><td>_____</td></tr>
+        <tr><td>Nach Arbeit eher: aktiv / ruhig?</td><td>_____</td></tr>
+        <tr><td>Lernstil: allein / klein / gross?</td><td>_____</td></tr>
+        <tr><td>Realistisches Budget (CHF)</td><td>_____</td></tr>
+        <tr><td>Ziel: Stressabbau / Fähigkeit / Sozialität?</td><td>_____</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Häufige Fehler beim Hobby-Einstieg – und wie du sie vermeidest</h2>
+    <ul>
+      <li><strong>Zu ehrgeiziges Format wählen:</strong> Wer über 40 Stunden Arbeit pro Woche leistet, sollte nicht mit einem intensiven Malkurs starten. Ein Workshop ist oft die bessere Einstiegswahl.</li>
+      <li><strong>Zeitzonen ignorieren:</strong> Abendmenschen fühlen sich in Morgenkursen unwohl. Das Ziel ist Regelmässigkeit, nicht Überwindung.</li>
+      <li><strong>Budget vs. Erwartung:</strong> Sehr günstige Kurse sind oft schlecht betreut. Ein realistisches Budget vermeidet Frustration.</li>
+    </ul>
+
+    <p><strong>Nutze den KursNavi-Selbstanalyse-Check und finde Dein passendes Hobby heute noch.</strong></p>
+  `,
+
+  'privat-hobby/hobby-inspiration/hobby-hopping': `
+    <p class="lead">Menschen wissen oft nicht, was sie mögen, bis sie es probieren. Strukturierte Experimentation ist die beste Strategie, echte Leidenschaft zu finden – nicht Vorausplanung.</p>
+
+    <h2>Warum ist Neugier dein grösstes Kapital?</h2>
+    <p>Neugier ist der 'Hunger nach Wissen' kombiniert mit Bereitschaft, sich überraschen zu lassen. Sie ist ein psychologisches Grundbedürfnis und Voraussetzung für Lernentwicklung. Im Erwachsenenalter: Neugier-Verlust korreliert mit kognitiver Stagnation. Wer regelmässig Neues probiert, bleibt mental jung und findet echte Leidenschaften – nicht nur Hobbys.</p>
+
+    <h2>Das Problem mit 'Die richtige Aktivität finden'</h2>
+    <p>Perfektionistische Vorausplanung scheitert. Es gibt zu viele Variablen. Viel effektiver: Strukturiert verschiedene Workshops ausprobieren, schnelle Feedback-Schleifen generieren, und dann – wenn was Funken schlägt – in einen Kurs investieren.</p>
+
+    <h2>Das Hobby-Hopping-Modell in der Praxis</h2>
+    <table>
+      <thead>
+        <tr><th>Woche</th><th>Aktivität</th><th>Ergebnis</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Woche 1</td><td>Workshop Watercolor (4h)</td><td>Interessant, aber nicht faszinierend</td></tr>
+        <tr><td>Woche 2</td><td>Workshop Töpfern (4h)</td><td>Sehr interessant – Funken!</td></tr>
+        <tr><td>Woche 3–6</td><td>Kurs Töpfern (4 Wochen)</td><td>Liebe entdeckt – Langzeitbindung folgt</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Psychologische Vorteile von Hobby-Hopping</h2>
+    <ul>
+      <li><strong>Persönlichkeitsentwicklung:</strong> Jedes neue Hobby erweitert dein Fähigkeitsspektrum und baut neue neuronale Pathways auf</li>
+      <li><strong>Neugier-Spirale:</strong> Ein Erfolg führt zum nächsten. Gegenteil: Stagnation und depressive Tendenzen</li>
+      <li><strong>Resilienz durch Vielfalt:</strong> Fehler in einem Hobby sind nicht identitätsbedrohend. Vielfalt schützt</li>
+    </ul>
+
+    <p>KursNavi bietet das 'Hobby-Explorer'-Feature: Du beschreibst deine Interessen, erhältst 3–5 Workshops zum strukturierten Ausprobieren, und wenn dich etwas fesselt, vermittelst du zum passenden Kurs. Paradox: Menschen, die hoppen, haben höhere Bindungsquoten an langfristige Kurse als direkte Entscheider.</p>
+
+    <p><strong>Mit KursNavi entdeckst Du systematisch, welches Hobby wirklich passt.</strong></p>
+  `,
+
+  'privat-hobby/hobby-inspiration/micro-hobbies': `
+    <p class="lead">15 Minuten täglich sind oft wirksamer als sporadische mehrstündige Sessions – Micro-Hobbies senken die Eintrittsbarriere und liefern nachweislich Stressabbau und Flow.</p>
+
+    <h2>Was genau ist ein Micro-Hobby?</h2>
+    <p>Ein Micro-Hobby ist eine Aktivität unter 30 Minuten pro Tag, mit minimalem Budget (CHF 0–50) und maximaler psychologischer Rendite. Es ist kein strukturiertes Lernen, sondern pure Genussaktivität. Der Trend 2025/2026 zeigt: Menschen wählen bewusst 'Micro-Splurges' – kleine freudenbringende Ausgaben und Aktivitäten – als Reaktion auf wirtschaftliche Unsicherheit und digitale Überflutung.</p>
+
+    <h2>Welche Micro-Hobbies gibt es – und wie viel Zeit brauchst du?</h2>
+    <ul>
+      <li><strong>Kreativ (10–20 min):</strong> Water Marbling, kleine Seifen machen, Miniatur-Welten bauen, Zentangle-Zeichnen</li>
+      <li><strong>Körper & Achtsamkeit (15–30 min):</strong> 15-Minuten-Yoga, Atemtechniken, leichte Dehnübungen mit Videos</li>
+      <li><strong>Intellektuell (20–30 min):</strong> Tägliche Wort-Puzzle, Podcast-Kapitel zu Interessensgebieten, Sprachen-Apps</li>
+    </ul>
+
+    <h2>Warum wirken Micro-Hobbies so gut gegen Stress?</h2>
+    <ul>
+      <li><strong>Vollständige Immersion:</strong> 15 Minuten sind lang genug für Flow, nicht lang genug um zu unterbrechen</li>
+      <li><strong>Schnelle Ergebnisse:</strong> Du siehst unmittelbar, was du geschaffen hast – das verstärkt das Erfolgsgefühl</li>
+      <li><strong>Repetitive Handbewegungen:</strong> Beruhigen das Nervensystem (ähnlich wie Meditation)</li>
+      <li><strong>Keine Leistungserwartung:</strong> Es geht um Genuss, nicht um Perfektion</li>
+    </ul>
+
+    <h2>Wer profitiert besonders von Micro-Hobbies?</h2>
+    <ul>
+      <li>Hochgradig gestresste Berufstätige: In der Schweiz berichten 25% der Frauen und 21% der Männer Dauerstress</li>
+      <li>Menschen mit Zeitmangel: 1/3 aller Erwerbstätigen klagen über Zeitstress</li>
+      <li>Introvertierte: Keine Gruppendynamik, pure Fokusaktivität</li>
+    </ul>
+
+    <p>KursNavi bietet einen Micro-Hobby-Katalog mit konkret erklärten Flow-Benefits. Ideal für deinen Zeitmangel-Einstieg: Starte mit 15 Minuten täglich und steigere dich später zu Workshops und Kursen, wenn die Freude gewachsen ist.</p>
+
+    <p><strong>Starte jetzt mit einem Micro-Hobby auf KursNavi – die perfekte Einstiegshürde.</strong></p>
+  `,
+
+  'privat-hobby/hobby-inspiration/workshop-vs-kurs': `
+    <p class="lead">Workshops geben schnelle Impulse und Motivationsspritzen; Kurse bauen systematische Kompetenzen auf. Wer wenig Zeit hat, wählt Workshops – wer Gewöhnung braucht, entscheidet sich für Kurse.</p>
+
+    <h2>Worin unterscheiden sich Workshops und Kurse wirklich?</h2>
+    <table>
+      <thead>
+        <tr><th>Kriterium</th><th>Workshop</th><th>Kurs</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Dauer</td><td>1–4 Stunden (intensiv, einmalig)</td><td>4–12 Wochen (regelmässig)</td></tr>
+        <tr><td>Lernziel</td><td>Schneller Impuls, Motivationszünder</td><td>Systematischer Wissensaufbau</td></tr>
+        <tr><td>Gruppengrösse</td><td>8–15 Personen</td><td>15–25 Personen</td></tr>
+        <tr><td>Erfolgsmodell</td><td>Unmittelbarer Output in 3h</td><td>Sichtbare Progression über 4–12 Wo.</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Wähle WORKSHOP wenn...</h2>
+    <ul>
+      <li>du wenig Zeit hast (max. 2h pro Woche verfügbar)</li>
+      <li>du schnell wissen willst, ob ein Hobby dir liegt</li>
+      <li>du Stress sofort abbauen möchtest</li>
+      <li>du schnelle Erfolgserlebnisse brauchst, um dich zu motivieren</li>
+    </ul>
+
+    <h2>Wähle KURS wenn...</h2>
+    <ul>
+      <li>du längerfristig Zeit (4h+ pro Woche) hast</li>
+      <li>du echte Kompetenz und Tiefenwissen aufbauen willst</li>
+      <li>du von sozialen Kontakten mit gleichen Lernenden profitierst</li>
+      <li>regelmässige Termine dir helfen, die Aktivität zur Gewohnheit zu machen</li>
+    </ul>
+
+    <h2>Die psychologische Kraft von Regelmässigkeit</h2>
+    <p>Kurse wirken anders als Workshops. Nach 4–6 Wochen wird eine regelmässige Aktivität zur Gewohnheit – dein Gehirn setzt weniger Überwindung frei, und der Termin wird zur Selbstverständlichkeit. Das ist psychologisch wertvoll: Besser zwei Stunden wöchentlich (Gewohnheit) als alle zwei Wochen drei Stunden (sporadischer Aufwand).</p>
+
+    <p>KursNavi zeigt Dir transparent, welche Workshops Deine Zeithürde senken und welche Kurse optimal für kontinuierliches Lernen sind. So findest Du das Format, das zu Deinem Leben wirklich passt – nicht das, das Du brauchtest, wenn du perfekt wärst.</p>
+
+    <p><strong>Auf KursNavi findest Du beide Format-Typen und kannst direkt vergleichen.</strong></p>
+  `,
+
+  'privat-hobby/hobby-inspiration/zurueck-zum-kindheitstraum': `
+    <p class="lead">Rückkehr zu Lieblingshobbys aus der Kindheit ist nicht Nostalgie – sie ist therapeutisch wirksamer Stressabbau und Reconnection mit Authentizität.</p>
+
+    <h2>Warum Kindheitshobbys noch heute nachwirken</h2>
+    <p>Das, was du zwischen 7 und 14 Jahren geliebt hast, hinterlässt tiefe neuronale Muster. Damals war deine Motivation 'intrinsisch' – du tatest es aus reiner Freude, nicht aus Leistungsdruck. Diese emotionale Imprägung bleibt ein Leben lang. Viele Menschen unterbrechen ihre Kindheitshobbys aus Zeitmangel, Geld oder sozialen Gründen – doch die Sehnsucht bleibt.</p>
+
+    <h2>Was passiert psychologisch, wenn du zurückkehrst?</h2>
+    <ul>
+      <li><strong>Selbstwirksamkeit redivivus:</strong> Das Kind zeichnete gerne, der Erwachsene leidet unter Berufsstress. Zurück zum Zeichnen heisst: 'Ich bin in diesem Bereich fähig', was den Job-Stress kompensiert.</li>
+      <li><strong>Nostalgische Heilung:</strong> Vertraute Aktivitäten entspannen das Nervensystem wie wenig sonst. Je mehr Druck im Beruf, desto therapeutischer wirkt die Kindheitsbeschäftigung.</li>
+      <li><strong>Authentizität-Effekt:</strong> Kein Instagram-Filter, keine Trends – echte Freude. Das verstärkt Flow und reduziert Vergleichszwang.</li>
+    </ul>
+
+    <h2>Häufige Hürden – und wie du sie überwindest</h2>
+    <ul>
+      <li><strong>'Ich war besser als Kind' Komplex:</strong> Erwachsene Selbstkritik ist schärfer. Lösungsansatz: Fokus auf Genuss, nicht Perfektion.</li>
+      <li><strong>Zeitmangel-Schuldgefühl:</strong> 'Ich hätte Zeit verschwendet.' Umframing: Zeitinvestment ist Selbstpflege, nicht Luxus.</li>
+      <li><strong>Sozialer Druck ('Zu alt dafür'):</strong> In der Schweiz sind Hobby-Kurse für alle Altersgruppen kulturell validiert und etabliert.</li>
+    </ul>
+
+    <h2>Vorbereitung: Fragen für die Rückkehr</h2>
+    <ul>
+      <li>Was hast du zwischen 7–14 Jahren geliebt?</li>
+      <li>Was hast du aufgegeben? Warum?</li>
+      <li>Würde es dich heute reizen, das erneut zu tun?</li>
+      <li>In welcher Form: Micro-Hobby, Workshop, Kurs, Solo?</li>
+    </ul>
+
+    <p>Es ist NIEMALS zu spät für Kindheitsträume. KursNavi stellt gezielt Kurse vor, die Erwachsene unterstützen, ihre Lieblingsbeschäftigungen aus der Kindheit wiederaufzunehmen – mit dem richtigen Format und dem richtigen Tempo.</p>
+
+    <p><strong>KursNavi hilft Dir, diesen Traum wieder zu entdecken und mit dem richtigen Kurs zu starten.</strong></p>
+  `,
+
+  'privat-hobby/hobby-inspiration/flow-zustand-stressabbau': `
+    <p class="lead">Flow – der Zustand vollständiger Vertiefung – ist einer der stärksten natürlichen Stressabbau-Mechanismen. Mit dem richtigen Hobby erreichst du diesen Zustand regelmässig.</p>
+
+    <h2>Was ist Flow?</h2>
+    <p>Flow ist ein psychologischer Zustand, in dem du vollständig in eine Aktivität vertieft bist. Zeit vergeht unbemerkt, Selbstzweifel verschwinden, und du erlebst tiefe Zufriedenheit. Dieser Zustand wurde vom Psychologen Mihaly Csikszentmihalyi entdeckt und ist wissenschaftlich gut erforscht.</p>
+
+    <h2>Wie erreicht man Flow?</h2>
+    <p>Flow entsteht, wenn die Herausforderung einer Aktivität perfekt zu deinen Fähigkeiten passt – weder zu leicht (Langeweile) noch zu schwer (Frustration). Die wichtigsten Bedingungen:</p>
+    <ul>
+      <li><strong>Klare Ziele:</strong> Du weisst genau, was du erreichen willst</li>
+      <li><strong>Unmittelbares Feedback:</strong> Du siehst sofort, ob es funktioniert</li>
+      <li><strong>Optimale Herausforderung:</strong> Anspruchsvoll, aber machbar</li>
+      <li><strong>Fokus ohne Ablenkung:</strong> Volle Konzentration möglich</li>
+    </ul>
+
+    <h2>Welche Hobbys fördern Flow besonders?</h2>
+    <table>
+      <thead>
+        <tr><th>Hobby-Kategorie</th><th>Flow-Potenzial</th><th>Warum?</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Kreatives Gestalten</td><td>Sehr hoch</td><td>Klare Fortschritte sichtbar, Hände beschäftigt</td></tr>
+        <tr><td>Musik & Instrumente</td><td>Sehr hoch</td><td>Sofortiges Feedback, progressive Schwierigkeit</td></tr>
+        <tr><td>Sport & Bewegung</td><td>Hoch</td><td>Körperliche Vertiefung, messbare Verbesserung</td></tr>
+        <tr><td>Handwerk & DIY</td><td>Hoch</td><td>Greifbare Ergebnisse, Problemlösung</td></tr>
+      </tbody>
+    </table>
+
+    <p>KursNavi filtert gezielt nach Flow-förderlichen Kriterien: progressive Schwierigkeitssteigerung, Gruppengrösse, Kurs-Länge und Zeitrahmen. Damit findest du nicht nur ein Hobby, sondern ein Hobby, das Flow-Zustand und Stressabbau garantiert.</p>
+
+    <p><strong>Finde Flow-optimierte Kurse auf KursNavi.</strong></p>
+  `,
+
+  // ============================================
+  // PRIVAT & HOBBY > KURSAUSWAHL
+  // ============================================
+  'privat-hobby/kursauswahl/kursbeschreibungen-richtig-lesen': `
+    <p class="lead">Eine gute Kursbeschreibung sagt dir exakt, was du lernen wirst – und was nicht. Hier lernst du, die richtigen Fragen zu stellen.</p>
+
+    <h2>Was sollte eine gute Kursbeschreibung enthalten?</h2>
+    <ul>
+      <li>Konkrete Lernziele (nicht nur "Entdecken Sie Ihre Künstlerische Seite")</li>
+      <li>Zielgruppe und notwendige Voraussetzungen</li>
+      <li>Gesamtdauer und Anzahl der Sitzungen</li>
+      <li>Spezifische Daten und Uhrzeiten</li>
+      <li>Name und Qualifikation des Dozenten/der Dozentin</li>
+      <li>Genaue Gebühren – Materialkosten inbegriffen?</li>
+      <li>Storno- und Rücktrittsbedingungen</li>
+    </ul>
+
+    <h2>Marketing-Sprache erkennen</h2>
+    <table>
+      <thead>
+        <tr><th>Marketing (vage)</th><th>Konkret (verlässlich)</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>"Lebensverändernder Kurs zur Selbstfindung"</td><td>"8-Wochen-Achtsamkeitskurs, Montags 19:00-20:30"</td></tr>
+        <tr><td>"Entdecke deine künstlerische Seite"</td><td>"Aquarellkurs für Anfänger, 6 Sitzungen, malen Sie 4 eigene Werke"</td></tr>
+      </tbody>
+    </table>
+
+    <p><strong>Auf KursNavi sind Kursbeschreibungen standardisiert und leicht vergleichbar.</strong></p>
+  `,
+
+  'privat-hobby/kursauswahl/qualitaetscheck-kursanbieter': `
+    <p class="lead">Ein seriöser Kursanbieter lässt sich in wenigen Minuten erkennen – wenn Du weisst, worauf Du achten musst. Dieser Artikel zeigt Dir die wichtigsten Merkmale.</p>
+
+    <h2>Auf welche Merkmale sollte ich achten?</h2>
+    <p>Professionelle Kursanbieter haben mehrere Gemeinsamkeiten:</p>
+    <ul>
+      <li>Website ist modern, keine Bugs oder Fehler</li>
+      <li>Klare, detaillierte Kursbeschreibungen mit Lernzielen</li>
+      <li>Transparente Preisangaben – kein Kleingedrucktes</li>
+      <li>Qualifikationen des Dozenten/der Dozentin ersichtlich</li>
+      <li>Kundenfreundliche Storno- und Rücktrittsbedingungen</li>
+      <li>Authentische Bewertungen (kein perfekter Score)</li>
+    </ul>
+
+    <h2>Qualitätsmerkmale im Überblick</h2>
+    <table>
+      <thead>
+        <tr><th>Merkmal</th><th>Was bedeutet das?</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Professionelle Website</td><td>Kein Designchaos, technisch aktuell, DSGVO-konform</td></tr>
+        <tr><td>Transparente Infos</td><td>Alle wichtigen Daten sind sofort zu finden</td></tr>
+        <tr><td>Dozenten-Qualifikationen</td><td>Erfahrung ist dokumentiert und nachprüfbar</td></tr>
+        <tr><td>Echte Bewertungen</td><td>Mix aus positiv und kritisch, detailliert</td></tr>
+      </tbody>
+    </table>
+
+    <p><strong>KursNavi zeigt Dir nur geprüfte Kursanbieter mit transparenten Bewertungen.</strong></p>
+  `,
+
+  'privat-hobby/kursauswahl/offline-vs-online': `
+    <p class="lead">Die Forschung ist eindeutig: Für praktische Fähigkeiten und soziale Integration schlägt Präsenzunterricht Online-Kurse. Aber nicht immer.</p>
+
+    <h2>Welches Format passt zu meinem Hobby?</h2>
+
+    <h3>Offline/Präsenz wählen wenn:</h3>
+    <ul>
+      <li>Du praktische Fähigkeiten lernst (Malerei, Tanz, Sport, Handwerk)</li>
+      <li>Dir der soziale Kontakt wichtig ist</li>
+      <li>Du intensive persönliche Betreuung brauchst</li>
+      <li>Du dich durch Bildschirme leicht ablenken lässt</li>
+    </ul>
+
+    <h3>Online wählen wenn:</h3>
+    <ul>
+      <li>Du zeitlich flexibel sein musst</li>
+      <li>Lange Anfahrtswege wegfallen sollen</li>
+      <li>Du unabhängig und im eigenen Tempo lernen möchtest</li>
+      <li>Kostenersparnis wichtig ist</li>
+    </ul>
+
+    <h2>Vergleich: Vorteile und Nachteile</h2>
+    <table>
+      <thead>
+        <tr><th>Präsenz</th><th>Online</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Direktes Feedback vom Dozenten</td><td>Örtlich und zeitlich flexibel</td></tr>
+        <tr><td>Gruppenenergie und Motivation</td><td>Oft günstiger</td></tr>
+        <tr><td>Praktische Übungen möglich</td><td>Aufzeichnungen zum Nachlernen</td></tr>
+      </tbody>
+    </table>
+
+    <p>Auf KursNavi findest du sowohl Online- als auch Präsenzkurse. Die Bewertungen zeigen dir, welches Format für dein Hobby am besten funktioniert.</p>
+
+    <p><strong>Filtere auf KursNavi nach Deinem bevorzugten Format.</strong></p>
+  `,
+
+  'privat-hobby/kursauswahl/bewertungen-kritisch-lesen': `
+    <p class="lead">Nicht jede 5-Sterne-Bewertung ist echt, und nicht jede 1-Stern-Bewertung ist fair. Lerne, Kursbewertungen richtig zu interpretieren.</p>
+
+    <h2>Woran erkennst du echte Bewertungen?</h2>
+    <ul>
+      <li><strong>Spezifische Details:</strong> Echte Bewertungen nennen konkrete Aspekte (Dozent, Raum, Materialien)</li>
+      <li><strong>Ausgewogene Perspektive:</strong> Auch positive Bewertungen erwähnen kleinere Kritikpunkte</li>
+      <li><strong>Realistische Sprache:</strong> Übertreibungen wie "der beste Kurs meines Lebens" sind oft Fake</li>
+      <li><strong>Verifizierte Teilnahme:</strong> Plattformen wie KursNavi verifizieren, dass Bewertende tatsächlich teilgenommen haben</li>
+    </ul>
+
+    <h2>Red Flags bei Bewertungen</h2>
+    <ul>
+      <li>Alle Bewertungen sind 5 Sterne – unrealistisch</li>
+      <li>Sehr ähnliche Formulierungen in verschiedenen Bewertungen</li>
+      <li>Keine konkreten Details, nur allgemeines Lob</li>
+      <li>Bewertungen alle am gleichen Tag geschrieben</li>
+    </ul>
+
+    <h2>Was du aus negativen Bewertungen lernen kannst</h2>
+    <p>Negative Bewertungen sind oft informativer als positive. Achte auf wiederkehrende Kritikpunkte – wenn mehrere Personen das Gleiche bemängeln, ist es wahrscheinlich berechtigt. Einzelne negative Bewertungen können auch persönliche Präferenzen widerspiegeln.</p>
+
+    <p><strong>KursNavi-Bewertungen sind verifiziert und moderiert. Du siehst echte Erfahrungen von echten Kursteilnehmern.</strong></p>
+  `,
+
+  'privat-hobby/kursauswahl/red-flags-hobbykurse': `
+    <p class="lead">Manche Kursanbieter sind unseriös oder halten nicht, was sie versprechen. Diese Warnsignale solltest du kennen.</p>
+
+    <h2>Die wichtigsten Red Flags</h2>
+    <ul>
+      <li><strong>Keine Preistransparenz:</strong> Kosten werden erst nach Anmeldung genannt oder versteckte Gebühren tauchen auf</li>
+      <li><strong>Unrealistische Versprechen:</strong> "In 2 Stunden zum Profi" oder "Garantierter Erfolg"</li>
+      <li><strong>Druck zur schnellen Buchung:</strong> "Nur noch 2 Plätze!" wenn es nicht stimmt</li>
+      <li><strong>Keine Stornobedingungen:</strong> Oder extrem restriktive Bedingungen im Kleingedruckten</li>
+      <li><strong>Unklare Dozenten-Qualifikation:</strong> Keine Infos, wer den Kurs leitet</li>
+      <li><strong>Keine echten Bewertungen:</strong> Nur Testimonials auf der eigenen Website</li>
+    </ul>
+
+    <h2>Warnsignale bei der Kommunikation</h2>
+    <ul>
+      <li>Keine Antwort auf Nachfragen oder sehr lange Reaktionszeiten</li>
+      <li>Ausweichende Antworten auf konkrete Fragen</li>
+      <li>Aggressive Verkaufstaktiken</li>
+      <li>Unprofessionelle E-Mails (Rechtschreibfehler, keine Signatur)</li>
+    </ul>
+
+    <h2>Was du tun kannst</h2>
+    <p>Recherchiere den Anbieter: Google den Namen + "Erfahrungen" oder "Bewertungen". Prüfe, ob der Anbieter auf vertrauenswürdigen Plattformen gelistet ist. Frage im Zweifelsfall direkt nach – seriöse Anbieter antworten gerne und transparent.</p>
+
+    <p><strong>Mit KursNavi-Bewertungen erkennst du sofort, ob andere Kursteilnehmer Red Flags erlebt haben. Transparenz schützt dich.</strong></p>
+  `,
+
+  'privat-hobby/kursauswahl/storno-ruecktritt-rechte': `
+    <p class="lead">Was passiert, wenn du einen gebuchten Kurs doch nicht besuchen kannst? Deine Rechte und Pflichten im Überblick.</p>
+
+    <h2>Allgemeine Rechtslage in der Schweiz</h2>
+    <p>In der Schweiz gibt es kein gesetzliches Widerrufsrecht für Kursanmeldungen wie bei Online-Käufen. Die Stornobedingungen richten sich nach dem Vertrag mit dem Anbieter. Deshalb ist es wichtig, diese VOR der Buchung zu lesen.</p>
+
+    <h2>Typische Stornobedingungen</h2>
+    <table>
+      <thead>
+        <tr><th>Zeitpunkt</th><th>Typische Regelung</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Bis 14 Tage vor Kursbeginn</td><td>Volle Rückerstattung oder geringe Bearbeitungsgebühr</td></tr>
+        <tr><td>7-14 Tage vor Kursbeginn</td><td>50% Erstattung oder Umbuchung möglich</td></tr>
+        <tr><td>Weniger als 7 Tage</td><td>Keine Erstattung, evtl. Ersatzteilnehmer stellen</td></tr>
+        <tr><td>Nach Kursbeginn</td><td>Keine Erstattung</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Tipps für den Ernstfall</h2>
+    <ul>
+      <li><strong>Krankheit:</strong> Mit Arztzeugnis sind viele Anbieter kulant</li>
+      <li><strong>Ersatzteilnehmer:</strong> Frage, ob du jemanden für dich schicken kannst</li>
+      <li><strong>Umbuchung:</strong> Oft möglich auf einen späteren Termin</li>
+      <li><strong>Kulanz:</strong> Freundliche Kommunikation erhöht die Chancen auf Entgegenkommen</li>
+    </ul>
+
+    <h2>Vor der Buchung prüfen</h2>
+    <p>Lies die AGB und Stornobedingungen BEVOR du buchst. Bei teuren Kursen lohnt sich eine Seminar-Versicherung. Achte auf flexible Anbieter mit fairen Bedingungen.</p>
+
+    <p><strong>Auf KursNavi findest du detaillierte Stornobedingungen für jeden Kurs – keine Überraschungen mehr.</strong></p>
   `
 };
 
