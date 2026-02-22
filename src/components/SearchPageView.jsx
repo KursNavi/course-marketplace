@@ -2,8 +2,9 @@ import React, { useEffect, useMemo } from 'react';
 import { Search, ChevronRight, User, X, Calendar, Shield, MapPin, CheckCircle, Loader, Bell, ArrowDown, Bookmark, BookmarkCheck, CreditCard, Info, EyeOff, Briefcase, Palette, Smile } from 'lucide-react';
 import { LocationDropdown, LanguageDropdown, DeliveryTypeFilter } from './Filters';
 import { Globe } from 'lucide-react';
-import { CATEGORY_TYPES, NEW_TAXONOMY, AGE_GROUPS, COURSE_LEVELS, DELIVERY_TYPES, SEGMENT_CONFIG } from '../lib/constants';
+import { CATEGORY_TYPES, AGE_GROUPS, COURSE_LEVELS, DELIVERY_TYPES, SEGMENT_CONFIG } from '../lib/constants';
 import { formatPriceCHF } from '../lib/formatPrice';
+import { useTaxonomy } from '../hooks/useTaxonomy';
 
 const fallbackImage = "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=600";
 
@@ -34,6 +35,21 @@ const SearchPageView = ({
     user
 }) => {
 
+    // Load taxonomy from DB
+    const { areas: dbAreas } = useTaxonomy();
+
+    // Helper to get area label from DB taxonomy
+    const getAreaLabelFromDB = (areaSlug) => {
+        if (!areaSlug) return '';
+        // Try exact match first
+        let area = dbAreas.find(a => a.slug === areaSlug);
+        // Try partial match (e.g. it_digital -> it_digitales)
+        if (!area) {
+            area = dbAreas.find(a => a.slug.startsWith(areaSlug) || areaSlug.startsWith(a.slug));
+        }
+        return area?.label_de || areaSlug;
+    };
+
     // --- SEO LOGIC: Zero-Result Rule + Dynamic Meta Tags ---
     useEffect(() => {
         if (loading) return; // Wait for data
@@ -41,10 +57,8 @@ const SearchPageView = ({
         // Build dynamic title and description
         const typeLabel = searchType ? (CATEGORY_TYPES?.[searchType]?.de || searchType) : 'Alle Kurse';
 
-        // ✅ Crash-sicher: label ist ein Objekt (de/en/...)
-        const areaLabel = searchArea
-            ? (NEW_TAXONOMY?.[searchType]?.[searchArea]?.label?.de || searchArea)
-            : '';
+        // Use DB taxonomy for area label
+        const areaLabel = searchArea ? getAreaLabelFromDB(searchArea) : '';
 
         const locationLabel = selectedLocations.length > 0 ? selectedLocations[0] : 'Schweiz';
 
@@ -247,17 +261,8 @@ const SearchPageView = ({
             // First check labelMap from all_categories (new schema)
             if (labelMap.areas[key]) return labelMap.areas[key];
 
-            // Fallback to NEW_TAXONOMY constant
-            // 1) Wenn ein Typ gewählt ist: dort zuerst suchen
-            const direct = NEW_TAXONOMY?.[searchType]?.[key]?.label?.de;
-            if (direct) return direct;
-
-            // 2) Sonst: in allen Typen suchen
-            for (const typeKey of Object.keys(NEW_TAXONOMY || {})) {
-                const lbl = NEW_TAXONOMY?.[typeKey]?.[key]?.label?.de;
-                if (lbl) return lbl;
-            }
-            return key;
+            // Use DB taxonomy
+            return getAreaLabelFromDB(key);
         }
 
         // specialties und focuses sind bereits Labels aus DB

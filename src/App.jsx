@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { CheckCircle } from 'lucide-react';
 
-// Build: 2026-02-21-v2 - Category paths fix for TeacherForm
+// Build: 2026-02-22 - Use DB taxonomy instead of constants
 // --- IMPORTS ---
-import { CATEGORY_LABELS, TRANSLATIONS, NEW_TAXONOMY, CATEGORY_TYPES } from './lib/constants';
+import { CATEGORY_LABELS, TRANSLATIONS, CATEGORY_TYPES } from './lib/constants';
 import { supabase } from './lib/supabase';
 import { isImageUsedByOtherCourses, deleteImageFromStorage } from './lib/imageUtils';
 import { BASE_URL, slugify as siteSlugify, buildCoursePath as siteBuildCoursePath } from './lib/siteConfig';
+import { useTaxonomy } from './hooks/useTaxonomy';
 
 // Components
 import { Navbar, Footer } from './components/Layout';
@@ -173,6 +174,9 @@ export default function KursNaviPro() {  // 1. Initial State Logic
   const [editingCourse, setEditingCourse] = useState(null);
   const [notification, setNotification] = useState(null);
 
+  // Load taxonomy from DB for label lookups
+  const { areas: dbAreas } = useTaxonomy();
+
 // --- FINAL FIX: Read params LIVE on every render (No useState) ---
   // Das garantiert, dass beim Navigieren die neuen Daten sofort da sind.
   let currentLocParams = { topicSlug: '', locationSlug: '' };
@@ -249,14 +253,16 @@ export default function KursNaviPro() {  // 1. Initial State Logic
           return CATEGORY_TYPES[key][lang] || CATEGORY_TYPES[key]['de'];
       }
 
-      // 3. Priorität: Neue Taxonomie durchsuchen (z.B. "sport_fitness_beruf")
-      if (NEW_TAXONOMY) {
-          for (const typeKey in NEW_TAXONOMY) {
-              const areas = NEW_TAXONOMY[typeKey];
-              // Prüfen, ob der Key in diesem Bereich existiert
-              if (areas && areas[key] && areas[key].label) {
-                  return areas[key].label[lang] || areas[key].label['de'];
-              }
+      // 3. Priorität: DB-Taxonomie durchsuchen
+      if (dbAreas && dbAreas.length > 0) {
+          // Exakter Match
+          let area = dbAreas.find(a => a.slug === key);
+          // Partieller Match (z.B. it_digital -> it_digitales)
+          if (!area) {
+              area = dbAreas.find(a => a.slug.startsWith(key) || key.startsWith(a.slug));
+          }
+          if (area) {
+              return area[`label_${lang}`] || area.label_de || key;
           }
       }
 

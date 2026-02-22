@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Search, ArrowRight, ChevronRight, ChevronDown, CreditCard, Info, Shield, Briefcase, Palette, Smile } from 'lucide-react';
+import { Search, ArrowRight, ChevronRight, ChevronDown, CreditCard, Info, Shield, Briefcase, Palette, Smile, BookOpen } from 'lucide-react';
 import { LocationDropdown, DeliveryTypeFilter } from './Filters';
-import { NEW_TAXONOMY, CATEGORY_TYPES, SEGMENT_CONFIG } from '../lib/constants';
+import { CATEGORY_TYPES, SEGMENT_CONFIG } from '../lib/constants';
 import { useTaxonomy } from '../hooks/useTaxonomy';
 import { BASE_URL } from '../lib/siteConfig';
+import { RATGEBER_STRUCTURE } from '../lib/ratgeberStructure';
 
 export const Home = ({
   lang, t, setView, courses, // Jetzt haben wir Zugriff auf die Kurse!
@@ -131,8 +132,8 @@ export const Home = ({
     // Try DB taxonomy lookup
     const dbLabel = dbGetAreaLabel(type, areaKey, lang);
     if (dbLabel && dbLabel !== areaKey) return dbLabel;
-    // Fallback to constants
-    return NEW_TAXONOMY[type]?.[areaKey]?.label?.[lang] || NEW_TAXONOMY[type]?.[areaKey]?.label?.de || areaKey;
+    // Fallback: return the key itself
+    return areaKey;
   };
 
   // SEO Meta Tags for Home Page
@@ -455,54 +456,117 @@ export const Home = ({
       <div className="py-20 bg-beige max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
         <h2 className="text-3xl font-heading font-bold text-dark mb-2 text-center">{t.home_path_title}</h2>
         <p className="text-gray-500 text-center mb-12 font-sans">{t.home_path_sub}</p>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
 
           {/* BERUFLICH - Blue */}
-          <div onClick={() => { setSearchType('beruflich'); window.history.pushState({ view: 'search' }, '', '/search?type=beruflich'); window.scrollTo(0,0); }} className="group relative h-80 rounded-2xl overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
-            <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=2670&auto=format&fit=crop")' }}></div>
-            <div className="absolute inset-0 bg-gradient-to-t from-blue-800/90 via-blue-600/40 to-blue-500/20"></div>
-            <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm rounded-full p-3">
-              <Briefcase className="w-6 h-6 text-white" />
+          <div className="flex flex-col">
+            <div onClick={() => { setSearchType('beruflich'); window.history.pushState({ view: 'search' }, '', '/search?type=beruflich'); window.scrollTo(0,0); }} className="group relative h-80 rounded-2xl overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
+              <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=2670&auto=format&fit=crop")' }}></div>
+              <div className="absolute inset-0 bg-gradient-to-t from-blue-800/90 via-blue-600/40 to-blue-500/20"></div>
+              <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm rounded-full p-3">
+                <Briefcase className="w-6 h-6 text-white" />
+              </div>
+              <div className="absolute bottom-0 left-0 p-6">
+                <h3 className="text-2xl font-bold text-white font-heading mb-1">{t.nav_professional}</h3>
+                <p className="text-blue-100 text-sm font-sans mb-4">{t.home_card_prof_sub}</p>
+                <span className="inline-flex items-center text-white font-bold text-sm uppercase tracking-wider group-hover:text-blue-200 transition-colors">
+                  {t.btn_explore} <ArrowRight className="w-4 h-4 ml-2" />
+                </span>
+              </div>
             </div>
-            <div className="absolute bottom-0 left-0 p-6">
-              <h3 className="text-2xl font-bold text-white font-heading mb-1">{t.nav_professional}</h3>
-              <p className="text-blue-100 text-sm font-sans mb-4">{t.home_card_prof_sub}</p>
-              <span className="inline-flex items-center text-white font-bold text-sm uppercase tracking-wider group-hover:text-blue-200 transition-colors">
-                {t.btn_explore} <ArrowRight className="w-4 h-4 ml-2" />
-              </span>
+            {/* Ratgeber Links - Beruflich */}
+            <div className="mt-4 px-1">
+              <div className="flex items-center gap-2 mb-2">
+                <BookOpen className="w-4 h-4 text-blue-600" />
+                <span className="text-sm font-semibold text-gray-700">{t.ratgeber_title || 'Ratgeber'}</span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {Object.values(RATGEBER_STRUCTURE.beruflich.clusters).map(cluster => (
+                  <a
+                    key={cluster.slug}
+                    href={`/ratgeber/${RATGEBER_STRUCTURE.beruflich.slug}/${cluster.slug}`}
+                    onClick={(e) => { e.preventDefault(); window.history.pushState({}, '', `/ratgeber/${RATGEBER_STRUCTURE.beruflich.slug}/${cluster.slug}`); window.scrollTo(0,0); window.dispatchEvent(new PopStateEvent('popstate')); }}
+                    className="text-xs px-3 py-1.5 rounded-full bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors border border-blue-100"
+                  >
+                    {cluster.label[lang] || cluster.label.de}
+                  </a>
+                ))}
+              </div>
             </div>
           </div>
 
           {/* PRIVAT & HOBBY - Orange */}
-          <div onClick={() => { setSearchType('privat_hobby'); window.history.pushState({ view: 'search' }, '', '/search?type=privat_hobby'); window.scrollTo(0,0); }} className="group relative h-80 rounded-2xl overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
-            <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?auto=format&fit=crop&q=80&w=2000")' }}></div>
-            <div className="absolute inset-0 bg-gradient-to-t from-orange-700/90 via-orange-600/40 to-orange-500/20"></div>
-            <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm rounded-full p-3">
-              <Palette className="w-6 h-6 text-white" />
+          <div className="flex flex-col">
+            <div onClick={() => { setSearchType('privat_hobby'); window.history.pushState({ view: 'search' }, '', '/search?type=privat_hobby'); window.scrollTo(0,0); }} className="group relative h-80 rounded-2xl overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
+              <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?auto=format&fit=crop&q=80&w=2000")' }}></div>
+              <div className="absolute inset-0 bg-gradient-to-t from-orange-700/90 via-orange-600/40 to-orange-500/20"></div>
+              <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm rounded-full p-3">
+                <Palette className="w-6 h-6 text-white" />
+              </div>
+              <div className="absolute bottom-0 left-0 p-6">
+                <h3 className="text-2xl font-bold text-white font-heading mb-1">{t.nav_private}</h3>
+                <p className="text-orange-100 text-sm font-sans mb-4">{t.home_card_priv_sub}</p>
+                <span className="inline-flex items-center text-white font-bold text-sm uppercase tracking-wider group-hover:text-orange-200 transition-colors">
+                  {t.btn_explore} <ArrowRight className="w-4 h-4 ml-2" />
+                </span>
+              </div>
             </div>
-            <div className="absolute bottom-0 left-0 p-6">
-              <h3 className="text-2xl font-bold text-white font-heading mb-1">{t.nav_private}</h3>
-              <p className="text-orange-100 text-sm font-sans mb-4">{t.home_card_priv_sub}</p>
-              <span className="inline-flex items-center text-white font-bold text-sm uppercase tracking-wider group-hover:text-orange-200 transition-colors">
-                {t.btn_explore} <ArrowRight className="w-4 h-4 ml-2" />
-              </span>
+            {/* Ratgeber Links - Privat & Hobby */}
+            <div className="mt-4 px-1">
+              <div className="flex items-center gap-2 mb-2">
+                <BookOpen className="w-4 h-4 text-orange-600" />
+                <span className="text-sm font-semibold text-gray-700">{t.ratgeber_title || 'Ratgeber'}</span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {Object.values(RATGEBER_STRUCTURE.privat_hobby.clusters).map(cluster => (
+                  <a
+                    key={cluster.slug}
+                    href={`/ratgeber/${RATGEBER_STRUCTURE.privat_hobby.slug}/${cluster.slug}`}
+                    onClick={(e) => { e.preventDefault(); window.history.pushState({}, '', `/ratgeber/${RATGEBER_STRUCTURE.privat_hobby.slug}/${cluster.slug}`); window.scrollTo(0,0); window.dispatchEvent(new PopStateEvent('popstate')); }}
+                    className="text-xs px-3 py-1.5 rounded-full bg-orange-50 text-orange-700 hover:bg-orange-100 transition-colors border border-orange-100"
+                  >
+                    {cluster.label[lang] || cluster.label.de}
+                  </a>
+                ))}
+              </div>
             </div>
           </div>
 
           {/* KINDER & JUGEND - Green */}
-          <div onClick={() => { setSearchType('kinder_jugend'); window.history.pushState({ view: 'search' }, '', '/search?type=kinder_jugend'); window.scrollTo(0,0); }} className="group relative h-80 rounded-2xl overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
-            <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1503676260728-1c00da094a0b?q=80&w=2622&auto=format&fit=crop")' }}></div>
-            <div className="absolute inset-0 bg-gradient-to-t from-emerald-800/90 via-emerald-600/40 to-emerald-500/20"></div>
-            <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm rounded-full p-3">
-              <Smile className="w-6 h-6 text-white" />
+          <div className="flex flex-col">
+            <div onClick={() => { setSearchType('kinder_jugend'); window.history.pushState({ view: 'search' }, '', '/search?type=kinder_jugend'); window.scrollTo(0,0); }} className="group relative h-80 rounded-2xl overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
+              <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1503676260728-1c00da094a0b?q=80&w=2622&auto=format&fit=crop")' }}></div>
+              <div className="absolute inset-0 bg-gradient-to-t from-emerald-800/90 via-emerald-600/40 to-emerald-500/20"></div>
+              <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm rounded-full p-3">
+                <Smile className="w-6 h-6 text-white" />
+              </div>
+              <div className="absolute bottom-0 left-0 p-6">
+                <h3 className="text-2xl font-bold text-white font-heading mb-1">{t.nav_kids}</h3>
+                <p className="text-emerald-100 text-sm font-sans mb-4">{t.home_card_kids_sub}</p>
+                <span className="inline-flex items-center text-white font-bold text-sm uppercase tracking-wider group-hover:text-emerald-200 transition-colors">
+                  {t.btn_explore} <ArrowRight className="w-4 h-4 ml-2" />
+                </span>
+              </div>
             </div>
-            <div className="absolute bottom-0 left-0 p-6">
-              <h3 className="text-2xl font-bold text-white font-heading mb-1">{t.nav_kids}</h3>
-              <p className="text-emerald-100 text-sm font-sans mb-4">{t.home_card_kids_sub}</p>
-              <span className="inline-flex items-center text-white font-bold text-sm uppercase tracking-wider group-hover:text-emerald-200 transition-colors">
-                {t.btn_explore} <ArrowRight className="w-4 h-4 ml-2" />
-              </span>
+            {/* Ratgeber Links - Kinder & Jugend */}
+            <div className="mt-4 px-1">
+              <div className="flex items-center gap-2 mb-2">
+                <BookOpen className="w-4 h-4 text-emerald-600" />
+                <span className="text-sm font-semibold text-gray-700">{t.ratgeber_title || 'Ratgeber'}</span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {Object.values(RATGEBER_STRUCTURE.kinder_jugend.clusters).map(cluster => (
+                  <a
+                    key={cluster.slug}
+                    href={`/ratgeber/${RATGEBER_STRUCTURE.kinder_jugend.slug}/${cluster.slug}`}
+                    onClick={(e) => { e.preventDefault(); window.history.pushState({}, '', `/ratgeber/${RATGEBER_STRUCTURE.kinder_jugend.slug}/${cluster.slug}`); window.scrollTo(0,0); window.dispatchEvent(new PopStateEvent('popstate')); }}
+                    className="text-xs px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors border border-emerald-100"
+                  >
+                    {cluster.label[lang] || cluster.label.de}
+                  </a>
+                ))}
+              </div>
             </div>
           </div>
 

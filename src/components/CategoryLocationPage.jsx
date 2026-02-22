@@ -1,8 +1,9 @@
 import React, { useEffect } from 'react';
 import { MapPin, TrendingUp, Clock, Award, ChevronRight, Bookmark, BookmarkCheck } from 'lucide-react';
-import { NEW_TAXONOMY, CATEGORY_TYPES } from '../lib/constants';
+import { CATEGORY_TYPES } from '../lib/constants';
 import { formatPriceCHF } from '../lib/formatPrice';
 import { BASE_URL } from '../lib/siteConfig';
+import { useTaxonomy } from '../hooks/useTaxonomy';
 
 /**
  * Programmatic SEO Landing Page for Topic/Location combinations
@@ -23,6 +24,9 @@ export default function CategoryLocationPage({
     onToggleSaveCourse,
     t
 }) {
+    // Load taxonomy from DB
+    const { areas: dbAreas } = useTaxonomy();
+
     // Scroll to top when category/location changes
     useEffect(() => {
         window.scrollTo(0, 0);
@@ -76,17 +80,19 @@ export default function CategoryLocationPage({
         bookableCourses: filteredCourses.filter(c => c.booking_type === 'platform').length
     };
 
-    // Get human-readable labels (Safety check for NEW_TAXONOMY)
+    // Get human-readable labels from DB taxonomy
     let topicLabel = topicSlug;
     try {
-        if (NEW_TAXONOMY) {
-            const found = Object.values(NEW_TAXONOMY).flatMap(type =>
-                Object.entries(type.areas || {}).map(([key, val]) => ({
-                    key: key.toLowerCase().replace(/_/g, '-'),
-                    label: val.label?.de || key
-                }))
-            ).find(item => item.key === topicSlug);
-            if (found) topicLabel = found.label;
+        // Convert URL slug (e.g. "wirtschaft-management") to DB slug format (e.g. "wirtschaft_management")
+        const dbSlug = topicSlug.replace(/-/g, '_');
+        // Find area by slug (exact or partial match)
+        const area = dbAreas.find(a =>
+            a.slug === dbSlug ||
+            a.slug.startsWith(dbSlug) ||
+            dbSlug.startsWith(a.slug)
+        );
+        if (area?.label_de) {
+            topicLabel = area.label_de;
         }
     } catch (err) {
         console.error("Taxonomy lookup error:", err);

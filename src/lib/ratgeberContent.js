@@ -808,18 +808,28 @@ export const RATGEBER_CONTENT = {
       <h3>✅ Vorteile der Generalisierung</h3>
       <ul>
       <li>Flexibilität bei Branchenwechsel</li>
-      <li>Bessere Chancen bei unerwarteten Marktveränderungen</li>
-      <li>2025 zeigten mehr als 50% der gekündigten Schweizer einen erfolgreichen Branchenwechsel</li>
-    </ul>
-    <h3>Risiken:</h3>
-    <ul>
-      <li>Weniger klare Positionierung</li>
-      <li>Wahrnehmung als "Jack of all trades, master of none"</li>
-      <li>Schwieriger, tiefe Expertise zu demonstrieren</li>
-    </ul>
+        <li>Bessere Chancen bei unerwarteten Marktveränderungen</li>
+        <li>2025 zeigten mehr als 50% der gekündigten Schweizer einen erfolgreichen Branchenwechsel</li>
+      </ul>
+    </div>
 
-    <h2>Das T-Shaped-Profil: Die beste Strategie</h2>
+    <div class="warning-box">
+      <h3>⚠️ Risiken der Generalisierung</h3>
+      <ul>
+        <li>Weniger klare Positionierung</li>
+        <li>Wahrnehmung als "Jack of all trades, master of none"</li>
+        <li>Schwieriger, tiefe Expertise zu demonstrieren</li>
+      </ul>
+    </div>
+
+    <h2>💼 Das T-Shaped-Profil: Die beste Strategie</h2>
     <p>T-Shaped bedeutet: Du bist Spezialist in EINEM Kernbereich, aber breit aufgestellt in 3-5 Komplementärfeldern. Das ist die optimale Balance:</p>
+
+    <div class="info-box">
+      <h3>💡 Was ist ein T-Shaped-Profil?</h3>
+      <p>Die <strong>vertikale Linie</strong> des T steht für deine tiefe Expertise in einem Kernbereich. Die <strong>horizontale Linie</strong> repräsentiert dein breites Wissen in verwandten Feldern.</p>
+    </div>
+
     <table>
       <thead>
         <tr><th>Beispiel</th><th>Spezialisierung (Tiefe)</th><th>Breites Wissen</th></tr>
@@ -830,29 +840,40 @@ export const RATGEBER_CONTENT = {
       </tbody>
     </table>
 
-    <h2>Arbeitsmarkt-Trends: Was bedeutet das für deine Wahl?</h2>
-    <ul>
-      <li><strong>KI-Automatisierung:</strong> Tiefe Spezialisierung in KI-fertigen Tasks wird entwertet. T-Shaped ist sicherer.</li>
-      <li><strong>Data Analytics Boom:</strong> Datenspezialisten sind stark nachgefragt – aber auch Generalisten mit Data-Grundlagen profitieren.</li>
-      <li><strong>Fachkräftemangel-Ende:</strong> Weniger Bonuspunkte für reine Spezialisten; Flexibilität wird wertvoll.</li>
-      <li><strong>Remote Work:</strong> Spezialisierung ist leichter zu verkaufen (globaler Markt).</li>
-    </ul>
+    <h2>📈 Arbeitsmarkt-Trends: Was bedeutet das für deine Wahl?</h2>
+    <div class="checklist">
+      <ul>
+        <li><strong>KI-Automatisierung:</strong> Tiefe Spezialisierung in KI-fertigen Tasks wird entwertet. T-Shaped ist sicherer.</li>
+        <li><strong>Data Analytics Boom:</strong> Datenspezialisten sind stark nachgefragt – aber auch Generalisten mit Data-Grundlagen profitieren.</li>
+        <li><strong>Fachkräftemangel-Ende:</strong> Weniger Bonuspunkte für reine Spezialisten; Flexibilität wird wertvoll.</li>
+        <li><strong>Remote Work:</strong> Spezialisierung ist leichter zu verkaufen (globaler Markt).</li>
+      </ul>
+    </div>
 
-    <p><strong>Wer entschieden hat, in welche Richtung es gehen soll, findet auf KursNavi spezialisierte Weiterbildungen in der eigenen Region.</strong></p>
+    <div class="cta-box">
+      <h3>🎓 Deine Weiterbildung planen</h3>
+      <p>Wer entschieden hat, in welche Richtung es gehen soll, findet auf KursNavi spezialisierte Weiterbildungen in der eigenen Region.</p>
+    </div>
   `,
 
   'beruflich/karriere/linkedin-optimierung': `
     <p class="lead">Recruiter vergeben 5-10 Sekunden pro LinkedIn-Profil. Deine Weiterbildungen müssen in dieser Zeit sichtbar und vertrauenswürdig wirken – konkret, spezifisch und belegt, nicht mit leeren Buzzwords.</p>
 
-    <h2>Wie Recruiter LinkedIn nutzen – und was sie wirklich sehen</h2>
-    <p>Recruiter suchen NICHT nach 'innovative Thinker' oder 'disruptive Strategist'. Sie suchen nach verifizierten, spezifischen Kompetenzen. Das ist der grosse Unterschied.</p>
-    <ul>
-      <li>Sie nutzen die Suchfunktion: Nach spezifischen Skills & Branchen filtern</li>
-      <li>Sie screenen Profile in Sekunden: 5-10 Sekunden durchschnittlich</li>
-      <li>Sie vertrauen Zertifizierungen als Lernnachweis</li>
-    </ul>
+    <img src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800&q=80" alt="LinkedIn Profil Optimierung für Karriere" class="article-image" />
 
-    <h2>Checkliste: Wie du deine Weiterbildung auf LinkedIn korrekt präsentierst</h2>
+    <h2>👀 Wie Recruiter LinkedIn nutzen – und was sie wirklich sehen</h2>
+    <p>Recruiter suchen NICHT nach 'innovative Thinker' oder 'disruptive Strategist'. Sie suchen nach verifizierten, spezifischen Kompetenzen. Das ist der grosse Unterschied.</p>
+
+    <div class="info-box">
+      <h3>💡 So denken Recruiter</h3>
+      <ul>
+        <li>Sie nutzen die Suchfunktion: Nach spezifischen Skills & Branchen filtern</li>
+        <li>Sie screenen Profile in Sekunden: 5-10 Sekunden durchschnittlich</li>
+        <li>Sie vertrauen Zertifizierungen als Lernnachweis</li>
+      </ul>
+    </div>
+
+    <h2>✅ Checkliste: Wie du deine Weiterbildung auf LinkedIn korrekt präsentierst</h2>
     <table>
       <thead>
         <tr><th>Was zu tun ist</th><th>Beispiel</th></tr>
@@ -866,68 +887,97 @@ export const RATGEBER_CONTENT = {
       </tbody>
     </table>
 
-    <h2>Häufige LinkedIn-Fehler bei Weiterbildungen</h2>
-    <ul>
-      <li>15+ Zertifikate ohne Kontext auflisten → Wirkt nach 'Zertifikat-Sammler'</li>
-      <li>Nur in 'Ausbildung' eintragen, nicht in Headline/Summary → Recruitern fehlt Kontext</li>
-      <li>"Currently taking courses..." ohne Abschlüsse → Wirkt unvollständig</li>
-      <li>Generische Buzzwords wie 'innovative leader' → Wirkt copy-paste</li>
-    </ul>
+    <h2>⚠️ Häufige LinkedIn-Fehler bei Weiterbildungen</h2>
 
-    <h2>Sichtbarkeit regelmässig aufbauen</h2>
+    <div class="warning-box">
+      <h3>⚠️ Diese Fehler solltest du vermeiden</h3>
+      <ul>
+        <li>15+ Zertifikate ohne Kontext auflisten → Wirkt nach 'Zertifikat-Sammler'</li>
+        <li>Nur in 'Ausbildung' eintragen, nicht in Headline/Summary → Recruitern fehlt Kontext</li>
+        <li>"Currently taking courses..." ohne Abschlüsse → Wirkt unvollständig</li>
+        <li>Generische Buzzwords wie 'innovative leader' → Wirkt copy-paste</li>
+      </ul>
+    </div>
+
+    <h2>📈 Sichtbarkeit regelmässig aufbauen</h2>
     <p>Aktivität ist wichtig – aber dosiert:</p>
-    <ul>
-      <li>1x pro Woche: Post zu Lernerkenntnis aus deinem Kurs</li>
-      <li>Kommentiere gelegentlich auf Posts in deiner Branche</li>
-      <li>Teile Erfolge authentisch, nicht geboostet</li>
-    </ul>
 
-    <p><strong>Auf KursNavi kannst Du Kurse zu digitalem Marketing und Personal Branding in Deiner Nähe entdecken.</strong></p>
+    <div class="checklist">
+      <ul>
+        <li>1x pro Woche: Post zu Lernerkenntnis aus deinem Kurs</li>
+        <li>Kommentiere gelegentlich auf Posts in deiner Branche</li>
+        <li>Teile Erfolge authentisch, nicht geboostet</li>
+      </ul>
+    </div>
+
+    <div class="cta-box">
+      <h3>🎓 Personal Branding stärken</h3>
+      <p>Auf KursNavi kannst Du Kurse zu digitalem Marketing und Personal Branding in Deiner Nähe entdecken.</p>
+    </div>
   `,
 
   'beruflich/karriere/gehaltsverhandlung-nach-kurs': `
     <p class="lead">Eine Lohnerhöhung folgt nicht automatisch aus einer Weiterbildung – aber wenn du die neuen Fähigkeiten konkret zeigen kannst und der Arbeitgeber davon profitiert, dann ist eine Verhandlung nicht nur berechtigt, sondern oft erfolgreich.</p>
 
-    <h2>Die Psychologie verstehen: Warum Arbeitgeber erhöhen (oder nicht)</h2>
-    <ul>
-      <li>"Die Person hat den Kurs selbst bezahlt – mein Geschenk war die Freistellung" (falsch gedacht!)</li>
-      <li>"Diese Fähigkeit ist nicht in der Stellenbeschreibung – warum sollte ich mehr zahlen?"</li>
-      <li>"Der Markt setzt den Lohn, nicht individuelle Kurse"</li>
-    </ul>
-    <p>Deine Gegenstrategie ist einfach: Konzentriere dich nicht auf den KURS, sondern auf den WERT, den du jetzt bringst. Beispiel: 'Mit meinen neuen SEO-Skills kann ich Inhalte selbst optimieren, statt 5'000 CHF pro Monat an externe Agenturen zu zahlen.'</p>
+    <img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?w=800&q=80" alt="Gehaltsverhandlung nach Weiterbildung" class="article-image" />
 
-    <h2>Die 5-Schritt-Strategie für erfolgreiche Verhandlung</h2>
+    <h2>🧠 Die Psychologie verstehen: Warum Arbeitgeber erhöhen (oder nicht)</h2>
 
-    <h3>Schritt 1: Timing – 4-8 Wochen NACH Kurs-Abschluss</h3>
+    <div class="warning-box">
+      <h3>⚠️ So denken viele Arbeitgeber</h3>
+      <ul>
+        <li>"Die Person hat den Kurs selbst bezahlt – mein Geschenk war die Freistellung" (falsch gedacht!)</li>
+        <li>"Diese Fähigkeit ist nicht in der Stellenbeschreibung – warum sollte ich mehr zahlen?"</li>
+        <li>"Der Markt setzt den Lohn, nicht individuelle Kurse"</li>
+      </ul>
+    </div>
+
+    <div class="tip-box">
+      <h3>💡 Deine Gegenstrategie</h3>
+      <p>Konzentriere dich nicht auf den KURS, sondern auf den WERT, den du jetzt bringst. Beispiel: 'Mit meinen neuen SEO-Skills kann ich Inhalte selbst optimieren, statt 5'000 CHF pro Monat an externe Agenturen zu zahlen.'</p>
+    </div>
+
+    <h2>📋 Die 5-Schritt-Strategie für erfolgreiche Verhandlung</h2>
+
+    <h3>⏰ Schritt 1: Timing – 4-8 Wochen NACH Kurs-Abschluss</h3>
     <p>Zu früh wirkt unberechtigt ('Kurs-Bonus'), zu spät ist das Momentum weg. Nach 4-8 Wochen hast du erste konkrete Ergebnisse und kannst sie zeigen.</p>
 
-    <h3>Schritt 2: Recherche – Markt & interne Fakten</h3>
-    <ul>
-      <li>Was verdienen Personen mit deiner neuen Qualifikation? (swisslance.com, LinkedIn, jobs.ch)</li>
-      <li>Wo stehst du in deiner aktuellen Gehaltsspanne? (unten, Mitte, oben)</li>
-      <li>Realistisches Ziel: CHF 3'000-6'000 für Spezialisierung, CHF 1'500-3'000 für allgemeine Verbesserung</li>
-    </ul>
+    <h3>🔍 Schritt 2: Recherche – Markt & interne Fakten</h3>
+    <div class="checklist">
+      <ul>
+        <li>Was verdienen Personen mit deiner neuen Qualifikation? (swisslance.com, LinkedIn, jobs.ch)</li>
+        <li>Wo stehst du in deiner aktuellen Gehaltsspanne? (unten, Mitte, oben)</li>
+        <li>Realistisches Ziel: CHF 3'000-6'000 für Spezialisierung, CHF 1'500-3'000 für allgemeine Verbesserung</li>
+      </ul>
+    </div>
 
-    <h3>Schritt 3: Konkrete Business-Case sammeln</h3>
+    <h3>💼 Schritt 3: Konkrete Business-Case sammeln</h3>
     <p>Du brauchst MINDESTENS einen dieser Punkte konkret belegt:</p>
-    <ul>
-      <li><strong>Kosten-Einsparung:</strong> "Agentur kostete CHF X/Monat, ich mache es jetzt intern. Einsparung: CHF X p.a."</li>
-      <li><strong>Effizienz-Gewinn:</strong> "Prozess X dauerte 5 Tage, jetzt 2 Tage mit neuer Methode."</li>
-      <li><strong>Qualität/Risiko:</strong> "Fehlerquote um 30% gesunken, weil ich jetzt richtige Methode nutze."</li>
-    </ul>
 
-    <h3>Schritt 4: Das Gespräch führen</h3>
+    <div class="info-box">
+      <h3>📊 Argumente, die überzeugen</h3>
+      <ul>
+        <li><strong>Kosten-Einsparung:</strong> "Agentur kostete CHF X/Monat, ich mache es jetzt intern. Einsparung: CHF X p.a."</li>
+        <li><strong>Effizienz-Gewinn:</strong> "Prozess X dauerte 5 Tage, jetzt 2 Tage mit neuer Methode."</li>
+        <li><strong>Qualität/Risiko:</strong> "Fehlerquote um 30% gesunken, weil ich jetzt richtige Methode nutze."</li>
+      </ul>
+    </div>
+
+    <h3>🗣️ Schritt 4: Das Gespräch führen</h3>
     <p><strong>NICHT:</strong> 'Ich habe einen Kurs gemacht und erwarte eine Erhöhung.'</p>
     <p><strong>SONDERN:</strong> 'Ich möchte über meine Gehaltsentwicklung sprechen. Seit dem Kurs habe ich zwei Projekte mit neuen Skills geleitet, das hat uns CHF X gespart. Ich denke, das rechtfertigt eine Anpassung. Wie siehst du das?'</p>
 
-    <h3>Schritt 5: Wenn 'Nein' kommt – Fallback-Strategien</h3>
-    <ul>
-      <li>Verschieben: 'Können wir das in 6 Monaten wieder besprechen, wenn mehr Ergebnisse sichtbar sind?'</li>
-      <li>Alternative Benefits: Mehr Verantwortung, weitere Weiterbildungs-Budget, flexible Stunden</li>
-      <li>Realitätscheck: 'Mit dieser Spezialisierung bin ich jetzt attraktiver am Markt. Ich muss leider extern nach Optionen schauen.'</li>
-    </ul>
+    <h3>🔄 Schritt 5: Wenn 'Nein' kommt – Fallback-Strategien</h3>
+    <div class="tip-box">
+      <h3>✅ Alternative Optionen</h3>
+      <ul>
+        <li>Verschieben: 'Können wir das in 6 Monaten wieder besprechen, wenn mehr Ergebnisse sichtbar sind?'</li>
+        <li>Alternative Benefits: Mehr Verantwortung, weitere Weiterbildungs-Budget, flexible Stunden</li>
+        <li>Realitätscheck: 'Mit dieser Spezialisierung bin ich jetzt attraktiver am Markt. Ich muss leider extern nach Optionen schauen.'</li>
+      </ul>
+    </div>
 
-    <h2>Checkliste: Mögliche Einwände & deine Antworten</h2>
+    <h2>🛡️ Checkliste: Mögliche Einwände & deine Antworten</h2>
     <table>
       <thead>
         <tr><th>Einwand</th><th>Deine Antwort</th></tr>
@@ -938,15 +988,26 @@ export const RATGEBER_CONTENT = {
         <tr><td>"Wirtschaft ist schwierig, wir sparen überall"</td><td>"Meine neue Effizienz hilft der Firma genau JETZT Kosten zu sparen."</td></tr>
       </tbody>
     </table>
+
+    <div class="cta-box">
+      <h3>🎓 Weiterbildung mit Gehaltspotenzial</h3>
+      <p>Finde auf KursNavi Weiterbildungen mit hohem ROI – Kurse, die deine Verhandlungsposition stärken.</p>
+    </div>
   `,
 
   'beruflich/karriere/quereinstieg-40-plus': `
     <p class="lead">2025 zeigt: Mehr als 50% der gekündigten Schweizer wechselten erfolgreich die Branche. Mit 40+ ist ein Quereinstieg realistisch – wenn du ihn strategisch angehst und die psychologischen Barrieren erkennst.</p>
 
-    <h2>Die gute Nachricht: Der Markt unterstützt dich</h2>
-    <p>Arbeitgeber erkennen zunehmend: Deine 20 Jahre Erfahrung sind ein Asset, nicht eine Liability. Lebenserfahrung hilft mit Kundenverständnis, Prozesslogik und Reife – Dinge, die junge Quereinsteiger oft nicht haben.</p>
+    <img src="https://images.unsplash.com/photo-1521791136064-7986c2920216?w=800&q=80" alt="Quereinstieg mit 40 plus - Neue Karrierechancen" class="article-image" />
 
-    <h2>Chancenreichste Branchen für 40+-Quereinsteiger</h2>
+    <h2>✅ Die gute Nachricht: Der Markt unterstützt dich</h2>
+
+    <div class="tip-box">
+      <h3>💡 Dein Vorteil mit 40+</h3>
+      <p>Arbeitgeber erkennen zunehmend: Deine 20 Jahre Erfahrung sind ein Asset, nicht eine Liability. Lebenserfahrung hilft mit Kundenverständnis, Prozesslogik und Reife – Dinge, die junge Quereinsteiger oft nicht haben.</p>
+    </div>
+
+    <h2>🎯 Chancenreichste Branchen für 40+-Quereinsteiger</h2>
     <table>
       <thead>
         <tr><th>Branche</th><th>Warum es funktioniert</th><th>Einstiegspunkte</th></tr>
@@ -958,7 +1019,7 @@ export const RATGEBER_CONTENT = {
       </tbody>
     </table>
 
-    <h2>Die psychologischen Barrieren – und wie du sie überwindest</h2>
+    <h2>⚠️ Die psychologischen Barrieren – und wie du sie überwindest</h2>
 
     <h3>"Ich bin zu alt für einen Neuanfang"</h3>
     <p>Mit 40-60 Jahren hast du noch 20-25 Arbeitsjahre. Reframe: 'Ich nutze 20 Jahre Erfahrung + 20 Jahre neuer Karriere'. Das ist eine Stärke!</p>
@@ -969,84 +1030,98 @@ export const RATGEBER_CONTENT = {
     <h3>"Werde ich als Junior behandelt?"</h3>
     <p>Ja, initial. Aber: Dein Alter bringt Selbstsicherheit und Reife, die Juniors nicht haben. Explizit zur Firma: 'Ich bin neu in der Rolle, aber Senior in Reife und Prozessverständnis.'</p>
 
-    <h2>Die 5-Phasen-Strategie für erfolgreichen Quereinstieg</h2>
+    <h2>📋 Die 5-Phasen-Strategie für erfolgreichen Quereinstieg</h2>
 
-    <h3>Phase 1: Klärung (6-8 Wochen)</h3>
+    <h3>1️⃣ Phase 1: Klärung (6-8 Wochen)</h3>
     <ul>
       <li>viamia-Programm durchführen (kostenlos)</li>
       <li>Psychologischer Test: Bin ich wirklich bereit zu wechseln?</li>
       <li>5-10 Informationsgespräche mit Personen in Zielbranche</li>
     </ul>
 
-    <h3>Phase 2: Kompetenz-Entwicklung (3-6 Monate)</h3>
+    <h3>2️⃣ Phase 2: Kompetenz-Entwicklung (3-6 Monate)</h3>
     <ul>
       <li>Gezielten KursNavi-Kurs buchen (basierend auf viamia)</li>
       <li>Parallel: Praktikum oder Nebenrollen-Engagement in Zielbranche</li>
       <li>Tipp: Kurs VOR Praktikum = schnelleres Lernen</li>
     </ul>
 
-    <h3>Phase 3: Positionierung & Narrative (2-3 Monate parallel)</h3>
+    <h3>3️⃣ Phase 3: Positionierung & Narrative (2-3 Monate parallel)</h3>
     <ul>
       <li>Dein 'Warum-Ich'-Statement formulieren</li>
       <li>Nicht: 'Alter Beruf ist langweilig'</li>
       <li>Sondern: 'Diese Fähigkeiten aus 15 Jahren sind in DIESEM Feld noch wertvoll.'</li>
     </ul>
 
-    <h3>Phase 4: Job-Suche aktiv (3-6 Monate)</h3>
-    <ul>
-      <li>Fokus: 5-10 konkrete Firmen, nicht 100 Standard-Bewerbungen</li>
-      <li>Nutze: Branchenverbände, quereinsteiger-stellen.ch, Direktbewerbungen</li>
-    </ul>
+    <h3>4️⃣ Phase 4: Job-Suche aktiv (3-6 Monate)</h3>
+    <div class="checklist">
+      <ul>
+        <li>Fokus: 5-10 konkrete Firmen, nicht 100 Standard-Bewerbungen</li>
+        <li>Nutze: Branchenverbände, quereinsteiger-stellen.ch, Direktbewerbungen</li>
+      </ul>
+    </div>
 
-    <h3>Phase 5: Neuer Job – erste 100 Tage sind entscheidend</h3>
+    <h3>5️⃣ Phase 5: Neuer Job – erste 100 Tage sind entscheidend</h3>
     <p>Arbeitgeber bewertet: Lernfähigkeit, Demut, Stabilität. Taktiken: Mentorship anfragen, schnelle Wins identifizieren, keine Überkorrektur.</p>
 
-    <h2>RAV-Unterstützung nutzen</h2>
-    <ul>
-      <li>Umschulungs-Budget: Bis CHF 15'000 für Kurse</li>
-      <li>Lohnzuschuss: Wenn du weniger verdienst, RAV kann Lücke reduzieren (50-80%)</li>
-      <li>Finanzpuffer nötig: CHF 25'000 für 6-12 Monate Übergangssicherheit</li>
-    </ul>
+    <h2>💰 RAV-Unterstützung nutzen</h2>
 
-    <p><strong>Finde jetzt passende Umschulungs- und Weiterbildungskurse auf KursNavi.</strong></p>
+    <div class="info-box">
+      <h3>💡 Diese Unterstützung steht dir zu</h3>
+      <ul>
+        <li><strong>Umschulungs-Budget:</strong> Bis CHF 15'000 für Kurse</li>
+        <li><strong>Lohnzuschuss:</strong> Wenn du weniger verdienst, RAV kann Lücke reduzieren (50-80%)</li>
+        <li><strong>Finanzpuffer nötig:</strong> CHF 25'000 für 6-12 Monate Übergangssicherheit</li>
+      </ul>
+    </div>
+
+    <div class="cta-box">
+      <h3>🎓 Umschulung starten</h3>
+      <p>Finde jetzt passende Umschulungs- und Weiterbildungskurse auf KursNavi – dein Neustart beginnt hier.</p>
+    </div>
   `,
 
   'beruflich/karriere/soft-skills-karriere-turbo': `
     <p class="lead">Während KI technische Tasks übernimmt, werden menschliche Kompetenzen zum neuen Wettbewerbsvorteil. Kommunikation und Resilienz sind keine 'Nice-to-Have' mehr – sie sind Karriere-Turbo-Skills, die dein Einkommen und deine Stabilität massiv beeinflussen.</p>
 
-    <h2>Warum Soft Skills 2026 essentiell sind</h2>
-    <p>Die Top 5 Skills 2026 laut World Economic Forum: Analytisches Denken, kreatives Denken, Resilienz, Neugier, Empathie. Keines davon ist ein technisches Skill. Das sagt alles.</p>
+    <img src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800&q=80" alt="Soft Skills und Kommunikation im Beruf" class="article-image" />
 
-    <h2>Kommunikation: Was Arbeitgeber wirklich meinen</h2>
+    <h2>🚀 Warum Soft Skills 2026 essentiell sind</h2>
+
+    <div class="info-box">
+      <h3>💡 Top 5 Skills 2026 laut World Economic Forum</h3>
+      <p>Analytisches Denken, kreatives Denken, Resilienz, Neugier, Empathie. Keines davon ist ein technisches Skill. Das sagt alles.</p>
+    </div>
+
+    <h2>💬 Kommunikation: Was Arbeitgeber wirklich meinen</h2>
     <p><strong>NICHT:</strong> 'Ich bin ein toller Redner' oder 'Ich bin outgoing'</p>
     <p><strong>SONDERN:</strong> 'Ich kann Komplexes vereinfacht erklären', 'Ich höre aktiv zu', 'Ich passe meine Message an die Zielgruppe an'</p>
 
-    <h2>Die Top 5 trainierbaren Kommunikations-Fähigkeiten</h2>
+    <h2>📋 Die Top 5 trainierbaren Kommunikations-Fähigkeiten</h2>
 
-    <h3>1. Storytelling für Präsentationen & Verkauf</h3>
-    <p>Fakten in eine emotionale Narrative packen. Nicht 'Revenue +15%', sondern 'Kunde war frustiert über X. Wir zeigten Lösung Y. Resultat: 15% mehr Umsatz.'</p>
+    <div class="checklist">
+      <ul>
+        <li><strong>1. Storytelling:</strong> Fakten in eine emotionale Narrative packen. Nicht 'Revenue +15%', sondern 'Kunde war frustiert über X. Wir zeigten Lösung Y. Resultat: 15% mehr Umsatz.'</li>
+        <li><strong>2. Executive Summary:</strong> Komplexe Themen auf 1-2 Minuten reduzieren. Projekt-Bericht nicht 30 Seiten, sondern 1 Page mit Ausgangslage → Lösung → Impact.</li>
+        <li><strong>3. Feedback-Kommunikation:</strong> Kritik konstruktiv geben. Nicht 'Das ist falsch', sondern 'Ich sehe das Resultat anders. Können wir Annahmen checken?'</li>
+        <li><strong>4. Digitale Kommunikation:</strong> Asynchrone Kommunikation genauso klar wie face-to-face. E-Mails prägnant, nicht 5 Absätze.</li>
+        <li><strong>5. Cross-Cultural Communication:</strong> Mit Menschen aus anderen Generationen, Ländern, Fachbereichen kommunizieren. Die deutsche Direktheit funktioniert nicht überall.</li>
+      </ul>
+    </div>
 
-    <h3>2. Executive Summary / Prägnant-Kommunikation</h3>
-    <p>Komplexe Themen auf 1-2 Minuten reduzieren. Projekt-Bericht nicht 30 Seiten, sondern 1 Page mit Ausgangslage → Lösung → Impact.</p>
-
-    <h3>3. Feedback-Kommunikation</h3>
-    <p>Kritik konstruktiv geben. Nicht 'Das ist falsch', sondern 'Ich sehe das Resultat anders. Können wir Annahmen checken?'</p>
-
-    <h3>4. Digitale Kommunikation</h3>
-    <p>Asynchrone Kommunikation genauso klar wie face-to-face. E-Mails prägnant, nicht 5 Absätze.</p>
-
-    <h3>5. Cross-Cultural Communication</h3>
-    <p>Mit Menschen aus anderen Generationen, Ländern, Fachbereichen kommunizieren. Die deutsche Direktheit funktioniert nicht überall.</p>
-
-    <h2>Resilienz: Was es wirklich bedeutet</h2>
+    <h2>💪 Resilienz: Was es wirklich bedeutet</h2>
     <p><strong>FALSCH:</strong> 'Bleibe immer positiv, gib nie auf'</p>
     <p><strong>RICHTIG:</strong> 'Fähigkeit, mit Rückschlägen umzugehen, davon zu lernen und gestärkt hervorzugehen'. Das ist nicht Positivität – das ist Intelligenz.</p>
 
-    <h2>Dein 40+-Vorteil bei Resilienz</h2>
-    <p>Du hast bereits Krisen überlebt: Finanzkrise 2008, Pandemie, Jobwechsel. Du kennst deine Recovery-Strategien. Dein Trainingsniveau: Fortgeschrittener, nicht Anfänger.</p>
-    <p>Das ist die Realität: Mit 40+ brauchst du keine Resilienz-Theorie – du brauchst Werkzeuge, um deine bestehende Resilienz zu nutzen und zu verstärken.</p>
+    <h2>✅ Dein 40+-Vorteil bei Resilienz</h2>
 
-    <h2>Checkliste: Praktische Resilienz-Techniken</h2>
+    <div class="tip-box">
+      <h3>💡 Deine Erfahrung ist Gold wert</h3>
+      <p>Du hast bereits Krisen überlebt: Finanzkrise 2008, Pandemie, Jobwechsel. Du kennst deine Recovery-Strategien. Dein Trainingsniveau: Fortgeschrittener, nicht Anfänger.</p>
+      <p>Das ist die Realität: Mit 40+ brauchst du keine Resilienz-Theorie – du brauchst Werkzeuge, um deine bestehende Resilienz zu nutzen und zu verstärken.</p>
+    </div>
+
+    <h2>🛠️ Checkliste: Praktische Resilienz-Techniken</h2>
     <table>
       <thead>
         <tr><th>Technik</th><th>Was tun</th></tr>
@@ -1058,11 +1133,22 @@ export const RATGEBER_CONTENT = {
       </tbody>
     </table>
 
-    <h2>Wie man Soft Skills konkret darstellt</h2>
-    <p><strong>Problem:</strong> Arbeitgeber verstehen 'Excel-Kurs: 3 Tage'. Aber 'Kommunikations-Training: 3 Monate' ist vage.</p>
-    <p><strong>Lösung:</strong> Konkrete Outcomes definieren. Nicht 'Ich mache einen Kurs, um Soft Skills zu verbessern.' Sondern: 'Nach 3 Monaten kann ich Projekt-Reports in 1 Page zusammenfassen und Kunden-Präsentationen leiten (macht aktuell Kolleg:in).'</p>
+    <h2>📊 Wie man Soft Skills konkret darstellt</h2>
 
-    <p><strong>Finde jetzt Soft-Skills-Kurse auf KursNavi – passende Angebote in Deiner Region.</strong></p>
+    <div class="warning-box">
+      <h3>⚠️ Das Problem</h3>
+      <p>Arbeitgeber verstehen 'Excel-Kurs: 3 Tage'. Aber 'Kommunikations-Training: 3 Monate' ist vage.</p>
+    </div>
+
+    <div class="tip-box">
+      <h3>✅ Die Lösung</h3>
+      <p>Konkrete Outcomes definieren. Nicht 'Ich mache einen Kurs, um Soft Skills zu verbessern.' Sondern: 'Nach 3 Monaten kann ich Projekt-Reports in 1 Page zusammenfassen und Kunden-Präsentationen leiten (macht aktuell Kolleg:in).'</p>
+    </div>
+
+    <div class="cta-box">
+      <h3>🎓 Soft Skills entwickeln</h3>
+      <p>Finde jetzt Soft-Skills-Kurse auf KursNavi – passende Angebote in Deiner Region.</p>
+    </div>
   `,
 
   // ============================================
@@ -1416,13 +1502,19 @@ export const RATGEBER_CONTENT = {
   'beruflich/bildungssystem/hoehere-berufsbildung-vs-hochschule': `
     <p class="lead">HF oder FH/Uni? – Diese Frage stellen sich viele Berufstätige. Der Unterschied liegt nicht in der Qualität, sondern in der Ausrichtung und Zielsetzung. Ein ehrlicher Vergleich.</p>
 
-    <h2>Was ist höhere Berufsbildung (HF/BP/HFP)?</h2>
+    <img src="https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?w=800&q=80" alt="Höhere Berufsbildung vs Hochschule" class="article-image" />
+
+    <h2>🎓 Was ist höhere Berufsbildung (HF/BP/HFP)?</h2>
     <p>Höhere Fachschulen (HF), Berufsprüfungen (BP) und Höhere Fachprüfungen (HFP) bilden die Tertiärstufe B. Sie sind praxisorientiert, spezialisiert und richten sich an Menschen mit Berufserfahrung. HF-Diplome dauern 2–4 Jahre (berufsbegleitend möglich), sind günstig und führen direkt zu besseren Jobs. Das HF-Diplom ist auf NQR-Stufe 6 klassifiziert – gleichwertig mit akademischen Bachelorabschlüssen.</p>
 
-    <h2>Was unterscheidet Fachhochschule (FH) und Universität (Uni)?</h2>
+    <div class="info-box">
+      <strong>Gut zu wissen:</strong> HF-Abschlüsse sind auf dem Arbeitsmarkt sehr gefragt – sie kombinieren Praxisnähe mit anerkannter Qualifikation und sind oft kostengünstiger als Hochschulstudien.
+    </div>
+
+    <h2>🏫 Was unterscheidet Fachhochschule (FH) und Universität (Uni)?</h2>
     <p>Fachhochschulen kombinieren angewandte Forschung mit beruflicher Praxis. Universitäten betreiben Grundlagenforschung und sind theoretisch orientiert. Beide vergeben Bachelor- und Masterabschlüsse. Der Unterschied: An der FH lernen Sie konkrete Anwendungen; an der Uni verstehen Sie theoretische Grundlagen und Forschungskompetenzen.</p>
 
-    <h2>Vergleichstabelle: HF, FH und Universität auf einen Blick</h2>
+    <h2>📊 Vergleichstabelle: HF, FH und Universität auf einen Blick</h2>
     <table>
       <thead>
         <tr><th>Kriterium</th><th>HF/BP</th><th>FH</th><th>Universität</th></tr>
@@ -1436,31 +1528,55 @@ export const RATGEBER_CONTENT = {
       </tbody>
     </table>
 
-    <h2>Welcher Weg passt zu mir?</h2>
+    <h2>🤔 Welcher Weg passt zu mir?</h2>
     <p>Wählen Sie HF/BP, wenn Sie spezialisierte Fachkompetenz schnell erlangen und arbeiten möchten. Berufserfahrung ist kein Hindernis – sondern Voraussetzung. Wählen Sie FH, wenn Sie Theorie und Praxis kombinieren möchten und bereits Berufsmaturität haben. Wählen Sie Universität, wenn Sie akademische oder Forschungsziele haben oder bereits gymnasiale Maturität besitzen.</p>
+
+    <div class="checklist">
+      <h3>✅ Checkliste: HF ist richtig für Sie, wenn...</h3>
+      <ul>
+        <li>Sie bereits ein EFZ haben und Berufserfahrung mitbringen</li>
+        <li>Sie berufsbegleitend studieren möchten</li>
+        <li>Sie praktische Fachkompetenz suchen</li>
+        <li>Sie eine kürzere Studiendauer bevorzugen</li>
+      </ul>
+    </div>
+
+    <div class="tip-box">
+      <strong>Tipp:</strong> Ab 2025/2026 können HF-Absolvent:innen den Titel "Professional Bachelor" führen – das erhöht die internationale Anerkennung erheblich.
+    </div>
+
+    <div class="cta-box">
+      <strong>🎯 KursNavi-Empfehlung:</strong> Vergleichen Sie HF- und FH-Angebote in Ihrem Fachbereich direkt auf KursNavi. <a href="/kurse">Jetzt passende Bildungswege entdecken</a>
+    </div>
   `,
 
   'beruflich/bildungssystem/ects-punkte-cas-das-mas': `
     <p class="lead">Ob CAS, DAS oder MAS – alle diese Weiterbildungen arbeiten mit ECTS-Punkten. Aber was bedeutet das konkret, und wieviel Lernaufwand steckt dahinter?</p>
 
-    <h2>Was ist 1 ECTS-Punkt?</h2>
+    <img src="https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=800&q=80" alt="ECTS Punkte und Weiterbildung" class="article-image" />
+
+    <h2>📚 Was ist 1 ECTS-Punkt?</h2>
     <p>1 ECTS (European Credit Transfer System) = etwa 25–30 Lernstunden. Das klingt technisch, bedeutet aber einfach: Ein ECTS-Punkt repräsentiert Ihre gesamte Arbeitsleistung – Unterricht, Selbststudium, Hausaufgaben, Prüfungsvorbereitung. Dieses System ermöglicht, dass Kurse europaweit vergleichbar sind.</p>
 
-    <h2>Die drei Stufen: CAS, DAS, MAS</h2>
+    <div class="info-box">
+      <strong>Gut zu wissen:</strong> Das ECTS-System wurde im Bologna-Prozess eingeführt und macht Bildungsabschlüsse in ganz Europa vergleichbar.
+    </div>
 
-    <h3>CAS (Certificate of Advanced Studies)</h3>
+    <h2>🎓 Die drei Stufen: CAS, DAS, MAS</h2>
+
+    <h3>📜 CAS (Certificate of Advanced Studies)</h3>
     <p><strong>Minimum: 10 ECTS-Punkte | Dauer: Wenige Monate bis 1 Jahr</strong></p>
     <p>Ein CAS ist ein spezialisiertes Zertifikat für schnelle Weiterqualifikation. Beispiel: "CAS Digital Marketing" dauert ca. 250–300 Lernstunden verteilt über 6–8 Monate. CAS-Module können kombiniert werden – mehrere CAS ergeben einen DAS.</p>
 
-    <h3>DAS (Diploma of Advanced Studies)</h3>
+    <h3>📜 DAS (Diploma of Advanced Studies)</h3>
     <p><strong>Minimum: 30 ECTS-Punkte | Dauer: 1–2 Jahre (berufsbegleitend)</strong></p>
     <p>Ein DAS ist umfassender als ein CAS. Oft besteht es aus 3 CAS-Modulen (je 10 ECTS) plus Zusatzprojekten. Beispiel: "DAS Führung und Management" = 750–900 Lernstunden, häufig mit Fallstudien und Gruppenprojekten.</p>
 
-    <h3>MAS (Master of Advanced Studies)</h3>
+    <h3>📜 MAS (Master of Advanced Studies)</h3>
     <p><strong>Minimum: 60 ECTS-Punkte | Dauer: 2–3 Jahre (berufsbegleitend)</strong></p>
     <p>Ein MAS ist die höchste Weiterbildungsstufe – vergleichbar mit akademischen Master-Abschlüssen. Beispiel: "MAS Health Technology Management" = 1500–1800 Lernstunden, endet mit Master-Thesis. Der Zugang setzt üblicherweise einen Hochschulabschluss oder äquivalente Berufserfahrung voraus.</p>
 
-    <h2>ECTS-Übersicht: CAS, DAS, MAS auf einen Blick</h2>
+    <h2>📊 ECTS-Übersicht: CAS, DAS, MAS auf einen Blick</h2>
     <table>
       <thead>
         <tr><th>Format</th><th>ECTS</th><th>Lernstunden</th><th>Dauer</th><th>Zielgruppe</th></tr>
@@ -1472,20 +1588,34 @@ export const RATGEBER_CONTENT = {
       </tbody>
     </table>
 
-    <h2>Modularität: Bausteine kombinieren</h2>
+    <h2>🧩 Modularität: Bausteine kombinieren</h2>
     <p>Ein häufiges Modell: Sie machen erst einen CAS (10 ECTS), dann einen zweiten (10 ECTS), dann einen dritten – zusammen 30 ECTS = DAS. Später können Sie noch weitere Kurse belegen und ergänzen bis 60 ECTS für einen MAS. Das System ist flexibel: Sie entscheiden, wann Sie weitermachen und spezialisieren.</p>
 
-    <h2>Arbeitsmarkt und NQR-Klassifikation</h2>
+    <div class="tip-box">
+      <strong>Tipp:</strong> Viele Hochschulen erlauben es, CAS-Module von verschiedenen Anbietern zu kombinieren – fragen Sie nach Anrechnungsmöglichkeiten!
+    </div>
+
+    <h2>💼 Arbeitsmarkt und NQR-Klassifikation</h2>
     <p>Arbeitgeber verstehen ECTS-Punkte – sie zeigen, wie viel Sie gelernt haben. Im Nationalen Qualifikationsrahmen (NQR) werden CAS/DAS/MAS wie folgt klassifiziert: CAS auf NQR 5, DAS auf NQR 6–7, MAS auf NQR 7. Das heisst: Ein MAS ist gleichwertig mit akademischen Master-Abschlüssen – international vergleichbar.</p>
+
+    <div class="cta-box">
+      <strong>🎯 KursNavi-Empfehlung:</strong> Finden Sie CAS-, DAS- und MAS-Programme, die zu Ihren Karrierezielen passen. <a href="/kurse">Jetzt Weiterbildungen vergleichen</a>
+    </div>
   `,
 
   'beruflich/bildungssystem/professional-bachelor-master': `
     <p class="lead">Ab 2025/2026 können Absolventinnen und Absolventen von Höheren Fachschulen und Berufsprüfungen neue Titel führen – "Professional Bachelor" und "Professional Master". Das stärkt die Sichtbarkeit beruflicher Qualifikationen weltweit.</p>
 
-    <h2>Was sind die neuen Titel?</h2>
+    <img src="https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=800&q=80" alt="Professional Bachelor und Master" class="article-image" />
+
+    <h2>🎓 Was sind die neuen Titel?</h2>
     <p>Der Titel "Professional Bachelor" ist für HF- und BP-Absolventinnen und Absolventen da. Statt "Diplomierte/r Betriebswirtschafter/in HF" heisst es neu "Professional Bachelor in Business Administration". Der "Professional Master" gilt für HFP-Absolventinnen und Absolventen – zum Beispiel "Professional Master in Financial Planning". Diese Titel sind international verständlich und signalisieren: Hier ist hochqualifizierte Fachkompetenz.</p>
 
-    <h2>Warum diese Reform?</h2>
+    <div class="info-box">
+      <strong>Wichtig:</strong> Die neuen Titel sind eine Ergänzung – Sie können weiterhin auch den bisherigen Schweizer Titel führen.
+    </div>
+
+    <h2>🌍 Warum diese Reform?</h2>
     <table>
       <thead>
         <tr><th>Grund</th><th>Nutzen für Sie</th></tr>
@@ -1498,39 +1628,67 @@ export const RATGEBER_CONTENT = {
       </tbody>
     </table>
 
-    <h2>Professional Bachelor vs. akademischer Bachelor – wo ist der Unterschied?</h2>
+    <h2>🔍 Professional Bachelor vs. akademischer Bachelor – wo ist der Unterschied?</h2>
     <p>Der Titel enthält das Wort "Professional" – das ist wichtig. Ein "Professional Bachelor of Science" ist nicht identisch mit einem "Bachelor of Science" von Universität oder Fachhochschule. Aber: Beide sind gleichwertig auf dem Arbeitsmarkt und international anerkannt. Der Zusatz "Professional" signalisiert bloss: Dies ist berufsbildende, nicht akademische Ausbildung – was ein Plus ist, nicht ein Minus.</p>
 
-    <h2>Wann kann ich den Titel führen?</h2>
+    <div class="tip-box">
+      <strong>Tipp:</strong> Aktualisieren Sie Ihr LinkedIn-Profil mit dem neuen Titel – internationale Recruiter verstehen "Professional Bachelor" sofort.
+    </div>
+
+    <h2>📅 Wann kann ich den Titel führen?</h2>
     <p>Die Titelzusätze sind seit Dezember 2025 gesetzlich verankert. Die Umsetzung an den Schulen erfolgt schrittweise – ab 2026/2027 werden viele Absolventinnen und Absolventen die neuen Titel verwenden können. Alte Titel ("Dipl. HF") bleiben gültig, aber die neuen Titel sind weltweit besser verständlich.</p>
+
+    <div class="checklist">
+      <h3>✅ Checkliste: So nutzen Sie den neuen Titel</h3>
+      <ul>
+        <li>Informieren Sie sich bei Ihrer Schule über den genauen Titel</li>
+        <li>Aktualisieren Sie Ihren Lebenslauf und LinkedIn</li>
+        <li>Nutzen Sie beide Titel parallel (Schweizer + Professional)</li>
+        <li>Erklären Sie bei Bedarf die Gleichwertigkeit</li>
+      </ul>
+    </div>
+
+    <div class="cta-box">
+      <strong>🎯 KursNavi-Empfehlung:</strong> Entdecken Sie HF- und Berufsprüfungs-Angebote, die zum Professional Bachelor oder Master führen. <a href="/kurse">Jetzt Bildungswege erkunden</a>
+    </div>
   `,
 
   'beruflich/bildungssystem/anerkennung-auslaendischer-diplome': `
     <p class="lead">Sie haben im Ausland studiert und möchten nun in der Schweiz arbeiten? Hier ist der konkrete Prozess zur Diplomanerkennung – von Anfrage bis Entscheid.</p>
 
-    <h2>Wer ist zuständig?</h2>
+    <img src="https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=800&q=80" alt="Anerkennung ausländischer Diplome" class="article-image" />
+
+    <h2>🏛️ Wer ist zuständig?</h2>
     <p>Das SBFI (Staatssekretariat für Bildung, Forschung und Innovation) ist die zentrale Stelle für die Anerkennung ausländischer Diplome. Das Verfahren ist individualisiert und dauert in der Regel 4–6 Monate. Die Online-Plattform anerkennung.swiss ist Ihr Einstiegspunkt.</p>
 
-    <h2>Reglementierte vs. nicht-reglementierte Berufe – das ist entscheidend</h2>
+    <div class="info-box">
+      <strong>Wichtig:</strong> Starten Sie den Anerkennungsprozess möglichst früh – idealerweise bereits während der Jobsuche, nicht erst nach einer Zusage.
+    </div>
 
-    <h3>Reglementierte Berufe</h3>
+    <h2>⚖️ Reglementierte vs. nicht-reglementierte Berufe – das ist entscheidend</h2>
+
+    <h3>🔒 Reglementierte Berufe</h3>
     <p>Ärzte, Zahnärzte, Pflegefachpersonen, Apotheker/innen, Ingenieure, Architekten, Psychologen – das sind Berufe mit gesetzlicher Regelung. Hier ist eine offizielle Anerkennung zwingend erforderlich, um arbeiten zu dürfen.</p>
 
-    <h3>Nicht-reglementierte Berufe</h3>
+    <h3>🔓 Nicht-reglementierte Berufe</h3>
     <p>Betriebsökonomen, IT-Spezialisten, Marketing-Manager, viele Handwerksberufe – diese sind nicht gesetzlich geregelt. Eine offizielle Anerkennung ist nicht zwingend, aber für Bewerbungen und Karriere oft hilfreich.</p>
 
-    <h2>Der Prozess: Schritt für Schritt</h2>
+    <div class="warning-box">
+      <strong>Achtung:</strong> Ohne offizielle Anerkennung dürfen Sie reglementierte Berufe in der Schweiz nicht ausüben – auch nicht mit ausländischem Diplom!
+    </div>
 
-    <h3>Schritt 1: Vorabklärung</h3>
+    <h2>📋 Der Prozess: Schritt für Schritt</h2>
+
+    <h3>1️⃣ Schritt 1: Vorabklärung</h3>
     <p>Sie füllen ein Antragsformular aus (auf anerkennung.swiss). Kosten: ca. CHF 550 für eine allgemeine Gleichwertigkeitsprüfung. Das SBFI teilt Ihnen mit, was als nächstes zu tun ist.</p>
 
-    <h3>Schritt 2: Diplomprüfung</h3>
+    <h3>2️⃣ Schritt 2: Diplomprüfung</h3>
     <p>Das SBFI vergleicht Ihr ausländisches Diplom mit dem Schweizer Äquivalent. Fragen: Wie lange dauerte Ihre Ausbildung? Welche Inhalte? Ist die Institution anerkannt?</p>
 
-    <h3>Schritt 3: Entscheid</h3>
+    <h3>3️⃣ Schritt 3: Entscheid</h3>
     <p>Das SBFI teilt mit: Diplom gleichwertig – ODER Ausgleichsmassnahmen notwendig.</p>
 
-    <h2>Ausgleichsmassnahmen: Die Optionen</h2>
+    <h2>🔧 Ausgleichsmassnahmen: Die Optionen</h2>
     <table>
       <thead>
         <tr><th>Massnahme</th><th>Beschreibung</th><th>Dauer & Kosten</th></tr>
@@ -1542,27 +1700,39 @@ export const RATGEBER_CONTENT = {
       </tbody>
     </table>
 
-    <h2>Einfacher oder schwieriger?</h2>
+    <h2>📈 Einfacher oder schwieriger?</h2>
     <p><strong>Einfacher:</strong> Diplome aus EU/EWR-Ländern (harmonisierte Systeme), mit bilateralen Abkommen oder von akkreditierten Institutionen.</p>
     <p><strong>Schwieriger:</strong> Nicht-harmonisierte Länder, sehr spezialisierte Berufe, grössere inhaltliche Unterschiede zum Schweizer System.</p>
 
-    <h2>Praktische Tipps</h2>
-    <ol>
-      <li><strong>Klären Sie früh:</strong> Bereits bei Jobsuche prüfen, nicht erst nach Zusage.</li>
-      <li><strong>Originaldokumente:</strong> Original-Diplom + Transkript; ggf. beglaubigen lassen.</li>
-      <li><strong>Sprache:</strong> Für reglementierte Berufe oft B2–C1 erforderlich (getestet).</li>
-      <li><strong>Übergangslösungen:</strong> Manche Berufe erlauben temporäre Ausübung während Anerkennung läuft.</li>
-      <li><strong>Netzwerk:</strong> Berufsverbände können informelle Anerkennung beschleunigen.</li>
-    </ol>
+    <h2>💡 Praktische Tipps</h2>
+    <div class="checklist">
+      <ul>
+        <li><strong>Klären Sie früh:</strong> Bereits bei Jobsuche prüfen, nicht erst nach Zusage.</li>
+        <li><strong>Originaldokumente:</strong> Original-Diplom + Transkript; ggf. beglaubigen lassen.</li>
+        <li><strong>Sprache:</strong> Für reglementierte Berufe oft B2–C1 erforderlich (getestet).</li>
+        <li><strong>Übergangslösungen:</strong> Manche Berufe erlauben temporäre Ausübung während Anerkennung läuft.</li>
+        <li><strong>Netzwerk:</strong> Berufsverbände können informelle Anerkennung beschleunigen.</li>
+      </ul>
+    </div>
+
+    <div class="cta-box">
+      <strong>🎯 KursNavi-Empfehlung:</strong> Benötigen Sie Ergänzungskurse für die Anerkennung? Finden Sie passende Angebote auf KursNavi. <a href="/kurse">Jetzt Kurse suchen</a>
+    </div>
   `,
 
   'beruflich/bildungssystem/qualitaetslabels-eduqua': `
     <p class="lead">eduQua ist das einzige schweizweit anerkannte Qualitätslabel für Weiterbildungsanbieter. Doch was bedeutet dieses Siegel konkret – und woran erkennen Sie wirklich gute Kurse?</p>
 
-    <h2>Was ist eduQua?</h2>
+    <img src="https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=800&q=80" alt="Qualitätslabels in der Weiterbildung" class="article-image" />
+
+    <h2>🏆 Was ist eduQua?</h2>
     <p>eduQua ist das zentrale Qualitätslabel für Weiterbildungsanbieter in der Schweiz. Es wird vom SVEB (Schweizer Verband für Weiterbildung) vergeben und ist eine unabhängige Zertifizierung. Über 1000 Schulen, Institute und Akademien sind eduQua-zertifiziert – das Label ist die wichtigste Orientierungshilfe für Qualität in der Erwachsenenbildung.</p>
 
-    <h2>Auf welchen Kriterien basiert eduQua?</h2>
+    <div class="info-box">
+      <strong>Gut zu wissen:</strong> eduQua-zertifizierte Anbieter werden regelmässig überprüft – das Zertifikat muss alle 3 Jahre erneuert werden.
+    </div>
+
+    <h2>📋 Auf welchen Kriterien basiert eduQua?</h2>
     <table>
       <thead>
         <tr><th>Kriterium</th><th>Was wird überprüft?</th></tr>
@@ -1577,26 +1747,33 @@ export const RATGEBER_CONTENT = {
       </tbody>
     </table>
 
-    <h2>Unterschied zwischen eduQua und anderen Labeln</h2>
+    <h2>🔍 Unterschied zwischen eduQua und anderen Labeln</h2>
     <p>ISO 9001 ist ein allgemeines Qualitätsmanagementsystem – technisch stringent, aber nicht auf Weiterbildung ausgerichtet. Hochschulakkreditierungen sind spezialisiert, aber nur für akademische Institutionen. eduQua ist das einzige Label, das Erwachsenenbildung und Weiterbildung systematisch bewertet – mit Fokus auf Lernziele und Kundenzufriedenheit.</p>
 
-    <h2>Was eduQua aussagt – und was nicht</h2>
+    <h2>✅ Was eduQua aussagt – und was nicht</h2>
     <p><strong>eduQua sagt aus:</strong></p>
-    <ul>
-      <li>Der Anbieter erfüllt standardisierte Qualitätskriterien</li>
-      <li>Es gibt systematische Qualitätssicherung</li>
-      <li>Die Kundenzufriedenheit wird gemessen und verbessert</li>
-    </ul>
+    <div class="checklist">
+      <ul>
+        <li>Der Anbieter erfüllt standardisierte Qualitätskriterien</li>
+        <li>Es gibt systematische Qualitätssicherung</li>
+        <li>Die Kundenzufriedenheit wird gemessen und verbessert</li>
+      </ul>
+    </div>
 
-    <p><strong>eduQua sagt nicht aus:</strong></p>
-    <ul>
-      <li>Ein Kurs ist "besser" als andere</li>
-      <li>Ein eduQua-Kurs ist automatisch besser als ein nicht-zertifizierter</li>
-      <li>Der Preis ist gerechtfertigt</li>
-    </ul>
+    <div class="warning-box">
+      <strong>Beachten Sie:</strong> eduQua garantiert nicht, dass ein Kurs "besser" ist als andere oder dass der Preis gerechtfertigt ist. Es zeigt lediglich, dass der Anbieter Qualitätsstandards einhält.
+    </div>
 
-    <h2>Gültigkeit und aktuelle Norm: eduQua:2021</h2>
+    <h2>📅 Gültigkeit und aktuelle Norm: eduQua:2021</h2>
     <p>Ein eduQua-Zertifikat ist 3 Jahre gültig. Die aktuelle Norm ist eduQua:2021 – sie betont Lernergebnisse, Digitalisierung, Inklusion und Nachhaltigkeit stärker. Viele Anbieter nutzen noch die ältere Norm; der Übergang läuft bis Juni 2025.</p>
+
+    <div class="tip-box">
+      <strong>Tipp:</strong> Achten Sie bei der Kurswahl auf das eduQua-Logo – es ist ein guter erster Qualitätsindikator, sollte aber nicht das einzige Entscheidungskriterium sein.
+    </div>
+
+    <div class="cta-box">
+      <strong>🎯 KursNavi-Empfehlung:</strong> Auf KursNavi finden Sie viele eduQua-zertifizierte Anbieter. <a href="/kurse">Jetzt qualitätsgeprüfte Kurse entdecken</a>
+    </div>
   `,
 
   // ============================================
