@@ -825,16 +825,24 @@ export default function KursNaviPro() {  // 1. Initial State Logic
 
     let matchesSpecialty = true;
     if (searchSpecialty) {
+      // Compare against both slug and label since dropdown uses labels
       matchesSpecialty = course.category_specialty === searchSpecialty ||
         (Array.isArray(course.all_categories) &&
-         course.all_categories.some(cat => cat && cat.category_specialty === searchSpecialty));
+         course.all_categories.some(cat => cat && (
+           cat.category_specialty === searchSpecialty ||
+           cat.category_specialty_label === searchSpecialty
+         )));
     }
 
     let matchesFocus = true;
     if (searchFocus) {
+      // Compare against both slug and label since dropdown uses labels
       matchesFocus = course.category_focus === searchFocus ||
         (Array.isArray(course.all_categories) &&
-         course.all_categories.some(cat => cat && cat.category_focus === searchFocus));
+         course.all_categories.some(cat => cat && (
+           cat.category_focus === searchFocus ||
+           cat.category_focus_label === searchFocus
+         )));
     }
 
     let matchesCategory = true;
