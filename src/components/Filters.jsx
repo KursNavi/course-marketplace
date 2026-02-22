@@ -32,51 +32,26 @@ export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCat
             .replace(/ Und /g, ' & ');
     };
 
-    // Check if a string looks like a slug (contains underscores or is all lowercase with no spaces)
-    const isSlug = (str) => {
-        if (!str || typeof str !== 'string') return false;
-        return str.includes('_') || (str === str.toLowerCase() && !str.includes(' '));
-    };
-
     // Helper to get labels from the new structure (Defaulting to DE for now)
     const getLabel = (key, level, parentKey = null) => {
         if (!key) return "";
         if (level === 1) return activeTypes[key]?.de || formatSlugToLabel(String(key));
         if (level === 2) {
-            // FIRST: Try to find the area in the areas array (from DB)
-            // This is the most reliable source - it's the raw DB data
+            // Try to find the area in the areas array (from DB)
             const keyNum = typeof key === 'string' ? parseInt(key, 10) : key;
-            const keyStr = String(key);
+            const area = areas.find(a => a.id === keyNum || a.id === key);
 
-            // Debug: Log what we're looking for
-            console.log('[getLabel] Looking for area:', { key, keyNum, keyStr, areasCount: areas.length });
-
-            const area = areas.find(a =>
-                a.id === key ||
-                a.id === keyNum ||
-                a.id === keyStr ||
-                a.slug === key ||
-                a.slug === keyStr
-            );
-
-            console.log('[getLabel] Found area:', area ? { id: area.id, slug: area.slug, label_de: area.label_de } : 'NOT FOUND');
-
-            if (area?.label_de && !isSlug(area.label_de)) {
-                console.log('[getLabel] Returning from areas array:', area.label_de);
+            if (area?.label_de) {
                 return area.label_de;
             }
 
-            // SECOND: Try to get label from activeTaxonomy structure
+            // Fallback: Try activeTaxonomy structure
             if (parentKey && activeTaxonomy[parentKey]?.[key]?.label?.de) {
-                const label = activeTaxonomy[parentKey][key].label.de;
-                if (!isSlug(label)) return label;
+                return activeTaxonomy[parentKey][key].label.de;
             }
 
-            // Third: Try slug from area
-            if (area?.slug) return formatSlugToLabel(area.slug);
-
-            // Last resort: format key as slug if it looks like one
-            return isSlug(keyStr) ? formatSlugToLabel(keyStr) : keyStr;
+            // Last resort: format as readable label
+            return formatSlugToLabel(String(key));
         }
         return key; // Level 3+4 are plain strings
     };
