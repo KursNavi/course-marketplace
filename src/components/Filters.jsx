@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronDown, ChevronRight, MapPin, Globe, Monitor } from 'lucide-react';
-import { NEW_TAXONOMY, CATEGORY_TYPES, SWISS_CANTONS, DELIVERY_TYPES, COURSE_LANGUAGES } from '../lib/constants';
+import { SWISS_CANTONS, DELIVERY_TYPES, COURSE_LANGUAGES } from '../lib/constants';
 import { useTaxonomy } from '../hooks/useTaxonomy';
 
 export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCatPath, catMenuOpen, setCatMenuOpen, t, catMenuRef }) => {
-    // Load taxonomy from DB (with fallback to constants.js)
+    // Load taxonomy from DB - NO FALLBACK to constants.js (different structure)
     const { taxonomy, types, areas, courseCounts } = useTaxonomy();
 
     const [lvl1, setLvl1] = useState(rootCategory || null);
@@ -16,11 +16,11 @@ export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCat
         if (!catMenuOpen) { setLvl1(rootCategory || null); setLvl2(null); setLvl3(null); }
     }, [catMenuOpen, rootCategory]);
 
-    // Use taxonomy from DB or fallback to constants
-    const activeTaxonomy = taxonomy || NEW_TAXONOMY;
+    // Use taxonomy from DB only - no fallback (NEW_TAXONOMY has different structure)
+    const activeTaxonomy = taxonomy || {};
     const activeTypes = types.length > 0
         ? Object.fromEntries(types.map(t => [t.id, { de: t.label_de, en: t.label_en, fr: t.label_fr, it: t.label_it }]))
-        : CATEGORY_TYPES;
+        : {};
 
     // Helper to format slug to readable label (e.g. "bildung_soziales" -> "Bildung & Soziales")
     const formatSlugToLabel = (slug) => {
@@ -122,7 +122,6 @@ export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCat
 
                     {/* Level 2: AREAS (e.g. Business, Sport) */}
                     <div className={`w-full ${currentFocuses.length > 0 ? 'md:w-1/4' : 'md:w-1/3'} border-r overflow-y-auto bg-white`}>
-                        {lvl1 && console.log('[DEBUG] lvl1:', lvl1, '_areaIds:', activeTaxonomy[lvl1]?._areaIds, 'keys:', Object.keys(activeTaxonomy[lvl1] || {}))}
                         {lvl1 ? (
                             // Use _areaIds for ordered numeric IDs - these contain only numeric IDs from DB
                             (activeTaxonomy[lvl1]?._areaIds || [])
