@@ -37,17 +37,16 @@ export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCat
         if (!key) return "";
         if (level === 1) return activeTypes[key]?.de || formatSlugToLabel(String(key));
         if (level === 2) {
-            // Try to find the area in the areas array (from DB)
-            const keyNum = typeof key === 'string' ? parseInt(key, 10) : key;
-            const area = areas.find(a => a.id === keyNum || a.id === key);
-
-            if (area?.label_de) {
-                return area.label_de;
-            }
-
-            // Fallback: Try activeTaxonomy structure
+            // FIRST: Try activeTaxonomy structure (most reliable, built from DB)
             if (parentKey && activeTaxonomy[parentKey]?.[key]?.label?.de) {
                 return activeTaxonomy[parentKey][key].label.de;
+            }
+
+            // SECOND: Try to find in areas array
+            const keyNum = typeof key === 'string' ? parseInt(key, 10) : key;
+            const area = areas.find(a => a.id === keyNum || a.id === key);
+            if (area?.label_de) {
+                return area.label_de;
             }
 
             // Last resort: format as readable label
