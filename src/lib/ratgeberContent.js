@@ -722,11 +722,18 @@ export const RATGEBER_CONTENT = {
   'beruflich/karriere/berufliche-standortbestimmung': `
     <p class="lead">Mit strukturierten Analysemethoden wie viamia die eigenen Stärken, Kompetenzen und beruflichen Chancen transparent machen – die Basis für gezielte Weiterbildung und zukunftssichere Karriereplanung.</p>
 
-    <h2>Warum Standortbestimmung mehr als Selbstreflexion ist</h2>
+    <img src="https://images.unsplash.com/photo-1521791136064-7986c2920216?w=800&q=80" alt="Berufliche Standortbestimmung und Karriereplanung" class="article-image" />
+
+    <h2>🎯 Warum Standortbestimmung mehr als Selbstreflexion ist</h2>
     <p>Viele Menschen haben eine ungenaue Vorstellung davon, was sie wirklich können. Standortbestimmung ist keine philosophische Übung, sondern eine datengestützte Analyse deiner bisherigen Karriere, deiner realen Fähigkeiten und deiner Chancen auf dem aktuellen Arbeitsmarkt.</p>
     <p>Das viamia-Programm des Bundesrates (kostenlos, für Personen ab 40) bietet genau das: strukturierte Fragebögen zu deiner Bildungsbiografie, deinen Kompetenzen und deinen Arbeitsmarkt-Chancen. Ergebnis: Du weisst nicht nur, WER du bist, sondern auch, WER du auf dem Markt sein kannst.</p>
 
-    <h2>Wie Standortbestimmung funktioniert: Die viamia-Methode</h2>
+    <div class="tip-box">
+      <h3>💡 Kostenlos für 40+</h3>
+      <p>Das <strong>viamia-Programm</strong> des Bundesrates bietet kostenlose Standortbestimmung für Personen ab 40 Jahren – nutze diese Chance!</p>
+    </div>
+
+    <h2>📋 Wie Standortbestimmung funktioniert: Die viamia-Methode</h2>
     <p>viamia gliedert sich in drei Kernelemente:</p>
     <table>
       <thead>
@@ -739,23 +746,32 @@ export const RATGEBER_CONTENT = {
       </tbody>
     </table>
 
-    <h2>Die psychologischen Barrieren bei 40+ erkennen und überwinden</h2>
+    <h2>⚠️ Die psychologischen Barrieren bei 40+ erkennen und überwinden</h2>
     <p>Viele Personen ab 40 Jahren erleben bei der Standortbestimmung emotionale Blockaden:</p>
-    <ul>
-      <li><strong>Sunk-Cost-Fallacy:</strong> "Ich habe 20 Jahre in diesem Beruf investiert, kann nicht wechseln." → Erkenntnis: Deine Erfahrung ist auch in anderen Rollen wertvoll.</li>
-      <li><strong>Identitätskrisen:</strong> Berufsrolle ist oft identitätsstiftend. → Lösung: Trennung von Berufsrolle und persönlichen Werten.</li>
-      <li><strong>Angst vor Neubewertung:</strong> "Werde ich als Junior behandelt?" → Gegenmassnahme: Lebenserfahrung ist ein echter Plus-Faktor.</li>
-    </ul>
 
-    <h2>Konkrete Analysemethoden in der Praxis</h2>
-    <ul>
-      <li><strong>Bildungs- und Erwerbsbiografie erfassen:</strong> Was hast du konkret gelernt, wann, in welchem Kontext?</li>
-      <li><strong>Kompetenzbilanzierung:</strong> Was kannst du WIRKLICH? (nicht, was denkst du, dass du kannst)</li>
-      <li><strong>Zielklärung:</strong> Was willst du erreichen? Karrierewechsel, Spezialisierung, Lohnerhöhung?</li>
-      <li><strong>Massnahmenpläne:</strong> Welche Kurse, Praktika oder Erfahrungen brauchst du, um dein Ziel zu erreichen?</li>
-    </ul>
+    <div class="warning-box">
+      <h3>⚠️ Häufige mentale Blockaden</h3>
+      <ul>
+        <li><strong>Sunk-Cost-Fallacy:</strong> "Ich habe 20 Jahre in diesem Beruf investiert, kann nicht wechseln." → Erkenntnis: Deine Erfahrung ist auch in anderen Rollen wertvoll.</li>
+        <li><strong>Identitätskrisen:</strong> Berufsrolle ist oft identitätsstiftend. → Lösung: Trennung von Berufsrolle und persönlichen Werten.</li>
+        <li><strong>Angst vor Neubewertung:</strong> "Werde ich als Junior behandelt?" → Gegenmassnahme: Lebenserfahrung ist ein echter Plus-Faktor.</li>
+      </ul>
+    </div>
 
-    <p><strong>Finde jetzt den passenden Kurs zu Deiner Weiterbildung auf KursNavi.</strong></p>
+    <h2>📈 Konkrete Analysemethoden in der Praxis</h2>
+    <div class="checklist">
+      <ul>
+        <li><strong>Bildungs- und Erwerbsbiografie erfassen:</strong> Was hast du konkret gelernt, wann, in welchem Kontext?</li>
+        <li><strong>Kompetenzbilanzierung:</strong> Was kannst du WIRKLICH? (nicht, was denkst du, dass du kannst)</li>
+        <li><strong>Zielklärung:</strong> Was willst du erreichen? Karrierewechsel, Spezialisierung, Lohnerhöhung?</li>
+        <li><strong>Massnahmenpläne:</strong> Welche Kurse, Praktika oder Erfahrungen brauchst du, um dein Ziel zu erreichen?</li>
+      </ul>
+    </div>
+
+    <div class="cta-box">
+      <h3>🎓 Passende Weiterbildung finden</h3>
+      <p>Finde jetzt den passenden Kurs zu Deiner Weiterbildung auf KursNavi – basierend auf Deiner persönlichen Standortbestimmung.</p>
+    </div>
   `,
 
   'beruflich/karriere/spezialisierung-vs-generalisierung': `
@@ -1045,7 +1061,13 @@ export const RATGEBER_CONTENT = {
   'beruflich/future-skills/ai-literacy-arbeitsplatz': `
     <p class="lead">KI-Skills sind 2026 am Schweizer Arbeitsmarkt keine Optionalität mehr – sie sind betriebliche Realität. Wer nicht versteht, wie ChatGPT, Claude, Copilot und ähnliche Tools funktionieren, wird in vielen Branchen schnell vom Arbeitsmarkt abgehängt. Gute Nachricht: Diese Fähigkeiten sind lernbar.</p>
 
-    <h2>Welche KI-Tools solltest Du können?</h2>
+    <img src="https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=800&h=400&fit=crop" alt="KI und Robotik am Arbeitsplatz" class="article-image" />
+
+    <div class="info-box">
+      <strong>Wusstest Du?</strong> Laut aktuellen Studien werden bis 2030 über 85% aller Berufe KI-Tools in irgendeiner Form nutzen. Der frühe Einstieg verschafft Dir einen entscheidenden Vorteil.
+    </div>
+
+    <h2>🤖 Welche KI-Tools solltest Du können?</h2>
     <p>Das Spektrum der relevanten Tools ist heute breiter denn je:</p>
     <table>
       <thead>
@@ -1059,22 +1081,43 @@ export const RATGEBER_CONTENT = {
       </tbody>
     </table>
 
-    <h2>Wie schreibst Du effektive Prompts?</h2>
-    <p>Prompt Engineering – die Fähigkeit, KI gezielt zu instruieren – ist die neue Kernkompetenz. Effektive Prompts enthalten:</p>
-    <ul>
-      <li><strong>Kontext und Ziel:</strong> Wozu brauchst Du die Information?</li>
-      <li><strong>Spezifizität:</strong> Je präziser, desto besser das Resultat</li>
-      <li><strong>Iteratives Feedback:</strong> Erste Antwort? Dann optimieren</li>
-      <li><strong>Kritisches Denken:</strong> KI-Output auf Fehler und Bias prüfen</li>
-    </ul>
+    <h2>💡 Wie schreibst Du effektive Prompts?</h2>
+    <p>Prompt Engineering – die Fähigkeit, KI gezielt zu instruieren – ist die neue Kernkompetenz.</p>
 
-    <p><strong>Finde jetzt AI-Kurse und Digital-Skills-Programme auf KursNavi.</strong></p>
+    <div class="tip-box">
+      <strong>Tipp:</strong> Starte mit klaren, strukturierten Prompts und verfeinere sie iterativ. Die besten Ergebnisse erzielst Du durch Dialog mit der KI.
+    </div>
+
+    <div class="checklist">
+      <h4>Checkliste für effektive Prompts:</h4>
+      <ul>
+        <li>✅ <strong>Kontext und Ziel:</strong> Wozu brauchst Du die Information?</li>
+        <li>✅ <strong>Spezifizität:</strong> Je präziser, desto besser das Resultat</li>
+        <li>✅ <strong>Iteratives Feedback:</strong> Erste Antwort? Dann optimieren</li>
+        <li>✅ <strong>Kritisches Denken:</strong> KI-Output auf Fehler und Bias prüfen</li>
+      </ul>
+    </div>
+
+    <div class="warning-box">
+      <strong>Wichtig:</strong> KI-generierte Inhalte sollten immer auf Korrektheit geprüft werden. Besonders bei Fakten, Zahlen und rechtlichen Informationen ist menschliche Überprüfung unerlässlich.
+    </div>
+
+    <div class="cta-box">
+      <h3>🚀 Bereit für die KI-Zukunft?</h3>
+      <p>Auf KursNavi findest Du praxisnahe AI-Kurse und Digital-Skills-Programme, die Dich fit für den modernen Arbeitsmarkt machen. Entdecke jetzt passende Weiterbildungen in Deiner Nähe!</p>
+    </div>
   `,
 
   'beruflich/future-skills/digital-literacy-generationen': `
     <p class="lead">Digital Literacy ist nicht mehr ein "Senioren-Problem" – es ist ein generationenübergreifendes Thema. Gleichzeitig gibt es gute Nachrichten: Die digitale Kluft in der Schweiz wird kleiner, und es entstehen niederschwellige Lernmöglichkeiten für alle.</p>
 
-    <h2>Wer braucht Digital Literacy?</h2>
+    <img src="https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&h=400&fit=crop" alt="Digitale Technologie und Generationen" class="article-image" />
+
+    <div class="info-box">
+      <strong>Gut zu wissen:</strong> Die digitale Inklusion in der Schweiz macht Fortschritte. Immer mehr niederschwellige Angebote ermöglichen allen Generationen den Zugang zu digitalen Kompetenzen.
+    </div>
+
+    <h2>👨‍👩‍👧‍👦 Wer braucht Digital Literacy?</h2>
     <p>Die digitale Spaltung hat mehrere Dimensionen:</p>
     <table>
       <thead>
@@ -1088,31 +1131,52 @@ export const RATGEBER_CONTENT = {
       </tbody>
     </table>
 
-    <h2>Was bietet die Schweiz?</h2>
+    <h2>🇨🇭 Was bietet die Schweiz?</h2>
     <p>Es gibt mittlerweile etablierte Strukturen für Digital Literacy:</p>
-    <ul>
-      <li><strong>ADIS (Alliance for Digital Inclusion):</strong> Koordiniert digitale Inklusion. Gegründet November 2024.</li>
-      <li><strong>Digital Cafés:</strong> Niederschwellige Orte für Austausch und Fragen</li>
-      <li><strong>Generationenprogramme:</strong> Junge Menschen mentorieren Ältere</li>
-      <li><strong>Online-Plattformen:</strong> Seniorengerecht designte Portale und Apps</li>
-    </ul>
 
-    <p><strong>Auf KursNavi gibt es für jede Altersgruppe passende Digital-Literacy-Kurse und IT-Grundlagen-Trainings.</strong></p>
+    <div class="checklist">
+      <h4>Schweizer Angebote für Digital Literacy:</h4>
+      <ul>
+        <li>✅ <strong>ADIS (Alliance for Digital Inclusion):</strong> Koordiniert digitale Inklusion. Gegründet November 2024.</li>
+        <li>✅ <strong>Digital Cafés:</strong> Niederschwellige Orte für Austausch und Fragen</li>
+        <li>✅ <strong>Generationenprogramme:</strong> Junge Menschen mentorieren Ältere</li>
+        <li>✅ <strong>Online-Plattformen:</strong> Seniorengerecht designte Portale und Apps</li>
+      </ul>
+    </div>
+
+    <div class="tip-box">
+      <strong>Tipp:</strong> Viele Gemeinden und Bibliotheken bieten kostenlose Digital-Cafés an. Erkundige Dich in Deiner Nähe nach lokalen Angeboten.
+    </div>
+
+    <div class="cta-box">
+      <h3>💻 Finde Deinen passenden Kurs</h3>
+      <p>Auf KursNavi gibt es für jede Altersgruppe passende Digital-Literacy-Kurse und IT-Grundlagen-Trainings. Egal ob Einsteiger oder Fortgeschrittene – starte jetzt Deine digitale Lernreise!</p>
+    </div>
   `,
 
   'beruflich/future-skills/green-skills': `
     <p class="lead">Die Schweiz hat sich zur CO₂-Neutralität bis 2050 verpflichtet – und das hat Folgen für den Arbeitsmarkt. Unternehmen suchen dringend nach Menschen, die verstehen, wie nachhaltige Geschäftsmodelle funktionieren. Green Skills sind nicht mehr Nischen-Know-how; sie sind ein Differenzierungsfaktor im CV.</p>
 
-    <h2>Was bedeutet Green Skills konkret?</h2>
-    <p>Green Skills umfassen Kompetenzen in folgenden Bereichen:</p>
-    <ul>
-      <li><strong>ESG-Integration:</strong> Environmental, Social, Governance Standards in der Unternehmensführung</li>
-      <li><strong>Kreislaufwirtschaft:</strong> Von linearen zu zirkulären Produktionsweisen</li>
-      <li><strong>Nachhaltigkeitsberichterstattung:</strong> Messung und Kommunikation von Sustainability-Zielen</li>
-      <li><strong>Regulatorisches Wissen:</strong> Compliance mit neuen Nachhaltigkeitsgesetzen (etwa der EU-Taxonomie)</li>
-    </ul>
+    <img src="https://images.unsplash.com/photo-1551434678-e076c223a692?w=800&h=400&fit=crop" alt="Nachhaltigkeit und grüne Technologie" class="article-image" />
 
-    <h2>Welche Weiterbildungen gibt es in der Schweiz?</h2>
+    <div class="info-box">
+      <strong>Markttrend:</strong> Der Bedarf an Fachkräften mit Green Skills steigt jährlich um über 20%. Besonders gefragt sind Kompetenzen in ESG-Reporting und Kreislaufwirtschaft.
+    </div>
+
+    <h2>🌱 Was bedeutet Green Skills konkret?</h2>
+    <p>Green Skills umfassen Kompetenzen in folgenden Bereichen:</p>
+
+    <div class="checklist">
+      <h4>Kernbereiche der Green Skills:</h4>
+      <ul>
+        <li>✅ <strong>ESG-Integration:</strong> Environmental, Social, Governance Standards in der Unternehmensführung</li>
+        <li>✅ <strong>Kreislaufwirtschaft:</strong> Von linearen zu zirkulären Produktionsweisen</li>
+        <li>✅ <strong>Nachhaltigkeitsberichterstattung:</strong> Messung und Kommunikation von Sustainability-Zielen</li>
+        <li>✅ <strong>Regulatorisches Wissen:</strong> Compliance mit neuen Nachhaltigkeitsgesetzen (etwa der EU-Taxonomie)</li>
+      </ul>
+    </div>
+
+    <h2>🎓 Welche Weiterbildungen gibt es in der Schweiz?</h2>
     <p>Schweizer Hochschulen und Fachinstitutionen bieten spezialisierte Programme an:</p>
     <table>
       <thead>
@@ -1126,10 +1190,21 @@ export const RATGEBER_CONTENT = {
       </tbody>
     </table>
 
-    <h2>Wo liegen die Karrierechancen?</h2>
-    <p>Unternehmen brauchen Sustainability Manager, CSR-Officer, ESG-Beraterinnen und Nachhaltigkeitsleitung. Der Arbeitsmarkt für Green Skills ist dynamisch und wächst kontinuierlich. Besonders attraktiv ist die Kombination von Green Skills mit anderen Domänen – etwa "Green Skills + KI-Literacy" oder "Green Skills + Digitale Transformation".</p>
+    <h2>💼 Wo liegen die Karrierechancen?</h2>
+    <p>Unternehmen brauchen Sustainability Manager, CSR-Officer, ESG-Beraterinnen und Nachhaltigkeitsleitung. Der Arbeitsmarkt für Green Skills ist dynamisch und wächst kontinuierlich.</p>
 
-    <p><strong>Wer sich beruflich in Nachhaltigkeit weiterentwickeln möchte, findet auf KursNavi spezialisierte Angebote.</strong></p>
+    <div class="tip-box">
+      <strong>Karriere-Tipp:</strong> Besonders attraktiv ist die Kombination von Green Skills mit anderen Domänen – etwa "Green Skills + KI-Literacy" oder "Green Skills + Digitale Transformation". Diese Kombination macht Dich zum gefragten Spezialisten.
+    </div>
+
+    <div class="warning-box">
+      <strong>Wichtig:</strong> Ab 2024 gelten in der EU verschärfte Nachhaltigkeitsberichtspflichten (CSRD), die auch Schweizer Unternehmen mit EU-Geschäft betreffen. Frühe Weiterbildung sichert Deinen Wissensvorsprung.
+    </div>
+
+    <div class="cta-box">
+      <h3>🌿 Starte Deine grüne Karriere</h3>
+      <p>Wer sich beruflich in Nachhaltigkeit weiterentwickeln möchte, findet auf KursNavi spezialisierte Angebote – von CAS-Programmen bis zu kompakten Kursen. Entdecke jetzt Deine Möglichkeiten!</p>
+    </div>
   `,
 
   'beruflich/future-skills/micro-credentials': `
@@ -1232,13 +1307,23 @@ export const RATGEBER_CONTENT = {
   'beruflich/bildungssystem/schweizer-bildungssystem-ueberblick': `
     <p class="lead">Das Schweizer Bildungssystem ist für seine Durchlässigkeit berühmt – doch was bedeutet das konkret? Eine klare Übersicht über Wege, Stufen und Chancen für Ihre berufliche Entwicklung.</p>
 
-    <h2>Wie ist das Schweizer Bildungssystem strukturiert?</h2>
+    <img src="https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=800&q=80" alt="Schweizer Bildungssystem" class="article-image" />
+
+    <h2>🏛️ Wie ist das Schweizer Bildungssystem strukturiert?</h2>
     <p>Das System gliedert sich in drei Hauptstufen: Sekundarstufe II (nach der Obligatorschule), Tertiärstufe B (Berufsbildung) und Tertiärstufe A (Hochschulen). Etwa zwei Drittel der Jugendlichen wählen die duale Berufsausbildung (Lehre), die Schule und Praxis verbindet und zum Eidgenössischen Fähigkeitszeugnis (EFZ) führt. Andere folgen gymnasialer oder Berufsmaturität.</p>
 
-    <h2>Was ist Durchlässigkeit und warum ist sie wichtig?</h2>
+    <div class="info-box">
+      <strong>Wussten Sie?</strong> Die Schweiz hat eines der durchlässigsten Bildungssysteme der Welt – mit über 250 anerkannten Berufen und zahlreichen Weiterbildungsmöglichkeiten.
+    </div>
+
+    <h2>🔄 Was ist Durchlässigkeit und warum ist sie wichtig?</h2>
     <p>Durchlässigkeit bedeutet: Man ist nicht auf einen Weg festgelegt. Nach einer Berufsausbildung kann man sich weiterbilden, spezialisieren oder an die Hochschule wechseln – je nach Abschluss und Zielen. Besonders die Berufsmaturität spielt eine Schlüsselrolle, da sie direkten Zugang zur Fachhochschule oder via Passerelle zur Universität öffnet.</p>
 
-    <h2>Überblick: Die Einstiegsvoraussetzungen nach Sekundarstufe II</h2>
+    <div class="tip-box">
+      <strong>Tipp:</strong> Die Berufsmaturität kann auch nachträglich erworben werden – ideal für alle, die sich nach der Lehre akademisch weiterentwickeln möchten.
+    </div>
+
+    <h2>📊 Überblick: Die Einstiegsvoraussetzungen nach Sekundarstufe II</h2>
     <table>
       <thead>
         <tr><th>Abschluss</th><th>Nächste Möglichkeiten</th><th>Besonderheit</th></tr>
@@ -1249,6 +1334,10 @@ export const RATGEBER_CONTENT = {
         <tr><td>Gymnasiale Maturität</td><td>Universität oder FH</td><td>Theoretisch, wissenschaftliche Orientierung</td></tr>
       </tbody>
     </table>
+
+    <div class="cta-box">
+      <strong>🎯 KursNavi-Empfehlung:</strong> Nutzen Sie unsere Kurssuche, um passende Weiterbildungen für Ihren Bildungsweg zu finden – egal ob HF, FH oder Berufsprüfung. <a href="/kurse">Jetzt Kurse entdecken</a>
+    </div>
   `,
 
   'beruflich/bildungssystem/hoehere-berufsbildung-vs-hochschule': `

@@ -28,16 +28,32 @@ export const Home = ({
   // 1. Welche Typen haben überhaupt Kurse?
   const availableTypes = activeType ? [activeType] : []; // Wir zeigen links immer alle an (statisch), aber filtern rechts dynamisch
 
-  // 2. Welche Bereiche (Level 1) im aktiven Typ haben Kurse?
+  // 2. Welche Bereiche (Level 2) im aktiven Typ haben Kurse?
   const getActiveAreas = () => {
-    if (!courses || courses.length === 0) return [];
-    
+    if (!courses || courses.length === 0 || areas.length === 0) return [];
+
     // Filtere Kurse nach dem aktiven Typ
     const relevantCourses = courses.filter(c => c.category_type === activeType);
-    
-    // Hole alle Areas, die vorkommen
-    const areaKeys = [...new Set(relevantCourses.map(c => c.category_area).filter(Boolean))];
-    return areaKeys;
+
+    // Hole alle Area-Slugs, die in Kursen vorkommen
+    const courseSlugs = new Set(relevantCourses.map(c => c.category_area).filter(Boolean));
+
+    // Finde DB-Areas, die zu den Kurs-Slugs passen
+    // Prüfe sowohl exakte Matches als auch partielle Matches (z.B. it_digital -> it_digitales)
+    const matchedAreas = new Set();
+    areas.forEach(area => {
+      for (const courseSlug of courseSlugs) {
+        // Exakter Match oder einer ist Prefix des anderen
+        if (area.slug === courseSlug ||
+            area.slug.startsWith(courseSlug) ||
+            courseSlug.startsWith(area.slug)) {
+          matchedAreas.add(area.slug);
+          break;
+        }
+      }
+    });
+
+    return [...matchedAreas];
   };
 
   // 3. Welche Spezialgebiete (Level 2) im aktiven Bereich haben Kurse?
@@ -103,8 +119,12 @@ export const Home = ({
   };
 
   const getAreaLabel = (type, areaKey) => {
-    // First, try to find area by slug in the areas array (most reliable)
-    const areaBySlug = areas.find(a => a.slug === areaKey);
+    // First, try to find area by exact slug match
+    let areaBySlug = areas.find(a => a.slug === areaKey);
+    // If not found, try partial match (e.g. it_digital -> it_digitales)
+    if (!areaBySlug) {
+      areaBySlug = areas.find(a => a.slug.startsWith(areaKey) || areaKey.startsWith(a.slug));
+    }
     if (areaBySlug) {
       return areaBySlug[`label_${lang}`] || areaBySlug.label_de || areaKey;
     }
