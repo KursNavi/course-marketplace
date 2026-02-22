@@ -33,27 +33,16 @@ export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCat
     };
 
     // Helper to get labels from the new structure (Defaulting to DE for now)
-    const getLabel = (key, level, parentKey = null) => {
+    const getLabel = (key, level) => {
         if (!key) return "";
         if (level === 1) return activeTypes[key]?.de || formatSlugToLabel(String(key));
         if (level === 2) {
-            // Try both numeric and string key lookups in activeTaxonomy
-            const typeData = activeTaxonomy[parentKey];
-            if (typeData) {
-                // Try numeric key first, then string
-                const areaData = typeData[key] || typeData[String(key)] || typeData[Number(key)];
-                if (areaData?.label?.de) {
-                    return areaData.label.de;
-                }
-            }
-
-            // Fallback: Try to find in areas array
-            const keyNum = typeof key === 'string' ? parseInt(key, 10) : key;
-            const area = areas.find(a => a.id === keyNum || a.id === key);
+            // Find area by numeric ID in areas array (most reliable source)
+            const keyNum = typeof key === 'number' ? key : parseInt(key, 10);
+            const area = areas.find(a => a.id === keyNum);
             if (area?.label_de) {
                 return area.label_de;
             }
-
             // Last resort: format as readable label
             return formatSlugToLabel(String(key));
         }
@@ -128,7 +117,7 @@ export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCat
                                 .filter(areaId => (courseCounts.level2[areaId] || courseCounts.level2[String(areaId)] || 0) > 0)
                                 .map(areaId => (
                                 <div key={areaId} onClick={() => { setLvl2(areaId); setLvl3(null); }} className={`p-3 mx-2 my-1 rounded-lg cursor-pointer text-sm flex justify-between items-center transition ${lvl2 === areaId ? 'bg-primaryLight font-bold text-primary' : 'text-gray-700 hover:bg-gray-50'}`}>
-                                    {getLabel(areaId, 2, lvl1)}
+                                    {getLabel(areaId, 2)}
                                     <ChevronRight className={`w-4 h-4 ${lvl2 === areaId ? 'text-primary' : 'text-gray-300'}`} />
                                 </div>
                             ))

@@ -2459,6 +2459,458 @@ export const RATGEBER_CONTENT = {
         <tr><td>Neue Peer-Konstellationen</td><td>Andere Kurse ermöglichen neue Freundschaften</td></tr>
       </tbody>
     </table>
+  `,
+
+  // ============================================
+  // KINDER & JUGEND > FERIENKURSE & CAMPS
+  // ============================================
+  'kinder-jugend/ferienkurse/ferienplanung-betreuung': `
+    <p class="lead">Das Kernproblem: Schweizer Schulferien dauern etwa 13 Wochen/Jahr, Elternferien sind durchschnittlich 4–5 Wochen. Die Lücke: 8–9 Wochen Betreuung ohne Schule.</p>
+
+    <h2>Arten von Ferienbetreuung in der Schweiz</h2>
+
+    <h3>1. Feriencamps und Ferienlager (mehrtägig bis wöchig)</h3>
+    <table>
+      <thead>
+        <tr><th>Anbieter</th><th>Spezialisierung</th><th>Kosten</th><th>Mit KulturLegi</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>friLingue</td><td>Sprachaufenthalte + Erlebnis</td><td>CHF 1'000–3'000+</td><td>30% Rabatt</td></tr>
+        <tr><td>Kovive</td><td>Camps für sozial belastete Kinder</td><td>Kostenlos/subventioniert</td><td>Ja</td></tr>
+        <tr><td>Erlebnisfahrten</td><td>Sport, Abenteuer, Kreativität</td><td>CHF 800–2'000</td><td>Teilweise</td></tr>
+        <tr><td>Lokale Stadt-Camps</td><td>Vielfältige Themen</td><td>CHF 400–800/Woche</td><td>Variabel</td></tr>
+      </tbody>
+    </table>
+
+    <h3>2. Tagesbetreuungs-Programme</h3>
+    <ul>
+      <li><strong>Gemeindliche Ferienbetreuung:</strong> 1–2 Wochen pro Ferienblock, CHF 50–150/Tag</li>
+      <li><strong>Private Anbieter:</strong> CHF 80–200/Tag, mehr Flexibilität</li>
+      <li><strong>Schulergänzende Tagesstrukturen:</strong> Kostenlos oder schulbudgetiert</li>
+    </ul>
+
+    <h3>3. Kombinations-Modell (Realistisch)</h3>
+    <ul>
+      <li><strong>Woche 1–2:</strong> Eltern-Ferienzeit (gemeinsam mit Kind)</li>
+      <li><strong>Woche 3–4:</strong> Feriencamps oder Tagesbetreuung</li>
+      <li><strong>Woche 5–6:</strong> Grosseltern oder Verwandte</li>
+      <li><strong>Woche 7–8:</strong> Zweiter Ferienblock oder gemischte Betreuung</li>
+    </ul>
+
+    <h2>Qualitätskriterien bei Camp-Wahl</h2>
+    <ul>
+      <li>Trainer/-innen-Kind-Verhältnis (1:6–1:8 Standard)</li>
+      <li>Erste-Hilfe Ausbildung der Trainer/-innen</li>
+      <li>Sicherheitsmassnahmen bei Aktivitäten</li>
+      <li>Regelmässige Updates für Eltern</li>
+    </ul>
+
+    <p><strong>Mit KursNavi findest du spielend leicht die passenden Ferienkurse für dein Kind.</strong></p>
+  `,
+
+  'kinder-jugend/ferienkurse/budgetplanung-kinderkurse': `
+    <p class="lead">Bevor du einen Kurs buchst, solltest du wissen: Was kostet das wirklich? Inklusive Transport, Ausrüstung und versteckte Gebühren.</p>
+
+    <h2>Durchschnittliche Kostenspannen (Schweiz 2026)</h2>
+    <table>
+      <thead>
+        <tr><th>Kurstyp</th><th>Typisch/Monat</th><th>Bandbreite</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Sportverein (Fussball, Volleyball)</td><td>CHF 30–60</td><td>CHF 20–100</td></tr>
+        <tr><td>Musik-Gruppenunterricht</td><td>CHF 50–100</td><td>CHF 40–150</td></tr>
+        <tr><td>Einzelinstrumentalunterricht</td><td>CHF 80–150</td><td>CHF 60–250</td></tr>
+        <tr><td>Tanzschule</td><td>CHF 40–80</td><td>CHF 30–120</td></tr>
+        <tr><td>Schwimmen (Gruppe)</td><td>CHF 30–70</td><td>CHF 25–100</td></tr>
+        <tr><td>Spezialisierte Sportkurse</td><td>CHF 100–300</td><td>CHF 50–500</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Die 3-Schichten-Methode</h2>
+    <ul>
+      <li><strong>Schicht 1: Essenzielle Bewegung (CHF 40–100/Monat)</strong> – Minimum: ein Sportangebot für Gesundheit (oft günstig via Verein)</li>
+      <li><strong>Schicht 2: Talentförderung (CHF 80–200/Monat, optional)</strong> – Spezialisierter Unterricht in Musik, Kunst oder Leistungssport</li>
+      <li><strong>Schicht 3: Erweiterung (CHF 50–150/Monat, optional)</strong> – Fremdsprachen, Zirkus, Kreativität</li>
+    </ul>
+
+    <h2>Budgetoptimierungs-Strategien</h2>
+    <ol>
+      <li><strong>Verein vs. Private Schule:</strong> Vereine (CHF 30–80/Monat) vs. Private (höherpreisig)</li>
+      <li><strong>Gruppenkurse vs. Einzelunterricht:</strong> Gruppe günstiger, sozial</li>
+      <li><strong>Jahrzahlung nutzen:</strong> Oft 10–15% Rabatt</li>
+      <li><strong>Gesamtkosten rechnen:</strong> Kosten pro Stunde + Transport = wahre Kosten</li>
+    </ol>
+
+    <p><strong>KursNavi unterstützt dich mit transparenten Preisangaben bei der Kursauswahl.</strong></p>
+  `,
+
+  'kinder-jugend/ferienkurse/kulturlegi-schweiz': `
+    <p class="lead">Die KulturLegi ist ein persönlicher Vorteilspass – kostenlos, landesweit gültig und öffnet Türen zu massiven Rabatten auf Kinderkurse.</p>
+
+    <h2>Was ist die KulturLegi?</h2>
+    <p>Ein Rabattpass für Erwachsene und Kinder ab 5 Jahren (in manchen Kantonen ab 4 Jahren). Berechtigung: Erwachsene und Kinder mit Sozialhilfebezug oder knappem Budget (kantonsabhängig).</p>
+    <p>Die KulturLegi bietet Rabatten auf etwa 3'000 verschiedene Freizeit-, Kultur-, Sport- und Bildungsangebote – bis zu 100% (also kostenlos!).</p>
+
+    <h2>Spezifische Kinderkurs-Rabatte</h2>
+    <table>
+      <thead>
+        <tr><th>Kurstyp</th><th>Rabatt</th><th>Beispiel</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Tanzwerk101 / Klubschule Migros</td><td>40%</td><td>Tanzkurs statt CHF 60 nur CHF 36</td></tr>
+        <tr><td>Sprachkurse Kinder bis 16 J.</td><td>30%</td><td>Englischkurs statt CHF 100 nur CHF 70</td></tr>
+        <tr><td>Lernbegleitungen</td><td>30%</td><td>Nachhilfe statt CHF 50 nur CHF 35</td></tr>
+        <tr><td>Theater/Kinder-Kurse</td><td>30%</td><td>Theaterkurs statt CHF 80 nur CHF 56</td></tr>
+        <tr><td>Sprachaufenthalte</td><td>30%</td><td>Sprachlager mit Rabatt</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Antragsprozess</h2>
+    <ol>
+      <li>Berechtigung prüfen (Sozialdienst)</li>
+      <li>Antrag beim kantonalen Amt einreichen</li>
+      <li>KulturLegi-Karte erhalten</li>
+      <li>Im Kurs vorzeigen = Rabatt automatisch</li>
+    </ol>
+
+    <p><strong>Infos: www.kulturlegi.ch oder lokale Caritas-Büros.</strong></p>
+  `,
+
+  'kinder-jugend/ferienkurse/geschwisterrabatte': `
+    <p class="lead">Hast du mehrere Kinder? Geschwisterrabatte können 20–50% Kostenersparnis bedeuten – aber du musst danach fragen!</p>
+
+    <h2>Typische Rabatthöhen</h2>
+    <table>
+      <thead>
+        <tr><th>Anbietertyp</th><th>Rabatt</th><th>Anmerkungen</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Musikschulen</td><td>10–20% auf 2. Sibling</td><td>Oft nur auf subventionierten Unterricht</td></tr>
+        <tr><td>Sport-Camps</td><td>CHF 30–100 Ermässigung</td><td>Manchmal nur bei simultaner Anmeldung</td></tr>
+        <tr><td>Tanzschulen</td><td>15% auf 2./3. Kind</td><td>Variiert stark</td></tr>
+        <tr><td>Kunstschulen</td><td>10–15%</td><td>Weniger standardisiert</td></tr>
+        <tr><td>Kindertagesstätten</td><td>10–30%</td><td>Je nach Anzahl Kinder</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Wer bekommt den Rabatt?</h2>
+    <p>Das erste angemeldete Kind zahlt Vollpreis. Das zweite und alle weiteren Geschwister erhalten den Rabatt – unabhängig vom Alter, nach Eintrittsdatum.</p>
+
+    <h2>Strategien für Anmeldung</h2>
+    <ol>
+      <li><strong>Immer fragen:</strong> "Bietet ihr Geschwisterrabatte an?" (Viele Anbieter werben nicht aktiv)</li>
+      <li><strong>Kombiniert anmelden:</strong> Mehrere Geschwister gleichzeitig = oft höherer Rabatt</li>
+      <li><strong>Budgetplanung:</strong> Bei 2–3 Kindern ~20–30% Kostenersparnis einrechnen</li>
+    </ol>
+
+    <p><strong>KursNavi hilft dir, Kurse mit Geschwisterrabatten zu finden.</strong></p>
+  `,
+
+  'kinder-jugend/ferienkurse/ausruestung-mieten-kinder': `
+    <p class="lead">Kinderausrüstung ist teuer und dein Kind entwächst sie schnell. Mieten ist oft die bessere Lösung – und spart bis zu 65% der Kosten.</p>
+
+    <h2>Das Wirtschaftliche Modell</h2>
+    <p>Kinder wachsen rapide (entwachsen Ski in 1–2 Saisons), Hobby-Wechsel ist häufig, Probieren ist sinnvoll. Deswegen: Mieten vor Kauf.</p>
+
+    <h2>Kinderski: Das Tausch-Programm</h2>
+    <p><strong>Konzept:</strong> Kaufen mit Rückerstattung</p>
+    <ul>
+      <li>Du kaufst Kinderskis zu Saisonbeginn</li>
+      <li>Ende April: Rückgabe in sauberem, intaktem Zustand</li>
+      <li>Bis zu <strong>50% des Kaufpreises</strong> werden erstattet</li>
+    </ul>
+    <p><strong>Beispiel:</strong> Kaufpreis CHF 300 → Rückerstattung CHF 150 → Effektive Kosten: CHF 150/Saison</p>
+
+    <h2>Kostenersparnis-Übersicht</h2>
+    <table>
+      <thead>
+        <tr><th>Ausrüstung</th><th>Kaufkosten</th><th>Mietkosten/Jahr</th><th>Sparpotenzial</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Kinderski + Equipment</td><td>CHF 400–700</td><td>CHF 150–300</td><td>50–65%</td></tr>
+        <tr><td>Skateboard</td><td>CHF 150–300</td><td>CHF 50–80</td><td>60%</td></tr>
+        <tr><td>Reitausrüstung</td><td>CHF 800–1'500</td><td>CHF 0–200</td><td>80–100%</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Plattformen in der Schweiz</h2>
+    <ul>
+      <li><strong>Och Sport (Zürich):</strong> Ski-Tauschprogramm</li>
+      <li><strong>Leihbar.ch:</strong> Subscription-basierte Leihe</li>
+      <li><strong>Sharely.ch:</strong> Peer-to-Peer Sharing</li>
+      <li><strong>loopi.ch, kiddos.ch:</strong> Kinderartikel-Plattformen</li>
+    </ul>
+
+    <p><strong>Viele Kursanbieter auf KursNavi stellen die nötige Ausrüstung zur Verfügung.</strong></p>
+  `,
+
+  'kinder-jugend/ferienkurse/stiftungen-kantonale-programme': `
+    <p class="lead">Die Schweiz hat eine reiche Stiftungskultur mit über 13'000 Stiftungen – viele davon unterstützen Kinderkurse. Nutze diese Ressourcen!</p>
+
+    <h2>Arten von Förderung für Kinder</h2>
+    <ul>
+      <li><strong>Bildungs- und Talentförderung:</strong> Stipendien für Schule und Kurse, Spezialförderung für Hochbegabte, Sportförderung, Künstlerische Talentförderung</li>
+      <li><strong>Soziale Unterstützung:</strong> Finanzhilfen für Kinder von sozialschwachen Familien, Unterstützung von Kindern mit Behinderung</li>
+      <li><strong>Gesundheit und Wellness:</strong> Ferienaufenthalte für kranke Kinder, Unterstützung bei Therapien</li>
+    </ul>
+
+    <h2>Nationale Beispiele</h2>
+    <table>
+      <thead>
+        <tr><th>Stiftung</th><th>Schwerpunkt</th><th>Unterstützung</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Pro Juventute</td><td>Kinder- und Jugendhilfe</td><td>Bildungsprogramme, Stipendien</td></tr>
+        <tr><td>Kinderschutz Schweiz</td><td>Kinderrechte</td><td>Beratung, Kurse, Prävention</td></tr>
+        <tr><td>Kovive</td><td>Kinderhilfswerk</td><td>Sommerlager, subventionierte Camps</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Antragsprozess</h2>
+    <ol>
+      <li><strong>Identifikation:</strong> Passende Stiftung finden (regional, Fokus)</li>
+      <li><strong>Recherche:</strong> Kriterien, Deadlines, Unterlagen</li>
+      <li><strong>Antrag:</strong> Mit Einkommensnachweis, Schulberichten, Begründung</li>
+      <li><strong>Entscheidung:</strong> 1–3 Monate Bearbeitungszeit</li>
+      <li><strong>Auszahlung:</strong> Direkt zu Kursanbieter oder Erstattung</li>
+    </ol>
+
+    <p><strong>Wichtig: Lange Vorlaufzeit einplanen!</strong></p>
+  `,
+
+  // ============================================
+  // KINDER & JUGEND > JUGEND-SPEZIAL
+  // ============================================
+  'kinder-jugend/jugend-spezial/hausaufgaben-vs-hobby': `
+    <p class="lead">Die mathematische Realität: Schule endet 15:00–16:00 Uhr, Hausaufgaben brauchen 1–2 Stunden, Hobbys 60–90 Minuten, Essen und Familie auch noch. Wie schafft man das alles?</p>
+
+    <h2>Neurowissenschaftliche Perspektive: Was das Gehirn braucht</h2>
+    <ol>
+      <li><strong>Akademische Anforderung:</strong> Hausaufgaben, Konzentration</li>
+      <li><strong>Motorische Herausforderung:</strong> Sport, Bewegung (wichtig für Hirn-Entwicklung!)</li>
+      <li><strong>Soziale Interaktion:</strong> Mit Peers spielen</li>
+      <li><strong>Kreative Aktivität:</strong> Freies Spielen, Fantasie, Hobbys</li>
+      <li><strong>Erholung:</strong> Ruhezeit, Spielzeit</li>
+    </ol>
+
+    <h2>5 Praktische Balance-Strategien</h2>
+
+    <h3>1. Qualitäts-Hausaufgaben-Strategie</h3>
+    <ul>
+      <li><strong>Fokussiertes Arbeiten:</strong> Keine Ablenkung (Handy weg!), 30–45 Min ohne Pause</li>
+      <li><strong>Strukturierter Ort:</strong> Immer gleicher Schreibtisch</li>
+      <li><strong>Zeitfenster:</strong> Z.B. "Immer 16:00–17:00 Uhr" (Routine spart Zeit)</li>
+    </ul>
+
+    <h3>2. Priorisierung der Hobbys</h3>
+    <p><strong>Faustregel:</strong> Zwei Hobbys sind völlig ausreichend. Kinder brauchen auch freie Zeit.</p>
+    <ul>
+      <li><strong>Kern-Hobby:</strong> 1–2x pro Woche, längfristig, fördert Talent</li>
+      <li><strong>Ergänzungs-Hobby:</strong> 1x pro Woche, zum Ausprobieren</li>
+      <li><strong>Maximum:</strong> 2–3 Hobbys pro Kind</li>
+    </ul>
+
+    <h3>3. Das "Freie-Zeit-Garantie"-Modell</h3>
+    <p>Minimum <strong>2–3 Stunden pro Woche</strong> komplett freie Zeit. Diese Zeit ist geschützt wie Schulzeit.</p>
+
+    <p><strong>KursNavi hilft dir, die richtige Balance für dein Kind zu finden.</strong></p>
+  `,
+
+  'kinder-jugend/jugend-spezial/zeitmanagement-eltern': `
+    <p class="lead">Zeitdruck ist ein Normalzustand in Schweizer Familien. Wie koordinierst du Schule, Kurse, Beruf und Haushalt, ohne dabei völlig zu kollabieren?</p>
+
+    <h2>Das Kernproblem: Komplexität der Koordination</h2>
+    <p>Du musst koordinieren: Schulzeiten, Kurszeiten, Berufstätigkeit beider Eltern, Fahrtenwesen, Haushaltsverpflichtungen, Hausaufgaben und Schulvorbereitung.</p>
+
+    <h2>5 Effektive Strategien</h2>
+
+    <h3>1. Prioritäten-Setting (Pareto-Prinzip)</h3>
+    <ul>
+      <li><strong>Must-Have:</strong> Schule, 1 Sport, Hausaufgaben</li>
+      <li><strong>Nice-to-Have:</strong> 2. Hobby, Fremdsprachen (optional)</li>
+      <li><strong>Optional:</strong> Spezialinteressen, Events</li>
+    </ul>
+
+    <h3>2. Die Wochenplan-Methode</h3>
+    <ol>
+      <li>Alle fixen Termine in Kalender (Schule, Arbeit, Kurse)</li>
+      <li>Meal Planning: Wochenmenü reduziert tägliche Entscheidungen</li>
+      <li>Batch-Aktivitäten: Alle Einkäufe an einem Tag</li>
+    </ol>
+
+    <h3>3. Mental Load verteilen</h3>
+    <p><strong>Falsch:</strong> "Könntest du Hausaufgaben kontrollieren?"</p>
+    <p><strong>Richtig:</strong> "Du bist verantwortlich für Hausaufgaben – Zeitpunkt, Kontrolle, Lehrer-Kontakt."</p>
+
+    <h3>4. Puffer einplanen</h3>
+    <ul>
+      <li>Minimum 15 Min. zwischen Kurs-Ende und nächstem Termin</li>
+      <li>Max. 2 Termine pro Wochenabend nach Schulschluss</li>
+      <li>Mindestens 1–2 freie Nachmittage pro Woche</li>
+    </ul>
+
+    <p><strong>KursNavi unterstützt dich mit intelligenten Filtern bei der Kursauswahl.</strong></p>
+  `,
+
+  'kinder-jugend/jugend-spezial/mental-load-buchungssysteme': `
+    <p class="lead">Mental Load ist nicht, wer die Arbeit tut, sondern wer über sie nachdenkt. Mit digitalen Systemen reduzierst du die ständige mentale Belastung.</p>
+
+    <h2>Was ist Mental Load?</h2>
+    <ul>
+      <li>Nicht die physische Arbeit (Fahren, Anmelden)</li>
+      <li>Sondern das <strong>ständige Denken</strong> über die Arbeit</li>
+      <li>Das <strong>Organisieren und Planen</strong> im Hintergrund</li>
+      <li>Das <strong>Gedächtnisleisten</strong> für alle Familien-Details</li>
+    </ul>
+
+    <h2>4 Strategien zur Reduktion</h2>
+
+    <h3>1. Systemische Optimierung</h3>
+    <ul>
+      <li><strong>Ein zentraler Kalender:</strong> Farben für jedes Familienmitglied, sichtbar überall</li>
+      <li><strong>Automatisierte Reminders:</strong> 24h vor Kurs, 1h vor Fahrt</li>
+    </ul>
+
+    <h3>2. Aufgaben-Delegation</h3>
+    <ul>
+      <li><strong>Ab 8 Jahren:</strong> Kind trägt Verantwortung für "Mein Handtuch/meine Tasche"</li>
+      <li><strong>Ab 10 Jahren:</strong> Kind verantwortlich, dass Hausaufgaben gemacht sind</li>
+      <li><strong>Ab 12 Jahren:</strong> Kind verantwortlich für Lehrer-Kommunikation</li>
+    </ul>
+
+    <h3>3. Bewusste Reduktion</h3>
+    <p><strong>Radikale Option:</strong> Maximal 2 Hobbys pro Kind = 60% weniger Mental Load</p>
+
+    <h3>4. Prozess-Automatisierung mit KursNavi</h3>
+    <ul>
+      <li>Automatische Erinnerungen für Kurs-Ende</li>
+      <li>Auto-Renewal Option</li>
+      <li>Kündigungshilfe mit Reminders</li>
+    </ul>
+
+    <p><strong>Mit KursNavi findest du spielend leicht die passenden Kurse für dein Kind.</strong></p>
+  `,
+
+  'kinder-jugend/jugend-spezial/angst-vor-neuem': `
+    <p class="lead">Ängstlichkeit vor neuen Situationen ist völlig normal und entwicklungsgerecht. Mit behutsamer Begleitung – nicht mit Zwang – wächst dein Kind über seine Angst hinaus.</p>
+
+    <h2>Normale Kinderängste</h2>
+    <ul>
+      <li><strong>2–4 Jahre:</strong> Angst vor Kindergarten-Wechsel</li>
+      <li><strong>6–8 Jahre:</strong> Angst vor neuer Klasse, neue Kurse</li>
+      <li><strong>10–12 Jahre:</strong> Angst vor Gruppenaktivitäten</li>
+    </ul>
+
+    <h2>Das Kernprinzip: Sicherheit vor Leistung</h2>
+    <p><strong>Nicht:</strong> "Sei mutig!" <strong>Sondern:</strong> "Ich bin bei dir."</p>
+
+    <h2>Die 5 Effizienzschritt-Methode</h2>
+
+    <h3>1. Behutsame Gewöhnung (4 Wochen-Modell)</h3>
+    <table>
+      <thead>
+        <tr><th>Woche</th><th>Aktion</th><th>Ziel</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>1</td><td>Gemeinsam beim Kurs anschauen</td><td>Raum kennenlernen</td></tr>
+        <tr><td>2</td><td>Zusammen in den Raum gehen</td><td>Nähe und Sicherheit</td></tr>
+        <tr><td>3</td><td>Kind darf mitmachen, Elternteil sichtbar</td><td>Teilnahme mit Support</td></tr>
+        <tr><td>4+</td><td>Elternteil-Präsenz graduell ausschleichen</td><td>Unabhängigkeit</td></tr>
+      </tbody>
+    </table>
+
+    <h3>2. Was funktioniert</h3>
+    <ul>
+      <li>"Ich sehe, dass dir das Angst macht. Das ist OK."</li>
+      <li>"Ich bleibe bei dir. Du bist sicher."</li>
+      <li>"Wir nehmen uns Zeit. Es ist kein Wettkampf."</li>
+    </ul>
+
+    <h2>Wann braucht man professionelle Hilfe?</h2>
+    <p><strong>Potenzielle Angststörung:</strong> Extreme Angst auch nach Monaten, Panik-Symptome, zunehmende Vermeidung → Kinderpsychologe/-in suchen.</p>
+
+    <p><strong>KursNavi hilft dir, Kurse mit Schnupperstunden für ängstliche Kinder zu finden.</strong></p>
+  `,
+
+  'kinder-jugend/jugend-spezial/mobbingpraevention-kurse': `
+    <p class="lead">Kurse sind potenzielle Mobbing-Orte: neue Gruppe, Leistungsfokus, Statusunterschiede. Wie erkennst du, ob ein Kurs eine sichere Umgebung ist?</p>
+
+    <h2>Warum Kurse Mobbing-Risiken sind</h2>
+    <ul>
+      <li><strong>Neue Gruppe:</strong> Kind kennt andere nicht</li>
+      <li><strong>Leistungsfokus:</strong> "Du bist schlecht" wird hämisch gemacht</li>
+      <li><strong>Physischer Kontakt:</strong> Bei Kampfsportarten, Tanzen, Schwimmen</li>
+      <li><strong>Unterschiedliche Körper:</strong> Peinlichkeit bei Umziehsituationen</li>
+    </ul>
+
+    <h2>Was gute Trainer/-innen tun</h2>
+    <ul>
+      <li><strong>Gruppenklima aktiv gestalten:</strong> Wer einsteigt, wird willkommen geheissen</li>
+      <li><strong>Grenzen setzen:</strong> "Wir sind respektvoll zueinander"</li>
+      <li><strong>Beobachten:</strong> Frühe Zeichen von Ausgrenzung erkennen</li>
+      <li><strong>Eingreifen:</strong> Schnell handeln, wenn Mobbing sichtbar wird</li>
+      <li><strong>Eltern informieren:</strong> Transparent kommunizieren bei Problemen</li>
+    </ul>
+
+    <h2>Früherkennung durch Eltern</h2>
+    <p><strong>Warnsignale:</strong></p>
+    <ul>
+      <li>Verhaltensänderung ("Mein Kind will nicht mehr zum Kurs gehen")</li>
+      <li>Emotionale Symptome (Traurigkeit, Angst, Schlafprobleme)</li>
+      <li>Körperliche Symptome (Magenschmerzen, Kopfweh vor Kurs)</li>
+      <li>Soziale Isolation ("Niemand mag mich")</li>
+    </ul>
+
+    <h2>Gespräch mit Kind führen</h2>
+    <p><strong>Nicht-suggestive Fragen:</strong></p>
+    <ul>
+      <li>"Wie war dein Kurs heute?"</li>
+      <li>"Wie kommen du und deine Kurs-Freunde miteinander aus?"</li>
+      <li>"Gibt es jemanden, der/die nicht so nett zu dir ist?"</li>
+    </ul>
+
+    <p><strong>Mit KursNavi-Bewertungen erkennst du, ob Kurse ein sicheres Umfeld bieten.</strong></p>
+  `,
+
+  'kinder-jugend/jugend-spezial/kinderbetreuungskosten-steuer': `
+    <p class="lead">Viele Eltern wissen nicht, dass sie Betreuungskosten von der Steuer abziehen können – aber Hobbys leider nicht. Hier ist die klare Orientierung.</p>
+
+    <h2>Was ist abzugsfähig (Bundesebene)?</h2>
+    <p>Maximal <strong>CHF 25'000 pro Kind pro Jahr</strong> für nachgewiesene Drittbetreuung:</p>
+    <ul>
+      <li>Krippe/Kindertagesstätte</li>
+      <li>Tagesfamilien mit Betreuungsvertrag</li>
+      <li>Schulergänzende Tagesstrukturen</li>
+      <li>Ferienbetreuung (wenn notwendig für Berufstätigkeit)</li>
+    </ul>
+
+    <h2>Was NICHT zählt</h2>
+    <ul>
+      <li>Hobbys und Sportvereine (z.B. Karatekurs)</li>
+      <li>Musikunterricht (in der Regel)</li>
+      <li>Feriencamps mit Unterhaltungsfokus</li>
+    </ul>
+
+    <h2>Kantonsunterschiede</h2>
+    <table>
+      <thead>
+        <tr><th>Kanton</th><th>Maximaler Abzug</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Zürich</td><td>CHF 25'000 (liberal)</td></tr>
+        <tr><td>Schwyz</td><td>CHF 6'000 (restriktiv)</td></tr>
+        <tr><td>Andere Kantone</td><td>CHF 3'000–25'000</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Praktische Schritte</h2>
+    <ol>
+      <li>Sammle Quittungen und Rechnungen (mit Kindername, Dauer, Kosten)</li>
+      <li>Geltend machen in Steuererklärung (Position "Kinderbetreuungskosten")</li>
+      <li>Unsicher? Kontaktiere die kantonale Steuerverwaltung oder einen Steuerberater</li>
+    </ol>
+
+    <p><strong>Wichtig: Lies die Merkblätter deines Kantons!</strong></p>
   `
 };
 
