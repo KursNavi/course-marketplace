@@ -7,15 +7,6 @@ export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCat
     // Load taxonomy from DB (with fallback to constants.js)
     const { taxonomy, types, areas, courseCounts } = useTaxonomy();
 
-    // Debug: Log areas and taxonomy when dropdown opens
-    React.useEffect(() => {
-        if (catMenuOpen) {
-            console.log('[CategoryDropdown] areas from hook:', areas.map(a => ({ id: a.id, slug: a.slug, label_de: a.label_de })));
-            console.log('[CategoryDropdown] activeTaxonomy[1]?._areaIds:', activeTaxonomy[1]?._areaIds);
-            console.log('[CategoryDropdown] activeTaxonomy[1] keys:', activeTaxonomy[1] ? Object.keys(activeTaxonomy[1]) : 'undefined');
-        }
-    }, [catMenuOpen, areas, activeTaxonomy]);
-
     const [lvl1, setLvl1] = useState(rootCategory || null);
     const [lvl2, setLvl2] = useState(null);
     const [lvl3, setLvl3] = useState(null);
@@ -82,11 +73,12 @@ export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCat
 
     // Get Level 1 types - use types array if available (from DB), otherwise filter object keys
     // Only show types that have at least one course
+    // Check both numeric and string keys for courseCounts lookup
     const availableLvl1 = rootCategory
         ? [rootCategory]
         : (types.length > 0
-            ? types.map(t => t.id).filter(id => (courseCounts.level1[id] || 0) > 0)
-            : Object.keys(activeTaxonomy).filter(k => !isNaN(Number(k)) && (courseCounts.level1[k] || 0) > 0));
+            ? types.map(t => t.id).filter(id => (courseCounts.level1[id] || courseCounts.level1[String(id)] || 0) > 0)
+            : Object.keys(activeTaxonomy).filter(k => !isNaN(Number(k)) && (courseCounts.level1[k] || courseCounts.level1[Number(k)] || 0) > 0));
 
     // Get focuses for the selected specialty
     const currentFocuses = (lvl1 && lvl2 && lvl3)
@@ -144,8 +136,9 @@ export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCat
                         {lvl1 ? (
                             // Use _areaIds for ordered numeric IDs, filter out internal keys
                             // Only show areas that have at least one course
+                            // Check both numeric and string keys for courseCounts lookup
                             (activeTaxonomy[lvl1]?._areaIds || Object.keys(activeTaxonomy[lvl1] || {}).filter(k => !k.startsWith('_') && !isNaN(Number(k))))
-                                .filter(areaId => (courseCounts.level2[areaId] || 0) > 0)
+                                .filter(areaId => (courseCounts.level2[areaId] || courseCounts.level2[String(areaId)] || 0) > 0)
                                 .map(areaId => (
                                 <div key={areaId} onClick={() => { setLvl2(areaId); setLvl3(null); }} className={`p-3 mx-2 my-1 rounded-lg cursor-pointer text-sm flex justify-between items-center transition ${lvl2 === areaId ? 'bg-primaryLight font-bold text-primary' : 'text-gray-700 hover:bg-gray-50'}`}>
                                     {getLabel(areaId, 2, lvl1)}
@@ -159,9 +152,10 @@ export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCat
                     <div className={`w-full ${currentFocuses.length > 0 ? 'md:w-1/4' : 'md:w-1/3'} ${currentFocuses.length > 0 ? 'border-r' : ''} overflow-y-auto bg-white`}>
                         {lvl1 && lvl2 ? (
                             // Use specialtyObjects if available (has IDs for filtering), otherwise fall back to specialties (no filtering)
+                            // Check both numeric and string keys for courseCounts lookup
                             activeTaxonomy[lvl1]?.[lvl2]?.specialtyObjects?.length > 0
                                 ? activeTaxonomy[lvl1][lvl2].specialtyObjects
-                                    .filter(spec => (courseCounts.level3[spec.id] || 0) > 0)
+                                    .filter(spec => (courseCounts.level3[spec.id] || courseCounts.level3[String(spec.id)] || 0) > 0)
                                     .map(spec => {
                                         const item = spec.label_de;
                                         const hasFocuses = (activeTaxonomy[lvl1]?.[lvl2]?.specialtyFocuses?.[item] || []).length > 0;

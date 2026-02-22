@@ -560,10 +560,13 @@ export function useTaxonomy() {
             });
 
             // Aggregate up to level2 and level1
+            // IMPORTANT: Object.entries returns string keys, but lookups use numeric keys
+            // Convert string keys to numbers for consistent lookup
             const level2Counts = {};
             const level1Counts = {};
 
-            Object.entries(level3Counts).forEach(([level3Id, count]) => {
+            Object.entries(level3Counts).forEach(([level3IdStr, count]) => {
+                const level3Id = Number(level3IdStr);
                 const level2Id = level3ToLevel2[level3Id];
                 if (level2Id) {
                     level2Counts[level2Id] = (level2Counts[level2Id] || 0) + count;
