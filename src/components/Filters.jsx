@@ -32,27 +32,9 @@ export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCat
             .replace(/ Und /g, ' & ');
     };
 
-    // Helper to get labels from the new structure (Defaulting to DE for now)
-    const getLabel = (key, level) => {
-        if (!key) return "";
-        if (level === 1) return activeTypes[key]?.de || formatSlugToLabel(String(key));
-        if (level === 2) {
-            // Find area by numeric ID in areas array (most reliable source)
-            const keyNum = typeof key === 'number' ? key : parseInt(key, 10);
-            const area = areas.find(a => a.id === keyNum);
-
-            // Debug: Log what we found
-            if (!area) {
-                console.log('[getLabel] Area NOT FOUND for key:', key, 'keyNum:', keyNum, 'areas.length:', areas.length);
-            }
-
-            if (area?.label_de) {
-                return area.label_de;
-            }
-            // Last resort: format as readable label
-            return formatSlugToLabel(String(key));
-        }
-        return key; // Level 3+4 are plain strings
+    // Helper to get type label (Level 1)
+    const getTypeLabel = (typeId) => {
+        return activeTypes[typeId]?.de || formatSlugToLabel(String(typeId));
     };
 
     // Get Level 1 types - use types array if available (from DB), otherwise filter object keys
@@ -108,7 +90,7 @@ export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCat
                     <div className={`w-full ${currentFocuses.length > 0 ? 'md:w-1/4' : 'md:w-1/3'} border-r overflow-y-auto bg-gray-50`}>
                         {availableLvl1.map(cat => (
                             <div key={cat} onClick={() => { setLvl1(cat); setLvl2(null); setLvl3(null); }} className={`p-4 cursor-pointer text-sm flex justify-between items-center transition ${lvl1 === cat ? 'bg-white font-bold text-primary shadow-sm' : 'text-gray-700 hover:bg-gray-100'}`}>
-                                {getLabel(cat, 1)}
+                                {getTypeLabel(cat)}
                                 <ChevronRight className={`w-4 h-4 ${lvl1 === cat ? 'text-primary' : 'text-gray-300'}`} />
                             </div>
                         ))}

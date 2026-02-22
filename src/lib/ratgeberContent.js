@@ -1300,7 +1300,7 @@ export const RATGEBER_CONTENT = {
   // ============================================
   // PRIVAT & HOBBY > HOBBY-INSPIRATION
   // ============================================
-  'privat-hobby/hobby-inspiration/hobby-finden-selbstanalyse': `
+  'privat-hobby/inspiration/hobby-finden-selbstanalyse': `
     <p class="lead">Wer systematisch die vier Säulen Zeit, Energie, soziale Vorlieben und Budget analysiert, findet das richtige Hobby – und senkt Einstiegshürden massiv.</p>
 
     <h2>Warum die richtige Hobby-Wahl so wichtig ist</h2>
@@ -1339,7 +1339,7 @@ export const RATGEBER_CONTENT = {
     <p><strong>Nutze den KursNavi-Selbstanalyse-Check und finde Dein passendes Hobby heute noch.</strong></p>
   `,
 
-  'privat-hobby/hobby-inspiration/hobby-hopping': `
+  'privat-hobby/inspiration/hobby-hopping': `
     <p class="lead">Menschen wissen oft nicht, was sie mögen, bis sie es probieren. Strukturierte Experimentation ist die beste Strategie, echte Leidenschaft zu finden – nicht Vorausplanung.</p>
 
     <h2>Warum ist Neugier dein grösstes Kapital?</h2>
@@ -1372,7 +1372,7 @@ export const RATGEBER_CONTENT = {
     <p><strong>Mit KursNavi entdeckst Du systematisch, welches Hobby wirklich passt.</strong></p>
   `,
 
-  'privat-hobby/hobby-inspiration/micro-hobbies': `
+  'privat-hobby/inspiration/micro-hobbies': `
     <p class="lead">15 Minuten täglich sind oft wirksamer als sporadische mehrstündige Sessions – Micro-Hobbies senken die Eintrittsbarriere und liefern nachweislich Stressabbau und Flow.</p>
 
     <h2>Was genau ist ein Micro-Hobby?</h2>
@@ -1405,7 +1405,7 @@ export const RATGEBER_CONTENT = {
     <p><strong>Starte jetzt mit einem Micro-Hobby auf KursNavi – die perfekte Einstiegshürde.</strong></p>
   `,
 
-  'privat-hobby/hobby-inspiration/workshop-vs-kurs': `
+  'privat-hobby/inspiration/workshop-vs-kurs': `
     <p class="lead">Workshops geben schnelle Impulse und Motivationsspritzen; Kurse bauen systematische Kompetenzen auf. Wer wenig Zeit hat, wählt Workshops – wer Gewöhnung braucht, entscheidet sich für Kurse.</p>
 
     <h2>Worin unterscheiden sich Workshops und Kurse wirklich?</h2>
@@ -1445,7 +1445,7 @@ export const RATGEBER_CONTENT = {
     <p><strong>Auf KursNavi findest Du beide Format-Typen und kannst direkt vergleichen.</strong></p>
   `,
 
-  'privat-hobby/hobby-inspiration/zurueck-zum-kindheitstraum': `
+  'privat-hobby/inspiration/zurueck-zum-kindheitstraum': `
     <p class="lead">Rückkehr zu Lieblingshobbys aus der Kindheit ist nicht Nostalgie – sie ist therapeutisch wirksamer Stressabbau und Reconnection mit Authentizität.</p>
 
     <h2>Warum Kindheitshobbys noch heute nachwirken</h2>
@@ -1478,7 +1478,7 @@ export const RATGEBER_CONTENT = {
     <p><strong>KursNavi hilft Dir, diesen Traum wieder zu entdecken und mit dem richtigen Kurs zu starten.</strong></p>
   `,
 
-  'privat-hobby/hobby-inspiration/flow-zustand-stressabbau': `
+  'privat-hobby/inspiration/flow-zustand-stressabbau': `
     <p class="lead">Flow – der Zustand vollständiger Vertiefung – ist einer der stärksten natürlichen Stressabbau-Mechanismen. Mit dem richtigen Hobby erreichst du diesen Zustand regelmässig.</p>
 
     <h2>Was ist Flow?</h2>
@@ -1514,7 +1514,7 @@ export const RATGEBER_CONTENT = {
   // ============================================
   // PRIVAT & HOBBY > KURSAUSWAHL
   // ============================================
-  'privat-hobby/kursauswahl/kursbeschreibungen-richtig-lesen': `
+  'privat-hobby/qualitaet/kursbeschreibungen-richtig-lesen': `
     <p class="lead">Eine gute Kursbeschreibung sagt dir exakt, was du lernen wirst – und was nicht. Hier lernst du, die richtigen Fragen zu stellen.</p>
 
     <h2>Was sollte eine gute Kursbeschreibung enthalten?</h2>
@@ -1542,7 +1542,7 @@ export const RATGEBER_CONTENT = {
     <p><strong>Auf KursNavi sind Kursbeschreibungen standardisiert und leicht vergleichbar.</strong></p>
   `,
 
-  'privat-hobby/kursauswahl/qualitaetscheck-kursanbieter': `
+  'privat-hobby/qualitaet/qualitaetscheck-kursanbieter': `
     <p class="lead">Ein seriöser Kursanbieter lässt sich in wenigen Minuten erkennen – wenn Du weisst, worauf Du achten musst. Dieser Artikel zeigt Dir die wichtigsten Merkmale.</p>
 
     <h2>Auf welche Merkmale sollte ich achten?</h2>
@@ -1572,7 +1572,7 @@ export const RATGEBER_CONTENT = {
     <p><strong>KursNavi zeigt Dir nur geprüfte Kursanbieter mit transparenten Bewertungen.</strong></p>
   `,
 
-  'privat-hobby/kursauswahl/offline-vs-online': `
+  'privat-hobby/qualitaet/offline-vs-online': `
     <p class="lead">Die Forschung ist eindeutig: Für praktische Fähigkeiten und soziale Integration schlägt Präsenzunterricht Online-Kurse. Aber nicht immer.</p>
 
     <h2>Welches Format passt zu meinem Hobby?</h2>
@@ -1610,7 +1610,7 @@ export const RATGEBER_CONTENT = {
     <p><strong>Filtere auf KursNavi nach Deinem bevorzugten Format.</strong></p>
   `,
 
-  'privat-hobby/kursauswahl/bewertungen-kritisch-lesen': `
+  'privat-hobby/qualitaet/bewertungen-kritisch-lesen': `
     <p class="lead">Nicht jede 5-Sterne-Bewertung ist echt, und nicht jede 1-Stern-Bewertung ist fair. Lerne, Kursbewertungen richtig zu interpretieren.</p>
 
     <h2>Woran erkennst du echte Bewertungen?</h2>
@@ -1635,7 +1635,7 @@ export const RATGEBER_CONTENT = {
     <p><strong>KursNavi-Bewertungen sind verifiziert und moderiert. Du siehst echte Erfahrungen von echten Kursteilnehmern.</strong></p>
   `,
 
-  'privat-hobby/kursauswahl/red-flags-hobbykurse': `
+  'privat-hobby/qualitaet/red-flags-hobbykurse': `
     <p class="lead">Manche Kursanbieter sind unseriös oder halten nicht, was sie versprechen. Diese Warnsignale solltest du kennen.</p>
 
     <h2>Die wichtigsten Red Flags</h2>
@@ -1662,7 +1662,7 @@ export const RATGEBER_CONTENT = {
     <p><strong>Mit KursNavi-Bewertungen erkennst du sofort, ob andere Kursteilnehmer Red Flags erlebt haben. Transparenz schützt dich.</strong></p>
   `,
 
-  'privat-hobby/kursauswahl/storno-ruecktritt-rechte': `
+  'privat-hobby/qualitaet/storno-ruecktritt-rechte': `
     <p class="lead">Was passiert, wenn du einen gebuchten Kurs doch nicht besuchen kannst? Deine Rechte und Pflichten im Überblick.</p>
 
     <h2>Allgemeine Rechtslage in der Schweiz</h2>
@@ -1698,7 +1698,7 @@ export const RATGEBER_CONTENT = {
   // ============================================
   // PRIVAT & HOBBY > KREATIVITÄT & AUSDRUCK (Soziale Hobbys)
   // ============================================
-  'privat-hobby/kreativitaet/neu-in-der-stadt': `
+  'privat-hobby/lebensphasen/neu-in-der-stadt': `
     <p class="lead">In einer neuen Stadt angekommen? Hobbykurse sind der schnellste Weg zu echten Kontakten und Freundschaften mit Gleichgesinnten.</p>
 
     <h2>Wie finde ich den richtigen Kurs zum Anschluss?</h2>
@@ -1724,7 +1724,7 @@ export const RATGEBER_CONTENT = {
     <p><strong>Nutze KursNavi, um schnell Dein neues Hobby und neue Kontakte in Deiner Stadt zu finden.</strong></p>
   `,
 
-  'privat-hobby/kreativitaet/introvertiert-hobbys': `
+  'privat-hobby/lebensphasen/introvertiert-hobbys': `
     <p class="lead">Die besten Hobbys für Introvertierte sind solche, die du allein geniesst – ohne Druck, nebenher zu reden oder deine Energie zu teilen.</p>
 
     <h2>Vorteile von Solo-Hobbys</h2>
@@ -1756,7 +1756,7 @@ export const RATGEBER_CONTENT = {
     <p><strong>Auf KursNavi kannst Du gezielt nach kleineren Gruppen oder Solo-Aktivitäten filtern.</strong></p>
   `,
 
-  'privat-hobby/kreativitaet/kurse-alleine-besuchen': `
+  'privat-hobby/lebensphasen/kurse-alleine-besuchen': `
     <p class="lead">Introversion ist keine Angststörung – und Introvertierte besuchen problemlos Kurse allein. Hier sind bewährte Tipps für weniger Nervosität.</p>
 
     <h2>Was ist der Unterschied?</h2>
@@ -1783,7 +1783,7 @@ export const RATGEBER_CONTENT = {
     <p><strong>KursNavi zeigt Dir kleinere und grossgruppen-freundliche Kurse.</strong></p>
   `,
 
-  'privat-hobby/kreativitaet/hobbykurse-date-idee': `
+  'privat-hobby/lebensphasen/hobbykurse-date-idee': `
     <p class="lead">Ein klassisches Dinner-Date kann langweilig sein. Ein gemeinsamer Kurs? Das schafft gemeinsame Erinnerungen, Teamwork und echte Gespräche.</p>
 
     <h2>Welche Kurse funktionieren für ein Date?</h2>
@@ -1806,7 +1806,7 @@ export const RATGEBER_CONTENT = {
     <p><strong>Schau auf KursNavi nach spannenden Paar-Kursen in Eurer Nähe.</strong></p>
   `,
 
-  'privat-hobby/kreativitaet/hobbys-senioren': `
+  'privat-hobby/lebensphasen/hobbys-senioren': `
     <p class="lead">90 Prozent der Schweizer Senioren haben regelmässige Hobbys – und das aus gutem Grund. Hobbys sind der beste Schutz gegen Einsamkeit und Burnout im Ruhestand.</p>
 
     <h2>Warum sind Hobbys im Alter so wichtig?</h2>
@@ -1842,7 +1842,7 @@ export const RATGEBER_CONTENT = {
     <p><strong>Erkunde auf KursNavi Hobbys speziell für Deine Altersgruppe.</strong></p>
   `,
 
-  'privat-hobby/kreativitaet/hobbys-studierende': `
+  'privat-hobby/lebensphasen/hobbys-studierende': `
     <p class="lead">Studierende haben wenig Geld – aber Zugang zu unschlagbar günstigen Hobbykursen. Hier sind die besten Tipps.</p>
 
     <h2>Warum sind Hobbys im Studium wichtig?</h2>
@@ -1875,7 +1875,7 @@ export const RATGEBER_CONTENT = {
   // ============================================
   // PRIVAT & HOBBY > WOHLBEFINDEN & BUDGET
   // ============================================
-  'privat-hobby/wohlbefinden/guenstige-alternativen': `
+  'privat-hobby/kosten-nutzen/guenstige-alternativen': `
     <p class="lead">Nicht jeder kann sich Premium-Fitnessstudios oder teure Sprachschulen leisten. Hier sind die besten kostenlosen und günstigen Alternativen.</p>
 
     <h2>Die Top-10 der günstigsten Hobbys</h2>
@@ -1907,7 +1907,7 @@ export const RATGEBER_CONTENT = {
     <p><strong>Entdecke auf KursNavi die besten günstigen Kurse in Deiner Region.</strong></p>
   `,
 
-  'privat-hobby/wohlbefinden/ausruestung-mieten': `
+  'privat-hobby/kosten-nutzen/ausruestung-mieten': `
     <p class="lead">Teure Ausrüstung vor dem Kauf zu testen ist klug. Die Sharing Economy macht das erschwinglich.</p>
 
     <h2>Wann mieten, wann kaufen?</h2>
@@ -1940,7 +1940,7 @@ export const RATGEBER_CONTENT = {
     <p><strong>Viele Kursanbieter auf KursNavi stellen die nötige Ausrüstung zur Verfügung.</strong></p>
   `,
 
-  'privat-hobby/wohlbefinden/minimum-viable-gear': `
+  'privat-hobby/kosten-nutzen/minimum-viable-gear': `
     <p class="lead">Viele Menschen kaufen teure Ausrüstung, bevor sie sicher sind, dass ihnen das Hobby gefällt. Der "Minimum Viable Gear"-Ansatz spart Geld und Reue.</p>
 
     <h2>Was ist Minimum Viable Gear?</h2>
@@ -1975,7 +1975,7 @@ export const RATGEBER_CONTENT = {
     <p><strong>KursNavi zeigt Dir Kurse, die ohne viel Equipment auskommen.</strong></p>
   `,
 
-  'privat-hobby/wohlbefinden/50-30-20-freizeitplanung': `
+  'privat-hobby/kosten-nutzen/50-30-20-freizeitplanung': `
     <p class="lead">Die 50-30-20-Regel hilft dir, dein Budget für Freizeit und Hobbys sinnvoll zu planen – ohne schlechtes Gewissen.</p>
 
     <h2>Was ist die 50-30-20-Regel?</h2>
@@ -2009,7 +2009,7 @@ export const RATGEBER_CONTENT = {
     <p><strong>KursNavi hilft dir, ein Hobby-Budget einzuhalten – mit transparenten Preisen und Rabatten.</strong></p>
   `,
 
-  'privat-hobby/wohlbefinden/hobby-vollkosten': `
+  'privat-hobby/kosten-nutzen/hobby-vollkosten': `
     <p class="lead">Die Kursgebühr ist nur ein Teil der Kosten. Lerne, die wahren Vollkosten eines Hobbys zu berechnen.</p>
 
     <h2>Was sind Vollkosten?</h2>
@@ -2041,7 +2041,7 @@ export const RATGEBER_CONTENT = {
     <p><strong>KursNavi zeigt Vollkosten transparent – keine versteckten Gebühren, nur ehrliche Preisangaben.</strong></p>
   `,
 
-  'privat-hobby/wohlbefinden/krankenkassenbeitraege-kurse': `
+  'privat-hobby/kosten-nutzen/krankenkassenbeitraege-kurse': `
     <p class="lead">Wusstest du, dass viele Schweizer Krankenkassen Beiträge an Präventionskurse zahlen? So holst du dir Geld zurück.</p>
 
     <h2>Welche Kurse werden erstattet?</h2>
@@ -2082,7 +2082,7 @@ export const RATGEBER_CONTENT = {
   // ============================================
   // KINDER & JUGEND > ELTERNRATGEBER
   // ============================================
-  'kinder-jugend/elternratgeber/aufsichtspflicht-schweizer-kurse': `
+  'kinder/sicherheit/aufsichtspflicht-schweiz': `
     <p class="lead">Die Aufsichtspflicht in Kursen ist rechtlich klar geregelt: Eltern delegieren die Verantwortung beim Kurs-Check-in an die Institution, und der Kursanbieter trägt die volle Obhutspflicht bis zur Übergabe.</p>
 
     <h2>Wer trägt die Verantwortung während des Kurses?</h2>
@@ -2116,7 +2116,7 @@ export const RATGEBER_CONTENT = {
     </ul>
   `,
 
-  'kinder-jugend/elternratgeber/versicherungsschutz-kindersport': `
+  'kinder/sicherheit/versicherungsschutz-kindersport': `
     <p class="lead">Das Schweizer Versicherungssystem ist komplex: Unfallversicherung (UVG) deckt medizinische Kosten, Betriebshaftpflicht des Anbieters deckt Schäden durch sein Verschulden. Wer zahlt wirklich? Eine klare Übersicht.</p>
 
     <h2>Was ist UVG und wer ist versichert?</h2>
@@ -2149,7 +2149,7 @@ export const RATGEBER_CONTENT = {
     </ul>
   `,
 
-  'kinder-jugend/elternratgeber/kinderschutz-safeguarding': `
+  'kinder/sicherheit/kinderschutz-safeguarding': `
     <p class="lead">Ein gutes Safeguarding-Konzept bedeutet präventive Massnahmen gegen alle Formen der Kindesgefährdung – von Missbrauch über emotionale Vernachlässigung bis zu sicherheitsrelevanten Lücken. Eltern sollten gezielt nachfragen, bevor sie ihr Kind anmelden.</p>
 
     <h2>Was ist Safeguarding?</h2>
@@ -2188,7 +2188,7 @@ export const RATGEBER_CONTENT = {
     </table>
   `,
 
-  'kinder-jugend/elternratgeber/datenschutz-fotos-videos': `
+  'kinder/sicherheit/datenschutz-fotos-videos': `
     <p class="lead">Fotos und Videos sind Personendaten – und das neue Datenschutzgesetz (DSG 2023) stellt klare Regeln auf. Eltern sollten wissen: Sie sind nicht verpflichtet, Fotos zu erlauben. Und Einwilligung ohne schriftliche Zustimmung ist nicht gültig.</p>
 
     <h2>Was sagt das Datenschutzgesetz?</h2>
@@ -2228,7 +2228,7 @@ export const RATGEBER_CONTENT = {
     </ul>
   `,
 
-  'kinder-jugend/elternratgeber/sicherheit-im-kursraum': `
+  'kinder/sicherheit/sicherheit-kursraum-checkliste': `
     <p class="lead">Raumsicherheit ist mehr als nur "Kanten abrunden". Es geht um Brandschutz, Hygiene, altersgerechte Einrichtung und klare Notfall-Strukturen. Diese Checkliste hilft Ihnen, einen Kursraum wirklich zu bewerten.</p>
 
     <h2>Was muss ich beim Brandschutz überprüfen?</h2>
@@ -2274,7 +2274,7 @@ export const RATGEBER_CONTENT = {
     </ul>
   `,
 
-  'kinder-jugend/elternratgeber/erste-hilfe-notfallplaene': `
+  'kinder/sicherheit/erste-hilfe-notfallplaene': `
     <p class="lead">Anbieter MÜSSEN offenlegen, wer im Notfall handelt – und Eltern müssen wissen, wie. Eine transparente Erste-Hilfe-Organisation ist keine Frage des "Vertrauens", sondern der rechtlichen Verpflichtung.</p>
 
     <h2>Was muss ein Kursanbieter zur Transparenz zeigen?</h2>
@@ -2314,7 +2314,7 @@ export const RATGEBER_CONTENT = {
   // ============================================
   // KINDER & JUGEND > ENTWICKLUNGSFÖRDERUNG
   // ============================================
-  'kinder-jugend/entwicklung/interessen-check-kinder': `
+  'kinder/interessen/interessen-check-kind': `
     <p class="lead">Die meisten Eltern kennen ihre Kinder – doch wissen sie wirklich, was sie fasziniert? Ein strukturierter Interessen-Check hilft Dir, authentische Leidenschaften von oberflächlichen Trends zu unterscheiden.</p>
 
     <h2>Welche Methoden gibt es, um Kinder-Interessen zu erfassen?</h2>
@@ -2341,7 +2341,7 @@ export const RATGEBER_CONTENT = {
     <p><strong>Mit KursNavi findest du spielend leicht die passenden Kurse für dein Kind.</strong></p>
   `,
 
-  'kinder-jugend/entwicklung/intrinsische-motivation': `
+  'kinder/interessen/intrinsische-motivation': `
     <p class="lead">Wie verwandelst du ein "Ich muss zum Kurs" in ein "Ich will zum Kurs"? Die Antwort liegt in den vier Säulen der Motivation.</p>
 
     <h2>Das Vier-Säulen-Modell</h2>
@@ -2363,7 +2363,7 @@ export const RATGEBER_CONTENT = {
     <p>Mehr als eine "Nein"-Antwort? Überdenke den Kurs oder bereite ihn besser vor.</p>
   `,
 
-  'kinder-jugend/entwicklung/motivation-ohne-zwang': `
+  'kinder/interessen/motivation-ohne-zwang': `
     <p class="lead">Viele Eltern kämpfen mit einem Dilemma: Wie motiviere ich mein Kind, einen Kurs weiterzumachen, wenn die erste Begeisterung verflogen ist – ohne es zu drangsalieren?</p>
 
     <h2>Intrinsische vs. extrinsische Motivation</h2>
@@ -2386,7 +2386,7 @@ export const RATGEBER_CONTENT = {
     <p><strong>KursNavi unterstützt dich mit intelligenten Filtern und einer übersichtlichen Kursauswahl.</strong></p>
   `,
 
-  'kinder-jugend/entwicklung/schnupperstunden-nutzen': `
+  'kinder/interessen/schnupperstunden-probieren': `
     <p class="lead">Schnupperstunden sind der Schlüssel zu besseren Kursentscheidungen. Sie senken Angst, klären Erwartungen und verhindern, dass dein Kind monatelang einen falschen Kurs besucht.</p>
 
     <h2>Warum Schnupperstunden so wertvoll sind</h2>
@@ -2410,7 +2410,7 @@ export const RATGEBER_CONTENT = {
     <p><strong>Mit KursNavi findest du spielend leicht Kurse mit Schnupperstunden für dein Kind.</strong></p>
   `,
 
-  'kinder-jugend/entwicklung/hobby-wechsel-kinder': `
+  'kinder/interessen/hobby-wechsel-aufgeben': `
     <p class="lead">Hobby-Hopping ist völlig normal – besonders bei Grundschulkindern. Die Frage ist nicht, ob dein Kind das Hobby wechselt, sondern wie du Entscheidungen intelligent triffst.</p>
 
     <h2>Ist Hobby-Wechsel Schaden oder Nutzen?</h2>
@@ -2433,7 +2433,7 @@ export const RATGEBER_CONTENT = {
     <p><strong>KursNavi unterstützt dich mit intelligenten Filtern bei der Kurswahl.</strong></p>
   `,
 
-  'kinder-jugend/entwicklung/peer-group-einfluss': `
+  'kinder/interessen/peer-group-einfluss': `
     <p class="lead">Die Frage, die viele Eltern stellen: Macht mein Kind diesen Kurs wirklich, weil es ihn mag – oder nur, weil Freunde gehen? Peer-Einfluss ist entwicklungsgerecht, aber es braucht Balance.</p>
 
     <h2>Wann ist Peer-Einfluss dominant?</h2>
@@ -2464,7 +2464,7 @@ export const RATGEBER_CONTENT = {
   // ============================================
   // KINDER & JUGEND > FERIENKURSE & CAMPS
   // ============================================
-  'kinder-jugend/ferienkurse/ferienplanung-betreuung': `
+  'kinder/familienalltag/ferienplanung-betreuungsluecken': `
     <p class="lead">Das Kernproblem: Schweizer Schulferien dauern etwa 13 Wochen/Jahr, Elternferien sind durchschnittlich 4–5 Wochen. Die Lücke: 8–9 Wochen Betreuung ohne Schule.</p>
 
     <h2>Arten von Ferienbetreuung in der Schweiz</h2>
@@ -2508,7 +2508,7 @@ export const RATGEBER_CONTENT = {
     <p><strong>Mit KursNavi findest du spielend leicht die passenden Ferienkurse für dein Kind.</strong></p>
   `,
 
-  'kinder-jugend/ferienkurse/budgetplanung-kinderkurse': `
+  'kinder/finanzen-kinder/budgetplanung-kinderkurse': `
     <p class="lead">Bevor du einen Kurs buchst, solltest du wissen: Was kostet das wirklich? Inklusive Transport, Ausrüstung und versteckte Gebühren.</p>
 
     <h2>Durchschnittliche Kostenspannen (Schweiz 2026)</h2>
@@ -2544,7 +2544,7 @@ export const RATGEBER_CONTENT = {
     <p><strong>KursNavi unterstützt dich mit transparenten Preisangaben bei der Kursauswahl.</strong></p>
   `,
 
-  'kinder-jugend/ferienkurse/kulturlegi-schweiz': `
+  'kinder/finanzen-kinder/kulturlegi-schweiz': `
     <p class="lead">Die KulturLegi ist ein persönlicher Vorteilspass – kostenlos, landesweit gültig und öffnet Türen zu massiven Rabatten auf Kinderkurse.</p>
 
     <h2>Was ist die KulturLegi?</h2>
@@ -2576,7 +2576,7 @@ export const RATGEBER_CONTENT = {
     <p><strong>Infos: www.kulturlegi.ch oder lokale Caritas-Büros.</strong></p>
   `,
 
-  'kinder-jugend/ferienkurse/geschwisterrabatte': `
+  'kinder/finanzen-kinder/geschwisterrabatte-paketpreise': `
     <p class="lead">Hast du mehrere Kinder? Geschwisterrabatte können 20–50% Kostenersparnis bedeuten – aber du musst danach fragen!</p>
 
     <h2>Typische Rabatthöhen</h2>
@@ -2606,7 +2606,7 @@ export const RATGEBER_CONTENT = {
     <p><strong>KursNavi hilft dir, Kurse mit Geschwisterrabatten zu finden.</strong></p>
   `,
 
-  'kinder-jugend/ferienkurse/ausruestung-mieten-kinder': `
+  'kinder/finanzen-kinder/ausruestung-mieten-kinder': `
     <p class="lead">Kinderausrüstung ist teuer und dein Kind entwächst sie schnell. Mieten ist oft die bessere Lösung – und spart bis zu 65% der Kosten.</p>
 
     <h2>Das Wirtschaftliche Modell</h2>
@@ -2644,7 +2644,7 @@ export const RATGEBER_CONTENT = {
     <p><strong>Viele Kursanbieter auf KursNavi stellen die nötige Ausrüstung zur Verfügung.</strong></p>
   `,
 
-  'kinder-jugend/ferienkurse/stiftungen-kantonale-programme': `
+  'kinder/finanzen-kinder/stiftungen-kantonale-programme': `
     <p class="lead">Die Schweiz hat eine reiche Stiftungskultur mit über 13'000 Stiftungen – viele davon unterstützen Kinderkurse. Nutze diese Ressourcen!</p>
 
     <h2>Arten von Förderung für Kinder</h2>
@@ -2681,7 +2681,7 @@ export const RATGEBER_CONTENT = {
   // ============================================
   // KINDER & JUGEND > JUGEND-SPEZIAL
   // ============================================
-  'kinder-jugend/jugend-spezial/hausaufgaben-vs-hobby': `
+  'kinder/familienalltag/hausaufgaben-vs-hobby': `
     <p class="lead">Die mathematische Realität: Schule endet 15:00–16:00 Uhr, Hausaufgaben brauchen 1–2 Stunden, Hobbys 60–90 Minuten, Essen und Familie auch noch. Wie schafft man das alles?</p>
 
     <h2>Neurowissenschaftliche Perspektive: Was das Gehirn braucht</h2>
@@ -2716,7 +2716,7 @@ export const RATGEBER_CONTENT = {
     <p><strong>KursNavi hilft dir, die richtige Balance für dein Kind zu finden.</strong></p>
   `,
 
-  'kinder-jugend/jugend-spezial/zeitmanagement-eltern': `
+  'kinder/familienalltag/zeitmanagement-eltern': `
     <p class="lead">Zeitdruck ist ein Normalzustand in Schweizer Familien. Wie koordinierst du Schule, Kurse, Beruf und Haushalt, ohne dabei völlig zu kollabieren?</p>
 
     <h2>Das Kernproblem: Komplexität der Koordination</h2>
@@ -2752,7 +2752,7 @@ export const RATGEBER_CONTENT = {
     <p><strong>KursNavi unterstützt dich mit intelligenten Filtern bei der Kursauswahl.</strong></p>
   `,
 
-  'kinder-jugend/jugend-spezial/mental-load-buchungssysteme': `
+  'kinder/familienalltag/mental-load-buchungssysteme': `
     <p class="lead">Mental Load ist nicht, wer die Arbeit tut, sondern wer über sie nachdenkt. Mit digitalen Systemen reduzierst du die ständige mentale Belastung.</p>
 
     <h2>Was ist Mental Load?</h2>
@@ -2791,7 +2791,7 @@ export const RATGEBER_CONTENT = {
     <p><strong>Mit KursNavi findest du spielend leicht die passenden Kurse für dein Kind.</strong></p>
   `,
 
-  'kinder-jugend/jugend-spezial/angst-vor-neuem': `
+  'kinder/familienalltag/angst-vor-neuem': `
     <p class="lead">Ängstlichkeit vor neuen Situationen ist völlig normal und entwicklungsgerecht. Mit behutsamer Begleitung – nicht mit Zwang – wächst dein Kind über seine Angst hinaus.</p>
 
     <h2>Normale Kinderängste</h2>
@@ -2832,7 +2832,7 @@ export const RATGEBER_CONTENT = {
     <p><strong>KursNavi hilft dir, Kurse mit Schnupperstunden für ängstliche Kinder zu finden.</strong></p>
   `,
 
-  'kinder-jugend/jugend-spezial/mobbingpraevention-kurse': `
+  'kinder/familienalltag/mobbingpraevention-kurse': `
     <p class="lead">Kurse sind potenzielle Mobbing-Orte: neue Gruppe, Leistungsfokus, Statusunterschiede. Wie erkennst du, ob ein Kurs eine sichere Umgebung ist?</p>
 
     <h2>Warum Kurse Mobbing-Risiken sind</h2>
@@ -2872,7 +2872,7 @@ export const RATGEBER_CONTENT = {
     <p><strong>Mit KursNavi-Bewertungen erkennst du, ob Kurse ein sicheres Umfeld bieten.</strong></p>
   `,
 
-  'kinder-jugend/jugend-spezial/kinderbetreuungskosten-steuer': `
+  'kinder/finanzen-kinder/steuertipp-kinderbetreuungskosten': `
     <p class="lead">Viele Eltern wissen nicht, dass sie Betreuungskosten von der Steuer abziehen können – aber Hobbys leider nicht. Hier ist die klare Orientierung.</p>
 
     <h2>Was ist abzugsfähig (Bundesebene)?</h2>
