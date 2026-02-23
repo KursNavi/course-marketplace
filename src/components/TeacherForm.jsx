@@ -636,52 +636,17 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
             setCourseStatus(initialData.status || 'published');
 
 
-            // Load private course data (address for legacy fallback)
-            // IMPORTANT: Check isMounted AND that user hasn't made changes before any state updates
-            (async () => {
-                try {
-                    const { data: priv, error: privErr } = await supabase
-                        .from('course_private')
-                        .select('address')
-                        .eq('course_id', initialData.id)
-                        .maybeSingle();
-
-                    // Check if component is still mounted AND user hasn't made changes yet
-                    // If user has edited (isDirty), don't overwrite their changes with async data
-                    if (!isMounted || formDataRef.current?.isDirty) return;
-
-                    if (privErr) console.warn("course_private load failed:", privErr.message);
-
-                    // Legacy fallback (falls es keinen course_events-Block gibt, aber private address existiert)
-                    if ((!initialData.course_events || initialData.course_events.length === 0) && initialData.start_date && priv?.address) {
-                        const loc = priv.address || '';
-                        const lastComma = loc.lastIndexOf(',');
-                        let street = '', city = loc;
-                        if (lastComma !== -1) {
-                            street = loc.substring(0, lastComma).trim();
-                            city = loc.substring(lastComma + 1).trim();
-                        }
-                        if (isMounted && !formDataRef.current?.isDirty) {
-                            setEvents([{ start_date: initialData.start_date, street, city, max_participants: 0, canton: initialData.canton || '', schedule_description: '' }]);
-                        }
-                    }
-
-                    // Fallback Cantons (nur falls kein course_events vorhanden)
-                    if (isMounted && !formDataRef.current?.isDirty && (!initialData.course_events || initialData.course_events.length === 0)) {
-                        if (priv?.address) {
-                            const parts = priv.address.split(',').map(s => s.trim()).filter(Boolean);
-                            const allAreCantons = parts.length > 0 && parts.every(p => SWISS_CANTONS.includes(p));
-                            if (allAreCantons) setFallbackCantons(parts);
-                            else if (initialData.canton) setFallbackCantons([initialData.canton]);
-                        } else if (initialData.canton) {
-                            // Kein course_private vorhanden, aber canton in courses gesetzt
-                            setFallbackCantons([initialData.canton]);
-                        }
-                    }
-                } catch (err) {
-                    console.warn("course_private load error:", err);
+            // Legacy fallback: if no course_events but has address, use address for fallback cantons
+            if ((!initialData.course_events || initialData.course_events.length === 0)) {
+                if (initialData.address) {
+                    const parts = initialData.address.split(',').map(s => s.trim()).filter(Boolean);
+                    const allAreCantons = parts.length > 0 && parts.every(p => SWISS_CANTONS.includes(p));
+                    if (allAreCantons) setFallbackCantons(parts);
+                    else if (initialData.canton) setFallbackCantons([initialData.canton]);
+                } else if (initialData.canton) {
+                    setFallbackCantons([initialData.canton]);
                 }
-            })();
+            }
 
             
             // Reconstruct Events & Address Split
@@ -1169,9 +1134,8 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
             }
         }
 
-        // 4. Determine Main Location/Date (public label) + private address
+        // 4. Determine Main Location/Date (public label)
 let publicLocationLabel = "";
-let privateAddress = "";
 let mainCanton = "";
 let mainDate = null;
 
@@ -1181,9 +1145,6 @@ const firstEvent = sortedEvents[0];
 if (firstEvent) {
     mainDate = firstEvent.start_date;
     mainCanton = firstEvent.canton || (fallbackCantons.length > 0 ? fallbackCantons[0] : '');
-
-    // privateAddress: full location string (street + city), if available
-    privateAddress = firstEvent.location || "";
 
     // publicLocationLabel: show only city (no street) for platform bookings
     if (bookingType === 'platform') {
@@ -1196,7 +1157,6 @@ if (firstEvent) {
 if (!publicLocationLabel && fallbackCantons.length > 0) {
     mainCanton = mainCanton || fallbackCantons[0];
     publicLocationLabel = fallbackCantons.join(', ');
-    if (!privateAddress) privateAddress = fallbackCantons.join(', ');
 }
 
 
@@ -1269,24 +1229,6 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
             return; 
         } 
 
-        // 6b. Save private fields to course_private
-        if (activeCourseId) {
-            const privatePayload = {
-                course_id: activeCourseId,
-                address: privateAddress || null
-            };
-
-            const { error: privErr } = await supabase
-                .from('course_private')
-                .upsert(privatePayload);
-
-            if (privErr) {
-                console.error(privErr);
-                showNotification("Fehler (private Daten): " + privErr.message);
-                setIsSubmitting(false);
-                return;
-            }
-        }
 
 
         // 7. Update Events Table
@@ -1307,38 +1249,8 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
             }
         }
 
-        // 8. Update course_categories junction tables (for Zweitkategorien support)
+        // 8. Update course_category_assignments junction table (for Zweitkategorien support)
         if (activeCourseId && cleanedCategories && cleanedCategories.length > 0) {
-            // 8a. Legacy junction table (course_categories) - keep for backward compatibility
-            await supabase.from('course_categories').delete().eq('course_id', activeCourseId);
-
-            const legacyCategoriesToInsert = cleanedCategories.map((cat, idx) => {
-                const catIds = getCategoryIds(cat.type, cat.area, cat.specialty, cat.focus);
-                return {
-                    course_id: activeCourseId,
-                    // Legacy text fields
-                    category_type: cat.type,
-                    category_area: cat.area,
-                    category_specialty: cat.specialty,
-                    category_focus: cat.focus || null,
-                    // V2 numeric ID fields
-                    type_id: catIds.type_id,
-                    area_id: catIds.area_id,
-                    specialty_id: catIds.specialty_id,
-                    focus_id: catIds.focus_id,
-                    is_primary: idx === 0
-                };
-            });
-
-            const { error: legacyCatErr } = await supabase
-                .from('course_categories')
-                .insert(legacyCategoriesToInsert);
-
-            if (legacyCatErr) {
-                console.error('Error saving legacy course categories:', legacyCatErr);
-            }
-
-            // 8b. New consolidated junction table (course_category_assignments)
             await supabase.from('course_category_assignments').delete().eq('course_id', activeCourseId);
 
             // Filter categories that have valid level3_id
@@ -1355,12 +1267,12 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                 .filter(cat => cat.level3_id != null);
 
             if (consolidatedCategories.length > 0) {
-                const { error: newCatErr } = await supabase
+                const { error: catErr } = await supabase
                     .from('course_category_assignments')
                     .insert(consolidatedCategories);
 
-                if (newCatErr) {
-                    console.error('Error saving course category assignments:', newCatErr);
+                if (catErr) {
+                    console.error('Error saving course category assignments:', catErr);
                 }
             }
         }
