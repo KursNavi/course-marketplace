@@ -73,7 +73,8 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
 
   // Delete account state
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deleteError, setDeleteError] = useState('');
   const [deleting, setDeleting] = useState(false);
 
   // Derived states
@@ -482,10 +483,23 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
 
   // Delete account handler
   const handleDeleteAccount = async () => {
-    if (deleteConfirmText !== 'LÖSCHEN') return;
+    if (!deletePassword) return;
 
     try {
       setDeleting(true);
+      setDeleteError('');
+
+      // Verify password by attempting to sign in
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: deletePassword
+      });
+
+      if (signInError) {
+        setDeleteError('Falsches Passwort. Bitte versuchen Sie es erneut.');
+        setDeleting(false);
+        return;
+      }
 
       // Call the delete account RPC function
       const { error: rpcError } = await supabase.rpc('delete_provider_account', {
@@ -1230,16 +1244,24 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
 
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Geben Sie <strong>LÖSCHEN</strong> ein, um zu bestätigen:
+                Geben Sie Ihr Passwort ein, um zu bestätigen:
               </label>
               <input
-                type="text"
-                value={deleteConfirmText}
-                onChange={(e) => setDeleteConfirmText(e.target.value)}
-                placeholder="LÖSCHEN"
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-400 focus:border-red-400 outline-none"
-                autoComplete="off"
+                type="password"
+                value={deletePassword}
+                onChange={(e) => {
+                  setDeletePassword(e.target.value);
+                  setDeleteError('');
+                }}
+                placeholder="Ihr Passwort"
+                className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-red-400 focus:border-red-400 outline-none ${
+                  deleteError ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                }`}
+                autoComplete="current-password"
               />
+              {deleteError && (
+                <p className="text-sm text-red-600 mt-2">{deleteError}</p>
+              )}
             </div>
 
             <div className="flex gap-3">
@@ -1247,7 +1269,8 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
                 type="button"
                 onClick={() => {
                   setShowDeleteModal(false);
-                  setDeleteConfirmText('');
+                  setDeletePassword('');
+                  setDeleteError('');
                 }}
                 disabled={deleting}
                 className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors disabled:opacity-50"
@@ -1257,7 +1280,7 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
               <button
                 type="button"
                 onClick={handleDeleteAccount}
-                disabled={deleteConfirmText !== 'LÖSCHEN' || deleting}
+                disabled={!deletePassword || deleting}
                 className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
               >
                 {deleting ? (
