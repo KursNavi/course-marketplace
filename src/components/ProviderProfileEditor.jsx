@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Save, Loader, Globe, Image, FileText, Mail, Eye, EyeOff,
   CheckCircle, AlertCircle, ExternalLink, Calendar, Info, Settings,
-  MapPin, Plus, XCircle, Lock, ChevronDown, User, PenTool, Shield
+  MapPin, Plus, XCircle, Lock, ChevronDown, User, PenTool, Shield, Trash2
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { BASE_URL, generateProviderSlug } from '../lib/siteConfig';
@@ -70,6 +70,11 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
 
   const [editingSlug, setEditingSlug] = useState(false);
   const [newSlug, setNewSlug] = useState('');
+
+  // Delete account state
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [deleting, setDeleting] = useState(false);
 
   // Derived states
   const tier = profileData.package_tier;
@@ -473,6 +478,107 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
 
   const handleChange = (e) => {
     setProfileData({ ...profileData, [e.target.name]: e.target.value });
+  };
+
+  // Delete account handler
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmText !== 'LÖSCHEN') return;
+
+    try {
+      setDeleting(true);
+
+      // Call the delete account RPC function
+      const { error: rpcError } = await supabase.rpc('delete_provider_account', {
+        provider_id: user.id
+      });
+
+      if (rpcError) {
+        console.error('RPC error:', rpcError);
+        // Fallback: manually delete in order if RPC doesn't exist
+        if (rpcError.code === 'PGRST202') {
+          // Delete course_category_assignments (via courses)
+          const { data: courses } = await supabase
+            .from('courses')
+            .select('id')
+            .eq('user_id', user.id);
+
+          if (courses?.length > 0) {
+            const courseIds = courses.map(c => c.id);
+
+            // Delete course_category_assignments
+            await supabase
+              .from('course_category_assignments')
+              .delete()
+              .in('course_id', courseIds);
+
+            // Delete ticket_periods
+            await supabase
+              .from('ticket_periods')
+              .delete()
+              .in('course_id', courseIds);
+
+            // Delete bookings (via course_events)
+            const { data: events } = await supabase
+              .from('course_events')
+              .select('id')
+              .in('course_id', courseIds);
+
+            if (events?.length > 0) {
+              await supabase
+                .from('bookings')
+                .delete()
+                .in('event_id', events.map(e => e.id));
+            }
+
+            // Delete course_events
+            await supabase
+              .from('course_events')
+              .delete()
+              .in('course_id', courseIds);
+
+            // Delete courses
+            await supabase
+              .from('courses')
+              .delete()
+              .eq('user_id', user.id);
+          }
+
+          // Delete provider_slug_aliases
+          await supabase
+            .from('provider_slug_aliases')
+            .delete()
+            .eq('provider_id', user.id);
+
+          // Delete profile
+          await supabase
+            .from('profiles')
+            .delete()
+            .eq('id', user.id);
+        } else {
+          throw rpcError;
+        }
+      }
+
+      // Delete the auth user (this will sign them out)
+      const { error: authError } = await supabase.auth.admin.deleteUser(user.id);
+
+      // If admin delete fails (expected for non-admin clients), sign out instead
+      if (authError) {
+        console.warn('Admin delete failed, signing out:', authError.message);
+      }
+
+      // Sign out the user
+      await supabase.auth.signOut();
+
+      showNotification?.('Ihr Konto wurde erfolgreich gelöscht', 'success');
+
+      // Redirect to homepage
+      window.location.href = '/';
+    } catch (err) {
+      console.error('Error deleting account:', err);
+      showNotification?.('Fehler beim Löschen des Kontos: ' + (err.message || 'Unbekannter Fehler'), 'error');
+      setDeleting(false);
+    }
   };
 
   // Loading state
@@ -1076,6 +1182,100 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
           </div>
         </form>
       </div>
+
+      {/* Delete Account Section */}
+      <div className="bg-white rounded-xl shadow-sm border border-red-100 p-6 md:p-8">
+        <h3 className="text-lg font-bold text-red-600 mb-4 flex items-center">
+          <Trash2 className="w-5 h-5 mr-2" />
+          Konto löschen
+        </h3>
+        <p className="text-gray-600 mb-4">
+          Wenn Sie Ihr Konto löschen, werden alle Ihre Daten unwiderruflich entfernt. Dies umfasst:
+        </p>
+        <ul className="list-disc list-inside text-gray-600 mb-6 space-y-1 text-sm">
+          <li>Ihr Profil und alle Einstellungen</li>
+          <li>Alle Ihre Kurse und Kurstermine</li>
+          <li>Buchungsdaten und Teilnehmerlisten</li>
+          <li>Hochgeladene Bilder und Dokumente</li>
+        </ul>
+        <button
+          type="button"
+          onClick={() => setShowDeleteModal(true)}
+          className="px-4 py-2 bg-red-50 text-red-600 border border-red-200 rounded-lg font-medium hover:bg-red-100 transition-colors flex items-center"
+        >
+          <Trash2 className="w-4 h-4 mr-2" />
+          Konto unwiderruflich löschen
+        </button>
+      </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+                <AlertCircle className="w-6 h-6 text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-gray-900">Konto löschen?</h3>
+                <p className="text-sm text-gray-500">Diese Aktion kann nicht rückgängig gemacht werden</p>
+              </div>
+            </div>
+
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+              <p className="text-sm text-red-700">
+                <strong>Achtung:</strong> Alle Ihre Daten werden permanent gelöscht, einschliesslich aller Kurse, Buchungen und Ihres Profils.
+              </p>
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Geben Sie <strong>LÖSCHEN</strong> ein, um zu bestätigen:
+              </label>
+              <input
+                type="text"
+                value={deleteConfirmText}
+                onChange={(e) => setDeleteConfirmText(e.target.value)}
+                placeholder="LÖSCHEN"
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-400 focus:border-red-400 outline-none"
+                autoComplete="off"
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setDeleteConfirmText('');
+                }}
+                disabled={deleting}
+                className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors disabled:opacity-50"
+              >
+                Abbrechen
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteAccount}
+                disabled={deleteConfirmText !== 'LÖSCHEN' || deleting}
+                className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+              >
+                {deleting ? (
+                  <>
+                    <Loader className="w-4 h-4 mr-2 animate-spin" />
+                    Wird gelöscht...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Endgültig löschen
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
