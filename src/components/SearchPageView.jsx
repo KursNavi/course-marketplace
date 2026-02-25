@@ -507,7 +507,7 @@ const SearchPageView = ({
                           e.preventDefault();
                           window.history.pushState({ view: 'detail', courseId: course.id }, '', coursePath);
                       }} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer group" style={{textDecoration: 'none', color: 'inherit'}}>
-                        <div className="relative h-48 overflow-hidden">
+                        <div className="relative aspect-video overflow-hidden">
                             <img
                                 src={course.image_url || fallbackImage}
                                 alt={`${course.title} - Kurs in ${course.canton}`}

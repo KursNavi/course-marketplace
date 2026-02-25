@@ -574,7 +574,7 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-8">
-                <div className="w-full h-80 bg-gray-100 rounded-2xl overflow-hidden shadow-lg relative group">
+                <div className="w-full aspect-video bg-gray-100 rounded-2xl overflow-hidden shadow-lg relative group">
                     <img
                         src={course.image_url || fallbackImage}
                         alt={`${course.title} in ${course.canton || 'Schweiz'}`}
@@ -800,7 +800,7 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
                               className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md cursor-pointer group transition-all"
                               style={{textDecoration: 'none', color: 'inherit'}}
                          >
-                            <div className="h-40 overflow-hidden relative">
+                            <div className="aspect-video overflow-hidden relative">
                                 <img
                                     src={rel.image_url || fallbackImage}
                                     alt={`${rel.title} - Kurs in ${rel.canton}`}

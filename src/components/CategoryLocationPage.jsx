@@ -322,7 +322,7 @@ export default function CategoryLocationPage({
                                         className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-all cursor-pointer group"
                                         style={{textDecoration: 'none', color: 'inherit'}}
                                     >
-                                        <div className="h-48 overflow-hidden relative">
+                                        <div className="aspect-video overflow-hidden relative">
                                             <img
                                                 src={course.image_url || fallbackImage}
                                                 alt={`${course.title} - ${topicLabel} Kurs in ${location}`}
