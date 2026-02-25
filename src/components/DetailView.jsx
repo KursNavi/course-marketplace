@@ -574,16 +574,6 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-8">
-                <div className="w-full aspect-video bg-gray-100 rounded-2xl overflow-hidden shadow-lg relative group">
-                    <img
-                        src={course.image_url || fallbackImage}
-                        alt={`${course.title} in ${course.canton || 'Schweiz'}`}
-                        loading="eager"
-                        decoding="async"
-                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
-                    />
-                </div>
-
                 <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                         <h1 className="text-3xl font-bold font-heading text-dark">{course.title}</h1>
@@ -616,7 +606,16 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
                 </div>
             </div>
 
-            <div className="lg:col-span-1">
+            <div className="lg:col-span-1 space-y-6 order-first lg:order-none">
+                <div className="w-full aspect-video bg-gray-100 rounded-2xl overflow-hidden shadow-lg relative group">
+                    <img
+                        src={course.image_url || fallbackImage}
+                        alt={`${course.title} in ${course.canton || 'Schweiz'}`}
+                        loading="eager"
+                        decoding="async"
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    />
+                </div>
                 <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100 sticky top-24">
                     <div className="text-3xl font-bold text-primary font-heading mb-1">{getPriceLabel(course)}</div>
                     <p className="text-gray-400 text-xs mb-4">
