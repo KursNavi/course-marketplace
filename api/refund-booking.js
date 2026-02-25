@@ -172,7 +172,7 @@ export default async function handler(req, res) {
     if (studentEmail) {
       try {
         await resend.emails.send({
-          from: 'KursNavi <onboarding@resend.dev>',
+          from: 'KursNavi <info@kursnavi.ch>',
           to: studentEmail,
           subject: `${sTexts.student_subject}${courseTitle}`,
           html: generateEmailHtml(
@@ -200,7 +200,7 @@ export default async function handler(req, res) {
 
         try {
           await resend.emails.send({
-            from: 'KursNavi <onboarding@resend.dev>',
+            from: 'KursNavi <info@kursnavi.ch>',
             to: teacherProfile.email,
             subject: `${tTexts.teacher_subject}${courseTitle}`,
             html: generateEmailHtml(

@@ -291,7 +291,7 @@ export default async function handler(req, res) {
 
           try {
             await resend.emails.send({
-              from: 'KursNavi <onboarding@resend.dev>',
+              from: 'KursNavi <info@kursnavi.ch>',
               to: customerEmail,
               subject: `${sTexts.overbooking_subject}${courseTitle}`,
               html: generateEmailHtml(
@@ -365,7 +365,7 @@ export default async function handler(req, res) {
           : sTexts.student_body(courseTitle, courseDate);
 
         await resend.emails.send({
-          from: 'KursNavi <onboarding@resend.dev>',
+          from: 'KursNavi <info@kursnavi.ch>',
           to: customerEmail,
           subject: `${sTexts.student_subject}${courseTitle}`,
           html: generateEmailHtml(sTexts.student_title, emailBody, sTexts.cta_view),
@@ -394,7 +394,7 @@ export default async function handler(req, res) {
             : tTexts.teacher_body(customerEmail, courseTitle, courseDate);
 
           await resend.emails.send({
-            from: 'KursNavi <onboarding@resend.dev>',
+            from: 'KursNavi <info@kursnavi.ch>',
             to: teacherEmail,
             subject: `${tTexts.teacher_subject}${courseTitle}`,
             html: generateEmailHtml(tTexts.teacher_title, teacherBody, tTexts.cta_view)
@@ -455,7 +455,7 @@ export default async function handler(req, res) {
         // 3. Send Confirmation Email to User
         try {
             await resend.emails.send({
-                from: 'KursNavi <onboarding@resend.dev>',
+                from: 'KursNavi <info@kursnavi.ch>',
                 to: customerEmail,
                 subject: 'Kurserfassungs-Service bestätigt',
                 html: generateEmailHtml(
@@ -473,7 +473,7 @@ export default async function handler(req, res) {
         // 4. Notify Admin
         try {
             await resend.emails.send({
-                from: 'KursNavi <onboarding@resend.dev>',
+                from: 'KursNavi <info@kursnavi.ch>',
                 to: 'info@kursnavi.ch',
                 subject: `🎯 Neuer Erfassungsservice: ${courseCount} Kurse`,
                 html: generateEmailHtml(

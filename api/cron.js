@@ -136,7 +136,7 @@ export default async function handler(req, res) {
         // Send email
         try {
           await resend.emails.send({
-            from: 'KursNavi <onboarding@resend.dev>',
+            from: 'KursNavi <info@kursnavi.ch>',
             to: teacherEmail,
             bcc: ADMIN_EMAIL,
             subject: `${t.subject}${course.title} (Flexible Buchungen)`,
@@ -229,7 +229,7 @@ export default async function handler(req, res) {
         // Send email
         try {
           await resend.emails.send({
-            from: 'KursNavi <onboarding@resend.dev>',
+            from: 'KursNavi <info@kursnavi.ch>',
             to: teacherEmail,
             bcc: ADMIN_EMAIL,
             subject: `${t.subject}${course.title}`,
@@ -288,7 +288,7 @@ export default async function handler(req, res) {
 
         try {
           await resend.emails.send({
-            from: 'KursNavi <onboarding@resend.dev>',
+            from: 'KursNavi <info@kursnavi.ch>',
             to: teacherEmail,
             bcc: ADMIN_EMAIL,
             subject: `${t.subject}${course.title}`,
