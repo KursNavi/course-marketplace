@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Lock, Loader, Shield, CheckCircle, Eye, ExternalLink, FileText, FolderTree } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Lock, Loader, Shield, CheckCircle, Eye, ExternalLink, FileText, FolderTree, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { PLANS } from '../lib/plans';
 import { formatPriceCHF } from '../lib/formatPrice';
@@ -11,38 +11,44 @@ const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView }) => 
     const [activeTab, setActiveTab] = useState("teachers");
     const [profiles, setProfiles] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [pageSize, setPageSize] = useState(25);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalCount, setTotalCount] = useState(0);
 
     // SECURITY: The secret password (MVP Version)
     const ADMIN_PW = "KursNavi2025!";
 
+    const [debouncedSearch, setDebouncedSearch] = useState('');
+
+    // Debounce search input
     useEffect(() => {
-        if (isAuthenticated) {
-            fetchProfiles();
-        }
-    }, [isAuthenticated]);
+        const timer = setTimeout(() => {
+            setDebouncedSearch(searchQuery);
+            setCurrentPage(1);
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
 
-    const handleLogin = (e) => {
-        e.preventDefault();
-        if (password === ADMIN_PW) {
-            setIsAuthenticated(true);
-        } else {
-            showNotification("Access Denied");
-            setPassword("");
-        }
-    };
-
-        const fetchProfiles = async () => {
+    const fetchProfiles = useCallback(async () => {
         setLoading(true);
+        const offset = (currentPage - 1) * pageSize;
 
         // 1) Try Admin API (Service Role, bypasses RLS)
         try {
-            const res = await fetch('/api/admin?action=profiles', {
+            const params = new URLSearchParams({ action: 'profiles', limit: String(pageSize), offset: String(offset) });
+            if (debouncedSearch) params.set('q', debouncedSearch);
+
+            const res = await fetch(`/api/admin?${params}`, {
                 headers: { 'x-admin-secret': ADMIN_PW }
             });
 
             if (res.ok) {
                 const json = await res.json();
                 setProfiles(json.data || []);
+                if (json.pagination) {
+                    setTotalCount(json.pagination.total);
+                }
                 setLoading(false);
                 return;
             } else {
@@ -62,13 +68,32 @@ const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView }) => 
             setProfiles([]);
         } else {
             setProfiles(data || []);
+            setTotalCount(data?.length || 0);
             if (!data || data.length === 0) {
                 showNotification("Keine Profile sichtbar (wahrscheinlich RLS). Admin API aktivieren.");
             }
         }
 
         setLoading(false);
+    }, [currentPage, pageSize, debouncedSearch]);
+
+    useEffect(() => {
+        if (isAuthenticated) {
+            fetchProfiles();
+        }
+    }, [isAuthenticated, fetchProfiles]);
+
+    const handleLogin = (e) => {
+        e.preventDefault();
+        if (password === ADMIN_PW) {
+            setIsAuthenticated(true);
+        } else {
+            showNotification("Access Denied");
+            setPassword("");
+        }
     };
+
+    const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
 
     const toggleVerify = async (userId, currentStatus, userEmail) => {
@@ -264,6 +289,35 @@ const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView }) => 
                     </div>
                 )}
 
+                {/* Search & Page Size Controls (for teachers tab) */}
+                {activeTab === 'teachers' && (
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
+                        <div className="relative flex-1 max-w-md">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                            <input
+                                type="text"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                placeholder="Anbieter suchen (Name, Email, Ort...)"
+                                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none transition"
+                            />
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                            <span>Einträge:</span>
+                            <select
+                                value={pageSize}
+                                onChange={(e) => { setPageSize(Number(e.target.value)); setCurrentPage(1); }}
+                                className="border border-gray-300 rounded-lg px-2 py-1.5 text-sm outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                            >
+                                {[25, 50, 100, 250, 500].map(n => (
+                                    <option key={n} value={n}>{n}</option>
+                                ))}
+                            </select>
+                            <span className="text-gray-400 ml-2">Total: {totalCount}</span>
+                        </div>
+                    </div>
+                )}
+
                 {/* Other Tabs - Table View */}
                 {activeTab !== 'categories' && (
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -284,7 +338,7 @@ const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView }) => 
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-100">
-                                    {activeTab === 'teachers' && teachers.map(user => {
+                                    {activeTab === 'teachers' && profiles.map(user => {
                                         const planId = user.package_tier || 'basic';
                                         const plan = PLANS.find(p => p.id === planId) || PLANS[0];
 
@@ -398,6 +452,71 @@ const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView }) => 
                         </div>
                     )}
                 </div>
+
+                {/* Pagination Controls (for teachers tab) */}
+                {activeTab === 'teachers' && totalPages > 1 && (
+                    <div className="flex items-center justify-between mt-4 px-2">
+                        <div className="text-sm text-gray-500">
+                            Seite {currentPage} von {totalPages} ({totalCount} Einträge)
+                        </div>
+                        <div className="flex items-center gap-1">
+                            <button
+                                onClick={() => setCurrentPage(1)}
+                                disabled={currentPage === 1}
+                                className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                            >
+                                Erste
+                            </button>
+                            <button
+                                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                disabled={currentPage === 1}
+                                className="p-1.5 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                            >
+                                <ChevronLeft className="w-4 h-4" />
+                            </button>
+
+                            {/* Page number buttons */}
+                            {(() => {
+                                const pages = [];
+                                let start = Math.max(1, currentPage - 2);
+                                let end = Math.min(totalPages, start + 4);
+                                if (end - start < 4) start = Math.max(1, end - 4);
+
+                                for (let i = start; i <= end; i++) {
+                                    pages.push(
+                                        <button
+                                            key={i}
+                                            onClick={() => setCurrentPage(i)}
+                                            className={`px-3 py-1.5 text-sm rounded-lg border transition ${
+                                                i === currentPage
+                                                    ? 'bg-blue-600 text-white border-blue-600'
+                                                    : 'border-gray-300 hover:bg-gray-50'
+                                            }`}
+                                        >
+                                            {i}
+                                        </button>
+                                    );
+                                }
+                                return pages;
+                            })()}
+
+                            <button
+                                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                disabled={currentPage === totalPages}
+                                className="p-1.5 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                            >
+                                <ChevronRight className="w-4 h-4" />
+                            </button>
+                            <button
+                                onClick={() => setCurrentPage(totalPages)}
+                                disabled={currentPage === totalPages}
+                                className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                            >
+                                Letzte
+                            </button>
+                        </div>
+                    </div>
+                )}
                 )}
             </div>
         </div>

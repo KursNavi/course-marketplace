@@ -57,13 +57,36 @@ export default async function handler(req, res) {
         return res.status(405).json({ error: 'Method not allowed' });
       }
 
-      const { data, error } = await supabaseAdmin
+      const limit = Math.min(Math.max(parseInt(req.query.limit) || 25, 1), 500);
+      const offset = Math.max(parseInt(req.query.offset) || 0, 0);
+      const search = (req.query.q || '').trim();
+
+      let query = supabaseAdmin
         .from('profiles')
-        .select('*');
+        .select('*', { count: 'exact' });
+
+      if (search) {
+        query = query.or(
+          `full_name.ilike.%${search}%,email.ilike.%${search}%,city.ilike.%${search}%,canton.ilike.%${search}%`
+        );
+      }
+
+      query = query.order('created_at', { ascending: false });
+      query = query.range(offset, offset + limit - 1);
+
+      const { data, error, count } = await query;
 
       if (error) return res.status(500).json({ error: error.message });
 
-      return res.status(200).json({ data: data || [] });
+      return res.status(200).json({
+        data: data || [],
+        pagination: {
+          total: count || 0,
+          limit,
+          offset,
+          hasMore: (offset + limit) < (count || 0)
+        }
+      });
     }
 
     // ============================================
