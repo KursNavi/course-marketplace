@@ -60,7 +60,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- Per-course performance metrics for a provider
 CREATE OR REPLACE FUNCTION get_course_performance(provider_id UUID, months_back INT DEFAULT 12)
 RETURNS TABLE (
-  course_id UUID,
+  course_id BIGINT,
   course_title TEXT,
   total_bookings BIGINT,
   total_revenue_cents BIGINT,

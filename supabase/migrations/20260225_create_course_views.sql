@@ -3,7 +3,7 @@
 
 CREATE TABLE IF NOT EXISTS course_views (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  course_id UUID NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
+  course_id BIGINT NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
   view_type TEXT NOT NULL CHECK (view_type IN ('impression', 'detail')),
   viewer_id UUID,  -- NULL for anonymous visitors
   source TEXT DEFAULT 'search',  -- 'search', 'category', 'home', 'direct', 'provider_profile'
