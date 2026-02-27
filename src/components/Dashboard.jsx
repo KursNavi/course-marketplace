@@ -18,7 +18,7 @@ import ProviderProfileEditor from './ProviderProfileEditor';
 import AnalyticsDashboard from './AnalyticsDashboard';
 
 // --- HELPER COMPONENT: User Profile Settings ---
-const UserProfileSection = ({ user, setUser, showNotification, setLang, t }) => {
+const UserProfileSection = ({ user, setUser, showNotification, setLang, t, isImpersonating }) => {
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [uploadingDoc, setUploadingDoc] = useState(false);
@@ -1350,7 +1350,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                 user.role === 'teacher' ? (
                     <ProviderProfileEditor user={user} setUser={setUser} showNotification={showNotification} setLang={changeLanguage} t={t} />
                 ) : (
-                    <UserProfileSection user={user} setUser={setUser} showNotification={showNotification} setLang={changeLanguage} t={t} />
+                    <UserProfileSection user={user} setUser={setUser} showNotification={showNotification} setLang={changeLanguage} t={t} isImpersonating={isImpersonating} />
                 )
              ) :
              dashView === 'subscription' ? ( <SubscriptionSection user={user} currentTier={userTier} /> ) :
