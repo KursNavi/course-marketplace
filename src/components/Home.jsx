@@ -216,6 +216,31 @@ export const Home = ({
         document.head.appendChild(orgScript);
     }
     orgScript.text = JSON.stringify(organizationData);
+
+    // SearchAction Schema (enables Google Sitelinks Search Box)
+    const searchActionData = {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "KursNavi",
+        "url": BASE_URL,
+        "potentialAction": {
+            "@type": "SearchAction",
+            "target": {
+                "@type": "EntryPoint",
+                "urlTemplate": `${BASE_URL}/search?q={search_term_string}`
+            },
+            "query-input": "required name=search_term_string"
+        }
+    };
+
+    let searchScript = document.querySelector('script[data-schema="searchaction"]');
+    if (!searchScript) {
+        searchScript = document.createElement('script');
+        searchScript.type = 'application/ld+json';
+        searchScript.setAttribute('data-schema', 'searchaction');
+        document.head.appendChild(searchScript);
+    }
+    searchScript.text = JSON.stringify(searchActionData);
   }, []);
 
   // Auto-Select first area when type changes (optional, improves UX)

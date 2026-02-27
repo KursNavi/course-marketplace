@@ -551,6 +551,8 @@ const SearchPageView = ({
                                 alt={`${course.title} - Kurs in ${course.canton}`}
                                 loading="lazy"
                                 decoding="async"
+                                width="600"
+                                height="338"
                                 className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300"
                             />
                             <div className="absolute top-3 left-3 flex flex-col gap-1 items-start">

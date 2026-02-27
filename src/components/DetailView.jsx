@@ -171,13 +171,13 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
             'og:title': `${course.title} in ${locationLabel}`,
             'og:description': metaDescription,
             'og:url': canonicalUrl,
-            'og:image': course.image_url || `${BASE_URL}/og-default.jpg`,
+            'og:image': course.image_url || `${BASE_URL}/og-default.svg`,
             'og:type': 'website',
             'og:site_name': 'KursNavi',
             'twitter:card': 'summary_large_image',
             'twitter:title': `${course.title} in ${locationLabel}`,
             'twitter:description': metaDescription,
-            'twitter:image': course.image_url || `${BASE_URL}/og-default.jpg`
+            'twitter:image': course.image_url || `${BASE_URL}/og-default.svg`
         };
 
         Object.entries(ogTags).forEach(([property, content]) => {
@@ -608,6 +608,8 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
                         alt={`${course.title} in ${course.canton || 'Schweiz'}`}
                         loading="eager"
                         decoding="async"
+                        width="600"
+                        height="338"
                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                     />
                 </div>
@@ -800,6 +802,8 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
                                     alt={`${rel.title} - Kurs in ${rel.canton}`}
                                     loading="lazy"
                                     decoding="async"
+                                    width="400"
+                                    height="225"
                                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                                 />
                                 <span className="absolute bottom-2 left-2 bg-white/90 px-2 py-0.5 rounded text-xs font-bold text-gray-700 flex items-center shadow-sm">
