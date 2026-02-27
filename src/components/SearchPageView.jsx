@@ -5,6 +5,7 @@ import { Globe } from 'lucide-react';
 import { CATEGORY_TYPES, AGE_GROUPS, COURSE_LEVELS, DELIVERY_TYPES, SEGMENT_CONFIG } from '../lib/constants';
 import { formatPriceCHF } from '../lib/formatPrice';
 import { useTaxonomy } from '../hooks/useTaxonomy';
+import { supabase } from '../lib/supabase';
 
 const fallbackImage = "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=600";
 
@@ -139,6 +140,27 @@ const SearchPageView = ({
             }
         };
     }, [filteredCourses.length, loading, searchQuery, searchType, searchArea, selectedLocations]);
+
+    // Track impressions for rendered course cards (session-deduplicated, batch insert)
+    useEffect(() => {
+        if (loading || !filteredCourses.length) return;
+
+        const untracked = filteredCourses.filter(c => !sessionStorage.getItem(`imp_${c.id}`));
+        if (untracked.length === 0) return;
+
+        untracked.forEach(c => sessionStorage.setItem(`imp_${c.id}`, '1'));
+
+        const rows = untracked.map(c => ({
+            course_id: c.id,
+            view_type: 'impression',
+            viewer_id: user?.id || null,
+            source: 'search'
+        }));
+
+        supabase.from('course_views').insert(rows).then(({ error }) => {
+            if (error) console.warn('Impression tracking failed:', error.message);
+        });
+    }, [filteredCourses, loading]);
 
     // Helper: Build label lookup map from all_categories (before filter logic)
     const labelMap = React.useMemo(() => {

@@ -26,6 +26,23 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
         window.scrollTo(0, 0);
     }, [course?.id]);
 
+    // Track detail view (session-deduplicated)
+    useEffect(() => {
+        if (!course?.id) return;
+        const key = `det_${course.id}`;
+        if (sessionStorage.getItem(key)) return;
+        sessionStorage.setItem(key, '1');
+
+        supabase.from('course_views').insert({
+            course_id: course.id,
+            view_type: 'detail',
+            viewer_id: user?.id || null,
+            source: 'search'
+        }).then(({ error }) => {
+            if (error) console.warn('Detail view tracking failed:', error.message);
+        });
+    }, [course?.id]);
+
     // Load ticket availability for courses with ticket_limit_30d
     useEffect(() => {
         if (course?.ticket_limit_30d && (course.booking_type === 'platform' || course.booking_type === 'platform_flex')) {

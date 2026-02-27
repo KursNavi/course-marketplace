@@ -135,6 +135,26 @@ export function canPublishProfile(tier) {
 }
 
 /**
+ * Check if tier has access to analytics time series charts
+ * Pro+ required
+ * @param {string} tier - Tier identifier
+ * @returns {boolean}
+ */
+export function hasAnalyticsCharts(tier) {
+  return ['pro', 'premium', 'enterprise'].includes(parseTier(tier));
+}
+
+/**
+ * Check if tier has access to advanced analytics insights & course comparison
+ * Premium+ required
+ * @param {string} tier - Tier identifier
+ * @returns {boolean}
+ */
+export function hasAnalyticsInsights(tier) {
+  return ['premium', 'enterprise'].includes(parseTier(tier));
+}
+
+/**
  * Get the course limit for a tier
  * @param {string} tier - Tier identifier
  * @returns {number} Maximum number of courses allowed
@@ -184,7 +204,9 @@ export function getAllEntitlements(tier) {
     canEditSlug: canEditSlug(t),
     canPublishProfile: canPublishProfile(t),
     courseLimit: getCourseLimit(t),
-    commissionPercent: getCommissionPercent(t)
+    commissionPercent: getCommissionPercent(t),
+    hasAnalyticsCharts: hasAnalyticsCharts(t),
+    hasAnalyticsInsights: hasAnalyticsInsights(t)
   };
 }
 
