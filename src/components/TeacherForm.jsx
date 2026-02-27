@@ -827,13 +827,14 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
     const getCategoryIds = (typeKey, areaKey, specialtyLabel, focusLabel) => {
         if (!isV2) return { type_id: null, area_id: null, specialty_id: null, focus_id: null, level3_id: null, level4_id: null };
 
-        // Type ID - typeKey in v2 is already numeric or slug
+        // Type ID - typeKey may be numeric ID (number or string) or slug
+        // Dropdown values are always strings, so also compare with Number() conversion
         const typeId = typeof typeKey === 'number' ? typeKey :
-            types.find(t => t.id === typeKey || t.slug === typeKey)?.id || null;
+            types.find(t => t.id === typeKey || t.id === Number(typeKey) || t.slug === typeKey)?.id || null;
 
-        // Area ID - areaKey in v2 is already numeric or slug
+        // Area ID - areaKey may be numeric ID (number or string) or slug
         const areaId = typeof areaKey === 'number' ? areaKey :
-            areas.find(a => a.id === areaKey || a.slug === areaKey)?.id || null;
+            areas.find(a => a.id === areaKey || a.id === Number(areaKey) || a.slug === areaKey)?.id || null;
 
         // Specialty ID (Level 3) - find by label in the area
         let specialtyId = null;

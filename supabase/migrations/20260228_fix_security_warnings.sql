@@ -37,14 +37,12 @@ ALTER FUNCTION refresh_taxonomy_paths SET search_path = public;
 
 
 -- ============================================
--- 2. RESTRICT MATERIALIZED VIEW API ACCESS
+-- 2. MATERIALIZED VIEW API ACCESS (kept open)
 -- ============================================
--- v_taxonomy_paths is only used internally by the v_course_full_categories
--- view and the refresh_taxonomy_paths function. It does not need to be
--- directly queryable via the PostgREST API.
-
-REVOKE SELECT ON v_taxonomy_paths FROM anon;
-REVOKE SELECT ON v_taxonomy_paths FROM authenticated;
+-- v_taxonomy_paths is used by v_course_full_categories which has
+-- security_invoker = true, meaning the calling user's permissions apply.
+-- Therefore anon/authenticated MUST retain SELECT to load courses.
+-- No REVOKE needed here.
 
 
 -- ============================================
