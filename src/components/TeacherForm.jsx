@@ -1252,12 +1252,18 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
 
         // 8. Update course_category_assignments junction table (for Zweitkategorien support)
         if (activeCourseId && cleanedCategories && cleanedCategories.length > 0) {
+            console.log('[CAT-DEBUG] cleanedCategories:', JSON.stringify(cleanedCategories));
+            console.log('[CAT-DEBUG] types available:', types.map(t => ({ id: t.id, slug: t.slug, idType: typeof t.id })));
+            console.log('[CAT-DEBUG] areas available:', areas.map(a => ({ id: a.id, slug: a.slug, idType: typeof a.id })));
+            console.log('[CAT-DEBUG] specialties available:', specialties.map(s => ({ id: s.id, area_id: s.area_id, level2_id: s.level2_id, label_de: s.label_de })));
+
             await supabase.from('course_category_assignments').delete().eq('course_id', activeCourseId);
 
             // Filter categories that have valid level3_id
             const consolidatedCategories = cleanedCategories
                 .map((cat, idx) => {
                     const catIds = getCategoryIds(cat.type, cat.area, cat.specialty, cat.focus);
+                    console.log(`[CAT-DEBUG] getCategoryIds(${JSON.stringify(cat)}) =>`, JSON.stringify(catIds));
                     return {
                         course_id: activeCourseId,
                         level3_id: catIds.level3_id,
@@ -1267,14 +1273,20 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                 })
                 .filter(cat => cat.level3_id != null);
 
+            console.log('[CAT-DEBUG] consolidatedCategories to insert:', JSON.stringify(consolidatedCategories));
+
             if (consolidatedCategories.length > 0) {
                 const { error: catErr } = await supabase
                     .from('course_category_assignments')
                     .insert(consolidatedCategories);
 
                 if (catErr) {
-                    console.error('Error saving course category assignments:', catErr);
+                    console.error('[CAT-DEBUG] INSERT ERROR:', catErr);
+                } else {
+                    console.log('[CAT-DEBUG] INSERT SUCCESS');
                 }
+            } else {
+                console.warn('[CAT-DEBUG] No valid categories to insert! All level3_id were null.');
             }
         }
 
