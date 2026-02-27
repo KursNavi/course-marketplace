@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Save, Loader, Globe, Image, FileText, Mail, Eye, EyeOff,
   CheckCircle, AlertCircle, ExternalLink, Calendar, Info, Settings,
-  MapPin, Plus, XCircle, Lock, ChevronDown, User, PenTool, Shield, Trash2
+  MapPin, Plus, XCircle, Lock, ChevronDown, User, PenTool, Shield, Trash2, CreditCard
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { BASE_URL, generateProviderSlug } from '../lib/siteConfig';
@@ -77,6 +77,10 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
   const [deleteError, setDeleteError] = useState('');
   const [deleting, setDeleting] = useState(false);
 
+  // Stripe Connect state
+  const [stripeConnectAccountId, setStripeConnectAccountId] = useState(null);
+  const [stripeConnectOnboardingComplete, setStripeConnectOnboardingComplete] = useState(false);
+
   // Derived states
   const tier = profileData.package_tier;
   const isEligible = hasPublicProfile(tier);
@@ -98,7 +102,8 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
         const baseColumns = `
           full_name, city, canton, bio_text, certificates,
           preferred_language, website_url, additional_locations,
-          verification_status, package_tier
+          verification_status, package_tier,
+          stripe_connect_account_id, stripe_connect_onboarding_complete
         `;
 
         // Optional columns from migration (may not exist yet)
@@ -157,6 +162,10 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
 
         setNewSlug(data.slug || '');
 
+        // Stripe Connect
+        setStripeConnectAccountId(data.stripe_connect_account_id || null);
+        setStripeConnectOnboardingComplete(data.stripe_connect_onboarding_complete || false);
+
         // Parse additional_locations
         if (data.additional_locations) {
           try {
@@ -188,6 +197,35 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
     };
 
     loadProfile();
+  }, [user?.id]);
+
+  // Check for Stripe Connect return
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const connectStatus = urlParams.get('connect');
+
+    if (connectStatus === 'success' && user?.id) {
+      (async () => {
+        try {
+          const response = await fetch('/api/stripe-management', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'check_connect_status', userId: user.id })
+          });
+          const data = await response.json();
+          if (data.onboardingComplete) {
+            setStripeConnectOnboardingComplete(true);
+            showNotification?.("Auszahlungskonto erfolgreich eingerichtet!", "success");
+          }
+        } catch (error) {
+          console.error('Error checking connect status:', error);
+        }
+        // Clean up URL
+        const url = new URL(window.location);
+        url.searchParams.delete('connect');
+        window.history.replaceState({}, '', url);
+      })();
+    }
   }, [user?.id]);
 
   // Validate slug
@@ -1204,6 +1242,102 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
           </div>
         </form>
       </div>
+
+      {/* Stripe Connect - Auszahlungen für Anbieter */}
+      {isTeacher && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 md:p-8">
+          <h3 className="text-lg font-bold mb-4 text-gray-800 flex items-center">
+            <CreditCard className="w-5 h-5 mr-2 text-orange-500" /> Auszahlungen einrichten
+          </h3>
+
+          {stripeConnectOnboardingComplete ? (
+            <div className="bg-green-50 p-6 rounded-xl border border-green-200">
+              <div className="flex items-start gap-4">
+                <CheckCircle className="w-6 h-6 text-green-600 mt-1 shrink-0" />
+                <div className="flex-1">
+                  <h4 className="font-bold text-green-900 mb-2">Auszahlungen aktiviert</h4>
+                  <p className="text-sm text-green-800 mb-4">
+                    Dein Auszahlungskonto ist eingerichtet. Du kannst jetzt Zahlungen von Kursbuchungen empfangen.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        const response = await fetch('/api/stripe-management', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            action: 'connect_dashboard_link',
+                            accountId: stripeConnectAccountId
+                          })
+                        });
+                        const data = await response.json();
+                        if (data.url) {
+                          window.open(data.url, '_blank');
+                        } else {
+                          showNotification?.("Fehler beim Öffnen des Dashboards", "error");
+                        }
+                      } catch (error) {
+                        console.error('Error opening connect dashboard:', error);
+                        showNotification?.("Fehler beim Öffnen des Dashboards", "error");
+                      }
+                    }}
+                    className="bg-green-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-green-700 transition shadow-md text-sm"
+                  >
+                    Auszahlungs-Dashboard öffnen
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-orange-50 p-6 rounded-xl border border-orange-200">
+              <div className="flex items-start gap-4">
+                <AlertCircle className="w-6 h-6 text-orange-600 mt-1 shrink-0" />
+                <div className="flex-1">
+                  <h4 className="font-bold text-orange-900 mb-2">Bankverbindung hinterlegen</h4>
+                  <p className="text-sm text-orange-800 mb-4">
+                    Um Zahlungen von Kursbuchungen zu empfangen, musst du deine Bankdaten bei Stripe hinterlegen.
+                    Dies ist einmalig und dauert nur wenige Minuten.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (!user?.id || !user?.email) {
+                        showNotification?.("Bitte melde dich erneut an und versuche es nochmal.", "error");
+                        return;
+                      }
+                      try {
+                        const response = await fetch('/api/stripe-management', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            action: 'create_connect_account',
+                            userId: user.id,
+                            userEmail: user.email
+                          })
+                        });
+                        const data = await response.json();
+                        if (data.url) {
+                          window.location.href = data.url;
+                        } else {
+                          console.error('Stripe connect error:', data);
+                          showNotification?.(data.error || "Fehler beim Erstellen des Onboarding-Links", "error");
+                        }
+                      } catch (error) {
+                        console.error('Error creating connect account:', error);
+                        showNotification?.("Fehler beim Erstellen des Kontos", "error");
+                      }
+                    }}
+                    className="bg-orange-500 text-white px-6 py-2 rounded-lg font-bold hover:bg-orange-600 transition shadow-md text-sm"
+                  >
+                    Jetzt einrichten
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Delete Account Section */}
       <div className="bg-white rounded-xl shadow-sm border border-red-100 p-6 md:p-8">
