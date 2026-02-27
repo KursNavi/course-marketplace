@@ -1033,28 +1033,50 @@ export default function KursNaviPro() {  // 1. Initial State Logic
       const qParam = query.get('q');
       const locParam = query.get('loc');
       const levelParam = query.get('level');
+      const langParam = query.get('lang');
+      const deliveryParam = query.get('delivery');
+      const fromParam = query.get('from');
+      const toParam = query.get('to');
+      const priceParam = query.get('price');
+      const proParam = query.get('pro');
+      const bookingParam = query.get('booking');
 
       // Reset filters first when navigating to search, then apply URL params
       if (nextView === 'search') {
+        const hasAnyParam = typeParam || areaParam || specParam || focusParam || qParam || locParam || levelParam
+          || langParam || deliveryParam || fromParam || toParam || priceParam || proParam || bookingParam;
         // Only reset if no params are provided (clean /search navigation)
-        if (!typeParam && !areaParam && !specParam && !focusParam && !qParam && !locParam && !levelParam) {
+        if (!hasAnyParam) {
           setSearchType("");
           setSearchArea("");
           setSearchSpecialty("");
           setSearchFocus("");
+          setSearchQuery("");
+          setSelectedLocations([]);
+          setFilterLevel("All");
+          setSelectedLanguages([]);
+          setSelectedDeliveryTypes([]);
+          setFilterDateFrom("");
+          setFilterDateTo("");
+          setFilterPriceMax("");
+          setFilterPro(false);
+          setFilterDirectBooking(false);
         } else {
-          // Apply URL params
-          if (typeParam) setSearchType(typeParam);
-          else setSearchType("");
-          if (areaParam) setSearchArea(areaParam);
-          else setSearchArea("");
-          if (specParam) setSearchSpecialty(specParam);
-          else setSearchSpecialty("");
-          if (focusParam) setSearchFocus(focusParam);
-          else setSearchFocus("");
-          if (qParam) setSearchQuery(qParam);
-          if (locParam) setSelectedLocations([locParam]);
-          if (levelParam) setFilterLevel(levelParam);
+          // Apply URL params — restore present ones, reset missing ones
+          if (typeParam) setSearchType(typeParam); else setSearchType("");
+          if (areaParam) setSearchArea(areaParam); else setSearchArea("");
+          if (specParam) setSearchSpecialty(specParam); else setSearchSpecialty("");
+          if (focusParam) setSearchFocus(focusParam); else setSearchFocus("");
+          if (qParam) setSearchQuery(qParam); else setSearchQuery("");
+          if (locParam) setSelectedLocations(locParam.split(',')); else setSelectedLocations([]);
+          if (levelParam) setFilterLevel(levelParam); else setFilterLevel("All");
+          if (langParam) setSelectedLanguages(langParam.split(',')); else setSelectedLanguages([]);
+          if (deliveryParam) setSelectedDeliveryTypes(deliveryParam.split(',')); else setSelectedDeliveryTypes([]);
+          if (fromParam) setFilterDateFrom(fromParam); else setFilterDateFrom("");
+          if (toParam) setFilterDateTo(toParam); else setFilterDateTo("");
+          if (priceParam) setFilterPriceMax(priceParam); else setFilterPriceMax("");
+          setFilterPro(proParam === '1');
+          setFilterDirectBooking(bookingParam === '1');
         }
       }
     };
@@ -1094,6 +1116,35 @@ export default function KursNaviPro() {  // 1. Initial State Logic
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Keep URL in sync with current filter state (replaceState, no new history entry)
+  // This ensures that browser back navigation restores the correct filters.
+  useEffect(() => {
+    if (view !== 'search') return;
+
+    const params = new URLSearchParams();
+    if (searchType) params.set('type', searchType);
+    if (searchArea) params.set('area', searchArea);
+    if (searchSpecialty) params.set('spec', searchSpecialty);
+    if (searchFocus) params.set('focus', searchFocus);
+    if (searchQuery) params.set('q', searchQuery);
+    if (selectedLocations.length) params.set('loc', selectedLocations.join(','));
+    if (filterLevel && filterLevel !== 'All') params.set('level', filterLevel);
+    if (selectedLanguages.length) params.set('lang', selectedLanguages.join(','));
+    if (selectedDeliveryTypes.length) params.set('delivery', selectedDeliveryTypes.join(','));
+    if (filterDateFrom) params.set('from', filterDateFrom);
+    if (filterDateTo) params.set('to', filterDateTo);
+    if (filterPriceMax) params.set('price', filterPriceMax);
+    if (filterPro) params.set('pro', '1');
+    if (filterDirectBooking) params.set('booking', '1');
+
+    const newUrl = '/search' + (params.toString() ? '?' + params.toString() : '');
+    const currentUrl = window.location.pathname + window.location.search;
+    if (currentUrl !== newUrl) {
+      window.history.replaceState({ view: 'search' }, '', newUrl);
+    }
+  }, [view, searchType, searchArea, searchSpecialty, searchFocus, searchQuery,
+      selectedLocations, filterLevel, selectedLanguages, selectedDeliveryTypes,
+      filterDateFrom, filterDateTo, filterPriceMax, filterPro, filterDirectBooking]);
 
   useEffect(() => {
     let cancelled = false;
@@ -1261,15 +1312,30 @@ useEffect(() => {
   const specParam = query.get('spec');
   const focusParam = query.get('focus');
   const levelParam = query.get('level');
+  const langParam = query.get('lang');
+  const deliveryParam = query.get('delivery');
+  const fromParam = query.get('from');
+  const toParam = query.get('to');
+  const priceParam = query.get('price');
+  const proParam = query.get('pro');
+  const bookingParam = query.get('booking');
 
-  if (qParam || locParam || typeParam || areaParam || specParam || focusParam || levelParam) {
+  if (qParam || locParam || typeParam || areaParam || specParam || focusParam || levelParam
+      || langParam || deliveryParam || fromParam || toParam || priceParam || proParam || bookingParam) {
     if (qParam) setSearchQuery(qParam);
-    if (locParam) setSelectedLocations([locParam]);
+    if (locParam) setSelectedLocations(locParam.split(','));
     if (typeParam) setSearchType(typeParam);
     if (areaParam) setSearchArea(areaParam);
     if (specParam) setSearchSpecialty(specParam);
     if (focusParam) setSearchFocus(focusParam);
     if (levelParam) setFilterLevel(levelParam);
+    if (langParam) setSelectedLanguages(langParam.split(','));
+    if (deliveryParam) setSelectedDeliveryTypes(deliveryParam.split(','));
+    if (fromParam) setFilterDateFrom(fromParam);
+    if (toParam) setFilterDateTo(toParam);
+    if (priceParam) setFilterPriceMax(priceParam);
+    if (proParam === '1') setFilterPro(true);
+    if (bookingParam === '1') setFilterDirectBooking(true);
 
     // Only switch view if not already on a specific detail/landing page
     setView(prev => (prev !== 'detail' ? 'search' : prev));
