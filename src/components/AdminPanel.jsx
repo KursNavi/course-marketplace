@@ -319,7 +319,7 @@ const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView }) => 
                 )}
 
                 {/* Other Tabs - Table View */}
-                {activeTab !== 'categories' && (
+                {activeTab !== 'categories' && (<>
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                     {loading ? (
                         <div className="p-12 text-center"><Loader className="animate-spin mx-auto w-8 h-8 text-blue-600" /></div>
@@ -517,7 +517,7 @@ const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView }) => 
                         </div>
                     </div>
                 )}
-                )}
+                </>)}
             </div>
         </div>
     );
