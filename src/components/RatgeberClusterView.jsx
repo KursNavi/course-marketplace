@@ -24,15 +24,17 @@ const RatgeberClusterView = ({ lang = 'de' }) => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">Cluster nicht gefunden</h1>
-          <button
-            onClick={() => {
+          <a
+            href="/"
+            onClick={(e) => {
+              e.preventDefault();
               window.scrollTo(0, 0);
               window.history.pushState({ view: 'home' }, '', '/');
             }}
             className="text-primary hover:underline"
           >
             Zurück zur Startseite
-          </button>
+          </a>
         </div>
       </div>
     );
@@ -91,13 +93,14 @@ const RatgeberClusterView = ({ lang = 'de' }) => {
       <div className={`bg-gradient-to-br ${config.gradient} py-16`}>
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Breadcrumb */}
-          <button
-            onClick={goBack}
+          <a
+            href={`/search?type=${segmentKey}`}
+            onClick={(e) => { e.preventDefault(); goBack(); }}
             className="flex items-center text-white/80 hover:text-white mb-6 transition-colors"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             {t.backTo[lang] || t.backTo.de} {category.label[lang] || category.label.de}
-          </button>
+          </a>
 
           {/* Cluster Title */}
           <div className="flex items-center gap-4 mb-4">
@@ -132,10 +135,11 @@ const RatgeberClusterView = ({ lang = 'de' }) => {
 
         <div className="grid md:grid-cols-2 gap-6">
           {clusterData.articles.map((article, index) => (
-            <button
+            <a
               key={article.slug}
-              onClick={() => goToArticle(article.slug)}
-              className="bg-white rounded-xl p-6 shadow-sm hover:shadow-lg transition-all duration-300 text-left group border border-gray-100 hover:border-gray-200"
+              href={`/ratgeber/${categorySlug}/${clusterSlug}/${article.slug}`}
+              onClick={(e) => { e.preventDefault(); goToArticle(article.slug); }}
+              className="bg-white rounded-xl p-6 shadow-sm hover:shadow-lg transition-all duration-300 text-left group border border-gray-100 hover:border-gray-200 block"
             >
               {/* Article Number */}
               <div className="flex items-start gap-4">
@@ -157,7 +161,7 @@ const RatgeberClusterView = ({ lang = 'de' }) => {
                 {t.readMore[lang] || t.readMore.de}
                 <ChevronRight className="w-4 h-4 ml-1" />
               </div>
-            </button>
+            </a>
           ))}
         </div>
       </div>
@@ -171,13 +175,14 @@ const RatgeberClusterView = ({ lang = 'de' }) => {
           <p className="text-gray-600 mb-6">
             Entdecke Kurse, die zu diesem Thema passen.
           </p>
-          <button
-            onClick={goBack}
+          <a
+            href={`/search?type=${segmentKey}`}
+            onClick={(e) => { e.preventDefault(); goBack(); }}
             className={`${config.bgSolid} text-white px-6 py-3 rounded-xl font-bold hover:opacity-90 transition-opacity inline-flex items-center gap-2`}
           >
             Kurse entdecken
             <ChevronRight className="w-5 h-5" />
-          </button>
+          </a>
         </div>
       </div>
     </div>

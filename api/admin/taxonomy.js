@@ -616,27 +616,24 @@ async function getLegacyTaxonomy(supabase, res) {
 async function getLegacyCourseCounts(supabase) {
     const courseCounts = { types: {}, areas: {}, specialties: {}, focuses: {} };
 
-    const [typeCounts, areaCounts, specialtyCounts, focusCounts] = await Promise.all([
-        supabase.from('course_categories').select('category_type').not('category_type', 'is', null),
-        supabase.from('course_categories').select('category_area').not('category_area', 'is', null),
-        supabase.from('course_categories').select('category_specialty').not('category_specialty', 'is', null),
-        supabase.from('course_categories').select('category_focus').not('category_focus', 'is', null)
-    ]);
+    // Use v_course_full_categories view to get course counts by taxonomy level
+    const { data: categoriesData } = await supabase
+        .from('v_course_full_categories')
+        .select('level1_slug, level2_slug, level3_slug, level4_slug');
 
-    typeCounts.data?.forEach(row => {
-        courseCounts.types[row.category_type] = (courseCounts.types[row.category_type] || 0) + 1;
-    });
-
-    areaCounts.data?.forEach(row => {
-        courseCounts.areas[row.category_area] = (courseCounts.areas[row.category_area] || 0) + 1;
-    });
-
-    specialtyCounts.data?.forEach(row => {
-        courseCounts.specialties[row.category_specialty] = (courseCounts.specialties[row.category_specialty] || 0) + 1;
-    });
-
-    focusCounts.data?.forEach(row => {
-        courseCounts.focuses[row.category_focus] = (courseCounts.focuses[row.category_focus] || 0) + 1;
+    categoriesData?.forEach(row => {
+        if (row.level1_slug) {
+            courseCounts.types[row.level1_slug] = (courseCounts.types[row.level1_slug] || 0) + 1;
+        }
+        if (row.level2_slug) {
+            courseCounts.areas[row.level2_slug] = (courseCounts.areas[row.level2_slug] || 0) + 1;
+        }
+        if (row.level3_slug) {
+            courseCounts.specialties[row.level3_slug] = (courseCounts.specialties[row.level3_slug] || 0) + 1;
+        }
+        if (row.level4_slug) {
+            courseCounts.focuses[row.level4_slug] = (courseCounts.focuses[row.level4_slug] || 0) + 1;
+        }
     });
 
     return courseCounts;
@@ -831,21 +828,11 @@ async function handleLegacyMutation(supabase, action, entity, data, res, isV2 = 
 
                 if (newFocus) {
                     await supabase
-                        .from('course_categories')
-                        .update({ category_focus: newFocus[nameField] })
-                        .eq('category_focus', oldName);
-
-                    await supabase
                         .from('courses')
                         .update({ category_focus: newFocus[nameField] })
                         .eq('category_focus', oldName);
                 }
             } else {
-                await supabase
-                    .from('course_categories')
-                    .update({ category_focus: null })
-                    .eq('category_focus', oldName);
-
                 await supabase
                     .from('courses')
                     .update({ category_focus: null })
@@ -879,11 +866,6 @@ async function handleLegacyMutation(supabase, action, entity, data, res, isV2 = 
 
                 if (newSpec) {
                     await supabase
-                        .from('course_categories')
-                        .update({ category_specialty: newSpec[nameField] })
-                        .eq('category_specialty', oldName);
-
-                    await supabase
                         .from('courses')
                         .update({ category_specialty: newSpec[nameField] })
                         .eq('category_specialty', oldName);
@@ -901,11 +883,6 @@ async function handleLegacyMutation(supabase, action, entity, data, res, isV2 = 
 
             if (reassign_to) {
                 await supabase
-                    .from('course_categories')
-                    .update({ category_area: reassign_to })
-                    .eq('category_area', id);
-
-                await supabase
                     .from('courses')
                     .update({ category_area: reassign_to })
                     .eq('category_area', id);
@@ -921,11 +898,6 @@ async function handleLegacyMutation(supabase, action, entity, data, res, isV2 = 
             const idField = isV2 ? 'slug' : 'id';
 
             if (reassign_to) {
-                await supabase
-                    .from('course_categories')
-                    .update({ category_type: reassign_to })
-                    .eq('category_type', id);
-
                 await supabase
                     .from('courses')
                     .update({ category_type: reassign_to })
@@ -943,57 +915,79 @@ async function handleLegacyMutation(supabase, action, entity, data, res, isV2 = 
         let count = 0;
 
         if (entity === 'focus') {
-            const tableName = isV2 ? 'taxonomy_focus_v2' : 'taxonomy_focus';
-            const nameField = isV2 ? 'label_de' : 'name';
-
+            // Get level4_id from taxonomy_level4
             const { data: focusItem } = await supabase
-                .from(tableName)
-                .select(nameField)
+                .from('taxonomy_level4')
+                .select('id')
                 .eq('id', data.id)
                 .single();
 
             if (focusItem) {
                 const { count: c } = await supabase
-                    .from('course_categories')
+                    .from('course_category_assignments')
                     .select('*', { count: 'exact', head: true })
-                    .eq('category_focus', focusItem[nameField]);
+                    .eq('level4_id', focusItem.id);
                 count = c || 0;
             }
         }
 
         if (entity === 'specialty') {
-            const tableName = isV2 ? 'taxonomy_specialties_v2' : 'taxonomy_specialties';
-            const nameField = isV2 ? 'label_de' : 'name';
-
+            // Get level3_id from taxonomy_level3
             const { data: spec } = await supabase
-                .from(tableName)
-                .select(nameField)
+                .from('taxonomy_level3')
+                .select('id')
                 .eq('id', data.id)
                 .single();
 
             if (spec) {
                 const { count: c } = await supabase
-                    .from('course_categories')
+                    .from('course_category_assignments')
                     .select('*', { count: 'exact', head: true })
-                    .eq('category_specialty', spec[nameField]);
+                    .eq('level3_id', spec.id);
                 count = c || 0;
             }
         }
 
         if (entity === 'area') {
-            const { count: c } = await supabase
-                .from('course_categories')
-                .select('*', { count: 'exact', head: true })
-                .eq('category_area', data.id);
-            count = c || 0;
+            // Count courses via level3 assignments that belong to this area
+            const { data: specs } = await supabase
+                .from('taxonomy_level3')
+                .select('id')
+                .eq('level2_id', data.id);
+
+            if (specs && specs.length > 0) {
+                const specIds = specs.map(s => s.id);
+                const { count: c } = await supabase
+                    .from('course_category_assignments')
+                    .select('*', { count: 'exact', head: true })
+                    .in('level3_id', specIds);
+                count = c || 0;
+            }
         }
 
         if (entity === 'type') {
-            const { count: c } = await supabase
-                .from('course_categories')
-                .select('*', { count: 'exact', head: true })
-                .eq('category_type', data.id);
-            count = c || 0;
+            // Count courses via level3 assignments that belong to this type
+            const { data: areas } = await supabase
+                .from('taxonomy_level2')
+                .select('id')
+                .eq('level1_id', data.id);
+
+            if (areas && areas.length > 0) {
+                const areaIds = areas.map(a => a.id);
+                const { data: specs } = await supabase
+                    .from('taxonomy_level3')
+                    .select('id')
+                    .in('level2_id', areaIds);
+
+                if (specs && specs.length > 0) {
+                    const specIds = specs.map(s => s.id);
+                    const { count: c } = await supabase
+                        .from('course_category_assignments')
+                        .select('*', { count: 'exact', head: true })
+                        .in('level3_id', specIds);
+                    count = c || 0;
+                }
+            }
         }
 
         return res.status(200).json({ count });

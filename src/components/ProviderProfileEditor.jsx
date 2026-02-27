@@ -573,12 +573,20 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
         }
       }
 
-      // Delete the auth user (this will sign them out)
-      const { error: authError } = await supabase.auth.admin.deleteUser(user.id);
-
-      // If admin delete fails (expected for non-admin clients), sign out instead
-      if (authError) {
-        console.warn('Admin delete failed, signing out:', authError.message);
+      // Delete the auth user via server-side API (requires service role key)
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.access_token) {
+        const response = await fetch('/api/delete-account', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        if (!response.ok) {
+          const result = await response.json();
+          console.error('Failed to delete auth user:', result.error);
+        }
       }
 
       // Sign out the user

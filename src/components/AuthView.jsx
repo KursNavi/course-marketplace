@@ -66,7 +66,7 @@ const AuthView = ({ setView, setUser, showNotification, lang }) => {
                 };
                 setUser(loggedInUser); 
                 
-                if (loggedInUser.role === 'teacher') setView('dashboard'); else setView('home');
+                if (loggedInUser.role === 'teacher' || loggedInUser.role === 'admin') setView('dashboard'); else setView('home');
                 showNotification(t.msg_welcome_back_toast);
             }
         } catch (error) { showNotification(error.message); } finally { setLoading(false); }

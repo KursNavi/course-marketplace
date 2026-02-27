@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Lock, Loader, Shield, CheckCircle, Eye, ExternalLink, FileText, FolderTree, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Lock, Loader, Shield, CheckCircle, Eye, ExternalLink, FileText, FolderTree, Search, ChevronLeft, ChevronRight, UserCheck } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { PLANS } from '../lib/plans';
 import { formatPriceCHF } from '../lib/formatPrice';
+import { ADMIN_API_SECRET } from '../lib/adminConfig';
 import AdminCategoryManager from './AdminCategoryManager';
 
-const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView }) => {
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [password, setPassword] = useState("");
+const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView, user, onImpersonate }) => {
+    const isAuthenticated = user?.role === 'admin';
     const [activeTab, setActiveTab] = useState("teachers");
     const [profiles, setProfiles] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -15,9 +15,6 @@ const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView }) => 
     const [pageSize, setPageSize] = useState(25);
     const [currentPage, setCurrentPage] = useState(1);
     const [totalCount, setTotalCount] = useState(0);
-
-    // SECURITY: The secret password (MVP Version)
-    const ADMIN_PW = "KursNavi2025!";
 
     const [debouncedSearch, setDebouncedSearch] = useState('');
 
@@ -40,7 +37,7 @@ const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView }) => 
             if (debouncedSearch) params.set('q', debouncedSearch);
 
             const res = await fetch(`/api/admin?${params}`, {
-                headers: { 'x-admin-secret': ADMIN_PW }
+                headers: { 'x-admin-secret': ADMIN_API_SECRET }
             });
 
             if (res.ok) {
@@ -83,14 +80,25 @@ const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView }) => 
         }
     }, [isAuthenticated, fetchProfiles]);
 
-    const handleLogin = (e) => {
-        e.preventDefault();
-        if (password === ADMIN_PW) {
-            setIsAuthenticated(true);
-        } else {
-            showNotification("Access Denied");
-            setPassword("");
+    const handleImpersonate = (profile) => {
+        if (onImpersonate) {
+            onImpersonate({
+                id: profile.id,
+                email: profile.email,
+                role: profile.role || (isTeacherProfile(profile) ? 'teacher' : 'student'),
+                name: profile.full_name || profile.email,
+                is_professional: profile.is_professional,
+                plan_tier: profile.package_tier || 'basic'
+            });
+            setView('dashboard');
         }
+    };
+
+    const isTeacherProfile = (p) => {
+        const r = getRoleValue(p);
+        if (['teacher', 'lehrer', 'instructor', 'anbieter', 'provider'].includes(r)) return true;
+        if (p.is_teacher === true || p.is_instructor === true || p.is_provider === true) return true;
+        return false;
     };
 
     const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
@@ -107,7 +115,7 @@ const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView }) => 
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'x-admin-secret': ADMIN_PW
+                    'x-admin-secret': ADMIN_API_SECRET
                 },
                 body: JSON.stringify({ action: 'set-verify', userId, newStatus })
             });
@@ -167,7 +175,7 @@ const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView }) => 
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'x-admin-secret': ADMIN_PW
+                    'x-admin-secret': ADMIN_API_SECRET
                 },
                 body: JSON.stringify({ action: 'set-tier', userId, package_tier: newTier })
             });
@@ -235,25 +243,18 @@ const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView }) => 
     if (!isAuthenticated) {
         return (
             <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
-                <div className="bg-white p-8 rounded-2xl shadow-2xl max-w-md w-full">
-                    <div className="text-center mb-6">
-                        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <Lock className="w-8 h-8 text-gray-700" />
-                        </div>
-                        <h1 className="text-2xl font-bold text-gray-800">{t.admin_login_title || "Admin Access"}</h1>
+                <div className="bg-white p-8 rounded-2xl shadow-2xl max-w-md w-full text-center">
+                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Lock className="w-8 h-8 text-gray-700" />
                     </div>
-                    <form onSubmit={handleLogin} className="space-y-4">
-                        <input 
-                            type="password" 
-                            value={password} 
-                            onChange={(e) => setPassword(e.target.value)} 
-                            placeholder={t.admin_pass_placeholder || "Passwort"}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 outline-none transition"
-                        />
-                        <button type="submit" className="w-full bg-gray-800 text-white py-3 rounded-lg font-bold hover:bg-black transition">
-                            {t.admin_btn_access || "Login"}
-                        </button>
-                    </form>
+                    <h1 className="text-2xl font-bold text-gray-800 mb-2">Admin Access</h1>
+                    <p className="text-gray-500 mb-6">Bitte melde dich mit einem Admin-Account an, um auf das Control Room zuzugreifen.</p>
+                    <button
+                        onClick={() => setView('login')}
+                        className="w-full bg-gray-800 text-white py-3 rounded-lg font-bold hover:bg-black transition"
+                    >
+                        Zum Login
+                    </button>
                 </div>
             </div>
         );
@@ -268,7 +269,7 @@ const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView }) => 
                         <button onClick={() => setView('admin-blog')} className="flex items-center bg-orange-100 text-orange-800 px-4 py-2 rounded-lg hover:bg-orange-200 font-bold transition border border-orange-200 shadow-sm">
                             <FileText className="w-4 h-4 mr-2"/> Blog Manager
                         </button>
-                        <button onClick={() => setIsAuthenticated(false)} className="text-red-500 hover:underline font-medium">Exit</button>
+                        <button onClick={() => setView('home')} className="text-red-500 hover:underline font-medium">Schliessen</button>
                     </div>
                 </div>
 
@@ -393,7 +394,14 @@ const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView }) => 
                                                 </td>
 
                                                 <td className="px-6 py-4 text-right flex items-center justify-end gap-2">
-                                                    <button 
+                                                    <button
+                                                        onClick={() => handleImpersonate(user)}
+                                                        className="text-purple-600 hover:text-purple-800 p-2 rounded-md hover:bg-purple-50 transition"
+                                                        title="Als User anschauen"
+                                                    >
+                                                        <UserCheck className="w-4 h-4" />
+                                                    </button>
+                                                    <button
                                                         onClick={() => alert(`--- LEHRER PROFIL ---\n\nBIOGRAFIE:\n${user.bio_text || 'Keine Biografie vorhanden.'}\n\nZERTIFIKATE:\n${user.certificates && user.certificates.length > 0 ? user.certificates.map(c => '- ' + c).join('\n') : 'Keine Zertifikate hochgeladen.'}`)}
                                                         className="text-gray-500 hover:text-primary p-2 rounded-md hover:bg-gray-100 transition"
                                                         title="Details ansehen"
@@ -433,7 +441,15 @@ const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView }) => 
                                             <td className="px-6 py-4 text-gray-500">{user.email}</td>
                                             <td className="px-6 py-4">{user.city}, {user.canton}</td>
                                             <td className="px-6 py-4"><span className="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs">Student</span></td>
-                                            <td className="px-6 py-4 text-right"><span className="text-gray-400 text-xs">-</span></td>
+                                            <td className="px-6 py-4 text-right">
+                                                <button
+                                                    onClick={() => handleImpersonate(user)}
+                                                    className="text-purple-600 hover:text-purple-800 p-2 rounded-md hover:bg-purple-50 transition"
+                                                    title="Als User anschauen"
+                                                >
+                                                    <UserCheck className="w-4 h-4" />
+                                                </button>
+                                            </td>
                                         </tr>
                                     ))}
                                     {activeTab === 'courses' && courses.map(course => (

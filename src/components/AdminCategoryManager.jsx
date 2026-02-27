@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ChevronRight, ChevronDown, Plus, Trash2, Edit2, Save, X, Loader, AlertTriangle, FolderTree } from 'lucide-react';
 import { invalidateTaxonomyCache } from '../hooks/useTaxonomy';
-
-const ADMIN_PW = "KursNavi2025!";
+import { ADMIN_API_SECRET } from '../lib/adminConfig';
 
 const AdminCategoryManager = ({ showNotification }) => {
     const [loading, setLoading] = useState(true);
@@ -53,7 +52,7 @@ const AdminCategoryManager = ({ showNotification }) => {
         setLoading(true);
         try {
             const res = await fetch('/api/admin/taxonomy', {
-                headers: { 'x-admin-secret': ADMIN_PW }
+                headers: { 'x-admin-secret': ADMIN_API_SECRET }
             });
             if (!res.ok) throw new Error('Failed to load taxonomy');
             const data = await res.json();
@@ -78,7 +77,7 @@ const AdminCategoryManager = ({ showNotification }) => {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'x-admin-secret': ADMIN_PW
+                    'x-admin-secret': ADMIN_API_SECRET
                 },
                 body: JSON.stringify({ action, entity, data })
             });

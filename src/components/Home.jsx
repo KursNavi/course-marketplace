@@ -444,7 +444,7 @@ export const Home = ({
 
           {/* BERUFLICH - Blue */}
           <div className="flex flex-col">
-            <div onClick={() => { setSearchType('beruflich'); window.history.pushState({ view: 'search' }, '', '/search?type=beruflich'); window.scrollTo(0,0); }} className="group relative h-80 rounded-2xl overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
+            <a href="/search?type=beruflich" onClick={(e) => { e.preventDefault(); setSearchType('beruflich'); window.history.pushState({ view: 'search' }, '', '/search?type=beruflich'); window.scrollTo(0,0); }} className="group relative h-80 rounded-2xl overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 block">
               <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=2670&auto=format&fit=crop")' }}></div>
               <div className="absolute inset-0 bg-gradient-to-t from-blue-800/90 via-blue-600/40 to-blue-500/20"></div>
               <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm rounded-full p-3">
@@ -457,7 +457,7 @@ export const Home = ({
                   {t.btn_explore} <ArrowRight className="w-4 h-4 ml-2" />
                 </span>
               </div>
-            </div>
+            </a>
             {/* Ratgeber Links - Beruflich */}
             <div className="mt-5">
               <div className="flex items-center gap-2 mb-3">
@@ -489,7 +489,7 @@ export const Home = ({
 
           {/* PRIVAT & HOBBY - Orange */}
           <div className="flex flex-col">
-            <div onClick={() => { setSearchType('privat_hobby'); window.history.pushState({ view: 'search' }, '', '/search?type=privat_hobby'); window.scrollTo(0,0); }} className="group relative h-80 rounded-2xl overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
+            <a href="/search?type=privat_hobby" onClick={(e) => { e.preventDefault(); setSearchType('privat_hobby'); window.history.pushState({ view: 'search' }, '', '/search?type=privat_hobby'); window.scrollTo(0,0); }} className="group relative h-80 rounded-2xl overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 block">
               <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?auto=format&fit=crop&q=80&w=2000")' }}></div>
               <div className="absolute inset-0 bg-gradient-to-t from-orange-700/90 via-orange-600/40 to-orange-500/20"></div>
               <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm rounded-full p-3">
@@ -502,7 +502,7 @@ export const Home = ({
                   {t.btn_explore} <ArrowRight className="w-4 h-4 ml-2" />
                 </span>
               </div>
-            </div>
+            </a>
             {/* Ratgeber Links - Privat & Hobby */}
             <div className="mt-5">
               <div className="flex items-center gap-2 mb-3">
@@ -534,7 +534,7 @@ export const Home = ({
 
           {/* KINDER & JUGEND - Green */}
           <div className="flex flex-col">
-            <div onClick={() => { setSearchType('kinder_jugend'); window.history.pushState({ view: 'search' }, '', '/search?type=kinder_jugend'); window.scrollTo(0,0); }} className="group relative h-80 rounded-2xl overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
+            <a href="/search?type=kinder_jugend" onClick={(e) => { e.preventDefault(); setSearchType('kinder_jugend'); window.history.pushState({ view: 'search' }, '', '/search?type=kinder_jugend'); window.scrollTo(0,0); }} className="group relative h-80 rounded-2xl overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 block">
               <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1503676260728-1c00da094a0b?q=80&w=2622&auto=format&fit=crop")' }}></div>
               <div className="absolute inset-0 bg-gradient-to-t from-emerald-800/90 via-emerald-600/40 to-emerald-500/20"></div>
               <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm rounded-full p-3">
@@ -547,7 +547,7 @@ export const Home = ({
                   {t.btn_explore} <ArrowRight className="w-4 h-4 ml-2" />
                 </span>
               </div>
-            </div>
+            </a>
             {/* Ratgeber Links - Kinder & Jugend */}
             <div className="mt-5">
               <div className="flex items-center gap-2 mb-3">

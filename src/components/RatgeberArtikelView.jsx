@@ -27,15 +27,17 @@ const RatgeberArtikelView = ({ lang = 'de' }) => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">Artikel nicht gefunden</h1>
-          <button
-            onClick={() => {
+          <a
+            href="/"
+            onClick={(e) => {
+              e.preventDefault();
               window.scrollTo(0, 0);
               window.history.pushState({ view: 'home' }, '', '/');
             }}
             className="text-primary hover:underline"
           >
             Zurück zur Startseite
-          </button>
+          </a>
         </div>
       </div>
     );
@@ -145,13 +147,13 @@ const RatgeberArtikelView = ({ lang = 'de' }) => {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Breadcrumb */}
           <div className="flex flex-wrap items-center gap-2 text-white/70 text-sm mb-6">
-            <button onClick={goToSearch} className="hover:text-white transition-colors">
+            <a href={`/search?type=${segmentKey}`} onClick={(e) => { e.preventDefault(); goToSearch(); }} className="hover:text-white transition-colors">
               {category.label[lang] || category.label.de}
-            </button>
+            </a>
             <ChevronRight className="w-4 h-4" />
-            <button onClick={goToCluster} className="hover:text-white transition-colors">
+            <a href={`/ratgeber/${categorySlug}/${clusterSlug}`} onClick={(e) => { e.preventDefault(); goToCluster(); }} className="hover:text-white transition-colors">
               {cluster.label[lang] || cluster.label.de}
-            </button>
+            </a>
           </div>
 
           {/* Article Title */}
@@ -204,9 +206,10 @@ const RatgeberArtikelView = ({ lang = 'de' }) => {
         {/* Article Navigation */}
         <div className="grid md:grid-cols-2 gap-4 mt-8">
           {prevArticle ? (
-            <button
-              onClick={() => goToArticle(prevArticle.slug)}
-              className="bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-all text-left group border border-gray-100"
+            <a
+              href={`/ratgeber/${categorySlug}/${clusterSlug}/${prevArticle.slug}`}
+              onClick={(e) => { e.preventDefault(); goToArticle(prevArticle.slug); }}
+              className="bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-all text-left group border border-gray-100 block"
             >
               <span className="text-xs text-gray-400 uppercase tracking-wide">
                 {t.prevArticle[lang] || t.prevArticle.de}
@@ -214,15 +217,16 @@ const RatgeberArtikelView = ({ lang = 'de' }) => {
               <p className="font-medium text-gray-700 group-hover:text-primary transition-colors mt-1 line-clamp-1">
                 {prevArticle.title[lang] || prevArticle.title.de}
               </p>
-            </button>
+            </a>
           ) : (
             <div />
           )}
 
           {nextArticle && (
-            <button
-              onClick={() => goToArticle(nextArticle.slug)}
-              className="bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-all text-right group border border-gray-100"
+            <a
+              href={`/ratgeber/${categorySlug}/${clusterSlug}/${nextArticle.slug}`}
+              onClick={(e) => { e.preventDefault(); goToArticle(nextArticle.slug); }}
+              className="bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-all text-right group border border-gray-100 block"
             >
               <span className="text-xs text-gray-400 uppercase tracking-wide">
                 {t.nextArticle[lang] || t.nextArticle.de}
@@ -230,7 +234,7 @@ const RatgeberArtikelView = ({ lang = 'de' }) => {
               <p className="font-medium text-gray-700 group-hover:text-primary transition-colors mt-1 line-clamp-1">
                 {nextArticle.title[lang] || nextArticle.title.de}
               </p>
-            </button>
+            </a>
           )}
         </div>
       </div>
@@ -242,13 +246,14 @@ const RatgeberArtikelView = ({ lang = 'de' }) => {
           <h3 className="text-lg font-bold text-gray-700">
             {t.moreInCluster[lang] || t.moreInCluster.de}
           </h3>
-          <button
-            onClick={goToCluster}
+          <a
+            href={`/ratgeber/${categorySlug}/${clusterSlug}`}
+            onClick={(e) => { e.preventDefault(); goToCluster(); }}
             className={`${config.text} text-sm font-medium flex items-center gap-1 hover:underline`}
           >
             Alle anzeigen
             <ChevronRight className="w-4 h-4" />
-          </button>
+          </a>
         </div>
 
         {/* Related Articles (exclude current) */}
@@ -257,15 +262,16 @@ const RatgeberArtikelView = ({ lang = 'de' }) => {
             .filter(a => a.slug !== articleSlug)
             .slice(0, 3)
             .map((article) => (
-              <button
+              <a
                 key={article.slug}
-                onClick={() => goToArticle(article.slug)}
-                className="bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-all text-left group border border-gray-100"
+                href={`/ratgeber/${categorySlug}/${clusterSlug}/${article.slug}`}
+                onClick={(e) => { e.preventDefault(); goToArticle(article.slug); }}
+                className="bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-all text-left group border border-gray-100 block"
               >
                 <h4 className="font-medium text-gray-700 group-hover:text-primary transition-colors line-clamp-2 text-sm">
                   {article.title[lang] || article.title.de}
                 </h4>
-              </button>
+              </a>
             ))}
         </div>
 
@@ -277,13 +283,14 @@ const RatgeberArtikelView = ({ lang = 'de' }) => {
           <p className="text-gray-600 mb-6">
             Entdecke Kurse, die zu diesem Thema passen.
           </p>
-          <button
-            onClick={goToSearch}
+          <a
+            href={`/search?type=${segmentKey}`}
+            onClick={(e) => { e.preventDefault(); goToSearch(); }}
             className={`${config.bgSolid} text-white px-6 py-3 rounded-xl font-bold hover:opacity-90 transition-opacity inline-flex items-center gap-2`}
           >
             Kurse entdecken
             <ChevronRight className="w-5 h-5" />
-          </button>
+          </a>
         </div>
       </div>
     </div>

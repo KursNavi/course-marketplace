@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Menu, X, Globe, LogOut, LayoutDashboard, ChevronDown, Mail, ArrowRight, Check, Loader2, Briefcase, Palette, Smile } from 'lucide-react';
+import { Menu, X, Globe, LogOut, LayoutDashboard, ChevronDown, Mail, ArrowRight, Check, Loader2, Briefcase, Palette, Smile, Shield } from 'lucide-react';
 import { SEGMENT_CONFIG } from '../lib/constants';
 import { MegaMenu, MobileMenuCategory } from './MegaMenu';
 
@@ -168,7 +168,10 @@ export const Navbar = ({ t, user, lang = 'de', setLang, setView, handleLogout, s
             {user ? (
               <div className="flex items-center space-x-4">
                 <button onClick={() => navTo('dashboard')} className="flex items-center text-gray-700 hover:text-primary font-medium font-sans"><LayoutDashboard className="w-4 h-4 mr-2" />{t.nav_dashboard}</button>
-                <button onClick={handleLogout} className="flex items-center text-gray-400 hover:text-red-500"><LogOut className="w-5 h-5" /></button>
+                {user.role === 'admin' && (
+                  <button onClick={() => navTo('admin')} className="flex items-center text-purple-600 hover:text-purple-700 font-bold font-sans"><Shield className="w-4 h-4 mr-1" /> Admin</button>
+                )}
+                <button onClick={handleLogout} className="flex items-center text-gray-400 hover:text-red-500"><LogOut className="w-5 h-5" /></button>
               </div>
             ) : (
               <button onClick={() => navTo('login')} className="bg-dark text-white px-6 py-2.5 rounded-full text-sm font-bold hover:bg-primary transition-all duration-300 shadow-lg hover:-translate-y-0.5 font-heading">{t.nav_login}</button>
@@ -227,7 +230,10 @@ export const Navbar = ({ t, user, lang = 'de', setLang, setView, handleLogout, s
                 {user ? (
                     <>
                         <button onClick={() => navTo('dashboard')} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50 font-sans">{t.nav_dashboard}</button>
-                        <button onClick={handleLogout} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-red-500 hover:bg-red-50 font-sans">{t.nav_logout}</button>
+                        {user.role === 'admin' && (
+                        <button onClick={() => navTo('admin')} className="block w-full text-left px-3 py-2 rounded-md text-base font-bold text-purple-600 hover:bg-purple-50 font-sans">Admin Panel</button>
+                    )}
+                    <button onClick={handleLogout} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-red-500 hover:bg-red-50 font-sans">{t.nav_logout}</button>
                     </>
                 ) : (
                     <button onClick={() => navTo('login')} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-primary font-bold font-sans">{t.nav_login}</button>
@@ -420,28 +426,28 @@ export const Footer = ({ t, setView }) => {
         <div>
           <h4 className="font-heading font-bold text-dark mb-4">{t.footer_discover}</h4>
           <ul className="space-y-2 text-sm text-gray-500 font-sans">
-            <li onClick={() => { window.scrollTo(0, 0); window.history.pushState({ view: 'search' }, '', '/search?type=beruflich'); }} className="hover:text-primary cursor-pointer transition-colors">{t.nav_professional}</li>
-            <li onClick={() => { window.scrollTo(0, 0); window.history.pushState({ view: 'search' }, '', '/search?type=privat_hobby'); }} className="hover:text-primary cursor-pointer transition-colors">{t.nav_private}</li>
-            <li onClick={() => { window.scrollTo(0, 0); window.history.pushState({ view: 'search' }, '', '/search?type=kinder_jugend'); }} className="hover:text-primary cursor-pointer transition-colors">{t.nav_kids}</li>
-            <li onClick={() => navTo('blog')} className="hover:text-primary cursor-pointer transition-colors">{t.nav_news}</li>
-            <li onClick={() => navTo('provider-directory')} className="hover:text-primary cursor-pointer transition-colors">{t.nav_providers || 'Anbieter-Verzeichnis'}</li>
-            <li onClick={() => navTo('teacher-hub')} className="hover:text-primary cursor-pointer transition-colors font-bold text-orange-600">{t.nav_for_providers}</li>
+            <li><a href="/search?type=beruflich" onClick={(e) => { e.preventDefault(); window.scrollTo(0, 0); window.history.pushState({ view: 'search' }, '', '/search?type=beruflich'); }} className="hover:text-primary transition-colors">{t.nav_professional}</a></li>
+            <li><a href="/search?type=privat_hobby" onClick={(e) => { e.preventDefault(); window.scrollTo(0, 0); window.history.pushState({ view: 'search' }, '', '/search?type=privat_hobby'); }} className="hover:text-primary transition-colors">{t.nav_private}</a></li>
+            <li><a href="/search?type=kinder_jugend" onClick={(e) => { e.preventDefault(); window.scrollTo(0, 0); window.history.pushState({ view: 'search' }, '', '/search?type=kinder_jugend'); }} className="hover:text-primary transition-colors">{t.nav_kids}</a></li>
+            <li><a href="/blog" onClick={(e) => { e.preventDefault(); navTo('blog'); }} className="hover:text-primary transition-colors">{t.nav_news}</a></li>
+            <li><a href="/anbieter" onClick={(e) => { e.preventDefault(); navTo('provider-directory'); }} className="hover:text-primary transition-colors">{t.nav_providers || 'Anbieter-Verzeichnis'}</a></li>
+            <li><a href="/teacher-hub" onClick={(e) => { e.preventDefault(); navTo('teacher-hub'); }} className="hover:text-primary transition-colors font-bold text-orange-600">{t.nav_for_providers}</a></li>
           </ul>
         </div>
         <div>
           <h4 className="font-heading font-bold text-dark mb-4">{t.footer_support}</h4>
           <ul className="space-y-2 text-sm text-gray-500 font-sans">
-            <li onClick={() => navTo('how-it-works')} className="hover:text-primary cursor-pointer transition-colors">{t.nav_howitworks}</li>
-            <li onClick={() => navTo('contact')} className="hover:text-primary cursor-pointer transition-colors">{t.nav_contact}</li>
-            <li onClick={() => navTo('about')} className="hover:text-primary cursor-pointer transition-colors">{t.nav_about}</li>
+            <li><a href="/how-it-works" onClick={(e) => { e.preventDefault(); navTo('how-it-works'); }} className="hover:text-primary transition-colors">{t.nav_howitworks}</a></li>
+            <li><a href="/contact" onClick={(e) => { e.preventDefault(); navTo('contact'); }} className="hover:text-primary transition-colors">{t.nav_contact}</a></li>
+            <li><a href="/about" onClick={(e) => { e.preventDefault(); navTo('about'); }} className="hover:text-primary transition-colors">{t.nav_about}</a></li>
           </ul>
         </div>
         <div>
           <h4 className="font-heading font-bold text-dark mb-4">{t.footer_legal_header}</h4>
           <ul className="space-y-2 text-sm text-gray-500 font-sans">
-            <li onClick={() => navTo('agb')} className="hover:text-primary cursor-pointer transition-colors">{t.legal_agb}</li>
-            <li onClick={() => navTo('datenschutz')} className="hover:text-primary cursor-pointer transition-colors">{t.footer_privacy}</li>
-            <li onClick={() => navTo('impressum')} className="hover:text-primary cursor-pointer transition-colors">{t.footer_legal}</li>
+            <li><a href="/agb" onClick={(e) => { e.preventDefault(); navTo('agb'); }} className="hover:text-primary transition-colors">{t.legal_agb}</a></li>
+            <li><a href="/datenschutz" onClick={(e) => { e.preventDefault(); navTo('datenschutz'); }} className="hover:text-primary transition-colors">{t.footer_privacy}</a></li>
+            <li><a href="/impressum" onClick={(e) => { e.preventDefault(); navTo('impressum'); }} className="hover:text-primary transition-colors">{t.footer_legal}</a></li>
           </ul>
         </div>
       </div>

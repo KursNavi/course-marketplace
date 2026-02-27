@@ -164,8 +164,79 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true });
     }
 
+    // ============================================
+    // ACTION: user-data - Get dashboard data for a specific user (impersonation)
+    // ============================================
+    if (action === 'user-data') {
+      if (req.method !== 'GET') {
+        return res.status(405).json({ error: 'Method not allowed' });
+      }
+
+      const userId = req.query.userId;
+      if (!userId || !isValidUUID(userId)) {
+        return res.status(400).json({ error: 'Missing or invalid userId' });
+      }
+
+      // Fetch bookings
+      const { data: bookings } = await supabaseAdmin
+        .from('bookings')
+        .select('*, courses(*), course_events(*)')
+        .eq('user_id', userId)
+        .eq('status', 'confirmed');
+
+      // Fetch saved courses
+      const { data: savedRaw } = await supabaseAdmin
+        .from('saved_courses')
+        .select('course_id')
+        .eq('user_id', userId);
+
+      let savedCourses = [];
+      if (savedRaw && savedRaw.length > 0) {
+        const courseIds = savedRaw.map(s => s.course_id);
+        const { data: courses } = await supabaseAdmin
+          .from('courses')
+          .select('*')
+          .in('id', courseIds);
+        savedCourses = courses || [];
+      }
+
+      // Fetch teacher earnings (courses + bookings)
+      const { data: userCourses } = await supabaseAdmin
+        .from('courses')
+        .select('id, title, price')
+        .eq('user_id', userId);
+
+      let earnings = [];
+      if (userCourses && userCourses.length > 0) {
+        const courseIds = userCourses.map(c => c.id);
+        const { data: courseBookings } = await supabaseAdmin
+          .from('bookings')
+          .select('course_id, created_at')
+          .in('course_id', courseIds)
+          .eq('status', 'confirmed');
+
+        earnings = userCourses.map(c => ({
+          ...c,
+          bookings: (courseBookings || []).filter(b => b.course_id === c.id).length,
+          revenue: (courseBookings || []).filter(b => b.course_id === c.id).length * (c.price || 0)
+        }));
+      }
+
+      return res.status(200).json({
+        bookings: (bookings || []).map(b => ({
+          id: b.id,
+          course_id: b.course_id,
+          course: b.courses,
+          event_id: b.event_id,
+          event: b.course_events
+        })).filter(b => b.course),
+        savedCourses,
+        earnings
+      });
+    }
+
     // Unknown action
-    return res.status(400).json({ error: 'Unknown action. Use: profiles, set-tier, or set-verify' });
+    return res.status(400).json({ error: 'Unknown action. Use: profiles, set-tier, set-verify, or user-data' });
 
   } catch (error) {
     console.error('Admin API error:', error);

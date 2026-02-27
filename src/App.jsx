@@ -7,6 +7,7 @@ import { CATEGORY_LABELS, TRANSLATIONS, CATEGORY_TYPES } from './lib/constants';
 import { supabase } from './lib/supabase';
 import { isImageUsedByOtherCourses, deleteImageFromStorage } from './lib/imageUtils';
 import { BASE_URL, slugify as siteSlugify, buildCoursePath as siteBuildCoursePath } from './lib/siteConfig';
+import { ADMIN_API_SECRET } from './lib/adminConfig';
 import { useTaxonomy } from './hooks/useTaxonomy';
 
 // Eagerly loaded components (always needed)
@@ -149,9 +150,13 @@ export default function KursNaviPro() {  // 1. Initial State Logic
 
   const [lang, setLang] = useState('de');
   const [view, setView] = useState(getInitialView);
-  const [user, setUser] = useState(null); 
+  const [user, setUser] = useState(null);
   const [, setSession] = useState(null);
-  
+
+  // Admin Impersonation State
+  const [impersonatedUser, setImpersonatedUser] = useState(null);
+  const effectiveUser = impersonatedUser || user;
+
   // App Data State
   const [courses, setCourses] = useState([]);
     const coursesRef = useRef([]);
@@ -1206,6 +1211,43 @@ export default function KursNaviPro() {  // 1. Initial State Logic
     };
   }, []);
 
+  // Load data for impersonated user via Admin API (bypasses RLS)
+  useEffect(() => {
+    if (!impersonatedUser) return;
+
+    const loadImpersonatedData = async () => {
+      try {
+        const params = new URLSearchParams({
+          action: 'user-data',
+          userId: impersonatedUser.id
+        });
+        const res = await fetch(`/api/admin?${params}`, {
+          headers: { 'x-admin-secret': ADMIN_API_SECRET }
+        });
+        if (res.ok) {
+          const json = await res.json();
+          setMyBookings(json.bookings || []);
+          setSavedCourses(json.savedCourses || []);
+          setSavedCourseIds((json.savedCourses || []).map(c => c.id));
+          setTeacherEarnings(json.earnings || []);
+        }
+      } catch (e) {
+        console.warn('Failed to load impersonated user data:', e);
+      }
+    };
+
+    loadImpersonatedData();
+  }, [impersonatedUser?.id]);
+
+  // Restore own data when stopping impersonation
+  useEffect(() => {
+    if (!impersonatedUser && user) {
+      fetchBookings(user.id);
+      fetchSavedCourses(user.id);
+      if (user.role === 'teacher') fetchTeacherEarnings(user.id);
+    }
+  }, [!impersonatedUser]);
+
   useEffect(() => {
     function handleClickOutside(event) {
       if (catMenuRef.current && !catMenuRef.current.contains(event.target)) setCatMenuOpen(false);
@@ -1298,6 +1340,20 @@ useEffect(() => {
     <ErrorBoundary>
       <div className="min-h-screen bg-beige font-sans text-dark selection:bg-orange-100 selection:text-primary flex flex-col font-sans">
       {notification && (<div className="fixed top-24 left-1/2 transform -translate-x-1/2 bg-dark text-white px-6 py-3 rounded-full shadow-2xl z-50 flex items-center animate-bounce font-heading"><CheckCircle className="w-5 h-5 mr-2 text-primary" />{notification}</div>)}
+
+      {/* Admin Impersonation Banner */}
+      {impersonatedUser && (
+        <div className="fixed top-16 left-0 right-0 bg-purple-600 text-white px-4 py-2 z-40 flex items-center justify-center gap-4 text-sm font-bold shadow-lg">
+          <span>Du siehst das Dashboard von: {impersonatedUser.name} ({impersonatedUser.email}) — Rolle: {impersonatedUser.role}</span>
+          <button
+            onClick={() => { setImpersonatedUser(null); setView('admin'); }}
+            className="bg-white text-purple-600 px-4 py-1 rounded-full text-xs font-bold hover:bg-purple-50 transition"
+          >
+            Beenden
+          </button>
+        </div>
+      )}
+
       <Navbar t={t} user={user} lang={lang} setLang={changeLanguage} setView={setView} handleLogout={handleLogout} setShowResults={() => setView('search')} setSelectedCatPath={setSelectedCatPath} />
 
       <div className="flex-grow">
@@ -1391,7 +1447,7 @@ useEffect(() => {
       {view === 'widerruf' && <LegalPage pageKey="widerruf" lang={lang} setView={setView} />}
       {view === 'trust' && <LegalPage pageKey="trust" lang={lang} setView={setView} />}
 
-      {view === 'admin' && <AdminPanel t={t} courses={courses} showNotification={showNotification} fetchCourses={fetchCourses} setView={setView} />}
+      {view === 'admin' && <AdminPanel t={t} courses={courses} showNotification={showNotification} fetchCourses={fetchCourses} setView={setView} user={user} onImpersonate={setImpersonatedUser} />}
       {view === 'admin-blog' && <AdminBlogManager showNotification={showNotification} setView={setView} courses={courses} />}
       {view === 'blog' && <BlogList articles={articles} setView={setView} setSelectedArticle={setSelectedArticle} />}
       {view === 'blog-detail' && <BlogDetail article={selectedArticle} setView={setView} courses={courses} />}
@@ -1401,7 +1457,7 @@ useEffect(() => {
       {view === 'ratgeber-cluster' && <RatgeberClusterView lang={lang} />}
       {view === 'ratgeber-artikel' && <RatgeberArtikelView lang={lang} />}
       {view === 'not-found' && <NotFoundPage setView={setView} />}
-      {view === 'dashboard' && user && <Dashboard user={user} setUser={setUser} t={t} setView={setView} courses={courses} teacherEarnings={teacherEarnings} myBookings={myBookings} savedCourses={savedCourses} savedCourseIds={savedCourseIds} onToggleSaveCourse={toggleSaveCourse} handleDeleteCourse={handleDeleteCourse} handleEditCourse={handleEditCourse} handleUpdateCourseStatus={handleUpdateCourseStatus} showNotification={showNotification} changeLanguage={changeLanguage} setSelectedCourse={setSelectedCourse} refreshBookings={fetchBookings} />}
+      {view === 'dashboard' && effectiveUser && <Dashboard user={effectiveUser} setUser={impersonatedUser ? () => {} : setUser} t={t} setView={setView} courses={courses} teacherEarnings={teacherEarnings} myBookings={myBookings} savedCourses={savedCourses} savedCourseIds={savedCourseIds} onToggleSaveCourse={toggleSaveCourse} handleDeleteCourse={handleDeleteCourse} handleEditCourse={handleEditCourse} handleUpdateCourseStatus={handleUpdateCourseStatus} showNotification={showNotification} changeLanguage={changeLanguage} setSelectedCourse={setSelectedCourse} refreshBookings={fetchBookings} isImpersonating={!!impersonatedUser} />}
       {view === 'create' && user?.role === 'teacher' && <TeacherForm key={editingCourse?.id || 'new'} t={t} setView={setView} user={user} fetchCourses={fetchCourses} showNotification={showNotification} setEditingCourse={setEditingCourse} initialData={editingCourse} />}
       </Suspense>
       </div>

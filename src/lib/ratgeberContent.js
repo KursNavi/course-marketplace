@@ -1782,7 +1782,9 @@ export const RATGEBER_CONTENT = {
   'privat-hobby/inspiration/hobby-finden-selbstanalyse': `
     <p class="lead">Wer systematisch die vier Säulen Zeit, Energie, soziale Vorlieben und Budget analysiert, findet das richtige Hobby – und senkt Einstiegshürden massiv.</p>
 
-    <h2>Warum die richtige Hobby-Wahl so wichtig ist</h2>
+    <img src="https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=800&q=80" alt="Hobby-Selbstanalyse und Entdeckung" class="article-image" />
+
+    <h2>🎯 Warum die richtige Hobby-Wahl so wichtig ist</h2>
     <p>Hobbys sind keine Nebensache. Wer aktiv ein Hobby ausübt, berichtet deutlich niedrigere Stresswerte und stärkt das eigene Selbstwirksamkeitserleben – das Gefühl, etwas selbst beeinflussen zu können. Besonders hilfreich ist das für beruflich gestresste Menschen: Ein Hobby dient als Gegengewicht zu Job-Ohnmacht. Doch nur wenn das Hobby wirklich passt, entfaltet sich dieser Effekt.</p>
 
     <h2>Welche vier Säulen entscheiden über die richtige Wahl?</h2>
@@ -1815,13 +1817,18 @@ export const RATGEBER_CONTENT = {
       <li><strong>Budget vs. Erwartung:</strong> Sehr günstige Kurse sind oft schlecht betreut. Ein realistisches Budget vermeidet Frustration.</li>
     </ul>
 
-    <p><strong>Nutze den KursNavi-Selbstanalyse-Check und finde Dein passendes Hobby heute noch.</strong></p>
+    <div class="cta-box">
+      <h3>🎯 Dein passendes Hobby finden</h3>
+      <p>Nutze den KursNavi-Selbstanalyse-Check und finde Dein passendes Hobby heute noch.</p>
+    </div>
   `,
 
   'privat-hobby/inspiration/hobby-hopping': `
     <p class="lead">Menschen wissen oft nicht, was sie mögen, bis sie es probieren. Strukturierte Experimentation ist die beste Strategie, echte Leidenschaft zu finden – nicht Vorausplanung.</p>
 
-    <h2>Warum ist Neugier dein grösstes Kapital?</h2>
+    <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&q=80" alt="Menschen probieren verschiedene Aktivitäten aus" class="article-image" />
+
+    <h2>🔍 Warum ist Neugier dein grösstes Kapital?</h2>
     <p>Neugier ist der 'Hunger nach Wissen' kombiniert mit Bereitschaft, sich überraschen zu lassen. Sie ist ein psychologisches Grundbedürfnis und Voraussetzung für Lernentwicklung. Im Erwachsenenalter: Neugier-Verlust korreliert mit kognitiver Stagnation. Wer regelmässig Neues probiert, bleibt mental jung und findet echte Leidenschaften – nicht nur Hobbys.</p>
 
     <h2>Das Problem mit 'Die richtige Aktivität finden'</h2>
@@ -1848,13 +1855,18 @@ export const RATGEBER_CONTENT = {
 
     <p>KursNavi bietet das 'Hobby-Explorer'-Feature: Du beschreibst deine Interessen, erhältst 3–5 Workshops zum strukturierten Ausprobieren, und wenn dich etwas fesselt, vermittelst du zum passenden Kurs. Paradox: Menschen, die hoppen, haben höhere Bindungsquoten an langfristige Kurse als direkte Entscheider.</p>
 
-    <p><strong>Mit KursNavi entdeckst Du systematisch, welches Hobby wirklich passt.</strong></p>
+    <div class="cta-box">
+      <h3>🎯 Hobby-Explorer starten</h3>
+      <p>Mit KursNavi entdeckst Du systematisch, welches Hobby wirklich zu Dir passt.</p>
+    </div>
   `,
 
   'privat-hobby/inspiration/micro-hobbies': `
     <p class="lead">15 Minuten täglich sind oft wirksamer als sporadische mehrstündige Sessions – Micro-Hobbies senken die Eintrittsbarriere und liefern nachweislich Stressabbau und Flow.</p>
 
-    <h2>Was genau ist ein Micro-Hobby?</h2>
+    <img src="https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=800&q=80" alt="Micro-Hobbies und kleine kreative Aktivitäten" class="article-image" />
+
+    <h2>⏱️ Was genau ist ein Micro-Hobby?</h2>
     <p>Ein Micro-Hobby ist eine Aktivität unter 30 Minuten pro Tag, mit minimalem Budget (CHF 0–50) und maximaler psychologischer Rendite. Es ist kein strukturiertes Lernen, sondern pure Genussaktivität. Der Trend 2025/2026 zeigt: Menschen wählen bewusst 'Micro-Splurges' – kleine freudenbringende Ausgaben und Aktivitäten – als Reaktion auf wirtschaftliche Unsicherheit und digitale Überflutung.</p>
 
     <h2>Welche Micro-Hobbies gibt es – und wie viel Zeit brauchst du?</h2>
@@ -1881,13 +1893,18 @@ export const RATGEBER_CONTENT = {
 
     <p>KursNavi bietet einen Micro-Hobby-Katalog mit konkret erklärten Flow-Benefits. Ideal für deinen Zeitmangel-Einstieg: Starte mit 15 Minuten täglich und steigere dich später zu Workshops und Kursen, wenn die Freude gewachsen ist.</p>
 
-    <p><strong>Starte jetzt mit einem Micro-Hobby auf KursNavi – die perfekte Einstiegshürde.</strong></p>
+    <div class="cta-box">
+      <h3>🎯 Micro-Hobbies entdecken</h3>
+      <p>Starte jetzt mit einem Micro-Hobby auf KursNavi – die perfekte Einstiegshürde für wenig Zeit.</p>
+    </div>
   `,
 
   'privat-hobby/inspiration/workshop-vs-kurs': `
     <p class="lead">Workshops geben schnelle Impulse und Motivationsspritzen; Kurse bauen systematische Kompetenzen auf. Wer wenig Zeit hat, wählt Workshops – wer Gewöhnung braucht, entscheidet sich für Kurse.</p>
 
-    <h2>Worin unterscheiden sich Workshops und Kurse wirklich?</h2>
+    <img src="https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=800&q=80" alt="Workshop vs Kurs Vergleich" class="article-image" />
+
+    <h2>📊 Worin unterscheiden sich Workshops und Kurse wirklich?</h2>
     <table>
       <thead>
         <tr><th>Kriterium</th><th>Workshop</th><th>Kurs</th></tr>
@@ -1921,13 +1938,18 @@ export const RATGEBER_CONTENT = {
 
     <p>KursNavi zeigt Dir transparent, welche Workshops Deine Zeithürde senken und welche Kurse optimal für kontinuierliches Lernen sind. So findest Du das Format, das zu Deinem Leben wirklich passt – nicht das, das Du brauchtest, wenn du perfekt wärst.</p>
 
-    <p><strong>Auf KursNavi findest Du beide Format-Typen und kannst direkt vergleichen.</strong></p>
+    <div class="cta-box">
+      <h3>🎯 Workshop oder Kurs?</h3>
+      <p>Auf KursNavi findest Du beide Format-Typen und kannst direkt vergleichen, was besser zu Dir passt.</p>
+    </div>
   `,
 
   'privat-hobby/inspiration/zurueck-zum-kindheitstraum': `
     <p class="lead">Rückkehr zu Lieblingshobbys aus der Kindheit ist nicht Nostalgie – sie ist therapeutisch wirksamer Stressabbau und Reconnection mit Authentizität.</p>
 
-    <h2>Warum Kindheitshobbys noch heute nachwirken</h2>
+    <img src="https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=800&q=80" alt="Kindheitserinnerungen und Hobbys wiederentdecken" class="article-image" />
+
+    <h2>💫 Warum Kindheitshobbys noch heute nachwirken</h2>
     <p>Das, was du zwischen 7 und 14 Jahren geliebt hast, hinterlässt tiefe neuronale Muster. Damals war deine Motivation 'intrinsisch' – du tatest es aus reiner Freude, nicht aus Leistungsdruck. Diese emotionale Imprägung bleibt ein Leben lang. Viele Menschen unterbrechen ihre Kindheitshobbys aus Zeitmangel, Geld oder sozialen Gründen – doch die Sehnsucht bleibt.</p>
 
     <h2>Was passiert psychologisch, wenn du zurückkehrst?</h2>
@@ -1954,13 +1976,18 @@ export const RATGEBER_CONTENT = {
 
     <p>Es ist NIEMALS zu spät für Kindheitsträume. KursNavi stellt gezielt Kurse vor, die Erwachsene unterstützen, ihre Lieblingsbeschäftigungen aus der Kindheit wiederaufzunehmen – mit dem richtigen Format und dem richtigen Tempo.</p>
 
-    <p><strong>KursNavi hilft Dir, diesen Traum wieder zu entdecken und mit dem richtigen Kurs zu starten.</strong></p>
+    <div class="cta-box">
+      <h3>🎯 Kindheitstraum wiederentdecken</h3>
+      <p>KursNavi hilft Dir, diesen Traum wieder zu entdecken und mit dem richtigen Kurs zu starten.</p>
+    </div>
   `,
 
   'privat-hobby/inspiration/flow-zustand-stressabbau': `
     <p class="lead">Flow – der Zustand vollständiger Vertiefung – ist einer der stärksten natürlichen Stressabbau-Mechanismen. Mit dem richtigen Hobby erreichst du diesen Zustand regelmässig.</p>
 
-    <h2>Was ist Flow?</h2>
+    <img src="https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&q=80" alt="Flow-Zustand und Entspannung" class="article-image" />
+
+    <h2>🧠 Was ist Flow?</h2>
     <p>Flow ist ein psychologischer Zustand, in dem du vollständig in eine Aktivität vertieft bist. Zeit vergeht unbemerkt, Selbstzweifel verschwinden, und du erlebst tiefe Zufriedenheit. Dieser Zustand wurde vom Psychologen Mihaly Csikszentmihalyi entdeckt und ist wissenschaftlich gut erforscht.</p>
 
     <h2>Wie erreicht man Flow?</h2>
@@ -1987,7 +2014,10 @@ export const RATGEBER_CONTENT = {
 
     <p>KursNavi filtert gezielt nach Flow-förderlichen Kriterien: progressive Schwierigkeitssteigerung, Gruppengrösse, Kurs-Länge und Zeitrahmen. Damit findest du nicht nur ein Hobby, sondern ein Hobby, das Flow-Zustand und Stressabbau garantiert.</p>
 
-    <p><strong>Finde Flow-optimierte Kurse auf KursNavi.</strong></p>
+    <div class="cta-box">
+      <h3>🎯 Flow-optimierte Kurse finden</h3>
+      <p>Finde auf KursNavi Kurse, die perfekt zu Deinem Stresslevel und Flow-Bedürfnis passen.</p>
+    </div>
   `,
 
   // ============================================
@@ -2211,7 +2241,9 @@ export const RATGEBER_CONTENT = {
   'privat-hobby/qualitaet/storno-ruecktritt-rechte': `
     <p class="lead">Was passiert, wenn du einen gebuchten Kurs doch nicht besuchen kannst? Deine Rechte und Pflichten im Überblick.</p>
 
-    <h2>Allgemeine Rechtslage in der Schweiz</h2>
+    <img src="https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=800&q=80" alt="Stornierung und Rücktrittsrechte" class="article-image" />
+
+    <h2>⚖️ Allgemeine Rechtslage in der Schweiz</h2>
     <p>In der Schweiz gibt es kein gesetzliches Widerrufsrecht für Kursanmeldungen wie bei Online-Käufen. Die Stornobedingungen richten sich nach dem Vertrag mit dem Anbieter. Deshalb ist es wichtig, diese VOR der Buchung zu lesen.</p>
 
     <h2>Typische Stornobedingungen</h2>
@@ -2238,7 +2270,10 @@ export const RATGEBER_CONTENT = {
     <h2>Vor der Buchung prüfen</h2>
     <p>Lies die AGB und Stornobedingungen BEVOR du buchst. Bei teuren Kursen lohnt sich eine Seminar-Versicherung. Achte auf flexible Anbieter mit fairen Bedingungen.</p>
 
-    <p><strong>Auf KursNavi findest du detaillierte Stornobedingungen für jeden Kurs – keine Überraschungen mehr.</strong></p>
+    <div class="cta-box">
+      <h3>🎯 Kurse mit fairen Bedingungen finden</h3>
+      <p>Auf KursNavi findest du detaillierte Stornobedingungen für jeden Kurs – keine Überraschungen mehr.</p>
+    </div>
   `,
 
   // ============================================
@@ -2247,7 +2282,9 @@ export const RATGEBER_CONTENT = {
   'privat-hobby/lebensphasen/neu-in-der-stadt': `
     <p class="lead">In einer neuen Stadt angekommen? Hobbykurse sind der schnellste Weg zu echten Kontakten und Freundschaften mit Gleichgesinnten.</p>
 
-    <h2>Wie finde ich den richtigen Kurs zum Anschluss?</h2>
+    <img src="https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=800&q=80" alt="Neue Leute kennenlernen in der Stadt" class="article-image" />
+
+    <h2>🤝 Wie finde ich den richtigen Kurs zum Anschluss?</h2>
     <ul>
       <li>Regelmässige Kurse wählen – nicht nur Einmalangebote</li>
       <li>Kurse mit Konversationsmöglichkeiten (Sport, Kochen, Sprachen)</li>
@@ -2267,13 +2304,18 @@ export const RATGEBER_CONTENT = {
       </tbody>
     </table>
 
-    <p><strong>Nutze KursNavi, um schnell Dein neues Hobby und neue Kontakte in Deiner Stadt zu finden.</strong></p>
+    <div class="cta-box">
+      <h3>🎯 Neue Kontakte finden</h3>
+      <p>Nutze KursNavi, um schnell Dein neues Hobby und neue Kontakte in Deiner Stadt zu finden.</p>
+    </div>
   `,
 
   'privat-hobby/lebensphasen/introvertiert-hobbys-alleine': `
     <p class="lead">Die besten Hobbys für Introvertierte sind solche, die du allein geniesst – ohne Druck, nebenher zu reden oder deine Energie zu teilen.</p>
 
-    <h2>Vorteile von Solo-Hobbys</h2>
+    <img src="https://images.unsplash.com/photo-1456406644174-8ddd4cd52a06?w=800&q=80" alt="Solo-Hobbys für Introvertierte" class="article-image" />
+
+    <h2>✨ Vorteile von Solo-Hobbys</h2>
     <ul>
       <li>Volle Kontrolle über Tempo und Umgebung</li>
       <li>Tiefe und intensiver Fokus möglich</li>
@@ -2299,13 +2341,18 @@ export const RATGEBER_CONTENT = {
     <h2>Solo + optionales Soziales</h2>
     <p>Viele Introvertierte finden ein Gleichgewicht: 80 Prozent allein, 20 Prozent in einer Gruppe. Dies bietet das Beste aus beiden Welten.</p>
 
-    <p><strong>Auf KursNavi kannst Du gezielt nach kleineren Gruppen oder Solo-Aktivitäten filtern.</strong></p>
+    <div class="cta-box">
+      <h3>🎯 Introvertiert? Kein Problem!</h3>
+      <p>Auf KursNavi kannst Du gezielt nach kleineren Gruppen oder Solo-Aktivitäten filtern.</p>
+    </div>
   `,
 
   'privat-hobby/lebensphasen/kurse-alleine-besuchen': `
     <p class="lead">Introversion ist keine Angststörung – und Introvertierte besuchen problemlos Kurse allein. Hier sind bewährte Tipps für weniger Nervosität.</p>
 
-    <h2>Was ist der Unterschied?</h2>
+    <img src="https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&q=80" alt="Alleine Kurse besuchen" class="article-image" />
+
+    <h2>🔍 Was ist der Unterschied?</h2>
     <p>Introvertiert sein bedeutet, dass du Energie aus deinem Innenleben ziehst – nicht, dass du Angst vor Menschen hast. Introvertierte können problemlos allein Kurse besuchen.</p>
     <p>Soziale Angst ist eine echte Angststörung, die behandelt werden sollte. Wenn dich Angst stark beeinträchtigt, suche professionelle Hilfe.</p>
 
@@ -2326,13 +2373,18 @@ export const RATGEBER_CONTENT = {
       <li>Tanz-Anfängerkurse (Bewegung schafft Leichtigkeit)</li>
     </ul>
 
-    <p><strong>KursNavi zeigt Dir kleinere und grossgruppen-freundliche Kurse.</strong></p>
+    <div class="cta-box">
+      <h3>🎯 Passende Kurse für Introvertierte</h3>
+      <p>KursNavi zeigt Dir kleinere und grossgruppen-freundliche Kurse, die zu Deinem Stil passen.</p>
+    </div>
   `,
 
   'privat-hobby/lebensphasen/hobbykurse-date-idee': `
     <p class="lead">Ein klassisches Dinner-Date kann langweilig sein. Ein gemeinsamer Kurs? Das schafft gemeinsame Erinnerungen, Teamwork und echte Gespräche.</p>
 
-    <h2>Welche Kurse funktionieren für ein Date?</h2>
+    <img src="https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?w=800&q=80" alt="Kreatives Date mit Kochkurs" class="article-image" />
+
+    <h2>💕 Welche Kurse funktionieren für ein Date?</h2>
     <table>
       <thead>
         <tr><th>Kurstyp</th><th>Warum es funktioniert</th></tr>
@@ -2349,13 +2401,18 @@ export const RATGEBER_CONTENT = {
     <p><strong>Vor dem Kurs:</strong> Wähle einen Kurs, der zu beiden Interessen passt.</p>
     <p><strong>Nach dem Kurs:</strong> Geht zusammen essen und diskutiert das Gelernte. Gemeinsames Lachen über Fehler schafft Intimität.</p>
 
-    <p><strong>Schau auf KursNavi nach spannenden Paar-Kursen in Eurer Nähe.</strong></p>
+    <div class="cta-box">
+      <h3>🎯 Das perfekte Hobby-Date planen</h3>
+      <p>Schau auf KursNavi nach spannenden Paar-Kursen in Eurer Nähe.</p>
+    </div>
   `,
 
   'privat-hobby/lebensphasen/hobbys-senioren': `
     <p class="lead">90 Prozent der Schweizer Senioren haben regelmässige Hobbys – und das aus gutem Grund. Hobbys sind der beste Schutz gegen Einsamkeit und Burnout im Ruhestand.</p>
 
-    <h2>Warum sind Hobbys im Alter so wichtig?</h2>
+    <img src="https://images.unsplash.com/photo-1447005497901-b3e9ee359928?w=800&q=80" alt="Aktive Senioren beim Hobby" class="article-image" />
+
+    <h2>🌟 Warum sind Hobbys im Alter so wichtig?</h2>
     <ul>
       <li>Schützen vor Vereinsamung und Depression</li>
       <li>Halten körperlich und geistig fit</li>
@@ -2385,13 +2442,18 @@ export const RATGEBER_CONTENT = {
       <li><strong>"Keine Energie"</strong> → Hobbys mit sozialem Element motivieren mehr</li>
     </ul>
 
-    <p><strong>Erkunde auf KursNavi Hobbys speziell für Deine Altersgruppe.</strong></p>
+    <div class="cta-box">
+      <h3>🎯 Hobbys für Senioren entdecken</h3>
+      <p>Erkunde auf KursNavi Hobbys und Kurse speziell für Deine Altersgruppe.</p>
+    </div>
   `,
 
   'privat-hobby/lebensphasen/hobbys-studierende': `
     <p class="lead">Studierende haben wenig Geld – aber Zugang zu unschlagbar günstigen Hobbykursen. Hier sind die besten Tipps.</p>
 
-    <h2>Warum sind Hobbys im Studium wichtig?</h2>
+    <img src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=800&q=80" alt="Studierende bei günstigen Hobbys" class="article-image" />
+
+    <h2>📚 Warum sind Hobbys im Studium wichtig?</h2>
     <ul>
       <li>Stressabbau und Mental-Health-Schutz</li>
       <li>Work-Life-Balance gegen Burnout</li>
@@ -2415,7 +2477,10 @@ export const RATGEBER_CONTENT = {
     <h2>Sharing Economy für Studis</h2>
     <p>Sharely und Leihbar helfen dir, Ausrüstung auszuleihen statt zu kaufen. Das spart hunderte Franken pro Jahr.</p>
 
-    <p><strong>Finde auf KursNavi günstige Kurse und Workshops speziell für Dein Budget.</strong></p>
+    <div class="cta-box">
+      <h3>🎯 Budget-freundliche Kurse für Studis</h3>
+      <p>Finde auf KursNavi günstige Kurse und Workshops speziell für Dein Budget.</p>
+    </div>
   `,
 
   // ============================================
@@ -2424,7 +2489,9 @@ export const RATGEBER_CONTENT = {
   'privat-hobby/kosten-nutzen/guenstige-alternativen': `
     <p class="lead">Nicht jeder kann sich Premium-Fitnessstudios oder teure Sprachschulen leisten. Hier sind die besten kostenlosen und günstigen Alternativen.</p>
 
-    <h2>Die Top-10 der günstigsten Hobbys</h2>
+    <img src="https://images.unsplash.com/photo-1434494878577-86c23bcb06b9?w=800&q=80" alt="Günstige Hobby-Alternativen" class="article-image" />
+
+    <h2>💰 Die Top-10 der günstigsten Hobbys</h2>
     <table>
       <thead>
         <tr><th>Hobby</th><th>Jahresbudget</th></tr>
@@ -2450,7 +2517,10 @@ export const RATGEBER_CONTENT = {
     <h2>Die "Budget-Hobby-Mischung"</h2>
     <p>Statt alle Hobbys Premium zu kaufen: Wähle 1 Premium-Hobby, das dir am meisten bedeutet, und 2-3 Budget-Hobbys. Ersparnis: CHF 5'000+/Jahr.</p>
 
-    <p><strong>Entdecke auf KursNavi die besten günstigen Kurse in Deiner Region.</strong></p>
+    <div class="cta-box">
+      <h3>🎯 Günstige Kurse entdecken</h3>
+      <p>Entdecke auf KursNavi die besten günstigen Kurse und Workshops in Deiner Region.</p>
+    </div>
   `,
 
   'privat-hobby/kosten-nutzen/ausruestung-mieten-statt-kaufen': `
@@ -2503,7 +2573,9 @@ export const RATGEBER_CONTENT = {
   'privat-hobby/kosten-nutzen/minimum-viable-gear': `
     <p class="lead">Viele Menschen kaufen teure Ausrüstung, bevor sie sicher sind, dass ihnen das Hobby gefällt. Der "Minimum Viable Gear"-Ansatz spart Geld und Reue.</p>
 
-    <h2>Was ist Minimum Viable Gear?</h2>
+    <img src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=80" alt="Minimalistische Hobby-Ausrüstung" class="article-image" />
+
+    <h2>🎯 Was ist Minimum Viable Gear?</h2>
     <ul>
       <li>Das absolute Minimum an Equipment zum Starten</li>
       <li>Funktioniert gut genug für Anfänger</li>
@@ -2532,13 +2604,18 @@ export const RATGEBER_CONTENT = {
       <li>Erst Erfahrung sammeln, dann upgraden</li>
     </ul>
 
-    <p><strong>KursNavi zeigt Dir Kurse, die ohne viel Equipment auskommen.</strong></p>
+    <div class="cta-box">
+      <h3>🎯 Low-Equipment-Kurse finden</h3>
+      <p>KursNavi zeigt Dir Kurse, die ohne viel Equipment auskommen – perfekt zum Ausprobieren.</p>
+    </div>
   `,
 
   'privat-hobby/kosten-nutzen/50-30-20-freizeitplanung': `
     <p class="lead">Die 50-30-20-Regel hilft dir, dein Budget für Freizeit und Hobbys sinnvoll zu planen – ohne schlechtes Gewissen.</p>
 
-    <h2>Was ist die 50-30-20-Regel?</h2>
+    <img src="https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=800&q=80" alt="Budget-Planung für Hobbys" class="article-image" />
+
+    <h2>💡 Was ist die 50-30-20-Regel?</h2>
     <p>Eine einfache Budgetierungsmethode:</p>
     <ul>
       <li><strong>50%</strong> – Grundbedürfnisse (Miete, Essen, Versicherungen)</li>
@@ -2566,7 +2643,10 @@ export const RATGEBER_CONTENT = {
       <li>Jährliche Ausgaben auf Monate verteilen (z.B. Ski-Abo)</li>
     </ul>
 
-    <p><strong>KursNavi hilft dir, ein Hobby-Budget einzuhalten – mit transparenten Preisen und Rabatten.</strong></p>
+    <div class="cta-box">
+      <h3>🎯 Budget-freundliche Kurse finden</h3>
+      <p>KursNavi hilft dir, ein Hobby-Budget einzuhalten – mit transparenten Preisen und Rabatten.</p>
+    </div>
   `,
 
   'privat-hobby/kosten-nutzen/hobby-vollkosten-modell': `
@@ -2618,7 +2698,9 @@ export const RATGEBER_CONTENT = {
   'privat-hobby/kosten-nutzen/krankenkassenbeitraege-kurse': `
     <p class="lead">Wusstest du, dass viele Schweizer Krankenkassen Beiträge an Präventionskurse zahlen? So holst du dir Geld zurück.</p>
 
-    <h2>Welche Kurse werden erstattet?</h2>
+    <img src="https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=800&q=80" alt="Krankenkassenbeiträge für Kurse" class="article-image" />
+
+    <h2>💰 Welche Kurse werden erstattet?</h2>
     <p>Die meisten Zusatzversicherungen decken:</p>
     <ul>
       <li>Fitnesskurse und Sportkurse</li>
@@ -2650,7 +2732,10 @@ export const RATGEBER_CONTENT = {
       <li>Erhalte die Rückerstattung (meist innert 2-4 Wochen)</li>
     </ol>
 
-    <p><strong>KursNavi hilft dir, Kurse zu finden, die deine Krankenkasse erstattet – Transparenz von Anfang an.</strong></p>
+    <div class="cta-box">
+      <h3>🎯 Krankenkassen-freundliche Kurse finden</h3>
+      <p>KursNavi hilft dir, Kurse zu finden, die deine Krankenkasse erstattet – Transparenz von Anfang an.</p>
+    </div>
   `,
 
   // ============================================
@@ -2659,7 +2744,9 @@ export const RATGEBER_CONTENT = {
   'kinder/sicherheit/aufsichtspflicht-schweiz': `
     <p class="lead">Die Aufsichtspflicht in Kursen ist rechtlich klar geregelt: Eltern delegieren die Verantwortung beim Kurs-Check-in an die Institution, und der Kursanbieter trägt die volle Obhutspflicht bis zur Übergabe.</p>
 
-    <h2>Wer trägt die Verantwortung während des Kurses?</h2>
+    <img src="https://images.unsplash.com/photo-1516627145497-ae6968895b74?w=800&q=80" alt="Aufsichtspflicht in Kinderkursen" class="article-image" />
+
+    <h2>⚖️ Wer trägt die Verantwortung während des Kurses?</h2>
     <p>Gemäss Art. 333 ZGB (Zivilgesetzbuch) haftet das Familienhaupt für Schäden eines unmündigen Kindes – es sei denn, es kann nachweisen, dass es angemessene Beaufsichtigung geleistet hat. Sobald Sie Ihr Kind jedoch in einen Kurs geben, delegieren Sie diese Aufsicht an die Kursleitung. Die Institution trägt dann die sogenannte Obhutspflicht, was eine Garantenstellung für die physische und mentale Integrität des Kindes bedeutet.</p>
 
     <h2>Welche Anforderungen hat ein Kursanbieter konkret zu erfüllen?</h2>
@@ -2688,12 +2775,19 @@ export const RATGEBER_CONTENT = {
       <li>Kursleiter-zu-Kind-Verhältnis bekannt</li>
       <li>Sicherheitskonzept transparent dargestellt</li>
     </ul>
+
+    <div class="cta-box">
+      <h3>🎯 Sichere Kursanbieter finden</h3>
+      <p>KursNavi zeigt Dir Kursanbieter mit klaren Sicherheitsstandards und Aufsichtskonzepten.</p>
+    </div>
   `,
 
   'kinder/sicherheit/versicherungsschutz-kindersport': `
     <p class="lead">Das Schweizer Versicherungssystem ist komplex: Unfallversicherung (UVG) deckt medizinische Kosten, Betriebshaftpflicht des Anbieters deckt Schäden durch sein Verschulden. Wer zahlt wirklich? Eine klare Übersicht.</p>
 
-    <h2>Was ist UVG und wer ist versichert?</h2>
+    <img src="https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=800&q=80" alt="Versicherungsschutz für Kindersport" class="article-image" />
+
+    <h2>🏥 Was ist UVG und wer ist versichert?</h2>
     <p>Das Bundesgesetz über die Unfallversicherung (UVG) ist eine obligatorische Versicherung. Ihr Kind ist automatisch über Ihre Grundversicherung versichert – Sie müssen nichts extra zahlen. Die UVG deckt medizinische Kosten nach Unfällen: Arzt, Spital, Physiotherapie, alles 100%. Auch Invaliditätsrenten sind enthalten, falls Ihr Kind dauerhaft geschädigt ist.</p>
 
     <table>
@@ -2721,12 +2815,19 @@ export const RATGEBER_CONTENT = {
       <li>Ich kenne die Grenzen: UVG deckelt Verdienstentgang nicht</li>
       <li>Optional: Ich erkundige mich nach privater Zusatz-Versicherung</li>
     </ul>
+
+    <div class="cta-box">
+      <h3>🎯 Gut versicherte Kursanbieter finden</h3>
+      <p>KursNavi hilft Dir, Anbieter mit transparenten Versicherungsangaben zu finden.</p>
+    </div>
   `,
 
   'kinder/sicherheit/kinderschutz-safeguarding': `
     <p class="lead">Ein gutes Safeguarding-Konzept bedeutet präventive Massnahmen gegen alle Formen der Kindesgefährdung – von Missbrauch über emotionale Vernachlässigung bis zu sicherheitsrelevanten Lücken. Eltern sollten gezielt nachfragen, bevor sie ihr Kind anmelden.</p>
 
-    <h2>Was ist Safeguarding?</h2>
+    <img src="https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=800&q=80" alt="Kinderschutz und Safeguarding" class="article-image" />
+
+    <h2>🛡️ Was ist Safeguarding?</h2>
     <p>Safeguarding ist präventiv und umfassend: Es zielt auf alle Formen der Gefährdung ab (physisch, emotional, sexuell, Vernachlässigung) und setzt VOR einem Schaden an. Child Protection reagiert dagegen auf bereits eingetretene Schäden. Eltern sollten Anbieter wählen, die Safeguarding-Massnahmen proaktiv umsetzen.</p>
 
     <h2>Welche Mindeststandards sollte ein Kursanbieter erfüllen?</h2>
@@ -2760,12 +2861,19 @@ export const RATGEBER_CONTENT = {
         <tr><td>Transparente Kommunikation</td><td>Eltern werden regelmässig informiert, Vorfälle kommuniziert</td></tr>
       </tbody>
     </table>
+
+    <div class="cta-box">
+      <h3>🎯 Sichere Kurse für Kinder finden</h3>
+      <p>KursNavi zeigt Dir Anbieter mit klaren Safeguarding-Standards.</p>
+    </div>
   `,
 
   'kinder/sicherheit/datenschutz-fotos-videos': `
     <p class="lead">Fotos und Videos sind Personendaten – und das neue Datenschutzgesetz (DSG 2023) stellt klare Regeln auf. Eltern sollten wissen: Sie sind nicht verpflichtet, Fotos zu erlauben. Und Einwilligung ohne schriftliche Zustimmung ist nicht gültig.</p>
 
-    <h2>Was sagt das Datenschutzgesetz?</h2>
+    <img src="https://images.unsplash.com/photo-1516321497487-e288fb19713f?w=800&q=80" alt="Datenschutz bei Kinderfotos" class="article-image" />
+
+    <h2>📷 Was sagt das Datenschutzgesetz?</h2>
     <p>Nach Art. 5 DSG sind Fotos und Videos Personendaten. Das heisst: Jeder Mensch hat das Recht, selbst zu entscheiden, ob er oder sie fotografiert oder gefilmt wird. Das "Recht am eigenen Bild" ist verfassungsrechtlich geschützt. Kinder unter etwa 13 Jahren können diese Entscheidung nicht selbst treffen – die Eltern entscheiden für sie. Ab ca. 13 Jahren können urteilsfähige Kinder selbst bestimmen.</p>
 
     <h2>Was ist eine gültige Einwilligung?</h2>
@@ -2800,12 +2908,19 @@ export const RATGEBER_CONTENT = {
       <li>Kann ich mein Kind abmelden (Fotos verweigern)?</li>
       <li>Kann ich die Einwilligung jederzeit zurückziehen?</li>
     </ul>
+
+    <div class="cta-box">
+      <h3>🎯 Datenschutz-bewusste Anbieter finden</h3>
+      <p>KursNavi zeigt Dir Kursanbieter mit klaren Datenschutz-Richtlinien.</p>
+    </div>
   `,
 
   'kinder/sicherheit/sicherheit-kursraum-checkliste': `
     <p class="lead">Raumsicherheit ist mehr als nur "Kanten abrunden". Es geht um Brandschutz, Hygiene, altersgerechte Einrichtung und klare Notfall-Strukturen. Diese Checkliste hilft Ihnen, einen Kursraum wirklich zu bewerten.</p>
 
-    <h2>Was muss ich beim Brandschutz überprüfen?</h2>
+    <img src="https://images.unsplash.com/photo-1567057419565-4349c49d8a04?w=800&q=80" alt="Sicherer Kursraum für Kinder" class="article-image" />
+
+    <h2>🔥 Was muss ich beim Brandschutz überprüfen?</h2>
     <p>Der Kursraum muss dem VKF-Standard (Vereinigung Kantonaler Feuerversicherungen) entsprechen:</p>
     <table>
       <thead>
@@ -2846,12 +2961,19 @@ export const RATGEBER_CONTENT = {
       <li>Möbel sind altersgerecht und stabil</li>
       <li>Toiletten sind sauber und kindgerecht</li>
     </ul>
+
+    <div class="cta-box">
+      <h3>🎯 Sichere Kursräume finden</h3>
+      <p>KursNavi hilft Dir, Kursanbieter mit professionellen Räumlichkeiten zu finden.</p>
+    </div>
   `,
 
   'kinder/sicherheit/erste-hilfe-notfallplaene': `
     <p class="lead">Anbieter MÜSSEN offenlegen, wer im Notfall handelt – und Eltern müssen wissen, wie. Eine transparente Erste-Hilfe-Organisation ist keine Frage des "Vertrauens", sondern der rechtlichen Verpflichtung.</p>
 
-    <h2>Was muss ein Kursanbieter zur Transparenz zeigen?</h2>
+    <img src="https://images.unsplash.com/photo-1584820927498-cfe5211fd8bf?w=800&q=80" alt="Erste-Hilfe-Ausrüstung für Kinderkurse" class="article-image" />
+
+    <h2>📋 Was muss ein Kursanbieter zur Transparenz zeigen?</h2>
     <p>Die Aushänge im Kursraum müssen folgende Infos enthalten:</p>
     <ul>
       <li>Notfall-Telefonnummern: 144 (Rettung), 112 (Feuerwehr/Polizei), 145 (Giftnotruf)</li>
@@ -2883,6 +3005,11 @@ export const RATGEBER_CONTENT = {
       <li>Rettungsausrüstung (Haken, Seil, Rettungsring) muss sichtbar und sofort erreichbar sein</li>
       <li>Wasserqualität wird täglich getestet</li>
     </ul>
+
+    <div class="cta-box">
+      <h3>🎯 Gut vorbereitete Kursanbieter finden</h3>
+      <p>KursNavi zeigt Dir Anbieter mit klaren Notfallkonzepten und geschultem Personal.</p>
+    </div>
   `,
 
   // ============================================
@@ -2891,16 +3018,23 @@ export const RATGEBER_CONTENT = {
   'kinder/interessen/interessen-check-kind': `
     <p class="lead">Die meisten Eltern kennen ihre Kinder – doch wissen sie wirklich, was sie fasziniert? Ein strukturierter Interessen-Check hilft Dir, authentische Leidenschaften von oberflächlichen Trends zu unterscheiden.</p>
 
-    <h2>Welche Methoden gibt es, um Kinder-Interessen zu erfassen?</h2>
-    <p>Offene Gespräche sind wichtiger als Beobachtung allein. Stelle Fragen wie:</p>
-    <ul>
-      <li>"Was macht dir am meisten Spass?"</li>
-      <li>"Womit spielst du am liebsten?"</li>
-      <li>"Was würdest du gerne ausprobieren?"</li>
-    </ul>
-    <p>Vertiefe dann die beobachteten Aktivitäten: "Warum gefällt dir das?" "Was interessiert dich daran besonders?"</p>
+    <img src="https://images.unsplash.com/photo-1472162072942-cd5147eb3902?w=800&q=80" alt="Kind entdeckt seine Interessen" class="article-image" />
 
-    <h2>Checkliste: Interessen nach Alter</h2>
+    <h2>🔍 Welche Methoden gibt es, um Kinder-Interessen zu erfassen?</h2>
+    <p>Offene Gespräche sind wichtiger als Beobachtung allein. Stelle Fragen wie:</p>
+
+    <div class="tip-box">
+      <h3>💬 Gute Gesprächsstarter</h3>
+      <ul>
+        <li>"Was macht dir am meisten Spass?"</li>
+        <li>"Womit spielst du am liebsten?"</li>
+        <li>"Was würdest du gerne ausprobieren?"</li>
+      </ul>
+    </div>
+
+    <p>Vertiefe dann die beobachteten Aktivitäten: <strong>"Warum gefällt dir das?"</strong> und <strong>"Was interessiert dich daran besonders?"</strong></p>
+
+    <h2>📊 Interessen nach Alter</h2>
     <table>
       <thead>
         <tr><th>Alter</th><th>Typische Interessen</th></tr>
@@ -2912,76 +3046,130 @@ export const RATGEBER_CONTENT = {
       </tbody>
     </table>
 
-    <p><strong>Mit KursNavi findest du spielend leicht die passenden Kurse für dein Kind.</strong></p>
+    <div class="cta-box">
+      <h3>🎯 Passende Kurse finden</h3>
+      <p>Mit KursNavi findest du spielend leicht die passenden Kurse für dein Kind – gefiltert nach Alter und Interessen.</p>
+    </div>
   `,
 
   'kinder/interessen/intrinsische-motivation': `
     <p class="lead">Wie verwandelst du ein "Ich muss zum Kurs" in ein "Ich will zum Kurs"? Die Antwort liegt in den vier Säulen der Motivation.</p>
 
-    <h2>Das Vier-Säulen-Modell</h2>
-    <ul>
-      <li><strong>Säule 1: Autonomie</strong> – Dein Kind hat Wahlfreiheit und Kontrolle. Praktisch: "Welcher Kurs interessiert dich? Wir können zwischen A und B wählen."</li>
-      <li><strong>Säule 2: Kompetenz</strong> – Es erlebt Fortschritt und Fähigkeitsaufbau. Praktisch: Zwischenziele setzen, Fortschritt sichtbar machen ("Du bist schneller geworden!").</li>
-      <li><strong>Säule 3: Zugehörigkeit</strong> – Es fühlt sich Teil einer Gemeinschaft. Praktisch: Positive Beziehungen zu Trainer/-innen und Peers aufbauen.</li>
-      <li><strong>Säule 4: Sinn</strong> – Es versteht, warum diese Aktivität wichtig ist. Praktisch: "Schwimmen ist wichtig für deine Sicherheit" oder "Du wolltest Freunde finden".</li>
-    </ul>
+    <img src="https://images.unsplash.com/photo-1485546246426-74dc88dec4d9?w=800&q=80" alt="Kind mit intrinsischer Motivation" class="article-image" />
 
-    <h2>Der Intrinsic Motivation Readiness Test</h2>
-    <p>Vor Anmeldung: Beantworte für jede Säule:</p>
-    <ul>
-      <li><strong>Autonomie:</strong> Wünscht sich mein Kind diese Aktivität selbst?</li>
-      <li><strong>Kompetenz:</strong> Passt der Schwierigkeitslevel?</li>
-      <li><strong>Zugehörigkeit:</strong> Ist der Trainer kinderfreundlich?</li>
-      <li><strong>Sinn:</strong> Kann mein Kind den Wert verstehen?</li>
-    </ul>
-    <p>Mehr als eine "Nein"-Antwort? Überdenke den Kurs oder bereite ihn besser vor.</p>
+    <h2>🏛️ Das Vier-Säulen-Modell</h2>
+
+    <div class="info-box">
+      <h3>Die vier Säulen der Motivation</h3>
+      <ul>
+        <li><strong>🎯 Säule 1: Autonomie</strong> – Dein Kind hat Wahlfreiheit und Kontrolle</li>
+        <li><strong>📈 Säule 2: Kompetenz</strong> – Es erlebt Fortschritt und Fähigkeitsaufbau</li>
+        <li><strong>👥 Säule 3: Zugehörigkeit</strong> – Es fühlt sich Teil einer Gemeinschaft</li>
+        <li><strong>💡 Säule 4: Sinn</strong> – Es versteht, warum diese Aktivität wichtig ist</li>
+      </ul>
+    </div>
+
+    <div class="tip-box">
+      <h3>💬 Praktische Umsetzung</h3>
+      <ul>
+        <li><strong>Autonomie:</strong> "Welcher Kurs interessiert dich? Wir können zwischen A und B wählen."</li>
+        <li><strong>Kompetenz:</strong> Zwischenziele setzen, Fortschritt sichtbar machen ("Du bist schneller geworden!")</li>
+        <li><strong>Zugehörigkeit:</strong> Positive Beziehungen zu Trainer/-innen und Peers aufbauen</li>
+        <li><strong>Sinn:</strong> "Schwimmen ist wichtig für deine Sicherheit" oder "Du wolltest Freunde finden"</li>
+      </ul>
+    </div>
+
+    <h2>✅ Der Intrinsic Motivation Readiness Test</h2>
+    <p>Vor der Anmeldung: Beantworte für jede Säule:</p>
+
+    <div class="checklist">
+      <ul>
+        <li><strong>Autonomie:</strong> Wünscht sich mein Kind diese Aktivität selbst?</li>
+        <li><strong>Kompetenz:</strong> Passt der Schwierigkeitslevel?</li>
+        <li><strong>Zugehörigkeit:</strong> Ist der Trainer kinderfreundlich?</li>
+        <li><strong>Sinn:</strong> Kann mein Kind den Wert verstehen?</li>
+      </ul>
+    </div>
+
+    <div class="warning-box">
+      <h3>⚠️ Achtung</h3>
+      <p>Mehr als eine "Nein"-Antwort? Überdenke den Kurs oder bereite ihn besser vor.</p>
+    </div>
+
+    <div class="cta-box">
+      <h3>🎯 Motivierende Kurse finden</h3>
+      <p>KursNavi hilft dir, Kurse zu finden, die zu den Interessen und dem Entwicklungsstand deines Kindes passen.</p>
+    </div>
   `,
 
   'kinder/interessen/motivation-ohne-zwang': `
     <p class="lead">Viele Eltern kämpfen mit einem Dilemma: Wie motiviere ich mein Kind, einen Kurs weiterzumachen, wenn die erste Begeisterung verflogen ist – ohne es zu drangsalieren?</p>
 
-    <h2>Intrinsische vs. extrinsische Motivation</h2>
-    <p>Intrinsische Motivation kommt von innen: Dein Kind möchte aus eigenem Antrieb etwas tun. Extrinsische Motivation kommt von aussen: Belohnungen, Lob oder Druck. Das Problem: Übermässige externe Belohnung kann intrinsische Motivation untergraben – ein Phänomen, das Psychologen den "Korruptionseffekt" nennen.</p>
-    <p>Die gute Nachricht: Du kannst intrinsische Motivation fördern – durch Autonomie, Kompetenzaufbau und Zugehörigkeit.</p>
+    <img src="https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=800&q=80" alt="Kind mit natürlicher Motivation" class="article-image" />
 
-    <h2>Vier Säulen der Motivationsförderung</h2>
+    <h2>🧠 Intrinsische vs. extrinsische Motivation</h2>
+
+    <div class="info-box">
+      <p><strong>Intrinsische Motivation</strong> kommt von innen: Dein Kind möchte aus eigenem Antrieb etwas tun.</p>
+      <p><strong>Extrinsische Motivation</strong> kommt von aussen: Belohnungen, Lob oder Druck.</p>
+    </div>
+
+    <div class="warning-box">
+      <h3>⚠️ Der Korruptionseffekt</h3>
+      <p>Übermässige externe Belohnung kann intrinsische Motivation untergraben – ein Phänomen, das Psychologen den "Korruptionseffekt" nennen.</p>
+    </div>
+
+    <p>Die gute Nachricht: Du kannst intrinsische Motivation fördern – durch <strong>Autonomie, Kompetenzaufbau und Zugehörigkeit</strong>.</p>
+
+    <h2>🏛️ Vier Säulen der Motivationsförderung</h2>
     <table>
       <thead>
         <tr><th>Säule</th><th>Praktische Umsetzung</th></tr>
       </thead>
       <tbody>
-        <tr><td>Autonomie</td><td>"Möchtest du diesen Kurs weitermachen? Das ist DEINE Entscheidung."</td></tr>
-        <tr><td>Kompetenz</td><td>Kleine Erfolge zeigen: "Schau, du kannst schon 50m schwimmen!"</td></tr>
-        <tr><td>Zugehörigkeit</td><td>Freundschaften in der Gruppe: "Hast du wieder deine Freunde dort getroffen?"</td></tr>
-        <tr><td>Sinn</td><td>Langfristige Bedeutung: "Schwimmen ist wichtig für deine Sicherheit."</td></tr>
+        <tr><td>🎯 Autonomie</td><td>"Möchtest du diesen Kurs weitermachen? Das ist DEINE Entscheidung."</td></tr>
+        <tr><td>📈 Kompetenz</td><td>Kleine Erfolge zeigen: "Schau, du kannst schon 50m schwimmen!"</td></tr>
+        <tr><td>👥 Zugehörigkeit</td><td>Freundschaften in der Gruppe: "Hast du wieder deine Freunde dort getroffen?"</td></tr>
+        <tr><td>💡 Sinn</td><td>Langfristige Bedeutung: "Schwimmen ist wichtig für deine Sicherheit."</td></tr>
       </tbody>
     </table>
 
-    <p><strong>KursNavi unterstützt dich mit intelligenten Filtern und einer übersichtlichen Kursauswahl.</strong></p>
+    <div class="cta-box">
+      <h3>🎯 Passende Kurse finden</h3>
+      <p>KursNavi unterstützt dich mit intelligenten Filtern und einer übersichtlichen Kursauswahl.</p>
+    </div>
   `,
 
   'kinder/interessen/schnupperstunden-probieren': `
     <p class="lead">Schnupperstunden sind der Schlüssel zu besseren Kursentscheidungen. Sie senken Angst, klären Erwartungen und verhindern, dass dein Kind monatelang einen falschen Kurs besucht.</p>
 
-    <h2>Warum Schnupperstunden so wertvoll sind</h2>
-    <p>Sie ermöglichen es deinem Kind:</p>
-    <ul>
-      <li>Die Umgebung, Trainer/-in und andere Kinder kennenzulernen (Angstabbau)</li>
-      <li>Realistische Erwartungen zu entwickeln (Fantasie vs. Realität)</li>
-      <li>Zu prüfen, ob der Unterrichtsstil passt</li>
-      <li>Erste Freundschaften entstehen zu lassen</li>
-    </ul>
+    <img src="https://images.unsplash.com/photo-1472162072942-cd5147eb3902?w=800&q=80" alt="Kind bei einer Schnupperstunde" class="article-image" />
 
-    <h2>Die 5-Schritt-Methode für Schnupperstunden</h2>
+    <h2>💡 Warum Schnupperstunden so wertvoll sind</h2>
+
+    <div class="tip-box">
+      <h3>Schnupperstunden ermöglichen es deinem Kind:</h3>
+      <ul>
+        <li>Die Umgebung, Trainer/-in und andere Kinder kennenzulernen (Angstabbau)</li>
+        <li>Realistische Erwartungen zu entwickeln (Fantasie vs. Realität)</li>
+        <li>Zu prüfen, ob der Unterrichtsstil passt</li>
+        <li>Erste Freundschaften entstehen zu lassen</li>
+      </ul>
+    </div>
+
+    <h2>📋 Die 5-Schritt-Methode für Schnupperstunden</h2>
     <ol>
-      <li><strong>Ankündigung:</strong> "Nächsten Samstag schaue ich mir einen Karatekurs an. Du kannst zuschauen oder mitmachen, wie du dich fühlst."</li>
-      <li><strong>Während der Stunde:</strong> Eltern bleiben im Hintergrund; Zuschauen ist völlig OK</li>
-      <li><strong>Nach der Stunde:</strong> Offenes Gespräch ohne Druck ("Wie war dein Erlebnis?")</li>
-      <li><strong>Mehrfache Schnupperstunden:</strong> Bei Unsicherheit ist ein zweiter Besuch wertvoll</li>
-      <li><strong>Übergang:</strong> Langsame Integration (1–2x pro Woche statt sofort 4x)</li>
+      <li><strong>1️⃣ Ankündigung:</strong> "Nächsten Samstag schaue ich mir einen Karatekurs an. Du kannst zuschauen oder mitmachen, wie du dich fühlst."</li>
+      <li><strong>2️⃣ Während der Stunde:</strong> Eltern bleiben im Hintergrund; Zuschauen ist völlig OK</li>
+      <li><strong>3️⃣ Nach der Stunde:</strong> Offenes Gespräch ohne Druck ("Wie war dein Erlebnis?")</li>
+      <li><strong>4️⃣ Mehrfache Schnupperstunden:</strong> Bei Unsicherheit ist ein zweiter Besuch wertvoll</li>
+      <li><strong>5️⃣ Übergang:</strong> Langsame Integration (1–2x pro Woche statt sofort 4x)</li>
     </ol>
 
-    <p><strong>Mit KursNavi findest du spielend leicht Kurse mit Schnupperstunden für dein Kind.</strong></p>
+    <div class="cta-box">
+      <h3>🎯 Kurse mit Schnupperstunden finden</h3>
+      <p>Mit KursNavi findest du spielend leicht Kurse mit Schnupperstunden für dein Kind.</p>
+    </div>
   `,
 
   'kinder/interessen/hobby-wechsel-aufgeben': `
@@ -3034,29 +3222,41 @@ export const RATGEBER_CONTENT = {
   'kinder/interessen/peer-group-einfluss': `
     <p class="lead">Die Frage, die viele Eltern stellen: Macht mein Kind diesen Kurs wirklich, weil es ihn mag – oder nur, weil Freunde gehen? Peer-Einfluss ist entwicklungsgerecht, aber es braucht Balance.</p>
 
-    <h2>Wann ist Peer-Einfluss dominant?</h2>
-    <ul>
-      <li><strong>Bei 6–10 Jahren:</strong> Moderate Bedeutung</li>
-      <li><strong>Mit 10–14 Jahren:</strong> Zunehmend wichtig</li>
-      <li><strong>Ab 14 Jahren:</strong> Maximaler Einfluss</li>
-    </ul>
-    <p>Trotzdem: Bei wichtigen Entscheidungen bleiben Eltern zentrale Ansprechpartner.</p>
+    <img src="https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=800&q=80" alt="Kinder mit Freunden" class="article-image" />
 
-    <p>Das "Akademischer Coolness"-Phänomen ist real: Gewisse Kurse gelten als uncool (Programmieren = nur für Nerds), andere haben Prestige (Skateboarding, Streetdance). Kinder können gegen ihre echten Interessen handeln, um Akzeptanz zu gewinnen.</p>
+    <h2>👥 Wann ist Peer-Einfluss dominant?</h2>
+    <div class="info-box">
+      <ul>
+        <li><strong>6–10 Jahren:</strong> Moderate Bedeutung</li>
+        <li><strong>10–14 Jahren:</strong> Zunehmend wichtig</li>
+        <li><strong>Ab 14 Jahren:</strong> Maximaler Einfluss</li>
+      </ul>
+      <p>Trotzdem: Bei wichtigen Entscheidungen bleiben <strong>Eltern zentrale Ansprechpartner</strong>.</p>
+    </div>
 
-    <h2>Strategien zur Moderierung von Peer-Einfluss</h2>
+    <div class="warning-box">
+      <h3>⚠️ Das "Coolness"-Phänomen</h3>
+      <p>Gewisse Kurse gelten als uncool (Programmieren = nur für Nerds), andere haben Prestige (Skateboarding, Streetdance). Kinder können gegen ihre echten Interessen handeln, um Akzeptanz zu gewinnen.</p>
+    </div>
+
+    <h2>💡 Strategien zur Moderierung von Peer-Einfluss</h2>
     <table>
       <thead>
         <tr><th>Strategie</th><th>Aktion</th></tr>
       </thead>
       <tbody>
-        <tr><td>Echte Interessen identifizieren</td><td>"Magst du das wirklich oder machst du es für deine Freunde?"</td></tr>
-        <tr><td>Offene Kommunikation</td><td>Regelmässige, nicht-moralisierende Gespräche</td></tr>
-        <tr><td>Diversität fördern</td><td>Ein Kurs, den dein Kind liebt; einer für Freunde als Kompromiss</td></tr>
-        <tr><td>Werteklarheit</td><td>"In unserer Familie nutzen wir unsere Talente."</td></tr>
-        <tr><td>Neue Peer-Konstellationen</td><td>Andere Kurse ermöglichen neue Freundschaften</td></tr>
+        <tr><td>🎯 Echte Interessen identifizieren</td><td>"Magst du das wirklich oder machst du es für deine Freunde?"</td></tr>
+        <tr><td>💬 Offene Kommunikation</td><td>Regelmässige, nicht-moralisierende Gespräche</td></tr>
+        <tr><td>🔄 Diversität fördern</td><td>Ein Kurs für dein Kind; einer für Freunde als Kompromiss</td></tr>
+        <tr><td>🏠 Werteklarheit</td><td>"In unserer Familie nutzen wir unsere Talente."</td></tr>
+        <tr><td>👥 Neue Peer-Konstellationen</td><td>Andere Kurse ermöglichen neue Freundschaften</td></tr>
       </tbody>
     </table>
+
+    <div class="cta-box">
+      <h3>🎯 Passende Kurse entdecken</h3>
+      <p>Mit KursNavi findest du Kurse, die zu den echten Interessen deines Kindes passen.</p>
+    </div>
   `,
 
   // ============================================
@@ -3065,9 +3265,16 @@ export const RATGEBER_CONTENT = {
   'kinder/familienalltag/ferienplanung-betreuungsluecken': `
     <p class="lead">Das Kernproblem: Schweizer Schulferien dauern etwa 13 Wochen/Jahr, Elternferien sind durchschnittlich 4–5 Wochen. Die Lücke: 8–9 Wochen Betreuung ohne Schule.</p>
 
-    <h2>Arten von Ferienbetreuung in der Schweiz</h2>
+    <img src="https://images.unsplash.com/photo-1484820540004-14229fe36ca4?w=800&q=80" alt="Ferienbetreuung für Kinder" class="article-image" />
 
-    <h3>1. Feriencamps und Ferienlager (mehrtägig bis wöchig)</h3>
+    <div class="warning-box">
+      <h3>⚠️ Die Betreuungslücke</h3>
+      <p><strong>13 Wochen</strong> Schulferien vs. <strong>4–5 Wochen</strong> Elternferien = <strong>8–9 Wochen</strong> Betreuungslücke pro Jahr</p>
+    </div>
+
+    <h2>🏕️ Arten von Ferienbetreuung in der Schweiz</h2>
+
+    <h3>1. Feriencamps und Ferienlager</h3>
     <table>
       <thead>
         <tr><th>Anbieter</th><th>Spezialisierung</th><th>Kosten</th><th>Mit KulturLegi</th></tr>
@@ -3087,172 +3294,229 @@ export const RATGEBER_CONTENT = {
       <li><strong>Schulergänzende Tagesstrukturen:</strong> Kostenlos oder schulbudgetiert</li>
     </ul>
 
-    <h3>3. Kombinations-Modell (Realistisch)</h3>
-    <ul>
-      <li><strong>Woche 1–2:</strong> Eltern-Ferienzeit (gemeinsam mit Kind)</li>
-      <li><strong>Woche 3–4:</strong> Feriencamps oder Tagesbetreuung</li>
-      <li><strong>Woche 5–6:</strong> Grosseltern oder Verwandte</li>
-      <li><strong>Woche 7–8:</strong> Zweiter Ferienblock oder gemischte Betreuung</li>
-    </ul>
+    <div class="tip-box">
+      <h3>💡 Das Kombinations-Modell</h3>
+      <ul>
+        <li><strong>Woche 1–2:</strong> Eltern-Ferienzeit (gemeinsam mit Kind)</li>
+        <li><strong>Woche 3–4:</strong> Feriencamps oder Tagesbetreuung</li>
+        <li><strong>Woche 5–6:</strong> Grosseltern oder Verwandte</li>
+        <li><strong>Woche 7–8:</strong> Zweiter Ferienblock oder gemischte Betreuung</li>
+      </ul>
+    </div>
 
-    <h2>Qualitätskriterien bei Camp-Wahl</h2>
-    <ul>
-      <li>Trainer/-innen-Kind-Verhältnis (1:6–1:8 Standard)</li>
-      <li>Erste-Hilfe Ausbildung der Trainer/-innen</li>
-      <li>Sicherheitsmassnahmen bei Aktivitäten</li>
-      <li>Regelmässige Updates für Eltern</li>
-    </ul>
+    <h2>✅ Qualitätskriterien bei Camp-Wahl</h2>
+    <div class="checklist">
+      <ul>
+        <li>Trainer/-innen-Kind-Verhältnis (1:6–1:8 Standard)</li>
+        <li>Erste-Hilfe Ausbildung der Trainer/-innen</li>
+        <li>Sicherheitsmassnahmen bei Aktivitäten</li>
+        <li>Regelmässige Updates für Eltern</li>
+      </ul>
+    </div>
 
-    <p><strong>Mit KursNavi findest du spielend leicht die passenden Ferienkurse für dein Kind.</strong></p>
+    <div class="cta-box">
+      <h3>🏕️ Ferienkurse finden</h3>
+      <p>Mit KursNavi findest du spielend leicht die passenden Ferienkurse für dein Kind.</p>
+    </div>
   `,
 
   'kinder/finanzen-kinder/budgetplanung-kinderkurse': `
     <p class="lead">Bevor du einen Kurs buchst, solltest du wissen: Was kostet das wirklich? Inklusive Transport, Ausrüstung und versteckte Gebühren.</p>
 
-    <h2>Durchschnittliche Kostenspannen (Schweiz 2026)</h2>
+    <img src="https://images.unsplash.com/photo-1579621970795-87facc2f976d?w=800&q=80" alt="Budgetplanung für Kinderkurse" class="article-image" />
+
+    <h2>💰 Durchschnittliche Kostenspannen (Schweiz 2026)</h2>
     <table>
       <thead>
         <tr><th>Kurstyp</th><th>Typisch/Monat</th><th>Bandbreite</th></tr>
       </thead>
       <tbody>
-        <tr><td>Sportverein (Fussball, Volleyball)</td><td>CHF 30–60</td><td>CHF 20–100</td></tr>
-        <tr><td>Musik-Gruppenunterricht</td><td>CHF 50–100</td><td>CHF 40–150</td></tr>
-        <tr><td>Einzelinstrumentalunterricht</td><td>CHF 80–150</td><td>CHF 60–250</td></tr>
-        <tr><td>Tanzschule</td><td>CHF 40–80</td><td>CHF 30–120</td></tr>
-        <tr><td>Schwimmen (Gruppe)</td><td>CHF 30–70</td><td>CHF 25–100</td></tr>
-        <tr><td>Spezialisierte Sportkurse</td><td>CHF 100–300</td><td>CHF 50–500</td></tr>
+        <tr><td>⚽ Sportverein (Fussball, Volleyball)</td><td>CHF 30–60</td><td>CHF 20–100</td></tr>
+        <tr><td>🎵 Musik-Gruppenunterricht</td><td>CHF 50–100</td><td>CHF 40–150</td></tr>
+        <tr><td>🎹 Einzelinstrumentalunterricht</td><td>CHF 80–150</td><td>CHF 60–250</td></tr>
+        <tr><td>💃 Tanzschule</td><td>CHF 40–80</td><td>CHF 30–120</td></tr>
+        <tr><td>🏊 Schwimmen (Gruppe)</td><td>CHF 30–70</td><td>CHF 25–100</td></tr>
+        <tr><td>🎿 Spezialisierte Sportkurse</td><td>CHF 100–300</td><td>CHF 50–500</td></tr>
       </tbody>
     </table>
 
-    <h2>Die 3-Schichten-Methode</h2>
-    <ul>
-      <li><strong>Schicht 1: Essenzielle Bewegung (CHF 40–100/Monat)</strong> – Minimum: ein Sportangebot für Gesundheit (oft günstig via Verein)</li>
-      <li><strong>Schicht 2: Talentförderung (CHF 80–200/Monat, optional)</strong> – Spezialisierter Unterricht in Musik, Kunst oder Leistungssport</li>
-      <li><strong>Schicht 3: Erweiterung (CHF 50–150/Monat, optional)</strong> – Fremdsprachen, Zirkus, Kreativität</li>
-    </ul>
+    <h2>📊 Die 3-Schichten-Methode</h2>
+    <div class="info-box">
+      <ul>
+        <li><strong>Schicht 1: Essenzielle Bewegung (CHF 40–100/Monat)</strong> – Minimum: ein Sportangebot für Gesundheit</li>
+        <li><strong>Schicht 2: Talentförderung (CHF 80–200/Monat)</strong> – Spezialisierter Unterricht in Musik, Kunst oder Sport</li>
+        <li><strong>Schicht 3: Erweiterung (CHF 50–150/Monat)</strong> – Fremdsprachen, Zirkus, Kreativität</li>
+      </ul>
+    </div>
 
-    <h2>Budgetoptimierungs-Strategien</h2>
-    <ol>
-      <li><strong>Verein vs. Private Schule:</strong> Vereine (CHF 30–80/Monat) vs. Private (höherpreisig)</li>
-      <li><strong>Gruppenkurse vs. Einzelunterricht:</strong> Gruppe günstiger, sozial</li>
-      <li><strong>Jahrzahlung nutzen:</strong> Oft 10–15% Rabatt</li>
-      <li><strong>Gesamtkosten rechnen:</strong> Kosten pro Stunde + Transport = wahre Kosten</li>
-    </ol>
+    <h2>💡 Budgetoptimierungs-Strategien</h2>
+    <div class="tip-box">
+      <ol>
+        <li><strong>Verein vs. Private Schule:</strong> Vereine (CHF 30–80/Monat) sind oft günstiger</li>
+        <li><strong>Gruppenkurse vs. Einzelunterricht:</strong> Gruppe günstiger und sozial</li>
+        <li><strong>Jahrzahlung nutzen:</strong> Oft 10–15% Rabatt</li>
+        <li><strong>Gesamtkosten rechnen:</strong> Kurskosten + Transport = wahre Kosten</li>
+      </ol>
+    </div>
 
-    <p><strong>KursNavi unterstützt dich mit transparenten Preisangaben bei der Kursauswahl.</strong></p>
+    <div class="cta-box">
+      <h3>🎯 Kurse mit transparenten Preisen finden</h3>
+      <p>KursNavi unterstützt dich mit transparenten Preisangaben bei der Kursauswahl.</p>
+    </div>
   `,
 
   'kinder/finanzen-kinder/kulturlegi-schweiz': `
     <p class="lead">Die KulturLegi ist ein persönlicher Vorteilspass – kostenlos, landesweit gültig und öffnet Türen zu massiven Rabatten auf Kinderkurse.</p>
 
-    <h2>Was ist die KulturLegi?</h2>
-    <p>Ein Rabattpass für Erwachsene und Kinder ab 5 Jahren (in manchen Kantonen ab 4 Jahren). Berechtigung: Erwachsene und Kinder mit Sozialhilfebezug oder knappem Budget (kantonsabhängig).</p>
-    <p>Die KulturLegi bietet Rabatten auf etwa 3'000 verschiedene Freizeit-, Kultur-, Sport- und Bildungsangebote – bis zu 100% (also kostenlos!).</p>
+    <img src="https://images.unsplash.com/photo-1559526324-593bc073d938?w=800&q=80" alt="KulturLegi Schweiz für Familien" class="article-image" />
 
-    <h2>Spezifische Kinderkurs-Rabatte</h2>
+    <h2>🎫 Was ist die KulturLegi?</h2>
+    <div class="tip-box">
+      <p>Ein <strong>kostenloser Rabattpass</strong> für Erwachsene und Kinder ab 5 Jahren mit knappem Budget. Rabatte auf etwa <strong>3'000 verschiedene Angebote</strong> – bis zu 100% (also kostenlos!).</p>
+    </div>
+
+    <h2>💰 Spezifische Kinderkurs-Rabatte</h2>
     <table>
       <thead>
         <tr><th>Kurstyp</th><th>Rabatt</th><th>Beispiel</th></tr>
       </thead>
       <tbody>
-        <tr><td>Tanzwerk101 / Klubschule Migros</td><td>40%</td><td>Tanzkurs statt CHF 60 nur CHF 36</td></tr>
-        <tr><td>Sprachkurse Kinder bis 16 J.</td><td>30%</td><td>Englischkurs statt CHF 100 nur CHF 70</td></tr>
-        <tr><td>Lernbegleitungen</td><td>30%</td><td>Nachhilfe statt CHF 50 nur CHF 35</td></tr>
-        <tr><td>Theater/Kinder-Kurse</td><td>30%</td><td>Theaterkurs statt CHF 80 nur CHF 56</td></tr>
-        <tr><td>Sprachaufenthalte</td><td>30%</td><td>Sprachlager mit Rabatt</td></tr>
+        <tr><td>💃 Tanzwerk101 / Klubschule Migros</td><td><strong>40%</strong></td><td>Tanzkurs statt CHF 60 nur CHF 36</td></tr>
+        <tr><td>🗣️ Sprachkurse Kinder bis 16 J.</td><td><strong>30%</strong></td><td>Englischkurs statt CHF 100 nur CHF 70</td></tr>
+        <tr><td>📚 Lernbegleitungen</td><td><strong>30%</strong></td><td>Nachhilfe statt CHF 50 nur CHF 35</td></tr>
+        <tr><td>🎭 Theater/Kinder-Kurse</td><td><strong>30%</strong></td><td>Theaterkurs statt CHF 80 nur CHF 56</td></tr>
+        <tr><td>✈️ Sprachaufenthalte</td><td><strong>30%</strong></td><td>Sprachlager mit Rabatt</td></tr>
       </tbody>
     </table>
 
-    <h2>Antragsprozess</h2>
-    <ol>
-      <li>Berechtigung prüfen (Sozialdienst)</li>
-      <li>Antrag beim kantonalen Amt einreichen</li>
-      <li>KulturLegi-Karte erhalten</li>
-      <li>Im Kurs vorzeigen = Rabatt automatisch</li>
-    </ol>
+    <h2>📋 Antragsprozess</h2>
+    <div class="checklist">
+      <ol>
+        <li>Berechtigung prüfen (Sozialdienst)</li>
+        <li>Antrag beim kantonalen Amt einreichen</li>
+        <li>KulturLegi-Karte erhalten</li>
+        <li>Im Kurs vorzeigen = Rabatt automatisch</li>
+      </ol>
+    </div>
 
-    <p><strong>Infos: www.kulturlegi.ch oder lokale Caritas-Büros.</strong></p>
+    <div class="cta-box">
+      <h3>🎯 Kurse mit KulturLegi-Rabatt finden</h3>
+      <p>Infos: <strong>www.kulturlegi.ch</strong> oder lokale Caritas-Büros.</p>
+    </div>
   `,
 
   'kinder/finanzen-kinder/geschwisterrabatte-paketpreise': `
-    <p class="lead">Hast du mehrere Kinder? Geschwisterrabatte können 20–50% Kostenersparnis bedeuten – aber du musst danach fragen!</p>
+    <p class="lead">Hast du mehrere Kinder? Geschwisterrabatte können 20–50% Kostenersparnis bedeuten – aber du musst danach fragen! Hier erfährst du, wo du am meisten sparst.</p>
 
-    <h2>Typische Rabatthöhen</h2>
+    <img src="https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=800&q=80" alt="Geschwister beim gemeinsamen Sport" class="article-image" />
+
+    <h2>💰 Typische Rabatthöhen nach Anbietertyp</h2>
     <table>
       <thead>
         <tr><th>Anbietertyp</th><th>Rabatt</th><th>Anmerkungen</th></tr>
       </thead>
       <tbody>
-        <tr><td>Musikschulen</td><td>10–20% auf 2. Sibling</td><td>Oft nur auf subventionierten Unterricht</td></tr>
+        <tr><td>Musikschulen</td><td>10–20% auf 2. Kind</td><td>Oft nur auf subventionierten Unterricht</td></tr>
         <tr><td>Sport-Camps</td><td>CHF 30–100 Ermässigung</td><td>Manchmal nur bei simultaner Anmeldung</td></tr>
-        <tr><td>Tanzschulen</td><td>15% auf 2./3. Kind</td><td>Variiert stark</td></tr>
+        <tr><td>Tanzschulen</td><td>15% auf 2./3. Kind</td><td>Variiert stark je nach Schule</td></tr>
         <tr><td>Kunstschulen</td><td>10–15%</td><td>Weniger standardisiert</td></tr>
-        <tr><td>Kindertagesstätten</td><td>10–30%</td><td>Je nach Anzahl Kinder</td></tr>
+        <tr><td>Kindertagesstätten</td><td>10–30%</td><td>Je nach Anzahl Kinder gestaffelt</td></tr>
       </tbody>
     </table>
 
-    <h2>Wer bekommt den Rabatt?</h2>
+    <div class="tip-box">
+      <p><strong>💡 Profi-Tipp:</strong> Frage <em>immer</em> nach Geschwisterrabatten – auch wenn sie nicht beworben werden. Viele Anbieter gewähren Rabatte auf Anfrage!</p>
+    </div>
+
+    <h2>👨‍👩‍👧‍👦 Wer bekommt den Rabatt?</h2>
     <p>Das erste angemeldete Kind zahlt Vollpreis. Das zweite und alle weiteren Geschwister erhalten den Rabatt – unabhängig vom Alter, nach Eintrittsdatum.</p>
 
-    <h2>Strategien für Anmeldung</h2>
-    <ol>
-      <li><strong>Immer fragen:</strong> "Bietet ihr Geschwisterrabatte an?" (Viele Anbieter werben nicht aktiv)</li>
-      <li><strong>Kombiniert anmelden:</strong> Mehrere Geschwister gleichzeitig = oft höherer Rabatt</li>
-      <li><strong>Budgetplanung:</strong> Bei 2–3 Kindern ~20–30% Kostenersparnis einrechnen</li>
-    </ol>
+    <h2>📋 Strategien für maximale Ersparnis</h2>
+    <div class="checklist">
+      <ul>
+        <li><strong>Immer fragen:</strong> "Bietet ihr Geschwisterrabatte an?" (Viele Anbieter werben nicht aktiv)</li>
+        <li><strong>Kombiniert anmelden:</strong> Mehrere Geschwister gleichzeitig = oft höherer Rabatt</li>
+        <li><strong>Paketpreise prüfen:</strong> Manche Anbieter bieten Familien-Abos an</li>
+        <li><strong>Budgetplanung:</strong> Bei 2–3 Kindern ~20–30% Kostenersparnis einrechnen</li>
+      </ul>
+    </div>
 
-    <p><strong>KursNavi hilft dir, Kurse mit Geschwisterrabatten zu finden.</strong></p>
+    <div class="info-box">
+      <p><strong>📊 Rechenbeispiel:</strong> Bei 3 Kindern in der Musikschule (je CHF 800/Jahr) sparst du mit 15% Geschwisterrabatt auf Kind 2 und 3 insgesamt <strong>CHF 240 pro Jahr</strong>!</p>
+    </div>
+
+    <div class="cta-box">
+      <h3>🎯 Kurse mit Geschwisterrabatten finden</h3>
+      <p>KursNavi hilft dir, familienfreundliche Kursanbieter zu entdecken.</p>
+    </div>
   `,
 
   'kinder/finanzen-kinder/ausruestung-mieten-kinder': `
-    <p class="lead">Kinderausrüstung ist teuer und dein Kind entwächst sie schnell. Mieten ist oft die bessere Lösung – und spart bis zu 65% der Kosten.</p>
+    <p class="lead">Kinderausrüstung ist teuer und dein Kind entwächst sie schnell. Mieten ist oft die bessere Lösung – und spart bis zu 65% der Kosten. Hier erfährst du, wie du clever sparst.</p>
 
-    <h2>Das Wirtschaftliche Modell</h2>
-    <p>Kinder wachsen rapide (entwachsen Ski in 1–2 Saisons), Hobby-Wechsel ist häufig, Probieren ist sinnvoll. Deswegen: Mieten vor Kauf.</p>
+    <img src="https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=800&q=80" alt="Kinderski-Ausrüstung" class="article-image" />
 
-    <h2>Kinderski: Das Tausch-Programm</h2>
-    <p><strong>Konzept:</strong> Kaufen mit Rückerstattung</p>
-    <ul>
-      <li>Du kaufst Kinderskis zu Saisonbeginn</li>
-      <li>Ende April: Rückgabe in sauberem, intaktem Zustand</li>
-      <li>Bis zu <strong>50% des Kaufpreises</strong> werden erstattet</li>
-    </ul>
-    <p><strong>Beispiel:</strong> Kaufpreis CHF 300 → Rückerstattung CHF 150 → Effektive Kosten: CHF 150/Saison</p>
+    <h2>💡 Warum Mieten sinnvoll ist</h2>
+    <p>Kinder wachsen rapide (entwachsen Ski in 1–2 Saisons), Hobby-Wechsel ist häufig, und Ausprobieren ist wichtig. Deswegen gilt: <strong>Mieten vor Kauf!</strong></p>
 
-    <h2>Kostenersparnis-Übersicht</h2>
+    <div class="tip-box">
+      <p><strong>🎿 Das Ski-Tauschprogramm:</strong> Du kaufst Kinderskis zu Saisonbeginn und erhältst Ende April bis zu <strong>50% des Kaufpreises zurück</strong>. Beispiel: Kaufpreis CHF 300 → Rückerstattung CHF 150 = Effektive Kosten nur CHF 150/Saison!</p>
+    </div>
+
+    <h2>💰 Kostenersparnis-Übersicht</h2>
     <table>
       <thead>
-        <tr><th>Ausrüstung</th><th>Kaufkosten</th><th>Mietkosten/Jahr</th><th>Sparpotenzial</th></tr>
+        <tr><th>Ausrüstung</th><th>Kaufkosten</th><th>Mietkosten/Jahr</th><th>Ersparnis</th></tr>
       </thead>
       <tbody>
         <tr><td>Kinderski + Equipment</td><td>CHF 400–700</td><td>CHF 150–300</td><td>50–65%</td></tr>
         <tr><td>Skateboard</td><td>CHF 150–300</td><td>CHF 50–80</td><td>60%</td></tr>
         <tr><td>Reitausrüstung</td><td>CHF 800–1'500</td><td>CHF 0–200</td><td>80–100%</td></tr>
+        <tr><td>Eishockey-Set</td><td>CHF 500–1'000</td><td>CHF 100–200</td><td>70–80%</td></tr>
       </tbody>
     </table>
 
-    <h2>Plattformen in der Schweiz</h2>
-    <ul>
-      <li><strong>Och Sport (Zürich):</strong> Ski-Tauschprogramm</li>
-      <li><strong>Leihbar.ch:</strong> Subscription-basierte Leihe</li>
-      <li><strong>Sharely.ch:</strong> Peer-to-Peer Sharing</li>
-      <li><strong>loopi.ch, kiddos.ch:</strong> Kinderartikel-Plattformen</li>
-    </ul>
+    <h2>🇨🇭 Plattformen in der Schweiz</h2>
+    <div class="info-box">
+      <ul>
+        <li><strong>Och Sport (Zürich):</strong> Beliebtes Ski-Tauschprogramm</li>
+        <li><strong>Leihbar.ch:</strong> Subscription-basierte Ausleihe</li>
+        <li><strong>Sharely.ch:</strong> Peer-to-Peer Sharing von Privat</li>
+        <li><strong>loopi.ch, kiddos.ch:</strong> Spezialisierte Kinderartikel-Plattformen</li>
+      </ul>
+    </div>
 
-    <p><strong>Viele Kursanbieter auf KursNavi stellen die nötige Ausrüstung zur Verfügung.</strong></p>
+    <h2>📋 Checkliste vor der Miete</h2>
+    <div class="checklist">
+      <ul>
+        <li>Grösse des Kindes genau messen</li>
+        <li>Mietdauer mit Kursdauer abstimmen</li>
+        <li>Zustand bei Übernahme dokumentieren</li>
+        <li>Versicherungsoptionen prüfen</li>
+      </ul>
+    </div>
+
+    <div class="cta-box">
+      <h3>🎯 Kurse mit Leih-Ausrüstung finden</h3>
+      <p>Viele Kursanbieter auf KursNavi stellen die nötige Ausrüstung zur Verfügung – ohne Zusatzkosten!</p>
+    </div>
   `,
 
   'kinder/finanzen-kinder/stiftungen-kantonale-programme': `
-    <p class="lead">Die Schweiz hat eine reiche Stiftungskultur mit über 13'000 Stiftungen – viele davon unterstützen Kinderkurse. Nutze diese Ressourcen!</p>
+    <p class="lead">Die Schweiz hat eine reiche Stiftungskultur mit über 13'000 Stiftungen – viele davon unterstützen Kinderkurse und Freizeitaktivitäten. Nutze diese wertvollen Ressourcen!</p>
 
-    <h2>Arten von Förderung für Kinder</h2>
-    <ul>
-      <li><strong>Bildungs- und Talentförderung:</strong> Stipendien für Schule und Kurse, Spezialförderung für Hochbegabte, Sportförderung, Künstlerische Talentförderung</li>
-      <li><strong>Soziale Unterstützung:</strong> Finanzhilfen für Kinder von sozialschwachen Familien, Unterstützung von Kindern mit Behinderung</li>
-      <li><strong>Gesundheit und Wellness:</strong> Ferienaufenthalte für kranke Kinder, Unterstützung bei Therapien</li>
-    </ul>
+    <img src="https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=800&q=80" alt="Kinder bei gemeinsamer Aktivität" class="article-image" />
 
-    <h2>Nationale Beispiele</h2>
+    <h2>🎓 Arten von Förderung für Kinder</h2>
+    <div class="info-box">
+      <ul>
+        <li><strong>Bildungs- und Talentförderung:</strong> Stipendien für Schule und Kurse, Spezialförderung für Hochbegabte, Sport- und Kunstförderung</li>
+        <li><strong>Soziale Unterstützung:</strong> Finanzhilfen für Kinder von einkommensschwachen Familien, Unterstützung von Kindern mit Behinderung</li>
+        <li><strong>Gesundheit und Wellness:</strong> Ferienaufenthalte für kranke Kinder, Unterstützung bei Therapien</li>
+      </ul>
+    </div>
+
+    <h2>🏛️ Wichtige nationale Stiftungen</h2>
     <table>
       <thead>
         <tr><th>Stiftung</th><th>Schwerpunkt</th><th>Unterstützung</th></tr>
@@ -3261,254 +3525,373 @@ export const RATGEBER_CONTENT = {
         <tr><td>Pro Juventute</td><td>Kinder- und Jugendhilfe</td><td>Bildungsprogramme, Stipendien</td></tr>
         <tr><td>Kinderschutz Schweiz</td><td>Kinderrechte</td><td>Beratung, Kurse, Prävention</td></tr>
         <tr><td>Kovive</td><td>Kinderhilfswerk</td><td>Sommerlager, subventionierte Camps</td></tr>
+        <tr><td>Winterhilfe Schweiz</td><td>Soziale Unterstützung</td><td>Beiträge für Freizeitaktivitäten</td></tr>
       </tbody>
     </table>
 
-    <h2>Antragsprozess</h2>
-    <ol>
-      <li><strong>Identifikation:</strong> Passende Stiftung finden (regional, Fokus)</li>
-      <li><strong>Recherche:</strong> Kriterien, Deadlines, Unterlagen</li>
-      <li><strong>Antrag:</strong> Mit Einkommensnachweis, Schulberichten, Begründung</li>
-      <li><strong>Entscheidung:</strong> 1–3 Monate Bearbeitungszeit</li>
-      <li><strong>Auszahlung:</strong> Direkt zu Kursanbieter oder Erstattung</li>
-    </ol>
+    <h2>📝 Der Antragsprozess Schritt für Schritt</h2>
+    <div class="checklist">
+      <ul>
+        <li><strong>Identifikation:</strong> Passende Stiftung finden (regional, thematisch)</li>
+        <li><strong>Recherche:</strong> Kriterien, Deadlines und benötigte Unterlagen prüfen</li>
+        <li><strong>Antrag:</strong> Mit Einkommensnachweis, Schulberichten, Begründung einreichen</li>
+        <li><strong>Entscheidung:</strong> 1–3 Monate Bearbeitungszeit einplanen</li>
+        <li><strong>Auszahlung:</strong> Direkt an Kursanbieter oder als Erstattung</li>
+      </ul>
+    </div>
 
-    <p><strong>Wichtig: Lange Vorlaufzeit einplanen!</strong></p>
+    <div class="warning-box">
+      <p><strong>⚠️ Wichtig:</strong> Plane mindestens 3–4 Monate Vorlaufzeit ein! Anträge werden oft nur zu bestimmten Terminen bearbeitet.</p>
+    </div>
+
+    <div class="tip-box">
+      <p><strong>💡 Tipp:</strong> Nutze die Suchmaschine auf <strong>stiftungschweiz.ch</strong> um passende Stiftungen in deiner Region zu finden.</p>
+    </div>
+
+    <div class="cta-box">
+      <h3>🎯 Kurse mit Fördermöglichkeiten finden</h3>
+      <p>KursNavi zeigt dir Kursanbieter, die mit Stiftungen zusammenarbeiten oder eigene Rabatte anbieten.</p>
+    </div>
   `,
 
   // ============================================
   // KINDER & JUGEND > JUGEND-SPEZIAL
   // ============================================
   'kinder/familienalltag/hausaufgaben-vs-hobby': `
-    <p class="lead">Die mathematische Realität: Schule endet 15:00–16:00 Uhr, Hausaufgaben brauchen 1–2 Stunden, Hobbys 60–90 Minuten, Essen und Familie auch noch. Wie schafft man das alles?</p>
+    <p class="lead">Die mathematische Realität: Schule endet 15:00–16:00 Uhr, Hausaufgaben brauchen 1–2 Stunden, Hobbys 60–90 Minuten, Essen und Familie auch noch. Wie schafft man das alles? Hier findest du praktische Lösungen.</p>
 
-    <h2>Neurowissenschaftliche Perspektive: Was das Gehirn braucht</h2>
-    <ol>
-      <li><strong>Akademische Anforderung:</strong> Hausaufgaben, Konzentration</li>
-      <li><strong>Motorische Herausforderung:</strong> Sport, Bewegung (wichtig für Hirn-Entwicklung!)</li>
-      <li><strong>Soziale Interaktion:</strong> Mit Peers spielen</li>
-      <li><strong>Kreative Aktivität:</strong> Freies Spielen, Fantasie, Hobbys</li>
-      <li><strong>Erholung:</strong> Ruhezeit, Spielzeit</li>
-    </ol>
+    <img src="https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=800&q=80" alt="Kind bei den Hausaufgaben" class="article-image" />
 
-    <h2>5 Praktische Balance-Strategien</h2>
+    <h2>🧠 Was das kindliche Gehirn täglich braucht</h2>
+    <div class="info-box">
+      <ol>
+        <li><strong>Akademische Anforderung:</strong> Hausaufgaben, Konzentration</li>
+        <li><strong>Motorische Herausforderung:</strong> Sport, Bewegung (wichtig für Hirn-Entwicklung!)</li>
+        <li><strong>Soziale Interaktion:</strong> Mit Gleichaltrigen spielen</li>
+        <li><strong>Kreative Aktivität:</strong> Freies Spielen, Fantasie, Hobbys</li>
+        <li><strong>Erholung:</strong> Ruhe- und Spielzeit</li>
+      </ol>
+    </div>
 
-    <h3>1. Qualitäts-Hausaufgaben-Strategie</h3>
-    <ul>
-      <li><strong>Fokussiertes Arbeiten:</strong> Keine Ablenkung (Handy weg!), 30–45 Min ohne Pause</li>
-      <li><strong>Strukturierter Ort:</strong> Immer gleicher Schreibtisch</li>
-      <li><strong>Zeitfenster:</strong> Z.B. "Immer 16:00–17:00 Uhr" (Routine spart Zeit)</li>
-    </ul>
+    <h2>📚 Strategie 1: Qualitäts-Hausaufgaben</h2>
+    <div class="checklist">
+      <ul>
+        <li><strong>Fokussiertes Arbeiten:</strong> Keine Ablenkung (Handy weg!), 30–45 Min ohne Pause</li>
+        <li><strong>Strukturierter Ort:</strong> Immer am gleichen Schreibtisch</li>
+        <li><strong>Festes Zeitfenster:</strong> Z.B. "Immer 16:00–17:00 Uhr" (Routine spart Zeit)</li>
+      </ul>
+    </div>
 
-    <h3>2. Priorisierung der Hobbys</h3>
-    <p><strong>Faustregel:</strong> Zwei Hobbys sind völlig ausreichend. Kinder brauchen auch freie Zeit.</p>
-    <ul>
-      <li><strong>Kern-Hobby:</strong> 1–2x pro Woche, längfristig, fördert Talent</li>
-      <li><strong>Ergänzungs-Hobby:</strong> 1x pro Woche, zum Ausprobieren</li>
-      <li><strong>Maximum:</strong> 2–3 Hobbys pro Kind</li>
-    </ul>
+    <h2>🎯 Strategie 2: Hobbys priorisieren</h2>
+    <div class="tip-box">
+      <p><strong>Faustregel:</strong> Zwei Hobbys sind völlig ausreichend! Kinder brauchen auch freie Zeit zum Durchatmen.</p>
+      <ul>
+        <li><strong>Kern-Hobby:</strong> 1–2x pro Woche, längfristig, fördert Talent</li>
+        <li><strong>Ergänzungs-Hobby:</strong> 1x pro Woche, zum Ausprobieren</li>
+        <li><strong>Maximum:</strong> 2–3 Hobbys pro Kind</li>
+      </ul>
+    </div>
 
-    <h3>3. Das "Freie-Zeit-Garantie"-Modell</h3>
-    <p>Minimum <strong>2–3 Stunden pro Woche</strong> komplett freie Zeit. Diese Zeit ist geschützt wie Schulzeit.</p>
+    <h2>⏰ Strategie 3: Freie-Zeit-Garantie</h2>
+    <p>Plane mindestens <strong>2–3 Stunden pro Woche</strong> komplett freie Zeit ein. Diese Zeit ist genauso wichtig wie Schulzeit und sollte nicht verplant werden!</p>
 
-    <p><strong>KursNavi hilft dir, die richtige Balance für dein Kind zu finden.</strong></p>
+    <div class="warning-box">
+      <p><strong>⚠️ Warnsignale für Überlastung:</strong> Müdigkeit, Konzentrationsprobleme, häufige Konflikte, körperliche Beschwerden wie Kopf- oder Bauchschmerzen</p>
+    </div>
+
+    <div class="cta-box">
+      <h3>🎯 Die richtige Balance finden</h3>
+      <p>KursNavi hilft dir, Kurse zu finden, die zeitlich in den Familienalltag passen.</p>
+    </div>
   `,
 
   'kinder/familienalltag/zeitmanagement-eltern': `
-    <p class="lead">Zeitdruck ist ein Normalzustand in Schweizer Familien. Wie koordinierst du Schule, Kurse, Beruf und Haushalt, ohne dabei völlig zu kollabieren?</p>
+    <p class="lead">Zeitdruck ist ein Normalzustand in Schweizer Familien. Wie koordinierst du Schule, Kurse, Beruf und Haushalt, ohne dabei völlig zu kollabieren? Hier findest du erprobte Strategien.</p>
 
-    <h2>Das Kernproblem: Komplexität der Koordination</h2>
-    <p>Du musst koordinieren: Schulzeiten, Kurszeiten, Berufstätigkeit beider Eltern, Fahrtenwesen, Haushaltsverpflichtungen, Hausaufgaben und Schulvorbereitung.</p>
+    <img src="https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?w=800&q=80" alt="Familienkalender und Planung" class="article-image" />
 
-    <h2>5 Effektive Strategien</h2>
+    <h2>🎯 Das Kernproblem: Komplexität der Koordination</h2>
+    <p>Als Eltern musst du gleichzeitig koordinieren: Schulzeiten, Kurszeiten, Berufstätigkeit beider Eltern, Fahrtenwesen, Haushaltsverpflichtungen, Hausaufgaben und Schulvorbereitung.</p>
 
-    <h3>1. Prioritäten-Setting (Pareto-Prinzip)</h3>
+    <h2>📊 Strategie 1: Prioritäten nach Pareto</h2>
+    <div class="info-box">
+      <ul>
+        <li><strong>Must-Have:</strong> Schule, 1 Sport, Hausaufgaben</li>
+        <li><strong>Nice-to-Have:</strong> 2. Hobby, Fremdsprachen</li>
+        <li><strong>Optional:</strong> Spezialinteressen, einzelne Events</li>
+      </ul>
+    </div>
+
+    <h2>📅 Strategie 2: Die Wochenplan-Methode</h2>
+    <div class="checklist">
+      <ul>
+        <li>Alle fixen Termine im Familienkalender eintragen</li>
+        <li>Meal Planning: Wochenmenü reduziert tägliche Entscheidungen</li>
+        <li>Batch-Aktivitäten: Alle Einkäufe an einem Tag erledigen</li>
+        <li>Fahrgemeinschaften mit anderen Eltern organisieren</li>
+      </ul>
+    </div>
+
+    <h2>🤝 Strategie 3: Mental Load fair verteilen</h2>
+    <div class="tip-box">
+      <p><strong>❌ Falsch:</strong> "Könntest du die Hausaufgaben kontrollieren?"</p>
+      <p><strong>✅ Richtig:</strong> "Du bist verantwortlich für Hausaufgaben – Zeitpunkt, Kontrolle, Lehrer-Kontakt."</p>
+      <p>Der Unterschied: <em>Komplette Verantwortung übergeben</em>, nicht nur Einzelaufgaben delegieren!</p>
+    </div>
+
+    <h2>⏰ Strategie 4: Puffer einplanen</h2>
     <ul>
-      <li><strong>Must-Have:</strong> Schule, 1 Sport, Hausaufgaben</li>
-      <li><strong>Nice-to-Have:</strong> 2. Hobby, Fremdsprachen (optional)</li>
-      <li><strong>Optional:</strong> Spezialinteressen, Events</li>
+      <li>Minimum <strong>15 Minuten</strong> zwischen Kurs-Ende und nächstem Termin</li>
+      <li>Maximum <strong>2 Termine</strong> pro Wochenabend nach Schulschluss</li>
+      <li>Mindestens <strong>1–2 freie Nachmittage</strong> pro Woche einplanen</li>
     </ul>
 
-    <h3>2. Die Wochenplan-Methode</h3>
-    <ol>
-      <li>Alle fixen Termine in Kalender (Schule, Arbeit, Kurse)</li>
-      <li>Meal Planning: Wochenmenü reduziert tägliche Entscheidungen</li>
-      <li>Batch-Aktivitäten: Alle Einkäufe an einem Tag</li>
-    </ol>
+    <div class="warning-box">
+      <p><strong>⚠️ Achtung:</strong> Ein zu voller Kalender führt zu Stress bei allen Familienmitgliedern. Weniger ist oft mehr!</p>
+    </div>
 
-    <h3>3. Mental Load verteilen</h3>
-    <p><strong>Falsch:</strong> "Könntest du Hausaufgaben kontrollieren?"</p>
-    <p><strong>Richtig:</strong> "Du bist verantwortlich für Hausaufgaben – Zeitpunkt, Kontrolle, Lehrer-Kontakt."</p>
-
-    <h3>4. Puffer einplanen</h3>
-    <ul>
-      <li>Minimum 15 Min. zwischen Kurs-Ende und nächstem Termin</li>
-      <li>Max. 2 Termine pro Wochenabend nach Schulschluss</li>
-      <li>Mindestens 1–2 freie Nachmittage pro Woche</li>
-    </ul>
-
-    <p><strong>KursNavi unterstützt dich mit intelligenten Filtern bei der Kursauswahl.</strong></p>
+    <div class="cta-box">
+      <h3>🎯 Kurse finden, die in den Alltag passen</h3>
+      <p>KursNavi unterstützt dich mit intelligenten Filtern nach Wochentag, Uhrzeit und Standort.</p>
+    </div>
   `,
 
   'kinder/familienalltag/mental-load-buchungssysteme': `
-    <p class="lead">Mental Load ist nicht, wer die Arbeit tut, sondern wer über sie nachdenkt. Mit digitalen Systemen reduzierst du die ständige mentale Belastung.</p>
+    <p class="lead">Mental Load ist nicht, wer die Arbeit tut, sondern wer über sie nachdenkt. Mit digitalen Systemen und cleveren Strategien reduzierst du die ständige mentale Belastung spürbar.</p>
 
-    <h2>Was ist Mental Load?</h2>
-    <ul>
-      <li>Nicht die physische Arbeit (Fahren, Anmelden)</li>
-      <li>Sondern das <strong>ständige Denken</strong> über die Arbeit</li>
-      <li>Das <strong>Organisieren und Planen</strong> im Hintergrund</li>
-      <li>Das <strong>Gedächtnisleisten</strong> für alle Familien-Details</li>
-    </ul>
+    <img src="https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=800&q=80" alt="Digitale Organisation und Planung" class="article-image" />
 
-    <h2>4 Strategien zur Reduktion</h2>
+    <h2>🧠 Was ist Mental Load genau?</h2>
+    <div class="info-box">
+      <ul>
+        <li><strong>Nicht</strong> die physische Arbeit (Fahren, Anmelden)</li>
+        <li>Sondern das <strong>ständige Denken</strong> über die Arbeit</li>
+        <li>Das <strong>Organisieren und Planen</strong> im Hintergrund</li>
+        <li>Das <strong>Gedächtnisleisten</strong> für alle Familien-Details</li>
+      </ul>
+    </div>
 
-    <h3>1. Systemische Optimierung</h3>
-    <ul>
-      <li><strong>Ein zentraler Kalender:</strong> Farben für jedes Familienmitglied, sichtbar überall</li>
-      <li><strong>Automatisierte Reminders:</strong> 24h vor Kurs, 1h vor Fahrt</li>
-    </ul>
+    <h2>📱 Strategie 1: Systemische Optimierung</h2>
+    <div class="tip-box">
+      <ul>
+        <li><strong>Ein zentraler Familienkalender:</strong> Farben für jedes Familienmitglied, sichtbar auf allen Geräten</li>
+        <li><strong>Automatisierte Reminders:</strong> 24h vor Kurs, 1h vor Fahrt</li>
+        <li><strong>Digitale Einkaufslisten:</strong> Gemeinsam bearbeitbar (z.B. Bring!, AnyList)</li>
+      </ul>
+    </div>
 
-    <h3>2. Aufgaben-Delegation</h3>
-    <ul>
-      <li><strong>Ab 8 Jahren:</strong> Kind trägt Verantwortung für "Mein Handtuch/meine Tasche"</li>
-      <li><strong>Ab 10 Jahren:</strong> Kind verantwortlich, dass Hausaufgaben gemacht sind</li>
-      <li><strong>Ab 12 Jahren:</strong> Kind verantwortlich für Lehrer-Kommunikation</li>
-    </ul>
+    <h2>👨‍👩‍👧‍👦 Strategie 2: Aufgaben altersgerecht delegieren</h2>
+    <table>
+      <thead>
+        <tr><th>Alter</th><th>Verantwortung</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Ab 8 Jahren</td><td>Kind packt selbst: "Mein Handtuch, meine Tasche"</td></tr>
+        <tr><td>Ab 10 Jahren</td><td>Kind ist verantwortlich, dass Hausaufgaben gemacht sind</td></tr>
+        <tr><td>Ab 12 Jahren</td><td>Kind kommuniziert selbstständig mit Lehrern/Trainern</td></tr>
+      </tbody>
+    </table>
 
-    <h3>3. Bewusste Reduktion</h3>
-    <p><strong>Radikale Option:</strong> Maximal 2 Hobbys pro Kind = 60% weniger Mental Load</p>
+    <h2>✂️ Strategie 3: Bewusste Reduktion</h2>
+    <div class="warning-box">
+      <p><strong>Radikale, aber effektive Option:</strong> Maximal 2 Hobbys pro Kind bedeutet <strong>60% weniger Mental Load</strong> für die ganze Familie!</p>
+    </div>
 
-    <h3>4. Prozess-Automatisierung mit KursNavi</h3>
-    <ul>
-      <li>Automatische Erinnerungen für Kurs-Ende</li>
-      <li>Auto-Renewal Option</li>
-      <li>Kündigungshilfe mit Reminders</li>
-    </ul>
+    <h2>🤖 Strategie 4: Automatisierung nutzen</h2>
+    <div class="checklist">
+      <ul>
+        <li>Automatische Erinnerungen für Kurs-Beginn und -Ende</li>
+        <li>Wiederkehrende Termine einmal einrichten</li>
+        <li>Kündigungsfristen im Kalender als Reminder</li>
+        <li>Bezahlungen wo möglich per Lastschrift</li>
+      </ul>
+    </div>
 
-    <p><strong>Mit KursNavi findest du spielend leicht die passenden Kurse für dein Kind.</strong></p>
+    <div class="cta-box">
+      <h3>🎯 Mental Load reduzieren mit KursNavi</h3>
+      <p>Finde Kurse mit einfacher Online-Buchung, klaren Terminen und transparenten Konditionen.</p>
+    </div>
   `,
 
   'kinder/familienalltag/angst-vor-neuem': `
-    <p class="lead">Ängstlichkeit vor neuen Situationen ist völlig normal und entwicklungsgerecht. Mit behutsamer Begleitung – nicht mit Zwang – wächst dein Kind über seine Angst hinaus.</p>
+    <p class="lead">Ängstlichkeit vor neuen Situationen ist völlig normal und entwicklungsgerecht. Mit behutsamer Begleitung – nicht mit Zwang – wächst dein Kind über seine Angst hinaus. So unterstützt du es richtig.</p>
 
-    <h2>Normale Kinderängste</h2>
-    <ul>
-      <li><strong>2–4 Jahre:</strong> Angst vor Kindergarten-Wechsel</li>
-      <li><strong>6–8 Jahre:</strong> Angst vor neuer Klasse, neue Kurse</li>
-      <li><strong>10–12 Jahre:</strong> Angst vor Gruppenaktivitäten</li>
-    </ul>
+    <img src="https://images.unsplash.com/photo-1516627145497-ae6968895b74?w=800&q=80" alt="Eltern unterstützen ängstliches Kind" class="article-image" />
 
-    <h2>Das Kernprinzip: Sicherheit vor Leistung</h2>
-    <p><strong>Nicht:</strong> "Sei mutig!" <strong>Sondern:</strong> "Ich bin bei dir."</p>
+    <h2>👶 Normale Kinderängste nach Alter</h2>
+    <div class="info-box">
+      <ul>
+        <li><strong>2–4 Jahre:</strong> Angst vor Kindergarten-Wechsel, Trennungsangst</li>
+        <li><strong>6–8 Jahre:</strong> Angst vor neuer Klasse, neuen Kursen</li>
+        <li><strong>10–12 Jahre:</strong> Angst vor Gruppenaktivitäten, sozialer Bewertung</li>
+      </ul>
+    </div>
 
-    <h2>Die 5 Effizienzschritt-Methode</h2>
+    <h2>💝 Das Kernprinzip: Sicherheit vor Leistung</h2>
+    <div class="tip-box">
+      <p><strong>❌ Nicht:</strong> "Sei mutig!" oder "Stell dich nicht so an!"</p>
+      <p><strong>✅ Sondern:</strong> "Ich bin bei dir." und "Deine Gefühle sind okay."</p>
+    </div>
 
-    <h3>1. Behutsame Gewöhnung (4 Wochen-Modell)</h3>
+    <h2>📅 Das 4-Wochen-Gewöhnungsmodell</h2>
     <table>
       <thead>
         <tr><th>Woche</th><th>Aktion</th><th>Ziel</th></tr>
       </thead>
       <tbody>
-        <tr><td>1</td><td>Gemeinsam beim Kurs anschauen</td><td>Raum kennenlernen</td></tr>
-        <tr><td>2</td><td>Zusammen in den Raum gehen</td><td>Nähe und Sicherheit</td></tr>
-        <tr><td>3</td><td>Kind darf mitmachen, Elternteil sichtbar</td><td>Teilnahme mit Support</td></tr>
-        <tr><td>4+</td><td>Elternteil-Präsenz graduell ausschleichen</td><td>Unabhängigkeit</td></tr>
+        <tr><td>1</td><td>Gemeinsam beim Kurs zuschauen</td><td>Raum und Ablauf kennenlernen</td></tr>
+        <tr><td>2</td><td>Zusammen in den Raum gehen</td><td>Nähe und Sicherheit spüren</td></tr>
+        <tr><td>3</td><td>Kind macht mit, Elternteil sichtbar</td><td>Teilnahme mit Rückhalt</td></tr>
+        <tr><td>4+</td><td>Elternpräsenz schrittweise reduzieren</td><td>Selbstständigkeit aufbauen</td></tr>
       </tbody>
     </table>
 
-    <h3>2. Was funktioniert</h3>
-    <ul>
-      <li>"Ich sehe, dass dir das Angst macht. Das ist OK."</li>
-      <li>"Ich bleibe bei dir. Du bist sicher."</li>
-      <li>"Wir nehmen uns Zeit. Es ist kein Wettkampf."</li>
-    </ul>
+    <h2>💬 Sätze, die wirklich helfen</h2>
+    <div class="checklist">
+      <ul>
+        <li>"Ich sehe, dass dir das Angst macht. Das ist völlig okay."</li>
+        <li>"Ich bleibe bei dir. Du bist sicher."</li>
+        <li>"Wir nehmen uns Zeit. Es ist kein Wettkampf."</li>
+        <li>"Du entscheidest, wann du bereit bist."</li>
+      </ul>
+    </div>
 
-    <h2>Wann braucht man professionelle Hilfe?</h2>
-    <p><strong>Potenzielle Angststörung:</strong> Extreme Angst auch nach Monaten, Panik-Symptome, zunehmende Vermeidung → Kinderpsychologe/-in suchen.</p>
+    <h2>⚠️ Wann professionelle Hilfe nötig ist</h2>
+    <div class="warning-box">
+      <p><strong>Mögliche Angststörung erkennen:</strong></p>
+      <ul>
+        <li>Extreme Angst auch nach mehreren Monaten</li>
+        <li>Panik-Symptome (Herzrasen, Zittern, Atemnot)</li>
+        <li>Zunehmende Vermeidung aller neuen Situationen</li>
+      </ul>
+      <p>→ Kontaktiere einen Kinderpsychologen oder die Schulsozialarbeit.</p>
+    </div>
 
-    <p><strong>KursNavi hilft dir, Kurse mit Schnupperstunden für ängstliche Kinder zu finden.</strong></p>
+    <div class="cta-box">
+      <h3>🎯 Kurse mit Schnupperstunden finden</h3>
+      <p>KursNavi hilft dir, Kursanbieter zu finden, die Probelektionen für ängstliche Kinder anbieten.</p>
+    </div>
   `,
 
   'kinder/familienalltag/mobbingpraevention-kurse': `
-    <p class="lead">Kurse sind potenzielle Mobbing-Orte: neue Gruppe, Leistungsfokus, Statusunterschiede. Wie erkennst du, ob ein Kurs eine sichere Umgebung ist?</p>
+    <p class="lead">Kurse können potenzielle Mobbing-Orte sein: neue Gruppe, Leistungsfokus, Statusunterschiede. Wie erkennst du, ob ein Kurs eine sichere Umgebung für dein Kind ist?</p>
 
-    <h2>Warum Kurse Mobbing-Risiken sind</h2>
-    <ul>
-      <li><strong>Neue Gruppe:</strong> Kind kennt andere nicht</li>
-      <li><strong>Leistungsfokus:</strong> "Du bist schlecht" wird hämisch gemacht</li>
-      <li><strong>Physischer Kontakt:</strong> Bei Kampfsportarten, Tanzen, Schwimmen</li>
-      <li><strong>Unterschiedliche Körper:</strong> Peinlichkeit bei Umziehsituationen</li>
-    </ul>
+    <img src="https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=800&q=80" alt="Kinder in harmonischer Gruppensituation" class="article-image" />
 
-    <h2>Was gute Trainer/-innen tun</h2>
-    <ul>
-      <li><strong>Gruppenklima aktiv gestalten:</strong> Wer einsteigt, wird willkommen geheissen</li>
-      <li><strong>Grenzen setzen:</strong> "Wir sind respektvoll zueinander"</li>
-      <li><strong>Beobachten:</strong> Frühe Zeichen von Ausgrenzung erkennen</li>
-      <li><strong>Eingreifen:</strong> Schnell handeln, wenn Mobbing sichtbar wird</li>
-      <li><strong>Eltern informieren:</strong> Transparent kommunizieren bei Problemen</li>
-    </ul>
+    <h2>⚠️ Warum Kurse Mobbing-Risiken bergen</h2>
+    <div class="warning-box">
+      <ul>
+        <li><strong>Neue Gruppe:</strong> Kind kennt die anderen nicht</li>
+        <li><strong>Leistungsfokus:</strong> Unterschiede werden schnell sichtbar</li>
+        <li><strong>Physischer Kontakt:</strong> Bei Kampfsport, Tanzen, Schwimmen</li>
+        <li><strong>Umziehsituationen:</strong> Körperliche Unterschiede werden thematisiert</li>
+      </ul>
+    </div>
 
-    <h2>Früherkennung durch Eltern</h2>
-    <p><strong>Warnsignale:</strong></p>
-    <ul>
-      <li>Verhaltensänderung ("Mein Kind will nicht mehr zum Kurs gehen")</li>
-      <li>Emotionale Symptome (Traurigkeit, Angst, Schlafprobleme)</li>
-      <li>Körperliche Symptome (Magenschmerzen, Kopfweh vor Kurs)</li>
-      <li>Soziale Isolation ("Niemand mag mich")</li>
-    </ul>
+    <h2>✅ Was gute Trainer/-innen auszeichnet</h2>
+    <div class="checklist">
+      <ul>
+        <li><strong>Gruppenklima aktiv gestalten:</strong> Neue werden willkommen geheissen</li>
+        <li><strong>Klare Grenzen setzen:</strong> "Wir sind respektvoll zueinander"</li>
+        <li><strong>Aufmerksam beobachten:</strong> Frühe Zeichen von Ausgrenzung erkennen</li>
+        <li><strong>Schnell eingreifen:</strong> Handeln, wenn Mobbing sichtbar wird</li>
+        <li><strong>Transparent kommunizieren:</strong> Eltern bei Problemen informieren</li>
+      </ul>
+    </div>
 
-    <h2>Gespräch mit Kind führen</h2>
-    <p><strong>Nicht-suggestive Fragen:</strong></p>
-    <ul>
-      <li>"Wie war dein Kurs heute?"</li>
-      <li>"Wie kommen du und deine Kurs-Freunde miteinander aus?"</li>
-      <li>"Gibt es jemanden, der/die nicht so nett zu dir ist?"</li>
-    </ul>
+    <h2>🔍 Warnsignale für Eltern</h2>
+    <div class="info-box">
+      <ul>
+        <li><strong>Verhaltensänderung:</strong> "Ich will nicht mehr zum Kurs gehen!"</li>
+        <li><strong>Emotionale Symptome:</strong> Traurigkeit, Angst, Schlafprobleme</li>
+        <li><strong>Körperliche Symptome:</strong> Bauch- oder Kopfschmerzen vor dem Kurs</li>
+        <li><strong>Soziale Äusserungen:</strong> "Niemand mag mich" oder "Alle sind gemein"</li>
+      </ul>
+    </div>
 
-    <p><strong>Mit KursNavi-Bewertungen erkennst du, ob Kurse ein sicheres Umfeld bieten.</strong></p>
+    <h2>💬 Gespräch mit dem Kind führen</h2>
+    <div class="tip-box">
+      <p><strong>Offene, nicht-suggestive Fragen stellen:</strong></p>
+      <ul>
+        <li>"Wie war dein Kurs heute? Erzähl mal!"</li>
+        <li>"Mit wem spielst du am liebsten im Kurs?"</li>
+        <li>"Gibt es jemanden, der nicht so nett zu dir ist?"</li>
+        <li>"Was würdest du dir wünschen, das anders wäre?"</li>
+      </ul>
+    </div>
+
+    <h2>🛡️ So reagierst du richtig</h2>
+    <ol>
+      <li><strong>Zuhören</strong> ohne zu unterbrechen oder zu werten</li>
+      <li><strong>Ernst nehmen</strong> – auch "kleine" Vorfälle können belastend sein</li>
+      <li><strong>Dokumentieren</strong> – Datum, was passiert ist, wer beteiligt war</li>
+      <li><strong>Gespräch suchen</strong> mit Kursleitung oder Trainer/-in</li>
+      <li><strong>Notfalls Kurs wechseln</strong> – das Wohlbefinden deines Kindes geht vor</li>
+    </ol>
+
+    <div class="cta-box">
+      <h3>🎯 Kurse mit gutem Gruppenklima finden</h3>
+      <p>Mit KursNavi-Bewertungen erkennst du, ob Kurse ein sicheres und respektvolles Umfeld bieten.</p>
+    </div>
   `,
 
   'kinder/finanzen-kinder/steuertipp-kinderbetreuungskosten': `
-    <p class="lead">Viele Eltern wissen nicht, dass sie Betreuungskosten von der Steuer abziehen können – aber Hobbys leider nicht. Hier ist die klare Orientierung.</p>
+    <p class="lead">Viele Eltern wissen nicht, dass sie Betreuungskosten von der Steuer abziehen können – aber Hobbys leider nicht. Hier findest du eine klare Orientierung für die Schweiz.</p>
 
-    <h2>Was ist abzugsfähig (Bundesebene)?</h2>
-    <p>Maximal <strong>CHF 25'000 pro Kind pro Jahr</strong> für nachgewiesene Drittbetreuung:</p>
-    <ul>
-      <li>Krippe/Kindertagesstätte</li>
-      <li>Tagesfamilien mit Betreuungsvertrag</li>
-      <li>Schulergänzende Tagesstrukturen</li>
-      <li>Ferienbetreuung (wenn notwendig für Berufstätigkeit)</li>
-    </ul>
+    <img src="https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=800&q=80" alt="Steuerunterlagen und Rechner" class="article-image" />
 
-    <h2>Was NICHT zählt</h2>
-    <ul>
-      <li>Hobbys und Sportvereine (z.B. Karatekurs)</li>
-      <li>Musikunterricht (in der Regel)</li>
-      <li>Feriencamps mit Unterhaltungsfokus</li>
-    </ul>
+    <h2>✅ Was ist abzugsfähig (Bundesebene)?</h2>
+    <div class="info-box">
+      <p>Maximal <strong>CHF 25'000 pro Kind pro Jahr</strong> für nachgewiesene Drittbetreuung:</p>
+      <ul>
+        <li>Krippe / Kindertagesstätte (Kita)</li>
+        <li>Tagesfamilien mit Betreuungsvertrag</li>
+        <li>Schulergänzende Tagesstrukturen (Hort)</li>
+        <li>Ferienbetreuung (wenn für Berufstätigkeit notwendig)</li>
+      </ul>
+    </div>
 
-    <h2>Kantonsunterschiede</h2>
+    <h2>❌ Was NICHT abzugsfähig ist</h2>
+    <div class="warning-box">
+      <ul>
+        <li>Hobbykurse und Sportvereine (z.B. Karatekurs, Fussball)</li>
+        <li>Musikunterricht (in der Regel nicht)</li>
+        <li>Feriencamps mit Unterhaltungsfokus</li>
+        <li>Babysitter ohne offizielle Anstellung</li>
+      </ul>
+    </div>
+
+    <h2>🇨🇭 Kantonsunterschiede beachten</h2>
     <table>
       <thead>
-        <tr><th>Kanton</th><th>Maximaler Abzug</th></tr>
+        <tr><th>Kanton</th><th>Maximaler Abzug</th><th>Tendenz</th></tr>
       </thead>
       <tbody>
-        <tr><td>Zürich</td><td>CHF 25'000 (liberal)</td></tr>
-        <tr><td>Schwyz</td><td>CHF 6'000 (restriktiv)</td></tr>
-        <tr><td>Andere Kantone</td><td>CHF 3'000–25'000</td></tr>
+        <tr><td>Zürich</td><td>CHF 25'000</td><td>Liberal</td></tr>
+        <tr><td>Bern</td><td>CHF 16'000</td><td>Mittel</td></tr>
+        <tr><td>Schwyz</td><td>CHF 6'000</td><td>Restriktiv</td></tr>
+        <tr><td>Andere Kantone</td><td>CHF 3'000–25'000</td><td>Variiert stark</td></tr>
       </tbody>
     </table>
 
-    <h2>Praktische Schritte</h2>
-    <ol>
-      <li>Sammle Quittungen und Rechnungen (mit Kindername, Dauer, Kosten)</li>
-      <li>Geltend machen in Steuererklärung (Position "Kinderbetreuungskosten")</li>
-      <li>Unsicher? Kontaktiere die kantonale Steuerverwaltung oder einen Steuerberater</li>
-    </ol>
+    <h2>📋 Praktische Schritte</h2>
+    <div class="checklist">
+      <ul>
+        <li><strong>Quittungen sammeln:</strong> Mit Kindername, Betreuungsdauer, Kosten</li>
+        <li><strong>Steuererklärung:</strong> Position "Kinderbetreuungskosten" ausfüllen</li>
+        <li><strong>Nachweis aufbewahren:</strong> Mindestens 10 Jahre archivieren</li>
+        <li><strong>Bei Unsicherheit:</strong> Kantonale Steuerverwaltung kontaktieren</li>
+      </ul>
+    </div>
 
-    <p><strong>Wichtig: Lies die Merkblätter deines Kantons!</strong></p>
+    <div class="tip-box">
+      <p><strong>💡 Profi-Tipp:</strong> Lade dir das Merkblatt "Kinderbetreuungskosten" deines Kantons herunter – dort findest du alle kantonsspezifischen Regelungen.</p>
+    </div>
+
+    <div class="cta-box">
+      <h3>🎯 Betreuungsangebote mit Steuervorteilen finden</h3>
+      <p>KursNavi zeigt dir Tagesstrukturen und Ferienbetreuung, die steuerlich absetzbar sind.</p>
+    </div>
   `
 };
 
