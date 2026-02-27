@@ -1343,7 +1343,7 @@ useEffect(() => {
 
       {/* Admin Impersonation Banner */}
       {impersonatedUser && (
-        <div className="fixed top-16 left-0 right-0 bg-purple-600 text-white px-4 py-2 z-40 flex items-center justify-center gap-4 text-sm font-bold shadow-lg">
+        <div className="sticky top-0 left-0 right-0 bg-purple-600 text-white px-4 py-2 z-50 flex items-center justify-center gap-4 text-sm font-bold shadow-lg">
           <span>Du siehst das Dashboard von: {impersonatedUser.name} ({impersonatedUser.email}) — Rolle: {impersonatedUser.role}</span>
           <button
             onClick={() => { setImpersonatedUser(null); setView('admin'); }}

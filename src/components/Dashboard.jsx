@@ -37,7 +37,7 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t }) => 
         return () => { cancelled = true; };
     }, []);
 
-    const uid = authUid || user?.id;
+    const uid = isImpersonating ? user?.id : (authUid || user?.id);
 
     
     const [formData, setFormData] = useState({
@@ -1125,7 +1125,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
         return () => { cancelled = true; };
     }, []);
 
-    const uid = authUid || user?.id;
+    const uid = isImpersonating ? user?.id : (authUid || user?.id);
 
     // 1. Fetch User Tier (AUTH UID + maybeSingle)
     useEffect(() => {
