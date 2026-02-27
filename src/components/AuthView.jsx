@@ -42,7 +42,17 @@ const AuthView = ({ setView, setUser, showNotification, lang }) => {
             });
 
                 if (authError) throw authError;
-                if (authData?.user) { await supabase.from('profiles').insert([{ id: authData.user.id, full_name: fullName, email: email, preferred_language: lang, role: role }]); }
+                if (authData?.user) {
+                    const { error: profileError } = await supabase.from('profiles').upsert([{
+                        id: authData.user.id,
+                        full_name: fullName,
+                        email: email,
+                        preferred_language: lang,
+                        role: role,
+                        package_tier: selectedPackage
+                    }], { onConflict: 'id' });
+                    if (profileError) console.warn('Profile insert failed (will retry on login):', profileError.message);
+                }
                 setShowSuccess(true); // Switch to success page
             } else {
                 const { data, error } = await supabase.auth.signInWithPassword({ email, password });

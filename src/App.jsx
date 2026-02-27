@@ -36,6 +36,7 @@ import ProviderDirectory from './components/ProviderDirectory';
 import ProviderProfilePage from './components/ProviderProfilePage';
 import RatgeberClusterView from './components/RatgeberClusterView';
 import RatgeberArtikelView from './components/RatgeberArtikelView';
+import RatgeberHubView from './components/RatgeberHubView';
 
 // --- DEBUG: ERROR BOUNDARY (Fängt Abstürze ab) ---
 class ErrorBoundary extends React.Component {
@@ -120,13 +121,11 @@ export default function KursNaviPro() {  // 1. Initial State Logic
       if (path.startsWith('/anbieter/')) return 'provider-profile';
 
       // RATGEBER ROUTING
-      // Pattern: /ratgeber/category/cluster/article -> article view
-      // Pattern: /ratgeber/category/cluster -> cluster overview
-      if (path.startsWith('/ratgeber/')) {
+      if (path === '/ratgeber' || path.startsWith('/ratgeber/')) {
           const parts = path.split('/').filter(Boolean);
           if (parts.length >= 4) return 'ratgeber-artikel';
           if (parts.length === 3) return 'ratgeber-cluster';
-          if (parts.length === 2) return 'search';
+          return 'ratgeber-hub';
       }
 
       // SEO Routing: Check for new structure /courses/topic/location/id
@@ -414,20 +413,17 @@ export default function KursNaviPro() {  // 1. Initial State Logic
       }
 
       // Load all course categories for multi-category search support
-      // Try both new (course_category_assignments) and legacy (course_categories) tables
       const courseIds = (courseData || []).map(c => c.id).filter(Boolean);
       let categoriesMap = {};
 
       if (courseIds.length > 0) {
-        // Try new consolidated junction table first (with v_course_full_categories view)
-        const { data: newCategoriesData, error: newCategoriesError } = await supabase
+        const { data: categoriesData, error: categoriesError } = await supabase
           .from('v_course_full_categories')
           .select('*')
           .in('course_id', courseIds);
 
-        if (!newCategoriesError && newCategoriesData && newCategoriesData.length > 0) {
-          // Map consolidated view data to legacy format for backward compatibility
-          categoriesMap = newCategoriesData.reduce((acc, cat) => {
+        if (!categoriesError && categoriesData) {
+          categoriesMap = categoriesData.reduce((acc, cat) => {
             if (!acc[cat.course_id]) {
               acc[cat.course_id] = [];
             }
@@ -449,22 +445,6 @@ export default function KursNaviPro() {  // 1. Initial State Logic
             });
             return acc;
           }, {});
-        } else {
-          // Fallback to legacy junction table
-          const { data: categoriesData, error: categoriesError } = await supabase
-            .from('course_categories')
-            .select('*')
-            .in('course_id', courseIds);
-
-          if (!categoriesError && categoriesData) {
-            categoriesMap = categoriesData.reduce((acc, cat) => {
-              if (!acc[cat.course_id]) {
-                acc[cat.course_id] = [];
-              }
-              acc[cat.course_id].push(cat);
-              return acc;
-            }, {});
-          }
         }
       }
 
@@ -1142,14 +1122,32 @@ export default function KursNaviPro() {  // 1. Initial State Logic
         syncPendingSavedCourse(session.user.id);
         if (role === 'teacher') fetchTeacherEarnings(session.user.id);
 
-        // Profil-Extras laden
-        const { data } = await supabase
+        // Profil-Extras laden (oder erstellen falls fehlend)
+        let { data } = await supabase
           .from('profiles')
           .select('preferred_language, is_professional, package_tier, role, full_name')
           .eq('id', session.user.id)
           .single();
 
         if (cancelled) return;
+
+        // Safety net: Profil erstellen falls es nicht existiert
+        if (!data) {
+          const meta = session.user.user_metadata || {};
+          const { data: created } = await supabase
+            .from('profiles')
+            .upsert({
+              id: session.user.id,
+              full_name: meta.full_name || session.user.email.split('@')[0],
+              email: session.user.email,
+              role: meta.role || 'student',
+              package_tier: meta.package_tier || 'basic',
+              preferred_language: 'de'
+            }, { onConflict: 'id' })
+            .select('preferred_language, is_professional, package_tier, role, full_name')
+            .single();
+          if (!cancelled) data = created;
+        }
 
         if (data) {
           if (data.preferred_language) setLang(data.preferred_language);
@@ -1392,6 +1390,7 @@ useEffect(() => {
       {view === 'blog-detail' && <BlogDetail article={selectedArticle} setView={setView} courses={courses} />}
       {view === 'provider-directory' && <ProviderDirectory t={t} setView={setView} />}
       {view === 'provider-profile' && <ProviderProfilePage t={t} setView={setView} setSelectedCourse={setSelectedCourse} />}
+      {view === 'ratgeber-hub' && <RatgeberHubView lang={lang} />}
       {view === 'ratgeber-cluster' && <RatgeberClusterView lang={lang} />}
       {view === 'ratgeber-artikel' && <RatgeberArtikelView lang={lang} />}
       {view === 'dashboard' && user && <Dashboard user={user} setUser={setUser} t={t} setView={setView} courses={courses} teacherEarnings={teacherEarnings} myBookings={myBookings} savedCourses={savedCourses} savedCourseIds={savedCourseIds} onToggleSaveCourse={toggleSaveCourse} handleDeleteCourse={handleDeleteCourse} handleEditCourse={handleEditCourse} handleUpdateCourseStatus={handleUpdateCourseStatus} showNotification={showNotification} changeLanguage={changeLanguage} setSelectedCourse={setSelectedCourse} refreshBookings={fetchBookings} />}
