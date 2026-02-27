@@ -1,4 +1,6 @@
 -- Migration: Add RPC functions for provider analytics
+-- Note: bookings table has no amount column. Revenue is derived from courses.price (CHF).
+-- We store revenue in cents (price * 100) for consistency.
 
 -- Monthly aggregates for a provider (bookings, revenue, views)
 CREATE OR REPLACE FUNCTION get_provider_analytics(provider_id UUID, months_back INT DEFAULT 12)
@@ -23,8 +25,8 @@ BEGIN
     SELECT
       date_trunc('month', b.created_at) AS m,
       COUNT(*) AS bookings,
-      COALESCE(SUM(b.amount_cents), 0) AS revenue,
-      COALESCE(SUM(b.net_amount_cents), 0) AS net
+      COALESCE(SUM(c.price * 100), 0)::BIGINT AS revenue,
+      COALESCE(SUM(c.price * 85), 0)::BIGINT AS net
     FROM bookings b
     JOIN courses c ON c.id = b.course_id
     WHERE c.user_id = provider_id
@@ -74,7 +76,7 @@ BEGIN
     c.id,
     c.title,
     COUNT(DISTINCT b.id) AS total_bookings,
-    COALESCE(SUM(DISTINCT b.amount_cents), 0) AS total_revenue_cents,
+    (COALESCE(COUNT(DISTINCT b.id), 0) * c.price * 100)::BIGINT AS total_revenue_cents,
     COUNT(DISTINCT v_imp.id) AS total_views,
     COUNT(DISTINCT v_det.id) AS total_detail_views,
     CASE
@@ -94,7 +96,7 @@ BEGIN
     AND v_det.created_at >= now() - (months_back || ' months')::interval
   WHERE c.user_id = provider_id
     AND (c.status = 'published' OR c.status IS NULL)
-  GROUP BY c.id, c.title
-  ORDER BY COUNT(DISTINCT b.id) DESC, COALESCE(SUM(DISTINCT b.amount_cents), 0) DESC;
+  GROUP BY c.id, c.title, c.price
+  ORDER BY COUNT(DISTINCT b.id) DESC, c.price DESC;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
