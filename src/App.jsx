@@ -466,15 +466,6 @@ export default function KursNaviPro() {  // 1. Initial State Logic
         // specialty and focus use LABELS (because dropdowns display labels)
         // Build: 2026-02-21-v3 - Added debug logging
         const categoryPaths = courseCategories.map(cat => {
-          console.log('[App.jsx] Building categoryPath for course', c.id, ':', {
-            raw_cat: cat,
-            type: cat.category_type,
-            area_id: cat.area_id,
-            specialty_label: cat.category_specialty_label,
-            specialty_slug: cat.category_specialty,
-            focus_label: cat.category_focus_label,
-            focus_slug: cat.category_focus
-          });
           return {
             type: cat.category_type,           // slug (e.g., "professionell")
             area: cat.area_id,                 // numeric ID (e.g., 22) - getAreasLocal returns IDs
