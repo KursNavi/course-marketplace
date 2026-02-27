@@ -80,25 +80,20 @@ const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView, user,
         }
     }, [isAuthenticated, fetchProfiles]);
 
-    const handleImpersonate = (profile) => {
+    const handleImpersonate = (profile, fromTab) => {
         if (onImpersonate) {
+            // Determine role: use profile.role if set, otherwise infer from which tab the admin clicked
+            const role = profile.role || (fromTab === 'teachers' ? 'teacher' : 'student');
             onImpersonate({
                 id: profile.id,
                 email: profile.email,
-                role: profile.role || (isTeacherProfile(profile) ? 'teacher' : 'student'),
+                role,
                 name: profile.full_name || profile.email,
                 is_professional: profile.is_professional,
                 plan_tier: profile.package_tier || 'basic'
             });
             setView('dashboard');
         }
-    };
-
-    const isTeacherProfile = (p) => {
-        const r = getRoleValue(p);
-        if (['teacher', 'lehrer', 'instructor', 'anbieter', 'provider'].includes(r)) return true;
-        if (p.is_teacher === true || p.is_instructor === true || p.is_provider === true) return true;
-        return false;
     };
 
     const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
@@ -395,7 +390,7 @@ const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView, user,
 
                                                 <td className="px-6 py-4 text-right flex items-center justify-end gap-2">
                                                     <button
-                                                        onClick={() => handleImpersonate(user)}
+                                                        onClick={() => handleImpersonate(user, 'teachers')}
                                                         className="text-purple-600 hover:text-purple-800 p-2 rounded-md hover:bg-purple-50 transition"
                                                         title="Als User anschauen"
                                                     >
@@ -443,7 +438,7 @@ const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView, user,
                                             <td className="px-6 py-4"><span className="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs">Student</span></td>
                                             <td className="px-6 py-4 text-right">
                                                 <button
-                                                    onClick={() => handleImpersonate(user)}
+                                                    onClick={() => handleImpersonate(user, 'students')}
                                                     className="text-purple-600 hover:text-purple-800 p-2 rounded-md hover:bg-purple-50 transition"
                                                     title="Als User anschauen"
                                                 >

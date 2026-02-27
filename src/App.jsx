@@ -1341,9 +1341,11 @@ useEffect(() => {
       <div className="min-h-screen bg-beige font-sans text-dark selection:bg-orange-100 selection:text-primary flex flex-col font-sans">
       {notification && (<div className="fixed top-24 left-1/2 transform -translate-x-1/2 bg-dark text-white px-6 py-3 rounded-full shadow-2xl z-50 flex items-center animate-bounce font-heading"><CheckCircle className="w-5 h-5 mr-2 text-primary" />{notification}</div>)}
 
-      {/* Admin Impersonation Banner */}
+      <Navbar t={t} user={user} lang={lang} setLang={changeLanguage} setView={setView} handleLogout={handleLogout} setShowResults={() => setView('search')} setSelectedCatPath={setSelectedCatPath} />
+
+      {/* Admin Impersonation Banner - fixed above navbar */}
       {impersonatedUser && (
-        <div className="sticky top-0 left-0 right-0 bg-purple-600 text-white px-4 py-2 z-50 flex items-center justify-center gap-4 text-sm font-bold shadow-lg">
+        <div className="fixed top-0 left-0 right-0 bg-purple-600 text-white px-4 py-3 z-[60] flex items-center justify-center gap-4 text-sm font-bold shadow-lg">
           <span>Du siehst das Dashboard von: {impersonatedUser.name} ({impersonatedUser.email}) — Rolle: {impersonatedUser.role}</span>
           <button
             onClick={() => { setImpersonatedUser(null); setView('admin'); }}
@@ -1353,8 +1355,6 @@ useEffect(() => {
           </button>
         </div>
       )}
-
-      <Navbar t={t} user={user} lang={lang} setLang={changeLanguage} setView={setView} handleLogout={handleLogout} setShowResults={() => setView('search')} setSelectedCatPath={setSelectedCatPath} />
 
       <div className="flex-grow">
       <Suspense fallback={
