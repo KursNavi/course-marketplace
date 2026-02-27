@@ -512,7 +512,7 @@ export const TRANSLATIONS = {
     booking_confirmed: "Confirmed",
     no_bookings_yet: "You haven't booked any courses yet.",
     no_cancellation_hint: "Cancellation, refund or rescheduling is at the discretion of the provider. Please contact the provider directly.",
-    booking_success_note: "Cancellation, partial refund or rescheduling of the booking is at the discretion of the provider and must be arranged directly between the provider and the learner.",
+    booking_success_note: "You can cancel free of charge within 7 days via your dashboard. After that, cancellation or refund is at the discretion of the provider.",
     lbl_objectives: "What you will learn", lbl_prerequisites: "Prerequisites", lbl_description: "About this course", lbl_address: "Location",
     lbl_duration: "Duration", lbl_sessions: "sessions",
     how_it_works: "How it Works", for_students: "For Learners", for_tutors: "For Course Providers",
@@ -571,15 +571,15 @@ export const TRANSLATIONS = {
 
     // FAQ
     faq_title: "Frequently Asked Questions",
-    faq_q1: "What exactly is KursNavi?", faq_a1: "KursNavi is Switzerland's local course marketplace. We connect people who want to learn (learners) with local experts (course providers) for face-to-face courses.",
+    faq_q1: "What exactly is KursNavi?", faq_a1: "KursNavi is Switzerland's course marketplace. We connect people who want to learn with local experts and course providers – for in-person courses, live online classes or self-study formats.",
     faq_q2: "Is the course search free for me?", faq_a2: "Yes! searching and contacting course providers is 100% free for learners. You only pay the course fee when you book.",
-    faq_q3: "How do I book a course?", faq_a3: "Simply choose a course, click 'Book', and pay securely online. You will receive an instant confirmation.",
+    faq_q3: "How do I book a course?", faq_a3: "Choose a course and click 'Book Now' to pay securely online – you will receive an instant confirmation. For some courses you can send a contact request instead, and the provider will get back to you.",
     faq_q4: "Do I need to register to book?", faq_a4: "Yes, you need a free account so that the course provider can contact you and we can send you the booking confirmation.",
     faq_q5: "How do I pay for the course?", faq_a5: "We accept all major credit cards and TWINT (via Stripe). Your payment is held securely until the course starts.",
     faq_q6: "Are the course providers verified?", faq_a6: "We check the identity of all providers. Providers with the 'Blue Check' have also submitted diplomas/certificates, which we have manually verified.",
-    faq_q7: "Can I cancel a booking?", faq_a7: "Cancellation via the platform is not possible. Cancellation, refund or rescheduling is at the discretion of the respective provider. Please contact the course provider directly.",
+    faq_q7: "Can I cancel a booking?", faq_a7: "Yes – within 7 days of payment you can cancel free of charge directly in your dashboard (provided the course does not start within 7 days). After that window, cancellation or refund is at the discretion of the provider. Please contact the course provider directly.",
     faq_q8: "Are there courses for companies or groups?", faq_a8: "Many of our course providers offer private group courses. Simply use the 'Contact' button on the course profile to ask.",
-    faq_q9: "I can't find the course I want – what now?", faq_a9: "We are growing daily! Check back next week or send us a message with your wish.",
+    faq_q9: "I can't find the course I want – what now?", faq_a9: "We are growing daily! Write to us at info@kursnavi.ch with your course wish – we'll check if we can find a suitable provider for you.",
     faq_q10: "I am a provider myself. How can I list courses?", faq_a10: "Create a free profile, verify your email, and click on 'New Course' in the dashboard. It takes less than 5 minutes.",
     
     // AUTH NEW
@@ -663,7 +663,7 @@ export const TRANSLATIONS = {
     booking_confirmed: "Bestätigt",
     no_bookings_yet: "Du hast noch keine Kurse gebucht.",
     no_cancellation_hint: "Stornierung, Erstattung oder Verlegung liegt im Ermessen des Anbieters. Bitte kontaktiere den Anbieter direkt.",
-    booking_success_note: "Eine Stornierung, (Teil-)Erstattung oder Verlegung der Buchung liegt im Ermessen des Anbieters und muss zwischen Anbieter und Lernendem direkt geregelt werden.",
+    booking_success_note: "Du kannst innerhalb von 7 Tagen kostenlos über dein Dashboard stornieren. Danach liegt eine Stornierung oder Erstattung im Ermessen des Anbieters.",
     lbl_description: "Beschreibung", lbl_address: "Standort", lbl_duration: "Dauer", lbl_sessions: "Lektionen",
     lbl_objectives: "Was du lernst", lbl_prerequisites: "Voraussetzungen",
     how_it_works: "So funktioniert's", for_students: "Für Lernende", for_tutors: "Für Kursanbieter",
@@ -721,15 +721,15 @@ export const TRANSLATIONS = {
 
     // FAQ
     faq_title: "Häufige Fragen (FAQ)",
-    faq_q1: "Was genau ist KursNavi?", faq_a1: "KursNavi ist der Schweizer Marktplatz für lokale Kurse. Wir verbinden Menschen, die lernen wollen, mit Experten vor Ort für Präsenzkurse.",
+    faq_q1: "Was genau ist KursNavi?", faq_a1: "KursNavi ist der Schweizer Marktplatz für Kurse. Wir verbinden Menschen, die lernen wollen, mit Experten und Kursanbietern – für Präsenzkurse, Live-Online-Kurse oder Selbststudium.",
     faq_q2: "Ist die Kurssuche für mich kostenlos?", faq_a2: "Ja! Die Suche ist zu 100% kostenlos. Du zahlst nur den Kurspreis bei einer Buchung.",
-    faq_q3: "Wie buche ich einen Kurs?", faq_a3: "Wähle einfach einen Kurs, klicke auf 'Buchen' und zahle sicher online. Du erhältst sofort eine Bestätigung.",
+    faq_q3: "Wie buche ich einen Kurs?", faq_a3: "Wähle einen Kurs und klicke auf 'Jetzt Buchen', um sicher online zu bezahlen – du erhältst sofort eine Bestätigung. Bei manchen Kursen kannst du stattdessen eine Kontaktanfrage senden, und der Anbieter meldet sich bei dir.",
     faq_q4: "Muss ich mich für eine Buchung registrieren?", faq_a4: "Ja, du benötigst einen kostenlosen Account, damit der Kursanbieter dich kontaktieren kann und wir dir die Buchungsbestätigung senden können.",
     faq_q5: "Wie bezahle ich den Kurs?", faq_a5: "Wir akzeptieren alle gängigen Kreditkarten und TWINT (via Stripe). Deine Zahlung wird sicher verwahrt.",
     faq_q6: "Sind die Kursanbieter auf KursNavi geprüft?", faq_a6: "Wir prüfen die Identität aller Anbieter. Anbieter mit dem 'Blauen Haken' haben zudem Diplome/Zertifikate eingereicht, die wir manuell geprüft haben.",
-    faq_q7: "Kann ich eine Buchung stornieren?", faq_a7: "Eine Stornierung über die Plattform ist nicht möglich. Stornierung, Erstattung oder Verlegung liegt im Ermessen des jeweiligen Anbieters. Bitte kontaktiere den Kursanbieter direkt.",
+    faq_q7: "Kann ich eine Buchung stornieren?", faq_a7: "Ja – innerhalb von 7 Tagen nach der Zahlung kannst du kostenlos direkt im Dashboard stornieren (sofern der Kurs nicht innerhalb von 7 Tagen beginnt). Nach Ablauf dieser Frist liegt eine Stornierung oder Erstattung im Ermessen des Anbieters. Bitte kontaktiere den Kursanbieter direkt.",
     faq_q8: "Gibt es auch Kurse für Firmen oder Gruppen?", faq_a8: "Viele unserer Kursanbieter bieten private Gruppenkurse an. Nutze einfach den 'Kontakt'-Button auf dem Kursprofil.",
-    faq_q9: "Ich finde meinen gewünschten Kurs nicht – was tun?", faq_a9: "Wir wachsen täglich! Schau nächste Woche wieder vorbei oder schreib uns eine Nachricht mit deinem Wunsch.",
+    faq_q9: "Ich finde meinen gewünschten Kurs nicht – was tun?", faq_a9: "Wir wachsen täglich! Schreib uns an info@kursnavi.ch mit deinem Kurswunsch – wir prüfen, ob wir einen passenden Anbieter finden können.",
     faq_q10: "Ich bin selbst Kursanbieter. Wie kann ich meine Kurse listen?", faq_a10: "Erstelle ein kostenloses Profil, bestätige deine E-Mail und klicke im Dashboard auf 'Neuer Kurs'. Es dauert keine 5 Minuten.",
 
     // AUTH NEW
@@ -813,7 +813,7 @@ export const TRANSLATIONS = {
     booking_confirmed: "Confirmé",
     no_bookings_yet: "Vous n'avez pas encore réservé de cours.",
     no_cancellation_hint: "L'annulation, le remboursement ou le report est à la discrétion du prestataire. Veuillez contacter le prestataire directement.",
-    booking_success_note: "L'annulation, le remboursement (partiel) ou le report de la réservation est à la discrétion du prestataire et doit être réglé directement entre le prestataire et l'apprenant.",
+    booking_success_note: "Vous pouvez annuler gratuitement dans les 7 jours via votre tableau de bord. Passé ce délai, l'annulation ou le remboursement est à la discrétion du prestataire.",
     lbl_description: "Description", lbl_address: "Lieu", lbl_duration: "Durée", lbl_sessions: "sessions",
     lbl_objectives: "Ce que vous apprendrez", lbl_prerequisites: "Prérequis",
     how_it_works: "Comment ça marche", for_students: "Pour Apprenants", for_tutors: "Pour Prestataires",
@@ -871,15 +871,15 @@ export const TRANSLATIONS = {
 
     // FAQ
     faq_title: "Questions Fréquentes (FAQ)",
-    faq_q1: "Qu'est-ce que KursNavi exactement?", faq_a1: "KursNavi est la place de marché suisse pour les cours locaux. Nous connectons les apprenants aux experts locaux (prestataires de cours).",
+    faq_q1: "Qu'est-ce que KursNavi exactement?", faq_a1: "KursNavi est la place de marché suisse pour les cours. Nous connectons les apprenants aux experts et prestataires – pour des cours en présentiel, des cours en ligne en direct ou de l'auto-apprentissage.",
     faq_q2: "La recherche de cours est-elle gratuite?", faq_a2: "Oui ! La recherche est 100% gratuite. Vous ne payez que le prix du cours lors de la réservation.",
-    faq_q3: "Comment réserver un cours?", faq_a3: "Choisissez un cours, cliquez sur 'Réserver' et payez en toute sécurité en ligne.",
+    faq_q3: "Comment réserver un cours?", faq_a3: "Choisissez un cours et cliquez sur 'Réserver' pour payer en toute sécurité en ligne – vous recevrez une confirmation instantanée. Pour certains cours, vous pouvez envoyer une demande de contact et le prestataire vous répondra.",
     faq_q4: "Dois-je m'inscrire pour réserver?", faq_a4: "Oui, vous avez besoin d'un compte gratuit pour que le prestataire puisse vous contacter.",
     faq_q5: "Comment payer le cours?", faq_a5: "Nous acceptons les cartes de crédit et TWINT. Votre paiement est sécurisé.",
     faq_q6: "Les prestataires sont-ils vérifiés?", faq_a6: "Nous vérifions l'identité de tous. Ceux avec la 'Coche Bleue' ont soumis des diplômes vérifiés manuellement.",
-    faq_q7: "Puis-je annuler une réservation?", faq_a7: "L'annulation via la plateforme n'est pas possible. L'annulation, le remboursement ou le report est à la discrétion du prestataire. Veuillez contacter le prestataire de cours directement.",
+    faq_q7: "Puis-je annuler une réservation?", faq_a7: "Oui – dans les 7 jours suivant le paiement, vous pouvez annuler gratuitement depuis votre tableau de bord (à condition que le cours ne commence pas dans les 7 jours). Passé ce délai, l'annulation ou le remboursement est à la discrétion du prestataire. Veuillez contacter le prestataire directement.",
     faq_q8: "Y a-t-il des cours pour entreprises?", faq_a8: "Beaucoup de nos prestataires proposent des cours privés. Utilisez le bouton 'Contact'.",
-    faq_q9: "Je ne trouve pas mon cours?", faq_a9: "Nous grandissons chaque jour ! Revenez la semaine prochaine.",
+    faq_q9: "Je ne trouve pas mon cours?", faq_a9: "Nous grandissons chaque jour ! Écrivez-nous à info@kursnavi.ch avec votre souhait de cours – nous vérifierons si nous pouvons trouver un prestataire adapté.",
     faq_q10: "Je suis prestataire. Comment lister des cours?", faq_a10: "Créez un profil gratuit et cliquez sur 'Nouveau Cours' dans le tableau de bord.",
 
     // AUTH NEW
@@ -963,7 +963,7 @@ export const TRANSLATIONS = {
     booking_confirmed: "Confermato",
     no_bookings_yet: "Non hai ancora prenotato nessun corso.",
     no_cancellation_hint: "La cancellazione, il rimborso o il rinvio è a discrezione del fornitore. Si prega di contattare direttamente il fornitore.",
-    booking_success_note: "La cancellazione, il rimborso (parziale) o il rinvio della prenotazione è a discrezione del fornitore e deve essere concordata direttamente tra il fornitore e l'apprendente.",
+    booking_success_note: "Puoi cancellare gratuitamente entro 7 giorni dalla tua dashboard. Dopo tale termine, la cancellazione o il rimborso è a discrezione del fornitore.",
     lbl_description: "Descrizione", lbl_address: "Luogo", lbl_duration: "Durata", lbl_sessions: "sessioni",
     lbl_objectives: "Cosa imparerai", lbl_prerequisites: "Prerequisiti",
     how_it_works: "Come funziona", for_students: "Per Apprendenti", for_tutors: "Per Fornitori di Corsi",
@@ -1021,15 +1021,15 @@ export const TRANSLATIONS = {
 
     // FAQ
     faq_title: "Domande Frequenti (FAQ)",
-    faq_q1: "Cos'è esattamente KursNavi?", faq_a1: "KursNavi è il mercato svizzero per i corsi locali. Mettiamo in contatto apprendenti ed esperti locali (fornitori di corsi).",
+    faq_q1: "Cos'è esattamente KursNavi?", faq_a1: "KursNavi è il mercato svizzero per i corsi. Mettiamo in contatto chi vuole imparare con esperti e fornitori di corsi – per corsi in presenza, corsi online dal vivo o studio autonomo.",
     faq_q2: "La ricerca dei corsi è gratuita?", faq_a2: "Sì! La ricerca è gratuita al 100%. Paghi solo il costo del corso al momento della prenotazione.",
-    faq_q3: "Come prenotare un corso?", faq_a3: "Scegli un corso, clicca su 'Prenota' e paga in modo sicuro online.",
+    faq_q3: "Come prenotare un corso?", faq_a3: "Scegli un corso e clicca su 'Prenota ora' per pagare in modo sicuro online – riceverai una conferma immediata. Per alcuni corsi puoi inviare una richiesta di contatto e il fornitore ti risponderà.",
     faq_q4: "Devo registrarmi per prenotare?", faq_a4: "Sì, hai bisogno di un account gratuito in modo che il fornitore del corso possa contattarti.",
     faq_q5: "Come pago il corso?", faq_a5: "Accettiamo carte di credito e TWINT. Il tuo pagamento è al sicuro.",
     faq_q6: "I fornitori sono verificati?", faq_a6: "Verifichiamo l'identità di tutti. Quelli con la 'Spunta Blu' hanno diplomi verificati manualmente.",
-    faq_q7: "Posso cancellare una prenotazione?", faq_a7: "La cancellazione tramite la piattaforma non è possibile. La cancellazione, il rimborso o il rinvio è a discrezione del fornitore. Si prega di contattare direttamente il fornitore del corso.",
+    faq_q7: "Posso cancellare una prenotazione?", faq_a7: "Sì – entro 7 giorni dal pagamento puoi cancellare gratuitamente dalla tua dashboard (a condizione che il corso non inizi entro 7 giorni). Dopo tale termine, la cancellazione o il rimborso è a discrezione del fornitore. Si prega di contattare direttamente il fornitore.",
     faq_q8: "Ci sono corsi per aziende?", faq_a8: "Molti dei nostri fornitori offrono corsi privati. Usa il pulsante 'Contatto'.",
-    faq_q9: "Non trovo il corso che cerco?", faq_a9: "Cresciamo ogni giorno! Torna la prossima settimana.",
+    faq_q9: "Non trovo il corso che cerco?", faq_a9: "Cresciamo ogni giorno! Scrivici a info@kursnavi.ch con il tuo desiderio di corso – verificheremo se possiamo trovare un fornitore adatto.",
     faq_q10: "Sono un fornitore di corsi. Come inserisco i corsi?", faq_a10: "Crea un profilo gratuito e clicca su 'Nuovo Corso' nella dashboard.",
 
     // AUTH NEW
