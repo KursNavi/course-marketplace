@@ -200,7 +200,7 @@ export default async function handler(req, res) {
         savedCourses = courses || [];
       }
 
-      // Fetch teacher earnings (courses + bookings)
+      // Fetch teacher earnings (individual bookings, same format as fetchTeacherEarnings in App.jsx)
       const { data: userCourses } = await supabaseAdmin
         .from('courses')
         .select('id, title, price')
@@ -211,15 +211,31 @@ export default async function handler(req, res) {
         const courseIds = userCourses.map(c => c.id);
         const { data: courseBookings } = await supabaseAdmin
           .from('bookings')
-          .select('course_id, created_at')
-          .in('course_id', courseIds)
-          .eq('status', 'confirmed');
+          .select('*, profiles!user_id(full_name, email)')
+          .in('course_id', courseIds);
 
-        earnings = userCourses.map(c => ({
-          ...c,
-          bookings: (courseBookings || []).filter(b => b.course_id === c.id).length,
-          revenue: (courseBookings || []).filter(b => b.course_id === c.id).length * (c.price || 0)
-        }));
+        // If the join fails, try without it
+        let bookingsList = courseBookings;
+        if (!bookingsList) {
+          const { data: fallback } = await supabaseAdmin
+            .from('bookings')
+            .select('*')
+            .in('course_id', courseIds);
+          bookingsList = fallback || [];
+        }
+
+        earnings = (bookingsList || []).map(booking => {
+          const course = userCourses.find(c => c.id === booking.course_id);
+          return {
+            id: booking.id,
+            courseTitle: course?.title || 'Unknown',
+            studentName: booking.profiles?.full_name || 'Guest Student',
+            price: course?.price || 0,
+            payout: (course?.price || 0) * 0.85,
+            isPaidOut: booking.is_paid || false,
+            date: new Date(booking.created_at).toLocaleDateString()
+          };
+        });
       }
 
       return res.status(200).json({
