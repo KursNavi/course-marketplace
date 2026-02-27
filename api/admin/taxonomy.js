@@ -280,6 +280,33 @@ async function handleConsolidatedMutation(supabase, action, entity, data, res) {
     // --- CREATE ---
     if (action === 'create') {
         const insertData = buildInsertData(entity, data);
+
+        // Resolve slug strings to numeric IDs for foreign key columns
+        if ((entity === 'area' || entity === 'level2') && insertData.level1_id && isNaN(Number(insertData.level1_id))) {
+            const { data: parentData } = await supabase
+                .from('taxonomy_level1')
+                .select('id')
+                .eq('slug', insertData.level1_id)
+                .single();
+            if (parentData) insertData.level1_id = parentData.id;
+        }
+        if ((entity === 'specialty' || entity === 'level3') && insertData.level2_id && isNaN(Number(insertData.level2_id))) {
+            const { data: parentData } = await supabase
+                .from('taxonomy_level2')
+                .select('id')
+                .eq('slug', insertData.level2_id)
+                .single();
+            if (parentData) insertData.level2_id = parentData.id;
+        }
+        if ((entity === 'focus' || entity === 'level4') && insertData.level3_id && isNaN(Number(insertData.level3_id))) {
+            const { data: parentData } = await supabase
+                .from('taxonomy_level3')
+                .select('id')
+                .eq('slug', insertData.level3_id)
+                .single();
+            if (parentData) insertData.level3_id = parentData.id;
+        }
+
         const { error } = await supabase.from(tableName).insert(insertData);
         if (error) throw error;
 
