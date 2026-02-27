@@ -18,6 +18,13 @@ const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView, user,
 
     const [debouncedSearch, setDebouncedSearch] = useState('');
 
+    // Reset search and pagination on tab change
+    useEffect(() => {
+        setSearchQuery('');
+        setDebouncedSearch('');
+        setCurrentPage(1);
+    }, [activeTab]);
+
     // Debounce search input
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -30,10 +37,12 @@ const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView, user,
     const fetchProfiles = useCallback(async () => {
         setLoading(true);
         const offset = (currentPage - 1) * pageSize;
+        const roleFilter = activeTab === 'teachers' ? 'teacher' : activeTab === 'students' ? 'student' : '';
 
         // 1) Try Admin API (Service Role, bypasses RLS)
         try {
             const params = new URLSearchParams({ action: 'profiles', limit: String(pageSize), offset: String(offset) });
+            if (roleFilter) params.set('role', roleFilter);
             if (debouncedSearch) params.set('q', debouncedSearch);
 
             const res = await fetch(`/api/admin?${params}`, {
@@ -72,7 +81,7 @@ const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView, user,
         }
 
         setLoading(false);
-    }, [currentPage, pageSize, debouncedSearch]);
+    }, [currentPage, pageSize, debouncedSearch, activeTab]);
 
     useEffect(() => {
         if (isAuthenticated) {
@@ -204,35 +213,8 @@ const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView, user,
     };
 
 
-        // Filter Logic (robust, falls "role" nicht (mehr) verwendet wird)
-    const getRoleValue = (p) =>
-        (p.role ?? p.user_type ?? p.account_type ?? p.user_role ?? p.profile_type ?? '').toString().toLowerCase();
-
-    const isTeacher = (p) => {
-        const r = getRoleValue(p);
-
-        // Klar definierte Lehrer-Rollen
-        if (['teacher', 'lehrer', 'instructor', 'anbieter', 'provider'].includes(r)) return true;
-
-        // Alternative Flags (falls vorhanden)
-        if (p.is_teacher === true || p.is_instructor === true || p.is_provider === true) return true;
-
-        // Fallback: Wenn keine Rolle vorhanden ist, zeigen wir das Profil bei Lehrern,
-        // damit Du Pakete/Limit auf jeden Fall einstellen kannst.
-        if (!r) return true;
-
-        return false;
-    };
-
-    const isStudent = (p) => {
-        const r = getRoleValue(p);
-        if (['student', 'schueler', 'schüler', 'learner'].includes(r)) return true;
-        if (p.is_student === true) return true;
-        return false;
-    };
-
-    const teachers = profiles.filter(isTeacher);
-    const students = profiles.filter(isStudent);
+    // Profiles are now server-side filtered by role via API ?role= parameter.
+    // No client-side filtering needed.
 
 
     if (!isAuthenticated) {
@@ -285,8 +267,8 @@ const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView, user,
                     </div>
                 )}
 
-                {/* Search & Page Size Controls (for teachers tab) */}
-                {activeTab === 'teachers' && (
+                {/* Search & Page Size Controls (for teachers and students tabs) */}
+                {(activeTab === 'teachers' || activeTab === 'students') && (
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
                         <div className="relative flex-1 max-w-md">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -294,7 +276,7 @@ const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView, user,
                                 type="text"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                placeholder="Anbieter suchen (Name, Email, Ort...)"
+                                placeholder={activeTab === 'teachers' ? "Anbieter suchen (Name, Email, Ort...)" : "Lernende suchen (Name, Email...)"}
                                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none transition"
                             />
                         </div>
@@ -430,7 +412,7 @@ const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView, user,
                                         );
                                     })}
 
-                                    {activeTab === 'students' && students.map(user => (
+                                    {activeTab === 'students' && profiles.map(user => (
                                         <tr key={user.id} className="hover:bg-gray-50">
                                             <td className="px-6 py-4 font-bold">{user.full_name}</td>
                                             <td className="px-6 py-4 text-gray-500">{user.email}</td>
@@ -464,8 +446,8 @@ const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView, user,
                     )}
                 </div>
 
-                {/* Pagination Controls (for teachers tab) */}
-                {activeTab === 'teachers' && totalPages > 1 && (
+                {/* Pagination Controls (for teachers and students tabs) */}
+                {(activeTab === 'teachers' || activeTab === 'students') && totalPages > 1 && (
                     <div className="flex items-center justify-between mt-4 px-2">
                         <div className="text-sm text-gray-500">
                             Seite {currentPage} von {totalPages} ({totalCount} Einträge)

@@ -60,10 +60,17 @@ export default async function handler(req, res) {
       const limit = Math.min(Math.max(parseInt(req.query.limit) || 25, 1), 500);
       const offset = Math.max(parseInt(req.query.offset) || 0, 0);
       const search = (req.query.q || '').trim();
+      const role = (req.query.role || '').trim().toLowerCase();
 
       let query = supabaseAdmin
         .from('profiles')
         .select('*', { count: 'exact' });
+
+      if (role === 'teacher') {
+        query = query.eq('role', 'teacher');
+      } else if (role === 'student') {
+        query = query.eq('role', 'student');
+      }
 
       if (search) {
         query = query.or(
