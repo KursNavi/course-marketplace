@@ -6,6 +6,7 @@ import { CATEGORY_TYPES, AGE_GROUPS, COURSE_LEVELS, DELIVERY_TYPES, SEGMENT_CONF
 import { formatPriceCHF } from '../lib/formatPrice';
 import { useTaxonomy } from '../hooks/useTaxonomy';
 import { supabase } from '../lib/supabase';
+import { BASE_URL } from '../lib/siteConfig';
 
 const fallbackImage = "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=600";
 
@@ -130,9 +131,24 @@ const SearchPageView = ({
             robotsMeta.content = "index,follow";
         }
 
+        // Canonical URL (strip filter params to avoid duplicate content)
+        let canonicalTag = document.querySelector('link[rel="canonical"]');
+        let createdCanonical = false;
+        if (!canonicalTag) {
+            canonicalTag = document.createElement('link');
+            canonicalTag.rel = 'canonical';
+            document.head.appendChild(canonicalTag);
+            createdCanonical = true;
+        }
+        canonicalTag.href = `${BASE_URL}/search`;
+
+        // Clean up stale hreflang tags
+        document.querySelectorAll('link[rel="alternate"][hreflang]').forEach(tag => tag.remove());
+
         // Cleanup: Remove created tags and reset robots on unmount
         return () => {
             createdTags.forEach(tag => tag.remove());
+            if (createdCanonical && canonicalTag) canonicalTag.remove();
             if (createdRobotsMeta && robotsMeta) {
                 robotsMeta.remove();
             } else if (robotsMeta) {

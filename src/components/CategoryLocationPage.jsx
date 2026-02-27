@@ -126,26 +126,8 @@ export default function CategoryLocationPage({
         }
         canonicalTag.href = canonicalUrl;
 
-        // hreflang Tags
-        const languages = ['de', 'fr', 'it', 'en'];
-        const basePath = `/courses/${topicSlug}/${locationSlug}/`;
+        // Clean up stale hreflang tags from other pages
         document.querySelectorAll('link[rel="alternate"][hreflang]').forEach(tag => tag.remove());
-
-        languages.forEach(langCode => {
-            const hreflangTag = document.createElement('link');
-            hreflangTag.rel = 'alternate';
-            hreflangTag.hreflang = langCode;
-            hreflangTag.href = langCode === 'de'
-                ? `${BASE_URL}${basePath}`
-                : `${BASE_URL}/${langCode}${basePath}`;
-            document.head.appendChild(hreflangTag);
-        });
-
-        const xDefaultTag = document.createElement('link');
-        xDefaultTag.rel = 'alternate';
-        xDefaultTag.hreflang = 'x-default';
-        xDefaultTag.href = `${BASE_URL}${basePath}`;
-        document.head.appendChild(xDefaultTag);
 
         // OG Tags
         const ogTags = {

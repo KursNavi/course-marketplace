@@ -123,6 +123,60 @@ export default async function handler(req, res) {
       </url>`;
     }).join('');
 
+    // 8. Generate Ratgeber URLs (Static content structure)
+    const ratgeberCategories = ['beruflich', 'privat-hobby', 'kinder'];
+    const ratgeberClusters = {
+      'beruflich': ['finanzierung', 'karriere', 'future-skills', 'bildungssystem'],
+      'privat-hobby': ['inspiration', 'qualitaet', 'lebensphasen', 'kosten-nutzen'],
+      'kinder': ['sicherheit', 'interessen', 'finanzen-kinder', 'familienalltag']
+    };
+    const ratgeberArticles = {
+      'beruflich/finanzierung': ['vollkostenrechnung-weiterbildung', 'bundesbeitraege-50-prozent', 'kantonale-stipendien-vergleich', 'weiterbildungsvereinbarungen', 'steuer-hack-weiterbildung', 'alternative-finanzierungswege'],
+      'beruflich/karriere': ['berufliche-standortbestimmung', 'spezialisierung-vs-generalisierung', 'linkedin-optimierung', 'gehaltsverhandlung-nach-kurs', 'quereinstieg-40-plus', 'soft-skills-karriere-turbo'],
+      'beruflich/future-skills': ['ai-literacy-arbeitsplatz', 'green-skills', 'new-work-hybride-fuehrung', 'micro-credentials', 'digital-literacy-generationen', 'adaptive-skills'],
+      'beruflich/bildungssystem': ['schweizer-bildungssystem-ueberblick', 'hoehere-berufsbildung-vs-hochschule', 'professional-bachelor-master', 'qualitaetslabels-eduqua', 'ects-punkte-cas-das-mas', 'anerkennung-auslaendischer-diplome'],
+      'privat-hobby/inspiration': ['hobby-finden-selbstanalyse', 'workshop-vs-kurs', 'micro-hobbies', 'zurueck-zum-kindheitstraum', 'hobby-hopping', 'flow-zustand-stressabbau'],
+      'privat-hobby/qualitaet': ['qualitaetscheck-kursanbieter', 'red-flags-hobbykurse', 'kursbeschreibungen-richtig-lesen', 'offline-vs-online', 'storno-ruecktritt-rechte', 'bewertungen-kontext'],
+      'privat-hobby/lebensphasen': ['hobbys-senioren', 'neu-in-der-stadt', 'hobbykurse-date-idee', 'kurse-alleine-besuchen', 'hobbys-studierende', 'introvertiert-hobbys-alleine'],
+      'privat-hobby/kosten-nutzen': ['hobby-vollkosten-modell', 'ausruestung-mieten-statt-kaufen', 'krankenkassenbeitraege-kurse', '50-30-20-freizeitplanung', 'minimum-viable-gear', 'guenstige-alternativen'],
+      'kinder/sicherheit': ['aufsichtspflicht-schweiz', 'kinderschutz-safeguarding', 'erste-hilfe-notfallplaene', 'sicherheit-kursraum-checkliste', 'datenschutz-fotos-videos', 'versicherungsschutz-kindersport'],
+      'kinder/interessen': ['interessen-check-kind', 'motivation-ohne-zwang', 'hobby-wechsel-aufgeben', 'peer-group-einfluss', 'schnupperstunden-probieren', 'intrinsische-motivation'],
+      'kinder/finanzen-kinder': ['kulturlegi-schweiz', 'steuertipp-kinderbetreuungskosten', 'budgetplanung-kinderkurse', 'geschwisterrabatte-paketpreise', 'stiftungen-kantonale-programme', 'ausruestung-mieten-kinder'],
+      'kinder/familienalltag': ['zeitmanagement-eltern', 'mental-load-buchungssysteme', 'angst-vor-neuem', 'hausaufgaben-vs-hobby', 'mobbingpraevention-kurse', 'ferienplanung-betreuungsluecken']
+    };
+
+    let ratgeberUrls = `
+      <url>
+          <loc>${baseUrl}/ratgeber</loc>
+          <changefreq>weekly</changefreq>
+          <priority>0.8</priority>
+      </url>`;
+
+    for (const cat of ratgeberCategories) {
+      ratgeberUrls += `
+      <url>
+          <loc>${baseUrl}/ratgeber/${cat}</loc>
+          <changefreq>weekly</changefreq>
+          <priority>0.7</priority>
+      </url>`;
+      for (const cluster of (ratgeberClusters[cat] || [])) {
+        ratgeberUrls += `
+      <url>
+          <loc>${baseUrl}/ratgeber/${cat}/${cluster}</loc>
+          <changefreq>weekly</changefreq>
+          <priority>0.7</priority>
+      </url>`;
+        for (const article of (ratgeberArticles[`${cat}/${cluster}`] || [])) {
+          ratgeberUrls += `
+      <url>
+          <loc>${baseUrl}/ratgeber/${cat}/${cluster}/${article}</loc>
+          <changefreq>monthly</changefreq>
+          <priority>0.6</priority>
+      </url>`;
+        }
+      }
+    }
+
     // 9. Construct Final XML
     const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
     <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -130,6 +184,7 @@ export default async function handler(req, res) {
       ${courseUrls}
       ${blogUrls}
       ${providerUrls}
+      ${ratgeberUrls}
     </urlset>`;
 
     // 6. Send Response

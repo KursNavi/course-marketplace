@@ -3,6 +3,7 @@ import { ArrowLeft, ChevronRight, BookOpen, Clock, Share2 } from 'lucide-react';
 import { findArticle, RATGEBER_STRUCTURE } from '../lib/ratgeberStructure';
 import { SEGMENT_CONFIG } from '../lib/constants';
 import { RATGEBER_CONTENT } from '../lib/ratgeberContent';
+import { enhanceImages } from '../lib/seoUtils';
 
 /**
  * RatgeberArtikelView
@@ -179,7 +180,7 @@ const RatgeberArtikelView = ({ lang = 'de' }) => {
             // Render actual content (HTML from ratgeberContent.js)
             <div
               className="prose-ratgeber"
-              dangerouslySetInnerHTML={{ __html: articleContent }}
+              dangerouslySetInnerHTML={{ __html: enhanceImages(articleContent) }}
             />
           ) : (
             // Placeholder for articles without content

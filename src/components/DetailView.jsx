@@ -163,30 +163,8 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
         }
         canonicalTag.href = canonicalUrl;
 
-        // --- FIX 2b: hreflang Tags (Multilingual) ---
-        const languages = ['de', 'fr', 'it', 'en'];
-        const baseHref = `/courses/${topicSlug}/${locSlug}/${course.id}-${titleSlug}`;
-
-        // Remove existing hreflang tags
+        // Clean up stale hreflang tags from other pages
         document.querySelectorAll('link[rel="alternate"][hreflang]').forEach(tag => tag.remove());
-
-        // Add hreflang for each language
-        languages.forEach(langCode => {
-            const hreflangTag = document.createElement('link');
-            hreflangTag.rel = 'alternate';
-            hreflangTag.hreflang = langCode;
-            hreflangTag.href = langCode === 'de'
-                ? `${BASE_URL}${baseHref}`
-                : `${BASE_URL}/${langCode}${baseHref}`;
-            document.head.appendChild(hreflangTag);
-        });
-
-        // Add x-default
-        const xDefaultTag = document.createElement('link');
-        xDefaultTag.rel = 'alternate';
-        xDefaultTag.hreflang = 'x-default';
-        xDefaultTag.href = `${BASE_URL}${baseHref}`;
-        document.head.appendChild(xDefaultTag);
 
         // --- FIX 3: Open Graph Tags (Social Sharing) ---
         const ogTags = {

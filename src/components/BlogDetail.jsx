@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { Calendar, User, ArrowLeft, ArrowRight, MapPin, Search } from 'lucide-react';
 import { formatPriceCHF } from '../lib/formatPrice';
 import { BASE_URL } from '../lib/siteConfig';
+import { enhanceImages } from '../lib/seoUtils';
 
 export default function BlogDetail({ article, setView, courses }) {
   // Scroll to top when article changes
@@ -165,7 +166,7 @@ export default function BlogDetail({ article, setView, courses }) {
                 prose-headings:font-heading prose-headings:font-bold prose-h2:text-3xl prose-h2:mt-12 prose-h2:mb-6
                 prose-p:text-gray-600 prose-p:leading-relaxed prose-a:text-primary prose-a:no-underline hover:prose-a:underline
                 prose-img:rounded-xl prose-img:shadow-lg prose-li:marker:text-primary">
-                <div dangerouslySetInnerHTML={{ __html: article.content }} />
+                <div dangerouslySetInnerHTML={{ __html: enhanceImages(article.content) }} />
             </div>
 
             {/* DYNAMIC CTA SECTION */}

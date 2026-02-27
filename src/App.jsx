@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { CheckCircle } from 'lucide-react';
 
 // Build: 2026-02-22 - Use DB taxonomy instead of constants
@@ -9,34 +9,35 @@ import { isImageUsedByOtherCourses, deleteImageFromStorage } from './lib/imageUt
 import { BASE_URL, slugify as siteSlugify, buildCoursePath as siteBuildCoursePath } from './lib/siteConfig';
 import { useTaxonomy } from './hooks/useTaxonomy';
 
-// Components
+// Eagerly loaded components (always needed)
 import { Navbar, Footer } from './components/Layout';
 import { Home } from './components/Home';
-import LegalPage from './components/LegalPage';
-
-// Full Page Components
-import LandingView from './components/LandingView';
 import SearchPageView from './components/SearchPageView';
-import DetailView from './components/DetailView';
-import TeacherHub from './components/TeacherHub';
-import TeacherProfileView from './components/TeacherProfileView';
-import Dashboard from './components/Dashboard';
-import TeacherForm from './components/TeacherForm';
-import AdminPanel from './components/AdminPanel';
-import AuthView from './components/AuthView';
-import ContactPage from './components/ContactPage';
-import AboutPage from './components/AboutPage';
-import HowItWorksPage from './components/HowItWorksPage';
-import SuccessView from './components/SuccessView';
-import BlogList from './components/BlogList';
-import BlogDetail from './components/BlogDetail';
-import AdminBlogManager from './components/AdminBlogManager';
-import CategoryLocationPage from './components/CategoryLocationPage';
-import ProviderDirectory from './components/ProviderDirectory';
-import ProviderProfilePage from './components/ProviderProfilePage';
-import RatgeberClusterView from './components/RatgeberClusterView';
-import RatgeberArtikelView from './components/RatgeberArtikelView';
-import RatgeberHubView from './components/RatgeberHubView';
+
+// Lazy-loaded page components (code-splitting)
+const LegalPage = React.lazy(() => import('./components/LegalPage'));
+const LandingView = React.lazy(() => import('./components/LandingView'));
+const DetailView = React.lazy(() => import('./components/DetailView'));
+const TeacherHub = React.lazy(() => import('./components/TeacherHub'));
+const TeacherProfileView = React.lazy(() => import('./components/TeacherProfileView'));
+const Dashboard = React.lazy(() => import('./components/Dashboard'));
+const TeacherForm = React.lazy(() => import('./components/TeacherForm'));
+const AdminPanel = React.lazy(() => import('./components/AdminPanel'));
+const AuthView = React.lazy(() => import('./components/AuthView'));
+const ContactPage = React.lazy(() => import('./components/ContactPage'));
+const AboutPage = React.lazy(() => import('./components/AboutPage'));
+const HowItWorksPage = React.lazy(() => import('./components/HowItWorksPage'));
+const SuccessView = React.lazy(() => import('./components/SuccessView'));
+const BlogList = React.lazy(() => import('./components/BlogList'));
+const BlogDetail = React.lazy(() => import('./components/BlogDetail'));
+const AdminBlogManager = React.lazy(() => import('./components/AdminBlogManager'));
+const CategoryLocationPage = React.lazy(() => import('./components/CategoryLocationPage'));
+const ProviderDirectory = React.lazy(() => import('./components/ProviderDirectory'));
+const ProviderProfilePage = React.lazy(() => import('./components/ProviderProfilePage'));
+const RatgeberClusterView = React.lazy(() => import('./components/RatgeberClusterView'));
+const RatgeberArtikelView = React.lazy(() => import('./components/RatgeberArtikelView'));
+const RatgeberHubView = React.lazy(() => import('./components/RatgeberHubView'));
+const NotFoundPage = React.lazy(() => import('./components/NotFoundPage'));
 
 // --- DEBUG: ERROR BOUNDARY (Fängt Abstürze ab) ---
 class ErrorBoundary extends React.Component {
@@ -140,8 +141,10 @@ export default function KursNaviPro() {  // 1. Initial State Logic
       }
       // Legacy Redirect Support
       if (path.startsWith('/course/')) return 'detail';
-      
-      return 'home';
+
+      // Only root path goes to home; everything else is 404
+      if (path === '/' || path === '') return 'home';
+      return 'not-found';
   };
 
   const [lang, setLang] = useState('de');
@@ -1294,12 +1297,16 @@ useEffect(() => {
     return (
     <ErrorBoundary>
       <div className="min-h-screen bg-beige font-sans text-dark selection:bg-orange-100 selection:text-primary flex flex-col font-sans">
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Hind+Madurai:wght@300;400;500;600&family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap');`}</style>
       {notification && (<div className="fixed top-24 left-1/2 transform -translate-x-1/2 bg-dark text-white px-6 py-3 rounded-full shadow-2xl z-50 flex items-center animate-bounce font-heading"><CheckCircle className="w-5 h-5 mr-2 text-primary" />{notification}</div>)}
       <Navbar t={t} user={user} lang={lang} setLang={changeLanguage} setView={setView} handleLogout={handleLogout} setShowResults={() => setView('search')} setSelectedCatPath={setSelectedCatPath} />
 
       <div className="flex-grow">
-            
+      <Suspense fallback={
+        <div className="flex flex-col items-center justify-center min-h-[60vh]">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mb-4"></div>
+        </div>
+      }>
+
       {/* GLOBAL LOADING STATE - Prevents White Screen / Redirects */}
       {loading && (
           <div className="flex flex-col items-center justify-center min-h-[60vh]">
@@ -1393,8 +1400,10 @@ useEffect(() => {
       {view === 'ratgeber-hub' && <RatgeberHubView lang={lang} />}
       {view === 'ratgeber-cluster' && <RatgeberClusterView lang={lang} />}
       {view === 'ratgeber-artikel' && <RatgeberArtikelView lang={lang} />}
+      {view === 'not-found' && <NotFoundPage setView={setView} />}
       {view === 'dashboard' && user && <Dashboard user={user} setUser={setUser} t={t} setView={setView} courses={courses} teacherEarnings={teacherEarnings} myBookings={myBookings} savedCourses={savedCourses} savedCourseIds={savedCourseIds} onToggleSaveCourse={toggleSaveCourse} handleDeleteCourse={handleDeleteCourse} handleEditCourse={handleEditCourse} handleUpdateCourseStatus={handleUpdateCourseStatus} showNotification={showNotification} changeLanguage={changeLanguage} setSelectedCourse={setSelectedCourse} refreshBookings={fetchBookings} />}
       {view === 'create' && user?.role === 'teacher' && <TeacherForm key={editingCourse?.id || 'new'} t={t} setView={setView} user={user} fetchCourses={fetchCourses} showNotification={showNotification} setEditingCourse={setEditingCourse} initialData={editingCourse} />}
+      </Suspense>
       </div>
       
       <Footer t={t} setView={setView} />
