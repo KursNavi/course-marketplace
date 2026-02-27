@@ -13,9 +13,9 @@ import { useTaxonomy } from './hooks/useTaxonomy';
 // Eagerly loaded components (always needed)
 import { Navbar, Footer } from './components/Layout';
 import { Home } from './components/Home';
-import SearchPageView from './components/SearchPageView';
 
 // Lazy-loaded page components (code-splitting)
+const SearchPageView = React.lazy(() => import('./components/SearchPageView'));
 const LegalPage = React.lazy(() => import('./components/LegalPage'));
 const LandingView = React.lazy(() => import('./components/LandingView'));
 const DetailView = React.lazy(() => import('./components/DetailView'));
