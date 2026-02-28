@@ -525,7 +525,9 @@ function buildInsertData(entity, data) {
 
 async function refreshTaxonomyView(supabase) {
     try {
-        await supabase.rpc('refresh_taxonomy_paths');
+        // Use the manually callable version (refresh_taxonomy_paths is RETURNS TRIGGER
+        // and can't be called via RPC)
+        await supabase.rpc('refresh_taxonomy_paths_manual');
     } catch (e) {
         // View refresh is non-critical, log but don't fail
         console.warn('Failed to refresh taxonomy view:', e.message);
