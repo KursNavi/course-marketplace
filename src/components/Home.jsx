@@ -466,7 +466,7 @@ export const Home = ({
                         setLocMenuOpen={setLocMenuOpen}
                         locMenuRef={locMenuRef}
                         t={t}
-                        buttonClassName="w-full px-4 py-3 flex items-center justify-between text-gray-700 font-medium hover:bg-gray-50 rounded-xl transition-colors"
+                        buttonClassName={`w-full px-4 py-3 flex items-center justify-between font-medium rounded-xl transition-colors ${locMenuOpen ? 'bg-primary/10 text-primary ring-2 ring-primary/30' : 'text-gray-700 hover:bg-gray-50'}`}
                     />
                 </div>
 
@@ -479,7 +479,7 @@ export const Home = ({
                         setDeliveryMenuOpen={setDeliveryMenuOpen}
                         deliveryMenuRef={deliveryMenuRef}
                         t={t}
-                        buttonClassName="w-full px-4 py-3 flex items-center justify-between text-gray-700 font-medium hover:bg-gray-50 rounded-xl transition-colors"
+                        buttonClassName={`w-full px-4 py-3 flex items-center justify-between font-medium rounded-xl transition-colors ${deliveryMenuOpen ? 'bg-primary/10 text-primary ring-2 ring-primary/30' : 'text-gray-700 hover:bg-gray-50'}`}
                     />
                 </div>
             </div>
