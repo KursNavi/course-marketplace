@@ -57,6 +57,7 @@ const ProviderProfilePage = lazyWithRetry(() => import('./components/ProviderPro
 const RatgeberClusterView = lazyWithRetry(() => import('./components/RatgeberClusterView'));
 const RatgeberArtikelView = lazyWithRetry(() => import('./components/RatgeberArtikelView'));
 const RatgeberHubView = lazyWithRetry(() => import('./components/RatgeberHubView'));
+const BereichLandingPage = lazyWithRetry(() => import('./components/BereichLandingPage'));
 const NotFoundPage = lazyWithRetry(() => import('./components/NotFoundPage'));
 
 // --- DEBUG: ERROR BOUNDARY (Fängt Abstürze ab) ---
@@ -153,6 +154,14 @@ export default function KursNaviPro() {  // 1. Initial State Logic
       if (path === '/anbieter') return 'provider-directory';
       if (path.startsWith('/anbieter/')) return 'provider-profile';
 
+      // BEREICH LANDING PAGE ROUTING
+      if (path.startsWith('/bereich/')) {
+          const parts = path.split('/').filter(Boolean);
+          if (parts.length >= 3) return 'bereich-landing';
+          // /bereich/beruflich/ → segment overview (future phase)
+          if (parts.length === 2) return 'search';
+      }
+
       // RATGEBER ROUTING
       if (path === '/ratgeber' || path.startsWith('/ratgeber/')) {
           const parts = path.split('/').filter(Boolean);
@@ -225,6 +234,15 @@ export default function KursNaviPro() {  // 1. Initial State Logic
      if (parts.length === 3) {
         currentLocParams = { topicSlug: parts[1], locationSlug: parts[2] };
      }
+  }
+
+  // Bereich Landing Page params (read live from URL)
+  let bereichParams = { segment: '', slug: '' };
+  if (window.location.pathname.startsWith('/bereich/')) {
+    const parts = window.location.pathname.split('/').filter(Boolean);
+    if (parts.length >= 3) {
+      bereichParams = { segment: parts[1], slug: parts[2] };
+    }
   }
 
   // Filter States
@@ -1542,6 +1560,15 @@ useEffect(() => {
       {view === 'blog-detail' && <BlogDetail article={selectedArticle} setView={setView} courses={courses} />}
       {view === 'provider-directory' && <ProviderDirectory t={t} setView={setView} />}
       {view === 'provider-profile' && <ProviderProfilePage t={t} setView={setView} setSelectedCourse={setSelectedCourse} />}
+      {view === 'bereich-landing' && (
+        <BereichLandingPage
+          segment={bereichParams.segment}
+          slug={bereichParams.slug}
+          courses={courses}
+          lang={lang}
+          t={t}
+        />
+      )}
       {view === 'ratgeber-hub' && <RatgeberHubView lang={lang} />}
       {view === 'ratgeber-cluster' && <RatgeberClusterView lang={lang} />}
       {view === 'ratgeber-artikel' && <RatgeberArtikelView lang={lang} />}

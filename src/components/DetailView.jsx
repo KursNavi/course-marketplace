@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, User, MapPin, Clock, CheckCircle, Calendar, Shield, ExternalLink, Mail, X, Send, Map, Info, Loader, Bookmark, BookmarkCheck, ChevronRight, AlertCircle } from 'lucide-react';
+import { ArrowLeft, User, MapPin, Clock, CheckCircle, Calendar, Shield, ExternalLink, Mail, X, Send, Map, Info, Loader, Bookmark, BookmarkCheck, ChevronRight, AlertCircle, Compass } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { formatPriceCHF } from '../lib/formatPrice';
 import { useTaxonomy } from '../hooks/useTaxonomy';
 import { SEGMENT_CONFIG } from '../lib/constants';
 import { BASE_URL } from '../lib/siteConfig';
+import { getBereichByAreaSlug, getBereichUrl } from '../lib/bereichLandingConfig';
 
 const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, savedCourseIds, onToggleSaveCourse, showNotification }) => {
     const [showLeadModal, setShowLeadModal] = useState(false);
@@ -878,6 +879,35 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
                 </div>
             </div>
         )}
+
+        {/* Ratgeber hint banner — shown when a Bereichs-Landingpage exists for this course's area */}
+        {(() => {
+            const areaSlug = currentPrimaryCat?.category_area || course.category_area;
+            const bereichConfig = areaSlug ? getBereichByAreaSlug(areaSlug) : null;
+            if (!bereichConfig) return null;
+            const segConfig = SEGMENT_CONFIG[bereichConfig.typeKey] || SEGMENT_CONFIG.beruflich;
+            return (
+                <div className={`max-w-4xl mx-auto mt-8 ${segConfig.bgLight} border ${segConfig.border} rounded-xl p-5 flex items-center gap-4`}>
+                    <div className={`p-2.5 rounded-lg ${segConfig.bgLight}`}>
+                        <Compass className={`w-6 h-6 ${segConfig.text}`} />
+                    </div>
+                    <div className="flex-1">
+                        <p className="text-sm font-bold text-gray-800">Noch unsicher, ob dieser Kurs der richtige ist?</p>
+                        <p className="text-xs text-gray-500 mt-0.5">Unser Ratgeber hilft dir bei der Orientierung im Bereich {bereichConfig.title?.de?.split('—')[0]?.trim() || 'diesem Bereich'}.</p>
+                    </div>
+                    <button
+                        onClick={() => {
+                            window.scrollTo(0, 0);
+                            window.history.pushState({ view: 'bereich-landing' }, '', getBereichUrl(bereichConfig));
+                        }}
+                        className={`${segConfig.text} hover:underline text-sm font-bold whitespace-nowrap flex items-center gap-1`}
+                    >
+                        Zum Ratgeber
+                        <ChevronRight className="w-4 h-4" />
+                    </button>
+                </div>
+            );
+        })()}
 
         {showSavePrompt && (
             <div className="fixed inset-0 bg-dark/60 backdrop-blur-sm z-[110] flex items-center justify-center p-4 animate-in fade-in duration-200">

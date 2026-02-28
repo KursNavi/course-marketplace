@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo } from 'react';
-import { Search, ChevronRight, User, X, Shield, MapPin, CheckCircle, Loader, Bell, ArrowDown, Bookmark, BookmarkCheck, CreditCard, Info, EyeOff, Briefcase, Palette, Smile } from 'lucide-react';
+import { Search, ChevronRight, User, X, Shield, MapPin, CheckCircle, Loader, Bell, ArrowDown, Bookmark, BookmarkCheck, CreditCard, Info, EyeOff, Briefcase, Palette, Smile, BookOpen, Compass } from 'lucide-react';
 import { LocationDropdown, LanguageDropdown, DeliveryTypeFilter } from './Filters';
 import { Globe } from 'lucide-react';
 import { CATEGORY_TYPES, AGE_GROUPS, COURSE_LEVELS, DELIVERY_TYPES, SEGMENT_CONFIG } from '../lib/constants';
@@ -7,6 +7,7 @@ import { formatPriceCHF } from '../lib/formatPrice';
 import { useTaxonomy } from '../hooks/useTaxonomy';
 import { supabase } from '../lib/supabase';
 import { BASE_URL } from '../lib/siteConfig';
+import { getBereichByAreaSlug, getBereichUrl } from '../lib/bereichLandingConfig';
 
 const fallbackImage = "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=600";
 
@@ -551,12 +552,45 @@ const SearchPageView = ({
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
                  {loading ? <div className="text-center py-20"><Loader className="animate-spin w-10 h-10 text-primary mx-auto" /></div> : filteredCourses.length > 0 ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-                    {sortedCourses.map(course => {
+                    {sortedCourses.flatMap((course, courseIndex) => {
+                      const bereichConfig = searchArea ? getBereichByAreaSlug(searchArea) : null;
+                      const showRatgeberHere = bereichConfig && courseIndex === 6 && sortedCourses.length > 3;
+                      const segTheme = bereichConfig ? (SEGMENT_CONFIG[bereichConfig.typeKey] || SEGMENT_CONFIG.beruflich) : null;
+
+                      const items = [];
+
+                      if (showRatgeberHere) {
+                        items.push(
+                          <a
+                            key="ratgeber-card"
+                            href={getBereichUrl(bereichConfig)}
+                            onClick={(e) => {
+                              if (e.ctrlKey || e.metaKey) return;
+                              e.preventDefault();
+                              window.history.pushState({ view: 'bereich-landing' }, '', getBereichUrl(bereichConfig));
+                            }}
+                            className={`${segTheme.bgLight} rounded-xl border-2 ${segTheme.borderLight} overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer group flex flex-col justify-center items-center text-center p-8`}
+                            style={{textDecoration: 'none', color: 'inherit'}}
+                          >
+                            <div className={`w-14 h-14 rounded-full ${segTheme.bgSolid} text-white flex items-center justify-center mb-4`}>
+                              <Compass className="w-7 h-7" />
+                            </div>
+                            <span className={`text-xs font-bold uppercase tracking-wider ${segTheme.text} mb-2`}>Themenwelt</span>
+                            <h3 className="font-bold text-dark text-base mb-2 font-heading">Noch unsicher?</h3>
+                            <p className="text-sm text-gray-600 mb-4 leading-relaxed">Unser Ratgeber hilft dir bei der Orientierung in diesem Bereich.</p>
+                            <span className={`inline-flex items-center gap-1 text-sm font-bold ${segTheme.text} group-hover:underline`}>
+                              Zum Ratgeber <ChevronRight className="w-4 h-4" />
+                            </span>
+                          </a>
+                        );
+                      }
+
                       const slugify = (input) => (input || '').toString().trim().toLowerCase()
                           .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
                           .replace(/&/g, ' und ').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
                       const coursePath = `/courses/${slugify(course.primary_category || course.category_area || 'kurs')}/${slugify(course.canton || 'schweiz')}/${course.id}-${slugify(course.title || 'detail')}`;
-                      return (
+
+                      items.push(
                       <a key={course.id} href={coursePath} onClick={(e) => {
                           if (e.ctrlKey || e.metaKey) return;
                           e.preventDefault();
@@ -637,6 +671,8 @@ const SearchPageView = ({
                         </div>
                       </a>
                       );
+
+                      return items;
                     })}
                   </div>
                 ) : (

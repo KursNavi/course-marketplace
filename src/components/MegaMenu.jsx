@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ChevronRight, BookOpen } from 'lucide-react';
+import { ChevronRight, BookOpen, Compass } from 'lucide-react';
 import { RATGEBER_STRUCTURE } from '../lib/ratgeberStructure';
+import { getBereicheForSegment, getBereichUrl } from '../lib/bereichLandingConfig';
 
 /**
  * MegaMenu Component
@@ -68,6 +69,16 @@ export const MegaMenu = ({
     window.history.pushState({ view: 'ratgeber-cluster' }, '', `/ratgeber/${categorySlug}/${clusterSlug}`);
   };
 
+  // Get available Bereichs-Landingpages for this segment
+  const bereiche = getBereicheForSegment(categoryKey);
+
+  // Navigate to Bereich landing page
+  const goToBereich = (bereichConfig) => {
+    setIsOpen(false);
+    window.scrollTo(0, 0);
+    window.history.pushState({ view: 'bereich-landing' }, '', getBereichUrl(bereichConfig));
+  };
+
   // Translations
   const t = {
     toOffers: {
@@ -81,6 +92,12 @@ export const MegaMenu = ({
       en: 'Guides',
       fr: 'Guides',
       it: 'Guide'
+    },
+    themenwelten: {
+      de: 'Themenwelten',
+      en: 'Topic Worlds',
+      fr: 'Mondes thématiques',
+      it: 'Mondi tematici'
     }
   };
 
@@ -160,6 +177,34 @@ export const MegaMenu = ({
               </button>
             );
           })}
+
+          {/* Themenwelten Section */}
+          {bereiche.length > 0 && (
+            <>
+              <div className="border-t border-gray-100 my-2" />
+              <div className="px-4 py-1">
+                <span className="text-xs font-bold text-gray-400 uppercase tracking-wide flex items-center gap-1.5">
+                  <Compass className="w-3 h-3" />
+                  {t.themenwelten[lang] || t.themenwelten.de}
+                </span>
+              </div>
+              {bereiche.map((bereich) => (
+                <button
+                  key={bereich.slug}
+                  onClick={() => goToBereich(bereich)}
+                  className={`w-full text-left px-4 py-2.5 flex items-center gap-3 ${config.hoverBg} transition-colors group`}
+                >
+                  <div className={`p-1.5 rounded-lg ${config.bgLight}`}>
+                    <Compass className={`w-4 h-4 ${config.text}`} />
+                  </div>
+                  <span className="text-gray-700 text-sm font-medium group-hover:text-gray-900 transition-colors flex-1">
+                    {bereich.title[lang] || bereich.title.de}
+                  </span>
+                  <ChevronRight className={`w-3 h-3 ${config.text} opacity-0 group-hover:opacity-100 transition-opacity`} />
+                </button>
+              ))}
+            </>
+          )}
         </div>
       )}
     </div>
@@ -187,6 +232,7 @@ export const MobileMenuCategory = ({
                       categoryKey;
 
   const categoryData = RATGEBER_STRUCTURE[ratgeberKey];
+  const bereiche = getBereicheForSegment(categoryKey);
 
   const goToSearch = () => {
     onClose?.();
@@ -201,6 +247,12 @@ export const MobileMenuCategory = ({
     window.history.pushState({ view: 'ratgeber-cluster' }, '', `/ratgeber/${categorySlug}/${clusterSlug}`);
   };
 
+  const goToBereich = (bereichConfig) => {
+    onClose?.();
+    window.scrollTo(0, 0);
+    window.history.pushState({ view: 'bereich-landing' }, '', getBereichUrl(bereichConfig));
+  };
+
   const t = {
     toOffers: {
       de: 'Zu den Angeboten',
@@ -213,6 +265,12 @@ export const MobileMenuCategory = ({
       en: 'Guides',
       fr: 'Guides',
       it: 'Guide'
+    },
+    themenwelten: {
+      de: 'Themenwelten',
+      en: 'Topic Worlds',
+      fr: 'Mondes thématiques',
+      it: 'Mondi tematici'
     }
   };
 
@@ -273,6 +331,28 @@ export const MobileMenuCategory = ({
               </button>
             );
           })}
+
+          {/* Themenwelten */}
+          {bereiche.length > 0 && (
+            <>
+              <div className="px-6 py-1 mt-2">
+                <span className="text-xs font-bold text-gray-400 uppercase tracking-wide flex items-center gap-1">
+                  <Compass className="w-3 h-3" />
+                  {t.themenwelten[lang] || t.themenwelten.de}
+                </span>
+              </div>
+              {bereiche.map((bereich) => (
+                <button
+                  key={bereich.slug}
+                  onClick={() => goToBereich(bereich)}
+                  className={`w-full text-left px-6 py-2 text-sm ${config.text} font-medium flex items-center gap-2`}
+                >
+                  <Compass className="w-4 h-4" />
+                  {bereich.title[lang] || bereich.title.de}
+                </button>
+              ))}
+            </>
+          )}
         </div>
       )}
     </div>

@@ -90,7 +90,8 @@ export const Navbar = ({ t, user, lang = 'de', setLang, setView, handleLogout, s
       'create': '/create-course',
       'admin': '/control-room-2025',
       'admin-blog': '/admin-blog',
-      'provider-directory': '/anbieter'
+      'provider-directory': '/anbieter',
+      'bereich-landing': '/bereich'
     };
     return urlMap[viewName] || '/';
   };
@@ -270,7 +271,8 @@ export const Footer = ({ t, setView }) => {
       'trust': '/vertrauen-sicherheit',
       'login': '/login',
       'dashboard': '/dashboard',
-      'provider-directory': '/anbieter'
+      'provider-directory': '/anbieter',
+      'bereich-landing': '/bereich'
     };
     return urlMap[viewName] || '/';
   };

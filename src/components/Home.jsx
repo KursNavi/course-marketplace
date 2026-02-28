@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Search, ArrowRight, ChevronRight, ChevronLeft, ChevronDown, CreditCard, Info, Shield, Briefcase, Palette, Smile, BookOpen, LayoutGrid } from 'lucide-react';
+import { Search, ArrowRight, ChevronRight, ChevronLeft, ChevronDown, CreditCard, Info, Shield, Briefcase, Palette, Smile, BookOpen, LayoutGrid, Compass } from 'lucide-react';
 import { LocationDropdown, DeliveryTypeFilter } from './Filters';
 import { CATEGORY_TYPES, SEGMENT_CONFIG } from '../lib/constants';
 import { useTaxonomy } from '../hooks/useTaxonomy';
 import { BASE_URL } from '../lib/siteConfig';
 import { RATGEBER_STRUCTURE } from '../lib/ratgeberStructure';
+import { getBereicheForSegment, getBereichUrl } from '../lib/bereichLandingConfig';
 
 export const Home = ({
   lang, t, setView, courses, // Jetzt haben wir Zugriff auf die Kurse!
@@ -554,6 +555,32 @@ export const Home = ({
                 })}
               </div>
             </div>
+            {/* Themenwelten - Beruflich */}
+            {getBereicheForSegment('beruflich').length > 0 && (
+              <div className="mt-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Compass className="w-4 h-4 text-blue-600" />
+                  <span className="text-sm font-semibold text-gray-700">Themenwelten</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {getBereicheForSegment('beruflich').map(bereich => (
+                    <a
+                      key={bereich.slug}
+                      href={getBereichUrl(bereich)}
+                      onClick={(e) => { e.preventDefault(); window.history.pushState({}, '', getBereichUrl(bereich)); window.scrollTo(0,0); }}
+                      className="group/card flex items-start gap-2 p-3 rounded-xl bg-white border border-blue-100 hover:border-blue-300 hover:shadow-md transition-all duration-200"
+                    >
+                      <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center group-hover/card:bg-blue-200 transition-colors">
+                        <Compass className="w-4 h-4 text-blue-600" />
+                      </div>
+                      <span className="text-xs font-medium text-gray-700 group-hover/card:text-blue-700 leading-tight flex items-center min-h-[2rem]">
+                        {bereich.title[lang] || bereich.title.de}
+                      </span>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* PRIVAT & HOBBY - Orange */}
@@ -599,6 +626,32 @@ export const Home = ({
                 })}
               </div>
             </div>
+            {/* Themenwelten - Privat & Hobby */}
+            {getBereicheForSegment('privat_hobby').length > 0 && (
+              <div className="mt-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Compass className="w-4 h-4 text-orange-600" />
+                  <span className="text-sm font-semibold text-gray-700">Themenwelten</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {getBereicheForSegment('privat_hobby').map(bereich => (
+                    <a
+                      key={bereich.slug}
+                      href={getBereichUrl(bereich)}
+                      onClick={(e) => { e.preventDefault(); window.history.pushState({}, '', getBereichUrl(bereich)); window.scrollTo(0,0); }}
+                      className="group/card flex items-start gap-2 p-3 rounded-xl bg-white border border-orange-100 hover:border-orange-300 hover:shadow-md transition-all duration-200"
+                    >
+                      <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center group-hover/card:bg-orange-200 transition-colors">
+                        <Compass className="w-4 h-4 text-orange-600" />
+                      </div>
+                      <span className="text-xs font-medium text-gray-700 group-hover/card:text-orange-700 leading-tight flex items-center min-h-[2rem]">
+                        {bereich.title[lang] || bereich.title.de}
+                      </span>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* KINDER & JUGEND - Green */}
@@ -644,6 +697,32 @@ export const Home = ({
                 })}
               </div>
             </div>
+            {/* Themenwelten - Kinder & Jugend */}
+            {getBereicheForSegment('kinder_jugend').length > 0 && (
+              <div className="mt-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Compass className="w-4 h-4 text-emerald-600" />
+                  <span className="text-sm font-semibold text-gray-700">Themenwelten</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {getBereicheForSegment('kinder_jugend').map(bereich => (
+                    <a
+                      key={bereich.slug}
+                      href={getBereichUrl(bereich)}
+                      onClick={(e) => { e.preventDefault(); window.history.pushState({}, '', getBereichUrl(bereich)); window.scrollTo(0,0); }}
+                      className="group/card flex items-start gap-2 p-3 rounded-xl bg-white border border-emerald-100 hover:border-emerald-300 hover:shadow-md transition-all duration-200"
+                    >
+                      <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center group-hover/card:bg-emerald-200 transition-colors">
+                        <Compass className="w-4 h-4 text-emerald-600" />
+                      </div>
+                      <span className="text-xs font-medium text-gray-700 group-hover/card:text-emerald-700 leading-tight flex items-center min-h-[2rem]">
+                        {bereich.title[lang] || bereich.title.de}
+                      </span>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
         </div>
