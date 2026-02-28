@@ -318,6 +318,7 @@ export const Home = ({
                         className="w-full px-4 py-3 flex items-center justify-between text-gray-700 font-medium hover:bg-gray-50 rounded-xl transition-colors"
                     >
                         <span className="flex items-center">
+                            <LayoutGrid className="w-4 h-4 mr-2" aria-hidden="true" />
                             {catMenuOpen ? t.lbl_select_cat : t.filter_label_cat || 'Kategorie'}
                         </span>
                         <ChevronDown className={`w-4 h-4 transition-transform ${catMenuOpen ? 'rotate-180' : ''}`} />
@@ -465,6 +466,7 @@ export const Home = ({
                         setLocMenuOpen={setLocMenuOpen}
                         locMenuRef={locMenuRef}
                         t={t}
+                        buttonClassName="w-full px-4 py-3 flex items-center justify-between text-gray-700 font-medium hover:bg-gray-50 rounded-xl transition-colors"
                     />
                 </div>
 
@@ -477,6 +479,7 @@ export const Home = ({
                         setDeliveryMenuOpen={setDeliveryMenuOpen}
                         deliveryMenuRef={deliveryMenuRef}
                         t={t}
+                        buttonClassName="w-full px-4 py-3 flex items-center justify-between text-gray-700 font-medium hover:bg-gray-50 rounded-xl transition-colors"
                     />
                 </div>
             </div>
