@@ -45,7 +45,7 @@ const TeacherProfileView = ({ teacher, courses, setView, setSelectedCourse, t })
                         })()}
                         {teacher.is_professional && (
                             <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-bold inline-flex items-center">
-                                <CheckCircle className="w-3 h-3 mr-1" /> Professional
+                                <CheckCircle className="w-3 h-3 mr-1" /> {t.lbl_professional_filter || 'Verifiziert'}
                             </span>
                         )}
                     </div>

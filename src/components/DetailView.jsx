@@ -574,7 +574,7 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
                         <h1 className="text-3xl font-bold font-heading text-dark">{course.title}</h1>
                         {course.is_pro && (
                             <span className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-xs font-bold flex items-center self-start md:self-auto border border-blue-100">
-                                <CheckCircle className="w-3 h-3 mr-1" /> Professional
+                                <CheckCircle className="w-3 h-3 mr-1" /> {t.lbl_professional_filter || 'Verifiziert'}
                             </span>
                         )}
                     </div>

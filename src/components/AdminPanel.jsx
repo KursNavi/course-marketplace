@@ -163,7 +163,7 @@ const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView, user,
 
         if (newStatus && userEmail) {
             const subject = "Glückwunsch: Dein Profil ist verifiziert!";
-            const body = "Hallo,\n\nwir haben deine Unterlagen geprüft und dein Profil erfolgreich verifiziert. Du hast jetzt den 'Professional' Status und das blaue Häkchen.\n\nViel Erfolg!\nDein KursNavi Team";
+            const body = "Hallo,\n\nwir haben deine Unterlagen geprüft und dein Profil erfolgreich verifiziert. Du hast jetzt den 'Verifiziert'-Status und das blaue Häkchen.\n\nViel Erfolg!\nDein KursNavi Team";
             window.location.href = `mailto:${userEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
         }
 

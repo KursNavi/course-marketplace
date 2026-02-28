@@ -398,7 +398,7 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t, isImp
                                 <div className="bg-white p-2 rounded-full shadow-sm"><CheckCircle className="w-6 h-6 text-blue-500" /></div>
                                 <div>
                                     <h4 className="font-bold text-dark">Get Verified (CHF 75.00)</h4>
-                                    <p className="text-sm text-gray-600 mt-1">Upload your diplomas/certificates to receive the "Professional" badge and boost your bookings.</p>
+                                    <p className="text-sm text-gray-600 mt-1">Upload your diplomas/certificates to receive the "Verified" badge and boost your bookings.</p>
                                 </div>
                             </div>
 
@@ -406,7 +406,7 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t, isImp
                             <div className="bg-green-100 text-green-800 px-4 py-6 rounded-xl flex flex-col items-center justify-center font-bold text-center">
                                 <CheckCircle className="w-12 h-12 mb-2 text-green-600" /> 
                                 <span className="text-lg">Dein Account ist verifiziert!</span>
-                                <p className="text-sm font-normal text-green-700 mt-1">Du hast das blaue Häkchen und den "Professional" Status erhalten.</p>
+                                <p className="text-sm font-normal text-green-700 mt-1">Du hast das blaue Häkchen und den "Verifiziert"-Status erhalten.</p>
                             </div>
                         ) : (
                             <div className="space-y-6">
