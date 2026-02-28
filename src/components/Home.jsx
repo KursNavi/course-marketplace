@@ -25,60 +25,66 @@ export const Home = ({
   const [activeSpecialty, setActiveSpecialty] = useState(null);  // Spalte 3 Auswahl
 
   // --- LOGIK: Nur Kategorien mit Kursen anzeigen ---
-  
-  // 1. Welche Typen haben überhaupt Kurse?
-  const availableTypes = activeType ? [activeType] : []; // Wir zeigen links immer alle an (statisch), aber filtern rechts dynamisch
+  // Map frontend type keys to DB type slugs (same as SearchPageView)
+  const TYPE_TO_DB = {
+    beruflich: 'professionell', privat_hobby: 'privat', kinder_jugend: 'kinder',
+    professionell: 'professionell', privat: 'privat', kinder: 'kinder'
+  };
 
   // 2. Welche Bereiche (Level 2) im aktiven Typ haben Kurse?
   const getActiveAreas = () => {
     if (!courses || courses.length === 0 || areas.length === 0) return [];
-
-    // Filtere Kurse nach dem aktiven Typ
-    const relevantCourses = courses.filter(c => c.category_type === activeType);
-
-    // Hole alle Area-Slugs, die in Kursen vorkommen
-    const courseSlugs = new Set(relevantCourses.map(c => c.category_area).filter(Boolean));
-
-    // Finde DB-Areas, die zu den Kurs-Slugs passen
-    // Prüfe sowohl exakte Matches als auch partielle Matches (z.B. it_digital -> it_digitales)
-    const matchedAreas = new Set();
-    areas.forEach(area => {
-      for (const courseSlug of courseSlugs) {
-        // Exakter Match oder einer ist Prefix des anderen
-        if (area.slug === courseSlug ||
-            area.slug.startsWith(courseSlug) ||
-            courseSlug.startsWith(area.slug)) {
-          matchedAreas.add(area.slug);
-          break;
+    const dbType = TYPE_TO_DB[activeType] || activeType;
+    const areaSlugs = new Set();
+    courses.forEach(c => {
+      (c.all_categories || []).forEach(cat => {
+        if (cat.category_type === dbType && cat.category_area) {
+          areaSlugs.add(cat.category_area);
         }
-      }
+      });
     });
-
-    return [...matchedAreas];
+    // Return only DB-known area slugs, sorted alphabetically by label
+    return areas
+      .filter(a => areaSlugs.has(a.slug))
+      .sort((a, b) => (a.label_de || '').localeCompare(b.label_de || '', 'de'))
+      .map(a => a.slug);
   };
 
-  // 3. Welche Spezialgebiete (Level 2) im aktiven Bereich haben Kurse?
+  // 3. Welche Spezialgebiete (Level 3) im aktiven Bereich haben Kurse?
   const getActiveSpecialties = () => {
     if (!courses || courses.length === 0 || !activeArea) return [];
-
-    // Filtere Kurse nach Typ UND Bereich
-    const relevantCourses = courses.filter(c => c.category_type === activeType && c.category_area === activeArea);
-
-    // Hole alle Specialties
-    const specKeys = [...new Set(relevantCourses.map(c => c.category_specialty).filter(Boolean))];
-    return specKeys;
+    const dbType = TYPE_TO_DB[activeType] || activeType;
+    const specs = new Map();
+    courses.forEach(c => {
+      (c.all_categories || []).forEach(cat => {
+        if (cat.category_type === dbType && cat.category_area === activeArea && cat.category_specialty) {
+          const label = cat.category_specialty_label || cat.category_specialty;
+          if (!specs.has(label)) {
+            specs.set(label, { label, slug: cat.category_specialty, hasFocuses: !!cat.category_focus });
+          } else if (cat.category_focus) {
+            specs.get(label).hasFocuses = true;
+          }
+        }
+      });
+    });
+    return [...specs.values()].sort((a, b) => a.label.localeCompare(b.label, 'de'));
   };
 
   // 4. Welche Focuses (Level 4) im aktiven Spezialgebiet haben Kurse?
   const getActiveFocuses = () => {
     if (!courses || courses.length === 0 || !activeArea || !activeSpecialty) return [];
-
-    const relevantCourses = courses.filter(c =>
-      c.category_type === activeType && c.category_area === activeArea && c.category_specialty === activeSpecialty
-    );
-
-    const focusKeys = [...new Set(relevantCourses.map(c => c.category_focus).filter(Boolean))];
-    return focusKeys;
+    const dbType = TYPE_TO_DB[activeType] || activeType;
+    const focuses = new Set();
+    courses.forEach(c => {
+      (c.all_categories || []).forEach(cat => {
+        if (cat.category_type === dbType && cat.category_area === activeArea &&
+            (cat.category_specialty_label === activeSpecialty || cat.category_specialty === activeSpecialty) &&
+            cat.category_focus) {
+          focuses.add(cat.category_focus_label || cat.category_focus);
+        }
+      });
+    });
+    return [...focuses].sort((a, b) => a.localeCompare(b, 'de'));
   };
 
   const visibleAreas = getActiveAreas();
@@ -366,26 +372,20 @@ export const Home = ({
                             <div className={`${visibleFocuses.length > 0 ? 'w-1/4 border-r border-gray-100' : 'flex-1'} py-2 overflow-y-auto bg-gray-50/50`}>
                                 <div className="px-4 py-2 text-xs font-bold text-gray-400 uppercase">{t.lbl_specialty}</div>
                                 {visibleSpecialties.length > 0 ? (
-                                    visibleSpecialties.map(specKey => {
-                                        const hasFocuses = courses && courses.some(c =>
-                                            c.category_type === activeType && c.category_area === activeArea &&
-                                            c.category_specialty === specKey && c.category_focus
-                                        );
-                                        return (
+                                    visibleSpecialties.map(spec => (
                                             <button
-                                                key={specKey}
-                                                onMouseEnter={() => setActiveSpecialty(specKey)}
-                                                onClick={() => handleCategorySelect(activeType, activeArea, specKey)}
-                                                className={`w-full text-left px-4 py-2 text-sm transition-colors flex items-center justify-between group ${activeSpecialty === specKey ? 'bg-orange-100 text-primary font-bold' : 'text-gray-600 hover:bg-orange-100 hover:text-primary'}`}
+                                                key={spec.label}
+                                                onMouseEnter={() => setActiveSpecialty(spec.label)}
+                                                onClick={() => handleCategorySelect(activeType, activeArea, spec.label)}
+                                                className={`w-full text-left px-4 py-2 text-sm transition-colors flex items-center justify-between group ${activeSpecialty === spec.label ? 'bg-orange-100 text-primary font-bold' : 'text-gray-600 hover:bg-orange-100 hover:text-primary'}`}
                                             >
                                                 <span className="flex items-center">
-                                                    <span className={`w-1.5 h-1.5 rounded-full mr-2 transition-colors ${activeSpecialty === specKey ? 'bg-primary' : 'bg-gray-300 group-hover:bg-primary'}`}></span>
-                                                    {specKey}
+                                                    <span className={`w-1.5 h-1.5 rounded-full mr-2 transition-colors ${activeSpecialty === spec.label ? 'bg-primary' : 'bg-gray-300 group-hover:bg-primary'}`}></span>
+                                                    {spec.label}
                                                 </span>
-                                                {hasFocuses && <ChevronRight className={`w-3 h-3 ${activeSpecialty === specKey ? 'text-primary' : 'text-gray-300'}`} />}
+                                                {spec.hasFocuses && <ChevronRight className={`w-3 h-3 ${activeSpecialty === spec.label ? 'text-primary' : 'text-gray-300'}`} />}
                                             </button>
-                                        );
-                                    })
+                                        ))
                                 ) : (
                                     <div className="p-4 text-xs text-gray-400 italic">
                                         {activeArea ? t.msg_all_topics : t.msg_select_area}
