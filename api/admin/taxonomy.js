@@ -189,10 +189,11 @@ async function getConsolidatedTaxonomy(supabase, res) {
 async function getConsolidatedCourseCounts(supabase, level1Data, level2Data, level3Data, level4Data) {
     const courseCounts = { types: {}, areas: {}, specialties: {}, focuses: {} };
 
-    // Get all assignments from new junction table
+    // Get assignments only for published courses
     const { data: assignments } = await supabase
         .from('course_category_assignments')
-        .select('level3_id, level4_id');
+        .select('level3_id, level4_id, courses!inner(status)')
+        .eq('courses.status', 'published');
 
     if (!assignments) return courseCounts;
 

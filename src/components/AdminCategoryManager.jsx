@@ -522,15 +522,12 @@ const AdminCategoryManager = ({ showNotification }) => {
                                                                         : <ChevronRight className="w-3 h-3 text-gray-400" />
                                                                     }
                                                                 </button>
-                                                                <span className="flex-1 text-sm text-gray-700">
+                                                                <span className="flex-1 text-sm text-gray-700 flex items-center gap-1.5">
                                                                     <EditableField entity="specialty" id={spec.id} field="name" value={spec.name} />
+                                                                    <span className={`text-xs px-1.5 py-0.5 rounded-full ${courseCounts.specialties[spec.name] ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                                                                        {courseCounts.specialties[spec.name] || 0}
+                                                                    </span>
                                                                 </span>
-                                                                <span className={`text-xs px-1.5 py-0.5 rounded-full ${courseCounts.specialties[spec.name] ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-                                                                    {courseCounts.specialties[spec.name] || 0}
-                                                                </span>
-                                                                {hasFocuses && (
-                                                                    <span className="text-xs text-gray-400">{specFocuses.length} Fokus</span>
-                                                                )}
                                                                 <button
                                                                     onClick={() => startAdd('focus', spec.id)}
                                                                     className="p-1 text-green-500 opacity-0 group-hover:opacity-100 hover:bg-green-50 rounded transition-opacity"
@@ -575,11 +572,11 @@ const AdminCategoryManager = ({ showNotification }) => {
                                                                     {specFocuses.map(f => (
                                                                         <div key={f.id} className="flex items-center gap-2 px-3 py-0.5 hover:bg-white group/focus">
                                                                             <span className="w-1 h-1 bg-purple-300 rounded-full"></span>
-                                                                            <span className="flex-1 text-xs text-gray-600">
+                                                                            <span className="flex-1 text-xs text-gray-600 flex items-center gap-1.5">
                                                                                 <EditableField entity="focus" id={f.id} field="name" value={f.name} />
-                                                                            </span>
-                                                                            <span className={`text-xs px-1 py-0.5 rounded ${courseCounts.focuses[f.name] ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'}`}>
-                                                                                {courseCounts.focuses[f.name] || 0}
+                                                                                <span className={`text-xs px-1 py-0.5 rounded ${courseCounts.focuses[f.name] ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'}`}>
+                                                                                    {courseCounts.focuses[f.name] || 0}
+                                                                                </span>
                                                                             </span>
                                                                             <button
                                                                                 onClick={() => initiateDelete('focus', f.id, f.name)}
