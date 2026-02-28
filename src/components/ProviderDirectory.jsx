@@ -21,7 +21,7 @@ export default function ProviderDirectory({ t, setView }) {
   const [error, setError] = useState(null);
 
   // Taxonomy for category filters
-  const { types, areas, specialties, focuses, loading: taxonomyLoading } = useTaxonomy();
+  const { types, areas, getSpecialtyObjects, loading: taxonomyLoading } = useTaxonomy();
 
   // Filters
   const [selectedCanton, setSelectedCanton] = useState('');
@@ -41,15 +41,18 @@ export default function ProviderDirectory({ t, setView }) {
   const LIMIT = 24;
 
   // Derived filter lists (cascade)
+  // Areas: flat array filtered by type_id matches correctly
   const filteredAreas = selectedType
     ? areas.filter(a => a.type_id === selectedType)
     : [];
-  const filteredSpecialties = selectedArea
-    ? specialties.filter(s => s.area_id === selectedArea)
+  // Specialties: use getSpecialtyObjects helper which reads from the nested taxonomy object
+  // (more reliable than filtering the flat specialties array by UUID)
+  const filteredSpecialties = (selectedType && selectedArea)
+    ? getSpecialtyObjects(selectedType, selectedArea)
     : [];
-  const filteredFocuses = selectedSpecialty
-    ? focuses.filter(f => f.specialty_id === selectedSpecialty)
-    : [];
+  // Focuses: nested inside the selected specialty object (.focuses array)
+  const selectedSpecialtyObj = filteredSpecialties.find(s => s.id === selectedSpecialty);
+  const filteredFocuses = selectedSpecialtyObj ? (selectedSpecialtyObj.focuses || []) : [];
 
   // Fetch providers from API
   const fetchProviders = useCallback(async (resetOffset = false) => {
