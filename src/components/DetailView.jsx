@@ -3,6 +3,7 @@ import { ArrowLeft, User, MapPin, Clock, CheckCircle, Calendar, Shield, External
 import { supabase } from '../lib/supabase';
 import { formatPriceCHF } from '../lib/formatPrice';
 import { useTaxonomy } from '../hooks/useTaxonomy';
+import { SEGMENT_CONFIG } from '../lib/constants';
 import { BASE_URL } from '../lib/siteConfig';
 
 const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, savedCourseIds, onToggleSaveCourse, showNotification }) => {
@@ -80,7 +81,8 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
 
             if (type) crumbs.push({
                 label: primary.category_type_label || getTypeLabel(type, lang),
-                filter: { type }
+                filter: { type },
+                typeSlug: type
             });
             if (area) crumbs.push({
                 label: primary.category_area_label || getAreaLabel(type, area, lang),
@@ -98,7 +100,8 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
             // Fallback to flat fields on course
             if (course.category_type) crumbs.push({
                 label: getTypeLabel(course.category_type, lang),
-                filter: { type: course.category_type }
+                filter: { type: course.category_type },
+                typeSlug: course.category_type
             });
             if (course.category_type && course.category_area) crumbs.push({
                 label: getAreaLabel(course.category_type, course.category_area, lang),
@@ -671,26 +674,56 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
                             <div className="flex items-start text-gray-700">
                                 <span className="w-5 h-5 mr-3 text-gray-400 shrink-0 flex items-center justify-center">📚</span>
                                 <div className="flex flex-wrap items-center gap-1">
-                                    {getCategoryBreadcrumb().map((crumb, idx, arr) => (
-                                        <span key={idx} className="flex items-center">
-                                            <a
-                                                href={`/search?${new URLSearchParams(crumb.filter).toString()}`}
-                                                onClick={(e) => {
-                                                    if (e.ctrlKey || e.metaKey) return;
-                                                    e.preventDefault();
-                                                    const params = new URLSearchParams(crumb.filter).toString();
-                                                    window.history.pushState({ view: 'search', ...crumb.filter }, '', `/search?${params}`);
-                                                    window.dispatchEvent(new PopStateEvent('popstate'));
-                                                }}
-                                                className="hover:text-primary hover:underline transition-colors"
-                                            >
-                                                {crumb.label}
-                                            </a>
-                                            {idx < arr.length - 1 && (
-                                                <ChevronRight className="w-3 h-3 mx-1 text-gray-400" />
-                                            )}
-                                        </span>
-                                    ))}
+                                    {getCategoryBreadcrumb().map((crumb, idx, arr) => {
+                                        // Level 1: show colored icon badge instead of text
+                                        if (idx === 0 && crumb.typeSlug) {
+                                            const segConfig = SEGMENT_CONFIG[crumb.typeSlug];
+                                            const SegIcon = segConfig?.icon;
+                                            if (SegIcon) {
+                                                return (
+                                                    <span key={idx} className="flex items-center">
+                                                        <a
+                                                            href={`/search?${new URLSearchParams(crumb.filter).toString()}`}
+                                                            onClick={(e) => {
+                                                                if (e.ctrlKey || e.metaKey) return;
+                                                                e.preventDefault();
+                                                                const params = new URLSearchParams(crumb.filter).toString();
+                                                                window.history.pushState({ view: 'search', ...crumb.filter }, '', `/search?${params}`);
+                                                                window.dispatchEvent(new PopStateEvent('popstate'));
+                                                            }}
+                                                            title={crumb.label}
+                                                            className={`inline-flex items-center justify-center w-5 h-5 rounded-full ${segConfig.bgSolid} hover:opacity-80 transition-opacity`}
+                                                        >
+                                                            <SegIcon className="w-3 h-3 text-white" />
+                                                        </a>
+                                                        {idx < arr.length - 1 && (
+                                                            <ChevronRight className="w-3 h-3 mx-1 text-gray-400" />
+                                                        )}
+                                                    </span>
+                                                );
+                                            }
+                                        }
+                                        return (
+                                            <span key={idx} className="flex items-center">
+                                                <a
+                                                    href={`/search?${new URLSearchParams(crumb.filter).toString()}`}
+                                                    onClick={(e) => {
+                                                        if (e.ctrlKey || e.metaKey) return;
+                                                        e.preventDefault();
+                                                        const params = new URLSearchParams(crumb.filter).toString();
+                                                        window.history.pushState({ view: 'search', ...crumb.filter }, '', `/search?${params}`);
+                                                        window.dispatchEvent(new PopStateEvent('popstate'));
+                                                    }}
+                                                    className="hover:text-primary hover:underline transition-colors"
+                                                >
+                                                    {crumb.label}
+                                                </a>
+                                                {idx < arr.length - 1 && (
+                                                    <ChevronRight className="w-3 h-3 mx-1 text-gray-400" />
+                                                )}
+                                            </span>
+                                        );
+                                    })}
                                 </div>
                             </div>
                         )}
