@@ -197,14 +197,20 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
           {config.scenarios && (
             <div className="flex flex-wrap gap-2 mb-10">
               {config.scenarios.map((scenario, i) => (
-                <span
-                  key={i}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full text-sm text-white/90 hover:bg-white/20 transition-colors cursor-default"
+                <a
+                  key={scenario.slug || i}
+                  href={`/bereich/${segment}/${slug}/${scenario.slug}`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    window.scrollTo(0, 0);
+                    window.history.pushState({ view: 'bereich-szenario' }, '', `/bereich/${segment}/${slug}/${scenario.slug}`);
+                  }}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full text-sm text-white/90 hover:bg-white/25 hover:border-white/40 transition-colors"
                   title={scenario.text[lang] || scenario.text.de}
                 >
                   <span>{scenario.icon}</span>
                   <span>{scenario.label[lang] || scenario.label.de}</span>
-                </span>
+                </a>
               ))}
             </div>
           )}
@@ -239,16 +245,40 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
         <div className="max-w-6xl mx-auto px-4 py-16">
           <h2 className="text-2xl font-heading font-bold text-dark mb-2 text-center">Wo stehst du?</h2>
           <p className="text-gray-500 text-center mb-10">Finde den passenden Einstieg — egal ob Anfänger oder Profi</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {config.scenarios.map((scenario, i) => (
-              <div
-                key={i}
-                className={`p-5 rounded-xl border ${theme.borderLight} bg-white hover:shadow-lg transition-all duration-200 group cursor-default`}
+              <a
+                key={scenario.slug || i}
+                href={`/bereich/${segment}/${slug}/${scenario.slug}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  window.scrollTo(0, 0);
+                  window.history.pushState({ view: 'bereich-szenario' }, '', `/bereich/${segment}/${slug}/${scenario.slug}`);
+                }}
+                className="relative p-6 rounded-2xl bg-white border border-gray-100 hover:border-gray-200 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group block"
               >
-                <div className="text-2xl mb-2">{scenario.icon}</div>
-                <h3 className={`font-bold text-sm ${theme.text} mb-1`}>{scenario.label[lang] || scenario.label.de}</h3>
-                <p className="text-sm text-gray-600 leading-relaxed">{scenario.text[lang] || scenario.text.de}</p>
-              </div>
+                {/* Icon */}
+                <div className={`w-14 h-14 ${theme.bgLight} rounded-2xl flex items-center justify-center mb-4 group-hover:scale-105 transition-transform duration-300`}>
+                  <span className="text-3xl">{scenario.icon}</span>
+                </div>
+
+                {/* Title */}
+                <h3 className={`font-bold text-base ${theme.text} mb-2 leading-snug`}>
+                  {scenario.label[lang] || scenario.label.de}
+                </h3>
+
+                {/* Description */}
+                <p className="text-sm text-gray-500 leading-relaxed line-clamp-3 mb-4">
+                  {scenario.text[lang] || scenario.text.de}
+                </p>
+
+                {/* Always-visible CTA */}
+                <div className={`flex items-center gap-1 text-xs font-semibold ${theme.text} group-hover:gap-2 transition-all duration-200`}>
+                  <BookOpen className="w-3.5 h-3.5" />
+                  <span>Ratgeber lesen</span>
+                  <ArrowRight className="w-3.5 h-3.5 ml-0.5" />
+                </div>
+              </a>
             ))}
           </div>
         </div>

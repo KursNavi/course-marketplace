@@ -58,6 +58,7 @@ const RatgeberClusterView = lazyWithRetry(() => import('./components/RatgeberClu
 const RatgeberArtikelView = lazyWithRetry(() => import('./components/RatgeberArtikelView'));
 const RatgeberHubView = lazyWithRetry(() => import('./components/RatgeberHubView'));
 const BereichLandingPage = lazyWithRetry(() => import('./components/BereichLandingPage'));
+const SzenarioArtikelView = lazyWithRetry(() => import('./components/SzenarioArtikelView'));
 const NotFoundPage = lazyWithRetry(() => import('./components/NotFoundPage'));
 
 // --- DEBUG: ERROR BOUNDARY (Fängt Abstürze ab) ---
@@ -157,6 +158,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
       // BEREICH LANDING PAGE ROUTING
       if (path.startsWith('/bereich/')) {
           const parts = path.split('/').filter(Boolean);
+          if (parts.length >= 4) return 'bereich-szenario';
           if (parts.length >= 3) return 'bereich-landing';
           // /bereich/beruflich/ → segment overview (future phase)
           if (parts.length === 2) return 'search';
@@ -237,11 +239,13 @@ export default function KursNaviPro() {  // 1. Initial State Logic
   }
 
   // Bereich Landing Page params (read live from URL)
-  let bereichParams = { segment: '', slug: '' };
+  let bereichParams = { segment: '', slug: '', szenarioSlug: '' };
   if (window.location.pathname.startsWith('/bereich/')) {
     const parts = window.location.pathname.split('/').filter(Boolean);
-    if (parts.length >= 3) {
-      bereichParams = { segment: parts[1], slug: parts[2] };
+    if (parts.length >= 4) {
+      bereichParams = { segment: parts[1], slug: parts[2], szenarioSlug: parts[3] };
+    } else if (parts.length >= 3) {
+      bereichParams = { segment: parts[1], slug: parts[2], szenarioSlug: '' };
     }
   }
 
@@ -1564,6 +1568,16 @@ useEffect(() => {
         <BereichLandingPage
           segment={bereichParams.segment}
           slug={bereichParams.slug}
+          courses={courses}
+          lang={lang}
+          t={t}
+        />
+      )}
+      {view === 'bereich-szenario' && (
+        <SzenarioArtikelView
+          segment={bereichParams.segment}
+          slug={bereichParams.slug}
+          szenarioSlug={bereichParams.szenarioSlug}
           courses={courses}
           lang={lang}
           t={t}
