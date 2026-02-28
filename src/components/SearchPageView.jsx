@@ -483,9 +483,30 @@ const SearchPageView = ({
                     </div>
                     <p className="text-xs text-gray-500 -mt-2 ml-3">{t.search_hint_boolean || 'Tipp: Kombiniere Begriffe mit AND oder OR'}</p>
 
-                    {/* TAXONOMY FILTERS (Level 2-4) - Level 1 is selected via Navbar */}
+                    {/* SEGMENT PICKER - shown when no segment is selected */}
+                    {!searchType && (
+                        <div className="flex items-center gap-2">
+                            <span className="text-xs text-gray-400 mr-1">Kategorie wählen:</span>
+                            {[
+                                { key: 'beruflich', dbKey: 'professionell' },
+                                { key: 'privat_hobby', dbKey: 'privat' },
+                                { key: 'kinder_jugend', dbKey: 'kinder' }
+                            ].map(({ key, dbKey }) => {
+                                const cfg = SEGMENT_CONFIG[key] || SEGMENT_CONFIG[dbKey];
+                                const Icon = cfg?.icon || Briefcase;
+                                return (
+                                    <button key={key} onClick={() => { setSearchType(key); setSearchArea(""); setSearchSpecialty(""); setSearchFocus(""); }} className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm font-medium transition-all hover:shadow-sm ${cfg?.bgLight || 'bg-gray-50'} ${cfg?.borderLight || 'border-gray-200'} ${cfg?.text || 'text-gray-600'} hover:opacity-80`}>
+                                        <Icon className="w-4 h-4" />
+                                        {cfg?.label?.de || key}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    )}
+
+                    {/* TAXONOMY FILTERS (Level 2-4) - Level 1 is selected via Navbar or segment picker */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        <select value={searchArea} onChange={(e) => { setSearchArea(e.target.value); setSearchSpecialty(""); setSearchFocus(""); }} className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 ${availableAreas.length > 0 ? 'bg-white border-gray-200' : 'bg-gray-50 border-gray-200'} ${!searchArea ? 'text-gray-400' : 'text-gray-900'}`} disabled={availableAreas.length === 0}>
+                        <select value={searchArea} onChange={(e) => { setSearchArea(e.target.value); setSearchSpecialty(""); setSearchFocus(""); }} className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 ${searchType ? 'bg-white border-gray-200' : 'bg-gray-50 border-gray-200'} ${!searchArea ? 'text-gray-400' : 'text-gray-900'}`} disabled={!searchType}>
                             <option value="" className="text-gray-400">— {t.lbl_area || 'Themenwelt'} —</option>
                             {availableAreas.map(area => (<option key={area} value={area} className="text-gray-900">{getLabel(area, 'area')}</option>))}
                         </select>
