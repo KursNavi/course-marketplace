@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo } from 'react';
-import { Search, ChevronRight, User, X, Calendar, Shield, MapPin, CheckCircle, Loader, Bell, ArrowDown, Bookmark, BookmarkCheck, CreditCard, Info, EyeOff, Briefcase, Palette, Smile } from 'lucide-react';
+import { Search, ChevronRight, User, X, Shield, MapPin, CheckCircle, Loader, Bell, ArrowDown, Bookmark, BookmarkCheck, CreditCard, Info, EyeOff, Briefcase, Palette, Smile } from 'lucide-react';
 import { LocationDropdown, LanguageDropdown, DeliveryTypeFilter } from './Filters';
 import { Globe } from 'lucide-react';
 import { CATEGORY_TYPES, AGE_GROUPS, COURSE_LEVELS, DELIVERY_TYPES, SEGMENT_CONFIG } from '../lib/constants';
@@ -500,13 +500,14 @@ const SearchPageView = ({
                     </div>
 
                     <div className="flex gap-4 overflow-x-auto pb-2 items-center border-t pt-3 border-gray-100">
-                        <div className="flex items-center space-x-2 bg-white px-3 py-1.5 rounded-lg border border-gray-200">
-                            <Calendar className="w-4 h-4 text-gray-500" />
-                            <span className="text-xs text-gray-400">Von</span>
-                            <input type="date" value={filterDateFrom} onChange={(e) => setFilterDateFrom(e.target.value)} className="bg-transparent text-sm outline-none text-gray-600" />
-                            <span className="text-xs text-gray-400">Bis</span>
-                            <input type="date" value={filterDateTo} onChange={(e) => setFilterDateTo(e.target.value)} className="bg-transparent text-sm outline-none text-gray-600" />
-                        </div>
+                        <label className="flex items-center bg-white px-3 py-1.5 rounded-lg border border-gray-200 cursor-pointer">
+                            <span className="text-xs text-gray-400 mr-2 whitespace-nowrap">Von</span>
+                            <input type="date" value={filterDateFrom} onChange={(e) => setFilterDateFrom(e.target.value)} className="bg-transparent text-sm outline-none text-gray-600 cursor-pointer" />
+                        </label>
+                        <label className="flex items-center bg-white px-3 py-1.5 rounded-lg border border-gray-200 cursor-pointer">
+                            <span className="text-xs text-gray-400 mr-2 whitespace-nowrap">Bis</span>
+                            <input type="date" value={filterDateTo} onChange={(e) => setFilterDateTo(e.target.value)} className="bg-transparent text-sm outline-none text-gray-600 cursor-pointer" />
+                        </label>
                         <div className="flex items-center space-x-2 bg-white px-3 py-1.5 rounded-lg border border-gray-200"><span className="text-sm text-gray-500">{t.lbl_max_price}</span><input type="number" placeholder="Any" value={filterPriceMax} onChange={(e) => setFilterPriceMax(e.target.value)} className="w-16 bg-transparent text-sm outline-none text-gray-600" /></div>
                         <select value={filterLevel} onChange={(e) => setFilterLevel(e.target.value)} className="bg-white border border-gray-200 rounded-lg px-3 py-1.5 text-sm outline-none text-gray-600"><option value="All">{t.opt_all_levels}</option>{Object.keys(COURSE_LEVELS).map(k => <option key={k} value={k}>{COURSE_LEVELS[k].de}</option>)}</select>
                          <label className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg border cursor-pointer transition select-none ${filterPro ? 'bg-blue-50 border-blue-200' : 'bg-white border-gray-200'}`} title={t.tooltip_pro_verified_long || t.tooltip_pro_verified}>
@@ -603,17 +604,17 @@ const SearchPageView = ({
                                 );
                             })()}
 
-                            <div className="flex items-center justify-between gap-4 pt-4 border-t border-gray-100">
+                            <div className="flex items-center justify-between gap-2 pt-4 border-t border-gray-100">
                                 {/* Anbieter-Badge */}
-                                <div className="min-w-0">
-                                    <div className="inline-flex items-center bg-beige px-2 py-1 rounded text-xs text-gray-500">
+                                <div className="min-w-0 flex-1">
+                                    <div className="inline-flex items-center bg-beige px-2 py-1 rounded text-xs text-gray-500 max-w-full">
                                         <User className="w-3 h-3 text-gray-500 mr-1 shrink-0" />
                                         <span className="truncate">{course.instructor_name}</span>
                                     </div>
                                 </div>
 
                                 {/* Preis */}
-                                <span className="ml-3 font-heading font-bold text-primary text-xs leading-tight text-right w-[70px] shrink-0">
+                                <span className="font-heading font-bold text-primary text-xs leading-tight text-right whitespace-nowrap shrink-0">
                                     {getPriceLabel(course)}
                                 </span>
                             </div>
