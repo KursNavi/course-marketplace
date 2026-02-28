@@ -195,8 +195,8 @@ export const LocationDropdown = ({ selectedLocations, setSelectedLocations, locM
                     {/* Online – special item */}
                     <label className="flex items-center space-x-2 p-2 mb-2 hover:bg-gray-50 rounded cursor-pointer border-b border-gray-100 pb-3">
                         <input type="checkbox" checked={selectedLocations.includes('Online')} onChange={() => toggleLoc('Online')} className="rounded border-gray-300 text-primary focus:ring-primary" />
-                        <Globe className="w-4 h-4 text-gray-400" />
                         <span className="text-sm font-medium text-gray-700">Online</span>
+                        <Globe className="w-4 h-4 text-gray-400" />
                     </label>
                     {/* Cantons in 3-column grid, Liechtenstein last with FL tag */}
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-x-2">
