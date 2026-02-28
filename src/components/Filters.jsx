@@ -191,9 +191,21 @@ export const LocationDropdown = ({ selectedLocations, setSelectedLocations, locM
                  <div className="flex items-center"><MapPin className="w-4 h-4 mr-2" aria-hidden="true" /><span>{selectedLocations.length > 0 ? `${selectedLocations.length} selected` : t.filter_label_loc}</span></div><ChevronDown className="w-4 h-4" aria-hidden="true" />
             </button>
             {locMenuOpen && (
-                <div className="absolute top-14 left-0 w-[300px] bg-white rounded-xl shadow-2xl border border-gray-100 p-4">
-                    <div className="max-h-[250px] overflow-y-auto space-y-1">
-                        {displayList.map(loc => (<label key={loc} className="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded cursor-pointer"><input type="checkbox" checked={selectedLocations.includes(loc)} onChange={() => toggleLoc(loc)} className="rounded border-gray-300 text-primary focus:ring-primary" /><span className="text-sm text-gray-700">{loc}</span></label>))}
+                <div className="absolute top-14 left-0 w-[calc(100vw-2rem)] md:w-[560px] bg-white rounded-xl shadow-2xl border border-gray-100 p-4">
+                    {/* Online – special item */}
+                    <label className="flex items-center space-x-2 p-2 mb-2 hover:bg-gray-50 rounded cursor-pointer border-b border-gray-100 pb-3">
+                        <input type="checkbox" checked={selectedLocations.includes('Online')} onChange={() => toggleLoc('Online')} className="rounded border-gray-300 text-primary focus:ring-primary" />
+                        <Globe className="w-4 h-4 text-gray-400" />
+                        <span className="text-sm font-medium text-gray-700">Online</span>
+                    </label>
+                    {/* Cantons in 3-column grid */}
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-x-2">
+                        {displayList.filter(l => l !== 'Online').map(loc => (
+                            <label key={loc} className="flex items-center space-x-2 p-1.5 hover:bg-gray-50 rounded cursor-pointer">
+                                <input type="checkbox" checked={selectedLocations.includes(loc)} onChange={() => toggleLoc(loc)} className="rounded border-gray-300 text-primary focus:ring-primary shrink-0" />
+                                <span className="text-sm text-gray-700 truncate">{loc}</span>
+                            </label>
+                        ))}
                     </div>
                     <div className="pt-3 mt-3 border-t flex justify-between items-center"><button onClick={() => setSelectedLocations([])} className="text-xs text-gray-400 hover:text-red-500">Clear</button><button onClick={() => setLocMenuOpen(false)} className="text-xs font-bold text-primary">Done</button></div>
                 </div>
