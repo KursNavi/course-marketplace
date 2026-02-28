@@ -290,7 +290,8 @@ export default async function handler(req, res) {
 
           let assignmentQuery = supabase
             .from('course_category_assignments')
-            .select('course_id');
+            .select('course_id')
+            .eq('is_primary', true); // nur primäre Zuweisungen → verhindert Falschzuweisungen über Zweitkategorien
           if (targetLevel3Ids !== null) {
             assignmentQuery = assignmentQuery.in('level3_id', targetLevel3Ids);
           }
