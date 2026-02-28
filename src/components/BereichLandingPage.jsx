@@ -284,83 +284,58 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
         </div>
       )}
 
-      {/* PFADFINDER-BUTTONS (Specialty Cards) */}
+      {/* AUSBILDUNGSBEREICHE — Directory-Liste */}
       <div className="bg-white py-16">
-        <div className="max-w-6xl mx-auto px-4">
+        <div className="max-w-5xl mx-auto px-4">
           <h2 className="text-2xl font-heading font-bold text-dark mb-2 text-center">Ausbildungsbereiche</h2>
-          <p className="text-gray-500 text-center mb-10">Wähle deinen Schwerpunkt</p>
+          <p className="text-gray-500 text-center mb-10">Alle Schwerpunkte auf einen Blick</p>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {Object.entries(config.specialtyDescriptions).map(([specLabel, specConfig]) => {
+          <div className="divide-y divide-gray-100 border border-gray-100 rounded-2xl overflow-hidden">
+            {Object.entries(config.specialtyDescriptions).map(([specLabel, specConfig], i) => {
               const count = specialtyCounts[specLabel] || 0;
               const focuses = getFocusesForSpecialty(specLabel);
-
               return (
-                <div
+                <button
                   key={specLabel}
                   onClick={() => handleSpecialtyClick(specLabel)}
-                  className="bg-beige p-6 rounded-xl border border-gray-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer group"
+                  className={`w-full text-left flex items-center gap-5 px-6 py-5 group transition-colors duration-150 ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50/60'} hover:bg-orange-50/50`}
                 >
-                  <div className="flex items-start justify-between mb-3">
-                    <span className="text-3xl">{specConfig.icon}</span>
-                    {count > 0 && (
-                      <span className={`text-xs font-bold ${theme.text} ${theme.bgLight} px-2 py-1 rounded-full`}>
-                        {count} {count === 1 ? 'Kurs' : 'Kurse'}
-                      </span>
-                    )}
-                  </div>
-                  <h3 className="font-bold text-dark group-hover:text-primary transition-colors mb-2 text-sm leading-tight">
-                    {specLabel}
-                  </h3>
-                  <p className="text-xs text-gray-500 mb-3 leading-relaxed">
-                    {specConfig[lang] || specConfig.de}
-                  </p>
-                  {/* L4 Focus Tags */}
-                  {focuses.length > 0 && (
-                    <div className="flex flex-wrap gap-1">
-                      {focuses.slice(0, 3).map(f => (
-                        <span key={f} className="text-[10px] bg-white text-gray-500 px-2 py-0.5 rounded border border-gray-100">
-                          {f}
-                        </span>
-                      ))}
-                      {focuses.length > 3 && (
-                        <span className="text-[10px] text-gray-400">+{focuses.length - 3}</span>
+                  {/* Icon */}
+                  <span className={`text-2xl w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-xl ${theme.bgLight}`}>
+                    {specConfig.icon}
+                  </span>
+
+                  {/* Content */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 mb-1">
+                      <span className="font-semibold text-dark text-sm group-hover:text-primary transition-colors">{specLabel}</span>
+                      {count > 0 && (
+                        <span className={`text-xs font-medium ${theme.text} shrink-0`}>{count} {count === 1 ? 'Kurs' : 'Kurse'}</span>
                       )}
                     </div>
-                  )}
-                  <div className="mt-3 flex items-center text-xs font-medium text-primary opacity-0 group-hover:opacity-100 transition-opacity">
-                    Kurse anzeigen <ArrowRight className="w-3 h-3 ml-1" />
+                    <p className="text-xs text-gray-500 leading-relaxed line-clamp-1 mb-1.5">
+                      {specConfig[lang] || specConfig.de}
+                    </p>
+                    {focuses.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {focuses.slice(0, 4).map(f => (
+                          <span key={f} className="text-[10px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
+                            {f}
+                          </span>
+                        ))}
+                        {focuses.length > 4 && (
+                          <span className="text-[10px] text-gray-400">+{focuses.length - 4}</span>
+                        )}
+                      </div>
+                    )}
                   </div>
-                </div>
+
+                  {/* Arrow */}
+                  <ArrowRight className={`w-4 h-4 flex-shrink-0 text-gray-300 group-hover:${theme.text} group-hover:translate-x-0.5 transition-all duration-150`} />
+                </button>
               );
             })}
           </div>
-        </div>
-      </div>
-
-      {/* CLUSTER-BESCHREIBUNGEN */}
-      <div className="max-w-6xl mx-auto px-4 py-16">
-        <h2 className="text-2xl font-heading font-bold text-dark mb-10 text-center">Im Detail</h2>
-        <div className="space-y-8">
-          {Object.entries(config.specialtyDescriptions).map(([specLabel, specConfig]) => {
-            const count = specialtyCounts[specLabel] || 0;
-            return (
-              <div key={specLabel} className="flex flex-col md:flex-row md:items-center gap-4 p-6 bg-white rounded-xl border border-gray-100">
-                <span className="text-4xl flex-shrink-0">{specConfig.icon}</span>
-                <div className="flex-1">
-                  <h3 className="font-bold text-dark text-lg mb-1">{specLabel}</h3>
-                  <p className="text-gray-600 text-sm">{specConfig[lang] || specConfig.de}</p>
-                </div>
-                <button
-                  onClick={() => handleSpecialtyClick(specLabel)}
-                  className={`flex-shrink-0 inline-flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium text-sm transition-colors ${theme.bgSolid} text-white hover:opacity-90`}
-                >
-                  {count > 0 ? `${count} Kurse` : 'Kurse anzeigen'}
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-              </div>
-            );
-          })}
         </div>
       </div>
 
