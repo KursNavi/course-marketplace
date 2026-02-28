@@ -23,6 +23,7 @@ const URL_TO_DB_TYPE = {
 
 const SearchPageView = ({
     courses,
+    filteredCoursesPreCategory,
     searchQuery, setSearchQuery,
     searchType, setSearchType,
     searchArea, setSearchArea,
@@ -197,18 +198,15 @@ const SearchPageView = ({
     }, [courses]);
 
     // --- DYNAMIC FILTER LOGIC (Hide empty categories) ---
-    // Use ONLY all_categories from junction table (new consolidated schema)
-    // Only consider explicitly published courses for available categories
-    // Note: Courses without status are legacy and should be excluded from category dropdowns
-    const publishedCourses = useMemo(() =>
-        courses.filter(c => c.status === 'published'),
-        [courses]
-    );
+    // Use filteredCoursesPreCategory (text search + non-category filters already applied)
+    // so that category dropdowns only show options that exist in the current search results.
+    // Fallback to published courses if prop not available (e.g. other pages).
+    const baseCourses = filteredCoursesPreCategory || courses.filter(c => c.status === 'published');
 
     // Fixed order for Level 1 (Types): Professionell, Privat, Kinder
     const typeOrder = ['professionell', 'privat', 'kinder'];
     const availableTypes = [...new Set(
-        publishedCourses.flatMap(c => {
+        baseCourses.flatMap(c => {
             if (Array.isArray(c.all_categories) && c.all_categories.length > 0) {
                 return c.all_categories.map(cat => cat.category_type).filter(Boolean);
             }
@@ -228,7 +226,7 @@ const SearchPageView = ({
 
     // Level 2-4: Alphabetically sorted by label
     const availableAreas = [...new Set(
-        publishedCourses.flatMap(c => {
+        baseCourses.flatMap(c => {
             const areas = [];
             if (Array.isArray(c.all_categories) && c.all_categories.length > 0) {
                 c.all_categories.forEach(cat => {
@@ -247,42 +245,39 @@ const SearchPageView = ({
     });
 
     const availableSpecialties = [...new Set(
-        publishedCourses.flatMap(c => {
+        baseCourses.flatMap(c => {
             const specialties = [];
             if (Array.isArray(c.all_categories) && c.all_categories.length > 0) {
                 c.all_categories.forEach(cat => {
                     const typeMatch = !dbSearchType || cat.category_type === dbSearchType;
                     const areaMatch = !searchArea || cat.category_area === searchArea;
                     if (typeMatch && areaMatch && (cat.category_specialty || cat.category_specialty_label)) {
-                        // Use label if available, fallback to slug
                         specialties.push(cat.category_specialty_label || cat.category_specialty);
                     }
                 });
             }
             return specialties;
         })
-    )].sort((a, b) => a.localeCompare(b, 'de')); // Already labels, sort alphabetically
+    )].sort((a, b) => a.localeCompare(b, 'de'));
 
     const availableFocuses = [...new Set(
-        publishedCourses.flatMap(c => {
+        baseCourses.flatMap(c => {
             const focuses = [];
             if (Array.isArray(c.all_categories) && c.all_categories.length > 0) {
                 c.all_categories.forEach(cat => {
                     const typeMatch = !dbSearchType || cat.category_type === dbSearchType;
                     const areaMatch = !searchArea || cat.category_area === searchArea;
-                    // Match specialty by label (what's displayed/selected) or slug
                     const specMatch = !searchSpecialty ||
                         cat.category_specialty_label === searchSpecialty ||
                         cat.category_specialty === searchSpecialty;
                     if (typeMatch && areaMatch && specMatch && (cat.category_focus || cat.category_focus_label)) {
-                        // Use label if available, fallback to slug
                         focuses.push(cat.category_focus_label || cat.category_focus);
                     }
                 });
             }
             return focuses;
         })
-    )].sort((a, b) => a.localeCompare(b, 'de')); // Already labels, sort alphabetically
+    )].sort((a, b) => a.localeCompare(b, 'de'));
 
     const getLabel = (key, scope) => {
         if (!key) return '';
@@ -491,7 +486,7 @@ const SearchPageView = ({
                                 { key: 'beruflich', dbKey: 'professionell' },
                                 { key: 'privat_hobby', dbKey: 'privat' },
                                 { key: 'kinder_jugend', dbKey: 'kinder' }
-                            ].map(({ key, dbKey }) => {
+                            ].filter(({ dbKey }) => availableTypes.includes(dbKey)).map(({ key, dbKey }) => {
                                 const cfg = SEGMENT_CONFIG[key] || SEGMENT_CONFIG[dbKey];
                                 const Icon = cfg?.icon || Briefcase;
                                 return (

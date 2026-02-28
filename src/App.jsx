@@ -826,27 +826,127 @@ export default function KursNaviPro() {  // 1. Initial State Logic
       }
   };
 
-  // Filter Logic
-  const filteredCourses = courses.filter(course => {
+  // Filter Logic – split into two stages:
+  // 1) Pre-category: text search, location, date, price, level, language, etc.
+  // 2) Category: type, area, specialty, focus
+  // Stage 1 is passed to SearchPageView for computing available category options.
+
+  const URL_TO_DB_TYPE_FILTER = {
+    'beruflich': 'professionell',
+    'privat_hobby': 'privat',
+    'kinder_jugend': 'kinder',
+    'professionell': 'professionell',
+    'privat': 'privat',
+    'kinder': 'kinder'
+  };
+
+  // Stage 1: All filters EXCEPT category (type/area/specialty/focus)
+  const filteredCoursesPreCategory = courses.filter(course => {
     if (!course) return false;
 
     // Status filter: Only show published courses OR user's own courses
     const isOwner = user?.id && String(course.user_id) === String(user.id);
-    const isPublished = course.status === 'published' || !course.status; // backward compat for existing courses
+    const isPublished = course.status === 'published' || !course.status;
     if (!isPublished && !isOwner) return false;
 
-    // Check category filters against ALL categories (primary + Zweitkategorien)
-    // Map URL slugs to database slugs (URL uses legacy slugs like 'beruflich', DB uses 'professionell')
-    const URL_TO_DB_TYPE = {
-      'beruflich': 'professionell',
-      'privat_hobby': 'privat',
-      'kinder_jugend': 'kinder',
-      'professionell': 'professionell',
-      'privat': 'privat',
-      'kinder': 'kinder'
-    };
-    const dbSearchType = searchType ? (URL_TO_DB_TYPE[searchType] || searchType) : '';
+    let matchesLocation = true;
+    if (selectedLocations.length > 0) {
+        const courseLocations = [];
+        if (course.canton) courseLocations.push(course.canton);
+        if (Array.isArray(course.course_events)) {
+            course.course_events.forEach(ev => {
+                if (ev.canton) courseLocations.push(ev.canton);
+            });
+        }
+        if (course.address) {
+            course.address.split(',').forEach(part => {
+                const trimmed = part.trim();
+                if (trimmed) courseLocations.push(trimmed);
+            });
+        }
+        if (course.additional_locations) {
+            try {
+                const locs = typeof course.additional_locations === 'string'
+                    ? JSON.parse(course.additional_locations)
+                    : course.additional_locations;
+                if (Array.isArray(locs)) {
+                    locs.forEach(loc => {
+                        if (loc.canton) courseLocations.push(loc.canton);
+                    });
+                }
+            } catch (e) { /* ignore parse errors */ }
+        }
+        const isOnlineCourse = courseLocations.includes('Online');
+        matchesLocation = isOnlineCourse || selectedLocations.some(selLoc => courseLocations.includes(selLoc));
+    }
 
+    // Boolean search with AND/OR operators
+    const rawQuery = (searchQuery || "").trim();
+    const safeTitle = (course.title || "").toString().toLowerCase();
+    const safeInstructor = (course.instructor_name || "").toString().toLowerCase();
+    const safeKeywords = Array.isArray(course.keywords)
+        ? course.keywords.join(" ").toLowerCase()
+        : (course.keywords || "").toString().toLowerCase();
+    const safeCanton = (course.canton || "").toString().toLowerCase();
+    const safeAddress = (course.address || "").toString().toLowerCase();
+    const eventLocations = Array.isArray(course.course_events)
+        ? course.course_events.map(ev => `${ev.canton || ""} ${ev.location || ""}`).join(" ").toLowerCase()
+        : "";
+    const safeSpecialty = (course.category_specialty || "").toString().toLowerCase();
+    const safeFocus = (course.category_focus || "").toString().toLowerCase();
+    const searchableText = `${safeTitle} ${safeInstructor} ${safeKeywords} ${safeCanton} ${safeAddress} ${eventLocations} ${safeSpecialty} ${safeFocus}`;
+
+    let matchesSearch = true;
+    if (rawQuery) {
+        const orClauses = rawQuery.split(/\s+OR\s+/i);
+        matchesSearch = orClauses.some(orClause => {
+            const andTerms = orClause.split(/\s+AND\s+/i)
+                .flatMap(part => part.trim().split(/\s+/))
+                .filter(term => term.length > 0);
+            return andTerms.every(term => searchableText.includes(term.toLowerCase()));
+        });
+    }
+
+    let matchesDate = true;
+    if (filterDateFrom || filterDateTo) {
+        const fromTime = filterDateFrom ? new Date(filterDateFrom).getTime() : 0;
+        const toTime = filterDateTo ? new Date(filterDateTo).getTime() : Infinity;
+        const courseDates = [];
+        if (course.start_date) courseDates.push(new Date(course.start_date).getTime());
+        if (Array.isArray(course.course_events)) {
+            course.course_events.forEach(ev => {
+                if (ev.start_date) courseDates.push(new Date(ev.start_date).getTime());
+            });
+        }
+        if (courseDates.length === 0) {
+            matchesDate = true;
+        } else {
+            matchesDate = courseDates.some(d => d >= fromTime && d <= toTime);
+        }
+    }
+
+    let matchesPrice = true; if (filterPriceMax) matchesPrice = (course.price || 0) <= Number(filterPriceMax);
+    let matchesLevel = true; if (filterLevel !== 'All') matchesLevel = course.level === filterLevel;
+    let matchesPro = true; if (filterPro) matchesPro = course.is_pro === true;
+    let matchesLanguage = true;
+    if (selectedLanguages.length > 0) {
+        const courseLanguages = course.languages || (course.language ? [course.language] : []);
+        matchesLanguage = selectedLanguages.some(filterLang => courseLanguages.includes(filterLang));
+    }
+    let matchesDirectBooking = true; if (filterDirectBooking) matchesDirectBooking = course.booking_type === 'platform';
+    let matchesDeliveryType = true;
+    if (selectedDeliveryTypes.length > 0) {
+        const courseDeliveryTypes = course.delivery_types || (course.delivery_type ? [course.delivery_type] : ['presence']);
+        matchesDeliveryType = selectedDeliveryTypes.some(filterType => courseDeliveryTypes.includes(filterType));
+    }
+
+    return matchesLocation && matchesSearch && matchesDate && matchesPrice && matchesLevel && matchesPro && matchesLanguage && matchesDirectBooking && matchesDeliveryType;
+  });
+
+  // Stage 2: Apply category filters on top of pre-category results
+  const dbSearchType = searchType ? (URL_TO_DB_TYPE_FILTER[searchType] || searchType) : '';
+
+  const filteredCourses = filteredCoursesPreCategory.filter(course => {
     let matchesType = true;
     if (dbSearchType) {
       matchesType = course.category_type === dbSearchType ||
@@ -864,7 +964,6 @@ export default function KursNaviPro() {  // 1. Initial State Logic
 
     let matchesSpecialty = true;
     if (searchSpecialty) {
-      // Compare against both slug and label since dropdown uses labels
       matchesSpecialty = course.category_specialty === searchSpecialty ||
         (Array.isArray(course.all_categories) &&
          course.all_categories.some(cat => cat && (
@@ -875,7 +974,6 @@ export default function KursNaviPro() {  // 1. Initial State Logic
 
     let matchesFocus = true;
     if (searchFocus) {
-      // Compare against both slug and label since dropdown uses labels
       matchesFocus = course.category_focus === searchFocus ||
         (Array.isArray(course.all_categories) &&
          course.all_categories.some(cat => cat && (
@@ -889,125 +987,8 @@ export default function KursNaviPro() {  // 1. Initial State Logic
         const courseCatStr = (course.category || "").toString().toLowerCase();
         matchesCategory = selectedCatPath.every(part => part && courseCatStr.includes(part.toString().toLowerCase()));
     }
-    
-    let matchesLocation = true;
-    if (selectedLocations.length > 0) {
-        const courseLocations = [];
-        if (course.canton) courseLocations.push(course.canton);
-        if (Array.isArray(course.course_events)) {
-            course.course_events.forEach(ev => {
-                if (ev.canton) courseLocations.push(ev.canton);
-            });
-        }
-        // Include cantons from the address field (comma-separated list like "Bern, Solothurn, Zürich")
-        if (course.address) {
-            course.address.split(',').forEach(part => {
-                const trimmed = part.trim();
-                if (trimmed) courseLocations.push(trimmed);
-            });
-        }
-        // Include additional_locations from instructor profile
-        if (course.additional_locations) {
-            try {
-                const locs = typeof course.additional_locations === 'string'
-                    ? JSON.parse(course.additional_locations)
-                    : course.additional_locations;
-                if (Array.isArray(locs)) {
-                    locs.forEach(loc => {
-                        if (loc.canton) courseLocations.push(loc.canton);
-                    });
-                }
-            } catch (e) { /* ignore parse errors */ }
-        }
 
-        // Online courses are available everywhere - show them when any canton is selected
-        const isOnlineCourse = courseLocations.includes('Online');
-        matchesLocation = isOnlineCourse || selectedLocations.some(selLoc => courseLocations.includes(selLoc));
-    }
-
-    // Boolean search with AND/OR operators
-    // Supported: "term1 AND term2", "term1 OR term2", "term1 term2" (implicit AND)
-    const rawQuery = (searchQuery || "").trim();
-
-    // Build searchable text from: Anbietername, Kursname, Keywords, Standort, Kategorien (Level 3+4)
-    const safeTitle = (course.title || "").toString().toLowerCase();
-    const safeInstructor = (course.instructor_name || "").toString().toLowerCase();
-    const safeKeywords = Array.isArray(course.keywords)
-        ? course.keywords.join(" ").toLowerCase()
-        : (course.keywords || "").toString().toLowerCase();
-    const safeCanton = (course.canton || "").toString().toLowerCase();
-    const safeAddress = (course.address || "").toString().toLowerCase();
-    const eventLocations = Array.isArray(course.course_events)
-        ? course.course_events.map(ev => `${ev.canton || ""} ${ev.location || ""}`).join(" ").toLowerCase()
-        : "";
-    // Level 3 (Specialty) and Level 4 (Focus) categories
-    const safeSpecialty = (course.category_specialty || "").toString().toLowerCase();
-    const safeFocus = (course.category_focus || "").toString().toLowerCase();
-
-    const searchableText = `${safeTitle} ${safeInstructor} ${safeKeywords} ${safeCanton} ${safeAddress} ${eventLocations} ${safeSpecialty} ${safeFocus}`;
-
-    let matchesSearch = true;
-    if (rawQuery) {
-        // Parse Boolean operators (case-insensitive)
-        // Split by OR first, then handle AND within each OR clause
-        const orClauses = rawQuery.split(/\s+OR\s+/i);
-
-        matchesSearch = orClauses.some(orClause => {
-            // Split by AND (explicit or implicit via spaces)
-            const andTerms = orClause.split(/\s+AND\s+/i)
-                .flatMap(part => part.trim().split(/\s+/))
-                .filter(term => term.length > 0);
-
-            // All AND terms must match
-            return andTerms.every(term => searchableText.includes(term.toLowerCase()));
-        });
-    }
-    
-    // Date filter: Von-Bis Bereich
-    // Kurse MIT Datum im Zeitraum werden angezeigt
-    // Kurse OHNE Datum werden auch angezeigt (könnten im Zeitraum liegen)
-    let matchesDate = true;
-    if (filterDateFrom || filterDateTo) {
-        const fromTime = filterDateFrom ? new Date(filterDateFrom).getTime() : 0;
-        const toTime = filterDateTo ? new Date(filterDateTo).getTime() : Infinity;
-
-        // Hole alle relevanten Daten des Kurses
-        const courseDates = [];
-        if (course.start_date) courseDates.push(new Date(course.start_date).getTime());
-        if (Array.isArray(course.course_events)) {
-            course.course_events.forEach(ev => {
-                if (ev.start_date) courseDates.push(new Date(ev.start_date).getTime());
-            });
-        }
-
-        // Kurs hat keine Daten -> wird angezeigt (könnte im Zeitraum sein)
-        if (courseDates.length === 0) {
-            matchesDate = true;
-        } else {
-            // Kurs hat mindestens ein Datum im Zeitraum
-            matchesDate = courseDates.some(d => d >= fromTime && d <= toTime);
-        }
-    }
-
-    let matchesPrice = true; if (filterPriceMax) matchesPrice = (course.price || 0) <= Number(filterPriceMax);
-    let matchesLevel = true; if (filterLevel !== 'All') matchesLevel = course.level === filterLevel;
-    let matchesPro = true; if (filterPro) matchesPro = course.is_pro === true;
-    let matchesLanguage = true;
-    if (selectedLanguages.length > 0) {
-        // Course matches if ANY of its languages matches ANY of the selected filter languages
-        const courseLanguages = course.languages || (course.language ? [course.language] : []);
-        matchesLanguage = selectedLanguages.some(filterLang => courseLanguages.includes(filterLang));
-    }
-    let matchesDirectBooking = true; if (filterDirectBooking) matchesDirectBooking = course.booking_type === 'platform';
-    let matchesDeliveryType = true;
-    if (selectedDeliveryTypes.length > 0) {
-        // Support both old 'delivery_type' (string) and new 'delivery_types' (array)
-        const courseDeliveryTypes = course.delivery_types || (course.delivery_type ? [course.delivery_type] : ['presence']);
-        // Course matches if ANY of its delivery types matches ANY of the selected filter types
-        matchesDeliveryType = selectedDeliveryTypes.some(filterType => courseDeliveryTypes.includes(filterType));
-    }
-
-    return matchesType && matchesArea && matchesSpecialty && matchesFocus && matchesCategory && matchesLocation && matchesSearch && matchesDate && matchesPrice && matchesLevel && matchesPro && matchesLanguage && matchesDirectBooking && matchesDeliveryType;
+    return matchesType && matchesArea && matchesSpecialty && matchesFocus && matchesCategory;
   });
   
 // --- EFFECT HOOKS ---
@@ -1488,7 +1469,7 @@ useEffect(() => {
          {view === 'landing-kids' && ( <LandingView title={t.landing_kids_title} subtitle={t.landing_kids_sub} variant="kids" searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearchSubmit={handleSearchSubmit} setSelectedCatPath={setSelectedCatPath} setView={setView} t={t} getCatLabel={getCatLabel} /> )}
 
       {view === 'search' && (
-          <SearchPageView courses={courses} searchQuery={searchQuery} setSearchQuery={setSearchQuery} searchType={searchType} setSearchType={setSearchType} searchArea={searchArea} setSearchArea={setSearchArea} searchSpecialty={searchSpecialty} setSearchSpecialty={setSearchSpecialty} searchFocus={searchFocus} setSearchFocus={setSearchFocus} selectedLocations={selectedLocations} setSelectedLocations={setSelectedLocations} locMenuOpen={locMenuOpen} setLocMenuOpen={setLocMenuOpen} locMenuRef={locMenuRef} loading={loading} filteredCourses={filteredCourses} setSelectedCourse={setSelectedCourse} setView={setView} t={t} getCatLabel={getCatLabel} filterDateFrom={filterDateFrom} setFilterDateFrom={setFilterDateFrom} filterDateTo={filterDateTo} setFilterDateTo={setFilterDateTo} filterPriceMax={filterPriceMax} setFilterPriceMax={setFilterPriceMax} filterLevel={filterLevel} setFilterLevel={setFilterLevel} filterPro={filterPro} setFilterPro={setFilterPro} filterDirectBooking={filterDirectBooking} setFilterDirectBooking={setFilterDirectBooking} selectedLanguages={selectedLanguages} setSelectedLanguages={setSelectedLanguages} langMenuOpen={langMenuOpen} setLangMenuOpen={setLangMenuOpen} langMenuRef={langMenuRef} selectedDeliveryTypes={selectedDeliveryTypes} setSelectedDeliveryTypes={setSelectedDeliveryTypes} deliveryMenuOpen={deliveryMenuOpen} setDeliveryMenuOpen={setDeliveryMenuOpen} deliveryMenuRef={deliveryMenuRef} savedCourseIds={savedCourseIds} onToggleSaveCourse={toggleSaveCourse} user={user} />
+          <SearchPageView courses={courses} filteredCoursesPreCategory={filteredCoursesPreCategory} searchQuery={searchQuery} setSearchQuery={setSearchQuery} searchType={searchType} setSearchType={setSearchType} searchArea={searchArea} setSearchArea={setSearchArea} searchSpecialty={searchSpecialty} setSearchSpecialty={setSearchSpecialty} searchFocus={searchFocus} setSearchFocus={setSearchFocus} selectedLocations={selectedLocations} setSelectedLocations={setSelectedLocations} locMenuOpen={locMenuOpen} setLocMenuOpen={setLocMenuOpen} locMenuRef={locMenuRef} loading={loading} filteredCourses={filteredCourses} setSelectedCourse={setSelectedCourse} setView={setView} t={t} getCatLabel={getCatLabel} filterDateFrom={filterDateFrom} setFilterDateFrom={setFilterDateFrom} filterDateTo={filterDateTo} setFilterDateTo={setFilterDateTo} filterPriceMax={filterPriceMax} setFilterPriceMax={setFilterPriceMax} filterLevel={filterLevel} setFilterLevel={setFilterLevel} filterPro={filterPro} setFilterPro={setFilterPro} filterDirectBooking={filterDirectBooking} setFilterDirectBooking={setFilterDirectBooking} selectedLanguages={selectedLanguages} setSelectedLanguages={setSelectedLanguages} langMenuOpen={langMenuOpen} setLangMenuOpen={setLangMenuOpen} langMenuRef={langMenuRef} selectedDeliveryTypes={selectedDeliveryTypes} setSelectedDeliveryTypes={setSelectedDeliveryTypes} deliveryMenuOpen={deliveryMenuOpen} setDeliveryMenuOpen={setDeliveryMenuOpen} deliveryMenuRef={deliveryMenuRef} savedCourseIds={savedCourseIds} onToggleSaveCourse={toggleSaveCourse} user={user} />
       )}
 
             {view === 'category-location' && (
