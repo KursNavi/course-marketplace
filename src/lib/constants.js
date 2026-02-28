@@ -581,7 +581,8 @@ export const TRANSLATIONS = {
     faq_q8: "Are there courses for companies or groups?", faq_a8: "Many of our course providers offer private group courses. Simply use the 'Contact' button on the course profile to ask.",
     faq_q9: "I can't find the course I want – what now?", faq_a9: "We are growing daily! Write to us at info@kursnavi.ch with your course wish – we'll check if we can find a suitable provider for you.",
     faq_q10: "I am a provider myself. How can I list courses?", faq_a10: "Create a free profile, verify your email, and click on 'New Course' in the dashboard. It takes less than 5 minutes.",
-    
+    faq_q11: "What does the 'Verified' badge mean?", faq_a11: "The 'Verified' badge means that this provider has submitted certificates or diplomas to KursNavi, and we have manually reviewed them. It does not mean that providers without the badge are unqualified – many excellent providers simply haven't gone through our verification process (yet).",
+
     // AUTH NEW
     lbl_name_company: "Full Name / Company",
     err_accept_terms: "Please accept the Terms and Privacy Policy.",
@@ -731,6 +732,7 @@ export const TRANSLATIONS = {
     faq_q8: "Gibt es auch Kurse für Firmen oder Gruppen?", faq_a8: "Viele unserer Kursanbieter bieten private Gruppenkurse an. Nutze einfach den 'Kontakt'-Button auf dem Kursprofil.",
     faq_q9: "Ich finde meinen gewünschten Kurs nicht – was tun?", faq_a9: "Wir wachsen täglich! Schreib uns an info@kursnavi.ch mit deinem Kurswunsch – wir prüfen, ob wir einen passenden Anbieter finden können.",
     faq_q10: "Ich bin selbst Kursanbieter. Wie kann ich meine Kurse listen?", faq_a10: "Erstelle ein kostenloses Profil, bestätige deine E-Mail und klicke im Dashboard auf 'Neuer Kurs'. Es dauert keine 5 Minuten.",
+    faq_q11: "Was bedeutet das 'Verifiziert'-Kennzeichen?", faq_a11: "Das 'Verifiziert'-Kennzeichen bedeutet, dass dieser Anbieter Zertifikate oder Diplome bei KursNavi eingereicht hat und wir diese manuell geprüft haben. Anbieter ohne dieses Kennzeichen sind nicht automatisch weniger qualifiziert – viele ausgezeichnete Anbieter haben den Verifizierungsprozess einfach (noch) nicht durchlaufen.",
 
     // AUTH NEW
     lbl_name_company: "Vollständiger Name / Firma",
@@ -881,6 +883,7 @@ export const TRANSLATIONS = {
     faq_q8: "Y a-t-il des cours pour entreprises?", faq_a8: "Beaucoup de nos prestataires proposent des cours privés. Utilisez le bouton 'Contact'.",
     faq_q9: "Je ne trouve pas mon cours?", faq_a9: "Nous grandissons chaque jour ! Écrivez-nous à info@kursnavi.ch avec votre souhait de cours – nous vérifierons si nous pouvons trouver un prestataire adapté.",
     faq_q10: "Je suis prestataire. Comment lister des cours?", faq_a10: "Créez un profil gratuit et cliquez sur 'Nouveau Cours' dans le tableau de bord.",
+    faq_q11: "Que signifie le badge 'Vérifié'?", faq_a11: "Le badge 'Vérifié' signifie que ce prestataire a soumis des certificats ou diplômes à KursNavi et que nous les avons vérifiés manuellement. Les prestataires sans ce badge ne sont pas automatiquement moins qualifiés – beaucoup d'excellents prestataires n'ont simplement pas (encore) effectué notre processus de vérification.",
 
     // AUTH NEW
     lbl_name_company: "Nom complet / Entreprise",
@@ -1031,6 +1034,7 @@ export const TRANSLATIONS = {
     faq_q8: "Ci sono corsi per aziende?", faq_a8: "Molti dei nostri fornitori offrono corsi privati. Usa il pulsante 'Contatto'.",
     faq_q9: "Non trovo il corso che cerco?", faq_a9: "Cresciamo ogni giorno! Scrivici a info@kursnavi.ch con il tuo desiderio di corso – verificheremo se possiamo trovare un fornitore adatto.",
     faq_q10: "Sono un fornitore di corsi. Come inserisco i corsi?", faq_a10: "Crea un profilo gratuito e clicca su 'Nuovo Corso' nella dashboard.",
+    faq_q11: "Cosa significa il badge 'Verificato'?", faq_a11: "Il badge 'Verificato' significa che questo fornitore ha inviato certificati o diplomi a KursNavi e che li abbiamo verificati manualmente. I fornitori senza questo badge non sono automaticamente meno qualificati – molti eccellenti fornitori semplicemente non hanno (ancora) completato il nostro processo di verifica.",
 
     // AUTH NEW
     lbl_name_company: "Nome completo / Azienda",
