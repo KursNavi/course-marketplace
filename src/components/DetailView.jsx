@@ -61,39 +61,54 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
         }
     }, [course?.id, course?.ticket_limit_30d, course?.booking_type]);
 
-    // Build category breadcrumb path
+    // Build category breadcrumb path from all_categories (primary) with flat-field fallback
     const getCategoryBreadcrumb = () => {
-        if (!course || !taxonomy) return [];
+        if (!course) return [];
         const crumbs = [];
         const lang = 'de';
 
-        // Level 1: Type
-        if (course.category_type) {
-            crumbs.push({
+        // Prefer primary category from all_categories (sourced from taxonomy view)
+        const primary = Array.isArray(course.all_categories)
+            ? course.all_categories.find(c => c.is_primary) || course.all_categories[0]
+            : null;
+
+        if (primary) {
+            const type = primary.category_type;
+            const area = primary.category_area;
+            const specialty = primary.category_specialty_label || primary.category_specialty;
+            const focus = primary.category_focus_label || primary.category_focus;
+
+            if (type) crumbs.push({
+                label: primary.category_type_label || getTypeLabel(type, lang),
+                filter: { type }
+            });
+            if (area) crumbs.push({
+                label: primary.category_area_label || getAreaLabel(type, area, lang),
+                filter: { type, area }
+            });
+            if (specialty) crumbs.push({
+                label: specialty,
+                filter: { type, area, specialty: primary.category_specialty }
+            });
+            if (focus) crumbs.push({
+                label: focus,
+                filter: { type, area, specialty: primary.category_specialty, focus: primary.category_focus }
+            });
+        } else if (taxonomy) {
+            // Fallback to flat fields on course
+            if (course.category_type) crumbs.push({
                 label: getTypeLabel(course.category_type, lang),
                 filter: { type: course.category_type }
             });
-        }
-
-        // Level 2: Area
-        if (course.category_type && course.category_area) {
-            crumbs.push({
+            if (course.category_type && course.category_area) crumbs.push({
                 label: getAreaLabel(course.category_type, course.category_area, lang),
                 filter: { type: course.category_type, area: course.category_area }
             });
-        }
-
-        // Level 3: Specialty
-        if (course.category_specialty) {
-            crumbs.push({
+            if (course.category_specialty) crumbs.push({
                 label: course.category_specialty,
                 filter: { type: course.category_type, area: course.category_area, specialty: course.category_specialty }
             });
-        }
-
-        // Level 4: Focus
-        if (course.category_focus) {
-            crumbs.push({
+            if (course.category_focus) crumbs.push({
                 label: course.category_focus,
                 filter: { type: course.category_type, area: course.category_area, specialty: course.category_specialty, focus: course.category_focus }
             });
@@ -282,8 +297,10 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
                 : course.session_length;
         }
 
-        if (course.category_area) {
-            schemaData.educationalLevel = course.category_area.replace(/_/g, ' ');
+        const primaryCat = Array.isArray(course.all_categories) && (course.all_categories.find(c => c.is_primary) || course.all_categories[0]);
+        const areaLabel = primaryCat?.category_area_label || (course.category_area ? course.category_area.replace(/_/g, ' ') : null);
+        if (areaLabel) {
+            schemaData.educationalLevel = areaLabel;
         }
 
         const script = document.createElement('script');
@@ -305,7 +322,7 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
                 {
                     "@type": "ListItem",
                     "position": 2,
-                    "name": course.category_area ? course.category_area.replace(/_/g, ' ') : 'Kurse',
+                    "name": areaLabel || 'Kurse',
                     "item": `${BASE_URL}/courses/${topicSlug}/${locSlug}/`
                 },
                 {
@@ -535,8 +552,16 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
 
     // Filter & Sort Logic: Priority same Category -> then fill with others
     const candidates = (courses || []).filter(c => c.id !== course.id);
-    const sameCategory = candidates.filter(c => c.category_area === course.category_area);
-    const otherCategory = candidates.filter(c => c.category_area !== course.category_area);
+    const currentPrimaryCat = Array.isArray(course.all_categories) && (course.all_categories.find(c => c.is_primary) || course.all_categories[0]);
+    const currentAreaSlug = currentPrimaryCat?.category_area || course.category_area;
+    const sameCategory = candidates.filter(c => {
+        const pCat = Array.isArray(c.all_categories) && (c.all_categories.find(x => x.is_primary) || c.all_categories[0]);
+        return (pCat?.category_area || c.category_area) === currentAreaSlug;
+    });
+    const otherCategory = candidates.filter(c => {
+        const pCat = Array.isArray(c.all_categories) && (c.all_categories.find(x => x.is_primary) || c.all_categories[0]);
+        return (pCat?.category_area || c.category_area) !== currentAreaSlug;
+    });
 
     const rankedSame = sameCategory.map(c => ({...c, score: getRankingScore(c)})).sort((a,b) => b.score - a.score);
     const rankedOther = otherCategory.map(c => ({...c, score: getRankingScore(c)})).sort((a,b) => b.score - a.score);
@@ -779,7 +804,10 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
         {relatedCourses.length > 0 && (
             <div className="mt-16 pt-10 border-t border-gray-200">
                 <h2 className="text-2xl font-bold font-heading text-dark mb-2">Nicht der richtige Kurs?</h2>
-                <p className="text-gray-500 mb-6">Entdecke diese Alternativen aus {course.category_area ? course.category_area.replace('_', ' ') : 'unserem Angebot'}</p>
+                <p className="text-gray-500 mb-6">Entdecke diese Alternativen aus {(() => {
+                    const primary = Array.isArray(course.all_categories) && (course.all_categories.find(c => c.is_primary) || course.all_categories[0]);
+                    return primary?.category_area_label || (course.category_area ? course.category_area.replace('_', ' ') : 'unserem Angebot');
+                })()}</p>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
                     {relatedCourses.map(rel => (
