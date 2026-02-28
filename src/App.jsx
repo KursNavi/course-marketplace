@@ -15,30 +15,49 @@ import { Navbar, Footer } from './components/Layout';
 import { Home } from './components/Home';
 
 // Lazy-loaded page components (code-splitting)
-const SearchPageView = React.lazy(() => import('./components/SearchPageView'));
-const LegalPage = React.lazy(() => import('./components/LegalPage'));
-const LandingView = React.lazy(() => import('./components/LandingView'));
-const DetailView = React.lazy(() => import('./components/DetailView'));
-const TeacherHub = React.lazy(() => import('./components/TeacherHub'));
-const TeacherProfileView = React.lazy(() => import('./components/TeacherProfileView'));
-const Dashboard = React.lazy(() => import('./components/Dashboard'));
-const TeacherForm = React.lazy(() => import('./components/TeacherForm'));
-const AdminPanel = React.lazy(() => import('./components/AdminPanel'));
-const AuthView = React.lazy(() => import('./components/AuthView'));
-const ContactPage = React.lazy(() => import('./components/ContactPage'));
-const AboutPage = React.lazy(() => import('./components/AboutPage'));
-const HowItWorksPage = React.lazy(() => import('./components/HowItWorksPage'));
-const SuccessView = React.lazy(() => import('./components/SuccessView'));
-const BlogList = React.lazy(() => import('./components/BlogList'));
-const BlogDetail = React.lazy(() => import('./components/BlogDetail'));
-const AdminBlogManager = React.lazy(() => import('./components/AdminBlogManager'));
-const CategoryLocationPage = React.lazy(() => import('./components/CategoryLocationPage'));
-const ProviderDirectory = React.lazy(() => import('./components/ProviderDirectory'));
-const ProviderProfilePage = React.lazy(() => import('./components/ProviderProfilePage'));
-const RatgeberClusterView = React.lazy(() => import('./components/RatgeberClusterView'));
-const RatgeberArtikelView = React.lazy(() => import('./components/RatgeberArtikelView'));
-const RatgeberHubView = React.lazy(() => import('./components/RatgeberHubView'));
-const NotFoundPage = React.lazy(() => import('./components/NotFoundPage'));
+// After a deploy, old chunk hashes no longer exist. The server returns index.html
+// (text/html) instead of the JS file, which causes a dynamic import failure.
+// This helper catches that and reloads the page once to fetch updated chunks.
+function lazyWithRetry(importFn) {
+  return React.lazy(() =>
+    importFn().catch((error) => {
+      // Only reload once to avoid infinite loops
+      const key = 'chunk_reload';
+      const lastReload = sessionStorage.getItem(key);
+      const now = Date.now();
+      if (!lastReload || now - Number(lastReload) > 10000) {
+        sessionStorage.setItem(key, String(now));
+        window.location.reload();
+      }
+      throw error;
+    })
+  );
+}
+
+const SearchPageView = lazyWithRetry(() => import('./components/SearchPageView'));
+const LegalPage = lazyWithRetry(() => import('./components/LegalPage'));
+const LandingView = lazyWithRetry(() => import('./components/LandingView'));
+const DetailView = lazyWithRetry(() => import('./components/DetailView'));
+const TeacherHub = lazyWithRetry(() => import('./components/TeacherHub'));
+const TeacherProfileView = lazyWithRetry(() => import('./components/TeacherProfileView'));
+const Dashboard = lazyWithRetry(() => import('./components/Dashboard'));
+const TeacherForm = lazyWithRetry(() => import('./components/TeacherForm'));
+const AdminPanel = lazyWithRetry(() => import('./components/AdminPanel'));
+const AuthView = lazyWithRetry(() => import('./components/AuthView'));
+const ContactPage = lazyWithRetry(() => import('./components/ContactPage'));
+const AboutPage = lazyWithRetry(() => import('./components/AboutPage'));
+const HowItWorksPage = lazyWithRetry(() => import('./components/HowItWorksPage'));
+const SuccessView = lazyWithRetry(() => import('./components/SuccessView'));
+const BlogList = lazyWithRetry(() => import('./components/BlogList'));
+const BlogDetail = lazyWithRetry(() => import('./components/BlogDetail'));
+const AdminBlogManager = lazyWithRetry(() => import('./components/AdminBlogManager'));
+const CategoryLocationPage = lazyWithRetry(() => import('./components/CategoryLocationPage'));
+const ProviderDirectory = lazyWithRetry(() => import('./components/ProviderDirectory'));
+const ProviderProfilePage = lazyWithRetry(() => import('./components/ProviderProfilePage'));
+const RatgeberClusterView = lazyWithRetry(() => import('./components/RatgeberClusterView'));
+const RatgeberArtikelView = lazyWithRetry(() => import('./components/RatgeberArtikelView'));
+const RatgeberHubView = lazyWithRetry(() => import('./components/RatgeberHubView'));
+const NotFoundPage = lazyWithRetry(() => import('./components/NotFoundPage'));
 
 // --- DEBUG: ERROR BOUNDARY (Fängt Abstürze ab) ---
 class ErrorBoundary extends React.Component {
@@ -53,9 +72,21 @@ class ErrorBoundary extends React.Component {
 
   componentDidCatch(error, errorInfo) {
     this.setState({ errorInfo });
-    // Wichtig: in der Konsole sieht man oft Datei + Zeile noch klarer
     console.error("💥 APP CRASH:", error);
     console.error("📌 COMPONENT STACK:", errorInfo);
+
+    // Auto-reload on chunk load failures (stale deploy)
+    const msg = error?.message || '';
+    if (msg.includes('Failed to fetch dynamically imported module') || msg.includes('Loading chunk')) {
+      const key = 'chunk_reload';
+      const lastReload = sessionStorage.getItem(key);
+      const now = Date.now();
+      if (!lastReload || now - Number(lastReload) > 10000) {
+        sessionStorage.setItem(key, String(now));
+        window.location.reload();
+        return;
+      }
+    }
   }
 
   render() {
