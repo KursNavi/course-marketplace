@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, ArrowRight, ChevronRight, ChevronDown, CreditCard, Info, Shield, Briefcase, Palette, Smile, BookOpen } from 'lucide-react';
+import { Search, ArrowRight, ChevronRight, ChevronLeft, ChevronDown, CreditCard, Info, Shield, Briefcase, Palette, Smile, BookOpen, LayoutGrid } from 'lucide-react';
 import { LocationDropdown, DeliveryTypeFilter } from './Filters';
 import { CATEGORY_TYPES, SEGMENT_CONFIG } from '../lib/constants';
 import { useTaxonomy } from '../hooks/useTaxonomy';
@@ -95,7 +95,14 @@ export const Home = ({
 
   const handleSearch = (e) => {
     e.preventDefault();
-    window.history.pushState({ view: 'search' }, '', '/search');
+    const params = new URLSearchParams();
+    if (searchQuery) params.set('q', searchQuery);
+    if (selectedLocations?.length) params.set('loc', selectedLocations.join(','));
+    if (selectedDeliveryTypes?.length) params.set('delivery', selectedDeliveryTypes.join(','));
+    if (filterPro) params.set('pro', '1');
+    if (filterDirectBooking) params.set('booking', '1');
+    const qs = params.toString();
+    window.history.pushState({ view: 'search' }, '', '/search' + (qs ? '?' + qs : ''));
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -317,8 +324,13 @@ export const Home = ({
                     </button>
 
                     {/* MEGA MENU (3-4 SPALTEN) */}
-                    {catMenuOpen && (
-                        <div className={`absolute top-full left-0 mt-2 ${visibleFocuses.length > 0 ? 'w-[1000px]' : 'w-[800px]'} -ml-0 md:-ml-0 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden z-50 text-left`}>
+                    {catMenuOpen && (() => {
+                        // Mobile step: which column to show on small screens
+                        const mobileStep = activeSpecialty && visibleFocuses.length > 0 ? 'fokus'
+                            : activeArea ? 'specialty'
+                            : 'area';
+                        return (
+                        <div className="absolute top-full left-0 mt-2 w-[calc(100vw-2rem)] md:w-[1000px] bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden z-50 text-left">
 
                             {/* TOP ROW: SEGMENT ICON TABS */}
                             <div className="flex border-b border-gray-200 bg-gray-50">
@@ -345,22 +357,42 @@ export const Home = ({
                                 })}
                             </div>
 
+                            {/* MOBILE: Back button */}
+                            {mobileStep !== 'area' && (
+                                <button
+                                    className="md:hidden flex items-center gap-1 px-4 py-2 text-sm text-primary font-medium border-b border-gray-100 w-full bg-gray-50"
+                                    onClick={() => {
+                                        if (mobileStep === 'fokus') setActiveSpecialty(null);
+                                        else if (mobileStep === 'specialty') setActiveArea(null);
+                                    }}
+                                >
+                                    <ChevronLeft className="w-4 h-4" />
+                                    {t.btn_back || 'Zurück'}
+                                </button>
+                            )}
+
                             {/* CONTENT ROWS */}
                             <div className="flex h-[400px]">
 
-                            {/* SPALTE 1: BEREICH / Themenwelt (Gefiltert nach Existenz) */}
-                            <div className={`${visibleFocuses.length > 0 ? 'w-1/4' : 'w-1/3'} border-r border-gray-100 py-2 overflow-y-auto bg-gray-50`}>
+                            {/* SPALTE 1: BEREICH / Themenwelt – fixed width */}
+                            <div className={`${mobileStep === 'area' ? '' : 'hidden md:block'} w-full md:w-[230px] md:shrink-0 border-r border-gray-100 py-2 overflow-y-auto bg-gray-50`}>
                                 <div className="px-4 py-2 text-xs font-bold text-gray-400 uppercase">{t.lbl_area}</div>
                                 {visibleAreas.length > 0 ? (
                                     visibleAreas.map(areaKey => (
                                         <div
                                             key={areaKey}
                                             onMouseEnter={() => { setActiveArea(areaKey); setActiveSpecialty(null); }}
-                                            onClick={() => handleCategorySelect(activeType, areaKey)}
+                                            onClick={() => {
+                                                if (window.innerWidth < 768) {
+                                                    setActiveArea(areaKey); setActiveSpecialty(null);
+                                                } else {
+                                                    handleCategorySelect(activeType, areaKey);
+                                                }
+                                            }}
                                             className={`px-4 py-2 cursor-pointer text-sm flex justify-between items-center transition-colors ${activeArea === areaKey ? 'text-primary font-bold bg-orange-50' : 'text-gray-700 hover:bg-gray-50'}`}
                                         >
                                             {getAreaLabel(activeType, areaKey)}
-                                            {activeArea === areaKey && <ChevronRight className="w-3 h-3" />}
+                                            <ChevronRight className={`w-3 h-3 ${activeArea === areaKey ? 'text-primary' : 'text-gray-300'}`} />
                                         </div>
                                     ))
                                 ) : (
@@ -368,15 +400,21 @@ export const Home = ({
                                 )}
                             </div>
 
-                            {/* SPALTE 2: SPEZIALGEBIET / Fachgebiet (Gefiltert nach Existenz) */}
-                            <div className={`${visibleFocuses.length > 0 ? 'w-1/4 border-r border-gray-100' : 'flex-1'} py-2 overflow-y-auto bg-gray-50/50`}>
+                            {/* SPALTE 2: SPEZIALGEBIET / Fachgebiet – fixed width */}
+                            <div className={`${mobileStep === 'specialty' ? '' : 'hidden md:block'} w-full md:w-[270px] md:shrink-0 border-r border-gray-100 py-2 overflow-y-auto bg-gray-50/50`}>
                                 <div className="px-4 py-2 text-xs font-bold text-gray-400 uppercase">{t.lbl_specialty}</div>
                                 {visibleSpecialties.length > 0 ? (
                                     visibleSpecialties.map(spec => (
                                             <button
                                                 key={spec.label}
                                                 onMouseEnter={() => setActiveSpecialty(spec.label)}
-                                                onClick={() => handleCategorySelect(activeType, activeArea, spec.label)}
+                                                onClick={() => {
+                                                    if (window.innerWidth < 768 && spec.hasFocuses) {
+                                                        setActiveSpecialty(spec.label);
+                                                    } else {
+                                                        handleCategorySelect(activeType, activeArea, spec.label);
+                                                    }
+                                                }}
                                                 className={`w-full text-left px-4 py-2 text-sm transition-colors flex items-center justify-between group ${activeSpecialty === spec.label ? 'bg-orange-100 text-primary font-bold' : 'text-gray-600 hover:bg-orange-100 hover:text-primary'}`}
                                             >
                                                 <span className="flex items-center">
@@ -393,26 +431,29 @@ export const Home = ({
                                 )}
                             </div>
 
-                            {/* SPALTE 3: FOKUS (Nur sichtbar wenn vorhanden) */}
-                            {visibleFocuses.length > 0 && (
-                                <div className="flex-1 py-2 overflow-y-auto">
-                                    <div className="px-4 py-2 text-xs font-bold text-gray-400 uppercase">{t.lbl_focus || 'Fokus'}</div>
-                                    {visibleFocuses.map(focusKey => (
-                                        <button
-                                            key={focusKey}
-                                            onClick={() => handleCategorySelect(activeType, activeArea, activeSpecialty, focusKey)}
-                                            className="w-full text-left px-4 py-2 hover:bg-orange-100 text-sm text-gray-600 hover:text-primary transition-colors flex items-center group"
-                                        >
-                                            <span className="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-primary mr-2 transition-colors"></span>
-                                            {focusKey}
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
+                            {/* SPALTE 3: FOKUS – always present, fills remaining space */}
+                            <div className={`${mobileStep === 'fokus' ? '' : 'hidden md:block'} w-full md:flex-1 py-2 overflow-y-auto`}>
+                                {visibleFocuses.length > 0 ? (
+                                    <>
+                                        <div className="px-4 py-2 text-xs font-bold text-gray-400 uppercase">{t.lbl_focus || 'Fokus'}</div>
+                                        {visibleFocuses.map(focusKey => (
+                                            <button
+                                                key={focusKey}
+                                                onClick={() => handleCategorySelect(activeType, activeArea, activeSpecialty, focusKey)}
+                                                className="w-full text-left px-4 py-2 hover:bg-orange-100 text-sm text-gray-600 hover:text-primary transition-colors flex items-center group"
+                                            >
+                                                <span className="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-primary mr-2 transition-colors"></span>
+                                                {focusKey}
+                                            </button>
+                                        ))}
+                                    </>
+                                ) : null}
+                            </div>
 
                             </div>{/* End CONTENT ROWS flex */}
                         </div>
-                    )}
+                        );
+                    })()}
                 </div>
 
                 {/* LOCATION DROPDOWN */}
