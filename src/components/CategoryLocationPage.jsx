@@ -333,7 +333,7 @@ export default function CategoryLocationPage({
                                                 {course.description || 'Keine Beschreibung verfügbar'}
                                             </p>
                                             <div className="flex justify-between items-center text-sm gap-4">
-                                                <span className="text-gray-500 truncate min-w-0">{course.instructor_name}</span>
+                                                <span className="text-gray-500 truncate min-w-0" title={course.instructor_name}>{course.instructor_name}</span>
                                                 <span className="font-bold text-primary text-lg text-right w-[90px] shrink-0 leading-tight">{getPriceLabel(course)}</span>
                                             </div>
                                         </div>

@@ -783,6 +783,11 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
                 Dieser Name wird auf Ihrem Profil und bei Ihren Kursen angezeigt.
               </p>
             )}
+            {isTeacher && profileData.full_name?.length > 25 && (
+              <p className="text-xs text-amber-600 mt-1">
+                Wir empfehlen max. 25 Zeichen ({profileData.full_name.length}/25) – bei längeren Namen wird der Anzeigename auf der Plattform je nach Darstellung mit „..." abgekürzt.
+              </p>
+            )}
           </div>
 
           {/* Location */}

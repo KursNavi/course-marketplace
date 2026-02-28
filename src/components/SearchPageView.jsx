@@ -609,7 +609,7 @@ const SearchPageView = ({
                                 <div className="min-w-0 flex-1">
                                     <div className="inline-flex items-center bg-beige px-2 py-1 rounded text-xs text-gray-500 max-w-full">
                                         <User className="w-3 h-3 text-gray-500 mr-1 shrink-0" />
-                                        <span className="truncate">{course.instructor_name}</span>
+                                        <span className="truncate" title={course.instructor_name}>{course.instructor_name}</span>
                                     </div>
                                 </div>
 
