@@ -198,21 +198,16 @@ export const LocationDropdown = ({ selectedLocations, setSelectedLocations, locM
                         <Globe className="w-4 h-4 text-gray-400" />
                         <span className="text-sm font-medium text-gray-700">Online</span>
                     </label>
-                    {/* Cantons in 3-column grid (Liechtenstein separated at end) */}
+                    {/* Cantons in 3-column grid, Liechtenstein last with FL tag */}
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-x-2">
-                        {displayList.filter(l => l !== 'Online' && l !== 'Liechtenstein').map(loc => (
+                        {[...displayList.filter(l => l !== 'Online' && l !== 'Liechtenstein'), 'Liechtenstein'].map(loc => (
                             <label key={loc} className="flex items-center space-x-2 p-1.5 hover:bg-gray-50 rounded cursor-pointer">
                                 <input type="checkbox" checked={selectedLocations.includes(loc)} onChange={() => toggleLoc(loc)} className="rounded border-gray-300 text-primary focus:ring-primary shrink-0" />
                                 <span className="text-sm text-gray-700 truncate">{loc}</span>
+                                {loc === 'Liechtenstein' && <span className="text-[10px] text-gray-400 bg-gray-100 px-1 py-0.5 rounded shrink-0">FL</span>}
                             </label>
                         ))}
                     </div>
-                    {/* Liechtenstein – not a Swiss canton */}
-                    <label className="flex items-center space-x-2 p-2 mt-2 hover:bg-gray-50 rounded cursor-pointer border-t border-gray-100 pt-3">
-                        <input type="checkbox" checked={selectedLocations.includes('Liechtenstein')} onChange={() => toggleLoc('Liechtenstein')} className="rounded border-gray-300 text-primary focus:ring-primary" />
-                        <span className="text-sm text-gray-700">Liechtenstein</span>
-                        <span className="text-[10px] text-gray-400 font-medium bg-gray-100 px-1.5 py-0.5 rounded">FL</span>
-                    </label>
                     <div className="pt-3 mt-3 border-t flex justify-between items-center"><button onClick={() => setSelectedLocations([])} className="text-xs text-gray-400 hover:text-red-500">Clear</button><button onClick={() => setLocMenuOpen(false)} className="text-xs font-bold text-primary">Done</button></div>
                 </div>
             )}
