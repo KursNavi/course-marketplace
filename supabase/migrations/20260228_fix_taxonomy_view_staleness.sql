@@ -69,3 +69,34 @@ $$ LANGUAGE plpgsql SECURITY DEFINER
 SET search_path = public;
 
 COMMENT ON FUNCTION refresh_taxonomy_paths_manual() IS 'Manually callable version to refresh v_taxonomy_paths (for admin API)';
+
+
+-- ============================================
+-- STEP 4: Generate slugs for taxonomy entries that are missing them
+-- ============================================
+-- Specialties and focuses created via the admin UI don't get slugs.
+-- Generate slugs from label_de for all entries where slug IS NULL.
+
+UPDATE taxonomy_level3
+SET slug = lower(
+    regexp_replace(
+        regexp_replace(
+            replace(replace(replace(replace(replace(
+                label_de,
+                'ä', 'ae'), 'ö', 'oe'), 'ü', 'ue'), 'ß', 'ss'), '&', 'und'),
+            '[^a-zA-Z0-9]+', '_', 'g'),
+        '^_|_$', '', 'g')
+    )
+WHERE slug IS NULL AND label_de IS NOT NULL;
+
+UPDATE taxonomy_level4
+SET slug = lower(
+    regexp_replace(
+        regexp_replace(
+            replace(replace(replace(replace(replace(
+                label_de,
+                'ä', 'ae'), 'ö', 'oe'), 'ü', 'ue'), 'ß', 'ss'), '&', 'und'),
+            '[^a-zA-Z0-9]+', '_', 'g'),
+        '^_|_$', '', 'g')
+    )
+WHERE slug IS NULL AND label_de IS NOT NULL;

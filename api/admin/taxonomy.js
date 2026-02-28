@@ -466,6 +466,19 @@ async function handleConsolidatedMutation(supabase, action, entity, data, res) {
     return res.status(400).json({ error: 'Invalid action' });
 }
 
+// Generate a URL-safe slug from a label (e.g. "Business Spanisch" → "business_spanisch")
+function generateSlug(label) {
+    if (!label) return null;
+    return label
+        .toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // remove accents
+        .replace(/[äÄ]/g, 'ae').replace(/[öÖ]/g, 'oe').replace(/[üÜ]/g, 'ue')
+        .replace(/ß/g, 'ss')
+        .replace(/&/g, 'und')
+        .replace(/[^a-z0-9]+/g, '_')
+        .replace(/^_|_$/g, '');
+}
+
 function buildInsertData(entity, data) {
     if (entity === 'type' || entity === 'level1') {
         return {
@@ -495,10 +508,11 @@ function buildInsertData(entity, data) {
     }
 
     if (entity === 'specialty' || entity === 'level3') {
+        const label = data.name || data.label_de;
         return {
             level2_id: data.level2_id || data.area_id,
-            slug: data.slug,
-            label_de: data.name || data.label_de,
+            slug: data.slug || generateSlug(label),
+            label_de: label,
             label_en: data.label_en,
             label_fr: data.label_fr,
             label_it: data.label_it,
@@ -508,10 +522,11 @@ function buildInsertData(entity, data) {
     }
 
     if (entity === 'focus' || entity === 'level4') {
+        const label = data.name || data.label_de;
         return {
             level3_id: data.level3_id || data.specialty_id,
-            slug: data.slug,
-            label_de: data.name || data.label_de,
+            slug: data.slug || generateSlug(label),
+            label_de: label,
             label_en: data.label_en,
             label_fr: data.label_fr,
             label_it: data.label_it,

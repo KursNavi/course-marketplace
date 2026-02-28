@@ -57,7 +57,7 @@ export const Home = ({
     const specs = new Map();
     courses.forEach(c => {
       (c.all_categories || []).forEach(cat => {
-        if (cat.category_type === dbType && cat.category_area === activeArea && cat.category_specialty) {
+        if (cat.category_type === dbType && cat.category_area === activeArea && (cat.category_specialty || cat.category_specialty_label)) {
           const label = cat.category_specialty_label || cat.category_specialty;
           if (!specs.has(label)) {
             specs.set(label, { label, slug: cat.category_specialty, hasFocuses: !!cat.category_focus });

@@ -253,7 +253,7 @@ const SearchPageView = ({
                 c.all_categories.forEach(cat => {
                     const typeMatch = !dbSearchType || cat.category_type === dbSearchType;
                     const areaMatch = !searchArea || cat.category_area === searchArea;
-                    if (typeMatch && areaMatch && cat.category_specialty) {
+                    if (typeMatch && areaMatch && (cat.category_specialty || cat.category_specialty_label)) {
                         // Use label if available, fallback to slug
                         specialties.push(cat.category_specialty_label || cat.category_specialty);
                     }
@@ -274,7 +274,7 @@ const SearchPageView = ({
                     const specMatch = !searchSpecialty ||
                         cat.category_specialty_label === searchSpecialty ||
                         cat.category_specialty === searchSpecialty;
-                    if (typeMatch && areaMatch && specMatch && cat.category_focus) {
+                    if (typeMatch && areaMatch && specMatch && (cat.category_focus || cat.category_focus_label)) {
                         // Use label if available, fallback to slug
                         focuses.push(cat.category_focus_label || cat.category_focus);
                     }
