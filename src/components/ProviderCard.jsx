@@ -48,7 +48,7 @@ export default function ProviderCard({ provider, onClick }) {
               <img
                 src={logoUrl}
                 alt={`${name} Logo`}
-                className="w-16 h-16 rounded-xl object-cover border border-gray-100"
+                className="w-16 h-16 rounded-xl object-contain bg-white border border-gray-100 p-1"
               />
             ) : (
               <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-orange-100 to-orange-50 flex items-center justify-center">

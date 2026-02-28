@@ -250,7 +250,7 @@ export default function ProviderProfilePage({ t, setView, setSelectedCourse }) {
                 <img
                   src={provider.logoUrl}
                   alt={`${provider.name} Logo`}
-                  className="w-24 h-24 md:w-32 md:h-32 rounded-2xl object-cover border border-gray-100"
+                  className="w-24 h-24 md:w-32 md:h-32 rounded-2xl object-contain bg-white border border-gray-100 p-1"
                 />
               ) : (
                 <div className="w-24 h-24 md:w-32 md:h-32 rounded-2xl bg-gradient-to-br from-orange-100 to-orange-50 flex items-center justify-center">

@@ -1004,7 +1004,7 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
                   <img
                     src={profileData.logo_url}
                     alt="Logo"
-                    className="w-20 h-20 rounded-xl object-cover border border-gray-200"
+                    className="w-20 h-20 rounded-xl object-contain bg-white border border-gray-200 p-1"
                   />
                 ) : (
                   <div className="w-20 h-20 rounded-xl bg-gray-100 flex items-center justify-center">
