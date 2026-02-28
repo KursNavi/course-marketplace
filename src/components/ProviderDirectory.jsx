@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Search, MapPin, Filter, CheckCircle, Loader, ChevronDown, X } from 'lucide-react';
-import { SWISS_CANTONS } from '../lib/constants';
+import { SWISS_CANTONS, SEGMENT_CONFIG } from '../lib/constants';
 import { BASE_URL } from '../lib/siteConfig';
 import { useTaxonomy } from '../hooks/useTaxonomy';
 import ProviderCard from './ProviderCard';
@@ -10,8 +10,8 @@ import ProviderCard from './ProviderCard';
  * Public directory listing of Pro+ providers with published profiles
  *
  * Features:
- * - Filter by canton, category (type/area), text search
- * - Categories derived from provider's courses
+ * - Filter by canton, category (type/area/specialty/focus), text search
+ * - Categories derived from provider's courses (new taxonomy schema)
  * - SEO: Meta tags, canonical URL, schema.org
  * - Pagination/Load more
  */
@@ -21,16 +21,18 @@ export default function ProviderDirectory({ t, setView }) {
   const [error, setError] = useState(null);
 
   // Taxonomy for category filters
-  const { types, areas, getTypeLabel, getAreaLabel, loading: taxonomyLoading } = useTaxonomy();
+  const { types, areas, specialties, focuses, loading: taxonomyLoading } = useTaxonomy();
 
   // Filters
   const [selectedCanton, setSelectedCanton] = useState('');
-  const [selectedType, setSelectedType] = useState('');
-  const [selectedArea, setSelectedArea] = useState('');
+  const [selectedType, setSelectedType] = useState('');   // level1 id
+  const [selectedArea, setSelectedArea] = useState('');   // level2 id
+  const [selectedSpecialty, setSelectedSpecialty] = useState(''); // level3 id
+  const [selectedFocus, setSelectedFocus] = useState('');  // level4 id
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchInput, setSearchInput] = useState(''); // Controlled input
+  const [searchInput, setSearchInput] = useState('');
+
   const [verifiedOnly, setVerifiedOnly] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
 
   // Pagination
   const [offset, setOffset] = useState(0);
@@ -38,9 +40,15 @@ export default function ProviderDirectory({ t, setView }) {
   const [totalCount, setTotalCount] = useState(0);
   const LIMIT = 24;
 
-  // Get areas for selected type
+  // Derived filter lists (cascade)
   const filteredAreas = selectedType
     ? areas.filter(a => a.type_id === selectedType)
+    : [];
+  const filteredSpecialties = selectedArea
+    ? specialties.filter(s => s.area_id === selectedArea)
+    : [];
+  const filteredFocuses = selectedSpecialty
+    ? focuses.filter(f => f.specialty_id === selectedSpecialty)
     : [];
 
   // Fetch providers from API
@@ -54,9 +62,12 @@ export default function ProviderDirectory({ t, setView }) {
         offset: currentOffset.toString()
       });
 
+      // New taxonomy IDs (used by the updated API)
+      if (selectedType) params.append('level1_id', selectedType);
+      if (selectedArea) params.append('level2_id', selectedArea);
+      if (selectedSpecialty) params.append('level3_id', selectedSpecialty);
+      if (selectedFocus) params.append('level4_id', selectedFocus);
       if (selectedCanton) params.append('canton', selectedCanton);
-      if (selectedType) params.append('category_type', selectedType);
-      if (selectedArea) params.append('category_area', selectedArea);
       if (searchQuery) params.append('q', searchQuery);
       if (verifiedOnly) params.append('verified', 'true');
 
@@ -84,12 +95,12 @@ export default function ProviderDirectory({ t, setView }) {
     } finally {
       setLoading(false);
     }
-  }, [offset, selectedCanton, selectedType, selectedArea, searchQuery, verifiedOnly]);
+  }, [offset, selectedCanton, selectedType, selectedArea, selectedSpecialty, selectedFocus, searchQuery, verifiedOnly]);
 
   // Initial fetch and on filter change
   useEffect(() => {
     fetchProviders(true);
-  }, [selectedCanton, selectedType, selectedArea, searchQuery, verifiedOnly]);
+  }, [selectedCanton, selectedType, selectedArea, selectedSpecialty, selectedFocus, searchQuery, verifiedOnly]);
 
   // Handle search submit
   const handleSearchSubmit = (e) => {
@@ -97,10 +108,10 @@ export default function ProviderDirectory({ t, setView }) {
     setSearchQuery(searchInput.trim());
   };
 
-  // Reset area when type changes
-  useEffect(() => {
-    setSelectedArea('');
-  }, [selectedType]);
+  // Cascade resets
+  useEffect(() => { setSelectedArea(''); }, [selectedType]);
+  useEffect(() => { setSelectedSpecialty(''); }, [selectedArea]);
+  useEffect(() => { setSelectedFocus(''); }, [selectedSpecialty]);
 
   // SEO: Set meta tags
   useEffect(() => {
@@ -168,6 +179,8 @@ export default function ProviderDirectory({ t, setView }) {
     setSelectedCanton('');
     setSelectedType('');
     setSelectedArea('');
+    setSelectedSpecialty('');
+    setSelectedFocus('');
     setSearchQuery('');
     setSearchInput('');
     setVerifiedOnly(false);
@@ -177,6 +190,8 @@ export default function ProviderDirectory({ t, setView }) {
     (selectedCanton ? 1 : 0) +
     (selectedType ? 1 : 0) +
     (selectedArea ? 1 : 0) +
+    (selectedSpecialty ? 1 : 0) +
+    (selectedFocus ? 1 : 0) +
     (searchQuery ? 1 : 0) +
     (verifiedOnly ? 1 : 0);
 
@@ -184,7 +199,7 @@ export default function ProviderDirectory({ t, setView }) {
     <div className="min-h-screen bg-beige pt-24 pb-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         {/* Header */}
-        <div className="text-center mb-10">
+        <div className="text-center mb-8">
           <h1 className="text-3xl md:text-4xl font-heading font-bold text-dark mb-4">
             Kursanbieter entdecken
           </h1>
@@ -194,7 +209,7 @@ export default function ProviderDirectory({ t, setView }) {
         </div>
 
         {/* Search Bar */}
-        <form onSubmit={handleSearchSubmit} className="mb-6">
+        <form onSubmit={handleSearchSubmit} className="mb-8">
           <div className="relative max-w-2xl mx-auto">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
@@ -225,35 +240,80 @@ export default function ProviderDirectory({ t, setView }) {
           )}
         </form>
 
+        {/* Top-level Category Buttons (Oberkategorien) */}
+        {!taxonomyLoading && types.length > 0 && (
+          <div className="flex flex-wrap gap-3 justify-center mb-6">
+            {types.map(type => {
+              const config = SEGMENT_CONFIG[type.slug] || SEGMENT_CONFIG.privat;
+              const Icon = config.icon;
+              const isSelected = selectedType === type.id;
+              return (
+                <button
+                  key={type.id}
+                  onClick={() => setSelectedType(isSelected ? '' : type.id)}
+                  className={`flex items-center gap-2.5 px-5 py-3 rounded-xl border-2 font-medium text-sm transition-all shadow-sm ${
+                    isSelected
+                      ? `${config.bgSolid} text-white border-transparent shadow-md`
+                      : `bg-white ${config.text} ${config.border} ${config.hoverBg}`
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  <span>{type.label_de}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+
         {/* Filter Bar */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-8">
-          <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center flex-wrap">
-            {/* Category Type Filter */}
-            <div className="relative w-full sm:w-auto">
-              <select
-                value={selectedType}
-                onChange={(e) => setSelectedType(e.target.value)}
-                className="w-full sm:w-48 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm appearance-none cursor-pointer focus:outline-none focus:border-orange-400"
-              >
-                <option value="">Alle Kategorien</option>
-                {types.map(type => (
-                  <option key={type.id} value={type.id}>{type.label_de}</option>
-                ))}
-              </select>
-              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-            </div>
+          <div className="flex flex-col lg:flex-row gap-3 items-start lg:items-center flex-wrap">
 
-            {/* Category Area Filter (dependent on Type) */}
+            {/* Level 2: Area (dependent on type) */}
             {selectedType && filteredAreas.length > 0 && (
               <div className="relative w-full sm:w-auto">
                 <select
                   value={selectedArea}
                   onChange={(e) => setSelectedArea(e.target.value)}
-                  className="w-full sm:w-48 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm appearance-none cursor-pointer focus:outline-none focus:border-orange-400"
+                  className="w-full sm:w-52 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm appearance-none cursor-pointer focus:outline-none focus:border-orange-400"
                 >
                   <option value="">Alle Bereiche</option>
                   {filteredAreas.map(area => (
                     <option key={area.id} value={area.id}>{area.label_de}</option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+              </div>
+            )}
+
+            {/* Level 3: Specialty (dependent on area) */}
+            {selectedArea && filteredSpecialties.length > 0 && (
+              <div className="relative w-full sm:w-auto">
+                <select
+                  value={selectedSpecialty}
+                  onChange={(e) => setSelectedSpecialty(e.target.value)}
+                  className="w-full sm:w-52 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm appearance-none cursor-pointer focus:outline-none focus:border-orange-400"
+                >
+                  <option value="">Alle Fachbereiche</option>
+                  {filteredSpecialties.map(spec => (
+                    <option key={spec.id} value={spec.id}>{spec.label_de}</option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+              </div>
+            )}
+
+            {/* Level 4: Focus (dependent on specialty) */}
+            {selectedSpecialty && filteredFocuses.length > 0 && (
+              <div className="relative w-full sm:w-auto">
+                <select
+                  value={selectedFocus}
+                  onChange={(e) => setSelectedFocus(e.target.value)}
+                  className="w-full sm:w-52 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm appearance-none cursor-pointer focus:outline-none focus:border-orange-400"
+                >
+                  <option value="">Alle Schwerpunkte</option>
+                  {filteredFocuses.map(focus => (
+                    <option key={focus.id} value={focus.id}>{focus.label_de}</option>
                   ))}
                 </select>
                 <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
@@ -265,7 +325,7 @@ export default function ProviderDirectory({ t, setView }) {
               <select
                 value={selectedCanton}
                 onChange={(e) => setSelectedCanton(e.target.value)}
-                className="w-full sm:w-48 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm appearance-none cursor-pointer focus:outline-none focus:border-orange-400"
+                className="w-full sm:w-44 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm appearance-none cursor-pointer focus:outline-none focus:border-orange-400"
               >
                 <option value="">Alle Kantone</option>
                 {SWISS_CANTONS.filter(c => c !== 'Online' && c !== 'Ausland').map(canton => (

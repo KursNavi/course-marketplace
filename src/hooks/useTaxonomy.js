@@ -11,6 +11,24 @@ const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 let courseCountsCache = null;
 let courseCountsCacheTimestamp = 0;
 
+// localStorage key for persistent taxonomy fallback
+const LS_TAXONOMY_KEY = 'kursnavi_taxonomy_cache';
+
+// Save taxonomy to localStorage so fallback stays current without manual constants.js updates
+function saveTaxonomyToLocalStorage(data) {
+    try {
+        localStorage.setItem(LS_TAXONOMY_KEY, JSON.stringify(data));
+    } catch { /* quota exceeded or SSR – ignore */ }
+}
+
+// Load taxonomy from localStorage (returns null if not available)
+function loadTaxonomyFromLocalStorage() {
+    try {
+        const raw = localStorage.getItem(LS_TAXONOMY_KEY);
+        return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+}
+
 /**
  * Hook to load taxonomy from database (taxonomy_level1/2/3/4 tables)
  * Returns the taxonomy in a normalized format for components
@@ -209,6 +227,9 @@ export function useTaxonomy() {
         };
         cacheTimestamp = Date.now();
 
+        // Persist to localStorage so the fallback stays current automatically
+        saveTaxonomyToLocalStorage(taxonomyCache);
+
         setTaxonomy(builtTaxonomy);
         setTypes(mappedTypes);
         setAreas(mappedAreas);
@@ -218,9 +239,24 @@ export function useTaxonomy() {
         setError(null);
     };
 
-    // Fallback to constants.js
+    // Fallback: try localStorage first (auto-updated from last DB load),
+    // then fall back to hardcoded constants.js as last resort
     const loadConstantsFallback = () => {
-        console.warn('Using fallback taxonomy from constants.js');
+        const cached = loadTaxonomyFromLocalStorage();
+        if (cached?.taxonomy && cached?.types?.length) {
+            console.warn('Using fallback taxonomy from localStorage cache');
+            taxonomyCache = cached;
+            cacheTimestamp = Date.now();
+            setTaxonomy(cached.taxonomy);
+            setTypes(cached.types);
+            setAreas(cached.areas || []);
+            setSpecialties(cached.specialties || []);
+            setFocuses(cached.focuses || []);
+            setSchemaVersion(cached.schemaVersion || 'consolidated');
+            return;
+        }
+
+        console.warn('Using fallback taxonomy from constants.js (no localStorage cache)');
 
         const fallbackTypes = Object.entries(CATEGORY_TYPES).map(([id, labels], idx) => ({
             id,

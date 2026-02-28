@@ -238,31 +238,90 @@ export default async function handler(req, res) {
 
       const {
         canton, city, verified,
-        category_type, category_area,
+        level1_id, level2_id, level3_id, level4_id,
         q: searchQuery,
         limit: limitParam, offset: offsetParam
       } = req.query;
       const limit = Math.min(parseInt(limitParam) || 50, 100);
       const offset = parseInt(offsetParam) || 0;
 
-      // Step 1: If category or search filter is active, find matching provider IDs via courses first
+      // Step 1: If category or search filter is active, find matching provider IDs
       let filteredProviderIds = null;
 
-      if (category_type || category_area || searchQuery) {
+      if (level1_id || level2_id || level3_id || level4_id || searchQuery) {
+        let matchingCourseIds = null;
+
+        // --- Category filtering via course_category_assignments (new taxonomy schema) ---
+        if (level1_id || level2_id || level3_id || level4_id) {
+          let targetLevel3Ids = null;
+
+          if (level3_id) {
+            targetLevel3Ids = [level3_id];
+          } else if (level2_id) {
+            const { data: lvl3s } = await supabase
+              .from('taxonomy_level3')
+              .select('id')
+              .eq('level2_id', level2_id);
+            targetLevel3Ids = (lvl3s || []).map(s => s.id);
+          } else if (level1_id) {
+            const { data: lvl2s } = await supabase
+              .from('taxonomy_level2')
+              .select('id')
+              .eq('level1_id', level1_id);
+            const lvl2Ids = (lvl2s || []).map(a => a.id);
+            if (lvl2Ids.length > 0) {
+              const { data: lvl3s } = await supabase
+                .from('taxonomy_level3')
+                .select('id')
+                .in('level2_id', lvl2Ids);
+              targetLevel3Ids = (lvl3s || []).map(s => s.id);
+            } else {
+              targetLevel3Ids = [];
+            }
+          }
+
+          if (targetLevel3Ids !== null && targetLevel3Ids.length === 0) {
+            return res.status(200).json({
+              providers: [],
+              pagination: { total: 0, limit, offset, hasMore: false },
+              filters: { canton: canton || null, verified: verified === 'true', q: searchQuery || null }
+            });
+          }
+
+          let assignmentQuery = supabase
+            .from('course_category_assignments')
+            .select('course_id');
+          if (targetLevel3Ids !== null) {
+            assignmentQuery = assignmentQuery.in('level3_id', targetLevel3Ids);
+          }
+          if (level4_id) {
+            assignmentQuery = assignmentQuery.eq('level4_id', level4_id);
+          }
+
+          const { data: assignments, error: assignErr } = await assignmentQuery;
+          if (assignErr) throw assignErr;
+
+          matchingCourseIds = [...new Set((assignments || []).map(a => a.course_id))];
+
+          if (matchingCourseIds.length === 0) {
+            return res.status(200).json({
+              providers: [],
+              pagination: { total: 0, limit, offset, hasMore: false },
+              filters: { canton: canton || null, verified: verified === 'true', q: searchQuery || null }
+            });
+          }
+        }
+
+        // Build course query (optionally restricted to matched course IDs)
         let courseQuery = supabase
           .from('courses')
           .select('user_id')
           .or('status.eq.published,status.is.null');
 
-        // Category filters
-        if (category_type) {
-          courseQuery = courseQuery.eq('category_type', category_type);
-        }
-        if (category_area) {
-          courseQuery = courseQuery.eq('category_area', category_area);
+        if (matchingCourseIds !== null) {
+          courseQuery = courseQuery.in('id', matchingCourseIds);
         }
 
-        // Text search in course title and description
         if (searchQuery) {
           const searchTerm = `%${searchQuery}%`;
           courseQuery = courseQuery.or(`title.ilike.${searchTerm},description.ilike.${searchTerm}`);
@@ -271,22 +330,13 @@ export default async function handler(req, res) {
         const { data: matchingCourses, error: courseError } = await courseQuery;
         if (courseError) throw courseError;
 
-        // Extract unique provider IDs
         filteredProviderIds = [...new Set((matchingCourses || []).map(c => c.user_id))];
 
-        // If no courses match, return empty result
         if (filteredProviderIds.length === 0) {
           return res.status(200).json({
             providers: [],
             pagination: { total: 0, limit, offset, hasMore: false },
-            filters: {
-              canton: canton || null,
-              city: city || null,
-              verified: verified === 'true',
-              category_type: category_type || null,
-              category_area: category_area || null,
-              q: searchQuery || null
-            }
+            filters: { canton: canton || null, verified: verified === 'true', q: searchQuery || null }
           });
         }
       }
@@ -372,8 +422,10 @@ export default async function handler(req, res) {
           canton: canton || null,
           city: city || null,
           verified: verified === 'true',
-          category_type: category_type || null,
-          category_area: category_area || null,
+          level1_id: level1_id || null,
+          level2_id: level2_id || null,
+          level3_id: level3_id || null,
+          level4_id: level4_id || null,
           q: searchQuery || null
         }
       });

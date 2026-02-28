@@ -219,10 +219,17 @@ export const NEW_TAXONOMY = {
     sport_fitness_beruf: {
       label: { de: "Sport & Fitness (Berufsausbildung)", en: "Sports & Fitness (Pro)", fr: "Sport & Fitness (Pro)", it: "Sport & Fitness (Pro)" },
       specialties: [
-        "Fitness Trainer Ausbildung", "Personal Trainer Ausbildung", "Group Fitness Instructor", 
-        "Functional Training", "Workout & Body Toning", "Rücken & Core Trainer", 
-        "Outdoor & Bootcamp Coach", "Sportmanagement", "Sonstiges Sport (Profi)"
-      ]
+        "Fitness-Trainer-Ausbildung", "Personal-Trainer-Ausbildung", "Group-Fitness / Kursleitung",
+        "Trainingsmethoden & Spezialisierungen", "Mind-Body (Yoga & Pilates)", "Ernährung & Coaching",
+        "Zertifikate & Prüfungsvorbereitung", "Business & Selbstständigkeit"
+      ],
+      specialtyFocuses: {
+        "Fitness-Trainer-Ausbildung": ["Basis-Ausbildung", "Advanced / Spezialisierung", "Diplom-Lehrgang"],
+        "Personal-Trainer-Ausbildung": ["Grundausbildung", "Spezialisierung (Athletik, Ernährung)"],
+        "Group-Fitness / Kursleitung": ["Gruppenfitness-Grundlagen", "Kursformate (Step, Aerobic, Toning, Cardio-Dance)"],
+        "Trainingsmethoden & Spezialisierungen": ["Kraft- & Ausdauertraining", "Rücken- & Core-Training (inkl. Antara)", "Functional Training", "Kampfsport- & Cardio-Formate"],
+        "Ernährung & Coaching": ["Ausbildung (Basiskurse)", "Workshop", "Sporternährung (CAS, Seminare)"]
+      }
     },
     gesundheit_beruf: {
       label: { de: "Gesundheit, Pflege & Prävention", en: "Health, Care & Prevention", fr: "Santé, Soins & Prévention", it: "Salute, Cura & Prevenzione" },
