@@ -181,6 +181,15 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
           )}
         </div>
 
+        {/* Fehler-Hinweis */}
+        <p className="text-center text-sm text-gray-400 mt-4 mb-2">
+          Fehler gefunden? Schreibe uns unter{' '}
+          <a href="mailto:info@kursnavi.ch" className="underline hover:text-gray-600 transition-colors">
+            info@kursnavi.ch
+          </a>{' '}
+          — wir freuen uns über dein Feedback.
+        </p>
+
         {/* CTA: Passende Kurse */}
         <div className={`${theme.bgLight} rounded-2xl p-8 text-center mt-8`}>
           <h3 className={`text-xl font-bold ${theme.text} mb-2`}>
