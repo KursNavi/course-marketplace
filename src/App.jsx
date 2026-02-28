@@ -868,6 +868,26 @@ export default function KursNaviPro() {  // 1. Initial State Logic
                 if (ev.canton) courseLocations.push(ev.canton);
             });
         }
+        // Include cantons from the address field (comma-separated list like "Bern, Solothurn, Zürich")
+        if (course.address) {
+            course.address.split(',').forEach(part => {
+                const trimmed = part.trim();
+                if (trimmed) courseLocations.push(trimmed);
+            });
+        }
+        // Include additional_locations from instructor profile
+        if (course.additional_locations) {
+            try {
+                const locs = typeof course.additional_locations === 'string'
+                    ? JSON.parse(course.additional_locations)
+                    : course.additional_locations;
+                if (Array.isArray(locs)) {
+                    locs.forEach(loc => {
+                        if (loc.canton) courseLocations.push(loc.canton);
+                    });
+                }
+            } catch (e) { /* ignore parse errors */ }
+        }
 
         // Online courses are available everywhere - show them when any canton is selected
         const isOnlineCourse = courseLocations.includes('Online');
