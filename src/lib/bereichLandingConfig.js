@@ -30,14 +30,14 @@ export const BEREICH_LANDING_CONFIG = {
 
     // Szenario-Ansprachen für die Hero-Section
     scenarios: [
-      { icon: '🎓', label: { de: 'Berufseinstieg' }, text: { de: 'Du willst Fitnesstrainer werden? Starte mit der Basis-Ausbildung.' } },
-      { icon: '🔄', label: { de: 'Quereinstieg' }, text: { de: 'Quereinstieg in die Fitnessbranche? Wir zeigen dir den Weg.' } },
-      { icon: '📈', label: { de: 'Weiterbildung' }, text: { de: 'Schon Trainer? Spezialisiere dich in Functional Training, Ernährung oder Personal Training.' } },
-      { icon: '🏆', label: { de: 'Diplom & Aufstieg' }, text: { de: 'Bereit für den nächsten Schritt? Diplom-Lehrgang und eidg. Fachausweis.' } },
-      { icon: '⚡', label: { de: 'Nebenerwerb' }, text: { de: 'Deine Leidenschaft zum Beruf machen — auch nebenberuflich.' } },
-      { icon: '🏢', label: { de: 'Selbstständigkeit' }, text: { de: 'Eigenes Studio? Lerne alles über Business, Recht und Versicherung.' } },
-      { icon: '🎯', label: { de: 'Spezialisierung' }, text: { de: 'Rückentraining, Antara®, Kampfsport — finde deine Nische.' } },
-      { icon: '✅', label: { de: 'Zertifizierung' }, text: { de: 'Qualitop, QualiCert, eidg. FA — welches Zertifikat passt zu dir?' } },
+      { slug: 'berufseinstieg', icon: '🎓', label: { de: 'Berufseinstieg' }, text: { de: 'Du willst Fitnesstrainer werden? Starte mit der Basis-Ausbildung.' }, searchParams: { spec: 'Fitness-Trainer-Ausbildung', focus: 'Basis-Ausbildung' } },
+      { slug: 'quereinstieg', icon: '🔄', label: { de: 'Quereinstieg' }, text: { de: 'Quereinstieg in die Fitnessbranche? Wir zeigen dir den Weg.' }, searchParams: { spec: 'Fitness-Trainer-Ausbildung' } },
+      { slug: 'weiterbildung', icon: '📈', label: { de: 'Weiterbildung' }, text: { de: 'Schon Trainer? Spezialisiere dich in Functional Training, Ernährung oder Personal Training.' }, searchParams: { spec: 'Trainingsmethoden & Spezialisierungen' } },
+      { slug: 'diplom-aufstieg', icon: '🏆', label: { de: 'Diplom & Aufstieg' }, text: { de: 'Bereit für den nächsten Schritt? Diplom-Lehrgang und eidg. Fachausweis.' }, searchParams: { spec: 'Zertifikate & Prüfungsvorbereitung' } },
+      { slug: 'nebenerwerb', icon: '⚡', label: { de: 'Nebenerwerb' }, text: { de: 'Deine Leidenschaft zum Beruf machen — auch nebenberuflich.' }, searchParams: { spec: 'Group-Fitness / Kursleitung' } },
+      { slug: 'selbststaendigkeit', icon: '🏢', label: { de: 'Selbstständigkeit' }, text: { de: 'Eigenes Studio? Lerne alles über Business, Recht und Versicherung.' }, searchParams: { spec: 'Business & Selbstständigkeit' } },
+      { slug: 'spezialisierung', icon: '🎯', label: { de: 'Spezialisierung' }, text: { de: 'Rückentraining, Antara®, Kampfsport — finde deine Nische.' }, searchParams: { spec: 'Trainingsmethoden & Spezialisierungen' } },
+      { slug: 'zertifizierung', icon: '✅', label: { de: 'Zertifizierung' }, text: { de: 'Qualitop, QualiCert, eidg. FA — welches Zertifikat passt zu dir?' }, searchParams: { spec: 'Zertifikate & Prüfungsvorbereitung' } },
     ],
 
     // L3 Specialty descriptions
@@ -142,4 +142,10 @@ export const getBereichByAreaSlug = (areaSlug) => {
 /** URL für eine Bereichs-Landingpage */
 export const getBereichUrl = (config) => {
   return `/bereich/${config.segment}/${config.slug}`;
+};
+
+/** Szenario anhand Bereich-Config + Szenario-Slug finden */
+export const findSzenario = (bereichConfig, szenarioSlug) => {
+  if (!bereichConfig?.scenarios) return null;
+  return bereichConfig.scenarios.find(s => s.slug === szenarioSlug) || null;
 };
