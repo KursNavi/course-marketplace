@@ -311,11 +311,11 @@ export const Home = ({
             <div className="flex flex-col md:flex-row gap-3 relative z-50">
                 
                 {/* NEW 3-LEVEL CATEGORY DROPDOWN */}
-                <div className="flex-1 bg-white rounded-xl relative" ref={catMenuRef}>
-                    <button 
+                <div className="flex-1 bg-white rounded-xl" ref={catMenuRef}>
+                    <button
                         type="button"
                         onClick={() => setCatMenuOpen(!catMenuOpen)}
-                        className="w-full px-4 py-3 flex items-center justify-between text-gray-700 font-medium hover:bg-gray-50 rounded-xl transition-colors"
+                        className={`w-full px-4 py-3 flex items-center justify-between font-medium rounded-xl transition-colors ${catMenuOpen ? 'bg-primary/10 text-primary ring-2 ring-primary/30' : 'text-gray-700 hover:bg-gray-50'}`}
                     >
                         <span className="flex items-center">
                             <LayoutGrid className="w-4 h-4 mr-2" aria-hidden="true" />
@@ -331,7 +331,7 @@ export const Home = ({
                             : activeArea ? 'specialty'
                             : 'area';
                         return (
-                        <div className="absolute top-full left-0 mt-2 w-[calc(100vw-2rem)] md:w-[1000px] bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden z-50 text-left">
+                        <div className="absolute top-full left-0 right-0 mt-2 w-[calc(100vw-2rem)] md:w-auto bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden z-50 text-left">
 
                             {/* TOP ROW: SEGMENT ICON TABS */}
                             <div className="flex border-b border-gray-200 bg-gray-50">
@@ -375,8 +375,8 @@ export const Home = ({
                             {/* CONTENT ROWS */}
                             <div className="flex h-[400px]">
 
-                            {/* SPALTE 1: BEREICH / Themenwelt – fixed width */}
-                            <div className={`${mobileStep === 'area' ? '' : 'hidden md:block'} w-full md:w-[230px] md:shrink-0 border-r border-gray-100 py-2 overflow-y-auto bg-gray-50`}>
+                            {/* SPALTE 1: BEREICH / Themenwelt */}
+                            <div className={`${mobileStep === 'area' ? '' : 'hidden md:block'} w-full md:w-1/3 border-r border-gray-100 py-2 overflow-y-auto bg-gray-50`}>
                                 <div className="px-4 py-2 text-xs font-bold text-gray-400 uppercase">{t.lbl_area}</div>
                                 {visibleAreas.length > 0 ? (
                                     visibleAreas.map(areaKey => (
@@ -401,8 +401,8 @@ export const Home = ({
                                 )}
                             </div>
 
-                            {/* SPALTE 2: SPEZIALGEBIET / Fachgebiet – fixed width */}
-                            <div className={`${mobileStep === 'specialty' ? '' : 'hidden md:block'} w-full md:w-[270px] md:shrink-0 border-r border-gray-100 py-2 overflow-y-auto bg-gray-50/50`}>
+                            {/* SPALTE 2: SPEZIALGEBIET / Fachgebiet */}
+                            <div className={`${mobileStep === 'specialty' ? '' : 'hidden md:block'} w-full md:w-1/3 border-r border-gray-100 py-2 overflow-y-auto bg-gray-50/50`}>
                                 <div className="px-4 py-2 text-xs font-bold text-gray-400 uppercase">{t.lbl_specialty}</div>
                                 {visibleSpecialties.length > 0 ? (
                                     visibleSpecialties.map(spec => (
@@ -432,8 +432,8 @@ export const Home = ({
                                 )}
                             </div>
 
-                            {/* SPALTE 3: FOKUS – always present, fills remaining space */}
-                            <div className={`${mobileStep === 'fokus' ? '' : 'hidden md:block'} w-full md:flex-1 py-2 overflow-y-auto`}>
+                            {/* SPALTE 3: FOKUS */}
+                            <div className={`${mobileStep === 'fokus' ? '' : 'hidden md:block'} w-full md:w-1/3 py-2 overflow-y-auto`}>
                                 {visibleFocuses.length > 0 ? (
                                     <>
                                         <div className="px-4 py-2 text-xs font-bold text-gray-400 uppercase">{t.lbl_focus || 'Fokus'}</div>
