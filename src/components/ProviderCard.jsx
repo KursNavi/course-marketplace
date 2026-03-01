@@ -9,7 +9,7 @@ import { MapPin, CheckCircle, Star, BookOpen } from 'lucide-react';
  * - provider: Provider data object
  * - onClick: Click handler for navigation
  */
-export default function ProviderCard({ provider, onClick }) {
+export default function ProviderCard({ provider, onClick, segmentConfig }) {
   const {
     name,
     slug,
@@ -22,18 +22,24 @@ export default function ProviderCard({ provider, onClick }) {
     tier
   } = provider;
 
+  // Segment-aware colors with orange fallback
+  const accentText = segmentConfig?.text || 'text-orange-500';
+  const accentBgLight = segmentConfig?.bgLight || 'bg-orange-50';
+  const accentBorderLight = segmentConfig?.borderLight || 'border-orange-200';
+  const accentGradient = segmentConfig?.gradient || 'from-orange-500/70 to-orange-400/90';
+
   return (
     <div
       onClick={() => onClick?.(slug)}
       className={`
         bg-white rounded-xl shadow-sm border overflow-hidden cursor-pointer
         transition-all duration-300 hover:shadow-xl hover:-translate-y-1
-        ${isFeatured ? 'border-orange-200 ring-2 ring-orange-100' : 'border-gray-100'}
+        ${isFeatured ? `${accentBorderLight} ring-2 ring-current/10` : 'border-gray-100'}
       `}
     >
       {/* Featured Badge */}
       {isFeatured && (
-        <div className="bg-gradient-to-r from-orange-500 to-orange-400 text-white text-xs font-bold px-3 py-1 text-center">
+        <div className={`bg-gradient-to-r ${accentGradient} text-white text-xs font-bold px-3 py-1 text-center`}>
           <Star className="w-3 h-3 inline mr-1" />
           Featured Anbieter
         </div>
@@ -51,8 +57,8 @@ export default function ProviderCard({ provider, onClick }) {
                 className="w-16 h-16 rounded-xl object-contain bg-white border border-gray-100 p-1"
               />
             ) : (
-              <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-orange-100 to-orange-50 flex items-center justify-center">
-                <span className="text-2xl font-bold text-orange-400">
+              <div className={`w-16 h-16 rounded-xl ${accentBgLight} flex items-center justify-center`}>
+                <span className={`text-2xl font-bold ${accentText}`}>
                   {name?.charAt(0)?.toUpperCase() || 'A'}
                 </span>
               </div>
@@ -99,7 +105,7 @@ export default function ProviderCard({ provider, onClick }) {
             {courseCount} {courseCount === 1 ? 'Kurs' : 'Kurse'}
           </span>
 
-          <span className="text-sm font-medium text-orange-500 group-hover:text-orange-600">
+          <span className={`text-sm font-medium ${accentText}`}>
             Profil ansehen &rarr;
           </span>
         </div>

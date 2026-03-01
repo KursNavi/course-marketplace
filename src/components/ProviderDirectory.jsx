@@ -34,6 +34,26 @@ export default function ProviderDirectory({ t, setView }) {
 
   const [verifiedOnly, setVerifiedOnly] = useState(false);
 
+  // Derive active segment config for visual theming
+  const activeType = types.find(tp => tp.id === selectedType);
+  const segmentConfig = SEGMENT_CONFIG[activeType?.slug] || SEGMENT_CONFIG.privat;
+
+  const INTRO_TEXTS = {
+    professionell: {
+      title: 'Anbieter für berufliche Weiterbildung',
+      subtitle: 'Finden Sie Schulen und Trainer für Fachkurse, Zertifikate und berufliche Qualifikationen in der Schweiz.'
+    },
+    privat: {
+      title: 'Anbieter für Hobby & Freizeit',
+      subtitle: 'Entdecken Sie Kursanbieter für kreative Kurse, Hobbys und persönliche Weiterbildung in der ganzen Schweiz.'
+    },
+    kinder: {
+      title: 'Anbieter für Kinder & Jugendliche',
+      subtitle: 'Finden Sie Anbieter für altersgerechte Kurse, Ferienprogramme und Förderangebote für Kinder und Jugendliche.'
+    }
+  };
+  const introText = INTRO_TEXTS[activeType?.slug] || INTRO_TEXTS.privat;
+
   // Pagination
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(false);
@@ -228,11 +248,11 @@ export default function ProviderDirectory({ t, setView }) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl md:text-4xl font-heading font-bold text-dark mb-4">
-            Kursanbieter entdecken
+          <h1 className={`text-3xl md:text-4xl font-heading font-bold mb-4 ${segmentConfig.text}`}>
+            {introText.title}
           </h1>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Finden Sie verifizierte Kursanbieter für Weiterbildung, Hobbykurse und Kinderprogramme in der ganzen Schweiz.
+            {introText.subtitle}
           </p>
         </div>
 
@@ -245,11 +265,11 @@ export default function ProviderDirectory({ t, setView }) {
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               placeholder="Anbieter suchen (z.B. Yoga, Kochen, Programmieren...)"
-              className="w-full pl-12 pr-24 py-3.5 bg-white border border-gray-200 rounded-xl text-base shadow-sm focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
+              className="w-full pl-12 pr-24 py-3.5 bg-white border border-gray-200 rounded-xl text-base shadow-sm focus:outline-none focus:border-gray-400 focus:ring-2 focus:ring-gray-200"
             />
             <button
               type="submit"
-              className="absolute right-2 top-1/2 -translate-y-1/2 px-4 py-2 bg-orange-500 text-white rounded-lg text-sm font-medium hover:bg-orange-600 transition-colors"
+              className={`absolute right-2 top-1/2 -translate-y-1/2 px-4 py-2 ${segmentConfig.bgSolid} text-white rounded-lg text-sm font-medium transition-colors hover:opacity-90`}
             >
               Suchen
             </button>
@@ -421,6 +441,7 @@ export default function ProviderDirectory({ t, setView }) {
                 key={provider.id}
                 provider={provider}
                 onClick={handleProviderClick}
+                segmentConfig={segmentConfig}
               />
             ))}
           </div>
