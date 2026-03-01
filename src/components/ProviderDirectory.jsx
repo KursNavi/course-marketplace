@@ -116,6 +116,20 @@ export default function ProviderDirectory({ t, setView }) {
   useEffect(() => { setSelectedSpecialty(''); }, [selectedArea]);
   useEffect(() => { setSelectedFocus(''); }, [selectedSpecialty]);
 
+  // Read type from URL param and pre-select category
+  useEffect(() => {
+    if (types.length === 0) return;
+    const params = new URLSearchParams(window.location.search);
+    const typeParam = params.get('type');
+    if (typeParam) {
+      const matched = types.find(t => t.slug === typeParam);
+      if (matched) setSelectedType(matched.id);
+    } else if (!selectedType) {
+      // Default to first type when no URL param (always have a category selected)
+      setSelectedType(types[0].id);
+    }
+  }, [types]);
+
   // SEO: Set meta tags
   useEffect(() => {
     document.title = 'Kursanbieter-Verzeichnis | KursNavi';
@@ -242,19 +256,6 @@ export default function ProviderDirectory({ t, setView }) {
             </p>
           )}
         </form>
-
-        {/* Step Hint */}
-        <div className="flex items-center justify-center gap-4 mb-6 text-sm text-gray-500">
-          <span className="flex items-center gap-1.5">
-            <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-bold ${selectedType ? 'bg-orange-500 text-white' : 'bg-orange-100 text-orange-600'}`}>1</span>
-            Kategorie wählen
-          </span>
-          <span className="text-gray-300">›</span>
-          <span className="flex items-center gap-1.5">
-            <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-bold ${(selectedArea || selectedCanton) ? 'bg-orange-500 text-white' : 'bg-orange-100 text-orange-600'}`}>2</span>
-            Bereich &amp; Kanton verfeinern
-          </span>
-        </div>
 
         {/* Top-level Category Buttons (Oberkategorien) */}
         {!taxonomyLoading && types.length > 0 && (

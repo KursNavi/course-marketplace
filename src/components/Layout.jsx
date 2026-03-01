@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Menu, X, Globe, LogOut, LayoutDashboard, ChevronDown, Mail, ArrowRight, Check, Loader2, Briefcase, Palette, Smile, Shield } from 'lucide-react';
 import { SEGMENT_CONFIG } from '../lib/constants';
 import { MegaMenu, MobileMenuCategory } from './MegaMenu';
@@ -20,6 +20,9 @@ export const Navbar = ({ t, user, lang = 'de', setLang, setView, handleLogout, s
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [langMenuOpen, setLangMenuOpen] = useState(false);
   const [activeSegment, setActiveSegment] = useState(null);
+  const [anbieterMenuOpen, setAnbieterMenuOpen] = useState(false);
+  const [mobileAnbieterOpen, setMobileAnbieterOpen] = useState(false);
+  const anbieterTimeoutRef = useRef(null);
 
   // Detect active segment from URL
   useEffect(() => {
@@ -105,6 +108,17 @@ export const Navbar = ({ t, user, lang = 'de', setLang, setView, handleLogout, s
     window.history.pushState({ view: viewName }, '', url);
   };
 
+  // Navigate to Anbietersuche with a pre-selected category
+  const navToAnbieter = (segmentKey) => {
+    const slugMap = { beruflich: 'professionell', privat_hobby: 'privat', kinder_jugend: 'kinder' };
+    const dbSlug = slugMap[segmentKey] || segmentKey;
+    setAnbieterMenuOpen(false);
+    setMobileMenuOpen(false);
+    setMobileAnbieterOpen(false);
+    window.scrollTo(0, 0);
+    window.history.pushState({ view: 'provider-directory' }, '', `/anbieter?type=${dbSlug}`);
+  };
+
   return (
     <nav className="bg-white/80 backdrop-blur-md border-b border-gray-100 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -136,7 +150,33 @@ export const Navbar = ({ t, user, lang = 'de', setLang, setView, handleLogout, s
               })}
               <button onClick={() => navTo('how-it-works')} className="text-gray-500 hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors font-sans">{t.nav_howitworks}</button>
               <button onClick={() => navTo('blog')} className="text-gray-500 hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors font-sans">{t.nav_news}</button>
-              <button onClick={() => navTo('provider-directory')} className="text-gray-500 hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors font-sans">{t.nav_providers || 'Anbieter'}</button>
+              {/* Anbietersuche Dropdown */}
+              <div
+                className="relative"
+                onMouseEnter={() => { if (anbieterTimeoutRef.current) clearTimeout(anbieterTimeoutRef.current); setAnbieterMenuOpen(true); }}
+                onMouseLeave={() => { anbieterTimeoutRef.current = setTimeout(() => setAnbieterMenuOpen(false), 150); }}
+              >
+                <span className="flex items-center px-3 py-2 rounded-md text-sm font-medium text-gray-500 hover:text-primary transition-colors font-sans cursor-default select-none">
+                  {t.nav_providers || 'Anbietersuche'}
+                  <ChevronDown className={`w-3 h-3 ml-1 transition-transform duration-200 ${anbieterMenuOpen ? 'rotate-180' : ''}`} />
+                </span>
+                {anbieterMenuOpen && (
+                  <div className="absolute left-0 top-full mt-1 w-56 bg-white rounded-xl shadow-2xl border border-gray-100 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                    {segmentButtons.map(({ key, label, Icon, config }) => (
+                      <button
+                        key={key}
+                        onClick={() => navToAnbieter(key)}
+                        className={`w-full text-left px-4 py-3 flex items-center gap-3 ${config.hoverBg} transition-colors`}
+                      >
+                        <div className={`p-1.5 rounded-lg ${config.bgLight}`}>
+                          <Icon className={`w-4 h-4 ${config.text}`} />
+                        </div>
+                        <span className="text-gray-700 text-sm font-medium">{label}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
               <button onClick={() => navTo('teacher-hub')} className="text-orange-600 hover:text-primary px-3 py-2 rounded-md text-sm font-bold transition-colors font-sans">{t.nav_for_providers}</button>
             </div>
           </div>
@@ -210,7 +250,30 @@ export const Navbar = ({ t, user, lang = 'de', setLang, setView, handleLogout, s
             <div className="px-2 space-y-1 mt-2">
             <button onClick={() => navTo('how-it-works')} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-primaryLight hover:text-primary font-sans">{t.nav_howitworks}</button>
             <button onClick={() => navTo('blog')} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-primaryLight hover:text-primary font-sans">{t.nav_news}</button>
-            <button onClick={() => navTo('provider-directory')} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-primaryLight hover:text-primary font-sans">{t.nav_providers || 'Anbieter'}</button>
+            {/* Anbietersuche expandable */}
+            <div>
+              <button
+                onClick={() => setMobileAnbieterOpen(!mobileAnbieterOpen)}
+                className="flex items-center justify-between w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-primaryLight hover:text-primary font-sans"
+              >
+                {t.nav_providers || 'Anbietersuche'}
+                <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${mobileAnbieterOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {mobileAnbieterOpen && (
+                <div className="pl-4 py-1 space-y-1">
+                  {segmentButtons.map(({ key, label, Icon, config }) => (
+                    <button
+                      key={key}
+                      onClick={() => navToAnbieter(key)}
+                      className={`flex items-center gap-2 w-full text-left px-3 py-2 rounded-md text-sm ${config.text} font-medium ${config.hoverBg}`}
+                    >
+                      <Icon className="w-4 h-4" />
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
             <button onClick={() => navTo('teacher-hub')} className="block w-full text-left px-3 py-2 rounded-md text-base font-bold text-orange-600 hover:bg-orange-50 font-sans">{t.nav_for_providers}</button>
             </div>
 
