@@ -1420,8 +1420,8 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                                                 required={idx === 0}
                                             >
                                                 {idx > 0 && <option value="">Bitte wählen...</option>}
-                                                {(types.length > 0 ? types : Object.keys(CATEGORY_TYPES).map(id => ({ id, label_de: CATEGORY_TYPES[id].de }))).map(type => (
-                                                    <option key={type.id} value={type.id}>{type.label_de}</option>
+                                                {(types.length > 0 ? types : Object.keys(CATEGORY_TYPES).map(id => ({ id, slug: id, label_de: CATEGORY_TYPES[id].de }))).map(type => (
+                                                    <option key={type.slug || type.id} value={type.slug || type.id}>{type.label_de}</option>
                                                 ))}
                                             </select>
                                         </div>
