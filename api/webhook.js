@@ -108,8 +108,8 @@ function calculatePayoutEligibleAt(paidAt, eventStartAt, bookingType) {
   const DAYS_MS = 24 * 60 * 60 * 1000;
 
   if (bookingType === 'platform' && eventStartAt) {
-    // Payout after event completion: event_start + 2 days
-    return new Date(new Date(eventStartAt).getTime() + 2 * DAYS_MS);
+    // Payout after event completion: event_start + 7 days (dispute window)
+    return new Date(new Date(eventStartAt).getTime() + 7 * DAYS_MS);
   }
 
   // platform_flex or platform without event: 14 days after payment

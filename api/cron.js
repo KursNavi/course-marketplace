@@ -82,6 +82,7 @@ export default async function handler(req, res) {
       .eq('is_paid', false)
       .eq('status', 'confirmed')
       .is('refunded_at', null)
+      .is('disputed_at', null)
       .lte('payout_eligible_at', nowISO);
 
     if (flexBookings && flexBookings.length > 0) {
@@ -160,6 +161,7 @@ export default async function handler(req, res) {
       .eq('is_paid', false)
       .eq('status', 'confirmed')
       .is('refunded_at', null)
+      .is('disputed_at', null)
       .not('event_id', 'is', null)
       .lte('payout_eligible_at', nowISO);
 

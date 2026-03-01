@@ -633,6 +633,9 @@ export default function KursNaviPro() {  // 1. Initial State Logic
       booking_status: booking.status,
       paid_at: booking.paid_at,
       auto_refund_until: booking.auto_refund_until,
+      is_paid: booking.is_paid,
+      disputed_at: booking.disputed_at,
+      payout_eligible_at: booking.payout_eligible_at,
       event_id: booking.event_id,
       event: booking.course_events
     })).filter(Boolean) : []);

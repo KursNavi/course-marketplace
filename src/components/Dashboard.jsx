@@ -1257,6 +1257,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
     const [prioCourseIds, setPrioCourseIds] = useState(new Set()); // Prio-Kurse IDs
     const [showPrioInfo, setShowPrioInfo] = useState(false); // Info-Tooltip anzeigen
     const [refundingBookingId, setRefundingBookingId] = useState(null); // Track which booking is being refunded
+    const [disputingBookingId, setDisputingBookingId] = useState(null); // Track which booking is being disputed
 
     // Load taxonomy from DB for category labels
     const { taxonomy: dbTaxonomy, types: dbTypes, getTypeLabel: dbGetTypeLabel } = useTaxonomy();
@@ -1294,6 +1295,40 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
             showNotification(error.message || 'Stornierung fehlgeschlagen. Bitte versuche es später erneut.');
         } finally {
             setRefundingBookingId(null);
+        }
+    };
+
+    // Handle booking dispute
+    const handleDisputeBooking = async (bookingId, userId) => {
+        if (!bookingId || !userId) return;
+        if (disputingBookingId) return;
+
+        const reason = window.prompt('Warum möchtest du Einspruch einlegen? (z.B. Kurs nicht stattgefunden, Leistung nicht wie beschrieben)');
+        if (reason === null) return; // User cancelled
+
+        setDisputingBookingId(bookingId);
+        try {
+            const response = await fetch('/api/dispute-booking', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ bookingId, userId, reason })
+            });
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Einspruch fehlgeschlagen');
+            }
+
+            showNotification('Einspruch eingereicht. Unser Team wird den Fall prüfen und sich bei dir melden.');
+
+            if (refreshBookings) {
+                await refreshBookings(userId);
+            }
+        } catch (error) {
+            console.error('Dispute error:', error);
+            showNotification(error.message || 'Einspruch fehlgeschlagen. Bitte versuche es später erneut.');
+        } finally {
+            setDisputingBookingId(null);
         }
     };
 
@@ -1914,6 +1949,23 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                                         </button>
                                                         <p className="text-[10px] text-gray-400 mt-1">
                                                             Kostenlose Stornierung bis {new Date(booking.auto_refund_until).toLocaleDateString('de-CH', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                                        </p>
+                                                    </div>
+                                                ) : booking.disputed_at ? (
+                                                    <div className="mt-3 pt-3 border-t border-gray-100">
+                                                        <p className="text-xs text-amber-600 font-medium">Einspruch eingereicht — wird geprüft</p>
+                                                    </div>
+                                                ) : !booking.is_paid ? (
+                                                    <div className="mt-3 pt-3 border-t border-gray-100">
+                                                        <button
+                                                            onClick={() => handleDisputeBooking(booking.booking_id, user.id)}
+                                                            disabled={disputingBookingId === booking.booking_id}
+                                                            className="text-xs text-amber-600 hover:text-amber-700 hover:underline font-medium"
+                                                        >
+                                                            {disputingBookingId === booking.booking_id ? 'Wird eingereicht...' : 'Einspruch einlegen'}
+                                                        </button>
+                                                        <p className="text-[10px] text-gray-400 mt-1">
+                                                            Leistung nicht erbracht? Melde dich vor der Auszahlung.
                                                         </p>
                                                     </div>
                                                 ) : (
