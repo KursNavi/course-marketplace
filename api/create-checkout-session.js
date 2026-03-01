@@ -19,7 +19,7 @@ export default async function handler(req, res) {
     // 1. Load course to check booking_type and validate
     const { data: course, error: courseError } = await supabase
       .from('courses')
-      .select('id, booking_type, ticket_limit_30d, price')
+      .select('id, booking_type, ticket_limit_30d, price, user_id')
       .eq('id', courseId)
       .single();
 
@@ -87,7 +87,18 @@ export default async function handler(req, res) {
       }
     }
 
-    // 4. Get or create Stripe customer
+    // 4. Load provider name for transparency
+    let providerName = 'Kursanbieter';
+    if (course.user_id) {
+      const { data: providerProfile } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', course.user_id)
+        .single();
+      if (providerProfile?.full_name) providerName = providerProfile.full_name;
+    }
+
+    // 5. Get or create Stripe customer
     let customerId;
 
     const { data: profile } = await supabase
@@ -111,7 +122,7 @@ export default async function handler(req, res) {
         .eq('id', userId);
     }
 
-    // 5. Create Stripe checkout session with v2 metadata
+    // 6. Create Stripe checkout session with v2 metadata
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       customer: customerId,
@@ -121,6 +132,7 @@ export default async function handler(req, res) {
             currency: 'chf',
             product_data: {
               name: courseTitle,
+              description: `Anbieter: ${providerName}. Zahlungsabwicklung: KursNavi (LifeSkills360 GmbH).`,
               images: courseImage ? [courseImage] : [],
             },
             unit_amount: Math.round(coursePrice * 100),
@@ -129,13 +141,19 @@ export default async function handler(req, res) {
         },
       ],
       mode: 'payment',
+      custom_text: {
+        after_submit: {
+          message: `Vertragspartner für diesen Kurs ist ${providerName}. KursNavi (LifeSkills360 GmbH) wickelt die Zahlung technisch ab.`
+        }
+      },
       success_url: `${req.headers.origin}/?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.headers.origin}/course/${courseId}`,
       metadata: {
         courseId,
         userId,
         eventId: eventId || '',
-        bookingType: course.booking_type
+        bookingType: course.booking_type,
+        providerName
       },
     });
 

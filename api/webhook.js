@@ -62,8 +62,8 @@ const EMAIL_TRANSLATIONS = {
   en: {
     student_subject: "Booking Confirmed: ",
     student_title: "You're in! 🎉",
-    student_body: (course, date) => `Great news! You have successfully booked <strong>${course}</strong>.<br><br>The course starts on: <strong>${date}</strong>.<br>Your invoice is attached to this email.`,
-    student_body_flex: (course, location) => `Great news! You have successfully booked <strong>${course}</strong>.<br><br>Location: <strong>${location}</strong><br>The exact date will be arranged directly with the provider.<br>Your invoice is attached to this email.`,
+    student_body: (course, date, provider) => `Great news! You have successfully booked <strong>${course}</strong>.<br><br>The course starts on: <strong>${date}</strong>.<br>Your invoice is attached to this email.<br><br><small style="color:#6B7280;">Your contractual partner for this course is <strong>${provider}</strong>. KursNavi (LifeSkills360 GmbH) handles the payment processing.</small>`,
+    student_body_flex: (course, location, provider) => `Great news! You have successfully booked <strong>${course}</strong>.<br><br>Location: <strong>${location}</strong><br>The exact date will be arranged directly with the provider.<br>Your invoice is attached to this email.<br><br><small style="color:#6B7280;">Your contractual partner for this course is <strong>${provider}</strong>. KursNavi (LifeSkills360 GmbH) handles the payment processing.</small>`,
     teacher_subject: "New Student: ",
     teacher_title: "New Booking Received 🚀",
     teacher_body: (email, course, date) => `<strong>${email}</strong> has just booked a spot in <strong>${course}</strong>.<br>Start Date: ${date}.`,
@@ -76,8 +76,8 @@ const EMAIL_TRANSLATIONS = {
   de: {
     student_subject: "Buchung bestätigt: ",
     student_title: "Du bist dabei! 🎉",
-    student_body: (course, date) => `Gute Nachrichten! Du hast dich erfolgreich für <strong>${course}</strong> angemeldet.<br><br>Der Kurs beginnt am: <strong>${date}</strong>.<br>Deine Rechnung findest du im Anhang dieser E-Mail.`,
-    student_body_flex: (course, location) => `Gute Nachrichten! Du hast dich erfolgreich für <strong>${course}</strong> angemeldet.<br><br>Ort: <strong>${location}</strong><br>Der genaue Termin wird direkt mit dem Anbieter vereinbart.<br>Deine Rechnung findest du im Anhang dieser E-Mail.`,
+    student_body: (course, date, provider) => `Gute Nachrichten! Du hast dich erfolgreich für <strong>${course}</strong> angemeldet.<br><br>Der Kurs beginnt am: <strong>${date}</strong>.<br>Deine Rechnung findest du im Anhang dieser E-Mail.<br><br><small style="color:#6B7280;">Dein Vertragspartner für diesen Kurs ist <strong>${provider}</strong>. KursNavi (LifeSkills360 GmbH) wickelt die Zahlung technisch ab.</small>`,
+    student_body_flex: (course, location, provider) => `Gute Nachrichten! Du hast dich erfolgreich für <strong>${course}</strong> angemeldet.<br><br>Ort: <strong>${location}</strong><br>Der genaue Termin wird direkt mit dem Anbieter vereinbart.<br>Deine Rechnung findest du im Anhang dieser E-Mail.<br><br><small style="color:#6B7280;">Dein Vertragspartner für diesen Kurs ist <strong>${provider}</strong>. KursNavi (LifeSkills360 GmbH) wickelt die Zahlung technisch ab.</small>`,
     teacher_subject: "Neuer Schüler: ",
     teacher_title: "Neue Buchung erhalten 🚀",
     teacher_body: (email, course, date) => `<strong>${email}</strong> hat sich gerade für <strong>${course}</strong> angemeldet.<br>Kursbeginn: ${date}.`,
@@ -90,8 +90,8 @@ const EMAIL_TRANSLATIONS = {
   fr: {
     student_subject: "Réservation confirmée : ",
     student_title: "C'est confirmé ! 🎉",
-    student_body: (course, date) => `Excellente nouvelle ! Vous êtes inscrit à <strong>${course}</strong>.<br><br>Le cours commence le : <strong>${date}</strong>.<br>Votre facture est jointe à cet e-mail.`,
-    student_body_flex: (course, location) => `Excellente nouvelle ! Vous êtes inscrit à <strong>${course}</strong>.<br><br>Lieu : <strong>${location}</strong><br>La date exacte sera convenue directement avec le prestataire.<br>Votre facture est jointe à cet e-mail.`,
+    student_body: (course, date, provider) => `Excellente nouvelle ! Vous êtes inscrit à <strong>${course}</strong>.<br><br>Le cours commence le : <strong>${date}</strong>.<br>Votre facture est jointe à cet e-mail.<br><br><small style="color:#6B7280;">Votre partenaire contractuel pour ce cours est <strong>${provider}</strong>. KursNavi (LifeSkills360 GmbH) assure le traitement du paiement.</small>`,
+    student_body_flex: (course, location, provider) => `Excellente nouvelle ! Vous êtes inscrit à <strong>${course}</strong>.<br><br>Lieu : <strong>${location}</strong><br>La date exacte sera convenue directement avec le prestataire.<br>Votre facture est jointe à cet e-mail.<br><br><small style="color:#6B7280;">Votre partenaire contractuel pour ce cours est <strong>${provider}</strong>. KursNavi (LifeSkills360 GmbH) assure le traitement du paiement.</small>`,
     teacher_subject: "Nouvel étudiant : ",
     teacher_title: "Nouvelle réservation 🚀",
     teacher_body: (email, course, date) => `<strong>${email}</strong> vient de réserver une place pour <strong>${course}</strong>.<br>Date de début : ${date}.`,
@@ -168,14 +168,15 @@ const generateInvoicePDF = async (invoiceData) => {
     doc.fontSize(10).fillColor('#333');
     doc.text(`Rechnungsnummer: INV-${Date.now().toString().slice(-6)}`, 50, 110);
     doc.text(`Datum: ${new Date().toLocaleDateString('de-CH')}`, 50, 125);
-    
+    doc.text(`Leistungserbringer: ${invoiceData.providerName || 'Kursanbieter'}`, 50, 140);
+
     doc.text(`Empfänger:`, 300, 110);
     doc.text(`${invoiceData.customerEmail}`, 300, 125);
-    
+
     doc.moveDown(4);
 
     // -- Table Header --
-    const tableTop = 200;
+    const tableTop = 210;
     doc.font('Helvetica-Bold').text('Beschreibung', 50, tableTop);
     doc.text('Betrag (CHF)', 450, tableTop, { align: 'right' });
     
@@ -191,6 +192,11 @@ const generateInvoicePDF = async (invoiceData) => {
     doc.font('Helvetica-Bold').fontSize(12);
     doc.text('Total CHF', 350, itemTop + 45);
     doc.text((invoiceData.amount / 100).toFixed(2), 450, itemTop + 45, { align: 'right' });
+
+    // -- Legal Notice --
+    doc.fontSize(8).fillColor('#666');
+    doc.text(`Vertragspartner: ${invoiceData.providerName || 'Kursanbieter'} (Kursanbieter). Der Kursvertrag besteht zwischen Teilnehmer und Anbieter.`, 50, 650, { width: 500 });
+    doc.text('Zahlungsabwicklung: LifeSkills360 GmbH (KursNavi).', 50, 665);
 
     // -- Footer --
     doc.fontSize(8).fillColor('#888');
@@ -351,7 +357,7 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: "Database Insert Failed", details: insertError });
       }
 
-      // 6. Determine language for emails
+      // 6. Determine language for emails + load provider name
       let studentLang = 'de';
       if (userId) {
         const { data: profile } = await supabase.from('profiles').select('language').eq('id', userId).single();
@@ -359,13 +365,21 @@ export default async function handler(req, res) {
       }
       const sTexts = EMAIL_TRANSLATIONS[studentLang] || EMAIL_TRANSLATIONS['de'];
 
+      // Load provider name (from metadata or teacher profile)
+      let providerName = metadata.providerName || 'Kursanbieter';
+      if (providerName === 'Kursanbieter' && course?.user_id) {
+        const { data: provProfile } = await supabase.from('profiles').select('full_name').eq('id', course.user_id).single();
+        if (provProfile?.full_name) providerName = provProfile.full_name;
+      }
+
       // 7. Generate PDF Invoice
       let pdfBuffer = null;
       try {
         pdfBuffer = await generateInvoicePDF({
           courseTitle: courseTitle,
           amount: amountTotal,
-          customerEmail: customerEmail
+          customerEmail: customerEmail,
+          providerName: providerName
         });
       } catch (pdfErr) {
         console.error("PDF Generation Failed:", pdfErr);
@@ -374,8 +388,8 @@ export default async function handler(req, res) {
       // 8. Send STUDENT Email (adapted for flex)
       try {
         const emailBody = bookingType === 'platform_flex'
-          ? sTexts.student_body_flex(courseTitle, courseLocation)
-          : sTexts.student_body(courseTitle, courseDate);
+          ? sTexts.student_body_flex(courseTitle, courseLocation, providerName)
+          : sTexts.student_body(courseTitle, courseDate, providerName);
 
         await resend.emails.send({
           from: 'KursNavi <info@kursnavi.ch>',
