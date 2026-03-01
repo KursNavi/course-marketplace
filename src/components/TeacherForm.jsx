@@ -7,6 +7,13 @@ import { useTaxonomy } from '../hooks/useTaxonomy';
 import { computeImageHash, getExistingImageByHash, uploadImageWithHash, getUserCourseImages, deleteImageFromLibrary } from '../lib/imageUtils';
 import imageCompression from 'browser-image-compression';
 
+// Display labels for Typ dropdown – match header/navigation wording
+const TYPE_DISPLAY_LABELS = {
+    professionell: 'Beruflich',
+    privat: 'Privat & Hobby',
+    kinder: 'Kinder',
+};
+
 // --- Image Compression Helper ---
 const compressImage = async (file) => {
     // Nur Bilder komprimieren, die grösser als 500KB sind
@@ -1421,7 +1428,7 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                                             >
                                                 {idx > 0 && <option value="">Bitte wählen...</option>}
                                                 {(types.length > 0 ? types : Object.keys(CATEGORY_TYPES).map(id => ({ id, slug: id, label_de: CATEGORY_TYPES[id].de }))).map(type => (
-                                                    <option key={type.slug || type.id} value={type.slug || type.id}>{type.label_de}</option>
+                                                    <option key={type.slug || type.id} value={type.slug || type.id}>{TYPE_DISPLAY_LABELS[type.slug] || type.label_de}</option>
                                                 ))}
                                             </select>
                                         </div>
