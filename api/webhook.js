@@ -402,6 +402,96 @@ export default async function handler(req, res) {
         } catch (tError) { console.error('Teacher Email Failed:', tError); }
       }
     }
+
+    // --- PACKAGE UPGRADE HANDLING ---
+    else if (metadata.type === 'package_upgrade') {
+      const userId = metadata.userId;
+      const targetTier = metadata.targetTier;
+      const isRenewal = metadata.isRenewal === 'true';
+      const currentExpiresAt = metadata.currentExpiresAt || null;
+      const customerEmail = session.customer_details?.email;
+      const amountTotal = session.amount_total;
+
+      // 1. Idempotency check
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('package_stripe_session_id')
+        .eq('id', userId)
+        .single();
+
+      if (existingProfile?.package_stripe_session_id === session.id) {
+        return res.status(200).json({ received: true, note: 'Package upgrade already processed' });
+      }
+
+      // 2. Calculate new expiry date
+      let newExpiresAt;
+      if (isRenewal && currentExpiresAt) {
+        // Extend from current expiry, not from today
+        newExpiresAt = new Date(currentExpiresAt);
+        newExpiresAt.setFullYear(newExpiresAt.getFullYear() + 1);
+      } else {
+        // Fresh upgrade: 1 year from now
+        newExpiresAt = new Date();
+        newExpiresAt.setFullYear(newExpiresAt.getFullYear() + 1);
+      }
+
+      // 3. Update profile
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({
+          package_tier: targetTier,
+          package_expires_at: newExpiresAt.toISOString(),
+          package_stripe_session_id: session.id,
+        })
+        .eq('id', userId);
+
+      if (updateError) {
+        console.error('Failed to update package tier:', updateError);
+      }
+
+      // 4. Tier label for emails
+      const tierLabels = { pro: 'Pro', premium: 'Premium' };
+      const tierLabel = tierLabels[targetTier] || targetTier;
+      const expiryFormatted = newExpiresAt.toLocaleDateString('de-CH');
+
+      // 5. Send confirmation email to user
+      try {
+        await resend.emails.send({
+          from: 'KursNavi <info@kursnavi.ch>',
+          to: customerEmail,
+          subject: `Dein KursNavi ${tierLabel} Paket ist aktiv!`,
+          html: generateEmailHtml(
+            isRenewal ? 'Abo erfolgreich verlängert!' : `Willkommen beim ${tierLabel} Paket!`,
+            `<p>Vielen Dank für ${isRenewal ? 'die Verlängerung' : 'dein Upgrade zum'} <strong>${tierLabel}</strong> Paket.</p>
+             <p>Dein Abo ist gültig bis: <strong>${expiryFormatted}</strong></p>
+             <p>Betrag: <strong>CHF ${(amountTotal / 100).toFixed(2)}</strong></p>`,
+            'Zum Dashboard'
+          )
+        });
+      } catch (emailError) {
+        console.error('Package upgrade email failed:', emailError);
+      }
+
+      // 6. Notify admin
+      try {
+        await resend.emails.send({
+          from: 'KursNavi <info@kursnavi.ch>',
+          to: 'info@kursnavi.ch',
+          subject: `Neues ${tierLabel} Paket: ${customerEmail}`,
+          html: generateEmailHtml(
+            `Neues ${tierLabel} Paket ${isRenewal ? '(Verlängerung)' : '(Upgrade)'}`,
+            `<p><strong>Kunde:</strong> ${customerEmail}</p>
+             <p><strong>Paket:</strong> ${tierLabel}</p>
+             <p><strong>Gültig bis:</strong> ${expiryFormatted}</p>
+             <p><strong>Betrag:</strong> CHF ${(amountTotal / 100).toFixed(2)}</p>
+             <p><strong>Typ:</strong> ${isRenewal ? 'Verlängerung' : 'Neu-Upgrade'}</p>`,
+            'Admin Panel öffnen'
+          )
+        });
+      } catch (adminEmailError) {
+        console.error('Admin notification for package upgrade failed:', adminEmailError);
+      }
+    }
   }
 
   // --- CAPTURE SERVICE PAYMENT HANDLING ---

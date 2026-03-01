@@ -809,11 +809,11 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t, isImp
 };
 
 // --- HELPER COMPONENT: Subscription Management ---
-const SubscriptionSection = ({ user, currentTier }) => {
-    const buildUpgradeMailto = (tierId) => {
-        const planLabel = String(tierId || "").toUpperCase();
+const SubscriptionSection = ({ user, currentTier, packageExpiresAt, checkoutLoading, setCheckoutLoading, showNotification }) => {
+    // Enterprise: weiterhin per E-Mail
+    const buildUpgradeMailto = () => {
         const to = "info@kursnavi.ch";
-        const subject = `Upgrade Anfrage: ${planLabel} Paket`;
+        const subject = "Upgrade Anfrage: ENTERPRISE Paket";
 
         const name =
             user?.user_metadata?.full_name ||
@@ -825,7 +825,7 @@ const SubscriptionSection = ({ user, currentTier }) => {
         const body = [
             "Hallo KursNavi Team",
             "",
-            `ich möchte mein Abo auf "${planLabel}" erhöhen.`,
+            'ich möchte mein Abo auf "ENTERPRISE" erhöhen.',
             "",
             "Meine Angaben:",
             name ? `Name: ${name}` : "Name:",
@@ -838,6 +838,34 @@ const SubscriptionSection = ({ user, currentTier }) => {
         return `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     };
 
+    // Stripe Checkout für Pro/Premium
+    const handleCheckout = async (tierId) => {
+        setCheckoutLoading(tierId);
+        try {
+            const res = await fetch('/api/create-package-checkout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    userId: user.id,
+                    userEmail: user.email,
+                    targetTier: tierId,
+                }),
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                throw new Error(data.error || 'Checkout fehlgeschlagen');
+            }
+
+            window.location.href = data.url;
+        } catch (err) {
+            console.error('Package checkout error:', err);
+            showNotification(err.message || 'Fehler beim Checkout. Bitte versuche es erneut.', 'error');
+        } finally {
+            setCheckoutLoading(null);
+        }
+    };
 
     const tierOrder = ['basic', 'pro', 'premium', 'enterprise'];
 
@@ -845,7 +873,6 @@ const SubscriptionSection = ({ user, currentTier }) => {
         id: p.id,
         name: p.title,
         price: `${formatPriceCHF(p.priceAnnualCHF)} CHF/Jahr`,
-        // WICHTIG: Wir behalten das Objekt (nicht nur Text), um 'excluded' zu prüfen
         features: (p.features || []).slice(0, 7),
     }));
 
@@ -855,14 +882,19 @@ const SubscriptionSection = ({ user, currentTier }) => {
                 <h2 className="text-2xl font-bold mb-2 flex items-center"><Crown className="w-6 h-6 mr-2 text-primary"/> Dein Abo-Status</h2>
                 <p className="text-gray-600 mb-6">
                     Du nutzt aktuell das <span className="font-bold text-dark">{(PLANS.find(p => p.id === currentTier) || PLANS[0]).title}</span> Paket.
+                    {packageExpiresAt && currentTier !== 'basic' && (
+                        <span className="text-sm text-gray-400 ml-2">
+                            (gültig bis {new Date(packageExpiresAt).toLocaleDateString('de-CH')})
+                        </span>
+                    )}
                 </p>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                     {tiers.map(tier => {
                         const isCurrent = currentTier === tier.id;
-                        // Logik: Upgrade ist möglich, wenn das Tier höher ist als das aktuelle
                         const isUpgrade = tierOrder.indexOf(tier.id) > tierOrder.indexOf(currentTier);
-                        
+                        const isPaidCurrent = isCurrent && tier.id !== 'basic' && packageExpiresAt;
+
                         return (
                             <div key={tier.id} className={`p-6 rounded-xl border-2 flex flex-col ${isCurrent ? 'border-primary bg-orange-50' : 'border-gray-100 bg-white'}`}>
                                 <div className="mb-4">
@@ -872,7 +904,6 @@ const SubscriptionSection = ({ user, currentTier }) => {
                                 <ul className="mb-6 flex-1 space-y-2">
                                     {tier.features.map((f, i) => (
                                         <li key={i} className={`text-sm flex items-start ${f.excluded ? 'text-gray-400' : 'text-gray-600'}`}>
-                                            {/* Logik: Rotes Kreuz wenn excluded, sonst grüner Haken */}
                                             {f.excluded ? (
                                                 <XCircle className="w-4 h-4 mr-2 text-red-500 shrink-0"/>
                                             ) : (
@@ -882,28 +913,64 @@ const SubscriptionSection = ({ user, currentTier }) => {
                                         </li>
                                     ))}
                                 </ul>
-                                {isCurrent ? (
+
+                                {/* Bezahlter aktueller Plan: Ablaufdatum + Verlängern */}
+                                {isPaidCurrent ? (
+                                    <div>
+                                        <div className="text-xs text-gray-500 text-center mb-2">
+                                            Gültig bis: {new Date(packageExpiresAt).toLocaleDateString('de-CH')}
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleCheckout(tier.id)}
+                                            disabled={!!checkoutLoading}
+                                            className="w-full py-2 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 transition shadow-md flex items-center justify-center gap-2"
+                                        >
+                                            {checkoutLoading === tier.id ? (
+                                                <><Loader className="w-4 h-4 animate-spin" /> Laden...</>
+                                            ) : (
+                                                'Verlängern'
+                                            )}
+                                        </button>
+                                    </div>
+
+                                /* Basic oder Enterprise (aktuell): kein Checkout */
+                                ) : isCurrent ? (
                                     <button disabled className="w-full py-2 bg-gray-200 text-gray-500 rounded-lg font-bold cursor-default">Aktueller Plan</button>
-                                                                ) : isUpgrade ? (
+
+                                /* Enterprise: per E-Mail kontaktieren */
+                                ) : isUpgrade && tier.id === 'enterprise' ? (
                                     <button
                                         type="button"
                                         onClick={() => {
-                                            const mailto = buildUpgradeMailto(tier.id);
-
-                                            // Fallback/UX: Adresse kopieren, falls kein Mail-Client eingerichtet ist
+                                            const mailto = buildUpgradeMailto();
                                             if (navigator?.clipboard?.writeText) {
                                                 navigator.clipboard.writeText("info@kursnavi.ch").catch(() => {});
                                             }
-
-                                            // Mail-App öffnen
                                             window.location.href = mailto;
                                         }}
                                         className="block w-full text-center py-2 bg-primary text-white rounded-lg font-bold hover:bg-orange-600 transition shadow-md"
                                     >
-                                        Upgrade anfragen
+                                        Kontaktieren
                                     </button>
-                                ) : (
 
+                                /* Pro/Premium Upgrade: Stripe Checkout */
+                                ) : isUpgrade ? (
+                                    <button
+                                        type="button"
+                                        onClick={() => handleCheckout(tier.id)}
+                                        disabled={!!checkoutLoading}
+                                        className="block w-full text-center py-2 bg-primary text-white rounded-lg font-bold hover:bg-orange-600 transition shadow-md flex items-center justify-center gap-2"
+                                    >
+                                        {checkoutLoading === tier.id ? (
+                                            <><Loader className="w-4 h-4 animate-spin" /> Laden...</>
+                                        ) : (
+                                            'Upgrade kaufen'
+                                        )}
+                                    </button>
+
+                                /* Niedrigerer Plan: nicht verfügbar */
+                                ) : (
                                     <button disabled className="w-full py-2 border border-gray-200 text-gray-400 rounded-lg">Nicht verfügbar</button>
                                 )}
                             </div>
@@ -1226,6 +1293,9 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
     const [showSuccessModal, setShowSuccessModal] = useState(false); // NEW: Success Modal State
     const [showCaptureServiceModal, setShowCaptureServiceModal] = useState(false); // Capture Service Modal
     const [showCaptureSuccessModal, setShowCaptureSuccessModal] = useState(false); // Capture Service Success Modal
+    const [showPackageSuccessModal, setShowPackageSuccessModal] = useState(false); // Package Upgrade Success Modal
+    const [packageExpiresAt, setPackageExpiresAt] = useState(null); // Ablaufdatum des Pakets
+    const [checkoutLoading, setCheckoutLoading] = useState(null); // Tier-ID being processed
     const [usedCaptureServices, setUsedCaptureServices] = useState(0); // Genutzte Erfassungsservices
     const [authUid, setAuthUid] = useState(null);
     const [prioCourseIds, setPrioCourseIds] = useState(new Set()); // Prio-Kurse IDs
@@ -1283,6 +1353,11 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
             setShowCaptureSuccessModal(true);
             window.history.replaceState(null, '', window.location.pathname);
         }
+        // Package Upgrade Success
+        if (query.get('package_upgrade') === 'success') {
+            setShowPackageSuccessModal(true);
+            window.history.replaceState(null, '', window.location.pathname);
+        }
     }, []);
 
     useEffect(() => {
@@ -1310,7 +1385,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
         (async () => {
             const { data, error, status } = await supabase
                 .from('profiles')
-                .select('package_tier')
+                .select('package_tier, package_expires_at')
                 .eq('id', uid)
                 .maybeSingle();
 
@@ -1335,7 +1410,15 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
             };
 
             const resolved = parseTier(data.package_tier);
-            setUserTier(resolved);
+
+            // Check if paid package has expired (client-side display only)
+            if (data.package_expires_at && new Date(data.package_expires_at) < new Date() && resolved !== 'enterprise') {
+                setUserTier('basic');
+                setPackageExpiresAt(null);
+            } else {
+                setUserTier(resolved);
+                setPackageExpiresAt(data.package_expires_at || null);
+            }
         })();
 
         return () => { cancelled = true; };
@@ -1526,7 +1609,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                     <UserProfileSection user={user} setUser={setUser} showNotification={showNotification} setLang={changeLanguage} t={t} isImpersonating={isImpersonating} />
                 )
              ) :
-             dashView === 'subscription' ? ( <SubscriptionSection user={user} currentTier={userTier} /> ) :
+             dashView === 'subscription' ? ( <SubscriptionSection user={user} currentTier={userTier} packageExpiresAt={packageExpiresAt} checkoutLoading={checkoutLoading} setCheckoutLoading={setCheckoutLoading} showNotification={showNotification} /> ) :
              dashView === 'analytics' ? (
                 <AnalyticsDashboard user={user} userTier={userTier} courses={courses} teacherEarnings={teacherEarnings} setDashView={setDashView} />
              ) : (
@@ -1546,6 +1629,11 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                     <p className="text-xs text-gray-400 mt-1">
                                         {currentPlan.maxPrioCourses === Infinity ? 'Unbegrenzte Prio-Kurse' : `${currentPlan.maxPrioCourses} Prio-Kurse`} • bis {currentPlan.maxCategoriesPerCourse} Kategorien/Kurs • {currentPlan.includedCaptureServices > 0 ? `${currentPlan.includedCaptureServices} Erfassungsservices inkl.` : 'keine Erfassungsservices inklusive'}
                                     </p>
+                                    {packageExpiresAt && userTier !== 'basic' && (
+                                        <p className="text-xs text-yellow-400 mt-1">
+                                            Gültig bis: {new Date(packageExpiresAt).toLocaleDateString('de-CH')}
+                                        </p>
+                                    )}
                                 </div>
                                 <div>
                                     <div className="flex justify-between text-sm mb-2">
@@ -1963,6 +2051,29 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                 usedServices={usedCaptureServices}
                 showNotification={showNotification}
             />
+
+            {/* PACKAGE UPGRADE SUCCESS MODAL */}
+            {showPackageSuccessModal && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-300">
+                    <div className="bg-white rounded-2xl p-8 max-w-md w-full text-center shadow-2xl border-4 border-primary/20 transform animate-in zoom-in-95 duration-300">
+                        <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
+                            <Crown className="w-12 h-12 text-green-600 animate-bounce" />
+                        </div>
+                        <h2 className="text-3xl font-bold font-heading text-dark mb-4">Herzlichen Glückwunsch!</h2>
+                        <p className="text-gray-600 mb-8 text-lg leading-relaxed">
+                            Dein Paket-Upgrade war erfolgreich!<br/>
+                            Du hast jetzt Zugriff auf alle <strong>{currentPlan?.title || userTier}</strong> Features.<br/>
+                            <span className="text-sm text-gray-400 mt-2 block">Viel Erfolg mit deinen Kursen!</span>
+                        </p>
+                        <button
+                            onClick={() => setShowPackageSuccessModal(false)}
+                            className="bg-primary text-white px-10 py-4 rounded-full font-bold hover:bg-orange-600 transition w-full shadow-lg hover:shadow-orange-500/30 text-lg"
+                        >
+                            Los geht's!
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {/* CAPTURE SERVICE SUCCESS MODAL */}
             {showCaptureSuccessModal && (

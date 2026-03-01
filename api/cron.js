@@ -301,11 +301,88 @@ export default async function handler(req, res) {
       }
     }
 
+    // ============================================
+    // PART 3: Package Expiry – Downgrade abgelaufener Pakete
+    // ============================================
+    let expiredPackages = 0;
+
+    const { data: expiredProfiles, error: expiryError } = await supabase
+      .from('profiles')
+      .select('id, email, package_tier, package_expires_at')
+      .not('package_tier', 'in', '("basic","enterprise")')
+      .lt('package_expires_at', nowISO)
+      .not('package_expires_at', 'is', null);
+
+    if (expiryError) {
+      console.error('Package expiry query error:', expiryError);
+    }
+
+    if (!expiryError && expiredProfiles && expiredProfiles.length > 0) {
+      for (const profile of expiredProfiles) {
+        const tierLabel = profile.package_tier === 'pro' ? 'Pro' : 'Premium';
+        const expiryDate = new Date(profile.package_expires_at).toLocaleDateString('de-CH');
+
+        // Downgrade to basic
+        const { error: downgradeError } = await supabase
+          .from('profiles')
+          .update({
+            package_tier: 'basic',
+            package_expires_at: null,
+            package_stripe_session_id: null,
+          })
+          .eq('id', profile.id);
+
+        if (downgradeError) {
+          console.error(`Failed to downgrade profile ${profile.id}:`, downgradeError);
+          continue;
+        }
+
+        expiredPackages++;
+
+        // Notify user about expiry
+        try {
+          await resend.emails.send({
+            from: 'KursNavi <info@kursnavi.ch>',
+            to: profile.email,
+            subject: 'Dein KursNavi Abo ist abgelaufen',
+            html: generateEmailHtml(
+              'Dein Abo ist abgelaufen',
+              `<p>Dein <strong>${tierLabel}</strong> Paket ist am ${expiryDate} abgelaufen.</p>
+               <p>Du bist jetzt auf dem kostenlosen Basic-Plan. Um alle Features weiter zu nutzen, kannst du dein Abo jederzeit erneuern.</p>`,
+              'Jetzt erneuern'
+            )
+          });
+          emailsSent++;
+        } catch (emailErr) {
+          console.error(`Expiry email to ${profile.email} failed:`, emailErr);
+        }
+
+        // Notify admin
+        try {
+          await resend.emails.send({
+            from: 'KursNavi <info@kursnavi.ch>',
+            to: ADMIN_EMAIL,
+            subject: `Abo abgelaufen: ${profile.email} (${tierLabel})`,
+            html: generateEmailHtml(
+              'Abo abgelaufen',
+              `<p><strong>Kunde:</strong> ${profile.email}</p>
+               <p><strong>Paket:</strong> ${tierLabel}</p>
+               <p><strong>Abgelaufen am:</strong> ${expiryDate}</p>`,
+              'Admin Panel öffnen'
+            )
+          });
+        } catch (adminErr) {
+          console.error(`Admin expiry notification failed:`, adminErr);
+        }
+      }
+    }
+
     return res.status(200).json({
       success: true,
-      message: "Payouts Processed",
+      message: "Payouts & Expiry Processed",
       emailsSent: emailsSent,
-      processedBookings: processedBookings
+      processedBookings: processedBookings,
+      expiredPackages: expiredPackages
     });
 
   } catch (error) {

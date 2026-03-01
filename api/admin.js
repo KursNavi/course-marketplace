@@ -119,9 +119,25 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'Invalid package_tier' });
       }
 
+      // Build update data with expiry logic
+      const updateData = { package_tier, courses_allowed: null };
+
+      const tierLower = package_tier.toLowerCase();
+      if (['pro', 'premium'].includes(tierLower)) {
+        // Paid tier: set expiry to 1 year from now
+        const expiresAt = new Date();
+        expiresAt.setFullYear(expiresAt.getFullYear() + 1);
+        updateData.package_expires_at = expiresAt.toISOString();
+      } else if (tierLower === 'basic') {
+        // Basic: clear expiry
+        updateData.package_expires_at = null;
+        updateData.package_stripe_session_id = null;
+      }
+      // Enterprise: leave package_expires_at as-is (manually managed)
+
       const { data, error } = await supabaseAdmin
         .from('profiles')
-        .update({ package_tier, courses_allowed: null })
+        .update(updateData)
         .eq('id', userId)
         .select('*')
         .single();
