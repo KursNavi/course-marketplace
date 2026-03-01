@@ -570,18 +570,25 @@ const SearchPageView = ({
                               e.preventDefault();
                               window.history.pushState({ view: 'bereich-landing' }, '', getBereichUrl(bereichConfig));
                             }}
-                            className={`${segTheme.bgLight} rounded-xl border-2 ${segTheme.borderLight} overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer group flex flex-col justify-center items-center text-center p-8`}
+                            className={`relative rounded-xl overflow-hidden hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 cursor-pointer group flex flex-col justify-center items-center text-center p-8 bg-gradient-to-br ${segTheme.gradient}`}
                             style={{textDecoration: 'none', color: 'inherit'}}
                           >
-                            <div className={`w-14 h-14 rounded-full ${segTheme.bgSolid} text-white flex items-center justify-center mb-4`}>
-                              <Compass className="w-7 h-7" />
+                            {/* Decorative circles */}
+                            <div className="absolute top-[-20px] right-[-20px] w-28 h-28 rounded-full bg-white/10" />
+                            <div className="absolute bottom-[-30px] left-[-15px] w-36 h-36 rounded-full bg-white/5" />
+                            <div className="absolute top-1/2 left-[-10px] w-16 h-16 rounded-full bg-white/10" />
+
+                            <div className="relative z-10 flex flex-col items-center">
+                              <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                                <Compass className="w-6 h-6 text-white" />
+                              </div>
+                              <span className="text-[11px] font-bold uppercase tracking-widest text-white/70 mb-2">Themenwelt</span>
+                              <h3 className="font-bold text-white text-base mb-2 font-heading">Welche Ausbildung passt zu dir?</h3>
+                              <p className="text-sm text-white/80 mb-5 leading-relaxed">Unser Ratgeber hilft dir, den passenden Kurs zu finden.</p>
+                              <span className="inline-flex items-center gap-1.5 text-sm font-bold text-white bg-white/20 backdrop-blur-sm rounded-full px-5 py-2 group-hover:bg-white/30 transition-colors duration-300">
+                                Ratgeber entdecken <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                              </span>
                             </div>
-                            <span className={`text-xs font-bold uppercase tracking-wider ${segTheme.text} mb-2`}>Themenwelt</span>
-                            <h3 className="font-bold text-dark text-base mb-2 font-heading">Noch unsicher?</h3>
-                            <p className="text-sm text-gray-600 mb-4 leading-relaxed">Unser Ratgeber hilft dir bei der Orientierung in diesem Bereich.</p>
-                            <span className={`inline-flex items-center gap-1 text-sm font-bold ${segTheme.text} group-hover:underline`}>
-                              Zum Ratgeber <ChevronRight className="w-4 h-4" />
-                            </span>
                           </a>
                         );
                       }
