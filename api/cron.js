@@ -83,6 +83,7 @@ export default async function handler(req, res) {
       .eq('status', 'confirmed')
       .is('refunded_at', null)
       .is('disputed_at', null)
+      .not('delivered_at', 'is', null)
       .lte('payout_eligible_at', nowISO);
 
     if (flexBookings && flexBookings.length > 0) {
@@ -154,9 +155,9 @@ export default async function handler(req, res) {
     // ============================================
     // PART 2: platform bookings (payout after event, via payout_eligible_at)
     // ============================================
-    const { data: platformBookings } = await supabase
+    const { data: platformBookingsRaw } = await supabase
       .from('bookings')
-      .select('*, courses(*)')
+      .select('*, courses(*), course_events!event_id(cancelled_at)')
       .eq('booking_type', 'platform')
       .eq('is_paid', false)
       .eq('status', 'confirmed')
@@ -164,6 +165,9 @@ export default async function handler(req, res) {
       .is('disputed_at', null)
       .not('event_id', 'is', null)
       .lte('payout_eligible_at', nowISO);
+
+    // Safety: exclude bookings for cancelled events (should already be refunded, but guard against partial failures)
+    const platformBookings = (platformBookingsRaw || []).filter(b => !b.course_events?.cancelled_at);
 
     if (platformBookings && platformBookings.length > 0) {
       // Group by course for batch processing

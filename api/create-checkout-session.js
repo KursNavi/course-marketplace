@@ -40,12 +40,17 @@ export default async function handler(req, res) {
       // Get event with booking count
       const { data: eventData, error: eventError } = await supabase
         .from('course_events')
-        .select('id, max_participants')
+        .select('id, max_participants, cancelled_at')
         .eq('id', eventId)
         .single();
 
       if (eventError || !eventData) {
         return res.status(400).json({ error: 'Event nicht gefunden' });
+      }
+
+      // Block booking for cancelled events
+      if (eventData.cancelled_at) {
+        return res.status(400).json({ error: 'Dieser Termin wurde abgesagt' });
       }
 
       // Count confirmed bookings for this event

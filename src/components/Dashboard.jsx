@@ -5,7 +5,7 @@ import {
     ChevronDown, User, DollarSign, PenTool, Trash2, ArrowRight, Plus, MapPin,
     Crown, BarChart3,
     CreditCard, Check, Shield, ExternalLink, Play, Pause, FileEdit, Info, Star, AlertCircle,
-    Eye, EyeOff
+    Eye, EyeOff, Calendar, ChevronRight, Ban
 } from 'lucide-react';
 import { SWISS_CANTONS, CATEGORY_TYPES, NEW_TAXONOMY, CATEGORY_LABELS } from "../lib/constants";
 import { PLANS } from "../constants/plans";
@@ -1243,7 +1243,7 @@ const getCategoryLabel = (key, lang = 'de', dbTaxonomy = null) => {
 };
 
 // --- MAIN DASHBOARD COMPONENT ---
-const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBookings, savedCourses, savedCourseIds, onToggleSaveCourse, handleDeleteCourse, handleEditCourse, handleUpdateCourseStatus, showNotification, changeLanguage, setSelectedCourse, refreshBookings, isImpersonating }) => {
+const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBookings, savedCourses, savedCourseIds, onToggleSaveCourse, handleDeleteCourse, handleEditCourse, handleUpdateCourseStatus, handleCancelEvent, showNotification, changeLanguage, setSelectedCourse, refreshBookings, isImpersonating }) => {
     const [dashView, setDashView] = useState('overview');
     const [userTier, setUserTier] = useState('basic'); // basic, pro, premium, enterprise
     const [showSuccessModal, setShowSuccessModal] = useState(false); // NEW: Success Modal State
@@ -1258,6 +1258,9 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
     const [showPrioInfo, setShowPrioInfo] = useState(false); // Info-Tooltip anzeigen
     const [refundingBookingId, setRefundingBookingId] = useState(null); // Track which booking is being refunded
     const [disputingBookingId, setDisputingBookingId] = useState(null); // Track which booking is being disputed
+    const [deliveringBookingId, setDeliveringBookingId] = useState(null); // Track which booking is being marked as delivered
+    const [expandedCourseEvents, setExpandedCourseEvents] = useState(null); // courseId of expanded events row
+    const [cancellingEventId, setCancellingEventId] = useState(null); // Track which event is being cancelled
 
     // Load taxonomy from DB for category labels
     const { taxonomy: dbTaxonomy, types: dbTypes, getTypeLabel: dbGetTypeLabel } = useTaxonomy();
@@ -1329,6 +1332,69 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
             showNotification(error.message || 'Einspruch fehlgeschlagen. Bitte versuche es später erneut.');
         } finally {
             setDisputingBookingId(null);
+        }
+    };
+
+    // Handle marking a platform_flex booking as delivered (provider)
+    const handleMarkDelivered = async (bookingId) => {
+        if (!bookingId) return;
+        if (deliveringBookingId) return;
+
+        if (!window.confirm('Buchung als durchgeführt markieren? Die Auszahlung wird in 2 Tagen freigegeben.')) {
+            return;
+        }
+
+        setDeliveringBookingId(bookingId);
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session?.access_token) {
+                throw new Error('Nicht eingeloggt');
+            }
+
+            const response = await fetch('/api/mark-booking-delivered', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session.access_token}`
+                },
+                body: JSON.stringify({ bookingId })
+            });
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Fehler beim Markieren');
+            }
+
+            showNotification('Buchung als durchgeführt markiert. Auszahlung wird in 2 Tagen freigegeben.', 'success');
+
+            if (refreshBookings) {
+                await refreshBookings(user.id);
+            }
+        } catch (error) {
+            console.error('Mark delivered error:', error);
+            showNotification(error.message || 'Markierung fehlgeschlagen. Bitte versuche es später erneut.');
+        } finally {
+            setDeliveringBookingId(null);
+        }
+    };
+
+    // Handle event cancellation (provider)
+    const handleCancelEventClick = async (eventId) => {
+        if (cancellingEventId) return;
+
+        const reason = window.prompt('Warum wird dieser Termin abgesagt? (optional)');
+        if (reason === null) return; // User pressed Cancel
+
+        if (!window.confirm('Termin wirklich absagen? Alle bestätigten Buchungen werden automatisch erstattet.')) {
+            return;
+        }
+
+        setCancellingEventId(eventId);
+        try {
+            await handleCancelEvent(eventId, reason || undefined);
+        } finally {
+            setCancellingEventId(null);
+            setExpandedCourseEvents(null);
         }
     };
 
@@ -1689,8 +1755,43 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                              {teacherEarnings.length > 0 ? (
                                 <div className="overflow-x-auto">
                                     <table className="w-full text-left">
-                                            <thead className="bg-beige border-b border-gray-200"><tr><th className="px-6 py-4 font-semibold text-gray-600">Datum</th><th className="px-6 py-4 font-semibold text-gray-600">Kurs</th><th className="px-6 py-4 font-semibold text-gray-600">Schüler</th><th className="px-6 py-4 font-semibold text-gray-600">Auszahlung (Netto)</th><th className="px-6 py-4 font-semibold text-gray-600">Status</th></tr></thead>
-                                            <tbody className="divide-y divide-gray-100">{teacherEarnings.map(earning => (<tr key={earning.id} className="hover:bg-gray-50"><td className="px-6 py-4 text-sm text-gray-500">{earning.date}</td><td className="px-6 py-4 font-medium text-dark">{earning.courseTitle}</td><td className="px-6 py-4 text-gray-700">{earning.studentName}</td><td className="px-6 py-4 font-bold text-dark">CHF {formatPriceCHF(earning.payout.toFixed(2))}</td><td className="px-6 py-4">{earning.isPaidOut ? <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Bezahlt</span> : <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Offen</span>}</td></tr>))}</tbody>
+                                            <thead className="bg-beige border-b border-gray-200"><tr><th className="px-6 py-4 font-semibold text-gray-600">Datum</th><th className="px-6 py-4 font-semibold text-gray-600">Kurs</th><th className="px-6 py-4 font-semibold text-gray-600">Schüler</th><th className="px-6 py-4 font-semibold text-gray-600">Auszahlung (Netto)</th><th className="px-6 py-4 font-semibold text-gray-600">Status</th><th className="px-6 py-4 font-semibold text-gray-600">Aktion</th></tr></thead>
+                                            <tbody className="divide-y divide-gray-100">{teacherEarnings.map(earning => {
+                                                const isFlex = earning.bookingType === 'platform_flex';
+                                                const canDeliver = isFlex && !earning.isPaidOut && !earning.deliveredAt && !earning.disputedAt && !earning.refundedAt;
+                                                const tooEarly = canDeliver && earning.paidAt && new Date() < new Date(new Date(earning.paidAt).getTime() + 48 * 60 * 60 * 1000);
+                                                return (
+                                                <tr key={earning.id} className="hover:bg-gray-50">
+                                                    <td className="px-6 py-4 text-sm text-gray-500">{earning.date}</td>
+                                                    <td className="px-6 py-4 font-medium text-dark">{earning.courseTitle}{isFlex && <span className="ml-2 text-[10px] font-bold bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded">Flex</span>}</td>
+                                                    <td className="px-6 py-4 text-gray-700">{earning.studentName}</td>
+                                                    <td className="px-6 py-4 font-bold text-dark">CHF {formatPriceCHF(earning.payout.toFixed(2))}</td>
+                                                    <td className="px-6 py-4">{earning.isPaidOut
+                                                        ? <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Bezahlt</span>
+                                                        : earning.disputedAt
+                                                            ? <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Einspruch</span>
+                                                            : isFlex && !earning.deliveredAt
+                                                                ? <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">Warte auf Bestätigung</span>
+                                                                : isFlex && earning.deliveredAt
+                                                                    ? <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">Auszahlung geplant</span>
+                                                                    : <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Offen</span>
+                                                    }</td>
+                                                    <td className="px-6 py-4">{canDeliver && (
+                                                        <button
+                                                            type="button"
+                                                            disabled={tooEarly || deliveringBookingId === earning.id}
+                                                            onClick={() => handleMarkDelivered(earning.id)}
+                                                            className={`inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-bold transition ${tooEarly ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-green-50 text-green-700 hover:bg-green-100 border border-green-200'}`}
+                                                            title={tooEarly ? 'Frühestens 48h nach Zahlung möglich' : 'Buchung als durchgeführt markieren'}
+                                                        >
+                                                            {deliveringBookingId === earning.id ? <Loader className="w-3 h-3 mr-1 animate-spin" /> : <CheckCircle className="w-3 h-3 mr-1" />}
+                                                            {tooEarly ? '48h-Sperre' : 'Durchgeführt'}
+                                                        </button>
+                                                    )}{isFlex && earning.deliveredAt && !earning.isPaidOut && (
+                                                        <span className="inline-flex items-center text-xs text-green-600"><Check className="w-3 h-3 mr-1" />Bestätigt</span>
+                                                    )}</td>
+                                                </tr>);
+                                            })}</tbody>
                                     </table>
                                 </div>
                              ) : <div className="p-8 text-center text-gray-500">Noch keine Buchungen über die Plattform.</div>}
@@ -1792,7 +1893,8 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                                 const canEnablePrio = isPrio || prioCourseIds.size < (currentPlan?.maxPrioCourses || 0);
 
                                                 return (
-                                                <tr key={course.id} className={`hover:bg-gray-50 ${isPrio && showPrioCheckbox ? 'bg-yellow-50/50' : ''}`}>
+                                                <React.Fragment key={course.id}>
+                                                <tr className={`hover:bg-gray-50 ${isPrio && showPrioCheckbox ? 'bg-yellow-50/50' : ''}`}>
                                                     {/* Prio Checkbox */}
                                                     {showPrioCheckbox && (
                                                         <td className="px-4 py-4 text-center">
@@ -1882,10 +1984,66 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                                         )}
                                                         <button onClick={() => handleEditCourse(course)} className="text-blue-500 hover:text-blue-700 bg-blue-50 p-2 rounded-full" title="Bearbeiten"><PenTool className="w-4 h-4" /></button>
                                                         <button onClick={() => handleDeleteCourse(course.id)} className="text-red-500 hover:text-red-700 bg-red-50 p-2 rounded-full" title="Löschen"><Trash2 className="w-4 h-4" /></button>
+                                                        {/* Termine expand button — only for platform courses with events */}
+                                                        {course.booking_type === 'platform' && course.course_events?.length > 0 && (
+                                                            <button
+                                                                onClick={() => setExpandedCourseEvents(expandedCourseEvents === course.id ? null : course.id)}
+                                                                className={`text-gray-500 hover:text-gray-700 p-2 rounded-full ${expandedCourseEvents === course.id ? 'bg-gray-200' : 'bg-gray-50'}`}
+                                                                title="Termine anzeigen"
+                                                            >
+                                                                <Calendar className="w-4 h-4" />
+                                                            </button>
+                                                        )}
                                                         </>)}
                                                         {isImpersonating && <span className="text-gray-400 text-xs italic">Nur Ansicht</span>}
                                                     </td>
                                                 </tr>
+                                                {/* Expandable event rows */}
+                                                {expandedCourseEvents === course.id && course.course_events?.length > 0 && (
+                                                    <tr>
+                                                        <td colSpan="99" className="px-6 py-3 bg-gray-50">
+                                                            <div className="text-sm font-bold text-gray-600 mb-2">Termine für «{course.title}»</div>
+                                                            <div className="space-y-2">
+                                                                {course.course_events
+                                                                    .sort((a, b) => new Date(a.start_date) - new Date(b.start_date))
+                                                                    .map(ev => {
+                                                                    const isCancelled = !!ev.cancelled_at;
+                                                                    const bookingCount = ev.bookings?.[0]?.count || 0;
+                                                                    return (
+                                                                        <div key={ev.id} className={`flex items-center justify-between p-3 rounded-lg border ${isCancelled ? 'bg-red-50 border-red-200' : 'bg-white border-gray-200'}`}>
+                                                                            <div className="flex items-center gap-3">
+                                                                                <Calendar className={`w-4 h-4 flex-shrink-0 ${isCancelled ? 'text-red-400' : 'text-gray-400'}`} />
+                                                                                <div>
+                                                                                    <span className={`font-medium ${isCancelled ? 'text-red-600 line-through' : 'text-dark'}`}>
+                                                                                        {ev.start_date ? new Date(ev.start_date).toLocaleDateString('de-CH', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' }) : '—'}
+                                                                                    </span>
+                                                                                    {ev.location && <span className="text-gray-500 text-xs ml-2">{ev.location}</span>}
+                                                                                    {bookingCount > 0 && <span className="text-xs text-blue-600 ml-2">({bookingCount} Buchung{bookingCount !== 1 ? 'en' : ''})</span>}
+                                                                                </div>
+                                                                            </div>
+                                                                            <div className="flex items-center gap-2">
+                                                                                {isCancelled ? (
+                                                                                    <span className="text-xs px-2 py-1 rounded font-bold bg-red-100 text-red-700 border border-red-200">Abgesagt</span>
+                                                                                ) : (
+                                                                                    !isImpersonating && (
+                                                                                        <button
+                                                                                            onClick={() => handleCancelEventClick(ev.id)}
+                                                                                            disabled={cancellingEventId === ev.id}
+                                                                                            className="text-xs px-3 py-1.5 rounded-lg font-medium text-red-600 hover:text-red-700 hover:bg-red-100 border border-red-200 transition disabled:opacity-50"
+                                                                                        >
+                                                                                            {cancellingEventId === ev.id ? 'Wird abgesagt...' : 'Termin absagen'}
+                                                                                        </button>
+                                                                                    )
+                                                                                )}
+                                                                            </div>
+                                                                        </div>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                )}
+                                                </React.Fragment>
                                             )})}</tbody>
                                     </table>
                                 </div>
@@ -1902,6 +2060,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                     // Check if refund is available
                                     const canRefund = booking.auto_refund_until && new Date() < new Date(booking.auto_refund_until);
                                     const isFlexBooking = booking.booking_type === 'platform_flex';
+                                    const isEventCancelled = booking.event?.cancelled_at;
 
                                     return (
                                         <div key={booking.booking_id || booking.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex gap-4 transition hover:shadow-md">
@@ -1933,9 +2092,15 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                                 ) : null}
 
                                                 <div className="mt-3 flex items-center justify-between">
-                                                    <div className="text-green-600 text-sm font-medium flex items-center">
-                                                        <CheckCircle className="w-4 h-4 mr-1" /> {t.booking_confirmed || 'Bestätigt'}
-                                                    </div>
+                                                    {isEventCancelled ? (
+                                                        <div className="text-red-600 text-sm font-medium flex items-center">
+                                                            <XCircle className="w-4 h-4 mr-1" /> Termin abgesagt — Rückerstattung folgt
+                                                        </div>
+                                                    ) : (
+                                                        <div className="text-green-600 text-sm font-medium flex items-center">
+                                                            <CheckCircle className="w-4 h-4 mr-1" /> {t.booking_confirmed || 'Bestätigt'}
+                                                        </div>
+                                                    )}
                                                 </div>
 
                                                 {/* Refund section */}

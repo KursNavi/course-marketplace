@@ -377,6 +377,25 @@ export default function KursNaviPro() {  // 1. Initial State Logic
     }
   };
 
+  const handleCancelEvent = async (eventId, reason) => {
+    try {
+      const response = await fetch('/api/cancel-event', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ eventId, userId: user.id, reason })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Fehler beim Absagen');
+      showNotification(`Termin abgesagt. ${data.refundedBookings || 0} Buchung(en) erstattet.`);
+      // Refresh courses to update cancelled_at in course_events
+      await fetchCourses();
+      // Refresh bookings if student view is also affected
+      if (user?.id) await fetchBookings(user.id);
+    } catch (err) {
+      showNotification('Fehler: ' + err.message);
+    }
+  };
+
   const handleEditCourse = (course) => {
       setEditingCourse(course);
       setView('create');
@@ -839,14 +858,19 @@ export default function KursNaviPro() {  // 1. Initial State Logic
       if (bookings) {
           setTeacherEarnings(bookings.map(booking => {
               const course = myCourses.find(c => c.id === booking.course_id);
-              return { 
-                  id: booking.id, 
-                  courseTitle: course?.title || 'Unknown', 
-                  studentName: booking.profiles?.full_name || 'Guest Student', 
-                  price: course?.price || 0, 
-                  payout: (course?.price || 0) * 0.85, 
-                  isPaidOut: booking.is_paid, 
-                  date: new Date(booking.created_at).toLocaleDateString() 
+              return {
+                  id: booking.id,
+                  courseTitle: course?.title || 'Unknown',
+                  studentName: booking.profiles?.full_name || 'Guest Student',
+                  price: course?.price || 0,
+                  payout: (course?.price || 0) * 0.85,
+                  isPaidOut: booking.is_paid,
+                  date: new Date(booking.created_at).toLocaleDateString(),
+                  bookingType: booking.booking_type,
+                  deliveredAt: booking.delivered_at,
+                  paidAt: booking.paid_at,
+                  disputedAt: booking.disputed_at,
+                  refundedAt: booking.refunded_at
               };
           }));
       }
@@ -1600,7 +1624,7 @@ useEffect(() => {
       {view === 'ratgeber-cluster' && <RatgeberClusterView lang={lang} />}
       {view === 'ratgeber-artikel' && <RatgeberArtikelView lang={lang} />}
       {view === 'not-found' && <NotFoundPage setView={setView} />}
-      {view === 'dashboard' && effectiveUser && <Dashboard user={effectiveUser} setUser={impersonatedUser ? () => {} : setUser} t={t} setView={setView} courses={courses} teacherEarnings={teacherEarnings} myBookings={myBookings} savedCourses={savedCourses} savedCourseIds={savedCourseIds} onToggleSaveCourse={toggleSaveCourse} handleDeleteCourse={handleDeleteCourse} handleEditCourse={handleEditCourse} handleUpdateCourseStatus={handleUpdateCourseStatus} showNotification={showNotification} changeLanguage={changeLanguage} setSelectedCourse={setSelectedCourse} refreshBookings={fetchBookings} isImpersonating={!!impersonatedUser} />}
+      {view === 'dashboard' && effectiveUser && <Dashboard user={effectiveUser} setUser={impersonatedUser ? () => {} : setUser} t={t} setView={setView} courses={courses} teacherEarnings={teacherEarnings} myBookings={myBookings} savedCourses={savedCourses} savedCourseIds={savedCourseIds} onToggleSaveCourse={toggleSaveCourse} handleDeleteCourse={handleDeleteCourse} handleEditCourse={handleEditCourse} handleUpdateCourseStatus={handleUpdateCourseStatus} handleCancelEvent={handleCancelEvent} showNotification={showNotification} changeLanguage={changeLanguage} setSelectedCourse={setSelectedCourse} refreshBookings={fetchBookings} isImpersonating={!!impersonatedUser} />}
       {view === 'create' && user?.role === 'teacher' && <TeacherForm key={editingCourse?.id || 'new'} t={t} setView={setView} user={user} fetchCourses={fetchCourses} showNotification={showNotification} setEditingCourse={setEditingCourse} initialData={editingCourse} />}
       </Suspense>
       </main>

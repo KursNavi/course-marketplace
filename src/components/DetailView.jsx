@@ -233,8 +233,9 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
             }];
         }
 
-        // Calculate if ALL events are full
-        const allEventsFull = rawEvents.length > 0 && rawEvents.every(ev => {
+        // Calculate if ALL events are full (exclude cancelled events)
+        const activeRawEvents = rawEvents.filter(ev => !ev.cancelled_at);
+        const allEventsFull = activeRawEvents.length > 0 && activeRawEvents.every(ev => {
             const max = ev.max_participants || 0;
             if (max === 0) return false; // Unlimited
             const bookedCount = Array.isArray(ev.bookings)
@@ -443,7 +444,10 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
         }];
     }
 
-    const displayEvents = rawEvents.map(ev => {
+    // Filter out cancelled events
+    const activeEvents = rawEvents.filter(ev => !ev.cancelled_at);
+
+    const displayEvents = activeEvents.map(ev => {
         let bookedCount = 0;
         if (Array.isArray(ev.bookings)) {
             if (ev.bookings[0] && typeof ev.bookings[0].count === 'number') {

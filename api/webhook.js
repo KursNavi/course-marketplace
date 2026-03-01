@@ -112,7 +112,12 @@ function calculatePayoutEligibleAt(paidAt, eventStartAt, bookingType) {
     return new Date(new Date(eventStartAt).getTime() + 7 * DAYS_MS);
   }
 
-  // platform_flex or platform without event: 14 days after payment
+  if (bookingType === 'platform_flex') {
+    // platform_flex: no auto-payout — provider must mark as delivered first
+    return null;
+  }
+
+  // platform without event: 14 days after payment
   return new Date(new Date(paidAt).getTime() + 14 * DAYS_MS);
 }
 
@@ -342,7 +347,7 @@ export default async function handler(req, res) {
         booking_type: bookingType,
         paid_at: paidAt.toISOString(),
         auto_refund_until: autoRefundUntil?.toISOString() || null,
-        payout_eligible_at: payoutEligibleAt.toISOString(),
+        payout_eligible_at: payoutEligibleAt?.toISOString() || null,
         stripe_payment_intent_id: session.payment_intent,
         stripe_checkout_session_id: session.id,
         ticket_period_id: periodId
