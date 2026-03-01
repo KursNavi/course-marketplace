@@ -20,6 +20,7 @@ export const Navbar = ({ t, user, lang = 'de', setLang, setView, handleLogout, s
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [langMenuOpen, setLangMenuOpen] = useState(false);
   const [activeSegment, setActiveSegment] = useState(null);
+  const [activePath, setActivePath] = useState(window.location.pathname);
   const [anbieterMenuOpen, setAnbieterMenuOpen] = useState(false);
   const [mobileAnbieterOpen, setMobileAnbieterOpen] = useState(false);
   const anbieterTimeoutRef = useRef(null);
@@ -30,6 +31,8 @@ export const Navbar = ({ t, user, lang = 'de', setLang, setView, handleLogout, s
       const params = new URLSearchParams(window.location.search);
       const type = params.get('type');
       const path = window.location.pathname;
+
+      setActivePath(path);
 
       // Only show active segment on search page
       if (path === '/search' && type) {
@@ -117,6 +120,7 @@ export const Navbar = ({ t, user, lang = 'de', setLang, setView, handleLogout, s
     setMobileAnbieterOpen(false);
     window.scrollTo(0, 0);
     window.history.pushState({ view: 'provider-directory' }, '', `/anbieter?type=${dbSlug}`);
+    window.dispatchEvent(new Event('anbieter-type-change'));
   };
 
   return (
@@ -148,8 +152,8 @@ export const Navbar = ({ t, user, lang = 'de', setLang, setView, handleLogout, s
                   />
                 );
               })}
-              <button onClick={() => navTo('how-it-works')} className="text-gray-500 hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors font-sans">{t.nav_howitworks}</button>
-              <button onClick={() => navTo('blog')} className="text-gray-500 hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors font-sans">{t.nav_news}</button>
+              <button onClick={() => navTo('how-it-works')} className="text-gray-500 hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors font-sans">{t.nav_howitworks}</button>
+              <button onClick={() => navTo('blog')} className="text-gray-500 hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors font-sans">{t.nav_news}</button>
               {/* Anbietersuche Dropdown */}
               <div
                 className="relative"
@@ -177,12 +181,12 @@ export const Navbar = ({ t, user, lang = 'de', setLang, setView, handleLogout, s
                   </div>
                 )}
               </div>
-              <button onClick={() => navTo('teacher-hub')} className="text-orange-600 hover:text-primary px-3 py-2 rounded-md text-sm font-bold transition-colors font-sans">{t.nav_for_providers}</button>
+              <button onClick={() => navTo('teacher-hub')} className={`${activePath === "/teacher-hub" ? "text-orange-600 font-bold" : "text-gray-500 font-medium hover:text-primary"} px-3 py-2 rounded-md text-sm transition-colors font-sans`}>{t.nav_for_providers}</button>
             </div>
           </div>
 
           {/* RIGHT SIDE */}
-          <div className="hidden md:flex items-center space-x-4">
+          <div className="hidden md:flex items-center">
             {/* Language switcher temporarily hidden for launch (German only)
             <div className="relative">
                 <button onClick={() => setLangMenuOpen(!langMenuOpen)} className="flex items-center space-x-1 text-gray-500 hover:text-primary p-2 rounded-full transition hover:bg-primaryLight">
@@ -206,14 +210,19 @@ export const Navbar = ({ t, user, lang = 'de', setLang, setView, handleLogout, s
             </div>
             */}
 
+            {/* Divider between nav and user area */}
+            <div className="h-8 w-px bg-gray-200 mx-3"></div>
+
             {user ? (
-              <div className="flex items-center space-x-4">
-                <button onClick={() => navTo('dashboard')} className="flex items-center text-gray-700 hover:text-primary font-medium font-sans"><LayoutDashboard className="w-4 h-4 mr-2" />{t.nav_dashboard}</button>
-                {user.role === 'admin' && (
+              <div className="flex items-center space-x-3">
+                <button onClick={() => navTo('dashboard')} className="flex items-center gap-2 bg-gray-50 hover:bg-primaryLight text-gray-700 hover:text-primary pl-3 pr-4 py-2 rounded-full text-sm font-semibold transition-colors border border-gray-200 hover:border-primary/30 font-sans">
+                  <LayoutDashboard className="w-4 h-4" />{t.nav_dashboard}
+                </button>
+                {user.role === 'admin' && (
                   <button onClick={() => navTo('admin')} className="flex items-center text-purple-600 hover:text-purple-700 font-bold font-sans"><Shield className="w-4 h-4 mr-1" /> Admin</button>
                 )}
-                <button onClick={handleLogout} className="flex items-center text-gray-400 hover:text-red-500"><LogOut className="w-5 h-5" /></button>
-              </div>
+                <button onClick={handleLogout} className="flex items-center text-gray-400 hover:text-red-500 p-1.5 rounded-full hover:bg-red-50 transition-colors"><LogOut className="w-4 h-4" /></button>
+              </div>
             ) : (
               <button onClick={() => navTo('login')} className="bg-dark text-white px-6 py-2.5 rounded-full text-sm font-bold hover:bg-primary transition-all duration-300 shadow-lg hover:-translate-y-0.5 font-heading">{t.nav_login}</button>
             )}
@@ -248,8 +257,8 @@ export const Navbar = ({ t, user, lang = 'de', setLang, setView, handleLogout, s
               );
             })}
             <div className="px-2 space-y-1 mt-2">
-            <button onClick={() => navTo('how-it-works')} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-primaryLight hover:text-primary font-sans">{t.nav_howitworks}</button>
-            <button onClick={() => navTo('blog')} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-primaryLight hover:text-primary font-sans">{t.nav_news}</button>
+            <button onClick={() => navTo('how-it-works')} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-primaryLight hover:text-primary font-sans">{t.nav_howitworks}</button>
+            <button onClick={() => navTo('blog')} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-primaryLight hover:text-primary font-sans">{t.nav_news}</button>
             {/* Anbietersuche expandable */}
             <div>
               <button
@@ -274,7 +283,7 @@ export const Navbar = ({ t, user, lang = 'de', setLang, setView, handleLogout, s
                 </div>
               )}
             </div>
-            <button onClick={() => navTo('teacher-hub')} className="block w-full text-left px-3 py-2 rounded-md text-base font-bold text-orange-600 hover:bg-orange-50 font-sans">{t.nav_for_providers}</button>
+            <button onClick={() => navTo('teacher-hub')} className={`block w-full text-left px-3 py-2 rounded-md text-base font-sans ${activePath === "/teacher-hub" ? "font-bold text-orange-600" : "font-medium text-gray-700 hover:bg-primaryLight hover:text-primary"}`}>{t.nav_for_providers}</button>
             </div>
 
             {/* Language switcher temporarily hidden for launch (German only)
@@ -496,7 +505,7 @@ export const Footer = ({ t, setView }) => {
             <li><a href="/search?type=kinder_jugend" onClick={(e) => { e.preventDefault(); window.scrollTo(0, 0); window.history.pushState({ view: 'search' }, '', '/search?type=kinder_jugend'); }} className="hover:text-primary transition-colors">{t.nav_kids}</a></li>
             <li><a href="/blog" onClick={(e) => { e.preventDefault(); navTo('blog'); }} className="hover:text-primary transition-colors">{t.nav_news}</a></li>
             <li><a href="/anbieter" onClick={(e) => { e.preventDefault(); navTo('provider-directory'); }} className="hover:text-primary transition-colors">{t.nav_providers || 'Anbieter-Verzeichnis'}</a></li>
-            <li><a href="/teacher-hub" onClick={(e) => { e.preventDefault(); navTo('teacher-hub'); }} className="hover:text-primary transition-colors font-bold text-orange-600">{t.nav_for_providers}</a></li>
+            <li><a href="/teacher-hub" onClick={(e) => { e.preventDefault(); navTo('teacher-hub'); }} className="hover:text-primary transition-colors">{t.nav_for_providers}</a></li>
           </ul>
         </div>
         <div>
