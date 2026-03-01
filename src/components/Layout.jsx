@@ -124,19 +124,21 @@ export const Navbar = ({ t, user, lang = 'de', setLang, setView, handleLogout, s
   };
 
   return (
-    <nav className="bg-white/80 backdrop-blur-md border-b border-gray-100 sticky top-0 z-50">
+    <>
+    <a href="#main-content" className="skip-to-content">Zum Inhalt springen</a>
+    <nav className="bg-white/80 backdrop-blur-md border-b border-gray-100 sticky top-0 z-50" aria-label="Hauptnavigation">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-20">
-          
+
           {/* LOGO & MAIN LINKS */}
           <div className="flex items-center">
-            <div onClick={() => navTo('home')} className="flex-shrink-0 flex items-center cursor-pointer group">
+            <button type="button" onClick={() => navTo('home')} className="flex-shrink-0 flex items-center cursor-pointer group bg-transparent border-none p-0" aria-label="KursNavi — Zur Startseite">
               <KursNaviLogo className="h-10 w-10 text-primary group-hover:scale-110 transition-transform duration-300" />
               <span className="ml-2 text-2xl font-heading font-bold tracking-tighter text-dark">
                 Kurs<span className="text-primary">Navi</span>
               </span>
-            </div>
-            
+            </button>
+
             <div className="hidden md:ml-10 md:flex md:space-x-6 md:items-center">
               {segmentButtons.map(({ key, label, Icon, config }) => {
                 const isActive = activeSegment === key;
@@ -316,6 +318,7 @@ export const Navbar = ({ t, user, lang = 'de', setLang, setView, handleLogout, s
         </div>
       )}
     </nav>
+    </>
   );
 };
 
@@ -430,7 +433,7 @@ export const Footer = ({ t, setView }) => {
   };
 
   return (
-  <footer className="bg-white border-t border-gray-200 py-12 font-sans">
+  <footer className="bg-white border-t border-gray-200 py-12 font-sans" role="contentinfo">
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       
       {/* NEWSLETTER SECTION */}
@@ -440,7 +443,7 @@ export const Footer = ({ t, setView }) => {
         
         <div className="relative z-10 max-w-lg">
           <h3 className="text-2xl font-bold text-white font-heading mb-2">Verpasse keine neuen Kurse!</h3>
-          <p className="text-gray-400 text-sm">Erhalte regelmässig handverlesene Kurs-Empfehlungen, exklusive Angebote und interessante Informationen direkt in dein Postfach.</p>
+          <p className="text-gray-300 text-sm">Erhalte regelmässig handverlesene Kurs-Empfehlungen, exklusive Angebote und interessante Informationen direkt in dein Postfach.</p>
         </div>
         
         <div className="relative z-10 w-full max-w-md">
@@ -475,7 +478,7 @@ export const Footer = ({ t, setView }) => {
               <button 
                 type="submit" 
                 disabled={status === 'loading'}
-                className="bg-primary hover:bg-orange-600 text-white px-6 py-3 rounded-xl font-bold transition flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+                className="bg-primary hover:bg-orange-600 text-white px-6 py-3 rounded-xl font-bold transition flex items-center disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed"
               >
                 {status === 'loading' ? <Loader2 className="w-5 h-5 animate-spin" /> : <ArrowRight className="w-5 h-5" />}
               </button>
