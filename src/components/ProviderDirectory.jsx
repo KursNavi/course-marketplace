@@ -243,6 +243,19 @@ export default function ProviderDirectory({ t, setView }) {
           )}
         </form>
 
+        {/* Step Hint */}
+        <div className="flex items-center justify-center gap-4 mb-6 text-sm text-gray-500">
+          <span className="flex items-center gap-1.5">
+            <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-bold ${selectedType ? 'bg-orange-500 text-white' : 'bg-orange-100 text-orange-600'}`}>1</span>
+            Kategorie wählen
+          </span>
+          <span className="text-gray-300">›</span>
+          <span className="flex items-center gap-1.5">
+            <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-bold ${(selectedArea || selectedCanton) ? 'bg-orange-500 text-white' : 'bg-orange-100 text-orange-600'}`}>2</span>
+            Bereich &amp; Kanton verfeinern
+          </span>
+        </div>
+
         {/* Top-level Category Buttons (Oberkategorien) */}
         {!taxonomyLoading && types.length > 0 && (
           <div className="flex flex-wrap gap-3 justify-center mb-6">
