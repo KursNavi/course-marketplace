@@ -1,6 +1,6 @@
 import React from 'react';
 import { Helmet } from 'react-helmet-async';
-import { ChevronRight, BookOpen, ArrowLeft } from 'lucide-react';
+import { ChevronRight, BookOpen } from 'lucide-react';
 import { RATGEBER_STRUCTURE, findCategoryBySlug } from '../lib/ratgeberStructure';
 import { SEGMENT_CONFIG } from '../lib/constants';
 import { getRobotsPolicy, buildCanonical, DEFAULT_OG_IMAGE } from '../lib/seoUtils';
@@ -34,6 +34,11 @@ function RootHub({ lang }) {
       </Helmet>
       <div className="bg-gradient-to-br from-gray-700 to-gray-900 py-16">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <nav className="flex items-center gap-2 text-sm text-white/60 mb-4">
+            <a href="/" onClick={(e) => { e.preventDefault(); window.history.pushState({}, '', '/'); window.scrollTo(0, 0); }} className="hover:text-white transition-colors">Home</a>
+            <ChevronRight className="w-3 h-3" />
+            <span className="text-white/90">Ratgeber</span>
+          </nav>
           <div className="flex items-center gap-3 mb-4">
             <BookOpen className="w-8 h-8 text-white/80" />
             <h1 className="text-3xl md:text-4xl font-bold text-white font-heading">Ratgeber</h1>
@@ -107,9 +112,13 @@ function CategoryHub({ category, categorySlug, lang }) {
       </Helmet>
       <div className={`bg-gradient-to-br ${config.gradient} py-16`}>
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <button onClick={() => nav('ratgeber-hub', '/ratgeber')} className="flex items-center text-white/80 hover:text-white mb-6 transition-colors">
-            <ArrowLeft className="w-4 h-4 mr-2" /> Alle Ratgeber
-          </button>
+          <nav className="flex items-center gap-2 text-sm text-white/60 mb-6">
+            <a href="/" onClick={(e) => { e.preventDefault(); window.history.pushState({}, '', '/'); window.scrollTo(0, 0); }} className="hover:text-white transition-colors">Home</a>
+            <ChevronRight className="w-3 h-3" />
+            <a href="/ratgeber" onClick={(e) => { e.preventDefault(); nav('ratgeber-hub', '/ratgeber'); }} className="hover:text-white transition-colors">Ratgeber</a>
+            <ChevronRight className="w-3 h-3" />
+            <span className="text-white/90">{catLabel}</span>
+          </nav>
           <div className="flex items-center gap-4 mb-4">
             <div className="p-3 bg-white/20 rounded-xl"><CatIcon className="w-8 h-8 text-white" /></div>
             <h1 className="text-3xl md:text-4xl font-bold text-white font-heading">Ratgeber {catLabel}</h1>

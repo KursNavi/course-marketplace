@@ -146,15 +146,21 @@ const RatgeberArtikelView = ({ lang = 'de' }) => {
       <div className={`bg-gradient-to-br ${config.gradient} py-12`}>
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Breadcrumb */}
-          <div className="flex flex-wrap items-center gap-2 text-white/70 text-sm mb-6">
-            <a href={`/search?type=${segmentKey}`} onClick={(e) => { e.preventDefault(); goToSearch(); }} className="hover:text-white transition-colors">
+          <nav className="flex flex-wrap items-center gap-2 text-white/70 text-sm mb-6">
+            <a href="/" onClick={(e) => { e.preventDefault(); window.history.pushState({}, '', '/'); window.scrollTo(0, 0); }} className="hover:text-white transition-colors">Home</a>
+            <ChevronRight className="w-3 h-3" />
+            <a href="/ratgeber" onClick={(e) => { e.preventDefault(); window.scrollTo(0, 0); window.history.pushState({ view: 'ratgeber-hub' }, '', '/ratgeber'); window.dispatchEvent(new PopStateEvent('popstate')); }} className="hover:text-white transition-colors">Ratgeber</a>
+            <ChevronRight className="w-3 h-3" />
+            <a href={`/ratgeber/${categorySlug}`} onClick={(e) => { e.preventDefault(); window.scrollTo(0, 0); window.history.pushState({ view: 'ratgeber-hub' }, '', `/ratgeber/${categorySlug}`); window.dispatchEvent(new PopStateEvent('popstate')); }} className="hover:text-white transition-colors">
               {category.label[lang] || category.label.de}
             </a>
-            <ChevronRight className="w-4 h-4" />
+            <ChevronRight className="w-3 h-3" />
             <a href={`/ratgeber/${categorySlug}/${clusterSlug}`} onClick={(e) => { e.preventDefault(); goToCluster(); }} className="hover:text-white transition-colors">
               {cluster.label[lang] || cluster.label.de}
             </a>
-          </div>
+            <ChevronRight className="w-3 h-3" />
+            <span className="text-white/90">{articleData.title[lang] || articleData.title.de}</span>
+          </nav>
 
           {/* Article Title */}
           <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white font-heading mb-4">

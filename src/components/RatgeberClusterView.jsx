@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowLeft, ChevronRight, BookOpen } from 'lucide-react';
+import { ChevronRight, BookOpen } from 'lucide-react';
 import { RATGEBER_STRUCTURE, findCluster } from '../lib/ratgeberStructure';
 import { SEGMENT_CONFIG } from '../lib/constants';
 
@@ -59,10 +59,10 @@ const RatgeberClusterView = ({ lang = 'de' }) => {
     );
   };
 
-  // Navigate back to search
+  // Navigate back to category hub
   const goBack = () => {
     window.scrollTo(0, 0);
-    window.history.pushState({ view: 'search' }, '', `/search?type=${segmentKey}`);
+    window.history.pushState({ view: 'ratgeber-hub' }, '', `/ratgeber/${categorySlug}`);
   };
 
   // Translations
@@ -93,14 +93,15 @@ const RatgeberClusterView = ({ lang = 'de' }) => {
       <div className={`bg-gradient-to-br ${config.gradient} py-16`}>
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Breadcrumb */}
-          <a
-            href={`/search?type=${segmentKey}`}
-            onClick={(e) => { e.preventDefault(); goBack(); }}
-            className="flex items-center text-white/80 hover:text-white mb-6 transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            {t.backTo[lang] || t.backTo.de} {category.label[lang] || category.label.de}
-          </a>
+          <nav className="flex flex-wrap items-center gap-2 text-sm text-white/60 mb-6">
+            <a href="/" onClick={(e) => { e.preventDefault(); window.history.pushState({}, '', '/'); window.scrollTo(0, 0); }} className="hover:text-white transition-colors">Home</a>
+            <ChevronRight className="w-3 h-3" />
+            <a href="/ratgeber" onClick={(e) => { e.preventDefault(); window.scrollTo(0, 0); window.history.pushState({ view: 'ratgeber-hub' }, '', '/ratgeber'); window.dispatchEvent(new PopStateEvent('popstate')); }} className="hover:text-white transition-colors">Ratgeber</a>
+            <ChevronRight className="w-3 h-3" />
+            <a href={`/ratgeber/${categorySlug}`} onClick={(e) => { e.preventDefault(); goBack(); }} className="hover:text-white transition-colors">{category.label[lang] || category.label.de}</a>
+            <ChevronRight className="w-3 h-3" />
+            <span className="text-white/90">{clusterData.label[lang] || clusterData.label.de}</span>
+          </nav>
 
           {/* Cluster Title */}
           <div className="flex items-center gap-4 mb-4">
@@ -177,7 +178,7 @@ const RatgeberClusterView = ({ lang = 'de' }) => {
           </p>
           <a
             href={`/search?type=${segmentKey}`}
-            onClick={(e) => { e.preventDefault(); goBack(); }}
+            onClick={(e) => { e.preventDefault(); window.scrollTo(0, 0); window.history.pushState({ view: 'search' }, '', `/search?type=${segmentKey}`); }}
             className={`${config.bgSolid} text-white px-6 py-3 rounded-xl font-bold hover:opacity-90 transition-opacity inline-flex items-center gap-2`}
           >
             Kurse entdecken
