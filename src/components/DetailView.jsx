@@ -400,9 +400,26 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
     const handleLeadSubmit = async (e) => {
         e.preventDefault();
         setLeadStatus('submitting');
-        await new Promise(r => setTimeout(r, 1000));
-        setLeadStatus('success');
-        setTimeout(() => { setShowLeadModal(false); setLeadStatus('idle'); }, 2500);
+        const fd = new FormData(e.target);
+        try {
+            const resp = await fetch('/api/send-lead', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    courseId: course.id,
+                    name: fd.get('name'),
+                    email: fd.get('email'),
+                    message: fd.get('message')
+                })
+            });
+            if (!resp.ok) throw new Error('send failed');
+            setLeadStatus('success');
+            setTimeout(() => { setShowLeadModal(false); setLeadStatus('idle'); }, 2500);
+        } catch (err) {
+            console.error('Lead submit error:', err);
+            setLeadStatus('idle');
+            if (typeof showNotification === 'function') showNotification('Anfrage konnte nicht gesendet werden. Bitte versuche es erneut.');
+        }
     };
 
     // Fix 2: Safety Guard (Render Check)
