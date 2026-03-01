@@ -810,35 +810,7 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t, isImp
 
 // --- HELPER COMPONENT: Subscription Management ---
 const SubscriptionSection = ({ user, currentTier, packageExpiresAt, checkoutLoading, setCheckoutLoading, showNotification }) => {
-    // Enterprise: weiterhin per E-Mail
-    const buildUpgradeMailto = () => {
-        const to = "info@kursnavi.ch";
-        const subject = "Upgrade Anfrage: ENTERPRISE Paket";
-
-        const name =
-            user?.user_metadata?.full_name ||
-            user?.user_metadata?.name ||
-            user?.name ||
-            "";
-        const email = user?.email || "";
-
-        const body = [
-            "Hallo KursNavi Team",
-            "",
-            'ich möchte mein Abo auf "ENTERPRISE" erhöhen.',
-            "",
-            "Meine Angaben:",
-            name ? `Name: ${name}` : "Name:",
-            email ? `E-Mail: ${email}` : "E-Mail:",
-            "Firma:",
-            "",
-            "Danke & Gruss"
-        ].join("\n");
-
-        return `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    };
-
-    // Stripe Checkout für Pro/Premium
+    // Stripe Checkout für alle bezahlten Pakete (Pro/Premium/Enterprise)
     const handleCheckout = async (tierId) => {
         setCheckoutLoading(tierId);
         try {
@@ -934,27 +906,11 @@ const SubscriptionSection = ({ user, currentTier, packageExpiresAt, checkoutLoad
                                         </button>
                                     </div>
 
-                                /* Basic oder Enterprise (aktuell): kein Checkout */
+                                /* Basic (aktuell): kein Checkout */
                                 ) : isCurrent ? (
                                     <button disabled className="w-full py-2 bg-gray-200 text-gray-500 rounded-lg font-bold cursor-default">Aktueller Plan</button>
 
-                                /* Enterprise: per E-Mail kontaktieren */
-                                ) : isUpgrade && tier.id === 'enterprise' ? (
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            const mailto = buildUpgradeMailto();
-                                            if (navigator?.clipboard?.writeText) {
-                                                navigator.clipboard.writeText("info@kursnavi.ch").catch(() => {});
-                                            }
-                                            window.location.href = mailto;
-                                        }}
-                                        className="block w-full text-center py-2 bg-primary text-white rounded-lg font-bold hover:bg-orange-600 transition shadow-md"
-                                    >
-                                        Kontaktieren
-                                    </button>
-
-                                /* Pro/Premium Upgrade: Stripe Checkout */
+                                /* Upgrade: Stripe Checkout (Pro/Premium/Enterprise) */
                                 ) : isUpgrade ? (
                                     <button
                                         type="button"

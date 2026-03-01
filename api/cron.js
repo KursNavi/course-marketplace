@@ -309,7 +309,7 @@ export default async function handler(req, res) {
     const { data: expiredProfiles, error: expiryError } = await supabase
       .from('profiles')
       .select('id, email, package_tier, package_expires_at')
-      .not('package_tier', 'in', '("basic","enterprise")')
+      .neq('package_tier', 'basic')
       .lt('package_expires_at', nowISO)
       .not('package_expires_at', 'is', null);
 
@@ -319,7 +319,7 @@ export default async function handler(req, res) {
 
     if (!expiryError && expiredProfiles && expiredProfiles.length > 0) {
       for (const profile of expiredProfiles) {
-        const tierLabel = profile.package_tier === 'pro' ? 'Pro' : 'Premium';
+        const tierLabel = { pro: 'Pro', premium: 'Premium', enterprise: 'Enterprise' }[profile.package_tier] || profile.package_tier;
         const expiryDate = new Date(profile.package_expires_at).toLocaleDateString('de-CH');
 
         // Downgrade to basic

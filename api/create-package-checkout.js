@@ -20,9 +20,9 @@ export default async function handler(req, res) {
             return res.status(400).json({ error: 'Missing required fields' });
         }
 
-        const allowedTiers = ['pro', 'premium'];
+        const allowedTiers = ['pro', 'premium', 'enterprise'];
         if (!allowedTiers.includes(targetTier)) {
-            return res.status(400).json({ error: 'Ungültiges Paket. Nur Pro oder Premium buchbar.' });
+            return res.status(400).json({ error: 'Ungültiges Paket. Nur Pro, Premium oder Enterprise buchbar.' });
         }
 
         // --- Check current tier (prevent downgrade) ---
@@ -47,8 +47,8 @@ export default async function handler(req, res) {
         }
 
         // --- Server-side prices (tamper-proof) ---
-        const prices = { pro: 290, premium: 690 };
-        const tierLabels = { pro: 'Pro', premium: 'Premium' };
+        const prices = { pro: 290, premium: 690, enterprise: 1490 };
+        const tierLabels = { pro: 'Pro', premium: 'Premium', enterprise: 'Enterprise' };
         const price = prices[targetTier];
         const label = tierLabels[targetTier];
 

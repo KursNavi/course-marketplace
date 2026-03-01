@@ -450,7 +450,7 @@ export default async function handler(req, res) {
       }
 
       // 4. Tier label for emails
-      const tierLabels = { pro: 'Pro', premium: 'Premium' };
+      const tierLabels = { pro: 'Pro', premium: 'Premium', enterprise: 'Enterprise' };
       const tierLabel = tierLabels[targetTier] || targetTier;
       const expiryFormatted = newExpiresAt.toLocaleDateString('de-CH');
 
