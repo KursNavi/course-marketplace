@@ -260,29 +260,29 @@ const TeacherHub = ({ setView, t, user, showNotification }) => {
                         </div>
 
                         {/* Kursschulen */}
-                        <div className="bg-white rounded-2xl p-8 border border-blue-200 hover:shadow-lg transition relative overflow-hidden">
-                            <div className="absolute top-0 right-0 bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-bl-lg">MEHR REICHWEITE</div>
-                            <div className="bg-blue-50 w-14 h-14 rounded-2xl flex items-center justify-center mb-5">
-                                <Building2 className="w-7 h-7 text-blue-600" />
+                        <div className="bg-white rounded-2xl p-8 border border-purple-200 hover:shadow-lg transition relative overflow-hidden">
+                            <div className="absolute top-0 right-0 bg-purple-600 text-white text-xs font-bold px-3 py-1 rounded-bl-lg">MAXIMALE REICHWEITE</div>
+                            <div className="bg-purple-50 w-14 h-14 rounded-2xl flex items-center justify-center mb-5">
+                                <Building2 className="w-7 h-7 text-purple-600" />
                             </div>
                             <h3 className="text-2xl font-bold font-heading text-gray-900">Kursschulen & Akademien</h3>
                             <p className="text-gray-500 mt-1 text-sm">Fitness-Studios, Sprachschulen, Bildungsanbieter</p>
                             <ul className="mt-6 space-y-3">
                                 {[
-                                    'Direktbuchung mit automatischer Zahlungsabwicklung',
-                                    'Prioritäts-Listings für mehr Sichtbarkeit',
-                                    'Öffentliches Profil im Anbieter-Verzeichnis',
-                                    'Analytics-Dashboard mit Buchungs- & Umsatztrends',
-                                    'Tiefere Kommission ab dem Pro-Paket',
+                                    'Unbegrenzte Prio-Kurse für maximale Sichtbarkeit',
+                                    'Bis zu 5 Kategorien pro Kurs – mehr Reichweite',
+                                    'Erhöhtes Ranking in den Suchergebnissen',
+                                    '15 Erfassungsservices inklusive',
+                                    'Nur 8% Kommission – die tiefste Stufe',
                                 ].map((text) => (
                                     <li key={text} className="flex items-start text-gray-700">
-                                        <CheckCircle className="w-5 h-5 text-blue-500 mr-3 mt-0.5 shrink-0" />
+                                        <CheckCircle className="w-5 h-5 text-purple-500 mr-3 mt-0.5 shrink-0" />
                                         <span>{text}</span>
                                     </li>
                                 ))}
                             </ul>
-                            <button onClick={() => handleCta('pro')} className="mt-8 w-full py-3 rounded-xl font-bold transition bg-blue-600 hover:bg-blue-700 text-white shadow-md">
-                                Pro-Paket wählen
+                            <button onClick={() => handleCta('enterprise')} className="mt-8 w-full py-3 rounded-xl font-bold transition bg-purple-600 hover:bg-purple-700 text-white shadow-md">
+                                Enterprise-Paket wählen
                             </button>
                         </div>
                     </div>
