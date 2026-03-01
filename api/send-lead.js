@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
+import { createHash } from 'crypto';
 
 const COLORS = {
   primary: '#FA6E28',
@@ -104,7 +105,27 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'Anbieter-E-Mail nicht gefunden' });
     }
 
-    // 3. E-Mail an Anbieter senden
+    // 3. Audit-Trail: Lead-Record anlegen (status=pending)
+    const emailHash = createHash('sha256')
+      .update(email.toLowerCase().trim() + (process.env.LEAD_HASH_SALT || ''))
+      .digest('hex');
+
+    const { data: lead, error: leadError } = await supabase
+      .from('leads')
+      .insert({
+        course_id: courseId,
+        provider_id: course.user_id,
+        requester_email_hash: emailHash,
+        status: 'pending'
+      })
+      .select('id')
+      .single();
+
+    if (leadError) {
+      console.error('send-lead: Lead-Record konnte nicht erstellt werden', leadError);
+    }
+
+    // 4. E-Mail an Anbieter senden
     const safeName = escapeHtml(name);
     const safeEmail = escapeHtml(email);
     const safeMessage = escapeHtml(message).replace(/\n/g, '<br>');
@@ -123,15 +144,28 @@ export default async function handler(req, res) {
       <p style="color:#6B7280; font-size:14px;">Du kannst direkt auf diese E-Mail antworten, um mit der interessierten Person in Kontakt zu treten.</p>
     `;
 
-    await resend.emails.send({
-      from: 'KursNavi <info@kursnavi.ch>',
-      to: teacherEmail,
-      replyTo: email,
-      subject: `Neue Kursanfrage: ${course.title}`,
-      html: generateEmailHtml('Neue Kursanfrage', bodyHtml, 'Zum Dashboard')
-    });
+    try {
+      await resend.emails.send({
+        from: 'KursNavi <info@kursnavi.ch>',
+        to: teacherEmail,
+        replyTo: email,
+        subject: `Neue Kursanfrage: ${course.title}`,
+        html: generateEmailHtml('Neue Kursanfrage', bodyHtml, 'Zum Dashboard')
+      });
 
-    return res.status(200).json({ success: true });
+      // Audit-Trail: Status → sent
+      if (lead?.id) {
+        await supabase.from('leads').update({ status: 'sent' }).eq('id', lead.id);
+      }
+
+      return res.status(200).json({ success: true });
+    } catch (emailErr) {
+      // Audit-Trail: Status → failed
+      if (lead?.id) {
+        await supabase.from('leads').update({ status: 'failed' }).eq('id', lead.id);
+      }
+      throw emailErr;
+    }
   } catch (err) {
     console.error('send-lead error:', err);
     return res.status(500).json({ error: 'E-Mail konnte nicht gesendet werden' });
