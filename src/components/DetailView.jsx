@@ -39,7 +39,7 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
             course_id: course.id,
             view_type: 'detail',
             viewer_id: user?.id || null,
-            source: 'search'
+            source: sessionStorage.getItem('cv_source') || 'search'
         }).then(({ error }) => {
             if (error) console.warn('Detail view tracking failed:', error.message);
         });
@@ -1038,7 +1038,7 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
                                 <div><label className="block text-xs font-bold text-gray-500 uppercase mb-1">Dein Name</label><input name="name" required defaultValue={user?.user_metadata?.full_name || user?.user_metadata?.name || ''} placeholder="Vor- und Nachname" className="w-full p-3 bg-gray-50 rounded-lg border border-transparent focus:bg-white focus:border-primary outline-none transition" /></div>
                                 <div><label className="block text-xs font-bold text-gray-500 uppercase mb-1">Deine Email</label><input name="email" type="email" required defaultValue={user?.email || ''} placeholder="deine@email.ch" className="w-full p-3 bg-gray-50 rounded-lg border border-transparent focus:bg-white focus:border-primary outline-none transition" /></div>
                                 <div><label className="block text-xs font-bold text-gray-500 uppercase mb-1">Nachricht <span className="font-normal normal-case text-gray-400">– kann angepasst werden</span></label><textarea name="message" rows="3" defaultValue={`Guten Tag, ich interessiere mich für den Kurs "${course.title}".`} className="w-full p-3 bg-gray-50 rounded-lg border border-transparent focus:bg-white focus:border-primary outline-none transition"></textarea></div>
-                                <button type="submit" disabled={leadStatus === 'submitting'} className="w-full bg-primary text-white font-bold py-3 rounded-lg hover:bg-orange-600 transition flex items-center justify-center disabled:opacity-50"><Send className="w-4 h-4 mr-2"/> Anfrage absenden</button>
+                                <button type="submit" disabled={leadStatus === 'submitting'} className="w-full bg-primary text-white font-bold py-3 rounded-lg hover:bg-orange-600 transition flex items-center justify-center disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed"><Send className="w-4 h-4 mr-2"/> Anfrage absenden</button>
                             </form>
                         </>
                     )}

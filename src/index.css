@@ -6,9 +6,24 @@
   body {
     @apply bg-beige text-dark font-sans;
   }
-  
+
   h1, h2, h3, h4, h5, h6 {
     @apply font-heading font-bold;
+  }
+
+  /* Sichtbarer Fokusring für Keyboard-Navigation (WCAG 2.1 AA) */
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-primary;
+    outline-style: solid;
+  }
+
+  /* Skip-to-Content Link */
+  .skip-to-content {
+    @apply absolute -top-full left-4 z-[9999] bg-primary text-white px-4 py-2 rounded-b-lg font-bold text-sm;
+    transition: top 0.2s;
+  }
+  .skip-to-content:focus {
+    @apply top-0;
   }
 }
 
@@ -111,6 +126,12 @@
 
 .prose-ratgeber .cta-box {
   @apply bg-gradient-to-r from-primary/10 to-orange-100 rounded-xl p-6 my-8 text-center;
+}
+
+.prose-ratgeber .cta-box-button {
+  @apply mt-4 inline-flex items-center gap-2 bg-primary text-white
+         px-6 py-3 rounded-xl font-bold hover:opacity-90
+         transition-opacity cursor-pointer border-0;
 }
 
 .prose-ratgeber .article-image {

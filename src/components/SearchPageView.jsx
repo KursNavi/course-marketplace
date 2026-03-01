@@ -168,11 +168,12 @@ const SearchPageView = ({
 
         untracked.forEach(c => sessionStorage.setItem(`imp_${c.id}`, '1'));
 
+        const cvSource = sessionStorage.getItem('cv_source') || 'search';
         const rows = untracked.map(c => ({
             course_id: c.id,
             view_type: 'impression',
             viewer_id: user?.id || null,
-            source: 'search'
+            source: cvSource
         }));
 
         supabase.from('course_views').insert(rows).then(({ error }) => {

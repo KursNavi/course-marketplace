@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { ChevronRight, Clock, ArrowRight, BookOpen } from 'lucide-react';
 import { BEREICH_LANDING_CONFIG, getBereichBySlug, getBereichUrl, findSzenario } from '../lib/bereichLandingConfig';
 import { SZENARIO_CONTENT } from '../lib/szenarioContent';
@@ -25,6 +25,7 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
   const contentKey = bereichKey && szenarioSlug ? `${bereichKey}/${szenarioSlug}` : null;
   const articleContent = contentKey ? SZENARIO_CONTENT[contentKey] || null : null;
   const readingTime = estimateReadingTime(articleContent);
+  const articleRef = useRef(null);
 
   // SEO
   useEffect(() => {
@@ -51,6 +52,26 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
     }
     canonicalTag.href = canonicalUrl;
   }, [scenario, bereichConfig, segment, slug, szenarioSlug, lang]);
+
+  // Inject clickable buttons into .cta-box elements
+  useEffect(() => {
+    if (!articleRef.current || !scenario) return;
+    const boxes = articleRef.current.querySelectorAll('.cta-box');
+    const btns = [];
+    const ctaText = scenario.ctaLabel?.[lang] || scenario.ctaLabel?.de || 'Kurse entdecken';
+    boxes.forEach(box => {
+      const btn = document.createElement('button');
+      btn.className = 'cta-box-button';
+      btn.textContent = ctaText + ' \u2192';
+      btn.addEventListener('click', () => {
+        sessionStorage.setItem('cv_source', `szenario-${scenario.slug}`);
+        goToSearch(scenario.searchParams || {});
+      });
+      box.appendChild(btn);
+      btns.push(btn);
+    });
+    return () => btns.forEach(b => b.remove());
+  }, [articleContent, scenario, lang]);
 
   // 404
   if (!bereichConfig || !scenario) {
@@ -102,7 +123,7 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
       <div className={`bg-gradient-to-br ${theme.gradient} py-12`}>
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Breadcrumb */}
-          <div className="flex flex-wrap items-center gap-2 text-white/70 text-sm mb-6">
+          <nav className="flex flex-wrap items-center gap-2 text-white/90 text-sm mb-6" aria-label="Breadcrumb">
             <a href="/" onClick={(e) => { e.preventDefault(); window.history.pushState({}, '', '/'); window.scrollTo(0, 0); }} className="hover:text-white transition-colors">
               Home
             </a>
@@ -124,7 +145,7 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
             </a>
             <ChevronRight className="w-3 h-3" />
             <span className="text-white/90">{scenario.label[lang] || scenario.label.de}</span>
-          </div>
+          </nav>
 
           {/* Title */}
           <div className="flex items-center gap-4 mb-4">
@@ -135,12 +156,12 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
           </div>
 
           {/* Subtitle */}
-          <p className="text-lg text-white/80 max-w-3xl">
+          <p className="text-lg text-white/90 max-w-3xl">
             {scenario.text[lang] || scenario.text.de}
           </p>
 
           {/* Meta */}
-          <div className="flex flex-wrap items-center gap-4 text-white/70 text-sm mt-4">
+          <div className="flex flex-wrap items-center gap-4 text-white/90 text-sm mt-4">
             <div className="flex items-center gap-1.5">
               <BookOpen className="w-4 h-4" />
               <span>Ratgeber</span>
@@ -160,6 +181,7 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 md:p-12">
           {articleContent ? (
             <div
+              ref={articleRef}
               className="prose-ratgeber"
               dangerouslySetInnerHTML={{ __html: enhanceImages(articleContent) }}
             />
@@ -193,7 +215,7 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
         {/* CTA: Passende Kurse */}
         <div className={`${theme.bgLight} rounded-2xl p-8 text-center mt-8`}>
           <h3 className={`text-xl font-bold ${theme.text} mb-2`}>
-            Passende Kurse finden
+            {scenario.ctaLabel?.[lang] || scenario.ctaLabel?.de || 'Passende Kurse finden'}
           </h3>
           <p className="text-gray-600 mb-6">
             Entdecke Kurse, die zu deiner Situation passen.
@@ -201,10 +223,13 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
           <div className="flex flex-wrap justify-center gap-3">
             {/* Primary CTA with scenario-specific search params */}
             <button
-              onClick={() => goToSearch(scenario.searchParams || {})}
+              onClick={() => {
+                sessionStorage.setItem('cv_source', `szenario-${scenario.slug}`);
+                goToSearch(scenario.searchParams || {});
+              }}
               className={`${theme.bgSolid} text-white px-6 py-3 rounded-xl font-bold hover:opacity-90 transition-opacity inline-flex items-center gap-2`}
             >
-              Kurse entdecken
+              {scenario.ctaLabel?.[lang] || scenario.ctaLabel?.de || 'Kurse entdecken'}
               <ArrowRight className="w-5 h-5" />
             </button>
             {/* Secondary: Back to Bereich overview */}
