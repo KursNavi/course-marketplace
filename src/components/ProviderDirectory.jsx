@@ -116,19 +116,30 @@ export default function ProviderDirectory({ t, setView }) {
   useEffect(() => { setSelectedSpecialty(''); }, [selectedArea]);
   useEffect(() => { setSelectedFocus(''); }, [selectedSpecialty]);
 
-  // Read type from URL param and pre-select category
+  // Read type from URL param and react to header category switches
   useEffect(() => {
     if (types.length === 0) return;
-    const params = new URLSearchParams(window.location.search);
-    const typeParam = params.get('type');
-    if (typeParam) {
-      const matched = types.find(t => t.slug === typeParam);
-      if (matched) setSelectedType(matched.id);
-    } else if (!selectedType) {
-      // Default to first type when no URL param (always have a category selected)
-      setSelectedType(types[0].id);
-    }
-  }, [types]);
+
+    const syncTypeFromUrl = () => {
+      const params = new URLSearchParams(window.location.search);
+      const typeParam = params.get('type');
+      if (typeParam) {
+        const matched = types.find(t => t.slug === typeParam);
+        if (matched && matched.id !== selectedType) setSelectedType(matched.id);
+      } else if (!selectedType) {
+        setSelectedType(types[0].id);
+      }
+    };
+
+    syncTypeFromUrl(); // initial read
+
+    window.addEventListener('anbieter-type-change', syncTypeFromUrl);
+    window.addEventListener('popstate', syncTypeFromUrl);
+    return () => {
+      window.removeEventListener('anbieter-type-change', syncTypeFromUrl);
+      window.removeEventListener('popstate', syncTypeFromUrl);
+    };
+  }, [types, selectedType]);
 
   // SEO: Set meta tags
   useEffect(() => {
@@ -257,30 +268,6 @@ export default function ProviderDirectory({ t, setView }) {
           )}
         </form>
 
-        {/* Top-level Category Buttons (Oberkategorien) */}
-        {!taxonomyLoading && types.length > 0 && (
-          <div className="flex flex-wrap gap-3 justify-center mb-6">
-            {types.map(type => {
-              const config = SEGMENT_CONFIG[type.slug] || SEGMENT_CONFIG.privat;
-              const Icon = config.icon;
-              const isSelected = selectedType === type.id;
-              return (
-                <button
-                  key={type.id}
-                  onClick={() => setSelectedType(isSelected ? '' : type.id)}
-                  className={`flex items-center gap-2.5 px-5 py-3 rounded-xl border-2 font-medium text-sm transition-all shadow-sm ${
-                    isSelected
-                      ? `${config.bgSolid} text-white border-transparent shadow-md`
-                      : `bg-white ${config.text} ${config.border} ${config.hoverBg}`
-                  }`}
-                >
-                  <Icon className="w-4 h-4" />
-                  <span>{{ professionell: t.nav_professional, privat: t.nav_private, kinder: t.nav_kids }[type.slug] || type.label_de}</span>
-                </button>
-              );
-            })}
-          </div>
-        )}
 
         {/* Filter Bar */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-8">
