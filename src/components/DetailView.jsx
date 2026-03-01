@@ -775,17 +775,15 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
                                         </div>
                                         
                                         {!user && course.booking_type !== 'lead' ? (
-                                            <div className="w-full text-center bg-orange-50 border border-orange-200 rounded-lg p-3">
-                                                <p className="text-xs text-gray-600 mb-2">
-                                                    <LogIn className="w-3.5 h-3.5 inline mr-1 -mt-0.5" />
-                                                    Zum Buchen ist ein Profil erforderlich.
-                                                </p>
+                                            <div className="w-full">
                                                 <button
                                                     onClick={() => { localStorage.setItem('pendingCourseId', course.id); if (ev?.id) localStorage.setItem('pendingEventId', ev.id); setView('login'); }}
-                                                    className="text-xs font-bold text-primary hover:underline"
+                                                    className="w-full py-2.5 rounded-lg font-bold text-sm transition flex items-center justify-center bg-primary text-white hover:bg-orange-600 shadow-sm hover:shadow active:scale-95"
                                                 >
-                                                    Jetzt anmelden oder registrieren
+                                                    <LogIn className="w-4 h-4 mr-2" />
+                                                    Anmelden & buchen
                                                 </button>
+                                                <p className="text-[11px] text-gray-500 text-center mt-1.5">Zum Buchen ist ein Konto erforderlich</p>
                                             </div>
                                         ) : (
                                             <button
@@ -837,17 +835,15 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
                             )}
 
                             {!user && course.booking_type !== 'lead' ? (
-                                <div className="w-full text-center bg-orange-50 border border-orange-200 rounded-lg p-3">
-                                    <p className="text-xs text-gray-600 mb-2">
-                                        <LogIn className="w-3.5 h-3.5 inline mr-1 -mt-0.5" />
-                                        Zum Buchen ist ein Profil erforderlich.
-                                    </p>
+                                <div className="w-full">
                                     <button
                                         onClick={() => { localStorage.setItem('pendingCourseId', course.id); setView('login'); }}
-                                        className="text-xs font-bold text-primary hover:underline"
+                                        className="w-full font-bold py-3 rounded-lg transition shadow-sm flex items-center justify-center bg-primary text-white hover:bg-orange-600 active:scale-95"
                                     >
-                                        Jetzt anmelden oder registrieren
+                                        <LogIn className="w-4 h-4 mr-2" />
+                                        Anmelden & buchen
                                     </button>
+                                    <p className="text-[11px] text-gray-500 text-center mt-1.5">Zum Buchen ist ein Konto erforderlich</p>
                                 </div>
                             ) : (
                                 <button
