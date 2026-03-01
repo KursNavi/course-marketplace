@@ -274,7 +274,7 @@ export default function ProviderDirectory({ t, setView }) {
                   }`}
                 >
                   <Icon className="w-4 h-4" />
-                  <span>{type.label_de}</span>
+                  <span>{{ professionell: t.nav_professional, privat: t.nav_private, kinder: t.nav_kids }[type.slug] || type.label_de}</span>
                 </button>
               );
             })}
