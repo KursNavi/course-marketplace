@@ -252,49 +252,45 @@ export default async function handler(req, res) {
         let matchingCourseIds = null;
 
         // --- Category filtering via course_category_assignments (new taxonomy schema) ---
+        // Uses inner JOINs to verify the full taxonomy hierarchy, preventing
+        // cross-type leakage (e.g. a provider appearing under "Privat" when
+        // all their courses are categorised under "Professionell").
         if (level1_id || level2_id || level3_id || level4_id) {
-          let targetLevel3Ids = null;
+
+          // Build the assignment query with a JOIN to taxonomy_level3 so we can
+          // verify that the level3 entry actually belongs to the correct level2/level1.
+          let assignmentQuery = supabase
+            .from('course_category_assignments')
+            .select('course_id, taxonomy_level3!inner(id, level2_id)')
+            .eq('is_primary', true);
 
           if (level3_id) {
-            targetLevel3Ids = [level3_id];
+            // Direct level3 filter – no hierarchy check needed
+            assignmentQuery = assignmentQuery.eq('level3_id', level3_id);
           } else if (level2_id) {
-            const { data: lvl3s } = await supabase
-              .from('taxonomy_level3')
-              .select('id')
-              .eq('level2_id', level2_id);
-            targetLevel3Ids = (lvl3s || []).map(s => s.id);
+            // Filter assignments whose level3 belongs to the selected level2
+            assignmentQuery = assignmentQuery.eq('taxonomy_level3.level2_id', level2_id);
           } else if (level1_id) {
+            // Resolve level1 → level2 IDs, then filter assignments whose level3
+            // belongs to one of those level2 entries
             const { data: lvl2s } = await supabase
               .from('taxonomy_level2')
               .select('id')
-              .eq('level1_id', level1_id);
+              .eq('level1_id', level1_id)
+              .eq('is_active', true);
             const lvl2Ids = (lvl2s || []).map(a => a.id);
-            if (lvl2Ids.length > 0) {
-              const { data: lvl3s } = await supabase
-                .from('taxonomy_level3')
-                .select('id')
-                .in('level2_id', lvl2Ids);
-              targetLevel3Ids = (lvl3s || []).map(s => s.id);
-            } else {
-              targetLevel3Ids = [];
+
+            if (lvl2Ids.length === 0) {
+              return res.status(200).json({
+                providers: [],
+                pagination: { total: 0, limit, offset, hasMore: false },
+                filters: { canton: canton || null, verified: verified === 'true', q: searchQuery || null }
+              });
             }
+
+            assignmentQuery = assignmentQuery.in('taxonomy_level3.level2_id', lvl2Ids);
           }
 
-          if (targetLevel3Ids !== null && targetLevel3Ids.length === 0) {
-            return res.status(200).json({
-              providers: [],
-              pagination: { total: 0, limit, offset, hasMore: false },
-              filters: { canton: canton || null, verified: verified === 'true', q: searchQuery || null }
-            });
-          }
-
-          let assignmentQuery = supabase
-            .from('course_category_assignments')
-            .select('course_id')
-            .eq('is_primary', true); // nur primäre Zuweisungen → verhindert Falschzuweisungen über Zweitkategorien
-          if (targetLevel3Ids !== null) {
-            assignmentQuery = assignmentQuery.in('level3_id', targetLevel3Ids);
-          }
           if (level4_id) {
             assignmentQuery = assignmentQuery.eq('level4_id', level4_id);
           }
