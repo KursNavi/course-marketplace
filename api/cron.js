@@ -6,19 +6,19 @@ const EMAIL_TRANSLATIONS = {
   en: {
     subject: "Payout Alert: ",
     title: "Payout Processed",
-    body: (course, amount, list) => `Hello Teacher,<br>Your course <strong>${course}</strong> is starting soon.<br>Payout Amount: <strong>CHF ${amount}</strong><br><h3>Student List:</h3><ul>${list}</ul>`,
+    body: (course, amount, list) => `Hello Teacher,<br>Your course <strong>${course}</strong> has been completed.<br>Payout Amount: <strong>CHF ${amount}</strong><br><h3>Student List:</h3><ul>${list}</ul>`,
     cta: "Check Bank Details"
   },
   de: {
     subject: "Auszahlung: ",
     title: "Auszahlung bearbeitet",
-    body: (course, amount, list) => `Hallo Kursleiter,<br>Dein Kurs <strong>${course}</strong> startet bald.<br>Auszahlungsbetrag: <strong>CHF ${amount}</strong><br><h3>Teilnehmerliste:</h3><ul>${list}</ul>`,
+    body: (course, amount, list) => `Hallo Kursleiter,<br>Dein Kurs <strong>${course}</strong> wurde durchgeführt.<br>Auszahlungsbetrag: <strong>CHF ${amount}</strong><br><h3>Teilnehmerliste:</h3><ul>${list}</ul>`,
     cta: "Bankdaten prüfen"
   },
   fr: {
     subject: "Paiement : ",
     title: "Paiement traité",
-    body: (course, amount, list) => `Bonjour,<br>Votre cours <strong>${course}</strong> commence bientôt.<br>Montant du paiement : <strong>CHF ${amount}</strong><br><h3>Liste des étudiants :</h3><ul>${list}</ul>`,
+    body: (course, amount, list) => `Bonjour,<br>Votre cours <strong>${course}</strong> a été réalisé.<br>Montant du paiement : <strong>CHF ${amount}</strong><br><h3>Liste des étudiants :</h3><ul>${list}</ul>`,
     cta: "Vérifier les coordonnées"
   }
 };
@@ -73,7 +73,7 @@ export default async function handler(req, res) {
     let processedBookings = 0;
 
     // ============================================
-    // PART 1: platform_flex bookings (payout after 7 days from payment)
+    // PART 1: platform_flex bookings (payout 14 days after payment)
     // ============================================
     const { data: flexBookings } = await supabase
       .from('bookings')
@@ -81,6 +81,7 @@ export default async function handler(req, res) {
       .eq('booking_type', 'platform_flex')
       .eq('is_paid', false)
       .eq('status', 'confirmed')
+      .is('refunded_at', null)
       .lte('payout_eligible_at', nowISO);
 
     if (flexBookings && flexBookings.length > 0) {
@@ -150,70 +151,56 @@ export default async function handler(req, res) {
     }
 
     // ============================================
-    // PART 2: platform bookings (payout 25-35 days before event)
+    // PART 2: platform bookings (payout after event, via payout_eligible_at)
     // ============================================
-    const startWindowDate = new Date(today);
-    startWindowDate.setDate(today.getDate() + 25);
-    const startWindow = `${startWindowDate.toISOString().split('T')[0]}T00:00:00`;
-
-    const endWindowDate = new Date(today);
-    endWindowDate.setDate(today.getDate() + 35);
-    const endWindow = `${endWindowDate.toISOString().split('T')[0]}T23:59:59`;
-
-    // Find events in the payout window
-    const { data: events } = await supabase
-      .from('course_events')
+    const { data: platformBookings } = await supabase
+      .from('bookings')
       .select('*, courses(*)')
-      .gte('start_date', startWindow)
-      .lte('start_date', endWindow);
+      .eq('booking_type', 'platform')
+      .eq('is_paid', false)
+      .eq('status', 'confirmed')
+      .is('refunded_at', null)
+      .not('event_id', 'is', null)
+      .lte('payout_eligible_at', nowISO);
 
-    if (events && events.length > 0) {
-      // Batch fetch all bookings for all events at once
-      const eventIds = events.map(e => e.id);
-      const { data: allEventBookings } = await supabase
-        .from('bookings')
-        .select('*')
-        .in('event_id', eventIds)
-        .eq('status', 'confirmed')
-        .eq('is_paid', false);
-
-      // Group bookings by event
-      const bookingsByEvent = (allEventBookings || []).reduce((acc, b) => {
-        if (!acc[b.event_id]) acc[b.event_id] = [];
-        acc[b.event_id].push(b);
-        return acc;
-      }, {});
+    if (platformBookings && platformBookings.length > 0) {
+      // Group by course for batch processing
+      const platformByCourse = {};
+      for (const booking of platformBookings) {
+        const courseId = booking.course_id;
+        if (!platformByCourse[courseId]) {
+          platformByCourse[courseId] = { course: booking.courses, bookings: [] };
+        }
+        platformByCourse[courseId].bookings.push(booking);
+      }
 
       // Batch fetch all teacher and student profiles
-      const eventTeacherIds = [...new Set(events.map(e => e.courses?.user_id).filter(Boolean))];
-      const eventStudentIds = [...new Set((allEventBookings || []).map(b => b.user_id))];
+      const platformTeacherIds = [...new Set(Object.values(platformByCourse).map(g => g.course?.user_id).filter(Boolean))];
+      const platformStudentIds = [...new Set(platformBookings.map(b => b.user_id))];
 
-      const { data: eventTeacherProfiles } = eventTeacherIds.length > 0
-        ? await supabase.from('profiles').select('id, email, language').in('id', eventTeacherIds)
+      const { data: platformTeacherProfiles } = platformTeacherIds.length > 0
+        ? await supabase.from('profiles').select('id, email, language').in('id', platformTeacherIds)
         : { data: [] };
-      const { data: eventStudentProfiles } = eventStudentIds.length > 0
-        ? await supabase.from('profiles').select('id, full_name, email').in('id', eventStudentIds)
+      const { data: platformStudentProfiles } = platformStudentIds.length > 0
+        ? await supabase.from('profiles').select('id, full_name, email').in('id', platformStudentIds)
         : { data: [] };
 
-      const eventTeacherMap = (eventTeacherProfiles || []).reduce((m, p) => { m[p.id] = p; return m; }, {});
-      const eventStudentMap = (eventStudentProfiles || []).reduce((m, p) => { m[p.id] = p; return m; }, {});
+      const platformTeacherMap = (platformTeacherProfiles || []).reduce((m, p) => { m[p.id] = p; return m; }, {});
+      const platformStudentMap = (platformStudentProfiles || []).reduce((m, p) => { m[p.id] = p; return m; }, {});
 
-      for (const event of events) {
-        const course = event.courses;
+      for (const courseId of Object.keys(platformByCourse)) {
+        const { course, bookings } = platformByCourse[courseId];
         if (!course) continue;
 
-        const bookings = bookingsByEvent[event.id] || [];
-        if (bookings.length === 0) continue;
-
         // Get teacher info from batch
-        const teacherProfile = course.user_id ? eventTeacherMap[course.user_id] : null;
+        const teacherProfile = course.user_id ? platformTeacherMap[course.user_id] : null;
         const teacherEmail = teacherProfile?.email || ADMIN_EMAIL;
         const teacherLang = teacherProfile?.language || 'de';
 
         const t = EMAIL_TRANSLATIONS[teacherLang] || EMAIL_TRANSLATIONS['de'];
 
         const listHtml = bookings.map(booking => {
-          const profile = eventStudentMap[booking.user_id];
+          const profile = platformStudentMap[booking.user_id];
           return `<li>${profile?.full_name || 'Teilnehmer'} (${profile?.email || 'Keine Email'})</li>`;
         }).join('');
 

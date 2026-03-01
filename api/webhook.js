@@ -103,7 +103,20 @@ const EMAIL_TRANSLATIONS = {
   }
 };
 
-// --- 3.1 AUTO-REFUND CALCULATION ---
+// --- 3.1 PAYOUT ELIGIBILITY CALCULATION ---
+function calculatePayoutEligibleAt(paidAt, eventStartAt, bookingType) {
+  const DAYS_MS = 24 * 60 * 60 * 1000;
+
+  if (bookingType === 'platform' && eventStartAt) {
+    // Payout after event completion: event_start + 2 days
+    return new Date(new Date(eventStartAt).getTime() + 2 * DAYS_MS);
+  }
+
+  // platform_flex or platform without event: 14 days after payment
+  return new Date(new Date(paidAt).getTime() + 14 * DAYS_MS);
+}
+
+// --- 3.2 AUTO-REFUND CALCULATION ---
 function calculateAutoRefundUntil(paidAt, eventStartAt, bookingType) {
   if (bookingType === 'lead') {
     return null;
@@ -312,7 +325,7 @@ export default async function handler(req, res) {
       // 4. Calculate timestamps
       const paidAt = new Date();
       const autoRefundUntil = calculateAutoRefundUntil(paidAt, eventStartAt, bookingType);
-      const payoutEligibleAt = new Date(paidAt.getTime() + 7 * 24 * 60 * 60 * 1000);
+      const payoutEligibleAt = calculatePayoutEligibleAt(paidAt, eventStartAt, bookingType);
 
       // 5. Create booking
       const { error: insertError } = await supabase.from('bookings').insert({
