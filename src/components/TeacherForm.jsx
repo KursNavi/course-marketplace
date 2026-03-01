@@ -671,7 +671,6 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
             }
 
         } else if (user && user.id) {
-             if (user.email) setContactEmail(user.email);
              supabase.from('profiles').select('preferred_language').eq('id', user.id).single()
              .then(({ data }) => {
                  // Only update if component is mounted AND user hasn't made changes
