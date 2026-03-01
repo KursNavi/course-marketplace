@@ -1,18 +1,17 @@
--- Korrektur der automatischen 3-Säulen-Klassifizierung
--- 8 Kurse falsch zugeordnet durch ungenaue Keyword-Matches
+-- Korrektur der automatischen 3-Säulen-Klassifizierung (Array-Format)
 
--- 1. "Masterclass" ≠ "Master" → diplome zurück zu fachkurse
-UPDATE courses SET beruf_saule = 'fachkurse'
+-- 1. "Masterclass" ≠ "Master" → diplome entfernen, fachkurse setzen
+UPDATE courses SET beruf_saeulen = ARRAY['fachkurse']
 WHERE id IN (94, 99);
 
--- 2. CAS/MAS am Titelanfang nicht erkannt → fachkurse zu diplome
-UPDATE courses SET beruf_saule = 'diplome'
+-- 2. CAS/MAS am Titelanfang nicht erkannt → diplome hinzufügen
+UPDATE courses SET beruf_saeulen = ARRAY['diplome']
 WHERE id IN (141, 142, 143, 297, 144);
 
 -- 3. Berufsmaturität BM2 = offizieller Schweizer Abschluss → diplome
-UPDATE courses SET beruf_saule = 'diplome'
+UPDATE courses SET beruf_saeulen = ARRAY['diplome']
 WHERE id = 278;
 
 -- 4. "star Fachausweis" = Anbieter-Zertifikat (nicht eidgenössisch) → fachkurse
-UPDATE courses SET beruf_saule = 'fachkurse'
+UPDATE courses SET beruf_saeulen = ARRAY['fachkurse']
 WHERE id = 27;

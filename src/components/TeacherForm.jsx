@@ -444,7 +444,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
     const [selectedLevel, setSelectedLevel] = useState(draft?.selectedLevel || 'all_levels');
     const [courseLanguages, setCourseLanguages] = useState(draft?.courseLanguages || ['Deutsch']);
     const [deliveryTypes, setDeliveryTypes] = useState(draft?.deliveryTypes || ['presence']);
-    const [berufSaule, setBerufSaule] = useState(draft?.berufSaule || '');
+    const [berufSaeulen, setBerufSaeulen] = useState(draft?.berufSaeulen || []);
 
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -621,7 +621,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
             }
 
             if (initialData.level) setSelectedLevel(initialData.level);
-            if (initialData.beruf_saule) setBerufSaule(initialData.beruf_saule);
+            if (Array.isArray(initialData.beruf_saeulen)) setBerufSaeulen(initialData.beruf_saeulen);
             // Support both old 'language' (string) and new 'languages' (array) field
             if (initialData.languages && Array.isArray(initialData.languages) && initialData.languages.length > 0) {
                 setCourseLanguages(initialData.languages);
@@ -892,9 +892,9 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
                 row.area = '';
                 row.specialty = '';
                 row.focus = '';
-                // Reset beruf_saule when primary category type changes away from professionell
+                // Reset beruf_saeulen when primary category type changes away from professionell
                 if (index === 0 && value !== 'professionell' && value !== 'beruflich') {
-                    setBerufSaule('');
+                    setBerufSaeulen([]);
                 }
             } else if (field === 'area') {
                 row.area = value;
@@ -1211,7 +1211,7 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
             user_id: user?.id || initialData?.user_id,
             is_pro: user?.is_professional ?? initialData?.is_pro ?? false,
             status: courseStatus,
-            beruf_saule: (catType === 'professionell' || catType === 'beruflich') ? (berufSaule || null) : null
+            beruf_saeulen: (catType === 'professionell' || catType === 'beruflich') && berufSaeulen.length > 0 ? berufSaeulen : null
         };
 
         // 6. DB Operations
@@ -1517,35 +1517,40 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                             </div>
                         </div>
 
-                        {/* 3-Säulen: Nur für berufliche Kurse */}
+                        {/* 3-Säulen: Nur für berufliche Kurse (Mehrfachauswahl) */}
                         {(categories[0]?.type === 'professionell' || categories[0]?.type === 'beruflich') && (
                             <div className="bg-white/60 p-4 rounded-lg border border-blue-200/60 mt-4">
                                 <span className="text-sm font-bold text-blue-900 block mb-1">
-                                    Berufliche Säule
+                                    Berufliche Säule(n)
                                 </span>
                                 <span className="text-xs text-gray-500 block mb-3">
-                                    Welche Art beruflicher Weiterbildung bietet dieser Kurs?
+                                    Welche Art(en) beruflicher Weiterbildung bietet dieser Kurs? Mehrfachauswahl möglich.
                                 </span>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                                     {Object.entries(BERUF_SAEULEN).map(([key, config]) => {
                                         const Icon = { diplome: GraduationCap, fachkurse: BookOpen, quereinstieg: Compass }[key];
+                                        const isSelected = berufSaeulen.includes(key);
                                         return (
                                             <label
                                                 key={key}
                                                 className={`flex flex-col p-3 rounded-lg border cursor-pointer transition ${
-                                                    berufSaule === key
+                                                    isSelected
                                                         ? 'bg-blue-50 border-blue-400 ring-2 ring-blue-200'
                                                         : 'bg-white border-gray-200 hover:border-blue-200'
                                                 }`}
                                             >
                                                 <div className="flex items-center gap-2">
                                                     <input
-                                                        type="radio"
-                                                        name="beruf_saule"
+                                                        type="checkbox"
                                                         value={key}
-                                                        checked={berufSaule === key}
-                                                        onChange={(e) => { setBerufSaule(e.target.value); markDirty(); }}
-                                                        className="text-blue-600 focus:ring-blue-500"
+                                                        checked={isSelected}
+                                                        onChange={() => {
+                                                            setBerufSaeulen(prev =>
+                                                                prev.includes(key) ? prev.filter(s => s !== key) : [...prev, key]
+                                                            );
+                                                            markDirty();
+                                                        }}
+                                                        className="rounded text-blue-600 focus:ring-blue-500"
                                                     />
                                                     <Icon className="w-4 h-4 text-blue-600" />
                                                     <span className="text-sm font-medium text-gray-800">{config.shortDe}</span>

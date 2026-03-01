@@ -1016,7 +1016,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
 
     let matchesSaule = true;
     if (selectedSaule) {
-        matchesSaule = course.beruf_saule === selectedSaule;
+        matchesSaule = Array.isArray(course.beruf_saeulen) && course.beruf_saeulen.includes(selectedSaule);
     }
 
     return matchesType && matchesArea && matchesSpecialty && matchesFocus && matchesCategory && matchesSaule;
