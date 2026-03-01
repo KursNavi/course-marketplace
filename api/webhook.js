@@ -442,6 +442,7 @@ export default async function handler(req, res) {
           package_tier: targetTier,
           package_expires_at: newExpiresAt.toISOString(),
           package_stripe_session_id: session.id,
+          package_reminder_sent: null, // Reset reminders for new cycle
         })
         .eq('id', userId);
 

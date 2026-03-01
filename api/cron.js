@@ -302,7 +302,87 @@ export default async function handler(req, res) {
     }
 
     // ============================================
-    // PART 3: Package Expiry – Downgrade abgelaufener Pakete
+    // PART 3: Package Renewal Reminders (28, 14, 7 Tage vor Ablauf)
+    // ============================================
+    let remindersSent = 0;
+    const REMINDER_DAYS = [28, 14, 7]; // 4 Wochen, 2 Wochen, 1 Woche
+
+    // Fetch all paid profiles with future expiry (within 28 days)
+    const reminderWindowDate = new Date(today);
+    reminderWindowDate.setDate(today.getDate() + 29); // slightly wider to catch edge
+    const reminderWindowISO = reminderWindowDate.toISOString();
+
+    const { data: reminderProfiles, error: reminderError } = await supabase
+      .from('profiles')
+      .select('id, email, package_tier, package_expires_at, package_reminder_sent')
+      .neq('package_tier', 'basic')
+      .gt('package_expires_at', nowISO) // not yet expired
+      .lt('package_expires_at', reminderWindowISO) // within 28 days
+      .not('package_expires_at', 'is', null);
+
+    if (reminderError) {
+      console.error('Package reminder query error:', reminderError);
+    }
+
+    if (!reminderError && reminderProfiles && reminderProfiles.length > 0) {
+      for (const profile of reminderProfiles) {
+        const expiresAt = new Date(profile.package_expires_at);
+        const daysRemaining = Math.ceil((expiresAt - today) / (1000 * 60 * 60 * 24));
+        const lastSent = profile.package_reminder_sent || 999; // 999 = no reminder sent yet
+        const tierLabel = { pro: 'Pro', premium: 'Premium', enterprise: 'Enterprise' }[profile.package_tier] || profile.package_tier;
+        const expiryFormatted = expiresAt.toLocaleDateString('de-CH');
+
+        // Find which reminder to send (most urgent first)
+        let targetReminder = null;
+        for (const days of REMINDER_DAYS) {
+          if (daysRemaining <= days && lastSent > days) {
+            targetReminder = days;
+            break; // send the most urgent one
+          }
+        }
+
+        if (!targetReminder) continue;
+
+        // Determine urgency for email subject/content
+        const urgencyText = targetReminder === 7 ? 'in 1 Woche'
+          : targetReminder === 14 ? 'in 2 Wochen'
+          : 'in 4 Wochen';
+
+        const isUrgent = targetReminder === 7;
+
+        try {
+          await resend.emails.send({
+            from: 'KursNavi <info@kursnavi.ch>',
+            to: profile.email,
+            subject: isUrgent
+              ? `Dein ${tierLabel} Paket läuft ${urgencyText} ab!`
+              : `Erinnerung: Dein ${tierLabel} Paket läuft ${urgencyText} ab`,
+            html: generateEmailHtml(
+              isUrgent ? 'Abo läuft bald ab!' : 'Abo-Erinnerung',
+              `<p>Dein <strong>${tierLabel}</strong> Paket läuft am <strong>${expiryFormatted}</strong> ab (${urgencyText}).</p>
+               <p>${isUrgent
+                 ? 'Verlängere jetzt, damit du keine Features verlierst. Nach Ablauf wirst du automatisch auf den kostenlosen Basic-Plan zurückgestuft.'
+                 : 'Verlängere rechtzeitig, um weiterhin alle Features nutzen zu können.'
+               }</p>`,
+              'Jetzt verlängern'
+            )
+          });
+          emailsSent++;
+          remindersSent++;
+        } catch (emailErr) {
+          console.error(`Reminder email to ${profile.email} failed:`, emailErr);
+        }
+
+        // Update reminder tracking
+        await supabase
+          .from('profiles')
+          .update({ package_reminder_sent: targetReminder })
+          .eq('id', profile.id);
+      }
+    }
+
+    // ============================================
+    // PART 4: Package Expiry – Downgrade abgelaufener Pakete
     // ============================================
     let expiredPackages = 0;
 
@@ -379,9 +459,10 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       success: true,
-      message: "Payouts & Expiry Processed",
+      message: "Payouts, Reminders & Expiry Processed",
       emailsSent: emailsSent,
       processedBookings: processedBookings,
+      remindersSent: remindersSent,
       expiredPackages: expiredPackages
     });
 

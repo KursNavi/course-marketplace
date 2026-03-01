@@ -6,7 +6,8 @@
 
 ALTER TABLE profiles
   ADD COLUMN IF NOT EXISTS package_expires_at TIMESTAMPTZ DEFAULT NULL,
-  ADD COLUMN IF NOT EXISTS package_stripe_session_id TEXT DEFAULT NULL;
+  ADD COLUMN IF NOT EXISTS package_stripe_session_id TEXT DEFAULT NULL,
+  ADD COLUMN IF NOT EXISTS package_reminder_sent INTEGER DEFAULT NULL;
 
 -- Index for cron job that finds expiring packages
 CREATE INDEX IF NOT EXISTS idx_profiles_package_expires_at
