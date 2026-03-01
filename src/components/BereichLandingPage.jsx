@@ -171,7 +171,7 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
 
         <div className="relative z-10 max-w-5xl mx-auto">
           {/* Breadcrumbs */}
-          <nav className="flex items-center gap-2 text-sm text-white/60 mb-8">
+          <nav className="flex items-center gap-2 text-sm text-white/90 mb-8" aria-label="Breadcrumb">
             <a href="/" onClick={(e) => { e.preventDefault(); window.history.pushState({}, '', '/'); window.scrollTo(0,0); }} className="hover:text-white transition-colors">Home</a>
             <ChevronRight className="w-3 h-3" />
             <a
@@ -234,7 +234,7 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
               </button>
             </div>
             {totalCourses > 0 && (
-              <p className="text-sm text-white/60 mt-2 ml-1">{totalCourses} Kurse in diesem Bereich</p>
+              <p className="text-sm text-white/80 mt-2 ml-1">{totalCourses} Kurse in diesem Bereich</p>
             )}
           </form>
         </div>
@@ -372,14 +372,17 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
             {config.faqs.map((faq, i) => (
               <div key={i} className="bg-white rounded-xl border border-gray-100 overflow-hidden">
                 <button
+                  id={`bereich-faq-btn-${i}`}
                   onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                  aria-expanded={openFaq === i}
+                  aria-controls={`bereich-faq-panel-${i}`}
                   className="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-gray-50 transition-colors"
                 >
                   <span className="font-medium text-dark text-sm pr-4">{faq.q[lang] || faq.q.de}</span>
-                  <ChevronDown className={`w-5 h-5 text-gray-400 flex-shrink-0 transition-transform duration-200 ${openFaq === i ? 'rotate-180' : ''}`} />
+                  <ChevronDown className={`w-5 h-5 text-gray-400 flex-shrink-0 transition-transform duration-200 ${openFaq === i ? 'rotate-180' : ''}`} aria-hidden="true" />
                 </button>
                 {openFaq === i && (
-                  <div className="px-6 pb-4 text-sm text-gray-600 leading-relaxed border-t border-gray-50 pt-3">
+                  <div id={`bereich-faq-panel-${i}`} role="region" aria-labelledby={`bereich-faq-btn-${i}`} className="px-6 pb-4 text-sm text-gray-600 leading-relaxed border-t border-gray-50 pt-3">
                     {faq.a[lang] || faq.a.de}
                   </div>
                 )}

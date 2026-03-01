@@ -76,6 +76,7 @@ export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCat
                 aria-label="Kategorie auswählen"
                 aria-expanded={catMenuOpen}
                 aria-haspopup="listbox"
+                aria-controls="category-dropdown-menu"
                 className={`w-full md:w-auto px-4 py-3 border rounded-full flex items-center justify-between space-x-2 text-sm font-medium transition shadow-sm ${selectedCatPath.length > 0 ? 'bg-primary text-white border-primary' : 'bg-white text-gray-700 hover:border-gray-400'}`}
             >
                 <span className="truncate max-w-[150px]">{getButtonLabel()}</span>
@@ -88,7 +89,7 @@ export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCat
                     : lvl1 ? 2
                     : 1;
                 return (
-                <div className="absolute top-14 left-0 w-[calc(100vw-2rem)] md:w-[900px] bg-white rounded-xl shadow-2xl border border-gray-100 p-0 flex flex-col md:flex-row h-[400px] overflow-hidden">
+                <div id="category-dropdown-menu" className="absolute top-14 left-0 w-[calc(100vw-2rem)] md:w-[900px] bg-white rounded-xl shadow-2xl border border-gray-100 p-0 flex flex-col md:flex-row h-[400px] overflow-hidden" role="listbox">
 
                     {/* Mobile back button */}
                     {mobileStep > 1 && (
@@ -108,12 +109,12 @@ export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCat
                     {/* Level 1: TYPES – fixed width */}
                     <div className={`${mobileStep === 1 ? '' : 'hidden md:block'} w-full md:w-[180px] md:shrink-0 border-r overflow-y-auto bg-gray-50`}>
                         {availableLvl1.map(cat => (
-                            <div key={cat} onClick={() => { setLvl1(cat); setLvl2(null); setLvl3(null); }} className={`p-4 cursor-pointer text-sm flex justify-between items-center transition ${lvl1 === cat ? 'bg-white font-bold text-primary shadow-sm' : 'text-gray-700 hover:bg-gray-100'}`}>
+                            <button type="button" key={cat} onClick={() => { setLvl1(cat); setLvl2(null); setLvl3(null); }} className={`w-full text-left p-4 cursor-pointer text-sm flex justify-between items-center transition ${lvl1 === cat ? 'bg-white font-bold text-primary shadow-sm' : 'text-gray-700 hover:bg-gray-100'}`}>
                                 {getTypeLabel(cat)}
-                                <ChevronRight className={`w-4 h-4 ${lvl1 === cat ? 'text-primary' : 'text-gray-300'}`} />
-                            </div>
+                                <ChevronRight className={`w-4 h-4 ${lvl1 === cat ? 'text-primary' : 'text-gray-300'}`} aria-hidden="true" />
+                            </button>
                         ))}
-                        {!rootCategory && <div onClick={() => { setSelectedCatPath([]); setCatMenuOpen(false); }} className="p-4 text-xs text-gray-400 cursor-pointer hover:text-primary border-t mt-2">Auswahl löschen</div>}
+                        {!rootCategory && <button type="button" onClick={() => { setSelectedCatPath([]); setCatMenuOpen(false); }} className="w-full text-left p-4 text-xs text-gray-500 cursor-pointer hover:text-primary border-t mt-2">Auswahl löschen</button>}
                     </div>
 
                     {/* Level 2: AREAS – fixed width */}
@@ -124,10 +125,10 @@ export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCat
                                 .filter(area => (courseCounts.level2[area.id] || 0) > 0)
                                 .sort((a, b) => (a.label_de || '').localeCompare(b.label_de || '', 'de'))
                                 .map(area => (
-                                <div key={area.id} onClick={() => { setLvl2(area.id); setLvl3(null); }} className={`p-3 mx-2 my-1 rounded-lg cursor-pointer text-sm flex justify-between items-center transition ${lvl2 === area.id ? 'bg-primaryLight font-bold text-primary' : 'text-gray-700 hover:bg-gray-50'}`}>
+                                <button type="button" key={area.id} onClick={() => { setLvl2(area.id); setLvl3(null); }} className={`w-full text-left p-3 mx-2 my-1 rounded-lg cursor-pointer text-sm flex justify-between items-center transition ${lvl2 === area.id ? 'bg-primaryLight font-bold text-primary' : 'text-gray-700 hover:bg-gray-50'}`}>
                                     {area.label_de}
-                                    <ChevronRight className={`w-4 h-4 ${lvl2 === area.id ? 'text-primary' : 'text-gray-300'}`} />
-                                </div>
+                                    <ChevronRight className={`w-4 h-4 ${lvl2 === area.id ? 'text-primary' : 'text-gray-300'}`} aria-hidden="true" />
+                                </button>
                             ))
                         ) : <div className="p-6 text-sm text-gray-400 italic">Wähle zuerst eine Hauptkategorie...</div>}
                     </div>
@@ -142,10 +143,10 @@ export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCat
                                 .map(spec => {
                                     const hasFocuses = focuses.some(f => f.level3_id === spec.id || f.specialty_id === spec.id);
                                     return (
-                                        <div key={spec.id} onClick={() => handleSpecialtyClick(spec.label_de)} className={`p-3 mx-2 cursor-pointer text-sm flex justify-between items-center rounded transition ${lvl3 === spec.label_de ? 'bg-primaryLight font-bold text-primary' : 'text-gray-600 hover:text-primary hover:bg-gray-50'}`}>
+                                        <button type="button" key={spec.id} onClick={() => handleSpecialtyClick(spec.label_de)} className={`w-full text-left p-3 mx-2 cursor-pointer text-sm flex justify-between items-center rounded transition ${lvl3 === spec.label_de ? 'bg-primaryLight font-bold text-primary' : 'text-gray-600 hover:text-primary hover:bg-gray-50'}`}>
                                             {spec.label_de}
-                                            {hasFocuses && <ChevronRight className={`w-4 h-4 ${lvl3 === spec.label_de ? 'text-primary' : 'text-gray-300'}`} />}
-                                        </div>
+                                            {hasFocuses && <ChevronRight className={`w-4 h-4 ${lvl3 === spec.label_de ? 'text-primary' : 'text-gray-300'}`} aria-hidden="true" />}
+                                        </button>
                                     );
                                 })
                         ) : <div className="p-6 text-sm text-gray-400 italic">{lvl1 ? "Wähle einen Bereich..." : ""}</div>}
@@ -155,13 +156,13 @@ export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCat
                     <div className={`${mobileStep === 4 ? '' : 'hidden md:block'} w-full md:flex-1 overflow-y-auto bg-white`}>
                         {currentFocuses.length > 0 ? (
                             <>
-                                <div onClick={() => { setSelectedCatPath([lvl1, lvl2, lvl3]); setCatMenuOpen(false); }} className="p-3 mx-2 cursor-pointer text-sm text-gray-400 hover:text-primary hover:bg-gray-50 rounded transition italic">
+                                <button type="button" onClick={() => { setSelectedCatPath([lvl1, lvl2, lvl3]); setCatMenuOpen(false); }} className="w-full text-left p-3 mx-2 cursor-pointer text-sm text-gray-500 hover:text-primary hover:bg-gray-50 rounded transition italic">
                                     Alle {lvl3}
-                                </div>
+                                </button>
                                 {currentFocuses.map(focus => (
-                                    <div key={focus} onClick={() => { setSelectedCatPath([lvl1, lvl2, lvl3, focus]); setCatMenuOpen(false); }} className="p-3 mx-2 cursor-pointer text-sm text-gray-600 hover:text-primary hover:bg-gray-50 rounded transition">
+                                    <button type="button" key={focus} onClick={() => { setSelectedCatPath([lvl1, lvl2, lvl3, focus]); setCatMenuOpen(false); }} className="w-full text-left p-3 mx-2 cursor-pointer text-sm text-gray-600 hover:text-primary hover:bg-gray-50 rounded transition">
                                         {focus}
-                                    </div>
+                                    </button>
                                 ))}
                             </>
                         ) : null}

@@ -465,19 +465,21 @@ export const Footer = ({ t, setView }) => {
           ) : (
             <form onSubmit={handleSubscribe} className="flex gap-2">
               <div className="relative flex-grow">
-                <Mail className="absolute left-3 top-3.5 text-gray-500 w-5 h-5" />
-                <input 
-                  type="email" 
+                <Mail className="absolute left-3 top-3.5 text-gray-500 w-5 h-5" aria-hidden="true" />
+                <input
+                  type="email"
                   required
-                  placeholder="Deine E-Mail Adresse" 
+                  aria-label="E-Mail-Adresse für Newsletter"
+                  placeholder="Deine E-Mail Adresse"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white/20 transition"
                 />
               </div>
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 disabled={status === 'loading'}
+                aria-label="Newsletter abonnieren"
                 className="bg-primary hover:bg-orange-600 text-white px-6 py-3 rounded-xl font-bold transition flex items-center disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed"
               >
                 {status === 'loading' ? <Loader2 className="w-5 h-5 animate-spin" /> : <ArrowRight className="w-5 h-5" />}

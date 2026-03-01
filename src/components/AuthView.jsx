@@ -103,8 +103,8 @@ const AuthView = ({ setView, setUser, showNotification, lang }) => {
                     {isSignUp && (
                         <>
                             <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_name_company}</label>
-                                <input required type="text" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" value={fullName} onChange={e => setFullName(e.target.value)} />
+                                <label htmlFor="auth-name" className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_name_company}</label>
+                                <input id="auth-name" required type="text" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" value={fullName} onChange={e => setFullName(e.target.value)} />
                                 {fullName.length > 25 && (
                                     <p className="text-xs text-amber-600 mt-1">
                                         Wir empfehlen max. 25 Zeichen ({fullName.length}/25) – bei längeren Namen wird der Anzeigename auf der Plattform je nach Darstellung mit „..." abgekürzt.
@@ -124,23 +124,23 @@ const AuthView = ({ setView, setUser, showNotification, lang }) => {
                             </div>
                         </>
                     )}
-                    <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_email}</label><input required type="email" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" value={email} onChange={e => setEmail(e.target.value)} /></div>
+                    <div><label htmlFor="auth-email" className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_email}</label><input id="auth-email" required type="email" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" value={email} onChange={e => setEmail(e.target.value)} /></div>
                     <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_password}</label>
+                        <label htmlFor="auth-password" className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_password}</label>
                         <div className="relative">
-                            <input required type={showPassword ? "text" : "password"} className="w-full px-4 py-2 pr-10 border rounded-lg focus:ring-2 focus:ring-primary outline-none" value={password} onChange={e => setPassword(e.target.value)} />
-                            <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700">
-                                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                            <input id="auth-password" required type={showPassword ? "text" : "password"} className="w-full px-4 py-2 pr-10 border rounded-lg focus:ring-2 focus:ring-primary outline-none" value={password} onChange={e => setPassword(e.target.value)} />
+                            <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700" aria-label={showPassword ? 'Passwort verbergen' : 'Passwort anzeigen'}>
+                                {showPassword ? <EyeOff className="w-5 h-5" aria-hidden="true" /> : <Eye className="w-5 h-5" aria-hidden="true" />}
                             </button>
                         </div>
                     </div>
                     {isSignUp && (
                         <div>
-                            <label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_confirm_password}</label>
+                            <label htmlFor="auth-confirm-password" className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_confirm_password}</label>
                             <div className="relative">
-                                <input required type={showConfirmPassword ? "text" : "password"} className="w-full px-4 py-2 pr-10 border rounded-lg focus:ring-2 focus:ring-primary outline-none" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} />
-                                <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700">
-                                    {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                                <input id="auth-confirm-password" required type={showConfirmPassword ? "text" : "password"} className="w-full px-4 py-2 pr-10 border rounded-lg focus:ring-2 focus:ring-primary outline-none" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} />
+                                <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700" aria-label={showConfirmPassword ? 'Passwort verbergen' : 'Passwort anzeigen'}>
+                                    {showConfirmPassword ? <EyeOff className="w-5 h-5" aria-hidden="true" /> : <Eye className="w-5 h-5" aria-hidden="true" />}
                                 </button>
                             </div>
                         </div>
@@ -161,7 +161,7 @@ const AuthView = ({ setView, setUser, showNotification, lang }) => {
                         </div>
                     )}
 
-                    <button disabled={loading} type="submit" className="w-full bg-primary text-white py-3 rounded-lg font-bold hover:bg-orange-600 transition disabled:opacity-50 font-heading">{loading ? <Loader className="animate-spin mx-auto" /> : (isSignUp ? t.btn_signup : t.btn_login)}</button>
+                    <button disabled={loading} type="submit" className="w-full bg-primary text-white py-3 rounded-lg font-bold hover:bg-orange-600 transition disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed font-heading">{loading ? <Loader className="animate-spin mx-auto" /> : (isSignUp ? t.btn_signup : t.btn_login)}</button>
                 </form>
                 <p className="text-center text-sm text-gray-600 mt-6 font-sans">{isSignUp ? t.auth_already_have : t.auth_dont_have}<button onClick={() => setIsSignUp(!isSignUp)} className="text-primary font-bold ml-2 hover:underline">{isSignUp ? t.link_login : t.link_signup}</button></p>
             </div>

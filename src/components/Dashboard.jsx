@@ -700,7 +700,7 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t, isImp
                 )}
 
                 <div className="border-t pt-6 mt-6"><h3 className="text-lg font-bold mb-4 text-dark flex items-center"><Lock className="w-4 h-4 mr-2" /> {t.lbl_account_security}</h3><div className="space-y-4"><div><label className="block text-sm font-bold text-gray-700 mb-1">Email</label><input type="email" name="email" value={formData.email} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none bg-gray-50" /></div><div className="grid grid-cols-1 md:grid-cols-2 gap-6"><div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_new_password}</label><div className="relative"><input type={showPassword ? "text" : "password"} name="password" value={formData.password} onChange={handleChange} placeholder="******" className="w-full px-4 py-2 pr-10 border rounded-lg focus:ring-2 focus:ring-primary outline-none" /><button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700">{showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}</button></div></div><div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_confirm_password}</label><div className="relative"><input type={showConfirmPassword ? "text" : "password"} name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} placeholder="******" className="w-full px-4 py-2 pr-10 border rounded-lg focus:ring-2 focus:ring-primary outline-none" /><button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700">{showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}</button></div></div></div></div></div>
-                <div className="pt-2"><button type="submit" disabled={saving} className="bg-primary text-white px-6 py-3 rounded-lg font-bold hover:bg-orange-600 transition flex items-center shadow-md disabled:opacity-50">{saving ? <Loader className="animate-spin w-5 h-5 mr-2" /> : <Save className="w-5 h-5 mr-2" />}{t.btn_save}</button></div>
+                <div className="pt-2"><button type="submit" disabled={saving} className="bg-primary text-white px-6 py-3 rounded-lg font-bold hover:bg-orange-600 transition flex items-center shadow-md disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed">{saving ? <Loader className="animate-spin w-5 h-5 mr-2" /> : <Save className="w-5 h-5 mr-2" />}{t.btn_save}</button></div>
             </form>
 
             {/* Delete Account Section */}
@@ -729,14 +729,14 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t, isImp
 
             {/* Delete Confirmation Modal */}
             {showDeleteModal && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" role="dialog" aria-modal="true" aria-labelledby="delete-modal-title">
                     <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
                         <div className="flex items-center gap-3 mb-4">
                             <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
-                                <AlertCircle className="w-6 h-6 text-red-600" />
+                                <AlertCircle className="w-6 h-6 text-red-600" aria-hidden="true" />
                             </div>
                             <div>
-                                <h3 className="text-lg font-bold text-gray-900">Konto löschen?</h3>
+                                <h3 id="delete-modal-title" className="text-lg font-bold text-gray-900">Konto löschen?</h3>
                                 <p className="text-sm text-gray-500">Diese Aktion kann nicht rückgängig gemacht werden</p>
                             </div>
                         </div>
@@ -778,7 +778,7 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t, isImp
                                     setDeleteError('');
                                 }}
                                 disabled={deleting}
-                                className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors disabled:opacity-50"
+                                className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed"
                             >
                                 Abbrechen
                             </button>
@@ -786,7 +786,7 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t, isImp
                                 type="button"
                                 onClick={handleDeleteAccount}
                                 disabled={!deletePassword || deleting}
-                                className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                                className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed flex items-center justify-center"
                             >
                                 {deleting ? (
                                     <>
@@ -1166,7 +1166,7 @@ const CaptureServiceModal = ({ isOpen, onClose, user, includedServices, usedServ
                     <button
                         onClick={handleSubmit}
                         disabled={isLoading}
-                        className="flex-1 px-6 py-3 bg-primary text-white rounded-xl font-semibold hover:bg-primary/90 transition flex items-center justify-center disabled:opacity-50"
+                        className="flex-1 px-6 py-3 bg-primary text-white rounded-xl font-semibold hover:bg-primary/90 transition flex items-center justify-center disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed"
                     >
                         {isLoading ? (
                             <Loader className="w-5 h-5 animate-spin" />
@@ -1872,6 +1872,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                         <div key={booking.booking_id || booking.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex gap-4 transition hover:shadow-md">
                                             <img
                                                 src={booking.image_url}
+                                                alt={booking.title || 'Kursbild'}
                                                 className="w-20 h-20 rounded-lg object-cover cursor-pointer hover:opacity-90 transition"
                                                 onClick={() => handleNavigateToCourse(booking)}
                                             />
@@ -1977,12 +1978,12 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
             )}
         {/* SUCCESS MODAL OVERLAY */}
             {showSuccessModal && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-300">
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-300" role="dialog" aria-modal="true" aria-labelledby="success-modal-title">
                     <div className="bg-white rounded-2xl p-8 max-w-md w-full text-center shadow-2xl border-4 border-primary/20 transform animate-in zoom-in-95 duration-300">
                         <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
-                            <Crown className="w-12 h-12 text-green-600 animate-bounce" />
+                            <Crown className="w-12 h-12 text-green-600 animate-bounce" aria-hidden="true" />
                         </div>
-                        <h2 className="text-3xl font-bold font-heading text-dark mb-4">Herzlichen Glückwunsch!</h2>
+                        <h2 id="success-modal-title" className="text-3xl font-bold font-heading text-dark mb-4">Herzlichen Glückwunsch!</h2>
                         <p className="text-gray-600 mb-8 text-lg leading-relaxed">
                             Dein Upgrade war erfolgreich! <br/>
                             Du hast jetzt Zugriff auf alle <strong>{currentPlan?.title || userTier}</strong> Features. <br/>

@@ -15,7 +15,7 @@ const HowItWorksPage = ({ t, setView }) => {
             {/* HERO */}
             <div className="bg-dark text-white py-20 px-4 text-center">
                 <h1 className="text-4xl md:text-5xl font-bold font-heading mb-6">{t.how_it_works}</h1>
-                <p className="text-xl text-gray-300 max-w-2xl mx-auto">Einfach, sicher und transparent. So findest du deinen nächsten Kurs oder startest als Anbieter durch.</p>
+                <p className="text-xl text-gray-100 max-w-2xl mx-auto">Einfach, sicher und transparent. So findest du deinen nächsten Kurs oder startest als Anbieter durch.</p>
             </div>
 
             <div className="max-w-7xl mx-auto px-4 py-16">
@@ -119,14 +119,20 @@ const HowItWorksPage = ({ t, setView }) => {
                     <div className="space-y-4">
                         {faqs.map((i) => (
                             <div key={i} className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm transition-all duration-300 hover:shadow-md">
-                                <button 
+                                <button
+                                    id={`hiw-faq-btn-${i}`}
                                     onClick={() => toggleFaq(i)}
-                                    className="w-full flex items-center justify-between p-5 text-left focus:outline-none"
+                                    aria-expanded={openFaq === i}
+                                    aria-controls={`hiw-faq-panel-${i}`}
+                                    className="w-full flex items-center justify-between p-5 text-left"
                                 >
                                     <span className="font-bold text-dark text-lg pr-4">{t[`faq_q${i}`]}</span>
-                                    {openFaq === i ? <Minus className="w-5 h-5 text-primary flex-shrink-0" /> : <Plus className="w-5 h-5 text-gray-400 flex-shrink-0" />}
+                                    {openFaq === i ? <Minus className="w-5 h-5 text-primary flex-shrink-0" aria-hidden="true" /> : <Plus className="w-5 h-5 text-gray-400 flex-shrink-0" aria-hidden="true" />}
                                 </button>
-                                <div 
+                                <div
+                                    id={`hiw-faq-panel-${i}`}
+                                    role="region"
+                                    aria-labelledby={`hiw-faq-btn-${i}`}
                                     className={`overflow-hidden transition-all duration-300 ease-in-out ${openFaq === i ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}
                                 >
                                     <div className="p-5 pt-0 text-gray-600 leading-relaxed border-t border-gray-100 mt-2">
@@ -143,7 +149,7 @@ const HowItWorksPage = ({ t, setView }) => {
                     <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
                     <div className="relative z-10">
                         <h2 className="text-3xl font-bold text-white mb-6 font-heading">{t.cta_title}</h2>
-                        <p className="text-gray-300 mb-8 max-w-2xl mx-auto text-lg">{t.cta_subtitle}</p>
+                        <p className="text-gray-100 mb-8 max-w-2xl mx-auto text-lg">{t.cta_subtitle}</p>
                         <button onClick={() => setView('login')} className="bg-primary text-white px-10 py-4 rounded-full font-bold text-lg hover:bg-orange-600 transition shadow-lg hover:scale-105">
                             {t.cta_btn}
                         </button>

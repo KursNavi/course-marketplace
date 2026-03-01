@@ -1903,9 +1903,9 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
 
         {/* Unsaved Changes Confirmation Modal */}
         {showUnsavedChangesModal && (
-            <div className="fixed inset-0 bg-dark/60 backdrop-blur-sm z-[110] flex items-center justify-center p-4 animate-in fade-in duration-200">
+            <div className="fixed inset-0 bg-dark/60 backdrop-blur-sm z-[110] flex items-center justify-center p-4 animate-in fade-in duration-200" role="dialog" aria-modal="true" aria-labelledby="unsaved-changes-title">
                 <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl">
-                    <h3 className="text-lg font-bold mb-3">Ungespeicherte Änderungen</h3>
+                    <h3 id="unsaved-changes-title" className="text-lg font-bold mb-3">Ungespeicherte Änderungen</h3>
                     <p className="text-gray-600 mb-6">
                         Du hast ungespeicherte Änderungen. Möchtest du wirklich zurückgehen? Deine Änderungen gehen verloren.
                     </p>

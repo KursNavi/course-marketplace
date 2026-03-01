@@ -1003,7 +1003,7 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
                 {profileData.logo_url ? (
                   <img
                     src={profileData.logo_url}
-                    alt="Logo"
+                    alt={`${profileData.name || 'Anbieter'} Logo`}
                     className="w-20 h-20 rounded-xl object-contain bg-white border border-gray-200 p-1"
                   />
                 ) : (
@@ -1046,7 +1046,7 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
               <div className="space-y-3">
                 <img
                   src={profileData.cover_image_url || DEFAULT_COVER_IMAGE}
-                  alt="Cover"
+                  alt={`${profileData.name || 'Anbieter'} Coverbild`}
                   className="w-full h-40 rounded-xl object-cover border border-gray-200"
                 />
                 <label className="cursor-pointer inline-block">

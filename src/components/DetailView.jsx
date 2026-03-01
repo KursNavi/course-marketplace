@@ -953,16 +953,17 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
         })()}
 
         {showSavePrompt && (
-            <div className="fixed inset-0 bg-dark/60 backdrop-blur-sm z-[110] flex items-center justify-center p-4 animate-in fade-in duration-200">
+            <div className="fixed inset-0 bg-dark/60 backdrop-blur-sm z-[110] flex items-center justify-center p-4 animate-in fade-in duration-200" role="dialog" aria-modal="true" aria-labelledby="save-prompt-title">
                 <div className="bg-white rounded-2xl p-6 max-w-md w-full relative shadow-2xl">
                     <button
                         onClick={() => { setShowSavePrompt(false); setPendingExternalUrl(null); }}
                         className="absolute top-4 right-4 text-gray-400 hover:text-dark transition-colors"
+                        aria-label="Schliessen"
                     >
-                        <X className="w-6 h-6" />
+                        <X className="w-6 h-6" aria-hidden="true" />
                     </button>
 
-                    <h3 className="text-xl font-bold mb-2 font-heading">Kurs merken?</h3>
+                    <h3 id="save-prompt-title" className="text-xl font-bold mb-2 font-heading">Kurs merken?</h3>
                     <p className="text-sm text-gray-600">
                         Möchtest du <span className="font-bold">„{course.title}“</span> in deine Merkliste aufnehmen?
                     </p>
@@ -1008,13 +1009,13 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
             </div>
         )}
         {showLeadModal && (
-            <div className="fixed inset-0 bg-dark/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200">
+            <div className="fixed inset-0 bg-dark/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200" role="dialog" aria-modal="true" aria-labelledby="lead-modal-title">
                 <div className="bg-white rounded-2xl p-6 max-w-md w-full relative shadow-2xl">
-                    <button onClick={() => setShowLeadModal(false)} className="absolute top-4 right-4 text-gray-400 hover:text-dark transition-colors"><X className="w-6 h-6"/></button>
+                    <button onClick={() => setShowLeadModal(false)} className="absolute top-4 right-4 text-gray-400 hover:text-dark transition-colors" aria-label="Schliessen"><X className="w-6 h-6" aria-hidden="true" /></button>
                     {leadStatus === 'success' ? (
                         <div className="text-center py-8 animate-in zoom-in duration-300">
                             <div className="w-16 h-16 bg-green-100 text-green-500 rounded-full flex items-center justify-center mx-auto mb-4"><CheckCircle className="w-8 h-8" /></div>
-                            <h3 className="text-xl font-bold font-heading mb-2">Anfrage gesendet!</h3>
+                            <h3 id="lead-modal-title" className="text-xl font-bold font-heading mb-2">Anfrage gesendet!</h3>
                             <p className="text-gray-600">Der Anbieter wird sich bald bei dir melden.</p>
 
                             {!isSaved && (
@@ -1032,7 +1033,7 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
                         </div>
                     ) : (
                         <>
-                            <h3 className="text-xl font-bold mb-1 font-heading">Kurs unverbindlich anfragen</h3>
+                            <h3 id="lead-modal-title" className="text-xl font-bold mb-1 font-heading">Kurs unverbindlich anfragen</h3>
                             <p className="text-xs text-gray-500 mb-6">Deine Anfrage geht direkt an {course.instructor_name}.</p>
                             <form onSubmit={handleLeadSubmit} className="space-y-4">
                                 <div><label className="block text-xs font-bold text-gray-500 uppercase mb-1">Dein Name</label><input name="name" required defaultValue={user?.user_metadata?.full_name || user?.user_metadata?.name || ''} placeholder="Vor- und Nachname" className="w-full p-3 bg-gray-50 rounded-lg border border-transparent focus:bg-white focus:border-primary outline-none transition" /></div>
