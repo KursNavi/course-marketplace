@@ -1243,7 +1243,7 @@ const getCategoryLabel = (key, lang = 'de', dbTaxonomy = null) => {
 };
 
 // --- MAIN DASHBOARD COMPONENT ---
-const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBookings, savedCourses, savedCourseIds, onToggleSaveCourse, handleDeleteCourse, handleEditCourse, handleUpdateCourseStatus, handleCancelEvent, showNotification, changeLanguage, setSelectedCourse, refreshBookings, isImpersonating }) => {
+const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBookings, savedCourses, savedCourseIds, onToggleSaveCourse, handleDeleteCourse, handleEditCourse, handleUpdateCourseStatus, handleCancelEvent, showNotification, changeLanguage, setSelectedCourse, refreshBookings, refreshTeacherEarnings, isImpersonating }) => {
     const [dashView, setDashView] = useState('overview');
     const [userTier, setUserTier] = useState('basic'); // basic, pro, premium, enterprise
     const [showSuccessModal, setShowSuccessModal] = useState(false); // NEW: Success Modal State
@@ -1367,8 +1367,8 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
 
             showNotification('Buchung als durchgeführt markiert. Auszahlung wird in 2 Tagen freigegeben.', 'success');
 
-            if (refreshBookings) {
-                await refreshBookings(user.id);
+            if (refreshTeacherEarnings) {
+                await refreshTeacherEarnings(user.id);
             }
         } catch (error) {
             console.error('Mark delivered error:', error);

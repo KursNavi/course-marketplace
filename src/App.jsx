@@ -379,10 +379,16 @@ export default function KursNaviPro() {  // 1. Initial State Logic
 
   const handleCancelEvent = async (eventId, reason) => {
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error('Nicht eingeloggt');
+
       const response = await fetch('/api/cancel-event', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ eventId, userId: user.id, reason })
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({ eventId, reason })
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Fehler beim Absagen');
@@ -1624,7 +1630,7 @@ useEffect(() => {
       {view === 'ratgeber-cluster' && <RatgeberClusterView lang={lang} />}
       {view === 'ratgeber-artikel' && <RatgeberArtikelView lang={lang} />}
       {view === 'not-found' && <NotFoundPage setView={setView} />}
-      {view === 'dashboard' && effectiveUser && <Dashboard user={effectiveUser} setUser={impersonatedUser ? () => {} : setUser} t={t} setView={setView} courses={courses} teacherEarnings={teacherEarnings} myBookings={myBookings} savedCourses={savedCourses} savedCourseIds={savedCourseIds} onToggleSaveCourse={toggleSaveCourse} handleDeleteCourse={handleDeleteCourse} handleEditCourse={handleEditCourse} handleUpdateCourseStatus={handleUpdateCourseStatus} handleCancelEvent={handleCancelEvent} showNotification={showNotification} changeLanguage={changeLanguage} setSelectedCourse={setSelectedCourse} refreshBookings={fetchBookings} isImpersonating={!!impersonatedUser} />}
+      {view === 'dashboard' && effectiveUser && <Dashboard user={effectiveUser} setUser={impersonatedUser ? () => {} : setUser} t={t} setView={setView} courses={courses} teacherEarnings={teacherEarnings} myBookings={myBookings} savedCourses={savedCourses} savedCourseIds={savedCourseIds} onToggleSaveCourse={toggleSaveCourse} handleDeleteCourse={handleDeleteCourse} handleEditCourse={handleEditCourse} handleUpdateCourseStatus={handleUpdateCourseStatus} handleCancelEvent={handleCancelEvent} showNotification={showNotification} changeLanguage={changeLanguage} setSelectedCourse={setSelectedCourse} refreshBookings={fetchBookings} refreshTeacherEarnings={fetchTeacherEarnings} isImpersonating={!!impersonatedUser} />}
       {view === 'create' && user?.role === 'teacher' && <TeacherForm key={editingCourse?.id || 'new'} t={t} setView={setView} user={user} fetchCourses={fetchCourses} showNotification={showNotification} setEditingCourse={setEditingCourse} initialData={editingCourse} />}
       </Suspense>
       </main>

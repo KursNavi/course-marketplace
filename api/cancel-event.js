@@ -45,19 +45,33 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  // Extract JWT from Authorization header
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Missing or invalid authorization header' });
+  }
+
+  const token = authHeader.replace('Bearer ', '');
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
   const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
   const resend = new Resend(process.env.RESEND_API_KEY);
   const ADMIN_EMAIL = 'btrespondek@gmail.com';
 
   try {
-    const { eventId, userId, reason } = req.body;
+    // 1. Verify provider identity via JWT
+    const { data: { user: authUser }, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !authUser) {
+      return res.status(401).json({ error: 'Ungültiges oder abgelaufenes Token' });
+    }
+    const userId = authUser.id;
 
-    if (!eventId || !userId) {
-      return res.status(400).json({ error: 'eventId and userId are required' });
+    const { eventId, reason } = req.body;
+
+    if (!eventId) {
+      return res.status(400).json({ error: 'eventId is required' });
     }
 
-    // 1. Load event + course (ownership check via course.user_id)
+    // 2. Load event + course (ownership check via course.user_id)
     const { data: event, error: eventError } = await supabase
       .from('course_events')
       .select('*, courses (id, title, price, user_id)')
