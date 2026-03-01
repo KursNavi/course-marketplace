@@ -80,6 +80,29 @@ export const COURSE_LEVELS = {
   all_levels: { de: "Alle Niveaus / gemischtes Niveau", en: "All Levels / Mixed", fr: "Tous niveaux", it: "Tutti i livelli" }
 };
 
+// --- 3-SÄULEN (Berufliche Kurs-Klassifikation) ---
+// Orthogonal zur Fach-Taxonomie, nur für professionelle/berufliche Kurse
+export const BERUF_SAEULEN = {
+  diplome: {
+    de: "Diplome & Höhere Abschlüsse",
+    shortDe: "Diplome",
+    subtitle: "Karrieresprung",
+    description: "Eidg. Abschlüsse (BP/HFP/HF), CAS/DAS/MAS"
+  },
+  fachkurse: {
+    de: "Fachkurse & Praxis-Zertifikate",
+    shortDe: "Fachkurse",
+    subtitle: "Skill-Update",
+    description: "Zertifikatskurse, Seminare, Branchen-Zertifikate"
+  },
+  quereinstieg: {
+    de: "Quereinstieg & Berufsbildung",
+    shortDe: "Quereinstieg",
+    subtitle: "Neuorientierung",
+    description: "Berufliche Grundbildung (EFZ/EBA), Bootcamps"
+  }
+};
+
 export const AGE_GROUPS = {
   age_0_3: { de: "0–3 Jahre", en: "0–3 Years", fr: "0–3 ans", it: "0–3 anni" },
   age_4_6: { de: "4–6 Jahre", en: "4–6 Years", fr: "4–6 ans", it: "4–6 anni" },

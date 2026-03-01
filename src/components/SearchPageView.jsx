@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo } from 'react';
 import { Search, ChevronRight, User, X, Shield, MapPin, CheckCircle, Loader, Bell, ArrowDown, Bookmark, BookmarkCheck, CreditCard, Info, EyeOff, Briefcase, Palette, Smile, BookOpen, Compass } from 'lucide-react';
-import { LocationDropdown, LanguageDropdown, DeliveryTypeFilter } from './Filters';
+import { LocationDropdown, LanguageDropdown, DeliveryTypeFilter, SaeulenFilter } from './Filters';
 import { Globe } from 'lucide-react';
 import { CATEGORY_TYPES, AGE_GROUPS, COURSE_LEVELS, DELIVERY_TYPES, SEGMENT_CONFIG, TYPE_DISPLAY_LABELS } from '../lib/constants';
 import { formatPriceCHF } from '../lib/formatPrice';
@@ -36,7 +36,8 @@ const SearchPageView = ({
     selectedLanguages, setSelectedLanguages, langMenuOpen, setLangMenuOpen, langMenuRef,
     selectedDeliveryTypes, setSelectedDeliveryTypes, deliveryMenuOpen, setDeliveryMenuOpen, deliveryMenuRef,
     savedCourseIds, onToggleSaveCourse,
-    user
+    user,
+    selectedSaule, setSelectedSaule
 }) => {
 
     // Load taxonomy from DB
@@ -517,6 +518,11 @@ const SearchPageView = ({
                             {availableFocuses.map(f => (<option key={f} value={f} className="text-gray-900">{f}</option>))}
                         </select>
                     </div>
+
+                    {/* 3-SÄULEN FILTER — nur für berufliche Kurse */}
+                    {(searchType === 'beruflich' || searchType === 'professionell') && (
+                        <SaeulenFilter selectedSaule={selectedSaule} setSelectedSaule={setSelectedSaule} />
+                    )}
 
                     <div className="flex gap-4 overflow-x-auto pb-2 items-center border-t pt-3 border-gray-100">
                         <label className="flex items-center bg-white px-3 py-1.5 rounded-lg border border-gray-200 cursor-pointer">

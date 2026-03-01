@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
-import { ArrowLeft, Loader, Calendar, Plus, Trash2, ExternalLink, Globe, MapPin, Lightbulb, X, Send, ChevronDown, Images, Check } from 'lucide-react';
+import { ArrowLeft, Loader, Calendar, Plus, Trash2, ExternalLink, Globe, MapPin, Lightbulb, X, Send, ChevronDown, Images, Check, GraduationCap, BookOpen, Compass } from 'lucide-react';
 import { KursNaviLogo } from './Layout';
-import { SWISS_CANTONS, NEW_TAXONOMY, CATEGORY_TYPES, COURSE_LEVELS, DELIVERY_TYPES, COURSE_LANGUAGES, TYPE_DISPLAY_LABELS } from '../lib/constants';
+import { SWISS_CANTONS, NEW_TAXONOMY, CATEGORY_TYPES, COURSE_LEVELS, DELIVERY_TYPES, COURSE_LANGUAGES, TYPE_DISPLAY_LABELS, BERUF_SAEULEN } from '../lib/constants';
 import { supabase } from '../lib/supabase';
 import { useTaxonomy } from '../hooks/useTaxonomy';
 import { computeImageHash, getExistingImageByHash, uploadImageWithHash, getUserCourseImages, deleteImageFromLibrary } from '../lib/imageUtils';
@@ -444,6 +444,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
     const [selectedLevel, setSelectedLevel] = useState(draft?.selectedLevel || 'all_levels');
     const [courseLanguages, setCourseLanguages] = useState(draft?.courseLanguages || ['Deutsch']);
     const [deliveryTypes, setDeliveryTypes] = useState(draft?.deliveryTypes || ['presence']);
+    const [berufSaule, setBerufSaule] = useState(draft?.berufSaule || '');
 
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -620,6 +621,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
             }
 
             if (initialData.level) setSelectedLevel(initialData.level);
+            if (initialData.beruf_saule) setBerufSaule(initialData.beruf_saule);
             // Support both old 'language' (string) and new 'languages' (array) field
             if (initialData.languages && Array.isArray(initialData.languages) && initialData.languages.length > 0) {
                 setCourseLanguages(initialData.languages);
@@ -890,6 +892,10 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
                 row.area = '';
                 row.specialty = '';
                 row.focus = '';
+                // Reset beruf_saule when primary category type changes away from professionell
+                if (index === 0 && value !== 'professionell' && value !== 'beruflich') {
+                    setBerufSaule('');
+                }
             } else if (field === 'area') {
                 row.area = value;
                 row.specialty = '';
@@ -1204,7 +1210,8 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
             provider_url: providerUrl,
             user_id: user?.id || initialData?.user_id,
             is_pro: user?.is_professional ?? initialData?.is_pro ?? false,
-            status: courseStatus
+            status: courseStatus,
+            beruf_saule: (catType === 'professionell' || catType === 'beruflich') ? (berufSaule || null) : null
         };
 
         // 6. DB Operations
@@ -1509,6 +1516,48 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                                 </button>
                             </div>
                         </div>
+
+                        {/* 3-Säulen: Nur für berufliche Kurse */}
+                        {(categories[0]?.type === 'professionell' || categories[0]?.type === 'beruflich') && (
+                            <div className="bg-white/60 p-4 rounded-lg border border-blue-200/60 mt-4">
+                                <span className="text-sm font-bold text-blue-900 block mb-1">
+                                    Berufliche Säule
+                                </span>
+                                <span className="text-xs text-gray-500 block mb-3">
+                                    Welche Art beruflicher Weiterbildung bietet dieser Kurs?
+                                </span>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                    {Object.entries(BERUF_SAEULEN).map(([key, config]) => {
+                                        const Icon = { diplome: GraduationCap, fachkurse: BookOpen, quereinstieg: Compass }[key];
+                                        return (
+                                            <label
+                                                key={key}
+                                                className={`flex flex-col p-3 rounded-lg border cursor-pointer transition ${
+                                                    berufSaule === key
+                                                        ? 'bg-blue-50 border-blue-400 ring-2 ring-blue-200'
+                                                        : 'bg-white border-gray-200 hover:border-blue-200'
+                                                }`}
+                                            >
+                                                <div className="flex items-center gap-2">
+                                                    <input
+                                                        type="radio"
+                                                        name="beruf_saule"
+                                                        value={key}
+                                                        checked={berufSaule === key}
+                                                        onChange={(e) => { setBerufSaule(e.target.value); markDirty(); }}
+                                                        className="text-blue-600 focus:ring-blue-500"
+                                                    />
+                                                    <Icon className="w-4 h-4 text-blue-600" />
+                                                    <span className="text-sm font-medium text-gray-800">{config.shortDe}</span>
+                                                    <span className="text-[10px] text-gray-400">({config.subtitle})</span>
+                                                </div>
+                                                <span className="text-xs text-gray-500 mt-1 ml-6">{config.description}</span>
+                                            </label>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4 pt-4 border-t border-orange-200/50">
                              <div>

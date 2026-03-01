@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronDown, ChevronRight, ChevronLeft, MapPin, Globe, Monitor } from 'lucide-react';
-import { SWISS_CANTONS, DELIVERY_TYPES, COURSE_LANGUAGES, TYPE_DISPLAY_LABELS } from '../lib/constants';
+import { SWISS_CANTONS, DELIVERY_TYPES, COURSE_LANGUAGES, TYPE_DISPLAY_LABELS, BERUF_SAEULEN } from '../lib/constants';
+import { GraduationCap, BookOpen, Compass } from 'lucide-react';
 import { useTaxonomy } from '../hooks/useTaxonomy';
 
 export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCatPath, catMenuOpen, setCatMenuOpen, t, catMenuRef }) => {
@@ -314,6 +315,50 @@ export const DeliveryTypeFilter = ({ selectedDeliveryTypes, setSelectedDeliveryT
                         <button onClick={() => setDeliveryMenuOpen(false)} className="text-xs font-bold text-primary">Done</button>
                     </div>
                 </div>
+            )}
+        </div>
+    );
+};
+
+const SAEULEN_ICONS = { diplome: GraduationCap, fachkurse: BookOpen, quereinstieg: Compass };
+
+export const SaeulenFilter = ({ selectedSaule, setSelectedSaule }) => {
+    return (
+        <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-xs text-gray-400 mr-1 hidden md:inline">Berufliche Säule:</span>
+            {Object.entries(BERUF_SAEULEN).map(([key, config]) => {
+                const Icon = SAEULEN_ICONS[key];
+                const active = selectedSaule === key;
+                return (
+                    <button
+                        key={key}
+                        type="button"
+                        onClick={() => setSelectedSaule(active ? '' : key)}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${
+                            active
+                                ? 'bg-blue-100 border-blue-300 text-blue-800 shadow-sm'
+                                : 'bg-white border-gray-200 text-gray-600 hover:border-blue-200 hover:bg-blue-50'
+                        }`}
+                        title={config.description}
+                        aria-pressed={active}
+                    >
+                        <Icon className="w-3.5 h-3.5" aria-hidden="true" />
+                        <span>{config.shortDe}</span>
+                        <span className={`text-[10px] hidden sm:inline ${active ? 'text-blue-600' : 'text-gray-400'}`}>
+                            ({config.subtitle})
+                        </span>
+                    </button>
+                );
+            })}
+            {selectedSaule && (
+                <button
+                    type="button"
+                    onClick={() => setSelectedSaule('')}
+                    className="text-xs text-gray-400 hover:text-red-500 ml-1"
+                    aria-label="Säulen-Filter zurücksetzen"
+                >
+                    ✕
+                </button>
             )}
         </div>
     );

@@ -270,6 +270,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
   const [filterLevel, setFilterLevel] = useState("All");
   const [filterPro, setFilterPro] = useState(false);
   const [filterDirectBooking, setFilterDirectBooking] = useState(false);
+  const [selectedSaule, setSelectedSaule] = useState("");
 
   const catMenuRef = useRef(null);
   const locMenuRef = useRef(null);
@@ -1010,7 +1011,12 @@ export default function KursNaviPro() {  // 1. Initial State Logic
         matchesCategory = selectedCatPath.every(part => part && courseCatStr.includes(part.toString().toLowerCase()));
     }
 
-    return matchesType && matchesArea && matchesSpecialty && matchesFocus && matchesCategory;
+    let matchesSaule = true;
+    if (selectedSaule) {
+        matchesSaule = course.beruf_saule === selectedSaule;
+    }
+
+    return matchesType && matchesArea && matchesSpecialty && matchesFocus && matchesCategory && matchesSaule;
   });
   
 // --- EFFECT HOOKS ---
@@ -1094,11 +1100,12 @@ export default function KursNaviPro() {  // 1. Initial State Logic
       const priceParam = query.get('price');
       const proParam = query.get('pro');
       const bookingParam = query.get('booking');
+      const sauleParam = query.get('saule');
 
       // Reset filters first when navigating to search, then apply URL params
       if (nextView === 'search') {
         const hasAnyParam = typeParam || areaParam || specParam || focusParam || qParam || locParam || levelParam
-          || langParam || deliveryParam || fromParam || toParam || priceParam || proParam || bookingParam;
+          || langParam || deliveryParam || fromParam || toParam || priceParam || proParam || bookingParam || sauleParam;
         // Only reset if no params are provided (clean /search navigation)
         if (!hasAnyParam) {
           setSearchType("");
@@ -1115,6 +1122,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
           setFilterPriceMax("");
           setFilterPro(false);
           setFilterDirectBooking(false);
+          setSelectedSaule("");
         } else {
           // Apply URL params — restore present ones, reset missing ones
           if (typeParam) setSearchType(typeParam); else setSearchType("");
@@ -1131,6 +1139,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
           if (priceParam) setFilterPriceMax(priceParam); else setFilterPriceMax("");
           setFilterPro(proParam === '1');
           setFilterDirectBooking(bookingParam === '1');
+          if (sauleParam) setSelectedSaule(sauleParam); else setSelectedSaule("");
         }
       }
     };
@@ -1190,6 +1199,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
     if (filterPriceMax) params.set('price', filterPriceMax);
     if (filterPro) params.set('pro', '1');
     if (filterDirectBooking) params.set('booking', '1');
+    if (selectedSaule) params.set('saule', selectedSaule);
 
     const newUrl = '/search' + (params.toString() ? '?' + params.toString() : '');
     const currentUrl = window.location.pathname + window.location.search;
@@ -1198,7 +1208,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
     }
   }, [view, searchType, searchArea, searchSpecialty, searchFocus, searchQuery,
       selectedLocations, filterLevel, selectedLanguages, selectedDeliveryTypes,
-      filterDateFrom, filterDateTo, filterPriceMax, filterPro, filterDirectBooking]);
+      filterDateFrom, filterDateTo, filterPriceMax, filterPro, filterDirectBooking, selectedSaule]);
 
   useEffect(() => {
     let cancelled = false;
@@ -1491,7 +1501,7 @@ useEffect(() => {
          {view === 'landing-kids' && ( <LandingView title={t.landing_kids_title} subtitle={t.landing_kids_sub} variant="kids" searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearchSubmit={handleSearchSubmit} setSelectedCatPath={setSelectedCatPath} setView={setView} t={t} getCatLabel={getCatLabel} /> )}
 
       {view === 'search' && (
-          <SearchPageView courses={courses} filteredCoursesPreCategory={filteredCoursesPreCategory} searchQuery={searchQuery} setSearchQuery={setSearchQuery} searchType={searchType} setSearchType={setSearchType} searchArea={searchArea} setSearchArea={setSearchArea} searchSpecialty={searchSpecialty} setSearchSpecialty={setSearchSpecialty} searchFocus={searchFocus} setSearchFocus={setSearchFocus} selectedLocations={selectedLocations} setSelectedLocations={setSelectedLocations} locMenuOpen={locMenuOpen} setLocMenuOpen={setLocMenuOpen} locMenuRef={locMenuRef} loading={loading} filteredCourses={filteredCourses} setSelectedCourse={setSelectedCourse} setView={setView} t={t} getCatLabel={getCatLabel} filterDateFrom={filterDateFrom} setFilterDateFrom={setFilterDateFrom} filterDateTo={filterDateTo} setFilterDateTo={setFilterDateTo} filterPriceMax={filterPriceMax} setFilterPriceMax={setFilterPriceMax} filterLevel={filterLevel} setFilterLevel={setFilterLevel} filterPro={filterPro} setFilterPro={setFilterPro} filterDirectBooking={filterDirectBooking} setFilterDirectBooking={setFilterDirectBooking} selectedLanguages={selectedLanguages} setSelectedLanguages={setSelectedLanguages} langMenuOpen={langMenuOpen} setLangMenuOpen={setLangMenuOpen} langMenuRef={langMenuRef} selectedDeliveryTypes={selectedDeliveryTypes} setSelectedDeliveryTypes={setSelectedDeliveryTypes} deliveryMenuOpen={deliveryMenuOpen} setDeliveryMenuOpen={setDeliveryMenuOpen} deliveryMenuRef={deliveryMenuRef} savedCourseIds={savedCourseIds} onToggleSaveCourse={toggleSaveCourse} user={user} />
+          <SearchPageView courses={courses} filteredCoursesPreCategory={filteredCoursesPreCategory} searchQuery={searchQuery} setSearchQuery={setSearchQuery} searchType={searchType} setSearchType={setSearchType} searchArea={searchArea} setSearchArea={setSearchArea} searchSpecialty={searchSpecialty} setSearchSpecialty={setSearchSpecialty} searchFocus={searchFocus} setSearchFocus={setSearchFocus} selectedLocations={selectedLocations} setSelectedLocations={setSelectedLocations} locMenuOpen={locMenuOpen} setLocMenuOpen={setLocMenuOpen} locMenuRef={locMenuRef} loading={loading} filteredCourses={filteredCourses} setSelectedCourse={setSelectedCourse} setView={setView} t={t} getCatLabel={getCatLabel} filterDateFrom={filterDateFrom} setFilterDateFrom={setFilterDateFrom} filterDateTo={filterDateTo} setFilterDateTo={setFilterDateTo} filterPriceMax={filterPriceMax} setFilterPriceMax={setFilterPriceMax} filterLevel={filterLevel} setFilterLevel={setFilterLevel} filterPro={filterPro} setFilterPro={setFilterPro} filterDirectBooking={filterDirectBooking} setFilterDirectBooking={setFilterDirectBooking} selectedLanguages={selectedLanguages} setSelectedLanguages={setSelectedLanguages} langMenuOpen={langMenuOpen} setLangMenuOpen={setLangMenuOpen} langMenuRef={langMenuRef} selectedDeliveryTypes={selectedDeliveryTypes} setSelectedDeliveryTypes={setSelectedDeliveryTypes} deliveryMenuOpen={deliveryMenuOpen} setDeliveryMenuOpen={setDeliveryMenuOpen} deliveryMenuRef={deliveryMenuRef} savedCourseIds={savedCourseIds} onToggleSaveCourse={toggleSaveCourse} user={user} selectedSaule={selectedSaule} setSelectedSaule={setSelectedSaule} />
       )}
 
             {view === 'category-location' && (
