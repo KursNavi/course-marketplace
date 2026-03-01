@@ -12,3 +12,7 @@ WHERE id IN (141, 142, 143, 297, 144);
 -- 3. Berufsmaturität BM2 = offizieller Schweizer Abschluss → diplome
 UPDATE courses SET beruf_saule = 'diplome'
 WHERE id = 278;
+
+-- 4. "star Fachausweis" = Anbieter-Zertifikat (nicht eidgenössisch) → fachkurse
+UPDATE courses SET beruf_saule = 'fachkurse'
+WHERE id = 27;
