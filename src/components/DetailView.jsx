@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, User, MapPin, Clock, CheckCircle, Calendar, Shield, ExternalLink, Mail, X, Send, Map, Info, Loader, Bookmark, BookmarkCheck, ChevronRight, AlertCircle, Compass } from 'lucide-react';
+import { ArrowLeft, User, MapPin, Clock, CheckCircle, Calendar, Shield, ExternalLink, Mail, X, Send, Map, Info, Loader, Bookmark, BookmarkCheck, ChevronRight, AlertCircle, Compass, LogIn } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { formatPriceCHF } from '../lib/formatPrice';
 import { useTaxonomy } from '../hooks/useTaxonomy';
@@ -774,18 +774,33 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
                                             )}
                                         </div>
                                         
-                                        <button 
-                                            onClick={() => !ev.isFull && handleBookingAction(ev)} 
-                                            disabled={ev.isFull && course.booking_type === 'platform'}
-                                            className={`w-full py-2.5 rounded-lg font-bold text-sm transition flex items-center justify-center 
-                                                ${(ev.isFull && course.booking_type === 'platform') 
-                                                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                                                    : 'bg-primary text-white hover:bg-orange-600 shadow-sm hover:shadow active:scale-95'}`}
-                                        >
-                                            {course.booking_type === 'lead' && <Mail className="w-4 h-4 mr-2" />}
-                                            {(ev.isFull && course.booking_type === 'platform') ? 'Ausgebucht' :
-                                             (course.booking_type === 'lead' ? 'Anfrage senden' : t.btn_book || 'Jetzt Buchen')}
-                                        </button>
+                                        {!user && course.booking_type !== 'lead' ? (
+                                            <div className="w-full text-center bg-orange-50 border border-orange-200 rounded-lg p-3">
+                                                <p className="text-xs text-gray-600 mb-2">
+                                                    <LogIn className="w-3.5 h-3.5 inline mr-1 -mt-0.5" />
+                                                    Zum Buchen ist ein Profil erforderlich.
+                                                </p>
+                                                <button
+                                                    onClick={() => { localStorage.setItem('pendingCourseId', course.id); if (ev?.id) localStorage.setItem('pendingEventId', ev.id); setView('login'); }}
+                                                    className="text-xs font-bold text-primary hover:underline"
+                                                >
+                                                    Jetzt anmelden oder registrieren
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <button
+                                                onClick={() => !ev.isFull && handleBookingAction(ev)}
+                                                disabled={ev.isFull && course.booking_type === 'platform'}
+                                                className={`w-full py-2.5 rounded-lg font-bold text-sm transition flex items-center justify-center
+                                                    ${(ev.isFull && course.booking_type === 'platform')
+                                                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                                        : 'bg-primary text-white hover:bg-orange-600 shadow-sm hover:shadow active:scale-95'}`}
+                                            >
+                                                {course.booking_type === 'lead' && <Mail className="w-4 h-4 mr-2" />}
+                                                {(ev.isFull && course.booking_type === 'platform') ? 'Ausgebucht' :
+                                                 (course.booking_type === 'lead' ? 'Anfrage senden' : t.btn_book || 'Jetzt Buchen')}
+                                            </button>
+                                        )}
                                     </div>
                                 ))}
                             </div>
@@ -821,20 +836,35 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
                                 </div>
                             )}
 
-                            <button
-                                onClick={() => (course.booking_type === 'platform_flex' || course.booking_type === 'lead') && handleBookingAction()}
-                                disabled={course.booking_type === 'platform' || (course.booking_type === 'platform_flex' && !ticketAvailable)}
-                                className={`w-full font-bold py-3 rounded-lg transition shadow-sm flex items-center justify-center
-                                    ${course.booking_type === 'platform' || (course.booking_type === 'platform_flex' && !ticketAvailable)
-                                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                        : 'bg-primary text-white hover:bg-orange-600'}`}
-                            >
-                                {course.booking_type === 'platform'
-                                    ? 'Derzeit nicht buchbar'
-                                    : course.booking_type === 'platform_flex'
-                                        ? (ticketAvailable ? `Jetzt buchen (${getPriceLabel(course)})` : 'Ausgebucht')
-                                        : <><Mail className="w-4 h-4 mr-2"/> Anfrage senden</>}
-                            </button>
+                            {!user && course.booking_type !== 'lead' ? (
+                                <div className="w-full text-center bg-orange-50 border border-orange-200 rounded-lg p-3">
+                                    <p className="text-xs text-gray-600 mb-2">
+                                        <LogIn className="w-3.5 h-3.5 inline mr-1 -mt-0.5" />
+                                        Zum Buchen ist ein Profil erforderlich.
+                                    </p>
+                                    <button
+                                        onClick={() => { localStorage.setItem('pendingCourseId', course.id); setView('login'); }}
+                                        className="text-xs font-bold text-primary hover:underline"
+                                    >
+                                        Jetzt anmelden oder registrieren
+                                    </button>
+                                </div>
+                            ) : (
+                                <button
+                                    onClick={() => (course.booking_type === 'platform_flex' || course.booking_type === 'lead') && handleBookingAction()}
+                                    disabled={course.booking_type === 'platform' || (course.booking_type === 'platform_flex' && !ticketAvailable)}
+                                    className={`w-full font-bold py-3 rounded-lg transition shadow-sm flex items-center justify-center
+                                        ${course.booking_type === 'platform' || (course.booking_type === 'platform_flex' && !ticketAvailable)
+                                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                            : 'bg-primary text-white hover:bg-orange-600'}`}
+                                >
+                                    {course.booking_type === 'platform'
+                                        ? 'Derzeit nicht buchbar'
+                                        : course.booking_type === 'platform_flex'
+                                            ? (ticketAvailable ? `Jetzt buchen (${getPriceLabel(course)})` : 'Ausgebucht')
+                                            : <><Mail className="w-4 h-4 mr-2"/> Anfrage senden</>}
+                                </button>
+                            )}
                         </div>
                     )}
 
