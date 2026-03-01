@@ -370,11 +370,12 @@ export default async function handler(req, res) {
       const providerIds = (providers || []).map(p => p.id);
       let courseCounts = {};
       let providerCategories = {};
+      let hasBookable = {};
 
       if (providerIds.length > 0) {
         const { data: courseData } = await supabase
           .from('courses')
-          .select('user_id, category_type, category_area')
+          .select('user_id, category_type, category_area, booking_type')
           .in('user_id', providerIds)
           .or('status.eq.published,status.is.null');
 
@@ -387,6 +388,11 @@ export default async function handler(req, res) {
           }
           if (c.category_type) providerCategories[c.user_id].types.add(c.category_type);
           if (c.category_area) providerCategories[c.user_id].areas.add(c.category_area);
+
+          // Track if provider has at least one course bookable through the platform
+          if (c.booking_type === 'platform' || c.booking_type === 'platform_flex') {
+            hasBookable[c.user_id] = true;
+          }
         });
       }
 
@@ -401,6 +407,8 @@ export default async function handler(req, res) {
           isVerified: p.verification_status === 'verified',
           tier: p.package_tier,
           isFeatured: p.package_tier === 'enterprise',
+          tierScore: p.package_tier === 'enterprise' ? 2 : 1,
+          hasBookableCourse: !!hasBookable[p.id],
           courseCount: courseCounts[p.id] || 0,
           categories: {
             types: providerCategories[p.id] ? Array.from(providerCategories[p.id].types) : [],
@@ -409,10 +417,12 @@ export default async function handler(req, res) {
           publishedAt: p.profile_published_at
         }))
         .sort((a, b) => {
-          if (a.isFeatured && !b.isFeatured) return -1;
-          if (!a.isFeatured && b.isFeatured) return 1;
-          if (b.courseCount !== a.courseCount) return b.courseCount - a.courseCount;
-          return a.name.localeCompare(b.name, 'de');
+          // Ranking-Score: enterprise=+2, pro/premium=+1, buchbar über Plattform=+1
+          const scoreA = a.tierScore + (a.hasBookableCourse ? 1 : 0);
+          const scoreB = b.tierScore + (b.hasBookableCourse ? 1 : 0);
+          if (scoreB !== scoreA) return scoreB - scoreA;
+          // Bei gleichem Score: Zufall
+          return Math.random() - 0.5;
         })
         .filter(p => p.courseCount > 0);
 
