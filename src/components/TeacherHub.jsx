@@ -416,7 +416,7 @@ const TeacherHub = ({ setView, t, user, showNotification }) => {
                     <div>
                         <h4 className="font-bold text-lg flex items-center gap-2"><div className="bg-primary text-white p-1 rounded-md"><CheckCircle className="w-4 h-4"/></div> Kurserfassungsservice</h4>
                         <p className="text-gray-600 text-sm mt-1">Keine Zeit für Dateneingabe? Wir übernehmen das für dich.</p>
-                        <p className="text-xs text-gray-500 mt-2">Gilt für alle Pakete (begrenzt durch jeweiliges Kurslimit).</p>
+                        <p className="text-xs text-gray-500 mt-2">Gilt für alle Pakete.</p>
                     </div>
                     <div className="text-right">
                         <span className="block text-gray-800 font-bold text-lg">75 CHF <span className="text-sm font-normal">pro Kurs</span></span>
