@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Search, MapPin, Filter, CheckCircle, Loader, ChevronDown, X } from 'lucide-react';
 import { SWISS_CANTONS, SEGMENT_CONFIG } from '../lib/constants';
 import { BASE_URL } from '../lib/siteConfig';
@@ -74,8 +74,12 @@ export default function ProviderDirectory({ t, setView }) {
   const selectedSpecialtyObj = filteredSpecialties.find(s => s.id === selectedSpecialty);
   const filteredFocuses = selectedSpecialtyObj ? (selectedSpecialtyObj.focuses || []) : [];
 
+  // Stale request protection: discard responses from outdated fetches
+  const fetchIdRef = useRef(0);
+
   // Fetch providers from API
   const fetchProviders = useCallback(async (resetOffset = false) => {
+    const fetchId = ++fetchIdRef.current;
     try {
       setLoading(true);
       const currentOffset = resetOffset ? 0 : offset;
@@ -97,6 +101,9 @@ export default function ProviderDirectory({ t, setView }) {
       const response = await fetch(`/api/provider?action=directory&${params}`);
       const data = await response.json();
 
+      // Discard stale response if a newer fetch was started
+      if (fetchId !== fetchIdRef.current) return;
+
       if (!response.ok) {
         throw new Error(data.error || 'Failed to fetch providers');
       }
@@ -113,10 +120,11 @@ export default function ProviderDirectory({ t, setView }) {
       setTotalCount(data.pagination?.total || 0);
       setError(null);
     } catch (err) {
+      if (fetchId !== fetchIdRef.current) return;
       console.error('Error fetching providers:', err);
       setError(err.message);
     } finally {
-      setLoading(false);
+      if (fetchId === fetchIdRef.current) setLoading(false);
     }
   }, [offset, selectedCanton, selectedType, selectedArea, selectedSpecialty, selectedFocus, searchQuery, verifiedOnly]);
 
@@ -131,10 +139,25 @@ export default function ProviderDirectory({ t, setView }) {
     setSearchQuery(searchInput.trim());
   };
 
-  // Cascade resets
-  useEffect(() => { setSelectedArea(''); }, [selectedType]);
-  useEffect(() => { setSelectedSpecialty(''); }, [selectedArea]);
-  useEffect(() => { setSelectedFocus(''); }, [selectedSpecialty]);
+  // Batched filter change handlers — reset all dependent filters in one render cycle
+  // to prevent intermediate fetches with stale params (race condition fix)
+  const changeType = useCallback((newType) => {
+    setSelectedType(newType);
+    setSelectedArea('');
+    setSelectedSpecialty('');
+    setSelectedFocus('');
+  }, []);
+
+  const changeArea = useCallback((newArea) => {
+    setSelectedArea(newArea);
+    setSelectedSpecialty('');
+    setSelectedFocus('');
+  }, []);
+
+  const changeSpecialty = useCallback((newSpecialty) => {
+    setSelectedSpecialty(newSpecialty);
+    setSelectedFocus('');
+  }, []);
 
   // Read type from URL param and react to header category switches
   useEffect(() => {
@@ -145,9 +168,9 @@ export default function ProviderDirectory({ t, setView }) {
       const typeParam = params.get('type');
       if (typeParam) {
         const matched = types.find(t => t.slug === typeParam);
-        if (matched && matched.id !== selectedType) setSelectedType(matched.id);
+        if (matched && matched.id !== selectedType) changeType(matched.id);
       } else if (!selectedType) {
-        setSelectedType(types[0].id);
+        changeType(types[0].id);
       }
     };
 
@@ -159,7 +182,7 @@ export default function ProviderDirectory({ t, setView }) {
       window.removeEventListener('anbieter-type-change', syncTypeFromUrl);
       window.removeEventListener('popstate', syncTypeFromUrl);
     };
-  }, [types, selectedType]);
+  }, [types, selectedType, changeType]);
 
   // SEO: Set meta tags
   useEffect(() => {
@@ -298,7 +321,7 @@ export default function ProviderDirectory({ t, setView }) {
               <div className="relative w-full sm:w-auto">
                 <select
                   value={selectedArea}
-                  onChange={(e) => setSelectedArea(e.target.value)}
+                  onChange={(e) => changeArea(e.target.value)}
                   className="w-full sm:w-52 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm appearance-none cursor-pointer focus:outline-none focus:border-orange-400"
                 >
                   <option value="">Alle Bereiche</option>
@@ -315,7 +338,7 @@ export default function ProviderDirectory({ t, setView }) {
               <div className="relative w-full sm:w-auto">
                 <select
                   value={selectedSpecialty}
-                  onChange={(e) => setSelectedSpecialty(e.target.value)}
+                  onChange={(e) => changeSpecialty(e.target.value)}
                   className="w-full sm:w-52 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm appearance-none cursor-pointer focus:outline-none focus:border-orange-400"
                 >
                   <option value="">Alle Fachbereiche</option>
