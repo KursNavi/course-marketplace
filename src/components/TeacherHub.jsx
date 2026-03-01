@@ -231,7 +231,34 @@ const TeacherHub = ({ setView, t, user, showNotification }) => {
                             Ob du gerade erst anfängst oder bereits eine Kursschule betreibst – KursNavi wächst mit dir.
                         </p>
                     </div>
-                    <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+                    <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+                        {/* Einstieg */}
+                        <div className="bg-white rounded-2xl p-8 border border-green-200 hover:shadow-lg transition relative overflow-hidden">
+                            <div className="absolute top-0 right-0 bg-green-600 text-white text-xs font-bold px-3 py-1 rounded-bl-lg">EINSTIEG</div>
+                            <div className="bg-green-50 w-14 h-14 rounded-2xl flex items-center justify-center mb-5">
+                                <Zap className="w-7 h-7 text-green-600" />
+                            </div>
+                            <h3 className="text-2xl font-bold font-heading text-gray-900">Einsteiger</h3>
+                            <p className="text-gray-500 mt-1 text-sm">Erst mal ausprobieren – ohne Risiko</p>
+                            <ul className="mt-6 space-y-3">
+                                {[
+                                    'Komplett kostenlos – 0 CHF/Jahr',
+                                    'Unbegrenzte Anzahl Kurse einstellen',
+                                    'Ranking-Bonus bei Direktbuchung',
+                                    'Sofort online und sichtbar',
+                                    'Jederzeit auf Pro upgraden',
+                                ].map((text) => (
+                                    <li key={text} className="flex items-start text-gray-700">
+                                        <CheckCircle className="w-5 h-5 text-green-500 mr-3 mt-0.5 shrink-0" />
+                                        <span>{text}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                            <button onClick={() => handleCta('basic')} className="mt-8 w-full py-3 rounded-xl font-bold transition border-2 border-green-500 text-green-700 hover:bg-green-50">
+                                Kostenlos starten
+                            </button>
+                        </div>
+
                         {/* Einzelanbieter */}
                         <div className="bg-white rounded-2xl p-8 border border-orange-200 hover:shadow-lg transition relative overflow-hidden">
                             <div className="absolute top-0 right-0 bg-orange-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg">EMPFOHLEN</div>
