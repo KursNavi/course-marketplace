@@ -36,7 +36,7 @@ export const TIER_CONFIG = {
     price_year: 0,
     course_limit: 3,
     commission_percent: 15,
-    features: ["Standard Ranking", "External & Platform Booking", "Basic Support"],
+    features: ["Standard Ranking", "External & Platform Booking", "Basic Support", "Basic Analytics"],
     description: "Ideal für Einsteiger & kleine Anbieter."
   },
   pro: {
@@ -44,7 +44,7 @@ export const TIER_CONFIG = {
     price_year: 290,
     course_limit: 10,
     commission_percent: 12,
-    features: ["Besseres Ranking", "Lead-Formular", "Rich Media Profil", "Mehr Rubriken"],
+    features: ["Besseres Ranking", "Lead-Formular", "Rich Media Profil", "Mehr Rubriken", "Medium Analytics"],
     description: "Für ernsthafte Anbieter, die wachsen wollen."
   },
   premium: {
@@ -52,7 +52,7 @@ export const TIER_CONFIG = {
     price_year: 590,
     course_limit: 30,
     commission_percent: 10,
-    features: ["Top Ranking & Badges", "Newsletter Features", "Reporting Dashboard", "Priorisierter Support"],
+    features: ["Top Ranking & Badges", "Newsletter Features", "Reporting Dashboard", "Priorisierter Support", "Advanced Analytics"],
     description: "Maximale Sichtbarkeit für etablierte Schulen."
   },
   enterprise: {
@@ -60,7 +60,7 @@ export const TIER_CONFIG = {
     price_year: 1190, // Startpreis
     course_limit: 9999, // Unlimitiert
     commission_percent: 8,
-    features: ["Unlimitiert Kurse", "Eigene Landingpage", "Account Manager", "Custom Reporting"],
+    features: ["Unlimitiert Kurse", "Eigene Landingpage", "Account Manager", "Custom Reporting", "Advanced Analytics"],
     description: "Individuelle Lösungen für Grossanbieter."
   }
 };

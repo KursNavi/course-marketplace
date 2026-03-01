@@ -29,6 +29,7 @@ export const PLANS = [
       { text: "Standard Listing" },
       { text: "Keine Erfassungsservices inklusive", dim: true, excluded: true },
       { text: "Ranking-Bonus bei Direktbuchung" },
+      { text: "Basic Analytics" },
     ],
   },
   {
@@ -61,6 +62,7 @@ export const PLANS = [
       { text: "Erhöhtes Ranking" },
       { text: "Keine Erfassungsservices inklusive", dim: true, excluded: true },
       { text: "Ranking-Bonus bei Direktbuchung" },
+      { text: "Medium Analytics", isStrong: true },
     ],
   },
   {
@@ -93,6 +95,7 @@ export const PLANS = [
       { text: "Erhöhtes Ranking", isStrong: true },
       { text: "5 Erfassungsservices inklusive", isStrong: true },
       { text: "Ranking-Bonus bei Direktbuchung" },
+      { text: "Advanced Analytics", isStrong: true },
     ],
   },
   {
@@ -125,6 +128,7 @@ export const PLANS = [
       { text: "Erhöhtes Ranking" },
       { text: "15 Erfassungsservices inklusive", isStrong: true },
       { text: "Ranking-Bonus bei Direktbuchung" },
+      { text: "Advanced Analytics", isStrong: true },
     ],
   },
 ];
