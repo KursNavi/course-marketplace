@@ -233,7 +233,8 @@ const TeacherHub = ({ setView, t, user, showNotification }) => {
                     </div>
                     <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
                         {/* Einzelanbieter */}
-                        <div className="bg-white rounded-2xl p-8 border border-gray-200 hover:shadow-lg transition">
+                        <div className="bg-white rounded-2xl p-8 border border-orange-200 hover:shadow-lg transition relative overflow-hidden">
+                            <div className="absolute top-0 right-0 bg-orange-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg">EMPFOHLEN</div>
                             <div className="bg-orange-50 w-14 h-14 rounded-2xl flex items-center justify-center mb-5">
                                 <User className="w-7 h-7 text-orange-600" />
                             </div>
@@ -241,11 +242,11 @@ const TeacherHub = ({ setView, t, user, showNotification }) => {
                             <p className="text-gray-500 mt-1 text-sm">Freelancer, Coaches, Trainer</p>
                             <ul className="mt-6 space-y-3">
                                 {[
-                                    'Kostenlos starten – kein Abo nötig',
-                                    'Anfragen per Kontaktformular empfangen',
-                                    'Kurse sofort einstellen und sichtbar machen',
+                                    'Eigenes Profil im Anbieter-Verzeichnis',
+                                    'Erhöhte Sichtbarkeit mit Prio-Kursen',
+                                    'Anfragen per Kontaktformular oder Direktbuchung',
                                     'Einfache Verwaltung ohne technische Kenntnisse',
-                                    'Nur zahlen, wenn du buchst (Kommission)',
+                                    'Bereits ab 290 CHF/Jahr – weniger als 1 CHF/Tag',
                                 ].map((text) => (
                                     <li key={text} className="flex items-start text-gray-700">
                                         <CheckCircle className="w-5 h-5 text-orange-500 mr-3 mt-0.5 shrink-0" />
@@ -253,8 +254,8 @@ const TeacherHub = ({ setView, t, user, showNotification }) => {
                                     </li>
                                 ))}
                             </ul>
-                            <button onClick={() => handleCta('basic')} className="mt-8 w-full py-3 rounded-xl font-bold transition border-2 border-orange-500 text-orange-600 hover:bg-orange-50">
-                                Kostenlos starten
+                            <button onClick={() => handleCta('pro')} className="mt-8 w-full py-3 rounded-xl font-bold transition bg-orange-500 hover:bg-orange-600 text-white shadow-md">
+                                Pro-Paket wählen
                             </button>
                         </div>
 
