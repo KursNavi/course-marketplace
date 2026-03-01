@@ -252,45 +252,55 @@ export default async function handler(req, res) {
         let matchingCourseIds = null;
 
         // --- Category filtering via course_category_assignments (new taxonomy schema) ---
-        // Uses inner JOINs to verify the full taxonomy hierarchy, preventing
-        // cross-type leakage (e.g. a provider appearing under "Privat" when
-        // all their courses are categorised under "Professionell").
+        // Resolves the taxonomy hierarchy (level1→level2→level3) and then filters
+        // assignments by the resolved level3 IDs. Uses is_active filters and a
+        // post-query verification step to prevent cross-type leakage.
         if (level1_id || level2_id || level3_id || level4_id) {
-
-          // Build the assignment query with a JOIN to taxonomy_level3 so we can
-          // verify that the level3 entry actually belongs to the correct level2/level1.
-          let assignmentQuery = supabase
-            .from('course_category_assignments')
-            .select('course_id, taxonomy_level3!inner(id, level2_id)')
-            .eq('is_primary', true);
+          let targetLevel3Ids = null;
 
           if (level3_id) {
-            // Direct level3 filter – no hierarchy check needed
-            assignmentQuery = assignmentQuery.eq('level3_id', level3_id);
+            targetLevel3Ids = [level3_id];
           } else if (level2_id) {
-            // Filter assignments whose level3 belongs to the selected level2
-            assignmentQuery = assignmentQuery.eq('taxonomy_level3.level2_id', level2_id);
+            const { data: lvl3s } = await supabase
+              .from('taxonomy_level3')
+              .select('id')
+              .eq('level2_id', level2_id)
+              .eq('is_active', true);
+            targetLevel3Ids = (lvl3s || []).map(s => s.id);
           } else if (level1_id) {
-            // Resolve level1 → level2 IDs, then filter assignments whose level3
-            // belongs to one of those level2 entries
             const { data: lvl2s } = await supabase
               .from('taxonomy_level2')
               .select('id')
               .eq('level1_id', level1_id)
               .eq('is_active', true);
             const lvl2Ids = (lvl2s || []).map(a => a.id);
-
-            if (lvl2Ids.length === 0) {
-              return res.status(200).json({
-                providers: [],
-                pagination: { total: 0, limit, offset, hasMore: false },
-                filters: { canton: canton || null, verified: verified === 'true', q: searchQuery || null }
-              });
+            if (lvl2Ids.length > 0) {
+              const { data: lvl3s } = await supabase
+                .from('taxonomy_level3')
+                .select('id')
+                .in('level2_id', lvl2Ids)
+                .eq('is_active', true);
+              targetLevel3Ids = (lvl3s || []).map(s => s.id);
+            } else {
+              targetLevel3Ids = [];
             }
-
-            assignmentQuery = assignmentQuery.in('taxonomy_level3.level2_id', lvl2Ids);
           }
 
+          if (targetLevel3Ids !== null && targetLevel3Ids.length === 0) {
+            return res.status(200).json({
+              providers: [],
+              pagination: { total: 0, limit, offset, hasMore: false },
+              filters: { canton: canton || null, verified: verified === 'true', q: searchQuery || null }
+            });
+          }
+
+          let assignmentQuery = supabase
+            .from('course_category_assignments')
+            .select('course_id')
+            .eq('is_primary', true);
+          if (targetLevel3Ids !== null) {
+            assignmentQuery = assignmentQuery.in('level3_id', targetLevel3Ids);
+          }
           if (level4_id) {
             assignmentQuery = assignmentQuery.eq('level4_id', level4_id);
           }
@@ -434,6 +444,99 @@ export default async function handler(req, res) {
           level3_id: level3_id || null,
           level4_id: level4_id || null,
           q: searchQuery || null
+        }
+      });
+    }
+
+    // ============================================
+    // ACTION: debug-provider - Show a provider's course assignments & taxonomy mapping
+    // Usage: GET ?action=debug-provider&slug=xxx
+    // ============================================
+    if (action === 'debug-provider') {
+      if (req.method !== 'GET') {
+        return res.status(405).json({ error: 'Method not allowed' });
+      }
+      const { slug } = req.query;
+      if (!slug) return res.status(400).json({ error: 'slug required' });
+
+      // Find provider
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id, full_name, slug')
+        .eq('slug', slug)
+        .single();
+      if (!profile) return res.status(404).json({ error: 'Provider not found' });
+
+      // Get all courses
+      const { data: courses } = await supabase
+        .from('courses')
+        .select('id, title, status, category_type, category_area, category_level3_id, category_level4_id')
+        .eq('user_id', profile.id)
+        .or('status.eq.published,status.is.null');
+
+      // Get all assignments for those courses
+      const courseIds = (courses || []).map(c => c.id);
+      let assignments = [];
+      if (courseIds.length > 0) {
+        const { data: a } = await supabase
+          .from('course_category_assignments')
+          .select('course_id, level3_id, level4_id, is_primary')
+          .in('course_id', courseIds);
+        assignments = a || [];
+      }
+
+      // Resolve each level3_id → level2 → level1 path
+      const level3Ids = [...new Set(assignments.map(a => a.level3_id).filter(Boolean))];
+      let pathMap = {};
+      if (level3Ids.length > 0) {
+        const { data: l3data } = await supabase
+          .from('taxonomy_level3')
+          .select('id, slug, label_de, level2_id, is_active')
+          .in('id', level3Ids);
+
+        const l2ids = [...new Set((l3data || []).map(l => l.level2_id))];
+        const { data: l2data } = await supabase
+          .from('taxonomy_level2')
+          .select('id, slug, label_de, level1_id, is_active')
+          .in('id', l2ids);
+
+        const l1ids = [...new Set((l2data || []).map(l => l.level1_id))];
+        const { data: l1data } = await supabase
+          .from('taxonomy_level1')
+          .select('id, slug, label_de')
+          .in('id', l1ids);
+
+        const l2map = Object.fromEntries((l2data || []).map(l => [l.id, l]));
+        const l1map = Object.fromEntries((l1data || []).map(l => [l.id, l]));
+
+        (l3data || []).forEach(l3 => {
+          const l2 = l2map[l3.level2_id];
+          const l1 = l2 ? l1map[l2.level1_id] : null;
+          pathMap[l3.id] = {
+            level3: { id: l3.id, slug: l3.slug, label: l3.label_de, is_active: l3.is_active },
+            level2: l2 ? { id: l2.id, slug: l2.slug, label: l2.label_de, is_active: l2.is_active } : null,
+            level1: l1 ? { id: l1.id, slug: l1.slug, label: l1.label_de } : null
+          };
+        });
+      }
+
+      // Enrich assignments with resolved paths
+      const enrichedAssignments = assignments.map(a => ({
+        ...a,
+        path: pathMap[a.level3_id] || null
+      }));
+
+      return res.status(200).json({
+        provider: { id: profile.id, name: profile.full_name, slug: profile.slug },
+        courses: courses || [],
+        assignments: enrichedAssignments,
+        summary: {
+          totalCourses: (courses || []).length,
+          totalAssignments: assignments.length,
+          primaryAssignments: assignments.filter(a => a.is_primary).length,
+          typesViaAssignments: [...new Set(enrichedAssignments
+            .filter(a => a.is_primary && a.path?.level1)
+            .map(a => a.path.level1.slug))]
         }
       });
     }
