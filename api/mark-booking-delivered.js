@@ -167,7 +167,7 @@ export default async function handler(req, res) {
            <p><strong>Buchungs-ID:</strong> ${bookingId}</p>
            <p><strong>Preis:</strong> CHF ${(booking.courses?.price || 0).toFixed(2)}</p>
            <p style="margin-top: 20px; padding: 12px; background: #D1FAE5; border-radius: 8px;">
-             Auszahlung wird am <strong>${payoutEligibleAt.toLocaleDateString('de-CH')}</strong> freigegeben.
+             Auszahlung wird am <strong>${payoutEligibleAt.toLocaleDateString('de-CH', { year: 'numeric', month: '2-digit', day: '2-digit' })}</strong> freigegeben.
            </p>`,
           'Im Dashboard prüfen'
         )
