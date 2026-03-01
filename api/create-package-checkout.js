@@ -69,10 +69,39 @@ export default async function handler(req, res) {
                 .eq('id', userId);
         }
 
-        // --- Determine if this is a renewal ---
-        const isRenewal = currentTier === targetTier
-            && profile.package_expires_at
+        // --- Determine if this is a renewal or upgrade ---
+        const hasActivePackage = profile.package_expires_at
             && new Date(profile.package_expires_at) > new Date();
+        const isRenewal = currentTier === targetTier && hasActivePackage;
+        const isUpgrade = targetIdx > currentIdx && currentTier !== 'basic' && hasActivePackage;
+
+        // --- Proration: credit remaining value of current plan on upgrade ---
+        let finalPrice = price;
+        let credit = 0;
+        let description = '';
+
+        if (isRenewal) {
+            description = `Verlängerung um 1 Jahr ab ${new Date(profile.package_expires_at).toLocaleDateString('de-CH')}`;
+        } else if (isUpgrade) {
+            // Calculate remaining days on current plan
+            const now = new Date();
+            const expiresAt = new Date(profile.package_expires_at);
+            const remainingMs = expiresAt - now;
+            const remainingDays = Math.max(0, Math.ceil(remainingMs / (1000 * 60 * 60 * 24)));
+
+            // Daily rate of current plan
+            const currentPrice = prices[currentTier] || 0;
+            const dailyRate = currentPrice / 365;
+            credit = Math.round(dailyRate * remainingDays * 100) / 100; // round to 2 decimals
+            finalPrice = Math.max(0, price - credit);
+
+            const currentLabel = tierLabels[currentTier] || currentTier;
+            description = credit > 0
+                ? `Upgrade ${currentLabel} → ${label} (Restguthaben CHF ${credit.toFixed(2)} verrechnet)`
+                : `Upgrade auf ${label} Paket – 1 Jahr Laufzeit`;
+        } else {
+            description = `${label} Paket – 1 Jahr Laufzeit`;
+        }
 
         // --- Create Stripe Checkout Session ---
         const session = await stripe.checkout.sessions.create({
@@ -83,11 +112,9 @@ export default async function handler(req, res) {
                     currency: 'chf',
                     product_data: {
                         name: `KursNavi ${label} Jahresabo`,
-                        description: isRenewal
-                            ? `Verlängerung um 1 Jahr ab ${new Date(profile.package_expires_at).toLocaleDateString('de-CH')}`
-                            : `${label} Paket – 1 Jahr Laufzeit`,
+                        description,
                     },
-                    unit_amount: Math.round(price * 100),
+                    unit_amount: Math.round(finalPrice * 100),
                 },
                 quantity: 1,
             }],
@@ -100,6 +127,7 @@ export default async function handler(req, res) {
                 targetTier,
                 isRenewal: isRenewal ? 'true' : 'false',
                 currentExpiresAt: profile.package_expires_at || '',
+                credit: credit.toFixed(2),
             },
         });
 
