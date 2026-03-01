@@ -270,7 +270,7 @@ export const Home = ({
     <div className="flex flex-col w-full font-sans">
       
       {/* 1. HERO SECTION */}
-      <div className="relative h-[600px] w-full flex items-center justify-center">
+      <div className="relative h-[720px] md:h-[600px] w-full flex items-center justify-center">
         {/* Background */}
         <div 
           className="absolute inset-0 bg-cover bg-center z-0"
@@ -279,7 +279,7 @@ export const Home = ({
         <div className="absolute inset-0 bg-black/50 z-10"></div>
 
         {/* Content */}
-        <div className="relative z-20 text-center px-4 max-w-4xl mx-auto w-full pt-16 md:pt-0">
+        <div className="relative z-20 text-center px-4 max-w-4xl mx-auto w-full">
           <h1 className="text-4xl md:text-6xl font-heading font-bold text-white mb-6 tracking-tight">
             {t.home_headline}
           </h1>
@@ -299,7 +299,7 @@ export const Home = ({
                     placeholder={t.search_placeholder}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-12 pr-28 md:pr-32 py-4 rounded-xl text-dark font-sans shadow-sm focus:outline-none focus:ring-2 focus:ring-primary text-lg placeholder-gray-500 bg-white"
+                    className="w-full pl-12 pr-32 py-4 rounded-xl text-dark font-sans shadow-sm focus:outline-none focus:ring-2 focus:ring-primary text-lg placeholder-gray-500 bg-white"
                     />
                     <button type="submit" className="absolute right-2 bg-primary hover:bg-orange-600 text-white px-6 py-2 rounded-lg font-bold transition-colors duration-300">
                     {t.btn_search}
