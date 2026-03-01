@@ -95,14 +95,21 @@ export const AGE_GROUPS = {
 };
 
 export const CATEGORY_TYPES = {
-  // New consolidated schema slugs
-  professionell: { de: "Professionell", en: "Professional", fr: "Professionnel", it: "Professionale" },
-  privat: { de: "Privat", en: "Private", fr: "Privé", it: "Privato" },
+  // New consolidated schema slugs — labels match header/navigation
+  professionell: { de: "Beruflich", en: "Professional", fr: "Professionnel", it: "Professionale" },
+  privat: { de: "Privat & Hobby", en: "Private & Hobby", fr: "Privé & Loisirs", it: "Privato & Hobby" },
   kinder: { de: "Kinder", en: "Children", fr: "Enfants", it: "Bambini" },
   // Legacy slugs (for backward compatibility during transition)
-  beruflich: { de: "Berufliche Weiterbildung", en: "Professional Development", fr: "Formation professionnelle", it: "Formazione professionale" },
+  beruflich: { de: "Beruflich", en: "Professional", fr: "Professionnel", it: "Professionale" },
   privat_hobby: { de: "Privat & Hobby", en: "Private & Hobby", fr: "Privé & Loisirs", it: "Privato & Hobby" },
-  kinder_jugend: { de: "Kinder & Jugendliche", en: "Kids & Teens", fr: "Enfants & Ados", it: "Bambini & Adolescenti" }
+  kinder_jugend: { de: "Kinder", en: "Children", fr: "Enfants", it: "Bambini" }
+};
+
+// Display-Label Override für DB taxonomy_level1.label_de → konsistent mit Header/Navigation
+export const TYPE_DISPLAY_LABELS = {
+  professionell: 'Beruflich',
+  privat: 'Privat & Hobby',
+  kinder: 'Kinder',
 };
 
 // --- SEGMENT VISUAL CONFIG ---
@@ -111,7 +118,7 @@ export const SEGMENT_CONFIG = {
   // Professionell / Beruflich - Blue theme
   professionell: {
     icon: Briefcase,
-    label: { de: "Professionell", en: "Professional", fr: "Professionnel", it: "Professionale" },
+    label: { de: "Beruflich", en: "Professional", fr: "Professionnel", it: "Professionale" },
     color: 'blue',
     bgLight: 'bg-blue-50',
     bgSolid: 'bg-blue-500',

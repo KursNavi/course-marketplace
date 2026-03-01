@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronDown, ChevronRight, ChevronLeft, MapPin, Globe, Monitor } from 'lucide-react';
-import { SWISS_CANTONS, DELIVERY_TYPES, COURSE_LANGUAGES } from '../lib/constants';
+import { SWISS_CANTONS, DELIVERY_TYPES, COURSE_LANGUAGES, TYPE_DISPLAY_LABELS } from '../lib/constants';
 import { useTaxonomy } from '../hooks/useTaxonomy';
 
 export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCatPath, catMenuOpen, setCatMenuOpen, t, catMenuRef }) => {
@@ -30,9 +30,10 @@ export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCat
             .replace(/ Und /g, ' & ');
     };
 
-    // Helper to get type label (Level 1)
+    // Helper to get type label (Level 1) – use display labels matching header/navigation
     const getTypeLabel = (typeId) => {
-        return activeTypes[typeId]?.de || formatSlugToLabel(String(typeId));
+        const slug = types.find(t => t.id === typeId)?.slug || typeId;
+        return TYPE_DISPLAY_LABELS[slug] || activeTypes[typeId]?.de || formatSlugToLabel(String(typeId));
     };
 
     // Get Level 1 types from DB, filtered by course count

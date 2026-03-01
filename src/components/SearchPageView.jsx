@@ -2,7 +2,7 @@ import React, { useEffect, useMemo } from 'react';
 import { Search, ChevronRight, User, X, Shield, MapPin, CheckCircle, Loader, Bell, ArrowDown, Bookmark, BookmarkCheck, CreditCard, Info, EyeOff, Briefcase, Palette, Smile, BookOpen, Compass } from 'lucide-react';
 import { LocationDropdown, LanguageDropdown, DeliveryTypeFilter } from './Filters';
 import { Globe } from 'lucide-react';
-import { CATEGORY_TYPES, AGE_GROUPS, COURSE_LEVELS, DELIVERY_TYPES, SEGMENT_CONFIG } from '../lib/constants';
+import { CATEGORY_TYPES, AGE_GROUPS, COURSE_LEVELS, DELIVERY_TYPES, SEGMENT_CONFIG, TYPE_DISPLAY_LABELS } from '../lib/constants';
 import { formatPriceCHF } from '../lib/formatPrice';
 import { useTaxonomy } from '../hooks/useTaxonomy';
 import { supabase } from '../lib/supabase';
@@ -285,9 +285,10 @@ const SearchPageView = ({
         if (!key) return '';
 
         if (scope === 'type') {
-            // First check labelMap from all_categories (new schema)
+            // Use consistent display labels matching header/navigation
+            if (TYPE_DISPLAY_LABELS[key]) return TYPE_DISPLAY_LABELS[key];
+            // Fallback to labelMap or CATEGORY_TYPES constant
             if (labelMap.types[key]) return labelMap.types[key];
-            // Fallback to CATEGORY_TYPES constant
             return CATEGORY_TYPES?.[key]?.de || key;
         }
         if (scope === 'age') return AGE_GROUPS?.[key]?.de || key;

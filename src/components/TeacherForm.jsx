@@ -1,18 +1,11 @@
 import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { ArrowLeft, Loader, Calendar, Plus, Trash2, ExternalLink, Globe, MapPin, Lightbulb, X, Send, ChevronDown, Images, Check } from 'lucide-react';
 import { KursNaviLogo } from './Layout';
-import { SWISS_CANTONS, NEW_TAXONOMY, CATEGORY_TYPES, COURSE_LEVELS, DELIVERY_TYPES, COURSE_LANGUAGES } from '../lib/constants';
+import { SWISS_CANTONS, NEW_TAXONOMY, CATEGORY_TYPES, COURSE_LEVELS, DELIVERY_TYPES, COURSE_LANGUAGES, TYPE_DISPLAY_LABELS } from '../lib/constants';
 import { supabase } from '../lib/supabase';
 import { useTaxonomy } from '../hooks/useTaxonomy';
 import { computeImageHash, getExistingImageByHash, uploadImageWithHash, getUserCourseImages, deleteImageFromLibrary } from '../lib/imageUtils';
 import imageCompression from 'browser-image-compression';
-
-// Display labels for Typ dropdown – match header/navigation wording
-const TYPE_DISPLAY_LABELS = {
-    professionell: 'Beruflich',
-    privat: 'Privat & Hobby',
-    kinder: 'Kinder',
-};
 
 // --- Image Compression Helper ---
 const compressImage = async (file) => {
@@ -231,8 +224,8 @@ const CategorySuggestionModal = ({ isOpen, onClose, taxonomy, types, showNotific
                                 required
                             >
                                 <option value="">Bitte wählen...</option>
-                                {(types.length > 0 ? types : Object.keys(CATEGORY_TYPES).map(id => ({ id, label_de: CATEGORY_TYPES[id].de }))).map(type => (
-                                    <option key={type.id} value={type.id}>{type.label_de}</option>
+                                {(types.length > 0 ? types : Object.keys(CATEGORY_TYPES).map(id => ({ id, slug: id, label_de: CATEGORY_TYPES[id].de }))).map(type => (
+                                    <option key={type.id} value={type.id}>{TYPE_DISPLAY_LABELS[type.slug] || type.label_de}</option>
                                 ))}
                             </select>
                             <ChevronDown className="absolute right-3 top-2.5 text-gray-400 w-5 h-5 pointer-events-none" />
