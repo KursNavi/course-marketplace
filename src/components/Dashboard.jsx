@@ -51,6 +51,12 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t, isImp
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+    // Delete account state
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [deletePassword, setDeletePassword] = useState('');
+    const [deleteError, setDeleteError] = useState('');
+    const [deleting, setDeleting] = useState(false);
+
     // Check for Stripe Connect return and update status
     useEffect(() => {
         if (!uid) return;
@@ -137,6 +143,71 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t, isImp
     }, [uid]);
 
     const handleChange = (e) => { setFormData({ ...formData, [e.target.name]: e.target.value }); };
+
+    const handleDeleteAccount = async () => {
+        if (!deletePassword) return;
+
+        try {
+            setDeleting(true);
+            setDeleteError('');
+
+            // Step 1: Verify password
+            const { error: signInError } = await supabase.auth.signInWithPassword({
+                email: user.email,
+                password: deletePassword
+            });
+
+            if (signInError) {
+                setDeleteError('Falsches Passwort. Bitte versuchen Sie es erneut.');
+                setDeleting(false);
+                return;
+            }
+
+            // Step 2: Delete learner data
+            // Delete saved courses (Merkliste)
+            await supabase
+                .from('saved_courses')
+                .delete()
+                .eq('user_id', user.id);
+
+            // Delete bookings
+            await supabase
+                .from('bookings')
+                .delete()
+                .eq('user_id', user.id);
+
+            // Delete profile
+            await supabase
+                .from('profiles')
+                .delete()
+                .eq('id', user.id);
+
+            // Step 3: Delete auth user via server-side API
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session?.access_token) {
+                const response = await fetch('/api/delete-account', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${session.access_token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                if (!response.ok) {
+                    const result = await response.json();
+                    console.error('Failed to delete auth user:', result.error);
+                }
+            }
+
+            // Step 4: Sign out and redirect
+            await supabase.auth.signOut();
+            showNotification?.('Ihr Konto wurde erfolgreich gelöscht', 'success');
+            window.location.href = '/';
+        } catch (err) {
+            console.error('Error deleting account:', err);
+            showNotification?.('Fehler beim Löschen des Kontos: ' + (err.message || 'Unbekannter Fehler'), 'error');
+            setDeleting(false);
+        }
+    };
 
     const handleSave = async (e) => {
         e.preventDefault(); setSaving(true);
@@ -631,6 +702,108 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t, isImp
                 <div className="border-t pt-6 mt-6"><h3 className="text-lg font-bold mb-4 text-dark flex items-center"><Lock className="w-4 h-4 mr-2" /> {t.lbl_account_security}</h3><div className="space-y-4"><div><label className="block text-sm font-bold text-gray-700 mb-1">Email</label><input type="email" name="email" value={formData.email} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none bg-gray-50" /></div><div className="grid grid-cols-1 md:grid-cols-2 gap-6"><div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_new_password}</label><div className="relative"><input type={showPassword ? "text" : "password"} name="password" value={formData.password} onChange={handleChange} placeholder="******" className="w-full px-4 py-2 pr-10 border rounded-lg focus:ring-2 focus:ring-primary outline-none" /><button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700">{showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}</button></div></div><div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_confirm_password}</label><div className="relative"><input type={showConfirmPassword ? "text" : "password"} name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} placeholder="******" className="w-full px-4 py-2 pr-10 border rounded-lg focus:ring-2 focus:ring-primary outline-none" /><button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700">{showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}</button></div></div></div></div></div>
                 <div className="pt-2"><button type="submit" disabled={saving} className="bg-primary text-white px-6 py-3 rounded-lg font-bold hover:bg-orange-600 transition flex items-center shadow-md disabled:opacity-50">{saving ? <Loader className="animate-spin w-5 h-5 mr-2" /> : <Save className="w-5 h-5 mr-2" />}{t.btn_save}</button></div>
             </form>
+
+            {/* Delete Account Section */}
+            <div className="bg-white rounded-xl shadow-sm border border-red-100 p-6 md:p-8 mt-8">
+                <h3 className="text-lg font-bold text-red-600 mb-4 flex items-center">
+                    <Trash2 className="w-5 h-5 mr-2" />
+                    Konto löschen
+                </h3>
+                <p className="text-gray-600 mb-4">
+                    Wenn Sie Ihr Konto löschen, werden alle Ihre Daten unwiderruflich entfernt. Dies umfasst:
+                </p>
+                <ul className="list-disc list-inside text-gray-600 mb-6 space-y-1 text-sm">
+                    <li>Ihr Profil und alle Einstellungen</li>
+                    <li>Ihre Merkliste und gespeicherte Kurse</li>
+                    <li>Buchungsdaten und Kurshistorie</li>
+                </ul>
+                <button
+                    type="button"
+                    onClick={() => setShowDeleteModal(true)}
+                    className="px-4 py-2 bg-red-50 text-red-600 border border-red-200 rounded-lg font-medium hover:bg-red-100 transition-colors flex items-center"
+                >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Konto unwiderruflich löschen
+                </button>
+            </div>
+
+            {/* Delete Confirmation Modal */}
+            {showDeleteModal && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+                                <AlertCircle className="w-6 h-6 text-red-600" />
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-bold text-gray-900">Konto löschen?</h3>
+                                <p className="text-sm text-gray-500">Diese Aktion kann nicht rückgängig gemacht werden</p>
+                            </div>
+                        </div>
+
+                        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                            <p className="text-sm text-red-700">
+                                <strong>Achtung:</strong> Alle Ihre Daten werden permanent gelöscht, einschliesslich Ihrer Merkliste, Buchungen und Ihres Profils.
+                            </p>
+                        </div>
+
+                        <div className="mb-6">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Geben Sie Ihr Passwort ein, um zu bestätigen:
+                            </label>
+                            <input
+                                type="password"
+                                value={deletePassword}
+                                onChange={(e) => {
+                                    setDeletePassword(e.target.value);
+                                    setDeleteError('');
+                                }}
+                                placeholder="Ihr Passwort"
+                                className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-red-400 focus:border-red-400 outline-none ${
+                                    deleteError ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                                }`}
+                                autoComplete="current-password"
+                            />
+                            {deleteError && (
+                                <p className="text-sm text-red-600 mt-2">{deleteError}</p>
+                            )}
+                        </div>
+
+                        <div className="flex gap-3">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setShowDeleteModal(false);
+                                    setDeletePassword('');
+                                    setDeleteError('');
+                                }}
+                                disabled={deleting}
+                                className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors disabled:opacity-50"
+                            >
+                                Abbrechen
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleDeleteAccount}
+                                disabled={!deletePassword || deleting}
+                                className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                            >
+                                {deleting ? (
+                                    <>
+                                        <Loader className="w-4 h-4 mr-2 animate-spin" />
+                                        Wird gelöscht...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Trash2 className="w-4 h-4 mr-2" />
+                                        Endgültig löschen
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
