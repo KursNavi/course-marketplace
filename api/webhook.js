@@ -350,7 +350,8 @@ export default async function handler(req, res) {
         payout_eligible_at: payoutEligibleAt?.toISOString() || null,
         stripe_payment_intent_id: session.payment_intent,
         stripe_checkout_session_id: session.id,
-        ticket_period_id: periodId
+        ticket_period_id: periodId,
+        guardian_attestation: metadata.guardianAttestation === 'true'
       });
 
       if (insertError) {

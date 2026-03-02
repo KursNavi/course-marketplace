@@ -8,7 +8,7 @@ export default async function handler(req, res) {
 
   try {
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-    const { courseId, courseTitle, coursePrice, userId, courseImage, userEmail, eventId } = req.body;
+    const { courseId, courseTitle, coursePrice, userId, courseImage, userEmail, eventId, guardianAttestation } = req.body;
 
     // Initialize Supabase client
     const supabase = createClient(
@@ -158,7 +158,8 @@ export default async function handler(req, res) {
         userId,
         eventId: eventId || '',
         bookingType: course.booking_type,
-        providerName
+        providerName,
+        guardianAttestation: guardianAttestation ? 'true' : 'false'
       },
     });
 
