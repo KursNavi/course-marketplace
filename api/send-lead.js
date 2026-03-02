@@ -106,9 +106,27 @@ export default async function handler(req, res) {
     }
 
     // 3. Audit-Trail: Lead-Record anlegen (status=pending)
+    const salt = process.env.LEAD_HASH_SALT;
+    if (!salt) {
+      console.error('send-lead: LEAD_HASH_SALT env var is missing');
+      return res.status(500).json({ error: 'Server-Konfigurationsfehler' });
+    }
+
     const emailHash = createHash('sha256')
-      .update(email.toLowerCase().trim() + (process.env.LEAD_HASH_SALT || ''))
+      .update(email.toLowerCase().trim() + salt)
       .digest('hex');
+
+    // 3b. Rate-Limiting: max 1 Lead pro Email+Kurs alle 5 Minuten
+    const { count: recentCount, error: rlError } = await supabase
+      .from('leads')
+      .select('id', { count: 'exact', head: true })
+      .eq('requester_email_hash', emailHash)
+      .eq('course_id', courseId)
+      .gte('created_at', new Date(Date.now() - 5 * 60 * 1000).toISOString());
+
+    if (!rlError && recentCount > 0) {
+      return res.status(429).json({ error: 'Bitte warte einige Minuten vor dem nächsten Senden.' });
+    }
 
     const { data: lead, error: leadError } = await supabase
       .from('leads')

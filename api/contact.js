@@ -165,8 +165,14 @@ export default async function handler(req, res) {
 
   try {
     // 5. Rate-Limiting via DB
+    const salt = process.env.LEAD_HASH_SALT;
+    if (!salt) {
+      console.error('contact: LEAD_HASH_SALT env var is missing');
+      return res.status(500).json({ error: 'Server-Konfigurationsfehler' });
+    }
+
     const emailHash = createHash('sha256')
-      .update(senderEmail + (process.env.LEAD_HASH_SALT || ''))
+      .update(senderEmail + salt)
       .digest('hex');
 
     const { count, error: countError } = await supabase

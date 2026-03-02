@@ -445,14 +445,36 @@ export default async function handler(req, res) {
       }
     }
 
+    // ============================================
+    // PART 5: Retention – alte Leads & Contact Messages löschen
+    // ============================================
+    let deletedLeads = 0;
+    let deletedContactMessages = 0;
+
+    try {
+      const { data: leadsResult } = await supabase.rpc('cleanup_old_leads');
+      deletedLeads = leadsResult ?? 0;
+    } catch (e) {
+      console.error('cleanup_old_leads failed:', e);
+    }
+
+    try {
+      const { data: contactResult } = await supabase.rpc('cleanup_old_contact_messages');
+      deletedContactMessages = contactResult ?? 0;
+    } catch (e) {
+      console.error('cleanup_old_contact_messages failed:', e);
+    }
+
     return res.status(200).json({
       success: true,
-      message: "Payouts, Reminders & Expiry Processed",
+      message: "Payouts, Reminders, Expiry & Retention Processed",
       emailsSent,
       processedBookings,
       remindersSent,
       expiredPackages,
-      staleAlertsSent
+      staleAlertsSent,
+      deletedLeads,
+      deletedContactMessages
     });
 
   } catch (error) {
