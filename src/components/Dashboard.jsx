@@ -5,7 +5,7 @@ import {
     ChevronDown, User, DollarSign, PenTool, Trash2, ArrowRight, Plus, MapPin,
     Crown, BarChart3,
     CreditCard, Check, Shield, ExternalLink, Play, Pause, FileEdit, Info, Star, AlertCircle,
-    Eye, EyeOff, Calendar, ChevronRight, Ban
+    Eye, EyeOff, Calendar, ChevronRight, Ban, Download
 } from 'lucide-react';
 import { SWISS_CANTONS, CATEGORY_TYPES, NEW_TAXONOMY, CATEGORY_LABELS } from "../lib/constants";
 import { PLANS } from "../constants/plans";
@@ -56,6 +56,9 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t, isImp
     const [deletePassword, setDeletePassword] = useState('');
     const [deleteError, setDeleteError] = useState('');
     const [deleting, setDeleting] = useState(false);
+
+    // Data export state
+    const [exporting, setExporting] = useState(false);
 
     // Check for Stripe Connect return and update status
     useEffect(() => {
@@ -206,6 +209,44 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t, isImp
             console.error('Error deleting account:', err);
             showNotification?.('Fehler beim Löschen des Kontos: ' + (err.message || 'Unbekannter Fehler'), 'error');
             setDeleting(false);
+        }
+    };
+
+    const handleExportData = async () => {
+        try {
+            setExporting(true);
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session?.access_token) {
+                showNotification?.('Nicht authentifiziert. Bitte erneut anmelden.', 'error');
+                return;
+            }
+
+            const response = await fetch('/api/export-user-data', {
+                method: 'GET',
+                headers: { 'Authorization': `Bearer ${session.access_token}` }
+            });
+
+            if (!response.ok) {
+                const result = await response.json();
+                throw new Error(result.error || 'Export fehlgeschlagen');
+            }
+
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `kursnavi-export-${new Date().toISOString().slice(0, 10)}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            showNotification?.('Daten erfolgreich exportiert', 'success');
+        } catch (err) {
+            console.error('Export error:', err);
+            showNotification?.('Fehler beim Exportieren: ' + (err.message || 'Unbekannter Fehler'), 'error');
+        } finally {
+            setExporting(false);
         }
     };
 
@@ -702,6 +743,41 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t, isImp
                 <div className="border-t pt-6 mt-6"><h3 className="text-lg font-bold mb-4 text-dark flex items-center"><Lock className="w-4 h-4 mr-2" /> {t.lbl_account_security}</h3><div className="space-y-4"><div><label className="block text-sm font-bold text-gray-700 mb-1">Email</label><input type="email" name="email" value={formData.email} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none bg-gray-50" /></div><div className="grid grid-cols-1 md:grid-cols-2 gap-6"><div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_new_password}</label><div className="relative"><input type={showPassword ? "text" : "password"} name="password" value={formData.password} onChange={handleChange} placeholder="******" className="w-full px-4 py-2 pr-10 border rounded-lg focus:ring-2 focus:ring-primary outline-none" /><button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700">{showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}</button></div></div><div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_confirm_password}</label><div className="relative"><input type={showConfirmPassword ? "text" : "password"} name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} placeholder="******" className="w-full px-4 py-2 pr-10 border rounded-lg focus:ring-2 focus:ring-primary outline-none" /><button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700">{showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}</button></div></div></div></div></div>
                 <div className="pt-2"><button type="submit" disabled={saving} className="bg-primary text-white px-6 py-3 rounded-lg font-bold hover:bg-orange-600 transition flex items-center shadow-md disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed">{saving ? <Loader className="animate-spin w-5 h-5 mr-2" /> : <Save className="w-5 h-5 mr-2" />}{t.btn_save}</button></div>
             </form>
+
+            {/* Data Export Section */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 md:p-8 mt-8">
+                <h3 className="text-lg font-bold text-dark mb-4 flex items-center">
+                    <Download className="w-5 h-5 mr-2" />
+                    Daten exportieren
+                </h3>
+                <p className="text-gray-600 mb-4">
+                    Laden Sie eine Kopie Ihrer gespeicherten Daten als JSON-Datei herunter. Der Export enthält:
+                </p>
+                <ul className="list-disc list-inside text-gray-600 mb-6 space-y-1 text-sm">
+                    <li>Ihr Profil und Einstellungen</li>
+                    <li>Buchungen und Kurshistorie</li>
+                    <li>Merkliste (gespeicherte Kurse)</li>
+                    {user?.role === 'teacher' && <li>Lead-Anfragen (als Anbieter)</li>}
+                </ul>
+                <button
+                    type="button"
+                    onClick={handleExportData}
+                    disabled={exporting}
+                    className="px-4 py-2 bg-gray-50 text-gray-700 border border-gray-300 rounded-lg font-medium hover:bg-gray-100 transition-colors flex items-center disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed"
+                >
+                    {exporting ? (
+                        <>
+                            <Loader className="w-4 h-4 mr-2 animate-spin" />
+                            Wird exportiert...
+                        </>
+                    ) : (
+                        <>
+                            <Download className="w-4 h-4 mr-2" />
+                            Daten herunterladen
+                        </>
+                    )}
+                </button>
+            </div>
 
             {/* Delete Account Section */}
             <div className="bg-white rounded-xl shadow-sm border border-red-100 p-6 md:p-8 mt-8">
