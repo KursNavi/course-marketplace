@@ -2,9 +2,8 @@ import { supabase } from './supabase';
 
 const BUCKET_NAME = 'course-images';
 
-// Default-Bilder — nach Migration durch Supabase-Storage-URLs ersetzen
-export const DEFAULT_COURSE_IMAGE = "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=600";
-export const DEFAULT_COVER_IMAGE = "https://images.unsplash.com/photo-1557683316-973673baf926?auto=format&fit=crop&q=80&w=1200&h=400";
+export const DEFAULT_COURSE_IMAGE = "https://nplxmpfasgpumpiddjfl.supabase.co/storage/v1/object/public/course-images/a0e887f57107603aaf4327ad40de2ab7.jpg";
+export const DEFAULT_COVER_IMAGE = "https://nplxmpfasgpumpiddjfl.supabase.co/storage/v1/object/public/course-images/ca3c9cbb76c1d0b4b0bf300cdbd3bf39.jpg";
 
 /**
  * Prüft ob eine URL auf Unsplash zeigt
