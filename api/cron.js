@@ -131,10 +131,17 @@ export default async function handler(req, res) {
         const totalRevenue = bookings.reduce((sum, b) => sum + (course.price || 0), 0);
         const payoutAmount = totalRevenue * 0.85;
 
-        // Mark as paid
+        // Mark as paid (guard against concurrent refund)
         const bookingIds = bookings.map(b => b.id);
-        await supabase.from('bookings').update({ is_paid: true }).in('id', bookingIds);
-        processedBookings += bookingIds.length;
+        const { count: flexPaidCount } = await supabase
+          .from('bookings')
+          .update({ is_paid: true }, { count: 'exact' })
+          .in('id', bookingIds)
+          .is('refunded_at', null)
+          .eq('is_paid', false);
+        processedBookings += flexPaidCount || 0;
+
+        if (!flexPaidCount) continue;
 
         // Send email
         try {
@@ -214,10 +221,17 @@ export default async function handler(req, res) {
         const totalRevenue = bookings.length * (course.price || 0);
         const payoutAmount = totalRevenue * 0.85;
 
-        // Mark as paid
+        // Mark as paid (guard against concurrent refund)
         const bookingIds = bookings.map(b => b.id);
-        await supabase.from('bookings').update({ is_paid: true }).in('id', bookingIds);
-        processedBookings += bookingIds.length;
+        const { count: platformPaidCount } = await supabase
+          .from('bookings')
+          .update({ is_paid: true }, { count: 'exact' })
+          .in('id', bookingIds)
+          .is('refunded_at', null)
+          .eq('is_paid', false);
+        processedBookings += platformPaidCount || 0;
+
+        if (!platformPaidCount) continue;
 
         // Send email
         try {
@@ -235,62 +249,43 @@ export default async function handler(req, res) {
       }
     }
 
-    // Also handle legacy bookings (old format without event_id)
-    const { data: legacyCourses } = await supabase.from('courses').select('*').gte('start_date', startWindow).lte('start_date', endWindow);
+    // ============================================
+    // PART 2b: Stale platform_flex bookings (no delivery after 90 days)
+    // ============================================
+    let staleAlertsSent = 0;
+    const STALE_DAYS_MS = 90 * 24 * 60 * 60 * 1000;
+    const staleCutoff = new Date(today.getTime() - STALE_DAYS_MS).toISOString();
 
-    if (legacyCourses && legacyCourses.length > 0) {
-      for (const course of legacyCourses) {
-        // Find unpaid bookings without event_id (legacy)
-        const { data: bookings } = await supabase
-          .from('bookings')
-          .select('*')
-          .eq('course_id', course.id)
-          .is('event_id', null)
-          .eq('is_paid', false);
+    const { data: staleFlexBookings } = await supabase
+      .from('bookings')
+      .select('id, user_id, course_id, paid_at, courses(title, user_id)')
+      .eq('booking_type', 'platform_flex')
+      .eq('status', 'confirmed')
+      .eq('is_paid', false)
+      .is('delivered_at', null)
+      .is('refunded_at', null)
+      .lte('paid_at', staleCutoff);
 
-        if (!bookings || bookings.length === 0) continue;
+    if (staleFlexBookings && staleFlexBookings.length > 0) {
+      const staleListHtml = staleFlexBookings.map(b =>
+        `<li><strong>${b.courses?.title || 'Kurs'}</strong> – Booking ${b.id}, bezahlt am ${new Date(b.paid_at).toLocaleDateString('de-CH')}</li>`
+      ).join('');
 
-        // Only process if status is confirmed or null (legacy bookings may not have status)
-        const validBookings = bookings.filter(b => !b.status || b.status === 'confirmed');
-        if (validBookings.length === 0) continue;
-
-        let teacherEmail = ADMIN_EMAIL;
-        let teacherLang = 'de';
-        if (course.user_id) {
-          const { data: teacherProfile } = await supabase.from('profiles').select('email, language').eq('id', course.user_id).single();
-          if (teacherProfile?.email) teacherEmail = teacherProfile.email;
-          if (teacherProfile?.language) teacherLang = teacherProfile.language;
-        }
-
-        const t = EMAIL_TRANSLATIONS[teacherLang] || EMAIL_TRANSLATIONS['de'];
-
-        const userIds = validBookings.map(b => b.user_id);
-        const { data: profiles } = await supabase.from('profiles').select('id, full_name, email').in('id', userIds);
-
-        const listHtml = validBookings.map(booking => {
-          const profile = profiles?.find(p => p.id === booking.user_id);
-          return `<li>${profile?.full_name || 'Teilnehmer'} (${profile?.email || 'Keine Email'})</li>`;
-        }).join('');
-
-        const totalRevenue = validBookings.length * (course.price || 0);
-        const payoutAmount = totalRevenue * 0.85;
-
-        const bookingIds = validBookings.map(b => b.id);
-        await supabase.from('bookings').update({ is_paid: true }).in('id', bookingIds);
-        processedBookings += bookingIds.length;
-
-        try {
-          await resend.emails.send({
-            from: 'KursNavi <info@kursnavi.ch>',
-            to: teacherEmail,
-            bcc: ADMIN_EMAIL,
-            subject: `${t.subject}${course.title}`,
-            html: generateEmailHtml(t.title, t.body(course.title, payoutAmount.toFixed(2), listHtml), t.cta)
-          });
-          emailsSent++;
-        } catch (emailError) {
-          console.error(`Failed to send legacy payout email to ${teacherEmail}:`, emailError);
-        }
+      try {
+        await resend.emails.send({
+          from: 'KursNavi <info@kursnavi.ch>',
+          to: ADMIN_EMAIL,
+          subject: `Achtung: ${staleFlexBookings.length} flexible Buchung(en) ohne Durchführung seit 90+ Tagen`,
+          html: generateEmailHtml(
+            'Stale Flex-Buchungen',
+            `<p>Die folgenden platform_flex Buchungen wurden seit über 90 Tagen nicht als durchgeführt markiert. Bitte prüfen und ggf. manuell erstatten:</p><ul>${staleListHtml}</ul>`,
+            'Im Dashboard prüfen'
+          )
+        });
+        staleAlertsSent++;
+        emailsSent++;
+      } catch (emailError) {
+        console.error('Stale flex alert email failed:', emailError);
       }
     }
 
@@ -453,10 +448,11 @@ export default async function handler(req, res) {
     return res.status(200).json({
       success: true,
       message: "Payouts, Reminders & Expiry Processed",
-      emailsSent: emailsSent,
-      processedBookings: processedBookings,
-      remindersSent: remindersSent,
-      expiredPackages: expiredPackages
+      emailsSent,
+      processedBookings,
+      remindersSent,
+      expiredPackages,
+      staleAlertsSent
     });
 
   } catch (error) {

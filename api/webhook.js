@@ -104,12 +104,18 @@ const EMAIL_TRANSLATIONS = {
 };
 
 // --- 3.1 PAYOUT ELIGIBILITY CALCULATION ---
-function calculatePayoutEligibleAt(paidAt, eventStartAt, bookingType) {
+function calculatePayoutEligibleAt(paidAt, eventEndAt, eventStartAt, bookingType) {
   const DAYS_MS = 24 * 60 * 60 * 1000;
 
-  if (bookingType === 'platform' && eventStartAt) {
-    // Payout after event completion: event_start + 7 days (dispute window)
-    return new Date(new Date(eventStartAt).getTime() + 7 * DAYS_MS);
+  if (bookingType === 'platform') {
+    // Use end_date if available, otherwise fall back to start_date
+    const eventRef = eventEndAt || eventStartAt;
+    if (eventRef) {
+      // Payout after event completion: event_end (or start fallback) + 2 days
+      return new Date(new Date(eventRef).getTime() + 2 * DAYS_MS);
+    }
+    // platform without event: 14 days after payment
+    return new Date(new Date(paidAt).getTime() + 14 * DAYS_MS);
   }
 
   if (bookingType === 'platform_flex') {
@@ -117,8 +123,7 @@ function calculatePayoutEligibleAt(paidAt, eventStartAt, bookingType) {
     return null;
   }
 
-  // platform without event: 14 days after payment
-  return new Date(new Date(paidAt).getTime() + 14 * DAYS_MS);
+  return null;
 }
 
 // --- 3.2 AUTO-REFUND CALCULATION ---
@@ -275,14 +280,16 @@ export default async function handler(req, res) {
         .single();
 
       let eventStartAt = null;
+      let eventEndAt = null;
       let eventLocation = null;
       if (eventId) {
         const { data: eventData } = await supabase
           .from('course_events')
-          .select('start_date, location, city')
+          .select('start_date, end_date, location, city')
           .eq('id', eventId)
           .single();
         eventStartAt = eventData?.start_date;
+        eventEndAt = eventData?.end_date;
         eventLocation = eventData?.location || eventData?.city;
       }
 
@@ -336,7 +343,7 @@ export default async function handler(req, res) {
       // 4. Calculate timestamps
       const paidAt = new Date();
       const autoRefundUntil = calculateAutoRefundUntil(paidAt, eventStartAt, bookingType);
-      const payoutEligibleAt = calculatePayoutEligibleAt(paidAt, eventStartAt, bookingType);
+      const payoutEligibleAt = calculatePayoutEligibleAt(paidAt, eventEndAt, eventStartAt, bookingType);
 
       // 5. Create booking
       const { error: insertError } = await supabase.from('bookings').insert({
