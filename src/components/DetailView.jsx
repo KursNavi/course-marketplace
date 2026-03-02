@@ -397,7 +397,7 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
                     userId: user.id,
                     userEmail: user.email,
                     eventId: courseEvent?.id || null,
-                    guardianAttestation: true
+                    guardianAttestation: guardianAttested
                 })
             });
             const data = await response.json();

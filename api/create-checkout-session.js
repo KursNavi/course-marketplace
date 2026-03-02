@@ -19,7 +19,7 @@ export default async function handler(req, res) {
     // 1. Load course to check booking_type and validate
     const { data: course, error: courseError } = await supabase
       .from('courses')
-      .select('id, booking_type, ticket_limit_30d, price, user_id')
+      .select('id, booking_type, ticket_limit_30d, price, user_id, requires_guardian_booking')
       .eq('id', courseId)
       .single();
 
@@ -29,6 +29,11 @@ export default async function handler(req, res) {
 
     if (course.booking_type === 'lead') {
       return res.status(400).json({ error: 'Dieser Kurs ist nicht online buchbar' });
+    }
+
+    // Guardian attestation: server-side enforcement
+    if (course.requires_guardian_booking && !guardianAttestation) {
+      return res.status(400).json({ error: 'Für diesen Kurs ist die Bestätigung durch eine erziehungsberechtigte Person erforderlich.' });
     }
 
     // 2. Event capacity check (only for platform)

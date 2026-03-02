@@ -178,6 +178,28 @@ export default async function handler(req, res) {
       refundResults.push({ bookingId: booking.id, status: 'refunded' });
     }
 
+    // 4b. Alert admin if any refunds failed
+    const failedRefunds = refundResults.filter(r => r.status === 'stripe_error');
+    if (failedRefunds.length > 0) {
+      try {
+        await resend.emails.send({
+          from: 'KursNavi <info@kursnavi.ch>',
+          to: ADMIN_EMAIL,
+          subject: `ACHTUNG: ${failedRefunds.length} Refund(s) fehlgeschlagen — ${courseTitle} (${eventDate})`,
+          html: generateEmailHtml(
+            'Refund-Fehler bei Terminabsage',
+            `<p>Beim Absagen des Termins <strong>${courseTitle}</strong> (${eventDate}) konnten folgende Buchungen nicht erstattet werden:</p>
+             <ul>${failedRefunds.map(f => `<li>Booking ${f.bookingId}: ${f.error}</li>`).join('')}</ul>
+             <p>Bitte manuell im <a href="https://dashboard.stripe.com/payments">Stripe Dashboard</a> erstatten.</p>`,
+            'Stripe Dashboard öffnen',
+            'https://dashboard.stripe.com/payments'
+          )
+        });
+      } catch (alertErr) {
+        console.error('Failed to send refund failure alert:', alertErr);
+      }
+    }
+
     // 5. Send emails to affected students
     if (affectedBookings.length > 0) {
       const studentIds = [...new Set(affectedBookings.map(b => b.user_id))];
