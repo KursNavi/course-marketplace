@@ -1,6 +1,18 @@
 import { createClient } from '@supabase/supabase-js';
 import { createHash } from 'crypto';
 
+const ALLOWED_HOSTS = ['images.unsplash.com', 'unsplash.com'];
+
+function isAllowedUnsplashUrl(url) {
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== 'https:') return false;
+    return ALLOWED_HOSTS.some(d => parsed.hostname === d || parsed.hostname.endsWith('.' + d));
+  } catch {
+    return false;
+  }
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -29,7 +41,7 @@ export default async function handler(req, res) {
     }
 
     const { url } = req.body || {};
-    if (!url || !url.includes('unsplash.com')) {
+    if (!url || !isAllowedUnsplashUrl(url)) {
       return res.status(400).json({ error: 'Ungültige oder fehlende Unsplash-URL' });
     }
 

@@ -6,10 +6,18 @@ export const DEFAULT_COURSE_IMAGE = "https://nplxmpfasgpumpiddjfl.supabase.co/st
 export const DEFAULT_COVER_IMAGE = "https://nplxmpfasgpumpiddjfl.supabase.co/storage/v1/object/public/course-images/ca3c9cbb76c1d0b4b0bf300cdbd3bf39.jpg";
 
 /**
- * Prüft ob eine URL auf Unsplash zeigt
+ * Prüft ob eine URL auf Unsplash zeigt (sichere Hostname-Prüfung)
  */
 export function isUnsplashUrl(url) {
-    return !!url && url.includes('unsplash.com');
+    if (!url) return false;
+    try {
+        const parsed = new URL(url);
+        return parsed.hostname === 'images.unsplash.com' ||
+               parsed.hostname === 'unsplash.com' ||
+               parsed.hostname.endsWith('.unsplash.com');
+    } catch {
+        return false;
+    }
 }
 
 /**
