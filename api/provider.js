@@ -155,6 +155,7 @@ export default async function handler(req, res) {
       }
 
       // Default cover image for non-Enterprise or if not set
+      // Nach Migration: Supabase-Storage-URL
       const defaultCoverImage = "https://images.unsplash.com/photo-1557683316-973673baf926?auto=format&fit=crop&q=80&w=1200&h=400";
 
       // Parse additional_locations (stored as JSON string in DB)

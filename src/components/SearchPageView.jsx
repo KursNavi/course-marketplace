@@ -9,7 +9,8 @@ import { supabase } from '../lib/supabase';
 import { BASE_URL } from '../lib/siteConfig';
 import { getBereichByAreaSlug, getBereichUrl } from '../lib/bereichLandingConfig';
 
-const fallbackImage = "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=600";
+import { DEFAULT_COURSE_IMAGE } from '../lib/imageUtils';
+const fallbackImage = DEFAULT_COURSE_IMAGE;
 
 // Map URL slugs to database slugs (URL uses legacy slugs, DB uses new consolidated slugs)
 const URL_TO_DB_TYPE = {

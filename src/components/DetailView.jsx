@@ -6,6 +6,7 @@ import { useTaxonomy } from '../hooks/useTaxonomy';
 import { SEGMENT_CONFIG } from '../lib/constants';
 import { BASE_URL } from '../lib/siteConfig';
 import { getBereichByAreaSlug, getBereichUrl } from '../lib/bereichLandingConfig';
+import { DEFAULT_COURSE_IMAGE } from '../lib/imageUtils';
 
 const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, savedCourseIds, onToggleSaveCourse, showNotification }) => {
     const [showLeadModal, setShowLeadModal] = useState(false);
@@ -18,6 +19,9 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
     const [ticketAvailable, setTicketAvailable] = useState(true);
     const [ticketRemaining, setTicketRemaining] = useState(null);
     const [ticketPeriodEnd, setTicketPeriodEnd] = useState(null);
+
+    // Guardian attestation state (for platform/platform_flex bookings)
+    const [guardianAttested, setGuardianAttested] = useState(false);
 
     const { taxonomy, getTypeLabel, getAreaLabel } = useTaxonomy();
 
@@ -359,6 +363,12 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
             return;
         }
 
+        // Guardian attestation required for platform/platform_flex
+        if (!guardianAttested) {
+            showNotification && showNotification('Bitte bestätige die Altersbestätigung, um fortzufahren.');
+            return;
+        }
+
         // For platform: event is required
         if (type === 'platform' && !courseEvent) return;
 
@@ -386,7 +396,8 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
                     courseImage: course.image_url,
                     userId: user.id,
                     userEmail: user.email,
-                    eventId: courseEvent?.id || null
+                    eventId: courseEvent?.id || null,
+                    guardianAttestation: true
                 })
             });
             const data = await response.json();
@@ -594,7 +605,7 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
     // Take all from same category, then fill up to 5 with others
     const relatedCourses = [...rankedSame, ...rankedOther].slice(0, 5);
 
-    const fallbackImage = "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=1200";
+    const fallbackImage = DEFAULT_COURSE_IMAGE;
 
     return (
     <div className="max-w-7xl mx-auto px-4 py-8 font-sans animate-in fade-in duration-500">
@@ -692,6 +703,12 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
                                 <span>{course.session_count ? `${course.session_count}x ` : ''}{course.session_length}</span>
                             </div>
                         )}
+                        {course.min_age && (
+                            <div className="flex items-center text-gray-700">
+                                <Info className="w-5 h-5 mr-3 text-gray-400 shrink-0"/>
+                                <span>Ab {course.min_age} Jahren</span>
+                            </div>
+                        )}
                         {getCategoryBreadcrumb().length > 0 && (() => {
                             const crumbs = getCategoryBreadcrumb();
                             const firstCrumb = crumbs[0];
@@ -755,7 +772,29 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
                         {isSaved ? <BookmarkCheck className="w-4 h-4 mr-2" /> : <Bookmark className="w-4 h-4 mr-2" />}
                         {isSaved ? 'Gemerkt' : 'Kurs merken'}
                     </button>
-                    
+
+                    {/* Guardian Attestation Checkbox (platform + platform_flex only) */}
+                    {(course.booking_type === 'platform' || course.booking_type === 'platform_flex') && (
+                        <div className="mb-4 p-3 rounded-lg border border-gray-200 bg-gray-50">
+                            <label className="flex items-start cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    checked={guardianAttested}
+                                    onChange={(e) => setGuardianAttested(e.target.checked)}
+                                    className="mt-0.5 mr-2.5 accent-primary shrink-0"
+                                />
+                                <span className="text-xs text-gray-700 leading-relaxed">
+                                    Ich bestätige, dass ich mindestens 18 Jahre alt bin und diese Buchung ggf. als Erziehungsberechtigte/r tätige.
+                                </span>
+                            </label>
+                            {course.requires_guardian_booking && (
+                                <p className="text-xs text-amber-700 mt-2 pl-5 font-medium">
+                                    Hinweis: Dieser Kurs richtet sich an Minderjährige. Die Buchung muss durch eine erziehungsberechtigte Person erfolgen.
+                                </p>
+                            )}
+                        </div>
+                    )}
+
                     {hasEvents ? (
                         <>
                             <h3 className="font-bold text-dark mb-3 flex items-center"><Calendar className="w-4 h-4 mr-2"/> Termine</h3>
@@ -792,9 +831,9 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
                                         ) : (
                                             <button
                                                 onClick={() => !ev.isFull && handleBookingAction(ev)}
-                                                disabled={ev.isFull && course.booking_type === 'platform'}
+                                                disabled={(ev.isFull && course.booking_type === 'platform') || (course.booking_type !== 'lead' && !guardianAttested)}
                                                 className={`w-full py-2.5 rounded-lg font-bold text-sm transition flex items-center justify-center
-                                                    ${(ev.isFull && course.booking_type === 'platform')
+                                                    ${(ev.isFull && course.booking_type === 'platform') || (course.booking_type !== 'lead' && !guardianAttested)
                                                         ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                                                         : 'bg-primary text-white hover:bg-orange-600 shadow-sm hover:shadow active:scale-95'}`}
                                             >
@@ -852,9 +891,9 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
                             ) : (
                                 <button
                                     onClick={() => (course.booking_type === 'platform_flex' || course.booking_type === 'lead') && handleBookingAction()}
-                                    disabled={course.booking_type === 'platform' || (course.booking_type === 'platform_flex' && !ticketAvailable)}
+                                    disabled={course.booking_type === 'platform' || (course.booking_type === 'platform_flex' && (!ticketAvailable || !guardianAttested))}
                                     className={`w-full font-bold py-3 rounded-lg transition shadow-sm flex items-center justify-center
-                                        ${course.booking_type === 'platform' || (course.booking_type === 'platform_flex' && !ticketAvailable)
+                                        ${course.booking_type === 'platform' || (course.booking_type === 'platform_flex' && (!ticketAvailable || !guardianAttested))
                                             ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                                             : 'bg-primary text-white hover:bg-orange-600'}`}
                                 >

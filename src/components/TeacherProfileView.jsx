@@ -2,7 +2,8 @@ import React, { useEffect } from 'react';
 import { ArrowLeft, CheckCircle, Shield } from 'lucide-react';
 import { formatPriceCHF } from '../lib/formatPrice';
 
-const fallbackImage = "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=600";
+import { DEFAULT_COURSE_IMAGE } from '../lib/imageUtils';
+const fallbackImage = DEFAULT_COURSE_IMAGE;
 
 const TeacherProfileView = ({ teacher, courses, setView, setSelectedCourse, t }) => {
     // Scroll to top when teacher changes

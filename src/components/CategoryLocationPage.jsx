@@ -4,6 +4,7 @@ import { CATEGORY_TYPES } from '../lib/constants';
 import { formatPriceCHF } from '../lib/formatPrice';
 import { BASE_URL } from '../lib/siteConfig';
 import { useTaxonomy } from '../hooks/useTaxonomy';
+import { DEFAULT_COURSE_IMAGE } from '../lib/imageUtils';
 
 /**
  * Programmatic SEO Landing Page for Topic/Location combinations
@@ -209,7 +210,7 @@ export default function CategoryLocationPage({
         return `CHF ${formatPriceCHF(price)}`;
     };
 
-    const fallbackImage = "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=1200";
+    const fallbackImage = DEFAULT_COURSE_IMAGE;
 
     return (
         <div className="min-h-screen bg-beige">

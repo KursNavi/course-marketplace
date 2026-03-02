@@ -4,7 +4,7 @@ import { KursNaviLogo } from './Layout';
 import { SWISS_CANTONS, NEW_TAXONOMY, CATEGORY_TYPES, COURSE_LEVELS, DELIVERY_TYPES, COURSE_LANGUAGES, TYPE_DISPLAY_LABELS, BERUF_SAEULEN } from '../lib/constants';
 import { supabase } from '../lib/supabase';
 import { useTaxonomy } from '../hooks/useTaxonomy';
-import { computeImageHash, getExistingImageByHash, uploadImageWithHash, getUserCourseImages, deleteImageFromLibrary } from '../lib/imageUtils';
+import { computeImageHash, getExistingImageByHash, uploadImageWithHash, getUserCourseImages, deleteImageFromLibrary, isUnsplashUrl, importUnsplashImage, DEFAULT_COURSE_IMAGE } from '../lib/imageUtils';
 import imageCompression from 'browser-image-compression';
 
 // --- Image Compression Helper ---
@@ -139,14 +139,20 @@ const CategorySuggestionModal = ({ isOpen, onClose, taxonomy, types, showNotific
         const message = messageLines.join('\n');
 
         try {
-            const response = await fetch("https://formsubmit.co/ajax/info@kursnavi.ch", {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session?.access_token) {
+                throw new Error('Nicht eingeloggt');
+            }
+
+            const response = await fetch("/api/contact", {
                 method: "POST",
                 headers: {
                     'Content-Type': 'application/json',
-                    'Accept': 'application/json'
+                    'Authorization': `Bearer ${session.access_token}`
                 },
                 body: JSON.stringify({
-                    _subject: `Kategorie-Vorschlag: ${newArea || newSpecialty || newFocus}`,
+                    type: 'category-suggestion',
+                    subject: `Kategorie-Vorschlag: ${newArea || newSpecialty || newFocus}`,
                     message: message,
                     email: userEmail || ''
                 })
@@ -157,7 +163,8 @@ const CategorySuggestionModal = ({ isOpen, onClose, taxonomy, types, showNotific
                 resetForm();
                 onClose();
             } else {
-                throw new Error('Senden fehlgeschlagen');
+                const errData = await response.json().catch(() => ({}));
+                throw new Error(errData.error || 'Senden fehlgeschlagen');
             }
         } catch (err) {
             console.error('Category suggestion error:', err);
@@ -445,6 +452,8 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
     const [courseLanguages, setCourseLanguages] = useState(draft?.courseLanguages || ['Deutsch']);
     const [deliveryTypes, setDeliveryTypes] = useState(draft?.deliveryTypes || ['presence']);
     const [berufSaeulen, setBerufSaeulen] = useState(draft?.berufSaeulen || []);
+    const [minAge, setMinAge] = useState(draft?.minAge || '');
+    const [requiresGuardianBooking, setRequiresGuardianBooking] = useState(draft?.requiresGuardianBooking || false);
 
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -622,6 +631,8 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
 
             if (initialData.level) setSelectedLevel(initialData.level);
             if (Array.isArray(initialData.beruf_saeulen)) setBerufSaeulen(initialData.beruf_saeulen);
+            if (initialData.min_age != null) setMinAge(String(initialData.min_age));
+            if (initialData.requires_guardian_booking) setRequiresGuardianBooking(true);
             // Support both old 'language' (string) and new 'languages' (array) field
             if (initialData.languages && Array.isArray(initialData.languages) && initialData.languages.length > 0) {
                 setCourseLanguages(initialData.languages);
@@ -1104,10 +1115,17 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
             }
         }
 
+        // Kinder-Kurs: Mindestalter ist Pflicht
+        const primaryType = cleanedCategories[0]?.type;
+        if ((primaryType === 'kinder' || primaryType === 'kinder_jugend') && !minAge) {
+            window.alert("Für Kinder-Kurse ist das Mindestalter erforderlich.");
+            return;
+        }
+
         setIsSubmitting(true);
 
         // 3. Image Upload (mit automatischer Komprimierung) oder bestehendes Bild verwenden
-        let imageUrl = initialData?.image_url || "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=600";
+        let imageUrl = initialData?.image_url || DEFAULT_COURSE_IMAGE;
 
         // Priorität: 1. Neues hochgeladenes Bild, 2. Aus Bibliothek gewähltes Bild, 3. Bestehendes Bild
         if (selectedExistingImage) {
@@ -1137,6 +1155,15 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
                         return;
                     }
                 }
+            }
+        }
+
+        // Unsplash-Bild in eigenen Storage importieren (Datenschutz)
+        if (isUnsplashUrl(imageUrl)) {
+            try {
+                imageUrl = await importUnsplashImage(imageUrl);
+            } catch (importErr) {
+                console.warn('Unsplash-Import fehlgeschlagen:', importErr);
             }
         }
 
@@ -1211,7 +1238,9 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
             user_id: user?.id || initialData?.user_id,
             is_pro: user?.is_professional ?? initialData?.is_pro ?? false,
             status: courseStatus,
-            beruf_saeulen: (catType === 'professionell' || catType === 'beruflich') && berufSaeulen.length > 0 ? berufSaeulen : null
+            beruf_saeulen: (catType === 'professionell' || catType === 'beruflich') && berufSaeulen.length > 0 ? berufSaeulen : null,
+            min_age: minAge ? Number(minAge) : null,
+            requires_guardian_booking: requiresGuardianBooking
         };
 
         // 6. DB Operations
@@ -1695,6 +1724,55 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                                 </div>
                             )}
                         </div>
+
+                        {/* C: KINDER-KURS EINSTELLUNGEN / MINDESTALTER */}
+                        {(() => {
+                            const isKinder = categories[0]?.type === 'kinder' || categories[0]?.type === 'kinder_jugend';
+                            return isKinder ? (
+                                <div className="bg-yellow-50 p-4 rounded-xl border border-yellow-200 mb-6">
+                                    <h4 className="text-sm font-bold text-yellow-900 mb-3">Kinder-Kurs Einstellungen</h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-700 mb-1">Mindestalter *</label>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                max="18"
+                                                value={minAge}
+                                                onChange={(e) => { setMinAge(e.target.value); markDirty(); }}
+                                                placeholder="z.B. 6"
+                                                required
+                                                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none"
+                                            />
+                                            <p className="text-xs text-gray-500 mt-1">Ab welchem Alter ist der Kurs geeignet?</p>
+                                        </div>
+                                        <div className="flex items-start pt-6">
+                                            <label className="flex items-center cursor-pointer">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={requiresGuardianBooking}
+                                                    onChange={(e) => { setRequiresGuardianBooking(e.target.checked); markDirty(); }}
+                                                    className="mr-2 accent-primary"
+                                                />
+                                                <span className="text-sm text-gray-700">Buchung nur durch Erziehungsberechtigte</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="mb-6">
+                                    <label className="block text-sm font-bold text-gray-700 mb-1">Mindestalter (Optional)</label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        value={minAge}
+                                        onChange={(e) => { setMinAge(e.target.value); markDirty(); }}
+                                        placeholder="Leer = kein Mindestalter"
+                                        className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none"
+                                    />
+                                </div>
+                            );
+                        })()}
 
                         {/* B: DATES & LOCATIONS */}
                         <div className="bg-blue-50 p-6 rounded-xl border border-blue-100">

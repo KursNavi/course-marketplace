@@ -11,8 +11,7 @@ import {
   hasPublicProfile, canPublishProfile, canEditSlug, hasCoverImage
 } from '../lib/entitlements';
 
-// Default cover image for providers (gradient with abstract pattern)
-const DEFAULT_COVER_IMAGE = "https://images.unsplash.com/photo-1557683316-973673baf926?auto=format&fit=crop&q=80&w=1200&h=400";
+import { DEFAULT_COVER_IMAGE } from '../lib/imageUtils';
 
 /**
  * Consolidated Profile Editor Component

@@ -2,6 +2,46 @@ import { supabase } from './supabase';
 
 const BUCKET_NAME = 'course-images';
 
+// Default-Bilder — nach Migration durch Supabase-Storage-URLs ersetzen
+export const DEFAULT_COURSE_IMAGE = "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=600";
+export const DEFAULT_COVER_IMAGE = "https://images.unsplash.com/photo-1557683316-973673baf926?auto=format&fit=crop&q=80&w=1200&h=400";
+
+/**
+ * Prüft ob eine URL auf Unsplash zeigt
+ */
+export function isUnsplashUrl(url) {
+    return !!url && url.includes('unsplash.com');
+}
+
+/**
+ * Importiert ein Unsplash-Bild über den Server in Supabase Storage
+ * @param {string} unsplashUrl - Die Unsplash-URL
+ * @returns {string} Die neue Supabase Storage URL
+ */
+export async function importUnsplashImage(unsplashUrl) {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) {
+        throw new Error('Nicht angemeldet');
+    }
+
+    const response = await fetch('/api/import-unsplash-image', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({ url: unsplashUrl })
+    });
+
+    if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.error || 'Import fehlgeschlagen');
+    }
+
+    const { url } = await response.json();
+    return url;
+}
+
 /**
  * Berechnet einen MD5-ähnlichen Hash aus einer Datei
  * Verwendet SubtleCrypto für schnelle Hash-Berechnung
@@ -162,14 +202,13 @@ export async function getUserCourseImages(userId) {
  * @returns {Object} { success: boolean, updatedCourses: number, error?: string }
  */
 export async function deleteImageFromLibrary(imageUrl, courseIds = []) {
-    const DEFAULT_IMAGE = "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=600";
 
     try {
         // 1. Setze alle betroffenen Kurse auf das Default-Bild
         if (courseIds.length > 0) {
             const { error: updateError } = await supabase
                 .from('courses')
-                .update({ image_url: DEFAULT_IMAGE })
+                .update({ image_url: DEFAULT_COURSE_IMAGE })
                 .in('id', courseIds);
 
             if (updateError) {

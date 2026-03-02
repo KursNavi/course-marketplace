@@ -10,7 +10,8 @@ import {
 import { SWISS_CANTONS, CATEGORY_TYPES, NEW_TAXONOMY, CATEGORY_LABELS } from "../lib/constants";
 import { PLANS } from "../constants/plans";
 
-const fallbackImage = "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=600";
+import { DEFAULT_COURSE_IMAGE } from '../lib/imageUtils';
+const fallbackImage = DEFAULT_COURSE_IMAGE;
 import { KursNaviLogo } from './Layout';
 import { supabase } from '../lib/supabase';
 import { useTaxonomy } from '../hooks/useTaxonomy';
@@ -358,15 +359,23 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t, isImp
 
 
             if (!dbError) {
-                // Notify Admin
-                fetch("https://formsubmit.co/ajax/995007a94ce934b7d8c8e7776670f9c4", {
-                    method: "POST",
-                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-                    body: JSON.stringify({
-                        _subject: "Neue Verifizierung (Mehrere Dateien): " + user.email,
-                        message: `User: ${user.email}\nAnzahl Dateien: ${newDocUrls.length}\nBitte im Admin Panel prüfen.`
-                    })
-                }).catch(err => console.error("Email failed", err));
+                // Notify Admin via /api/contact
+                supabase.auth.getSession().then(({ data: { session } }) => {
+                    if (session?.access_token) {
+                        fetch("/api/contact", {
+                            method: "POST",
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${session.access_token}`
+                            },
+                            body: JSON.stringify({
+                                type: 'verification',
+                                subject: "Neue Verifizierung (Mehrere Dateien): " + user.email,
+                                message: `User: ${user.email}\nAnzahl Dateien: ${newDocUrls.length}\nBitte im Admin Panel prüfen.`
+                            })
+                        }).catch(err => console.error("Contact API failed", err));
+                    }
+                }).catch(err => console.error("Session check failed", err));
 
                 setVerificationStatus('pending');
                 showNotification(`${newDocUrls.length} Datei(en) erfolgreich hochgeladen.`);
