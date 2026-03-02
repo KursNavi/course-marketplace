@@ -11,6 +11,10 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
+// In-memory rate limit: max 1 export per user per 60 seconds
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const rateLimitMap = new Map();
+
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -37,6 +41,16 @@ export default async function handler(req, res) {
     }
 
     const userId = user.id;
+
+    // Rate limit check
+    const now = Date.now();
+    const lastExport = rateLimitMap.get(userId);
+    if (lastExport && now - lastExport < RATE_LIMIT_WINDOW_MS) {
+      const retryAfter = Math.ceil((RATE_LIMIT_WINDOW_MS - (now - lastExport)) / 1000);
+      res.setHeader('Retry-After', retryAfter);
+      return res.status(429).json({ error: `Bitte warten Sie ${retryAfter} Sekunden vor dem nächsten Export.` });
+    }
+    rateLimitMap.set(userId, now);
 
     // Fetch all user data in parallel
     const [profileRes, bookingsRes, savedCoursesRes, leadsRes] = await Promise.all([
@@ -73,8 +87,7 @@ export default async function handler(req, res) {
     const exportData = {
       export_info: {
         exported_at: new Date().toISOString(),
-        platform: 'KursNavi',
-        user_id: userId
+        platform: 'KursNavi'
       },
       profile: profileRes.data || null,
       bookings: bookingsRes.data || [],
