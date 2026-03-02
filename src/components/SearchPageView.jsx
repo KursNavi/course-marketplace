@@ -467,13 +467,13 @@ const SearchPageView = ({
                     </div>
                 </div>
             )}
-            <div className="bg-white border-b pt-6 pb-4 sticky top-20 z-30 shadow-sm">
-                <div className="max-w-7xl mx-auto px-4 space-y-4">
+            <div className="bg-white border-b pt-3 pb-2 sticky top-20 z-30 shadow-sm">
+                <div className="max-w-7xl mx-auto px-4 space-y-2">
                     {/* Search row */}
-                    <div className="flex flex-col md:flex-row gap-3 items-stretch">
+                    <div className="flex flex-col md:flex-row gap-2 items-stretch">
                         <div className="relative flex-grow w-full md:w-auto">
-                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                            <input type="text" placeholder={t.search_refine} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full h-[42px] pl-10 pr-4 bg-beige border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-colors" />
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                            <input type="text" placeholder={t.search_refine} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full h-[36px] pl-9 pr-4 bg-beige border border-gray-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-colors" />
                         </div>
                         <div className="flex items-center gap-2">
                             <LocationDropdown selectedLocations={selectedLocations} setSelectedLocations={setSelectedLocations} locMenuOpen={locMenuOpen} setLocMenuOpen={setLocMenuOpen} locMenuRef={locMenuRef} t={t} />
@@ -481,7 +481,7 @@ const SearchPageView = ({
                             <DeliveryTypeFilter selectedDeliveryTypes={selectedDeliveryTypes} setSelectedDeliveryTypes={setSelectedDeliveryTypes} deliveryMenuOpen={deliveryMenuOpen} setDeliveryMenuOpen={setDeliveryMenuOpen} deliveryMenuRef={deliveryMenuRef} t={t} />
                         </div>
                     </div>
-                    <p className="text-xs text-gray-500 -mt-2 ml-3">{t.search_hint_boolean || 'Tipp: Kombiniere Begriffe mit AND oder OR'}</p>
+                    <p className="text-xs text-gray-500 -mt-1 ml-3">{t.search_hint_boolean || 'Tipp: Kombiniere Begriffe mit AND oder OR'}</p>
 
                     {/* SEGMENT PICKER - shown when no segment is selected */}
                     {!searchType && (
@@ -505,16 +505,16 @@ const SearchPageView = ({
                     )}
 
                     {/* TAXONOMY FILTERS (Level 2-4) - Level 1 is selected via Navbar or segment picker */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        <select value={searchArea} onChange={(e) => { setSearchArea(e.target.value); setSearchSpecialty(""); setSearchFocus(""); }} className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 ${searchType ? 'bg-white border-gray-200' : 'bg-gray-50 border-gray-200'} ${!searchArea ? 'text-gray-400' : 'text-gray-900'}`} disabled={!searchType}>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                        <select value={searchArea} onChange={(e) => { setSearchArea(e.target.value); setSearchSpecialty(""); setSearchFocus(""); }} className={`w-full px-3 py-1.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 ${searchType ? 'bg-white border-gray-200' : 'bg-gray-50 border-gray-200'} ${!searchArea ? 'text-gray-400' : 'text-gray-900'}`} disabled={!searchType}>
                             <option value="" className="text-gray-400">— {t.lbl_area || 'Themenwelt'} —</option>
                             {availableAreas.map(area => (<option key={area} value={area} className="text-gray-900">{getLabel(area, 'area')}</option>))}
                         </select>
-                        <select value={searchSpecialty} onChange={(e) => { setSearchSpecialty(e.target.value); setSearchFocus(""); }} className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 ${searchArea ? 'bg-white border-gray-200' : 'bg-gray-50 border-gray-200'} ${!searchSpecialty ? 'text-gray-400' : 'text-gray-900'}`} disabled={!searchArea}>
+                        <select value={searchSpecialty} onChange={(e) => { setSearchSpecialty(e.target.value); setSearchFocus(""); }} className={`w-full px-3 py-1.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 ${searchArea ? 'bg-white border-gray-200' : 'bg-gray-50 border-gray-200'} ${!searchSpecialty ? 'text-gray-400' : 'text-gray-900'}`} disabled={!searchArea}>
                             <option value="" className="text-gray-400">— {t.lbl_specialty || 'Fachgebiet'} —</option>
                             {availableSpecialties.map(spec => (<option key={spec} value={spec} className="text-gray-900">{spec}</option>))}
                         </select>
-                        <select value={searchFocus || ""} onChange={(e) => setSearchFocus(e.target.value)} className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 ${searchSpecialty && availableFocuses.length > 0 ? 'bg-white border-gray-200' : 'bg-gray-50 border-gray-200'} ${!searchFocus ? 'text-gray-400' : 'text-gray-900'}`} disabled={!searchSpecialty || availableFocuses.length === 0}>
+                        <select value={searchFocus || ""} onChange={(e) => setSearchFocus(e.target.value)} className={`w-full px-3 py-1.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 ${searchSpecialty && availableFocuses.length > 0 ? 'bg-white border-gray-200' : 'bg-gray-50 border-gray-200'} ${!searchFocus ? 'text-gray-400' : 'text-gray-900'}`} disabled={!searchSpecialty || availableFocuses.length === 0}>
                             <option value="" className="text-gray-400">— {t.lbl_focus || 'Fokus'} —</option>
                             {availableFocuses.map(f => (<option key={f} value={f} className="text-gray-900">{f}</option>))}
                         </select>
@@ -525,26 +525,26 @@ const SearchPageView = ({
                         <SaeulenFilter selectedSaule={selectedSaule} setSelectedSaule={setSelectedSaule} />
                     )}
 
-                    <div className="flex gap-4 overflow-x-auto pb-2 items-center border-t pt-3 border-gray-100">
-                        <label className="flex items-center bg-white px-3 py-1.5 rounded-lg border border-gray-200 cursor-pointer">
-                            <span className="text-xs text-gray-400 mr-2 whitespace-nowrap">Von</span>
-                            <input type="date" value={filterDateFrom} onChange={(e) => setFilterDateFrom(e.target.value)} className="bg-transparent text-sm outline-none text-gray-600 cursor-pointer" />
+                    <div className="flex gap-3 overflow-x-auto pb-1 items-center border-t pt-2 border-gray-100">
+                        <label className="flex items-center bg-white px-2.5 py-1 rounded-lg border border-gray-200 cursor-pointer">
+                            <span className="text-xs text-gray-400 mr-1.5 whitespace-nowrap">Von</span>
+                            <input type="date" value={filterDateFrom} onChange={(e) => setFilterDateFrom(e.target.value)} className="bg-transparent text-xs outline-none text-gray-600 cursor-pointer" />
                         </label>
-                        <label className="flex items-center bg-white px-3 py-1.5 rounded-lg border border-gray-200 cursor-pointer">
-                            <span className="text-xs text-gray-400 mr-2 whitespace-nowrap">Bis</span>
-                            <input type="date" value={filterDateTo} onChange={(e) => setFilterDateTo(e.target.value)} className="bg-transparent text-sm outline-none text-gray-600 cursor-pointer" />
+                        <label className="flex items-center bg-white px-2.5 py-1 rounded-lg border border-gray-200 cursor-pointer">
+                            <span className="text-xs text-gray-400 mr-1.5 whitespace-nowrap">Bis</span>
+                            <input type="date" value={filterDateTo} onChange={(e) => setFilterDateTo(e.target.value)} className="bg-transparent text-xs outline-none text-gray-600 cursor-pointer" />
                         </label>
-                        <div className="flex items-center space-x-2 bg-white px-3 py-1.5 rounded-lg border border-gray-200"><span className="text-sm text-gray-500">{t.lbl_max_price}</span><input type="number" placeholder="Any" value={filterPriceMax} onChange={(e) => setFilterPriceMax(e.target.value)} className="w-16 bg-transparent text-sm outline-none text-gray-600" /></div>
-                        <select value={filterLevel} onChange={(e) => setFilterLevel(e.target.value)} className="bg-white border border-gray-200 rounded-lg px-3 py-1.5 text-sm outline-none text-gray-600"><option value="All">{t.opt_all_levels}</option>{Object.keys(COURSE_LEVELS).map(k => <option key={k} value={k}>{COURSE_LEVELS[k].de}</option>)}</select>
-                         <label className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg border cursor-pointer transition select-none ${filterPro ? 'bg-blue-50 border-blue-200' : 'bg-white border-gray-200'}`} title={t.tooltip_pro_verified_long || t.tooltip_pro_verified}>
-                            <input type="checkbox" checked={filterPro} onChange={(e) => setFilterPro(e.target.checked)} className="rounded text-primary focus:ring-primary" />
-                            <span className={`text-sm font-medium ${filterPro ? 'text-blue-700' : 'text-gray-600'}`}>{t.lbl_professional_filter}</span>
+                        <div className="flex items-center space-x-1.5 bg-white px-2.5 py-1 rounded-lg border border-gray-200"><span className="text-xs text-gray-500">{t.lbl_max_price}</span><input type="number" placeholder="Any" value={filterPriceMax} onChange={(e) => setFilterPriceMax(e.target.value)} className="w-14 bg-transparent text-xs outline-none text-gray-600" /></div>
+                        <select value={filterLevel} onChange={(e) => setFilterLevel(e.target.value)} className="bg-white border border-gray-200 rounded-lg px-2.5 py-1 text-xs outline-none text-gray-600"><option value="All">{t.opt_all_levels}</option>{Object.keys(COURSE_LEVELS).map(k => <option key={k} value={k}>{COURSE_LEVELS[k].de}</option>)}</select>
+                         <label className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-lg border cursor-pointer transition select-none ${filterPro ? 'bg-blue-50 border-blue-200' : 'bg-white border-gray-200'}`} title={t.tooltip_pro_verified_long || t.tooltip_pro_verified}>
+                            <input type="checkbox" checked={filterPro} onChange={(e) => setFilterPro(e.target.checked)} className="rounded text-primary focus:ring-primary w-3.5 h-3.5" />
+                            <span className={`text-xs font-medium ${filterPro ? 'text-blue-700' : 'text-gray-600'}`}>{t.lbl_professional_filter}</span>
                             <Shield className="w-3 h-3 text-blue-500" />
                             <Info className="w-3 h-3 text-gray-400 hover:text-blue-500 transition-colors" />
                          </label>
-                         <label className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg border cursor-pointer transition select-none ${filterDirectBooking ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200'}`} title={t.tooltip_direct_booking_long || t.tooltip_direct_booking}>
-                            <input type="checkbox" checked={filterDirectBooking} onChange={(e) => setFilterDirectBooking(e.target.checked)} className="rounded text-primary focus:ring-primary" />
-                            <span className={`text-sm font-medium ${filterDirectBooking ? 'text-green-700' : 'text-gray-600'}`}>{t.lbl_direct_booking_filter}</span>
+                         <label className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-lg border cursor-pointer transition select-none ${filterDirectBooking ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200'}`} title={t.tooltip_direct_booking_long || t.tooltip_direct_booking}>
+                            <input type="checkbox" checked={filterDirectBooking} onChange={(e) => setFilterDirectBooking(e.target.checked)} className="rounded text-primary focus:ring-primary w-3.5 h-3.5" />
+                            <span className={`text-xs font-medium ${filterDirectBooking ? 'text-green-700' : 'text-gray-600'}`}>{t.lbl_direct_booking_filter}</span>
                             <CreditCard className="w-3 h-3 text-green-500" />
                             <Info className="w-3 h-3 text-gray-400 hover:text-green-500 transition-colors" />
                          </label>

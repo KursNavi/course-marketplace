@@ -180,7 +180,7 @@ export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCat
 export const LocationDropdown = ({ selectedLocations, setSelectedLocations, locMenuOpen, setLocMenuOpen, locMenuRef, t, buttonClassName }) => {
     const toggleLoc = (loc) => { if (selectedLocations.includes(loc)) setSelectedLocations(selectedLocations.filter(l => l !== loc)); else setSelectedLocations([...selectedLocations, loc]); };
     const displayList = SWISS_CANTONS.filter(c => c !== "Ausland");
-    const defaultBtnClass = `w-full md:w-auto px-4 py-3 border rounded-full flex items-center justify-between space-x-2 text-sm font-medium transition shadow-sm ${selectedLocations.length > 0 ? 'bg-primary text-white border-primary' : 'bg-white text-gray-700 hover:border-gray-400'}`;
+    const defaultBtnClass = `w-full md:w-auto px-3 py-1.5 border rounded-full flex items-center justify-between space-x-2 text-sm font-medium transition shadow-sm ${selectedLocations.length > 0 ? 'bg-primary text-white border-primary' : 'bg-white text-gray-700 hover:border-gray-400'}`;
     return (
         <div ref={locMenuRef} className="static relative z-50 text-left">
             <button
@@ -194,7 +194,7 @@ export const LocationDropdown = ({ selectedLocations, setSelectedLocations, locM
                  <div className="flex items-center"><MapPin className="w-4 h-4 mr-2" aria-hidden="true" /><span>{selectedLocations.length > 0 ? `${selectedLocations.length} selected` : t.filter_label_loc}</span></div><ChevronDown className="w-4 h-4" aria-hidden="true" />
             </button>
             {locMenuOpen && (
-                <div className="absolute top-14 left-0 w-[calc(100vw-2rem)] md:w-[560px] bg-white rounded-xl shadow-2xl border border-gray-100 p-4">
+                <div className="absolute top-10 left-0 w-[calc(100vw-2rem)] md:w-[560px] bg-white rounded-xl shadow-2xl border border-gray-100 p-4">
                     {/* Online – special item */}
                     <label className="flex items-center space-x-2 p-2 mb-2 hover:bg-gray-50 rounded cursor-pointer border-b border-gray-100 pb-3">
                         <input type="checkbox" checked={selectedLocations.includes('Online')} onChange={() => toggleLoc('Online')} className="rounded border-gray-300 text-primary focus:ring-primary" />
@@ -235,7 +235,7 @@ export const LanguageDropdown = ({ selectedLanguages, setSelectedLanguages, lang
                 aria-label="Kurssprache auswählen"
                 aria-expanded={langMenuOpen}
                 aria-haspopup="listbox"
-                className={`w-full md:w-auto px-4 py-3 border rounded-full flex items-center justify-between space-x-2 text-sm font-medium transition shadow-sm ${selectedLanguages.length > 0 ? 'bg-primary text-white border-primary' : 'bg-white text-gray-700 hover:border-gray-400'}`}
+                className={`w-full md:w-auto px-3 py-1.5 border rounded-full flex items-center justify-between space-x-2 text-sm font-medium transition shadow-sm ${selectedLanguages.length > 0 ? 'bg-primary text-white border-primary' : 'bg-white text-gray-700 hover:border-gray-400'}`}
             >
                 <div className="flex items-center">
                     <Globe className="w-4 h-4 mr-2" aria-hidden="true" />
@@ -244,7 +244,7 @@ export const LanguageDropdown = ({ selectedLanguages, setSelectedLanguages, lang
                 <ChevronDown className="w-4 h-4" aria-hidden="true" />
             </button>
             {langMenuOpen && (
-                <div className="absolute top-14 left-0 w-[250px] bg-white rounded-xl shadow-2xl border border-gray-100 p-4">
+                <div className="absolute top-10 left-0 w-[250px] bg-white rounded-xl shadow-2xl border border-gray-100 p-4">
                     <div className="space-y-1">
                         {Object.keys(COURSE_LANGUAGES).map(lang => (
                             <label key={lang} className="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
@@ -277,7 +277,7 @@ export const DeliveryTypeFilter = ({ selectedDeliveryTypes, setSelectedDeliveryT
         }
     };
 
-    const defaultBtnClass = `w-full md:w-auto px-4 py-3 border rounded-full flex items-center justify-between space-x-2 text-sm font-medium transition shadow-sm ${selectedDeliveryTypes.length > 0 ? 'bg-primary text-white border-primary' : 'bg-white text-gray-700 hover:border-gray-400'}`;
+    const defaultBtnClass = `w-full md:w-auto px-3 py-1.5 border rounded-full flex items-center justify-between space-x-2 text-sm font-medium transition shadow-sm ${selectedDeliveryTypes.length > 0 ? 'bg-primary text-white border-primary' : 'bg-white text-gray-700 hover:border-gray-400'}`;
 
     return (
         <div ref={deliveryMenuRef} className="static relative z-50 text-left">
@@ -296,7 +296,7 @@ export const DeliveryTypeFilter = ({ selectedDeliveryTypes, setSelectedDeliveryT
                 <ChevronDown className="w-4 h-4" aria-hidden="true" />
             </button>
             {deliveryMenuOpen && (
-                <div className="absolute top-14 left-0 w-[250px] bg-white rounded-xl shadow-2xl border border-gray-100 p-4">
+                <div className="absolute top-10 left-0 w-[250px] bg-white rounded-xl shadow-2xl border border-gray-100 p-4">
                     <div className="space-y-1">
                         {Object.keys(DELIVERY_TYPES).map(key => (
                             <label key={key} className="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
@@ -334,7 +334,7 @@ export const SaeulenFilter = ({ selectedSaule, setSelectedSaule }) => {
                         key={key}
                         type="button"
                         onClick={() => setSelectedSaule(active ? '' : key)}
-                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${
+                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border text-xs font-medium transition-all ${
                             active
                                 ? 'bg-blue-100 border-blue-300 text-blue-800 shadow-sm'
                                 : 'bg-white border-gray-200 text-gray-600 hover:border-blue-200 hover:bg-blue-50'
