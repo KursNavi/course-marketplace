@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, Suspense } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef, Suspense } from 'react';
 import { CheckCircle } from 'lucide-react';
 
 // Build: 2026-02-22 - Use DB taxonomy instead of constants
@@ -203,6 +203,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
   const [courses, setCourses] = useState([]);
     const coursesRef = useRef([]);
     const coursesLoadedRef = useRef(false);
+    const scrollRestoreRef = useRef(null);
 
   useEffect(() => {
     coursesRef.current = courses;
@@ -215,6 +216,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
   const [articles, setArticles] = useState([]); // Blog State
   const [selectedArticle, setSelectedArticle] = useState(null);
    const [loading, setLoading] = useState(true);
+   const [fetchError, setFetchError] = useState(false);
   
   // UI State
   const [searchQuery, setSearchQuery] = useState("");
@@ -297,9 +299,15 @@ export default function KursNaviPro() {  // 1. Initial State Logic
     document.documentElement.lang = lang;
   }, [lang]);
 
-  // --- Scroll to top on view change ---
-  useEffect(() => {
-    window.scrollTo(0, 0);
+  // --- Scroll restoration on view change (back/forward) or scroll-to-top ---
+  useLayoutEffect(() => {
+    if (scrollRestoreRef.current != null) {
+      const y = scrollRestoreRef.current;
+      scrollRestoreRef.current = null;
+      window.scrollTo(0, y);
+    } else {
+      window.scrollTo(0, 0);
+    }
   }, [view]);
 
     const getCatLabel = (key) => {
@@ -475,6 +483,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
   const fetchCourses = async () => {
     try {
             setLoading(true);
+            setFetchError(false);
 
       // V3.0 Data Sync (robust): Lade Kurse + Events zuerst, Profile danach separat (kein fragiler Join)
       const { data: courseData, error: courseError } = await supabase
@@ -625,7 +634,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
               }
           }
       }
-    } catch (error) { console.error('Error:', error.message); showNotification("Error loading courses"); } finally { setLoading(false); }
+    } catch (error) { console.error('Error:', error.message); showNotification("Error loading courses"); setFetchError(true); } finally { setLoading(false); }
    };
 
   const fetchArticles = async () => {
@@ -1054,6 +1063,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
   
 // --- EFFECT HOOKS ---
     useEffect(() => {
+    window.history.scrollRestoration = 'manual';
     fetchCourses();
     fetchArticles();
 
@@ -1182,6 +1192,9 @@ export default function KursNaviPro() {  // 1. Initial State Logic
     const originalReplaceState = window.history.replaceState;
 
     window.history.pushState = function (...args) {
+      // Save current scroll position in the outgoing history entry
+      const currentState = window.history.state || {};
+      originalReplaceState.call(window.history, { ...currentState, scrollY: window.scrollY }, '', window.location.href);
       const ret = originalPushState.apply(this, args);
       window.dispatchEvent(new Event('locationchange'));
       return ret;
@@ -1194,6 +1207,8 @@ export default function KursNaviPro() {  // 1. Initial State Logic
     };
 
     const handlePopState = () => {
+      const savedY = window.history.state?.scrollY;
+      scrollRestoreRef.current = savedY != null ? savedY : null;
       window.dispatchEvent(new Event('locationchange'));
     };
 
@@ -1237,7 +1252,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
     const newUrl = '/search' + (params.toString() ? '?' + params.toString() : '');
     const currentUrl = window.location.pathname + window.location.search;
     if (currentUrl !== newUrl) {
-      window.history.replaceState({ view: 'search' }, '', newUrl);
+      window.history.replaceState({ ...(window.history.state || {}), view: 'search' }, '', newUrl);
     }
   }, [view, searchType, searchArea, searchSpecialty, searchFocus, searchQuery,
       selectedLocations, filterLevel, selectedLanguages, selectedDeliveryTypes,
@@ -1534,7 +1549,7 @@ useEffect(() => {
          {view === 'landing-kids' && ( <LandingView title={t.landing_kids_title} subtitle={t.landing_kids_sub} variant="kids" searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearchSubmit={handleSearchSubmit} setSelectedCatPath={setSelectedCatPath} setView={setView} t={t} getCatLabel={getCatLabel} /> )}
 
       {view === 'search' && (
-          <SearchPageView courses={courses} filteredCoursesPreCategory={filteredCoursesPreCategory} searchQuery={searchQuery} setSearchQuery={setSearchQuery} searchType={searchType} setSearchType={setSearchType} searchArea={searchArea} setSearchArea={setSearchArea} searchSpecialty={searchSpecialty} setSearchSpecialty={setSearchSpecialty} searchFocus={searchFocus} setSearchFocus={setSearchFocus} selectedLocations={selectedLocations} setSelectedLocations={setSelectedLocations} locMenuOpen={locMenuOpen} setLocMenuOpen={setLocMenuOpen} locMenuRef={locMenuRef} loading={loading} filteredCourses={filteredCourses} setSelectedCourse={setSelectedCourse} setView={setView} t={t} getCatLabel={getCatLabel} filterDateFrom={filterDateFrom} setFilterDateFrom={setFilterDateFrom} filterDateTo={filterDateTo} setFilterDateTo={setFilterDateTo} filterPriceMax={filterPriceMax} setFilterPriceMax={setFilterPriceMax} filterLevel={filterLevel} setFilterLevel={setFilterLevel} filterPro={filterPro} setFilterPro={setFilterPro} filterDirectBooking={filterDirectBooking} setFilterDirectBooking={setFilterDirectBooking} selectedLanguages={selectedLanguages} setSelectedLanguages={setSelectedLanguages} langMenuOpen={langMenuOpen} setLangMenuOpen={setLangMenuOpen} langMenuRef={langMenuRef} selectedDeliveryTypes={selectedDeliveryTypes} setSelectedDeliveryTypes={setSelectedDeliveryTypes} deliveryMenuOpen={deliveryMenuOpen} setDeliveryMenuOpen={setDeliveryMenuOpen} deliveryMenuRef={deliveryMenuRef} savedCourseIds={savedCourseIds} onToggleSaveCourse={toggleSaveCourse} user={user} selectedSaule={selectedSaule} setSelectedSaule={setSelectedSaule} />
+          <SearchPageView courses={courses} filteredCoursesPreCategory={filteredCoursesPreCategory} searchQuery={searchQuery} setSearchQuery={setSearchQuery} searchType={searchType} setSearchType={setSearchType} searchArea={searchArea} setSearchArea={setSearchArea} searchSpecialty={searchSpecialty} setSearchSpecialty={setSearchSpecialty} searchFocus={searchFocus} setSearchFocus={setSearchFocus} selectedLocations={selectedLocations} setSelectedLocations={setSelectedLocations} locMenuOpen={locMenuOpen} setLocMenuOpen={setLocMenuOpen} locMenuRef={locMenuRef} loading={loading} filteredCourses={filteredCourses} setSelectedCourse={setSelectedCourse} setView={setView} t={t} getCatLabel={getCatLabel} filterDateFrom={filterDateFrom} setFilterDateFrom={setFilterDateFrom} filterDateTo={filterDateTo} setFilterDateTo={setFilterDateTo} filterPriceMax={filterPriceMax} setFilterPriceMax={setFilterPriceMax} filterLevel={filterLevel} setFilterLevel={setFilterLevel} filterPro={filterPro} setFilterPro={setFilterPro} filterDirectBooking={filterDirectBooking} setFilterDirectBooking={setFilterDirectBooking} selectedLanguages={selectedLanguages} setSelectedLanguages={setSelectedLanguages} langMenuOpen={langMenuOpen} setLangMenuOpen={setLangMenuOpen} langMenuRef={langMenuRef} selectedDeliveryTypes={selectedDeliveryTypes} setSelectedDeliveryTypes={setSelectedDeliveryTypes} deliveryMenuOpen={deliveryMenuOpen} setDeliveryMenuOpen={setDeliveryMenuOpen} deliveryMenuRef={deliveryMenuRef} savedCourseIds={savedCourseIds} onToggleSaveCourse={toggleSaveCourse} user={user} selectedSaule={selectedSaule} setSelectedSaule={setSelectedSaule} fetchError={fetchError} onRetry={fetchCourses} />
       )}
 
             {view === 'category-location' && (
