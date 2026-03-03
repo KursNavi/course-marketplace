@@ -4,6 +4,8 @@
  *   2. Empty State A (no matches) vs B (catalog empty) selection
  *   3. "Filter zurücksetzen" resets all filters to defaults
  *   4. Scroll-to-results fires on filter change
+ *   5. Filter chips for all active filters
+ *   6. Price filter validation
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
@@ -25,6 +27,7 @@ vi.mock('../src/lib/bereichLandingConfig', () => ({
 }));
 vi.mock('../src/lib/formatPrice', () => ({
   formatPriceCHF: (v) => String(v),
+  getPriceLabel: (course) => course?.price ? `CHF ${course.price}` : 'Preis auf Anfrage',
 }));
 vi.mock('../src/lib/imageUtils', () => ({
   DEFAULT_COURSE_IMAGE: '/placeholder.jpg',
@@ -63,6 +66,7 @@ function makeProps(overrides = {}) {
     user: null,
     selectedSaule: '', setSelectedSaule: vi.fn(),
     fetchError: false, onRetry: vi.fn(),
+    setSelectedCatPath: vi.fn(),
     ...overrides,
   };
 }
@@ -204,6 +208,7 @@ describe('Filter reset', () => {
       setSelectedSaule: vi.fn(),
       setSelectedLanguages: vi.fn(),
       setSelectedDeliveryTypes: vi.fn(),
+      setSelectedCatPath: vi.fn(),
     };
 
     const props = makeProps({
@@ -226,6 +231,7 @@ describe('Filter reset', () => {
     expect(setters.setSelectedSaule).toHaveBeenCalledWith('');
     expect(setters.setSelectedLanguages).toHaveBeenCalledWith([]);
     expect(setters.setSelectedDeliveryTypes).toHaveBeenCalledWith([]);
+    expect(setters.setSelectedCatPath).toHaveBeenCalledWith([]);
   });
 });
 
@@ -253,5 +259,137 @@ describe('Scroll to results', () => {
     rerender(<SearchPageView {...props} filteredCourses={[c1]} />);
 
     expect(scrollSpy).toHaveBeenCalled();
+  });
+});
+
+// ===================== 5. FILTER CHIPS =====================
+describe('Filter chips', () => {
+  it('shows delivery type chips when delivery types are selected', () => {
+    const c = makeCourse('1');
+    const props = makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+      selectedDeliveryTypes: ['presence', 'online_live'],
+    });
+    render(<SearchPageView {...props} />);
+    const chips = screen.getByTestId('filter-chips');
+    expect(chips).toHaveTextContent('Präsenz');
+    expect(chips).toHaveTextContent('Online Live');
+  });
+
+  it('shows price max chip when price filter is set', () => {
+    const c = makeCourse('1');
+    const props = makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+      filterPriceMax: '500',
+    });
+    render(<SearchPageView {...props} />);
+    const chips = screen.getByTestId('filter-chips');
+    expect(chips).toHaveTextContent('Max CHF');
+    expect(chips).toHaveTextContent('500');
+  });
+
+  it('shows pro and direct booking chips when toggled', () => {
+    const c = makeCourse('1');
+    const props = makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+      filterPro: true, filterDirectBooking: true,
+    });
+    render(<SearchPageView {...props} />);
+    const chips = screen.getByTestId('filter-chips');
+    expect(chips).toHaveTextContent('Pro');
+    expect(chips).toHaveTextContent('Direkt');
+  });
+
+  it('shows level chip when level is not "All"', () => {
+    const c = makeCourse('1');
+    const props = makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+      filterLevel: 'beginner',
+    });
+    render(<SearchPageView {...props} />);
+    expect(screen.getByTestId('filter-chips')).toHaveTextContent('Einsteiger');
+  });
+
+  it('shows date range chips', () => {
+    const c = makeCourse('1');
+    const props = makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+      filterDateFrom: '2026-01-01', filterDateTo: '2026-06-30',
+    });
+    render(<SearchPageView {...props} />);
+    const chips = screen.getByTestId('filter-chips');
+    expect(chips).toHaveTextContent('Ab 2026-01-01');
+    expect(chips).toHaveTextContent('Bis 2026-06-30');
+  });
+
+  it('removes delivery type chip on click', () => {
+    const setDT = vi.fn();
+    const c = makeCourse('1');
+    const props = makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+      selectedDeliveryTypes: ['presence', 'online_live'],
+      setSelectedDeliveryTypes: setDT,
+    });
+    render(<SearchPageView {...props} />);
+    const chips = screen.getByTestId('filter-chips');
+    // Click the Präsenz chip
+    const presenceChip = Array.from(chips.querySelectorAll('span')).find(el => el.textContent.includes('Präsenz'));
+    fireEvent.click(presenceChip);
+    expect(setDT).toHaveBeenCalledWith(['online_live']);
+  });
+
+  it('does not show chip container when no filters are active', () => {
+    const c = makeCourse('1');
+    const props = makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+    });
+    render(<SearchPageView {...props} />);
+    expect(screen.queryByTestId('filter-chips')).not.toBeInTheDocument();
+  });
+
+  it('shows category type chip and clears cascade on click', () => {
+    const setType = vi.fn();
+    const setArea = vi.fn();
+    const setSpec = vi.fn();
+    const setFocus = vi.fn();
+    const c = makeCourse('1');
+    const props = makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+      searchType: 'beruflich',
+      setSearchType: setType, setSearchArea: setArea,
+      setSearchSpecialty: setSpec, setSearchFocus: setFocus,
+    });
+    render(<SearchPageView {...props} />);
+    const chips = screen.getByTestId('filter-chips');
+    expect(chips).toHaveTextContent('Beruflich');
+    // Click the category chip
+    const catChip = Array.from(chips.querySelectorAll('span')).find(el => el.textContent.includes('Beruflich'));
+    fireEvent.click(catChip);
+    expect(setType).toHaveBeenCalledWith('');
+    expect(setArea).toHaveBeenCalledWith('');
+    expect(setSpec).toHaveBeenCalledWith('');
+    expect(setFocus).toHaveBeenCalledWith('');
+  });
+});
+
+// ===================== 6. PRICE VALIDATION =====================
+describe('Price filter validation', () => {
+  it('shows German placeholder "Beliebig" instead of "Any"', () => {
+    const c = makeCourse('1');
+    const props = makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+    });
+    render(<SearchPageView {...props} />);
+    expect(screen.getByPlaceholderText('Beliebig')).toBeInTheDocument();
+  });
+
+  it('has min="0" attribute on price input', () => {
+    const c = makeCourse('1');
+    const props = makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+    });
+    render(<SearchPageView {...props} />);
+    const priceInput = screen.getByPlaceholderText('Beliebig');
+    expect(priceInput).toHaveAttribute('min', '0');
   });
 });

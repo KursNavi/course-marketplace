@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, User, MapPin, Clock, CheckCircle, Calendar, Shield, ExternalLink, Mail, X, Send, Map, Info, Loader, Bookmark, BookmarkCheck, ChevronRight, AlertCircle, Compass, LogIn } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { formatPriceCHF } from '../lib/formatPrice';
+import { formatPriceCHF, getPriceLabel } from '../lib/formatPrice';
 import { useTaxonomy } from '../hooks/useTaxonomy';
 import { SEGMENT_CONFIG } from '../lib/constants';
 import { BASE_URL } from '../lib/siteConfig';
@@ -125,16 +125,7 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
         return crumbs;
     };
 
-    // --- HELPER: Consistent Price Labeling ---
-    const getPriceLabel = (c) => {
-        if (!c) return '';
-        const type = c.booking_type || 'platform';
-        const price = Number(c.price) || 0; 
-
-        if (type === 'lead' && price === 0) return 'Preis auf Anfrage';
-        if (price === 0) return 'Kostenlos';
-        return `CHF ${formatPriceCHF(price)}`;
-    };
+    // getPriceLabel imported from '../lib/formatPrice'
 
     // --- SECURITY: XSS Protection & Parsing ---
     const escapeHtml = (text) => {
@@ -686,7 +677,17 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
                         <button
                             onClick={async () => {
                                 const { data } = await supabase.from('profiles').select('*').eq('id', course.user_id).single();
-                                if (data) { setSelectedTeacher(data); setView('teacher-profile'); window.scrollTo(0,0); }
+                                if (!data) return;
+                                const tier = (data.package_tier || 'basic').toLowerCase();
+                                const hasPublicProfile = ['pro','premium','enterprise'].includes(tier) && data.slug && data.profile_published_at;
+                                if (hasPublicProfile) {
+                                    window.history.pushState({}, '', `/anbieter/${data.slug}`);
+                                    setView('provider-profile');
+                                } else {
+                                    setSelectedTeacher(data);
+                                    setView('teacher-profile');
+                                }
+                                window.scrollTo(0,0);
                             }}
                             className="flex items-center text-gray-700 hover:text-primary transition-colors w-full group"
                         >

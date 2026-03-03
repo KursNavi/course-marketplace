@@ -1,21 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
-  MapPin, CheckCircle, ExternalLink, Mail, ArrowLeft, BookOpen,
-  Globe, Phone, Loader, Star, ChevronRight, Calendar, Award
+  MapPin, CheckCircle, Mail, ArrowLeft, BookOpen,
+  Globe, Phone, Loader, Star, ChevronRight, Award, Search, SortAsc
 } from 'lucide-react';
 import { BASE_URL, buildCoursePath } from '../lib/siteConfig';
-import { formatPriceCHF } from '../lib/formatPrice';
+import { formatPriceCHF, getPriceLabel } from '../lib/formatPrice';
+
+const SORT_OPTIONS = [
+  { value: 'newest', label: 'Neueste zuerst' },
+  { value: 'alpha', label: 'Alphabetisch' },
+  { value: 'price_asc', label: 'Preis aufsteigend' },
+  { value: 'price_desc', label: 'Preis absteigend' },
+];
 
 /**
  * ProviderProfilePage Component
  * Public profile page for Pro+ providers
- *
- * Features:
- * - Provider info (name, description, logo, locations)
- * - Course listing
- * - Contact CTA (no plaintext email)
- * - SEO: Meta, canonical, schema.org
- * - Enterprise features: cover image, featured badge
  */
 export default function ProviderProfilePage({ t, setView, setSelectedCourse }) {
   const [provider, setProvider] = useState(null);
@@ -24,6 +24,11 @@ export default function ProviderProfilePage({ t, setView, setSelectedCourse }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [redirect, setRedirect] = useState(null);
+
+  // Course filter state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState('newest');
+  const [filterCanton, setFilterCanton] = useState('');
 
   // Get slug from URL
   const getSlugFromUrl = () => {
@@ -61,7 +66,6 @@ export default function ProviderProfilePage({ t, setView, setSelectedCourse }) {
         if (data.redirect) {
           setRedirect(data);
           window.history.replaceState({}, '', `/anbieter/${data.newSlug}`);
-          // Fetch the actual provider data
           const newResponse = await fetch(`/api/provider?action=profile&slug=${data.newSlug}`);
           const newData = await newResponse.json();
           if (newResponse.ok && !newData.redirect) {
@@ -103,7 +107,6 @@ export default function ProviderProfilePage({ t, setView, setSelectedCourse }) {
     }
     metaDescTag.content = metaDescription;
 
-    // Canonical
     let canonicalTag = document.querySelector('link[rel="canonical"]');
     if (!canonicalTag) {
       canonicalTag = document.createElement('link');
@@ -112,7 +115,6 @@ export default function ProviderProfilePage({ t, setView, setSelectedCourse }) {
     }
     canonicalTag.href = `${BASE_URL}/anbieter/${provider.slug}`;
 
-    // OG Tags
     const ogTags = {
       'og:title': `${provider.name} - Kursanbieter`,
       'og:description': metaDescription,
@@ -132,7 +134,6 @@ export default function ProviderProfilePage({ t, setView, setSelectedCourse }) {
       tag.content = content;
     });
 
-    // Schema.org
     const schemaData = {
       "@context": "https://schema.org",
       "@type": "EducationalOrganization",
@@ -148,9 +149,8 @@ export default function ProviderProfilePage({ t, setView, setSelectedCourse }) {
       }
     };
 
-    if (provider.websiteUrl) {
-      schemaData.sameAs = [provider.websiteUrl];
-    }
+    const sameAs = [provider.websiteUrl, provider.socialLinkedin, provider.socialInstagram, provider.socialFacebook, provider.socialYoutube].filter(Boolean);
+    if (sameAs.length > 0) schemaData.sameAs = sameAs;
 
     let schemaScript = document.querySelector('script[data-schema="provider"]');
     if (!schemaScript) {
@@ -174,11 +174,63 @@ export default function ProviderProfilePage({ t, setView, setSelectedCourse }) {
     setView('detail');
   };
 
-  // Back to directory
+  // Back navigation
   const handleBack = () => {
-    window.history.pushState({}, '', '/anbieter');
-    setView('provider-directory');
+    window.history.back();
   };
+
+  // Available cantons from courses (for filter dropdown)
+  const availableCantons = useMemo(() => {
+    const cantons = [...new Set(courses.map(c => c.canton).filter(Boolean))].sort();
+    return cantons;
+  }, [courses]);
+
+  // Filter + sort courses
+  const filteredCourses = useMemo(() => {
+    let result = [...courses];
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(c =>
+        (c.title || '').toLowerCase().includes(q) ||
+        (c.description || '').toLowerCase().includes(q) ||
+        (c.category_specialty || '').toLowerCase().includes(q) ||
+        (c.category_area || '').toLowerCase().includes(q)
+      );
+    }
+
+    if (filterCanton) {
+      result = result.filter(c => c.canton === filterCanton);
+    }
+
+    switch (sortBy) {
+      case 'alpha':
+        result.sort((a, b) => (a.title || '').localeCompare(b.title || '', 'de'));
+        break;
+      case 'price_asc':
+        result.sort((a, b) => (Number(a.price) || 0) - (Number(b.price) || 0));
+        break;
+      case 'price_desc':
+        result.sort((a, b) => (Number(b.price) || 0) - (Number(a.price) || 0));
+        break;
+      case 'newest':
+      default:
+        result.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+        break;
+    }
+    return result;
+  }, [courses, searchQuery, sortBy, filterCanton]);
+
+  // Social links helper
+  const socialLinks = useMemo(() => {
+    if (!provider) return [];
+    const links = [];
+    if (provider.socialLinkedin) links.push({ url: provider.socialLinkedin, label: 'LinkedIn', icon: 'in' });
+    if (provider.socialInstagram) links.push({ url: provider.socialInstagram, label: 'Instagram', icon: 'ig' });
+    if (provider.socialFacebook) links.push({ url: provider.socialFacebook, label: 'Facebook', icon: 'fb' });
+    if (provider.socialYoutube) links.push({ url: provider.socialYoutube, label: 'YouTube', icon: 'yt' });
+    return links;
+  }, [provider]);
 
   // Loading state
   if (loading) {
@@ -196,7 +248,7 @@ export default function ProviderProfilePage({ t, setView, setSelectedCourse }) {
       <div className="min-h-screen bg-beige pt-24 pb-16">
         <div className="max-w-4xl mx-auto px-4 text-center py-20">
           <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <span className="text-4xl">😕</span>
+            <span className="text-4xl">?</span>
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-4">
             {error}
@@ -205,7 +257,7 @@ export default function ProviderProfilePage({ t, setView, setSelectedCourse }) {
             Der gesuchte Anbieter konnte nicht gefunden werden oder ist nicht mehr verfügbar.
           </p>
           <button
-            onClick={handleBack}
+            onClick={() => { window.history.pushState({}, '', '/anbieter'); setView('provider-directory'); }}
             className="px-6 py-3 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 transition-colors"
           >
             Zurück zum Anbieter-Verzeichnis
@@ -219,7 +271,7 @@ export default function ProviderProfilePage({ t, setView, setSelectedCourse }) {
 
   return (
     <div className="min-h-screen bg-beige pt-24 pb-16">
-      {/* Cover Image (always shown - uses default if not custom) */}
+      {/* Cover Image */}
       {provider.coverImageUrl && (
         <div className="w-full h-48 md:h-64 lg:h-80 relative">
           <img
@@ -238,7 +290,7 @@ export default function ProviderProfilePage({ t, setView, setSelectedCourse }) {
           className="flex items-center text-gray-600 hover:text-gray-900 mb-6 mt-6"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Alle Anbieter
+          Zurück
         </button>
 
         {/* Profile Header */}
@@ -268,7 +320,6 @@ export default function ProviderProfilePage({ t, setView, setSelectedCourse }) {
                   {provider.name}
                 </h1>
 
-                {/* Featured Badge */}
                 {entitlements?.isFeatured && (
                   <span className="inline-flex items-center text-sm font-medium text-orange-600 bg-orange-50 px-3 py-1 rounded-full">
                     <Star className="w-4 h-4 mr-1.5 fill-current" />
@@ -276,7 +327,6 @@ export default function ProviderProfilePage({ t, setView, setSelectedCourse }) {
                   </span>
                 )}
 
-                {/* Verified Badge */}
                 {provider.isVerified && (
                   <span className="inline-flex items-center text-sm font-medium text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
                     <CheckCircle className="w-4 h-4 mr-1.5" />
@@ -285,7 +335,6 @@ export default function ProviderProfilePage({ t, setView, setSelectedCourse }) {
                 )}
               </div>
 
-              {/* Location */}
               {(provider.location?.city || provider.location?.canton) && (
                 <p className="flex items-center text-gray-600 mb-4">
                   <MapPin className="w-4 h-4 mr-2" />
@@ -293,27 +342,21 @@ export default function ProviderProfilePage({ t, setView, setSelectedCourse }) {
                 </p>
               )}
 
-              {/* Additional Locations */}
               {provider.additionalLocations?.length > 0 && (
                 <div className="flex flex-wrap gap-2 mb-4">
                   {provider.additionalLocations.map((loc, idx) => (
-                    <span
-                      key={idx}
-                      className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full"
-                    >
+                    <span key={idx} className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
                       {[loc.city, loc.canton].filter(Boolean).join(', ')}
                     </span>
                   ))}
                 </div>
               )}
 
-              {/* Stats */}
               <div className="flex flex-wrap gap-4 text-sm text-gray-500">
                 <span className="flex items-center">
                   <BookOpen className="w-4 h-4 mr-1.5" />
                   {provider.courseCount} {provider.courseCount === 1 ? 'Kurs' : 'Kurse'}
                 </span>
-
                 {provider.certificates?.length > 0 && (
                   <span className="flex items-center">
                     <Award className="w-4 h-4 mr-1.5" />
@@ -325,7 +368,6 @@ export default function ProviderProfilePage({ t, setView, setSelectedCourse }) {
 
             {/* Actions */}
             <div className="flex flex-col gap-3 md:min-w-[200px]">
-              {/* Website Link */}
               {provider.websiteUrl && entitlements?.homepageLinkRel && (
                 <a
                   href={provider.websiteUrl}
@@ -338,7 +380,16 @@ export default function ProviderProfilePage({ t, setView, setSelectedCourse }) {
                 </a>
               )}
 
-              {/* Contact CTA */}
+              {provider.phone && (
+                <a
+                  href={`tel:${provider.phone}`}
+                  className="flex items-center justify-center px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+                >
+                  <Phone className="w-4 h-4 mr-2" />
+                  {provider.phone}
+                </a>
+              )}
+
               {provider.contactEmail ? (
                 <a
                   href={`mailto:${provider.contactEmail}`}
@@ -367,13 +418,9 @@ export default function ProviderProfilePage({ t, setView, setSelectedCourse }) {
             {/* Description */}
             {provider.description && (
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">
-                  Über uns
-                </h2>
+                <h2 className="text-xl font-bold text-gray-900 mb-4">Über uns</h2>
                 <div className="prose prose-gray max-w-none">
-                  <p className="text-gray-600 whitespace-pre-line">
-                    {provider.description}
-                  </p>
+                  <p className="text-gray-600 whitespace-pre-line">{provider.description}</p>
                 </div>
               </div>
             )}
@@ -381,15 +428,10 @@ export default function ProviderProfilePage({ t, setView, setSelectedCourse }) {
             {/* Certificates */}
             {provider.certificates?.length > 0 && (
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">
-                  Zertifikate & Qualifikationen
-                </h2>
+                <h2 className="text-xl font-bold text-gray-900 mb-4">Zertifikate & Qualifikationen</h2>
                 <div className="flex flex-wrap gap-2">
                   {provider.certificates.map((cert, idx) => (
-                    <span
-                      key={idx}
-                      className="inline-flex items-center text-sm bg-blue-50 text-blue-700 px-3 py-1.5 rounded-full"
-                    >
+                    <span key={idx} className="inline-flex items-center text-sm bg-blue-50 text-blue-700 px-3 py-1.5 rounded-full">
                       <Award className="w-4 h-4 mr-1.5" />
                       {cert}
                     </span>
@@ -398,25 +440,65 @@ export default function ProviderProfilePage({ t, setView, setSelectedCourse }) {
               </div>
             )}
 
-            {/* Courses */}
+            {/* Courses with Filter */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8">
-              <h2 className="text-xl font-bold text-gray-900 mb-6">
-                Kurse von {provider.name}
-              </h2>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold text-gray-900">
+                  Kurse von {provider.name}
+                  <span className="text-gray-400 font-normal text-base ml-2">({filteredCourses.length})</span>
+                </h2>
+              </div>
 
-              {courses.length === 0 ? (
+              {/* Filter Bar */}
+              {courses.length > 3 && (
+                <div className="flex flex-col sm:flex-row gap-3 mb-6">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="Kurs suchen..."
+                      value={searchQuery}
+                      onChange={e => setSearchQuery(e.target.value)}
+                      className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400"
+                    />
+                  </div>
+                  {availableCantons.length > 1 && (
+                    <select
+                      value={filterCanton}
+                      onChange={e => setFilterCanton(e.target.value)}
+                      className="px-3 py-2 border border-gray-200 rounded-lg text-sm appearance-none bg-white focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400"
+                    >
+                      <option value="">Alle Kantone</option>
+                      {availableCantons.map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                  )}
+                  <div className="relative">
+                    <SortAsc className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <select
+                      value={sortBy}
+                      onChange={e => setSortBy(e.target.value)}
+                      className="pl-9 pr-8 py-2 border border-gray-200 rounded-lg text-sm appearance-none bg-white focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400"
+                    >
+                      {SORT_OPTIONS.map(opt => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              )}
+
+              {filteredCourses.length === 0 ? (
                 <p className="text-gray-500 text-center py-8">
-                  Momentan sind keine Kurse verfügbar.
+                  {searchQuery || filterCanton ? 'Keine Kurse für diese Filter gefunden.' : 'Momentan sind keine Kurse verfügbar.'}
                 </p>
               ) : (
                 <div className="space-y-4">
-                  {courses.map((course) => (
+                  {filteredCourses.map((course) => (
                     <div
                       key={course.id}
                       onClick={() => handleCourseClick(course)}
                       className="flex gap-4 p-4 rounded-xl border border-gray-100 hover:border-orange-200 hover:bg-orange-50/30 cursor-pointer transition-all"
                     >
-                      {/* Course Image */}
                       {course.image_url ? (
                         <img
                           src={course.image_url}
@@ -429,11 +511,8 @@ export default function ProviderProfilePage({ t, setView, setSelectedCourse }) {
                         </div>
                       )}
 
-                      {/* Course Info */}
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-bold text-gray-900 line-clamp-1">
-                          {course.title}
-                        </h3>
+                        <h3 className="font-bold text-gray-900 line-clamp-1">{course.title}</h3>
                         <p className="text-sm text-gray-500 mt-1">
                           {course.category_specialty || course.category_area}
                         </p>
@@ -445,7 +524,7 @@ export default function ProviderProfilePage({ t, setView, setSelectedCourse }) {
                             </span>
                           )}
                           <span className="font-bold text-orange-600">
-                            {course.price > 0 ? `CHF ${formatPriceCHF(course.price)}` : 'Preis auf Anfrage'}
+                            {getPriceLabel(course)}
                           </span>
                         </div>
                       </div>
@@ -462,9 +541,7 @@ export default function ProviderProfilePage({ t, setView, setSelectedCourse }) {
           <div className="space-y-6">
             {/* Quick Info Card */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sticky top-24">
-              <h3 className="font-bold text-gray-900 mb-4">
-                Auf einen Blick
-              </h3>
+              <h3 className="font-bold text-gray-900 mb-4">Auf einen Blick</h3>
 
               <div className="space-y-4">
                 <div className="flex items-start gap-3">
@@ -479,7 +556,9 @@ export default function ProviderProfilePage({ t, setView, setSelectedCourse }) {
                   <div className="flex items-start gap-3">
                     <MapPin className="w-5 h-5 text-orange-500 flex-shrink-0 mt-0.5" />
                     <div>
-                      <p className="font-medium text-gray-900">{provider.location.canton}</p>
+                      <p className="font-medium text-gray-900">
+                        {[provider.location.city, provider.location.canton].filter(Boolean).join(', ')}
+                      </p>
                       <p className="text-sm text-gray-500">Hauptstandort</p>
                     </div>
                   </div>
@@ -495,14 +574,13 @@ export default function ProviderProfilePage({ t, setView, setSelectedCourse }) {
                   </div>
                 )}
 
-                {/* Public Email (if enabled) */}
                 {provider.contactEmail && (
                   <div className="flex items-start gap-3">
                     <Mail className="w-5 h-5 text-orange-500 flex-shrink-0 mt-0.5" />
                     <div>
                       <a
                         href={`mailto:${provider.contactEmail}`}
-                        className="font-medium text-gray-900 hover:text-orange-600 transition-colors"
+                        className="font-medium text-gray-900 hover:text-orange-600 transition-colors break-all"
                       >
                         {provider.contactEmail}
                       </a>
@@ -510,7 +588,42 @@ export default function ProviderProfilePage({ t, setView, setSelectedCourse }) {
                     </div>
                   </div>
                 )}
+
+                {provider.phone && (
+                  <div className="flex items-start gap-3">
+                    <Phone className="w-5 h-5 text-orange-500 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <a
+                        href={`tel:${provider.phone}`}
+                        className="font-medium text-gray-900 hover:text-orange-600 transition-colors"
+                      >
+                        {provider.phone}
+                      </a>
+                      <p className="text-sm text-gray-500">Telefon</p>
+                    </div>
+                  </div>
+                )}
               </div>
+
+              {/* Social Links */}
+              {socialLinks.length > 0 && (
+                <div className="mt-4 pt-4 border-t border-gray-100">
+                  <p className="text-sm font-medium text-gray-500 mb-3">Social Media</p>
+                  <div className="flex flex-wrap gap-2">
+                    {socialLinks.map((link) => (
+                      <a
+                        key={link.label}
+                        href={link.url}
+                        target="_blank"
+                        rel="nofollow noopener"
+                        className="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-sm hover:bg-gray-200 transition-colors"
+                      >
+                        {link.label}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* CTA */}
               <div className="mt-6 pt-6 border-t border-gray-100">

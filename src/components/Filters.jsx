@@ -191,7 +191,7 @@ export const LocationDropdown = ({ selectedLocations, setSelectedLocations, locM
                 aria-haspopup="listbox"
                 className={buttonClassName || defaultBtnClass}
             >
-                 <div className="flex items-center"><MapPin className="w-4 h-4 mr-2" aria-hidden="true" /><span>{selectedLocations.length > 0 ? `${selectedLocations.length} selected` : t.filter_label_loc}</span></div><ChevronDown className="w-4 h-4" aria-hidden="true" />
+                 <div className="flex items-center"><MapPin className="w-4 h-4 mr-2" aria-hidden="true" /><span>{selectedLocations.length > 0 ? `${selectedLocations.length} ausgewählt` : t.filter_label_loc}</span></div><ChevronDown className="w-4 h-4" aria-hidden="true" />
             </button>
             {locMenuOpen && (
                 <div className="absolute top-10 left-0 w-[calc(100vw-2rem)] md:w-[560px] bg-white rounded-xl shadow-2xl border border-gray-100 p-4">
@@ -211,7 +211,7 @@ export const LocationDropdown = ({ selectedLocations, setSelectedLocations, locM
                             </label>
                         ))}
                     </div>
-                    <div className="pt-3 mt-3 border-t flex justify-between items-center"><button onClick={() => setSelectedLocations([])} className="text-xs text-gray-400 hover:text-red-500">Clear</button><button onClick={() => setLocMenuOpen(false)} className="text-xs font-bold text-primary">Done</button></div>
+                    <div className="pt-3 mt-3 border-t flex justify-between items-center"><button onClick={() => setSelectedLocations([])} className="text-xs text-gray-400 hover:text-red-500">Löschen</button><button onClick={() => setLocMenuOpen(false)} className="text-xs font-bold text-primary">Fertig</button></div>
                 </div>
             )}
         </div>
@@ -259,8 +259,8 @@ export const LanguageDropdown = ({ selectedLanguages, setSelectedLanguages, lang
                         ))}
                     </div>
                     <div className="pt-3 mt-3 border-t flex justify-between items-center">
-                        <button onClick={() => setSelectedLanguages([])} className="text-xs text-gray-400 hover:text-red-500">Clear</button>
-                        <button onClick={() => setLangMenuOpen(false)} className="text-xs font-bold text-primary">Done</button>
+                        <button onClick={() => setSelectedLanguages([])} className="text-xs text-gray-400 hover:text-red-500">Löschen</button>
+                        <button onClick={() => setLangMenuOpen(false)} className="text-xs font-bold text-primary">Fertig</button>
                     </div>
                 </div>
             )}
@@ -291,7 +291,7 @@ export const DeliveryTypeFilter = ({ selectedDeliveryTypes, setSelectedDeliveryT
             >
                 <div className="flex items-center">
                     <Monitor className="w-4 h-4 mr-2" aria-hidden="true" />
-                    <span>{selectedDeliveryTypes.length > 0 ? `${selectedDeliveryTypes.length} selected` : "Kursformat"}</span>
+                    <span>{selectedDeliveryTypes.length > 0 ? `${selectedDeliveryTypes.length} ausgewählt` : "Kursformat"}</span>
                 </div>
                 <ChevronDown className="w-4 h-4" aria-hidden="true" />
             </button>
@@ -311,8 +311,8 @@ export const DeliveryTypeFilter = ({ selectedDeliveryTypes, setSelectedDeliveryT
                         ))}
                     </div>
                     <div className="pt-3 mt-3 border-t flex justify-between items-center">
-                        <button onClick={() => setSelectedDeliveryTypes([])} className="text-xs text-gray-400 hover:text-red-500">Clear</button>
-                        <button onClick={() => setDeliveryMenuOpen(false)} className="text-xs font-bold text-primary">Done</button>
+                        <button onClick={() => setSelectedDeliveryTypes([])} className="text-xs text-gray-400 hover:text-red-500">Löschen</button>
+                        <button onClick={() => setDeliveryMenuOpen(false)} className="text-xs font-bold text-primary">Fertig</button>
                     </div>
                 </div>
             )}

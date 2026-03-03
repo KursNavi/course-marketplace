@@ -2,8 +2,8 @@ import React, { useEffect, useMemo, useRef, useCallback } from 'react';
 import { Search, ChevronRight, User, X, Shield, MapPin, CheckCircle, Loader, Bell, ArrowDown, Bookmark, BookmarkCheck, CreditCard, Info, EyeOff, Briefcase, Palette, Smile, BookOpen, Compass, SearchX, AlertTriangle, RotateCcw } from 'lucide-react';
 import { LocationDropdown, LanguageDropdown, DeliveryTypeFilter, SaeulenFilter } from './Filters';
 import { Globe } from 'lucide-react';
-import { CATEGORY_TYPES, AGE_GROUPS, COURSE_LEVELS, DELIVERY_TYPES, SEGMENT_CONFIG, TYPE_DISPLAY_LABELS } from '../lib/constants';
-import { formatPriceCHF } from '../lib/formatPrice';
+import { CATEGORY_TYPES, AGE_GROUPS, COURSE_LEVELS, DELIVERY_TYPES, SEGMENT_CONFIG, TYPE_DISPLAY_LABELS, BERUF_SAEULEN } from '../lib/constants';
+import { formatPriceCHF, getPriceLabel } from '../lib/formatPrice';
 import { useTaxonomy } from '../hooks/useTaxonomy';
 import { supabase } from '../lib/supabase';
 import { BASE_URL } from '../lib/siteConfig';
@@ -40,13 +40,16 @@ const SearchPageView = ({
     savedCourseIds, onToggleSaveCourse,
     user,
     selectedSaule, setSelectedSaule,
-    fetchError, onRetry
+    fetchError, onRetry,
+    setSelectedCatPath
 }) => {
 
     // Ref for scroll-to-results behavior
     const resultsRef = useRef(null);
     // Track whether initial mount has happened (skip scroll on first render)
     const hasMountedRef = useRef(false);
+    // Price validation error state
+    const [priceError, setPriceError] = React.useState(false);
 
     // Load taxonomy from DB
     const { areas: dbAreas } = useTaxonomy();
@@ -318,16 +321,7 @@ const SearchPageView = ({
     };
 
 
-    // --- HELPER: Consistent Price Labeling (match DetailView logic) ---
-    const getPriceLabel = (c) => {
-        if (!c) return '';
-        const type = c.booking_type || 'platform';
-        const price = Number(c.price) || 0;
-
-        if (type === 'lead' && price === 0) return 'Preis auf Anfrage';
-        if (price === 0) return 'Kostenlos';
-        return `${t.currency} ${formatPriceCHF(price)}`;
-    };
+    // getPriceLabel imported from '../lib/formatPrice'
 
     // --- HELPER: Check if course is sold out (all events full) ---
     const isSoldOut = (course) => {
@@ -361,7 +355,8 @@ const SearchPageView = ({
         if (setSelectedSaule) setSelectedSaule("");
         if (setSelectedLanguages) setSelectedLanguages([]);
         if (setSelectedDeliveryTypes) setSelectedDeliveryTypes([]);
-    }, [setSearchType, setSearchArea, setSearchSpecialty, setSearchFocus, setSelectedLocations, setSearchQuery, setFilterDateFrom, setFilterDateTo, setFilterPriceMax, setFilterLevel, setFilterPro, setFilterDirectBooking, setSelectedSaule, setSelectedLanguages, setSelectedDeliveryTypes]);
+        if (setSelectedCatPath) setSelectedCatPath([]);
+    }, [setSearchType, setSearchArea, setSearchSpecialty, setSearchFocus, setSelectedLocations, setSearchQuery, setFilterDateFrom, setFilterDateTo, setFilterPriceMax, setFilterLevel, setFilterPro, setFilterDirectBooking, setSelectedSaule, setSelectedLanguages, setSelectedDeliveryTypes, setSelectedCatPath]);
 
     const clearSearchText = useCallback(() => {
         setSearchQuery("");
@@ -587,7 +582,22 @@ const SearchPageView = ({
                             <span className="text-xs text-gray-400 mr-1.5 whitespace-nowrap">Bis</span>
                             <input type="date" value={filterDateTo} onChange={(e) => setFilterDateTo(e.target.value)} className="bg-transparent text-xs outline-none text-gray-600 cursor-pointer" />
                         </label>
-                        <div className="flex items-center space-x-1.5 bg-white px-2.5 py-1 rounded-lg border border-gray-200"><span className="text-xs text-gray-500">{t.lbl_max_price}</span><input type="number" placeholder="Any" value={filterPriceMax} onChange={(e) => setFilterPriceMax(e.target.value)} className="w-14 bg-transparent text-xs outline-none text-gray-600" /></div>
+                        <div className={`flex items-center space-x-1.5 bg-white px-2.5 py-1 rounded-lg border ${priceError ? 'border-red-400' : 'border-gray-200'}`}>
+                            <span className="text-xs text-gray-500">{t.lbl_max_price}</span>
+                            <input type="number" min="0" step="1" placeholder="Beliebig" value={filterPriceMax}
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    if (val === '' || (Number(val) >= 0 && !isNaN(Number(val)))) {
+                                        setFilterPriceMax(val);
+                                        setPriceError(false);
+                                    } else {
+                                        setPriceError(true);
+                                    }
+                                }}
+                                onBlur={() => { if (filterPriceMax && Number(filterPriceMax) < 0) { setFilterPriceMax(''); setPriceError(false); } }}
+                                className={`w-16 bg-transparent text-xs outline-none ${priceError ? 'text-red-600' : 'text-gray-600'}`} />
+                            {priceError && <span className="text-[10px] text-red-500 whitespace-nowrap">Nur positive Zahlen</span>}
+                        </div>
                         <select value={filterLevel} onChange={(e) => setFilterLevel(e.target.value)} className="bg-white border border-gray-200 rounded-lg px-2.5 py-1 text-xs outline-none text-gray-600"><option value="All">{t.opt_all_levels}</option>{Object.keys(COURSE_LEVELS).map(k => <option key={k} value={k}>{COURSE_LEVELS[k].de}</option>)}</select>
                          <label className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-lg border cursor-pointer transition select-none ${filterPro ? 'bg-blue-50 border-blue-200' : 'bg-white border-gray-200'}`} title={t.tooltip_pro_verified_long || t.tooltip_pro_verified}>
                             <input type="checkbox" checked={filterPro} onChange={(e) => setFilterPro(e.target.checked)} className="rounded text-primary focus:ring-primary w-3.5 h-3.5" />
@@ -603,10 +613,83 @@ const SearchPageView = ({
                          </label>
                     </div>
                 </div>
-                 {(selectedLocations.length > 0 || selectedLanguages.length > 0) && (
-                    <div className="max-w-7xl mx-auto px-4 pt-2 flex gap-2 flex-wrap">
-                        {selectedLanguages.map((lang, i) => (<span key={`lang-${i}`} onClick={() => setSelectedLanguages(selectedLanguages.filter(l => l !== lang))} className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-purple-200 flex items-center"><Globe className="w-3 h-3 mr-1"/> {lang} <X className="w-3 h-3 ml-1 opacity-50" /></span>))}
-                        {selectedLocations.map((loc, i) => (<span key={i} onClick={() => setSelectedLocations(selectedLocations.filter(l => l !== loc))} className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-blue-200 flex items-center">{loc} <X className="w-3 h-3 ml-1 opacity-50" /></span>))}
+                 {/* --- ACTIVE FILTER CHIPS --- */}
+                 {(selectedLanguages.length > 0 || selectedLocations.length > 0 ||
+                   selectedDeliveryTypes.length > 0 || (filterPriceMax && filterPriceMax !== '') ||
+                   (filterLevel && filterLevel !== 'All') || filterDateFrom || filterDateTo ||
+                   filterPro || filterDirectBooking || selectedSaule ||
+                   searchType || searchArea || searchSpecialty || searchFocus) && (
+                    <div className="max-w-7xl mx-auto px-4 pt-2 flex gap-2 flex-wrap" data-testid="filter-chips">
+                        {selectedLanguages.map((lang, i) => (
+                            <span key={`lang-${i}`} onClick={() => setSelectedLanguages(selectedLanguages.filter(l => l !== lang))} className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-purple-200 flex items-center">
+                                <Globe className="w-3 h-3 mr-1"/> {lang} <X className="w-3 h-3 ml-1 opacity-50" />
+                            </span>
+                        ))}
+                        {selectedLocations.map((loc, i) => (
+                            <span key={`loc-${i}`} onClick={() => setSelectedLocations(selectedLocations.filter(l => l !== loc))} className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-blue-200 flex items-center">
+                                <MapPin className="w-3 h-3 mr-1"/> {loc} <X className="w-3 h-3 ml-1 opacity-50" />
+                            </span>
+                        ))}
+                        {selectedDeliveryTypes.map((dt, i) => (
+                            <span key={`dt-${i}`} onClick={() => setSelectedDeliveryTypes(selectedDeliveryTypes.filter(d => d !== dt))} className="text-xs bg-cyan-100 text-cyan-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-cyan-200 flex items-center">
+                                {DELIVERY_TYPES[dt]?.de || dt} <X className="w-3 h-3 ml-1 opacity-50" />
+                            </span>
+                        ))}
+                        {filterPriceMax && filterPriceMax !== '' && (
+                            <span onClick={() => setFilterPriceMax('')} className="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-amber-200 flex items-center">
+                                Max CHF {formatPriceCHF(Number(filterPriceMax))} <X className="w-3 h-3 ml-1 opacity-50" />
+                            </span>
+                        )}
+                        {filterLevel && filterLevel !== 'All' && (
+                            <span onClick={() => setFilterLevel('All')} className="text-xs bg-indigo-100 text-indigo-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-indigo-200 flex items-center">
+                                {COURSE_LEVELS[filterLevel]?.de || filterLevel} <X className="w-3 h-3 ml-1 opacity-50" />
+                            </span>
+                        )}
+                        {filterDateFrom && (
+                            <span onClick={() => setFilterDateFrom('')} className="text-xs bg-teal-100 text-teal-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-teal-200 flex items-center">
+                                Ab {filterDateFrom} <X className="w-3 h-3 ml-1 opacity-50" />
+                            </span>
+                        )}
+                        {filterDateTo && (
+                            <span onClick={() => setFilterDateTo('')} className="text-xs bg-teal-100 text-teal-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-teal-200 flex items-center">
+                                Bis {filterDateTo} <X className="w-3 h-3 ml-1 opacity-50" />
+                            </span>
+                        )}
+                        {filterPro && (
+                            <span onClick={() => setFilterPro(false)} className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-blue-100 flex items-center">
+                                <Shield className="w-3 h-3 mr-1"/> {t.lbl_professional_filter} <X className="w-3 h-3 ml-1 opacity-50" />
+                            </span>
+                        )}
+                        {filterDirectBooking && (
+                            <span onClick={() => setFilterDirectBooking(false)} className="text-xs bg-green-50 text-green-700 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-green-100 flex items-center">
+                                <CreditCard className="w-3 h-3 mr-1"/> {t.lbl_direct_booking_filter} <X className="w-3 h-3 ml-1 opacity-50" />
+                            </span>
+                        )}
+                        {selectedSaule && (
+                            <span onClick={() => setSelectedSaule('')} className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-blue-200 flex items-center">
+                                {BERUF_SAEULEN[selectedSaule]?.shortDe || selectedSaule} <X className="w-3 h-3 ml-1 opacity-50" />
+                            </span>
+                        )}
+                        {searchType && (
+                            <span onClick={() => { setSearchType(''); setSearchArea(''); setSearchSpecialty(''); setSearchFocus(''); }} className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-orange-200 flex items-center">
+                                {TYPE_DISPLAY_LABELS[searchType] || CATEGORY_TYPES[searchType]?.de || searchType} <X className="w-3 h-3 ml-1 opacity-50" />
+                            </span>
+                        )}
+                        {searchArea && (
+                            <span onClick={() => { setSearchArea(''); setSearchSpecialty(''); setSearchFocus(''); }} className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-orange-200 flex items-center">
+                                {dbAreas.find(a => a.slug === searchArea)?.label_de || searchArea} <X className="w-3 h-3 ml-1 opacity-50" />
+                            </span>
+                        )}
+                        {searchSpecialty && (
+                            <span onClick={() => { setSearchSpecialty(''); setSearchFocus(''); }} className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-orange-200 flex items-center">
+                                {searchSpecialty} <X className="w-3 h-3 ml-1 opacity-50" />
+                            </span>
+                        )}
+                        {searchFocus && (
+                            <span onClick={() => setSearchFocus('')} className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-orange-200 flex items-center">
+                                {searchFocus} <X className="w-3 h-3 ml-1 opacity-50" />
+                            </span>
+                        )}
                     </div>
                  )}
             </div>

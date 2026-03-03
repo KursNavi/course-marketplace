@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { MapPin, TrendingUp, Clock, Award, ChevronRight, Bookmark, BookmarkCheck } from 'lucide-react';
 import { CATEGORY_TYPES } from '../lib/constants';
-import { formatPriceCHF } from '../lib/formatPrice';
+import { formatPriceCHF, getPriceLabel } from '../lib/formatPrice';
 import { BASE_URL } from '../lib/siteConfig';
 import { useTaxonomy } from '../hooks/useTaxonomy';
 import { DEFAULT_COURSE_IMAGE } from '../lib/imageUtils';
@@ -201,14 +201,7 @@ export default function CategoryLocationPage({
 
     }, [topicSlug, locationSlug, stats.totalCourses, topicLabel, location]);
 
-    const getPriceLabel = (c) => {
-        if (!c) return '';
-        const type = c.booking_type || 'platform';
-        const price = Number(c.price) || 0;
-        if (type === 'lead' && price === 0) return 'Preis auf Anfrage';
-        if (price === 0) return 'Kostenlos';
-        return `CHF ${formatPriceCHF(price)}`;
-    };
+    // getPriceLabel imported from '../lib/formatPrice'
 
     const fallbackImage = DEFAULT_COURSE_IMAGE;
 
