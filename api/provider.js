@@ -61,30 +61,48 @@ export default async function handler(req, res) {
       let provider;
       let providerError;
 
+      // Try extended query with new fields, fallback gracefully
       const fullQuery = await supabase
         .from('profiles')
         .select(`
           id, full_name, slug, logo_url, cover_image_url,
           show_email_publicly, profile_published_at, website_url, city, canton,
-          additional_locations, verification_status, package_tier, bio_text, certificates
+          additional_locations, verification_status, package_tier, bio_text, certificates,
+          phone, social_linkedin, social_instagram, social_facebook, social_youtube
         `)
         .eq('slug', slug)
         .single();
 
       if (fullQuery.error) {
-        // Fallback query without show_email_publicly
+        // Fallback query without new columns (pre-migration)
         const fallbackQuery = await supabase
           .from('profiles')
           .select(`
             id, full_name, slug, logo_url, cover_image_url,
-            profile_published_at, website_url, city, canton,
+            show_email_publicly, profile_published_at, website_url, city, canton,
             additional_locations, verification_status, package_tier, bio_text, certificates
           `)
           .eq('slug', slug)
           .single();
 
-        provider = fallbackQuery.data ? { ...fallbackQuery.data, show_email_publicly: false } : null;
-        providerError = fallbackQuery.error;
+        if (fallbackQuery.error) {
+          // Last resort: without show_email_publicly
+          const minimalQuery = await supabase
+            .from('profiles')
+            .select(`
+              id, full_name, slug, logo_url, cover_image_url,
+              profile_published_at, website_url, city, canton,
+              additional_locations, verification_status, package_tier, bio_text, certificates
+            `)
+            .eq('slug', slug)
+            .single();
+
+          provider = minimalQuery.data ? { ...minimalQuery.data, show_email_publicly: false } : null;
+          providerError = minimalQuery.error;
+        } else {
+          provider = fallbackQuery.data ? { ...fallbackQuery.data } : null;
+          providerError = fallbackQuery.error;
+        }
       } else {
         provider = fullQuery.data;
         providerError = null;
@@ -183,12 +201,17 @@ export default async function handler(req, res) {
         websiteUrl: provider.website_url,
         showEmailPublicly: provider.show_email_publicly || false,
         contactEmail: contactEmail,
+        phone: provider.phone || null,
         location: { city: provider.city, canton: provider.canton },
         additionalLocations: additionalLocations,
         isVerified: provider.verification_status === 'verified',
         certificates: provider.certificates || [],
         publishedAt: provider.profile_published_at,
-        courseCount: publishedCourses?.length || 0
+        courseCount: publishedCourses?.length || 0,
+        socialLinkedin: provider.social_linkedin || null,
+        socialInstagram: provider.social_instagram || null,
+        socialFacebook: provider.social_facebook || null,
+        socialYoutube: provider.social_youtube || null
       };
 
       const seoMeta = {
@@ -211,7 +234,10 @@ export default async function handler(req, res) {
           addressRegion: provider.canton,
           addressCountry: 'CH'
         },
-        ...(provider.website_url && { sameAs: [provider.website_url] })
+        ...(() => {
+          const links = [provider.website_url, provider.social_linkedin, provider.social_instagram, provider.social_facebook, provider.social_youtube].filter(Boolean);
+          return links.length > 0 ? { sameAs: links } : {};
+        })()
       };
 
       return res.status(200).json({
