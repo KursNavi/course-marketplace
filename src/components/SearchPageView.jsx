@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo } from 'react';
-import { Search, ChevronRight, User, X, Shield, MapPin, CheckCircle, Loader, Bell, ArrowDown, Bookmark, BookmarkCheck, CreditCard, Info, EyeOff, Briefcase, Palette, Smile, BookOpen, Compass } from 'lucide-react';
+import React, { useEffect, useMemo, useRef, useCallback } from 'react';
+import { Search, ChevronRight, User, X, Shield, MapPin, CheckCircle, Loader, Bell, ArrowDown, Bookmark, BookmarkCheck, CreditCard, Info, EyeOff, Briefcase, Palette, Smile, BookOpen, Compass, SearchX, AlertTriangle, RotateCcw } from 'lucide-react';
 import { LocationDropdown, LanguageDropdown, DeliveryTypeFilter, SaeulenFilter } from './Filters';
 import { Globe } from 'lucide-react';
 import { CATEGORY_TYPES, AGE_GROUPS, COURSE_LEVELS, DELIVERY_TYPES, SEGMENT_CONFIG, TYPE_DISPLAY_LABELS } from '../lib/constants';
@@ -8,6 +8,7 @@ import { useTaxonomy } from '../hooks/useTaxonomy';
 import { supabase } from '../lib/supabase';
 import { BASE_URL } from '../lib/siteConfig';
 import { getBereichByAreaSlug, getBereichUrl } from '../lib/bereichLandingConfig';
+import { SEARCH_STRINGS } from '../lib/searchStrings';
 
 import { DEFAULT_COURSE_IMAGE } from '../lib/imageUtils';
 const fallbackImage = DEFAULT_COURSE_IMAGE;
@@ -38,8 +39,14 @@ const SearchPageView = ({
     selectedDeliveryTypes, setSelectedDeliveryTypes, deliveryMenuOpen, setDeliveryMenuOpen, deliveryMenuRef,
     savedCourseIds, onToggleSaveCourse,
     user,
-    selectedSaule, setSelectedSaule
+    selectedSaule, setSelectedSaule,
+    fetchError, onRetry
 }) => {
+
+    // Ref for scroll-to-results behavior
+    const resultsRef = useRef(null);
+    // Track whether initial mount has happened (skip scroll on first render)
+    const hasMountedRef = useRef(false);
 
     // Load taxonomy from DB
     const { areas: dbAreas } = useTaxonomy();
@@ -348,10 +355,56 @@ const SearchPageView = ({
         });
     };
 
-    const resetFilters = () => {
+    const resetFilters = useCallback(() => {
         setSearchType(""); setSearchArea(""); setSearchSpecialty(""); setSearchFocus("");
         setSelectedLocations([]); setSearchQuery(""); setFilterDateFrom(""); setFilterDateTo(""); setFilterPriceMax(""); setFilterLevel("All"); setFilterPro(false); setFilterDirectBooking(false);
-    };
+        if (setSelectedSaule) setSelectedSaule("");
+        if (setSelectedLanguages) setSelectedLanguages([]);
+        if (setSelectedDeliveryTypes) setSelectedDeliveryTypes([]);
+    }, [setSearchType, setSearchArea, setSearchSpecialty, setSearchFocus, setSelectedLocations, setSearchQuery, setFilterDateFrom, setFilterDateTo, setFilterPriceMax, setFilterLevel, setFilterPro, setFilterDirectBooking, setSelectedSaule, setSelectedLanguages, setSelectedDeliveryTypes]);
+
+    const clearSearchText = useCallback(() => {
+        setSearchQuery("");
+    }, [setSearchQuery]);
+
+    // --- EMPTY STATE DETECTION ---
+    // Determine if the catalog is genuinely empty for the selected type/segment
+    // vs. just the current filters producing 0 results
+    const publishedCourses = useMemo(() => courses.filter(c => c.status === 'published'), [courses]);
+
+    const catalogHasCoursesInSlice = useMemo(() => {
+        if (!dbSearchType) return publishedCourses.length > 0;
+        return publishedCourses.some(c =>
+            Array.isArray(c.all_categories) &&
+            c.all_categories.some(cat => cat.category_type === dbSearchType)
+        );
+    }, [publishedCourses, dbSearchType]);
+
+    // true = catalog empty for this type, false = filters are just too restrictive
+    const isCatalogEmpty = !catalogHasCoursesInSlice;
+
+    // --- RESULTS COUNTER ---
+    const resultsCountText = useMemo(() => {
+        if (loading) return SEARCH_STRINGS.results_loading;
+        const n = filteredCourses.length;
+        if (searchQuery.trim()) return SEARCH_STRINGS.results_for(n, searchQuery.trim());
+        if (n === 0) return SEARCH_STRINGS.results_zero;
+        if (n === 1) return SEARCH_STRINGS.results_one;
+        return SEARCH_STRINGS.results_many(n);
+    }, [loading, filteredCourses.length, searchQuery]);
+
+    // --- SCROLL TO RESULTS on filter/search change ---
+    useEffect(() => {
+        if (!hasMountedRef.current) {
+            hasMountedRef.current = true;
+            return;
+        }
+        if (loading) return;
+        // Scroll results area into view after filter change
+        if (resultsRef.current) {
+            resultsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }, [filteredCourses, loading]);
 
     // --- RANKING LOGIC (v3.1) ---
     // Formula: Score = Plan * Booking * (0.6 + 0.4*Freshness) * (1 + RandomEpsilon)
@@ -558,9 +611,55 @@ const SearchPageView = ({
                  )}
             </div>
 
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-                 {loading ? <div className="text-center py-20"><Loader className="animate-spin w-10 h-10 text-primary mx-auto" /></div> : filteredCourses.length > 0 ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            <main ref={resultsRef} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" style={{ scrollMarginTop: '180px' }}>
+                {/* --- RESULTS HEADER (counter + aria-live) --- */}
+                <div
+                    className="mb-6"
+                    aria-live="polite"
+                    aria-atomic="true"
+                    role="status"
+                    data-testid="results-counter"
+                >
+                    <p className="text-sm text-gray-500 font-medium">
+                        {resultsCountText}
+                    </p>
+                </div>
+
+                {/* --- STATE D: LOADING --- */}
+                {loading && (
+                    <div className="text-center py-20" data-testid="loading-state">
+                        <Loader className="animate-spin w-10 h-10 text-primary mx-auto mb-4" />
+                        <p className="text-sm text-gray-500">{SEARCH_STRINGS.loading_text}</p>
+                    </div>
+                )}
+
+                {/* --- STATE C: FETCH ERROR --- */}
+                {!loading && fetchError && (
+                    <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-red-200 px-6" data-testid="error-state">
+                        <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <AlertTriangle className="w-8 h-8 text-red-500" />
+                        </div>
+                        <h3 className="text-xl font-bold text-gray-900 mb-2 font-heading">
+                            {SEARCH_STRINGS.error_title}
+                        </h3>
+                        <p className="text-gray-600 max-w-md mx-auto mb-6">
+                            {SEARCH_STRINGS.error_text}
+                        </p>
+                        {onRetry && (
+                            <button
+                                onClick={onRetry}
+                                className="inline-flex items-center gap-2 text-primary font-bold hover:text-orange-700 transition border border-orange-200 px-4 py-2 rounded-lg bg-orange-50 hover:bg-orange-100"
+                            >
+                                <RotateCcw className="w-4 h-4" />
+                                {SEARCH_STRINGS.btn_retry}
+                            </button>
+                        )}
+                    </div>
+                )}
+
+                {/* --- RESULTS GRID --- */}
+                {!loading && !fetchError && filteredCourses.length > 0 && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8" data-testid="course-grid">
                     {sortedCourses.flatMap((course, courseIndex) => {
                       const bereichConfig = searchArea ? getBereichByAreaSlug(searchArea) : null;
                       const showRatgeberHere = bereichConfig && courseIndex === 6 && sortedCourses.length > 3;
@@ -691,23 +790,62 @@ const SearchPageView = ({
                       return items;
                     })}
                   </div>
-                ) : (
-                  <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-gray-300 px-6">
+                )}
+
+                {/* --- STATE A: NO MATCHES (filters too restrictive) --- */}
+                {!loading && !fetchError && filteredCourses.length === 0 && !isCatalogEmpty && (
+                  <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-gray-300 px-6" data-testid="empty-no-matches">
+                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <SearchX className="w-8 h-8 text-gray-400" />
+                    </div>
+                    <h3 className="text-xl font-bold text-gray-900 mb-2 font-heading">
+                        {SEARCH_STRINGS.no_matches_title}
+                    </h3>
+                    <p className="text-gray-600 max-w-md mx-auto mb-6">
+                        {searchQuery.trim()
+                            ? SEARCH_STRINGS.no_matches_for(searchQuery.trim())
+                            : SEARCH_STRINGS.no_matches_text}
+                    </p>
+                    <div className="flex items-center justify-center gap-3 flex-wrap">
+                        {searchQuery.trim() && (
+                            <button
+                                onClick={clearSearchText}
+                                className="inline-flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition border border-gray-200 px-4 py-2 rounded-lg bg-gray-50 hover:bg-gray-100"
+                                data-testid="btn-clear-search"
+                            >
+                                <X className="w-4 h-4" />
+                                {SEARCH_STRINGS.btn_clear_search}
+                            </button>
+                        )}
+                        <button
+                            onClick={resetFilters}
+                            className="inline-flex items-center gap-2 text-sm font-bold text-primary hover:text-orange-700 transition border border-orange-200 px-4 py-2 rounded-lg bg-orange-50 hover:bg-orange-100"
+                            data-testid="btn-reset-filters"
+                        >
+                            <RotateCcw className="w-4 h-4" />
+                            {SEARCH_STRINGS.btn_reset_filters}
+                        </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* --- STATE B: CATALOG GENUINELY EMPTY --- */}
+                {!loading && !fetchError && filteredCourses.length === 0 && isCatalogEmpty && (
+                  <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-gray-300 px-6" data-testid="empty-catalog">
                     <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
                         <Bell className="w-8 h-8 text-primary" />
                     </div>
                     <h3 className="text-xl font-bold text-gray-900 mb-2 font-heading">
-                        Kursangebot im Aufbau
+                        {SEARCH_STRINGS.catalog_empty_title}
                     </h3>
-                    <p className="text-gray-600 max-w-md mx-auto mb-6">
-                        In deiner Region bauen wir das Angebot gerade auf. <br />
-                        Melde dich unten im Footer für unseren Newsletter an, um informiert zu bleiben.
+                    <p className="text-gray-600 max-w-md mx-auto mb-6 whitespace-pre-line">
+                        {SEARCH_STRINGS.catalog_empty_text}
                     </p>
-                    <button 
+                    <button
                         onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })}
                         className="text-primary font-bold hover:text-orange-700 transition flex items-center justify-center mx-auto gap-2 border border-orange-200 px-4 py-2 rounded-lg bg-orange-50 hover:bg-orange-100"
                     >
-                        Zum Newsletter scrollen <ArrowDown className="w-4 h-4" />
+                        {SEARCH_STRINGS.btn_scroll_newsletter} <ArrowDown className="w-4 h-4" />
                     </button>
                   </div>
                 )}
