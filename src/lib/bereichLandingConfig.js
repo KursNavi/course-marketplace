@@ -29,48 +29,48 @@ export const BEREICH_LANDING_CONFIG = {
     heroImage: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&q=80&w=2000',
 
     scenarios: [
-      { slug: 'berufseinstieg', icon: 'ðŸŽ“', label: { de: 'Berufseinstieg' }, text: { de: 'Du willst Fitnesstrainer werden? Starte mit der Basis-Ausbildung.' }, searchParams: { spec: 'Fitness-Trainer-Ausbildung', focus: 'Basis-Ausbildung' }, ctaLabel: { de: 'Einstiegskurse entdecken' } },
-      { slug: 'quereinstieg', icon: 'ðŸ”„', label: { de: 'Quereinstieg' }, text: { de: 'Quereinstieg in die Fitnessbranche? Wir zeigen dir den Weg.' }, searchParams: { spec: 'Fitness-Trainer-Ausbildung' }, ctaLabel: { de: 'Quereinsteiger-Kurse entdecken' } },
-      { slug: 'weiterbildung', icon: 'ðŸ“ˆ', label: { de: 'Weiterbildung' }, text: { de: 'Schon Trainer? Spezialisiere dich in Functional Training, Ernaehrung oder Personal Training.' }, searchParams: { spec: 'Trainingsmethoden & Spezialisierungen' }, ctaLabel: { de: 'Weiterbildungskurse entdecken' } },
-      { slug: 'diplom-aufstieg', icon: 'ðŸ†', label: { de: 'Diplom & Aufstieg' }, text: { de: 'Bereit fuer den naechsten Schritt? Diplom-Lehrgang und eidg. Fachausweis.' }, searchParams: { spec: 'Zertifikate & Pruefungsvorbereitung' }, ctaLabel: { de: 'Diplom-Kurse entdecken' } },
-      { slug: 'nebenerwerb', icon: 'âš¡', label: { de: 'Nebenerwerb' }, text: { de: 'Deine Leidenschaft zum Beruf machen - auch nebenberuflich.' }, searchParams: { spec: 'Group-Fitness / Kursleitung' }, ctaLabel: { de: 'Kurse fuer Nebenerwerb entdecken' } },
-      { slug: 'selbststaendigkeit', icon: 'ðŸ¢', label: { de: 'Selbststaendigkeit' }, text: { de: 'Eigenes Studio? Lerne alles ueber Business, Recht und Versicherung.' }, searchParams: { spec: 'Business & Selbststaendigkeit' }, ctaLabel: { de: 'Business-Kurse entdecken' } },
-      { slug: 'spezialisierung', icon: 'ðŸŽ¯', label: { de: 'Spezialisierung' }, text: { de: 'Rueckentraining, Antara, Kampfsport - finde deine Nische.' }, searchParams: { spec: 'Trainingsmethoden & Spezialisierungen' }, ctaLabel: { de: 'Spezialisierungskurse entdecken' } },
-      { slug: 'zertifizierung', icon: 'âœ…', label: { de: 'Zertifizierung' }, text: { de: 'Qualitop, QualiCert, eidg. FA - welches Zertifikat passt zu dir?' }, searchParams: { spec: 'Zertifikate & Pruefungsvorbereitung' }, ctaLabel: { de: 'Zertifizierungskurse entdecken' } },
+      { slug: 'berufseinstieg', icon: '🎓', label: { de: 'Berufseinstieg' }, text: { de: 'Du willst Fitnesstrainer werden? Starte mit der Basis-Ausbildung.' }, searchParams: { spec: 'Fitness-Trainer-Ausbildung', focus: 'Basis-Ausbildung' }, ctaLabel: { de: 'Einstiegskurse entdecken' } },
+      { slug: 'quereinstieg', icon: '🔄', label: { de: 'Quereinstieg' }, text: { de: 'Quereinstieg in die Fitnessbranche? Wir zeigen dir den Weg.' }, searchParams: { spec: 'Fitness-Trainer-Ausbildung' }, ctaLabel: { de: 'Quereinsteiger-Kurse entdecken' } },
+      { slug: 'weiterbildung', icon: '📈', label: { de: 'Weiterbildung' }, text: { de: 'Schon Trainer? Spezialisiere dich in Functional Training, Ernaehrung oder Personal Training.' }, searchParams: { spec: 'Trainingsmethoden & Spezialisierungen' }, ctaLabel: { de: 'Weiterbildungskurse entdecken' } },
+      { slug: 'diplom-aufstieg', icon: '🏆', label: { de: 'Diplom & Aufstieg' }, text: { de: 'Bereit fuer den naechsten Schritt? Diplom-Lehrgang und eidg. Fachausweis.' }, searchParams: { spec: 'Zertifikate & Pruefungsvorbereitung' }, ctaLabel: { de: 'Diplom-Kurse entdecken' } },
+      { slug: 'nebenerwerb', icon: '⚡', label: { de: 'Nebenerwerb' }, text: { de: 'Deine Leidenschaft zum Beruf machen - auch nebenberuflich.' }, searchParams: { spec: 'Group-Fitness / Kursleitung' }, ctaLabel: { de: 'Kurse fuer Nebenerwerb entdecken' } },
+      { slug: 'selbststaendigkeit', icon: '🏢', label: { de: 'Selbststaendigkeit' }, text: { de: 'Eigenes Studio? Lerne alles ueber Business, Recht und Versicherung.' }, searchParams: { spec: 'Business & Selbststaendigkeit' }, ctaLabel: { de: 'Business-Kurse entdecken' } },
+      { slug: 'spezialisierung', icon: '🎯', label: { de: 'Spezialisierung' }, text: { de: 'Rueckentraining, Antara, Kampfsport - finde deine Nische.' }, searchParams: { spec: 'Trainingsmethoden & Spezialisierungen' }, ctaLabel: { de: 'Spezialisierungskurse entdecken' } },
+      { slug: 'zertifizierung', icon: '✅', label: { de: 'Zertifizierung' }, text: { de: 'Qualitop, QualiCert, eidg. FA - welches Zertifikat passt zu dir?' }, searchParams: { spec: 'Zertifikate & Pruefungsvorbereitung' }, ctaLabel: { de: 'Zertifizierungskurse entdecken' } },
     ],
 
     specialtyDescriptions: {
       'Fitness-Trainer-Ausbildung': {
         de: 'Basiskurse mit Anatomie, Trainingslehre, Kraft- und Ausdauertraining. Von der B-Lizenz bis zum Diplom.',
-        icon: 'ðŸ’ª'
+        icon: '💪'
       },
       'Personal-Trainer-Ausbildung': {
         de: 'Gespraechsfuehrung, Anamnese, individuelle Trainingsplanung. Werde zum 1:1-Experten.',
-        icon: 'ðŸ¤'
+        icon: '🤝'
       },
       'Group-Fitness / Kursleitung': {
         de: 'Aerobic, Step, Toning, Cardio-Dance und moderne Kursformate unterrichten. Gruppendynamik meistern.',
-        icon: 'ðŸ‘¥'
+        icon: '👥'
       },
       'Trainingsmethoden & Spezialisierungen': {
         de: 'Kraft & Ausdauer, Ruecken & Core, Functional Training, Kampfsport-Formate.',
-        icon: 'ðŸ”¥'
+        icon: '🔥'
       },
       'Mind-Body (Yoga & Pilates)': {
         de: 'Yoga- und Pilates-Ausbildungen fuer ganzheitliches Training. Achtsamkeit und Koerperbewusstsein.',
-        icon: 'ðŸ§˜'
+        icon: '🧘'
       },
       'Ernaehrung & Coaching': {
         de: 'Sporternaehrung, Ernaehrungsberatung und Coaching-Kompetenzen. CAS und Seminare.',
-        icon: 'ðŸ¥—'
+        icon: '🥗'
       },
       'Zertifikate & Pruefungsvorbereitung': {
         de: 'Vorbereitung auf eidg. Pruefungen, Fitness-Lizenzen und Branchenzertifikate.',
-        icon: 'ðŸ“‹'
+        icon: '📋'
       },
       'Business & Selbststaendigkeit': {
         de: 'Unternehmer-Workshops, Recht, Versicherung, Datenschutz und Vertriebs-Know-how.',
-        icon: 'ðŸ’¼'
+        icon: '💼'
       }
     },
 
@@ -145,44 +145,44 @@ export const BEREICH_LANDING_CONFIG = {
     heroImage: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&q=80&w=2000',
 
     scenarios: [
-      { slug: 'yoga-fuer-anfaenger', icon: 'ðŸ§˜', label: { de: 'Yoga für Anfänger' }, text: { de: 'Sicher starten ohne Vorkenntnisse: klare Stilempfehlungen, typische Stolpersteine und ein realistischer Einstieg.' }, searchParams: { spec: 'Yoga', focus: 'Hatha & Grundlagen' }, ctaLabel: { de: 'Anfängerkurse anzeigen' } },
-      { slug: 'yoga-stile-finden', icon: 'ðŸ§­', label: { de: 'Welcher Yogastil passt zu dir?' }, text: { de: 'Hatha, Vinyasa, Yin, Power oder Kundalini: finde den Stil, der zu deinem Ziel und Energielevel passt.' }, searchParams: { spec: 'Yoga' }, ctaLabel: { de: 'Yogastile vergleichen' } },
-      { slug: 'stress-abbauen-entspannen', icon: 'ðŸŒ¿', label: { de: 'Stress abbauen & entspannen' }, text: { de: 'Ruhige Formate für Entlastung, Regeneration und bessere Selbstregulation im Alltag.' }, searchParams: { spec: 'Meditation & Achtsamkeit' }, ctaLabel: { de: 'Entspannungskurse anzeigen' } },
-      { slug: 'besser-schlafen-yoga-nidra', icon: 'ðŸŒ™', label: { de: 'Besser schlafen mit Yoga Nidra' }, text: { de: 'Tiefenentspannung sinnvoll nutzen: für wen Yoga Nidra passt und wie der Einstieg gelingt.' }, searchParams: { spec: 'Meditation & Achtsamkeit', focus: 'Yoga Nidra' }, ctaLabel: { de: 'Yoga Nidra Kurse finden' } },
-      { slug: 'atemarbeit-breathwork', icon: 'ðŸ«', label: { de: 'Atemarbeit & Breathwork' }, text: { de: 'Pranayama, Breathwork, Atemreise: Unterschiede verstehen und sicher das passende Format wählen.' }, searchParams: { spec: 'Atemarbeit' }, ctaLabel: { de: 'Atemarbeit-Kurse anzeigen' } },
-      { slug: 'klangmeditation-mantra', icon: 'ðŸ””', label: { de: 'Klangmeditation & Mantra' }, text: { de: 'Sound Bath, Gong, Kirtan und Klangreise: achtsame Formate für Ruhe, Fokus und Ausrichtung.' }, searchParams: { spec: 'Klang & Mantra' }, ctaLabel: { de: 'Klang-Kurse anzeigen' } },
-      { slug: 'energiearbeit-reiki', icon: 'âœ¨', label: { de: 'Energiearbeit & Reiki' }, text: { de: 'Einordnen statt idealisieren: was dich in Reiki- und Energiearbeit-Kursen konkret erwartet.' }, searchParams: { spec: 'Energiearbeit' }, ctaLabel: { de: 'Reiki-Kurse anzeigen' } },
-      { slug: 'bodywork-thai-yoga-massage', icon: 'ðŸ¤²', label: { de: 'Bodywork & Thai Yoga Massage' }, text: { de: 'Körperorientierte Methoden für Beweglichkeit, Entspannung und bewusste Berührung.' }, searchParams: { spec: 'Bodywork & Massage' }, ctaLabel: { de: 'Bodywork-Kurse anzeigen' } },
+      { slug: 'yoga-fuer-anfaenger', icon: '🧘', label: { de: 'Yoga für Anfänger' }, text: { de: 'Sicher starten ohne Vorkenntnisse: klare Stilempfehlungen, typische Stolpersteine und ein realistischer Einstieg.' }, searchParams: { spec: 'Yoga', focus: 'Hatha & Grundlagen' }, ctaLabel: { de: 'Anfängerkurse anzeigen' } },
+      { slug: 'yoga-stile-finden', icon: '🧭', label: { de: 'Welcher Yogastil passt zu dir?' }, text: { de: 'Hatha, Vinyasa, Yin, Power oder Kundalini: finde den Stil, der zu deinem Ziel und Energielevel passt.' }, searchParams: { spec: 'Yoga' }, ctaLabel: { de: 'Yogastile vergleichen' } },
+      { slug: 'stress-abbauen-entspannen', icon: '🌿', label: { de: 'Stress abbauen & entspannen' }, text: { de: 'Ruhige Formate für Entlastung, Regeneration und bessere Selbstregulation im Alltag.' }, searchParams: { spec: 'Meditation & Achtsamkeit' }, ctaLabel: { de: 'Entspannungskurse anzeigen' } },
+      { slug: 'besser-schlafen-yoga-nidra', icon: '🌙', label: { de: 'Besser schlafen mit Yoga Nidra' }, text: { de: 'Tiefenentspannung sinnvoll nutzen: für wen Yoga Nidra passt und wie der Einstieg gelingt.' }, searchParams: { spec: 'Meditation & Achtsamkeit', focus: 'Yoga Nidra' }, ctaLabel: { de: 'Yoga Nidra Kurse finden' } },
+      { slug: 'atemarbeit-breathwork', icon: '🫁', label: { de: 'Atemarbeit & Breathwork' }, text: { de: 'Pranayama, Breathwork, Atemreise: Unterschiede verstehen und sicher das passende Format wählen.' }, searchParams: { spec: 'Atemarbeit' }, ctaLabel: { de: 'Atemarbeit-Kurse anzeigen' } },
+      { slug: 'klangmeditation-mantra', icon: '🔔', label: { de: 'Klangmeditation & Mantra' }, text: { de: 'Sound Bath, Gong, Kirtan und Klangreise: achtsame Formate für Ruhe, Fokus und Ausrichtung.' }, searchParams: { spec: 'Klang & Mantra' }, ctaLabel: { de: 'Klang-Kurse anzeigen' } },
+      { slug: 'energiearbeit-reiki', icon: '✨', label: { de: 'Energiearbeit & Reiki' }, text: { de: 'Einordnen statt idealisieren: was dich in Reiki- und Energiearbeit-Kursen konkret erwartet.' }, searchParams: { spec: 'Energiearbeit' }, ctaLabel: { de: 'Reiki-Kurse anzeigen' } },
+      { slug: 'bodywork-thai-yoga-massage', icon: '🤲', label: { de: 'Bodywork & Thai Yoga Massage' }, text: { de: 'Körperorientierte Methoden für Beweglichkeit, Entspannung und bewusste Berührung.' }, searchParams: { spec: 'Bodywork & Massage' }, ctaLabel: { de: 'Bodywork-Kurse anzeigen' } },
     ],
 
     specialtyDescriptions: {
       'Yoga': {
         de: 'Von Hatha bis Vinyasa, von Yin bis Power: finde deinen Stil mit passender Intensität und klarer Progression.',
-        icon: 'ðŸ§˜'
+        icon: '🧘'
       },
       'Meditation & Achtsamkeit': {
         de: 'Geführte und stille Meditation, MBSR-nahe Formate und Yoga Nidra für mentale Ruhe und Selbstregulation.',
-        icon: 'ðŸ•¯ï¸'
+        icon: '🕯️'
       },
       'Atemarbeit': {
         de: 'Pranayama, Breathwork und Atemreise: Atem als Werkzeug für Fokus, Regulation und Energie.',
-        icon: 'ðŸ«'
+        icon: '🫁'
       },
       'Klang & Mantra': {
         de: 'Klangmeditation, Sound Bath, Gong und Mantra-Praxis für Entschleunigung und innere Sammlung.',
-        icon: 'ðŸ””'
+        icon: '🔔'
       },
       'Somatics & Körperbewusstsein': {
         de: 'Feldenkrais, Embodiment, Mobility und entspannungsorientierte Körperarbeit für nachhaltige Wahrnehmung.',
-        icon: 'ðŸ§ '
+        icon: '🧠'
       },
       'Energiearbeit': {
         de: 'Reiki, Chakra-Fokus und Healing-orientierte Angebote mit transparenter Kursbeschreibung.',
-        icon: 'âœ¨'
+        icon: '✨'
       },
       'Bodywork & Massage': {
         de: 'Thai Yoga Massage, Massage und Körpertherapie als Ergänzung zu Yoga und achtsamem Training.',
-        icon: 'ðŸ¤²'
+        icon: '🤲'
       }
     },
 
