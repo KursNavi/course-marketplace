@@ -15,8 +15,8 @@ DROP TABLE IF EXISTS backup_taxonomy_level4_20260304;
 DO $$
 BEGIN
     BEGIN
-        REVOKE ALL ON MATERIALIZED VIEW v_taxonomy_paths FROM anon;
-        REVOKE ALL ON MATERIALIZED VIEW v_taxonomy_paths FROM authenticated;
+        REVOKE ALL ON TABLE v_taxonomy_paths FROM anon;
+        REVOKE ALL ON TABLE v_taxonomy_paths FROM authenticated;
     EXCEPTION
         WHEN undefined_table THEN
             NULL;
@@ -29,7 +29,7 @@ END $$;
 DO $$
 BEGIN
     BEGIN
-        GRANT SELECT ON MATERIALIZED VIEW v_taxonomy_paths TO service_role;
+        GRANT SELECT ON TABLE v_taxonomy_paths TO service_role;
     EXCEPTION
         WHEN undefined_table THEN
             NULL;
