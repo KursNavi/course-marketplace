@@ -519,6 +519,440 @@ export const SZENARIO_CONTENT = {
 <h3>✅ Zertifizierungs- und Vorbereitungskurse</h3>
 <p>Finde Kurse, die direkt auf eidg. Prüfungen vorbereiten und zu Qualitop/QualiCert-Zertifizierungen führen.</p>
 </div>
+`,
+
+  // ============================================================
+  // YOGA & ACHTSAMKEIT
+  // ============================================================
+
+  'yoga_achtsamkeit/yoga-fuer-anfaenger': `
+<p class="lead">Der Einstieg in Yoga scheitert selten an fehlender Fitness, sondern an falschen Erwartungen. Viele glauben, sie muessen zuerst beweglich werden, bevor sie beginnen. Genau umgekehrt ist sinnvoll: Du startest mit einem passenden Kurs und baust Schritt fuer Schritt Beweglichkeit, Stabilitaet und Koerpergefuehl auf.</p>
+
+<h2>Was ein guter Einsteigerkurs wirklich leisten sollte</h2>
+<p>Ein anfaengerfreundlicher Kurs ist klar strukturiert, erklaert Grundlagen verstaendlich und bietet Varianten fuer unterschiedliche Koerpervoraussetzungen. Gute Lehrpersonen zeigen, wie du Haltungen sicher aufbaust, wie Atmung und Bewegung zusammenspielen und woran du erkennst, wann du reduzieren solltest.</p>
+
+<table>
+<thead><tr><th>Merkmal</th><th>Guter Einstieg</th><th>Warnsignal</th></tr></thead>
+<tbody>
+<tr><td>Tempo</td><td>Ruhig bis moderat, mit Erklaerungen</td><td>Schnelle Abfolge ohne Orientierung</td></tr>
+<tr><td>Level</td><td>Einsteiger / All Levels klar benannt</td><td>Unklare oder fehlende Level-Angabe</td></tr>
+<tr><td>Anpassungen</td><td>Varianten bei Knie, Ruecken, Schulter</td><td>Nur eine "richtige" Ausfuehrung</td></tr>
+<tr><td>Atmosphaere</td><td>Lernfokus ohne Leistungsdruck</td><td>Vergleichs- oder Performance-Setting</td></tr>
+</tbody>
+</table>
+
+<h2>Welche Stile fuer den Start sinnvoll sind</h2>
+<ul>
+<li><strong>Hatha & Grundlagen:</strong> klarer Aufbau, gute Technikbasis, ideal fuer die ersten Wochen.</li>
+<li><strong>Yin & Restorative:</strong> sanfter Zugang ueber Atmung und Regeneration, hilfreich bei Stress.</li>
+<li><strong>Sanftes Vinyasa:</strong> fliessender Stil mit moderater Intensitaet, wenn du Bewegung magst.</li>
+</ul>
+
+<div class="info-box">
+<h3>Gut zu wissen</h3>
+<p>Fortschritt zeigt sich am Anfang meist subtil: bessere Haltung, ruhigere Atmung, weniger Spannungsgefuehl im Alltag. Diese Signale sind oft wertvoller als "tiefer in die Pose kommen".</p>
+</div>
+
+<h2>Die 6 haeufigsten Anfaengerfehler</h2>
+<ol>
+<li>Direkt in intensive Klassen einsteigen</li>
+<li>Zu selten trainieren und schnellen Effekt erwarten</li>
+<li>Schmerzen mit Dehnreiz verwechseln</li>
+<li>Mit anderen vergleichen statt auf den eigenen Koerper hoeren</li>
+<li>Vor der Stunde nicht kommunizieren, wenn Beschwerden bestehen</li>
+<li>Unrealistische Ziele in den ersten 4 Wochen</li>
+</ol>
+
+<div class="tip-box">
+<h3>8-Wochen-Einstiegsplan</h3>
+<p>Woche 1-2: 1 Einheit pro Woche. Woche 3-6: 1-2 Einheiten, Fokus Technik und Atem. Woche 7-8: bestaendigen, nicht intensivieren. Erst danach Stil oder Frequenz gezielt ausbauen.</p>
+</div>
+
+<h2>Checkliste vor der Buchung</h2>
+<div class="checklist">
+<h3>Passt der Kurs zu meinem Startniveau?</h3>
+<ul>
+<li>Level klar ausgewiesen (Einsteiger / All Levels)</li>
+<li>Kursziel nachvollziehbar (Entspannung, Mobilitaet, Fitness)</li>
+<li>Lehrperson nennt Anpassungen und Hilfsmittel</li>
+<li>Kurszeit ist realistisch mit meinem Alltag vereinbar</li>
+<li>Probestunde oder unkomplizierter Einstieg moeglich</li>
+</ul>
+</div>
+
+<div class="cta-box">
+<h3>Jetzt mit einem passenden Kurs starten</h3>
+<p>Finde anfaengerfreundliche Yoga-Angebote mit klarer Einstufung, strukturierter Anleitung und sicherem Aufbau.</p>
+</div>
+`,
+
+  'yoga_achtsamkeit/yoga-stile-finden': `
+<p class="lead">Die Stilvielfalt ist ein Vorteil, wenn du sie richtig nutzt. Nicht der "beste" Stil entscheidet, sondern die Passung zu deinem Ziel, deinem Energielevel und deinem Wochenrhythmus. Wer das klug kombiniert, bleibt laenger dran und erzielt stabilere Ergebnisse.</p>
+
+<h2>Stile im direkten Vergleich</h2>
+<table>
+<thead><tr><th>Stil</th><th>Intensitaet</th><th>Schwerpunkt</th><th>Geeignet fuer</th></tr></thead>
+<tbody>
+<tr><td>Hatha</td><td>Niedrig-Mittel</td><td>Grundlagen, Ausrichtung</td><td>Einsteiger, Technikaufbau</td></tr>
+<tr><td>Vinyasa</td><td>Mittel-Hoch</td><td>Flow, Kondition, Koordination</td><td>Dynamik, Fitness, Abwechslung</td></tr>
+<tr><td>Yin / Restorative</td><td>Niedrig</td><td>Regeneration, Dehnung</td><td>Stressabbau, Erholung</td></tr>
+<tr><td>Power / Ashtanga</td><td>Hoch</td><td>Kraft, Disziplin, Ausdauer</td><td>Sportlich Ambitionierte</td></tr>
+<tr><td>Kundalini</td><td>Mittel</td><td>Atem, Fokus, innere Ausrichtung</td><td>Mind-Body Praxis</td></tr>
+</tbody>
+</table>
+
+<h2>Typische Ziele und passende Routen</h2>
+<ul>
+<li><strong>Entspannung und Schlaf:</strong> Yin, Restorative, Yoga Nidra, Meditation</li>
+<li><strong>Kraft und Kondition:</strong> Vinyasa, Power, Ashtanga-orientierte Formate</li>
+<li><strong>Ruecken und Haltung:</strong> Hatha mit Ausrichtungsfokus, therapeutisches Yoga</li>
+<li><strong>Mentale Klarheit:</strong> Atemarbeit, Meditation, ruhige Klangformate</li>
+</ul>
+
+<h2>Warum viele bei der Stilwahl scheitern</h2>
+<ul>
+<li>Sie waehlen nach Trend statt nach Ziel.</li>
+<li>Sie verwechseln kurzfristigen Kick mit langfristiger Passung.</li>
+<li>Sie testen nur eine Stunde und urteilen zu frueh.</li>
+<li>Sie ignorieren Tageszeit und Belastung im Alltag.</li>
+</ul>
+
+<div class="info-box">
+<h3>Hybrid statt Dogma</h3>
+<p>Die beste Praxis ist haeufig eine Kombination aus zwei Formaten: ein aktiver Kurs fuer Leistung und ein ruhiger Kurs fuer Regeneration. Das reduziert Ueberlastung und erhoeht die Konstanz.</p>
+</div>
+
+<h2>Entscheidungslogik in 4 Schritten</h2>
+<ol>
+<li>Ziel fuer 8 Wochen festlegen (z. B. Stressabbau oder Kraftaufbau).</li>
+<li>Maximal 2 passende Stile waehlen.</li>
+<li>Pro Stil 2-3 Sessions testen.</li>
+<li>Ergebnis am naechsten Tag bewerten: Energie, Schlaf, Spannung, Motivation.</li>
+</ol>
+
+<div class="checklist">
+<h3>Praktischer Auswahl-Check</h3>
+<ul>
+<li>Kursbeschreibung nennt Intensitaet klar</li>
+<li>Level ist eindeutig ausgewiesen</li>
+<li>Format passt zu deinem Wochenrhythmus</li>
+<li>Lehrperson bietet Varianten fuer unterschiedliche Koerper</li>
+<li>Du kannst 4-6 Wochen konstant teilnehmen</li>
+</ul>
+</div>
+
+<div class="tip-box">
+<h3>Praxisnaher Tipp</h3>
+<p>Wenn du haeufig erschoepft bist, beginne mit einem ruhigeren Stil und ergaenze erst spaeter dynamische Klassen. So vermeidest du Abbruch nach den ersten Wochen.</p>
+</div>
+
+<div class="cta-box">
+<h3>Stile gezielt vergleichen</h3>
+<p>Filtere nach Stil, Level, Ziel und Intensitaet und finde die Kombination, die langfristig fuer dich funktioniert.</p>
+</div>
+`,
+
+  'yoga_achtsamkeit/stress-abbauen-entspannen': `
+<p class="lead">Viele suchen Yoga nicht wegen Akrobatik, sondern wegen Ueberlastung im Alltag. Genau dort setzen entspannungsorientierte Kurse an: Sie kombinieren bewusste Atmung, ruhige Bewegung und klare Aufmerksamkeit. Das hilft, innere Unruhe zu reduzieren und Regeneration wieder lernbar zu machen.</p>
+
+<h2>Warum Entspannung trainierbar ist</h2>
+<p>Entspannung ist kein Zufall. Mit regelmaessiger Praxis lernt dein Nervensystem, schneller zwischen Anspannung und Erholung zu wechseln. Schon kurze, aber wiederholte Einheiten koennen Schlaf, Konzentration und Stressresistenz positiv beeinflussen.</p>
+
+<h2>Geeignete Kursformate</h2>
+<ul>
+<li>Yin & Restorative Yoga</li>
+<li>Gefuehrte Meditation</li>
+<li>Achtsamkeitstraining (MBSR/Alltag)</li>
+<li>Yoga Nidra</li>
+<li>Klangmeditation und sanfte Atemarbeit</li>
+</ul>
+
+<div class="info-box">
+<h3>Realistische Erwartung</h3>
+<p>Du musst nicht sofort komplett abschalten koennen. Viele merken zuerst kleine Verbesserungen: ruhigerer Atem, weniger Gedankenkreisen, stabilere Stimmung.</p>
+</div>
+
+<h2>Worauf du bei der Kurswahl achten solltest</h2>
+<ul>
+<li>Klare Level- und Intensitaetsangaben</li>
+<li>Transparenter Ablauf und ruhiges Setting</li>
+<li>Lehrperson geht auf individuelle Grenzen ein</li>
+<li>Kurszeit passt zu deinem tatsaechlichen Wochenrhythmus</li>
+</ul>
+
+<h2>4-Wochen-Einstieg ohne Ueberforderung</h2>
+<div class="checklist">
+<h3>Mini-Plan</h3>
+<ul>
+<li>Woche 1: eine ruhige Einheit + 5 Minuten Atemfokus pro Tag</li>
+<li>Woche 2: wieder eine Einheit + kurze Abendroutine</li>
+<li>Woche 3: zwei kurze oder eine laengere Einheit</li>
+<li>Woche 4: reflektieren, was dir am meisten geholfen hat</li>
+</ul>
+</div>
+
+<div class="tip-box">
+<h3>Tipp fuer den Alltag</h3>
+<p>Lege den Kurstermin fix in den Kalender wie einen Arbeitstermin. Entlastung wirkt nur, wenn sie regelmaessig stattfindet.</p>
+</div>
+
+<div class="cta-box">
+<h3>Entspannungskurse finden</h3>
+<p>Entdecke Formate fuer Stressabbau, Regeneration und mentale Ruhe - passend zu deinem Alltag.</p>
+</div>
+`,
+
+  'yoga_achtsamkeit/besser-schlafen-yoga-nidra': `
+<p class="lead">Viele Menschen sind abends koerperlich muede, aber mental ueberaktiv. Yoga Nidra kann genau hier ansetzen: als gefuehrte Tiefenentspannung, die dein Nervensystem herunterreguliert und den Uebergang in die Nachtruhe erleichtert.</p>
+
+<h2>Was Yoga Nidra in der Praxis ist</h2>
+<p>Du liegst bequem und folgst einer strukturierten Anleitung. Die Aufmerksamkeit wird bewusst durch Koerper, Atmung und innere Bilder gefuehrt. Ziel ist kein "richtiges Meditieren", sondern ein Zustand tiefer Regeneration bei gleichzeitiger Wachheit oder Halbschlaf.</p>
+
+<h2>Wann Yoga Nidra besonders sinnvoll ist</h2>
+<ul>
+<li>bei Gedankenkreisen am Abend</li>
+<li>bei unruhigem Nervensystem nach stressigen Tagen</li>
+<li>bei mentaler Erschoepfung trotz ausreichender Bettzeit</li>
+<li>als Ergaenzung zu Yoga- oder Achtsamkeitspraxis</li>
+</ul>
+
+<table>
+<thead><tr><th>Situation</th><th>Typischer Effekt</th><th>Sinnvolle Frequenz</th></tr></thead>
+<tbody>
+<tr><td>Akute Stressphase</td><td>Schnellere mentale Beruhigung</td><td>2-3x pro Woche</td></tr>
+<tr><td>Stabiler Alltag</td><td>Bessere Abendroutine</td><td>1-2x pro Woche</td></tr>
+<tr><td>Sehr unruhiger Schlaf</td><td>Mehr Abschaltbarkeit</td><td>kurz taeglich + 1 Kurs</td></tr>
+</tbody>
+</table>
+
+<div class="info-box">
+<h3>Wichtige Einordnung</h3>
+<p>Yoga Nidra kann Schlafhygiene und Regeneration verbessern, ersetzt aber keine medizinische oder psychotherapeutische Behandlung bei anhaltenden Schlaf- oder Belastungssymptomen.</p>
+</div>
+
+<h2>Konkrete Abendroutine in 20-30 Minuten</h2>
+<ol>
+<li>60 Minuten vor Schlafen: Bildschirmreize reduzieren.</li>
+<li>Raum vorbereiten: wenig Licht, Decke, ruhige Temperatur.</li>
+<li>10-20 Minuten Yoga Nidra Audio oder Kurssequenz.</li>
+<li>Danach keine neuen Reize mehr, direkt in den Schlaf uebergehen.</li>
+</ol>
+
+<h2>Hauefige Fragen</h2>
+<h3>Muss ich die ganze Zeit wach bleiben?</h3>
+<p>Nein. Auch kurzes Eindoesen ist normal und kann dennoch erholsam wirken.</p>
+<h3>Wie lange bis erste Wirkung spuerbar ist?</h3>
+<p>Bei vielen nach 1-2 Wochen regelmaessiger Anwendung, bei anderen spaeter. Konsistenz ist entscheidend.</p>
+<h3>Ist Yoga Nidra fuer Anfaenger geeignet?</h3>
+<p>Ja, oft sogar besonders gut, weil die Anleitung klar gefuehrt ist.</p>
+
+<div class="checklist">
+<h3>Schlaf-Check vor Kurswahl</h3>
+<ul>
+<li>Kursdauer passt zu meinem Abendrhythmus</li>
+<li>Format ist ruhig und einsteigerfreundlich</li>
+<li>Ich kann 2-3 Wochen regelmaessig testen</li>
+<li>Ich kombiniere Yoga Nidra mit einfacher Schlafhygiene</li>
+</ul>
+</div>
+
+<div class="tip-box">
+<h3>Abend-Tipp</h3>
+<p>Wenn du sehr angespannt bist, starte zuerst mit 3-5 Minuten langsamer Atmung und gehe dann in Yoga Nidra. Das erleichtert den Einstieg deutlich.</p>
+</div>
+
+<div class="cta-box">
+<h3>Yoga Nidra gezielt nutzen</h3>
+<p>Finde Kurse und Formate fuer Tiefenentspannung, Schlafunterstuetzung und bessere Abendregeneration.</p>
+</div>
+`,
+
+  'yoga_achtsamkeit/atemarbeit-breathwork': `
+<p class="lead">Atemarbeit kann sehr wirksam sein, weil sie direkt auf deinen physiologischen Zustand wirkt. Genau deshalb lohnt eine differenzierte Auswahl. Unter dem Begriff "Breathwork" laufen ruhige, regulierende und sehr intensive Methoden - mit deutlich unterschiedlicher Wirkung und Eignung.</p>
+
+<h2>Pranayama, Breathwork, Atemreise: was unterscheidet sich?</h2>
+<table>
+<thead><tr><th>Format</th><th>Typischer Fokus</th><th>Intensitaet</th><th>Einstieg</th></tr></thead>
+<tbody>
+<tr><td>Pranayama</td><td>Regulation, Konzentration</td><td>Niedrig-Mittel</td><td>Sehr gut fuer Einsteiger</td></tr>
+<tr><td>Breathwork (modern)</td><td>Aktivierung oder Prozessarbeit</td><td>Mittel-Hoch</td><td>Nur mit klarer Anleitung</td></tr>
+<tr><td>Atemreise</td><td>Gefuehrtes Erleben</td><td>Mittel-Hoch</td><td>Einstieg je nach Format</td></tr>
+</tbody>
+</table>
+
+<h2>Moegliche Ziele von Atemarbeit</h2>
+<ul>
+<li>Stressregulation und Beruhigung</li>
+<li>Mentale Klarheit und Fokus</li>
+<li>Koerperwahrnehmung und Praesenz</li>
+<li>Regeneration nach hoher Belastung</li>
+</ul>
+
+<div class="info-box">
+<h3>Sicherheitsprinzip</h3>
+<p>Je intensiver die Atemmethode, desto wichtiger sind Vorgespraech, Kontraindikationen und ein professioneller Rahmen. Gute Anbieter erklaeren offen, fuer wen ein Format nicht geeignet ist.</p>
+</div>
+
+<h2>Kontraindikationen: wann besonders vorsichtig sein</h2>
+<p>Bei intensiven Atemformaten sollte vorab geklaert werden, ob gesundheitliche oder psychische Faktoren vorliegen, die eine Anpassung oder ein ruhigeres Format sinnvoll machen. Serioese Kurse weisen darauf transparent hin und bieten Alternativen.</p>
+
+<h2>So waehlst du ein passendes Kursniveau</h2>
+<div class="checklist">
+<h3>Vor der Buchung pruefen</h3>
+<ul>
+<li>Ist die Methode und Intensitaet klar beschrieben?</li>
+<li>Werden Eignung und Grenzen transparent benannt?</li>
+<li>Gibt es die Option, jederzeit zu pausieren?</li>
+<li>Fuehlst du dich mit Setting und Gruppengroesse sicher?</li>
+<li>Passt das Ziel (Beruhigung vs. Aktivierung) zu deinem Bedarf?</li>
+</ul>
+</div>
+
+<h2>Typische Fehler am Anfang</h2>
+<ul>
+<li>Zu schnell zu intensiv starten</li>
+<li>Koerpersignale ignorieren</li>
+<li>Nur auf "starke Erfahrung" statt auf nachhaltige Wirkung achten</li>
+<li>Unklare Anbieter ohne Methodentransparenz waehlen</li>
+</ul>
+
+<div class="tip-box">
+<h3>Empfehlenswerter Start</h3>
+<p>Beginne mit ruhigen, regulierenden Atemtechniken und steigere erst nach mehreren stabilen Wochen. Atemarbeit wirkt am besten, wenn sie sicher, klar und regelmaessig praktiziert wird.</p>
+</div>
+
+<div class="cta-box">
+<h3>Atemarbeit sicher und passend starten</h3>
+<p>Vergleiche Pranayama, Breathwork und Atemreise nach Ziel, Intensitaet und Erfahrungsniveau.</p>
+</div>
+`,
+
+  'yoga_achtsamkeit/klangmeditation-mantra': `
+<p class="lead">Klangmeditation und Mantraarbeit sind fuer viele ein direkter Zugang zu Achtsamkeit - ohne hohen koerperlichen Aufwand. Ueber Resonanz, Rhythmus und Wiederholung entsteht ein fokussierter Zustand, der Entschleunigung und mentale Sammlung unterstuetzen kann.</p>
+
+<h2>Typische Formate</h2>
+<ul>
+<li><strong>Klangmeditation / Sound Bath:</strong> meist liegend, passiv und regenerativ.</li>
+<li><strong>Gong & Klanginstrumente:</strong> intensiveres Klangfeld mit meditativer Ausrichtung.</li>
+<li><strong>Mantra & Kirtan:</strong> Stimme und Wiederholung als Fokuswerkzeug.</li>
+<li><strong>Klangreise:</strong> Gefuehrte Sequenzen mit unterschiedlichen Instrumenten.</li>
+</ul>
+
+<h2>Wofuer diese Kurse besonders beliebt sind</h2>
+<ul>
+<li>Stressabbau und tiefe Entspannung</li>
+<li>Bessere Konzentration und innere Ausrichtung</li>
+<li>Achtsamkeit ohne Leistungsdruck</li>
+<li>Regenerative Ergaenzung zu dynamischen Yogastilen</li>
+</ul>
+
+<div class="info-box">
+<h3>Einsteigerfreundlich</h3>
+<p>Viele Klangformate sind niedrigschwellig, weil keine komplexen Bewegungsablaeufe notwendig sind. Das macht sie fuer viele Menschen alltagstauglich.</p>
+</div>
+
+<h2>Wie du den passenden Kurs waehlt</h2>
+<ul>
+<li>Ruhiges vs. intensiveres Klangsetting klaeren</li>
+<li>Dauer und Gruppengroesse beachten</li>
+<li>Einsteiger-Hinweise in der Beschreibung suchen</li>
+<li>Online oder vor Ort passend zu deinem Alltag waehlen</li>
+</ul>
+
+<div class="tip-box">
+<h3>Tipp fuer die erste Session</h3>
+<p>Gehe ohne Erwartungsdruck hinein. Ziel ist Praesenz, nicht Leistung. Diese Haltung macht den Effekt oft staerker.</p>
+</div>
+
+<div class="cta-box">
+<h3>Klang- und Mantra-Kurse entdecken</h3>
+<p>Finde Sound Bath, Gong, Kirtan und Klangreisen mit passender Intensitaet.</p>
+</div>
+`,
+
+  'yoga_achtsamkeit/energiearbeit-reiki': `
+<p class="lead">Energiearbeit und Reiki werden oft gewaehlt, wenn Menschen nach sanften Formaten fuer Entspannung, Selbstkontakt und innere Ordnung suchen. Entscheidend ist eine serioese Einordnung: Gute Kurse arbeiten transparent, respektvoll und ohne ueberzogene Heilsversprechen.</p>
+
+<h2>Was dich in solchen Kursen erwartet</h2>
+<p>Je nach Angebot stehen gefuehrte Wahrnehmung, stille Sequenzen, Fokusarbeit oder achtsame Beruehrung im Mittelpunkt. Ziel ist meist nicht Performance, sondern Regulation, Reflexion und Ruhe.</p>
+
+<h2>Qualitaetsmerkmale serioeser Angebote</h2>
+<ul>
+<li>Klare Beschreibung von Ablauf und Rahmen</li>
+<li>Transparente Kommunikation ueber Ziele und Grenzen</li>
+<li>Kein Absolutheitsanspruch bei Wirkungsaussagen</li>
+<li>Respektvoller Umgang mit Einverstaendnis und persoenlichen Grenzen</li>
+</ul>
+
+<div class="info-box">
+<h3>Einordnung statt Schwarz-Weiss</h3>
+<p>Viele erleben Energiearbeit als wohltuend und regulierend. Gleichzeitig sollte sie als ergaenzendes Angebot verstanden werden - nicht als Ersatz fuer medizinische oder psychotherapeutische Versorgung.</p>
+</div>
+
+<h2>Fuer wen das passend sein kann</h2>
+<ul>
+<li>Menschen mit hohem Stresslevel</li>
+<li>Personen mit Wunsch nach ruhiger Innenwahrnehmung</li>
+<li>Teilnehmende, die achtsame Praxis ohne hohe koerperliche Belastung suchen</li>
+</ul>
+
+<div class="tip-box">
+<h3>Vorab-Fragen helfen</h3>
+<p>Frage vor der Buchung nach Methode, Intensitaet und Ablauf. Gute Anbieter beantworten das klar und ohne Ausweichformeln.</p>
+</div>
+
+<div class="cta-box">
+<h3>Reiki- und Energiearbeit-Kurse finden</h3>
+<p>Entdecke Kurse mit transparenter Beschreibung und passendem Einstiegsniveau.</p>
+</div>
+`,
+
+  'yoga_achtsamkeit/bodywork-thai-yoga-massage': `
+<p class="lead">Bodywork verbindet achtsame Bewegung, Beruehrung und Koerperwahrnehmung. Im Kontext von Yoga sind Thai Yoga Massage, Massageformate und koerpertherapeutische Angebote besonders verbreitet. Richtig eingesetzt sind sie eine starke Ergaenzung zu klassischer Mattenpraxis.</p>
+
+<h2>Was Bodywork bewirken kann</h2>
+<ul>
+<li>Mobilitaet und Bewegungsqualitaet verbessern</li>
+<li>Koerperspannung regulieren und Regeneration foerdern</li>
+<li>Wahrnehmung fuer Haltung und Atmung schaerfen</li>
+<li>Stressabbau ueber den Koerperzugang unterstuetzen</li>
+</ul>
+
+<h2>Die wichtigsten Formate</h2>
+<h3>Thai Yoga Massage</h3>
+<p>Arbeitet mit Druck, Dehnung und Mobilisation in strukturierten Sequenzen, meist auf der Matte und in bequemer Kleidung.</p>
+
+<h3>Massage & Wellness</h3>
+<p>Fokus auf Entspannung, Erholung und loslassende Regulation im Alltag.</p>
+
+<h3>Koerpertherapie</h3>
+<p>Haeufig individueller und funktioneller Ansatz mit Augenmerk auf Bewegungsmuster und Beschwerden.</p>
+
+<div class="info-box">
+<h3>Professioneller Rahmen ist Pflicht</h3>
+<p>Zu gutem Bodywork gehoeren immer klare Kommunikation, informierte Zustimmung, Hygiene und respektvolle Grenzsetzung. Das ist ein Qualitaetskriterium, kein Bonus.</p>
+</div>
+
+<h2>Vor der Buchung klaeren</h2>
+<div class="checklist">
+<h3>Wichtige Punkte</h3>
+<ul>
+<li>Gruppenformat oder 1:1 Setting?</li>
+<li>Wie intensiv ist die Behandlung oder Session?</li>
+<li>Werden Kontraindikationen transparent benannt?</li>
+<li>Kann ich Grenzen jederzeit klar kommunizieren?</li>
+</ul>
+</div>
+
+<div class="tip-box">
+<h3>Sinnvolle Kombination</h3>
+<p>Viele profitieren von der Kombination aus einem aktiven Yogakurs und regelmaessigem Bodywork fuer Mobilitaet und Regeneration.</p>
+</div>
+
+<div class="cta-box">
+<h3>Bodywork-Kurse entdecken</h3>
+<p>Finde Thai Yoga Massage, Massage & Wellness und koerpertherapeutische Angebote mit klarem Profil.</p>
+</div>
 `
 
 };
