@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ChevronRight, ChevronDown, Plus, Trash2, Edit2, Save, X, Loader, AlertTriangle, FolderTree } from 'lucide-react';
 import { invalidateTaxonomyCache } from '../hooks/useTaxonomy';
-import { ADMIN_API_SECRET } from '../lib/adminConfig';
+import { supabase } from '../lib/supabase';
 
 const AdminCategoryManager = ({ showNotification }) => {
     const [loading, setLoading] = useState(true);
@@ -38,6 +38,17 @@ const AdminCategoryManager = ({ showNotification }) => {
         loadTaxonomy();
     }, []);
 
+    const getAuthHeaders = async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.access_token) {
+            throw new Error('Nicht eingeloggt');
+        }
+        return {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`
+        };
+    };
+
     // Maintain focus on input fields during typing
     useEffect(() => {
         if (addingTo?.entity === 'specialty' && specialtyInputRef.current) {
@@ -51,8 +62,9 @@ const AdminCategoryManager = ({ showNotification }) => {
     const loadTaxonomy = async () => {
         setLoading(true);
         try {
+            const headers = await getAuthHeaders();
             const res = await fetch('/api/admin/taxonomy', {
-                headers: { 'x-admin-secret': ADMIN_API_SECRET }
+                headers
             });
             if (!res.ok) throw new Error('Failed to load taxonomy');
             const data = await res.json();
@@ -73,12 +85,10 @@ const AdminCategoryManager = ({ showNotification }) => {
     const apiCall = async (action, entity, data) => {
         setSaving(true);
         try {
+            const headers = await getAuthHeaders();
             const res = await fetch('/api/admin/taxonomy', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-admin-secret': ADMIN_API_SECRET
-                },
+                headers,
                 body: JSON.stringify({ action, entity, data })
             });
             if (!res.ok) {
@@ -96,6 +106,20 @@ const AdminCategoryManager = ({ showNotification }) => {
     const toggleType = (id) => setExpandedTypes(prev => ({ ...prev, [id]: !prev[id] }));
     const toggleArea = (id) => setExpandedAreas(prev => ({ ...prev, [id]: !prev[id] }));
     const toggleSpecialty = (id) => setExpandedSpecialties(prev => ({ ...prev, [id]: !prev[id] }));
+
+    const getSpecialtyCount = (spec) => (
+        courseCounts.specialties[String(spec.id)]
+        ?? courseCounts.specialties[spec.slug]
+        ?? courseCounts.specialties[spec.name]
+        ?? 0
+    );
+
+    const getFocusCount = (focus) => (
+        courseCounts.focuses[String(focus.id)]
+        ?? courseCounts.focuses[focus.slug]
+        ?? courseCounts.focuses[focus.name]
+        ?? 0
+    );
 
     // Start editing
     const startEdit = (entity, id, field, currentValue) => {
@@ -524,8 +548,8 @@ const AdminCategoryManager = ({ showNotification }) => {
                                                                 </button>
                                                                 <span className="flex-1 text-sm text-gray-700 flex items-center gap-1.5">
                                                                     <EditableField entity="specialty" id={spec.id} field="name" value={spec.name} />
-                                                                    <span className={`text-xs px-1.5 py-0.5 rounded-full ${courseCounts.specialties[spec.name] ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-                                                                        {courseCounts.specialties[spec.name] || 0}
+                                                                    <span className={`text-xs px-1.5 py-0.5 rounded-full ${getSpecialtyCount(spec) ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                                                                        {getSpecialtyCount(spec)}
                                                                     </span>
                                                                 </span>
                                                                 <button
@@ -574,8 +598,8 @@ const AdminCategoryManager = ({ showNotification }) => {
                                                                             <span className="w-1 h-1 bg-purple-300 rounded-full"></span>
                                                                             <span className="flex-1 text-xs text-gray-600 flex items-center gap-1.5">
                                                                                 <EditableField entity="focus" id={f.id} field="name" value={f.name} />
-                                                                                <span className={`text-xs px-1 py-0.5 rounded ${courseCounts.focuses[f.name] ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'}`}>
-                                                                                    {courseCounts.focuses[f.name] || 0}
+                                                                                <span className={`text-xs px-1 py-0.5 rounded ${getFocusCount(f) ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'}`}>
+                                                                                    {getFocusCount(f)}
                                                                                 </span>
                                                                             </span>
                                                                             <button

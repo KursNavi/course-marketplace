@@ -2,7 +2,6 @@ import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const adminSecret = process.env.ADMIN_CONSOLE_SECRET;
 
 export default async function handler(req, res) {
     // Auth check
@@ -10,14 +9,28 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: 'Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY' });
     }
 
-    if (adminSecret) {
-        const incoming = req.headers['x-admin-secret'];
-        if (incoming !== adminSecret) {
-            return res.status(401).json({ error: 'Unauthorized' });
-        }
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ error: 'Missing or invalid authorization header' });
     }
 
     const supabaseAdmin = createClient(supabaseUrl, serviceKey);
+    const token = authHeader.replace('Bearer ', '');
+    const { data: authData, error: authError } = await supabaseAdmin.auth.getUser(token);
+    if (authError || !authData?.user) {
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { data: profile, error: profileError } = await supabaseAdmin
+        .from('profiles')
+        .select('role')
+        .eq('id', authData.user.id)
+        .single();
+
+    if (profileError || profile?.role !== 'admin') {
+        return res.status(403).json({ error: 'Forbidden' });
+    }
+
     const { method } = req;
 
     // Detect which schema is available
@@ -98,10 +111,10 @@ async function detectSchema(supabase) {
 // ============================================
 async function getConsolidatedTaxonomy(supabase, res) {
     const [level1Res, level2Res, level3Res, level4Res] = await Promise.all([
-        supabase.from('taxonomy_level1').select('*').order('sort_order'),
-        supabase.from('taxonomy_level2').select('*').order('sort_order'),
-        supabase.from('taxonomy_level3').select('*').order('sort_order'),
-        supabase.from('taxonomy_level4').select('*').order('sort_order')
+        supabase.from('taxonomy_level1').select('*').eq('is_active', true).order('sort_order'),
+        supabase.from('taxonomy_level2').select('*').eq('is_active', true).order('sort_order'),
+        supabase.from('taxonomy_level3').select('*').eq('is_active', true).order('sort_order'),
+        supabase.from('taxonomy_level4').select('*').eq('is_active', true).order('sort_order')
     ]);
 
     if (level1Res.error) throw level1Res.error;
@@ -249,12 +262,29 @@ async function getConsolidatedCourseCounts(supabase, level1Data, level2Data, lev
         courseCounts.areas[key] = level2Counts[a.id] || 0;
     });
 
+    // Store counts under stable keys first (id), then add compatibility keys.
     level3Data?.forEach(s => {
-        courseCounts.specialties[s.label_de] = level3Counts[s.id] || 0;
+        const count = level3Counts[s.id] || 0;
+        courseCounts.specialties[String(s.id)] = count;
+        if (s.slug) {
+            courseCounts.specialties[s.slug] = count;
+        }
+        // Backward compatibility for older UI code
+        if (s.label_de) {
+            courseCounts.specialties[s.label_de] = count;
+        }
     });
 
     level4Data?.forEach(f => {
-        courseCounts.focuses[f.label_de] = level4Counts[f.id] || 0;
+        const count = level4Counts[f.id] || 0;
+        courseCounts.focuses[String(f.id)] = count;
+        if (f.slug) {
+            courseCounts.focuses[f.slug] = count;
+        }
+        // Backward compatibility for older UI code
+        if (f.label_de) {
+            courseCounts.focuses[f.label_de] = count;
+        }
     });
 
     return courseCounts;
