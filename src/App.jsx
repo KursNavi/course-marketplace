@@ -1001,7 +1001,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
         const courseLanguages = course.languages || (course.language ? [course.language] : []);
         matchesLanguage = selectedLanguages.some(filterLang => courseLanguages.includes(filterLang));
     }
-    let matchesDirectBooking = true; if (filterDirectBooking) matchesDirectBooking = course.booking_type === 'platform';
+    let matchesDirectBooking = true; if (filterDirectBooking) matchesDirectBooking = course.booking_type === 'platform' || course.booking_type === 'platform_flex';
     let matchesDeliveryType = true;
     if (selectedDeliveryTypes.length > 0) {
         const courseDeliveryTypes = course.delivery_types || (course.delivery_type ? [course.delivery_type] : ['presence']);
