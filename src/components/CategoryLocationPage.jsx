@@ -33,20 +33,12 @@ export default function CategoryLocationPage({
         window.scrollTo(0, 0);
     }, [topicSlug, locationSlug]);
 
-    // --- GUARD: Prevent crash on initial load (empty slugs) ---
-    if (!topicSlug || !locationSlug) {
-        return (
-            <div className="min-h-screen bg-beige flex items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-            </div>
-        );
-    }
-
     // Normalize slugs back to database values
         const location = (locationSlug || '').charAt(0).toUpperCase() + (locationSlug || '').slice(1);
+        const safeCourses = Array.isArray(courses) ? courses : [];
         
         // Filter courses (SAFE MODE)
-        const filteredCourses = courses.filter(c => {
+        const filteredCourses = safeCourses.filter(c => {
             if (!c) return false;
 
             // Status filter: Only show published courses (no drafts on pSEO pages)
@@ -204,6 +196,15 @@ export default function CategoryLocationPage({
     // getPriceLabel imported from '../lib/formatPrice'
 
     const fallbackImage = DEFAULT_COURSE_IMAGE;
+
+    // --- GUARD: Prevent crash on initial load (empty slugs) ---
+    if (!topicSlug || !locationSlug) {
+        return (
+            <div className="min-h-screen bg-beige flex items-center justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-beige">

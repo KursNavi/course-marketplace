@@ -1,6 +1,11 @@
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
 
+function getBaseUrl() {
+    const raw = process.env.VITE_SITE_URL || process.env.SITE_URL || 'https://kursnavi.ch';
+    return raw.replace(/\/$/, '');
+}
+
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
@@ -9,9 +14,25 @@ export default async function handler(req, res) {
     try {
         const supabaseUrl = process.env.SUPABASE_URL;
         const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+        if (!supabaseUrl || !supabaseServiceKey) {
+            return res.status(500).json({ error: 'Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY' });
+        }
 
         const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-        const { userId, userEmail, courses, totalAmount, freeCount, paidCount } = req.body;
+        const { courses } = req.body;
+        const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return res.status(401).json({ error: 'Missing or invalid authorization header' });
+        }
+        const token = authHeader.replace('Bearer ', '');
+        const { data: { user: authUser }, error: authError } = await supabase.auth.getUser(token);
+        if (authError || !authUser) {
+            return res.status(401).json({ error: 'Ungültiges oder abgelaufenes Token' });
+        }
+        const userId = authUser.id;
+        const userEmail = (authUser.email || '').toLowerCase();
 
         // Validierung
         if (!userId || !courses || !Array.isArray(courses) || courses.length === 0) {
@@ -20,94 +41,86 @@ export default async function handler(req, res) {
 
         // Erstelle Beschreibung für Line Item
         const courseUrls = courses.map((c, i) => `Kurs ${i + 1}: ${c.url}`).join('\n');
-        const description = `Kurserfassungs-Service für ${courses.length} Kurs(e):\n${courseUrls}`;
+        const _description = `Kurserfassungs-Service für ${courses.length} Kurs(e):\n${courseUrls}`;
 
-        // Speichere Anfrage in Supabase (wenn Service Key vorhanden)
+        const includedByTier = { basic: 0, pro: 0, premium: 5, enterprise: 15 };
+        const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('package_tier, used_capture_services, stripe_customer_id')
+            .eq('id', userId)
+            .single();
+        if (profileError || !profile) {
+            return res.status(400).json({ error: 'Profil nicht gefunden' });
+        }
+
+        const tier = (profile.package_tier || 'basic').toLowerCase();
+        const includedServices = includedByTier[tier] || 0;
+        const usedServices = Number(profile.used_capture_services || 0);
+        const availableServices = Math.max(0, includedServices - usedServices);
+
+        const prices = Array.from({ length: courses.length }, (_, i) => (i < 3 ? 75 : 50));
+        const freeCount = Math.min(availableServices, courses.length);
+        const paidBreakdown = prices.slice(freeCount);
+        const paidCount = Math.max(0, courses.length - freeCount);
+        const totalAmount = paidBreakdown.reduce((sum, price) => sum + price, 0);
+
+        // Speichere Anfrage in Supabase
         let requestId = null;
         let customerId = null;
-        if (supabaseUrl && supabaseServiceKey) {
-            const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-            // Get or create Stripe customer
-            const { data: profile } = await supabase
+        // Get or create Stripe customer
+        if (profile.stripe_customer_id) {
+            customerId = profile.stripe_customer_id;
+        } else {
+            const customer = await stripe.customers.create({
+                email: userEmail,
+                metadata: { userId },
+            });
+            customerId = customer.id;
+            await supabase
                 .from('profiles')
-                .select('stripe_customer_id')
-                .eq('id', userId)
-                .single();
+                .update({ stripe_customer_id: customerId })
+                .eq('id', userId);
+        }
 
-            if (profile?.stripe_customer_id) {
-                customerId = profile.stripe_customer_id;
-            } else {
-                // Create new Stripe customer
-                const customer = await stripe.customers.create({
-                    email: userEmail,
-                    metadata: { userId },
-                });
-                customerId = customer.id;
+        const { data: insertData, error: insertError } = await supabase
+            .from('capture_service_requests')
+            .insert({
+                user_id: userId,
+                user_email: userEmail,
+                courses: courses,
+                total_courses: courses.length,
+                free_courses: freeCount,
+                paid_courses: paidCount,
+                total_amount: totalAmount,
+                status: totalAmount === 0 ? 'paid' : 'pending',
+                created_at: new Date().toISOString()
+            })
+            .select('id')
+            .single();
 
-                // Store customer ID in database
-                await supabase
-                    .from('profiles')
-                    .update({ stripe_customer_id: customerId })
-                    .eq('id', userId);
-            }
+        if (!insertError && insertData) {
+            requestId = insertData.id;
+        }
 
-            const { data: insertData, error: insertError } = await supabase
-                .from('capture_service_requests')
-                .insert({
-                    user_id: userId,
-                    user_email: userEmail,
-                    courses: courses,
-                    total_courses: courses.length,
-                    free_courses: freeCount,
-                    paid_courses: paidCount,
-                    total_amount: totalAmount,
-                    status: totalAmount === 0 ? 'paid' : 'pending',
-                    created_at: new Date().toISOString()
+        // Wenn komplett kostenlos: used_capture_services updaten
+        if (totalAmount === 0) {
+            await supabase
+                .from('profiles')
+                .update({
+                    used_capture_services: usedServices + courses.length
                 })
-                .select('id')
-                .single();
+                .eq('id', userId);
 
-            if (!insertError && insertData) {
-                requestId = insertData.id;
-            }
-
-            // Wenn komplett kostenlos: used_capture_services updaten
-            if (totalAmount === 0) {
-                await supabase
-                    .from('profiles')
-                    .update({
-                        used_capture_services: supabase.rpc('increment_used_capture_services', {
-                            user_id: userId,
-                            increment_by: courses.length
-                        })
-                    })
-                    .eq('id', userId);
-
-                // Alternative: Direktes Inkrement
-                const { data: profile } = await supabase
-                    .from('profiles')
-                    .select('used_capture_services')
-                    .eq('id', userId)
-                    .single();
-
-                await supabase
-                    .from('profiles')
-                    .update({
-                        used_capture_services: (profile?.used_capture_services || 0) + courses.length
-                    })
-                    .eq('id', userId);
-
-                return res.status(200).json({
-                    success: true,
-                    message: 'Kostenlos gebucht - inkludierte Services verwendet',
-                    requestId
-                });
-            }
+            return res.status(200).json({
+                success: true,
+                message: 'Kostenlos gebucht - inkludierte Services verwendet',
+                requestId
+            });
         }
 
         // Wenn Zahlung erforderlich: Stripe Checkout Session erstellen
         if (totalAmount > 0) {
+            const baseUrl = getBaseUrl();
             const session = await stripe.checkout.sessions.create({
                 payment_method_types: ['card'],
                 customer: customerId,
@@ -127,8 +140,8 @@ export default async function handler(req, res) {
                     },
                 ],
                 mode: 'payment',
-                success_url: `${req.headers.origin}/dashboard?capture_service=success&request_id=${requestId || 'new'}`,
-                cancel_url: `${req.headers.origin}/dashboard?capture_service=cancelled`,
+                success_url: `${baseUrl}/dashboard?capture_service=success&request_id=${requestId || 'new'}`,
+                cancel_url: `${baseUrl}/dashboard?capture_service=cancelled`,
                 metadata: {
                     userId,
                     requestId: requestId || '',

@@ -1,6 +1,11 @@
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
 
+function getBaseUrl() {
+  const raw = process.env.VITE_SITE_URL || process.env.SITE_URL || 'https://kursnavi.ch';
+  return raw.replace(/\/$/, '');
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -8,7 +13,7 @@ export default async function handler(req, res) {
 
   try {
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-    const { courseId, courseTitle, coursePrice, userId, courseImage, userEmail, eventId, guardianAttestation } = req.body;
+    const { courseId, courseImage, eventId, guardianAttestation } = req.body;
 
     // Initialize Supabase client
     const supabase = createClient(
@@ -16,10 +21,22 @@ export default async function handler(req, res) {
       process.env.SUPABASE_SERVICE_ROLE_KEY
     );
 
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Missing or invalid authorization header' });
+    }
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user: authUser }, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !authUser) {
+      return res.status(401).json({ error: 'Ungültiges oder abgelaufenes Token' });
+    }
+    const userId = authUser.id;
+    const userEmail = (authUser.email || '').toLowerCase();
+
     // 1. Load course to check booking_type and validate
     const { data: course, error: courseError } = await supabase
       .from('courses')
-      .select('id, booking_type, ticket_limit_30d, price, user_id, requires_guardian_booking')
+      .select('id, title, booking_type, ticket_limit_30d, price, user_id, requires_guardian_booking')
       .eq('id', courseId)
       .single();
 
@@ -45,12 +62,15 @@ export default async function handler(req, res) {
       // Get event with booking count
       const { data: eventData, error: eventError } = await supabase
         .from('course_events')
-        .select('id, max_participants, cancelled_at')
+        .select('id, course_id, max_participants, cancelled_at')
         .eq('id', eventId)
         .single();
 
       if (eventError || !eventData) {
         return res.status(400).json({ error: 'Event nicht gefunden' });
+      }
+      if (Number(eventData.course_id) !== Number(courseId)) {
+        return res.status(400).json({ error: 'Event gehört nicht zu diesem Kurs' });
       }
 
       // Block booking for cancelled events
@@ -99,6 +119,7 @@ export default async function handler(req, res) {
 
     // 4. Load provider name for transparency
     let providerName = 'Kursanbieter';
+    const courseTitle = course.title || 'Kurs';
     if (course.user_id) {
       const { data: providerProfile } = await supabase
         .from('profiles')
@@ -133,6 +154,7 @@ export default async function handler(req, res) {
     }
 
     // 6. Create Stripe checkout session with v2 metadata
+    const baseUrl = getBaseUrl();
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       customer: customerId,
@@ -145,7 +167,7 @@ export default async function handler(req, res) {
               description: `Anbieter: ${providerName}. Zahlungsabwicklung: KursNavi (LifeSkills360 GmbH).`,
               images: courseImage ? [courseImage] : [],
             },
-            unit_amount: Math.round(coursePrice * 100),
+            unit_amount: Math.round((Number(course.price) || 0) * 100),
           },
           quantity: 1,
         },
@@ -156,8 +178,8 @@ export default async function handler(req, res) {
           message: `Vertragspartner für diesen Kurs ist ${providerName}. KursNavi (LifeSkills360 GmbH) wickelt die Zahlung technisch ab.`
         }
       },
-      success_url: `${req.headers.origin}/?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${req.headers.origin}/course/${courseId}`,
+      success_url: `${baseUrl}/?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${baseUrl}/course/${courseId}`,
       metadata: {
         courseId,
         userId,

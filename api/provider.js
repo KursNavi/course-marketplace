@@ -453,8 +453,11 @@ export default async function handler(req, res) {
           const scoreA = a.tierScore + (a.hasBookableCourse ? 1 : 0);
           const scoreB = b.tierScore + (b.hasBookableCourse ? 1 : 0);
           if (scoreB !== scoreA) return scoreB - scoreA;
-          // Bei gleichem Score: Zufall
-          return Math.random() - 0.5;
+          // Deterministic tiebreaker for stable SEO/indexing
+          const dateA = a.publishedAt ? new Date(a.publishedAt).getTime() : 0;
+          const dateB = b.publishedAt ? new Date(b.publishedAt).getTime() : 0;
+          if (dateB !== dateA) return dateB - dateA;
+          return String(a.id).localeCompare(String(b.id));
         })
         .filter(p => p.courseCount > 0);
 
@@ -481,6 +484,14 @@ export default async function handler(req, res) {
     if (action === 'debug-provider') {
       if (req.method !== 'GET') {
         return res.status(405).json({ error: 'Method not allowed' });
+      }
+      const adminSecret = process.env.ADMIN_CONSOLE_SECRET;
+      if (!adminSecret) {
+        return res.status(500).json({ error: 'Debug endpoint not configured' });
+      }
+      const incoming = req.headers['x-admin-secret'];
+      if (!incoming || incoming !== adminSecret) {
+        return res.status(401).json({ error: 'Unauthorized - admin access required' });
       }
       const { slug } = req.query;
       if (!slug) return res.status(400).json({ error: 'slug required' });

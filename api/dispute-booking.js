@@ -48,10 +48,21 @@ export default async function handler(req, res) {
   const ADMIN_EMAIL = 'btrespondek@gmail.com';
 
   try {
-    const { bookingId, userId, reason } = req.body;
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Missing or invalid authorization header' });
+    }
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user: authUser }, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !authUser) {
+      return res.status(401).json({ error: 'Ungültiges oder abgelaufenes Token' });
+    }
 
-    if (!bookingId || !userId) {
-      return res.status(400).json({ error: 'bookingId and userId are required' });
+    const { bookingId, reason } = req.body;
+    const userId = authUser.id;
+
+    if (!bookingId) {
+      return res.status(400).json({ error: 'bookingId is required' });
     }
 
     // 1. Load booking (only own bookings)

@@ -2,7 +2,11 @@ node_modules
 .env
 .env.local
 .env*.local
+.env.vercel
+.tmp-*.json
 .DS_Store
 dist
 build
 nul
+.vercel
+supabase/.temp

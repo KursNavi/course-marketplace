@@ -7,7 +7,6 @@ import { CATEGORY_LABELS, TRANSLATIONS, CATEGORY_TYPES } from './lib/constants';
 import { supabase } from './lib/supabase';
 import { isImageUsedByOtherCourses, deleteImageFromStorage } from './lib/imageUtils';
 import { BASE_URL, slugify as siteSlugify, buildCoursePath as siteBuildCoursePath } from './lib/siteConfig';
-import { ADMIN_API_SECRET } from './lib/adminConfig';
 import { useTaxonomy } from './hooks/useTaxonomy';
 
 // Eagerly loaded components (always needed)
@@ -1378,12 +1377,14 @@ export default function KursNaviPro() {  // 1. Initial State Logic
 
     const loadImpersonatedData = async () => {
       try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.access_token) return;
         const params = new URLSearchParams({
           action: 'user-data',
           userId: impersonatedUser.id
         });
         const res = await fetch(`/api/admin?${params}`, {
-          headers: { 'x-admin-secret': ADMIN_API_SECRET }
+          headers: { 'Authorization': `Bearer ${session.access_token}` }
         });
         if (res.ok) {
           const json = await res.json();

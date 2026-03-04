@@ -102,10 +102,21 @@ export default async function handler(req, res) {
   const resend = new Resend(process.env.RESEND_API_KEY);
 
   try {
-    const { bookingId, userId } = req.body;
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Missing or invalid authorization header' });
+    }
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user: authUser }, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !authUser) {
+      return res.status(401).json({ error: 'Ungültiges oder abgelaufenes Token' });
+    }
 
-    if (!bookingId || !userId) {
-      return res.status(400).json({ error: 'bookingId and userId are required' });
+    const { bookingId } = req.body;
+    const userId = authUser.id;
+
+    if (!bookingId) {
+      return res.status(400).json({ error: 'bookingId is required' });
     }
 
     // 1. Load booking with course + event data (only own bookings)

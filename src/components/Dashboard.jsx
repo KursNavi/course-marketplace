@@ -1711,6 +1711,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
 
     // 3. Plan & Daten (Business Logic)
     const currentPlan = PLANS.find(p => p.id === userTier) || PLANS[0];
+    const isEnterprisePlan = userTier === 'enterprise' || currentPlan?.maxPrioCourses === Infinity;
 
     const totalPaidOut = user.role === 'teacher' ? teacherEarnings.filter(e => e.isPaidOut).reduce((sum, e) => sum + e.payout, 0) : 0;
     const myCourses = user.role === 'teacher'
@@ -1769,7 +1770,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                         <span className="text-2xl font-bold capitalize">{currentPlan.title}</span>
                                     </div>
                                     <p className="text-xs text-gray-400 mt-1">
-                                        {currentPlan.maxPrioCourses === Infinity ? 'Unbegrenzte Prio-Kurse' : `${currentPlan.maxPrioCourses} Prio-Kurse`} • bis {currentPlan.maxCategoriesPerCourse} Kategorien/Kurs • {currentPlan.includedCaptureServices > 0 ? `${currentPlan.includedCaptureServices} Erfassungsservices inkl.` : 'keine Erfassungsservices inklusive'}
+                                        {isEnterprisePlan ? 'Unbegrenzte Prio-Kurse' : `${currentPlan.maxPrioCourses} Prio-Kurse`} • bis {currentPlan.maxCategoriesPerCourse} Kategorien/Kurs • {currentPlan.includedCaptureServices > 0 ? `${currentPlan.includedCaptureServices} Erfassungsservices inkl.` : 'keine Erfassungsservices inklusive'}
                                     </p>
                                     {packageExpiresAt && userTier !== 'basic' && (
                                         <p className="text-xs text-yellow-400 mt-1">
@@ -1929,7 +1930,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                                 </div>
                                             </div>
                                             <p className="text-sm text-gray-600">
-                                                {currentPlan?.maxPrioCourses === Infinity ? (
+                                                {isEnterprisePlan ? (
                                                     <span className="text-green-600 font-medium">Unbegrenzte Prio-Kurse (Enterprise)</span>
                                                 ) : myCourses.length <= currentPlan?.maxPrioCourses ? (
                                                     <span className="text-green-600">Alle deine Kurse sind automatisch Prio-Kurse</span>
@@ -1940,7 +1941,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                         </div>
                                     </div>
                                     {/* Zähler nur für nicht-Enterprise-User anzeigen */}
-                                    {currentPlan?.maxPrioCourses !== Infinity && (
+                                    {!isEnterprisePlan && (
                                         <div className="flex items-center gap-2">
                                             <div className={`px-4 py-2 rounded-lg font-bold text-sm ${
                                                 prioCourseIds.size >= (currentPlan?.maxPrioCourses || 0)
@@ -1961,7 +1962,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                             <thead className="bg-beige border-b border-gray-200">
                                                 <tr>
                                                     {/* Prio-Spalte nur anzeigen wenn: Plan hat Prio-Slots UND mehr Kurse als Slots */}
-                                                    {currentPlan?.maxPrioCourses > 0 && myCourses.length > (currentPlan?.maxPrioCourses || 0) && currentPlan?.maxPrioCourses !== Infinity && (
+                                                    {currentPlan?.maxPrioCourses > 0 && myCourses.length > (currentPlan?.maxPrioCourses || 0) && !isEnterprisePlan && (
                                                         <th className="px-4 py-4 font-semibold text-gray-600 text-center w-16">Prio</th>
                                                     )}
                                                     <th className="px-6 py-4 font-semibold text-gray-600">Kurs</th>
@@ -1974,7 +1975,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                             </thead>
                                             <tbody className="divide-y divide-gray-100">{myCourses.map(course => {
                                                 const isPrio = prioCourseIds.has(course.id);
-                                                const showPrioCheckbox = currentPlan?.maxPrioCourses > 0 && myCourses.length > (currentPlan?.maxPrioCourses || 0) && currentPlan?.maxPrioCourses !== Infinity;
+                                                const showPrioCheckbox = currentPlan?.maxPrioCourses > 0 && myCourses.length > (currentPlan?.maxPrioCourses || 0) && !isEnterprisePlan;
                                                 const canEnablePrio = isPrio || prioCourseIds.size < (currentPlan?.maxPrioCourses || 0);
 
                                                 return (
@@ -2009,7 +2010,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                                             <div className="font-bold text-dark">{course.title}</div>
                                                             {/* Prio-Badge wenn alle Kurse automatisch Prio sind ODER wenn Kurs als Prio markiert ist */}
                                                             {((currentPlan?.maxPrioCourses > 0 && myCourses.length <= (currentPlan?.maxPrioCourses || 0)) ||
-                                                              (currentPlan?.maxPrioCourses === Infinity) ||
+                                                              isEnterprisePlan ||
                                                               (showPrioCheckbox && isPrio)) && (
                                                                 <span className="text-xs px-1.5 py-0.5 rounded bg-yellow-100 text-yellow-700 border border-yellow-200 flex items-center gap-0.5">
                                                                     <Star className="w-3 h-3 fill-yellow-500" /> Prio

@@ -10,6 +10,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
+    "retest:security": "node scripts/security-retest.mjs",
+    "dev:finalize-yoga": "node scripts/finalize-yoga-cleanup-dev.mjs",
     "cleanup:check": "node scripts/cleanup-images.js --dry-run",
     "cleanup:execute": "node scripts/cleanup-images.js --execute"
   },

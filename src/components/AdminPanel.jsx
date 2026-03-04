@@ -3,7 +3,6 @@ import { Lock, Loader, Shield, CheckCircle, Eye, ExternalLink, FileText, FolderT
 import { supabase } from '../lib/supabase';
 import { PLANS } from '../lib/plans';
 import { formatPriceCHF } from '../lib/formatPrice';
-import { ADMIN_API_SECRET } from '../lib/adminConfig';
 import AdminCategoryManager from './AdminCategoryManager';
 
 const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView, user, onImpersonate }) => {
@@ -17,6 +16,17 @@ const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView, user,
     const [totalCount, setTotalCount] = useState(0);
 
     const [debouncedSearch, setDebouncedSearch] = useState('');
+
+    const getAuthHeaders = async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.access_token) {
+            throw new Error('Nicht eingeloggt');
+        }
+        return {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`
+        };
+    };
 
     // Reset search and pagination on tab change
     useEffect(() => {
@@ -44,9 +54,10 @@ const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView, user,
             const params = new URLSearchParams({ action: 'profiles', limit: String(pageSize), offset: String(offset) });
             if (roleFilter) params.set('role', roleFilter);
             if (debouncedSearch) params.set('q', debouncedSearch);
+            const headers = await getAuthHeaders();
 
             const res = await fetch(`/api/admin?${params}`, {
-                headers: { 'x-admin-secret': ADMIN_API_SECRET }
+                headers
             });
 
             if (res.ok) {
@@ -115,12 +126,10 @@ const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView, user,
                 // 1) Admin API (bypasses RLS)
         let apiOk = false;
         try {
+            const headers = await getAuthHeaders();
             const res = await fetch('/api/admin', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-admin-secret': ADMIN_API_SECRET
-                },
+                headers,
                 body: JSON.stringify({ action: 'set-verify', userId, newStatus })
             });
 
@@ -175,12 +184,10 @@ const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView, user,
         // 1) Admin API (bypasses RLS)
         let apiOk = false;
         try {
+            const headers = await getAuthHeaders();
             const res = await fetch('/api/admin', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-admin-secret': ADMIN_API_SECRET
-                },
+                headers,
                 body: JSON.stringify({ action: 'set-tier', userId, package_tier: newTier })
             });
 

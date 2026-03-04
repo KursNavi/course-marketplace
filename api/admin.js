@@ -12,7 +12,6 @@ import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const adminSecret = process.env.ADMIN_CONSOLE_SECRET;
 
 function parseBody(req) {
   if (req.body && typeof req.body === 'object') return req.body;
@@ -36,16 +35,28 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY' });
   }
 
-  // Auth check - REQUIRED
-  if (!adminSecret) {
-    return res.status(500).json({ error: 'ADMIN_CONSOLE_SECRET not configured' });
+  const supabaseAdmin = createClient(supabaseUrl, serviceKey);
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Missing or invalid authorization header' });
   }
-  const incoming = req.headers['x-admin-secret'];
-  if (!incoming || incoming !== adminSecret) {
+
+  const token = authHeader.replace('Bearer ', '');
+  const { data: authData, error: authError } = await supabaseAdmin.auth.getUser(token);
+  if (authError || !authData?.user) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const supabaseAdmin = createClient(supabaseUrl, serviceKey);
+  const { data: profile, error: profileError } = await supabaseAdmin
+    .from('profiles')
+    .select('role')
+    .eq('id', authData.user.id)
+    .single();
+
+  if (profileError || profile?.role !== 'admin') {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+
   const action = req.query.action || parseBody(req).action;
 
   try {

@@ -164,4 +164,14 @@ const summary = {
 console.log('── JSON Summary ──');
 console.log(JSON.stringify(summary, null, 2));
 
-process.exit(failed > 0 ? 1 : 0);
+if (process.env.VITEST) {
+  const { test, expect } = await import('vitest');
+  test('refund logic custom runner passes all cases', () => {
+    expect(failed).toBe(0);
+    expect(passed).toBe(results.length);
+  });
+}
+
+if (!process.env.VITEST) {
+  process.exit(failed > 0 ? 1 : 0);
+}

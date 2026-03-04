@@ -285,9 +285,17 @@ export default async function handler(req, res) {
       if (eventId) {
         const { data: eventData } = await supabase
           .from('course_events')
-          .select('start_date, end_date, location, city')
+          .select('course_id, start_date, end_date, location, city')
           .eq('id', eventId)
           .single();
+        if (eventData?.course_id && Number(eventData.course_id) !== Number(courseId)) {
+          try {
+            await stripe.refunds.create({ payment_intent: session.payment_intent });
+          } catch (refundErr) {
+            console.error('Stripe refund failed for mismatched event:', refundErr);
+          }
+          return res.status(200).json({ received: true, note: 'Mismatched event/course metadata, auto-refunded' });
+        }
         eventStartAt = eventData?.start_date;
         eventEndAt = eventData?.end_date;
         eventLocation = eventData?.location || eventData?.city;
@@ -547,8 +555,34 @@ export default async function handler(req, res) {
         const courseCount = parseInt(metadata.courseCount || '0', 10);
         const customerEmail = session.customer_details?.email;
 
+        // Idempotency guard #1: already linked via stripe_session_id
+        const { data: existingCaptureSession } = await supabase
+            .from('capture_service_requests')
+            .select('id')
+            .eq('stripe_session_id', session.id)
+            .limit(1)
+            .maybeSingle();
+        if (existingCaptureSession) {
+            return res.status(200).json({ received: true, note: 'Capture service already processed (session)' });
+        }
+
         // 1. Update Request Status
         if (requestId && requestId !== 'new') {
+            const { data: requestRow } = await supabase
+                .from('capture_service_requests')
+                .select('id, status, stripe_session_id')
+                .eq('id', requestId)
+                .maybeSingle();
+
+            // Idempotency guard #2: same request already processed
+            if (requestRow?.stripe_session_id === session.id) {
+                return res.status(200).json({ received: true, note: 'Capture service already processed (request)' });
+            }
+            // Defensive: request already paid with another session, do not increment twice
+            if (requestRow?.status === 'paid' && requestRow?.stripe_session_id && requestRow.stripe_session_id !== session.id) {
+                return res.status(200).json({ received: true, note: 'Capture request already paid' });
+            }
+
             const { error: updateError } = await supabase
                 .from('capture_service_requests')
                 .update({

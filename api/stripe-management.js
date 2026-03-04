@@ -1,6 +1,24 @@
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
 
+function getBaseUrl() {
+  const raw = process.env.VITE_SITE_URL || process.env.SITE_URL || 'https://kursnavi.ch';
+  return raw.replace(/\/$/, '');
+}
+
+async function requireAuthUser(req, supabase) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return { error: 'Missing or invalid authorization header' };
+  }
+  const token = authHeader.replace('Bearer ', '');
+  const { data: { user }, error } = await supabase.auth.getUser(token);
+  if (error || !user) {
+    return { error: 'Ungültiges oder abgelaufenes Token' };
+  }
+  return { user };
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -8,30 +26,32 @@ export default async function handler(req, res) {
 
   try {
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-    const { action, ...params } = req.body;
+    const supabase = createClient(
+      process.env.SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY
+    );
+    const auth = await requireAuthUser(req, supabase);
+    if (auth.error) {
+      return res.status(401).json({ error: auth.error });
+    }
 
-    // Route based on action
+    const { action } = req.body || {};
+
     switch (action) {
       case 'create_customer_portal':
-        return await handleCustomerPortal(stripe, params, req, res);
-
+        return await handleCustomerPortal(stripe, supabase, auth.user.id, req, res);
       case 'create_connect_account':
-        return await handleConnectAccount(stripe, params, req, res);
-
+        return await handleConnectAccount(stripe, supabase, auth.user, req, res);
       case 'connect_dashboard_link':
-        return await handleConnectDashboard(stripe, params, res);
-
+        return await handleConnectDashboard(stripe, supabase, auth.user.id, req, res);
       case 'check_connect_status':
-        return await handleCheckConnectStatus(stripe, params, res);
-
+        return await handleCheckConnectStatus(stripe, supabase, auth.user.id, res);
       default:
         return res.status(400).json({ error: 'Invalid action' });
     }
-
   } catch (error) {
     console.error('Stripe Management Error:', error);
-    // Return more detailed error info for debugging
-    res.status(500).json({
+    return res.status(500).json({
       error: error.message,
       type: error.type || 'unknown',
       code: error.code || null
@@ -39,59 +59,52 @@ export default async function handler(req, res) {
   }
 }
 
-// Handle Customer Portal Session Creation
-async function handleCustomerPortal(stripe, params, req, res) {
-  const { customerId } = params;
+async function loadProfile(supabase, userId) {
+  const { data: profile, error } = await supabase
+    .from('profiles')
+    .select('stripe_customer_id, stripe_connect_account_id, stripe_connect_onboarding_complete')
+    .eq('id', userId)
+    .single();
+  return { profile, error };
+}
 
-  if (!customerId) {
-    return res.status(400).json({ error: 'Customer ID is required' });
+async function handleCustomerPortal(stripe, supabase, userId, req, res) {
+  const { profile, error } = await loadProfile(supabase, userId);
+  if (error || !profile?.stripe_customer_id) {
+    return res.status(400).json({ error: 'No customer profile found' });
   }
 
+  const baseUrl = getBaseUrl();
   const session = await stripe.billingPortal.sessions.create({
-    customer: customerId,
-    return_url: `${req.headers.origin}/`,
+    customer: profile.stripe_customer_id,
+    return_url: `${baseUrl}/`,
   });
 
   return res.status(200).json({ url: session.url });
 }
 
-// Handle Connect Account Creation and Onboarding
-async function handleConnectAccount(stripe, params, req, res) {
-  const { userId, userEmail } = params;
+async function handleConnectAccount(stripe, supabase, authUser, req, res) {
+  const userId = authUser.id;
+  const userEmail = (authUser.email || '').toLowerCase();
 
-  if (!userId || !userEmail) {
-    return res.status(400).json({ error: 'Missing userId or userEmail' });
+  if (!userEmail) {
+    return res.status(400).json({ error: 'Missing account email' });
   }
 
-  // Initialize Supabase client
-  const supabase = createClient(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
-  );
-
-  // Check if user already has a Connect account
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('stripe_connect_account_id, stripe_connect_onboarding_complete')
-    .eq('id', userId)
-    .single();
-
+  const { profile } = await loadProfile(supabase, userId);
   let accountId;
 
   if (profile?.stripe_connect_account_id) {
-    // Verify the existing account is still valid
     try {
       await stripe.accounts.retrieve(profile.stripe_connect_account_id);
       accountId = profile.stripe_connect_account_id;
     } catch (retrieveError) {
-      // Account no longer exists or is invalid - create a new one
       console.log('Existing Connect account invalid, creating new one:', retrieveError.message);
       accountId = null;
     }
   }
 
   if (!accountId) {
-    // Create new Connect account
     const account = await stripe.accounts.create({
       type: 'express',
       country: 'CH',
@@ -105,8 +118,6 @@ async function handleConnectAccount(stripe, params, req, res) {
     });
 
     accountId = account.id;
-
-    // Store account ID in database
     await supabase
       .from('profiles')
       .update({
@@ -116,62 +127,42 @@ async function handleConnectAccount(stripe, params, req, res) {
       .eq('id', userId);
   }
 
-  // Create account link for onboarding
+  const baseUrl = getBaseUrl();
   const accountLink = await stripe.accountLinks.create({
     account: accountId,
-    refresh_url: `${req.headers.origin}/dashboard?connect=refresh`,
-    return_url: `${req.headers.origin}/dashboard?connect=success`,
+    refresh_url: `${baseUrl}/dashboard?connect=refresh`,
+    return_url: `${baseUrl}/dashboard?connect=success`,
     type: 'account_onboarding',
   });
 
   return res.status(200).json({ url: accountLink.url, accountId });
 }
 
-// Handle Connect Dashboard Link
-async function handleConnectDashboard(stripe, params, res) {
-  const { accountId } = params;
-
-  if (!accountId) {
-    return res.status(400).json({ error: 'Account ID is required' });
+async function handleConnectDashboard(stripe, supabase, userId, req, res) {
+  const requestedAccountId = req.body?.accountId || null;
+  const { profile, error } = await loadProfile(supabase, userId);
+  if (error || !profile?.stripe_connect_account_id) {
+    return res.status(400).json({ error: 'No connect account found' });
+  }
+  if (requestedAccountId && requestedAccountId !== profile.stripe_connect_account_id) {
+    return res.status(403).json({ error: 'Account mismatch' });
   }
 
-  const loginLink = await stripe.accounts.createLoginLink(accountId);
-
+  const loginLink = await stripe.accounts.createLoginLink(profile.stripe_connect_account_id);
   return res.status(200).json({ url: loginLink.url });
 }
 
-// Check Connect Account Status and update database
-async function handleCheckConnectStatus(stripe, params, res) {
-  const { userId } = params;
-
-  if (!userId) {
-    return res.status(400).json({ error: 'User ID is required' });
-  }
-
-  // Initialize Supabase client
-  const supabase = createClient(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
-  );
-
-  // Get the user's Connect account ID
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('stripe_connect_account_id')
-    .eq('id', userId)
-    .single();
-
+async function handleCheckConnectStatus(stripe, supabase, userId, res) {
+  const { profile } = await loadProfile(supabase, userId);
   if (!profile?.stripe_connect_account_id) {
     return res.status(400).json({ error: 'No Connect account found', onboardingComplete: false });
   }
 
-  // Retrieve account status from Stripe
   const account = await stripe.accounts.retrieve(profile.stripe_connect_account_id);
+  const onboardingComplete = account.details_submitted === true
+    && account.charges_enabled === true
+    && account.payouts_enabled === true;
 
-  // Check if onboarding is complete (details_submitted is the key indicator)
-  const onboardingComplete = account.details_submitted === true;
-
-  // Update database
   await supabase
     .from('profiles')
     .update({ stripe_connect_onboarding_complete: onboardingComplete })

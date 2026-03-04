@@ -252,7 +252,7 @@ const CategorySuggestionModal = ({ isOpen, onClose, taxonomy, types, showNotific
                                         className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 outline-none appearance-none bg-white"
                                     >
                                         <option value="">-- Keinen auswählen (neuen Bereich vorschlagen) --</option>
-                                        {getAreasLocal(selectedType).map(key => {
+                                        {getAreas(selectedType).map(key => {
                                             const label = taxonomy?.[selectedType]?.[key]?.label?.de || NEW_TAXONOMY[selectedType]?.[key]?.label?.de || key;
                                             return <option key={key} value={key}>{label}</option>;
                                         })}
@@ -273,7 +273,7 @@ const CategorySuggestionModal = ({ isOpen, onClose, taxonomy, types, showNotific
                                             className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 outline-none appearance-none bg-white"
                                         >
                                             <option value="">-- Keines auswählen (neues Spezialgebiet vorschlagen) --</option>
-                                            {getSpecialtiesLocal(selectedType, selectedArea).map(spec => (
+                                            {getSpecialties(selectedType, selectedArea).map(spec => (
                                                 <option key={spec} value={spec}>{spec}</option>
                                             ))}
                                         </select>

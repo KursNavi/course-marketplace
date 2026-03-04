@@ -1,6 +1,11 @@
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
 
+function getBaseUrl() {
+    const raw = process.env.VITE_SITE_URL || process.env.SITE_URL || 'https://kursnavi.ch';
+    return raw.replace(/\/$/, '');
+}
+
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
@@ -13,10 +18,21 @@ export default async function handler(req, res) {
             process.env.SUPABASE_SERVICE_ROLE_KEY
         );
 
-        const { userId, userEmail, targetTier } = req.body;
+        const { targetTier } = req.body;
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return res.status(401).json({ error: 'Missing or invalid authorization header' });
+        }
+        const token = authHeader.replace('Bearer ', '');
+        const { data: { user: authUser }, error: authError } = await supabase.auth.getUser(token);
+        if (authError || !authUser) {
+            return res.status(401).json({ error: 'Ungültiges oder abgelaufenes Token' });
+        }
+        const userId = authUser.id;
+        const userEmail = (authUser.email || '').toLowerCase();
 
         // --- Validation ---
-        if (!userId || !userEmail || !targetTier) {
+        if (!userEmail || !targetTier) {
             return res.status(400).json({ error: 'Missing required fields' });
         }
 
@@ -104,6 +120,7 @@ export default async function handler(req, res) {
         }
 
         // --- Create Stripe Checkout Session ---
+        const baseUrl = getBaseUrl();
         const session = await stripe.checkout.sessions.create({
             payment_method_types: ['card'],
             customer: customerId,
@@ -119,8 +136,8 @@ export default async function handler(req, res) {
                 quantity: 1,
             }],
             mode: 'payment',
-            success_url: `${req.headers.origin}/dashboard?package_upgrade=success`,
-            cancel_url: `${req.headers.origin}/dashboard?package_upgrade=cancelled`,
+            success_url: `${baseUrl}/dashboard?package_upgrade=success`,
+            cancel_url: `${baseUrl}/dashboard?package_upgrade=cancelled`,
             metadata: {
                 type: 'package_upgrade',
                 userId,

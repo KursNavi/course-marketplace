@@ -206,10 +206,15 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
     if (connectStatus === 'success' && user?.id) {
       (async () => {
         try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (!session?.access_token) return;
           const response = await fetch('/api/stripe-management', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'check_connect_status', userId: user.id })
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${session.access_token}`
+            },
+            body: JSON.stringify({ action: 'check_connect_status' })
           });
           const data = await response.json();
           if (data.onboardingComplete) {
@@ -1267,9 +1272,14 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
                     type="button"
                     onClick={async () => {
                       try {
+                        const { data: { session } } = await supabase.auth.getSession();
+                        if (!session?.access_token) throw new Error('Nicht authentifiziert');
                         const response = await fetch('/api/stripe-management', {
                           method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
+                          headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${session.access_token}`
+                          },
                           body: JSON.stringify({
                             action: 'connect_dashboard_link',
                             accountId: stripeConnectAccountId
@@ -1311,13 +1321,16 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
                         return;
                       }
                       try {
+                        const { data: { session } } = await supabase.auth.getSession();
+                        if (!session?.access_token) throw new Error('Nicht authentifiziert');
                         const response = await fetch('/api/stripe-management', {
                           method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
+                          headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${session.access_token}`
+                          },
                           body: JSON.stringify({
-                            action: 'create_connect_account',
-                            userId: user.id,
-                            userEmail: user.email
+                            action: 'create_connect_account'
                           })
                         });
                         const data = await response.json();

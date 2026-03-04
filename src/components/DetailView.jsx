@@ -377,16 +377,19 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
         }
 
         try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session?.access_token) {
+                throw new Error('Nicht authentifiziert. Bitte erneut anmelden.');
+            }
             const response = await fetch('/api/create-checkout-session', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session.access_token}`
+                },
                 body: JSON.stringify({
                     courseId: course.id,
-                    courseTitle: course.title,
-                    coursePrice: Number(course.price) || 0,
                     courseImage: course.image_url,
-                    userId: user.id,
-                    userEmail: user.email,
                     eventId: courseEvent?.id || null,
                     guardianAttestation: guardianAttested
                 })
