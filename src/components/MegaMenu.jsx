@@ -203,6 +203,9 @@ export const MegaMenu = ({
                   <ChevronRight className={`w-3 h-3 ${config.text} opacity-0 group-hover:opacity-100 transition-opacity`} />
                 </button>
               ))}
+              <p className="px-4 py-2 text-xs text-gray-500">
+                Weitere Themenwelten sind in Arbeit und folgen demnächst.
+              </p>
             </>
           )}
         </div>
@@ -351,6 +354,9 @@ export const MobileMenuCategory = ({
                   {bereich.title[lang] || bereich.title.de}
                 </button>
               ))}
+              <p className="px-6 py-2 text-xs text-gray-500">
+                Weitere Themenwelten sind in Arbeit und folgen demnächst.
+              </p>
             </>
           )}
         </div>

@@ -579,6 +579,9 @@ export const Home = ({
                     </a>
                   ))}
                 </div>
+                <p className="mt-2 text-xs text-blue-700/80">
+                  Weitere Themenwelten sind in Arbeit und folgen demnächst.
+                </p>
               </div>
             )}
           </div>
@@ -650,6 +653,9 @@ export const Home = ({
                     </a>
                   ))}
                 </div>
+                <p className="mt-2 text-xs text-orange-700/80">
+                  Weitere Themenwelten sind in Arbeit und folgen demnächst.
+                </p>
               </div>
             )}
           </div>
@@ -721,6 +727,9 @@ export const Home = ({
                     </a>
                   ))}
                 </div>
+                <p className="mt-2 text-xs text-emerald-700/80">
+                  Weitere Themenwelten sind in Arbeit und folgen demnächst.
+                </p>
               </div>
             )}
           </div>
