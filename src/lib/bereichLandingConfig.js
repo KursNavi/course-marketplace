@@ -31,11 +31,11 @@ export const BEREICH_LANDING_CONFIG = {
     scenarios: [
       { slug: 'berufseinstieg', icon: '🎓', label: { de: 'Berufseinstieg' }, text: { de: 'Du willst Fitnesstrainer werden? Starte mit der Basis-Ausbildung.' }, searchParams: { spec: 'Fitness-Trainer-Ausbildung', focus: 'Basis-Ausbildung' }, ctaLabel: { de: 'Einstiegskurse entdecken' } },
       { slug: 'quereinstieg', icon: '🔄', label: { de: 'Quereinstieg' }, text: { de: 'Quereinstieg in die Fitnessbranche? Wir zeigen dir den Weg.' }, searchParams: { spec: 'Fitness-Trainer-Ausbildung' }, ctaLabel: { de: 'Quereinsteiger-Kurse entdecken' } },
-      { slug: 'weiterbildung', icon: '📈', label: { de: 'Weiterbildung' }, text: { de: 'Schon Trainer? Spezialisiere dich in Functional Training, Ernaehrung oder Personal Training.' }, searchParams: { spec: 'Trainingsmethoden & Spezialisierungen' }, ctaLabel: { de: 'Weiterbildungskurse entdecken' } },
-      { slug: 'diplom-aufstieg', icon: '🏆', label: { de: 'Diplom & Aufstieg' }, text: { de: 'Bereit fuer den naechsten Schritt? Diplom-Lehrgang und eidg. Fachausweis.' }, searchParams: { spec: 'Zertifikate & Pruefungsvorbereitung' }, ctaLabel: { de: 'Diplom-Kurse entdecken' } },
-      { slug: 'nebenerwerb', icon: '⚡', label: { de: 'Nebenerwerb' }, text: { de: 'Deine Leidenschaft zum Beruf machen - auch nebenberuflich.' }, searchParams: { spec: 'Group-Fitness / Kursleitung' }, ctaLabel: { de: 'Kurse fuer Nebenerwerb entdecken' } },
-      { slug: 'selbststaendigkeit', icon: '🏢', label: { de: 'Selbststaendigkeit' }, text: { de: 'Eigenes Studio? Lerne alles ueber Business, Recht und Versicherung.' }, searchParams: { spec: 'Business & Selbststaendigkeit' }, ctaLabel: { de: 'Business-Kurse entdecken' } },
-      { slug: 'spezialisierung', icon: '🎯', label: { de: 'Spezialisierung' }, text: { de: 'Rueckentraining, Antara, Kampfsport - finde deine Nische.' }, searchParams: { spec: 'Trainingsmethoden & Spezialisierungen' }, ctaLabel: { de: 'Spezialisierungskurse entdecken' } },
+      { slug: 'weiterbildung', icon: '📈', label: { de: 'Weiterbildung' }, text: { de: 'Schon Trainer? Spezialisiere dich in Functional Training, Ernährung oder Personal Training.' }, searchParams: { spec: 'Trainingsmethoden & Spezialisierungen' }, ctaLabel: { de: 'Weiterbildungskurse entdecken' } },
+      { slug: 'diplom-aufstieg', icon: '🏆', label: { de: 'Diplom & Aufstieg' }, text: { de: 'Bereit für den nächsten Schritt? Diplom-Lehrgang und eidg. Fachausweis.' }, searchParams: { spec: 'Zertifikate & Pruefungsvorbereitung' }, ctaLabel: { de: 'Diplom-Kurse entdecken' } },
+      { slug: 'nebenerwerb', icon: '⚡', label: { de: 'Nebenerwerb' }, text: { de: 'Deine Leidenschaft zum Beruf machen - auch nebenberuflich.' }, searchParams: { spec: 'Group-Fitness / Kursleitung' }, ctaLabel: { de: 'Kurse für Nebenerwerb entdecken' } },
+      { slug: 'selbststaendigkeit', icon: '🏢', label: { de: 'Selbstständigkeit' }, text: { de: 'Eigenes Studio? Lerne alles über Business, Recht und Versicherung.' }, searchParams: { spec: 'Business & Selbststaendigkeit' }, ctaLabel: { de: 'Business-Kurse entdecken' } },
+      { slug: 'spezialisierung', icon: '🎯', label: { de: 'Spezialisierung' }, text: { de: 'Rückentraining, Antara, Kampfsport - finde deine Nische.' }, searchParams: { spec: 'Trainingsmethoden & Spezialisierungen' }, ctaLabel: { de: 'Spezialisierungskurse entdecken' } },
       { slug: 'zertifizierung', icon: '✅', label: { de: 'Zertifizierung' }, text: { de: 'Qualitop, QualiCert, eidg. FA - welches Zertifikat passt zu dir?' }, searchParams: { spec: 'Zertifikate & Pruefungsvorbereitung' }, ctaLabel: { de: 'Zertifizierungskurse entdecken' } },
     ],
 
@@ -45,7 +45,7 @@ export const BEREICH_LANDING_CONFIG = {
         icon: '💪'
       },
       'Personal-Trainer-Ausbildung': {
-        de: 'Gespraechsfuehrung, Anamnese, individuelle Trainingsplanung. Werde zum 1:1-Experten.',
+        de: 'Gesprächsführung, Anamnese, individuelle Trainingsplanung. Werde zum 1:1-Experten.',
         icon: '🤝'
       },
       'Group-Fitness / Kursleitung': {
@@ -53,19 +53,19 @@ export const BEREICH_LANDING_CONFIG = {
         icon: '👥'
       },
       'Trainingsmethoden & Spezialisierungen': {
-        de: 'Kraft & Ausdauer, Ruecken & Core, Functional Training, Kampfsport-Formate.',
+        de: 'Kraft & Ausdauer, Rücken & Core, Functional Training, Kampfsport-Formate.',
         icon: '🔥'
       },
       'Mind-Body (Yoga & Pilates)': {
-        de: 'Yoga- und Pilates-Ausbildungen fuer ganzheitliches Training. Achtsamkeit und Koerperbewusstsein.',
+        de: 'Yoga- und Pilates-Ausbildungen für ganzheitliches Training. Achtsamkeit und Körperbewusstsein.',
         icon: '🧘'
       },
       'Ernaehrung & Coaching': {
-        de: 'Sporternaehrung, Ernaehrungsberatung und Coaching-Kompetenzen. CAS und Seminare.',
+        de: 'Sporternährung, Ernährungsberatung und Coaching-Kompetenzen. CAS und Seminare.',
         icon: '🥗'
       },
       'Zertifikate & Pruefungsvorbereitung': {
-        de: 'Vorbereitung auf eidg. Pruefungen, Fitness-Lizenzen und Branchenzertifikate.',
+        de: 'Vorbereitung auf eidg. Prüfungen, Fitness-Lizenzen und Branchenzertifikate.',
         icon: '📋'
       },
       'Business & Selbststaendigkeit': {
@@ -78,29 +78,29 @@ export const BEREICH_LANDING_CONFIG = {
       { label: { de: 'Fitnesstrainer Basiskurs' }, params: { spec: 'Fitness-Trainer-Ausbildung', focus: 'Basis-Ausbildung' } },
       { label: { de: 'Personal Trainer Lehrgang' }, params: { spec: 'Personal-Trainer-Ausbildung' } },
       { label: { de: 'Group-Fitness Kursformate' }, params: { spec: 'Group-Fitness / Kursleitung' } },
-      { label: { de: 'Ruecken & Core Training' }, params: { spec: 'Trainingsmethoden & Spezialisierungen' } },
+      { label: { de: 'Rücken & Core Training' }, params: { spec: 'Trainingsmethoden & Spezialisierungen' } },
       { label: { de: 'Yoga & Pilates' }, params: { spec: 'Mind-Body (Yoga & Pilates)' } },
-      { label: { de: 'Diplom & eidg. Pruefung' }, params: { spec: 'Zertifikate & Pruefungsvorbereitung' } },
-      { label: { de: 'Ernaehrung & Coaching' }, params: { spec: 'Ernaehrung & Coaching' } },
+      { label: { de: 'Diplom & eidg. Prüfung' }, params: { spec: 'Zertifikate & Pruefungsvorbereitung' } },
+      { label: { de: 'Ernährung & Coaching' }, params: { spec: 'Ernaehrung & Coaching' } },
       { label: { de: 'Online Kurse' }, params: {}, extraParams: { delivery: 'online_live,self_study' } },
     ],
 
     faqs: [
       {
         q: { de: 'Brauche ich eine Grundausbildung vor der Spezialisierung?' },
-        a: { de: 'In der Regel ja. Die meisten Anbieter empfehlen die Fitness-Trainer Basis-Ausbildung (B-Lizenz) als Einstieg. Darauf aufbauend kannst du dich in Bereichen wie Personal Training, Group Fitness oder Ernaehrung spezialisieren.' }
+        a: { de: 'In der Regel ja. Die meisten Anbieter empfehlen die Fitness-Trainer Basis-Ausbildung (B-Lizenz) als Einstieg. Darauf aufbauend kannst du dich in Bereichen wie Personal Training, Group Fitness oder Ernährung spezialisieren.' }
       },
       {
         q: { de: 'Kann ich als Quereinsteiger direkt in die Fitnessbranche?' },
-        a: { de: 'Absolut. Viele Basis-Ausbildungen setzen keine Vorkenntnisse voraus - nur Freude an Bewegung und Gesundheit. Die B-Lizenz ist ideal fuer den Einstieg, unabhaengig von deinem bisherigen Beruf.' }
+        a: { de: 'Absolut. Viele Basis-Ausbildungen setzen keine Vorkenntnisse voraus - nur Freude an Bewegung und Gesundheit. Die B-Lizenz ist ideal für den Einstieg, unabhängig von deinem bisherigen Beruf.' }
       },
       {
-        q: { de: 'Welche Qualitaetssiegel sind relevant?' },
-        a: { de: 'In der Schweiz sind Qualitop, QualiCert und Fitness-Guide wichtige Zertifizierungen. Sie stehen fuer hohe Ausbildungsstandards und werden von Versicherungen und Arbeitgebern anerkannt.' }
+        q: { de: 'Welche Qualitätssiegel sind relevant?' },
+        a: { de: 'In der Schweiz sind Qualitop, QualiCert und Fitness-Guide wichtige Zertifizierungen. Sie stehen für hohe Ausbildungsstandards und werden von Versicherungen und Arbeitgebern anerkannt.' }
       },
       {
-        q: { de: 'Wie laeuft die eidg. Pruefungsvorbereitung ab?' },
-        a: { de: 'Die Vorbereitung auf den eidgenoessischen Fachausweis umfasst mehrere Module und dauert in der Regel 1 bis 2 Jahre berufsbegleitend. Du kannst Bundesbeitraege von bis zu 50% der Kurskosten beantragen.' }
+        q: { de: 'Wie läuft die eidg. Prüfungsvorbereitung ab?' },
+        a: { de: 'Die Vorbereitung auf den eidgenössischen Fachausweis umfasst mehrere Module und dauert in der Regel 1 bis 2 Jahre berufsbegleitend. Du kannst Bundesbeiträge von bis zu 50% der Kurskosten beantragen.' }
       },
       {
         q: { de: 'Welche Ausbildung passt als Nebenerwerb?' },
@@ -110,18 +110,18 @@ export const BEREICH_LANDING_CONFIG = {
 
     sectionTitles: {
       scenarioTitle: { de: 'Wo stehst du?' },
-      scenarioSubtitle: { de: 'Finde den passenden Einstieg - egal ob Anfaenger oder Profi' },
+      scenarioSubtitle: { de: 'Finde den passenden Einstieg - egal ob Anfänger oder Profi' },
       specialtiesTitle: { de: 'Ausbildungsbereiche' },
       specialtiesSubtitle: { de: 'Alle Schwerpunkte auf einen Blick' },
       searchesSubtitle: { de: 'Schnelleinstieg zu den gefragtesten Ausbildungen' },
-      ctaTitle: { de: 'Bereit fuer den naechsten Schritt?' },
+      ctaTitle: { de: 'Bereit für den nächsten Schritt?' },
       ctaButton: { de: 'Alle Kurse anzeigen' }
     },
 
     trustLogos: [
-      { name: 'Qualitop', description: { de: 'Qualitaetszertifikat fuer Fitnesscenter und Ausbildungen in der Schweiz' } },
-      { name: 'QualiCert', description: { de: 'Zertifizierung fuer Bewegungs- und Gesundheitsangebote' } },
-      { name: 'Fitness-Guide', description: { de: 'Schweizer Ausbildungsstandard fuer Fitness-Professionals' } },
+      { name: 'Qualitop', description: { de: 'Qualitätszertifikat für Fitnesscenter und Ausbildungen in der Schweiz' } },
+      { name: 'QualiCert', description: { de: 'Zertifizierung für Bewegungs- und Gesundheitsangebote' } },
+      { name: 'Fitness-Guide', description: { de: 'Schweizer Ausbildungsstandard für Fitness-Professionals' } },
     ]
   },
 
