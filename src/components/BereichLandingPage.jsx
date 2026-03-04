@@ -248,7 +248,7 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
             {sectionTitles.scenarioTitle?.[lang] || sectionTitles.scenarioTitle?.de || 'Wo stehst du?'}
           </h2>
           <p className="text-gray-500 text-center mb-10">
-            {sectionTitles.scenarioSubtitle?.[lang] || sectionTitles.scenarioSubtitle?.de || 'Finde den passenden Einstieg - egal ob Anfaenger oder Profi'}
+            {sectionTitles.scenarioSubtitle?.[lang] || sectionTitles.scenarioSubtitle?.de || 'Finde den passenden Einstieg - egal ob Anfänger oder Profi'}
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {config.scenarios.map((scenario, i) => (
@@ -371,7 +371,7 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
         <div className="max-w-3xl mx-auto px-4 py-16">
           <div className="flex items-center justify-center gap-2 mb-8">
             <HelpCircle className={`w-6 h-6 ${theme.text}`} />
-            <h2 className="text-2xl font-heading font-bold text-dark">{sectionTitles.faqTitle?.[lang] || sectionTitles.faqTitle?.de || 'Haeufige Fragen'}</h2>
+            <h2 className="text-2xl font-heading font-bold text-dark">{sectionTitles.faqTitle?.[lang] || sectionTitles.faqTitle?.de || 'Häufige Fragen'}</h2>
           </div>
           <div className="space-y-3">
             {config.faqs.map((faq, i) => (
@@ -403,7 +403,7 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
           <div className="max-w-4xl mx-auto px-4">
             <div className="flex items-center justify-center gap-2 mb-8">
               <Award className={`w-6 h-6 ${theme.text}`} />
-              <h2 className="text-2xl font-heading font-bold text-dark">{sectionTitles.trustTitle?.[lang] || sectionTitles.trustTitle?.de || 'Qualitaet & Anerkennung'}</h2>
+              <h2 className="text-2xl font-heading font-bold text-dark">{sectionTitles.trustTitle?.[lang] || sectionTitles.trustTitle?.de || 'Qualität & Anerkennung'}</h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {config.trustLogos.map((logo, i) => (
@@ -423,7 +423,7 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
       {/* CTA FOOTER */}
       <div className={`py-12 ${theme.bgLight}`}>
         <div className="max-w-4xl mx-auto px-4 text-center">
-          <h2 className="text-xl font-heading font-bold text-dark mb-3">{sectionTitles.ctaTitle?.[lang] || sectionTitles.ctaTitle?.de || 'Bereit fuer den naechsten Schritt?'}</h2>
+          <h2 className="text-xl font-heading font-bold text-dark mb-3">{sectionTitles.ctaTitle?.[lang] || sectionTitles.ctaTitle?.de || 'Bereit für den nächsten Schritt?'}</h2>
           <p className="text-gray-600 mb-6">{sectionTitles.ctaSubtitle?.[lang] || sectionTitles.ctaSubtitle?.de || `Entdecke alle ${totalCourses} Kurse in diesem Bereich.`}</p>
           <button
             onClick={() => navigateToSearch()}
