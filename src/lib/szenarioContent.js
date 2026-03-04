@@ -1,7 +1,7 @@
 ﻿/**
  * Szenario-Artikel Content
  *
- * HTML-Content fÃ¼r Szenario-Ratgeber-Artikel auf Bereichs-Landingpages.
+ * HTML-Content für Szenario-Ratgeber-Artikel auf Bereichs-Landingpages.
  * Gleiche CSS-Klassen wie ratgeberContent.js (prose-ratgeber, info-box, tip-box, etc.)
  *
  * Key-Format: '{bereich-config-key}/{szenario-slug}'
@@ -14,32 +14,32 @@ export const SZENARIO_CONTENT = {
   // ============================================================
 
   'sport_fitness_beruf/berufseinstieg': `
-<p class="lead">Du trÃ¤umst davon, deine Leidenschaft fÃ¼r Fitness zum Beruf zu machen? Der Einstieg in die Schweizer Fitnessbranche ist strukturiert und bietet klare Karrierepfade â€” von der Grundlehre bis zum eidgenÃ¶ssischen Diplom.</p>
+<p class="lead">Du träumst davon, deine Leidenschaft für Fitness zum Beruf zu machen? Der Einstieg in die Schweizer Fitnessbranche ist strukturiert und bietet klare Karrierepfade — von der Grundlehre bis zum eidgenössischen Diplom.</p>
 
-<h2>FÃ¼r wen ist der Berufseinstieg geeignet?</h2>
-<p>Der klassische Berufseinstieg richtet sich an alle, die <strong>zum ersten Mal eine Karriere im Fitness- und Gesundheitsbereich</strong> anstreben. Ob du gerade die Schule abgeschlossen hast, aus einer Sportlehre kommst oder einfach den nÃ¤chsten Schritt machen willst â€” die Basis-Ausbildung ist dein Startpunkt.</p>
+<h2>Für wen ist der Berufseinstieg geeignet?</h2>
+<p>Der klassische Berufseinstieg richtet sich an alle, die <strong>zum ersten Mal eine Karriere im Fitness- und Gesundheitsbereich</strong> anstreben. Ob du gerade die Schule abgeschlossen hast, aus einer Sportlehre kommst oder einfach den nächsten Schritt machen willst — die Basis-Ausbildung ist dein Startpunkt.</p>
 
 <div class="info-box">
-<h3>ðŸ’¡ Gut zu wissen: Die Hierarchie der AbschlÃ¼sse</h3>
-<p>Die Schweiz kennt drei staatlich anerkannte Stufen in der Fitnessbranche: das <strong>EFZ</strong> (Eidg. FÃ¤higkeitszeugnis, 3-jÃ¤hrige Berufslehre), der <strong>eidg. Fachausweis</strong> (BerufsprÃ¼fung) und das <strong>eidg. Diplom</strong> (HÃ¶here FachprÃ¼fung). Jede Stufe Ã¶ffnet neue TÃ¼ren â€“ und erhÃ¶ht das Gehalt.</p>
+<h3>💡 Gut zu wissen: Die Hierarchie der Abschlüsse</h3>
+<p>Die Schweiz kennt drei staatlich anerkannte Stufen in der Fitnessbranche: das <strong>EFZ</strong> (Eidg. Fähigkeitszeugnis, 3-jährige Berufslehre), der <strong>eidg. Fachausweis</strong> (Berufsprüfung) und das <strong>eidg. Diplom</strong> (Höhere Fachprüfung). Jede Stufe öffnet neue Türen – und erhöht das Gehalt.</p>
 </div>
 
 <h2>Der klassische Ausbildungsweg: EFZ</h2>
-<p>Die dreijÃ¤hrige Lehre zur <strong>Fachfrau / zum Fachmann Bewegungs- und GesundheitsfÃ¶rderung EFZ</strong> ist der klassische Berufseinstieg. Sie wird von der Organisation der Arbeitswelt Bewegung und Gesundheit (OdA BuG) geregelt und umfasst:</p>
+<p>Die dreijährige Lehre zur <strong>Fachfrau / zum Fachmann Bewegungs- und Gesundheitsförderung EFZ</strong> ist der klassische Berufseinstieg. Sie wird von der Organisation der Arbeitswelt Bewegung und Gesundheit (OdA BuG) geregelt und umfasst:</p>
 <ul>
-<li>Anatomie und Physiologie des menschlichen KÃ¶rpers</li>
-<li>GerÃ¤tekunde und Trainingslehre (Kraft, Ausdauer, Beweglichkeit)</li>
+<li>Anatomie und Physiologie des menschlichen Körpers</li>
+<li>Gerätekunde und Trainingslehre (Kraft, Ausdauer, Beweglichkeit)</li>
 <li>Kundenbetreuung, Beratung und erste Hilfe</li>
 <li>Administrative Aufgaben im Fitnessbetrieb und Verkaufstechniken</li>
 </ul>
 <p><strong>Voraussetzungen:</strong> Abgeschlossene Volksschule, Freude an Bewegung und im Umgang mit Menschen. Sportliche Vorerfahrung ist kein Muss.</p>
 
 <h2>Die modulare Alternative: B-Lizenz</h2>
-<p>Wer keine 3-jÃ¤hrige Lehre absolvieren mÃ¶chte, kann Ã¼ber einen modularen Lehrgang (z. B. bei SAFS oder Star Education) in die Branche einsteigen. Die Fitness-Trainer B-Lizenz dauert typischerweise 3â€“6 Monate und vermittelt das Fundament fÃ¼r die Arbeit auf der TrainingsflÃ¤che.</p>
+<p>Wer keine 3-jährige Lehre absolvieren möchte, kann über einen modularen Lehrgang (z. B. bei SAFS oder Star Education) in die Branche einsteigen. Die Fitness-Trainer B-Lizenz dauert typischerweise 3–6 Monate und vermittelt das Fundament für die Arbeit auf der Trainingsfläche.</p>
 
 <div class="tip-box">
-<h3>âœ… Tipp: Direkt zur BerufsprÃ¼fung planen</h3>
-<p>Nach dem EFZ steht der Weg zum <strong>eidgenÃ¶ssischen Fachausweis</strong> offen â€” oft mit verkÃ¼rzter Lehrzeit, da die Berufslehre angerechnet wird. Plane von Anfang an, welche Abschlussstufe du anstrebst, denn das beeinflusst die Wahl des Anbieters.</p>
+<h3>✅ Tipp: Direkt zur Berufsprüfung planen</h3>
+<p>Nach dem EFZ steht der Weg zum <strong>eidgenössischen Fachausweis</strong> offen — oft mit verkürzter Lehrzeit, da die Berufslehre angerechnet wird. Plane von Anfang an, welche Abschlussstufe du anstrebst, denn das beeinflusst die Wahl des Anbieters.</p>
 </div>
 
 <h2>Was verdiene ich als Fitness-Trainer?</h2>
@@ -48,84 +48,84 @@ export const SZENARIO_CONTENT = {
 <table>
 <thead><tr><th>Qualifikation</th><th>Empfohlener Monatslohn</th></tr></thead>
 <tbody>
-<tr><td>Ohne Ausbildung (mit Erfahrung)</td><td>CHF 2'800 â€“ 3'500</td></tr>
-<tr><td>Eidg. FÃ¤higkeitszeugnis (EFZ)</td><td>CHF 4'000 â€“ 4'300</td></tr>
-<tr><td>Eidg. Fachausweis (BerufsprÃ¼fung)</td><td>CHF 4'600 â€“ 4'900</td></tr>
-<tr><td>Eidg. Diplom (HÃ¶here FachprÃ¼fung)</td><td>CHF 5'500 â€“ 6'500</td></tr>
+<tr><td>Ohne Ausbildung (mit Erfahrung)</td><td>CHF 2'800 – 3'500</td></tr>
+<tr><td>Eidg. Fähigkeitszeugnis (EFZ)</td><td>CHF 4'000 – 4'300</td></tr>
+<tr><td>Eidg. Fachausweis (Berufsprüfung)</td><td>CHF 4'600 – 4'900</td></tr>
+<tr><td>Eidg. Diplom (Höhere Fachprüfung)</td><td>CHF 5'500 – 6'500</td></tr>
 </tbody>
 </table>
 
-<p>Eine Investition in die Ausbildung lohnt sich: Der Sprung vom ungelernten Trainer zum eidg. Fachausweis bedeutet <strong>Ã¼ber 30% mehr Gehalt</strong>.</p>
+<p>Eine Investition in die Ausbildung lohnt sich: Der Sprung vom ungelernten Trainer zum eidg. Fachausweis bedeutet <strong>über 30% mehr Gehalt</strong>.</p>
 
 <h2>Berufsaussichten</h2>
-<p>Die Fitnessbranche in der Schweiz wÃ¤chst stetig. MÃ¶gliche TÃ¤tigkeitsfelder als Einsteiger:</p>
+<p>Die Fitnessbranche in der Schweiz wächst stetig. Mögliche Tätigkeitsfelder als Einsteiger:</p>
 <ul>
-<li>Fitnesscenter und Gesundheitszentren (TrainingsflÃ¤che, Kursleitung)</li>
+<li>Fitnesscenter und Gesundheitszentren (Trainingsfläche, Kursleitung)</li>
 <li>Physiotherapie-Praxen als Trainingsbegleitung</li>
-<li>Firmenfitness und betriebliche GesundheitsfÃ¶rderung</li>
+<li>Firmenfitness und betriebliche Gesundheitsförderung</li>
 <li>Sportvereine und kommunale Sportanlagen</li>
-<li>Als Sprungbrett: SelbststÃ¤ndigkeit als Personal Trainer</li>
+<li>Als Sprungbrett: Selbstständigkeit als Personal Trainer</li>
 </ul>
 
 <div class="checklist">
 <h3>Checkliste: Bin ich bereit?</h3>
 <ul>
 <li>Ich habe Freude an Bewegung und Sport</li>
-<li>Ich interessiere mich fÃ¼r den menschlichen KÃ¶rper und Gesundheit</li>
-<li>Ich arbeite gerne mit Menschen â€” auch in schwierigen Momenten</li>
-<li>Ich kann 3 Monate (Lizenz) bis 3 Jahre (EFZ) fÃ¼r die Ausbildung einplanen</li>
+<li>Ich interessiere mich für den menschlichen Körper und Gesundheit</li>
+<li>Ich arbeite gerne mit Menschen — auch in schwierigen Momenten</li>
+<li>Ich kann 3 Monate (Lizenz) bis 3 Jahre (EFZ) für die Ausbildung einplanen</li>
 <li>Ich bin bereit, auch abends oder am Wochenende zu arbeiten</li>
 </ul>
 </div>
 
 <div class="cta-box">
-<h3>ðŸŽ“ Passende Einstiegskurse finden</h3>
-<p>Entdecke Fitness-Trainer Basis-Ausbildungen auf KursNavi â€” mit transparenten Preisen und allen Infos auf einen Blick.</p>
+<h3>🎓 Passende Einstiegskurse finden</h3>
+<p>Entdecke Fitness-Trainer Basis-Ausbildungen auf KursNavi — mit transparenten Preisen und allen Infos auf einen Blick.</p>
 </div>
 `,
 
   'sport_fitness_beruf/quereinstieg': `
-<p class="lead">Du arbeitest aktuell in einem anderen Beruf, aber die Fitnessbranche zieht dich magisch an? Quereinsteiger sind in der Schweizer Fitnessbranche willkommen â€” und bringen oft wertvolle Kompetenzen mit, die reine Sportabsolventen nicht haben.</p>
+<p class="lead">Du arbeitest aktuell in einem anderen Beruf, aber die Fitnessbranche zieht dich magisch an? Quereinsteiger sind in der Schweizer Fitnessbranche willkommen — und bringen oft wertvolle Kompetenzen mit, die reine Sportabsolventen nicht haben.</p>
 
 <h2>Warum Quereinsteiger gefragt sind</h2>
-<p>Quereinsteiger bringen <strong>Lebenserfahrung, Soft Skills und oft Business-Know-how</strong> aus ihrem bisherigen Beruf mit. KommunikationsfÃ¤higkeit, Empathie und Organisationstalent sind im Kundenkontakt Gold wert. Viele erfolgreiche Trainer in der Schweiz haben als Quereinsteiger begonnen.</p>
+<p>Quereinsteiger bringen <strong>Lebenserfahrung, Soft Skills und oft Business-Know-how</strong> aus ihrem bisherigen Beruf mit. Kommunikationsfähigkeit, Empathie und Organisationstalent sind im Kundenkontakt Gold wert. Viele erfolgreiche Trainer in der Schweiz haben als Quereinsteiger begonnen.</p>
 
 <div class="info-box">
-<h3>ðŸ’¡ Ehrlicher Ãœberblick: Was auf dich zukommt</h3>
-<p>FÃ¼r die Zulassung zur eidgenÃ¶ssischen PrÃ¼fung (Fachausweis) mÃ¼ssen Quereinsteiger <strong>5'000 Praxisstunden</strong> (ca. 2,5 Jahre Vollzeit) nachweisen. WÃ¤hrend des Praktikums ist mit einem reduzierten Lohn von ca. <strong>CHF 1'500 bis 2'000</strong> pro Monat zu rechnen. Die gute Nachricht: Diese Investition zahlt sich aus.</p>
+<h3>💡 Ehrlicher Überblick: Was auf dich zukommt</h3>
+<p>Für die Zulassung zur eidgenössischen Prüfung (Fachausweis) müssen Quereinsteiger <strong>5'000 Praxisstunden</strong> (ca. 2,5 Jahre Vollzeit) nachweisen. Während des Praktikums ist mit einem reduzierten Lohn von ca. <strong>CHF 1'500 bis 2'000</strong> pro Monat zu rechnen. Die gute Nachricht: Diese Investition zahlt sich aus.</p>
 </div>
 
 <h2>Kosten und Finanzierung</h2>
-<p>Eine vollstÃ¤ndige Ausbildung zum Fachausweis kostet fÃ¼r Quereinsteiger ca. <strong>CHF 12'600</strong>. Das klingt viel â€” aber der Bund unterstÃ¼tzt dich:</p>
+<p>Eine vollständige Ausbildung zum Fachausweis kostet für Quereinsteiger ca. <strong>CHF 12'600</strong>. Das klingt viel — aber der Bund unterstützt dich:</p>
 <ul>
-<li><strong>BundesbeitrÃ¤ge (SBFI):</strong> bis zu 50% der Kurskosten, max. CHF 9'500 fÃ¼r den Fachausweis. Du musst die PrÃ¼fung nur absolvieren, nicht bestehen.</li>
-<li><strong>Kantonale FÃ¶rderprogramme:</strong> Einige Kantone unterstÃ¼tzen berufliche Umschulungen zusÃ¤tzlich.</li>
+<li><strong>Bundesbeiträge (SBFI):</strong> bis zu 50% der Kurskosten, max. CHF 9'500 für den Fachausweis. Du musst die Prüfung nur absolvieren, nicht bestehen.</li>
+<li><strong>Kantonale Förderprogramme:</strong> Einige Kantone unterstützen berufliche Umschulungen zusätzlich.</li>
 <li><strong>Ratenzahlung:</strong> Viele Anbieter (z. B. SAFS, Star Education) bieten flexible Zahlungsmodelle.</li>
 </ul>
 
-<h2>So gelingt der Quereinstieg Schritt fÃ¼r Schritt</h2>
+<h2>So gelingt der Quereinstieg Schritt für Schritt</h2>
 
 <h3>Schritt 1: Orientierung und Richtungswahl</h3>
-<p>Die Fitnessbranche bietet vielfÃ¤ltige Karrierepfade. Welcher passt zu dir?</p>
+<p>Die Fitnessbranche bietet vielfältige Karrierepfade. Welcher passt zu dir?</p>
 <ul>
-<li><strong>Fitness-Trainer auf der FlÃ¤che</strong> â€” Betreuung im Center-Alltag, Trainingsplanung</li>
-<li><strong>Personal Trainer</strong> â€” 1:1-Coaching mit individuellen Kunden, hÃ¶chste StundensÃ¤tze</li>
-<li><strong>Group-Fitness-Instruktor</strong> â€” Gruppentraining leiten, ideal fÃ¼r berufsbegleitenden Einstieg</li>
-<li><strong>ErnÃ¤hrungscoach</strong> â€” Beratung zu SporternÃ¤hrung und Gesundheit</li>
+<li><strong>Fitness-Trainer auf der Fläche</strong> — Betreuung im Center-Alltag, Trainingsplanung</li>
+<li><strong>Personal Trainer</strong> — 1:1-Coaching mit individuellen Kunden, höchste Stundensätze</li>
+<li><strong>Group-Fitness-Instruktor</strong> — Gruppentraining leiten, ideal für berufsbegleitenden Einstieg</li>
+<li><strong>Ernährungscoach</strong> — Beratung zu Sporternährung und Gesundheit</li>
 </ul>
 
-<h3>Schritt 2: Basis-Ausbildung (berufsbegleitend mÃ¶glich)</h3>
-<p>Starte mit der <strong>Fitness-Trainer Basis-Ausbildung (B-Lizenz)</strong>. Viele Anbieter bieten Wochenend- und Abendkurse â€” du kannst also noch im alten Job weiterarbeiten, bis du Tritt gefasst hast.</p>
+<h3>Schritt 2: Basis-Ausbildung (berufsbegleitend möglich)</h3>
+<p>Starte mit der <strong>Fitness-Trainer Basis-Ausbildung (B-Lizenz)</strong>. Viele Anbieter bieten Wochenend- und Abendkurse — du kannst also noch im alten Job weiterarbeiten, bis du Tritt gefasst hast.</p>
 
 <h3>Schritt 3: Praxisstunden sammeln</h3>
-<p>FÃ¼r den eidg. Fachausweis brauchst du 5'000 Praxisstunden. Beginne parallel zur Ausbildung mit Teilzeit-EinsÃ¤tzen in einem Fitnesscenter â€” viele Studios sind froh Ã¼ber motivierte Quereinsteiger.</p>
+<p>Für den eidg. Fachausweis brauchst du 5'000 Praxisstunden. Beginne parallel zur Ausbildung mit Teilzeit-Einsätzen in einem Fitnesscenter — viele Studios sind froh über motivierte Quereinsteiger.</p>
 
 <h3>Schritt 4: Modulare Vorbereitung auf den Fachausweis</h3>
-<p>Anbieter wie SAFS (14 Module) oder Star Education strukturieren die Vorbereitung modular. Du kannst die Module flexibel Ã¼ber 1â€“2 Jahre berufsbegleitend absolvieren.</p>
+<p>Anbieter wie SAFS (14 Module) oder Star Education strukturieren die Vorbereitung modular. Du kannst die Module flexibel über 1–2 Jahre berufsbegleitend absolvieren.</p>
 
 <div class="tip-box">
-<h3>âœ… Tipp: Praxis und Ausbildung kombinieren</h3>
-<p>Sprich aktiv mit lokalen Fitnesscentern und biete an, Probelektionen zu geben. Viele Studios sind offen fÃ¼r Quereinsteiger mit Motivation â€” und du sammelst gleichzeitig die benÃ¶tigten Praxisstunden fÃ¼r die PrÃ¼fungszulassung.</p>
+<h3>✅ Tipp: Praxis und Ausbildung kombinieren</h3>
+<p>Sprich aktiv mit lokalen Fitnesscentern und biete an, Probelektionen zu geben. Viele Studios sind offen für Quereinsteiger mit Motivation — und du sammelst gleichzeitig die benötigten Praxisstunden für die Prüfungszulassung.</p>
 </div>
 
 <h2>Vorteile als Quereinsteiger</h2>
@@ -133,353 +133,353 @@ export const SZENARIO_CONTENT = {
 <h3>Das bringst du mit</h3>
 <ul>
 <li>Lebenserfahrung und Menschenkenntnis aus einem anderen Berufsumfeld</li>
-<li>Soft Skills (Kommunikation, FÃ¼hrung, ProblemlÃ¶sung)</li>
-<li>Klare Motivation â€” du weisst, warum du wechselst</li>
+<li>Soft Skills (Kommunikation, Führung, Problemlösung)</li>
+<li>Klare Motivation — du weisst, warum du wechselst</li>
 <li>Breiteres Netzwerk aus verschiedenen Branchen</li>
-<li>Oft bessere Business-Kompetenz fÃ¼r spÃ¤tere SelbststÃ¤ndigkeit</li>
+<li>Oft bessere Business-Kompetenz für spätere Selbstständigkeit</li>
 </ul>
 </div>
 
 <div class="cta-box">
-<h3>ðŸ”„ Quereinsteiger-Kurse entdecken</h3>
-<p>Finde Basis-Ausbildungen, die sich ideal fÃ¼r Quereinsteiger eignen â€” berufsbegleitend, modular und ohne sportliche Vorkenntnisse.</p>
+<h3>🔄 Quereinsteiger-Kurse entdecken</h3>
+<p>Finde Basis-Ausbildungen, die sich ideal für Quereinsteiger eignen — berufsbegleitend, modular und ohne sportliche Vorkenntnisse.</p>
 </div>
 `,
 
   'sport_fitness_beruf/weiterbildung': `
-<p class="lead">Du bist bereits Trainer und willst dein Repertoire erweitern? Die Fitnessbranche von 2026 verÃ¤ndert sich rasant â€” neue Trainingsmethoden, Datenanalyse und Recovery-Coaching erÃ¶ffnen ganz neue MÃ¶glichkeiten. Wer sich jetzt weiterbildet, bleibt langfristig relevant.</p>
+<p class="lead">Du bist bereits Trainer und willst dein Repertoire erweitern? Die Fitnessbranche von 2026 verändert sich rasant — neue Trainingsmethoden, Datenanalyse und Recovery-Coaching eröffnen ganz neue Möglichkeiten. Wer sich jetzt weiterbildet, bleibt langfristig relevant.</p>
 
 <h2>Warum Weiterbildung 2026 entscheidend ist</h2>
-<p>Laut aktuellen Fitness-Trend-Reports 2026 verschieben sich die Schwerpunkte massgeblich. Trainer, die diese Trends kennen und anbieten kÃ¶nnen, sichern sich einen klaren Wettbewerbsvorteil:</p>
+<p>Laut aktuellen Fitness-Trend-Reports 2026 verschieben sich die Schwerpunkte massgeblich. Trainer, die diese Trends kennen und anbieten können, sichern sich einen klaren Wettbewerbsvorteil:</p>
 
 <div class="info-box">
-<h3>ðŸ“Š Fitness-Trends 2026: Was Kunden wollen</h3>
+<h3>📊 Fitness-Trends 2026: Was Kunden wollen</h3>
 <ul>
-<li><strong>Wearable Technology:</strong> Integration von HRV-Daten, SchlafqualitÃ¤t und Erholungsstatus in die individuelle Trainingsplanung</li>
-<li><strong>Recovery Coaching:</strong> KÃ¤lteexposition (Cold Plunge), Infrarot-Sauna und Kompressionstherapie als fester Bestandteil des Serviceangebots</li>
+<li><strong>Wearable Technology:</strong> Integration von HRV-Daten, Schlafqualität und Erholungsstatus in die individuelle Trainingsplanung</li>
+<li><strong>Recovery Coaching:</strong> Kälteexposition (Cold Plunge), Infrarot-Sauna und Kompressionstherapie als fester Bestandteil des Serviceangebots</li>
 <li><strong>Mindful Movement:</strong> Kombination von HIIT mit Yoga, Pilates oder Atemarbeit (Breathwork)</li>
-<li><strong>Longevity Training:</strong> PrÃ¤ventives Training fÃ¼r Langlebigkeit, besonders bei der Zielgruppe 40+</li>
+<li><strong>Longevity Training:</strong> Präventives Training für Langlebigkeit, besonders bei der Zielgruppe 40+</li>
 </ul>
 </div>
 
-<h2>Beliebte Spezialisierungen fÃ¼r erfahrene Trainer</h2>
+<h2>Beliebte Spezialisierungen für erfahrene Trainer</h2>
 
 <h3>Functional Training</h3>
-<p>Einer der grÃ¶ssten Trends: Training mit dem eigenen KÃ¶rpergewicht, Kettlebells, TRX und mehr. Functional Training verbessert die alltagsnahe Fitness und spricht ein breites Publikum an â€” von Jugendlichen bis Senioren.</p>
+<p>Einer der grössten Trends: Training mit dem eigenen Körpergewicht, Kettlebells, TRX und mehr. Functional Training verbessert die alltagsnahe Fitness und spricht ein breites Publikum an — von Jugendlichen bis Senioren.</p>
 
 <h3>Personal Training (Vertiefung)</h3>
-<p>Die KÃ¶nigsdisziplin der 1:1-Betreuung. Neben Trainingsplanung lernst du Anamnese, GesprÃ¤chsfÃ¼hrung und individuelle ErnÃ¤hrungsberatung. Personal Trainer erzielen die hÃ¶chsten StundensÃ¤tze in der Branche.</p>
+<p>Die Königsdisziplin der 1:1-Betreuung. Neben Trainingsplanung lernst du Anamnese, Gesprächsführung und individuelle Ernährungsberatung. Personal Trainer erzielen die höchsten Stundensätze in der Branche.</p>
 
-<h3>ErnÃ¤hrung & Coaching</h3>
-<p>Training und ErnÃ¤hrung gehÃ¶ren zusammen. Mit einer Zusatzqualifikation in SporternÃ¤hrung kannst du deine Kunden ganzheitlich betreuen und ein deutlich breiteres Angebot schaffen.</p>
+<h3>Ernährung & Coaching</h3>
+<p>Training und Ernährung gehören zusammen. Mit einer Zusatzqualifikation in Sporternährung kannst du deine Kunden ganzheitlich betreuen und ein deutlich breiteres Angebot schaffen.</p>
 
-<h3>RÃ¼cken- & Core-Training (inkl. AntaraÂ®)</h3>
-<p>RÃ¼ckenbeschwerden betreffen einen Grossteil der Schweizer BevÃ¶lkerung. Das <strong>AntaraÂ®-Konzept</strong> kombiniert Core-Stabilisation mit moderner Trainingslehre und ist bei Krankenkassen hoch anerkannt. Spezialisten sind sehr gefragt â€” in Fitnesscentern, PrÃ¤vention und betrieblichem Gesundheitsmanagement.</p>
+<h3>Rücken- & Core-Training (inkl. Antara®)</h3>
+<p>Rückenbeschwerden betreffen einen Grossteil der Schweizer Bevölkerung. Das <strong>Antara®-Konzept</strong> kombiniert Core-Stabilisation mit moderner Trainingslehre und ist bei Krankenkassen hoch anerkannt. Spezialisten sind sehr gefragt — in Fitnesscentern, Prävention und betrieblichem Gesundheitsmanagement.</p>
 
 <div class="tip-box">
-<h3>âœ… Tipp: Strategisch kombinieren</h3>
-<p>Die erfolgreichsten Trainer kombinieren <strong>zwei komplementÃ¤re Spezialisierungen</strong> â€” z. B. Functional Training + ErnÃ¤hrung oder RÃ¼ckentraining + Personal Training. So bietest du einen einzigartigen Mix und kannst hÃ¶here Preise verlangen.</p>
+<h3>✅ Tipp: Strategisch kombinieren</h3>
+<p>Die erfolgreichsten Trainer kombinieren <strong>zwei komplementäre Spezialisierungen</strong> — z. B. Functional Training + Ernährung oder Rückentraining + Personal Training. So bietest du einen einzigartigen Mix und kannst höhere Preise verlangen.</p>
 </div>
 
-<h2>Formate fÃ¼r die Weiterbildung</h2>
+<h2>Formate für die Weiterbildung</h2>
 <ul>
-<li><strong>Zertifikatskurse (2â€“5 Tage):</strong> Fokussiert auf ein Thema, sofort umsetzbar</li>
-<li><strong>CAS-Programme (Certificate of Advanced Studies):</strong> Hochschulzertifikate, oft berufsbegleitend Ã¼ber mehrere Monate</li>
-<li><strong>Workshops & Seminare (1â€“2 Tage):</strong> Ideal zum Reinschnuppern und fÃ¼r aktuelle Trends</li>
-<li><strong>Online-Kurse:</strong> Flexibel von zu Hause, ideal fÃ¼r theoretische Grundlagen</li>
+<li><strong>Zertifikatskurse (2–5 Tage):</strong> Fokussiert auf ein Thema, sofort umsetzbar</li>
+<li><strong>CAS-Programme (Certificate of Advanced Studies):</strong> Hochschulzertifikate, oft berufsbegleitend über mehrere Monate</li>
+<li><strong>Workshops & Seminare (1–2 Tage):</strong> Ideal zum Reinschnuppern und für aktuelle Trends</li>
+<li><strong>Online-Kurse:</strong> Flexibel von zu Hause, ideal für theoretische Grundlagen</li>
 </ul>
 
 <div class="info-box">
-<h3>ðŸ’¡ Recertifizierung nicht vergessen</h3>
-<p>Viele Branchenzertifikate â€” insbesondere Qualitop und QualiCert â€” erfordern regelmÃ¤ssige <strong>Weiterbildungsnachweise</strong> zur Rezertifizierung. Plane mindestens 1â€“2 Kurstage pro Jahr ein, um deine Zertifizierungen aktuell zu halten.</p>
+<h3>💡 Recertifizierung nicht vergessen</h3>
+<p>Viele Branchenzertifikate — insbesondere Qualitop und QualiCert — erfordern regelmässige <strong>Weiterbildungsnachweise</strong> zur Rezertifizierung. Plane mindestens 1–2 Kurstage pro Jahr ein, um deine Zertifizierungen aktuell zu halten.</p>
 </div>
 
 <div class="cta-box">
-<h3>ðŸ“ˆ Weiterbildungen fÃ¼r Trainer entdecken</h3>
-<p>Finde Spezialisierungskurse fÃ¼r erfahrene Trainer â€” von Functional Training Ã¼ber ErnÃ¤hrungscoaching bis zum AntaraÂ®-Konzept.</p>
+<h3>📈 Weiterbildungen für Trainer entdecken</h3>
+<p>Finde Spezialisierungskurse für erfahrene Trainer — von Functional Training über Ernährungscoaching bis zum Antara®-Konzept.</p>
 </div>
 `,
 
   'sport_fitness_beruf/diplom-aufstieg': `
-<p class="lead">Du hast bereits Erfahrung als Trainer und willst den nÃ¤chsten Karriereschritt machen? Der eidgenÃ¶ssische Fachausweis oder das eidg. Diplom Ã¶ffnet dir TÃ¼ren zu FÃ¼hrungspositionen, hÃ¶heren GehÃ¤ltern und echter staatlicher Anerkennung in der Schweiz.</p>
+<p class="lead">Du hast bereits Erfahrung als Trainer und willst den nächsten Karriereschritt machen? Der eidgenössische Fachausweis oder das eidg. Diplom öffnet dir Türen zu Führungspositionen, höheren Gehältern und echter staatlicher Anerkennung in der Schweiz.</p>
 
 <h2>Eidg. Fachausweis vs. eidg. Diplom: Was ist der Unterschied?</h2>
 
 <table>
 <thead><tr><th>Abschluss</th><th>Bezeichnung</th><th>Stufe</th><th>Zielgruppe</th></tr></thead>
 <tbody>
-<tr><td>Eidg. Fachausweis (BP)</td><td>Spezialist/in Bewegungs- und GesundheitsfÃ¶rderung</td><td>BerufsprÃ¼fung</td><td>Berufsleute mit Erfahrung / Quereinsteiger</td></tr>
-<tr><td>Eidg. Diplom (HFP)</td><td>Experte/Expertin Bewegungs- und GesundheitsfÃ¶rderung</td><td>HÃ¶here FachprÃ¼fung</td><td>Erfahrene Spezialisten, FÃ¼hrungsaufgaben</td></tr>
+<tr><td>Eidg. Fachausweis (BP)</td><td>Spezialist/in Bewegungs- und Gesundheitsförderung</td><td>Berufsprüfung</td><td>Berufsleute mit Erfahrung / Quereinsteiger</td></tr>
+<tr><td>Eidg. Diplom (HFP)</td><td>Experte/Expertin Bewegungs- und Gesundheitsförderung</td><td>Höhere Fachprüfung</td><td>Erfahrene Spezialisten, Führungsaufgaben</td></tr>
 </tbody>
 </table>
 
 <h2>Warum der Aufstieg so wertvoll ist</h2>
 
 <div class="info-box">
-<h3>ðŸ’¡ BundesbeitrÃ¤ge: Bis zu CHF 9'500 zurÃ¼ck</h3>
-<p>FÃ¼r die Vorbereitung auf eidgenÃ¶ssische PrÃ¼fungen kannst du <strong>BundesbeitrÃ¤ge von bis zu 50% der Kurskosten</strong> beantragen â€” via das Staatssekretariat fÃ¼r Bildung, Forschung und Innovation (SBFI). Der Maximalbetrag belÃ¤uft sich auf <strong>CHF 9'500 fÃ¼r den Fachausweis</strong> und <strong>CHF 10'500 fÃ¼r das Diplom</strong>. Du musst die PrÃ¼fung nur absolvieren, nicht bestehen. Der Kurs muss auf der offiziellen "Meldeliste" des SBFI stehen.</p>
+<h3>💡 Bundesbeiträge: Bis zu CHF 9'500 zurück</h3>
+<p>Für die Vorbereitung auf eidgenössische Prüfungen kannst du <strong>Bundesbeiträge von bis zu 50% der Kurskosten</strong> beantragen — via das Staatssekretariat für Bildung, Forschung und Innovation (SBFI). Der Maximalbetrag beläuft sich auf <strong>CHF 9'500 für den Fachausweis</strong> und <strong>CHF 10'500 für das Diplom</strong>. Du musst die Prüfung nur absolvieren, nicht bestehen. Der Kurs muss auf der offiziellen "Meldeliste" des SBFI stehen.</p>
 </div>
 
 <h2>Was du damit erreichst</h2>
-<p>Der Fachausweis ist <strong>Voraussetzung fÃ¼r viele Kaderstellen</strong> und fÃ¼r die Krankenkassen-Anerkennung entscheidend. Das Diplom Ã¶ffnet zwei Spezialisierungsrichtungen:</p>
+<p>Der Fachausweis ist <strong>Voraussetzung für viele Kaderstellen</strong> und für die Krankenkassen-Anerkennung entscheidend. Das Diplom öffnet zwei Spezialisierungsrichtungen:</p>
 <ul>
-<li><strong>Medizinische Fitness:</strong> Zusammenarbeit mit Ã„rzten und Physiotherapeuten im Rahmen des Netzwerks Gesundheitscoaching, spezialisierte Rehabilitationsprogramme</li>
-<li><strong>FÃ¼hrung von Fitnessunternehmen:</strong> BefÃ¤higung zur Leitung grosser Center oder Ketten</li>
+<li><strong>Medizinische Fitness:</strong> Zusammenarbeit mit Ärzten und Physiotherapeuten im Rahmen des Netzwerks Gesundheitscoaching, spezialisierte Rehabilitationsprogramme</li>
+<li><strong>Führung von Fitnessunternehmen:</strong> Befähigung zur Leitung grosser Center oder Ketten</li>
 </ul>
 
 <h2>Das Lohnpotenzial</h2>
-<p>Der Lohnsprung ist erheblich. Mit eidg. Diplom erreichst du den Bereich <strong>CHF 5'500 â€“ 6'500 Monatslohn</strong> (SFGV-Empfehlung) â€” gegenÃ¼ber CHF 4'000â€“4'300 mit EFZ bedeutet das eine Steigerung von Ã¼ber 50%.</p>
+<p>Der Lohnsprung ist erheblich. Mit eidg. Diplom erreichst du den Bereich <strong>CHF 5'500 – 6'500 Monatslohn</strong> (SFGV-Empfehlung) — gegenüber CHF 4'000–4'300 mit EFZ bedeutet das eine Steigerung von über 50%.</p>
 
 <h2>Der Weg zum Diplom</h2>
 <ol>
-<li><strong>Voraussetzungen prÃ¼fen:</strong> In der Regel Grundausbildung + 2â€“3 Jahre Berufserfahrung, je nach Anbieter</li>
-<li><strong>Module absolvieren:</strong> Die Vorbereitung ist modular aufgebaut (z. B. SAFS: 14 Module). Berufsbegleitend Ã¼ber 1â€“2 Jahre mÃ¶glich</li>
-<li><strong>Praxisnachweis:</strong> Dokumentation der praktischen TÃ¤tigkeit als Trainer</li>
-<li><strong>PrÃ¼fungsanmeldung und BundesbeitrÃ¤ge beantragen:</strong> Antrag beim SBFI frÃ¼hzeitig stellen</li>
-<li><strong>EidgenÃ¶ssische PrÃ¼fung:</strong> Schriftliche und praktische PrÃ¼fung</li>
+<li><strong>Voraussetzungen prüfen:</strong> In der Regel Grundausbildung + 2–3 Jahre Berufserfahrung, je nach Anbieter</li>
+<li><strong>Module absolvieren:</strong> Die Vorbereitung ist modular aufgebaut (z. B. SAFS: 14 Module). Berufsbegleitend über 1–2 Jahre möglich</li>
+<li><strong>Praxisnachweis:</strong> Dokumentation der praktischen Tätigkeit als Trainer</li>
+<li><strong>Prüfungsanmeldung und Bundesbeiträge beantragen:</strong> Antrag beim SBFI frühzeitig stellen</li>
+<li><strong>Eidgenössische Prüfung:</strong> Schriftliche und praktische Prüfung</li>
 </ol>
 
 <div class="checklist">
-<h3>Was sich mit dem Diplom Ã¤ndert</h3>
+<h3>Was sich mit dem Diplom ändert</h3>
 <ul>
-<li>HÃ¶heres Gehalt und bessere Verhandlungsposition</li>
-<li>Zugang zu FÃ¼hrungspositionen (Studioleitung, Ausbildungsleitung)</li>
-<li>Anerkennung durch Krankenkassen fÃ¼r Zusatzversicherungen</li>
-<li>MÃ¶glichkeit, selbst als Ausbilder tÃ¤tig zu werden</li>
-<li>StÃ¤rkere Position bei der SelbststÃ¤ndigkeit und UnternehmensfÃ¼hrung</li>
+<li>Höheres Gehalt und bessere Verhandlungsposition</li>
+<li>Zugang zu Führungspositionen (Studioleitung, Ausbildungsleitung)</li>
+<li>Anerkennung durch Krankenkassen für Zusatzversicherungen</li>
+<li>Möglichkeit, selbst als Ausbilder tätig zu werden</li>
+<li>Stärkere Position bei der Selbstständigkeit und Unternehmensführung</li>
 </ul>
 </div>
 
 <div class="tip-box">
-<h3>âœ… Tipp: Arbeitgeber frÃ¼hzeitig einbeziehen</h3>
-<p>Der Diplom-Weg erfordert Ausdauer und Planung. Sprich frÃ¼hzeitig mit deinem Arbeitgeber Ã¼ber UnterstÃ¼tzung â€” Zeitreduktion oder Kostenbeteiligung sind in vielen Betrieben Ã¼blich. Und: Stelle den Bundesbeitrags-Antrag, bevor du den Kurs bezahlst.</p>
+<h3>✅ Tipp: Arbeitgeber frühzeitig einbeziehen</h3>
+<p>Der Diplom-Weg erfordert Ausdauer und Planung. Sprich frühzeitig mit deinem Arbeitgeber über Unterstützung — Zeitreduktion oder Kostenbeteiligung sind in vielen Betrieben üblich. Und: Stelle den Bundesbeitrags-Antrag, bevor du den Kurs bezahlst.</p>
 </div>
 
 <div class="cta-box">
-<h3>ðŸ† Diplom- und PrÃ¼fungsvorbereitungskurse</h3>
-<p>Finde LehrgÃ¤nge und Module zur Vorbereitung auf den eidgenÃ¶ssischen Fachausweis oder das Diplom â€” inkl. sbfi-anerkannter Kurse fÃ¼r BundesbeitrÃ¤ge.</p>
+<h3>🏆 Diplom- und Prüfungsvorbereitungskurse</h3>
+<p>Finde Lehrgänge und Module zur Vorbereitung auf den eidgenössischen Fachausweis oder das Diplom — inkl. sbfi-anerkannter Kurse für Bundesbeiträge.</p>
 </div>
 `,
 
   'sport_fitness_beruf/nebenerwerb': `
-<p class="lead">Du liebst Fitness und willst deine Leidenschaft zum Nebenerwerb machen? Als Kursleiter oder Trainer im Nebenerwerb kannst du Spass, Bewegung und ein Zusatzeinkommen verbinden â€” mit dem richtigen Wissen auch rechtlich sicher.</p>
+<p class="lead">Du liebst Fitness und willst deine Leidenschaft zum Nebenerwerb machen? Als Kursleiter oder Trainer im Nebenerwerb kannst du Spass, Bewegung und ein Zusatzeinkommen verbinden — mit dem richtigen Wissen auch rechtlich sicher.</p>
 
 <h2>Fitness als Nebenerwerb: Was du wissen musst</h2>
-<p>Viele Fitness-Professionals in der Schweiz arbeiten <strong>nebenberuflich</strong> â€” sei es als Group-Fitness-Instruktor, Yoga-Lehrer oder Personal Trainer. Der Vorteil: Du behÃ¤ltst die finanzielle Sicherheit deines Hauptjobs und kannst dich schrittweise in der Branche etablieren.</p>
+<p>Viele Fitness-Professionals in der Schweiz arbeiten <strong>nebenberuflich</strong> — sei es als Group-Fitness-Instruktor, Yoga-Lehrer oder Personal Trainer. Der Vorteil: Du behältst die finanzielle Sicherheit deines Hauptjobs und kannst dich schrittweise in der Branche etablieren.</p>
 
-<h2>Die besten Formate fÃ¼r den Nebenerwerb</h2>
+<h2>Die besten Formate für den Nebenerwerb</h2>
 
 <h3>Group-Fitness-Instruktor</h3>
-<p>Die beliebteste Option fÃ¼r NebenerwerbstÃ¤tige. Du leitest Gruppenkurse an Abenden oder am Wochenende. Typische Formate: Bodypump, Zumba, Step-Aerobic, Indoor Cycling oder Functional Group Training.</p>
+<p>Die beliebteste Option für Nebenerwerbstätige. Du leitest Gruppenkurse an Abenden oder am Wochenende. Typische Formate: Bodypump, Zumba, Step-Aerobic, Indoor Cycling oder Functional Group Training.</p>
 <ul>
-<li><strong>Zeitaufwand:</strong> 2â€“6 Stunden pro Woche</li>
-<li><strong>Ausbildung:</strong> Group-Fitness-Grundkurs (ca. 2â€“4 Wochenenden)</li>
-<li><strong>Verdienst:</strong> CHF 50â€“100 pro Kurslektion</li>
+<li><strong>Zeitaufwand:</strong> 2–6 Stunden pro Woche</li>
+<li><strong>Ausbildung:</strong> Group-Fitness-Grundkurs (ca. 2–4 Wochenenden)</li>
+<li><strong>Verdienst:</strong> CHF 50–100 pro Kurslektion</li>
 </ul>
 
 <h3>Yoga- oder Pilates-Lehrer</h3>
-<p>Yoga und Pilates boomen â€” und die Nachfrage nach qualifizierten Lehrern ist gross. Die Ausbildung ist etwas umfangreicher, aber dafÃ¼r kannst du auch selbststÃ¤ndig Kurse anbieten und hÃ¶here Preise verlangen.</p>
+<p>Yoga und Pilates boomen — und die Nachfrage nach qualifizierten Lehrern ist gross. Die Ausbildung ist etwas umfangreicher, aber dafür kannst du auch selbstständig Kurse anbieten und höhere Preise verlangen.</p>
 <ul>
 <li><strong>Zeitaufwand:</strong> Flexibel, ab 2 Stunden pro Woche</li>
-<li><strong>Ausbildung:</strong> 200â€“500h Yoga-Teacher-Training oder Pilates-Ausbildung</li>
-<li><strong>Verdienst:</strong> CHF 60â€“120 pro Lektion (hÃ¶her bei Privatunterricht)</li>
+<li><strong>Ausbildung:</strong> 200–500h Yoga-Teacher-Training oder Pilates-Ausbildung</li>
+<li><strong>Verdienst:</strong> CHF 60–120 pro Lektion (höher bei Privatunterricht)</li>
 </ul>
 
 <h3>Personal Trainer (Abend/Wochenende)</h3>
-<p>Mit einer Personal-Trainer-Ausbildung kannst du nach Feierabend oder am Wochenende Kunden betreuen. Weniger Lektionen, aber hÃ¶here StundensÃ¤tze â€” und du baust einen langfristigen Kundenstamm auf.</p>
+<p>Mit einer Personal-Trainer-Ausbildung kannst du nach Feierabend oder am Wochenende Kunden betreuen. Weniger Lektionen, aber höhere Stundensätze — und du baust einen langfristigen Kundenstamm auf.</p>
 
 <div class="info-box">
-<h3>ðŸ’¡ Rechtliches: Was du als NebenerwerbstÃ¤tiger wissen musst</h3>
+<h3>💡 Rechtliches: Was du als Nebenerwerbstätiger wissen musst</h3>
 <ul>
 <li><strong>AHV-Meldepflicht:</strong> Ab einem Einkommen von <strong>CHF 2'300 pro Jahr</strong> bei einem Arbeitgeber ist die Anmeldung bei der Ausgleichskasse obligatorisch.</li>
-<li><strong>GeringfÃ¼gigkeit:</strong> Einkommen unter CHF 2'500 pro Arbeitgeber sind unter bestimmten Bedingungen AHV-beitragsfrei â€” wenn du es nicht explizit meldest.</li>
-<li><strong>Haftpflichtversicherung:</strong> Auch im Nebenerwerb greift Haftung bei PersonenschÃ¤den. Eine Berufshaftpflicht (z. B. Ã¼ber <em>exali</em> ab ca. <strong>CHF 277 pro Jahr</strong>) ist dringend zu empfehlen.</li>
+<li><strong>Geringfügigkeit:</strong> Einkommen unter CHF 2'500 pro Arbeitgeber sind unter bestimmten Bedingungen AHV-beitragsfrei — wenn du es nicht explizit meldest.</li>
+<li><strong>Haftpflichtversicherung:</strong> Auch im Nebenerwerb greift Haftung bei Personenschäden. Eine Berufshaftpflicht (z. B. über <em>exali</em> ab ca. <strong>CHF 277 pro Jahr</strong>) ist dringend zu empfehlen.</li>
 </ul>
 </div>
 
 <div class="tip-box">
-<h3>âœ… Tipp: Klein anfangen, gross denken</h3>
-<p>Starte mit 2â€“3 Kurslektionen pro Woche. So kannst du testen, ob dir das Unterrichten Freude macht, ohne dich zu Ã¼berlasten. Viele Studios suchen aktiv Aushilfs-Instruktoren fÃ¼r Abend- und Wochenendslots â€” frag einfach nach.</p>
+<h3>✅ Tipp: Klein anfangen, gross denken</h3>
+<p>Starte mit 2–3 Kurslektionen pro Woche. So kannst du testen, ob dir das Unterrichten Freude macht, ohne dich zu überlasten. Viele Studios suchen aktiv Aushilfs-Instruktoren für Abend- und Wochenendslots — frag einfach nach.</p>
 </div>
 
 <div class="checklist">
 <h3>Dein Fahrplan zum Nebenerwerb</h3>
 <ul>
-<li>Geeignete Ausbildung wÃ¤hlen (Group Fitness, Yoga/Pilates, Personal Training)</li>
-<li>Ausbildung absolvieren â€” oft an Wochenenden, berufsbegleitend mÃ¶glich</li>
+<li>Geeignete Ausbildung wählen (Group Fitness, Yoga/Pilates, Personal Training)</li>
+<li>Ausbildung absolvieren — oft an Wochenenden, berufsbegleitend möglich</li>
 <li>Erste Studio-Kontakte aufbauen und Probelektionen anbieten</li>
 <li>Berufshaftpflichtversicherung abschliessen</li>
 <li>Nebenberuf bei der Ausgleichskasse anmelden (ab CHF 2'300/Jahr)</li>
-<li>Erste bezahlte Lektionen Ã¼bernehmen</li>
+<li>Erste bezahlte Lektionen übernehmen</li>
 </ul>
 </div>
 
 <div class="cta-box">
-<h3>âš¡ Kurse fÃ¼r den Nebenerwerb entdecken</h3>
-<p>Finde kompakte Ausbildungen, die sich perfekt als Nebenerwerb eignen â€” Group Fitness, Yoga, Pilates und Personal Training.</p>
+<h3>⚡ Kurse für den Nebenerwerb entdecken</h3>
+<p>Finde kompakte Ausbildungen, die sich perfekt als Nebenerwerb eignen — Group Fitness, Yoga, Pilates und Personal Training.</p>
 </div>
 `,
 
   'sport_fitness_beruf/selbststaendigkeit': `
-<p class="lead">Eigenes Studio, eigene Kunden, eigene Regeln â€” die SelbststÃ¤ndigkeit in der Fitnessbranche ist der Traum vieler Trainer. Doch neben Fachwissen brauchst du unternehmerische Kompetenz. Hier bekommst du den vollstÃ¤ndigen Ãœberblick.</p>
+<p class="lead">Eigenes Studio, eigene Kunden, eigene Regeln — die Selbstständigkeit in der Fitnessbranche ist der Traum vieler Trainer. Doch neben Fachwissen brauchst du unternehmerische Kompetenz. Hier bekommst du den vollständigen Überblick.</p>
 
-<h2>GeschÃ¤ftsmodelle fÃ¼r Fitness-Unternehmer</h2>
+<h2>Geschäftsmodelle für Fitness-Unternehmer</h2>
 
 <h3>Freelance Trainer / Kursleiter</h3>
-<p>Du arbeitest auf selbststÃ¤ndiger Basis fÃ¼r verschiedene Studios und Firmen. <strong>Geringe Fixkosten</strong>, flexible Zeiteinteilung, aber kein eigener Standort. Ideal als erster Schritt in die SelbststÃ¤ndigkeit.</p>
+<p>Du arbeitest auf selbstständiger Basis für verschiedene Studios und Firmen. <strong>Geringe Fixkosten</strong>, flexible Zeiteinteilung, aber kein eigener Standort. Ideal als erster Schritt in die Selbstständigkeit.</p>
 
 <h3>Personal Training Studio (Kleinbetrieb)</h3>
-<p>Ein kleines, spezialisiertes Studio fÃ¼r 1:1 oder Kleingruppen-Training. Geringere Investition als ein grosses Fitnesscenter â€” und du kannst dich stark differenzieren.</p>
+<p>Ein kleines, spezialisiertes Studio für 1:1 oder Kleingruppen-Training. Geringere Investition als ein grosses Fitnesscenter — und du kannst dich stark differenzieren.</p>
 
 <h3>Online-Coaching</h3>
-<p>Trainingsplanung, ErnÃ¤hrungscoaching und Betreuung Ã¼ber digitale KanÃ¤le. Skalierbar, ortsunabhÃ¤ngig und mit niedrigen Fixkosten â€” ideal als ErgÃ¤nzung zur PrÃ¤senzarbeit.</p>
+<p>Trainingsplanung, Ernährungscoaching und Betreuung über digitale Kanäle. Skalierbar, ortsunabhängig und mit niedrigen Fixkosten — ideal als Ergänzung zur Präsenzarbeit.</p>
 
 <h3>Eigenes Fitnesscenter</h3>
-<p>Die grÃ¶sste Investition, aber auch das grÃ¶sste Potenzial. Erfordert fundiertes Business-Know-how, ausreichend Kapital und einen guten Standort. Rechne mit Anlaufkosten von CHF 150'000 bis CHF 500'000+.</p>
+<p>Die grösste Investition, aber auch das grösste Potenzial. Erfordert fundiertes Business-Know-how, ausreichend Kapital und einen guten Standort. Rechne mit Anlaufkosten von CHF 150'000 bis CHF 500'000+.</p>
 
 <div class="info-box">
-<h3>ðŸ’¡ Rechtsformen in der Schweiz</h3>
+<h3>💡 Rechtsformen in der Schweiz</h3>
 <ul>
-<li><strong>Einzelunternehmen:</strong> Einfach zu grÃ¼nden, aber volle persÃ¶nliche Haftung. Kein Mindestkapital nÃ¶tig.</li>
-<li><strong>GmbH (Gesellschaft mit beschrÃ¤nkter Haftung):</strong> Mindestkapital <strong>CHF 20'000</strong>, beschrÃ¤nkte Haftung auf das GesellschaftsvermÃ¶gen. Empfohlen, sobald du Angestellte beschÃ¤ftigst oder grÃ¶ssere Risiken eingehst.</li>
+<li><strong>Einzelunternehmen:</strong> Einfach zu gründen, aber volle persönliche Haftung. Kein Mindestkapital nötig.</li>
+<li><strong>GmbH (Gesellschaft mit beschränkter Haftung):</strong> Mindestkapital <strong>CHF 20'000</strong>, beschränkte Haftung auf das Gesellschaftsvermögen. Empfohlen, sobald du Angestellte beschäftigst oder grössere Risiken eingehst.</li>
 </ul>
 </div>
 
-<h2>Sozialversicherungen als SelbststÃ¤ndiger</h2>
-<p>Als SelbststÃ¤ndiger in der Schweiz musst du dich um deine Sozialversicherungen selbst kÃ¼mmern:</p>
+<h2>Sozialversicherungen als Selbstständiger</h2>
+<p>Als Selbstständiger in der Schweiz musst du dich um deine Sozialversicherungen selbst kümmern:</p>
 <ul>
-<li><strong>AHV/IV/EO-BeitrÃ¤ge:</strong> Ca. <strong>10% des Einkommens</strong> â€” du trÃ¤gst den gesamten Beitrag (kein Arbeitgeberanteil)</li>
-<li><strong>Unfallversicherung:</strong> Nicht obligatorisch fÃ¼r SelbststÃ¤ndige â€” freiwillig dringend empfohlen</li>
-<li><strong>Arbeitslosenversicherung (ALV):</strong> Kein Anspruch als SelbststÃ¤ndiger â€” RÃ¼cklage bilden!</li>
+<li><strong>AHV/IV/EO-Beiträge:</strong> Ca. <strong>10% des Einkommens</strong> — du trägst den gesamten Beitrag (kein Arbeitgeberanteil)</li>
+<li><strong>Unfallversicherung:</strong> Nicht obligatorisch für Selbstständige — freiwillig dringend empfohlen</li>
+<li><strong>Arbeitslosenversicherung (ALV):</strong> Kein Anspruch als Selbstständiger — Rücklage bilden!</li>
 <li><strong>Krankentaggeld:</strong> Essentiell zum Schutz vor Erwerbsausfall bei Krankheit</li>
 </ul>
 
 <div class="tip-box">
-<h3>âœ… Tipp: Erst nebenberuflich testen</h3>
-<p>Die hÃ¤ufigste Ursache fÃ¼r das Scheitern von Fitness-Unternehmern ist nicht mangelndes Fachwissen, sondern fehlende unternehmerische Kompetenz. Starte nebenberuflich als Freelancer, baue deinen Kundenstamm auf â€” und wage den Sprung in die Vollzeit-SelbststÃ¤ndigkeit erst, wenn du weisst, dass das Modell funktioniert.</p>
+<h3>✅ Tipp: Erst nebenberuflich testen</h3>
+<p>Die häufigste Ursache für das Scheitern von Fitness-Unternehmern ist nicht mangelndes Fachwissen, sondern fehlende unternehmerische Kompetenz. Starte nebenberuflich als Freelancer, baue deinen Kundenstamm auf — und wage den Sprung in die Vollzeit-Selbstständigkeit erst, wenn du weisst, dass das Modell funktioniert.</p>
 </div>
 
 <h2>Was du neben Fitness-Wissen brauchst</h2>
 <ul>
-<li><strong>Businessplan & Finanzplanung:</strong> Kosten, Einnahmen, Break-Even, LiquiditÃ¤t</li>
-<li><strong>Marketing & Kundengewinnung:</strong> Social Media, Website, Google-PrÃ¤senz, lokale Vernetzung</li>
-<li><strong>Recht & Versicherung:</strong> Berufshaftpflicht, MietvertrÃ¤ge, Datenschutz (Gesundheitsdaten!)</li>
+<li><strong>Businessplan & Finanzplanung:</strong> Kosten, Einnahmen, Break-Even, Liquidität</li>
+<li><strong>Marketing & Kundengewinnung:</strong> Social Media, Website, Google-Präsenz, lokale Vernetzung</li>
+<li><strong>Recht & Versicherung:</strong> Berufshaftpflicht, Mietverträge, Datenschutz (Gesundheitsdaten!)</li>
 <li><strong>Buchhaltung & Steuern:</strong> Grundlagen der Buchhaltung, MWST-Pflicht (ab CHF 100'000 Umsatz)</li>
 </ul>
 
 <div class="checklist">
-<h3>GrÃ¼nder-Checkliste Fitness-Schweiz</h3>
+<h3>Gründer-Checkliste Fitness-Schweiz</h3>
 <ul>
-<li>Solide Fachausbildung abgeschlossen (min. 2â€“3 Jahre Erfahrung)</li>
+<li>Solide Fachausbildung abgeschlossen (min. 2–3 Jahre Erfahrung)</li>
 <li>Business-Kurs oder Unternehmer-Workshop besucht</li>
 <li>Businessplan erstellt und Finanzen durchgerechnet</li>
-<li>Rechtsform gewÃ¤hlt (Einzelfirma oder GmbH)</li>
+<li>Rechtsform gewählt (Einzelfirma oder GmbH)</li>
 <li>Berufshaftpflicht und Krankentaggeldversicherung abgeschlossen</li>
-<li>AHV-Anmeldung als SelbststÃ¤ndiger erledigt</li>
+<li>AHV-Anmeldung als Selbstständiger erledigt</li>
 <li>Marketing-Konzept und erste Kundenakquise gestartet</li>
 </ul>
 </div>
 
 <div class="cta-box">
-<h3>ðŸ¢ Business-Kurse fÃ¼r Fitness-Profis</h3>
-<p>Finde Kurse zu Unternehmertum, Recht und Marketing â€” speziell fÃ¼r die Fitnessbranche in der Schweiz.</p>
+<h3>🏢 Business-Kurse für Fitness-Profis</h3>
+<p>Finde Kurse zu Unternehmertum, Recht und Marketing — speziell für die Fitnessbranche in der Schweiz.</p>
 </div>
 `,
 
   'sport_fitness_beruf/spezialisierung': `
-<p class="lead">RÃ¼ckentraining, Functional Training, Kampfsport, AntaraÂ® â€” die Welt der Spezialisierungen ist vielfÃ¤ltig. Mit einer klaren Nische hebst du dich von der Masse ab und wirst zum gefragten Experten in deinem Gebiet.</p>
+<p class="lead">Rückentraining, Functional Training, Kampfsport, Antara® — die Welt der Spezialisierungen ist vielfältig. Mit einer klaren Nische hebst du dich von der Masse ab und wirst zum gefragten Experten in deinem Gebiet.</p>
 
-<h2>Warum eine Nische wÃ¤hlen?</h2>
+<h2>Warum eine Nische wählen?</h2>
 <p>Die Fitnessbranche wird kompetitiver. Trainer, die sich <strong>in einer Nische positionieren</strong>, haben klare Vorteile:</p>
 <ul>
-<li>HÃ¶herer Expertenstatus und Vertrauen bei Kunden</li>
+<li>Höherer Expertenstatus und Vertrauen bei Kunden</li>
 <li>Weniger direkte Konkurrenz im Preiskampf</li>
-<li>HÃ¶here StundensÃ¤tze durch Spezialistenwissen</li>
-<li>Klarere Positionierung im Marketing â€” du wirst gesucht, nicht gesucht</li>
+<li>Höhere Stundensätze durch Spezialistenwissen</li>
+<li>Klarere Positionierung im Marketing — du wirst gesucht, nicht gesucht</li>
 </ul>
 
-<h2>Die stÃ¤rksten Nischen im Schweizer Markt</h2>
+<h2>Die stärksten Nischen im Schweizer Markt</h2>
 
-<h3>RÃ¼cken- & Core-Training: AntaraÂ®</h3>
-<p>RÃ¼ckenbeschwerden betreffen einen Grossteil der Schweizer BevÃ¶lkerung â€” und das Interesse an PrÃ¤vention wÃ¤chst. Das <strong>AntaraÂ®-Konzept</strong> ist ein wissenschaftlich fundierter Ansatz, der Core-Stabilisation mit moderner Trainingslehre kombiniert. Es ist <strong>bei Krankenkassen hoch anerkannt</strong> und ermÃ¶glicht, dass Kunden Lektionen Ã¼ber ihre Zusatzversicherung abrechnen kÃ¶nnen. Anbieter sind SAFS und Star Education.</p>
+<h3>Rücken- & Core-Training: Antara®</h3>
+<p>Rückenbeschwerden betreffen einen Grossteil der Schweizer Bevölkerung — und das Interesse an Prävention wächst. Das <strong>Antara®-Konzept</strong> ist ein wissenschaftlich fundierter Ansatz, der Core-Stabilisation mit moderner Trainingslehre kombiniert. Es ist <strong>bei Krankenkassen hoch anerkannt</strong> und ermöglicht, dass Kunden Lektionen über ihre Zusatzversicherung abrechnen können. Anbieter sind SAFS und Star Education.</p>
 
-<h3>Active Ageing: Training fÃ¼r die Zielgruppe 60+</h3>
-<p>Einer der am stÃ¤rksten wachsenden MÃ¤rkte. Funktionelles Training fÃ¼r Ã¤ltere Erwachsene mit Fokus auf SturzprÃ¤vention, MobilitÃ¤t und Erhalt der SelbststÃ¤ndigkeit. Diese Zielgruppe zahlt gut und ist langfristig treu.</p>
+<h3>Active Ageing: Training für die Zielgruppe 60+</h3>
+<p>Einer der am stärksten wachsenden Märkte. Funktionelles Training für ältere Erwachsene mit Fokus auf Sturzprävention, Mobilität und Erhalt der Selbstständigkeit. Diese Zielgruppe zahlt gut und ist langfristig treu.</p>
 
 <h3>BGM: Betriebliches Gesundheitsmanagement</h3>
-<p>Zertifizierte Trainer werden zunehmend von Unternehmen gebucht, um die Gesundheit von Mitarbeitenden zu fÃ¶rdern. BGM-AuftrÃ¤ge sind gut planbar, besser bezahlt und bieten Skalierungspotenzial.</p>
+<p>Zertifizierte Trainer werden zunehmend von Unternehmen gebucht, um die Gesundheit von Mitarbeitenden zu fördern. BGM-Aufträge sind gut planbar, besser bezahlt und bieten Skalierungspotenzial.</p>
 
 <h3>Functional Training & Athletik</h3>
-<p>Training mit dem eigenen KÃ¶rpergewicht, Kettlebells, TRX und Gewichten â€” alltagsnah und breit einsetzbar. Functional Training spricht Fitnessenthusiasten, Reha-Patienten und Sportler gleichermassen an.</p>
+<p>Training mit dem eigenen Körpergewicht, Kettlebells, TRX und Gewichten — alltagsnah und breit einsetzbar. Functional Training spricht Fitnessenthusiasten, Reha-Patienten und Sportler gleichermassen an.</p>
 
 <h3>Kampfsport-Formate (Cardio Kick, Box-Fitness)</h3>
-<p>Boxen, Kickboxen und MMA-inspirierte Gruppenformate boomen â€” sie bieten eine einzigartige Kombination aus Fitness, Technik und Motivation. Hohe Kundenbindung durch Community-Charakter.</p>
+<p>Boxen, Kickboxen und MMA-inspirierte Gruppenformate boomen — sie bieten eine einzigartige Kombination aus Fitness, Technik und Motivation. Hohe Kundenbindung durch Community-Charakter.</p>
 
 <div class="tip-box">
-<h3>âœ… Tipp: Kombiniere zwei komplementÃ¤re Nischen</h3>
-<p>Besonders erfolgreich sind Trainer, die zwei Bereiche verbinden: z. B. <strong>RÃ¼ckentraining + ErnÃ¤hrung</strong> oder <strong>Functional Training + Personal Training</strong> oder <strong>Active Ageing + BGM</strong>. So erweiterst du dein Angebot gezielt, ohne beliebig zu werden.</p>
+<h3>✅ Tipp: Kombiniere zwei komplementäre Nischen</h3>
+<p>Besonders erfolgreich sind Trainer, die zwei Bereiche verbinden: z. B. <strong>Rückentraining + Ernährung</strong> oder <strong>Functional Training + Personal Training</strong> oder <strong>Active Ageing + BGM</strong>. So erweiterst du dein Angebot gezielt, ohne beliebig zu werden.</p>
 </div>
 
 <h2>Wie finde ich meine Nische?</h2>
 <div class="checklist">
 <h3>Fragen zur Orientierung</h3>
 <ul>
-<li>Welches Thema begeistert mich am meisten â€” auch nach 10 Jahren noch?</li>
-<li>Wo habe ich bereits Ã¼berdurchschnittliches Wissen oder Erfahrung?</li>
-<li>Welche Zielgruppe mÃ¶chte ich ansprechen â€” und wer kann sich das leisten?</li>
-<li>Gibt es in meiner Region Nachfrage fÃ¼r diese Nische?</li>
-<li>Welche Zertifizierungen Ã¶ffnen mir TÃ¼ren (Qualitop, AntaraÂ®, QualiCert)?</li>
+<li>Welches Thema begeistert mich am meisten — auch nach 10 Jahren noch?</li>
+<li>Wo habe ich bereits überdurchschnittliches Wissen oder Erfahrung?</li>
+<li>Welche Zielgruppe möchte ich ansprechen — und wer kann sich das leisten?</li>
+<li>Gibt es in meiner Region Nachfrage für diese Nische?</li>
+<li>Welche Zertifizierungen öffnen mir Türen (Qualitop, Antara®, QualiCert)?</li>
 </ul>
 </div>
 
 <div class="info-box">
-<h3>ðŸ’¡ Trend-Check 2026</h3>
-<p>Aktuelle Mega-Trends laut Fitness-Branchenberichten 2026: <strong>DatengestÃ¼tztes Training</strong> (Wearables, HRV), <strong>Recovery als Serviceangebot</strong> (Cold Plunge, Infrarot-Sauna) und <strong>Mindful Movement</strong> (Breathwork, Yoga-HIIT-Kombos). Wer sich jetzt hier positioniert, ist frÃ¼h am Markt.</p>
+<h3>💡 Trend-Check 2026</h3>
+<p>Aktuelle Mega-Trends laut Fitness-Branchenberichten 2026: <strong>Datengestütztes Training</strong> (Wearables, HRV), <strong>Recovery als Serviceangebot</strong> (Cold Plunge, Infrarot-Sauna) und <strong>Mindful Movement</strong> (Breathwork, Yoga-HIIT-Kombos). Wer sich jetzt hier positioniert, ist früh am Markt.</p>
 </div>
 
 <div class="cta-box">
-<h3>ðŸŽ¯ Spezialisierungskurse entdecken</h3>
-<p>Finde Kurse in Functional Training, RÃ¼ckentraining, AntaraÂ®, Kampfsport, Active Ageing und BGM.</p>
+<h3>🎯 Spezialisierungskurse entdecken</h3>
+<p>Finde Kurse in Functional Training, Rückentraining, Antara®, Kampfsport, Active Ageing und BGM.</p>
 </div>
 `,
 
   'sport_fitness_beruf/zertifizierung': `
-<p class="lead">Qualitop, QualiCert, eidg. Fachausweis â€” welche Zertifizierung ist die richtige fÃ¼r dich? In der Schweizer Fitnessbranche sind QualitÃ¤tssiegel der "TÃ¼rÃ¶ffner" fÃ¼r Krankenkassen-RÃ¼ckerstattungen und attraktive Kaderstellen. Hier bekommst du den vollstÃ¤ndigen Ãœberblick.</p>
+<p class="lead">Qualitop, QualiCert, eidg. Fachausweis — welche Zertifizierung ist die richtige für dich? In der Schweizer Fitnessbranche sind Qualitätssiegel der "Türöffner" für Krankenkassen-Rückerstattungen und attraktive Kaderstellen. Hier bekommst du den vollständigen Überblick.</p>
 
 <h2>Warum Zertifizierungen so wichtig sind</h2>
-<p>Zertifizierungen schaffen <strong>Vertrauen bei Kunden und Arbeitgebern</strong>. Doch in der Schweiz gibt es einen weiteren, sehr konkreten Anreiz: Bestimmte Zertifizierungen sind Voraussetzung dafÃ¼r, dass Kunden ihre Fitnessmitgliedschaft oder Kurse Ã¼ber die <strong>Krankenkassen-Zusatzversicherung</strong> abrechnen kÃ¶nnen â€” das ist ein massives Verkaufsargument.</p>
+<p>Zertifizierungen schaffen <strong>Vertrauen bei Kunden und Arbeitgebern</strong>. Doch in der Schweiz gibt es einen weiteren, sehr konkreten Anreiz: Bestimmte Zertifizierungen sind Voraussetzung dafür, dass Kunden ihre Fitnessmitgliedschaft oder Kurse über die <strong>Krankenkassen-Zusatzversicherung</strong> abrechnen können — das ist ein massives Verkaufsargument.</p>
 
 <h2>Die wichtigsten Zertifizierungen in der Schweiz</h2>
 
-<h3>Qualitop â€” das fÃ¼hrende GÃ¼tesiegel</h3>
-<p>Das fÃ¼hrende QualitÃ¤tslabel fÃ¼r Fitness- und Gesundheitsangebote in der Schweiz. Qualitop-zertifizierte Anbieter erfÃ¼llen strenge QualitÃ¤tskriterien bezÃ¼glich Ausbildung, Infrastruktur und Hygiene.</p>
+<h3>Qualitop — das führende Gütesiegel</h3>
+<p>Das führende Qualitätslabel für Fitness- und Gesundheitsangebote in der Schweiz. Qualitop-zertifizierte Anbieter erfüllen strenge Qualitätskriterien bezüglich Ausbildung, Infrastruktur und Hygiene.</p>
 <ul>
-<li><strong>FÃ¼r wen:</strong> Fitnesscenter und Gesundheitsanbieter</li>
-<li><strong>Vorteil:</strong> Kunden kÃ¶nnen BeitrÃ¤ge Ã¼ber die Krankenkassen-Zusatzversicherung abrechnen</li>
+<li><strong>Für wen:</strong> Fitnesscenter und Gesundheitsanbieter</li>
+<li><strong>Vorteil:</strong> Kunden können Beiträge über die Krankenkassen-Zusatzversicherung abrechnen</li>
 <li><strong>Anforderung an Trainer:</strong> Anerkannte Ausbildung mit nachgewiesener laufender Weiterbildung</li>
 </ul>
 
-<h3>QualiCert â€” fÃ¼r Kursanbieter und Einzeltrainer</h3>
-<p>QualiCert zertifiziert sowohl Center als auch <strong>einzelne Methodenanbieter (Kursleiter)</strong> â€” das macht es besonders interessant fÃ¼r selbststÃ¤ndige Trainer und kleine Studios.</p>
+<h3>QualiCert — für Kursanbieter und Einzeltrainer</h3>
+<p>QualiCert zertifiziert sowohl Center als auch <strong>einzelne Methodenanbieter (Kursleiter)</strong> — das macht es besonders interessant für selbstständige Trainer und kleine Studios.</p>
 <ul>
-<li><strong>FÃ¼r wen:</strong> Kursanbieter, Trainer, Therapeuten, Methodenentwickler</li>
-<li><strong>Vorteil:</strong> Anerkennung durch Versicherungen, stÃ¤rkt das Vertrauen bei Kunden</li>
-<li><strong>Anforderung:</strong> Nachweisbare Ausbildung und regelmÃ¤ssige Weiterbildung</li>
+<li><strong>Für wen:</strong> Kursanbieter, Trainer, Therapeuten, Methodenentwickler</li>
+<li><strong>Vorteil:</strong> Anerkennung durch Versicherungen, stärkt das Vertrauen bei Kunden</li>
+<li><strong>Anforderung:</strong> Nachweisbare Ausbildung und regelmässige Weiterbildung</li>
 </ul>
 
-<h3>EidgenÃ¶ssischer Fachausweis (eidg. FA)</h3>
-<p>Das hÃ¶chste staatlich anerkannte Zertifikat in der Fitnessbranche. Geniesst die breiteste Anerkennung bei Arbeitgebern, Krankenkassen und in der Ã–ffentlichkeit.</p>
+<h3>Eidgenössischer Fachausweis (eidg. FA)</h3>
+<p>Das höchste staatlich anerkannte Zertifikat in der Fitnessbranche. Geniesst die breiteste Anerkennung bei Arbeitgebern, Krankenkassen und in der Öffentlichkeit.</p>
 <ul>
-<li><strong>FÃ¼r wen:</strong> Erfahrene Trainer (min. 2â€“3 Jahre Praxis)</li>
-<li><strong>Vorteil:</strong> HÃ¶chste Anerkennung, bis zu CHF 9'500 BundesbeitrÃ¤ge fÃ¼r die Vorbereitung</li>
-<li><strong>Dauer:</strong> 1â€“2 Jahre Vorbereitung, berufsbegleitend mÃ¶glich</li>
+<li><strong>Für wen:</strong> Erfahrene Trainer (min. 2–3 Jahre Praxis)</li>
+<li><strong>Vorteil:</strong> Höchste Anerkennung, bis zu CHF 9'500 Bundesbeiträge für die Vorbereitung</li>
+<li><strong>Dauer:</strong> 1–2 Jahre Vorbereitung, berufsbegleitend möglich</li>
 </ul>
 
-<h3>Fitness-Guide â€” das Bewertungssystem fÃ¼r Center</h3>
-<p>Das Schweizer Ratingsystem (1â€“5 Sterne) fÃ¼r Fitnesscenter, das die Betreuungsdichte und Qualifikation der Mitarbeitenden bewertet. Relevant fÃ¼r Trainer, die in zertifizierten Centern arbeiten mÃ¶chten.</p>
+<h3>Fitness-Guide — das Bewertungssystem für Center</h3>
+<p>Das Schweizer Ratingsystem (1–5 Sterne) für Fitnesscenter, das die Betreuungsdichte und Qualifikation der Mitarbeitenden bewertet. Relevant für Trainer, die in zertifizierten Centern arbeiten möchten.</p>
 
-<h2>Krankenkassen-RÃ¼ckerstattungen: Wer zahlt was?</h2>
-<p>Die meisten Schweizer Krankenkassen unterstÃ¼tzen Fitness-AktivitÃ¤ten Ã¼ber die Zusatzversicherung â€” aber nur bei zertifizierten Anbietern. Hier die wichtigsten Kassen im Ãœberblick (Stand 2025/2026):</p>
+<h2>Krankenkassen-Rückerstattungen: Wer zahlt was?</h2>
+<p>Die meisten Schweizer Krankenkassen unterstützen Fitness-Aktivitäten über die Zusatzversicherung — aber nur bei zertifizierten Anbietern. Hier die wichtigsten Kassen im Überblick (Stand 2025/2026):</p>
 
 <table>
 <thead><tr><th>Krankenkasse</th><th>Produkt</th><th>Beitrag pro Jahr</th><th>Voraussetzung</th></tr></thead>
@@ -492,32 +492,32 @@ export const SZENARIO_CONTENT = {
 </tbody>
 </table>
 
-<p>FÃ¼r dich als Trainer bedeutet das: Wenn dein Center oder du selbst Qualitop- oder QualiCert-zertifiziert bist, kÃ¶nnen Kunden Kosten Ã¼ber ihre Krankenkasse abrechnen â€” das ist ein <strong>starkes Verkaufsargument</strong> in der Kundengewinnung.</p>
+<p>Für dich als Trainer bedeutet das: Wenn dein Center oder du selbst Qualitop- oder QualiCert-zertifiziert bist, können Kunden Kosten über ihre Krankenkasse abrechnen — das ist ein <strong>starkes Verkaufsargument</strong> in der Kundengewinnung.</p>
 
 <div class="info-box">
-<h3>ðŸ’¡ BundesbeitrÃ¤ge fÃ¼r den eidg. Fachausweis</h3>
-<p>FÃ¼r vorbereitende Kurse auf eidgenÃ¶ssische PrÃ¼fungen kannst du <strong>50% der Kurskosten</strong> zurÃ¼ckfordern â€” bis zu <strong>CHF 9'500 fÃ¼r den Fachausweis</strong> und <strong>CHF 10'500 fÃ¼r das Diplom</strong>. Der Kurs muss auf der "Meldeliste" des SBFI stehen. Du musst die PrÃ¼fung nur absolvieren â€” Bestehen ist keine Bedingung.</p>
+<h3>💡 Bundesbeiträge für den eidg. Fachausweis</h3>
+<p>Für vorbereitende Kurse auf eidgenössische Prüfungen kannst du <strong>50% der Kurskosten</strong> zurückfordern — bis zu <strong>CHF 9'500 für den Fachausweis</strong> und <strong>CHF 10'500 für das Diplom</strong>. Der Kurs muss auf der "Meldeliste" des SBFI stehen. Du musst die Prüfung nur absolvieren — Bestehen ist keine Bedingung.</p>
 </div>
 
 <h2>Welches Zertifikat passt zu mir?</h2>
 <div class="checklist">
 <h3>Entscheidungshilfe</h3>
 <ul>
-<li>Gerade erst mit der Ausbildung fertig â†’ Qualitop-konforme Grundausbildung wÃ¤hlen</li>
-<li>SelbststÃ¤ndig, eigene Kurse â†’ QualiCert-Anerkennung prÃ¼fen (auch fÃ¼r Einzelpersonen)</li>
-<li>Ambitionierte Karriere / FÃ¼hrungsrolle â†’ Eidg. Fachausweis anstreben</li>
-<li>Center-Angestellter â†’ Im aktuellen Center prÃ¼fen, ob Qualitop-Status vorhanden</li>
+<li>Gerade erst mit der Ausbildung fertig → Qualitop-konforme Grundausbildung wählen</li>
+<li>Selbstständig, eigene Kurse → QualiCert-Anerkennung prüfen (auch für Einzelpersonen)</li>
+<li>Ambitionierte Karriere / Führungsrolle → Eidg. Fachausweis anstreben</li>
+<li>Center-Angestellter → Im aktuellen Center prüfen, ob Qualitop-Status vorhanden</li>
 </ul>
 </div>
 
 <div class="tip-box">
-<h3>âœ… Tipp: Vor Ausbildungsbeginn prÃ¼fen</h3>
-<p>Informiere dich <strong>vor Ausbildungsbeginn</strong>, ob der gewÃ¤hlte Lehrgang zu den Zertifizierungen fÃ¼hrt, die du anstrebst. Nicht alle Ausbildungen sind automatisch Qualitop- oder QualiCert-anerkannt â€” und ein nachtrÃ¤gliches "Upgrade" ist aufwendig.</p>
+<h3>✅ Tipp: Vor Ausbildungsbeginn prüfen</h3>
+<p>Informiere dich <strong>vor Ausbildungsbeginn</strong>, ob der gewählte Lehrgang zu den Zertifizierungen führt, die du anstrebst. Nicht alle Ausbildungen sind automatisch Qualitop- oder QualiCert-anerkannt — und ein nachträgliches "Upgrade" ist aufwendig.</p>
 </div>
 
 <div class="cta-box">
-<h3>âœ… Zertifizierungs- und Vorbereitungskurse</h3>
-<p>Finde Kurse, die direkt auf eidg. PrÃ¼fungen vorbereiten und zu Qualitop/QualiCert-Zertifizierungen fÃ¼hren.</p>
+<h3>✅ Zertifizierungs- und Vorbereitungskurse</h3>
+<p>Finde Kurse, die direkt auf eidg. Prüfungen vorbereiten und zu Qualitop/QualiCert-Zertifizierungen führen.</p>
 </div>
 `,
 
@@ -956,3 +956,4 @@ export const SZENARIO_CONTENT = {
 `
 
 };
+
