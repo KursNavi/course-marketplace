@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { ChevronRight, BookOpen, Compass } from 'lucide-react';
 import { RATGEBER_STRUCTURE } from '../lib/ratgeberStructure';
 import { getBereicheForSegment, getBereichUrl } from '../lib/bereichLandingConfig';
+import { shouldHandleClientNavigation } from '../lib/navigation';
 
 /**
  * MegaMenu Component
@@ -59,6 +60,7 @@ export const MegaMenu = ({
     setIsOpen(false);
     window.scrollTo(0, 0);
     window.history.pushState({ view: 'search' }, '', `/search?type=${categoryKey}`);
+    window.dispatchEvent(new Event('locationchange'));
   };
 
   // Navigate to cluster page
@@ -67,6 +69,7 @@ export const MegaMenu = ({
     window.scrollTo(0, 0);
     const categorySlug = categoryData?.slug || categoryKey;
     window.history.pushState({ view: 'ratgeber-cluster' }, '', `/ratgeber/${categorySlug}/${clusterSlug}`);
+    window.dispatchEvent(new Event('locationchange'));
   };
 
   // Get available Bereichs-Landingpages for this segment
@@ -77,6 +80,7 @@ export const MegaMenu = ({
     setIsOpen(false);
     window.scrollTo(0, 0);
     window.history.pushState({ view: 'bereich-landing' }, '', getBereichUrl(bereichConfig));
+    window.dispatchEvent(new Event('locationchange'));
   };
 
   // Translations
@@ -129,8 +133,13 @@ export const MegaMenu = ({
           style={{ minWidth: '280px' }}
         >
           {/* "Zu den Angeboten" - Primary Action */}
-          <button
-            onClick={goToSearch}
+          <a
+            href={`/search?type=${categoryKey}`}
+            onClick={(e) => {
+              if (!shouldHandleClientNavigation(e)) return;
+              e.preventDefault();
+              goToSearch();
+            }}
             className={`w-full text-left px-4 py-3 flex items-center gap-3 ${config.hoverBg} transition-colors group`}
           >
             <div className={`p-2 rounded-lg ${config.bgLight}`}>
@@ -145,7 +154,7 @@ export const MegaMenu = ({
               </span>
             </div>
             <ChevronRight className={`w-4 h-4 ${config.text} opacity-0 group-hover:opacity-100 transition-opacity`} />
-          </button>
+          </a>
 
           {/* Divider */}
           <div className="border-t border-gray-100 my-2" />
@@ -162,9 +171,14 @@ export const MegaMenu = ({
           {Object.values(categoryData.clusters).map((cluster) => {
             const ClusterIcon = cluster.icon;
             return (
-              <button
+              <a
                 key={cluster.slug}
-                onClick={() => goToCluster(cluster.slug)}
+                href={`/ratgeber/${categoryData?.slug || categoryKey}/${cluster.slug}`}
+                onClick={(e) => {
+                  if (!shouldHandleClientNavigation(e)) return;
+                  e.preventDefault();
+                  goToCluster(cluster.slug);
+                }}
                 className="w-full text-left px-4 py-2.5 flex items-center gap-3 hover:bg-gray-50 transition-colors group"
               >
                 <div className="p-1.5 rounded-lg bg-gray-100 group-hover:bg-gray-200 transition-colors">
@@ -174,7 +188,7 @@ export const MegaMenu = ({
                   {cluster.label[lang] || cluster.label.de}
                 </span>
                 <ChevronRight className="w-3 h-3 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity" />
-              </button>
+              </a>
             );
           })}
 
@@ -189,9 +203,14 @@ export const MegaMenu = ({
                 </span>
               </div>
               {bereiche.map((bereich) => (
-                <button
+                <a
                   key={bereich.slug}
-                  onClick={() => goToBereich(bereich)}
+                  href={getBereichUrl(bereich)}
+                  onClick={(e) => {
+                    if (!shouldHandleClientNavigation(e)) return;
+                    e.preventDefault();
+                    goToBereich(bereich);
+                  }}
                   className={`w-full text-left px-4 py-2.5 flex items-center gap-3 ${config.hoverBg} transition-colors group`}
                 >
                   <div className={`p-1.5 rounded-lg ${config.bgLight}`}>
@@ -201,7 +220,7 @@ export const MegaMenu = ({
                     {bereich.title[lang] || bereich.title.de}
                   </span>
                   <ChevronRight className={`w-3 h-3 ${config.text} opacity-0 group-hover:opacity-100 transition-opacity`} />
-                </button>
+                </a>
               ))}
               <p className="px-4 py-2 text-xs text-gray-500">
                 Weitere Themenwelten sind in Arbeit und folgen demnächst.
@@ -241,6 +260,7 @@ export const MobileMenuCategory = ({
     onClose?.();
     window.scrollTo(0, 0);
     window.history.pushState({ view: 'search' }, '', `/search?type=${categoryKey}`);
+    window.dispatchEvent(new Event('locationchange'));
   };
 
   const goToCluster = (clusterSlug) => {
@@ -248,12 +268,14 @@ export const MobileMenuCategory = ({
     window.scrollTo(0, 0);
     const categorySlug = categoryData?.slug || categoryKey;
     window.history.pushState({ view: 'ratgeber-cluster' }, '', `/ratgeber/${categorySlug}/${clusterSlug}`);
+    window.dispatchEvent(new Event('locationchange'));
   };
 
   const goToBereich = (bereichConfig) => {
     onClose?.();
     window.scrollTo(0, 0);
     window.history.pushState({ view: 'bereich-landing' }, '', getBereichUrl(bereichConfig));
+    window.dispatchEvent(new Event('locationchange'));
   };
 
   const t = {

@@ -221,6 +221,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
 
   const [lang, setLang] = useState('de');
   const [view, setView] = useState(getInitialView);
+  const [routePath, setRoutePath] = useState(() => `${window.location.pathname}${window.location.search}`);
   const [user, setUser] = useState(null);
   const [, setSession] = useState(null);
 
@@ -1103,6 +1104,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
     const syncFromUrl = () => {
       // Skip if triggered by our own URL-sync useEffect (not user navigation)
       if (isUrlSyncingRef.current) return;
+      setRoutePath(`${window.location.pathname}${window.location.search}`);
       const nextView = getInitialView();
       const path = window.location.pathname;
 
@@ -1662,6 +1664,7 @@ useEffect(() => {
       {view === 'provider-profile' && <ProviderProfilePage t={t} setView={setView} setSelectedCourse={setSelectedCourse} />}
       {view === 'bereich-landing' && (
         <BereichLandingPage
+          key={routePath}
           segment={bereichParams.segment}
           slug={bereichParams.slug}
           courses={courses}
@@ -1671,6 +1674,7 @@ useEffect(() => {
       )}
       {view === 'bereich-szenario' && (
         <SzenarioArtikelView
+          key={routePath}
           segment={bereichParams.segment}
           slug={bereichParams.slug}
           szenarioSlug={bereichParams.szenarioSlug}
@@ -1679,9 +1683,9 @@ useEffect(() => {
           t={t}
         />
       )}
-      {view === 'ratgeber-hub' && <RatgeberHubView lang={lang} />}
-      {view === 'ratgeber-cluster' && <RatgeberClusterView lang={lang} />}
-      {view === 'ratgeber-artikel' && <RatgeberArtikelView lang={lang} />}
+      {view === 'ratgeber-hub' && <RatgeberHubView key={routePath} lang={lang} />}
+      {view === 'ratgeber-cluster' && <RatgeberClusterView key={routePath} lang={lang} />}
+      {view === 'ratgeber-artikel' && <RatgeberArtikelView key={routePath} lang={lang} />}
       {view === 'not-found' && <NotFoundPage setView={setView} />}
       {view === 'dashboard' && effectiveUser && <Dashboard user={effectiveUser} setUser={impersonatedUser ? () => {} : setUser} t={t} setView={setView} courses={courses} teacherEarnings={teacherEarnings} myBookings={myBookings} savedCourses={savedCourses} savedCourseIds={savedCourseIds} onToggleSaveCourse={toggleSaveCourse} handleDeleteCourse={handleDeleteCourse} handleEditCourse={handleEditCourse} handleUpdateCourseStatus={handleUpdateCourseStatus} handleCancelEvent={handleCancelEvent} showNotification={showNotification} changeLanguage={changeLanguage} setSelectedCourse={setSelectedCourse} refreshBookings={fetchBookings} refreshTeacherEarnings={fetchTeacherEarnings} isImpersonating={!!impersonatedUser} />}
       {view === 'create' && user?.role === 'teacher' && <TeacherForm key={editingCourse?.id || 'new'} t={t} setView={setView} user={user} fetchCourses={fetchCourses} showNotification={showNotification} setEditingCourse={setEditingCourse} initialData={editingCourse} />}

@@ -61,11 +61,13 @@ const RatgeberArtikelView = ({ lang = 'de' }) => {
       '',
       `/ratgeber/${categorySlug}/${clusterSlug}`
     );
+    window.dispatchEvent(new Event('locationchange'));
   };
 
   const goToSearch = () => {
     window.scrollTo(0, 0);
     window.history.pushState({ view: 'search' }, '', `/search?type=${segmentKey}`);
+    window.dispatchEvent(new Event('locationchange'));
   };
 
   // Find current article index and siblings
@@ -80,6 +82,7 @@ const RatgeberArtikelView = ({ lang = 'de' }) => {
       '',
       `/ratgeber/${categorySlug}/${clusterSlug}/${slug}`
     );
+    window.dispatchEvent(new Event('locationchange'));
   };
 
   // Translations

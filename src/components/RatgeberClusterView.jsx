@@ -58,12 +58,14 @@ const RatgeberClusterView = ({ lang = 'de' }) => {
       '',
       `/ratgeber/${categorySlug}/${clusterSlug}/${articleSlug}`
     );
+    window.dispatchEvent(new Event('locationchange'));
   };
 
   // Navigate back to category hub
   const goBack = () => {
     window.scrollTo(0, 0);
     window.history.pushState({ view: 'ratgeber-hub' }, '', `/ratgeber/${categorySlug}`);
+    window.dispatchEvent(new Event('locationchange'));
   };
 
   // Translations
