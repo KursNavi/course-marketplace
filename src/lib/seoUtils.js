@@ -99,7 +99,61 @@ export function buildBreadcrumbJsonLd(items) {
  */
 export function enhanceImages(html) {
   if (!html) return html;
-  return html.replace(/<img(\s)/g, '<img loading="lazy" decoding="async"$1');
+  return html.replace(/<img\b[^>]*>/gi, (imgTag) => {
+    let result = imgTag;
+    const srcMatch = imgTag.match(/\bsrc=(["'])(.*?)\1/i);
+    const altMatch = imgTag.match(/\balt=(["'])(.*?)\1/i);
+
+    if (srcMatch) {
+      const source = srcMatch[2] || '';
+      if (/unsplash\.com/i.test(source)) {
+        const thematicImage = normalizeEditorialImageUrl(source, altMatch?.[2] || '');
+        result = result.replace(srcMatch[0], `src="${thematicImage}"`);
+      }
+    }
+
+    if (!/\bloading\s*=/i.test(result)) {
+      result = result.replace('<img', '<img loading="lazy"');
+    }
+    if (!/\bdecoding\s*=/i.test(result)) {
+      result = result.replace('<img', '<img decoding="async"');
+    }
+    return result;
+  });
+}
+
+export function normalizeEditorialImageUrl(url, altText = '') {
+  if (!url) return '/images/platform/editorial-generic.svg';
+  if (/unsplash\.com/i.test(url)) {
+    return resolveEditorialImageByAlt(altText);
+  }
+  return url;
+}
+
+function resolveEditorialImageByAlt(altText) {
+  const alt = (altText || '').toLowerCase();
+
+  if (/(steuer|budget|kosten|stipend|beitrag|finanz|geld|foerder|förder|kulturlegi|rechnung)/i.test(alt)) {
+    return '/images/platform/editorial-finance.svg';
+  }
+
+  if (/(recht|vertrag|storno|ruecktritt|rücktritt|datenschutz|safeguarding|aufsicht|versicherung|pflicht|warnsignal)/i.test(alt)) {
+    return '/images/platform/editorial-legal.svg';
+  }
+
+  if (/(kind|kinder|jugend|famil|eltern|geschwister|schul|hausaufgaben|ferienbetreuung)/i.test(alt)) {
+    return '/images/platform/editorial-kids.svg';
+  }
+
+  if (/(beruf|karriere|weiterbildung|linkedin|gehalt|quereinstieg|kompetenz|diplom|zertifikat|arbeitsplatz|leadership)/i.test(alt)) {
+    return '/images/platform/editorial-career.svg';
+  }
+
+  if (/(hobby|yoga|achtsam|meditation|flow|schnupper|kreativ|sport|solo|date|senior|workshop|kurs)/i.test(alt)) {
+    return '/images/platform/editorial-hobby.svg';
+  }
+
+  return '/images/platform/editorial-generic.svg';
 }
 
 /**

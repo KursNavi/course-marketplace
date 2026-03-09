@@ -26,7 +26,7 @@ export const BEREICH_LANDING_CONFIG = {
       fr: 'Coach fitness, entrainement personnel, fitness en groupe et plus',
       it: 'Istruttore fitness, personal training, fitness di gruppo e altro'
     },
-    heroImage: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&q=80&w=2000',
+    heroImage: '/images/platform/hero-professional.svg',
 
     scenarios: [
       { slug: 'berufseinstieg', icon: '🎓', label: { de: 'Berufseinstieg' }, text: { de: 'Du willst Fitnesstrainer werden? Starte mit der Basis-Ausbildung.' }, searchParams: { spec: 'Fitness-Trainer-Ausbildung', focus: 'Basis-Ausbildung' }, ctaLabel: { de: 'Einstiegskurse entdecken' } },
@@ -142,7 +142,7 @@ export const BEREICH_LANDING_CONFIG = {
       fr: 'Yoga, meditation, respiration, son et conscience corporelle pour debutants et avances',
       it: 'Yoga, meditazione, respirazione, suono e consapevolezza corporea per principianti e avanzati'
     },
-    heroImage: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&q=80&w=2000',
+    heroImage: '/images/platform/hero-private.svg',
 
     scenarios: [
       { slug: 'yoga-fuer-anfaenger', icon: '🧘', label: { de: 'Yoga für Anfänger' }, text: { de: 'Sicher starten ohne Vorkenntnisse: klare Stilempfehlungen, typische Stolpersteine und ein realistischer Einstieg.' }, searchParams: { spec: 'Yoga', focus: 'Hatha & Grundlagen' }, ctaLabel: { de: 'Anfängerkurse anzeigen' } },

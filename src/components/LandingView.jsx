@@ -10,15 +10,15 @@ const LandingView = ({ title, subtitle, variant, searchQuery, setSearchQuery, ha
     if (variant === 'private') {
         categories = CATEGORY_HIERARCHY["Private & Hobby"];
         rootCategory = "Private & Hobby";
-        bgImage = "https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?auto=format&fit=crop&q=80&w=2000"; 
+        bgImage = "/images/platform/hero-private.svg"; 
     } else if (variant === 'prof') {
         categories = CATEGORY_HIERARCHY["Professional"];
         rootCategory = "Professional";
-        bgImage = "https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&q=80&w=2000"; 
+        bgImage = "/images/platform/hero-professional.svg"; 
     } else if (variant === 'kids') {
         categories = CATEGORY_HIERARCHY["Children"];
         rootCategory = "Children";
-        bgImage = "https://images.unsplash.com/photo-1472162072942-cd5147eb3902?auto=format&fit=crop&q=80&w=2000"; 
+        bgImage = "/images/platform/hero-kids.svg"; 
     }
 
     const handleCategoryClick = (subCat) => {

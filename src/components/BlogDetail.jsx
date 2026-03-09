@@ -2,9 +2,11 @@ import React, { useEffect } from 'react';
 import { Calendar, User, ArrowLeft, ArrowRight, MapPin, Search } from 'lucide-react';
 import { formatPriceCHF } from '../lib/formatPrice';
 import { BASE_URL } from '../lib/siteConfig';
-import { enhanceImages } from '../lib/seoUtils';
+import { enhanceImages, normalizeEditorialImageUrl } from '../lib/seoUtils';
 
 export default function BlogDetail({ article, setView, courses }) {
+  const heroImage = normalizeEditorialImageUrl(article?.image_url, article?.title);
+
   // Scroll to top when article changes
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -43,14 +45,14 @@ export default function BlogDetail({ article, setView, courses }) {
         'og:title': article.title,
         'og:description': metaDescription,
         'og:url': canonicalUrl,
-        'og:image': article.image_url || `${BASE_URL}/og-default.jpg`,
+        'og:image': heroImage || `${BASE_URL}/og-default.jpg`,
         'og:type': 'article',
         'og:site_name': 'KursNavi',
         'article:published_time': article.created_at,
         'twitter:card': 'summary_large_image',
         'twitter:title': article.title,
         'twitter:description': metaDescription,
-        'twitter:image': article.image_url || `${BASE_URL}/og-default.jpg`
+        'twitter:image': heroImage || `${BASE_URL}/og-default.jpg`
     };
 
     const createdTags = [];
@@ -112,7 +114,7 @@ export default function BlogDetail({ article, setView, courses }) {
             breadcrumbScript.remove();
         }
     };
-  }, [article]);
+  }, [article, heroImage]);
 
   if (!article) return <div className="p-20 text-center">Artikel nicht gefunden.</div>;
 
@@ -146,7 +148,7 @@ export default function BlogDetail({ article, setView, courses }) {
         {/* Hero Section */}
         <div className="bg-stone-900 text-white py-20 px-4 relative overflow-hidden">
             <div className="absolute inset-0 opacity-30">
-                {article.image_url && <img src={article.image_url} alt={article.title} className="w-full h-full object-cover blur-sm" />}
+                {article.image_url && <img src={heroImage} alt={article.title} className="w-full h-full object-cover blur-sm" />}
             </div>
             <div className="relative max-w-3xl mx-auto text-center z-10">
                 <button onClick={() => setView('blog')} className="mb-6 inline-flex items-center text-stone-300 hover:text-white transition-colors text-sm font-bold uppercase tracking-widest">
