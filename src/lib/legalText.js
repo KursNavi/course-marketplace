@@ -9,7 +9,7 @@ export const LEGAL_CONTENT = {
       sections: [
         {
           heading: "1. Geltungsbereich und Begriffe",
-          text: "1.1 Diese Allgemeinen Geschäftsbedingungen (AGB) regeln die Nutzung der Online-Plattform KursNavi unter der Domain www.kursnavi.ch (nachfolgend «Plattform») durch Besucherinnen und Besucher, registrierte Nutzerinnen und Nutzer als Teilnehmer sowie Kursanbieterinnen und Kursanbieter (nachfolgend «Anbieter»).\n1.2 Betreiberin der Plattform ist die LifeSkills360 GmbH, Talrain 25, 6043 Adligenswil, Schweiz (nachfolgend «LifeSkills360», «wir», «uns»).\n1.3 Abweichende Bedingungen von Teilnehmern oder Anbietern gelten nur, wenn wir diesen ausdrücklich schriftlich zugestimmt haben.\n1.4 Begriffe\na) Kurs: Vom Anbieter angebotene Veranstaltung oder Dienstleistung (in der Regel offline).\nb) Direktbuchungskurs: Kurs, der über KursNavi verbindlich gebucht und bezahlt werden kann.\nc) Lead-Kurs: Kurs, der auf KursNavi gelistet ist und bei dem Teilnehmer dem Anbieter über KursNavi eine Anfrage senden können. Über KursNavi erfolgt dabei weder eine Buchung noch eine Zahlung.\nd) Kursvertrag: Vertrag über die Teilnahme am Kurs zwischen Teilnehmer und Anbieter."
+          text: "1.1 Diese Allgemeinen Geschäftsbedingungen (AGB) regeln die Nutzung der Online-Plattform KursNavi unter der Domain www.kursnavi.ch (nachfolgend «Plattform») durch Besucherinnen und Besucher, registrierte Nutzerinnen und Nutzer als Teilnehmer sowie Kursanbieterinnen und Kursanbieter (nachfolgend «Anbieter»).\n1.2 Betreiberin der Plattform ist die LifeSkills360 GmbH, Handelsregisternummer CHE-350.398.166 (nachfolgend «LifeSkills360», «wir», «uns»).\n1.3 Abweichende Bedingungen von Teilnehmern oder Anbietern gelten nur, wenn wir diesen ausdrücklich schriftlich zugestimmt haben.\n1.4 Begriffe\na) Kurs: Vom Anbieter angebotene Veranstaltung oder Dienstleistung (in der Regel offline).\nb) Direktbuchungskurs: Kurs, der über KursNavi verbindlich gebucht und bezahlt werden kann.\nc) Lead-Kurs: Kurs, der auf KursNavi gelistet ist und bei dem Teilnehmer dem Anbieter über KursNavi eine Anfrage senden können. Über KursNavi erfolgt dabei weder eine Buchung noch eine Zahlung.\nd) Kursvertrag: Vertrag über die Teilnahme am Kurs zwischen Teilnehmer und Anbieter."
         },
         {
           heading: "2. Plattform, Rolle von LifeSkills360 und Vertragsverhältnisse",
@@ -80,7 +80,7 @@ export const LEGAL_CONTENT = {
       sections: [
         {
           heading: "1. Verantwortliche Stelle",
-          text: "Verantwortlich für die Datenbearbeitung gemäss Schweizer Datenschutzgesetz (nDSG) ist:\nLifeSkills360 GmbH\nTalrain 25, 6043 Adligenswil, Schweiz\nE-Mail: info@kursnavi.ch"
+          text: "Verantwortlich für die Datenbearbeitung gemäss Schweizer Datenschutzgesetz (nDSG) ist:\nLifeSkills360 GmbH\nHandelsregisternummer CHE-350.398.166\nE-Mail: info@kursnavi.ch"
         },
         {
           heading: "2. Bearbeitung von Personendaten",
@@ -126,7 +126,7 @@ export const LEGAL_CONTENT = {
       sections: [
         {
           heading: "Betreiber",
-          text: "LifeSkills360 GmbH\nTalrain 25\n6043 Adligenswil\nSchweiz"
+          text: "LifeSkills360 GmbH\nHandelsregisternummer: CHE-350.398.166"
         },
         {
           heading: "Kontakt",
@@ -153,7 +153,7 @@ export const LEGAL_CONTENT = {
       sections: [
         {
           heading: "1. Scope and definitions",
-          text: "1.1 These Terms and Conditions (\"T&Cs\") govern the use of the online platform KursNavi under the domain www.kursnavi.ch (the \"Platform\") by visitors, registered users as Participants (\"Participants\"), and course providers (\"Providers\").\n1.2 The operator of the Platform is LifeSkills360 GmbH, Talrain 25, 6043 Adligenswil, Switzerland (\"LifeSkills360\", \"we\", \"us\").\n1.3 Any deviating terms of Participants or Providers apply only if we have expressly agreed to them in writing.\n1.4 Definitions\na) Course: An event or service offered by a Provider (generally offline).\nb) Direct Booking Course: A Course that can be booked and paid for via KursNavi.\nc) Lead Course: A Course listed on KursNavi where Participants can send an enquiry to the Provider via KursNavi. No booking and no payment take place via KursNavi.\nd) Course Contract: The contract for participation in a Course between the Participant and the Provider."
+          text: "1.1 These Terms and Conditions (\"T&Cs\") govern the use of the online platform KursNavi under the domain www.kursnavi.ch (the \"Platform\") by visitors, registered users as Participants (\"Participants\"), and course providers (\"Providers\").\n1.2 The operator of the Platform is LifeSkills360 GmbH, Commercial Register Number CHE-350.398.166 (\"LifeSkills360\", \"we\", \"us\").\n1.3 Any deviating terms of Participants or Providers apply only if we have expressly agreed to them in writing.\n1.4 Definitions\na) Course: An event or service offered by a Provider (generally offline).\nb) Direct Booking Course: A Course that can be booked and paid for via KursNavi.\nc) Lead Course: A Course listed on KursNavi where Participants can send an enquiry to the Provider via KursNavi. No booking and no payment take place via KursNavi.\nd) Course Contract: The contract for participation in a Course between the Participant and the Provider."
         },
         {
           heading: "2. Platform, role of LifeSkills360, and contractual relationships",
@@ -224,7 +224,7 @@ export const LEGAL_CONTENT = {
       sections: [
         {
           heading: "1. Controller",
-          text: "Responsible for data processing in accordance with the Swiss Federal Act on Data Protection (nFADP) is:\nLifeSkills360 GmbH\nTalrain 25, 6043 Adligenswil, Switzerland\nEmail: info@kursnavi.ch"
+          text: "Responsible for data processing in accordance with the Swiss Federal Act on Data Protection (nFADP) is:\nLifeSkills360 GmbH\nCommercial Register Number CHE-350.398.166\nEmail: info@kursnavi.ch"
         },
         {
           heading: "2. Processing of Personal Data",
@@ -270,7 +270,7 @@ export const LEGAL_CONTENT = {
       sections: [
         {
           heading: "Operator",
-          text: "LifeSkills360 GmbH\nTalrain 25\n6043 Adligenswil\nSwitzerland"
+          text: "LifeSkills360 GmbH\nCommercial Register Number: CHE-350.398.166"
         },
         {
           heading: "Contact",
@@ -297,7 +297,7 @@ export const LEGAL_CONTENT = {
       sections: [
         {
           heading: "1. Champ d'application et définitions",
-          text: "1.1 Les présentes Conditions Générales (\"CG\") régissent l'utilisation de la plateforme en ligne KursNavi sous le domaine www.kursnavi.ch (ci-après la \"Plateforme\") par les visiteurs, les utilisateurs enregistrés en tant que Participants (ci-après les \"Participants\") ainsi que les prestataires de cours (ci-après les \"Fournisseurs\").\n1.2 L'exploitante de la Plateforme est LifeSkills360 GmbH, Talrain 25, 6043 Adligenswil, Suisse (ci-après \"LifeSkills360\", \"nous\").\n1.3 Les conditions divergentes des Participants ou des Fournisseurs ne s'appliquent que si nous les avons acceptées expressément par écrit.\n1.4 Définitions\na) Cours: Événement ou prestation proposée par un Fournisseur (en général hors ligne).\nb) Cours avec réservation directe: Cours pouvant être réservé et payé via KursNavi.\nc) Cours de type lead (demande): Cours référencé sur KursNavi pour lequel les Participants peuvent envoyer une demande au Fournisseur via KursNavi. Aucune réservation et aucun paiement n'ont lieu via KursNavi.\nd) Contrat de cours: Contrat relatif à la participation au Cours entre le Participant et le Fournisseur."
+          text: "1.1 Les présentes Conditions Générales (\"CG\") régissent l'utilisation de la plateforme en ligne KursNavi sous le domaine www.kursnavi.ch (ci-après la \"Plateforme\") par les visiteurs, les utilisateurs enregistrés en tant que Participants (ci-après les \"Participants\") ainsi que les prestataires de cours (ci-après les \"Fournisseurs\").\n1.2 L'exploitante de la Plateforme est LifeSkills360 GmbH, Numéro du registre du commerce CHE-350.398.166 (ci-après \"LifeSkills360\", \"nous\").\n1.3 Les conditions divergentes des Participants ou des Fournisseurs ne s'appliquent que si nous les avons acceptées expressément par écrit.\n1.4 Définitions\na) Cours: Événement ou prestation proposée par un Fournisseur (en général hors ligne).\nb) Cours avec réservation directe: Cours pouvant être réservé et payé via KursNavi.\nc) Cours de type lead (demande): Cours référencé sur KursNavi pour lequel les Participants peuvent envoyer une demande au Fournisseur via KursNavi. Aucune réservation et aucun paiement n'ont lieu via KursNavi.\nd) Contrat de cours: Contrat relatif à la participation au Cours entre le Participant et le Fournisseur."
         },
         {
           heading: "2. Plateforme, rôle de LifeSkills360 et relations contractuelles",
@@ -368,7 +368,7 @@ export const LEGAL_CONTENT = {
       sections: [
         {
           heading: "1. Responsable",
-          text: "Le responsable du traitement des données conformément à la loi fédérale sur la protection des données (nLPD) est :\nLifeSkills360 GmbH\nTalrain 25, 6043 Adligenswil, Suisse\nE-mail : info@kursnavi.ch"
+          text: "Le responsable du traitement des données conformément à la loi fédérale sur la protection des données (nLPD) est :\nLifeSkills360 GmbH\nNuméro du registre du commerce CHE-350.398.166\nE-mail : info@kursnavi.ch"
         },
         {
           heading: "2. Traitement des Données Personnelles",
@@ -414,7 +414,7 @@ export const LEGAL_CONTENT = {
       sections: [
         {
           heading: "Exploitant",
-          text: "LifeSkills360 GmbH\nTalrain 25\n6043 Adligenswil\nSuisse"
+          text: "LifeSkills360 GmbH\nNuméro du registre du commerce : CHE-350.398.166"
         },
         {
           heading: "Contact",
@@ -441,7 +441,7 @@ export const LEGAL_CONTENT = {
       sections: [
         {
           heading: "1. Ambito di applicazione e definizioni",
-          text: "1.1 I presenti Termini e Condizioni Generali (\"TCG\") disciplinano l'utilizzo della piattaforma online KursNavi sotto il dominio www.kursnavi.ch (di seguito la \"Piattaforma\") da parte di visitatori, utenti registrati quali Partecipanti (di seguito i \"Partecipanti\") e fornitori di corsi (di seguito i \"Fornitori\").\n1.2 L'operatore della Piattaforma è LifeSkills360 GmbH, Talrain 25, 6043 Adligenswil, Svizzera (di seguito \"LifeSkills360\", \"noi\").\n1.3 Condizioni divergenti di Partecipanti o Fornitori si applicano solo se da noi espressamente accettate per iscritto.\n1.4 Definizioni\na) Corso: Evento o servizio offerto da un Fornitore (di regola offline).\nb) Corso con prenotazione diretta: Corso prenotabile e pagabile tramite KursNavi.\nc) Corso lead (richiesta): Corso elencato su KursNavi per il quale i Partecipanti possono inviare una richiesta al Fornitore tramite KursNavi. Non avvengono né prenotazione né pagamento tramite KursNavi.\nd) Contratto di corso: Contratto per la partecipazione al Corso tra Partecipante e Fornitore."
+          text: "1.1 I presenti Termini e Condizioni Generali (\"TCG\") disciplinano l'utilizzo della piattaforma online KursNavi sotto il dominio www.kursnavi.ch (di seguito la \"Piattaforma\") da parte di visitatori, utenti registrati quali Partecipanti (di seguito i \"Partecipanti\") e fornitori di corsi (di seguito i \"Fornitori\").\n1.2 L'operatore della Piattaforma è LifeSkills360 GmbH, Numero di registro di commercio CHE-350.398.166 (di seguito \"LifeSkills360\", \"noi\").\n1.3 Condizioni divergenti di Partecipanti o Fornitori si applicano solo se da noi espressamente accettate per iscritto.\n1.4 Definizioni\na) Corso: Evento o servizio offerto da un Fornitore (di regola offline).\nb) Corso con prenotazione diretta: Corso prenotabile e pagabile tramite KursNavi.\nc) Corso lead (richiesta): Corso elencato su KursNavi per il quale i Partecipanti possono inviare una richiesta al Fornitore tramite KursNavi. Non avvengono né prenotazione né pagamento tramite KursNavi.\nd) Contratto di corso: Contratto per la partecipazione al Corso tra Partecipante e Fornitore."
         },
         {
           heading: "2. Piattaforma, ruolo di LifeSkills360 e rapporti contrattuali",
@@ -512,7 +512,7 @@ export const LEGAL_CONTENT = {
       sections: [
         {
           heading: "1. Titolare del Trattamento",
-          text: "Responsabile del trattamento dei dati ai sensi della Legge federale sulla protezione dei dati (nLPD) è:\nLifeSkills360 GmbH\nTalrain 25, 6043 Adligenswil, Svizzera\nEmail: info@kursnavi.ch"
+          text: "Responsabile del trattamento dei dati ai sensi della Legge federale sulla protezione dei dati (nLPD) è:\nLifeSkills360 GmbH\nNumero di registro di commercio CHE-350.398.166\nEmail: info@kursnavi.ch"
         },
         {
           heading: "2. Trattamento dei Dati Personali",
@@ -558,7 +558,7 @@ export const LEGAL_CONTENT = {
       sections: [
         {
           heading: "Gestore",
-          text: "LifeSkills360 GmbH\nTalrain 25\n6043 Adligenswil\nSvizzera"
+          text: "LifeSkills360 GmbH\nNumero di registro di commercio: CHE-350.398.166"
         },
         {
           heading: "Contatto",
