@@ -531,7 +531,7 @@ export const Footer = ({ t, setView }) => {
         </div>
       </div>
       <div className="border-t border-gray-100 pt-8 flex flex-col md:flex-row justify-between items-center">
-        <p className="text-gray-400 text-sm font-sans">&copy; {new Date().getFullYear()} LifeSkills360 GmbH. {t.footer_rights}</p>
+        <p className="text-gray-400 text-sm font-sans">&copy; LifeSkills360 GmbH. {t.footer_rights}</p>
       </div>
     </div>
   </footer>
