@@ -1,13 +1,13 @@
 import React, { useEffect } from 'react';
 import {
-    CheckCircle, XCircle, ArrowRight, CreditCard, MessageSquare,
+    CheckCircle, ArrowRight, CreditCard, MessageSquare,
     CalendarClock, BookOpen, BarChart3, UserCircle, BadgeCheck,
-    ClipboardList, User, Building2, Zap, Shield, Eye
+    ClipboardList, User, Building2, Zap, Shield
 } from 'lucide-react';
-import { PLANS } from '../constants/plans';
+import PlanCardGrid from './PlanCardGrid';
 import { BASE_URL } from '../lib/siteConfig';
 
-const TeacherHub = ({ setView, t, user, showNotification }) => {
+const TeacherHub = ({ setView, user, showNotification }) => {
 
     // SEO: B2B Specific Meta Tags
     useEffect(() => {
@@ -78,16 +78,6 @@ const TeacherHub = ({ setView, t, user, showNotification }) => {
         }
 
         window.location.href = mailto;
-    };
-
-    const getColorClasses = (accent) => {
-        switch (accent) {
-            case 'green': return { border: 'border-green-500', text: 'text-green-600', bg: 'bg-green-600', icon: 'text-green-500', btnOutline: 'text-green-700 border-green-500 hover:bg-green-50' };
-            case 'blue': return { border: 'border-blue-500', text: 'text-blue-600', bg: 'bg-blue-600', icon: 'text-blue-500', btnSolid: 'bg-blue-600 hover:bg-blue-700 text-white' };
-            case 'purple': return { border: 'border-purple-500', text: 'text-purple-600', bg: 'bg-purple-600', icon: 'text-purple-500', btnOutline: 'text-purple-700 border-purple-500 hover:bg-purple-50' };
-            case 'orange': return { border: 'border-orange-500', text: 'text-orange-600', bg: 'bg-orange-600', icon: 'text-orange-500', btnOutline: 'text-orange-700 border-orange-500 hover:bg-orange-50' };
-            default: return { border: 'border-gray-200', text: 'text-gray-800', bg: 'bg-gray-800', icon: 'text-gray-500', btnOutline: 'text-gray-700 border-gray-300' };
-        }
     };
 
     const bookingModels = [
@@ -369,47 +359,7 @@ const TeacherHub = ({ setView, t, user, showNotification }) => {
                     </p>
                 </div>
 
-                <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    {PLANS.map((plan) => {
-                        const colors = getColorClasses(plan.accent);
-                        return (
-                            <div key={plan.id} className={`bg-white p-6 rounded-2xl border-t-4 shadow-lg hover:shadow-xl transition flex flex-col relative ${plan.lift ? 'transform md:-translate-y-2' : ''} ${colors.border}`}>
-                                {plan.badgeText && (
-                                    <div className={`absolute top-0 right-0 text-white text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-lg ${colors.bg}`}>
-                                        {plan.badgeText}
-                                    </div>
-                                )}
-                                <div className="mb-4">
-                                    <h3 className="text-xl font-bold font-heading text-gray-800">{plan.title}</h3>
-                                    <div className={`mt-2 text-3xl font-bold ${plan.id === 'basic' ? 'text-gray-900' : colors.text}`}>
-                                        {plan.priceText}
-                                        <span className="text-sm font-normal text-gray-500">{plan.periodText}</span>
-                                    </div>
-                                </div>
-                                <ul className="space-y-3 mb-8 flex-1 text-sm text-gray-600">
-                                    {plan.features.map((feature, idx) => (
-                                        <li key={idx} className={`flex items-start ${feature.dim ? 'opacity-70' : ''}`}>
-                                            {feature.excluded ? (
-                                                <XCircle className="w-4 h-4 mr-2 mt-1 shrink-0 text-red-500" />
-                                            ) : (
-                                                <CheckCircle className={`w-4 h-4 mr-2 mt-1 shrink-0 ${colors.icon}`} />
-                                            )}
-                                            <span className={feature.isStrong ? 'font-bold text-gray-800' : (feature.excluded ? 'text-gray-500' : '')}>
-                                                {feature.text}
-                                            </span>
-                                        </li>
-                                    ))}
-                                </ul>
-                                <button
-                                    onClick={() => handleCta(plan.id)}
-                                    className={`w-full py-2 font-bold rounded-lg transition shadow-md ${plan.buttonVariant === 'solid' ? colors.btnSolid : colors.btnOutline}`}
-                                >
-                                    {plan.ctaLabel}
-                                </button>
-                            </div>
-                        );
-                    })}
-                </div>
+                <PlanCardGrid onPlanSelect={(plan) => handleCta(plan.id)} />
 
                 {/* Service Add-on */}
                 <div className="mt-12 bg-gray-50 rounded-xl p-6 border border-gray-200 flex flex-col md:flex-row items-center justify-between gap-6">

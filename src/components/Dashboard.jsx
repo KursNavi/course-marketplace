@@ -17,6 +17,7 @@ import { supabase } from '../lib/supabase';
 import { useTaxonomy } from '../hooks/useTaxonomy';
 import ProviderProfileEditor from './ProviderProfileEditor';
 import AnalyticsDashboard from './AnalyticsDashboard';
+import PlanCardGrid from './PlanCardGrid';
 
 // --- HELPER COMPONENT: User Profile Settings ---
 const UserProfileSection = ({ user, setUser, showNotification, setLang, t, isImpersonating }) => {
@@ -926,13 +927,6 @@ const SubscriptionSection = ({ user, currentTier, packageExpiresAt, checkoutLoad
 
     const tierOrder = ['basic', 'pro', 'premium', 'enterprise'];
 
-    const tiers = PLANS.map(p => ({
-        id: p.id,
-        name: p.title,
-        price: `${formatPriceCHF(p.priceAnnualCHF)} CHF/Jahr`,
-        features: (p.features || []).slice(0, 7),
-    }));
-
     return (
         <div className="space-y-6 animate-in fade-in">
             <div className="bg-white p-8 rounded-xl border border-gray-200 shadow-sm">
@@ -946,78 +940,74 @@ const SubscriptionSection = ({ user, currentTier, packageExpiresAt, checkoutLoad
                     )}
                 </p>
 
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                    {tiers.map(tier => {
-                        const isCurrent = currentTier === tier.id;
-                        const isUpgrade = tierOrder.indexOf(tier.id) > tierOrder.indexOf(currentTier);
-                        const isPaidCurrent = isCurrent && tier.id !== 'basic' && packageExpiresAt;
+                <PlanCardGrid
+                    currentTier={currentTier}
+                    renderAction={({ plan, colors, isCurrent }) => {
+                        const isUpgrade = tierOrder.indexOf(plan.id) > tierOrder.indexOf(currentTier);
+                        const isPaidCurrent = isCurrent && plan.id !== 'basic' && packageExpiresAt;
 
-                        return (
-                            <div key={tier.id} className={`p-6 rounded-xl border-2 flex flex-col ${isCurrent ? 'border-primary bg-orange-50' : 'border-gray-100 bg-white'}`}>
-                                <div className="mb-4">
-                                    <h3 className="font-bold text-lg">{tier.name}</h3>
-                                    <div className="text-2xl font-bold text-dark">{tier.price}</div>
-                                </div>
-                                <ul className="mb-6 flex-1 space-y-2">
-                                    {tier.features.map((f, i) => (
-                                        <li key={i} className={`text-sm flex items-start ${f.excluded ? 'text-gray-400' : 'text-gray-600'}`}>
-                                            {f.excluded ? (
-                                                <XCircle className="w-4 h-4 mr-2 text-red-500 shrink-0"/>
-                                            ) : (
-                                                <CheckCircle className="w-4 h-4 mr-2 text-green-500 shrink-0"/>
-                                            )}
-                                            <span>{f.text}</span>
-                                        </li>
-                                    ))}
-                                </ul>
-
-                                {/* Bezahlter aktueller Plan: Ablaufdatum + Verlängern */}
-                                {isPaidCurrent ? (
-                                    <div>
-                                        <div className="text-xs text-gray-500 text-center mb-2">
-                                            Gültig bis: {new Date(packageExpiresAt).toLocaleDateString('de-CH')}
-                                        </div>
-                                        <button
-                                            type="button"
-                                            onClick={() => handleCheckout(tier.id)}
-                                            disabled={!!checkoutLoading}
-                                            className="w-full py-2 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 transition shadow-md flex items-center justify-center gap-2"
-                                        >
-                                            {checkoutLoading === tier.id ? (
-                                                <><Loader className="w-4 h-4 animate-spin" /> Laden...</>
-                                            ) : (
-                                                'Verlängern'
-                                            )}
-                                        </button>
+                        if (isPaidCurrent) {
+                            return (
+                                <div>
+                                    <div className="mb-2 text-center text-xs text-gray-500">
+                                        Gültig bis: {new Date(packageExpiresAt).toLocaleDateString('de-CH')}
                                     </div>
-
-                                /* Basic (aktuell): kein Checkout */
-                                ) : isCurrent ? (
-                                    <button disabled className="w-full py-2 bg-gray-200 text-gray-500 rounded-lg font-bold cursor-default">Aktueller Plan</button>
-
-                                /* Upgrade: Stripe Checkout (Pro/Premium/Enterprise) */
-                                ) : isUpgrade ? (
                                     <button
                                         type="button"
-                                        onClick={() => handleCheckout(tier.id)}
+                                        onClick={() => handleCheckout(plan.id)}
                                         disabled={!!checkoutLoading}
-                                        className="block w-full text-center py-2 bg-primary text-white rounded-lg font-bold hover:bg-orange-600 transition shadow-md flex items-center justify-center gap-2"
+                                        className="flex w-full items-center justify-center gap-2 rounded-lg bg-green-600 py-2 font-bold text-white shadow-md transition hover:bg-green-700"
                                     >
-                                        {checkoutLoading === tier.id ? (
+                                        {checkoutLoading === plan.id ? (
                                             <><Loader className="w-4 h-4 animate-spin" /> Laden...</>
                                         ) : (
-                                            'Upgrade kaufen'
+                                            'Verlängern'
                                         )}
                                     </button>
+                                </div>
+                            );
+                        }
 
-                                /* Niedrigerer Plan: nicht verfügbar */
-                                ) : (
-                                    <button disabled className="w-full py-2 border border-gray-200 text-gray-400 rounded-lg">Nicht verfügbar</button>
-                                )}
-                            </div>
+                        if (isCurrent) {
+                            return (
+                                <button
+                                    type="button"
+                                    disabled
+                                    className="w-full cursor-default rounded-lg bg-gray-200 py-2 font-bold text-gray-500"
+                                >
+                                    Aktueller Plan
+                                </button>
+                            );
+                        }
+
+                        if (isUpgrade) {
+                            return (
+                                <button
+                                    type="button"
+                                    onClick={() => handleCheckout(plan.id)}
+                                    disabled={!!checkoutLoading}
+                                    className={`flex w-full items-center justify-center gap-2 rounded-lg py-2 font-bold shadow-md transition ${colors.btnSolid}`}
+                                >
+                                    {checkoutLoading === plan.id ? (
+                                        <><Loader className="w-4 h-4 animate-spin" /> Laden...</>
+                                    ) : (
+                                        'Upgrade kaufen'
+                                    )}
+                                </button>
+                            );
+                        }
+
+                        return (
+                            <button
+                                type="button"
+                                disabled
+                                className="w-full rounded-lg border border-gray-200 py-2 text-gray-400"
+                            >
+                                Nicht verfügbar
+                            </button>
                         );
-                    })}
-                </div>
+                    }}
+                />
             </div>
         </div>
     );
