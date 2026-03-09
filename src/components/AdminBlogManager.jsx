@@ -53,12 +53,12 @@ export default function AdminBlogManager({ showNotification, setView, courses })
   const [selectedCourseId, setSelectedCourseId] = useState('');
   const [searchParams, setSearchParams] = useState({ q: '', loc: '', label: '' });
 
-  useEffect(() => { fetchArticles(); }, []);
-
   const fetchArticles = async () => {
     const { data } = await supabase.from('articles').select('*').order('created_at', { ascending: false });
     if (data) setArticles(data);
   };
+
+  useEffect(() => { fetchArticles(); }, []);
 
   const handleCreateNew = () => {
       setFormData(JSON.parse(JSON.stringify(initialFormState))); 

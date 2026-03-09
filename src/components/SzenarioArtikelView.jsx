@@ -1,10 +1,11 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import { ChevronRight, Clock, ArrowRight, BookOpen } from 'lucide-react';
 import { BEREICH_LANDING_CONFIG, getBereichBySlug, getBereichUrl, findSzenario } from '../lib/bereichLandingConfig';
 import { SZENARIO_CONTENT } from '../lib/szenarioContent';
 import { SEGMENT_CONFIG } from '../lib/constants';
 import { enhanceImages, estimateReadingTime } from '../lib/seoUtils';
 import { BASE_URL } from '../lib/siteConfig';
+import { shouldHandleClientNavigation } from '../lib/navigation';
 
 /**
  * SzenarioArtikelView
@@ -26,6 +27,18 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
   const articleContent = contentKey ? SZENARIO_CONTENT[contentKey] || null : null;
   const readingTime = estimateReadingTime(articleContent);
   const articleRef = useRef(null);
+
+  const goToSearch = useCallback((extraParams = {}) => {
+    if (!bereichConfig) return;
+    const params = new URLSearchParams();
+    params.set('type', bereichConfig.typeKey);
+    params.set('area', bereichConfig.areaSlug);
+    Object.entries(extraParams).forEach(([k, v]) => {
+      if (v) params.set(k, v);
+    });
+    window.scrollTo(0, 0);
+    window.history.pushState({ view: 'search' }, '', '/search?' + params.toString());
+  }, [bereichConfig]);
 
   // SEO
   useEffect(() => {
@@ -71,7 +84,7 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
       btns.push(btn);
     });
     return () => btns.forEach(b => b.remove());
-  }, [articleContent, scenario, lang]);
+  }, [articleContent, scenario, lang, goToSearch]);
 
   // 404
   if (!bereichConfig || !scenario) {
@@ -91,17 +104,6 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
   const goToBereich = () => {
     window.scrollTo(0, 0);
     window.history.pushState({ view: 'bereich-landing' }, '', getBereichUrl(bereichConfig));
-  };
-
-  const goToSearch = (extraParams = {}) => {
-    const params = new URLSearchParams();
-    params.set('type', bereichConfig.typeKey);
-    params.set('area', bereichConfig.areaSlug);
-    Object.entries(extraParams).forEach(([k, v]) => {
-      if (v) params.set(k, v);
-    });
-    window.scrollTo(0, 0);
-    window.history.pushState({ view: 'search' }, '', '/search?' + params.toString());
   };
 
   const goToSzenario = (scenarioSlug) => {
@@ -254,7 +256,11 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
               <a
                 key={s.slug}
                 href={`/bereich/${segment}/${slug}/${s.slug}`}
-                onClick={(e) => { e.preventDefault(); goToSzenario(s.slug); }}
+                onClick={(e) => {
+                  if (!shouldHandleClientNavigation(e)) return;
+                  e.preventDefault();
+                  goToSzenario(s.slug);
+                }}
                 className="bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-all group border border-gray-100 block"
               >
                 <div className="flex items-center gap-3 mb-2">

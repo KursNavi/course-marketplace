@@ -4,6 +4,7 @@ import { findArticle, RATGEBER_STRUCTURE } from '../lib/ratgeberStructure';
 import { SEGMENT_CONFIG } from '../lib/constants';
 import { RATGEBER_CONTENT } from '../lib/ratgeberContent';
 import { enhanceImages } from '../lib/seoUtils';
+import { shouldHandleClientNavigation } from '../lib/navigation';
 
 /**
  * RatgeberArtikelView
@@ -214,7 +215,11 @@ const RatgeberArtikelView = ({ lang = 'de' }) => {
           {prevArticle ? (
             <a
               href={`/ratgeber/${categorySlug}/${clusterSlug}/${prevArticle.slug}`}
-              onClick={(e) => { e.preventDefault(); goToArticle(prevArticle.slug); }}
+              onClick={(e) => {
+                if (!shouldHandleClientNavigation(e)) return;
+                e.preventDefault();
+                goToArticle(prevArticle.slug);
+              }}
               className="bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-all text-left group border border-gray-100 block"
             >
               <span className="text-xs text-gray-400 uppercase tracking-wide">
@@ -231,7 +236,11 @@ const RatgeberArtikelView = ({ lang = 'de' }) => {
           {nextArticle && (
             <a
               href={`/ratgeber/${categorySlug}/${clusterSlug}/${nextArticle.slug}`}
-              onClick={(e) => { e.preventDefault(); goToArticle(nextArticle.slug); }}
+              onClick={(e) => {
+                if (!shouldHandleClientNavigation(e)) return;
+                e.preventDefault();
+                goToArticle(nextArticle.slug);
+              }}
               className="bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-all text-right group border border-gray-100 block"
             >
               <span className="text-xs text-gray-400 uppercase tracking-wide">
@@ -254,7 +263,11 @@ const RatgeberArtikelView = ({ lang = 'de' }) => {
           </h3>
           <a
             href={`/ratgeber/${categorySlug}/${clusterSlug}`}
-            onClick={(e) => { e.preventDefault(); goToCluster(); }}
+            onClick={(e) => {
+              if (!shouldHandleClientNavigation(e)) return;
+              e.preventDefault();
+              goToCluster();
+            }}
             className={`${config.text} text-sm font-medium flex items-center gap-1 hover:underline`}
           >
             Alle anzeigen
@@ -271,7 +284,11 @@ const RatgeberArtikelView = ({ lang = 'de' }) => {
               <a
                 key={article.slug}
                 href={`/ratgeber/${categorySlug}/${clusterSlug}/${article.slug}`}
-                onClick={(e) => { e.preventDefault(); goToArticle(article.slug); }}
+                onClick={(e) => {
+                  if (!shouldHandleClientNavigation(e)) return;
+                  e.preventDefault();
+                  goToArticle(article.slug);
+                }}
                 className="bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-all text-left group border border-gray-100 block"
               >
                 <h4 className="font-medium text-gray-700 group-hover:text-primary transition-colors line-clamp-2 text-sm">

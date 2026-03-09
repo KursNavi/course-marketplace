@@ -2,6 +2,7 @@ import React from 'react';
 import { ChevronRight, BookOpen } from 'lucide-react';
 import { RATGEBER_STRUCTURE, findCluster } from '../lib/ratgeberStructure';
 import { SEGMENT_CONFIG } from '../lib/constants';
+import { shouldHandleClientNavigation } from '../lib/navigation';
 
 /**
  * RatgeberClusterView
@@ -139,7 +140,11 @@ const RatgeberClusterView = ({ lang = 'de' }) => {
             <a
               key={article.slug}
               href={`/ratgeber/${categorySlug}/${clusterSlug}/${article.slug}`}
-              onClick={(e) => { e.preventDefault(); goToArticle(article.slug); }}
+              onClick={(e) => {
+                if (!shouldHandleClientNavigation(e)) return;
+                e.preventDefault();
+                goToArticle(article.slug);
+              }}
               className="bg-white rounded-xl p-6 shadow-sm hover:shadow-lg transition-all duration-300 text-left group border border-gray-100 hover:border-gray-200 block"
             >
               {/* Article Number */}

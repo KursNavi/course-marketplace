@@ -4,6 +4,7 @@ import { getBereichBySlug, getBereichUrl } from '../lib/bereichLandingConfig';
 import { SEGMENT_CONFIG } from '../lib/constants';
 import { useTaxonomy } from '../hooks/useTaxonomy';
 import { BASE_URL } from '../lib/siteConfig';
+import { shouldHandleClientNavigation } from '../lib/navigation';
 
 export default function BereichLandingPage({ segment, slug, courses, lang = 'de', t }) {
   const config = getBereichBySlug(segment, slug);
@@ -202,6 +203,7 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
                   key={scenario.slug || i}
                   href={`/bereich/${segment}/${slug}/${scenario.slug}`}
                   onClick={(e) => {
+                    if (!shouldHandleClientNavigation(e)) return;
                     e.preventDefault();
                     window.scrollTo(0, 0);
                     window.history.pushState({ view: 'bereich-szenario' }, '', `/bereich/${segment}/${slug}/${scenario.slug}`);
@@ -256,6 +258,7 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
                 key={scenario.slug || i}
                 href={`/bereich/${segment}/${slug}/${scenario.slug}`}
                 onClick={(e) => {
+                  if (!shouldHandleClientNavigation(e)) return;
                   e.preventDefault();
                   window.scrollTo(0, 0);
                   window.history.pushState({ view: 'bereich-szenario' }, '', `/bereich/${segment}/${slug}/${scenario.slug}`);
