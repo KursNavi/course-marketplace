@@ -9,6 +9,31 @@ import { isImageUsedByOtherCourses, deleteImageFromStorage } from './lib/imageUt
 import { BASE_URL, slugify as siteSlugify, buildCoursePath as siteBuildCoursePath } from './lib/siteConfig';
 import { useTaxonomy } from './hooks/useTaxonomy';
 
+const CHUNK_RELOAD_KEY = 'chunk_reload';
+const CHUNK_RELOAD_COOLDOWN_MS = 10000;
+
+function isChunkLoadError(error) {
+  const message = (error?.message || '').toLowerCase();
+  const name = (error?.name || '').toLowerCase();
+  return (
+    name.includes('chunkloaderror') ||
+    message.includes('failed to fetch dynamically imported module') ||
+    message.includes('importing a module script failed') ||
+    message.includes('loading chunk')
+  );
+}
+
+function triggerChunkReload() {
+  const lastReload = sessionStorage.getItem(CHUNK_RELOAD_KEY);
+  const now = Date.now();
+  if (!lastReload || now - Number(lastReload) > CHUNK_RELOAD_COOLDOWN_MS) {
+    sessionStorage.setItem(CHUNK_RELOAD_KEY, String(now));
+    window.location.reload();
+    return true;
+  }
+  return false;
+}
+
 // Eagerly loaded components (always needed)
 import { Navbar, Footer } from './components/Layout';
 import { Home } from './components/Home';
@@ -18,19 +43,25 @@ import { Home } from './components/Home';
 // (text/html) instead of the JS file, which causes a dynamic import failure.
 // This helper catches that and reloads the page once to fetch updated chunks.
 function lazyWithRetry(importFn) {
-  return React.lazy(() =>
-    importFn().catch((error) => {
-      // Only reload once to avoid infinite loops
-      const key = 'chunk_reload';
-      const lastReload = sessionStorage.getItem(key);
-      const now = Date.now();
-      if (!lastReload || now - Number(lastReload) > 10000) {
-        sessionStorage.setItem(key, String(now));
-        window.location.reload();
+  return React.lazy(async () => {
+    try {
+      return await importFn();
+    } catch (firstError) {
+      if (!isChunkLoadError(firstError)) throw firstError;
+      try {
+        // One quick retry for transient network/cache race conditions.
+        return await importFn();
+      } catch (retryError) {
+        if (!isChunkLoadError(retryError)) throw retryError;
+        const didReload = triggerChunkReload();
+        if (didReload) {
+          // Keep Suspense fallback visible while reload starts; avoid crash flash.
+          return await new Promise(() => {});
+        }
+        throw retryError;
       }
-      throw error;
-    })
-  );
+    }
+  });
 }
 
 const SearchPageView = lazyWithRetry(() => import('./components/SearchPageView'));
@@ -77,21 +108,20 @@ class ErrorBoundary extends React.Component {
     console.error("📌 COMPONENT STACK:", errorInfo);
 
     // Auto-reload on chunk load failures (stale deploy)
-    const msg = error?.message || '';
-    if (msg.includes('Failed to fetch dynamically imported module') || msg.includes('Loading chunk')) {
-      const key = 'chunk_reload';
-      const lastReload = sessionStorage.getItem(key);
-      const now = Date.now();
-      if (!lastReload || now - Number(lastReload) > 10000) {
-        sessionStorage.setItem(key, String(now));
-        window.location.reload();
-        return;
-      }
+    if (isChunkLoadError(error)) {
+      if (triggerChunkReload()) return;
     }
   }
 
   render() {
     if (this.state.hasError) {
+      if (isChunkLoadError(this.state.error)) {
+        return (
+          <div className="flex flex-col items-center justify-center min-h-[60vh]">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mb-4"></div>
+          </div>
+        );
+      }
       return (
         <div className="p-10 bg-white min-h-screen text-red-600 pt-32 text-center">
           <h1 className="text-3xl font-bold mb-4">💥 APP ABGESTÜRZT</h1>

@@ -1947,7 +1947,7 @@ export const RATGEBER_CONTENT = {
   'privat-hobby/inspiration/zurueck-zum-kindheitstraum': `
     <p class="lead">Rückkehr zu Lieblingshobbys aus der Kindheit ist nicht Nostalgie – sie ist therapeutisch wirksamer Stressabbau und Reconnection mit Authentizität.</p>
 
-    <img src="https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=800&q=80" alt="Kindheitserinnerungen und Hobbys wiederentdecken" class="article-image" />
+    <img src="https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=800&q=80" alt="Kindheitserinnerungen und Hobbys wiederentdecken" class="article-image" />
 
     <h2>💫 Warum Kindheitshobbys noch heute nachwirken</h2>
     <p>Das, was du zwischen 7 und 14 Jahren geliebt hast, hinterlässt tiefe neuronale Muster. Damals war deine Motivation 'intrinsisch' – du tatest es aus reiner Freude, nicht aus Leistungsdruck. Diese emotionale Imprägung bleibt ein Leben lang. Viele Menschen unterbrechen ihre Kindheitshobbys aus Zeitmangel, Geld oder sozialen Gründen – doch die Sehnsucht bleibt.</p>
@@ -3105,7 +3105,7 @@ export const RATGEBER_CONTENT = {
   'kinder/interessen/motivation-ohne-zwang': `
     <p class="lead">Viele Eltern kämpfen mit einem Dilemma: Wie motiviere ich mein Kind, einen Kurs weiterzumachen, wenn die erste Begeisterung verflogen ist – ohne es zu drangsalieren?</p>
 
-    <img src="https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=800&q=80" alt="Kind mit natürlicher Motivation" class="article-image" />
+    <img src="https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=800&q=80" alt="Kind mit natürlicher Motivation" class="article-image" />
 
     <h2>🧠 Intrinsische vs. extrinsische Motivation</h2>
 
@@ -3175,7 +3175,7 @@ export const RATGEBER_CONTENT = {
   'kinder/interessen/hobby-wechsel-aufgeben': `
     <p class="lead">Hobby-Hopping ist völlig normal – besonders bei Grundschulkindern. Die Frage ist nicht, ob dein Kind das Hobby wechselt, sondern wie du Entscheidungen intelligent triffst.</p>
 
-    <img src="https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=800&q=80" alt="Kind beim Ausprobieren verschiedener Aktivitäten" class="article-image" />
+    <img src="https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=800&q=80" alt="Kind beim Ausprobieren verschiedener Aktivitäten" class="article-image" />
 
     <h2>Ist Hobby-Wechsel Schaden oder Nutzen?</h2>
     <p>Hobby-Wechsel ist in der Regel <strong>nützlich</strong>: Kinder erkunden verschiedene Aktivitäten, lernen sich selbst besser kennen und sammeln vielfältige Kompetenzen. Das ist ein wichtiger Teil der kindlichen Entwicklung!</p>
@@ -3408,7 +3408,7 @@ export const RATGEBER_CONTENT = {
   'kinder/finanzen-kinder/geschwisterrabatte-paketpreise': `
     <p class="lead">Hast du mehrere Kinder? Geschwisterrabatte können 20–50% Kostenersparnis bedeuten – aber du musst danach fragen! Hier erfährst du, wo du am meisten sparst.</p>
 
-    <img src="https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=800&q=80" alt="Geschwister beim gemeinsamen Sport" class="article-image" />
+    <img src="https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=800&q=80" alt="Geschwister beim gemeinsamen Sport" class="article-image" />
 
     <h2>💰 Typische Rabatthöhen nach Anbietertyp</h2>
     <table>

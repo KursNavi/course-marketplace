@@ -234,11 +234,11 @@ const TeacherHub = ({ setView, user, showNotification }) => {
                                 {[
                                     'Komplett kostenlos – 0 CHF/Jahr',
                                     'Unbegrenzte Anzahl Kurse einstellen',
-                                    'Ranking-Bonus bei Direktbuchung',
+                                    'Zusätzlicher Ranking-Bonus bei Direktbuchung',
                                     'Sofort online und sichtbar',
                                     'Jederzeit auf Pro upgraden',
                                 ].map((text) => (
-                                    <li key={text} className="flex items-start text-gray-700">
+                                    <li key={text} className={`flex items-start text-gray-700 ${text === 'Zusätzlicher Ranking-Bonus bei Direktbuchung' ? 'font-bold' : ''}`}>
                                         <CheckCircle className="w-5 h-5 text-green-500 mr-3 mt-0.5 shrink-0" />
                                         <span>{text}</span>
                                     </li>

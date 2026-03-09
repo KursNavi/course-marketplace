@@ -35,7 +35,7 @@ const AboutPage = ({ t, setView }) => {
             titleKey: 'about_kids_title',
             textKey: 'about_kids_text',
             subKey: 'about_kids_sub',
-            image: 'https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?auto=format&fit=crop&q=80&w=1200',
+            image: 'https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&q=80&w=1200',
             imageAlt: 'Kids learning',
         },
         {
