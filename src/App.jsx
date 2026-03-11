@@ -1663,7 +1663,7 @@ useEffect(() => {
       )}
 
 
-            {view === 'success' && <SuccessView setView={setView} />}
+            {view === 'success' && <SuccessView setView={setView} t={t} />}
 
       {!loading && view === 'detail' && selectedCourse && (
         <DetailView
