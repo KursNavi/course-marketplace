@@ -514,7 +514,7 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t, isImp
 
                 {user.role === 'teacher' && (
                     <div className="border-t pt-6 mt-6">
-                        <h3 className="text-lg font-bold mb-4 text-blue-600 flex items-center"><Shield className="w-4 h-4 mr-2" /> Verification & Blue Check</h3>
+                        <h3 className="text-lg font-bold mb-4 text-blue-600 flex items-center"><Shield className="w-4 h-4 mr-2" /> Verification</h3>
                         <div className="bg-blue-50 border border-blue-100 p-6 rounded-xl">
                             <div className="flex items-start gap-4 mb-6">
                                 <div className="bg-white p-2 rounded-full shadow-sm"><CheckCircle className="w-6 h-6 text-blue-500" /></div>
@@ -528,7 +528,7 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t, isImp
                             <div className="bg-green-100 text-green-800 px-4 py-6 rounded-xl flex flex-col items-center justify-center font-bold text-center">
                                 <CheckCircle className="w-12 h-12 mb-2 text-green-600" /> 
                                 <span className="text-lg">Dein Account ist verifiziert!</span>
-                                <p className="text-sm font-normal text-green-700 mt-1">Du hast das blaue Häkchen und den "Verifiziert"-Status erhalten.</p>
+                                <p className="text-sm font-normal text-green-700 mt-1">Dein Profil trägt jetzt den Status "Verifiziert".</p>
                             </div>
                         ) : (
                             <div className="space-y-6">
@@ -545,11 +545,11 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t, isImp
                                                     type="button"
                                                     onClick={() => {
                                                         const to = "info@kursnavi.ch";
-                                                        const subject = "Verifizierung: Zahlung/Blue Check";
+                                                        const subject = "Verifizierung: Zahlung";
                                                         const body = [
                                                             "Hallo KursNavi Team",
                                                             "",
-                                                            "ich möchte die Verifizierung (Blue Check) abschliessen. Bitte sendet mir die Zahlungsinfos/Rechnung.",
+                                                            "ich möchte die Verifizierung abschliessen. Bitte sendet mir die Zahlungsinfos/Rechnung.",
                                                             "",
                                                             `Account E-Mail: ${user?.email || ""}`,
                                                             "",

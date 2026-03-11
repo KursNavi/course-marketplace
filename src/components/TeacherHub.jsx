@@ -137,7 +137,7 @@ const TeacherHub = ({ setView, user, showNotification }) => {
         {
             icon: BadgeCheck,
             title: 'Verifizierungsbadge',
-            description: 'Lass deine Qualifikationen prüfen und erhalte das blaue Häkchen für mehr Vertrauen.',
+            description: 'Lass deine Qualifikationen prüfen und erhalte den Status "Verifiziert" für mehr Vertrauen.',
         },
         {
             icon: ClipboardList,
