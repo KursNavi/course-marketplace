@@ -900,12 +900,18 @@ const SubscriptionSection = ({ user, currentTier, packageExpiresAt, checkoutLoad
     const handleCheckout = async (tierId) => {
         setCheckoutLoading(tierId);
         try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session?.access_token) {
+                throw new Error('Bitte melde dich erneut an.');
+            }
+
             const res = await fetch('/api/create-package-checkout', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session.access_token}`,
+                },
                 body: JSON.stringify({
-                    userId: user.id,
-                    userEmail: user.email,
                     targetTier: tierId,
                 }),
             });
