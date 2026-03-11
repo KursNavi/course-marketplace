@@ -1500,6 +1500,23 @@ useEffect(() => {
       setView('success');
 
       for (let attempt = 0; attempt < 6; attempt += 1) {
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (session?.access_token) {
+          try {
+            await fetch('/api/confirm-checkout-session', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${session.access_token}`
+              },
+              body: JSON.stringify({ sessionId })
+            });
+          } catch (error) {
+            console.warn('Checkout confirmation fallback failed:', error);
+          }
+        }
+
         const { data } = await supabase
           .from('bookings')
           .select('id')
