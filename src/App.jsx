@@ -1494,7 +1494,8 @@ useEffect(() => {
   }
 
   const sessionId = query.get('session_id');
-  if (sessionId && user) {
+  const isPackageUpgradeReturn = query.get('package_upgrade') === 'success';
+  if (sessionId && user && !isPackageUpgradeReturn) {
     let stopped = false;
     const finalizeStripeReturn = async () => {
       setView('success');
