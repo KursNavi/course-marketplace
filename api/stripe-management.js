@@ -1,7 +1,14 @@
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
 
-function getBaseUrl() {
+function getBaseUrl(req) {
+  const forwardedProto = req.headers['x-forwarded-proto'];
+  const forwardedHost = req.headers['x-forwarded-host'] || req.headers.host;
+
+  if (forwardedHost) {
+    return `${forwardedProto || 'https'}://${forwardedHost}`.replace(/\/$/, '');
+  }
+
   const raw = process.env.VITE_SITE_URL || process.env.SITE_URL || 'https://kursnavi.ch';
   return raw.replace(/\/$/, '');
 }
@@ -74,7 +81,7 @@ async function handleCustomerPortal(stripe, supabase, userId, req, res) {
     return res.status(400).json({ error: 'No customer profile found' });
   }
 
-  const baseUrl = getBaseUrl();
+  const baseUrl = getBaseUrl(req);
   const session = await stripe.billingPortal.sessions.create({
     customer: profile.stripe_customer_id,
     return_url: `${baseUrl}/`,

@@ -1495,8 +1495,44 @@ useEffect(() => {
 
   const sessionId = query.get('session_id');
   if (sessionId && user) {
-    const pendingCourseId = localStorage.getItem('pendingCourseId');
+    let stopped = false;
+    const finalizeStripeReturn = async () => {
+      setView('success');
 
+      for (let attempt = 0; attempt < 6; attempt += 1) {
+        const { data } = await supabase
+          .from('bookings')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('stripe_checkout_session_id', sessionId)
+          .maybeSingle();
+
+        if (stopped) return;
+
+        if (data) {
+          localStorage.removeItem('pendingCourseId');
+          localStorage.removeItem('pendingEventId');
+          await fetchBookings(user.id);
+
+          window.history.replaceState({}, document.title, '/dashboard');
+          setView('dashboard');
+          return;
+        }
+
+        if (attempt < 5) {
+          await new Promise((resolve) => window.setTimeout(resolve, 1500));
+        }
+      }
+
+      await fetchBookings(user.id);
+    };
+
+    finalizeStripeReturn();
+    return () => {
+      stopped = true;
+    };
+
+    /*
     if (pendingCourseId) {
       const saveBooking = async () => {
         const pendingEventId = localStorage.getItem('pendingEventId');
@@ -1540,6 +1576,7 @@ useEffect(() => {
     } else {
       setView('dashboard');
     }
+    */
   }
 }, [user]);
 

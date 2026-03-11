@@ -1,7 +1,14 @@
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
 
-function getBaseUrl() {
+function getBaseUrl(req) {
+  const forwardedProto = req.headers['x-forwarded-proto'];
+  const forwardedHost = req.headers['x-forwarded-host'] || req.headers.host;
+
+  if (forwardedHost) {
+    return `${forwardedProto || 'https'}://${forwardedHost}`.replace(/\/$/, '');
+  }
+
   const raw = process.env.VITE_SITE_URL || process.env.SITE_URL || 'https://kursnavi.ch';
   return raw.replace(/\/$/, '');
 }
@@ -154,7 +161,7 @@ export default async function handler(req, res) {
     }
 
     // 6. Create Stripe checkout session with v2 metadata
-    const baseUrl = getBaseUrl();
+    const baseUrl = getBaseUrl(req);
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       customer: customerId,
