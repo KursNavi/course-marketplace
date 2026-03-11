@@ -76,8 +76,8 @@ const EMAIL_TRANSLATIONS = {
   de: {
     student_subject: "Buchung bestätigt: ",
     student_title: "Du bist dabei! 🎉",
-    student_body: (course, date, provider) => `Gute Nachrichten! Du hast dich erfolgreich für <strong>${course}</strong> angemeldet.<br><br>Der Kurs beginnt am: <strong>${date}</strong>.<br>Deine Rechnung findest du im Anhang dieser E-Mail.<br><br><small style="color:#6B7280;">Dein Vertragspartner für diesen Kurs ist <strong>${provider}</strong>. KursNavi (LifeSkills360 GmbH) wickelt die Zahlung technisch ab.</small>`,
-    student_body_flex: (course, location, provider) => `Gute Nachrichten! Du hast dich erfolgreich für <strong>${course}</strong> angemeldet.<br><br>Ort: <strong>${location}</strong><br>Der genaue Termin wird direkt mit dem Anbieter vereinbart.<br>Deine Rechnung findest du im Anhang dieser E-Mail.<br><br><small style="color:#6B7280;">Dein Vertragspartner für diesen Kurs ist <strong>${provider}</strong>. KursNavi (LifeSkills360 GmbH) wickelt die Zahlung technisch ab.</small>`,
+    student_body: (course, date, provider) => `Gute Nachrichten! Du hast dich erfolgreich für <strong>${course}</strong> angemeldet.<br><br>Der Kurs beginnt am: <strong>${date}</strong>.<br>Deine Rechnung findest du im Anhang dieser E-Mail.<br><br><small style="color:#6B7280;">Dein Vertragspartner für diesen Kurs ist <strong>${provider}</strong>. Du buchst im eigenen Namen und bleibst als buchende Person Vertragspartner/in und zahlungspflichtig, auch wenn die Teilnahme für eine andere Person erfolgt. KursNavi (LifeSkills360 GmbH) wickelt die Zahlung technisch ab.</small>`,
+    student_body_flex: (course, location, provider) => `Gute Nachrichten! Du hast dich erfolgreich für <strong>${course}</strong> angemeldet.<br><br>Ort: <strong>${location}</strong><br>Der genaue Termin wird direkt mit dem Anbieter vereinbart.<br>Deine Rechnung findest du im Anhang dieser E-Mail.<br><br><small style="color:#6B7280;">Dein Vertragspartner für diesen Kurs ist <strong>${provider}</strong>. Du buchst im eigenen Namen und bleibst als buchende Person Vertragspartner/in und zahlungspflichtig, auch wenn die Teilnahme für eine andere Person erfolgt. KursNavi (LifeSkills360 GmbH) wickelt die Zahlung technisch ab.</small>`,
     teacher_subject: "Neuer Schüler: ",
     teacher_title: "Neue Buchung erhalten 🚀",
     teacher_body: (email, course, date) => `<strong>${email}</strong> hat sich gerade für <strong>${course}</strong> angemeldet.<br>Kursbeginn: ${date}.`,
@@ -205,7 +205,7 @@ const generateInvoicePDF = async (invoiceData) => {
 
     // -- Legal Notice --
     doc.fontSize(8).fillColor('#666');
-    doc.text(`Vertragspartner: ${invoiceData.providerName || 'Kursanbieter'} (Kursanbieter). Der Kursvertrag besteht zwischen Teilnehmer und Anbieter.`, 50, 650, { width: 500 });
+    doc.text(`Vertragspartner: ${invoiceData.providerName || 'Kursanbieter'} (Kursanbieter). Der Kursvertrag besteht zwischen buchender Person und Anbieter.`, 50, 650, { width: 500 });
     doc.text('Zahlungsabwicklung: LifeSkills360 GmbH (KursNavi).', 50, 665);
 
     // -- Footer --

@@ -20,7 +20,7 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
     const [ticketRemaining, setTicketRemaining] = useState(null);
     const [ticketPeriodEnd, setTicketPeriodEnd] = useState(null);
 
-    // Guardian attestation state (for platform/platform_flex bookings)
+    // Booking attestation state (for platform/platform_flex bookings)
     const [guardianAttested, setGuardianAttested] = useState(false);
 
     const { taxonomy, getTypeLabel, getAreaLabel } = useTaxonomy();
@@ -354,9 +354,9 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
             return;
         }
 
-        // Guardian attestation required for platform/platform_flex
+        // Booking attestation required for platform/platform_flex
         if (!guardianAttested) {
-            showNotification && showNotification('Bitte bestätige die Altersbestätigung, um fortzufahren.');
+            showNotification && showNotification('Bitte bestätige die Buchungsbestätigung, um fortzufahren.');
             return;
         }
 
@@ -777,7 +777,7 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
                         {isSaved ? 'Gemerkt' : 'Kurs merken'}
                     </button>
 
-                    {/* Guardian Attestation Checkbox (platform + platform_flex only) */}
+                    {/* Booking attestation checkbox (platform + platform_flex only) */}
                     {(course.booking_type === 'platform' || course.booking_type === 'platform_flex') && (
                         <div className="mb-4 p-3 rounded-lg border border-gray-200 bg-gray-50">
                             <label className="flex items-start cursor-pointer">
@@ -788,7 +788,9 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
                                     className="mt-0.5 mr-2.5 accent-primary shrink-0"
                                 />
                                 <span className="text-xs text-gray-700 leading-relaxed">
-                                    Ich bestätige, dass ich mindestens 18 Jahre alt bin und diese Buchung ggf. als Erziehungsberechtigte/r tätige.
+                                    {course.requires_guardian_booking
+                                        ? 'Ich bestätige, dass ich mindestens 18 Jahre alt bin, diese Buchung als erziehungsberechtigte Person vornehme und als buchende Person Vertragspartner/in sowie zahlungspflichtig bin.'
+                                        : 'Ich bestätige, dass ich mindestens 18 Jahre alt bin und diese Buchung für mich selbst oder mit Einverständnis der teilnehmenden Person vornehme. Mir ist bewusst, dass ich als buchende Person Vertragspartner/in und zahlungspflichtig bin.'}
                                 </span>
                             </label>
                             {course.requires_guardian_booking && (

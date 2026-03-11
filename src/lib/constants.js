@@ -760,7 +760,7 @@ export const TRANSLATIONS = {
 
     // LEGAL MICRO-COPY
     legal_agree: "Ich akzeptiere die", legal_agb: "AGB", legal_and: "und habe die", legal_privacy: "Datenschutzerklärung", legal_read: "gelesen.",
-    legal_provider_suffix: "inkl. Anbieterbedingungen", legal_mediator_note: "KursNavi ist Vermittlerin. Vertragspartner ist der Anbieter.",
+    legal_provider_suffix: "inkl. Anbieterbedingungen", legal_mediator_note: "KursNavi ist Vermittlerin. Vertragspartner ist der Anbieter; bei Direktbuchungen bleibt die buchende Person zahlungspflichtig.",
     legal_provider_verified_tooltip: "Manuell geprüft von LifeSkills360 (Identität & Basisdaten).",
 
     // FAQ

@@ -182,7 +182,7 @@ export default async function handler(req, res) {
       mode: 'payment',
       custom_text: {
         after_submit: {
-          message: `Vertragspartner für diesen Kurs ist ${providerName}. KursNavi (LifeSkills360 GmbH) wickelt die Zahlung technisch ab.`
+          message: `Vertragspartner für diesen Kurs ist ${providerName}. Die Buchung erfolgt im eigenen Namen; die buchende Person bleibt Vertragspartnerin und zahlungspflichtig. KursNavi (LifeSkills360 GmbH) wickelt die Zahlung technisch ab.`
         }
       },
       success_url: `${baseUrl}/?session_id={CHECKOUT_SESSION_ID}`,
