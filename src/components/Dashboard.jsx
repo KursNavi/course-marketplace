@@ -1481,22 +1481,82 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
 
     // NEW: Check for Payment Success in URL
     useEffect(() => {
+        let stopped = false;
         const query = new URLSearchParams(window.location.search);
+
         if (query.get('payment') === 'success') {
             setShowSuccessModal(true);
             window.history.replaceState(null, '', window.location.pathname);
         }
-        // Capture Service Success
+
         if (query.get('capture_service') === 'success') {
             setShowCaptureSuccessModal(true);
             window.history.replaceState(null, '', window.location.pathname);
         }
-        // Package Upgrade Success
+
         if (query.get('package_upgrade') === 'success') {
-            setShowPackageSuccessModal(true);
-            window.history.replaceState(null, '', window.location.pathname);
+            const sessionId = query.get('session_id');
+
+            const finalizePackageReturn = async () => {
+                if (sessionId) {
+                    const { data: { session } } = await supabase.auth.getSession();
+
+                    if (session?.access_token) {
+                        try {
+                            await fetch('/api/confirm-package-checkout', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${session.access_token}`,
+                                },
+                                body: JSON.stringify({ sessionId }),
+                            });
+                        } catch (error) {
+                            console.warn('Package checkout confirmation failed:', error);
+                        }
+                    }
+                }
+
+                if (stopped) return;
+
+                const { data, error } = await supabase
+                    .from('profiles')
+                    .select('package_tier, package_expires_at')
+                    .eq('id', user?.id)
+                    .maybeSingle();
+
+                if (!stopped && !error && data) {
+                    const value = (data.package_tier || '').toString().toLowerCase().trim();
+                    const resolvedTier = value.includes('enterprise')
+                        ? 'enterprise'
+                        : value.includes('premium')
+                            ? 'premium'
+                            : value === 'pro' || value.startsWith('pro')
+                                ? 'pro'
+                                : 'basic';
+
+                    if (data.package_expires_at && new Date(data.package_expires_at) < new Date() && resolvedTier !== 'enterprise') {
+                        setUserTier('basic');
+                        setPackageExpiresAt(null);
+                    } else {
+                        setUserTier(resolvedTier);
+                        setPackageExpiresAt(data.package_expires_at || null);
+                    }
+                }
+
+                if (!stopped) {
+                    setShowPackageSuccessModal(true);
+                    window.history.replaceState(null, '', window.location.pathname);
+                }
+            };
+
+            finalizePackageReturn();
         }
-    }, []);
+
+        return () => {
+            stopped = true;
+        };
+    }, [user?.id]);
 
     useEffect(() => {
         let cancelled = false;
