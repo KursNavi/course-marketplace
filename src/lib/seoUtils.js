@@ -106,7 +106,7 @@ export function enhanceImages(html) {
 
     if (srcMatch) {
       const source = srcMatch[2] || '';
-      if (/unsplash\.com/i.test(source)) {
+      if (shouldReplaceEditorialImage(source)) {
         const thematicImage = normalizeEditorialImageUrl(source, altMatch?.[2] || '');
         result = result.replace(srcMatch[0], `src="${thematicImage}"`);
       }
@@ -123,37 +123,48 @@ export function enhanceImages(html) {
 }
 
 export function normalizeEditorialImageUrl(url, altText = '') {
-  if (!url) return '/images/platform/editorial-generic.svg';
-  if (/unsplash\.com/i.test(url)) {
-    return resolveEditorialImageByAlt(altText);
+  if (!url) return getReplacementPhotoByAlt(altText);
+  if (shouldReplaceEditorialImage(url)) {
+    return getReplacementPhotoByAlt(altText);
   }
   return url;
 }
 
-function resolveEditorialImageByAlt(altText) {
+function shouldReplaceEditorialImage(url) {
+  if (!url) return true;
+  if (!/unsplash\.com/i.test(url)) return false;
+  return BLOCKED_UNSPLASH_PATTERNS.some((pattern) => pattern.test(url));
+}
+
+const BLOCKED_UNSPLASH_PATTERNS = [
+  /1488521787991-ed7bbaae773c/i,
+  /1485546246426-74dc88dec4d9/i
+];
+
+function getReplacementPhotoByAlt(altText) {
   const alt = (altText || '').toLowerCase();
 
   if (/(steuer|budget|kosten|stipend|beitrag|finanz|geld|foerder|förder|kulturlegi|rechnung)/i.test(alt)) {
-    return '/images/platform/editorial-finance.svg';
+    return 'https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&q=80&w=1200';
   }
 
   if (/(recht|vertrag|storno|ruecktritt|rücktritt|datenschutz|safeguarding|aufsicht|versicherung|pflicht|warnsignal)/i.test(alt)) {
-    return '/images/platform/editorial-legal.svg';
+    return 'https://images.unsplash.com/photo-1450101499163-c8848c66ca85?auto=format&fit=crop&q=80&w=1200';
   }
 
   if (/(kind|kinder|jugend|famil|eltern|geschwister|schul|hausaufgaben|ferienbetreuung)/i.test(alt)) {
-    return '/images/platform/editorial-kids.svg';
+    return 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&q=80&w=1200';
   }
 
   if (/(beruf|karriere|weiterbildung|linkedin|gehalt|quereinstieg|kompetenz|diplom|zertifikat|arbeitsplatz|leadership)/i.test(alt)) {
-    return '/images/platform/editorial-career.svg';
+    return 'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&q=80&w=1200';
   }
 
   if (/(hobby|yoga|achtsam|meditation|flow|schnupper|kreativ|sport|solo|date|senior|workshop|kurs)/i.test(alt)) {
-    return '/images/platform/editorial-hobby.svg';
+    return 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&q=80&w=1200';
   }
 
-  return '/images/platform/editorial-generic.svg';
+  return 'https://images.unsplash.com/photo-1544928147-79a2dbc1f389?auto=format&fit=crop&q=80&w=1200';
 }
 
 /**

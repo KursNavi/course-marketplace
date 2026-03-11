@@ -274,7 +274,7 @@ export const Home = ({
         {/* Background */}
         <div 
           className="absolute inset-0 bg-cover bg-center z-0"
-          style={{ backgroundImage: 'url("/images/platform/hero-community.svg")' }}
+          style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop")' }}
         ></div>
         <div className="absolute inset-0 bg-black/50 z-10"></div>
 
@@ -515,7 +515,7 @@ export const Home = ({
           {/* BERUFLICH - Blue */}
           <div className="flex flex-col">
             <a href="/search?type=beruflich" onClick={(e) => { e.preventDefault(); setSearchType('beruflich'); window.history.pushState({ view: 'search' }, '', '/search?type=beruflich'); window.scrollTo(0,0); }} className="group relative h-80 rounded-2xl overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 block">
-              <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" style={{ backgroundImage: 'url("/images/platform/hero-professional.svg")' }}></div>
+              <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=800&auto=format&fit=crop")' }}></div>
               <div className="absolute inset-0 bg-gradient-to-t from-blue-800/90 via-blue-600/40 to-blue-500/20"></div>
               <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm rounded-full p-3">
                 <Briefcase className="w-6 h-6 text-white" />
@@ -589,7 +589,7 @@ export const Home = ({
           {/* PRIVAT & HOBBY - Orange */}
           <div className="flex flex-col">
             <a href="/search?type=privat_hobby" onClick={(e) => { e.preventDefault(); setSearchType('privat_hobby'); window.history.pushState({ view: 'search' }, '', '/search?type=privat_hobby'); window.scrollTo(0,0); }} className="group relative h-80 rounded-2xl overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 block">
-              <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" style={{ backgroundImage: 'url("/images/platform/hero-private.svg")' }}></div>
+              <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?auto=format&fit=crop&q=80&w=800")' }}></div>
               <div className="absolute inset-0 bg-gradient-to-t from-orange-700/90 via-orange-600/40 to-orange-500/20"></div>
               <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm rounded-full p-3">
                 <Palette className="w-6 h-6 text-white" />
@@ -663,7 +663,7 @@ export const Home = ({
           {/* KINDER & JUGEND - Green */}
           <div className="flex flex-col">
             <a href="/search?type=kinder_jugend" onClick={(e) => { e.preventDefault(); setSearchType('kinder_jugend'); window.history.pushState({ view: 'search' }, '', '/search?type=kinder_jugend'); window.scrollTo(0,0); }} className="group relative h-80 rounded-2xl overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 block">
-              <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" style={{ backgroundImage: 'url("/images/platform/hero-kids.svg")' }}></div>
+              <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1503676260728-1c00da094a0b?q=80&w=800&auto=format&fit=crop")' }}></div>
               <div className="absolute inset-0 bg-gradient-to-t from-emerald-800/90 via-emerald-600/40 to-emerald-500/20"></div>
               <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm rounded-full p-3">
                 <Smile className="w-6 h-6 text-white" />

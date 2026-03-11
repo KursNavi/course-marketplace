@@ -26,7 +26,7 @@ const AboutPage = ({ t, setView }) => {
             icon: Heart,
             titleKey: 'about_you_title',
             textKey: 'about_you_text',
-            image: '/images/platform/audience-you.svg',
+            image: 'https://images.unsplash.com/photo-1452860606245-08befc0ff44b?auto=format&fit=crop&q=80&w=1200',
             imageAlt: 'Hands on learning',
         },
         {
@@ -35,7 +35,7 @@ const AboutPage = ({ t, setView }) => {
             titleKey: 'about_kids_title',
             textKey: 'about_kids_text',
             subKey: 'about_kids_sub',
-            image: '/images/platform/audience-kids.svg',
+            image: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&q=80&w=1200',
             imageAlt: 'Kids learning',
         },
         {
@@ -43,7 +43,7 @@ const AboutPage = ({ t, setView }) => {
             icon: Building2,
             titleKey: 'about_prov_title',
             textKey: 'about_prov_text',
-            image: '/images/platform/audience-providers.svg',
+            image: 'https://images.unsplash.com/photo-1544531586-fde5298cdd40?auto=format&fit=crop&q=80&w=1200',
             imageAlt: 'Teacher instructing',
         },
     ];
@@ -53,7 +53,7 @@ const AboutPage = ({ t, setView }) => {
             {/* HERO SECTION */}
             <div className="relative py-24 px-4 text-center text-white overflow-hidden" style={{ backgroundColor: '#2d2d2d' }}>
                 <div className="absolute inset-0 z-0">
-                    <img src="/images/platform/hero-community.svg" alt="Learning together" className="w-full h-full object-cover opacity-50" />
+                    <img src="https://images.unsplash.com/photo-1544928147-79a2dbc1f389?auto=format&fit=crop&q=80&w=2000" alt="Learning together" className="w-full h-full object-cover opacity-50" />
                     <div className="absolute inset-0 bg-black/60"></div>
                 </div>
                 <div className="relative z-10 max-w-4xl mx-auto">
@@ -103,7 +103,7 @@ const AboutPage = ({ t, setView }) => {
                     </div>
                 </div>
                 <div>
-                    <img src="/images/platform/hero-professional.svg" alt="Team KursNavi" className="rounded-2xl shadow-xl w-full h-auto object-cover" />
+                    <img src="https://images.unsplash.com/photo-1531545514256-b1400bc00f31?auto=format&fit=crop&q=80&w=1200" alt="Team KursNavi" className="rounded-2xl shadow-xl w-full h-auto object-cover" />
                 </div>
             </div>
 
@@ -210,7 +210,7 @@ const AboutPage = ({ t, setView }) => {
                     </div>
                 </div>
                 <div className="mt-12 max-w-4xl mx-auto px-4">
-                     <img src="/images/platform/hero-community.svg" alt="Happy group" className="rounded-2xl shadow-2xl w-full h-64 object-cover opacity-80" />
+                     <img src="https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&q=80&w=1200" alt="Happy group" className="rounded-2xl shadow-2xl w-full h-64 object-cover opacity-80" />
                 </div>
             </div>
         </div>
