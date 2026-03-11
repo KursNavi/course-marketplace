@@ -216,6 +216,16 @@ function resolvePackageTargetTier(currentTier, currentExpiresAt, requestedTarget
   return normalizedRequested;
 }
 
+function calculatePackageExpiry(currentTier, currentExpiresAt, targetTier) {
+  const isRenewal = currentTier === targetTier && hasActivePackage(currentExpiresAt);
+  const newExpiresAt = isRenewal && currentExpiresAt
+    ? new Date(currentExpiresAt)
+    : new Date();
+
+  newExpiresAt.setFullYear(newExpiresAt.getFullYear() + 1);
+  return { isRenewal, newExpiresAt };
+}
+
 // --- 4. PDF INVOICE GENERATOR ---
 const generateInvoicePDF = async (invoiceData) => {
   return new Promise((resolve, reject) => {
@@ -526,19 +536,30 @@ export default async function handler(req, res) {
         .eq('id', userId)
         .single();
 
-      if (existingProfile?.package_stripe_session_id === session.id) {
-        return res.status(200).json({ received: true, note: 'Package upgrade already processed' });
-      }
-
-      const currentTier = normalizePackageTier(existingProfile?.package_tier);
-      const currentExpiresAt = existingProfile?.package_expires_at || null;
+      const currentTier = normalizePackageTier(metadata.currentTier || existingProfile?.package_tier);
+      const currentExpiresAt = metadata.currentExpiresAt || existingProfile?.package_expires_at || null;
       const targetTier = resolvePackageTargetTier(
         currentTier,
         currentExpiresAt,
         requestedTargetTier,
         amountTotal
       );
-      const isRenewal = currentTier === targetTier && hasActivePackage(currentExpiresAt);
+      const { isRenewal, newExpiresAt } = calculatePackageExpiry(currentTier, currentExpiresAt, targetTier);
+
+      if (existingProfile?.package_stripe_session_id === session.id) {
+        if (normalizePackageTier(existingProfile?.package_tier) !== targetTier) {
+          const { error: correctionError } = await supabase
+            .from('profiles')
+            .update({ package_tier: targetTier })
+            .eq('id', userId);
+
+          if (correctionError) {
+            console.error('Failed to correct package tier:', correctionError);
+          }
+        }
+
+        return res.status(200).json({ received: true, note: 'Package upgrade already processed' });
+      }
 
       if (targetTier !== normalizePackageTier(requestedTargetTier)) {
         console.warn('Package target tier corrected from payment amount', {
@@ -552,17 +573,6 @@ export default async function handler(req, res) {
       }
 
       // 2. Calculate new expiry date
-      let newExpiresAt;
-      if (isRenewal && currentExpiresAt) {
-        // Extend from current expiry, not from today
-        newExpiresAt = new Date(currentExpiresAt);
-        newExpiresAt.setFullYear(newExpiresAt.getFullYear() + 1);
-      } else {
-        // Fresh upgrade: 1 year from now
-        newExpiresAt = new Date();
-        newExpiresAt.setFullYear(newExpiresAt.getFullYear() + 1);
-      }
-
       // 3. Update profile
       const { error: updateError } = await supabase
         .from('profiles')

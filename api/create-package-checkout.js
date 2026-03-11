@@ -148,6 +148,7 @@ export default async function handler(req, res) {
             metadata: {
                 type: 'package_upgrade',
                 userId,
+                currentTier,
                 targetTier,
                 isRenewal: isRenewal ? 'true' : 'false',
                 currentExpiresAt: profile.package_expires_at || '',

@@ -62,6 +62,16 @@ function resolvePackageTargetTier(currentTier, currentExpiresAt, requestedTarget
   return normalizedRequested;
 }
 
+function calculatePackageExpiry(currentTier, currentExpiresAt, targetTier) {
+  const isRenewal = currentTier === targetTier && hasActivePackage(currentExpiresAt);
+  const newExpiresAt = isRenewal && currentExpiresAt
+    ? new Date(currentExpiresAt)
+    : new Date();
+
+  newExpiresAt.setFullYear(newExpiresAt.getFullYear() + 1);
+  return { isRenewal, newExpiresAt };
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -112,27 +122,34 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Profil nicht gefunden' });
     }
 
-    if (profile.package_stripe_session_id === session.id) {
-      return res.status(200).json({ received: true, note: 'Already processed' });
-    }
-
-    const currentTier = normalizePackageTier(profile.package_tier);
-    const currentExpiresAt = profile.package_expires_at || null;
+    const currentTier = normalizePackageTier(metadata.currentTier || profile.package_tier);
+    const currentExpiresAt = metadata.currentExpiresAt || profile.package_expires_at || null;
     const targetTier = resolvePackageTargetTier(
       currentTier,
       currentExpiresAt,
       metadata.targetTier,
       session.amount_total
     );
-    const isRenewal = currentTier === targetTier && hasActivePackage(currentExpiresAt);
+    const { newExpiresAt } = calculatePackageExpiry(currentTier, currentExpiresAt, targetTier);
 
-    let newExpiresAt;
-    if (isRenewal && currentExpiresAt) {
-      newExpiresAt = new Date(currentExpiresAt);
-      newExpiresAt.setFullYear(newExpiresAt.getFullYear() + 1);
-    } else {
-      newExpiresAt = new Date();
-      newExpiresAt.setFullYear(newExpiresAt.getFullYear() + 1);
+    if (profile.package_stripe_session_id === session.id) {
+      if (normalizePackageTier(profile.package_tier) !== targetTier) {
+        const { error: correctionError } = await supabase
+          .from('profiles')
+          .update({ package_tier: targetTier })
+          .eq('id', user.id);
+
+        if (correctionError) {
+          return res.status(500).json({ error: 'Failed to correct package tier', details: correctionError });
+        }
+      }
+
+      return res.status(200).json({
+        received: true,
+        note: 'Already processed',
+        targetTier,
+        packageExpiresAt: profile.package_expires_at || newExpiresAt.toISOString(),
+      });
     }
 
     const { error: updateError } = await supabase
