@@ -82,51 +82,53 @@ export default async function handler(req, res) {
         effectiveBookingType = 'platform_flex';
       }
 
-      // Get event with booking count
-      const { data: eventData, error: eventError } = await supabase
-        .from('course_events')
-        .select('id, course_id, max_participants, cancelled_at, start_date')
-        .eq('id', eventId)
-        .single();
+      if (eventId) {
+        // Get event with booking count
+        const { data: eventData, error: eventError } = await supabase
+          .from('course_events')
+          .select('id, course_id, max_participants, cancelled_at, start_date')
+          .eq('id', eventId)
+          .single();
 
-      if (eventError || !eventData) {
-        return res.status(400).json({ error: 'Event nicht gefunden' });
-      }
-      if (Number(eventData.course_id) !== Number(courseId)) {
-        return res.status(400).json({ error: 'Event gehört nicht zu diesem Kurs' });
-      }
+        if (eventError || !eventData) {
+          return res.status(400).json({ error: 'Event nicht gefunden' });
+        }
+        if (Number(eventData.course_id) !== Number(courseId)) {
+          return res.status(400).json({ error: 'Event gehört nicht zu diesem Kurs' });
+        }
 
-      if (eventData.start_date && new Date(`${eventData.start_date}T23:59:59`) < new Date()) {
-        return res.status(400).json({ error: 'Dieser Termin liegt in der Vergangenheit' });
-      }
+        if (eventData.start_date && new Date(`${eventData.start_date}T23:59:59`) < new Date()) {
+          return res.status(400).json({ error: 'Dieser Termin liegt in der Vergangenheit' });
+        }
 
-      // Block booking for cancelled events
-      if (eventData.cancelled_at) {
-        return res.status(400).json({ error: 'Dieser Termin wurde abgesagt' });
-      }
+        // Block booking for cancelled events
+        if (eventData.cancelled_at) {
+          return res.status(400).json({ error: 'Dieser Termin wurde abgesagt' });
+        }
 
-      // Count confirmed bookings for this event
-      const { count: bookedCount } = await supabase
-        .from('bookings')
-        .select('*', { count: 'exact', head: true })
-        .eq('event_id', eventId)
-        .eq('status', 'confirmed');
+        // Count confirmed bookings for this event
+        const { count: bookedCount } = await supabase
+          .from('bookings')
+          .select('*', { count: 'exact', head: true })
+          .eq('event_id', eventId)
+          .eq('status', 'confirmed');
 
-      if (eventData.max_participants > 0 && bookedCount >= eventData.max_participants) {
-        return res.status(400).json({ error: 'Dieser Termin ist ausgebucht' });
-      }
+        if (eventData.max_participants > 0 && bookedCount >= eventData.max_participants) {
+          return res.status(400).json({ error: 'Dieser Termin ist ausgebucht' });
+        }
 
-      // Duplicate check: User has already booked this event?
-      const { data: existingBooking } = await supabase
-        .from('bookings')
-        .select('id')
-        .eq('user_id', userId)
-        .eq('event_id', eventId)
-        .eq('status', 'confirmed')
-        .single();
+        // Duplicate check: User has already booked this event?
+        const { data: existingBooking } = await supabase
+          .from('bookings')
+          .select('id')
+          .eq('user_id', userId)
+          .eq('event_id', eventId)
+          .eq('status', 'confirmed')
+          .single();
 
-      if (existingBooking) {
-        return res.status(400).json({ error: 'Du hast diesen Termin bereits gebucht' });
+        if (existingBooking) {
+          return res.status(400).json({ error: 'Du hast diesen Termin bereits gebucht' });
+        }
       }
     }
 
