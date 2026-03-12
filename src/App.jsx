@@ -1498,6 +1498,7 @@ useEffect(() => {
   if (sessionId && user && !isPackageUpgradeReturn) {
     let stopped = false;
     const finalizeStripeReturn = async () => {
+      const successShownAt = Date.now();
       setView('success');
 
       for (let attempt = 0; attempt < 6; attempt += 1) {
@@ -1531,6 +1532,11 @@ useEffect(() => {
           localStorage.removeItem('pendingCourseId');
           localStorage.removeItem('pendingEventId');
           await fetchBookings(user.id);
+
+          const remainingMs = Math.max(0, 3000 - (Date.now() - successShownAt));
+          if (remainingMs > 0) {
+            await new Promise((resolve) => window.setTimeout(resolve, remainingMs));
+          }
 
           window.history.replaceState({}, document.title, '/dashboard');
           setView('dashboard');

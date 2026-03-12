@@ -2203,6 +2203,8 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                     const canRefund = booking.auto_refund_until && new Date() < new Date(booking.auto_refund_until);
                                     const isFlexBooking = booking.booking_type === 'platform_flex';
                                     const isEventCancelled = booking.event?.cancelled_at;
+                                    const eventDisplayDate = booking.event?.start_date ? new Date(`${booking.event.start_date}T23:59:59`) : null;
+                                    const showFlexBookingMessage = isFlexBooking || !eventDisplayDate || eventDisplayDate < new Date();
 
                                     return (
                                         <div key={booking.booking_id || booking.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex gap-4 transition hover:shadow-md">
@@ -2224,8 +2226,8 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                                 <p className="text-sm text-gray-500">{booking.instructor_name} • {booking.canton}</p>
 
                                                 {/* Event info for platform bookings, or flex message */}
-                                                {isFlexBooking ? (
-                                                    <p className="text-xs text-purple-600 mt-2">Termin wird direkt mit dem Anbieter vereinbart</p>
+                                                {showFlexBookingMessage ? (
+                                                    <p className="text-xs text-purple-600 mt-2">Bitte vereinbare den Termin direkt mit dem Anbieter</p>
                                                 ) : booking.event ? (
                                                     <p className="text-xs text-gray-500 mt-2">
                                                         {booking.event.start_date && new Date(booking.event.start_date).toLocaleDateString('de-CH')}

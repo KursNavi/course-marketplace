@@ -345,9 +345,14 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
         }
     }, [course]);
     
+    const isUpcomingEventDate = (value) => {
+        if (!value) return false;
+        return new Date(`${value}T23:59:59`) >= new Date();
+    };
+
     // --- SMART BOOKING HANDLER ---
     const handleBookingAction = async (courseEvent = null) => {
-        const type = course.booking_type || 'platform';
+        const type = effectiveBookingType || 'platform';
 
         if (type === 'lead') {
             setShowLeadModal(true);
@@ -372,6 +377,7 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
         if (!user) {
             localStorage.setItem('pendingCourseId', course.id);
             if (courseEvent?.id) localStorage.setItem('pendingEventId', courseEvent.id);
+            localStorage.setItem('postLoginRedirectPath', `${window.location.pathname}${window.location.search}`);
             setView('login');
             return;
         }
@@ -449,10 +455,13 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
         }];
     }
 
-    // Filter out cancelled events
+    // Filter out cancelled events and hide past fixed dates from learners
     const activeEvents = rawEvents.filter(ev => !ev.cancelled_at);
+    const visibleEvents = course.booking_type === 'platform'
+        ? activeEvents.filter(ev => isUpcomingEventDate(ev.start_date))
+        : activeEvents;
 
-    const displayEvents = activeEvents.map(ev => {
+    const displayEvents = visibleEvents.map(ev => {
         let bookedCount = 0;
         if (Array.isArray(ev.bookings)) {
             if (ev.bookings[0] && typeof ev.bookings[0].count === 'number') {
@@ -475,6 +484,8 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
     }).sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
 
     const hasEvents = displayEvents.length > 0;
+    const isPastEventFallback = course.booking_type === 'platform' && !hasEvents;
+    const effectiveBookingType = isPastEventFallback ? 'platform_flex' : course.booking_type;
 
     // --- RENDER HELPERS ---
     const renderDescription = (text) => {
@@ -671,7 +682,7 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
                 <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100 sticky top-24">
                     <div className="text-3xl font-bold text-primary font-heading mb-1">{getPriceLabel(course)}</div>
                     <p className="text-gray-400 text-xs mb-4">
-                        {(course.booking_type === 'platform' || course.booking_type === 'platform_flex')
+                        {(effectiveBookingType === 'platform' || effectiveBookingType === 'platform_flex')
                             ? 'pro Person inkl. MwSt.'
                             : (Number(course.price) > 0 ? 'Unverbindliche Preisangabe' : '')}
                     </p>
@@ -778,7 +789,7 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
                     </button>
 
                     {/* Booking attestation checkbox (platform + platform_flex only) */}
-                    {(course.booking_type === 'platform' || course.booking_type === 'platform_flex') && (
+                    {(effectiveBookingType === 'platform' || effectiveBookingType === 'platform_flex') && (
                         <div className="mb-4 p-3 rounded-lg border border-gray-200 bg-gray-50">
                             <label className="flex items-start cursor-pointer">
                                 <input
@@ -814,7 +825,7 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
                                                 </div>
                                                 {ev.schedule_description && <div className="text-xs text-gray-500 mt-1">{ev.schedule_description}</div>}
                                             </div>
-                                            {course.booking_type === 'platform' && (
+                                            {effectiveBookingType === 'platform' && (
                                                 ev.isUnlimited 
                                                 ? <span className="text-[10px] font-bold bg-gray-100 text-gray-700 px-2 py-1 rounded">Unbegrenzt</span>
                                                 : ev.isFull
@@ -823,10 +834,15 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
                                             )}
                                         </div>
                                         
-                                        {!user && course.booking_type !== 'lead' ? (
+                                        {!user && effectiveBookingType !== 'lead' ? (
                                             <div className="w-full">
                                                 <button
-                                                    onClick={() => { localStorage.setItem('pendingCourseId', course.id); if (ev?.id) localStorage.setItem('pendingEventId', ev.id); setView('login'); }}
+                                                    onClick={() => {
+                                                        localStorage.setItem('pendingCourseId', course.id);
+                                                        if (ev?.id) localStorage.setItem('pendingEventId', ev.id);
+                                                        localStorage.setItem('postLoginRedirectPath', `${window.location.pathname}${window.location.search}`);
+                                                        setView('login');
+                                                    }}
                                                     className="w-full py-2.5 rounded-lg font-bold text-sm transition flex items-center justify-center bg-primary text-white hover:bg-orange-600 shadow-sm hover:shadow active:scale-95"
                                                 >
                                                     <LogIn className="w-4 h-4 mr-2" />
@@ -837,15 +853,15 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
                                         ) : (
                                             <button
                                                 onClick={() => !ev.isFull && handleBookingAction(ev)}
-                                                disabled={(ev.isFull && course.booking_type === 'platform') || (course.booking_type !== 'lead' && !guardianAttested)}
+                                                disabled={(ev.isFull && effectiveBookingType === 'platform') || (effectiveBookingType !== 'lead' && !guardianAttested)}
                                                 className={`w-full py-2.5 rounded-lg font-bold text-sm transition flex items-center justify-center
-                                                    ${(ev.isFull && course.booking_type === 'platform') || (course.booking_type !== 'lead' && !guardianAttested)
+                                                    ${(ev.isFull && effectiveBookingType === 'platform') || (effectiveBookingType !== 'lead' && !guardianAttested)
                                                         ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                                                         : 'bg-primary text-white hover:bg-orange-600 shadow-sm hover:shadow active:scale-95'}`}
                                             >
-                                                {course.booking_type === 'lead' && <Mail className="w-4 h-4 mr-2" />}
-                                                {(ev.isFull && course.booking_type === 'platform') ? 'Ausgebucht' :
-                                                 (course.booking_type === 'lead' ? 'Anfrage senden' : t.btn_book || 'Jetzt Buchen')}
+                                                {effectiveBookingType === 'lead' && <Mail className="w-4 h-4 mr-2" />}
+                                                {(ev.isFull && effectiveBookingType === 'platform') ? 'Ausgebucht' :
+                                                 (effectiveBookingType === 'lead' ? 'Anfrage senden' : t.btn_book || 'Jetzt Buchen')}
                                             </button>
                                         )}
                                     </div>
@@ -856,21 +872,26 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
                         <div className="bg-gray-50 rounded-xl p-5 border border-gray-200 mb-6 text-center">
                             <Map className="w-8 h-8 text-gray-400 mx-auto mb-3" />
                             <h3 className="font-bold text-dark text-sm mb-2">
-                                {course.booking_type === 'platform_flex' ? 'Flexibler Termin' : 'Flexible Verfügbarkeit'}
+                                {effectiveBookingType === 'platform_flex' ? 'Flexibler Termin' : 'Flexible Verfügbarkeit'}
                             </h3>
                             <p className="text-xs text-gray-500 mb-4">
-                                {course.booking_type === 'platform_flex'
-                                    ? 'Der genaue Termin wird nach der Buchung direkt mit dem Anbieter vereinbart.'
+                                {effectiveBookingType === 'platform_flex'
+                                    ? 'Bitte vereinbare den Termin direkt mit dem Anbieter.'
                                     : 'Dieser Kurs hat keine festen Termine oder findet an flexiblen Orten statt.'}
                             </p>
+                            {isPastEventFallback && (
+                                <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-4">
+                                    Alle früheren Termine sind bereits vorbei. Dieser Kurs wird deshalb automatisch als flexible Direktbuchung angezeigt.
+                                </p>
+                            )}
                             {course.address && course.address.length > 2 && (
                                 <div className="text-xs font-medium text-gray-700 bg-white p-2 rounded border border-gray-200 mb-4">
-                                    {course.booking_type === 'platform_flex' ? 'Ort: ' : 'Regionen: '}{course.address}
+                                    {effectiveBookingType === 'platform_flex' ? 'Ort: ' : 'Regionen: '}{course.address}
                                 </div>
                             )}
 
                             {/* Ticket availability info for platform_flex */}
-                            {course.booking_type === 'platform_flex' && course.ticket_limit_30d && (
+                            {effectiveBookingType === 'platform_flex' && course.ticket_limit_30d && (
                                 <div className={`text-xs p-2 rounded border mb-4 ${ticketAvailable ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700'}`}>
                                     {ticketAvailable
                                         ? (ticketRemaining !== null ? `Noch ${ticketRemaining} Plätze verfügbar` : 'Plätze verfügbar')
@@ -883,10 +904,14 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
                                 </div>
                             )}
 
-                            {!user && course.booking_type !== 'lead' ? (
+                            {!user && effectiveBookingType !== 'lead' ? (
                                 <div className="w-full">
                                     <button
-                                        onClick={() => { localStorage.setItem('pendingCourseId', course.id); setView('login'); }}
+                                        onClick={() => {
+                                            localStorage.setItem('pendingCourseId', course.id);
+                                            localStorage.setItem('postLoginRedirectPath', `${window.location.pathname}${window.location.search}`);
+                                            setView('login');
+                                        }}
                                         className="w-full font-bold py-3 rounded-lg transition shadow-sm flex items-center justify-center bg-primary text-white hover:bg-orange-600 active:scale-95"
                                     >
                                         <LogIn className="w-4 h-4 mr-2" />
@@ -896,16 +921,16 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
                                 </div>
                             ) : (
                                 <button
-                                    onClick={() => (course.booking_type === 'platform_flex' || course.booking_type === 'lead') && handleBookingAction()}
-                                    disabled={course.booking_type === 'platform' || (course.booking_type === 'platform_flex' && (!ticketAvailable || !guardianAttested))}
+                                    onClick={() => (effectiveBookingType === 'platform_flex' || effectiveBookingType === 'lead') && handleBookingAction()}
+                                    disabled={effectiveBookingType === 'platform' || (effectiveBookingType === 'platform_flex' && (!ticketAvailable || !guardianAttested))}
                                     className={`w-full font-bold py-3 rounded-lg transition shadow-sm flex items-center justify-center
-                                        ${course.booking_type === 'platform' || (course.booking_type === 'platform_flex' && (!ticketAvailable || !guardianAttested))
+                                        ${effectiveBookingType === 'platform' || (effectiveBookingType === 'platform_flex' && (!ticketAvailable || !guardianAttested))
                                             ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                                             : 'bg-primary text-white hover:bg-orange-600'}`}
                                 >
-                                    {course.booking_type === 'platform'
+                                    {effectiveBookingType === 'platform'
                                         ? 'Derzeit nicht buchbar'
-                                        : course.booking_type === 'platform_flex'
+                                        : effectiveBookingType === 'platform_flex'
                                             ? (ticketAvailable ? `Jetzt buchen (${getPriceLabel(course)})` : 'Ausgebucht')
                                             : <><Mail className="w-4 h-4 mr-2"/> Anfrage senden</>}
                                 </button>

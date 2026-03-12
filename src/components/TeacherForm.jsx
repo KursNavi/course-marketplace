@@ -1693,6 +1693,11 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                                 <p className="text-xs text-gray-500">Kontaktformular. Keine Zahlung.</p>
                             </label>
                         </div>
+                        {bookingType === 'platform' && (
+                            <p className="mt-3 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                                Vergangene Termine werden auf der Kursseite nicht angezeigt. Wenn keine zukünftigen Termine mehr vorhanden sind, erscheint der Kurs automatisch als flexible Direktbuchung.
+                            </p>
+                        )}
                     </div>
 
                     {/* DYNAMIC FIELDS */}

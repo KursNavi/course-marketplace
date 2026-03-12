@@ -60,16 +60,32 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Für diesen Kurs ist die Bestätigung durch eine erziehungsberechtigte Person erforderlich.' });
     }
 
+    let effectiveBookingType = course.booking_type;
+
     // 2. Event capacity check (only for platform)
     if (course.booking_type === 'platform') {
       if (!eventId) {
-        return res.status(400).json({ error: 'Event-ID erforderlich für Direktbuchung' });
+        const { data: possibleEvents } = await supabase
+          .from('course_events')
+          .select('id, start_date')
+          .eq('course_id', courseId)
+          .is('cancelled_at', null);
+
+        const hasFutureEvents = (possibleEvents || []).some((event) => (
+          event?.start_date && new Date(`${event.start_date}T23:59:59`) >= new Date()
+        ));
+
+        if (hasFutureEvents) {
+          return res.status(400).json({ error: 'Event-ID erforderlich für Direktbuchung' });
+        }
+
+        effectiveBookingType = 'platform_flex';
       }
 
       // Get event with booking count
       const { data: eventData, error: eventError } = await supabase
         .from('course_events')
-        .select('id, course_id, max_participants, cancelled_at')
+        .select('id, course_id, max_participants, cancelled_at, start_date')
         .eq('id', eventId)
         .single();
 
@@ -78,6 +94,10 @@ export default async function handler(req, res) {
       }
       if (Number(eventData.course_id) !== Number(courseId)) {
         return res.status(400).json({ error: 'Event gehört nicht zu diesem Kurs' });
+      }
+
+      if (eventData.start_date && new Date(`${eventData.start_date}T23:59:59`) < new Date()) {
+        return res.status(400).json({ error: 'Dieser Termin liegt in der Vergangenheit' });
       }
 
       // Block booking for cancelled events
@@ -191,7 +211,7 @@ export default async function handler(req, res) {
         courseId,
         userId,
         eventId: eventId || '',
-        bookingType: course.booking_type,
+        bookingType: effectiveBookingType,
         providerName,
         guardianAttestation: guardianAttestation ? 'true' : 'false'
       },
