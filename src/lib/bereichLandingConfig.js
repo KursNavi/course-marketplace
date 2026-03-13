@@ -30,10 +30,10 @@ export const BEREICH_LANDING_CONFIG = {
 
     scenarios: [
       { slug: 'berufseinstieg', icon: '🎓', label: { de: 'Berufseinstieg' }, text: { de: 'Du willst Fitnesstrainer werden? Starte mit der Basis-Ausbildung.' }, searchParams: { spec: 'Fitness-Trainer-Ausbildung', focus: 'Basis-Ausbildung' }, ctaLabel: { de: 'Einstiegskurse entdecken' } },
-      { slug: 'quereinstieg', icon: '🔄', label: { de: 'Quereinstieg' }, text: { de: 'Quereinstieg in die Fitnessbranche? Wir zeigen dir den Weg.' }, searchParams: { spec: 'Fitness-Trainer-Ausbildung' }, ctaLabel: { de: 'Quereinsteiger-Kurse entdecken' } },
+      { slug: 'quereinstieg', icon: '🔄', label: { de: 'Quereinstieg' }, text: { de: 'Du willst als Quereinsteiger in die Fitnessbranche einsteigen? Wir zeigen dir den Weg.' }, searchParams: { spec: 'Fitness-Trainer-Ausbildung' }, ctaLabel: { de: 'Quereinsteiger-Kurse entdecken' } },
       { slug: 'weiterbildung', icon: '📈', label: { de: 'Weiterbildung' }, text: { de: 'Schon Trainer? Spezialisiere dich in Functional Training, Ernährung oder Personal Training.' }, searchParams: { spec: 'Trainingsmethoden & Spezialisierungen' }, ctaLabel: { de: 'Weiterbildungskurse entdecken' } },
       { slug: 'diplom-aufstieg', icon: '🏆', label: { de: 'Diplom & Aufstieg' }, text: { de: 'Bereit für den nächsten Schritt? Diplom-Lehrgang und eidg. Fachausweis.' }, searchParams: { spec: 'Zertifikate & Pruefungsvorbereitung' }, ctaLabel: { de: 'Diplom-Kurse entdecken' } },
-      { slug: 'nebenerwerb', icon: '⚡', label: { de: 'Nebenerwerb' }, text: { de: 'Deine Leidenschaft zum Beruf machen - auch nebenberuflich.' }, searchParams: { spec: 'Group-Fitness / Kursleitung' }, ctaLabel: { de: 'Kurse für Nebenerwerb entdecken' } },
+      { slug: 'nebenerwerb', icon: '⚡', label: { de: 'Nebenerwerb' }, text: { de: 'Deine Leidenschaft zum Beruf machen - auch nebenberuflich.' }, searchParams: { spec: 'Group-Fitness / Kursleitung' }, ctaLabel: { de: 'Kurse für den Nebenerwerb entdecken' } },
       { slug: 'selbststaendigkeit', icon: '🏢', label: { de: 'Selbstständigkeit' }, text: { de: 'Eigenes Studio? Lerne alles über Business, Recht und Versicherung.' }, searchParams: { spec: 'Business & Selbststaendigkeit' }, ctaLabel: { de: 'Business-Kurse entdecken' } },
       { slug: 'spezialisierung', icon: '🎯', label: { de: 'Spezialisierung' }, text: { de: 'Rückentraining, Antara, Kampfsport - finde deine Nische.' }, searchParams: { spec: 'Trainingsmethoden & Spezialisierungen' }, ctaLabel: { de: 'Spezialisierungskurse entdecken' } },
       { slug: 'zertifizierung', icon: '✅', label: { de: 'Zertifizierung' }, text: { de: 'Qualitop, QualiCert, eidg. FA - welches Zertifikat passt zu dir?' }, searchParams: { spec: 'Zertifikate & Pruefungsvorbereitung' }, ctaLabel: { de: 'Zertifizierungskurse entdecken' } },
@@ -49,7 +49,7 @@ export const BEREICH_LANDING_CONFIG = {
         icon: '🤝'
       },
       'Group-Fitness / Kursleitung': {
-        de: 'Aerobic, Step, Toning, Cardio-Dance und moderne Kursformate unterrichten. Gruppendynamik meistern.',
+        de: 'Aerobic, Step, Toning, Cardio-Dance und moderne Kursformate unterrichten und Gruppendynamik meistern.',
         icon: '👥'
       },
       'Trainingsmethoden & Spezialisierungen': {
@@ -61,7 +61,7 @@ export const BEREICH_LANDING_CONFIG = {
         icon: '🧘'
       },
       'Ernaehrung & Coaching': {
-        de: 'Sporternährung, Ernährungsberatung und Coaching-Kompetenzen. CAS und Seminare.',
+        de: 'Sporternährung, Ernährungsberatung und Coaching-Kompetenzen. CAS, Lehrgänge und Seminare.',
         icon: '🥗'
       },
       'Zertifikate & Pruefungsvorbereitung': {
@@ -69,7 +69,7 @@ export const BEREICH_LANDING_CONFIG = {
         icon: '📋'
       },
       'Business & Selbststaendigkeit': {
-        de: 'Unternehmer-Workshops, Recht, Versicherung, Datenschutz und Vertriebs-Know-how.',
+        de: 'Unternehmer-Workshops für Selbstständigkeit, Recht, Versicherung, Datenschutz und Vertriebs-Know-how.',
         icon: '💼'
       }
     },
@@ -91,7 +91,7 @@ export const BEREICH_LANDING_CONFIG = {
         a: { de: 'In der Regel ja. Die meisten Anbieter empfehlen die Fitness-Trainer Basis-Ausbildung (B-Lizenz) als Einstieg. Darauf aufbauend kannst du dich in Bereichen wie Personal Training, Group Fitness oder Ernährung spezialisieren.' }
       },
       {
-        q: { de: 'Kann ich als Quereinsteiger direkt in die Fitnessbranche?' },
+        q: { de: 'Kann ich als Quereinsteiger direkt in die Fitnessbranche einsteigen?' },
         a: { de: 'Absolut. Viele Basis-Ausbildungen setzen keine Vorkenntnisse voraus - nur Freude an Bewegung und Gesundheit. Die B-Lizenz ist ideal für den Einstieg, unabhängig von deinem bisherigen Beruf.' }
       },
       {
@@ -149,10 +149,10 @@ export const BEREICH_LANDING_CONFIG = {
       { slug: 'yoga-stile-finden', icon: '🧭', label: { de: 'Welcher Yogastil passt zu dir?' }, text: { de: 'Hatha, Vinyasa, Yin, Power oder Kundalini: finde den Stil, der zu deinem Ziel und Energielevel passt.' }, searchParams: { spec: 'Yoga' }, ctaLabel: { de: 'Yogastile vergleichen' } },
       { slug: 'stress-abbauen-entspannen', icon: '🌿', label: { de: 'Stress abbauen & entspannen' }, text: { de: 'Ruhige Formate für Entlastung, Regeneration und bessere Selbstregulation im Alltag.' }, searchParams: { spec: 'Meditation & Achtsamkeit' }, ctaLabel: { de: 'Entspannungskurse anzeigen' } },
       { slug: 'besser-schlafen-yoga-nidra', icon: '🌙', label: { de: 'Besser schlafen mit Yoga Nidra' }, text: { de: 'Tiefenentspannung sinnvoll nutzen: für wen Yoga Nidra passt und wie der Einstieg gelingt.' }, searchParams: { spec: 'Meditation & Achtsamkeit', focus: 'Yoga Nidra' }, ctaLabel: { de: 'Yoga Nidra Kurse finden' } },
-      { slug: 'atemarbeit-breathwork', icon: '🫁', label: { de: 'Atemarbeit & Breathwork' }, text: { de: 'Pranayama, Breathwork, Atemreise: Unterschiede verstehen und sicher das passende Format wählen.' }, searchParams: { spec: 'Atemarbeit' }, ctaLabel: { de: 'Atemarbeit-Kurse anzeigen' } },
+      { slug: 'atemarbeit-breathwork', icon: '🫁', label: { de: 'Atemarbeit & Breathwork' }, text: { de: 'Pranayama, Breathwork (moderne Atemmethoden) und Atemreise: Unterschiede verstehen und sicher das passende Format wählen.' }, searchParams: { spec: 'Atemarbeit' }, ctaLabel: { de: 'Atemarbeit-Kurse anzeigen' } },
       { slug: 'klangmeditation-mantra', icon: '🔔', label: { de: 'Klangmeditation & Mantra' }, text: { de: 'Sound Bath, Gong, Kirtan und Klangreise: achtsame Formate für Ruhe, Fokus und Ausrichtung.' }, searchParams: { spec: 'Klang & Mantra' }, ctaLabel: { de: 'Klang-Kurse anzeigen' } },
       { slug: 'energiearbeit-reiki', icon: '✨', label: { de: 'Energiearbeit & Reiki' }, text: { de: 'Einordnen statt idealisieren: was dich in Reiki- und Energiearbeit-Kursen konkret erwartet.' }, searchParams: { spec: 'Energiearbeit' }, ctaLabel: { de: 'Reiki-Kurse anzeigen' } },
-      { slug: 'bodywork-thai-yoga-massage', icon: '🤲', label: { de: 'Bodywork & Thai Yoga Massage' }, text: { de: 'Körperorientierte Methoden für Beweglichkeit, Entspannung und bewusste Berührung.' }, searchParams: { spec: 'Bodywork & Massage' }, ctaLabel: { de: 'Bodywork-Kurse anzeigen' } },
+      { slug: 'bodywork-thai-yoga-massage', icon: '🤲', label: { de: 'Bodywork & Thai Yoga Massage' }, text: { de: 'Bodywork, also körperorientierte Methoden, unterstützt Beweglichkeit, Entspannung und bewusste Berührung.' }, searchParams: { spec: 'Bodywork & Massage' }, ctaLabel: { de: 'Bodywork-Kurse anzeigen' } },
     ],
 
     specialtyDescriptions: {
@@ -165,7 +165,7 @@ export const BEREICH_LANDING_CONFIG = {
         icon: '🕯️'
       },
       'Atemarbeit': {
-        de: 'Pranayama, Breathwork und Atemreise: Atem als Werkzeug für Fokus, Regulation und Energie.',
+        de: 'Pranayama, Breathwork und Atemreise: Atem als Werkzeug für Fokus, Regulation und Energie. Breathwork ist dabei ein Sammelbegriff für moderne Atemmethoden.',
         icon: '🫁'
       },
       'Klang & Mantra': {
@@ -181,7 +181,7 @@ export const BEREICH_LANDING_CONFIG = {
         icon: '✨'
       },
       'Bodywork & Massage': {
-        de: 'Thai Yoga Massage, Massage und Körpertherapie als Ergänzung zu Yoga und achtsamem Training.',
+        de: 'Thai Yoga Massage, Massage und weitere Bodywork-Methoden als Ergänzung zu Yoga und achtsamem Training.',
         icon: '🤲'
       }
     },
@@ -213,7 +213,7 @@ export const BEREICH_LANDING_CONFIG = {
         a: { de: 'Pranayama bezeichnet klassische Yogaatmung mit klaren Techniken und Struktur. Breathwork ist ein breiter Sammelbegriff für moderne Atemmethoden, die je nach Kurs sehr ruhig oder intensiv sein können. Lies die Kursbeschreibung genau und starte bei Unsicherheit mit sanften Formaten.' }
       },
       {
-        q: { de: 'Online oder vor Ort: was ist besser?' },
+        q: { de: 'Online oder vor Ort - was ist besser?' },
         a: { de: 'Vor Ort ist oft besser für direkte Korrekturen und Gruppenerlebnis. Online ist flexibel, zeitsparend und gut in den Alltag integrierbar. Für Einsteiger ist ein Start vor Ort oft hilfreich, danach kann Online eine starke Ergänzung sein.' }
       },
       {
