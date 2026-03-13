@@ -88,8 +88,13 @@ export const RATGEBER_CONTENT = {
         <li>Reserve für Unvorhergesehenes: CHF 490</li>
       </ul>
       <p><strong>Gesamtbudget: CHF 14'000</strong></p>
-      <p><strong>Netto nach 50% Bundesbeitrag: CHF 4'500 – 9'500</strong></p>
+      <p><strong>Anrechenbar für den Bundesbeitrag:</strong> nur die Kursgebühren von CHF 10'000</p>
+      <p><strong>Nicht förderfähig:</strong> Reise, Unterkunft, Verpflegung, Lernmaterialien und Reserven</p>
+      <p><strong>Möglicher Bundesbeitrag:</strong> CHF 5'000 (50 % der förderfähigen Kursgebühren, innerhalb des Bundesmaximums)</p>
+      <p><strong>Eigenanteil am Gesamtbudget:</strong> CHF 9'000</p>
     </div>
+
+    <p>Wichtig: Für eidgenössische Prüfungen vergütet der Bund nur anrechenbare Kursgebühren aus vorbereitenden Kursen. Nebenkosten wie Reise, Unterkunft, Verpflegung, Material oder private Reserveposten musst du separat budgetieren.</p>
 
     <h2>Checkliste: Kostenplanung richtig machen</h2>
     <div class="checklist">
@@ -115,11 +120,11 @@ export const RATGEBER_CONTENT = {
     <img src="https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?w=800&q=80" alt="Schweizer Bundesbeiträge für Weiterbildung" class="article-image" />
 
     <h2>Wie funktioniert die 50%-Regel?</h2>
-    <p>Das Bundesgesetz über Berufsbildung (BBG) sieht vor, dass der Bund (über das Staatssekretariat für Bildung, Forschung und Innovation SBFI) Weiterbildungskosten für anerkannte eidgenössische Prüfungen mit bis zu 50 % unterstützt. Dies ist ein <strong>einmaliger Zuschuss</strong> (keine Rückzahlung nötig) nach erfolgreichem Prüfungsabschluss.</p>
+    <p>Das Bundesgesetz über Berufsbildung (BBG) sieht vor, dass der Bund (über das Staatssekretariat für Bildung, Forschung und Innovation SBFI) anrechenbare Kursgebühren für anerkannte eidgenössische Prüfungen mit bis zu 50 % unterstützt. Dies ist ein <strong>einmaliger Zuschuss</strong> (keine Rückzahlung nötig) nach erfolgreichem Prüfungsabschluss.</p>
 
     <div class="tip-box">
       <h3>💡 Das Wichtigste auf einen Blick</h3>
-      <p>Der Bundesbeitrag ist ein <strong>Geschenk</strong> – keine Rückzahlung erforderlich! Du erhältst bis zu CHF 10'500 zurück, wenn du deine Prüfung bestehst.</p>
+      <p>Der Bundesbeitrag ist ein <strong>Geschenk</strong> – keine Rückzahlung erforderlich. Er bezieht sich aber nur auf förderfähige Kursgebühren, nicht auf Reise-, Unterkunfts- oder Materialkosten.</p>
     </div>
 
     <h2>Maximale Bundesbeiträge nach Prüfungstyp</h2>
@@ -153,6 +158,8 @@ export const RATGEBER_CONTENT = {
         <li>Vorbereitungskurse auf Höhere Fachprüfung (HFP)</li>
       </ul>
     </div>
+
+    <p><strong>Praxisregel:</strong> Rechne den Bundesbeitrag immer auf Basis der förderfähigen Kursrechnungen. Prüfungsgebühren, Lehrmittel, Reisen, Unterkunft und Verpflegung solltest du separat kalkulieren.</p>
 
     <h2>Schritt-für-Schritt: So beantragst Du den Bundesbeitrag</h2>
 
@@ -209,7 +216,7 @@ export const RATGEBER_CONTENT = {
   `,
 
   'beruflich/finanzierung/kantonale-stipendien-vergleich': `
-    <p class="lead">Kantonale Stipendien sind finanzielle Zuschüsse oder zinslose Darlehen für Berufstätige in Weiterbildung – allerdings mit sehr unterschiedlichen Bedingungen und Höchstbeträgen zwischen den Kantonen.</p>
+    <p class="lead">Kantonale Stipendien sind finanzielle Zuschüsse oder zinslose Darlehen für Berufstätige in Weiterbildung – allerdings mit sehr unterschiedlichen Bedingungen zwischen den Kantonen. Die unten genannten Beträge sind typische Beispiele, keine garantierten Fixwerte.</p>
 
     <img src="https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=800&q=80" alt="Kantonale Stipendien und Finanzierung in der Schweiz" class="article-image" />
 
@@ -231,11 +238,12 @@ export const RATGEBER_CONTENT = {
     <div class="info-box">
       <h3>💡 Gut zu wissen</h3>
       <p>Kantonale Stipendien und Bundesbeiträge können kombiniert werden! So maximierst Du Deine Förderung.</p>
+      <p>Ob und wie viel du erhältst, hängt in der Praxis meist von Einkommen, Vermögen, Wohnsitzkanton und Ausbildungsform ab.</p>
     </div>
 
     <h2>🏙️ Kanton Zürich: Liberal und schnell</h2>
     <p><strong>Zuständigkeit: Amt für Berufsbildung</strong></p>
-    <p>Weiterbildungsstipendien für Berufstätige (auch Lernende über 25 Jahre möglich). Finanzielle Bedürftigkeit nachgewiesen auf Basis Familien-Einkommen.</p>
+    <p>Weiterbildungsstipendien für Berufstätige (auch Lernende über 25 Jahre möglich). Finanzielle Bedürftigkeit wird in der Regel anhand von Einkommen und Vermögen geprüft; die genannten Beträge sind Richtbeispiele.</p>
     <ul>
       <li>Zuschuss: CHF 1'000–3'500/Jahr</li>
       <li>Darlehen: CHF 5'000–20'000 (für grössere Lücken)</li>
@@ -254,7 +262,7 @@ export const RATGEBER_CONTENT = {
 
     <h2>🏔️ Kanton Bern: Stringent und zinsfrei</h2>
     <p><strong>Zuständigkeit: Bildungs- und Kulturdirektion (BKD), Stipendienamt</strong></p>
-    <p>Fokus auf anerkannte Weiterbildungen. Finanzielle Bedürftigkeit wird strenger geprüft als in Zürich.</p>
+    <p>Fokus auf anerkannte Weiterbildungen. Finanzielle Bedürftigkeit wird strenger geprüft als in Zürich; auch hier sind die Beträge als Beispiele zu verstehen.</p>
     <ul>
       <li>Zuschuss: CHF 1'500–4'000/Jahr</li>
       <li>Darlehen: CHF 10'000–30'000 (zinslos, über 5–10 Jahre tilgbar)</li>
@@ -315,7 +323,7 @@ export const RATGEBER_CONTENT = {
   `,
 
   'beruflich/finanzierung/weiterbildungsvereinbarungen': `
-    <p class="lead">Ein Weiterbildungsvertrag zwischen Dir und Deinem Arbeitgeber regelt, wer die Kosten trägt und wie lange Du an die Firma gebunden bist. Zu lange Bindungsfristen (über 3 Jahre) sind oft rechtlich ungültig – kenne Deine Rechte.</p>
+    <p class="lead">Ein Weiterbildungsvertrag zwischen Dir und Deinem Arbeitgeber regelt, wer die Kosten trägt und wie lange Du an die Firma gebunden bist. Bindungsfristen über 3 Jahre sind oft unverhältnismässig – bei sehr teuren Weiterbildungen können Gerichte im Einzelfall aber auch längere Fristen akzeptieren.</p>
 
     <img src="https://images.unsplash.com/photo-1521791136064-7986c2920216?w=800&q=80" alt="Vertragsverhandlung und Weiterbildungsvereinbarung" class="article-image" />
 
@@ -327,6 +335,7 @@ export const RATGEBER_CONTENT = {
       <ul>
         <li>Vereinbarungen sind möglich, aber müssen verhältnismässig sein</li>
         <li>Bindungsfristen über 3 Jahre werden oft als zu restriktiv beurteilt</li>
+        <li>Bei sehr teuren Lehrgängen sind in Ausnahmefällen auch 3–4 Jahre vertretbar, wenn die Klausel sauber begründet ist</li>
         <li>Eine strikte Rückzahlungsklausel ohne Reduktion ist oft ungültig</li>
       </ul>
     </div>
@@ -349,9 +358,9 @@ export const RATGEBER_CONTENT = {
     <h3>3️⃣ Klare Bindungsdauer</h3>
     <ul>
       <li>Empfohlen: 1–3 Jahre nach Kursende</li>
-      <li>Maximum: 3 Jahre (längere Bindung oft als ungültig beurteilt)</li>
-      <li>Zeitlich begrenzt, NICHT 'bis zum Ende der Anstellung'</li>
-    </ul>
+        <li>Faustregel: maximal 3 Jahre; bei sehr teuren Einzelfällen sind ausnahmsweise bis zu 4 Jahre denkbar</li>
+        <li>Zeitlich begrenzt, NICHT 'bis zum Ende der Anstellung'</li>
+      </ul>
 
     <h3>4️⃣ Degressive Rückzahlungsverpflichtung</h3>
 
@@ -857,7 +866,7 @@ export const RATGEBER_CONTENT = {
   `,
 
   'beruflich/karriere/linkedin-optimierung': `
-    <p class="lead">Recruiter vergeben 5-10 Sekunden pro LinkedIn-Profil. Deine Weiterbildungen müssen in dieser Zeit sichtbar und vertrauenswürdig wirken – konkret, spezifisch und belegt, nicht mit leeren Buzzwords.</p>
+    <p class="lead">Recruiter überfliegen ein LinkedIn-Profil oft nur wenige Sekunden. Deine Weiterbildungen müssen in dieser kurzen Zeit sichtbar und vertrauenswürdig wirken – konkret, spezifisch und belegt, nicht mit leeren Buzzwords.</p>
 
     <img src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800&q=80" alt="LinkedIn Profil Optimierung für Karriere" class="article-image" />
 
@@ -868,7 +877,7 @@ export const RATGEBER_CONTENT = {
       <h3>💡 So denken Recruiter</h3>
       <ul>
         <li>Sie nutzen die Suchfunktion: Nach spezifischen Skills & Branchen filtern</li>
-        <li>Sie screenen Profile in Sekunden: 5-10 Sekunden durchschnittlich</li>
+        <li>Sie screenen Profile sehr schnell: Studien zu Bewerbungsunterlagen zeigen nur wenige Sekunden erste Aufmerksamkeit</li>
         <li>Sie vertrauen Zertifizierungen als Lernnachweis</li>
       </ul>
     </div>
@@ -947,9 +956,11 @@ export const RATGEBER_CONTENT = {
       <ul>
         <li>Was verdienen Personen mit deiner neuen Qualifikation? (swisslance.com, LinkedIn, jobs.ch)</li>
         <li>Wo stehst du in deiner aktuellen Gehaltsspanne? (unten, Mitte, oben)</li>
-        <li>Realistisches Ziel: CHF 3'000-6'000 für Spezialisierung, CHF 1'500-3'000 für allgemeine Verbesserung</li>
+        <li>Realistisches Ziel als Richtwert: CHF 3'000-6'000 für Spezialisierung, CHF 1'500-3'000 für allgemeine Verbesserung</li>
       </ul>
     </div>
+
+    <p>Diese Spannen sind bewusst konservative Richtwerte. Je nach Abschluss, Branche, Verantwortung und Firmengrösse können Gehaltssprünge höher oder tiefer ausfallen.</p>
 
     <h3>💼 Schritt 3: Konkrete Business-Case sammeln</h3>
     <p>Du brauchst MINDESTENS einen dieser Punkte konkret belegt:</p>
@@ -1789,8 +1800,8 @@ export const RATGEBER_CONTENT = {
 
     <h2>Welche vier Säulen entscheiden über die richtige Wahl?</h2>
     <ul>
-      <li><strong>Zeit:</strong> Wie viel verfügbare Freizeit hast du pro Woche? In der Schweiz arbeitet man überdurchschnittlich viel – fast ein Drittel aller Erwerbstätigen klagen über Zeitstress. Faustregel: Hobbys brauchen regelmässige Zeit (mindestens 1–2x pro Woche für Kurse).</li>
-      <li><strong>Energie:</strong> Bist du Morgen- oder Abend-Typ? Nach einem stressigen Tag ist leichte, genussvolle Aktivität oft besser als Hochlast-Formate. Zwei Drittel der Schweizer berichten häufigen Stress – daher sollte dein Hobby Energie geben, nicht nehmen.</li>
+      <li><strong>Zeit:</strong> Wie viel verfügbare Freizeit hast du pro Woche? Gemäss GDI-Umfragen berichtet rund ein Drittel der erwerbsfähigen Bevölkerung in der Schweiz häufig oder fast immer Zeitstress. Faustregel: Hobbys brauchen regelmässige Zeit (mindestens 1–2x pro Woche für Kurse).</li>
+      <li><strong>Energie:</strong> Bist du Morgen- oder Abend-Typ? Nach einem stressigen Tag ist leichte, genussvolle Aktivität oft besser als Hochlast-Formate. Dein Hobby sollte Energie geben, nicht zusätzlich Druck erzeugen.</li>
       <li><strong>Soziale Vorlieben:</strong> Lernst du lieber allein, in kleinen Gruppen oder in grösseren Kursen? Solo-Aktivitäten wie Zeichnen oder Yoga fördern Selbsterleben; kleine Gruppen bieten Sicherheit; Grossgruppen geben externe Motivation.</li>
       <li><strong>Budget:</strong> Realistische Kosten variieren in der Schweiz zwischen CHF 50–500 pro Kurs. Micro-Hobbies (CHF 0–30) bieten kostengünstige Alternativen für knappe Budgets.</li>
     </ul>
@@ -1862,12 +1873,12 @@ export const RATGEBER_CONTENT = {
   `,
 
   'privat-hobby/inspiration/micro-hobbies': `
-    <p class="lead">15 Minuten täglich sind oft wirksamer als sporadische mehrstündige Sessions – Micro-Hobbies senken die Eintrittsbarriere und liefern nachweislich Stressabbau und Flow.</p>
+    <p class="lead">15 Minuten täglich sind oft alltagstauglicher als sporadische mehrstündige Sessions – Micro-Hobbies senken die Eintrittsbarriere und können helfen, regelmässig kleine Erholungsinseln zu schaffen.</p>
 
     <img src="https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=800&q=80" alt="Micro-Hobbies und kleine kreative Aktivitäten" class="article-image" />
 
     <h2>⏱️ Was genau ist ein Micro-Hobby?</h2>
-    <p>Ein Micro-Hobby ist eine Aktivität unter 30 Minuten pro Tag, mit minimalem Budget (CHF 0–50) und maximaler psychologischer Rendite. Es ist kein strukturiertes Lernen, sondern pure Genussaktivität. Der Trend 2025/2026 zeigt: Menschen wählen bewusst 'Micro-Splurges' – kleine freudenbringende Ausgaben und Aktivitäten – als Reaktion auf wirtschaftliche Unsicherheit und digitale Überflutung.</p>
+    <p>Ein Micro-Hobby ist eine Aktivität unter 30 Minuten pro Tag, meist mit kleinem Budget. Es ist kein strukturiertes Lernen, sondern eine bewusst kleine Genuss- oder Fokusaktivität, die sich leichter in den Alltag integrieren lässt.</p>
 
     <h2>Welche Micro-Hobbies gibt es – und wie viel Zeit brauchst du?</h2>
     <ul>
@@ -1886,12 +1897,12 @@ export const RATGEBER_CONTENT = {
 
     <h2>Wer profitiert besonders von Micro-Hobbies?</h2>
     <ul>
-      <li>Hochgradig gestresste Berufstätige: In der Schweiz berichten 25% der Frauen und 21% der Männer Dauerstress</li>
-      <li>Menschen mit Zeitmangel: 1/3 aller Erwerbstätigen klagen über Zeitstress</li>
+      <li>Hochgradig gestresste Berufstätige: Gemäss Job-Stress-Index 2022 berichten 25 % der erwerbstätigen Frauen und 21 % der erwerbstätigen Männer häufig oder immer Stress am Arbeitsplatz</li>
+      <li>Menschen mit Zeitmangel: Gemäss GDI-Umfragen berichtet rund ein Drittel der Erwerbstätigen häufig oder fast immer Zeitstress</li>
       <li>Introvertierte: Keine Gruppendynamik, pure Fokusaktivität</li>
     </ul>
 
-    <p>KursNavi bietet einen Micro-Hobby-Katalog mit konkret erklärten Flow-Benefits. Ideal für deinen Zeitmangel-Einstieg: Starte mit 15 Minuten täglich und steigere dich später zu Workshops und Kursen, wenn die Freude gewachsen ist.</p>
+    <p>KursNavi bietet einen Micro-Hobby-Katalog für einen niederschwelligen Einstieg. Starte mit 15 Minuten täglich und steigere dich später zu Workshops und Kursen, wenn die Freude gewachsen ist.</p>
 
     <div class="cta-box">
       <h3>🎯 Micro-Hobbies entdecken</h3>
