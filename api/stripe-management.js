@@ -134,7 +134,7 @@ async function handleConnectAccount(stripe, supabase, authUser, req, res) {
       .eq('id', userId);
   }
 
-  const baseUrl = getBaseUrl();
+  const baseUrl = getBaseUrl(req);
   const accountLink = await stripe.accountLinks.create({
     account: accountId,
     refresh_url: `${baseUrl}/dashboard?connect=refresh`,

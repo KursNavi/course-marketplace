@@ -806,7 +806,7 @@ const SearchPageView = ({
                             />
                             <div className="absolute top-3 left-3 flex flex-col gap-1 items-start">
                                 {/* Draft badge - only visible to course owner */}
-                                {user?.id && String(course.user_id) === String(user.id) && (course.status === 'draft' || course.status === 'paused') && (
+                                {user?.id && String(course.user_id) === String(user.id) && course.status === 'draft' && (
                                     <div className="bg-yellow-500/95 text-white px-2 py-1 rounded text-xs font-bold shadow-sm flex items-center"><EyeOff className="w-3 h-3 mr-1" /> Entwurf</div>
                                 )}
                                 {course.instructor_verified && <div className="bg-blue-600/90 text-white px-2 py-1 rounded text-xs font-bold shadow-sm flex items-center"><CheckCircle className="w-3 h-3 mr-1" /> Pro</div>}

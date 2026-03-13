@@ -1,7 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
+import { getDashboardUrl } from './_lib/base-url.js';
 
-const generateEmailHtml = (title, bodyHtml, ctaText, ctaLink = "https://kursnavi.ch/dashboard") => `
+const generateEmailHtml = (title, bodyHtml, ctaText, ctaLink) => `
 <!DOCTYPE html>
 <html>
 <head>
@@ -50,7 +51,6 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Server configuration error' });
   }
 
-  // Extract JWT from Authorization header
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'Missing or invalid authorization header' });
@@ -60,12 +60,12 @@ export default async function handler(req, res) {
   const supabase = createClient(supabaseUrl, serviceKey);
   const resend = new Resend(process.env.RESEND_API_KEY);
   const ADMIN_EMAIL = 'btrespondek@gmail.com';
+  const dashboardUrl = getDashboardUrl(req);
 
   try {
-    // 1. Verify provider identity
     const { data: { user: authUser }, error: authError } = await supabase.auth.getUser(token);
     if (authError || !authUser) {
-      return res.status(401).json({ error: 'Ungültiges oder abgelaufenes Token' });
+      return res.status(401).json({ error: 'Ungueltiges oder abgelaufenes Token' });
     }
     const providerId = authUser.id;
 
@@ -74,7 +74,6 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'bookingId is required' });
     }
 
-    // 2. Load booking with course
     const { data: booking, error: bookingError } = await supabase
       .from('bookings')
       .select('*, courses(id, title, user_id, price)')
@@ -85,14 +84,12 @@ export default async function handler(req, res) {
       return res.status(404).json({ error: 'Buchung nicht gefunden' });
     }
 
-    // 3. Validate: course belongs to this provider
     if (booking.courses?.user_id !== providerId) {
-      return res.status(403).json({ error: 'Keine Berechtigung für diese Buchung' });
+      return res.status(403).json({ error: 'Keine Berechtigung fuer diese Buchung' });
     }
 
-    // 4. Validate booking state
     if (booking.booking_type !== 'platform_flex') {
-      return res.status(400).json({ error: 'Nur für flexible Buchungen verfügbar' });
+      return res.status(400).json({ error: 'Nur fuer flexible Buchungen verfuegbar' });
     }
 
     if (booking.status !== 'confirmed') {
@@ -100,7 +97,7 @@ export default async function handler(req, res) {
     }
 
     if (booking.delivered_at) {
-      return res.status(400).json({ error: 'Buchung wurde bereits als durchgeführt markiert' });
+      return res.status(400).json({ error: 'Buchung wurde bereits als durchgefuehrt markiert' });
     }
 
     if (booking.refunded_at) {
@@ -111,27 +108,27 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Buchung hat einen offenen Einspruch' });
     }
 
+    if (booking.goodwill_status === 'pending') {
+      return res.status(400).json({ error: 'Fuer diese Buchung ist zuerst die offene Kulanzanfrage zu entscheiden' });
+    }
+
     if (booking.is_paid) {
       return res.status(400).json({ error: 'Auszahlung bereits erfolgt' });
     }
 
-    // 5. Abuse protection: delivery cannot be before paid_at + 48h
-    const HOURS_48_MS = 48 * 60 * 60 * 1000;
     const paidAt = new Date(booking.paid_at);
-    const earliestDelivery = new Date(paidAt.getTime() + HOURS_48_MS);
+    const earliestDelivery = new Date(paidAt.getTime() + 48 * 60 * 60 * 1000);
     const now = new Date();
 
     if (now < earliestDelivery) {
       const hoursLeft = Math.ceil((earliestDelivery - now) / (60 * 60 * 1000));
       return res.status(400).json({
-        error: `Durchführung kann frühestens 48 Stunden nach Zahlung bestätigt werden. Noch ${hoursLeft}h verbleibend.`
+        error: `Durchfuehrung kann fruehestens 48 Stunden nach Zahlung bestaetigt werden. Noch ${hoursLeft}h verbleibend.`
       });
     }
 
-    // 6. Set delivered_at + payout_eligible_at
     const deliveredAt = now;
-    const DAYS_2_MS = 2 * 24 * 60 * 60 * 1000;
-    const payoutEligibleAt = new Date(deliveredAt.getTime() + DAYS_2_MS);
+    const payoutEligibleAt = new Date(deliveredAt.getTime() + 2 * 24 * 60 * 60 * 1000);
 
     const { error: updateError } = await supabase
       .from('bookings')
@@ -144,10 +141,9 @@ export default async function handler(req, res) {
 
     if (updateError) {
       console.error('Delivery update failed:', updateError);
-      return res.status(500).json({ error: 'Durchführung konnte nicht gespeichert werden' });
+      return res.status(500).json({ error: 'Durchfuehrung konnte nicht gespeichert werden' });
     }
 
-    // 7. Notify admin
     const courseTitle = booking.courses?.title || 'Kurs';
     try {
       const { data: providerProfile } = await supabase
@@ -159,9 +155,9 @@ export default async function handler(req, res) {
       await resend.emails.send({
         from: 'KursNavi <info@kursnavi.ch>',
         to: ADMIN_EMAIL,
-        subject: `Durchführung bestätigt: ${courseTitle}`,
+        subject: `Durchfuehrung bestaetigt: ${courseTitle}`,
         html: generateEmailHtml(
-          'Buchung als durchgeführt markiert',
+          'Buchung als durchgefuehrt markiert',
           `<p><strong>Anbieter:</strong> ${providerProfile?.full_name || 'Unbekannt'} (${providerProfile?.email || '-'})</p>
            <p><strong>Kurs:</strong> ${courseTitle}</p>
            <p><strong>Buchungs-ID:</strong> ${bookingId}</p>
@@ -169,7 +165,8 @@ export default async function handler(req, res) {
            <p style="margin-top: 20px; padding: 12px; background: #D1FAE5; border-radius: 8px;">
              Auszahlung wird am <strong>${payoutEligibleAt.toLocaleDateString('de-CH', { year: 'numeric', month: '2-digit', day: '2-digit' })}</strong> freigegeben.
            </p>`,
-          'Im Dashboard prüfen'
+          'Im Dashboard pruefen',
+          dashboardUrl
         )
       });
     } catch (emailErr) {
@@ -178,10 +175,9 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       success: true,
-      message: 'Buchung als durchgeführt markiert. Auszahlung wird in 2 Tagen freigegeben.',
+      message: 'Buchung als durchgefuehrt markiert. Auszahlung wird in 2 Tagen freigegeben.',
       payoutEligibleAt: payoutEligibleAt.toISOString()
     });
-
   } catch (error) {
     console.error('Mark Delivered Error:', error);
     return res.status(500).json({ error: error.message });

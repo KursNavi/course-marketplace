@@ -80,16 +80,21 @@ export default async function handler(req, res) {
       .select('*, courses(*)')
       .eq('booking_type', 'platform_flex')
       .eq('is_paid', false)
-      .eq('status', 'confirmed')
-      .is('refunded_at', null)
+      .in('status', ['confirmed', 'refunded'])
       .is('disputed_at', null)
       .not('delivered_at', 'is', null)
       .lte('payout_eligible_at', nowISO);
 
-    if (flexBookings && flexBookings.length > 0) {
+    const eligibleFlexBookings = (flexBookings || []).filter((b) => {
+      if (b.goodwill_status === 'pending') return false;
+      if (!b.refunded_at) return true;
+      return b.goodwill_status === 'approved' && b.goodwill_refund_percent > 0 && b.goodwill_refund_percent < 100;
+    });
+
+    if (eligibleFlexBookings.length > 0) {
       // Group by course for batch processing
       const flexByCourse = {};
-      for (const booking of flexBookings) {
+      for (const booking of eligibleFlexBookings) {
         const courseId = booking.course_id;
         if (!flexByCourse[courseId]) {
           flexByCourse[courseId] = { course: booking.courses, bookings: [] };
@@ -99,7 +104,7 @@ export default async function handler(req, res) {
 
       // Batch fetch all teacher profiles to avoid N+1
       const teacherIds = [...new Set(Object.values(flexByCourse).map(g => g.course?.user_id).filter(Boolean))];
-      const allStudentIds = [...new Set(flexBookings.map(b => b.user_id))];
+      const allStudentIds = [...new Set(eligibleFlexBookings.map(b => b.user_id))];
 
       const { data: teacherProfiles } = teacherIds.length > 0
         ? await supabase.from('profiles').select('id, email, language').in('id', teacherIds)
@@ -128,7 +133,10 @@ export default async function handler(req, res) {
         }).join('');
 
         // Calculate payout
-        const totalRevenue = bookings.reduce((sum, b) => sum + (course.price || 0), 0);
+        const totalRevenue = bookings.reduce((sum, b) => {
+          const refundedAmount = (b.goodwill_status === 'approved' ? (b.goodwill_refund_amount_cents || 0) : 0) / 100;
+          return sum + Math.max((course.price || 0) - refundedAmount, 0);
+        }, 0);
         const payoutAmount = totalRevenue * 0.85;
 
         // Mark as paid (guard against concurrent refund)
@@ -137,7 +145,6 @@ export default async function handler(req, res) {
           .from('bookings')
           .update({ is_paid: true }, { count: 'exact' })
           .in('id', bookingIds)
-          .is('refunded_at', null)
           .eq('is_paid', false);
         processedBookings += flexPaidCount || 0;
 
@@ -167,14 +174,17 @@ export default async function handler(req, res) {
       .select('*, courses(*), course_events!event_id(cancelled_at)')
       .eq('booking_type', 'platform')
       .eq('is_paid', false)
-      .eq('status', 'confirmed')
-      .is('refunded_at', null)
+      .in('status', ['confirmed', 'refunded'])
       .is('disputed_at', null)
       .not('event_id', 'is', null)
       .lte('payout_eligible_at', nowISO);
 
     // Safety: exclude bookings for cancelled events (should already be refunded, but guard against partial failures)
-    const platformBookings = (platformBookingsRaw || []).filter(b => !b.course_events?.cancelled_at);
+    const platformBookings = (platformBookingsRaw || []).filter((b) => {
+      if (b.course_events?.cancelled_at || b.goodwill_status === 'pending') return false;
+      if (!b.refunded_at) return true;
+      return b.goodwill_status === 'approved' && b.goodwill_refund_percent > 0 && b.goodwill_refund_percent < 100;
+    });
 
     if (platformBookings && platformBookings.length > 0) {
       // Group by course for batch processing
@@ -218,7 +228,10 @@ export default async function handler(req, res) {
         }).join('');
 
         // Calculate payout
-        const totalRevenue = bookings.length * (course.price || 0);
+        const totalRevenue = bookings.reduce((sum, b) => {
+          const refundedAmount = (b.goodwill_status === 'approved' ? (b.goodwill_refund_amount_cents || 0) : 0) / 100;
+          return sum + Math.max((course.price || 0) - refundedAmount, 0);
+        }, 0);
         const payoutAmount = totalRevenue * 0.85;
 
         // Mark as paid (guard against concurrent refund)
@@ -227,7 +240,6 @@ export default async function handler(req, res) {
           .from('bookings')
           .update({ is_paid: true }, { count: 'exact' })
           .in('id', bookingIds)
-          .is('refunded_at', null)
           .eq('is_paid', false);
         processedBookings += platformPaidCount || 0;
 

@@ -11,7 +11,7 @@ const SuccessView = ({ setView, t = {} }) => (
                 <div className="flex items-start gap-2">
                     <Info className="w-5 h-5 text-orange-500 flex-shrink-0 mt-0.5" />
                     <p className="text-sm text-gray-700">
-                        {t.booking_success_note || 'Du kannst innerhalb von 7 Tagen kostenlos ueber dein Dashboard stornieren. Danach liegt eine Stornierung oder Erstattung im Ermessen des Anbieters.'}
+                        {t.booking_success_note || 'Kostenlose Stornierung ist je nach Kursart und Termin bis zu 7 Tage nach Buchung bzw. gemaess den Stornobedingungen vor dem Termin moeglich. Details findest du im Dashboard.'}
                     </p>
                 </div>
             </div>

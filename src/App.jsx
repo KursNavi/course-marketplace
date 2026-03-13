@@ -690,7 +690,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
       .from('bookings')
       .select('*, courses(*), course_events(*)')
       .eq('user_id', userId)
-      .eq('status', 'confirmed');
+      .in('status', ['confirmed', 'refunded']);
     // Merge booking data with course data so Dashboard can show booking-specific info
     setMyBookings(data ? data.map(booking => ({
       ...booking.courses,
@@ -698,9 +698,18 @@ export default function KursNaviPro() {  // 1. Initial State Logic
       booking_type: booking.booking_type,
       booking_status: booking.status,
       paid_at: booking.paid_at,
+      delivered_at: booking.delivered_at,
       auto_refund_until: booking.auto_refund_until,
       is_paid: booking.is_paid,
       disputed_at: booking.disputed_at,
+      refunded_at: booking.refunded_at,
+      goodwill_status: booking.goodwill_status,
+      goodwill_requested_at: booking.goodwill_requested_at,
+      goodwill_request_message: booking.goodwill_request_message,
+      goodwill_decided_at: booking.goodwill_decided_at,
+      goodwill_decision_message: booking.goodwill_decision_message,
+      goodwill_refund_percent: booking.goodwill_refund_percent,
+      goodwill_refund_amount_cents: booking.goodwill_refund_amount_cents,
       payout_eligible_at: booking.payout_eligible_at,
       event_id: booking.event_id,
       event: booking.course_events
@@ -905,19 +914,33 @@ export default function KursNaviPro() {  // 1. Initial State Logic
       if (bookings) {
           setTeacherEarnings(bookings.map(booking => {
               const course = myCourses.find(c => c.id === booking.course_id);
+              const price = course?.price || 0;
+              const refundedAmount = booking.goodwill_status === 'approved'
+                ? ((booking.goodwill_refund_amount_cents || 0) / 100)
+                : 0;
+              const retainedRevenue = booking.refunded_at && !(booking.goodwill_status === 'approved' && booking.goodwill_refund_percent > 0 && booking.goodwill_refund_percent < 100)
+                ? 0
+                : Math.max(price - refundedAmount, 0);
               return {
                   id: booking.id,
                   courseTitle: course?.title || 'Unknown',
                   studentName: booking.profiles?.full_name || 'Guest Student',
-                  price: course?.price || 0,
-                  payout: (course?.price || 0) * 0.85,
+                  price,
+                  payout: retainedRevenue * 0.85,
                   isPaidOut: booking.is_paid,
                   date: new Date(booking.created_at).toLocaleDateString(),
                   bookingType: booking.booking_type,
                   deliveredAt: booking.delivered_at,
                   paidAt: booking.paid_at,
                   disputedAt: booking.disputed_at,
-                  refundedAt: booking.refunded_at
+                  refundedAt: booking.refunded_at,
+                  goodwillStatus: booking.goodwill_status,
+                  goodwillRequestedAt: booking.goodwill_requested_at,
+                  goodwillRequestMessage: booking.goodwill_request_message,
+                  goodwillDecidedAt: booking.goodwill_decided_at,
+                  goodwillDecisionMessage: booking.goodwill_decision_message,
+                  goodwillRefundPercent: booking.goodwill_refund_percent,
+                  goodwillRefundAmountCents: booking.goodwill_refund_amount_cents
               };
           }));
       }

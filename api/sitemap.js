@@ -12,7 +12,7 @@ export default async function handler(req, res) {
   const supabase = createClient(supabaseUrl, supabaseKey);
 
   try {
-    // 2. Fetch all published courses (exclude drafts and paused)
+    // 2. Fetch all published courses (exclude drafts)
     // FIX: Removed 'updated_at' because it does not exist in the DB schema
     const { data: courses, error } = await supabase
       .from('courses')

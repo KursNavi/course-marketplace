@@ -1,39 +1,48 @@
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
+import { getDashboardUrl } from './_lib/base-url.js';
 
-// --- EMAIL TEMPLATES ---
 const EMAIL_TRANSLATIONS = {
   en: {
-    student_subject: "Refund Confirmed: ",
-    student_title: "Refund Processed",
+    student_subject: 'Refund Confirmed: ',
+    student_title: 'Refund Processed',
     student_body: (course, amount, percent) => `Your booking for <strong>${course}</strong> has been cancelled and refunded (${percent} %).<br><br>Refund amount: <strong>CHF ${amount}</strong><br>The refund will appear on your original payment method within 5-10 business days.`,
-    teacher_subject: "Booking Cancelled: ",
-    teacher_title: "Booking Cancelled",
+    teacher_subject: 'Booking Cancelled: ',
+    teacher_title: 'Booking Cancelled',
     teacher_body: (email, course, percent) => `<strong>${email}</strong> has cancelled their booking for <strong>${course}</strong>.<br>A ${percent} % refund has been processed automatically per the platform refund policy.`,
-    cta: "Go to Dashboard"
+    cta: 'Go to Dashboard'
   },
   de: {
-    student_subject: "Rückerstattung bestätigt: ",
-    student_title: "Rückerstattung verarbeitet",
-    student_body: (course, amount, percent) => `Deine Buchung für <strong>${course}</strong> wurde storniert und erstattet (${percent} %).<br><br>Erstattungsbetrag: <strong>CHF ${amount}</strong><br>Die Rückerstattung erscheint innerhalb von 5-10 Werktagen auf deiner ursprünglichen Zahlungsmethode.`,
-    teacher_subject: "Buchung storniert: ",
-    teacher_title: "Buchung storniert",
-    teacher_body: (email, course, percent) => `<strong>${email}</strong> hat die Buchung für <strong>${course}</strong> storniert.<br>Gemäss der Plattform-Rückerstattungsrichtlinie wurde eine ${percent} %-Rückerstattung automatisch verarbeitet.`,
-    cta: "Zum Dashboard"
+    student_subject: 'Rueckerstattung bestaetigt: ',
+    student_title: 'Rueckerstattung verarbeitet',
+    student_body: (course, amount, percent) => `Deine Buchung fuer <strong>${course}</strong> wurde storniert und erstattet (${percent} %).<br><br>Erstattungsbetrag: <strong>CHF ${amount}</strong><br>Die Rueckerstattung erscheint innerhalb von 5-10 Werktagen auf deiner urspruenglichen Zahlungsmethode.`,
+    teacher_subject: 'Buchung storniert: ',
+    teacher_title: 'Buchung storniert',
+    teacher_body: (email, course, percent) => `<strong>${email}</strong> hat die Buchung fuer <strong>${course}</strong> storniert.<br>Gemaess der Plattform-Rueckerstattungsrichtlinie wurde eine ${percent} %-Rueckerstattung automatisch verarbeitet.`,
+    cta: 'Zum Dashboard'
   },
   fr: {
-    student_subject: "Remboursement confirmé : ",
-    student_title: "Remboursement traité",
-    student_body: (course, amount, percent) => `Votre réservation pour <strong>${course}</strong> a été annulée et remboursée (${percent} %).<br><br>Montant remboursé : <strong>CHF ${amount}</strong><br>Le remboursement apparaîtra sur votre méthode de paiement d'origine dans un délai de 5 à 10 jours ouvrables.`,
-    teacher_subject: "Réservation annulée : ",
-    teacher_title: "Réservation annulée",
-    teacher_body: (email, course, percent) => `<strong>${email}</strong> a annulé sa réservation pour <strong>${course}</strong>.<br>Un remboursement de ${percent} % a été traité automatiquement selon la politique de remboursement de la plateforme.`,
-    cta: "Voir le tableau de bord"
+    student_subject: 'Remboursement confirme : ',
+    student_title: 'Remboursement traite',
+    student_body: (course, amount, percent) => `Votre reservation pour <strong>${course}</strong> a ete annulee et remboursee (${percent} %).<br><br>Montant rembourse : <strong>CHF ${amount}</strong><br>Le remboursement apparaitra sur votre methode de paiement d'origine dans un delai de 5 a 10 jours ouvrables.`,
+    teacher_subject: 'Reservation annulee : ',
+    teacher_title: 'Reservation annulee',
+    teacher_body: (email, course, percent) => `<strong>${email}</strong> a annule sa reservation pour <strong>${course}</strong>.<br>Un remboursement de ${percent} % a ete traite automatiquement selon la politique de remboursement de la plateforme.`,
+    cta: 'Voir le tableau de bord'
+  },
+  it: {
+    student_subject: 'Rimborso confermato: ',
+    student_title: 'Rimborso elaborato',
+    student_body: (course, amount, percent) => `La tua prenotazione per <strong>${course}</strong> e stata annullata e rimborsata (${percent} %).<br><br>Importo rimborsato: <strong>CHF ${amount}</strong><br>Il rimborso comparira sul metodo di pagamento originale entro 5-10 giorni lavorativi.`,
+    teacher_subject: 'Prenotazione annullata: ',
+    teacher_title: 'Prenotazione annullata',
+    teacher_body: (email, course, percent) => `<strong>${email}</strong> ha annullato la prenotazione per <strong>${course}</strong>.<br>E stato elaborato automaticamente un rimborso del ${percent} % secondo la politica della piattaforma.`,
+    cta: 'Vai alla dashboard'
   }
 };
 
-const generateEmailHtml = (title, bodyHtml, ctaText, ctaLink = "https://kursnavi.ch/dashboard") => `
+const generateEmailHtml = (title, bodyHtml, ctaText, ctaLink) => `
 <!DOCTYPE html>
 <html>
 <head>
@@ -70,26 +79,12 @@ const generateEmailHtml = (title, bodyHtml, ctaText, ctaLink = "https://kursnavi
 </html>
 `;
 
-// Server-side: 7-day free cancellation window (Ziff. 10.1)
 function isWithinAutoRefundWindow(booking) {
   return (
     booking.status === 'confirmed' &&
     booking.auto_refund_until !== null &&
     new Date() < new Date(booking.auto_refund_until)
   );
-}
-
-// Graduated refund schedule after 7-day window (AGB Ziff. 10.2)
-// Returns 100, 50 or 0
-function calculateRefundPercent(eventStartDate) {
-  if (!eventStartDate) return 0; // no event date → no graduated refund
-  const now = new Date();
-  const start = new Date(eventStartDate);
-  const msPerDay = 24 * 60 * 60 * 1000;
-  const daysUntilStart = Math.floor((start.getTime() - now.getTime()) / msPerDay);
-  if (daysUntilStart >= 14) return 100;
-  if (daysUntilStart >= 3) return 50;
-  return 0;
 }
 
 export default async function handler(req, res) {
@@ -100,6 +95,7 @@ export default async function handler(req, res) {
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
   const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
   const resend = new Resend(process.env.RESEND_API_KEY);
+  const dashboardUrl = getDashboardUrl(req);
 
   try {
     const authHeader = req.headers.authorization;
@@ -109,7 +105,7 @@ export default async function handler(req, res) {
     const token = authHeader.replace('Bearer ', '');
     const { data: { user: authUser }, error: authError } = await supabase.auth.getUser(token);
     if (authError || !authUser) {
-      return res.status(401).json({ error: 'Ungültiges oder abgelaufenes Token' });
+      return res.status(401).json({ error: 'Ungueltiges oder abgelaufenes Token' });
     }
 
     const { bookingId } = req.body;
@@ -119,14 +115,9 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'bookingId is required' });
     }
 
-    // 1. Load booking with course + event data (only own bookings)
     const { data: booking, error: bookingError } = await supabase
       .from('bookings')
-      .select(`
-        *,
-        courses (id, title, price, user_id),
-        course_events (id, start_date)
-      `)
+      .select('*, courses (id, title, price, user_id), course_events (id, start_date)')
       .eq('id', bookingId)
       .eq('user_id', userId)
       .single();
@@ -139,25 +130,15 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Buchung ist nicht aktiv' });
     }
 
-    // 2. Determine refund percentage
-    //    a) Within 7-day auto-refund window → always 100 % (AGB 10.1)
-    //    b) After window → graduated schedule based on event start (AGB 10.2)
-    let refundPercent;
-    if (isWithinAutoRefundWindow(booking)) {
-      refundPercent = 100;
-    } else {
-      const eventStartDate = booking.course_events?.start_date;
-      refundPercent = calculateRefundPercent(eventStartDate);
-    }
-
-    if (refundPercent === 0) {
+    if (!isWithinAutoRefundWindow(booking)) {
       return res.status(400).json({
-        error: 'Keine Rückerstattung möglich (weniger als 3 Tage vor Kursbeginn)',
-        refund_percent: 0
+        error: 'Automatische Rueckerstattung nicht mehr moeglich. Du kannst stattdessen eine Kulanzanfrage an den Anbieter senden.',
+        goodwill_available: true
       });
     }
 
-    // 3. Stripe Refund (full or partial)
+    const refundPercent = 100;
+
     if (!booking.stripe_payment_intent_id) {
       return res.status(400).json({ error: 'Keine Zahlungsinformationen vorhanden' });
     }
@@ -165,22 +146,13 @@ export default async function handler(req, res) {
     let refundAmountCents;
     try {
       const pi = await stripe.paymentIntents.retrieve(booking.stripe_payment_intent_id);
-      const chargedAmount = pi.amount_received;
-      refundAmountCents = refundPercent === 100
-        ? chargedAmount
-        : Math.round(chargedAmount * refundPercent / 100);
-
-      const refundParams = { payment_intent: booking.stripe_payment_intent_id };
-      if (refundPercent < 100) {
-        refundParams.amount = refundAmountCents;
-      }
-      await stripe.refunds.create(refundParams);
+      refundAmountCents = pi.amount_received;
+      await stripe.refunds.create({ payment_intent: booking.stripe_payment_intent_id });
     } catch (stripeError) {
       console.error('Stripe refund failed:', stripeError);
-      return res.status(500).json({ error: 'Rückerstattung fehlgeschlagen. Bitte kontaktiere den Support.' });
+      return res.status(500).json({ error: 'Rueckerstattung fehlgeschlagen. Bitte kontaktiere den Support.' });
     }
 
-    // 4. Update booking status
     const { error: updateError } = await supabase
       .from('bookings')
       .update({
@@ -193,7 +165,6 @@ export default async function handler(req, res) {
       console.error('Booking update failed:', updateError);
     }
 
-    // 5. Release ticket (if period still active)
     if (booking.ticket_period_id) {
       const { error: releaseError } = await supabase.rpc('release_ticket', {
         p_period_id: booking.ticket_period_id
@@ -203,7 +174,6 @@ export default async function handler(req, res) {
       }
     }
 
-    // 6. Get user profile for email
     const { data: userProfile } = await supabase
       .from('profiles')
       .select('email, language')
@@ -214,9 +184,8 @@ export default async function handler(req, res) {
     const refundAmountCHF = (refundAmountCents / 100).toFixed(2);
     const studentEmail = userProfile?.email;
     const studentLang = userProfile?.language || 'de';
-    const sTexts = EMAIL_TRANSLATIONS[studentLang] || EMAIL_TRANSLATIONS['de'];
+    const sTexts = EMAIL_TRANSLATIONS[studentLang] || EMAIL_TRANSLATIONS.de;
 
-    // 7. Send refund confirmation email to student
     if (studentEmail) {
       try {
         await resend.emails.send({
@@ -226,7 +195,8 @@ export default async function handler(req, res) {
           html: generateEmailHtml(
             sTexts.student_title,
             sTexts.student_body(courseTitle, refundAmountCHF, refundPercent),
-            sTexts.cta
+            sTexts.cta,
+            dashboardUrl
           )
         });
       } catch (emailErr) {
@@ -234,7 +204,6 @@ export default async function handler(req, res) {
       }
     }
 
-    // 8. Notify provider
     if (booking.courses?.user_id) {
       const { data: teacherProfile } = await supabase
         .from('profiles')
@@ -244,7 +213,7 @@ export default async function handler(req, res) {
 
       if (teacherProfile?.email) {
         const teacherLang = teacherProfile.language || 'de';
-        const tTexts = EMAIL_TRANSLATIONS[teacherLang] || EMAIL_TRANSLATIONS['de'];
+        const tTexts = EMAIL_TRANSLATIONS[teacherLang] || EMAIL_TRANSLATIONS.de;
 
         try {
           await resend.emails.send({
@@ -254,7 +223,8 @@ export default async function handler(req, res) {
             html: generateEmailHtml(
               tTexts.teacher_title,
               tTexts.teacher_body(studentEmail || 'Ein Teilnehmer', courseTitle, refundPercent),
-              tTexts.cta
+              tTexts.cta,
+              dashboardUrl
             )
           });
         } catch (emailErr) {
@@ -265,11 +235,10 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       success: true,
-      message: 'Rückerstattung erfolgreich',
+      message: 'Rueckerstattung erfolgreich',
       refund_percent: refundPercent,
       refund_amount_chf: refundAmountCHF
     });
-
   } catch (error) {
     console.error('Refund Error:', error);
     return res.status(500).json({ error: error.message });

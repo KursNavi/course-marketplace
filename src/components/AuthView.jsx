@@ -19,6 +19,19 @@ const AuthView = ({ setView, setUser, showNotification, lang }) => {
     
     const t = TRANSLATIONS[lang] || TRANSLATIONS['de']; 
 
+    const restorePendingBookingFlow = () => {
+        const redirectPath = localStorage.getItem('postLoginRedirectPath');
+        if (!redirectPath) return false;
+
+        localStorage.removeItem('pendingCourseId');
+        localStorage.removeItem('pendingEventId');
+        localStorage.removeItem('postLoginRedirectPath');
+        window.history.replaceState({ view: 'detail' }, document.title, redirectPath);
+        setView('detail');
+        showNotification('Bitte bestätige die Buchung noch einmal, um fortzufahren.');
+        return true;
+    };
+
     const handleAuth = async (e) => {
         e.preventDefault(); setLoading(true);
         try {
@@ -27,7 +40,9 @@ const AuthView = ({ setView, setUser, showNotification, lang }) => {
                 if (!agbAccepted) { throw new Error(t.err_accept_terms); }
                 
                 // LOGIC: Retrieve selected package from previous step (TeacherHub)
-            const selectedPackage = localStorage.getItem('selectedPackage') || 'basic';
+            const selectedPackage = role === 'teacher'
+                ? (localStorage.getItem('selectedPackage') || 'basic')
+                : 'basic';
 
             const { data: authData, error: authError } = await supabase.auth.signUp({
                 email,
@@ -53,6 +68,7 @@ const AuthView = ({ setView, setUser, showNotification, lang }) => {
                     }], { onConflict: 'id' });
                     if (profileError) console.warn('Profile insert failed (will retry on login):', profileError.message);
                 }
+                localStorage.removeItem('selectedPackage');
                 setShowSuccess(true); // Switch to success page
             } else {
                 const { data, error } = await supabase.auth.signInWithPassword({ email, password });
@@ -65,8 +81,10 @@ const AuthView = ({ setView, setUser, showNotification, lang }) => {
                     name: userMetadata?.full_name || data.user.email.split('@')[0]
                 };
                 setUser(loggedInUser); 
-                
-                if (loggedInUser.role === 'teacher' || loggedInUser.role === 'admin') setView('dashboard'); else setView('home');
+
+                if (!restorePendingBookingFlow()) {
+                    if (loggedInUser.role === 'teacher' || loggedInUser.role === 'admin') setView('dashboard'); else setView('home');
+                }
                 showNotification(t.msg_welcome_back_toast);
             }
         } catch (error) { showNotification(error.message); } finally { setLoading(false); }

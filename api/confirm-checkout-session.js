@@ -1,49 +1,13 @@
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
-
-function calculatePayoutEligibleAt(paidAt, eventEndAt, eventStartAt, bookingType) {
-  const DAYS_MS = 24 * 60 * 60 * 1000;
-
-  if (bookingType === 'platform') {
-    const eventRef = eventEndAt || eventStartAt;
-    if (eventRef) {
-      return new Date(new Date(eventRef).getTime() + 2 * DAYS_MS);
-    }
-    return new Date(new Date(paidAt).getTime() + 14 * DAYS_MS);
-  }
-
-  if (bookingType === 'platform_flex') {
-    return null;
-  }
-
-  return null;
-}
-
-function calculateAutoRefundUntil(paidAt, eventStartAt, bookingType) {
-  if (bookingType === 'lead') {
-    return null;
-  }
-
-  const paidDate = new Date(paidAt);
-  const sevenDaysAfterPayment = new Date(paidDate.getTime() + 7 * 24 * 60 * 60 * 1000);
-
-  if (bookingType === 'platform_flex') {
-    return sevenDaysAfterPayment;
-  }
-
-  if (bookingType === 'platform' && eventStartAt) {
-    const eventDate = new Date(eventStartAt);
-    const sevenDaysBeforeEvent = new Date(eventDate.getTime() - 7 * 24 * 60 * 60 * 1000);
-
-    if (sevenDaysBeforeEvent <= paidDate) {
-      return null;
-    }
-
-    return sevenDaysAfterPayment < sevenDaysBeforeEvent ? sevenDaysAfterPayment : sevenDaysBeforeEvent;
-  }
-
-  return null;
-}
+import { Resend } from 'resend';
+import {
+  calculateAutoRefundUntil,
+  calculatePayoutEligibleAt,
+  sendBookingAutoRefundEmail,
+  sendCourseBookingEmails
+} from './_lib/course-booking-email.js';
+import { getDashboardUrl } from './_lib/base-url.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -53,6 +17,8 @@ export default async function handler(req, res) {
   try {
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
     const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+    const resend = new Resend(process.env.RESEND_API_KEY);
+    const dashboardUrl = getDashboardUrl(req);
 
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -101,16 +67,17 @@ export default async function handler(req, res) {
 
     const { data: course } = await supabase
       .from('courses')
-      .select('id, ticket_limit_30d')
+      .select('id, title, city, canton, user_id, ticket_limit_30d')
       .eq('id', courseId)
       .single();
 
     let eventStartAt = null;
     let eventEndAt = null;
+    let eventLocation = null;
     if (eventId) {
       const { data: eventData } = await supabase
         .from('course_events')
-        .select('course_id, start_date, end_date')
+        .select('course_id, start_date, end_date, location, city, max_participants, cancelled_at')
         .eq('id', eventId)
         .single();
 
@@ -120,6 +87,44 @@ export default async function handler(req, res) {
 
       eventStartAt = eventData?.start_date;
       eventEndAt = eventData?.end_date;
+      eventLocation = eventData?.location || eventData?.city || null;
+
+      if (bookingType === 'platform') {
+        if (eventData?.cancelled_at) {
+          try {
+            await stripe.refunds.create({ payment_intent: session.payment_intent });
+          } catch (refundError) {
+            console.error('Stripe refund failed for cancelled event:', refundError);
+          }
+          return res.status(409).json({ error: 'Event was cancelled and payment has been refunded' });
+        }
+
+        const { count: bookedCount } = await supabase
+          .from('bookings')
+          .select('*', { count: 'exact', head: true })
+          .eq('event_id', eventId)
+          .eq('status', 'confirmed');
+
+        if (eventData?.max_participants > 0 && bookedCount >= eventData.max_participants) {
+          try {
+            await stripe.refunds.create({ payment_intent: session.payment_intent });
+          } catch (refundError) {
+            console.error('Stripe refund failed for full event:', refundError);
+          }
+
+          await sendBookingAutoRefundEmail({
+            supabase,
+            resend,
+            dashboardUrl,
+            userId: user.id,
+            customerEmail: session.customer_details?.email,
+            courseTitle: course?.title || 'Kurs',
+            amountTotal: session.amount_total
+          });
+
+          return res.status(409).json({ error: 'Event became fully booked and payment has been refunded' });
+        }
+      }
     }
 
     let periodId = null;
@@ -156,10 +161,41 @@ export default async function handler(req, res) {
 
     if (insertError) {
       if (insertError.code === '23505') {
+        if (periodId) {
+          await supabase.rpc('release_ticket', { p_period_id: periodId });
+        }
         return res.status(200).json({ received: true, note: 'Duplicate, ignored' });
+      }
+      if (periodId) {
+        await supabase.rpc('release_ticket', { p_period_id: periodId });
       }
       return res.status(500).json({ error: 'Database insert failed', details: insertError });
     }
+
+    let providerName = metadata.providerName || 'Kursanbieter';
+    if (providerName === 'Kursanbieter' && course?.user_id) {
+      const { data: providerProfile } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', course.user_id)
+        .single();
+      if (providerProfile?.full_name) providerName = providerProfile.full_name;
+    }
+
+    await sendCourseBookingEmails({
+      supabase,
+      resend,
+      dashboardUrl,
+      userId: user.id,
+      customerEmail: session.customer_details?.email,
+      course,
+      bookingType,
+      courseTitle: course?.title || 'Kurs',
+      courseDate: eventStartAt ? new Date(eventStartAt).toLocaleDateString('de-CH') : 'TBA',
+      courseLocation: eventLocation || course?.city || course?.canton || '',
+      providerName,
+      amountTotal: session.amount_total
+    });
 
     return res.status(200).json({ received: true, note: 'Processed' });
   } catch (error) {

@@ -1,9 +1,10 @@
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
+import { getDashboardUrl } from './_lib/base-url.js';
 
 // --- EMAIL TEMPLATE ---
-const generateEmailHtml = (title, bodyHtml, ctaText, ctaLink = "https://kursnavi.ch/dashboard") => `
+const generateEmailHtml = (title, bodyHtml, ctaText, ctaLink) => `
 <!DOCTYPE html>
 <html>
 <head>
@@ -55,6 +56,7 @@ export default async function handler(req, res) {
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
   const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
   const resend = new Resend(process.env.RESEND_API_KEY);
+  const dashboardUrl = getDashboardUrl(req);
   const ADMIN_EMAIL = 'btrespondek@gmail.com';
 
   try {
@@ -231,7 +233,8 @@ export default async function handler(req, res) {
                ${reason ? `<p><strong>Grund:</strong> ${reason}</p>` : ''}
                <p>Deine Buchung wurde automatisch storniert und der Betrag von <strong>CHF ${coursePrice.toFixed(2)}</strong> wird innerhalb von 5–10 Werktagen auf deine ursprüngliche Zahlungsmethode zurückerstattet.</p>
                <p>Wir entschuldigen uns für die Unannehmlichkeiten.</p>`,
-              'Zum Dashboard'
+              'Zum Dashboard',
+              dashboardUrl
             )
           });
         } catch (emailErr) {
@@ -265,7 +268,8 @@ export default async function handler(req, res) {
              ${reason ? `<p><strong>Grund:</strong> ${reason}</p>` : ''}
              <p><strong>${refundedCount} Buchung(en)</strong> wurden automatisch storniert und erstattet.</p>
              ${totalRefundAmount > 0 ? `<p>Erstatteter Gesamtbetrag: <strong>CHF ${totalRefundAmount.toFixed(2)}</strong></p>` : ''}`,
-            'Zum Dashboard'
+            'Zum Dashboard',
+            dashboardUrl
           )
         });
       } catch (emailErr) {

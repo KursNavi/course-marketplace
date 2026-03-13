@@ -2,6 +2,7 @@ import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
 import PDFDocument from 'pdfkit';
+import { getDashboardUrl } from './_lib/base-url.js';
 
 export const config = {
   api: {
@@ -132,24 +133,15 @@ function calculateAutoRefundUntil(paidAt, eventStartAt, bookingType) {
     return null;
   }
 
-  const paidDate = new Date(paidAt);
-  const sevenDaysAfterPayment = new Date(paidDate.getTime() + 7 * 24 * 60 * 60 * 1000);
-
   if (bookingType === 'platform_flex') {
-    return sevenDaysAfterPayment;
+    const paidDate = new Date(paidAt);
+    return new Date(paidDate.getTime() + 7 * 24 * 60 * 60 * 1000);
   }
 
-  // platform with event
   if (bookingType === 'platform' && eventStartAt) {
     const eventDate = new Date(eventStartAt);
-    const sevenDaysBeforeEvent = new Date(eventDate.getTime() - 7 * 24 * 60 * 60 * 1000);
-
-    // Event in less than 7 days → no auto-refund
-    if (sevenDaysBeforeEvent <= paidDate) {
-      return null;
-    }
-
-    return sevenDaysAfterPayment < sevenDaysBeforeEvent ? sevenDaysAfterPayment : sevenDaysBeforeEvent;
+    const fourteenDaysBeforeEvent = new Date(eventDate.getTime() - 14 * 24 * 60 * 60 * 1000);
+    return fourteenDaysBeforeEvent > new Date() ? fourteenDaysBeforeEvent : null;
   }
 
   return null;
@@ -304,6 +296,7 @@ export default async function handler(req, res) {
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
   const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
   const resend = new Resend(process.env.RESEND_API_KEY);
+  const dashboardUrl = getDashboardUrl(req);
 
   const buf = await buffer(req);
   const sig = req.headers['stripe-signature'];
@@ -356,7 +349,7 @@ export default async function handler(req, res) {
       if (eventId) {
         const { data: eventData } = await supabase
           .from('course_events')
-          .select('course_id, start_date, end_date, location, city')
+          .select('course_id, start_date, end_date, location, city, max_participants, cancelled_at')
           .eq('id', eventId)
           .single();
         if (eventData?.course_id && Number(eventData.course_id) !== Number(courseId)) {
@@ -370,6 +363,56 @@ export default async function handler(req, res) {
         eventStartAt = eventData?.start_date;
         eventEndAt = eventData?.end_date;
         eventLocation = eventData?.location || eventData?.city;
+
+        if (bookingType === 'platform') {
+          if (eventData?.cancelled_at) {
+            try {
+              await stripe.refunds.create({ payment_intent: session.payment_intent });
+            } catch (refundErr) {
+              console.error('Stripe refund failed for cancelled event:', refundErr);
+            }
+            return res.status(200).json({ received: true, note: 'Cancelled event, auto-refunded' });
+          }
+
+          const { count: bookedCount } = await supabase
+            .from('bookings')
+            .select('*', { count: 'exact', head: true })
+            .eq('event_id', eventId)
+            .eq('status', 'confirmed');
+
+          if (eventData?.max_participants > 0 && bookedCount >= eventData.max_participants) {
+            try {
+              await stripe.refunds.create({ payment_intent: session.payment_intent });
+            } catch (refundErr) {
+              console.error('Stripe refund failed for full event:', refundErr);
+            }
+
+            let studentLang = 'de';
+            if (userId) {
+              const { data: profile } = await supabase.from('profiles').select('language').eq('id', userId).single();
+              if (profile?.language) studentLang = profile.language;
+            }
+            const sTexts = EMAIL_TRANSLATIONS[studentLang] || EMAIL_TRANSLATIONS.de;
+
+            try {
+              await resend.emails.send({
+                from: 'KursNavi <info@kursnavi.ch>',
+                to: customerEmail,
+                subject: `${sTexts.overbooking_subject}${course?.title || 'Kurs'}`,
+                html: generateEmailHtml(
+                  sTexts.overbooking_title,
+                  sTexts.overbooking_body(course?.title || 'Kurs', (amountTotal / 100).toFixed(2)),
+                  sTexts.cta_view,
+                  dashboardUrl
+                )
+              });
+            } catch (emailErr) {
+              console.error('Overbooking email failed:', emailErr);
+            }
+
+            return res.status(200).json({ received: true, note: 'Event full, auto-refunded' });
+          }
+        }
       }
 
       const courseTitle = course?.title || 'Kurs';
@@ -407,7 +450,8 @@ export default async function handler(req, res) {
               html: generateEmailHtml(
                 sTexts.overbooking_title,
                 sTexts.overbooking_body(courseTitle, (amountTotal / 100).toFixed(2)),
-                sTexts.cta_view
+                sTexts.cta_view,
+                dashboardUrl
               )
             });
           } catch (emailErr) {
@@ -442,6 +486,9 @@ export default async function handler(req, res) {
 
       if (insertError) {
         // Duplicate via unique constraint? → idempotent ignore
+        if (periodId) {
+          await supabase.rpc('release_ticket', { p_period_id: periodId });
+        }
         if (insertError.code === '23505') {
           return res.status(200).json({ received: true, note: 'Duplicate, ignored' });
         }
@@ -487,7 +534,7 @@ export default async function handler(req, res) {
           from: 'KursNavi <info@kursnavi.ch>',
           to: customerEmail,
           subject: `${sTexts.student_subject}${courseTitle}`,
-          html: generateEmailHtml(sTexts.student_title, emailBody, sTexts.cta_view),
+          html: generateEmailHtml(sTexts.student_title, emailBody, sTexts.cta_view, dashboardUrl),
           attachments: pdfBuffer ? [{
             filename: 'Rechnung_KursNavi.pdf',
             content: pdfBuffer
@@ -516,7 +563,7 @@ export default async function handler(req, res) {
             from: 'KursNavi <info@kursnavi.ch>',
             to: teacherEmail,
             subject: `${tTexts.teacher_subject}${courseTitle}`,
-            html: generateEmailHtml(tTexts.teacher_title, teacherBody, tTexts.cta_view)
+            html: generateEmailHtml(tTexts.teacher_title, teacherBody, tTexts.cta_view, dashboardUrl)
           });
         } catch (tError) { console.error('Teacher Email Failed:', tError); }
       }

@@ -457,7 +457,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
 
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Course Status (draft/published/paused)
+    // Course Status (draft/published)
     const [courseStatus, setCourseStatus] = useState(draft?.courseStatus || 'draft'); // Default: new courses start as draft
 
     // Image Preview State (for showing newly selected image before save)
@@ -1939,9 +1939,9 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                 <div className="bg-gray-50 p-6 rounded-xl border border-gray-100">
                     <h3 className="text-lg font-bold text-dark mb-4">Veröffentlichungs-Status</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <label className={`cursor-pointer border-2 p-4 rounded-xl transition relative ${(courseStatus === 'draft' || courseStatus === 'paused') ? 'border-yellow-400 bg-yellow-50' : 'border-gray-200 hover:bg-gray-50'}`}>
+                        <label className={`cursor-pointer border-2 p-4 rounded-xl transition relative ${courseStatus === 'draft' ? 'border-yellow-400 bg-yellow-50' : 'border-gray-200 hover:bg-gray-50'}`}>
                             <div className="flex items-center mb-2">
-                                <input type="radio" name="courseStatus" value="draft" checked={courseStatus === 'draft' || courseStatus === 'paused'} onChange={() => { setCourseStatus('draft'); setIsDirty(true); }} className="mr-2 accent-yellow-500"/>
+                                <input type="radio" name="courseStatus" value="draft" checked={courseStatus === 'draft'} onChange={() => { setCourseStatus('draft'); setIsDirty(true); }} className="mr-2 accent-yellow-500"/>
                                 <span className="font-bold">Entwurf</span>
                             </div>
                             <p className="text-xs text-gray-500">Kurs ist nur für dich sichtbar. Kann jederzeit veröffentlicht werden.</p>

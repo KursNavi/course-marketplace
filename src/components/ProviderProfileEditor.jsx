@@ -184,7 +184,7 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
 
         if (courses) {
           const published = courses.filter(c => c.status === 'published' || c.status === null || c.status === undefined).length;
-          const draft = courses.filter(c => c.status === 'draft' || c.status === 'paused').length;
+          const draft = courses.filter(c => c.status === 'draft').length;
           setCourseStats({ total: courses.length, published, draft });
         }
       } catch (err) {
