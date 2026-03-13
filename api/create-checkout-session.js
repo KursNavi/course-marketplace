@@ -40,6 +40,11 @@ export default async function handler(req, res) {
     const userId = authUser.id;
     const userEmail = (authUser.email || '').toLowerCase();
 
+    // Block providers from booking courses
+    if (authUser.user_metadata?.role === 'teacher') {
+      return res.status(403).json({ error: 'Kursanbieter können keine Kurse buchen' });
+    }
+
     // 1. Load course to check booking_type and validate
     const { data: course, error: courseError } = await supabase
       .from('courses')
@@ -163,9 +168,25 @@ export default async function handler(req, res) {
 
     const { data: profile } = await supabase
       .from('profiles')
-      .select('stripe_customer_id')
+      .select('stripe_customer_id, credit_balance_cents')
       .eq('id', userId)
       .single();
+
+    // Check credit balance for full-credit bookings
+    const creditBalance = profile?.credit_balance_cents || 0;
+    const coursePriceCents = Math.round((Number(course.price) || 0) * 100);
+
+    if (creditBalance >= coursePriceCents && coursePriceCents > 0) {
+      return res.status(200).json({
+        full_credit_available: true,
+        credit_balance_cents: creditBalance,
+        course_price_cents: coursePriceCents
+      });
+    }
+
+    // Calculate credit to apply (partial)
+    const creditToApply = Math.min(creditBalance, coursePriceCents);
+    const stripeAmountCents = coursePriceCents - creditToApply;
 
     if (profile?.stripe_customer_id) {
       customerId = profile.stripe_customer_id;
@@ -193,10 +214,12 @@ export default async function handler(req, res) {
             currency: 'chf',
             product_data: {
               name: courseTitle,
-              description: `Anbieter: ${providerName}. Zahlungsabwicklung: KursNavi (LifeSkills360 GmbH).`,
+              description: creditToApply > 0
+                ? `Anbieter: ${providerName}. Guthaben verrechnet: CHF ${(creditToApply / 100).toFixed(2)}. Zahlungsabwicklung: KursNavi (LifeSkills360 GmbH).`
+                : `Anbieter: ${providerName}. Zahlungsabwicklung: KursNavi (LifeSkills360 GmbH).`,
               images: courseImage ? [courseImage] : [],
             },
-            unit_amount: Math.round((Number(course.price) || 0) * 100),
+            unit_amount: stripeAmountCents,
           },
           quantity: 1,
         },
@@ -216,7 +239,8 @@ export default async function handler(req, res) {
         bookingType: effectiveBookingType,
         providerName,
         courseTitle,
-        guardianAttestation: guardianAttestation ? 'true' : 'false'
+        guardianAttestation: guardianAttestation ? 'true' : 'false',
+        creditToApplyCents: creditToApply.toString()
       },
     });
 

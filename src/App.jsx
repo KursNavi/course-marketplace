@@ -1432,7 +1432,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
         // Profil-Extras laden (oder erstellen falls fehlend)
         let { data } = await supabase
           .from('profiles')
-          .select('preferred_language, is_professional, package_tier, role, full_name')
+          .select('preferred_language, is_professional, package_tier, role, full_name, credit_balance_cents')
           .eq('id', session.user.id)
           .single();
 
@@ -1451,7 +1451,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
               package_tier: meta.package_tier || 'basic',
               preferred_language: 'de'
             }, { onConflict: 'id' })
-            .select('preferred_language, is_professional, package_tier, role, full_name')
+            .select('preferred_language, is_professional, package_tier, role, full_name, credit_balance_cents')
             .single();
           if (!cancelled) data = created;
         }
@@ -1476,7 +1476,8 @@ export default function KursNaviPro() {  // 1. Initial State Logic
                   role: data.role || prev.role,
                   is_professional: data.is_professional,
                   plan_tier: parseTier(data.package_tier),
-                  name: data.full_name || prev.name
+                  name: data.full_name || prev.name,
+                  credit_balance_cents: data.credit_balance_cents || 0
                 }
               : prev
           );

@@ -387,20 +387,41 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
             if (!session?.access_token) {
                 throw new Error('Nicht authentifiziert. Bitte erneut anmelden.');
             }
+
+            const authHeaders = {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${session.access_token}`
+            };
+            const bookingBody = {
+                courseId: course.id,
+                courseImage: course.image_url,
+                eventId: courseEvent?.id || null,
+                guardianAttestation: guardianAttested
+            };
+
+            // Try create-checkout-session first (handles credit check server-side)
             const response = await fetch('/api/create-checkout-session', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${session.access_token}`
-                },
-                body: JSON.stringify({
-                    courseId: course.id,
-                    courseImage: course.image_url,
-                    eventId: courseEvent?.id || null,
-                    guardianAttestation: guardianAttested
-                })
+                headers: authHeaders,
+                body: JSON.stringify(bookingBody)
             });
             const data = await response.json();
+
+            // Server says full credit is available — book directly with credit
+            if (data.full_credit_available) {
+                const creditResponse = await fetch('/api/book-with-credit', {
+                    method: 'POST',
+                    headers: authHeaders,
+                    body: JSON.stringify(bookingBody)
+                });
+                const creditData = await creditResponse.json();
+                if (!creditResponse.ok) throw new Error(creditData.error || 'Buchung fehlgeschlagen');
+
+                showNotification && showNotification('Buchung erfolgreich! Bezahlt mit deinem Guthaben.');
+                setView('dashboard');
+                return;
+            }
+
             if (data.error) throw new Error(data.error);
             window.location.href = data.url;
         } catch (error) {
@@ -788,6 +809,14 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
                         {isSaved ? 'Gemerkt' : 'Kurs merken'}
                     </button>
 
+                    {/* Provider cannot book courses */}
+                    {user?.role === 'teacher' ? (
+                        <div className="mb-4 p-4 rounded-lg border border-amber-200 bg-amber-50 text-center">
+                            <Info className="w-5 h-5 text-amber-600 mx-auto mb-2" />
+                            <p className="text-sm font-medium text-amber-800">Als Kursanbieter kannst du keine Kurse buchen.</p>
+                            <p className="text-xs text-amber-600 mt-1">Melde dich mit einem Teilnehmer-Konto an, um Kurse zu buchen.</p>
+                        </div>
+                    ) : (<>
                     {/* Booking attestation checkbox (platform + platform_flex only) */}
                     {(effectiveBookingType === 'platform' || effectiveBookingType === 'platform_flex') && (
                         <div className="mb-4 p-3 rounded-lg border border-gray-200 bg-gray-50">
@@ -935,8 +964,17 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
                                             : <><Mail className="w-4 h-4 mr-2"/> Anfrage senden</>}
                                 </button>
                             )}
+                            {user?.credit_balance_cents > 0 && effectiveBookingType !== 'lead' && course.price > 0 && (() => {
+                                const priceCents = Math.round(Number(course.price) * 100);
+                                const credit = user.credit_balance_cents;
+                                if (credit >= priceCents) {
+                                    return <p className="text-xs text-green-700 text-center mt-2">Mit Guthaben bezahlbar (CHF {(credit / 100).toFixed(2)} verfügbar)</p>;
+                                }
+                                return <p className="text-xs text-green-700 text-center mt-2">CHF {(Math.min(credit, priceCents) / 100).toFixed(2)} Guthaben wird verrechnet</p>;
+                            })()}
                         </div>
                     )}
+                    </>)}
 
                     {course.instructor_verified && (
                         <div className="space-y-3 text-xs text-gray-500 border-t pt-4">

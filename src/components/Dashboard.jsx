@@ -1527,7 +1527,12 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                 throw new Error(data.error || 'Refund fehlgeschlagen');
             }
 
-            showNotification('Buchung erfolgreich storniert. Die Rückerstattung wird innerhalb von 5-10 Werktagen auf deiner Zahlungsmethode erscheinen.');
+            showNotification(`Buchung storniert. CHF ${data.credit_amount_chf || ''} als Guthaben gutgeschrieben.`);
+
+            // Update credit balance in user state
+            if (data.new_balance_chf && setUser) {
+                setUser(prev => prev ? { ...prev, credit_balance_cents: Math.round(parseFloat(data.new_balance_chf) * 100) } : prev);
+            }
 
             // Refresh bookings list
             if (refreshBookings) {
@@ -1713,7 +1718,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
             type: 'refund',
             targetId: bookingId,
             title: 'Buchung stornieren?',
-            message: 'Die Buchung wird storniert und der erstattbare Betrag auf die urspruengliche Zahlungsmethode zurueckgebucht.',
+            message: 'Die Buchung wird storniert und der Betrag als Guthaben auf deinem KursNavi-Konto gutgeschrieben. Das Guthaben wird automatisch bei deiner nächsten Buchung verrechnet.',
             confirmLabel: 'Stornierung bestaetigen',
             tone: 'danger'
         });
@@ -2593,6 +2598,13 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         {/* LEFT: Bookings */}
                         <div>
+                            {user?.credit_balance_cents > 0 && (
+                                <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-4">
+                                    <p className="text-sm font-medium text-green-800">Dein Guthaben</p>
+                                    <p className="text-2xl font-bold text-green-700">CHF {((user.credit_balance_cents / 100).toFixed(2)).replace(/\B(?=(\d{3})+(?!\d))/g, "'")}</p>
+                                    <p className="text-xs text-green-600 mt-1">Wird automatisch bei deiner nächsten Buchung verrechnet.</p>
+                                </div>
+                            )}
                             <h2 className="text-xl font-bold mb-4 text-dark">{t.my_bookings}</h2>
                             <div className="space-y-4">
                                 {myBookings.length > 0 ? myBookings.map(booking => {
@@ -2667,7 +2679,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                                         <p className="text-xs text-gray-500 font-medium">
                                                             {isPartialGoodwillRefund
                                                                 ? `Diese Buchung wurde storniert. Rueckerstattet wurden ${booking.goodwill_refund_percent} % (CHF ${((booking.goodwill_refund_amount_cents || 0) / 100).toFixed(2)}).`
-                                                                : 'Diese Buchung wurde storniert oder rueckerstattet.'}
+                                                                : 'Diese Buchung wurde storniert. Der Betrag wurde als Guthaben gutgeschrieben.'}
                                                         </p>
                                                         {booking.refunded_at && (
                                                             <p className="text-[10px] text-gray-400 mt-1">

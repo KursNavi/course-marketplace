@@ -486,7 +486,8 @@ export default async function handler(req, res) {
         stripe_payment_intent_id: session.payment_intent,
         stripe_checkout_session_id: session.id,
         ticket_period_id: periodId,
-        guardian_attestation: metadata.guardianAttestation === 'true'
+        guardian_attestation: metadata.guardianAttestation === 'true',
+        credit_used_cents: parseInt(metadata.creditToApplyCents || '0', 10) || 0
       });
 
       if (insertError) {
@@ -499,6 +500,20 @@ export default async function handler(req, res) {
         }
         console.error('Database Rejected Booking:', insertError);
         return res.status(500).json({ error: "Database Insert Failed", details: insertError });
+      }
+
+      // Deduct credit if applicable (partial credit was applied at checkout)
+      const creditToApply = parseInt(metadata.creditToApplyCents || '0', 10);
+      if (creditToApply > 0 && userId) {
+        try {
+          await supabase.rpc('deduct_credit', {
+            p_user_id: userId,
+            p_amount_cents: creditToApply,
+            p_description: `Buchung: ${courseTitle}`
+          });
+        } catch (creditErr) {
+          console.error('Credit deduction in webhook failed (non-fatal):', creditErr);
+        }
       }
 
       // 6. Determine language for emails + load provider name

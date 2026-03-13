@@ -322,8 +322,7 @@ export default async function handler(req, res) {
 
           let assignmentQuery = supabase
             .from('course_category_assignments')
-            .select('course_id')
-            .eq('is_primary', true);
+            .select('course_id');
           if (targetLevel3Ids !== null) {
             assignmentQuery = assignmentQuery.in('level3_id', targetLevel3Ids);
           }

@@ -5,39 +5,39 @@ import { getDashboardUrl } from './_lib/base-url.js';
 
 const EMAIL_TRANSLATIONS = {
   en: {
-    student_subject: 'Refund Confirmed: ',
-    student_title: 'Refund Processed',
-    student_body: (course, amount, percent) => `Your booking for <strong>${course}</strong> has been cancelled and refunded (${percent} %).<br><br>Refund amount: <strong>CHF ${amount}</strong><br>The refund will appear on your original payment method within 5-10 business days.`,
+    student_subject: 'Credit Confirmed: ',
+    student_title: 'Credit Added',
+    student_body: (course, amount) => `Your booking for <strong>${course}</strong> has been cancelled.<br><br>A credit of <strong>CHF ${amount}</strong> has been added to your KursNavi account.<br>The credit will be automatically applied to your next booking.`,
     teacher_subject: 'Booking Cancelled: ',
     teacher_title: 'Booking Cancelled',
-    teacher_body: (email, course, percent) => `<strong>${email}</strong> has cancelled their booking for <strong>${course}</strong>.<br>A ${percent} % refund has been processed automatically per the platform refund policy.`,
+    teacher_body: (email, course) => `<strong>${email}</strong> has cancelled their booking for <strong>${course}</strong>.<br>The cancellation was processed automatically per the platform policy.`,
     cta: 'Go to Dashboard'
   },
   de: {
-    student_subject: 'Rückerstattung bestätigt: ',
-    student_title: 'Rückerstattung verarbeitet',
-    student_body: (course, amount, percent) => `Deine Buchung für <strong>${course}</strong> wurde storniert und erstattet (${percent} %).<br><br>Erstattungsbetrag: <strong>CHF ${amount}</strong><br>Die Rückerstattung erscheint innerhalb von 5–10 Werktagen auf deiner ursprünglichen Zahlungsmethode.`,
+    student_subject: 'Guthaben gutgeschrieben: ',
+    student_title: 'Guthaben erhalten',
+    student_body: (course, amount) => `Deine Buchung für <strong>${course}</strong> wurde storniert.<br><br>Dir wurde ein Guthaben von <strong>CHF ${amount}</strong> auf deinem KursNavi-Konto gutgeschrieben.<br>Das Guthaben wird automatisch bei deiner nächsten Buchung verrechnet.`,
     teacher_subject: 'Buchung storniert: ',
     teacher_title: 'Buchung storniert',
-    teacher_body: (email, course, percent) => `<strong>${email}</strong> hat die Buchung für <strong>${course}</strong> storniert.<br>Gemäss der Plattform-Rückerstattungsrichtlinie wurde eine ${percent} %-Rückerstattung automatisch verarbeitet.`,
+    teacher_body: (email, course) => `<strong>${email}</strong> hat die Buchung für <strong>${course}</strong> storniert.<br>Die Stornierung wurde automatisch gemäss der Plattform-Richtlinie verarbeitet.`,
     cta: 'Zum Dashboard'
   },
   fr: {
-    student_subject: 'Remboursement confirmé : ',
-    student_title: 'Remboursement traité',
-    student_body: (course, amount, percent) => `Votre réservation pour <strong>${course}</strong> a été annulée et remboursée (${percent} %).<br><br>Montant remboursé : <strong>CHF ${amount}</strong><br>Le remboursement apparaîtra sur votre méthode de paiement d'origine dans un délai de 5 à 10 jours ouvrables.`,
+    student_subject: 'Crédit confirmé : ',
+    student_title: 'Crédit ajouté',
+    student_body: (course, amount) => `Votre réservation pour <strong>${course}</strong> a été annulée.<br><br>Un crédit de <strong>CHF ${amount}</strong> a été ajouté à votre compte KursNavi.<br>Le crédit sera automatiquement déduit lors de votre prochaine réservation.`,
     teacher_subject: 'Réservation annulée : ',
     teacher_title: 'Réservation annulée',
-    teacher_body: (email, course, percent) => `<strong>${email}</strong> a annulé sa réservation pour <strong>${course}</strong>.<br>Un remboursement de ${percent} % a été traité automatiquement selon la politique de remboursement de la plateforme.`,
+    teacher_body: (email, course) => `<strong>${email}</strong> a annulé sa réservation pour <strong>${course}</strong>.<br>L'annulation a été traitée automatiquement selon la politique de la plateforme.`,
     cta: 'Voir le tableau de bord'
   },
   it: {
-    student_subject: 'Rimborso confermato: ',
-    student_title: 'Rimborso elaborato',
-    student_body: (course, amount, percent) => `La tua prenotazione per <strong>${course}</strong> è stata annullata e rimborsata (${percent} %).<br><br>Importo rimborsato: <strong>CHF ${amount}</strong><br>Il rimborso comparirà sul metodo di pagamento originale entro 5–10 giorni lavorativi.`,
+    student_subject: 'Credito confermato: ',
+    student_title: 'Credito aggiunto',
+    student_body: (course, amount) => `La tua prenotazione per <strong>${course}</strong> è stata annullata.<br><br>Un credito di <strong>CHF ${amount}</strong> è stato aggiunto al tuo conto KursNavi.<br>Il credito verrà detratto automaticamente dalla prossima prenotazione.`,
     teacher_subject: 'Prenotazione annullata: ',
     teacher_title: 'Prenotazione annullata',
-    teacher_body: (email, course, percent) => `<strong>${email}</strong> ha annullato la prenotazione per <strong>${course}</strong>.<br>È stato elaborato automaticamente un rimborso del ${percent} % secondo la politica della piattaforma.`,
+    teacher_body: (email, course) => `<strong>${email}</strong> ha annullato la prenotazione per <strong>${course}</strong>.<br>L'annullamento è stato elaborato automaticamente secondo la politica della piattaforma.`,
     cta: 'Vai alla dashboard'
   }
 };
@@ -133,41 +133,50 @@ export default async function handler(req, res) {
 
     if (!isWithinAutoRefundWindow(booking)) {
       return res.status(400).json({
-        error: 'Automatische Rückerstattung nicht mehr möglich. Du kannst stattdessen eine Kulanzanfrage an den Anbieter senden.',
+        error: 'Automatische Stornierung nicht mehr möglich. Du kannst stattdessen eine Kulanzanfrage an den Anbieter senden.',
         goodwill_available: true
       });
     }
 
-    const refundPercent = 100;
+    // Determine credit amount
+    let creditAmountCents;
 
-    if (!booking.stripe_payment_intent_id) {
-      return res.status(400).json({ error: 'Keine Zahlungsinformationen vorhanden' });
-    }
-
-    let refundAmountCents;
-    try {
-      const pi = await stripe.paymentIntents.retrieve(booking.stripe_payment_intent_id);
-      refundAmountCents = pi.amount_received;
-
-      if (pi.status !== 'succeeded') {
-        console.error('PaymentIntent not in succeeded state:', pi.id, pi.status);
-        return res.status(400).json({ error: `Zahlung ist im Status "${pi.status}" und kann nicht erstattet werden.` });
-      }
-
-      await stripe.refunds.create({ payment_intent: booking.stripe_payment_intent_id });
-    } catch (stripeError) {
-      console.error('Stripe refund failed:', stripeError?.type, stripeError?.code, stripeError?.message);
-
-      // If already refunded, proceed with status update
-      if (stripeError?.code === 'charge_already_refunded') {
+    if (booking.paid_via_credit) {
+      // Booking was paid with credit — re-credit the same amount
+      creditAmountCents = booking.credit_used_cents || Math.round((Number(booking.courses?.price) || 0) * 100);
+    } else if (booking.stripe_payment_intent_id) {
+      // Booking was paid via Stripe — credit the amount actually paid
+      try {
         const pi = await stripe.paymentIntents.retrieve(booking.stripe_payment_intent_id);
-        refundAmountCents = pi.amount_received;
-      } else {
-        const detail = stripeError?.message || 'Unbekannter Stripe-Fehler';
-        return res.status(500).json({ error: `Rückerstattung fehlgeschlagen: ${detail}` });
+        creditAmountCents = pi.amount_received;
+      } catch (stripeError) {
+        console.error('PI lookup failed, falling back to course price:', stripeError?.message);
+        creditAmountCents = Math.round((Number(booking.courses?.price) || 0) * 100);
       }
+    } else {
+      creditAmountCents = Math.round((Number(booking.courses?.price) || 0) * 100);
     }
 
+    if (creditAmountCents <= 0) {
+      return res.status(400).json({ error: 'Betrag konnte nicht ermittelt werden' });
+    }
+
+    // Add credit to user's balance
+    const courseTitle = booking.courses?.title || 'Kurs';
+    const { data: creditResult, error: creditError } = await supabase.rpc('add_credit', {
+      p_user_id: userId,
+      p_amount_cents: creditAmountCents,
+      p_type: 'cancellation_credit',
+      p_reference_booking_id: bookingId,
+      p_description: `Stornierung: ${courseTitle}`
+    });
+
+    if (creditError) {
+      console.error('Credit addition failed:', creditError);
+      return res.status(500).json({ error: 'Gutschrift konnte nicht verarbeitet werden.' });
+    }
+
+    // Update booking status
     const { error: updateError } = await supabase
       .from('bookings')
       .update({
@@ -180,6 +189,7 @@ export default async function handler(req, res) {
       console.error('Booking update failed:', updateError);
     }
 
+    // Release ticket if applicable
     if (booking.ticket_period_id) {
       const { error: releaseError } = await supabase.rpc('release_ticket', {
         p_period_id: booking.ticket_period_id
@@ -189,14 +199,14 @@ export default async function handler(req, res) {
       }
     }
 
+    // Send emails
     const { data: userProfile } = await supabase
       .from('profiles')
       .select('email, language')
       .eq('id', userId)
       .single();
 
-    const courseTitle = booking.courses?.title || 'Kurs';
-    const refundAmountCHF = (refundAmountCents / 100).toFixed(2);
+    const creditAmountCHF = (creditAmountCents / 100).toFixed(2);
     const studentEmail = userProfile?.email;
     const studentLang = userProfile?.language || 'de';
     const sTexts = EMAIL_TRANSLATIONS[studentLang] || EMAIL_TRANSLATIONS.de;
@@ -209,13 +219,13 @@ export default async function handler(req, res) {
           subject: `${sTexts.student_subject}${courseTitle}`,
           html: generateEmailHtml(
             sTexts.student_title,
-            sTexts.student_body(courseTitle, refundAmountCHF, refundPercent),
+            sTexts.student_body(courseTitle, creditAmountCHF),
             sTexts.cta,
             dashboardUrl
           )
         });
       } catch (emailErr) {
-        console.error('Student refund email failed:', emailErr);
+        console.error('Student credit email failed:', emailErr);
       }
     }
 
@@ -237,22 +247,24 @@ export default async function handler(req, res) {
             subject: `${tTexts.teacher_subject}${courseTitle}`,
             html: generateEmailHtml(
               tTexts.teacher_title,
-              tTexts.teacher_body(studentEmail || 'Ein Teilnehmer', courseTitle, refundPercent),
+              tTexts.teacher_body(studentEmail || 'Ein Teilnehmer', courseTitle),
               tTexts.cta,
               dashboardUrl
             )
           });
         } catch (emailErr) {
-          console.error('Teacher refund notification failed:', emailErr);
+          console.error('Teacher cancellation notification failed:', emailErr);
         }
       }
     }
 
+    const newBalanceCents = creditResult?.[0]?.new_balance_cents || creditAmountCents;
+
     return res.status(200).json({
       success: true,
-      message: 'Rückerstattung erfolgreich',
-      refund_percent: refundPercent,
-      refund_amount_chf: refundAmountCHF
+      message: 'Buchung storniert — Guthaben gutgeschrieben',
+      credit_amount_chf: creditAmountCHF,
+      new_balance_chf: (newBalanceCents / 100).toFixed(2)
     });
   } catch (error) {
     console.error('Refund Error:', error);
