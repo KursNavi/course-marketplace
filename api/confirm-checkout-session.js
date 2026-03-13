@@ -118,7 +118,7 @@ export default async function handler(req, res) {
             dashboardUrl,
             userId: user.id,
             customerEmail: session.customer_details?.email,
-            courseTitle: course?.title || 'Kurs',
+            courseTitle: course?.title || metadata.courseTitle || 'Kurs',
             amountTotal: session.amount_total
           });
 
@@ -190,7 +190,7 @@ export default async function handler(req, res) {
       customerEmail: session.customer_details?.email,
       course,
       bookingType,
-      courseTitle: course?.title || 'Kurs',
+      courseTitle: course?.title || metadata.courseTitle || 'Kurs',
       courseDate: eventStartAt ? new Date(eventStartAt).toLocaleDateString('de-CH') : 'TBA',
       courseLocation: eventLocation || course?.city || course?.canton || '',
       providerName,

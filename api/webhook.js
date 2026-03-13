@@ -402,10 +402,10 @@ export default async function handler(req, res) {
               await resend.emails.send({
                 from: 'KursNavi <info@kursnavi.ch>',
                 to: customerEmail,
-                subject: `${sTexts.overbooking_subject}${course?.title || 'Kurs'}`,
+                subject: `${sTexts.overbooking_subject}${course?.title || metadata.courseTitle || 'Kurs'}`,
                 html: generateEmailHtml(
                   sTexts.overbooking_title,
-                  sTexts.overbooking_body(course?.title || 'Kurs', (amountTotal / 100).toFixed(2)),
+                  sTexts.overbooking_body(course?.title || metadata.courseTitle || 'Kurs', (amountTotal / 100).toFixed(2)),
                   sTexts.cta_view,
                   dashboardUrl
                 )
@@ -419,7 +419,7 @@ export default async function handler(req, res) {
         }
       }
 
-      const courseTitle = course?.title || 'Kurs';
+      const courseTitle = course?.title || metadata.courseTitle || 'Kurs';
       const courseLocation = eventLocation || course?.city || course?.canton || '';
       const courseDate = eventStartAt ? new Date(eventStartAt).toLocaleDateString('de-CH') : 'TBA';
 

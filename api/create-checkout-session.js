@@ -215,6 +215,7 @@ export default async function handler(req, res) {
         eventId: eventId || '',
         bookingType: effectiveBookingType,
         providerName,
+        courseTitle,
         guardianAttestation: guardianAttestation ? 'true' : 'false'
       },
     });
