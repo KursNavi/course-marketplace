@@ -1692,7 +1692,7 @@ useEffect(() => {
       {/* Admin Impersonation Banner - fixed above navbar */}
       {impersonatedUser && (
         <div className="fixed top-0 left-0 right-0 bg-purple-600 text-white px-4 py-3 z-[60] flex items-center justify-center gap-4 text-sm font-bold shadow-lg">
-          <span>Du siehst das Dashboard von: {impersonatedUser.name} ({impersonatedUser.email}) — Rolle: {impersonatedUser.role}</span>
+          <span>Du siehst das Dashboard von: {impersonatedUser.name}{impersonatedUser.email ? ` (${impersonatedUser.email})` : ''} — Rolle: {impersonatedUser.role}</span>
           <button
             onClick={() => { setImpersonatedUser(null); setView('admin'); }}
             className="bg-white text-purple-600 px-4 py-1 rounded-full text-xs font-bold hover:bg-purple-50 transition"
