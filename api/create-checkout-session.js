@@ -212,7 +212,6 @@ export default async function handler(req, res) {
     // 6. Create Stripe checkout session with v2 metadata
     const baseUrl = getBaseUrl(req);
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
       customer: customerId,
       line_items: [
         {
