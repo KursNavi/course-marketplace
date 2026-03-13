@@ -1730,11 +1730,11 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
             type: 'dispute',
             targetId: bookingId,
             title: 'Einspruch einreichen',
-            message: 'Beschreibe kurz, weshalb du Einspruch einlegen moechtest. Die Auszahlung an den Anbieter bleibt bis zur Klaerung blockiert.',
+            message: 'Beschreibe kurz, weshalb du Einspruch einlegen möchtest. Die Auszahlung an den Anbieter bleibt bis zur Klärung blockiert.',
             confirmLabel: 'Einspruch senden',
             tone: 'warning',
             needsReason: true,
-            reasonLabel: 'Grund fuer den Einspruch',
+            reasonLabel: 'Grund für den Einspruch',
             reasonPlaceholder: 'z.B. Kurs nicht stattgefunden oder Leistung nicht wie beschrieben'
         });
     };
@@ -1759,9 +1759,9 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
         setActionDialog({
             type: 'deliver',
             targetId: bookingId,
-            title: 'Buchung als durchgefuehrt markieren?',
-            message: 'Damit bestaetigst du die Leistungserbringung. Die Auszahlung wird 2 Tage spaeter freigegeben.',
-            confirmLabel: 'Durchfuehrung bestaetigen',
+            title: 'Buchung als durchgeführt markieren?',
+            message: 'Damit bestätigst du die Leistungserbringung. Die Auszahlung wird 2 Tage später freigegeben.',
+            confirmLabel: 'Durchführung bestätigen',
             tone: 'warning'
         });
     };
@@ -1772,12 +1772,12 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
             type: 'cancelEvent',
             targetId: eventId,
             title: 'Termin absagen?',
-            message: 'Alle bestaetigten Buchungen fuer diesen Termin werden automatisch erstattet.',
+            message: 'Alle bestätigten Buchungen für diesen Termin werden automatisch erstattet.',
             confirmLabel: 'Termin absagen',
             tone: 'danger',
             needsReason: true,
-            reasonLabel: 'Grund fuer die Absage (optional)',
-            reasonPlaceholder: 'Optionaler Hinweis fuer Teilnehmer und Support'
+            reasonLabel: 'Grund für die Absage (optional)',
+            reasonPlaceholder: 'Optionaler Hinweis für Teilnehmer und Support'
         });
     };
 

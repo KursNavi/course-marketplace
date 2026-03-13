@@ -377,7 +377,7 @@ const CategorySuggestionModal = ({ isOpen, onClose, taxonomy, types, showNotific
 };
 
 const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotification, setEditingCourse, isAdminImpersonating = false }) => {
-    // --- LIMITS REMOVED: Unbegrenzte Kurse fuer alle ---
+    // --- LIMITS REMOVED: Unbegrenzte Kurse für alle ---
 
     // Load taxonomy from DB (with fallback to constants.js)
     const { taxonomy, types, areas, specialties, focuses, getFocuses, isV2, getSpecialtyObjects } = useTaxonomy();
@@ -741,7 +741,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
                 const limit = CATEGORY_ROW_LIMITS[resolvedTier] ?? 1;
                 setMaxCategories(limit);
 
-                // Falls jemand downgradet hat: ueberzaehlige Reihen abschneiden
+                // Falls jemand downgradet hat: überzählige Reihen abschneiden
                 setCategories(prev => prev.slice(0, limit));
             });
 

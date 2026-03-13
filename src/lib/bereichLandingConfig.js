@@ -1,9 +1,9 @@
 ﻿/**
  * Bereichs-Landingpage Configuration
  *
- * Konfiguration fuer Level-2-Landingpages (Bereiche/Themenwelten).
+ * Konfiguration für Level-2-Landingpages (Bereiche/Themenwelten).
  * Jeder Eintrag definiert Content, Szenarien, Suchlinks und FAQs
- * fuer einen spezifischen Bereich.
+ * für einen spezifischen Bereich.
  *
  * URL-Struktur: /bereich/{segment}/{slug}
  */
@@ -262,7 +262,7 @@ export const getBereichBySlug = (segment, slug) => {
   );
 };
 
-/** Alle Bereiche eines Segments (fuer MegaMenu / Home) */
+/** Alle Bereiche eines Segments (für MegaMenu / Home) */
 export const getBereicheForSegment = (segment) => {
   return Object.values(BEREICH_LANDING_CONFIG).filter(b => b.segment === segment);
 };
@@ -272,7 +272,7 @@ export const getBereichByAreaSlug = (areaSlug) => {
   return BEREICH_LANDING_CONFIG[areaSlug] || null;
 };
 
-/** URL fuer eine Bereichs-Landingpage */
+/** URL für eine Bereichs-Landingpage */
 export const getBereichUrl = (config) => {
   return `/bereich/${config.segment}/${config.slug}`;
 };
