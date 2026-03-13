@@ -1719,7 +1719,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
             targetId: bookingId,
             title: 'Buchung stornieren?',
             message: 'Die Buchung wird storniert und der Betrag als Guthaben auf deinem KursNavi-Konto gutgeschrieben. Das Guthaben wird automatisch bei deiner nächsten Buchung verrechnet.',
-            confirmLabel: 'Stornierung bestaetigen',
+            confirmLabel: 'Stornierung bestätigen',
             tone: 'danger'
         });
     };
