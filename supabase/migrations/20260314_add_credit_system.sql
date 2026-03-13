@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS credit_transactions (
   amount_cents INTEGER NOT NULL,
   balance_after_cents INTEGER NOT NULL,
   type TEXT NOT NULL,
-  reference_booking_id UUID,
+  reference_booking_id BIGINT,
   description TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -52,7 +52,7 @@ CREATE OR REPLACE FUNCTION add_credit(
   p_user_id UUID,
   p_amount_cents INTEGER,
   p_type TEXT,
-  p_reference_booking_id UUID DEFAULT NULL,
+  p_reference_booking_id BIGINT DEFAULT NULL,
   p_description TEXT DEFAULT NULL
 )
 RETURNS TABLE(new_balance_cents INTEGER)
@@ -84,7 +84,7 @@ $$;
 CREATE OR REPLACE FUNCTION deduct_credit(
   p_user_id UUID,
   p_amount_cents INTEGER,
-  p_reference_booking_id UUID DEFAULT NULL,
+  p_reference_booking_id BIGINT DEFAULT NULL,
   p_description TEXT DEFAULT NULL
 )
 RETURNS TABLE(new_balance_cents INTEGER, actually_deducted INTEGER)

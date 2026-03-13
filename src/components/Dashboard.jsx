@@ -809,6 +809,9 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t, isImp
                     <li>Ihr Profil und alle Einstellungen</li>
                     <li>Ihre Merkliste und gespeicherte Kurse</li>
                     <li>Buchungsdaten und Kurshistorie</li>
+                    {user?.credit_balance_cents > 0 && (
+                        <li className="text-red-600 font-medium">Ihr Guthaben von CHF {(user.credit_balance_cents / 100).toFixed(2)} verfällt unwiderruflich</li>
+                    )}
                 </ul>
                 <button
                     type="button"
@@ -839,6 +842,11 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t, isImp
                             <p className="text-sm text-red-700">
                                 <strong>Achtung:</strong> Alle Ihre Daten werden permanent gelöscht, einschliesslich Ihrer Merkliste, Buchungen und Ihres Profils.
                             </p>
+                            {user?.credit_balance_cents > 0 && (
+                                <p className="text-sm text-red-700 mt-2 font-semibold">
+                                    Ihr Guthaben von CHF {(user.credit_balance_cents / 100).toFixed(2)} verfällt bei Kontolöschung unwiderruflich.
+                                </p>
+                            )}
                         </div>
 
                         <div className="mb-6">
