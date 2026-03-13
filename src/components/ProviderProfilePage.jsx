@@ -390,23 +390,6 @@ export default function ProviderProfilePage({ t, setView, setSelectedCourse }) {
                 </a>
               )}
 
-              {provider.contactEmail ? (
-                <a
-                  href={`mailto:${provider.contactEmail}`}
-                  className="flex items-center justify-center px-4 py-2.5 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 transition-colors"
-                >
-                  <Mail className="w-4 h-4 mr-2" />
-                  E-Mail senden
-                </a>
-              ) : (
-                <button
-                  onClick={() => setView('contact')}
-                  className="flex items-center justify-center px-4 py-2.5 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 transition-colors"
-                >
-                  <Mail className="w-4 h-4 mr-2" />
-                  Kontakt aufnehmen
-                </button>
-              )}
             </div>
           </div>
         </div>
@@ -600,6 +583,23 @@ export default function ProviderProfilePage({ t, setView, setSelectedCourse }) {
                         {provider.phone}
                       </a>
                       <p className="text-sm text-gray-500">Telefon</p>
+                    </div>
+                  </div>
+                )}
+
+                {provider.websiteUrl && entitlements?.homepageLinkRel && (
+                  <div className="flex items-start gap-3">
+                    <Globe className="w-5 h-5 text-orange-500 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <a
+                        href={provider.websiteUrl}
+                        target="_blank"
+                        rel={entitlements.homepageLinkRel}
+                        className="font-medium text-gray-900 hover:text-orange-600 transition-colors break-all"
+                      >
+                        {provider.websiteUrl.replace(/^https?:\/\//, '').replace(/\/$/, '')}
+                      </a>
+                      <p className="text-sm text-gray-500">Webseite</p>
                     </div>
                   </div>
                 )}
