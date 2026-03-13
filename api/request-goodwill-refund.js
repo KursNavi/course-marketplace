@@ -6,14 +6,14 @@ const EMAIL_TEXTS = {
   de: {
     learnerSubject: (courseTitle) => `Kulanzanfrage gesendet: ${courseTitle}`,
     learnerTitle: 'Deine Kulanzanfrage wurde gesendet',
-    learnerBody: (courseTitle, providerName, message) => `<p>Wir haben deine Kulanzanfrage fuer <strong>${courseTitle}</strong> an ${providerName} weitergeleitet.</p>
-             <p>Der Anbieter kann eine Rueckerstattung von 0 %, 25 %, 50 % oder 100 % bewilligen oder ablehnen.</p>
+    learnerBody: (courseTitle, providerName, message) => `<p>Wir haben deine Kulanzanfrage für <strong>${courseTitle}</strong> an ${providerName} weitergeleitet.</p>
+             <p>Der Anbieter kann eine Rückerstattung von 0 %, 25 %, 50 % oder 100 % bewilligen oder ablehnen.</p>
              ${message ? `<p><strong>Deine Nachricht:</strong><br>${message}</p>` : ''}`,
     providerSubject: (courseTitle) => `Neue Kulanzanfrage: ${courseTitle}`,
     providerTitle: 'Neue Kulanzanfrage eingegangen',
-    providerBody: (learnerName, learnerEmail, courseTitle, message) => `<p><strong>${learnerName}</strong> (${learnerEmail || 'keine E-Mail'}) hat eine Kulanzanfrage fuer <strong>${courseTitle}</strong> gestellt.</p>
+    providerBody: (learnerName, learnerEmail, courseTitle, message) => `<p><strong>${learnerName}</strong> (${learnerEmail || 'keine E-Mail'}) hat eine Kulanzanfrage für <strong>${courseTitle}</strong> gestellt.</p>
              ${message ? `<p><strong>Nachricht:</strong><br>${message}</p>` : ''}
-             <p>Bitte entscheide im Dashboard ueber 0 %, 25 %, 50 % oder 100 % Rueckerstattung. Kulante Entscheidungen wirken sich in der Regel positiv auf das Kundenerlebnis aus.</p>`,
+             <p>Bitte entscheide im Dashboard über 0 %, 25 %, 50 % oder 100 % Rückerstattung. Kulante Entscheidungen wirken sich in der Regel positiv auf das Kundenerlebnis aus.</p>`,
     cta: 'Zum Dashboard'
   },
   en: {
@@ -61,6 +61,7 @@ const generateEmailHtml = (title, bodyHtml, ctaText, ctaLink) => `
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="utf-8">
   <style>
     body { font-family: Arial, sans-serif; background-color: #F3F4F6; padding: 0; margin: 0; }
     .container { max-width: 600px; margin: 0 auto; background: #FFFFFF; border-radius: 12px; overflow: hidden; }
@@ -130,7 +131,7 @@ export default async function handler(req, res) {
     }
 
     if (booking.status !== 'confirmed') {
-      return res.status(400).json({ error: 'Fuer diese Buchung kann keine Kulanzanfrage mehr gestellt werden' });
+      return res.status(400).json({ error: 'Für diese Buchung kann keine Kulanzanfrage mehr gestellt werden' });
     }
 
     if (booking.refunded_at) {
@@ -138,19 +139,19 @@ export default async function handler(req, res) {
     }
 
     if (booking.disputed_at) {
-      return res.status(400).json({ error: 'Fuer diese Buchung laeuft bereits ein Einspruch' });
+      return res.status(400).json({ error: 'Für diese Buchung läuft bereits ein Einspruch' });
     }
 
     if (booking.is_paid) {
-      return res.status(400).json({ error: 'Fuer bereits ausbezahlte Buchungen kann keine Kulanzanfrage mehr ueber die Plattform gestellt werden' });
+      return res.status(400).json({ error: 'Für bereits ausbezahlte Buchungen kann keine Kulanzanfrage mehr über die Plattform gestellt werden' });
     }
 
     if (booking.goodwill_status) {
-      return res.status(400).json({ error: 'Fuer diese Buchung wurde bereits eine Kulanzanfrage eingereicht oder bearbeitet' });
+      return res.status(400).json({ error: 'Für diese Buchung wurde bereits eine Kulanzanfrage eingereicht oder bearbeitet' });
     }
 
     if (isWithinAutoRefundWindow(booking)) {
-      return res.status(400).json({ error: 'Fuer diese Buchung ist noch eine automatische Stornierung moeglich' });
+      return res.status(400).json({ error: 'Für diese Buchung ist noch eine automatische Stornierung möglich' });
     }
 
     const { error: updateError } = await supabase

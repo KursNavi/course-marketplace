@@ -7,22 +7,22 @@ const EMAIL_TEXTS = {
   de: {
     declineLearnerSubject: (courseTitle) => `Kulanzanfrage entschieden: ${courseTitle}`,
     declineLearnerTitle: 'Deine Kulanzanfrage wurde beantwortet',
-    declineLearnerBody: (providerName, courseTitle, message) => `<p>${providerName} hat deine Kulanzanfrage fuer <strong>${courseTitle}</strong> geprueft und keine Rueckerstattung bewilligt.</p>
+    declineLearnerBody: (providerName, courseTitle, message) => `<p>${providerName} hat deine Kulanzanfrage für <strong>${courseTitle}</strong> geprüft und keine Rückerstattung bewilligt.</p>
                ${message ? `<p><strong>Nachricht des Anbieters:</strong><br>${message}</p>` : ''}`,
     declineProviderSubject: (courseTitle) => `Kulanzanfrage beantwortet: ${courseTitle}`,
     declineProviderTitle: 'Kulanzanfrage dokumentiert',
-    declineProviderBody: (learnerName, courseTitle, message) => `<p>Du hast die Kulanzanfrage von <strong>${learnerName}</strong> fuer <strong>${courseTitle}</strong> mit <strong>0 % Rueckerstattung</strong> beantwortet.</p>
-               <p>Hinweis: Kulante Loesungen wirken sich in der Regel positiv auf das Kundenerlebnis aus.</p>
+    declineProviderBody: (learnerName, courseTitle, message) => `<p>Du hast die Kulanzanfrage von <strong>${learnerName}</strong> für <strong>${courseTitle}</strong> mit <strong>0 % Rückerstattung</strong> beantwortet.</p>
+               <p>Hinweis: Kulante Lösungen wirken sich in der Regel positiv auf das Kundenerlebnis aus.</p>
                ${message ? `<p><strong>Deine Nachricht:</strong><br>${message}</p>` : ''}`,
-    approveLearnerSubject: (courseTitle) => `Kulanz-Rueckerstattung bestaetigt: ${courseTitle}`,
-    approveLearnerTitle: 'Kulanz-Rueckerstattung bewilligt',
-    approveLearnerBody: (providerName, courseTitle, percent, amount, message) => `<p>${providerName} hat deine Kulanzanfrage fuer <strong>${courseTitle}</strong> mit <strong>${percent} % Rueckerstattung</strong> bewilligt.</p>
+    approveLearnerSubject: (courseTitle) => `Kulanz-Rückerstattung bestätigt: ${courseTitle}`,
+    approveLearnerTitle: 'Kulanz-Rückerstattung bewilligt',
+    approveLearnerBody: (providerName, courseTitle, percent, amount, message) => `<p>${providerName} hat deine Kulanzanfrage für <strong>${courseTitle}</strong> mit <strong>${percent} % Rückerstattung</strong> bewilligt.</p>
              <p>Erstattungsbetrag: <strong>CHF ${amount}</strong></p>
              ${message ? `<p><strong>Nachricht des Anbieters:</strong><br>${message}</p>` : ''}
-             <p>Die Rueckerstattung erscheint in der Regel innerhalb von 5-10 Werktagen auf deiner urspruenglichen Zahlungsmethode.</p>`,
-    approveProviderSubject: (courseTitle) => `Kulanz-Rueckerstattung durchgefuehrt: ${courseTitle}`,
-    approveProviderTitle: 'Kulanzentscheidung ausgefuehrt',
-    approveProviderBody: (learnerName, courseTitle, percent, amount, message) => `<p>Du hast die Kulanzanfrage von <strong>${learnerName}</strong> fuer <strong>${courseTitle}</strong> mit <strong>${percent} % Rueckerstattung</strong> bewilligt.</p>
+             <p>Die Rückerstattung erscheint in der Regel innerhalb von 5–10 Werktagen auf deiner ursprünglichen Zahlungsmethode.</p>`,
+    approveProviderSubject: (courseTitle) => `Kulanz-Rückerstattung durchgeführt: ${courseTitle}`,
+    approveProviderTitle: 'Kulanzentscheidung ausgeführt',
+    approveProviderBody: (learnerName, courseTitle, percent, amount, message) => `<p>Du hast die Kulanzanfrage von <strong>${learnerName}</strong> für <strong>${courseTitle}</strong> mit <strong>${percent} % Rückerstattung</strong> bewilligt.</p>
              <p>Erstattungsbetrag: <strong>CHF ${amount}</strong></p>
              ${message ? `<p><strong>Deine Nachricht:</strong><br>${message}</p>` : ''}`,
     cta: 'Zum Dashboard'
@@ -102,6 +102,7 @@ const generateEmailHtml = (title, bodyHtml, ctaText, ctaLink) => `
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="utf-8">
   <style>
     body { font-family: Arial, sans-serif; background-color: #F3F4F6; padding: 0; margin: 0; }
     .container { max-width: 600px; margin: 0 auto; background: #FFFFFF; border-radius: 12px; overflow: hidden; }
@@ -163,11 +164,11 @@ export default async function handler(req, res) {
     }
 
     if (booking.courses?.user_id !== authUser.id) {
-      return res.status(403).json({ error: 'Keine Berechtigung fuer diese Buchung' });
+      return res.status(403).json({ error: 'Keine Berechtigung für diese Buchung' });
     }
 
     if (booking.goodwill_status !== 'pending') {
-      return res.status(400).json({ error: 'Fuer diese Buchung liegt keine offene Kulanzanfrage vor' });
+      return res.status(400).json({ error: 'Für diese Buchung liegt keine offene Kulanzanfrage vor' });
     }
 
     if (booking.status !== 'confirmed') {
@@ -175,11 +176,11 @@ export default async function handler(req, res) {
     }
 
     if (booking.disputed_at) {
-      return res.status(400).json({ error: 'Fuer diese Buchung laeuft bereits ein Einspruch' });
+      return res.status(400).json({ error: 'Für diese Buchung läuft bereits ein Einspruch' });
     }
 
     if (booking.is_paid) {
-      return res.status(400).json({ error: 'Nach erfolgter Auszahlung kann keine Kulanzentscheidung mehr ueber die Plattform ausgefuehrt werden' });
+      return res.status(400).json({ error: 'Nach erfolgter Auszahlung kann keine Kulanzentscheidung mehr über die Plattform ausgeführt werden' });
     }
 
     const { data: learnerProfile } = await supabase
@@ -272,7 +273,7 @@ export default async function handler(req, res) {
       });
     } catch (stripeError) {
       console.error('Stripe goodwill refund failed:', stripeError);
-      return res.status(500).json({ error: 'Rueckerstattung ueber Stripe fehlgeschlagen' });
+      return res.status(500).json({ error: 'Rückerstattung über Stripe fehlgeschlagen' });
     }
 
     const { error: updateError } = await supabase
@@ -338,7 +339,7 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       success: true,
-      message: 'Kulanz-Rueckerstattung durchgefuehrt',
+      message: 'Kulanz-Rückerstattung durchgeführt',
       refund_percent: refundPercent,
       refund_amount_chf: refundAmountCHF
     });

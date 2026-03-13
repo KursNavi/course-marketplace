@@ -14,30 +14,30 @@ const EMAIL_TRANSLATIONS = {
     cta: 'Go to Dashboard'
   },
   de: {
-    student_subject: 'Rueckerstattung bestaetigt: ',
-    student_title: 'Rueckerstattung verarbeitet',
-    student_body: (course, amount, percent) => `Deine Buchung fuer <strong>${course}</strong> wurde storniert und erstattet (${percent} %).<br><br>Erstattungsbetrag: <strong>CHF ${amount}</strong><br>Die Rueckerstattung erscheint innerhalb von 5-10 Werktagen auf deiner urspruenglichen Zahlungsmethode.`,
+    student_subject: 'Rückerstattung bestätigt: ',
+    student_title: 'Rückerstattung verarbeitet',
+    student_body: (course, amount, percent) => `Deine Buchung für <strong>${course}</strong> wurde storniert und erstattet (${percent} %).<br><br>Erstattungsbetrag: <strong>CHF ${amount}</strong><br>Die Rückerstattung erscheint innerhalb von 5–10 Werktagen auf deiner ursprünglichen Zahlungsmethode.`,
     teacher_subject: 'Buchung storniert: ',
     teacher_title: 'Buchung storniert',
-    teacher_body: (email, course, percent) => `<strong>${email}</strong> hat die Buchung fuer <strong>${course}</strong> storniert.<br>Gemaess der Plattform-Rueckerstattungsrichtlinie wurde eine ${percent} %-Rueckerstattung automatisch verarbeitet.`,
+    teacher_body: (email, course, percent) => `<strong>${email}</strong> hat die Buchung für <strong>${course}</strong> storniert.<br>Gemäss der Plattform-Rückerstattungsrichtlinie wurde eine ${percent} %-Rückerstattung automatisch verarbeitet.`,
     cta: 'Zum Dashboard'
   },
   fr: {
-    student_subject: 'Remboursement confirme : ',
-    student_title: 'Remboursement traite',
-    student_body: (course, amount, percent) => `Votre reservation pour <strong>${course}</strong> a ete annulee et remboursee (${percent} %).<br><br>Montant rembourse : <strong>CHF ${amount}</strong><br>Le remboursement apparaitra sur votre methode de paiement d'origine dans un delai de 5 a 10 jours ouvrables.`,
-    teacher_subject: 'Reservation annulee : ',
-    teacher_title: 'Reservation annulee',
-    teacher_body: (email, course, percent) => `<strong>${email}</strong> a annule sa reservation pour <strong>${course}</strong>.<br>Un remboursement de ${percent} % a ete traite automatiquement selon la politique de remboursement de la plateforme.`,
+    student_subject: 'Remboursement confirmé : ',
+    student_title: 'Remboursement traité',
+    student_body: (course, amount, percent) => `Votre réservation pour <strong>${course}</strong> a été annulée et remboursée (${percent} %).<br><br>Montant remboursé : <strong>CHF ${amount}</strong><br>Le remboursement apparaîtra sur votre méthode de paiement d'origine dans un délai de 5 à 10 jours ouvrables.`,
+    teacher_subject: 'Réservation annulée : ',
+    teacher_title: 'Réservation annulée',
+    teacher_body: (email, course, percent) => `<strong>${email}</strong> a annulé sa réservation pour <strong>${course}</strong>.<br>Un remboursement de ${percent} % a été traité automatiquement selon la politique de remboursement de la plateforme.`,
     cta: 'Voir le tableau de bord'
   },
   it: {
     student_subject: 'Rimborso confermato: ',
     student_title: 'Rimborso elaborato',
-    student_body: (course, amount, percent) => `La tua prenotazione per <strong>${course}</strong> e stata annullata e rimborsata (${percent} %).<br><br>Importo rimborsato: <strong>CHF ${amount}</strong><br>Il rimborso comparira sul metodo di pagamento originale entro 5-10 giorni lavorativi.`,
+    student_body: (course, amount, percent) => `La tua prenotazione per <strong>${course}</strong> è stata annullata e rimborsata (${percent} %).<br><br>Importo rimborsato: <strong>CHF ${amount}</strong><br>Il rimborso comparirà sul metodo di pagamento originale entro 5–10 giorni lavorativi.`,
     teacher_subject: 'Prenotazione annullata: ',
     teacher_title: 'Prenotazione annullata',
-    teacher_body: (email, course, percent) => `<strong>${email}</strong> ha annullato la prenotazione per <strong>${course}</strong>.<br>E stato elaborato automaticamente un rimborso del ${percent} % secondo la politica della piattaforma.`,
+    teacher_body: (email, course, percent) => `<strong>${email}</strong> ha annullato la prenotazione per <strong>${course}</strong>.<br>È stato elaborato automaticamente un rimborso del ${percent} % secondo la politica della piattaforma.`,
     cta: 'Vai alla dashboard'
   }
 };
@@ -46,6 +46,7 @@ const generateEmailHtml = (title, bodyHtml, ctaText, ctaLink) => `
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="utf-8">
   <style>
     body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #F3F4F6; padding: 0; margin: 0; }
     .wrapper { width: 100%; table-layout: fixed; background-color: #F3F4F6; padding-bottom: 40px; }
@@ -132,7 +133,7 @@ export default async function handler(req, res) {
 
     if (!isWithinAutoRefundWindow(booking)) {
       return res.status(400).json({
-        error: 'Automatische Rueckerstattung nicht mehr moeglich. Du kannst stattdessen eine Kulanzanfrage an den Anbieter senden.',
+        error: 'Automatische Rückerstattung nicht mehr möglich. Du kannst stattdessen eine Kulanzanfrage an den Anbieter senden.',
         goodwill_available: true
       });
     }
@@ -150,7 +151,7 @@ export default async function handler(req, res) {
       await stripe.refunds.create({ payment_intent: booking.stripe_payment_intent_id });
     } catch (stripeError) {
       console.error('Stripe refund failed:', stripeError);
-      return res.status(500).json({ error: 'Rueckerstattung fehlgeschlagen. Bitte kontaktiere den Support.' });
+      return res.status(500).json({ error: 'Rückerstattung fehlgeschlagen. Bitte kontaktiere den Support.' });
     }
 
     const { error: updateError } = await supabase
@@ -235,7 +236,7 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       success: true,
-      message: 'Rueckerstattung erfolgreich',
+      message: 'Rückerstattung erfolgreich',
       refund_percent: refundPercent,
       refund_amount_chf: refundAmountCHF
     });

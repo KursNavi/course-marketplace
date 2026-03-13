@@ -24,6 +24,7 @@ const generateEmailHtml = (title, bodyHtml, ctaText, ctaLink = "https://kursnavi
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="utf-8">
   <style>
     body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: ${COLORS.gray}; padding: 0; margin: 0; }
     .wrapper { width: 100%; table-layout: fixed; background-color: ${COLORS.gray}; padding-bottom: 40px; }
@@ -330,7 +331,7 @@ export default async function handler(req, res) {
         .from('bookings')
         .select('id')
         .eq('stripe_checkout_session_id', session.id)
-        .single();
+        .maybeSingle();
 
       if (existingBooking) {
         return res.status(200).json({ received: true, note: 'Already processed' });
@@ -357,6 +358,7 @@ export default async function handler(req, res) {
             await stripe.refunds.create({ payment_intent: session.payment_intent });
           } catch (refundErr) {
             console.error('Stripe refund failed for mismatched event:', refundErr);
+            return res.status(500).json({ error: 'Refund failed for mismatched event/course, needs manual review' });
           }
           return res.status(200).json({ received: true, note: 'Mismatched event/course metadata, auto-refunded' });
         }
@@ -370,6 +372,7 @@ export default async function handler(req, res) {
               await stripe.refunds.create({ payment_intent: session.payment_intent });
             } catch (refundErr) {
               console.error('Stripe refund failed for cancelled event:', refundErr);
+              return res.status(500).json({ error: 'Refund failed for cancelled event, needs manual review' });
             }
             return res.status(200).json({ received: true, note: 'Cancelled event, auto-refunded' });
           }
@@ -385,11 +388,12 @@ export default async function handler(req, res) {
               await stripe.refunds.create({ payment_intent: session.payment_intent });
             } catch (refundErr) {
               console.error('Stripe refund failed for full event:', refundErr);
+              return res.status(500).json({ error: 'Refund failed for full event, needs manual review' });
             }
 
             let studentLang = 'de';
             if (userId) {
-              const { data: profile } = await supabase.from('profiles').select('language').eq('id', userId).single();
+              const { data: profile } = await supabase.from('profiles').select('language').eq('id', userId).maybeSingle();
               if (profile?.language) studentLang = profile.language;
             }
             const sTexts = EMAIL_TRANSLATIONS[studentLang] || EMAIL_TRANSLATIONS.de;
@@ -432,12 +436,13 @@ export default async function handler(req, res) {
             await stripe.refunds.create({ payment_intent: session.payment_intent });
           } catch (refundErr) {
             console.error('Stripe refund failed:', refundErr);
+            return res.status(500).json({ error: 'Refund failed for ticket limit, needs manual review' });
           }
 
           // Send overbooking email to user
           let studentLang = 'de';
           if (userId) {
-            const { data: profile } = await supabase.from('profiles').select('language').eq('id', userId).single();
+            const { data: profile } = await supabase.from('profiles').select('language').eq('id', userId).maybeSingle();
             if (profile?.language) studentLang = profile.language;
           }
           const sTexts = EMAIL_TRANSLATIONS[studentLang] || EMAIL_TRANSLATIONS['de'];
@@ -499,7 +504,7 @@ export default async function handler(req, res) {
       // 6. Determine language for emails + load provider name
       let studentLang = 'de';
       if (userId) {
-        const { data: profile } = await supabase.from('profiles').select('language').eq('id', userId).single();
+        const { data: profile } = await supabase.from('profiles').select('language').eq('id', userId).maybeSingle();
         if (profile?.language) studentLang = profile.language;
       }
       const sTexts = EMAIL_TRANSLATIONS[studentLang] || EMAIL_TRANSLATIONS['de'];
@@ -507,7 +512,7 @@ export default async function handler(req, res) {
       // Load provider name (from metadata or teacher profile)
       let providerName = metadata.providerName || 'Kursanbieter';
       if (providerName === 'Kursanbieter' && course?.user_id) {
-        const { data: provProfile } = await supabase.from('profiles').select('full_name').eq('id', course.user_id).single();
+        const { data: provProfile } = await supabase.from('profiles').select('full_name').eq('id', course.user_id).maybeSingle();
         if (provProfile?.full_name) providerName = provProfile.full_name;
       }
 
@@ -548,7 +553,7 @@ export default async function handler(req, res) {
           .from('profiles')
           .select('email, language')
           .eq('id', course.user_id)
-          .single();
+          .maybeSingle();
 
         const teacherEmail = teacherProfile?.email || 'btrespondek@gmail.com';
         const teacherLang = teacherProfile?.language || 'de';
@@ -581,7 +586,7 @@ export default async function handler(req, res) {
         .from('profiles')
         .select('package_tier, package_expires_at, package_stripe_session_id')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
 
       const currentTier = normalizePackageTier(metadata.currentTier || existingProfile?.package_tier);
       const currentExpiresAt = metadata.currentExpiresAt || existingProfile?.package_expires_at || null;
@@ -739,7 +744,7 @@ export default async function handler(req, res) {
             .from('profiles')
             .select('used_capture_services')
             .eq('id', userId)
-            .single();
+            .maybeSingle();
 
         const currentUsed = profile?.used_capture_services || 0;
 

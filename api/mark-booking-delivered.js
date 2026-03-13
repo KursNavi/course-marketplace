@@ -6,6 +6,7 @@ const generateEmailHtml = (title, bodyHtml, ctaText, ctaLink) => `
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="utf-8">
   <style>
     body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #F3F4F6; padding: 0; margin: 0; }
     .wrapper { width: 100%; table-layout: fixed; background-color: #F3F4F6; padding-bottom: 40px; }
@@ -85,11 +86,11 @@ export default async function handler(req, res) {
     }
 
     if (booking.courses?.user_id !== providerId) {
-      return res.status(403).json({ error: 'Keine Berechtigung fuer diese Buchung' });
+      return res.status(403).json({ error: 'Keine Berechtigung für diese Buchung' });
     }
 
     if (booking.booking_type !== 'platform_flex') {
-      return res.status(400).json({ error: 'Nur fuer flexible Buchungen verfuegbar' });
+      return res.status(400).json({ error: 'Nur für flexible Buchungen verfügbar' });
     }
 
     if (booking.status !== 'confirmed') {
@@ -97,7 +98,7 @@ export default async function handler(req, res) {
     }
 
     if (booking.delivered_at) {
-      return res.status(400).json({ error: 'Buchung wurde bereits als durchgefuehrt markiert' });
+      return res.status(400).json({ error: 'Buchung wurde bereits als durchgeführt markiert' });
     }
 
     if (booking.refunded_at) {
@@ -109,7 +110,7 @@ export default async function handler(req, res) {
     }
 
     if (booking.goodwill_status === 'pending') {
-      return res.status(400).json({ error: 'Fuer diese Buchung ist zuerst die offene Kulanzanfrage zu entscheiden' });
+      return res.status(400).json({ error: 'Für diese Buchung ist zuerst die offene Kulanzanfrage zu entscheiden' });
     }
 
     if (booking.is_paid) {
@@ -123,7 +124,7 @@ export default async function handler(req, res) {
     if (now < earliestDelivery) {
       const hoursLeft = Math.ceil((earliestDelivery - now) / (60 * 60 * 1000));
       return res.status(400).json({
-        error: `Durchfuehrung kann fruehestens 48 Stunden nach Zahlung bestaetigt werden. Noch ${hoursLeft}h verbleibend.`
+        error: `Durchführung kann frühestens 48 Stunden nach Zahlung bestätigt werden. Noch ${hoursLeft}h verbleibend.`
       });
     }
 
@@ -141,7 +142,7 @@ export default async function handler(req, res) {
 
     if (updateError) {
       console.error('Delivery update failed:', updateError);
-      return res.status(500).json({ error: 'Durchfuehrung konnte nicht gespeichert werden' });
+      return res.status(500).json({ error: 'Durchführung konnte nicht gespeichert werden' });
     }
 
     const courseTitle = booking.courses?.title || 'Kurs';
@@ -155,9 +156,9 @@ export default async function handler(req, res) {
       await resend.emails.send({
         from: 'KursNavi <info@kursnavi.ch>',
         to: ADMIN_EMAIL,
-        subject: `Durchfuehrung bestaetigt: ${courseTitle}`,
+        subject: `Durchführung bestätigt: ${courseTitle}`,
         html: generateEmailHtml(
-          'Buchung als durchgefuehrt markiert',
+          'Buchung als durchgeführt markiert',
           `<p><strong>Anbieter:</strong> ${providerProfile?.full_name || 'Unbekannt'} (${providerProfile?.email || '-'})</p>
            <p><strong>Kurs:</strong> ${courseTitle}</p>
            <p><strong>Buchungs-ID:</strong> ${bookingId}</p>
@@ -165,7 +166,7 @@ export default async function handler(req, res) {
            <p style="margin-top: 20px; padding: 12px; background: #D1FAE5; border-radius: 8px;">
              Auszahlung wird am <strong>${payoutEligibleAt.toLocaleDateString('de-CH', { year: 'numeric', month: '2-digit', day: '2-digit' })}</strong> freigegeben.
            </p>`,
-          'Im Dashboard pruefen',
+          'Im Dashboard prüfen',
           dashboardUrl
         )
       });

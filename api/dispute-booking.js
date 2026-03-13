@@ -6,6 +6,7 @@ const generateEmailHtml = (title, bodyHtml, ctaText, ctaLink) => `
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="utf-8">
   <style>
     body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #F3F4F6; padding: 0; margin: 0; }
     .wrapper { width: 100%; table-layout: fixed; background-color: #F3F4F6; padding-bottom: 40px; }
@@ -151,8 +152,8 @@ export default async function handler(req, res) {
           subject: `Einspruch eingereicht: ${courseTitle}`,
           html: generateEmailHtml(
             'Dein Einspruch wurde registriert',
-            `<p>Wir haben deinen Einspruch fuer <strong>${courseTitle}</strong> erhalten.</p>
-             <p>Unser Team wird den Fall pruefen und sich innerhalb von 3 Werktagen bei dir melden.</p>
+            `<p>Wir haben deinen Einspruch für <strong>${courseTitle}</strong> erhalten.</p>
+             <p>Unser Team wird den Fall prüfen und sich innerhalb von 3 Werktagen bei dir melden.</p>
              ${reason ? `<p><strong>Dein Grund:</strong> ${reason}</p>` : ''}`,
             'Zum Dashboard',
             dashboardUrl

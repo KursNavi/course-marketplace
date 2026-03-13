@@ -135,7 +135,13 @@ const TeacherProfileView = ({ teacher, courses, setView, setSelectedCourse, t })
                             <h2 className="text-xl font-bold mb-4 border-b pb-2">{t.lbl_bio || "Über mich"}</h2>
                             <div className="text-gray-600 leading-relaxed space-y-4 custom-rich-text">
                                 {teacher.bio_text.split('\n').map((line, index) => {
-                                    let formattedLine = line.replace(/\*\*(.*?)\*\*/g, '<strong class="text-dark font-bold">$1</strong>');
+                                    const escaped = line
+                                        .replace(/&/g, '&amp;')
+                                        .replace(/</g, '&lt;')
+                                        .replace(/>/g, '&gt;')
+                                        .replace(/"/g, '&quot;')
+                                        .replace(/'/g, '&#039;');
+                                    let formattedLine = escaped.replace(/\*\*(.*?)\*\*/g, '<strong class="text-dark font-bold">$1</strong>');
                                     formattedLine = formattedLine.replace(/\*(.*?)\*/g, '<em class="italic">$1</em>');
                                     formattedLine = formattedLine.replace(/__(.*?)__/g, '<u class="underline">$1</u>');
 

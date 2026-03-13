@@ -25,31 +25,31 @@ const EMAIL_TRANSLATIONS = {
     cta_view: 'Go to Dashboard'
   },
   de: {
-    student_subject: 'Buchung bestaetigt: ',
+    student_subject: 'Buchung bestätigt: ',
     student_title: 'Du bist dabei!',
-    student_body: (course, date, provider) => `Gute Nachrichten! Du hast dich erfolgreich fuer <strong>${course}</strong> angemeldet.<br><br>Der Kurs beginnt am: <strong>${date}</strong>.<br>Deine Rechnung findest du im Anhang dieser E-Mail.<br><br><small style="color:#6B7280;">Dein Vertragspartner fuer diesen Kurs ist <strong>${provider}</strong>. Du buchst im eigenen Namen und bleibst als buchende Person Vertragspartner/in und zahlungspflichtig, auch wenn die Teilnahme fuer eine andere Person erfolgt. KursNavi (LifeSkills360 GmbH) wickelt die Zahlung technisch ab.</small>`,
-    student_body_flex: (course, location, provider) => `Gute Nachrichten! Du hast dich erfolgreich fuer <strong>${course}</strong> angemeldet.<br><br>Ort: <strong>${location}</strong><br>Der genaue Termin wird direkt mit dem Anbieter vereinbart.<br>Deine Rechnung findest du im Anhang dieser E-Mail.<br><br><small style="color:#6B7280;">Dein Vertragspartner fuer diesen Kurs ist <strong>${provider}</strong>. Du buchst im eigenen Namen und bleibst als buchende Person Vertragspartner/in und zahlungspflichtig, auch wenn die Teilnahme fuer eine andere Person erfolgt. KursNavi (LifeSkills360 GmbH) wickelt die Zahlung technisch ab.</small>`,
-    teacher_subject: 'Neuer Schueler: ',
+    student_body: (course, date, provider) => `Gute Nachrichten! Du hast dich erfolgreich für <strong>${course}</strong> angemeldet.<br><br>Der Kurs beginnt am: <strong>${date}</strong>.<br>Deine Rechnung findest du im Anhang dieser E-Mail.<br><br><small style="color:#6B7280;">Dein Vertragspartner für diesen Kurs ist <strong>${provider}</strong>. Du buchst im eigenen Namen und bleibst als buchende Person Vertragspartner/in und zahlungspflichtig, auch wenn die Teilnahme für eine andere Person erfolgt. KursNavi (LifeSkills360 GmbH) wickelt die Zahlung technisch ab.</small>`,
+    student_body_flex: (course, location, provider) => `Gute Nachrichten! Du hast dich erfolgreich für <strong>${course}</strong> angemeldet.<br><br>Ort: <strong>${location}</strong><br>Der genaue Termin wird direkt mit dem Anbieter vereinbart.<br>Deine Rechnung findest du im Anhang dieser E-Mail.<br><br><small style="color:#6B7280;">Dein Vertragspartner für diesen Kurs ist <strong>${provider}</strong>. Du buchst im eigenen Namen und bleibst als buchende Person Vertragspartner/in und zahlungspflichtig, auch wenn die Teilnahme für eine andere Person erfolgt. KursNavi (LifeSkills360 GmbH) wickelt die Zahlung technisch ab.</small>`,
+    teacher_subject: 'Neuer Schüler: ',
     teacher_title: 'Neue Buchung erhalten',
-    teacher_body: (email, course, date) => `<strong>${email}</strong> hat sich gerade fuer <strong>${course}</strong> angemeldet.<br>Kursbeginn: ${date}.`,
-    teacher_body_flex: (email, course, location) => `<strong>${email}</strong> hat sich gerade fuer <strong>${course}</strong> angemeldet.<br>Ort: ${location}.<br>Bitte kontaktiere den Teilnehmer, um einen Termin zu vereinbaren.`,
-    overbooking_subject: 'Automatische Rueckerstattung - ',
-    overbooking_title: 'Automatische Rueckerstattung',
-    overbooking_body: (course, price) => `Leider war der Kurs "<strong>${course}</strong>" zum Zeitpunkt deiner Buchung bereits ausgebucht.<br><br>Der Betrag von CHF ${price} wurde automatisch auf deine urspruengliche Zahlungsmethode zurueckerstattet.<br><br>Wir entschuldigen uns fuer die Unannehmlichkeiten.`,
+    teacher_body: (email, course, date) => `<strong>${email}</strong> hat sich gerade für <strong>${course}</strong> angemeldet.<br>Kursbeginn: ${date}.`,
+    teacher_body_flex: (email, course, location) => `<strong>${email}</strong> hat sich gerade für <strong>${course}</strong> angemeldet.<br>Ort: ${location}.<br>Bitte kontaktiere den Teilnehmer, um einen Termin zu vereinbaren.`,
+    overbooking_subject: 'Automatische Rückerstattung - ',
+    overbooking_title: 'Automatische Rückerstattung',
+    overbooking_body: (course, price) => `Leider war der Kurs „<strong>${course}</strong>" zum Zeitpunkt deiner Buchung bereits ausgebucht.<br><br>Der Betrag von CHF ${price} wurde automatisch auf deine ursprüngliche Zahlungsmethode zurückerstattet.<br><br>Wir entschuldigen uns für die Unannehmlichkeiten.`,
     cta_view: 'Zum Dashboard'
   },
   fr: {
-    student_subject: 'Reservation confirmee : ',
-    student_title: "C'est confirme !",
-    student_body: (course, date, provider) => `Excellente nouvelle ! Vous etes inscrit a <strong>${course}</strong>.<br><br>Le cours commence le : <strong>${date}</strong>.<br>Votre facture est jointe a cet e-mail.<br><br><small style="color:#6B7280;">Votre partenaire contractuel pour ce cours est <strong>${provider}</strong>. KursNavi (LifeSkills360 GmbH) assure le traitement du paiement.</small>`,
-    student_body_flex: (course, location, provider) => `Excellente nouvelle ! Vous etes inscrit a <strong>${course}</strong>.<br><br>Lieu : <strong>${location}</strong><br>La date exacte sera convenue directement avec le prestataire.<br>Votre facture est jointe a cet e-mail.<br><br><small style="color:#6B7280;">Votre partenaire contractuel pour ce cours est <strong>${provider}</strong>. KursNavi (LifeSkills360 GmbH) assure le traitement du paiement.</small>`,
-    teacher_subject: 'Nouvel etudiant : ',
-    teacher_title: 'Nouvelle reservation',
-    teacher_body: (email, course, date) => `<strong>${email}</strong> vient de reserver une place pour <strong>${course}</strong>.<br>Date de debut : ${date}.`,
-    teacher_body_flex: (email, course, location) => `<strong>${email}</strong> vient de reserver une place pour <strong>${course}</strong>.<br>Lieu : ${location}.<br>Veuillez contacter l'etudiant pour convenir d'une date.`,
+    student_subject: 'Réservation confirmée : ',
+    student_title: "C'est confirmé !",
+    student_body: (course, date, provider) => `Excellente nouvelle ! Vous êtes inscrit à <strong>${course}</strong>.<br><br>Le cours commence le : <strong>${date}</strong>.<br>Votre facture est jointe à cet e-mail.<br><br><small style="color:#6B7280;">Votre partenaire contractuel pour ce cours est <strong>${provider}</strong>. KursNavi (LifeSkills360 GmbH) assure le traitement du paiement.</small>`,
+    student_body_flex: (course, location, provider) => `Excellente nouvelle ! Vous êtes inscrit à <strong>${course}</strong>.<br><br>Lieu : <strong>${location}</strong><br>La date exacte sera convenue directement avec le prestataire.<br>Votre facture est jointe à cet e-mail.<br><br><small style="color:#6B7280;">Votre partenaire contractuel pour ce cours est <strong>${provider}</strong>. KursNavi (LifeSkills360 GmbH) assure le traitement du paiement.</small>`,
+    teacher_subject: 'Nouvel étudiant : ',
+    teacher_title: 'Nouvelle réservation',
+    teacher_body: (email, course, date) => `<strong>${email}</strong> vient de réserver une place pour <strong>${course}</strong>.<br>Date de début : ${date}.`,
+    teacher_body_flex: (email, course, location) => `<strong>${email}</strong> vient de réserver une place pour <strong>${course}</strong>.<br>Lieu : ${location}.<br>Veuillez contacter l'étudiant pour convenir d'une date.`,
     overbooking_subject: 'Remboursement automatique - ',
     overbooking_title: 'Remboursement automatique',
-    overbooking_body: (course, price) => `Malheureusement, le cours "<strong>${course}</strong>" etait deja complet au moment de votre reservation.<br><br>Le montant de CHF ${price} a ete automatiquement rembourse sur votre methode de paiement d'origine.<br><br>Nous nous excusons pour ce desagrement.`,
+    overbooking_body: (course, price) => `Malheureusement, le cours « <strong>${course}</strong> » était déjà complet au moment de votre réservation.<br><br>Le montant de CHF ${price} a été automatiquement remboursé sur votre méthode de paiement d'origine.<br><br>Nous nous excusons pour ce désagrément.`,
     cta_view: 'Voir le tableau de bord'
   }
 };
@@ -92,6 +92,7 @@ export function generateEmailHtml(title, bodyHtml, ctaText, ctaLink = `${getBase
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="utf-8">
   <style>
     body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: ${COLORS.gray}; padding: 0; margin: 0; }
     .wrapper { width: 100%; table-layout: fixed; background-color: ${COLORS.gray}; padding-bottom: 40px; }
@@ -146,7 +147,7 @@ async function generateInvoicePDF(invoiceData) {
     doc.text(`Rechnungsnummer: INV-${Date.now().toString().slice(-6)}`, 50, 110);
     doc.text(`Datum: ${new Date().toLocaleDateString('de-CH')}`, 50, 125);
     doc.text(`Leistungserbringer: ${invoiceData.providerName || 'Kursanbieter'}`, 50, 140);
-    doc.text('Empfaenger:', 300, 110);
+    doc.text('Empfänger:', 300, 110);
     doc.text(`${invoiceData.customerEmail}`, 300, 125);
 
     const tableTop = 210;
@@ -167,7 +168,7 @@ async function generateInvoicePDF(invoiceData) {
     doc.text(`Vertragspartner: ${invoiceData.providerName || 'Kursanbieter'} (Kursanbieter). Der Kursvertrag besteht zwischen buchender Person und Anbieter.`, 50, 650, { width: 500 });
     doc.text('Zahlungsabwicklung: LifeSkills360 GmbH (KursNavi).', 50, 665);
     doc.fontSize(8).fillColor('#888');
-    doc.text('Vielen Dank fuer Ihre Buchung bei KursNavi.', 50, 700, { align: 'center' });
+    doc.text('Vielen Dank für Ihre Buchung bei KursNavi.', 50, 700, { align: 'center' });
     doc.end();
   });
 }
@@ -188,7 +189,7 @@ export async function sendCourseBookingEmails({
 }) {
   let studentLang = 'de';
   if (userId) {
-    const { data: profile } = await supabase.from('profiles').select('language').eq('id', userId).single();
+    const { data: profile } = await supabase.from('profiles').select('language').eq('id', userId).maybeSingle();
     if (profile?.language) studentLang = profile.language;
   }
   const sTexts = EMAIL_TRANSLATIONS[studentLang] || EMAIL_TRANSLATIONS.de;
@@ -234,7 +235,7 @@ export async function sendCourseBookingEmails({
     .from('profiles')
     .select('email, language')
     .eq('id', course.user_id)
-    .single();
+    .maybeSingle();
 
   const teacherEmail = teacherProfile?.email || 'btrespondek@gmail.com';
   const teacherLang = teacherProfile?.language || 'de';
@@ -267,7 +268,7 @@ export async function sendBookingAutoRefundEmail({
 }) {
   let studentLang = 'de';
   if (userId) {
-    const { data: profile } = await supabase.from('profiles').select('language').eq('id', userId).single();
+    const { data: profile } = await supabase.from('profiles').select('language').eq('id', userId).maybeSingle();
     if (profile?.language) studentLang = profile.language;
   }
 
