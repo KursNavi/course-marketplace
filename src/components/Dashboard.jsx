@@ -2144,6 +2144,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                     {user.role === 'teacher' && (
                         <>
                             <button onClick={() => setDashView('analytics')} className={`px-4 py-2 rounded-full text-sm font-bold transition ${dashView === 'analytics' ? 'bg-primary text-white shadow' : 'text-gray-500 hover:bg-gray-50'}`}>Analytics</button>
+                            <button onClick={() => setDashView('merkliste')} className={`px-4 py-2 rounded-full text-sm font-bold transition ${dashView === 'merkliste' ? 'bg-primary text-white shadow' : 'text-gray-500 hover:bg-gray-50'}`}>Merkliste</button>
                             <button onClick={() => setDashView('subscription')} className={`px-4 py-2 rounded-full text-sm font-bold transition ${dashView === 'subscription' ? 'bg-primary text-white shadow' : 'text-gray-500 hover:bg-gray-50'}`}>Abo</button>
                         </>
                     )}
@@ -2161,6 +2162,37 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
              dashView === 'subscription' ? ( <SubscriptionSection user={user} currentTier={userTier} packageExpiresAt={packageExpiresAt} checkoutLoading={checkoutLoading} setCheckoutLoading={setCheckoutLoading} showNotification={showNotification} /> ) :
              dashView === 'analytics' ? (
                 <AnalyticsDashboard user={user} userTier={userTier} courses={courses} teacherEarnings={teacherEarnings} setDashView={setDashView} />
+             ) :
+             dashView === 'merkliste' ? (
+                <div>
+                    <h2 className="text-2xl font-bold mb-6 text-dark">Merkliste</h2>
+                    <p className="text-gray-500 mb-6">Beobachte Kurse anderer Anbieter — praktisch für die Wettbewerbsanalyse.</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {(savedCourses || []).length > 0 ? (savedCourses || []).map(course => (
+                            <div key={course.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col transition hover:shadow-md">
+                                <img
+                                    src={course.image_url || fallbackImage}
+                                    alt={course.title}
+                                    className="w-full h-40 rounded-lg object-cover cursor-pointer hover:opacity-90 transition mb-3"
+                                    onClick={() => handleNavigateToCourse(course)}
+                                />
+                                <h3 className="font-bold text-dark cursor-pointer hover:text-primary transition" onClick={() => handleNavigateToCourse(course)}>
+                                    {course.title}
+                                </h3>
+                                <p className="text-sm text-gray-500 mt-1">{course.instructor_name} • {course.canton}</p>
+                                {course.price != null && (
+                                    <p className="text-sm font-bold text-dark mt-2">CHF {formatPriceCHF(course.price)}</p>
+                                )}
+                                <div className="mt-auto pt-4 flex items-center justify-between">
+                                    <button type="button" onClick={() => handleNavigateToCourse(course)} className="text-sm font-bold text-primary hover:text-orange-700 hover:underline">Ansehen</button>
+                                    <button type="button" onClick={() => onToggleSaveCourse && onToggleSaveCourse(course)} className="text-sm font-bold text-red-500 hover:text-red-700 hover:underline">Entfernen</button>
+                                </div>
+                            </div>
+                        )) : (
+                            <p className="text-gray-500 italic col-span-full">Du hast noch keine Kurse gemerkt.</p>
+                        )}
+                    </div>
+                </div>
              ) : (
                 <>
                 {user.role === 'teacher' ? (
@@ -2475,9 +2507,9 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                                             course.booking_type === 'platform_flex' ? 'bg-purple-100 text-purple-700' :
                                                             'bg-orange-100 text-orange-700'
                                                         }`}>
-                                                            {course.booking_type === 'lead' ? 'Lead' :
-                                                             course.booking_type === 'platform_flex' ? 'Flexibel' :
-                                                             (course.booking_type || 'Direkt')}
+                                                            {course.booking_type === 'lead' ? 'Anfrage' :
+                                                             course.booking_type === 'platform_flex' ? 'Flex' :
+                                                             course.booking_type === 'platform' ? 'Termin' : 'Termin'}
                                                         </span>
                                                     </td>
                                                     <td className="px-6 py-4 font-medium">{course.price ? `CHF ${formatPriceCHF(course.price)}` : <span className="text-gray-400 italic">Kein Preis angegeben</span>}</td>
