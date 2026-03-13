@@ -473,7 +473,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
     }, [imagePreview]);
 
     // Schedule State
-    const [events, setEvents] = useState(draft?.events || [{ start_date: '', street: '', city: '', max_participants: 0, canton: '', schedule_description: '' }]);
+    const [events, setEvents] = useState(draft?.events || [{ id: null, bookingCount: 0, start_date: '', street: '', city: '', max_participants: 0, canton: '', schedule_description: '' }]);
 
     // Fallback Regions
     const [fallbackCantons, setFallbackCantons] = useState(draft?.fallbackCantons || []);
@@ -673,6 +673,8 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
                         city = loc.substring(lastComma + 1).trim();
                     }
                     return {
+                        id: e.id || null,
+                        bookingCount: Array.isArray(e.bookings) ? (e.bookings[0]?.count || 0) : (e.bookings?.count || 0),
                         start_date: e.start_date ? e.start_date.split('T')[0] : '',
                         street: street,
                         city: city,
@@ -924,9 +926,15 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
         markDirty();
     };
 
-    const addEvent = () => { setEvents([...events, { start_date: '', street: '', city: '', max_participants: 0, canton: '', schedule_description: '' }]); markDirty(); };
-    const removeEvent = (index) => { setEvents(events.filter((_, i) => i !== index)); markDirty(); };
+    const addEvent = () => { setEvents([...events, { id: null, bookingCount: 0, start_date: '', street: '', city: '', max_participants: 0, canton: '', schedule_description: '' }]); markDirty(); };
+    const removeEvent = (index) => {
+        const target = events[index];
+        if ((target?.bookingCount || 0) > 0) return;
+        setEvents(events.filter((_, i) => i !== index));
+        markDirty();
+    };
     const updateEvent = (index, field, value) => {
+        if ((events[index]?.bookingCount || 0) > 0) return;
         const newEvents = [...events];
         newEvents[index][field] = value;
         setEvents(newEvents);
@@ -1028,6 +1036,9 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
 
     // UX Logic: Has the user entered a Valid Date?
     const hasDatedEvents = events.some(ev => !!ev.start_date);
+    const isEventPast = (value) => !!value && new Date(`${value}T23:59:59`) < new Date();
+    const archivedBookedEvents = events.filter(ev => (ev.bookingCount || 0) > 0 && isEventPast(ev.start_date));
+    const visibleEvents = events.filter(ev => !((ev.bookingCount || 0) > 0 && isEventPast(ev.start_date)));
 
     const handlePublishCourse = async (e) => {
         e.preventDefault();
@@ -1269,19 +1280,72 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
 
         // 7. Update Events Table
         if (activeCourseId) {
-            await supabase.from('course_events').delete().eq('course_id', activeCourseId);
+            const existingEventIds = validEvents.map(ev => ev.id).filter(Boolean);
 
-            const eventsToInsert = validEvents.map(ev => ({
-                course_id: activeCourseId,
-                start_date: ev.start_date,
-                location: ev.location,
-                canton: ev.canton || (fallbackCantons.length > 0 ? fallbackCantons[0] : null),
-                schedule_description: ev.schedule_description,
-                max_participants: parseInt(ev.max_participants) || 0
-            }));
+            const { data: existingEvents, error: existingEventsError } = await supabase
+                .from('course_events')
+                .select('id')
+                .eq('course_id', activeCourseId);
 
-            if (eventsToInsert.length > 0) {
-                await supabase.from('course_events').insert(eventsToInsert);
+            if (existingEventsError) {
+                console.error(existingEventsError);
+                showNotification("Fehler beim Laden der Termine: " + existingEventsError.message);
+                setIsSubmitting(false);
+                return;
+            }
+
+            const eventIdsToDelete = (existingEvents || [])
+                .map(ev => ev.id)
+                .filter(id => !existingEventIds.includes(id));
+
+            if (eventIdsToDelete.length > 0) {
+                const { error: deleteError } = await supabase
+                    .from('course_events')
+                    .delete()
+                    .in('id', eventIdsToDelete);
+
+                if (deleteError) {
+                    console.error(deleteError);
+                    showNotification("Termine mit bestehenden Buchungen können nicht gelöscht werden. Bitte passe den Termin an, statt ihn zu entfernen.");
+                    setIsSubmitting(false);
+                    return;
+                }
+            }
+
+            for (const ev of validEvents) {
+                const eventPayload = {
+                    course_id: activeCourseId,
+                    start_date: ev.start_date,
+                    location: ev.location,
+                    canton: ev.canton || (fallbackCantons.length > 0 ? fallbackCantons[0] : null),
+                    schedule_description: ev.schedule_description,
+                    max_participants: parseInt(ev.max_participants) || 0
+                };
+
+                if (ev.id) {
+                    const { error: updateEventError } = await supabase
+                        .from('course_events')
+                        .update(eventPayload)
+                        .eq('id', ev.id);
+
+                    if (updateEventError) {
+                        console.error(updateEventError);
+                        showNotification("Fehler beim Aktualisieren eines Termins: " + updateEventError.message);
+                        setIsSubmitting(false);
+                        return;
+                    }
+                } else {
+                    const { error: insertEventError } = await supabase
+                        .from('course_events')
+                        .insert(eventPayload);
+
+                    if (insertEventError) {
+                        console.error(insertEventError);
+                        showNotification("Fehler beim Erstellen eines Termins: " + insertEventError.message);
+                        setIsSubmitting(false);
+                        return;
+                    }
+                }
             }
         }
 
@@ -1787,6 +1851,7 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                                     {bookingType === 'platform_flex' && <p className="text-xs text-blue-700">Flexible Buchung: Wähle deine Region(en). Der Termin wird nach der Buchung vereinbart.</p>}
                                     {bookingType === 'lead' && <p className="text-xs text-blue-700">Datum optional. Wenn keine fixen Termine, bitte Region wählen.</p>}
                                     {bookingType === 'platform' && <p className="text-xs text-blue-700">Datum, Ort und Zeit sind für Direktbuchungen erforderlich.</p>}
+                                    {bookingType !== 'platform_flex' && <p className="text-xs text-amber-700 mt-2">Termine mit bestehenden Buchungen sind gesperrt. Vergangene gebuchte Termine werden automatisch archiviert und hier nicht mehr bearbeitbar angezeigt.</p>}
                                 </div>
                                 {bookingType !== 'platform_flex' && (
                                     <button type="button" onClick={addEvent} className="bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-bold hover:bg-blue-700 flex items-center"><Plus className="w-4 h-4 mr-1"/> Termin hinzufügen</button>
@@ -1813,43 +1878,56 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                             {/* Event list - hide for platform_flex since they don't need events */}
                             {bookingType !== 'platform_flex' && (
                             <div className="space-y-4">
-                                {events.map((ev, i) => (
-                                    <div key={i} className="bg-white p-4 rounded-lg shadow-sm flex flex-col gap-4 border border-gray-200">
+                                {archivedBookedEvents.length > 0 && (
+                                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-800">
+                                        {archivedBookedEvents.length} vergangene(r) Termin(e) mit bestehenden Buchungen wurden archiviert und bleiben im Hintergrund erhalten.
+                                    </div>
+                                )}
+                                {visibleEvents.map((ev, i) => {
+                                    const originalIndex = events.indexOf(ev);
+                                    const isLockedEvent = (ev.bookingCount || 0) > 0;
+                                    return (
+                                    <div key={ev.id || i} className={`bg-white p-4 rounded-lg shadow-sm flex flex-col gap-4 border ${isLockedEvent ? 'border-amber-300 bg-amber-50/40' : 'border-gray-200'}`}>
+                                        {isLockedEvent && (
+                                            <div className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                                                Dieser Termin hat bereits {ev.bookingCount} Buchung{ev.bookingCount === 1 ? '' : 'en'} und ist deshalb nicht mehr veränderbar.
+                                            </div>
+                                        )}
                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                             <div>
                                                 <label className="text-xs font-bold text-gray-500 uppercase">Datum {bookingType === 'platform' && '*'}</label>
-                                                <input type="date" required={bookingType === 'platform'} value={ev.start_date} onChange={e => updateEvent(i, 'start_date', e.target.value)} className={`w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white ${bookingType !== 'platform' && !ev.start_date ? 'border-orange-300' : ''}`} />
+                                                <input type="date" disabled={isLockedEvent} required={bookingType === 'platform'} value={ev.start_date} onChange={e => updateEvent(originalIndex, 'start_date', e.target.value)} className={`w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white disabled:bg-gray-100 disabled:text-gray-500 ${bookingType !== 'platform' && !ev.start_date ? 'border-orange-300' : ''}`} />
                                             </div>
                                             <div className="md:col-span-2">
                                                 <label className="text-xs font-bold text-gray-500 uppercase">Zeit / Details (Optional)</label>
-                                                <input type="text" value={ev.schedule_description} onChange={e => updateEvent(i, 'schedule_description', e.target.value)} placeholder="z.B. Sa & So, 09:00 - 17:00" className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white" />
+                                                <input type="text" disabled={isLockedEvent} value={ev.schedule_description} onChange={e => updateEvent(originalIndex, 'schedule_description', e.target.value)} placeholder="z.B. Sa & So, 09:00 - 17:00" className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white disabled:bg-gray-100 disabled:text-gray-500" />
                                             </div>
                                         </div>
 
                                         <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
                                             <div className="md:col-span-5">
                                                 <label className="text-xs font-bold text-gray-500 uppercase">Strasse / Nr. {bookingType === 'platform' && '*'}</label>
-                                                <input type="text" required={bookingType === 'platform'} value={ev.street} onChange={e => updateEvent(i, 'street', e.target.value)} placeholder="Musterstrasse 12" className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white" />
+                                                <input type="text" disabled={isLockedEvent} required={bookingType === 'platform'} value={ev.street} onChange={e => updateEvent(originalIndex, 'street', e.target.value)} placeholder="Musterstrasse 12" className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white disabled:bg-gray-100 disabled:text-gray-500" />
                                             </div>
                                             <div className="md:col-span-2">
                                                 <label className="text-xs font-bold text-gray-500 uppercase">PLZ / Ort {bookingType === 'platform' && '*'}</label>
-                                                <input type="text" required={bookingType === 'platform'} value={ev.city} onChange={e => updateEvent(i, 'city', e.target.value)} placeholder="8000 Zürich" className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white" />
+                                                <input type="text" disabled={isLockedEvent} required={bookingType === 'platform'} value={ev.city} onChange={e => updateEvent(originalIndex, 'city', e.target.value)} placeholder="8000 Zürich" className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white disabled:bg-gray-100 disabled:text-gray-500" />
                                             </div>
                                             <div className="md:col-span-3">
                                                 <label className="text-xs font-bold text-gray-500 uppercase">Kanton {bookingType === 'platform' && '*'}</label>
-                                                <select required={bookingType === 'platform'} value={ev.canton} onChange={e => updateEvent(i, 'canton', e.target.value)} className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white">
+                                                <select disabled={isLockedEvent} required={bookingType === 'platform'} value={ev.canton} onChange={e => updateEvent(originalIndex, 'canton', e.target.value)} className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white disabled:bg-gray-100 disabled:text-gray-500">
                                                     <option value="">Wählen...</option>
                                                     {SWISS_CANTONS.filter(c => c !== "Ausland").map(c => <option key={c} value={c}>{c}</option>)}
                                                 </select>
                                             </div>
                                             <div className="md:col-span-2">
                                                 <label className="text-xs font-bold text-gray-500 uppercase">Plätze</label>
-                                                <input type="number" min="0" value={ev.max_participants} onChange={e => updateEvent(i, 'max_participants', e.target.value)} className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white" title="0 = Unbegrenzt" />
+                                                <input type="number" disabled={isLockedEvent} min="0" value={ev.max_participants} onChange={e => updateEvent(originalIndex, 'max_participants', e.target.value)} className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white disabled:bg-gray-100 disabled:text-gray-500" title="0 = Unbegrenzt" />
                                             </div>
                                         </div>
-                                        <button type="button" onClick={() => removeEvent(i)} className="text-red-500 text-xs hover:underline flex items-center self-end"><Trash2 className="w-3 h-3 mr-1" /> Entfernen</button>
+                                        <button type="button" disabled={isLockedEvent} onClick={() => removeEvent(originalIndex)} className="text-red-500 text-xs hover:underline flex items-center self-end disabled:opacity-40 disabled:cursor-not-allowed"><Trash2 className="w-3 h-3 mr-1" /> Entfernen</button>
                                     </div>
-                                ))}
+                                )})}
                             </div>
                             )}
                         </div>
