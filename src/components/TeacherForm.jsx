@@ -1342,6 +1342,17 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
 
         // 7. Update Events Table
         if (!isAdminImpersonating && activeCourseId) {
+            // Dedupe check: no two events may share (start_date, location, canton)
+            const eventKeys = validEvents.map(ev =>
+                `${ev.start_date}|${ev.location || ''}|${ev.canton || (fallbackCantons.length > 0 ? fallbackCantons[0] : '')}`
+            );
+            const dupeIdx = eventKeys.findIndex((k, i) => eventKeys.indexOf(k) !== i);
+            if (dupeIdx !== -1) {
+                showNotification("Zwei Termine haben dasselbe Startdatum, denselben Ort und Kanton. Bitte passe einen der Termine an.");
+                setIsSubmitting(false);
+                return;
+            }
+
             const existingEventIds = validEvents.map(ev => ev.id).filter(Boolean);
 
             const { data: existingEvents, error: existingEventsError } = await supabase
@@ -1392,7 +1403,10 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
 
                     if (updateEventError) {
                         console.error(updateEventError);
-                        showNotification("Fehler beim Aktualisieren eines Termins: " + updateEventError.message);
+                        const msg = updateEventError.message?.includes('course_events_dedupe_uq')
+                            ? "Zwei Termine dürfen nicht dasselbe Startdatum, denselben Ort und Kanton haben."
+                            : "Fehler beim Aktualisieren eines Termins: " + updateEventError.message;
+                        showNotification(msg);
                         setIsSubmitting(false);
                         return;
                     }
@@ -1403,7 +1417,9 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
 
                     if (insertEventError) {
                         console.error(insertEventError);
-                        showNotification("Fehler beim Erstellen eines Termins: " + insertEventError.message);
+                        const msg = insertEventError.message?.includes('course_events_dedupe_uq')
+                            ? "Zwei Termine dürfen nicht dasselbe Startdatum, denselben Ort und Kanton haben."
+                            : "Fehler beim Erstellen eines Termins: " + insertEventError.message;
                         setIsSubmitting(false);
                         return;
                     }
