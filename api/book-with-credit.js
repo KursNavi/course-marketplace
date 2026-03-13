@@ -60,11 +60,12 @@ export default async function handler(req, res) {
     }
 
     const coursePriceCents = Math.round((Number(course.price) || 0) * 100);
-    if (coursePriceCents <= 0) {
+    const isFreeCourse = coursePriceCents === 0;
+    if (coursePriceCents < 0) {
       return res.status(400).json({ error: 'Kurspreis ungültig' });
     }
 
-    // 2. Verify credit balance
+    // 2. Verify credit balance (skip for free courses)
     const { data: profile } = await supabase
       .from('profiles')
       .select('credit_balance_cents, email')
@@ -72,7 +73,7 @@ export default async function handler(req, res) {
       .single();
 
     const creditBalance = profile?.credit_balance_cents || 0;
-    if (creditBalance < coursePriceCents) {
+    if (!isFreeCourse && creditBalance < coursePriceCents) {
       return res.status(400).json({ error: 'Nicht genügend Guthaben' });
     }
 
@@ -163,37 +164,40 @@ export default async function handler(req, res) {
       periodId = ticketResult[0].period_id;
     }
 
-    // 5. Deduct credit atomically
-    const { data: deductResult, error: deductError } = await supabase.rpc('deduct_credit', {
-      p_user_id: userId,
-      p_amount_cents: coursePriceCents,
-      p_description: `Buchung: ${course.title || 'Kurs'}`
-    });
+    // 5. Deduct credit atomically (skip for free courses)
+    let actuallyDeducted = 0;
+    if (!isFreeCourse) {
+      const { data: deductResult, error: deductError } = await supabase.rpc('deduct_credit', {
+        p_user_id: userId,
+        p_amount_cents: coursePriceCents,
+        p_description: `Buchung: ${course.title || 'Kurs'}`
+      });
 
-    if (deductError) {
-      console.error('Credit deduction failed:', deductError);
-      if (periodId) {
-        await supabase.rpc('release_ticket', { p_period_id: periodId });
+      if (deductError) {
+        console.error('Credit deduction failed:', deductError);
+        if (periodId) {
+          await supabase.rpc('release_ticket', { p_period_id: periodId });
+        }
+        return res.status(500).json({ error: 'Guthaben-Abzug fehlgeschlagen' });
       }
-      return res.status(500).json({ error: 'Guthaben-Abzug fehlgeschlagen' });
-    }
 
-    const actuallyDeducted = deductResult?.[0]?.actually_deducted || 0;
-    if (actuallyDeducted < coursePriceCents) {
-      // Credit was spent concurrently — release ticket and abort
-      if (periodId) {
-        await supabase.rpc('release_ticket', { p_period_id: periodId });
+      actuallyDeducted = deductResult?.[0]?.actually_deducted || 0;
+      if (actuallyDeducted < coursePriceCents) {
+        // Credit was spent concurrently — release ticket and abort
+        if (periodId) {
+          await supabase.rpc('release_ticket', { p_period_id: periodId });
+        }
+        // Re-add whatever was deducted
+        if (actuallyDeducted > 0) {
+          await supabase.rpc('add_credit', {
+            p_user_id: userId,
+            p_amount_cents: actuallyDeducted,
+            p_type: 'cancellation_credit',
+            p_description: 'Rückbuchung: Guthaben reichte nicht'
+          });
+        }
+        return res.status(400).json({ error: 'Nicht genügend Guthaben. Bitte versuche es erneut.' });
       }
-      // Re-add whatever was deducted
-      if (actuallyDeducted > 0) {
-        await supabase.rpc('add_credit', {
-          p_user_id: userId,
-          p_amount_cents: actuallyDeducted,
-          p_type: 'cancellation_credit',
-          p_description: 'Rückbuchung: Guthaben reichte nicht'
-        });
-      }
-      return res.status(400).json({ error: 'Nicht genügend Guthaben. Bitte versuche es erneut.' });
     }
 
     // 6. Calculate timestamps
@@ -215,8 +219,8 @@ export default async function handler(req, res) {
       stripe_checkout_session_id: null,
       ticket_period_id: periodId,
       guardian_attestation: !!guardianAttestation,
-      paid_via_credit: true,
-      credit_used_cents: coursePriceCents
+      paid_via_credit: !isFreeCourse,
+      credit_used_cents: isFreeCourse ? 0 : coursePriceCents
     });
 
     if (insertError) {
@@ -225,12 +229,14 @@ export default async function handler(req, res) {
       if (periodId) {
         await supabase.rpc('release_ticket', { p_period_id: periodId });
       }
-      await supabase.rpc('add_credit', {
-        p_user_id: userId,
-        p_amount_cents: coursePriceCents,
-        p_type: 'cancellation_credit',
-        p_description: 'Rückbuchung: Buchung fehlgeschlagen'
-      });
+      if (!isFreeCourse) {
+        await supabase.rpc('add_credit', {
+          p_user_id: userId,
+          p_amount_cents: coursePriceCents,
+          p_type: 'cancellation_credit',
+          p_description: 'Rückbuchung: Buchung fehlgeschlagen'
+        });
+      }
 
       if (insertError.code === '23505') {
         return res.status(400).json({ error: 'Buchung existiert bereits' });

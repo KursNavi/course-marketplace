@@ -770,11 +770,13 @@ export default function KursNaviPro() {  // 1. Initial State Logic
   };
 
   const fetchBookings = async (userId) => {
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
     const { data } = await supabase
       .from('bookings')
       .select('*, courses(*), course_events(*)')
       .eq('user_id', userId)
-      .in('status', ['confirmed', 'refunded']);
+      .in('status', ['confirmed', 'refunded'])
+      .or(`status.eq.confirmed,refunded_at.gt.${thirtyDaysAgo}`);
     // Merge booking data with course data so Dashboard can show booking-specific info
     setMyBookings(data ? data.map(booking => ({
       ...booking.courses,

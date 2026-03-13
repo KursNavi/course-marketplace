@@ -11,9 +11,7 @@ export function formatPriceCHF(value) {
  * Consistent price label for any course object.
  * Rules:
  *  - booking_type === 'lead' && price == 0  → "Preis auf Anfrage"
- *  - price == null / undefined / 0          → "Preis auf Anfrage"
- *    (genuinely free courses must have booking_type 'free' or is_free flag)
- *  - booking_type === 'free' || is_free     → "Kostenlos"
+ *  - price == 0 (platform / platform_flex)  → "Kostenlos"
  *  - otherwise                              → "CHF X'XXX"
  */
 export function getPriceLabel(course, currencyPrefix = 'CHF') {
@@ -22,7 +20,6 @@ export function getPriceLabel(course, currencyPrefix = 'CHF') {
     const price = Number(course.price) || 0;
 
     if (type === 'lead' && price === 0) return 'Preis auf Anfrage';
-    if (type === 'free' || course.is_free) return 'Kostenlos';
-    if (price === 0) return 'Preis auf Anfrage';
+    if (price === 0) return 'Kostenlos';
     return `${currencyPrefix} ${formatPriceCHF(price)}`;
 }

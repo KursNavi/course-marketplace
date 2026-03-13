@@ -60,6 +60,12 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Dieser Kurs ist nicht online buchbar' });
     }
 
+    // Free course: skip Stripe, signal client to use book-with-credit directly
+    const coursePriceCentsCheck = Math.round((Number(course.price) || 0) * 100);
+    if (coursePriceCentsCheck === 0) {
+      return res.status(200).json({ free_booking: true });
+    }
+
     // Guardian attestation: server-side enforcement
     if (course.requires_guardian_booking && !guardianAttestation) {
       return res.status(400).json({ error: 'Für diesen Kurs ist die Bestätigung durch eine erziehungsberechtigte Person erforderlich.' });

@@ -436,6 +436,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
     const [keywords, setKeywords] = useState(draft?.keywords || '');
     const [prerequisites, setPrerequisites] = useState(draft?.prerequisites || '');
     const [price, setPrice] = useState(draft?.price || '');
+    const [freeReason, setFreeReason] = useState(draft?.freeReason || '');
     const [sessionCount, setSessionCount] = useState(draft?.sessionCount || '');
     const [sessionLength, setSessionLength] = useState(draft?.sessionLength || '');
     const [providerUrl, setProviderUrl] = useState(draft?.providerUrl || '');
@@ -521,6 +522,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
             keywords,
             prerequisites,
             price,
+            freeReason,
             sessionCount,
             sessionLength,
             providerUrl,
@@ -545,7 +547,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
                 console.warn('Failed to save draft:', e);
             }
         }
-    }, [isDirty, draftKey, bookingType, ticketLimit30d, title, description, objectives, keywords, prerequisites, price, sessionCount, sessionLength, providerUrl, categories, selectedLevel, courseLanguages, deliveryTypes, courseStatus, events, fallbackCantons, initialData?.id]);
+    }, [isDirty, draftKey, bookingType, ticketLimit30d, title, description, objectives, keywords, prerequisites, price, freeReason, sessionCount, sessionLength, providerUrl, categories, selectedLevel, courseLanguages, deliveryTypes, courseStatus, events, fallbackCantons, initialData?.id]);
 
     // Save draft on unmount (safety net for fast tab switches)
     useEffect(() => {
@@ -601,6 +603,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
             if (initialData.keywords) setKeywords(initialData.keywords);
             if (initialData.prerequisites) setPrerequisites(initialData.prerequisites);
             if (initialData.price !== undefined && initialData.price !== null) setPrice(String(initialData.price));
+            if (initialData.free_reason) setFreeReason(initialData.free_reason);
             if (initialData.session_count) setSessionCount(String(initialData.session_count));
             if (initialData.session_length) setSessionLength(initialData.session_length);
             if (initialData.provider_url) setProviderUrl(initialData.provider_url);
@@ -1136,7 +1139,6 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
 
         if (bookingType === 'platform') {
             if (validEvents.length === 0) { window.alert("Für Direktbuchungen benötigen wir mindestens einen Termin mit Datum, Strasse, Ort und Kanton."); return; }
-            if (!formData.get('price')) { window.alert("Ein Preis ist für Direktbuchungen erforderlich."); return; }
         }
 
         if (bookingType === 'platform_flex') {
@@ -1145,7 +1147,12 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
                 window.alert("Für flexible Buchungen benötigen wir mindestens einen Kanton/Region.");
                 return;
             }
-            if (!formData.get('price')) { window.alert("Ein Preis ist für flexible Buchungen erforderlich."); return; }
+        }
+
+        // Kostenloser Kurs: free_reason ist Pflicht
+        if ((bookingType === 'platform' || bookingType === 'platform_flex') && (!price || Number(price) === 0) && !freeReason.trim()) {
+            window.alert("Bitte geben Sie einen Grund an, warum dieser Kurs kostenlos ist.");
+            return;
         }
 
         if (bookingType === 'lead') {
@@ -1281,7 +1288,8 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
             status: courseStatus,
             beruf_saeulen: (catType === 'professionell' || catType === 'beruflich') && berufSaeulen.length > 0 ? berufSaeulen : null,
             min_age: minAge ? Number(minAge) : null,
-            requires_guardian_booking: requiresGuardianBooking
+            requires_guardian_booking: requiresGuardianBooking,
+            free_reason: (Number(price) === 0 || !price) && (bookingType === 'platform' || bookingType === 'platform_flex') ? freeReason.trim() : null
         };
 
         const consolidatedCategories = cleanedCategories
@@ -1818,9 +1826,18 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                         {/* A: PRICE / LINK FIELDS */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                             <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-1">Preis (CHF) {(bookingType === 'platform' || bookingType === 'platform_flex') && '*'}</label>
-                                <input required={bookingType === 'platform' || bookingType === 'platform_flex'} type="number" name="price" value={price} onChange={(e) => { setPrice(e.target.value); markDirty(); }} placeholder={bookingType === 'lead' ? "Optional" : "0.00"} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+                                <label className="block text-sm font-bold text-gray-700 mb-1">Preis (CHF)</label>
+                                <input type="number" min="0" name="price" value={price} onChange={(e) => { setPrice(e.target.value); markDirty(); }} placeholder={bookingType === 'lead' ? "Optional" : "0 = Kostenlos"} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+                                {(bookingType === 'platform' || bookingType === 'platform_flex') && (!price || Number(price) === 0) && (
+                                    <p className="text-xs text-amber-600 mt-1">Kein Preis = Kostenloser Kurs (Grund erforderlich)</p>
+                                )}
                             </div>
+                            {(bookingType === 'platform' || bookingType === 'platform_flex') && (!price || Number(price) === 0) && (
+                                <div className="md:col-span-2">
+                                    <label className="block text-sm font-bold text-gray-700 mb-1">Warum ist dieser Kurs kostenlos? *</label>
+                                    <textarea name="freeReason" value={freeReason} onChange={(e) => { setFreeReason(e.target.value); markDirty(); }} placeholder="z.B. Schnupperkurs, Probetraining, ehrenamtliches Angebot…" rows={2} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none resize-none" />
+                                </div>
+                            )}
                             <div>
                                 <label className="block text-sm font-bold text-gray-700 mb-1">Anzahl Lektionen</label>
                                 <input type="number" name="sessionCount" value={sessionCount} onChange={(e) => { setSessionCount(e.target.value); markDirty(); }} placeholder="z.B. 5" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />

@@ -407,8 +407,8 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
             });
             const data = await response.json();
 
-            // Server says full credit is available — book directly with credit
-            if (data.full_credit_available) {
+            // Server says free booking or full credit is available — book directly
+            if (data.free_booking || data.full_credit_available) {
                 const creditResponse = await fetch('/api/book-with-credit', {
                     method: 'POST',
                     headers: authHeaders,
@@ -417,7 +417,9 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
                 const creditData = await creditResponse.json();
                 if (!creditResponse.ok) throw new Error(creditData.error || 'Buchung fehlgeschlagen');
 
-                showNotification && showNotification('Buchung erfolgreich! Bezahlt mit deinem Guthaben.');
+                showNotification && showNotification(data.free_booking
+                    ? 'Buchung erfolgreich! Dieser Kurs ist kostenlos.'
+                    : 'Buchung erfolgreich! Bezahlt mit deinem Guthaben.');
                 setView('dashboard');
                 return;
             }
@@ -704,7 +706,7 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
                     <div className="text-3xl font-bold text-primary font-heading mb-1">{getPriceLabel(course)}</div>
                     <p className="text-gray-400 text-xs mb-4">
                         {(effectiveBookingType === 'platform' || effectiveBookingType === 'platform_flex')
-                            ? 'pro Person inkl. MwSt.'
+                            ? (Number(course.price) === 0 ? (course.free_reason || '') : 'pro Person inkl. MwSt.')
                             : (Number(course.price) > 0 ? 'Unverbindliche Preisangabe' : '')}
                     </p>
 
