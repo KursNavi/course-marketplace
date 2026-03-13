@@ -1323,12 +1323,10 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
         } else if (activeCourseId) {
             const { error: err } = await supabase.from('courses').update(newCourse).eq('id', activeCourseId);
             error = err;
-            if (!error) showNotification("Kurs aktualisiert!");
         } else {
             const { data: inserted, error: err } = await supabase.from('courses').insert([newCourse]).select();
             if (inserted && inserted[0]) activeCourseId = inserted[0].id;
             error = err;
-            if (!error) showNotification(t.success_msg);
         }
 
         if (error) { 
@@ -1469,6 +1467,7 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
         }
         setIsDirty(false);
 
+        showNotification(initialData?.id ? "Kurs aktualisiert!" : t.success_msg);
         fetchCourses();
         setEditingCourse(null);
         setView('dashboard');
