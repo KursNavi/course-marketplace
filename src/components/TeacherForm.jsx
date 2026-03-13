@@ -376,7 +376,7 @@ const CategorySuggestionModal = ({ isOpen, onClose, taxonomy, types, showNotific
     );
 };
 
-const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotification, setEditingCourse }) => {
+const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotification, setEditingCourse, isAdminImpersonating = false }) => {
     // --- LIMITS REMOVED: Unbegrenzte Kurse fuer alle ---
 
     // Load taxonomy from DB (with fallback to constants.js)
@@ -1040,6 +1040,36 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
     const archivedBookedEvents = events.filter(ev => (ev.bookingCount || 0) > 0 && isEventPast(ev.start_date));
     const visibleEvents = events.filter(ev => !((ev.bookingCount || 0) > 0 && isEventPast(ev.start_date)));
 
+    const saveCourseViaAdmin = async ({ coursePayload, courseId, validEvents, categories }) => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.access_token) {
+            throw new Error('Nicht eingeloggt');
+        }
+
+        const response = await fetch('/api/admin', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${session.access_token}`
+            },
+            body: JSON.stringify({
+                action: 'save-course',
+                userId: user?.id,
+                courseId,
+                course: coursePayload,
+                validEvents,
+                categories
+            })
+        });
+
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+            throw new Error(data.error || 'Admin-Kursspeicherung fehlgeschlagen');
+        }
+
+        return data;
+    };
+
     const handlePublishCourse = async (e) => {
         e.preventDefault();
 
@@ -1254,11 +1284,35 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
             requires_guardian_booking: requiresGuardianBooking
         };
 
+        const consolidatedCategories = cleanedCategories
+            .map((cat, idx) => {
+                const catIds = getCategoryIds(cat.type, cat.area, cat.specialty, cat.focus);
+                return {
+                    level3_id: catIds.level3_id,
+                    level4_id: catIds.level4_id || null,
+                    is_primary: idx === 0
+                };
+            })
+            .filter(cat => cat.level3_id != null);
+
         // 6. DB Operations
         let activeCourseId = initialData?.id;
         let error;
 
-        if (activeCourseId) {
+        if (isAdminImpersonating) {
+            try {
+                const result = await saveCourseViaAdmin({
+                    coursePayload: newCourse,
+                    courseId: activeCourseId,
+                    validEvents,
+                    categories: consolidatedCategories
+                });
+                activeCourseId = result.courseId;
+                showNotification(activeCourseId && initialData?.id ? "Kurs aktualisiert!" : t.success_msg);
+            } catch (adminError) {
+                error = adminError;
+            }
+        } else if (activeCourseId) {
             const { error: err } = await supabase.from('courses').update(newCourse).eq('id', activeCourseId);
             error = err;
             if (!error) showNotification("Kurs aktualisiert!");
@@ -1279,7 +1333,7 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
 
 
         // 7. Update Events Table
-        if (activeCourseId) {
+        if (!isAdminImpersonating && activeCourseId) {
             const existingEventIds = validEvents.map(ev => ev.id).filter(Boolean);
 
             const { data: existingEvents, error: existingEventsError } = await supabase
@@ -1350,7 +1404,7 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
         }
 
         // 8. Update course_category_assignments junction table (for Zweitkategorien support)
-        if (activeCourseId && cleanedCategories && cleanedCategories.length > 0) {
+        if (!isAdminImpersonating && activeCourseId && cleanedCategories && cleanedCategories.length > 0) {
             console.log('[CAT-DEBUG] cleanedCategories:', JSON.stringify(cleanedCategories));
             console.log('[CAT-DEBUG] types available:', types.map(t => ({ id: t.id, slug: t.slug, idType: typeof t.id })));
             console.log('[CAT-DEBUG] areas available:', areas.map(a => ({ id: a.id, slug: a.slug, idType: typeof a.id })));
@@ -1359,25 +1413,19 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
             await supabase.from('course_category_assignments').delete().eq('course_id', activeCourseId);
 
             // Filter categories that have valid level3_id
-            const consolidatedCategories = cleanedCategories
-                .map((cat, idx) => {
-                    const catIds = getCategoryIds(cat.type, cat.area, cat.specialty, cat.focus);
-                    console.log(`[CAT-DEBUG] getCategoryIds(${JSON.stringify(cat)}) =>`, JSON.stringify(catIds));
-                    return {
-                        course_id: activeCourseId,
-                        level3_id: catIds.level3_id,
-                        level4_id: catIds.level4_id || null,
-                        is_primary: idx === 0
-                    };
-                })
-                .filter(cat => cat.level3_id != null);
+            const dbCategories = consolidatedCategories.map(cat => ({
+                course_id: activeCourseId,
+                level3_id: cat.level3_id,
+                level4_id: cat.level4_id,
+                is_primary: cat.is_primary
+            }));
 
-            console.log('[CAT-DEBUG] consolidatedCategories to insert:', JSON.stringify(consolidatedCategories));
+            console.log('[CAT-DEBUG] consolidatedCategories to insert:', JSON.stringify(dbCategories));
 
-            if (consolidatedCategories.length > 0) {
+            if (dbCategories.length > 0) {
                 const { error: catErr } = await supabase
                     .from('course_category_assignments')
-                    .insert(consolidatedCategories);
+                    .insert(dbCategories);
 
                 if (catErr) {
                     console.error('[CAT-DEBUG] INSERT ERROR:', catErr);

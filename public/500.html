@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>KursNavi Dev | Serverfehler</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f6f1e8;
+        --card: #fffaf4;
+        --text: #1f2937;
+        --muted: #6b7280;
+        --accent: #fa6e28;
+        --border: #ead8c5;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        font-family: "Segoe UI", Arial, sans-serif;
+        background:
+          radial-gradient(circle at top left, rgba(250, 110, 40, 0.18), transparent 32%),
+          linear-gradient(180deg, var(--bg), #fff);
+        color: var(--text);
+      }
+      main {
+        width: min(680px, 100%);
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 32px;
+        box-shadow: 0 20px 60px rgba(31, 41, 55, 0.08);
+      }
+      h1 { margin: 0 0 12px; font-size: 2rem; }
+      p { line-height: 1.6; margin: 0 0 12px; }
+      .meta {
+        margin-top: 20px;
+        padding-top: 16px;
+        border-top: 1px solid var(--border);
+        color: var(--muted);
+        font-size: 0.95rem;
+      }
+      code {
+        display: inline-block;
+        padding: 2px 6px;
+        border-radius: 6px;
+        background: #f4e5d7;
+        color: #8f3b10;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Die Dev-Umgebung hat gerade ein Problem</h1>
+      <p>Der Request konnte serverseitig nicht sauber verarbeitet werden. Lade die Seite neu oder versuche es später erneut.</p>
+      <p>Wenn der Fehler reproduzierbar ist, prüfe die zugehörigen Function Logs in Vercel und teile dem Team die IDs unten mit.</p>
+      <div class="meta">
+        <p>Request ID: <code>::vercel:REQUEST_ID::</code></p>
+        <p>Error Code: <code>::vercel:ERROR_CODE::</code></p>
+      </div>
+    </main>
+  </body>
+</html>

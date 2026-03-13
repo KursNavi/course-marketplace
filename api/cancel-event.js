@@ -67,7 +67,15 @@ export default async function handler(req, res) {
     }
     const userId = authUser.id;
 
-    const { eventId, reason } = req.body;
+    const { eventId, reason, impersonatedUserId } = req.body;
+
+    const { data: requesterProfile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', userId)
+      .single();
+
+    const isAdmin = requesterProfile?.role === 'admin';
 
     if (!eventId) {
       return res.status(400).json({ error: 'eventId is required' });
@@ -84,8 +92,12 @@ export default async function handler(req, res) {
       return res.status(404).json({ error: 'Termin nicht gefunden' });
     }
 
-    // Ownership check: only the course owner can cancel
-    if (event.courses?.user_id !== userId) {
+    const ownerId = event.courses?.user_id;
+    const isOwner = ownerId === userId;
+    const isAdminForImpersonatedOwner = isAdmin && impersonatedUserId && ownerId === impersonatedUserId;
+
+    // Ownership check: only the course owner or an admin acting for that owner can cancel
+    if (!isOwner && !isAdminForImpersonatedOwner) {
       return res.status(403).json({ error: 'Nicht berechtigt' });
     }
 

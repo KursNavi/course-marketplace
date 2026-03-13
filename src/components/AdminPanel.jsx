@@ -5,7 +5,7 @@ import { PLANS } from '../lib/plans';
 import { formatPriceCHF } from '../lib/formatPrice';
 import AdminCategoryManager from './AdminCategoryManager';
 
-const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView, user, onImpersonate }) => {
+const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView, user, onImpersonate, handleEditCourse }) => {
     const isAuthenticated = user?.role === 'admin';
     const [activeTab, setActiveTab] = useState("teachers");
     const [profiles, setProfiles] = useState([]);
@@ -113,6 +113,23 @@ const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView, user,
                 plan_tier: profile.package_tier || 'basic'
             });
             setView('dashboard');
+        }
+    };
+
+    const handleAdminCourseEdit = (course) => {
+        if (onImpersonate && course?.user_id) {
+            onImpersonate({
+                id: course.user_id,
+                email: course.email || '',
+                role: 'teacher',
+                name: course.instructor_name || course.title || 'Kursanbieter',
+                is_professional: course.is_pro,
+                plan_tier: course.package_tier || 'basic'
+            });
+        }
+
+        if (typeof handleEditCourse === 'function') {
+            handleEditCourse(course);
         }
     };
 
@@ -250,20 +267,20 @@ const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView, user,
                 <div className="flex justify-between items-center mb-8">
                     <h1 className="text-3xl font-bold text-gray-900 font-heading">{t.admin_panel || "Control Room"}</h1>
                     <div className="flex items-center gap-4">
-                        <button onClick={() => setView('admin-blog')} className="flex items-center bg-orange-100 text-orange-800 px-4 py-2 rounded-lg hover:bg-orange-200 font-bold transition border border-orange-200 shadow-sm">
-                            <FileText className="w-4 h-4 mr-2"/> Blog Manager
-                        </button>
                         <button onClick={() => setView('home')} className="text-red-500 hover:underline font-medium">Schliessen</button>
                     </div>
                 </div>
 
                 {/* TABS */}
-                <div className="flex space-x-4 mb-8">
+                <div className="flex flex-wrap gap-4 mb-8">
                     <button onClick={() => setActiveTab('teachers')} className={`px-6 py-2 rounded-full font-bold transition ${activeTab === 'teachers' ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 shadow-sm'}`}>{t.admin_tab_teachers || "Lehrer"}</button>
                     <button onClick={() => setActiveTab('students')} className={`px-6 py-2 rounded-full font-bold transition ${activeTab === 'students' ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 shadow-sm'}`}>{t.admin_tab_students || "Studenten"}</button>
                     <button onClick={() => setActiveTab('courses')} className={`px-6 py-2 rounded-full font-bold transition ${activeTab === 'courses' ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 shadow-sm'}`}>{t.admin_tab_courses || "Kurse"}</button>
                     <button onClick={() => setActiveTab('categories')} className={`px-6 py-2 rounded-full font-bold transition flex items-center gap-2 ${activeTab === 'categories' ? 'bg-orange-500 text-white' : 'bg-white text-gray-600 shadow-sm'}`}>
                         <FolderTree className="w-4 h-4" /> Kategorien
+                    </button>
+                    <button onClick={() => setView('admin-blog')} className="px-6 py-2 rounded-full font-bold transition flex items-center gap-2 bg-orange-100 text-orange-800 border border-orange-200 shadow-sm hover:bg-orange-200">
+                        <FileText className="w-4 h-4" /> Blog Manager
                     </button>
                 </div>
 
@@ -443,7 +460,7 @@ const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView, user,
                                             <td className="px-6 py-4">CHF {formatPriceCHF(course.price)}</td>
                                             <td className="px-6 py-4 text-sm text-gray-500">{new Date(course.created_at).toLocaleDateString()}</td>
                                             <td className="px-6 py-4 text-right">
-                                                <button className="text-blue-500 hover:underline text-sm mr-3">Edit</button>
+                                                <button onClick={() => handleAdminCourseEdit(course)} className="text-blue-500 hover:underline text-sm mr-3">Edit</button>
                                             </td>
                                         </tr>
                                     ))}

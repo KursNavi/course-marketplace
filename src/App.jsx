@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useLayoutEffect, useRef, Suspense } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef, Suspense, useCallback } from 'react';
 import { CheckCircle } from 'lucide-react';
 
 // Build: 2026-02-22 - Use DB taxonomy instead of constants
@@ -375,17 +375,77 @@ export default function KursNaviPro() {  // 1. Initial State Logic
 
   const handleLogout = async () => { await supabase.auth.signOut(); showNotification("Logged out successfully"); setView('home'); };
 
+  const runAdminAction = useCallback(async (payload) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) {
+      throw new Error('Nicht eingeloggt');
+    }
+
+    const response = await fetch('/api/admin', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(data.error || 'Admin-Aktion fehlgeschlagen');
+    }
+
+    return data;
+  }, []);
+
+  const loadImpersonatedData = useCallback(async (targetUserId) => {
+    if (!targetUserId) return;
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) return;
+      const params = new URLSearchParams({
+        action: 'user-data',
+        userId: targetUserId
+      });
+      const res = await fetch(`/api/admin?${params}`, {
+        headers: { 'Authorization': `Bearer ${session.access_token}` }
+      });
+      if (res.ok) {
+        const json = await res.json();
+        setMyBookings(json.bookings || []);
+        setSavedCourses(json.savedCourses || []);
+        setSavedCourseIds((json.savedCourses || []).map(c => c.id));
+        setTeacherEarnings(json.earnings || []);
+      }
+    } catch (e) {
+      console.warn('Failed to load impersonated user data:', e);
+    }
+  }, []);
+
   const handleDeleteCourse = async (courseId) => {
     if (!window.confirm("Are you sure you want to delete this course?")) return;
 
     // Hole Kurs-Daten vor dem Löschen um die image_url zu bekommen
     const courseToDelete = courses.find(c => c.id === courseId);
     const imageUrl = courseToDelete?.image_url;
+    const previousCourses = courses;
 
     setCourses(prev => prev.filter(c => c.id !== courseId));
 
-    const { error } = await supabase.from('courses').delete().eq('id', courseId);
-    if (error) {
+    try {
+      if (impersonatedUser?.id) {
+        await runAdminAction({
+          action: 'delete-course',
+          userId: impersonatedUser.id,
+          courseId
+        });
+      } else {
+        const { error } = await supabase.from('courses').delete().eq('id', courseId);
+        if (error) throw error;
+      }
+    } catch (error) {
+      setCourses(previousCourses);
       showNotification("Error deleting: " + error.message);
       return;
     }
@@ -403,17 +463,30 @@ export default function KursNaviPro() {  // 1. Initial State Logic
   };
 
   const handleUpdateCourseStatus = async (courseId, newStatus) => {
+    const previousCourses = courses;
     // Update local state immediately for responsive UI
     setCourses(prev => prev.map(c => c.id === courseId ? { ...c, status: newStatus } : c));
 
-    const { error } = await supabase.from('courses').update({ status: newStatus }).eq('id', courseId);
-    if (error) {
-      showNotification("Fehler: " + error.message);
-      // Revert on error
-      setCourses(prev => prev.map(c => c.id === courseId ? { ...c, status: c.status } : c));
-    } else {
+    try {
+      let error;
+      if (impersonatedUser?.id) {
+        await runAdminAction({
+          action: 'set-course-status',
+          userId: impersonatedUser.id,
+          courseId,
+          newStatus
+        });
+      } else {
+        ({ error } = await supabase.from('courses').update({ status: newStatus }).eq('id', courseId));
+      }
+      if (error) {
+        throw error;
+      }
       const statusLabels = { draft: 'Entwurf', published: 'Veröffentlicht' };
       showNotification(`Kurs-Status: ${statusLabels[newStatus] || newStatus}`);
+    } catch (error) {
+      showNotification("Fehler: " + error.message);
+      setCourses(previousCourses);
     }
   };
 
@@ -428,7 +501,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session.access_token}`
         },
-        body: JSON.stringify({ eventId, reason })
+        body: JSON.stringify({ eventId, reason, impersonatedUserId: impersonatedUser?.id || null })
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Fehler beim Absagen');
@@ -436,7 +509,11 @@ export default function KursNaviPro() {  // 1. Initial State Logic
       // Refresh courses to update cancelled_at in course_events
       await fetchCourses();
       // Refresh bookings if student view is also affected
-      if (user?.id) await fetchBookings(user.id);
+      if (impersonatedUser?.id) {
+        await loadImpersonatedData(impersonatedUser.id);
+      } else if (user?.id) {
+        await fetchBookings(user.id);
+      }
     } catch (err) {
       showNotification('Fehler: ' + err.message);
     }
@@ -1429,32 +1506,8 @@ export default function KursNaviPro() {  // 1. Initial State Logic
   // Load data for impersonated user via Admin API (bypasses RLS)
   useEffect(() => {
     if (!impersonatedUser) return;
-
-    const loadImpersonatedData = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session?.access_token) return;
-        const params = new URLSearchParams({
-          action: 'user-data',
-          userId: impersonatedUser.id
-        });
-        const res = await fetch(`/api/admin?${params}`, {
-          headers: { 'Authorization': `Bearer ${session.access_token}` }
-        });
-        if (res.ok) {
-          const json = await res.json();
-          setMyBookings(json.bookings || []);
-          setSavedCourses(json.savedCourses || []);
-          setSavedCourseIds((json.savedCourses || []).map(c => c.id));
-          setTeacherEarnings(json.earnings || []);
-        }
-      } catch (e) {
-        console.warn('Failed to load impersonated user data:', e);
-      }
-    };
-
-    loadImpersonatedData();
-  }, [impersonatedUser?.id]);
+    loadImpersonatedData(impersonatedUser.id);
+  }, [impersonatedUser?.id, loadImpersonatedData]);
 
   // Restore own data when stopping impersonation
   useEffect(() => {
@@ -1740,7 +1793,7 @@ useEffect(() => {
       {view === 'widerruf' && <LegalPage pageKey="widerruf" lang={lang} setView={setView} />}
       {view === 'trust' && <LegalPage pageKey="trust" lang={lang} setView={setView} />}
 
-      {view === 'admin' && <AdminPanel t={t} courses={courses} showNotification={showNotification} fetchCourses={fetchCourses} setView={setView} user={user} onImpersonate={setImpersonatedUser} />}
+      {view === 'admin' && <AdminPanel t={t} courses={courses} showNotification={showNotification} fetchCourses={fetchCourses} setView={setView} user={user} onImpersonate={setImpersonatedUser} handleEditCourse={handleEditCourse} />}
       {view === 'admin-blog' && <AdminBlogManager showNotification={showNotification} setView={setView} courses={courses} />}
       {view === 'blog' && <BlogList articles={articles} setView={setView} setSelectedArticle={setSelectedArticle} />}
       {view === 'blog-detail' && <BlogDetail article={selectedArticle} setView={setView} courses={courses} />}
@@ -1772,7 +1825,7 @@ useEffect(() => {
       {view === 'ratgeber-artikel' && <RatgeberArtikelView key={routePath} lang={lang} />}
       {view === 'not-found' && <NotFoundPage setView={setView} />}
       {view === 'dashboard' && effectiveUser && <Dashboard user={effectiveUser} setUser={impersonatedUser ? () => {} : setUser} t={t} setView={setView} courses={courses} teacherEarnings={teacherEarnings} myBookings={myBookings} savedCourses={savedCourses} savedCourseIds={savedCourseIds} onToggleSaveCourse={toggleSaveCourse} handleDeleteCourse={handleDeleteCourse} handleEditCourse={handleEditCourse} handleUpdateCourseStatus={handleUpdateCourseStatus} handleCancelEvent={handleCancelEvent} showNotification={showNotification} changeLanguage={changeLanguage} setSelectedCourse={setSelectedCourse} refreshBookings={fetchBookings} refreshTeacherEarnings={fetchTeacherEarnings} isImpersonating={!!impersonatedUser} />}
-      {view === 'create' && user?.role === 'teacher' && <TeacherForm key={editingCourse?.id || 'new'} t={t} setView={setView} user={user} fetchCourses={fetchCourses} showNotification={showNotification} setEditingCourse={setEditingCourse} initialData={editingCourse} />}
+      {view === 'create' && effectiveUser?.role === 'teacher' && <TeacherForm key={editingCourse?.id || 'new'} t={t} setView={setView} user={effectiveUser} fetchCourses={fetchCourses} showNotification={showNotification} setEditingCourse={setEditingCourse} initialData={editingCourse} isAdminImpersonating={!!impersonatedUser} />}
       </Suspense>
       </main>
 

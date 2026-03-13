@@ -2309,15 +2309,13 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
 
                         <div className="flex items-center justify-between mb-4">
                             <h2 className="text-xl font-bold font-heading text-dark">Meine Kurse verwalten</h2>
-                            {!isImpersonating && (
-                                <button
-                                    onClick={() => handleEditCourse(null)}
-                                    className="px-5 py-2.5 rounded-xl font-bold flex items-center shadow-lg transition font-heading bg-primary text-white hover:bg-orange-600 hover:-translate-y-0.5"
-                                >
-                                    <KursNaviLogo className="mr-2 w-5 h-5 text-white" />
-                                    {t.dash_new_course}
-                                </button>
-                            )}
+                            <button
+                                onClick={() => handleEditCourse(null)}
+                                className="px-5 py-2.5 rounded-xl font-bold flex items-center shadow-lg transition font-heading bg-primary text-white hover:bg-orange-600 hover:-translate-y-0.5"
+                            >
+                                <KursNaviLogo className="mr-2 w-5 h-5 text-white" />
+                                {t.dash_new_course}
+                            </button>
                         </div>
 
                         {/* Prio-Kurse Management Section */}
@@ -2480,7 +2478,6 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                                     </td>
                                                     <td className="px-6 py-4 font-medium">{course.price ? `CHF ${formatPriceCHF(course.price)}` : <span className="text-gray-400 italic">Kein Preis angegeben</span>}</td>
                                                     <td className="px-6 py-4 flex gap-2">
-                                                        {!isImpersonating && (<>
                                                         {/* Quick Publish/Pause Toggle */}
                                                         {course.status === 'draft' && (
                                                             <button onClick={() => handleUpdateCourseStatus(course.id, 'published')} className="text-green-600 hover:text-green-700 bg-green-50 p-2 rounded-full" title="VerÃ¶ffentlichen">
@@ -2504,8 +2501,6 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                                                 <Calendar className="w-4 h-4" />
                                                             </button>
                                                         )}
-                                                        </>)}
-                                                        {isImpersonating && <span className="text-gray-400 text-xs italic">Nur Ansicht</span>}
                                                     </td>
                                                 </tr>
                                                 {/* Expandable event rows */}
@@ -2535,15 +2530,13 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                                                                 {isCancelled ? (
                                                                                     <span className="text-xs px-2 py-1 rounded font-bold bg-red-100 text-red-700 border border-red-200">Abgesagt</span>
                                                                                 ) : (
-                                                                                    !isImpersonating && (
-                                                                                        <button
-                                                                                            onClick={() => openCancelEventDialog(ev.id)}
-                                                                                            disabled={cancellingEventId === ev.id}
-                                                                                            className="text-xs px-3 py-1.5 rounded-lg font-medium text-red-600 hover:text-red-700 hover:bg-red-100 border border-red-200 transition disabled:opacity-50"
-                                                                                        >
-                                                                                            {cancellingEventId === ev.id ? 'Wird abgesagt...' : 'Termin absagen'}
-                                                                                        </button>
-                                                                                    )
+                                                                                    <button
+                                                                                        onClick={() => openCancelEventDialog(ev.id)}
+                                                                                        disabled={cancellingEventId === ev.id}
+                                                                                        className="text-xs px-3 py-1.5 rounded-lg font-medium text-red-600 hover:text-red-700 hover:bg-red-100 border border-red-200 transition disabled:opacity-50"
+                                                                                    >
+                                                                                        {cancellingEventId === ev.id ? 'Wird abgesagt...' : 'Termin absagen'}
+                                                                                    </button>
                                                                                 )}
                                                                             </div>
                                                                         </div>
