@@ -21,7 +21,7 @@ export const LEGAL_CONTENT = {
         },
         {
           heading: "4. Leistungen der Plattform, Verfügbarkeit und Darstellung",
-          text: "4.1 LifeSkills360 ermöglicht das Suchen, Filtern, Vergleichen und Anzeigen von Kursen sowie – je nach Kursart – die Direktbuchung oder das Senden einer Anfrage.\n4.2 Kursinformationen stammen von den Anbietern. Wir können Plausibilitätsprüfungen durchführen, garantieren jedoch keine Richtigkeit, Aktualität oder Vollständigkeit.\n4.3 Es besteht kein Anspruch auf ununterbrochene Verfügbarkeit der Plattform. Wartungsarbeiten, Weiterentwicklungen und Störungen sind möglich.\n4.4 Suchresultate, Kategorien und Sortierungen können automatisiert erfolgen und jederzeit angepasst werden (z.B. Relevanz, Standortnähe, Kategoriezuordnung, Datenqualität, Performance)."
+          text: "4.1 LifeSkills360 ermöglicht das Suchen, Filtern, Vergleichen und Anzeigen von Kursen sowie – je nach Kursart – die Direktbuchung oder das Senden einer Anfrage.\n4.2 Kursinformationen stammen von den Anbietern. Wir können Plausibilitätsprüfungen durchführen, garantieren jedoch keine Richtigkeit, Aktualität oder Vollständigkeit.\n4.3 Zusätzliche redaktionelle Inhalte von LifeSkills360, insbesondere Ratgeber, Themenwelten, Einordnungstexte oder ähnliche Informationsangebote, dienen ausschliesslich der allgemeinen Orientierung. Sie stellen weder eine verbindliche Beratung noch eine Zusicherung bestimmter Eigenschaften oder Ergebnisse dar. Massgeblich sind im Einzelfall die Angaben der jeweiligen Anbieter sowie der zuständigen offiziellen Stellen.\n4.4 Es besteht kein Anspruch auf ununterbrochene Verfügbarkeit der Plattform. Wartungsarbeiten, Weiterentwicklungen und Störungen sind möglich.\n4.5 Suchresultate, Kategorien und Sortierungen können automatisiert erfolgen und jederzeit angepasst werden (z.B. Relevanz, Standortnähe, Kategoriezuordnung, Datenqualität, Performance)."
         },
         {
           heading: "5. Pflichten der Nutzerinnen und Nutzer",
@@ -57,7 +57,7 @@ export const LEGAL_CONTENT = {
         },
         {
           heading: "13. Haftung von LifeSkills360",
-          text: "13.1 LifeSkills360 haftet im gesetzlich zulässigen Umfang nur für Schäden, die durch vorsätzliches oder grob fahrlässiges Verhalten von LifeSkills360 verursacht wurden.\n13.2 Soweit gesetzlich zulässig, ist jede weitere Haftung von LifeSkills360 ausgeschlossen, insbesondere für leichte Fahrlässigkeit sowie für indirekte Schäden, Folgeschäden, entgangenen Gewinn, Datenverlust, Reputationsschäden oder Ansprüche Dritter.\n13.3 LifeSkills360 haftet nicht für Handlungen oder Unterlassungen der Anbieter, insbesondere nicht für\na) Kursdurchführung, Sicherheit, Qualität oder Eignung eines Kurses,\nb) Richtigkeit, Aktualität und Vollständigkeit von Kursangaben,\nc) Streitigkeiten zwischen buchenden Personen, teilnehmenden Personen und Anbietern,\nd) Stornierungen, Refunds oder Umbuchungen (vorbehaltlich der Mindeststandards gemäss Ziff. 10.2–10.4 und der technischen Mitwirkung von LifeSkills360 gemäss Ziff. 10.5),\ne) Inhalte, die Anbieter oder Nutzerinnen und Nutzer einstellen.\n13.4 Zwingende gesetzliche Haftungsbestimmungen bleiben vorbehalten."
+          text: "13.1 LifeSkills360 haftet im gesetzlich zulässigen Umfang nur für Schäden, die durch vorsätzliches oder grob fahrlässiges Verhalten von LifeSkills360 verursacht wurden.\n13.2 Soweit gesetzlich zulässig, ist jede weitere Haftung von LifeSkills360 ausgeschlossen, insbesondere für leichte Fahrlässigkeit sowie für indirekte Schäden, Folgeschäden, entgangenen Gewinn, Datenverlust, Reputationsschäden oder Ansprüche Dritter.\n13.3 LifeSkills360 haftet nicht für Handlungen oder Unterlassungen der Anbieter, insbesondere nicht für\na) Kursdurchführung, Sicherheit, Qualität oder Eignung eines Kurses,\nb) Richtigkeit, Aktualität und Vollständigkeit von Kursangaben,\nc) Richtigkeit, Aktualität und Vollständigkeit redaktioneller Inhalte gemäss Ziff. 4.3,\nd) Streitigkeiten zwischen buchenden Personen, teilnehmenden Personen und Anbietern,\ne) Stornierungen, Refunds, Kulanzentscheidungen oder Umbuchungen (vorbehaltlich der technischen Mitwirkung von LifeSkills360 gemäss Ziff. 10),\nf) Inhalte, die Anbieter oder Nutzerinnen und Nutzer einstellen.\n13.4 Zwingende gesetzliche Haftungsbestimmungen bleiben vorbehalten."
         },
         {
           heading: "14. Datenschutz",
@@ -138,7 +138,7 @@ export const LEGAL_CONTENT = {
         },
         {
           heading: "Haftungsausschluss",
-          text: "Trotz sorgfältiger inhaltlicher Kontrolle übernehmen wir keine Haftung für die Inhalte externer Links. Für den Inhalt der verlinkten Seiten sind ausschliesslich deren Betreiber verantwortlich."
+          text: "Die redaktionellen Inhalte auf KursNavi dienen der allgemeinen Orientierung. Trotz sorgfältiger Prüfung übernehmen wir keine Gewähr für Richtigkeit, Vollständigkeit und Aktualität. Massgeblich sind im Einzelfall die Angaben der jeweiligen Anbieter sowie der zuständigen offiziellen Stellen.\n\nTrotz sorgfältiger inhaltlicher Kontrolle übernehmen wir keine Haftung für die Inhalte externer Links. Für den Inhalt der verlinkten Seiten sind ausschliesslich deren Betreiber verantwortlich.\n\nEine Haftung von LifeSkills360 richtet sich im Übrigen nach den zwingenden gesetzlichen Bestimmungen sowie den anwendbaren AGB."
         }
       ]
     },
@@ -165,7 +165,7 @@ export const LEGAL_CONTENT = {
         },
         {
           heading: "4. Platform services, availability, and presentation",
-          text: "4.1 LifeSkills360 enables the searching, filtering, comparing and displaying of Courses and, depending on the Course type, direct booking or sending an enquiry.\n4.2 Course information is provided by Providers. We may perform plausibility checks but do not guarantee accuracy, timeliness or completeness.\n4.3 There is no entitlement to uninterrupted availability of the Platform. Maintenance, further development and disruptions may occur.\n4.4 Search results, categories and sorting may be automated and may be adjusted at any time (e.g. relevance, proximity, category allocation, data quality, performance)."
+          text: "4.1 LifeSkills360 enables the searching, filtering, comparing and displaying of Courses and, depending on the Course type, direct booking or sending an enquiry.\n4.2 Course information is provided by Providers. We may perform plausibility checks but do not guarantee accuracy, timeliness or completeness.\n4.3 Additional editorial content provided by LifeSkills360, in particular guides, topic pages, explanatory texts or similar information offers, is for general guidance only. It does not constitute binding advice or any guarantee of specific characteristics or outcomes. In individual cases, the information provided by the respective Providers and the competent official authorities shall prevail.\n4.4 There is no entitlement to uninterrupted availability of the Platform. Maintenance, further development and disruptions may occur.\n4.5 Search results, categories and sorting may be automated and may be adjusted at any time (e.g. relevance, proximity, category allocation, data quality, performance)."
         },
         {
           heading: "5. Participant obligations",
@@ -201,7 +201,7 @@ export const LEGAL_CONTENT = {
         },
         {
           heading: "13. Liability of LifeSkills360",
-          text: "13.1 To the extent permitted by law, LifeSkills360 is liable only for damages caused by intentional misconduct or gross negligence by LifeSkills360.\n13.2 To the extent permitted by law, any further liability of LifeSkills360 is excluded, in particular for slight negligence and for indirect damages, consequential damages, loss of profit, data loss, reputational damage or third-party claims.\n13.3 LifeSkills360 is not liable for acts or omissions of Providers, in particular not for\na) delivery, safety, quality or suitability of a Course,\nb) accuracy, timeliness or completeness of Course information,\nc) disputes between Participants and Providers,\nd) cancellations, refunds or rescheduling (subject to LifeSkills360's technical facilitation obligations under section 10.4),\ne) content posted by Providers or Participants.\n13.4 Mandatory statutory liability provisions remain reserved."
+          text: "13.1 To the extent permitted by law, LifeSkills360 is liable only for damages caused by intentional misconduct or gross negligence by LifeSkills360.\n13.2 To the extent permitted by law, any further liability of LifeSkills360 is excluded, in particular for slight negligence and for indirect damages, consequential damages, loss of profit, data loss, reputational damage or third-party claims.\n13.3 LifeSkills360 is not liable for acts or omissions of Providers, in particular not for\na) delivery, safety, quality or suitability of a Course,\nb) accuracy, timeliness or completeness of Course information,\nc) accuracy, timeliness or completeness of editorial content as described in section 4.3,\nd) disputes between Participants and Providers,\ne) cancellations, refunds, goodwill decisions or rescheduling (subject to LifeSkills360's technical facilitation under section 10),\nf) content posted by Providers or Participants.\n13.4 Mandatory statutory liability provisions remain reserved."
         },
         {
           heading: "14. Data protection",
@@ -282,7 +282,7 @@ export const LEGAL_CONTENT = {
         },
         {
           heading: "Disclaimer",
-          text: "Despite careful content control, we assume no liability for the content of external links. The operators of the linked pages are solely responsible for their content."
+          text: "The editorial content on KursNavi is intended for general guidance only. Despite careful review, we do not guarantee accuracy, completeness or timeliness. In individual cases, the information provided by the respective providers and the competent official authorities shall prevail.\n\nDespite careful content control, we assume no liability for the content of external links. The operators of the linked pages are solely responsible for their content.\n\nAny liability of LifeSkills360 is otherwise governed by mandatory statutory provisions and the applicable Terms and Conditions."
         }
       ]
     },

@@ -20,6 +20,11 @@ function RootHub({ lang }) {
   const robots = getRobotsPolicy();
   const canonical = buildCanonical('/ratgeber');
   const categories = Object.values(RATGEBER_STRUCTURE);
+  const goToContact = () => {
+    window.scrollTo(0, 0);
+    window.history.pushState({ view: 'contact' }, '', '/contact');
+    window.dispatchEvent(new Event('locationchange'));
+  };
   return (
     <div className="min-h-screen bg-gray-50">
       <Helmet>
@@ -102,6 +107,23 @@ function RootHub({ lang }) {
             );
           })}
         </div>
+        <div className="text-center text-sm text-gray-500 mt-8">
+          <p>Zuletzt redaktionell geprüft: März 2026. Die Inhalte dienen der Orientierung; maßgeblich sind im Zweifel die Angaben der jeweiligen Anbieter und offiziellen Stellen.</p>
+          <p className="mt-2">
+            Ist dir in einem Ratgeber ein Fehler oder eine veraltete Information aufgefallen? Gib uns gern kurz Bescheid.{' '}
+            <a
+              href="/contact"
+              onClick={(e) => {
+                if (!shouldHandleClientNavigation(e)) return;
+                e.preventDefault();
+                goToContact();
+              }}
+              className="text-primary font-medium underline underline-offset-2 hover:opacity-80"
+            >
+              Zum Kontaktformular
+            </a>
+          </p>
+        </div>
       </div>
     </div>
   );
@@ -118,6 +140,11 @@ function CategoryHub({ category, categorySlug, lang }) {
   const robots = getRobotsPolicy();
   const canonical = buildCanonical(`/ratgeber/${categorySlug}`);
   const nav = (view, p) => { window.scrollTo(0,0); window.history.pushState({view},'',p); window.dispatchEvent(new PopStateEvent('popstate')); };
+  const goToContact = () => {
+    window.scrollTo(0, 0);
+    window.history.pushState({ view: 'contact' }, '', '/contact');
+    window.dispatchEvent(new Event('locationchange'));
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -190,6 +217,23 @@ function CategoryHub({ category, categorySlug, lang }) {
             </div>
           );
         })}
+        <div className="text-center text-sm text-gray-500">
+          <p>Zuletzt redaktionell geprüft: März 2026. Die Inhalte dienen der Orientierung; maßgeblich sind im Zweifel die Angaben der jeweiligen Anbieter und offiziellen Stellen.</p>
+          <p className="mt-2">
+            Ist dir in einem Ratgeber ein Fehler oder eine veraltete Information aufgefallen? Gib uns gern kurz Bescheid.{' '}
+            <a
+              href="/contact"
+              onClick={(e) => {
+                if (!shouldHandleClientNavigation(e)) return;
+                e.preventDefault();
+                goToContact();
+              }}
+              className={`${config.text} font-medium underline underline-offset-2 hover:opacity-80`}
+            >
+              Zum Kontaktformular
+            </a>
+          </p>
+        </div>
       </div>
     </div>
   );

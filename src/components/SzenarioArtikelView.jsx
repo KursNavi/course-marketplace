@@ -115,6 +115,12 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
     );
   };
 
+  const goToContact = () => {
+    window.scrollTo(0, 0);
+    window.history.pushState({ view: 'contact' }, '', '/contact');
+    window.dispatchEvent(new Event('locationchange'));
+  };
+
   const segmentLabel = theme.label?.[lang] || theme.label?.de || segment;
   const bereichTitle = (bereichConfig.title[lang] || bereichConfig.title.de).split('—')[0].trim();
   const otherScenarios = (bereichConfig.scenarios || []).filter(s => s.slug !== szenarioSlug);
@@ -205,14 +211,23 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
           )}
         </div>
 
-        {/* Fehler-Hinweis */}
-        <p className="text-center text-sm text-gray-400 mt-4 mb-2">
-          Fehler gefunden? Schreibe uns unter{' '}
-          <a href="mailto:info@kursnavi.ch" className="underline hover:text-gray-600 transition-colors">
-            info@kursnavi.ch
-          </a>{' '}
-          — wir freuen uns über dein Feedback.
-        </p>
+        <div className="text-center text-sm text-gray-500 mt-4 mb-2">
+          <p>Zuletzt redaktionell geprüft: März 2026. Die Inhalte dienen der Orientierung; maßgeblich sind im Zweifel die Angaben der jeweiligen Anbieter und offiziellen Stellen.</p>
+          <p className="mt-2">
+            Wenn dir in dieser Themenwelt ein Fehler oder eine veraltete Information auffällt, gib uns gern kurz Bescheid.{' '}
+            <a
+              href="/contact"
+              onClick={(e) => {
+                if (!shouldHandleClientNavigation(e)) return;
+                e.preventDefault();
+                goToContact();
+              }}
+              className={`${theme.text} font-medium underline underline-offset-2 hover:opacity-80`}
+            >
+              Zum Kontaktformular
+            </a>
+          </p>
+        </div>
 
         {/* CTA: Passende Kurse */}
         <div className={`${theme.bgLight} rounded-2xl p-8 text-center mt-8`}>

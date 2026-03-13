@@ -15,6 +15,12 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
   // Segment theme
   const theme = SEGMENT_CONFIG[segment] || SEGMENT_CONFIG.beruflich;
 
+  const goToContact = () => {
+    window.scrollTo(0, 0);
+    window.history.pushState({ view: 'contact' }, '', '/contact');
+    window.dispatchEvent(new Event('locationchange'));
+  };
+
   // SEO Meta Tags
   useEffect(() => {
     if (!config) return;
@@ -288,6 +294,23 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
                 </div>
               </a>
             ))}
+          </div>
+          <div className="text-center text-sm text-gray-500 mt-6">
+            <p>Zuletzt redaktionell geprüft: März 2026. Die Inhalte dienen der Orientierung; maßgeblich sind im Zweifel die Angaben der jeweiligen Anbieter und offiziellen Stellen.</p>
+            <p className="mt-2">
+              Ist dir in einer Themenwelt ein Fehler oder eine veraltete Information aufgefallen? Gib uns gern kurz Bescheid.{' '}
+              <a
+                href="/contact"
+                onClick={(e) => {
+                  if (!shouldHandleClientNavigation(e)) return;
+                  e.preventDefault();
+                  goToContact();
+                }}
+                className={`${theme.text} font-medium underline underline-offset-2 hover:opacity-80`}
+              >
+                Zum Kontaktformular
+              </a>
+            </p>
           </div>
         </div>
       )}

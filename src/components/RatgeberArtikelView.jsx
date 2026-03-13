@@ -70,6 +70,12 @@ const RatgeberArtikelView = ({ lang = 'de' }) => {
     window.dispatchEvent(new Event('locationchange'));
   };
 
+  const goToContact = () => {
+    window.scrollTo(0, 0);
+    window.history.pushState({ view: 'contact' }, '', '/contact');
+    window.dispatchEvent(new Event('locationchange'));
+  };
+
   // Find current article index and siblings
   const currentIndex = cluster.articles.findIndex(a => a.slug === articleSlug);
   const prevArticle = currentIndex > 0 ? cluster.articles[currentIndex - 1] : null;
@@ -254,6 +260,24 @@ const RatgeberArtikelView = ({ lang = 'de' }) => {
               </p>
             </a>
           )}
+        </div>
+
+        <div className="mt-6 text-center text-sm text-gray-500">
+          <p>Zuletzt redaktionell geprüft: März 2026. Die Inhalte dienen der Orientierung; maßgeblich sind im Zweifel die Angaben der jeweiligen Anbieter und offiziellen Stellen.</p>
+          <p className="mt-2">
+            Wenn dir in diesem Beitrag ein Fehler oder eine veraltete Information auffällt, gib uns gern kurz Bescheid.{' '}
+            <a
+              href="/contact"
+              onClick={(e) => {
+                if (!shouldHandleClientNavigation(e)) return;
+                e.preventDefault();
+                goToContact();
+              }}
+              className={`${config.text} font-medium underline underline-offset-2 hover:opacity-80`}
+            >
+              Zum Kontaktformular
+            </a>
+          </p>
         </div>
       </div>
 

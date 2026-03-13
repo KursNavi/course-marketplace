@@ -68,6 +68,12 @@ const RatgeberClusterView = ({ lang = 'de' }) => {
     window.dispatchEvent(new Event('locationchange'));
   };
 
+  const goToContact = () => {
+    window.scrollTo(0, 0);
+    window.history.pushState({ view: 'contact' }, '', '/contact');
+    window.dispatchEvent(new Event('locationchange'));
+  };
+
   // Translations
   const t = {
     backTo: {
@@ -171,6 +177,24 @@ const RatgeberClusterView = ({ lang = 'de' }) => {
               </div>
             </a>
           ))}
+        </div>
+
+        <div className="text-center text-sm text-gray-500 mt-8">
+          <p>Zuletzt redaktionell geprüft: März 2026. Die Inhalte dienen der Orientierung; maßgeblich sind im Zweifel die Angaben der jeweiligen Anbieter und offiziellen Stellen.</p>
+          <p className="mt-2">
+            Wenn dir in diesem Ratgeberbereich ein Fehler oder eine veraltete Information auffällt, gib uns gern kurz Bescheid.{' '}
+            <a
+              href="/contact"
+              onClick={(e) => {
+                if (!shouldHandleClientNavigation(e)) return;
+                e.preventDefault();
+                goToContact();
+              }}
+              className={`${config.text} font-medium underline underline-offset-2 hover:opacity-80`}
+            >
+              Zum Kontaktformular
+            </a>
+          </p>
         </div>
       </div>
 
