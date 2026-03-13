@@ -451,7 +451,8 @@ export default function KursNaviPro() {  // 1. Initial State Logic
     }
 
     // Prüfe ob das Bild noch von anderen Kursen verwendet wird
-    if (imageUrl) {
+    // Bei Impersonation überspringen — Admin-API macht das serverseitig
+    if (imageUrl && !impersonatedUser?.id) {
       const isUsed = await isImageUsedByOtherCourses(imageUrl, courseId);
       if (!isUsed) {
         // Bild wird nicht mehr verwendet - aus Storage löschen

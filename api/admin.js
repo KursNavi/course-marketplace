@@ -36,7 +36,7 @@ function isValidUUID(str) {
 async function getOwnedCourse(supabaseAdmin, courseId) {
   const { data, error } = await supabaseAdmin
     .from('courses')
-    .select('id, user_id')
+    .select('id, user_id, image_url')
     .eq('id', courseId)
     .single();
 
@@ -385,12 +385,34 @@ export default async function handler(req, res) {
         return res.status(403).json({ error: 'Kurs gehört nicht zum impersonierten Anbieter' });
       }
 
+      const imageUrl = existingCourse.image_url;
+
       const { error } = await supabaseAdmin
         .from('courses')
         .delete()
         .eq('id', courseId);
 
       if (error) return res.status(500).json({ error: error.message });
+
+      // Clean up orphaned image from storage (best-effort)
+      if (imageUrl && imageUrl.includes('course-images') && !imageUrl.includes('unsplash.com')) {
+        try {
+          const { data: otherCourses } = await supabaseAdmin
+            .from('courses')
+            .select('id')
+            .eq('image_url', imageUrl)
+            .limit(1);
+
+          if (!otherCourses || otherCourses.length === 0) {
+            const match = imageUrl.match(/course-images\/([^?]+)/);
+            if (match) {
+              await supabaseAdmin.storage.from('course-images').remove([match[1]]);
+            }
+          }
+        } catch (imgErr) {
+          console.warn('Image cleanup failed (non-critical):', imgErr.message);
+        }
+      }
 
       return res.status(200).json({ ok: true });
     }

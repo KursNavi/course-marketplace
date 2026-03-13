@@ -754,8 +754,10 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t, isImp
                     </div>
                 )}
 
+                {!isImpersonating && (
                 <div className="border-t pt-6 mt-6"><h3 className="text-lg font-bold mb-4 text-dark flex items-center"><Lock className="w-4 h-4 mr-2" /> {t.lbl_account_security}</h3><div className="space-y-4"><div><label className="block text-sm font-bold text-gray-700 mb-1">Email</label><input type="email" name="email" value={formData.email} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none bg-gray-50" /></div><div className="grid grid-cols-1 md:grid-cols-2 gap-6"><div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_new_password}</label><div className="relative"><input type={showPassword ? "text" : "password"} name="password" value={formData.password} onChange={handleChange} placeholder="******" className="w-full px-4 py-2 pr-10 border rounded-lg focus:ring-2 focus:ring-primary outline-none" /><button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700">{showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}</button></div></div><div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_confirm_password}</label><div className="relative"><input type={showConfirmPassword ? "text" : "password"} name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} placeholder="******" className="w-full px-4 py-2 pr-10 border rounded-lg focus:ring-2 focus:ring-primary outline-none" /><button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700">{showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}</button></div></div></div></div></div>
-                <div className="pt-2"><button type="submit" disabled={saving} className="bg-primary text-white px-6 py-3 rounded-lg font-bold hover:bg-orange-600 transition flex items-center shadow-md disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed">{saving ? <Loader className="animate-spin w-5 h-5 mr-2" /> : <Save className="w-5 h-5 mr-2" />}{t.btn_save}</button></div>
+                )}
+                <div className="pt-2"><button type="submit" disabled={saving || isImpersonating} title={isImpersonating ? 'Profil-Änderungen sind bei Impersonation nicht möglich' : ''} className="bg-primary text-white px-6 py-3 rounded-lg font-bold hover:bg-orange-600 transition flex items-center shadow-md disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed">{saving ? <Loader className="animate-spin w-5 h-5 mr-2" /> : <Save className="w-5 h-5 mr-2" />}{t.btn_save}</button></div>
             </form>
 
             {/* Data Export Section */}
@@ -793,7 +795,8 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t, isImp
                 </button>
             </div>
 
-            {/* Delete Account Section */}
+            {/* Delete Account Section — hidden during impersonation */}
+            {!isImpersonating && (
             <div className="bg-white rounded-xl shadow-sm border border-red-100 p-6 md:p-8 mt-8">
                 <h3 className="text-lg font-bold text-red-600 mb-4 flex items-center">
                     <Trash2 className="w-5 h-5 mr-2" />
@@ -816,6 +819,7 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t, isImp
                     Konto unwiderruflich lÃ¶schen
                 </button>
             </div>
+            )}
 
             {/* Delete Confirmation Modal */}
             {showDeleteModal && (
