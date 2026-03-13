@@ -111,6 +111,11 @@ class ErrorBoundary extends React.Component {
     if (isChunkLoadError(error)) {
       if (triggerChunkReload()) return;
     }
+
+    // Report to Sentry
+    import('@sentry/react').then(Sentry => {
+      Sentry.captureException(error, { contexts: { react: { componentStack: errorInfo?.componentStack } } });
+    }).catch(() => {});
   }
 
   render() {
