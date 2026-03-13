@@ -255,11 +255,12 @@ export default async function handler(req, res) {
       }
     }
 
-    // 6. Send summary email to provider
+    // 6. Send summary email to provider (use course owner, not the requesting admin)
+    const providerId = ownerId || userId;
     const { data: providerProfile } = await supabase
       .from('profiles')
       .select('email, language')
-      .eq('id', userId)
+      .eq('id', providerId)
       .single();
 
     if (providerProfile?.email) {
