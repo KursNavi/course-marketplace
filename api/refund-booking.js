@@ -148,10 +148,24 @@ export default async function handler(req, res) {
     try {
       const pi = await stripe.paymentIntents.retrieve(booking.stripe_payment_intent_id);
       refundAmountCents = pi.amount_received;
+
+      if (pi.status !== 'succeeded') {
+        console.error('PaymentIntent not in succeeded state:', pi.id, pi.status);
+        return res.status(400).json({ error: `Zahlung ist im Status "${pi.status}" und kann nicht erstattet werden.` });
+      }
+
       await stripe.refunds.create({ payment_intent: booking.stripe_payment_intent_id });
     } catch (stripeError) {
-      console.error('Stripe refund failed:', stripeError);
-      return res.status(500).json({ error: 'Rückerstattung fehlgeschlagen. Bitte kontaktiere den Support.' });
+      console.error('Stripe refund failed:', stripeError?.type, stripeError?.code, stripeError?.message);
+
+      // If already refunded, proceed with status update
+      if (stripeError?.code === 'charge_already_refunded') {
+        const pi = await stripe.paymentIntents.retrieve(booking.stripe_payment_intent_id);
+        refundAmountCents = pi.amount_received;
+      } else {
+        const detail = stripeError?.message || 'Unbekannter Stripe-Fehler';
+        return res.status(500).json({ error: `Rückerstattung fehlgeschlagen: ${detail}` });
+      }
     }
 
     const { error: updateError } = await supabase

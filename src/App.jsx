@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useLayoutEffect, useRef, Suspense, useCallback } from 'react';
-import { CheckCircle } from 'lucide-react';
+import { CheckCircle, XCircle } from 'lucide-react';
 
 // Build: 2026-02-22 - Use DB taxonomy instead of constants
 // --- IMPORTS ---
@@ -258,7 +258,8 @@ export default function KursNaviPro() {  // 1. Initial State Logic
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [selectedTeacher, setSelectedTeacher] = useState(null);
   const [editingCourse, setEditingCourse] = useState(null);
-  const [notification, setNotification] = useState(null);
+  const [notification, setNotification] = useState(null); // { msg, type }
+  const [notificationType, setNotificationType] = useState('success');
 
   // Load taxonomy from DB for label lookups
   const { areas: dbAreas } = useTaxonomy();
@@ -376,7 +377,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
       return key;
     };
 
-  const showNotification = (msg) => { setNotification(msg); setTimeout(() => setNotification(null), 3000); };
+  const showNotification = (msg, type = 'success') => { setNotification(msg); setNotificationType(type); setTimeout(() => setNotification(null), 5000); };
 
   const handleLogout = async () => { await supabase.auth.signOut(); showNotification("Logged out successfully"); setView('home'); };
 
@@ -1691,7 +1692,7 @@ useEffect(() => {
     return (
     <ErrorBoundary>
       <div className="min-h-screen bg-beige font-sans text-dark selection:bg-orange-100 selection:text-primary flex flex-col font-sans">
-      {notification && (<div className="fixed top-24 left-1/2 transform -translate-x-1/2 bg-dark text-white px-6 py-3 rounded-full shadow-2xl z-50 flex items-center animate-bounce font-heading"><CheckCircle className="w-5 h-5 mr-2 text-primary" />{notification}</div>)}
+      {notification && (<div className={`fixed top-24 left-1/2 transform -translate-x-1/2 text-white px-6 py-3 rounded-full shadow-2xl z-50 flex items-center animate-bounce font-heading ${notificationType === 'error' ? 'bg-red-700' : 'bg-dark'}`}>{notificationType === 'error' ? <XCircle className="w-5 h-5 mr-2 text-red-200" /> : <CheckCircle className="w-5 h-5 mr-2 text-primary" />}{notification}</div>)}
 
       <Navbar t={t} user={user} lang={lang} setLang={changeLanguage} setView={setView} handleLogout={handleLogout} setShowResults={() => setView('search')} setSelectedCatPath={setSelectedCatPath} />
 
