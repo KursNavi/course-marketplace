@@ -34,4 +34,4 @@ Allow: /*?level=*
 Allow: /*?age=*
 
 # Verweis auf die Sitemap
-Sitemap: https://kursnavi.ch/api/sitemap
+Sitemap: https://kursnavi.ch/sitemap.xml
