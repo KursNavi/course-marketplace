@@ -300,37 +300,18 @@ export default async function handler(req, res) {
     let refundMeta;
 
     if (creditAmountCents > 0) {
-      const { data: refundResult, error: refundError } = await supabase.rpc('refund_booking_to_credit', {
-        p_booking_id: bookingId,
-        p_user_id: userId,
-        p_amount_cents: creditAmountCents,
-        p_description: `Stornierung: ${courseTitle}`
-      });
-
-      if (refundError) {
-        const shouldUseFallback = refundError.code === '42804';
-
-        console.error('Atomic booking refund failed:', refundError);
-
-        if (!shouldUseFallback) {
-          return res.status(500).json({ error: 'Gutschrift konnte nicht verarbeitet werden.' });
-        }
-
-        try {
-          refundMeta = await refundBookingToCreditFallback({
-            supabase,
-            bookingId,
-            userId,
-            amountCents: creditAmountCents,
-            description: `Stornierung: ${courseTitle}`,
-            fallbackTicketPeriodId: booking.ticket_period_id
-          });
-        } catch (fallbackError) {
-          console.error('Refund fallback failed:', fallbackError);
-          return res.status(500).json({ error: 'Gutschrift konnte nicht verarbeitet werden.' });
-        }
-      } else {
-        refundMeta = refundResult?.[0];
+      try {
+        refundMeta = await refundBookingToCreditFallback({
+          supabase,
+          bookingId,
+          userId,
+          amountCents: creditAmountCents,
+          description: `Stornierung: ${courseTitle}`,
+          fallbackTicketPeriodId: booking.ticket_period_id
+        });
+      } catch (fallbackError) {
+        console.error('Refund fallback failed:', fallbackError);
+        return res.status(500).json({ error: 'Gutschrift konnte nicht verarbeitet werden.' });
       }
     } else {
       try {
