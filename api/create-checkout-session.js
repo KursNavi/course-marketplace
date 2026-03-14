@@ -53,6 +53,7 @@ export default async function handler(req, res) {
       .single();
 
     if (courseError || !course) {
+      console.error('Course lookup failed:', { courseId, courseError });
       return res.status(400).json({ error: 'Kurs nicht gefunden' });
     }
 

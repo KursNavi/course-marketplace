@@ -428,7 +428,7 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
             window.location.href = data.url;
         } catch (error) {
             console.warn("Checkout error:", error);
-            showNotification && showNotification(error.message || 'Ein Fehler ist aufgetreten');
+            showNotification && showNotification(error.message || 'Ein Fehler ist aufgetreten', 'error');
         }
     };
 

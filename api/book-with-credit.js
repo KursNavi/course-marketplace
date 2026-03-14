@@ -48,6 +48,7 @@ export default async function handler(req, res) {
       .single();
 
     if (courseError || !course) {
+      console.error('Course lookup failed:', { courseId, courseError });
       return res.status(400).json({ error: 'Kurs nicht gefunden' });
     }
 
@@ -166,6 +167,7 @@ export default async function handler(req, res) {
 
     // 5. Deduct credit atomically (skip for free courses)
     let actuallyDeducted = 0;
+    let newBalanceCents = 0;
     if (!isFreeCourse) {
       const { data: deductResult, error: deductError } = await supabase.rpc('deduct_credit', {
         p_user_id: userId,
@@ -182,6 +184,7 @@ export default async function handler(req, res) {
       }
 
       actuallyDeducted = deductResult?.[0]?.actually_deducted || 0;
+      newBalanceCents = deductResult?.[0]?.new_balance_cents || 0;
       if (actuallyDeducted < coursePriceCents) {
         // Credit was spent concurrently — release ticket and abort
         if (periodId) {
@@ -277,7 +280,7 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       success: true,
-      new_balance_chf: ((deductResult?.[0]?.new_balance_cents || 0) / 100).toFixed(2)
+      new_balance_chf: (newBalanceCents / 100).toFixed(2)
     });
   } catch (error) {
     console.error('Book with credit error:', error);
