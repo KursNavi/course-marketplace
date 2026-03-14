@@ -7,7 +7,7 @@ import { SEGMENT_CONFIG } from '../lib/constants';
 import { BASE_URL, buildCoursePath } from '../lib/siteConfig';
 import { getBereichByAreaSlug, getBereichUrl } from '../lib/bereichLandingConfig';
 import { DEFAULT_COURSE_IMAGE } from '../lib/imageUtils';
-import { getCourseCategoryText, getPrimaryCategory, getPrimaryCategoryLabel, getPrimaryCategorySlug } from '../lib/courseMetadata';
+import { getCourseCategoryText, getPrimaryCategory, getPrimaryCategoryLabel, getPrimaryCategorySlug, isSyntheticCategory } from '../lib/courseMetadata';
 
 const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, savedCourseIds, onToggleSaveCourse, showNotification }) => {
     const [showLeadModal, setShowLeadModal] = useState(false);
@@ -84,13 +84,14 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
             const area = primary.category_area;
             const specialty = primary.category_specialty_label || primary.category_specialty;
             const focus = primary.category_focus_label || primary.category_focus;
+            const hideLegacyAreaCrumb = isSyntheticCategory(primary) && !primary.category_area_label && (specialty || focus);
 
             if (type) crumbs.push({
                 label: primary.category_type_label || getTypeLabel(type, lang),
                 filter: { type },
                 typeSlug: type
             });
-            if (area) crumbs.push({
+            if (area && !hideLegacyAreaCrumb) crumbs.push({
                 label: primary.category_area_label || getAreaLabel(type, area, lang),
                 filter: { type, area }
             });

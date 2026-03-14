@@ -7,6 +7,8 @@ node_modules
 .DS_Store
 dist
 build
+playwright-report
+test-results
 nul
 .vercel
 supabase/.temp

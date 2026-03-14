@@ -5,11 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:playwright": "node scripts/start-playwright-dev.mjs",
     "build": "vite build",
     "lint": "eslint .",
     "check:mojibake": "node scripts/check-mojibake.mjs",
     "preview": "vite preview",
     "test": "vitest run",
+    "test:e2e": "playwright test --config=playwright.config.mjs",
     "test:watch": "vitest",
     "retest:security": "node scripts/security-retest.mjs",
     "dev:finalize-yoga": "node scripts/finalize-yoga-cleanup-dev.mjs",

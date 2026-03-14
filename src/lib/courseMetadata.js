@@ -79,7 +79,7 @@ export function buildSyntheticCategories(course) {
   }];
 }
 
-function isSyntheticCategory(category) {
+export function isSyntheticCategory(category) {
   return Boolean(
     category?.is_synthetic ||
     (
