@@ -472,6 +472,38 @@ export default async function handler(req, res) {
       const paidAt = new Date();
       const autoRefundUntil = calculateAutoRefundUntil(paidAt, eventStartAt, bookingType);
       const payoutEligibleAt = calculatePayoutEligibleAt(paidAt, eventEndAt, eventStartAt, bookingType);
+      const creditToApply = parseInt(metadata.creditToApplyCents || '0', 10);
+      let deductedCreditCents = 0;
+
+      if (creditToApply > 0 && userId) {
+        const { data: creditResult, error: creditError } = await supabase.rpc('deduct_credit', {
+          p_user_id: userId,
+          p_amount_cents: creditToApply,
+          p_description: `Buchung: ${courseTitle}`
+        });
+
+        deductedCreditCents = creditResult?.[0]?.actually_deducted || 0;
+        if (creditError || deductedCreditCents < creditToApply) {
+          if (deductedCreditCents > 0) {
+            await supabase.rpc('add_credit', {
+              p_user_id: userId,
+              p_amount_cents: deductedCreditCents,
+              p_type: 'cancellation_credit',
+              p_description: 'Rückbuchung: Guthaben konnte nicht angewendet werden'
+            });
+          }
+          if (periodId) {
+            await supabase.rpc('release_ticket', { p_period_id: periodId });
+          }
+          try {
+            await stripe.refunds.create({ payment_intent: session.payment_intent });
+          } catch (refundErr) {
+            console.error('Stripe refund failed after credit mismatch:', refundErr);
+            return res.status(500).json({ error: 'Refund failed after credit mismatch, needs manual review' });
+          }
+          return res.status(200).json({ received: true, note: 'Credit unavailable, auto-refunded' });
+        }
+      }
 
       // 5. Create booking
       const { error: insertError } = await supabase.from('bookings').insert({
@@ -487,10 +519,19 @@ export default async function handler(req, res) {
         stripe_checkout_session_id: session.id,
         ticket_period_id: periodId,
         guardian_attestation: metadata.guardianAttestation === 'true',
-        credit_used_cents: parseInt(metadata.creditToApplyCents || '0', 10) || 0
+        paid_via_credit: false,
+        credit_used_cents: deductedCreditCents
       });
 
       if (insertError) {
+        if (deductedCreditCents > 0 && userId) {
+          await supabase.rpc('add_credit', {
+            p_user_id: userId,
+            p_amount_cents: deductedCreditCents,
+            p_type: 'cancellation_credit',
+            p_description: 'Rückbuchung: Buchung konnte nicht erstellt werden'
+          });
+        }
         // Duplicate via unique constraint? → idempotent ignore
         if (periodId) {
           await supabase.rpc('release_ticket', { p_period_id: periodId });
@@ -499,21 +540,7 @@ export default async function handler(req, res) {
           return res.status(200).json({ received: true, note: 'Duplicate, ignored' });
         }
         console.error('Database Rejected Booking:', insertError);
-        return res.status(500).json({ error: "Database Insert Failed", details: insertError });
-      }
-
-      // Deduct credit if applicable (partial credit was applied at checkout)
-      const creditToApply = parseInt(metadata.creditToApplyCents || '0', 10);
-      if (creditToApply > 0 && userId) {
-        try {
-          await supabase.rpc('deduct_credit', {
-            p_user_id: userId,
-            p_amount_cents: creditToApply,
-            p_description: `Buchung: ${courseTitle}`
-          });
-        } catch (creditErr) {
-          console.error('Credit deduction in webhook failed (non-fatal):', creditErr);
-        }
+        return res.status(500).json({ error: "Database Insert Failed" });
       }
 
       // 6. Determine language for emails + load provider name

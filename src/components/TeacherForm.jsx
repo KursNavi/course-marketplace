@@ -1383,15 +1383,6 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                 }
             }
 
-            // Null out start_date on existing events first to avoid intermediate
-            // unique-constraint violations during sequential updates
-            if (existingEventIds.length > 0) {
-                await supabase
-                    .from('course_events')
-                    .update({ start_date: null })
-                    .in('id', existingEventIds);
-            }
-
             for (const ev of validEvents) {
                 const eventPayload = {
                     course_id: activeCourseId,

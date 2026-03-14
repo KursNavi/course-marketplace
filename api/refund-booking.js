@@ -138,65 +138,57 @@ export default async function handler(req, res) {
       });
     }
 
-    // Determine credit amount
-    let creditAmountCents;
+    const coursePriceCents = Math.round((Number(booking.courses?.price) || 0) * 100);
+    const creditUsedCents = booking.credit_used_cents || 0;
+    let stripePaidCents = 0;
 
-    if (booking.paid_via_credit) {
-      // Booking was paid with credit — re-credit the same amount
-      creditAmountCents = booking.credit_used_cents || Math.round((Number(booking.courses?.price) || 0) * 100);
-    } else if (booking.stripe_payment_intent_id) {
-      // Booking was paid via Stripe — credit the amount actually paid
+    if (booking.stripe_payment_intent_id) {
       try {
         const pi = await stripe.paymentIntents.retrieve(booking.stripe_payment_intent_id);
-        creditAmountCents = pi.amount_received;
+        stripePaidCents = pi.amount_received || 0;
       } catch (stripeError) {
-        console.error('PI lookup failed, falling back to course price:', stripeError?.message);
-        creditAmountCents = Math.round((Number(booking.courses?.price) || 0) * 100);
+        console.error('PI lookup failed, falling back to stored values:', stripeError?.message);
+        stripePaidCents = Math.max(coursePriceCents - creditUsedCents, 0);
       }
-    } else {
-      creditAmountCents = Math.round((Number(booking.courses?.price) || 0) * 100);
     }
 
-    if (creditAmountCents <= 0) {
-      return res.status(400).json({ error: 'Betrag konnte nicht ermittelt werden' });
-    }
-
-    // Add credit to user's balance
+    const creditAmountCents = creditUsedCents + stripePaidCents;
     const courseTitle = booking.courses?.title || 'Kurs';
-    const { data: creditResult, error: creditError } = await supabase.rpc('add_credit', {
+    const { data: refundResult, error: refundError } = await supabase.rpc('refund_booking_to_credit', {
+      p_booking_id: bookingId,
       p_user_id: userId,
       p_amount_cents: creditAmountCents,
-      p_type: 'cancellation_credit',
-      p_reference_booking_id: bookingId,
       p_description: `Stornierung: ${courseTitle}`
     });
 
-    if (creditError) {
-      console.error('Credit addition failed:', creditError);
+    if (refundError) {
+      console.error('Atomic booking refund failed:', refundError);
       return res.status(500).json({ error: 'Gutschrift konnte nicht verarbeitet werden.' });
     }
-
-    // Update booking status
-    const { error: updateError } = await supabase
-      .from('bookings')
-      .update({
-        status: 'refunded',
-        refunded_at: new Date().toISOString()
-      })
-      .eq('id', bookingId);
-
-    if (updateError) {
-      console.error('Booking update failed:', updateError);
-    }
+    const refundMeta = refundResult?.[0];
+    const alreadyProcessed = !!refundMeta?.already_processed;
 
     // Release ticket if applicable
-    if (booking.ticket_period_id) {
+    const ticketPeriodId = refundMeta?.ticket_period_id ?? booking.ticket_period_id;
+    if (ticketPeriodId && !alreadyProcessed) {
       const { error: releaseError } = await supabase.rpc('release_ticket', {
-        p_period_id: booking.ticket_period_id
+        p_period_id: ticketPeriodId
       });
       if (releaseError) {
         console.error('Ticket release failed:', releaseError);
       }
+    }
+
+    const creditAmountCHF = (creditAmountCents / 100).toFixed(2);
+    const newBalanceCents = refundMeta?.new_balance_cents || 0;
+
+    if (alreadyProcessed) {
+      return res.status(200).json({
+        success: true,
+        message: 'Buchung war bereits storniert',
+        credit_amount_chf: creditAmountCHF,
+        new_balance_chf: (newBalanceCents / 100).toFixed(2)
+      });
     }
 
     // Send emails
@@ -206,7 +198,6 @@ export default async function handler(req, res) {
       .eq('id', userId)
       .single();
 
-    const creditAmountCHF = (creditAmountCents / 100).toFixed(2);
     const studentEmail = userProfile?.email;
     const studentLang = userProfile?.language || 'de';
     const sTexts = EMAIL_TRANSLATIONS[studentLang] || EMAIL_TRANSLATIONS.de;
@@ -258,8 +249,6 @@ export default async function handler(req, res) {
       }
     }
 
-    const newBalanceCents = creditResult?.[0]?.new_balance_cents || creditAmountCents;
-
     return res.status(200).json({
       success: true,
       message: 'Buchung storniert — Guthaben gutgeschrieben',
@@ -268,6 +257,6 @@ export default async function handler(req, res) {
     });
   } catch (error) {
     console.error('Refund Error:', error);
-    return res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: 'Interner Fehler' });
   }
 }

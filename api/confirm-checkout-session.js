@@ -143,6 +143,37 @@ export default async function handler(req, res) {
     const paidAt = new Date();
     const autoRefundUntil = calculateAutoRefundUntil(paidAt, eventStartAt, bookingType);
     const payoutEligibleAt = calculatePayoutEligibleAt(paidAt, eventEndAt, eventStartAt, bookingType);
+    const creditToApply = parseInt(metadata.creditToApplyCents || '0', 10);
+    let deductedCreditCents = 0;
+
+    if (creditToApply > 0) {
+      const { data: creditResult, error: creditError } = await supabase.rpc('deduct_credit', {
+        p_user_id: user.id,
+        p_amount_cents: creditToApply,
+        p_description: `Buchung: ${course?.title || metadata.courseTitle || 'Kurs'}`
+      });
+
+      deductedCreditCents = creditResult?.[0]?.actually_deducted || 0;
+      if (creditError || deductedCreditCents < creditToApply) {
+        if (deductedCreditCents > 0) {
+          await supabase.rpc('add_credit', {
+            p_user_id: user.id,
+            p_amount_cents: deductedCreditCents,
+            p_type: 'cancellation_credit',
+            p_description: 'Rückbuchung: Guthaben konnte nicht angewendet werden'
+          });
+        }
+        if (periodId) {
+          await supabase.rpc('release_ticket', { p_period_id: periodId });
+        }
+        try {
+          await stripe.refunds.create({ payment_intent: session.payment_intent });
+        } catch (refundError) {
+          console.error('Stripe refund failed after credit mismatch:', refundError);
+        }
+        return res.status(409).json({ error: 'Guthabenstand hat sich geändert. Die Zahlung wurde rückerstattet.' });
+      }
+    }
 
     const { error: insertError } = await supabase.from('bookings').insert({
       user_id: user.id,
@@ -157,10 +188,19 @@ export default async function handler(req, res) {
       stripe_checkout_session_id: session.id,
       ticket_period_id: periodId,
       guardian_attestation: metadata.guardianAttestation === 'true',
-      credit_used_cents: parseInt(metadata.creditToApplyCents || '0', 10) || 0
+      paid_via_credit: false,
+      credit_used_cents: deductedCreditCents
     });
 
     if (insertError) {
+      if (deductedCreditCents > 0) {
+        await supabase.rpc('add_credit', {
+          p_user_id: user.id,
+          p_amount_cents: deductedCreditCents,
+          p_type: 'cancellation_credit',
+          p_description: 'Rückbuchung: Buchung konnte nicht erstellt werden'
+        });
+      }
       if (insertError.code === '23505') {
         if (periodId) {
           await supabase.rpc('release_ticket', { p_period_id: periodId });
@@ -170,21 +210,7 @@ export default async function handler(req, res) {
       if (periodId) {
         await supabase.rpc('release_ticket', { p_period_id: periodId });
       }
-      return res.status(500).json({ error: 'Database insert failed', details: insertError });
-    }
-
-    // Deduct credit if applicable (partial credit was applied at checkout)
-    const creditToApply = parseInt(metadata.creditToApplyCents || '0', 10);
-    if (creditToApply > 0) {
-      try {
-        await supabase.rpc('deduct_credit', {
-          p_user_id: user.id,
-          p_amount_cents: creditToApply,
-          p_description: `Buchung: ${course?.title || metadata.courseTitle || 'Kurs'}`
-        });
-      } catch (creditErr) {
-        console.error('Credit deduction failed (non-fatal):', creditErr);
-      }
+      return res.status(500).json({ error: 'Database insert failed' });
     }
 
     let providerName = metadata.providerName || 'Kursanbieter';
