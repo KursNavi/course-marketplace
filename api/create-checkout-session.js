@@ -13,6 +13,39 @@ function getBaseUrl(req) {
   return raw.replace(/\/$/, '');
 }
 
+function normalizeStripeImageUrl(rawUrl) {
+  if (typeof rawUrl !== 'string') return null;
+
+  const trimmedUrl = rawUrl.trim();
+  if (!trimmedUrl) return null;
+
+  try {
+    const parsedUrl = new URL(trimmedUrl);
+    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+    const normalizedPath = parsedUrl.pathname.toLowerCase();
+
+    if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+      return null;
+    }
+
+    if (!allowedExtensions.some((extension) => normalizedPath.endsWith(extension))) {
+      return null;
+    }
+
+    return parsedUrl.toString();
+  } catch {
+    return null;
+  }
+}
+
+function toStripeMetadata(values) {
+  return Object.fromEntries(
+    Object.entries(values)
+      .filter(([, value]) => value !== undefined && value !== null)
+      .map(([key, value]) => [key, String(value)])
+  );
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -212,19 +245,38 @@ export default async function handler(req, res) {
 
     // 6. Create Stripe checkout session with v2 metadata
     const baseUrl = getBaseUrl(req);
+    const stripeImageUrl = normalizeStripeImageUrl(courseImage);
+    const productData = {
+      name: courseTitle,
+      description: creditToApply > 0
+        ? `Anbieter: ${providerName}. Guthaben verrechnet: CHF ${(creditToApply / 100).toFixed(2)}. Zahlungsabwicklung: KursNavi (LifeSkills360 GmbH).`
+        : `Anbieter: ${providerName}. Zahlungsabwicklung: KursNavi (LifeSkills360 GmbH).`,
+    };
+
+    if (stripeImageUrl) {
+      productData.images = [stripeImageUrl];
+    } else if (courseImage) {
+      console.warn('Skipping invalid Stripe checkout image URL:', courseImage);
+    }
+
+    const sessionMetadata = toStripeMetadata({
+      courseId,
+      userId,
+      eventId: eventId || '',
+      bookingType: effectiveBookingType,
+      providerName,
+      courseTitle,
+      guardianAttestation: guardianAttestation ? 'true' : 'false',
+      creditToApplyCents: creditToApply
+    });
+
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       line_items: [
         {
           price_data: {
             currency: 'chf',
-            product_data: {
-              name: courseTitle,
-              description: creditToApply > 0
-                ? `Anbieter: ${providerName}. Guthaben verrechnet: CHF ${(creditToApply / 100).toFixed(2)}. Zahlungsabwicklung: KursNavi (LifeSkills360 GmbH).`
-                : `Anbieter: ${providerName}. Zahlungsabwicklung: KursNavi (LifeSkills360 GmbH).`,
-              images: courseImage ? [courseImage] : [],
-            },
+            product_data: productData,
             unit_amount: stripeAmountCents,
           },
           quantity: 1,
@@ -238,16 +290,7 @@ export default async function handler(req, res) {
       },
       success_url: `${baseUrl}/?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${baseUrl}/course/${courseId}`,
-      metadata: {
-        courseId,
-        userId,
-        eventId: eventId || '',
-        bookingType: effectiveBookingType,
-        providerName,
-        courseTitle,
-        guardianAttestation: guardianAttestation ? 'true' : 'false',
-        creditToApplyCents: creditToApply.toString()
-      },
+      metadata: sessionMetadata,
     });
 
     res.status(200).json({ id: session.id, url: session.url });
