@@ -33,8 +33,6 @@ export async function restoreRefundedFlexBooking({
     .eq('course_id', courseId)
     .is('event_id', null)
     .eq('status', 'refunded')
-    .order('paid_at', { ascending: false })
-    .limit(1)
     .select('id')
     .maybeSingle();
 

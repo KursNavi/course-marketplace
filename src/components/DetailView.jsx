@@ -828,8 +828,8 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
                             <p className="text-xs text-amber-600 mt-1">Melde dich mit einem Teilnehmer-Konto an, um Kurse zu buchen.</p>
                         </div>
                     ) : (<>
-                    {/* Booking attestation checkbox (platform + platform_flex only) */}
-                    {(effectiveBookingType === 'platform' || effectiveBookingType === 'platform_flex') && (
+                    {/* Booking attestation checkbox for event-based bookings */}
+                    {effectiveBookingType === 'platform' && (
                         <div className="mb-4 p-3 rounded-lg border border-gray-200 bg-gray-50">
                             <label className="flex items-start cursor-pointer">
                                 <input
@@ -958,6 +958,29 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
                                         Anmelden & buchen
                                     </button>
                                     <p className="text-[11px] text-gray-500 text-center mt-1.5">Zum Buchen ist ein Konto erforderlich</p>
+                            {effectiveBookingType === 'platform_flex' && user && (
+                                <div className="mb-4 p-3 rounded-lg border border-gray-200 bg-white text-left">
+                                    <label className="flex items-start cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={guardianAttested}
+                                            onChange={(e) => setGuardianAttested(e.target.checked)}
+                                            className="mt-0.5 mr-2.5 accent-primary shrink-0"
+                                        />
+                                        <span className="text-xs text-gray-700 leading-relaxed">
+                                            {course.requires_guardian_booking
+                                                ? 'Ich best\u00e4tige, dass ich mindestens 18 Jahre alt bin, diese Buchung als erziehungsberechtigte Person vornehme und als buchende Person Vertragspartner/in sowie zahlungspflichtig bin.'
+                                                : 'Ich best\u00e4tige, dass ich mindestens 18 Jahre alt bin und diese Buchung f\u00fcr mich selbst oder mit Einverst\u00e4ndnis der teilnehmenden Person vornehme. Mir ist bewusst, dass ich als buchende Person Vertragspartner/in und zahlungspflichtig bin.'}
+                                        </span>
+                                    </label>
+                                    {course.requires_guardian_booking && (
+                                        <p className="text-xs text-amber-700 mt-2 pl-5 font-medium">
+                                            Hinweis: Dieser Kurs richtet sich an Minderj\u00e4hrige. Die Buchung muss durch eine erziehungsberechtigte Person erfolgen.
+                                        </p>
+                                    )}
+                                </div>
+                            )}
+
                                 </div>
                             ) : (
                                 <button
