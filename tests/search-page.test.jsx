@@ -20,6 +20,7 @@ vi.mock('../src/lib/supabase', () => ({
 }));
 vi.mock('../src/lib/siteConfig', () => ({
   BASE_URL: 'https://kursnavi.ch',
+  buildCoursePath: (course) => `/courses/test/${course?.id ?? 'unknown'}`,
 }));
 vi.mock('../src/lib/bereichLandingConfig', () => ({
   getBereichByAreaSlug: () => null,
