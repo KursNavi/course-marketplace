@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { BASE_URL, buildCoursePath } from '../lib/siteConfig';
 import { formatPriceCHF, getPriceLabel } from '../lib/formatPrice';
+import { getCourseCategoryText } from '../lib/courseMetadata';
 
 const SORT_OPTIONS = [
   { value: 'newest', label: 'Neueste zuerst' },
@@ -497,7 +498,7 @@ export default function ProviderProfilePage({ t, setView, setSelectedCourse }) {
                       <div className="flex-1 min-w-0">
                         <h3 className="font-bold text-gray-900 line-clamp-1">{course.title}</h3>
                         <p className="text-sm text-gray-500 mt-1">
-                          {course.category_specialty || course.category_area}
+                          {getCourseCategoryText(course)}
                         </p>
                         <div className="flex items-center gap-4 mt-2 text-sm">
                           {course.canton && (

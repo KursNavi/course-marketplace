@@ -1,5 +1,24 @@
 import { createClient } from '@supabase/supabase-js';
 
+function mapCourseCategories(categoriesData = []) {
+  return (categoriesData || []).map((cat) => ({
+    course_id: cat.course_id,
+    category_type: cat.level1_slug,
+    category_type_label: cat.level1_label_de,
+    category_area: cat.level2_slug,
+    category_area_label: cat.level2_label_de,
+    category_specialty: cat.level3_slug,
+    category_specialty_label: cat.level3_label_de,
+    category_focus: cat.level4_slug || null,
+    category_focus_label: cat.level4_label_de || null,
+    type_id: cat.level1_id,
+    area_id: cat.level2_id,
+    specialty_id: cat.level3_id,
+    focus_id: cat.level4_id,
+    is_primary: cat.is_primary
+  }));
+}
+
 /**
  * Unified Provider API
  * Handles all provider-related endpoints via action parameter
@@ -146,14 +165,32 @@ export default async function handler(req, res) {
         const { data: fullCourses, error: fullError } = await supabase
           .from('courses')
           .select(`id, title, description, price, category_type, category_area,
-            category_specialty, canton, booking_type, image_url, created_at, status`)
+            category_specialty, category_focus, canton, booking_type, image_url, created_at, status, delivery_types, delivery_type`)
           .in('id', courseIdList)
           .order('created_at', { ascending: false });
 
         if (fullError) {
           console.error('Error loading full courses:', fullError.message);
         }
-        courses = fullCourses || [];
+        const { data: categoriesData, error: categoriesError } = await supabase
+          .from('v_course_full_categories')
+          .select('*')
+          .in('course_id', courseIdList);
+
+        if (categoriesError) {
+          console.error('Error loading provider course categories:', categoriesError.message);
+        }
+
+        const categoriesByCourseId = (categoriesData || []).reduce((acc, cat) => {
+          if (!acc[cat.course_id]) acc[cat.course_id] = [];
+          acc[cat.course_id].push(cat);
+          return acc;
+        }, {});
+
+        courses = (fullCourses || []).map((course) => ({
+          ...course,
+          all_categories: mapCourseCategories(categoriesByCourseId[course.id] || [])
+        }));
       }
 
       // Filter for published courses (status = 'published' OR status is null/undefined for legacy)

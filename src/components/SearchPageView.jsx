@@ -6,9 +6,10 @@ import { CATEGORY_TYPES, AGE_GROUPS, COURSE_LEVELS, DELIVERY_TYPES, SEGMENT_CONF
 import { formatPriceCHF, getPriceLabel } from '../lib/formatPrice';
 import { useTaxonomy } from '../hooks/useTaxonomy';
 import { supabase } from '../lib/supabase';
-import { BASE_URL } from '../lib/siteConfig';
+import { BASE_URL, buildCoursePath } from '../lib/siteConfig';
 import { getBereichByAreaSlug, getBereichUrl } from '../lib/bereichLandingConfig';
 import { SEARCH_STRINGS } from '../lib/searchStrings';
+import { getNormalizedDeliveryTypes } from '../lib/courseMetadata';
 
 import { DEFAULT_COURSE_IMAGE } from '../lib/imageUtils';
 const fallbackImage = DEFAULT_COURSE_IMAGE;
@@ -786,7 +787,7 @@ const SearchPageView = ({
                       const slugify = (input) => (input || '').toString().trim().toLowerCase()
                           .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
                           .replace(/&/g, ' und ').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-                      const coursePath = `/courses/${slugify(course.primary_category || course.category_area || 'kurs')}/${slugify(course.canton || 'schweiz')}/${course.id}-${slugify(course.title || 'detail')}`;
+                      const coursePath = buildCoursePath(course) || slugify(course.title || 'detail');
 
                       items.push(
                       <a key={course.id} href={coursePath} onClick={(e) => {
@@ -839,7 +840,7 @@ const SearchPageView = ({
 
                             {/* Kursformat-Badges */}
                             {(() => {
-                                const types = course.delivery_types || (course.delivery_type ? [course.delivery_type] : []);
+                                const types = getNormalizedDeliveryTypes(course);
                                 if (types.length === 0) return null;
                                 return (
                                     <div className="flex flex-wrap gap-1 mb-3">

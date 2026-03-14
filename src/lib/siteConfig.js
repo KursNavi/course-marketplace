@@ -1,3 +1,5 @@
+import { getPrimaryCategorySlug } from './courseMetadata';
+
 /**
  * Site Configuration
  * Centralized configuration for base URLs and site metadata
@@ -58,7 +60,7 @@ export function slugify(input) {
  */
 export function buildCoursePath(course) {
   if (!course) return '/search';
-  const topic = slugify(course.primary_category || course.category_area || 'kurs');
+  const topic = slugify(getPrimaryCategorySlug(course));
   const loc = slugify(course.canton || 'schweiz');
   const title = slugify(course.title || 'detail');
   return `/courses/${topic}/${loc}/${course.id}-${title}`;

@@ -4,9 +4,10 @@ import { supabase } from '../lib/supabase';
 import { formatPriceCHF, getPriceLabel } from '../lib/formatPrice';
 import { useTaxonomy } from '../hooks/useTaxonomy';
 import { SEGMENT_CONFIG } from '../lib/constants';
-import { BASE_URL } from '../lib/siteConfig';
+import { BASE_URL, buildCoursePath } from '../lib/siteConfig';
 import { getBereichByAreaSlug, getBereichUrl } from '../lib/bereichLandingConfig';
 import { DEFAULT_COURSE_IMAGE } from '../lib/imageUtils';
+import { getCourseCategoryText, getPrimaryCategory, getPrimaryCategoryLabel, getPrimaryCategorySlug } from '../lib/courseMetadata';
 
 const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, savedCourseIds, onToggleSaveCourse, showNotification }) => {
     const [showLeadModal, setShowLeadModal] = useState(false);
@@ -153,7 +154,7 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
         const locationLabel = course.canton || 'Schweiz';
         document.title = `${course.title} in ${locationLabel} | KursNavi`;
 
-        const topicSlug = (course.category_area || 'kurs').toLowerCase().replace(/_/g, '-');
+        const topicSlug = getPrimaryCategorySlug(course).toLowerCase().replace(/_/g, '-');
         const locSlug = (course.canton || 'schweiz').toLowerCase();
         const titleSlug = (course.title || 'detail').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
         const canonicalUrl = `${BASE_URL}/courses/${topicSlug}/${locSlug}/${course.id}-${titleSlug}`;
@@ -297,8 +298,8 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
                 : course.session_length;
         }
 
-        const primaryCat = Array.isArray(course.all_categories) && (course.all_categories.find(c => c.is_primary) || course.all_categories[0]);
-        const areaLabel = primaryCat?.category_area_label || (course.category_area ? course.category_area.replace(/_/g, ' ') : null);
+        const primaryCat = getPrimaryCategory(course);
+        const areaLabel = getPrimaryCategoryLabel(course) || null;
         if (areaLabel) {
             schemaData.educationalLevel = areaLabel;
         }
@@ -991,21 +992,17 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
             <div className="mt-16 pt-10 border-t border-gray-200">
                 <h2 className="text-2xl font-bold font-heading text-dark mb-2">Nicht der richtige Kurs?</h2>
                 <p className="text-gray-500 mb-6">Entdecke diese Alternativen aus {(() => {
-                    const primary = Array.isArray(course.all_categories) && (course.all_categories.find(c => c.is_primary) || course.all_categories[0]);
-                    return primary?.category_area_label || (course.category_area ? course.category_area.replace('_', ' ') : 'unserem Angebot');
+                    return getPrimaryCategoryLabel(course) || 'unserem Angebot';
                 })()}</p>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
                     {relatedCourses.map(rel => (
                          <a key={rel.id}
-                              href={`/courses/${(rel.category_area || 'kurs').toLowerCase().replace(/_/g, '-')}/${(rel.canton || 'schweiz').toLowerCase()}/${rel.id}-${(rel.title || 'detail').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`}
+                              href={buildCoursePath(rel)}
                               onClick={(e) => {
                                   if (e.ctrlKey || e.metaKey) return;
                                   e.preventDefault();
-                                  const topicSlug = (rel.category_area || 'kurs').toLowerCase().replace(/_/g, '-');
-                                  const locSlug = (rel.canton || 'schweiz').toLowerCase();
-                                  const titleSlug = (rel.title || 'detail').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-                                  window.location.href = `/courses/${topicSlug}/${locSlug}/${rel.id}-${titleSlug}`;
+                                  window.location.href = buildCoursePath(rel);
                               }}
                               className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md cursor-pointer group transition-all"
                               style={{textDecoration: 'none', color: 'inherit'}}
@@ -1027,7 +1024,7 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
                             <div className="p-4">
                                 <h4 className="font-bold text-dark text-sm line-clamp-2 h-10 mb-2 font-heading group-hover:text-primary transition-colors">{rel.title}</h4>
                                 <div className="flex justify-between items-center text-xs text-gray-500">
-                                    <span>{rel.category_area?.replace('_', ' ')}</span>
+                                    <span>{getCourseCategoryText(rel)}</span>
                                     <span className="font-bold text-primary">{getPriceLabel(rel)}</span>
                                 </div>
                             </div>

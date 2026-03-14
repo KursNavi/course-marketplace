@@ -1,5 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
+import { buildCoursePath } from '../src/lib/siteConfig.js';
+
 export default async function handler(req, res) {
   // 1. Supabase Init (Robust Environment Check)
   const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
@@ -84,16 +86,11 @@ export default async function handler(req, res) {
 
     // 6. Generate Course URLs (Dynamic)
     const courseUrls = (courses || []).map((course) => {
-      const topicSlug = (course.category_area || 'kurs').toLowerCase().replace(/_/g, '-');
-      const locSlug = (course.canton || 'schweiz').toLowerCase();
-      const titleSlug = (course.title || 'detail')
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-|-$/g, '');
+      const path = buildCoursePath(course);
 
       return `
       <url>
-          <loc>${baseUrl}/courses/${topicSlug}/${locSlug}/${course.id}-${titleSlug}</loc>
+          <loc>${baseUrl}${path}</loc>
           <lastmod>${new Date(course.created_at).toISOString()}</lastmod>
           <changefreq>daily</changefreq>
           <priority>0.7</priority>

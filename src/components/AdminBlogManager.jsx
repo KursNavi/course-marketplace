@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { formatPriceCHF } from '../lib/formatPrice';
+import { buildCoursePath } from '../lib/siteConfig';
 // Safe Mode: Wir definieren Listen lokal, um Abstürze zu verhindern.
 import { Save, Trash2, Edit, Plus, ArrowLeft, Bold, Search, Link as LinkIcon, X, Layout, Filter } from 'lucide-react';
 
@@ -129,10 +130,7 @@ export default function AdminBlogManager({ showNotification, setView, courses })
     if (!selectedCourseId) return;
     const course = (courses || []).find(c => c.id.toString() === selectedCourseId);
     if (course) {
-        const topicSlug = (course.category_area || 'kurs').toLowerCase().replace(/_/g, '-');
-        const locSlug = (course.canton || 'schweiz').toLowerCase();
-        const titleSlug = (course.title || 'detail').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-        const url = `/courses/${topicSlug}/${locSlug}/${course.id}-${titleSlug}`;
+        const url = buildCoursePath(course);
         insertText(`<a href="${url}" title="${course.title}">${course.title}</a>`);
         setLinkToolMode(null);
     }

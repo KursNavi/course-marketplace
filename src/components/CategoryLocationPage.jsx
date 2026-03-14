@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { MapPin, TrendingUp, Clock, Award, ChevronRight, Bookmark, BookmarkCheck } from 'lucide-react';
 import { CATEGORY_TYPES } from '../lib/constants';
 import { formatPriceCHF, getPriceLabel } from '../lib/formatPrice';
-import { BASE_URL } from '../lib/siteConfig';
+import { BASE_URL, buildCoursePath } from '../lib/siteConfig';
 import { useTaxonomy } from '../hooks/useTaxonomy';
 import { DEFAULT_COURSE_IMAGE } from '../lib/imageUtils';
 
@@ -286,7 +286,7 @@ export default function CategoryLocationPage({
                                 const slugify = (input) => (input || '').toString().trim().toLowerCase()
                                     .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
                                     .replace(/&/g, ' und ').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-                                const coursePath = `/courses/${slugify(course.primary_category || course.category_area || 'kurs')}/${slugify(course.canton || 'schweiz')}/${course.id}-${slugify(course.title || 'detail')}`;
+                                const coursePath = buildCoursePath(course) || slugify(course.title || 'detail');
                                 return (
                                     <a
                                         key={course.id}

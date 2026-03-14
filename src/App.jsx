@@ -7,6 +7,7 @@ import { CATEGORY_LABELS, TRANSLATIONS, CATEGORY_TYPES } from './lib/constants';
 import { supabase } from './lib/supabase';
 import { isImageUsedByOtherCourses, deleteImageFromStorage } from './lib/imageUtils';
 import { BASE_URL, slugify as siteSlugify, buildCoursePath as siteBuildCoursePath } from './lib/siteConfig';
+import { getNormalizedDeliveryTypes, getPrimaryCategorySlug } from './lib/courseMetadata';
 import { useTaxonomy } from './hooks/useTaxonomy';
 
 const CHUNK_RELOAD_KEY = 'chunk_reload';
@@ -541,11 +542,11 @@ export default function KursNaviPro() {  // 1. Initial State Logic
   const normalizeCourse = (c) => {
     // Bereits neues Schema?
     if (c.category_type) {
-      const primary = c.primary_category || c.category_area || 'kurs';
+      const primary = getPrimaryCategorySlug(c);
       const categories =
         Array.isArray(c.categories) && c.categories.length > 0 ? c.categories : [primary];
 
-      return { ...c, primary_category: primary, categories };
+      return { ...c, primary_category: primary, categories, delivery_types: getNormalizedDeliveryTypes(c) };
     }
 
     // Migration Logic for legacy courses
@@ -591,7 +592,8 @@ export default function KursNaviPro() {  // 1. Initial State Logic
       target_age_groups: age,
       level,
       primary_category,
-      categories
+      categories,
+      delivery_types: getNormalizedDeliveryTypes(c)
     };
   };
 
@@ -1147,7 +1149,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
     let matchesDirectBooking = true; if (filterDirectBooking) matchesDirectBooking = course.booking_type === 'platform' || course.booking_type === 'platform_flex';
     let matchesDeliveryType = true;
     if (selectedDeliveryTypes.length > 0) {
-        const courseDeliveryTypes = course.delivery_types || (course.delivery_type ? [course.delivery_type] : ['presence']);
+        const courseDeliveryTypes = getNormalizedDeliveryTypes(course);
         matchesDeliveryType = selectedDeliveryTypes.some(filterType => courseDeliveryTypes.includes(filterType));
     }
 
