@@ -74,8 +74,43 @@ export function buildSyntheticCategories(course) {
     category_specialty_label: course.category_specialty_label || course.category_specialty || null,
     category_focus: course.category_focus || null,
     category_focus_label: course.category_focus_label || course.category_focus || null,
-    is_primary: true
+    is_primary: true,
+    is_synthetic: true
   }];
+}
+
+function isSyntheticCategory(category) {
+  return Boolean(
+    category?.is_synthetic ||
+    (
+      category &&
+      !category.type_id &&
+      !category.area_id &&
+      !category.specialty_id &&
+      !category.focus_id &&
+      !category.course_id
+    )
+  );
+}
+
+function getPreferredCategoryTopic(category, fallbackCourse) {
+  if (!category) return fallbackCourse?.primary_category || fallbackCourse?.category_area || 'kurs';
+
+  if (isSyntheticCategory(category)) {
+    return (
+      category.category_focus_label ||
+      category.category_focus ||
+      category.category_specialty_label ||
+      category.category_specialty ||
+      category.category_area_label ||
+      category.category_area ||
+      fallbackCourse?.primary_category ||
+      fallbackCourse?.category_area ||
+      'kurs'
+    );
+  }
+
+  return category.category_area || fallbackCourse?.primary_category || fallbackCourse?.category_area || 'kurs';
 }
 
 export function getPrimaryCategory(course) {
@@ -113,13 +148,22 @@ export function getPrimaryCategory(course) {
 
 export function getPrimaryCategorySlug(course) {
   const primary = getPrimaryCategory(course);
-  return primary?.category_area || course?.primary_category || course?.category_area || 'kurs';
+  return getPreferredCategoryTopic(primary, course);
 }
 
 export function getPrimaryCategoryLabel(course) {
   const primary = getPrimaryCategory(course);
+  if (isSyntheticCategory(primary)) {
+    const syntheticLabel = (
+      primary?.category_focus_label ||
+      primary?.category_focus ||
+      primary?.category_specialty_label ||
+      primary?.category_specialty
+    );
+    if (syntheticLabel) return syntheticLabel;
+  }
   if (primary?.category_area_label) return primary.category_area_label;
-  const area = primary?.category_area || course?.primary_category || course?.category_area;
+  const area = getPreferredCategoryTopic(primary, course);
   return area ? String(area).replace(/_/g, ' ') : '';
 }
 

@@ -58,7 +58,8 @@ describe('course metadata helpers', () => {
         category_type: 'privat',
         category_area: 'sprachen_privat',
         category_specialty_label: 'Reisevorbereitung',
-        is_primary: true
+        is_primary: true,
+        is_synthetic: true
       })
     ]);
   });
@@ -71,5 +72,19 @@ describe('course metadata helpers', () => {
     };
 
     expect(getNormalizedDeliveryTypes(course)).toEqual(['online_live']);
+  });
+
+  it('uses the most specific synthetic category for legacy detail paths and labels', () => {
+    const course = {
+      id: '363',
+      title: 'Testkurs Auto',
+      canton: 'Online',
+      category_type: 'privat_hobby',
+      category_area: 'sprachen_privat',
+      category_specialty: 'Reisevorbereitung'
+    };
+
+    expect(getPrimaryCategorySlug(course)).toBe('Reisevorbereitung');
+    expect(buildCoursePath(course)).toBe('/courses/reisevorbereitung/online/363-testkurs-auto');
   });
 });
