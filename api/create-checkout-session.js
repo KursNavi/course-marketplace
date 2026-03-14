@@ -54,7 +54,7 @@ export default async function handler(req, res) {
 
     if (courseError || !course) {
       console.error('Course lookup failed:', { courseId, courseError });
-      return res.status(400).json({ error: 'Kurs nicht gefunden' });
+      return res.status(400).json({ error: `Kurs nicht gefunden (courseId=${courseId}, dbError=${courseError?.message || 'none'})` });
     }
 
     if (course.booking_type === 'lead') {
