@@ -1032,6 +1032,10 @@ export default function KursNaviPro() {  // 1. Initial State Logic
       }
   };
 
+  // Published courses: only published (or legacy null-status) courses, visible to all.
+  // Owners always see their own drafts in Dashboard/TeacherForm, but not in public views.
+  const publishedCourses = courses.filter(c => c && (c.status === 'published' || !c.status));
+
   // Filter Logic – split into two stages:
   // 1) Pre-category: text search, location, date, price, level, language, etc.
   // 2) Category: type, area, specialty, focus
@@ -1728,7 +1732,7 @@ useEffect(() => {
       )}
 
       {!loading && view === 'home' && (
-                     <Home lang={lang} t={t} courses={courses} setView={setView} setSearchType={setSearchType} setSearchArea={setSearchArea} setSearchSpecialty={setSearchSpecialty} setSearchFocus={setSearchFocus} setSelectedCatPath={setSelectedCatPath} searchQuery={searchQuery} setSearchQuery={setSearchQuery} catMenuOpen={catMenuOpen} setCatMenuOpen={setCatMenuOpen} catMenuRef={catMenuRef} selectedLocations={selectedLocations} setSelectedLocations={setSelectedLocations} locMenuOpen={locMenuOpen} setLocMenuOpen={setLocMenuOpen} locMenuRef={locMenuRef} getCatLabel={getCatLabel} filterPro={filterPro} setFilterPro={setFilterPro} filterDirectBooking={filterDirectBooking} setFilterDirectBooking={setFilterDirectBooking} selectedDeliveryTypes={selectedDeliveryTypes} setSelectedDeliveryTypes={setSelectedDeliveryTypes} deliveryMenuOpen={deliveryMenuOpen} setDeliveryMenuOpen={setDeliveryMenuOpen} deliveryMenuRef={deliveryMenuRef} />
+                     <Home lang={lang} t={t} courses={publishedCourses} setView={setView} setSearchType={setSearchType} setSearchArea={setSearchArea} setSearchSpecialty={setSearchSpecialty} setSearchFocus={setSearchFocus} setSelectedCatPath={setSelectedCatPath} searchQuery={searchQuery} setSearchQuery={setSearchQuery} catMenuOpen={catMenuOpen} setCatMenuOpen={setCatMenuOpen} catMenuRef={catMenuRef} selectedLocations={selectedLocations} setSelectedLocations={setSelectedLocations} locMenuOpen={locMenuOpen} setLocMenuOpen={setLocMenuOpen} locMenuRef={locMenuRef} getCatLabel={getCatLabel} filterPro={filterPro} setFilterPro={setFilterPro} filterDirectBooking={filterDirectBooking} setFilterDirectBooking={setFilterDirectBooking} selectedDeliveryTypes={selectedDeliveryTypes} setSelectedDeliveryTypes={setSelectedDeliveryTypes} deliveryMenuOpen={deliveryMenuOpen} setDeliveryMenuOpen={setDeliveryMenuOpen} deliveryMenuRef={deliveryMenuRef} />
             )}
             
          {view === 'landing-private' && ( <LandingView title={t.landing_priv_title} subtitle={t.landing_priv_sub} variant="private" searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearchSubmit={handleSearchSubmit} setSelectedCatPath={setSelectedCatPath} setView={setView} t={t} getCatLabel={getCatLabel} /> )}
@@ -1744,7 +1748,7 @@ useEffect(() => {
           <CategoryLocationPage
               topicSlug={currentLocParams.topicSlug}
               locationSlug={currentLocParams.locationSlug}
-              courses={courses}
+              courses={publishedCourses}
               setSelectedCourse={setSelectedCourse}
               setView={setView}
               savedCourseIds={savedCourseIds}
@@ -1761,7 +1765,7 @@ useEffect(() => {
       {!loading && view === 'detail' && selectedCourse && (
         <DetailView
           course={selectedCourse}
-          courses={courses}
+          courses={publishedCourses}
           setView={setView}
           t={t}
           setSelectedTeacher={setSelectedTeacher}
@@ -1790,7 +1794,7 @@ useEffect(() => {
       )}
 
       {view === 'teacher-hub' && <TeacherHub setView={setView} t={t} user={user} />}
-      {view === 'teacher-profile' && selectedTeacher && ( <TeacherProfileView teacher={selectedTeacher} courses={courses} setView={setView} setSelectedCourse={setSelectedCourse} t={t} getCatLabel={getCatLabel} /> )}
+      {view === 'teacher-profile' && selectedTeacher && ( <TeacherProfileView teacher={selectedTeacher} courses={publishedCourses} setView={setView} setSelectedCourse={setSelectedCourse} t={t} getCatLabel={getCatLabel} /> )}
       {view === 'how-it-works' && <HowItWorksPage t={t} setView={setView} />}
       {view === 'login' && <AuthView setView={setView} setUser={setUser} showNotification={showNotification} lang={lang} />}
       {view === 'about' && <AboutPage t={t} setView={setView} />}
@@ -1806,7 +1810,7 @@ useEffect(() => {
       {view === 'admin' && <AdminPanel t={t} courses={courses} showNotification={showNotification} fetchCourses={fetchCourses} setView={setView} user={user} onImpersonate={setImpersonatedUser} handleEditCourse={handleEditCourse} />}
       {view === 'admin-blog' && <AdminBlogManager showNotification={showNotification} setView={setView} courses={courses} />}
       {view === 'blog' && <BlogList articles={articles} setView={setView} setSelectedArticle={setSelectedArticle} />}
-      {view === 'blog-detail' && <BlogDetail article={selectedArticle} setView={setView} courses={courses} />}
+      {view === 'blog-detail' && <BlogDetail article={selectedArticle} setView={setView} courses={publishedCourses} />}
       {view === 'provider-directory' && <ProviderDirectory t={t} setView={setView} />}
       {view === 'provider-profile' && <ProviderProfilePage t={t} setView={setView} setSelectedCourse={setSelectedCourse} />}
       {view === 'bereich-landing' && (
@@ -1814,7 +1818,7 @@ useEffect(() => {
           key={routePath}
           segment={bereichParams.segment}
           slug={bereichParams.slug}
-          courses={courses}
+          courses={publishedCourses}
           lang={lang}
           t={t}
         />
@@ -1825,7 +1829,7 @@ useEffect(() => {
           segment={bereichParams.segment}
           slug={bereichParams.slug}
           szenarioSlug={bereichParams.szenarioSlug}
-          courses={courses}
+          courses={publishedCourses}
           lang={lang}
           t={t}
         />
