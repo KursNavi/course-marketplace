@@ -137,6 +137,99 @@ async function cancelFreeBooking({ supabase, bookingId, userId, fallbackTicketPe
   };
 }
 
+async function refundBookingToCreditFallback({
+  supabase,
+  bookingId,
+  userId,
+  amountCents,
+  description,
+  fallbackTicketPeriodId
+}) {
+  const { data: currentBooking, error: currentBookingError } = await supabase
+    .from('bookings')
+    .select('status, refunded_at, ticket_period_id')
+    .eq('id', bookingId)
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (currentBookingError) {
+    throw currentBookingError;
+  }
+
+  if (!currentBooking) {
+    throw new Error(`Booking not found: ${bookingId}`);
+  }
+
+  if (currentBooking.status === 'refunded' || currentBooking.refunded_at) {
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('credit_balance_cents')
+      .eq('id', userId)
+      .single();
+
+    if (profileError) {
+      throw profileError;
+    }
+
+    return {
+      new_balance_cents: profile?.credit_balance_cents || 0,
+      ticket_period_id: currentBooking.ticket_period_id ?? fallbackTicketPeriodId,
+      already_processed: true
+    };
+  }
+
+  const { data: creditResult, error: creditError } = await supabase.rpc('add_credit', {
+    p_user_id: userId,
+    p_amount_cents: amountCents,
+    p_type: 'cancellation_credit',
+    p_reference_booking_id: bookingId,
+    p_description: description
+  });
+
+  if (creditError) {
+    throw creditError;
+  }
+
+  const newBalanceCents = creditResult?.[0]?.new_balance_cents || 0;
+
+  const { data: updatedBooking, error: bookingUpdateError } = await supabase
+    .from('bookings')
+    .update({
+      status: 'refunded',
+      refunded_at: new Date().toISOString()
+    })
+    .eq('id', bookingId)
+    .eq('user_id', userId)
+    .eq('status', 'confirmed')
+    .select('ticket_period_id')
+    .maybeSingle();
+
+  if (bookingUpdateError) {
+    await supabase.rpc('add_credit', {
+      p_user_id: userId,
+      p_amount_cents: -amountCents,
+      p_type: 'booking_deduction',
+      p_reference_booking_id: bookingId,
+      p_description: 'Rollback: Buchung konnte nicht storniert werden'
+    });
+    throw bookingUpdateError;
+  }
+
+  if (!updatedBooking) {
+    return {
+      new_balance_cents: newBalanceCents,
+      ticket_period_id: currentBooking.ticket_period_id ?? fallbackTicketPeriodId,
+      already_processed: true
+    };
+  }
+
+  return {
+    new_balance_cents: newBalanceCents,
+    ticket_period_id: updatedBooking.ticket_period_id ?? fallbackTicketPeriodId,
+    already_processed: false
+  };
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -215,11 +308,30 @@ export default async function handler(req, res) {
       });
 
       if (refundError) {
-        console.error('Atomic booking refund failed:', refundError);
-        return res.status(500).json({ error: 'Gutschrift konnte nicht verarbeitet werden.' });
-      }
+        const shouldUseFallback = refundError.code === '42804';
 
-      refundMeta = refundResult?.[0];
+        console.error('Atomic booking refund failed:', refundError);
+
+        if (!shouldUseFallback) {
+          return res.status(500).json({ error: 'Gutschrift konnte nicht verarbeitet werden.' });
+        }
+
+        try {
+          refundMeta = await refundBookingToCreditFallback({
+            supabase,
+            bookingId,
+            userId,
+            amountCents: creditAmountCents,
+            description: `Stornierung: ${courseTitle}`,
+            fallbackTicketPeriodId: booking.ticket_period_id
+          });
+        } catch (fallbackError) {
+          console.error('Refund fallback failed:', fallbackError);
+          return res.status(500).json({ error: 'Gutschrift konnte nicht verarbeitet werden.' });
+        }
+      } else {
+        refundMeta = refundResult?.[0];
+      }
     } else {
       try {
         refundMeta = await cancelFreeBooking({
