@@ -1,5 +1,38 @@
 import { createClient } from '@supabase/supabase-js';
-import { buildSyntheticCategories, normalizeCategoryType } from '../src/lib/courseMetadata.js';
+
+const LEGACY_CATEGORY_TYPE_MAP = {
+  beruflich: 'professionell',
+  privat_hobby: 'privat',
+  kinder_jugend: 'kinder'
+};
+
+function normalizeCategoryType(value) {
+  if (!value) return value ?? null;
+  const normalized = String(value).trim().toLowerCase();
+  return LEGACY_CATEGORY_TYPE_MAP[normalized] || normalized;
+}
+
+function buildSyntheticCategories(course) {
+  if (!course || Array.isArray(course.all_categories) && course.all_categories.length > 0) {
+    return Array.isArray(course?.all_categories) ? course.all_categories : [];
+  }
+
+  if (!course.category_type && !course.category_area && !course.category_specialty && !course.category_focus) {
+    return [];
+  }
+
+  return [{
+    category_type: normalizeCategoryType(course.category_type) || null,
+    category_type_label: course.category_type_label || null,
+    category_area: course.category_area || course.primary_category || null,
+    category_area_label: course.category_area_label || null,
+    category_specialty: course.category_specialty || null,
+    category_specialty_label: course.category_specialty_label || course.category_specialty || null,
+    category_focus: course.category_focus || null,
+    category_focus_label: course.category_focus_label || course.category_focus || null,
+    is_primary: true
+  }];
+}
 
 function mapCourseCategories(categoriesData = []) {
   return (categoriesData || []).map((cat) => ({
