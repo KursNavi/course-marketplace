@@ -276,9 +276,6 @@ const TeacherHub = ({ setView, user, showNotification }) => {
           </div>
 
           <div className="relative">
-            <div className="absolute -left-6 top-10 hidden rounded-full border border-white/15 bg-white/[0.06] px-4 py-2 text-sm text-white/80 backdrop-blur md:block">Anfragen zuerst</div>
-            <div className="absolute -right-5 bottom-16 hidden rounded-full border border-orange-300/30 bg-orange-400/20 px-4 py-2 text-sm text-orange-50 backdrop-blur md:block">Direktbuchung optional</div>
-
             <div className="overflow-hidden rounded-[2.25rem] border border-white/10 bg-white/[0.06] shadow-2xl shadow-black/20 backdrop-blur">
               <div className="relative border-b border-white/10 p-4">
                 <img src="/images/platform/hero-professional.svg" alt="Illustration einer Kursplattform für Anbieter" className="h-64 w-full rounded-[1.6rem] object-cover md:h-72" />
@@ -348,8 +345,12 @@ const TeacherHub = ({ setView, user, showNotification }) => {
                   <div className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
                 </div>
               </div>
-              <div className="p-5">
-                <img src="/images/platform/audience-providers.svg" alt="Illustration für Anbieter auf KursNavi" className="h-auto w-full rounded-[1.5rem] bg-[#eef4ff]" />
+              <div className="bg-[linear-gradient(180deg,#f6f9ff_0%,#eef4ff_100%)] p-5">
+                <img
+                  src="/images/platform/hero-professional.svg"
+                  alt="Visualisierung eines Kursangebots auf KursNavi"
+                  className="h-64 w-full rounded-[1.5rem] border border-white object-cover shadow-[0_12px_30px_rgba(29,79,145,0.10)]"
+                />
               </div>
             </div>
           </div>
@@ -600,37 +601,38 @@ const TeacherHub = ({ setView, user, showNotification }) => {
       <section className="bg-[#f5efe7] px-4 py-24 md:py-28">
         <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary">ROI-Beispiel</p>
-            <h2 className="mt-4 text-4xl font-bold leading-tight text-dark md:text-5xl">Schon wenige zusätzliche Teilnehmer machen den Unterschied</h2>
-            <p className="mt-5 text-lg leading-relaxed text-gray-600">Die bezahlten Pakete sollen sich nicht über Provision erklären, sondern über mehr Reichweite. Schon ein kleiner Zuwachs kann den Jahrespreis deutlich übersteigen.</p>
+            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary">Unverbindliche Beispielrechnung</p>
+            <h2 className="mt-4 text-4xl font-bold leading-tight text-dark md:text-5xl">So kann eine Beispielrechnung aussehen</h2>
+            <p className="mt-5 text-lg leading-relaxed text-gray-600">Das folgende Rechenbeispiel dient nur der Veranschaulichung. Es ist keine Zusage und keine Garantie für Reichweite, Anfragen, Buchungen oder Umsatz.</p>
+            <p className="mt-4 text-sm leading-relaxed text-gray-500">Die tatsächlichen Ergebnisse hängen unter anderem von Angebot, Preis, Region, Nachfrage, Saison, Kursqualität und Sichtbarkeit ab.</p>
           </div>
 
           <div className="rounded-[2.25rem] border border-gray-200 bg-white p-8 shadow-[0_18px_60px_rgba(34,34,34,0.06)]">
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="rounded-2xl bg-gray-50 p-5">
-                <p className="text-sm text-gray-500">Average course price</p>
+                <p className="text-sm text-gray-500">Beispielhafter Kurspreis</p>
                 <p className="mt-2 text-3xl font-bold text-gray-900">350 CHF</p>
               </div>
               <div className="rounded-2xl bg-gray-50 p-5">
-                <p className="text-sm text-gray-500">Additional participants</p>
-                <p className="mt-2 text-3xl font-bold text-gray-900">2 / month</p>
+                <p className="text-sm text-gray-500">Beispielhafte zusätzliche Teilnehmende</p>
+                <p className="mt-2 text-3xl font-bold text-gray-900">2 / Monat</p>
               </div>
             </div>
 
             <div className="mt-6 rounded-[1.75rem] bg-orange-50 p-6">
-              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">Annual uplift</p>
+              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">Beispielhafte Mehrerlöse pro Jahr</p>
               <p className="mt-3 text-4xl font-bold text-gray-900">8 400 CHF</p>
-              <p className="mt-2 text-gray-600">2 zusätzliche Teilnehmer pro Monat bei 350 CHF Kurswert.</p>
+              <p className="mt-2 text-gray-600">Rechenbeispiel auf Basis von 2 zusätzlichen Teilnehmenden pro Monat bei 350 CHF Kurswert.</p>
             </div>
 
             <div className="mt-6 flex items-center justify-between rounded-[1.75rem] border border-gray-200 px-5 py-4">
               <div>
-                <p className="text-sm text-gray-500">Enterprise plan</p>
+                <p className="text-sm text-gray-500">Enterprise-Paket</p>
                 <p className="text-xl font-bold text-gray-900">1490 CHF / Jahr</p>
               </div>
               <div className="text-right">
-                <p className="text-sm text-gray-500">Beispiel-Ergebnis</p>
-                <p className="text-xl font-bold text-emerald-700">deutlich positiv</p>
+                <p className="text-sm text-gray-500">Hinweis</p>
+                <p className="text-xl font-bold text-gray-900">Keine Garantie</p>
               </div>
             </div>
           </div>
