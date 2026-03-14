@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { buildSyntheticCategories, normalizeCategoryType } from '../src/lib/courseMetadata.js';
 
 function mapCourseCategories(categoriesData = []) {
   return (categoriesData || []).map((cat) => ({
@@ -191,7 +192,10 @@ export default async function handler(req, res) {
 
         courses = (fullCourses || []).map((course) => ({
           ...course,
-          all_categories: mapCourseCategories(categoriesByCourseId[course.id] || [])
+          category_type: normalizeCategoryType(course.category_type),
+          all_categories: (categoriesByCourseId[course.id] || []).length > 0
+            ? mapCourseCategories(categoriesByCourseId[course.id] || [])
+            : buildSyntheticCategories({ ...course, category_type: normalizeCategoryType(course.category_type) })
         }));
       }
 

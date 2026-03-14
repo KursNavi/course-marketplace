@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getCourseCategoryText, getNormalizedDeliveryTypes, getPrimaryCategorySlug } from '../src/lib/courseMetadata';
+import { buildSyntheticCategories, getCourseCategoryText, getNormalizedDeliveryTypes, getPrimaryCategorySlug, normalizeCategoryType } from '../src/lib/courseMetadata';
 import { buildCoursePath } from '../src/lib/siteConfig';
 
 describe('course metadata helpers', () => {
@@ -43,5 +43,33 @@ describe('course metadata helpers', () => {
     };
 
     expect(getCourseCategoryText(course)).toBe('Reisevorbereitung');
+  });
+
+  it('normalizes legacy segment slugs and synthesizes a primary category', () => {
+    const course = {
+      category_type: 'privat_hobby',
+      category_area: 'sprachen_privat',
+      category_specialty: 'Reisevorbereitung'
+    };
+
+    expect(normalizeCategoryType(course.category_type)).toBe('privat');
+    expect(buildSyntheticCategories(course)).toEqual([
+      expect.objectContaining({
+        category_type: 'privat',
+        category_area: 'sprachen_privat',
+        category_specialty_label: 'Reisevorbereitung',
+        is_primary: true
+      })
+    ]);
+  });
+
+  it('overrides a misleading in-person delivery flag for online-only legacy courses', () => {
+    const course = {
+      delivery_types: ['presence'],
+      canton: 'Online',
+      address: 'Online per Zoom'
+    };
+
+    expect(getNormalizedDeliveryTypes(course)).toEqual(['online_live']);
   });
 });

@@ -7,7 +7,7 @@ import { CATEGORY_LABELS, TRANSLATIONS, CATEGORY_TYPES } from './lib/constants';
 import { supabase } from './lib/supabase';
 import { isImageUsedByOtherCourses, deleteImageFromStorage } from './lib/imageUtils';
 import { BASE_URL, slugify as siteSlugify, buildCoursePath as siteBuildCoursePath } from './lib/siteConfig';
-import { getNormalizedDeliveryTypes, getPrimaryCategorySlug } from './lib/courseMetadata';
+import { buildSyntheticCategories, getNormalizedDeliveryTypes, getPrimaryCategorySlug, normalizeCategoryType } from './lib/courseMetadata';
 import { refreshCoursesAfterMutation } from './lib/courseRefresh';
 import { useTaxonomy } from './hooks/useTaxonomy';
 
@@ -544,11 +544,20 @@ export default function KursNaviPro() {  // 1. Initial State Logic
   const normalizeCourse = (c) => {
     // Bereits neues Schema?
     if (c.category_type) {
-      const primary = getPrimaryCategorySlug(c);
+      const normalizedType = normalizeCategoryType(c.category_type);
+      const syntheticCategories = buildSyntheticCategories({ ...c, category_type: normalizedType });
+      const primary = getPrimaryCategorySlug({ ...c, category_type: normalizedType, all_categories: syntheticCategories });
       const categories =
         Array.isArray(c.categories) && c.categories.length > 0 ? c.categories : [primary];
 
-      return { ...c, primary_category: primary, categories, delivery_types: getNormalizedDeliveryTypes(c) };
+      return {
+        ...c,
+        category_type: normalizedType,
+        primary_category: primary,
+        categories,
+        all_categories: syntheticCategories,
+        delivery_types: getNormalizedDeliveryTypes(c)
+      };
     }
 
     // Migration Logic for legacy courses
@@ -683,15 +692,17 @@ export default function KursNaviPro() {  // 1. Initial State Logic
           };
         });
 
-        return {
+        const normalizedWithFallbacks = {
           ...normalized,
           instructor_bio: prof?.bio_text,
           instructor_certificates: prof?.certificates,
           additional_locations: prof?.additional_locations,
           instructor_verified: prof?.verification_status === 'verified',
-          all_categories: courseCategories, // Add all categories including Zweitkategorien
+          all_categories: courseCategories.length > 0 ? courseCategories : buildSyntheticCategories(normalized), // Add real or synthesized categories
           category_paths: categoryPaths, // Add category_paths for TeacherForm
         };
+
+        return normalizedWithFallbacks;
       });
 
       setCourses(migratedData);

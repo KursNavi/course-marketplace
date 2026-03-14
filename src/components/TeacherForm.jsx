@@ -7,6 +7,7 @@ import { useTaxonomy } from '../hooks/useTaxonomy';
 import { computeImageHash, getExistingImageByHash, uploadImageWithHash, getUserCourseImages, deleteImageFromLibrary, isUnsplashUrl, importUnsplashImage, DEFAULT_COURSE_IMAGE } from '../lib/imageUtils';
 import imageCompression from 'browser-image-compression';
 import { refreshCoursesAfterMutation } from '../lib/courseRefresh';
+import { getNormalizedDeliveryTypes, normalizeCategoryType } from '../lib/courseMetadata';
 
 // --- Image Compression Helper ---
 const compressImage = async (file) => {
@@ -445,7 +446,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
     // Taxonomy State (Mehrfach-Kategorien)
     const CATEGORY_ROW_LIMITS = { basic: 1, pro: 3, premium: 3, enterprise: 5, free: 1 };
 
-    const [categories, setCategories] = useState(draft?.categories || [{ type: 'privat_hobby', area: '', specialty: '', focus: '' }]);
+    const [categories, setCategories] = useState(draft?.categories || [{ type: 'privat', area: '', specialty: '', focus: '' }]);
     const [maxCategories, setMaxCategories] = useState(1);
 
 
@@ -619,14 +620,14 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
             if (Array.isArray(initialData.category_paths) && initialData.category_paths.length > 0) {
                 console.log('[TeacherForm] Using category_paths:', initialData.category_paths);
                 setCategories(initialData.category_paths.map(c => ({
-                    type: c?.type || 'privat_hobby',
+                    type: normalizeCategoryType(c?.type) || 'privat',
                     area: c?.area || '',
                     specialty: c?.specialty || '',
                     focus: c?.focus || ''
                 })));
             } else {
                 setCategories([{
-                    type: initialData.category_type || 'privat_hobby',
+                    type: normalizeCategoryType(initialData.category_type) || 'privat',
                     area: initialData.category_area || '',
                     specialty: initialData.category_specialty || '',
                     focus: initialData.category_focus || ''
@@ -1104,7 +1105,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
 
         const cleanedCategories = categories
             .map(c => ({
-                type: (c.type || '').toString(),
+                type: normalizeCategoryType((c.type || '').toString()),
                 area: (c.area || '').toString(),
                 specialty: (c.specialty || '').toString(),
                 focus: (c.focus || '').toString()
@@ -1245,6 +1246,18 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
         // 5. Build Object - Safe access guards
         // Get numeric IDs for v2 schema
         const primaryIds = getCategoryIds(catType, catArea, catSpec, catFocus);
+        if (isV2 && !primaryIds.level3_id) {
+            window.alert("Die Kategorie konnte nicht eindeutig der aktuellen Taxonomie zugeordnet werden. Bitte wähle die Kategorie erneut aus und warte, bis die Taxonomie geladen ist.");
+            setIsSubmitting(false);
+            return;
+        }
+
+        const normalizedDeliveryTypes = getNormalizedDeliveryTypes({
+            delivery_types: deliveryTypes,
+            canton: mainCanton,
+            address: publicLocationLabel,
+            course_events: validEvents
+        });
 
         const newCourse = {
             title: titleVal,
@@ -1254,7 +1267,7 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
             rating: initialData?.rating || 0,
             category: `${catType} | ${catArea}`,
             // Legacy text fields (keep for backward compatibility)
-            category_type: catType,
+            category_type: normalizeCategoryType(catType),
             category_area: catArea,
             category_specialty: catSpec,
             category_focus: catFocus || null,
@@ -1271,7 +1284,7 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
             ticket_limit_30d: ticketLimit30d ? Number(ticketLimit30d) : null,
             external_link: null,
             level: level,
-            delivery_types: deliveryTypes,
+            delivery_types: normalizedDeliveryTypes,
             target_age_groups: [],
             canton: mainCanton,
             address: publicLocationLabel, // öffentliche "Label"-Location (ohne Strasse)

@@ -1,6 +1,11 @@
 import { DELIVERY_TYPES } from './constants';
 
 const ONLINE_HINTS = ['online', 'remote', 'zoom', 'teams', 'meet'];
+const LEGACY_CATEGORY_TYPE_MAP = {
+  beruflich: 'professionell',
+  privat_hobby: 'privat',
+  kinder_jugend: 'kinder'
+};
 
 function normalizeDeliveryTypeKey(value) {
   if (!value) return null;
@@ -41,14 +46,47 @@ function collectLocationTokens(course) {
     .map((value) => String(value).trim().toLowerCase());
 }
 
+function isOnlineToken(token) {
+  return ONLINE_HINTS.some((hint) => token.includes(hint));
+}
+
+export function normalizeCategoryType(value) {
+  if (!value) return value ?? null;
+  const normalized = String(value).trim().toLowerCase();
+  return LEGACY_CATEGORY_TYPE_MAP[normalized] || normalized;
+}
+
+export function buildSyntheticCategories(course) {
+  if (!course || Array.isArray(course.all_categories) && course.all_categories.length > 0) {
+    return Array.isArray(course?.all_categories) ? course.all_categories : [];
+  }
+
+  if (!course.category_type && !course.category_area && !course.category_specialty && !course.category_focus) {
+    return [];
+  }
+
+  return [{
+    category_type: normalizeCategoryType(course.category_type) || null,
+    category_type_label: course.category_type_label || null,
+    category_area: course.category_area || course.primary_category || null,
+    category_area_label: course.category_area_label || null,
+    category_specialty: course.category_specialty || null,
+    category_specialty_label: course.category_specialty_label || course.category_specialty || null,
+    category_focus: course.category_focus || null,
+    category_focus_label: course.category_focus_label || course.category_focus || null,
+    is_primary: true
+  }];
+}
+
 export function getPrimaryCategory(course) {
   if (!course) return null;
-  if (Array.isArray(course.all_categories) && course.all_categories.length > 0) {
-    return course.all_categories.find((entry) => entry?.is_primary) || course.all_categories[0];
+  const categories = buildSyntheticCategories(course);
+  if (categories.length > 0) {
+    return categories.find((entry) => entry?.is_primary) || categories[0];
   }
   if (course.category_type || course.category_area || course.category_specialty || course.category_focus) {
     return {
-      category_type: course.category_type || null,
+      category_type: normalizeCategoryType(course.category_type) || null,
       category_area: course.category_area || course.primary_category || null,
       category_area_label: course.category_area_label || null,
       category_specialty: course.category_specialty || null,
@@ -102,6 +140,7 @@ export function getCourseCategoryText(course) {
 }
 
 export function getNormalizedDeliveryTypes(course) {
+  const locationTokens = collectLocationTokens(course);
   const explicit = [
     ...(Array.isArray(course?.delivery_types) ? course.delivery_types : []),
     course?.delivery_type
@@ -110,10 +149,18 @@ export function getNormalizedDeliveryTypes(course) {
     .filter(Boolean);
 
   if (explicit.length > 0) {
-    return [...new Set(explicit)];
+    const uniqueExplicit = [...new Set(explicit)];
+    const hasOnlineHint = locationTokens.some((token) => isOnlineToken(token));
+    const hasPhysicalHint = locationTokens.some((token) => token && !isOnlineToken(token));
+    const onlyPresenceSelected = uniqueExplicit.every((type) => type === 'presence');
+
+    if (onlyPresenceSelected && hasOnlineHint && !hasPhysicalHint) {
+      return ['online_live'];
+    }
+
+    return uniqueExplicit;
   }
 
-  const locationTokens = collectLocationTokens(course);
-  const hasOnlineHint = locationTokens.some((token) => ONLINE_HINTS.some((hint) => token.includes(hint)));
+  const hasOnlineHint = locationTokens.some((token) => isOnlineToken(token));
   return hasOnlineHint ? ['online_live'] : [];
 }
