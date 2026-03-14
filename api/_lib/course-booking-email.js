@@ -1,5 +1,6 @@
 import PDFDocument from 'pdfkit';
 import { getBaseUrl } from './base-url.js';
+import { getEmailConfig, resolveUserEmail, sendEmailOrThrow } from './email-config.js';
 
 const COLORS = {
   primary: '#FA6E28',
@@ -193,6 +194,7 @@ export async function sendCourseBookingEmails({
     if (profile?.language) studentLang = profile.language;
   }
   const sTexts = EMAIL_TRANSLATIONS[studentLang] || EMAIL_TRANSLATIONS.de;
+  const emailConfig = getEmailConfig();
 
   let pdfBuffer = null;
   try {
@@ -212,8 +214,8 @@ export async function sendCourseBookingEmails({
         ? sTexts.student_body_flex(courseTitle, courseLocation, providerName)
         : sTexts.student_body(courseTitle, courseDate, providerName);
 
-      await resend.emails.send({
-        from: 'KursNavi <info@kursnavi.ch>',
+      await sendEmailOrThrow(resend, 'course-booking-student', {
+        from: emailConfig.from,
         to: customerEmail,
         subject: `${sTexts.student_subject}${courseTitle}`,
         html: generateEmailHtml(sTexts.student_title, emailBody, sTexts.cta_view, dashboardUrl),
@@ -237,17 +239,25 @@ export async function sendCourseBookingEmails({
     .eq('id', course.user_id)
     .maybeSingle();
 
-  const teacherEmail = teacherProfile?.email || 'btrespondek@gmail.com';
+  const teacherEmail = await resolveUserEmail(supabase, course.user_id, teacherProfile?.email);
   const teacherLang = teacherProfile?.language || 'de';
   const tTexts = EMAIL_TRANSLATIONS[teacherLang] || EMAIL_TRANSLATIONS.de;
+
+  if (!teacherEmail) {
+    console.warn('[email] course-booking-teacher skipped: missing provider email', {
+      courseId: course?.id,
+      providerUserId: course?.user_id
+    });
+    return;
+  }
 
   try {
     const teacherBody = bookingType === 'platform_flex'
       ? tTexts.teacher_body_flex(customerEmail, courseTitle, courseLocation)
       : tTexts.teacher_body(customerEmail, courseTitle, courseDate);
 
-    await resend.emails.send({
-      from: 'KursNavi <info@kursnavi.ch>',
+    await sendEmailOrThrow(resend, 'course-booking-teacher', {
+      from: emailConfig.from,
       to: teacherEmail,
       subject: `${tTexts.teacher_subject}${courseTitle}`,
       html: generateEmailHtml(tTexts.teacher_title, teacherBody, tTexts.cta_view, dashboardUrl)
@@ -273,11 +283,12 @@ export async function sendBookingAutoRefundEmail({
   }
 
   const sTexts = EMAIL_TRANSLATIONS[studentLang] || EMAIL_TRANSLATIONS.de;
+  const emailConfig = getEmailConfig();
 
   if (customerEmail) {
     try {
-      await resend.emails.send({
-        from: 'KursNavi <info@kursnavi.ch>',
+      await sendEmailOrThrow(resend, 'booking-auto-refund-student', {
+        from: emailConfig.from,
         to: customerEmail,
         subject: `${sTexts.overbooking_subject}${courseTitle}`,
         html: generateEmailHtml(

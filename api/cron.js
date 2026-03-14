@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
+import { getEmailConfig, resolveUserEmail, sendEmailOrThrow } from './_lib/email-config.js';
 
 // --- EMAIL HELPERS ---
 const EMAIL_TRANSLATIONS = {
@@ -58,7 +59,7 @@ export default async function handler(req, res) {
   const SUPABASE_URL = process.env.SUPABASE_URL;
   const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const RESEND_KEY = process.env.RESEND_API_KEY;
-  const ADMIN_EMAIL = 'btrespondek@gmail.com'; 
+  const ADMIN_EMAIL = getEmailConfig().adminEmail; 
 
   if (!SUPABASE_URL || !SUPABASE_KEY || !RESEND_KEY) {
       return res.status(500).json({ error: "Keys missing in Vercel." });
@@ -66,6 +67,7 @@ export default async function handler(req, res) {
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
   const resend = new Resend(RESEND_KEY);
+  const emailConfig = getEmailConfig();
 
   try {
     const today = new Date();
@@ -153,8 +155,8 @@ export default async function handler(req, res) {
 
         // Send email
         try {
-          await resend.emails.send({
-            from: 'KursNavi <info@kursnavi.ch>',
+          await sendEmailOrThrow(resend, 'cron-flex-payout', {
+            from: emailConfig.from,
             to: teacherEmail,
             bcc: ADMIN_EMAIL,
             subject: `${t.subject}${course.title} (Flexible Buchungen)`,
@@ -248,8 +250,8 @@ export default async function handler(req, res) {
 
         // Send email
         try {
-          await resend.emails.send({
-            from: 'KursNavi <info@kursnavi.ch>',
+          await sendEmailOrThrow(resend, 'cron-platform-payout', {
+            from: emailConfig.from,
             to: teacherEmail,
             bcc: ADMIN_EMAIL,
             subject: `${t.subject}${course.title}`,
@@ -285,8 +287,8 @@ export default async function handler(req, res) {
       ).join('');
 
       try {
-        await resend.emails.send({
-          from: 'KursNavi <info@kursnavi.ch>',
+        await sendEmailOrThrow(resend, 'cron-stale-flex-alert', {
+          from: emailConfig.from,
           to: ADMIN_EMAIL,
           subject: `Achtung: ${staleFlexBookings.length} flexible Buchung(en) ohne Durchführung seit 90+ Tagen`,
           html: generateEmailHtml(
@@ -352,8 +354,8 @@ export default async function handler(req, res) {
         const isUrgent = targetReminder === 7;
 
         try {
-          await resend.emails.send({
-            from: 'KursNavi <info@kursnavi.ch>',
+          await sendEmailOrThrow(resend, 'cron-package-reminder', {
+            from: emailConfig.from,
             to: profile.email,
             subject: isUrgent
               ? `Dein ${tierLabel} Paket läuft ${urgencyText} ab!`
@@ -422,8 +424,8 @@ export default async function handler(req, res) {
 
         // Notify user about expiry
         try {
-          await resend.emails.send({
-            from: 'KursNavi <info@kursnavi.ch>',
+          await sendEmailOrThrow(resend, 'cron-package-expired-customer', {
+            from: emailConfig.from,
             to: profile.email,
             subject: 'Dein KursNavi Abo ist abgelaufen',
             html: generateEmailHtml(
@@ -440,8 +442,8 @@ export default async function handler(req, res) {
 
         // Notify admin
         try {
-          await resend.emails.send({
-            from: 'KursNavi <info@kursnavi.ch>',
+          await sendEmailOrThrow(resend, 'cron-package-expired-admin', {
+            from: emailConfig.from,
             to: ADMIN_EMAIL,
             subject: `Abo abgelaufen: ${profile.email} (${tierLabel})`,
             html: generateEmailHtml(

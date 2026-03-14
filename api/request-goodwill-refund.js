@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
 import { getDashboardUrl } from './_lib/base-url.js';
+import { getEmailConfig, resolveUserEmail, sendEmailOrThrow } from './_lib/email-config.js';
 
 const EMAIL_TEXTS = {
   de: {
@@ -100,6 +101,7 @@ export default async function handler(req, res) {
 
   const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
   const resend = new Resend(process.env.RESEND_API_KEY);
+  const emailConfig = getEmailConfig();
   const dashboardUrl = getDashboardUrl(req);
 
   try {
@@ -187,15 +189,16 @@ export default async function handler(req, res) {
       .single();
 
     const learnerName = learnerProfile?.full_name || 'Teilnehmer/in';
-    const learnerEmail = learnerProfile?.email || authUser.email;
+    const learnerEmail = await resolveUserEmail(supabase, authUser.id, learnerProfile?.email) || authUser.email;
     const providerName = providerProfile?.full_name || 'Anbieter';
     const learnerTexts = EMAIL_TEXTS[learnerProfile?.language || 'de'] || EMAIL_TEXTS.de;
     const providerTexts = EMAIL_TEXTS[providerProfile?.language || 'de'] || EMAIL_TEXTS.de;
+    const providerEmail = await resolveUserEmail(supabase, booking.courses?.user_id, providerProfile?.email);
 
     if (learnerEmail) {
       try {
-        await resend.emails.send({
-          from: 'KursNavi <info@kursnavi.ch>',
+        await sendEmailOrThrow(resend, 'goodwill-request-learner', {
+          from: emailConfig.from,
           to: learnerEmail,
           subject: learnerTexts.learnerSubject(courseTitle),
           html: generateEmailHtml(
@@ -210,11 +213,11 @@ export default async function handler(req, res) {
       }
     }
 
-    if (providerProfile?.email) {
+    if (providerEmail) {
       try {
-        await resend.emails.send({
-          from: 'KursNavi <info@kursnavi.ch>',
-          to: providerProfile.email,
+        await sendEmailOrThrow(resend, 'goodwill-request-provider', {
+          from: emailConfig.from,
+          to: providerEmail,
           subject: providerTexts.providerSubject(courseTitle),
           html: generateEmailHtml(
             providerTexts.providerTitle,

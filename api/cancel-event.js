@@ -2,6 +2,7 @@ import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
 import { getDashboardUrl } from './_lib/base-url.js';
+import { getEmailConfig, resolveUserEmail, sendEmailOrThrow } from './_lib/email-config.js';
 
 // --- EMAIL TEMPLATE ---
 const generateEmailHtml = (title, bodyHtml, ctaText, ctaLink) => `
@@ -58,7 +59,7 @@ export default async function handler(req, res) {
   const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
   const resend = new Resend(process.env.RESEND_API_KEY);
   const dashboardUrl = getDashboardUrl(req);
-  const ADMIN_EMAIL = 'btrespondek@gmail.com';
+  const emailConfig = getEmailConfig();
 
   try {
     // 1. Verify provider identity via JWT
@@ -197,9 +198,9 @@ export default async function handler(req, res) {
     const failedRefunds = refundResults.filter(r => r.status === 'stripe_error');
     if (failedRefunds.length > 0) {
       try {
-        await resend.emails.send({
-          from: 'KursNavi <info@kursnavi.ch>',
-          to: ADMIN_EMAIL,
+        await sendEmailOrThrow(resend, 'cancel-event-admin-alert', {
+          from: emailConfig.from,
+          to: emailConfig.adminEmail,
           subject: `ACHTUNG: ${failedRefunds.length} Refund(s) fehlgeschlagen — ${courseTitle} (${eventDate})`,
           html: generateEmailHtml(
             'Refund-Fehler bei Terminabsage',
@@ -234,8 +235,8 @@ export default async function handler(req, res) {
         const coursePrice = event.courses?.price || 0;
 
         try {
-          await resend.emails.send({
-            from: 'KursNavi <info@kursnavi.ch>',
+          await sendEmailOrThrow(resend, 'cancel-event-student', {
+            from: emailConfig.from,
             to: student.email,
             subject: `Termin abgesagt: ${courseTitle}`,
             html: generateEmailHtml(
@@ -264,15 +265,17 @@ export default async function handler(req, res) {
       .eq('id', providerId)
       .single();
 
-    if (providerProfile?.email) {
+    const providerEmail = await resolveUserEmail(supabase, providerId, providerProfile?.email);
+
+    if (providerEmail) {
       const refundedCount = refundResults.filter(r => r.status === 'refunded').length;
       const totalRefundAmount = refundedCount * (event.courses?.price || 0);
 
       try {
-        await resend.emails.send({
-          from: 'KursNavi <info@kursnavi.ch>',
-          to: providerProfile.email,
-          bcc: ADMIN_EMAIL,
+        await sendEmailOrThrow(resend, 'cancel-event-provider', {
+          from: emailConfig.from,
+          to: providerEmail,
+          bcc: emailConfig.adminEmail,
           subject: `Termin abgesagt: ${courseTitle} (${eventDate})`,
           html: generateEmailHtml(
             'Terminabsage bestätigt',

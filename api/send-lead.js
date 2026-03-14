@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
 import { createHash } from 'crypto';
+import { getEmailConfig, resolveUserEmail, sendEmailOrThrow } from './_lib/email-config.js';
 
 const COLORS = {
   primary: '#FA6E28',
@@ -74,6 +75,7 @@ export default async function handler(req, res) {
       process.env.SUPABASE_SERVICE_ROLE_KEY
     );
     const resend = new Resend(process.env.RESEND_API_KEY);
+    const emailConfig = getEmailConfig();
 
     // 1. Kurs laden
     const { data: course, error: courseError } = await supabase
@@ -98,7 +100,7 @@ export default async function handler(req, res) {
         .select('email')
         .eq('id', course.user_id)
         .single();
-      teacherEmail = teacherProfile?.email;
+      teacherEmail = await resolveUserEmail(supabase, course.user_id, teacherProfile?.email);
     }
 
     if (!teacherEmail) {
@@ -164,8 +166,8 @@ export default async function handler(req, res) {
     `;
 
     try {
-      await resend.emails.send({
-        from: 'KursNavi <info@kursnavi.ch>',
+      await sendEmailOrThrow(resend, 'lead-to-provider', {
+        from: emailConfig.from,
         to: teacherEmail,
         replyTo: email,
         subject: `Neue Kursanfrage: ${course.title}`,

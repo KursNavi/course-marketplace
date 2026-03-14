@@ -448,13 +448,14 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
                     message: fd.get('message')
                 })
             });
-            if (!resp.ok) throw new Error('send failed');
+            const data = await resp.json().catch(() => ({}));
+            if (!resp.ok) throw new Error(data.error || 'Anfrage konnte nicht gesendet werden.');
             setLeadStatus('success');
             setTimeout(() => { setShowLeadModal(false); setLeadStatus('idle'); }, 2500);
         } catch (err) {
             console.error('Lead submit error:', err);
             setLeadStatus('idle');
-            if (typeof showNotification === 'function') showNotification('Anfrage konnte nicht gesendet werden. Bitte versuche es erneut.');
+            if (typeof showNotification === 'function') showNotification(err.message || 'Anfrage konnte nicht gesendet werden. Bitte versuche es erneut.');
         }
     };
 

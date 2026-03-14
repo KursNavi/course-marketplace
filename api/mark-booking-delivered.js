@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
 import { getDashboardUrl } from './_lib/base-url.js';
+import { getEmailConfig, resolveUserEmail, sendEmailOrThrow } from './_lib/email-config.js';
 
 const generateEmailHtml = (title, bodyHtml, ctaText, ctaLink) => `
 <!DOCTYPE html>
@@ -60,7 +61,7 @@ export default async function handler(req, res) {
   const token = authHeader.replace('Bearer ', '');
   const supabase = createClient(supabaseUrl, serviceKey);
   const resend = new Resend(process.env.RESEND_API_KEY);
-  const ADMIN_EMAIL = 'btrespondek@gmail.com';
+  const emailConfig = getEmailConfig();
   const dashboardUrl = getDashboardUrl(req);
 
   try {
@@ -153,13 +154,15 @@ export default async function handler(req, res) {
         .eq('id', providerId)
         .single();
 
-      await resend.emails.send({
-        from: 'KursNavi <info@kursnavi.ch>',
-        to: ADMIN_EMAIL,
+      const providerEmail = await resolveUserEmail(supabase, providerId, providerProfile?.email);
+
+      await sendEmailOrThrow(resend, 'mark-booking-delivered-admin', {
+        from: emailConfig.from,
+        to: emailConfig.adminEmail,
         subject: `Durchführung bestätigt: ${courseTitle}`,
         html: generateEmailHtml(
           'Buchung als durchgeführt markiert',
-          `<p><strong>Anbieter:</strong> ${providerProfile?.full_name || 'Unbekannt'} (${providerProfile?.email || '-'})</p>
+          `<p><strong>Anbieter:</strong> ${providerProfile?.full_name || 'Unbekannt'} (${providerEmail || '-'})</p>
            <p><strong>Kurs:</strong> ${courseTitle}</p>
            <p><strong>Buchungs-ID:</strong> ${bookingId}</p>
            <p><strong>Preis:</strong> CHF ${(booking.courses?.price || 0).toFixed(2)}</p>

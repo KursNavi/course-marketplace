@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
 import { createHash } from 'crypto';
+import { getEmailConfig, sendEmailOrThrow } from './_lib/email-config.js';
 
 const COLORS = {
   primary: '#FA6E28',
@@ -84,7 +85,7 @@ export default async function handler(req, res) {
     process.env.SUPABASE_SERVICE_ROLE_KEY
   );
   const resend = new Resend(process.env.RESEND_API_KEY);
-  const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL || 'info@kursnavi.ch';
+  const emailConfig = getEmailConfig();
 
   // 3. Auth-Check für geschützte Typen
   let authUser = null;
@@ -208,8 +209,8 @@ export default async function handler(req, res) {
     // 7. E-Mail via Resend senden
     try {
       const emailOptions = {
-        from: 'KursNavi <info@kursnavi.ch>',
-        to: SUPPORT_EMAIL,
+        from: emailConfig.from,
+        to: emailConfig.supportEmail,
         subject: emailSubject,
         html: generateEmailHtml(emailSubject, emailBodyHtml, 'Zum Admin Panel', 'https://kursnavi.ch/admin')
       };
@@ -218,7 +219,7 @@ export default async function handler(req, res) {
         emailOptions.replyTo = senderEmail;
       }
 
-      await resend.emails.send(emailOptions);
+      await sendEmailOrThrow(resend, `contact-${type}`, emailOptions);
 
       // Audit-Trail: Status → sent
       if (record?.id) {

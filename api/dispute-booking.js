@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
 import { getDashboardUrl } from './_lib/base-url.js';
+import { getEmailConfig, resolveUserEmail, sendEmailOrThrow } from './_lib/email-config.js';
 
 const generateEmailHtml = (title, bodyHtml, ctaText, ctaLink) => `
 <!DOCTYPE html>
@@ -47,7 +48,7 @@ export default async function handler(req, res) {
 
   const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
   const resend = new Resend(process.env.RESEND_API_KEY);
-  const ADMIN_EMAIL = 'btrespondek@gmail.com';
+  const emailConfig = getEmailConfig();
   const dashboardUrl = getDashboardUrl(req);
 
   try {
@@ -119,13 +120,13 @@ export default async function handler(req, res) {
       .single();
 
     const courseTitle = booking.courses?.title || 'Kurs';
-    const studentEmail = studentProfile?.email || 'Unbekannt';
+    const studentEmail = await resolveUserEmail(supabase, userId, studentProfile?.email) || 'Unbekannt';
     const studentName = studentProfile?.full_name || 'Teilnehmer';
 
     try {
-      await resend.emails.send({
-        from: 'KursNavi <info@kursnavi.ch>',
-        to: ADMIN_EMAIL,
+      await sendEmailOrThrow(resend, 'dispute-booking-admin', {
+        from: emailConfig.from,
+        to: emailConfig.adminEmail,
         subject: `Einspruch: ${courseTitle} - ${studentName}`,
         html: generateEmailHtml(
           'Neuer Einspruch eingegangen',
@@ -144,11 +145,11 @@ export default async function handler(req, res) {
       console.error('Admin dispute notification failed:', emailErr);
     }
 
-    if (studentProfile?.email) {
+    if (studentEmail && studentEmail !== 'Unbekannt') {
       try {
-        await resend.emails.send({
-          from: 'KursNavi <info@kursnavi.ch>',
-          to: studentProfile.email,
+        await sendEmailOrThrow(resend, 'dispute-booking-student', {
+          from: emailConfig.from,
+          to: studentEmail,
           subject: `Einspruch eingereicht: ${courseTitle}`,
           html: generateEmailHtml(
             'Dein Einspruch wurde registriert',

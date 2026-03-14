@@ -2,6 +2,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
 import { getDashboardUrl } from './_lib/base-url.js';
+import { getEmailConfig, resolveUserEmail, sendEmailOrThrow } from './_lib/email-config.js';
 
 const EMAIL_TRANSLATIONS = {
   en: {
@@ -143,6 +144,7 @@ export default async function handler(req, res) {
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
   const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
   const resend = new Resend(process.env.RESEND_API_KEY);
+  const emailConfig = getEmailConfig();
   const dashboardUrl = getDashboardUrl(req);
 
   try {
@@ -263,15 +265,15 @@ export default async function handler(req, res) {
       .eq('id', userId)
       .single();
 
-    const studentEmail = userProfile?.email;
+    const studentEmail = await resolveUserEmail(supabase, userId, userProfile?.email);
     const studentLang = userProfile?.language || 'de';
     const sTexts = EMAIL_TRANSLATIONS[studentLang] || EMAIL_TRANSLATIONS.de;
     const isFreeCancellation = creditAmountCents <= 0;
 
     if (studentEmail) {
       try {
-        await resend.emails.send({
-          from: 'KursNavi <info@kursnavi.ch>',
+        await sendEmailOrThrow(resend, 'refund-booking-student', {
+          from: emailConfig.from,
           to: studentEmail,
           subject: `${sTexts.student_subject}${courseTitle}`,
           html: generateEmailHtml(
@@ -295,14 +297,15 @@ export default async function handler(req, res) {
         .eq('id', booking.courses.user_id)
         .single();
 
-      if (teacherProfile?.email) {
+      const teacherEmail = await resolveUserEmail(supabase, booking.courses.user_id, teacherProfile?.email);
+      if (teacherEmail) {
         const teacherLang = teacherProfile.language || 'de';
         const tTexts = EMAIL_TRANSLATIONS[teacherLang] || EMAIL_TRANSLATIONS.de;
 
         try {
-          await resend.emails.send({
-            from: 'KursNavi <info@kursnavi.ch>',
-            to: teacherProfile.email,
+          await sendEmailOrThrow(resend, 'refund-booking-teacher', {
+            from: emailConfig.from,
+            to: teacherEmail,
             subject: `${tTexts.teacher_subject}${courseTitle}`,
             html: generateEmailHtml(
               tTexts.teacher_title,

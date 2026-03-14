@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
 import PDFDocument from 'pdfkit';
 import { getDashboardUrl } from './_lib/base-url.js';
+import { getEmailConfig, resolveUserEmail, sendEmailOrThrow } from './_lib/email-config.js';
 
 export const config = {
   api: {
@@ -297,6 +298,7 @@ export default async function handler(req, res) {
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
   const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
   const resend = new Resend(process.env.RESEND_API_KEY);
+  const emailConfig = getEmailConfig();
   const dashboardUrl = getDashboardUrl(req);
 
   const buf = await buffer(req);
@@ -399,8 +401,8 @@ export default async function handler(req, res) {
             const sTexts = EMAIL_TRANSLATIONS[studentLang] || EMAIL_TRANSLATIONS.de;
 
             try {
-              await resend.emails.send({
-                from: 'KursNavi <info@kursnavi.ch>',
+              await sendEmailOrThrow(resend, 'webhook-overbooking-student-full-event', {
+                from: emailConfig.from,
                 to: customerEmail,
                 subject: `${sTexts.overbooking_subject}${course?.title || metadata.courseTitle || 'Kurs'}`,
                 html: generateEmailHtml(
@@ -448,8 +450,8 @@ export default async function handler(req, res) {
           const sTexts = EMAIL_TRANSLATIONS[studentLang] || EMAIL_TRANSLATIONS['de'];
 
           try {
-            await resend.emails.send({
-              from: 'KursNavi <info@kursnavi.ch>',
+            await sendEmailOrThrow(resend, 'webhook-overbooking-student-ticket-limit', {
+              from: emailConfig.from,
               to: customerEmail,
               subject: `${sTexts.overbooking_subject}${courseTitle}`,
               html: generateEmailHtml(
@@ -572,13 +574,13 @@ export default async function handler(req, res) {
       }
 
       // 8. Send STUDENT Email (adapted for flex)
-      try {
-        const emailBody = bookingType === 'platform_flex'
-          ? sTexts.student_body_flex(courseTitle, courseLocation, providerName)
-          : sTexts.student_body(courseTitle, courseDate, providerName);
+        try {
+          const emailBody = bookingType === 'platform_flex'
+            ? sTexts.student_body_flex(courseTitle, courseLocation, providerName)
+            : sTexts.student_body(courseTitle, courseDate, providerName);
 
-        await resend.emails.send({
-          from: 'KursNavi <info@kursnavi.ch>',
+        await sendEmailOrThrow(resend, 'webhook-course-booking-student', {
+          from: emailConfig.from,
           to: customerEmail,
           subject: `${sTexts.student_subject}${courseTitle}`,
           html: generateEmailHtml(sTexts.student_title, emailBody, sTexts.cta_view, dashboardUrl),
@@ -597,22 +599,29 @@ export default async function handler(req, res) {
           .eq('id', course.user_id)
           .maybeSingle();
 
-        const teacherEmail = teacherProfile?.email || 'btrespondek@gmail.com';
+        const teacherEmail = await resolveUserEmail(supabase, course.user_id, teacherProfile?.email);
         const teacherLang = teacherProfile?.language || 'de';
         const tTexts = EMAIL_TRANSLATIONS[teacherLang] || EMAIL_TRANSLATIONS['de'];
 
-        try {
-          const teacherBody = bookingType === 'platform_flex'
-            ? tTexts.teacher_body_flex(customerEmail, courseTitle, courseLocation)
-            : tTexts.teacher_body(customerEmail, courseTitle, courseDate);
-
-          await resend.emails.send({
-            from: 'KursNavi <info@kursnavi.ch>',
-            to: teacherEmail,
-            subject: `${tTexts.teacher_subject}${courseTitle}`,
-            html: generateEmailHtml(tTexts.teacher_title, teacherBody, tTexts.cta_view, dashboardUrl)
+        if (!teacherEmail) {
+          console.warn('[email] webhook-course-booking-teacher skipped: missing provider email', {
+            courseId: course?.id,
+            providerUserId: course?.user_id
           });
-        } catch (tError) { console.error('Teacher Email Failed:', tError); }
+        } else {
+          try {
+            const teacherBody = bookingType === 'platform_flex'
+              ? tTexts.teacher_body_flex(customerEmail, courseTitle, courseLocation)
+              : tTexts.teacher_body(customerEmail, courseTitle, courseDate);
+
+            await sendEmailOrThrow(resend, 'webhook-course-booking-teacher', {
+              from: emailConfig.from,
+              to: teacherEmail,
+              subject: `${tTexts.teacher_subject}${courseTitle}`,
+              html: generateEmailHtml(tTexts.teacher_title, teacherBody, tTexts.cta_view, dashboardUrl)
+            });
+          } catch (tError) { console.error('Teacher Email Failed:', tError); }
+        }
       }
     }
 
@@ -689,8 +698,8 @@ export default async function handler(req, res) {
 
       // 5. Send confirmation email to user
       try {
-        await resend.emails.send({
-          from: 'KursNavi <info@kursnavi.ch>',
+        await sendEmailOrThrow(resend, 'webhook-package-upgrade-customer', {
+          from: emailConfig.from,
           to: customerEmail,
           subject: `Dein KursNavi ${tierLabel} Paket ist aktiv!`,
           html: generateEmailHtml(
@@ -707,9 +716,9 @@ export default async function handler(req, res) {
 
       // 6. Notify admin
       try {
-        await resend.emails.send({
-          from: 'KursNavi <info@kursnavi.ch>',
-          to: 'info@kursnavi.ch',
+        await sendEmailOrThrow(resend, 'webhook-package-upgrade-admin', {
+          from: emailConfig.from,
+          to: emailConfig.adminEmail,
           subject: `Neues ${tierLabel} Paket: ${customerEmail}`,
           html: generateEmailHtml(
             `Neues ${tierLabel} Paket ${isRenewal ? '(Verlängerung)' : '(Upgrade)'}`,
@@ -803,8 +812,8 @@ export default async function handler(req, res) {
 
         // 3. Send Confirmation Email to User
         try {
-            await resend.emails.send({
-                from: 'KursNavi <info@kursnavi.ch>',
+            await sendEmailOrThrow(resend, 'webhook-capture-service-customer', {
+                from: emailConfig.from,
                 to: customerEmail,
                 subject: 'Kurserfassungs-Service bestätigt',
                 html: generateEmailHtml(
@@ -821,9 +830,9 @@ export default async function handler(req, res) {
 
         // 4. Notify Admin
         try {
-            await resend.emails.send({
-                from: 'KursNavi <info@kursnavi.ch>',
-                to: 'info@kursnavi.ch',
+            await sendEmailOrThrow(resend, 'webhook-capture-service-admin', {
+                from: emailConfig.from,
+                to: emailConfig.adminEmail,
                 subject: `🎯 Neuer Erfassungsservice: ${courseCount} Kurse`,
                 html: generateEmailHtml(
                     'Neuer Kurserfassungs-Service Auftrag',
