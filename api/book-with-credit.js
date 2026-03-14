@@ -43,7 +43,7 @@ export default async function handler(req, res) {
     // 1. Load course
     const { data: course, error: courseError } = await supabase
       .from('courses')
-      .select('id, title, booking_type, ticket_limit_30d, price, user_id, requires_guardian_booking, city, canton')
+      .select('id, title, booking_type, ticket_limit_30d, price, user_id, requires_guardian_booking')
       .eq('id', courseId)
       .single();
 
@@ -249,13 +249,15 @@ export default async function handler(req, res) {
 
     // 8. Send booking confirmation emails
     let providerName = 'Kursanbieter';
+    let providerCity = '';
     if (course.user_id) {
       const { data: providerProfile } = await supabase
         .from('profiles')
-        .select('full_name')
+        .select('full_name, city, canton')
         .eq('id', course.user_id)
         .single();
       if (providerProfile?.full_name) providerName = providerProfile.full_name;
+      providerCity = providerProfile?.city || providerProfile?.canton || '';
     }
 
     try {
@@ -269,7 +271,7 @@ export default async function handler(req, res) {
         bookingType: effectiveBookingType,
         courseTitle: course.title || 'Kurs',
         courseDate: eventStartAt ? new Date(eventStartAt).toLocaleDateString('de-CH') : 'TBA',
-        courseLocation: eventLocation || course.city || course.canton || '',
+        courseLocation: eventLocation || providerCity,
         providerName,
         amountTotal: coursePriceCents,
         paidWithCredit: true
