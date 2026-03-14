@@ -279,6 +279,16 @@ export default async function handler(req, res) {
       }
 
       const sanitizedEvents = Array.isArray(validEvents) ? validEvents : [];
+      const eventKeys = sanitizedEvents.map((ev) => (
+        `${ev?.start_date || ''}|${ev?.location || ''}|${ev?.canton || ''}`
+      ));
+      const duplicateEventIndex = eventKeys.findIndex((key, index) => eventKeys.indexOf(key) !== index);
+      if (duplicateEventIndex !== -1) {
+        return res.status(400).json({
+          error: 'Zwei Termine dürfen nicht dasselbe Startdatum, denselben Ort und Kanton haben'
+        });
+      }
+
       const existingEventIds = sanitizedEvents.map(ev => ev?.id).filter(Boolean);
 
       const { data: existingEvents, error: existingEventsError } = await supabaseAdmin
