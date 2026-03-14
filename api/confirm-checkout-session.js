@@ -177,6 +177,32 @@ export default async function handler(req, res) {
       }
     }
 
+    if (bookingType === 'platform_flex' && !eventId) {
+      try {
+        const restoredBooking = await restoreRefundedFlexBooking({
+          supabase,
+          userId: user.id,
+          courseId,
+          bookingType,
+          paidAt,
+          autoRefundUntil,
+          payoutEligibleAt,
+          stripePaymentIntentId: session.payment_intent,
+          stripeCheckoutSessionId: session.id,
+          ticketPeriodId: periodId,
+          guardianAttestation: metadata.guardianAttestation === 'true',
+          paidViaCredit: false,
+          creditUsedCents: deductedCreditCents
+        });
+
+        if (restoredBooking) {
+          return res.status(200).json({ received: true, note: 'Restored refunded flex booking' });
+        }
+      } catch (restoreError) {
+        console.error('Flex rebooking pre-insert restore failed:', restoreError);
+      }
+    }
+
     const { error: insertError } = await supabase.from('bookings').insert({
       user_id: user.id,
       course_id: courseId,
@@ -201,6 +227,7 @@ export default async function handler(req, res) {
             supabase,
             userId: user.id,
             courseId,
+            bookingType,
             paidAt,
             autoRefundUntil,
             payoutEligibleAt,

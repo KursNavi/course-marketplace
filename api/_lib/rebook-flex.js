@@ -2,6 +2,7 @@ export async function restoreRefundedFlexBooking({
   supabase,
   userId,
   courseId,
+  bookingType = 'platform_flex',
   paidAt,
   autoRefundUntil,
   payoutEligibleAt,
@@ -16,6 +17,7 @@ export async function restoreRefundedFlexBooking({
     .from('bookings')
     .update({
       status: 'confirmed',
+      booking_type: bookingType,
       paid_at: paidAt.toISOString(),
       auto_refund_until: autoRefundUntil?.toISOString() || null,
       payout_eligible_at: payoutEligibleAt?.toISOString() || null,
@@ -30,7 +32,6 @@ export async function restoreRefundedFlexBooking({
     .eq('user_id', userId)
     .eq('course_id', courseId)
     .is('event_id', null)
-    .eq('booking_type', 'platform_flex')
     .eq('status', 'refunded')
     .order('paid_at', { ascending: false })
     .limit(1)

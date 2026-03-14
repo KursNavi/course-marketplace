@@ -209,6 +209,36 @@ export default async function handler(req, res) {
     const autoRefundUntil = calculateAutoRefundUntil(paidAt, eventStartAt, effectiveBookingType);
     const payoutEligibleAt = calculatePayoutEligibleAt(paidAt, eventEndAt, eventStartAt, effectiveBookingType);
 
+    if (effectiveBookingType === 'platform_flex' && !eventId) {
+      try {
+        const restoredBooking = await restoreRefundedFlexBooking({
+          supabase,
+          userId,
+          courseId,
+          bookingType: effectiveBookingType,
+          paidAt,
+          autoRefundUntil,
+          payoutEligibleAt,
+          stripePaymentIntentId: null,
+          stripeCheckoutSessionId: null,
+          ticketPeriodId: periodId,
+          guardianAttestation,
+          paidViaCredit: !isFreeCourse,
+          creditUsedCents: isFreeCourse ? 0 : coursePriceCents
+        });
+
+        if (restoredBooking) {
+          return res.status(200).json({
+            success: true,
+            restored_booking: true,
+            new_balance_chf: (newBalanceCents / 100).toFixed(2)
+          });
+        }
+      } catch (restoreError) {
+        console.error('Flex rebooking pre-insert restore failed:', restoreError);
+      }
+    }
+
     // 7. Insert booking
     const { error: insertError } = await supabase.from('bookings').insert({
       user_id: userId,
@@ -236,6 +266,7 @@ export default async function handler(req, res) {
             supabase,
             userId,
             courseId,
+            bookingType: effectiveBookingType,
             paidAt,
             autoRefundUntil,
             payoutEligibleAt,
@@ -248,6 +279,11 @@ export default async function handler(req, res) {
           });
 
           if (restoredBooking) {
+            console.info('Restored refunded flex booking before duplicate failure', {
+              bookingId: restoredBooking.id,
+              userId,
+              courseId
+            });
             return res.status(200).json({
               success: true,
               restored_booking: true,
