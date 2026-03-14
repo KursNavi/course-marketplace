@@ -1520,6 +1520,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
         if (refundingBookingId) return; // Prevent double-clicks
 
         setRefundingBookingId(bookingId);
+        let refundSucceeded = false;
         try {
             const { data: { session } } = await supabase.auth.getSession();
             if (!session?.access_token) {
@@ -1540,6 +1541,8 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                 throw new Error(data.error || 'Refund fehlgeschlagen');
             }
 
+            refundSucceeded = true;
+
             const creditAmount = Number(data.credit_amount_chf || 0);
             showNotification(
                 creditAmount > 0
@@ -1554,11 +1557,17 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
 
             // Refresh bookings list
             if (refreshBookings) {
-                await refreshBookings(userId);
+                try {
+                    await refreshBookings(userId);
+                } catch (refreshError) {
+                    console.warn('Bookings refresh after refund failed:', refreshError);
+                }
             }
         } catch (error) {
             console.error('Refund error:', error);
-            showNotification(error.message || 'Stornierung fehlgeschlagen. Bitte versuche es später erneut.', 'error');
+            if (!refundSucceeded) {
+                showNotification(error.message || 'Stornierung fehlgeschlagen. Bitte versuche es später erneut.', 'error');
+            }
         } finally {
             setRefundingBookingId(null);
         }
