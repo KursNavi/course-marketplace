@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabase';
 import { useTaxonomy } from '../hooks/useTaxonomy';
 import { computeImageHash, getExistingImageByHash, uploadImageWithHash, getUserCourseImages, deleteImageFromLibrary, isUnsplashUrl, importUnsplashImage, DEFAULT_COURSE_IMAGE } from '../lib/imageUtils';
 import imageCompression from 'browser-image-compression';
+import { refreshCoursesAfterMutation } from '../lib/courseRefresh';
 
 // --- Image Compression Helper ---
 const compressImage = async (file) => {
@@ -1468,7 +1469,7 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
         setIsDirty(false);
 
         showNotification(initialData?.id ? "Kurs aktualisiert!" : t.success_msg);
-        fetchCourses();
+        await refreshCoursesAfterMutation(fetchCourses, { followupDelayMs: courseStatus === 'published' ? 600 : 0 });
         setEditingCourse(null);
         setView('dashboard');
         setIsSubmitting(false);

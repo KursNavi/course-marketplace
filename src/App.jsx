@@ -8,6 +8,7 @@ import { supabase } from './lib/supabase';
 import { isImageUsedByOtherCourses, deleteImageFromStorage } from './lib/imageUtils';
 import { BASE_URL, slugify as siteSlugify, buildCoursePath as siteBuildCoursePath } from './lib/siteConfig';
 import { getNormalizedDeliveryTypes, getPrimaryCategorySlug } from './lib/courseMetadata';
+import { refreshCoursesAfterMutation } from './lib/courseRefresh';
 import { useTaxonomy } from './hooks/useTaxonomy';
 
 const CHUNK_RELOAD_KEY = 'chunk_reload';
@@ -491,6 +492,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
         throw error;
       }
       const statusLabels = { draft: 'Entwurf', published: 'Veröffentlicht' };
+      await refreshCoursesAfterMutation(fetchCourses, { followupDelayMs: newStatus === 'published' ? 600 : 0 });
       showNotification(`Kurs-Status: ${statusLabels[newStatus] || newStatus}`);
     } catch (error) {
       showNotification("Fehler: " + error.message);

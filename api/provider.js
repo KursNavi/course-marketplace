@@ -29,6 +29,8 @@ function mapCourseCategories(categoriesData = []) {
  * - POST action=validate-slug     → Validate a proposed slug
  */
 export default async function handler(req, res) {
+  res.setHeader('Cache-Control', 'no-store, max-age=0');
+
   // Initialize Supabase
   const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
   const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;

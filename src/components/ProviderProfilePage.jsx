@@ -40,6 +40,17 @@ export default function ProviderProfilePage({ t, setView, setSelectedCourse }) {
 
   const slug = getSlugFromUrl();
 
+  const loadProviderProfile = async (targetSlug) => {
+    const response = await fetch(`/api/provider?action=profile&slug=${targetSlug}`, {
+      cache: 'no-store',
+      headers: {
+        'Cache-Control': 'no-cache'
+      }
+    });
+    const data = await response.json();
+    return { response, data };
+  };
+
   // Fetch provider data
   useEffect(() => {
     if (!slug) {
@@ -51,8 +62,7 @@ export default function ProviderProfilePage({ t, setView, setSelectedCourse }) {
     const fetchProvider = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`/api/provider?action=profile&slug=${slug}`);
-        const data = await response.json();
+        const { response, data } = await loadProviderProfile(slug);
 
         if (!response.ok) {
           if (response.status === 404) {
@@ -67,8 +77,7 @@ export default function ProviderProfilePage({ t, setView, setSelectedCourse }) {
         if (data.redirect) {
           setRedirect(data);
           window.history.replaceState({}, '', `/anbieter/${data.newSlug}`);
-          const newResponse = await fetch(`/api/provider?action=profile&slug=${data.newSlug}`);
-          const newData = await newResponse.json();
+          const { response: newResponse, data: newData } = await loadProviderProfile(data.newSlug);
           if (newResponse.ok && !newData.redirect) {
             setProvider(newData.provider);
             setCourses(newData.courses || []);
