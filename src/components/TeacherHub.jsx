@@ -1,407 +1,670 @@
 import React, { useEffect } from 'react';
 import {
-    CheckCircle, ArrowRight, CreditCard, MessageSquare,
-    CalendarClock, BookOpen, BarChart3, UserCircle, BadgeCheck,
-    ClipboardList, User, Building2, Zap, Shield
+  ArrowRight,
+  BookOpen,
+  CheckCircle,
+  ChevronRight,
+  ClipboardList,
+  CreditCard,
+  LineChart,
+  MessageSquare,
+  Search,
+  ShieldCheck,
+  Sparkles,
+  Users,
 } from 'lucide-react';
-import PlanCardGrid from './PlanCardGrid';
 import { BASE_URL } from '../lib/siteConfig';
 
+const howItWorksSteps = [
+  {
+    number: '01',
+    title: 'Kurs erstellen',
+    description: 'Erstellen Sie eine Kursseite mit Bildern, Beschreibung und Terminen.',
+    icon: BookOpen,
+  },
+  {
+    number: '02',
+    title: 'Gefunden werden',
+    description: 'Ihre Kurse erscheinen in Suchergebnissen nach Kategorie, Ort und Thema.',
+    icon: Search,
+  },
+  {
+    number: '03',
+    title: 'Teilnehmer gewinnen',
+    description: 'Interessenten senden Anfragen oder buchen direkt online.',
+    icon: Users,
+  },
+];
+
+const courseModels = [
+  {
+    key: 'lead',
+    title: 'Lead Courses',
+    eyebrow: 'Ohne Provision',
+    icon: MessageSquare,
+    accent: 'emerald',
+    description: 'Teilnehmer kontaktieren Sie ueber ein Formular.',
+    features: ['No commission', 'Full control of booking', 'Ideal for large schools'],
+  },
+  {
+    key: 'booking',
+    title: 'Direct Booking',
+    eyebrow: 'Optional aktivierbar',
+    icon: CreditCard,
+    accent: 'orange',
+    description: 'Teilnehmer buchen den Kurs direkt ueber KursNavi.',
+    features: ['Automated booking', 'Higher conversion', 'Less administration'],
+  },
+];
+
+const comparisonRows = [
+  { feature: 'Course listing', traditional: true, kursnavi: true },
+  { feature: 'Lead inquiries', traditional: true, kursnavi: true },
+  { feature: 'Direct booking', traditional: false, kursnavi: true },
+  { feature: 'SEO landing pages', traditional: 'limited', kursnavi: true },
+  { feature: 'Analytics', traditional: false, kursnavi: true },
+];
+
+const pricingGroups = [
+  {
+    title: 'Marketplace',
+    subtitle: 'Starter (Free)',
+    highlight: 'Kostenlos starten und Leads sammeln',
+    plans: [
+      {
+        id: 'basic',
+        name: 'Start for free',
+        price: '0 CHF',
+        period: '/ year',
+        accent: 'emerald',
+        badge: 'Marketplace',
+        features: ['publish courses', 'receive inquiries', 'optional direct booking'],
+        note: 'commission only on direct bookings',
+      },
+    ],
+  },
+  {
+    title: 'Visibility & Growth',
+    subtitle: 'Pro / Premium / Enterprise',
+    highlight: 'Mehr Sichtbarkeit, mehr Daten, mehr Leads',
+    plans: [
+      {
+        id: 'pro',
+        name: 'Grow visibility',
+        price: '290 CHF',
+        period: '/ year',
+        accent: 'sky',
+        badge: 'Pro',
+        features: ['better ranking', 'analytics', 'multiple categories'],
+      },
+      {
+        id: 'premium',
+        name: 'Maximize reach',
+        price: '690 CHF',
+        period: '/ year',
+        accent: 'violet',
+        badge: 'Premium',
+        features: ['featured placement', 'advanced analytics', 'priority ranking'],
+      },
+      {
+        id: 'enterprise',
+        name: 'For large providers',
+        price: '1490 CHF',
+        period: '/ year',
+        accent: 'amber',
+        badge: 'Enterprise',
+        features: ['unlimited courses', 'maximum ranking priority', 'onboarding support', 'import service'],
+      },
+    ],
+  },
+];
+
+const accentMap = {
+  emerald: {
+    card: 'border-emerald-200 bg-emerald-50/80',
+    soft: 'bg-emerald-100 text-emerald-800',
+    icon: 'text-emerald-600',
+    button: 'border-emerald-500 text-emerald-700 hover:bg-emerald-50',
+  },
+  orange: {
+    card: 'border-orange-200 bg-orange-50/80',
+    soft: 'bg-orange-100 text-orange-800',
+    icon: 'text-orange-600',
+    button: 'bg-primary text-white hover:bg-orange-600',
+  },
+  sky: {
+    card: 'border-sky-200 bg-sky-50/80',
+    soft: 'bg-sky-100 text-sky-800',
+    icon: 'text-sky-600',
+    button: 'bg-sky-600 text-white hover:bg-sky-700',
+  },
+  violet: {
+    card: 'border-violet-200 bg-violet-50/80',
+    soft: 'bg-violet-100 text-violet-800',
+    icon: 'text-violet-600',
+    button: 'bg-violet-600 text-white hover:bg-violet-700',
+  },
+  amber: {
+    card: 'border-amber-200 bg-amber-50/80',
+    soft: 'bg-amber-100 text-amber-800',
+    icon: 'text-amber-600',
+    button: 'bg-amber-500 text-white hover:bg-amber-600',
+  },
+};
+
+const tableCellClasses = 'px-4 py-4 text-sm md:text-base';
+
 const TeacherHub = ({ setView, user, showNotification }) => {
+  useEffect(() => {
+    document.title = 'Kurse anbieten auf KursNavi | Fuer Anbieter in der Schweiz';
 
-    // SEO: B2B Specific Meta Tags
-    useEffect(() => {
-        document.title = "Kurse anbieten auf KursNavi | Für Anbieter in der Schweiz";
+    let metaDesc = document.querySelector('meta[name="description"]');
+    if (!metaDesc) {
+      metaDesc = document.createElement('meta');
+      metaDesc.name = 'description';
+      document.head.appendChild(metaDesc);
+    }
+    metaDesc.content =
+      'Mehr Teilnehmer fuer Ihre Kurse: kostenlos starten, Leads ohne Provision erhalten und Direktbuchung optional aktivieren.';
 
-        let metaDesc = document.querySelector('meta[name="description"]');
-        if (!metaDesc) {
-            metaDesc = document.createElement('meta');
-            metaDesc.name = "description";
-            document.head.appendChild(metaDesc);
-        }
-        metaDesc.content = "Biete deine Kurse auf der Schweizer Plattform an – ob Einzelanbieter oder Kursschule. Wähle zwischen Direktbuchung und Kontaktanfragen. Kostenlos starten.";
+    let linkCanonical = document.querySelector('link[rel="canonical"]');
+    if (!linkCanonical) {
+      linkCanonical = document.createElement('link');
+      linkCanonical.rel = 'canonical';
+      document.head.appendChild(linkCanonical);
+    }
+    linkCanonical.href = `${BASE_URL}/teacher-hub`;
+  }, []);
 
-        let linkCanonical = document.querySelector('link[rel="canonical"]');
-        if (!linkCanonical) {
-            linkCanonical = document.createElement('link');
-            linkCanonical.rel = "canonical";
-            document.head.appendChild(linkCanonical);
-        }
-        linkCanonical.href = `${BASE_URL}/teacher-hub`;
-    }, []);
+  const openEmailDraft = ({ subject, intro }) => {
+    const to = 'info@kursnavi.ch';
+    const name = user?.user_metadata?.full_name || user?.user_metadata?.name || '';
+    const email = user?.email || '';
 
-    const handleCta = (tier) => {
-        if (!user) {
-            localStorage.setItem('selectedPackage', tier);
-            setView('login');
-            window.scrollTo(0, 0);
-            return;
-        }
+    const body = [
+      'Hallo KursNavi Team',
+      '',
+      intro,
+      '',
+      'Meine Angaben:',
+      name ? `Name: ${name}` : 'Name:',
+      email ? `E-Mail: ${email}` : 'E-Mail:',
+      'Firma:',
+      '',
+      'Danke und Gruss',
+    ].join('\n');
 
-        if (tier === 'basic' || tier === 'basic_default') {
-            if (showNotification) showNotification("Du nutzt das Basic Paket.");
-            setView('dashboard');
-            return;
-        }
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(to).catch(() => {});
+    }
 
-        const planLabel = String(tier || "").toUpperCase();
-        const to = "info@kursnavi.ch";
-        const subject = `Upgrade Anfrage: ${planLabel} Paket`;
+    if (showNotification) {
+      showNotification('Ihr E-Mail-Programm sollte sich jetzt oeffnen. Falls nicht: info@kursnavi.ch');
+    }
 
-        const name =
-            user?.user_metadata?.full_name ||
-            user?.user_metadata?.name ||
-            "";
-        const email = user?.email || "";
+    window.location.href = `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  };
 
-        const body = [
-            "Hallo KursNavi Team",
-            "",
-            `ich möchte mein Abo auf "${planLabel}" erhöhen.`,
-            "",
-            "Meine Angaben:",
-            name ? `Name: ${name}` : "Name:",
-            email ? `E-Mail: ${email}` : "E-Mail:",
-            "Firma:",
-            "",
-            "Danke & Gruss"
-        ].join("\n");
+  const handlePrimaryCta = () => {
+    if (!user) {
+      localStorage.setItem('selectedPackage', 'basic');
+      setView('login');
+      window.scrollTo(0, 0);
+      return;
+    }
 
-        const mailto = `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    if (showNotification) showNotification('Sie koennen jetzt Ihren Anbieter-Account aufsetzen.');
+    setView('dashboard');
+  };
 
-        if (navigator?.clipboard?.writeText) {
-            navigator.clipboard.writeText(to).catch(() => {});
-        }
+  const handlePlanCta = (planId) => {
+    if (planId === 'basic') {
+      handlePrimaryCta();
+      return;
+    }
 
-        if (showNotification) {
-            showNotification("Dein E-Mail-Programm sollte sich jetzt öffnen. Falls nicht: info@kursnavi.ch (Adresse wurde kopiert).");
-        }
-
-        window.location.href = mailto;
+    const subjectMap = {
+      pro: 'Upgrade Anfrage: Pro Paket',
+      premium: 'Upgrade Anfrage: Premium Paket',
+      enterprise: 'Demo Anfrage: Enterprise Paket',
     };
 
-    const bookingModels = [
-        {
-            icon: CreditCard,
-            title: 'Direktbuchung',
-            color: 'text-green-600',
-            bgColor: 'bg-green-50',
-            borderColor: 'border-green-200',
-            description: 'Teilnehmer buchen und bezahlen direkt über die Plattform.',
-            idealFor: 'Feste Termine, Gruppenkurse & Events',
-            detail: 'Automatische Zahlungsabwicklung via Stripe. Du erhältst die Auszahlung direkt auf dein Konto.',
-        },
-        {
-            icon: CalendarClock,
-            title: 'Flexibel',
-            color: 'text-blue-600',
-            bgColor: 'bg-blue-50',
-            borderColor: 'border-blue-200',
-            description: 'Interessenten melden sich an – ihr vereinbart den Termin gemeinsam.',
-            idealFor: 'Flexible Terminplanung & Einzelunterricht',
-            detail: 'Bezahlung über die Plattform, aber der Termin wird individuell abgesprochen.',
-        },
-        {
-            icon: MessageSquare,
-            title: 'Anfrage (Lead)',
-            color: 'text-purple-600',
-            bgColor: 'bg-purple-50',
-            borderColor: 'border-purple-200',
-            description: 'Interessenten schreiben dir über ein Kontaktformular – du antwortest persönlich.',
-            idealFor: 'Individuelle Angebote & Beratung',
-            detail: 'Keine Zahlungsabwicklung nötig. Ideal, wenn du Preise individuell vereinbarst.',
-        },
-    ];
+    openEmailDraft({
+      subject: subjectMap[planId] || 'Anfrage zu Anbieter-Paketen',
+      intro:
+        planId === 'enterprise'
+          ? 'Ich moechte eine Demo fuer das Enterprise Paket buchen.'
+          : `Ich moechte mehr ueber das ${String(planId).charAt(0).toUpperCase()}${String(planId).slice(1)} Paket erfahren.`,
+    });
+  };
 
-    const features = [
-        {
-            icon: BookOpen,
-            title: 'Kursverwaltung',
-            description: 'Erstelle und verwalte unbegrenzt viele Kurse. Mit Bildern, Beschreibung, Terminen und Preisen.',
-        },
-        {
-            icon: Zap,
-            title: 'Buchungen & Anfragen',
-            description: 'Du entscheidest: Direktbuchung über die Plattform oder Kontaktformular für persönliche Anfragen.',
-        },
-        {
-            icon: BarChart3,
-            title: 'Analytics Dashboard',
-            description: 'Behalte Buchungen, Umsatz und Kursaufrufe im Blick. Erweiterte Insights ab Pro.',
-        },
-        {
-            icon: UserCircle,
-            title: 'Öffentliches Profil',
-            description: 'Deine eigene Anbieterseite mit Logo, Bio und Kursübersicht. Sichtbar im Anbieter-Verzeichnis.',
-        },
-        {
-            icon: BadgeCheck,
-            title: 'Verifizierungsbadge',
-            description: 'Lass deine Qualifikationen prüfen und erhalte den Status "Verifiziert" für mehr Vertrauen.',
-        },
-        {
-            icon: ClipboardList,
-            title: 'Erfassungsservice',
-            description: 'Keine Zeit für Dateneingabe? Wir übernehmen das Erstellen deiner Kurseinträge für dich.',
-        },
-    ];
+  const handleDemoCta = () => {
+    openEmailDraft({
+      subject: 'Demo Anfrage KursNavi fuer Anbieter',
+      intro: 'Ich moechte eine Demo fuer KursNavi als Anbieter buchen.',
+    });
+  };
 
-    const steps = [
-        { number: '1', title: 'Registriere dich kostenlos', description: 'In wenigen Klicks hast du deinen Anbieter-Account.' },
-        { number: '2', title: 'Erstelle deinen ersten Kurs', description: 'Titel, Beschreibung, Preis – in unter 10 Minuten online.' },
-        { number: '3', title: 'Empfange Buchungen oder Anfragen', description: 'Teilnehmer finden dich und buchen direkt – oder schreiben dir.' },
-    ];
+  return (
+    <div className="bg-white text-gray-900">
+      <section className="relative overflow-hidden bg-dark px-4 pb-24 pt-20 text-white">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(250,110,40,0.22),_transparent_36%),radial-gradient(circle_at_bottom_right,_rgba(56,189,248,0.18),_transparent_32%)]" />
+        <div className="relative mx-auto grid max-w-7xl gap-12 lg:grid-cols-[1.15fr_0.85fr] lg:items-center">
+          <div>
+            <div className="inline-flex items-center rounded-full border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold text-orange-200 backdrop-blur">
+              Fuer Anbieter, Schulen und Akademien
+            </div>
+            <h1 className="mt-6 max-w-3xl text-4xl font-bold leading-tight sm:text-5xl md:text-6xl">
+              Mehr Teilnehmer fuer Ihre Kurse.
+            </h1>
+            <p className="mt-6 max-w-2xl text-lg text-gray-200 md:text-xl">
+              KursNavi bringt Ihre Kurse zu Menschen, die aktiv nach Weiterbildung suchen.
+            </p>
 
-    return (
-        <div className="font-sans bg-white">
-            {/* ─── HERO ─── */}
-            <div className="relative bg-dark text-white pt-20 pb-24 px-4 overflow-hidden">
-                <div className="absolute top-0 right-0 w-1/2 h-full bg-primary opacity-10 transform skew-x-12 translate-x-20"></div>
-                <div className="max-w-5xl mx-auto relative z-10 text-center">
-                    <span className="text-primary font-bold tracking-wider uppercase text-sm">Für Kursanbieter in der Schweiz</span>
-                    <h1 className="text-4xl sm:text-5xl md:text-6xl font-heading font-bold leading-tight mt-4">
-                        Deine Kurse. <span className="text-primary">Deine Regeln.</span>
-                    </h1>
-                    <p className="text-lg md:text-xl text-gray-300 mt-6 max-w-3xl mx-auto">
-                        Ob Einzelanbieter oder Kursschule – KursNavi passt sich deinem Modell an.
-                        Empfange Anfragen über ein Kontaktformular oder verkaufe direkt über die Plattform. Kostenlos starten, ohne Risiko.
-                    </p>
-                    <div className="flex flex-col sm:flex-row gap-4 justify-center mt-10">
-                        <button onClick={() => handleCta('basic')} className="bg-primary hover:bg-orange-600 text-white px-8 py-4 rounded-full font-bold text-lg transition flex items-center justify-center shadow-lg hover:shadow-orange-500/20">
-                            Kostenlos starten <ArrowRight className="ml-2 w-5 h-5"/>
-                        </button>
-                        <a href="#pakete" onClick={(e) => { e.preventDefault(); document.getElementById('pakete')?.scrollIntoView({ behavior: 'smooth' }); }} className="border border-gray-500 hover:border-white text-white px-8 py-4 rounded-full font-bold text-lg transition flex items-center justify-center">
-                            Pakete vergleichen
-                        </a>
-                    </div>
-
-                    {/* Mini trust signals */}
-                    <div className="flex flex-wrap justify-center gap-6 mt-12 text-sm text-gray-400">
-                        <span className="flex items-center gap-1.5"><CheckCircle className="w-4 h-4 text-green-400"/> Keine Grundgebühr nötig</span>
-                        <span className="flex items-center gap-1.5"><Shield className="w-4 h-4 text-blue-400"/> Schweizer Plattform</span>
-                        <span className="flex items-center gap-1.5"><Zap className="w-4 h-4 text-yellow-400"/> In unter 10 Min. online</span>
-                    </div>
+            <div className="mt-8 grid gap-3 text-base text-gray-100 sm:grid-cols-2">
+              {[
+                'Lead-Anfragen oder Direktbuchungen',
+                'Kostenlos starten',
+                'Nur Provision bei Buchung',
+              ].map((point) => (
+                <div key={point} className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+                  <CheckCircle className="mt-0.5 h-5 w-5 shrink-0 text-orange-300" />
+                  <span>{point}</span>
                 </div>
+              ))}
             </div>
 
-            {/* ─── DEIN KURS, DEIN MODELL ─── */}
-            <div className="py-20 bg-white">
-                <div className="max-w-7xl mx-auto px-4">
-                    <div className="text-center mb-14">
-                        <h2 className="text-3xl md:text-4xl font-bold font-heading text-dark">Dein Kurs, dein Modell</h2>
-                        <p className="text-gray-600 mt-3 max-w-2xl mx-auto">
-                            Wähle, wie du mit Teilnehmern in Kontakt treten möchtest. Alle Modelle lassen sich pro Kurs individuell festlegen.
-                        </p>
-                    </div>
-                    <div className="grid md:grid-cols-3 gap-8">
-                        {bookingModels.map((model) => (
-                            <div key={model.title} className={`rounded-2xl border ${model.borderColor} p-6 hover:shadow-lg transition`}>
-                                <div className={`${model.bgColor} w-12 h-12 rounded-xl flex items-center justify-center mb-4`}>
-                                    <model.icon className={`w-6 h-6 ${model.color}`} />
-                                </div>
-                                <h3 className="text-xl font-bold font-heading text-gray-900">{model.title}</h3>
-                                <p className="text-gray-600 mt-2">{model.description}</p>
-                                <div className="mt-4 pt-4 border-t border-gray-100">
-                                    <div className="text-xs uppercase tracking-wide text-gray-400 font-bold mb-1">Ideal für</div>
-                                    <p className="text-sm text-gray-700 font-medium">{model.idealFor}</p>
-                                </div>
-                                <p className="text-sm text-gray-500 mt-3">{model.detail}</p>
-                            </div>
-                        ))}
-                    </div>
+            <div className="mt-10 flex flex-col gap-4 sm:flex-row">
+              <button
+                type="button"
+                onClick={handlePrimaryCta}
+                className="inline-flex items-center justify-center rounded-full bg-primary px-8 py-4 text-lg font-bold text-white transition hover:bg-orange-600 hover:shadow-lg hover:shadow-orange-500/20"
+              >
+                Jetzt Anbieter werden
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
+                className="inline-flex items-center justify-center rounded-full border border-white/20 px-8 py-4 text-lg font-bold text-white transition hover:border-white hover:bg-white/5"
+              >
+                Preise ansehen
+              </button>
+            </div>
+          </div>
+
+          <div className="grid gap-5">
+            <div className="rounded-[2rem] border border-white/10 bg-white/8 p-6 backdrop-blur">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-sm uppercase tracking-[0.24em] text-orange-200">Provider Model</p>
+                  <h2 className="mt-2 text-2xl font-bold">Leads zuerst, Buchung optional</h2>
                 </div>
+                <Sparkles className="h-10 w-10 text-orange-300" />
+              </div>
+              <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                <div className="rounded-2xl border border-emerald-300/30 bg-emerald-400/10 p-5">
+                  <div className="flex items-center gap-3">
+                    <MessageSquare className="h-6 w-6 text-emerald-300" />
+                    <span className="font-semibold text-emerald-100">Lead courses</span>
+                  </div>
+                  <p className="mt-3 text-sm text-gray-200">Anfragen landen direkt bei Ihnen. Keine Provision.</p>
+                </div>
+                <div className="rounded-2xl border border-orange-300/30 bg-orange-400/10 p-5">
+                  <div className="flex items-center gap-3">
+                    <CreditCard className="h-6 w-6 text-orange-300" />
+                    <span className="font-semibold text-orange-100">Direct booking</span>
+                  </div>
+                  <p className="mt-3 text-sm text-gray-200">Optional fuer Kurse, die online buchbar sein sollen.</p>
+                </div>
+              </div>
             </div>
 
-            {/* ─── FÜR JEDE GRÖSSE ─── */}
-            <div className="py-20 bg-gray-50">
-                <div className="max-w-7xl mx-auto px-4">
-                    <div className="text-center mb-14">
-                        <h2 className="text-3xl md:text-4xl font-bold font-heading text-dark">Für jede Grösse die richtige Lösung</h2>
-                        <p className="text-gray-600 mt-3 max-w-2xl mx-auto">
-                            Ob du gerade erst anfängst oder bereits eine Kursschule betreibst – KursNavi wächst mit dir.
-                        </p>
-                    </div>
-                    <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-                        {/* Einstieg */}
-                        <div className="bg-white rounded-2xl p-8 border border-green-200 hover:shadow-lg transition relative overflow-hidden">
-                            <div className="absolute top-0 right-0 bg-green-600 text-white text-xs font-bold px-3 py-1 rounded-bl-lg">EINSTIEG</div>
-                            <div className="bg-green-50 w-14 h-14 rounded-2xl flex items-center justify-center mb-5">
-                                <Zap className="w-7 h-7 text-green-600" />
-                            </div>
-                            <h3 className="text-2xl font-bold font-heading text-gray-900">Einsteiger</h3>
-                            <p className="text-gray-500 mt-1 text-sm">Erst mal ausprobieren – ohne Risiko</p>
-                            <ul className="mt-6 space-y-3">
-                                {[
-                                    'Komplett kostenlos – 0 CHF/Jahr',
-                                    'Unbegrenzte Anzahl Kurse einstellen',
-                                    'Zusätzlicher Ranking-Bonus bei Direktbuchung',
-                                    'Sofort online und sichtbar',
-                                    'Jederzeit auf Pro upgraden',
-                                ].map((text) => (
-                                    <li key={text} className={`flex items-start text-gray-700 ${text === 'Zusätzlicher Ranking-Bonus bei Direktbuchung' ? 'font-bold' : ''}`}>
-                                        <CheckCircle className="w-5 h-5 text-green-500 mr-3 mt-0.5 shrink-0" />
-                                        <span>{text}</span>
-                                    </li>
-                                ))}
-                            </ul>
-                            <button onClick={() => handleCta('basic')} className="mt-8 w-full py-3 rounded-xl font-bold transition border-2 border-green-500 text-green-700 hover:bg-green-50">
-                                Kostenlos starten
-                            </button>
-                        </div>
-
-                        {/* Einzelanbieter */}
-                        <div className="bg-white rounded-2xl p-8 border border-orange-200 hover:shadow-lg transition relative overflow-hidden">
-                            <div className="absolute top-0 right-0 bg-orange-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg">EMPFOHLEN</div>
-                            <div className="bg-orange-50 w-14 h-14 rounded-2xl flex items-center justify-center mb-5">
-                                <User className="w-7 h-7 text-orange-600" />
-                            </div>
-                            <h3 className="text-2xl font-bold font-heading text-gray-900">Einzelanbieter</h3>
-                            <p className="text-gray-500 mt-1 text-sm">Freelancer, Coaches, Trainer</p>
-                            <ul className="mt-6 space-y-3">
-                                {[
-                                    'Eigenes Profil im Anbieter-Verzeichnis',
-                                    'Erhöhte Sichtbarkeit mit Prio-Kursen',
-                                    'Anfragen per Kontaktformular oder Direktbuchung',
-                                    'Einfache Verwaltung ohne technische Kenntnisse',
-                                    'Bereits ab 290 CHF/Jahr – weniger als 1 CHF/Tag',
-                                ].map((text) => (
-                                    <li key={text} className="flex items-start text-gray-700">
-                                        <CheckCircle className="w-5 h-5 text-orange-500 mr-3 mt-0.5 shrink-0" />
-                                        <span>{text}</span>
-                                    </li>
-                                ))}
-                            </ul>
-                            <button onClick={() => handleCta('pro')} className="mt-8 w-full py-3 rounded-xl font-bold transition bg-orange-500 hover:bg-orange-600 text-white shadow-md">
-                                Pro-Paket wählen
-                            </button>
-                        </div>
-
-                        {/* Kursschulen */}
-                        <div className="bg-white rounded-2xl p-8 border border-purple-200 hover:shadow-lg transition relative overflow-hidden">
-                            <div className="absolute top-0 right-0 bg-purple-600 text-white text-xs font-bold px-3 py-1 rounded-bl-lg">MAXIMALE REICHWEITE</div>
-                            <div className="bg-purple-50 w-14 h-14 rounded-2xl flex items-center justify-center mb-5">
-                                <Building2 className="w-7 h-7 text-purple-600" />
-                            </div>
-                            <h3 className="text-2xl font-bold font-heading text-gray-900">Kursschulen & Akademien</h3>
-                            <p className="text-gray-500 mt-1 text-sm">Fitness-Studios, Sprachschulen, Bildungsanbieter</p>
-                            <ul className="mt-6 space-y-3">
-                                {[
-                                    'Unbegrenzte Prio-Kurse für maximale Sichtbarkeit',
-                                    'Bis zu 5 Kategorien pro Kurs – mehr Reichweite',
-                                    'Erhöhtes Ranking in den Suchergebnissen',
-                                    '15 Erfassungsservices inklusive',
-                                    'Nur 8% Kommission – die tiefste Stufe',
-                                ].map((text) => (
-                                    <li key={text} className="flex items-start text-gray-700">
-                                        <CheckCircle className="w-5 h-5 text-purple-500 mr-3 mt-0.5 shrink-0" />
-                                        <span>{text}</span>
-                                    </li>
-                                ))}
-                            </ul>
-                            <button onClick={() => handleCta('enterprise')} className="mt-8 w-full py-3 rounded-xl font-bold transition bg-purple-600 hover:bg-purple-700 text-white shadow-md">
-                                Enterprise-Paket wählen
-                            </button>
-                        </div>
-                    </div>
-                </div>
+            <div className="grid gap-5 sm:grid-cols-3">
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+                <p className="text-sm text-gray-300">Startkosten</p>
+                <p className="mt-2 text-3xl font-bold text-white">0 CHF</p>
+                <p className="mt-2 text-sm text-gray-400">Starter ist kostenlos.</p>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+                <p className="text-sm text-gray-300">Provision</p>
+                <p className="mt-2 text-3xl font-bold text-white">nur bei Buchung</p>
+                <p className="mt-2 text-sm text-gray-400">Lead-Kurse bleiben provisionsfrei.</p>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+                <p className="text-sm text-gray-300">Paid plans</p>
+                <p className="mt-2 text-3xl font-bold text-white">mehr Sichtbarkeit</p>
+                <p className="mt-2 text-sm text-gray-400">Besseres Ranking und mehr Reichweite.</p>
+              </div>
             </div>
-
-            {/* ─── ALLES WAS DU BRAUCHST ─── */}
-            <div className="py-20 bg-white">
-                <div className="max-w-7xl mx-auto px-4">
-                    <div className="text-center mb-14">
-                        <h2 className="text-3xl md:text-4xl font-bold font-heading text-dark">Alles was du brauchst</h2>
-                        <p className="text-gray-600 mt-3 max-w-2xl mx-auto">
-                            KursNavi bietet dir die Werkzeuge, um deine Kurse erfolgreich zu vermarkten und zu verwalten.
-                        </p>
-                    </div>
-                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {features.map((feature) => (
-                            <div key={feature.title} className="p-6 rounded-2xl border border-gray-100 hover:border-gray-200 hover:shadow-md transition">
-                                <div className="bg-gray-100 w-11 h-11 rounded-lg flex items-center justify-center mb-4">
-                                    <feature.icon className="w-5 h-5 text-dark" />
-                                </div>
-                                <h3 className="text-lg font-bold text-gray-900">{feature.title}</h3>
-                                <p className="text-gray-600 text-sm mt-2">{feature.description}</p>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </div>
-
-            {/* ─── SO EINFACH GEHT'S ─── */}
-            <div className="py-20 bg-gray-50">
-                <div className="max-w-4xl mx-auto px-4">
-                    <div className="text-center mb-14">
-                        <h2 className="text-3xl md:text-4xl font-bold font-heading text-dark">So einfach geht's</h2>
-                        <p className="text-gray-600 mt-3">In drei Schritten von der Registrierung zum ersten Teilnehmer.</p>
-                    </div>
-                    <div className="grid md:grid-cols-3 gap-8">
-                        {steps.map((step) => (
-                            <div key={step.number} className="text-center">
-                                <div className="w-14 h-14 rounded-full bg-primary text-white text-2xl font-bold flex items-center justify-center mx-auto mb-4">
-                                    {step.number}
-                                </div>
-                                <h3 className="text-lg font-bold text-gray-900 font-heading">{step.title}</h3>
-                                <p className="text-gray-600 text-sm mt-2">{step.description}</p>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </div>
-
-            {/* ─── PRICING / PACKAGES ─── */}
-            <div id="pakete" className="py-20 max-w-7xl mx-auto px-4">
-                <div className="text-center mb-12">
-                    <h2 className="text-3xl md:text-4xl font-bold font-heading text-dark mb-4">Wähle dein Anbieter-Paket</h2>
-                    <p className="text-gray-600 max-w-2xl mx-auto">
-                        Fair und transparent. Wähle das Paket, das zu deinem Kursvolumen passt.
-                    </p>
-                </div>
-
-                <PlanCardGrid onPlanSelect={(plan) => handleCta(plan.id)} />
-
-                {/* Service Add-on */}
-                <div className="mt-12 bg-gray-50 rounded-xl p-6 border border-gray-200 flex flex-col md:flex-row items-center justify-between gap-6">
-                    <div>
-                        <h4 className="font-bold text-lg flex items-center gap-2"><div className="bg-primary text-white p-1 rounded-md"><CheckCircle className="w-4 h-4"/></div> Kurserfassungsservice</h4>
-                        <p className="text-gray-600 text-sm mt-1">Keine Zeit für Dateneingabe? Wir übernehmen das für dich.</p>
-                        <p className="text-xs text-gray-500 mt-2">Gilt für alle Pakete.</p>
-                    </div>
-                    <div className="text-right">
-                        <span className="block text-gray-800 font-bold text-lg">75 CHF <span className="text-sm font-normal">pro Kurs</span></span>
-                        <span className="text-xs text-gray-500">ab dem 4. Kurs: 50 CHF</span>
-                    </div>
-                </div>
-            </div>
-
-            {/* ─── CTA BOTTOM ─── */}
-            <div className="bg-dark py-20">
-                <div className="max-w-4xl mx-auto px-4 text-center">
-                    <h2 className="text-3xl md:text-4xl font-bold font-heading text-white mb-6">Bereit, loszulegen?</h2>
-                    <p className="text-lg text-gray-300 mb-8">
-                        Erstelle heute noch deinen ersten Kurs und erreiche neue Teilnehmer in der ganzen Schweiz.
-                    </p>
-                    <button onClick={() => handleCta('basic')} className="bg-primary hover:bg-orange-600 text-white px-10 py-4 rounded-full font-bold text-lg transition shadow-xl hover:shadow-orange-500/20">
-                        Jetzt kostenlos starten
-                    </button>
-                    <p className="text-gray-500 text-sm mt-4">Kein Abo nötig. Du kannst jederzeit upgraden.</p>
-                </div>
-            </div>
-
-            {/* Schema.org for B2B Page */}
-            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
-                "@context": "https://schema.org",
-                "@type": "WebPage",
-                "name": "KursNavi – Für Anbieter",
-                "description": "Plattform für Kursanbieter in der Schweiz. Kostenlos starten, Kurse anbieten und Teilnehmer erreichen.",
-                "audience": {
-                    "@type": "BusinessAudience",
-                    "audienceType": "Course Instructors, Teachers, Coaches"
-                }
-            })}} />
+          </div>
         </div>
-    );
+      </section>
+
+      <section className="px-4 py-20 md:py-24">
+        <div className="mx-auto max-w-7xl">
+          <div className="max-w-3xl">
+            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary">How KursNavi Works</p>
+            <h2 className="mt-4 text-3xl font-bold text-dark md:text-4xl">So gewinnen Anbieter Teilnehmer ueber den Marktplatz</h2>
+            <p className="mt-4 text-lg text-gray-600">
+              Der Ablauf ist bewusst einfach: Kurs erfassen, in der Suche sichtbar werden und ueber Leads oder Direktbuchungen neue Teilnehmer gewinnen.
+            </p>
+          </div>
+
+          <div className="mt-12 grid gap-6 lg:grid-cols-3">
+            {howItWorksSteps.map((step, index) => {
+              const Icon = step.icon;
+              return (
+                <div key={step.number} className="relative rounded-[2rem] border border-gray-200 bg-white p-8 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-semibold uppercase tracking-[0.22em] text-gray-400">{step.number}</span>
+                    <div className="rounded-2xl bg-orange-50 p-3 text-primary">
+                      <Icon className="h-6 w-6" />
+                    </div>
+                  </div>
+                  <h3 className="mt-8 text-2xl font-bold text-gray-900">{step.title}</h3>
+                  <p className="mt-4 text-gray-600">{step.description}</p>
+                  {index < howItWorksSteps.length - 1 ? (
+                    <ChevronRight className="absolute -right-3 top-1/2 hidden h-8 w-8 -translate-y-1/2 rounded-full bg-white text-gray-300 shadow lg:block" />
+                  ) : null}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-stone-50 px-4 py-20 md:py-24">
+        <div className="mx-auto max-w-7xl">
+          <div className="max-w-3xl">
+            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary">Two Course Models</p>
+            <h2 className="mt-4 text-3xl font-bold text-dark md:text-4xl">Zwei Modelle, ein Ziel: mehr passende Teilnehmer</h2>
+            <p className="mt-4 text-lg text-gray-600">
+              Waehlen Sie pro Kurs, ob Interessenten zuerst anfragen oder direkt buchen sollen. So passt sich KursNavi an Ihren Vertriebsprozess an.
+            </p>
+          </div>
+
+          <div className="mt-12 grid gap-6 lg:grid-cols-2">
+            {courseModels.map((model) => {
+              const Icon = model.icon;
+              const accent = accentMap[model.accent];
+              return (
+                <div key={model.key} className={`rounded-[2rem] border p-8 shadow-sm ${accent.card}`}>
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <span className={`inline-flex rounded-full px-3 py-1 text-sm font-semibold ${accent.soft}`}>{model.eyebrow}</span>
+                      <h3 className="mt-5 text-3xl font-bold text-gray-900">{model.title}</h3>
+                    </div>
+                    <div className="rounded-2xl bg-white p-4 shadow-sm">
+                      <Icon className={`h-8 w-8 ${accent.icon}`} />
+                    </div>
+                  </div>
+                  <p className="mt-5 text-lg text-gray-700">{model.description}</p>
+                  <div className="mt-8 space-y-4">
+                    {model.features.map((feature) => (
+                      <div key={feature} className="flex items-start gap-3 rounded-2xl bg-white/80 px-4 py-3">
+                        <CheckCircle className={`mt-0.5 h-5 w-5 shrink-0 ${accent.icon}`} />
+                        <span className="font-medium text-gray-800">{feature}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="mt-8 rounded-[2rem] border border-gray-200 bg-white p-6 shadow-sm md:p-8">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <div className="flex items-start gap-4">
+                <div className="rounded-2xl bg-orange-50 p-3 text-primary">
+                  <ShieldCheck className="h-6 w-6" />
+                </div>
+                <div>
+                  <p className="text-lg font-bold text-gray-900">Commission is only charged on successful direct bookings.</p>
+                  <p className="mt-2 text-gray-600">
+                    Lead courses have no commission. Sie zahlen nur dann eine Provision, wenn Sie die Direktbuchung fuer einen Kurs aktivieren und eine Buchung erfolgreich abgeschlossen wird.
+                  </p>
+                </div>
+              </div>
+              <div className="rounded-2xl bg-emerald-50 px-5 py-4 text-center">
+                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-700">Wichtig</p>
+                <p className="mt-1 text-lg font-bold text-emerald-800">Lead courses have no commission.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="px-4 py-20 md:py-24">
+        <div className="mx-auto max-w-7xl">
+          <div className="max-w-3xl">
+            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary">Why KursNavi</p>
+            <h2 className="mt-4 text-3xl font-bold text-dark md:text-4xl">Mehr als ein klassisches Kursverzeichnis</h2>
+            <p className="mt-4 text-lg text-gray-600">
+              KursNavi kombiniert Sichtbarkeit, Lead-Generierung und optionale Direktbuchung auf einer Plattform.
+            </p>
+          </div>
+
+          <div className="mt-12 overflow-hidden rounded-[2rem] border border-gray-200 bg-white shadow-sm">
+            <table className="min-w-full border-collapse">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className={`${tableCellClasses} text-left font-bold text-gray-800`}>Feature</th>
+                  <th className={`${tableCellClasses} text-left font-bold text-gray-800`}>Traditional course directories</th>
+                  <th className={`${tableCellClasses} text-left font-bold text-gray-800`}>KursNavi</th>
+                </tr>
+              </thead>
+              <tbody>
+                {comparisonRows.map((row) => (
+                  <tr key={row.feature} className="border-t border-gray-100">
+                    <td className={`${tableCellClasses} font-medium text-gray-900`}>{row.feature}</td>
+                    <td className={`${tableCellClasses} text-gray-600`}>
+                      {row.traditional === true ? (
+                        <CheckCircle className="h-5 w-5 text-emerald-600" />
+                      ) : row.traditional === false ? (
+                        <span className="text-xl text-gray-300">✗</span>
+                      ) : (
+                        <span className="rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-gray-600">{row.traditional}</span>
+                      )}
+                    </td>
+                    <td className={`${tableCellClasses} text-gray-700`}>
+                      {row.kursnavi === true ? (
+                        <CheckCircle className="h-5 w-5 text-primary" />
+                      ) : (
+                        <span>{String(row.kursnavi)}</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section id="pricing" className="bg-dark px-4 py-20 text-white md:py-24">
+        <div className="mx-auto max-w-7xl">
+          <div className="max-w-3xl">
+            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-orange-200">Pricing</p>
+            <h2 className="mt-4 text-3xl font-bold md:text-5xl">Pakete fuer Sichtbarkeit und Wachstum</h2>
+            <p className="mt-4 text-lg text-gray-300">
+              Starter ist Ihr kostenloser Marktplatz-Einstieg. Bezahlte Pakete steigern Ranking, Reichweite und Lead-Potenzial.
+            </p>
+          </div>
+
+          <div className="mt-12 grid gap-8 xl:grid-cols-[0.85fr_1.15fr]">
+            {pricingGroups.map((group) => (
+              <div key={group.title} className="rounded-[2rem] border border-white/10 bg-white/5 p-6 backdrop-blur md:p-8">
+                <div className="flex flex-col gap-3 border-b border-white/10 pb-6 md:flex-row md:items-end md:justify-between">
+                  <div>
+                    <p className="text-sm font-semibold uppercase tracking-[0.22em] text-orange-200">{group.title}</p>
+                    <h3 className="mt-2 text-2xl font-bold">{group.subtitle}</h3>
+                  </div>
+                  <p className="text-sm text-gray-300">{group.highlight}</p>
+                </div>
+
+                <div className={`mt-6 grid gap-6 ${group.plans.length === 1 ? '' : 'lg:grid-cols-3'}`}>
+                  {group.plans.map((plan) => {
+                    const accent = accentMap[plan.accent];
+                    const isStarter = plan.id === 'basic';
+                    return (
+                      <div
+                        key={plan.id}
+                        className={`flex h-full flex-col rounded-[1.75rem] border bg-white p-6 text-gray-900 shadow-xl ${
+                          isStarter ? 'border-emerald-200 ring-2 ring-emerald-200' : 'border-white/60'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          <div>
+                            <span className={`inline-flex rounded-full px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] ${accent.soft}`}>
+                              {plan.badge}
+                            </span>
+                            <h4 className="mt-4 text-2xl font-bold text-gray-900">{plan.name}</h4>
+                          </div>
+                          {plan.id !== 'basic' ? <LineChart className={`h-8 w-8 ${accent.icon}`} /> : <Sparkles className={`h-8 w-8 ${accent.icon}`} />}
+                        </div>
+
+                        <div className="mt-6">
+                          <span className="text-4xl font-bold text-gray-900">{plan.price}</span>
+                          <span className="ml-2 text-sm text-gray-500">{plan.period}</span>
+                        </div>
+
+                        <div className="mt-6 flex-1 space-y-3">
+                          {plan.features.map((feature) => (
+                            <div key={feature} className="flex items-start gap-3">
+                              <CheckCircle className={`mt-0.5 h-5 w-5 shrink-0 ${accent.icon}`} />
+                              <span className="text-gray-700">{feature}</span>
+                            </div>
+                          ))}
+                        </div>
+
+                        {plan.note ? (
+                          <div className="mt-6 rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">{plan.note}</div>
+                        ) : null}
+
+                        <button
+                          type="button"
+                          onClick={() => handlePlanCta(plan.id)}
+                          className={`mt-6 inline-flex items-center justify-center rounded-xl px-5 py-3 font-bold transition ${accent.button}`}
+                        >
+                          {plan.id === 'enterprise' ? 'Book a demo' : plan.id === 'basic' ? 'Create provider account' : 'Mehr erfahren'}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-8 rounded-[2rem] border border-orange-400/25 bg-orange-500/10 p-6">
+            <p className="text-lg font-bold text-white">Lead courses have no commission. Commission only applies to direct bookings.</p>
+          </div>
+
+          <div className="mt-8 rounded-[2rem] border border-white/10 bg-white/5 p-6 md:flex md:items-center md:justify-between md:gap-6">
+            <div className="flex items-start gap-4">
+              <div className="rounded-2xl bg-white/10 p-3">
+                <ClipboardList className="h-6 w-6 text-orange-200" />
+              </div>
+              <div>
+                <p className="text-lg font-bold text-white">Import- und Erfassungsservice</p>
+                <p className="mt-2 text-gray-300">Wenn Sie viele Kurse migrieren moechten, unterstuetzt KursNavi Ihr Team beim Onboarding und Import.</p>
+              </div>
+            </div>
+            <div className="mt-4 text-left md:mt-0 md:text-right">
+              <p className="text-2xl font-bold text-white">75 CHF pro Kurs</p>
+              <p className="text-sm text-gray-400">ab dem 4. Kurs: 50 CHF</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-stone-50 px-4 py-20 md:py-24">
+        <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary">ROI Example</p>
+            <h2 className="mt-4 text-3xl font-bold text-dark md:text-4xl">Schon wenige zusaetzliche Teilnehmer machen den Unterschied</h2>
+            <p className="mt-4 text-lg text-gray-600">
+              Die bezahlten Pakete sollen sich nicht ueber Provision erklaeren, sondern ueber mehr Reichweite. Schon ein kleiner Zuwachs kann den Jahrespreis deutlich uebersteigen.
+            </p>
+          </div>
+
+          <div className="rounded-[2rem] border border-gray-200 bg-white p-8 shadow-sm">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="rounded-2xl bg-gray-50 p-5">
+                <p className="text-sm text-gray-500">Average course price</p>
+                <p className="mt-2 text-3xl font-bold text-gray-900">350 CHF</p>
+              </div>
+              <div className="rounded-2xl bg-gray-50 p-5">
+                <p className="text-sm text-gray-500">Additional participants</p>
+                <p className="mt-2 text-3xl font-bold text-gray-900">2 / month</p>
+              </div>
+            </div>
+
+            <div className="mt-6 rounded-2xl bg-orange-50 p-6">
+              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">Annual uplift</p>
+              <p className="mt-3 text-4xl font-bold text-gray-900">8 400 CHF</p>
+              <p className="mt-2 text-gray-600">2 zusaetzliche Teilnehmer pro Monat bei 350 CHF Kurswert.</p>
+            </div>
+
+            <div className="mt-6 flex items-center justify-between rounded-2xl border border-gray-200 px-5 py-4">
+              <div>
+                <p className="text-sm text-gray-500">Enterprise plan</p>
+                <p className="text-xl font-bold text-gray-900">1490 CHF / year</p>
+              </div>
+              <div className="text-right">
+                <p className="text-sm text-gray-500">Beispiel-Ergebnis</p>
+                <p className="text-xl font-bold text-emerald-700">deutlich positiv</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-white px-4 py-20 md:py-24">
+        <div className="mx-auto max-w-5xl rounded-[2.5rem] bg-[linear-gradient(135deg,#171717_0%,#2a2a2a_55%,#40220f_100%)] px-8 py-12 text-center text-white shadow-2xl md:px-12 md:py-16">
+          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-orange-200">Final CTA</p>
+          <h2 className="mt-4 text-3xl font-bold md:text-5xl">Start listing your courses today.</h2>
+          <p className="mx-auto mt-5 max-w-2xl text-lg text-gray-300">
+            Starten Sie kostenlos, sammeln Sie provisionsfreie Leads und aktivieren Sie Direktbuchung nur dort, wo sie fuer Sie sinnvoll ist.
+          </p>
+          <div className="mt-10 flex flex-col justify-center gap-4 sm:flex-row">
+            <button
+              type="button"
+              onClick={handlePrimaryCta}
+              className="inline-flex items-center justify-center rounded-full bg-primary px-8 py-4 text-lg font-bold text-white transition hover:bg-orange-600"
+            >
+              Create provider account
+            </button>
+            <button
+              type="button"
+              onClick={handleDemoCta}
+              className="inline-flex items-center justify-center rounded-full border border-white/20 px-8 py-4 text-lg font-bold text-white transition hover:border-white hover:bg-white/5"
+            >
+              Book a demo
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'WebPage',
+            name: 'KursNavi - Fuer Anbieter',
+            description:
+              'Landingpage fuer Kursanbieter: kostenlos starten, Leads ohne Provision erhalten und Direktbuchung optional aktivieren.',
+            audience: {
+              '@type': 'BusinessAudience',
+              audienceType: 'Course Providers, Academies, Schools',
+            },
+          }),
+        }}
+      />
+    </div>
+  );
 };
 
 export default TeacherHub;
