@@ -9,7 +9,7 @@ import { getBereichByAreaSlug, getBereichUrl } from '../lib/bereichLandingConfig
 import { DEFAULT_COURSE_IMAGE } from '../lib/imageUtils';
 import { getCourseCategoryText, getPrimaryCategory, getPrimaryCategoryLabel, getPrimaryCategorySlug, isSyntheticCategory } from '../lib/courseMetadata';
 
-const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, savedCourseIds, onToggleSaveCourse, showNotification }) => {
+const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, savedCourseIds, onToggleSaveCourse, showNotification, refreshBookings }) => {
     const [showLeadModal, setShowLeadModal] = useState(false);
     const [leadStatus, setLeadStatus] = useState('idle'); // idle, submitting, success
 
@@ -422,6 +422,12 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
                 showNotification && showNotification(data.free_booking
                     ? 'Buchung erfolgreich! Dieser Kurs ist kostenlos.'
                     : 'Buchung erfolgreich! Bezahlt mit deinem Guthaben.');
+
+                if (typeof refreshBookings === 'function' && user?.id) {
+                    await refreshBookings(user.id);
+                }
+
+                window.history.replaceState({}, document.title, '/dashboard');
                 setView('dashboard');
                 return;
             }

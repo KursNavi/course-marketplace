@@ -1788,6 +1788,7 @@ useEffect(() => {
           savedCourseIds={savedCourseIds}
           onToggleSaveCourse={toggleSaveCourse}
           showNotification={showNotification}
+          refreshBookings={fetchBookings}
         />
       )}
 
