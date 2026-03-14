@@ -1,5 +1,6 @@
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
+import { getRequiredSanitizedEnv } from './_lib/env.js';
 
 const PACKAGE_TIER_ORDER = ['basic', 'pro', 'premium', 'enterprise'];
 const PACKAGE_PRICES_CHF = { pro: 290, premium: 690, enterprise: 1490 };
@@ -78,7 +79,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+    const stripe = new Stripe(getRequiredSanitizedEnv('STRIPE_SECRET_KEY'));
     const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
     const authHeader = req.headers.authorization;

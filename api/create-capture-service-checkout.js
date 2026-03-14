@@ -1,5 +1,6 @@
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
+import { getRequiredSanitizedEnv } from './_lib/env.js';
 
 function getBaseUrl(req) {
     const forwardedProto = req.headers['x-forwarded-proto'];
@@ -25,7 +26,7 @@ export default async function handler(req, res) {
             return res.status(500).json({ error: 'Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY' });
         }
 
-        const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+        const stripe = new Stripe(getRequiredSanitizedEnv('STRIPE_SECRET_KEY'));
         const { courses } = req.body;
         const supabase = createClient(supabaseUrl, supabaseServiceKey);
 

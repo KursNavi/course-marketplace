@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
 import { getDashboardUrl } from './_lib/base-url.js';
 import { getEmailConfig, resolveUserEmail, sendEmailOrThrow } from './_lib/email-config.js';
+import { getRequiredSanitizedEnv } from './_lib/env.js';
 
 // --- EMAIL TEMPLATE ---
 const generateEmailHtml = (title, bodyHtml, ctaText, ctaLink) => `
@@ -55,7 +56,7 @@ export default async function handler(req, res) {
   }
 
   const token = authHeader.replace('Bearer ', '');
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+  const stripe = new Stripe(getRequiredSanitizedEnv('STRIPE_SECRET_KEY'));
   const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
   const resend = new Resend(process.env.RESEND_API_KEY);
   const dashboardUrl = getDashboardUrl(req);

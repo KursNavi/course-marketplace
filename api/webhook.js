@@ -4,6 +4,7 @@ import { Resend } from 'resend';
 import PDFDocument from 'pdfkit';
 import { getDashboardUrl } from './_lib/base-url.js';
 import { getEmailConfig, resolveUserEmail, sendEmailOrThrow } from './_lib/email-config.js';
+import { getRequiredSanitizedEnv } from './_lib/env.js';
 
 export const config = {
   api: {
@@ -295,7 +296,7 @@ export default async function handler(req, res) {
     return res.status(405).send('Method Not Allowed');
   }
 
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+  const stripe = new Stripe(getRequiredSanitizedEnv('STRIPE_SECRET_KEY'));
   const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
   const resend = new Resend(process.env.RESEND_API_KEY);
   const emailConfig = getEmailConfig();
