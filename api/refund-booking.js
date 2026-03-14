@@ -8,6 +8,7 @@ const EMAIL_TRANSLATIONS = {
     student_subject: 'Credit Confirmed: ',
     student_title: 'Credit Added',
     student_body: (course, amount) => `Your booking for <strong>${course}</strong> has been cancelled.<br><br>A credit of <strong>CHF ${amount}</strong> has been added to your KursNavi account.<br>The credit will be automatically applied to your next booking.`,
+    student_body_free: (course) => `Your booking for <strong>${course}</strong> has been cancelled.<br><br>Because the course was free, no credit was added.`,
     teacher_subject: 'Booking Cancelled: ',
     teacher_title: 'Booking Cancelled',
     teacher_body: (email, course) => `<strong>${email}</strong> has cancelled their booking for <strong>${course}</strong>.<br>The cancellation was processed automatically per the platform policy.`,
@@ -16,28 +17,31 @@ const EMAIL_TRANSLATIONS = {
   de: {
     student_subject: 'Guthaben gutgeschrieben: ',
     student_title: 'Guthaben erhalten',
-    student_body: (course, amount) => `Deine Buchung für <strong>${course}</strong> wurde storniert.<br><br>Dir wurde ein Guthaben von <strong>CHF ${amount}</strong> auf deinem KursNavi-Konto gutgeschrieben.<br>Das Guthaben wird automatisch bei deiner nächsten Buchung verrechnet.`,
+    student_body: (course, amount) => `Deine Buchung fuer <strong>${course}</strong> wurde storniert.<br><br>Dir wurde ein Guthaben von <strong>CHF ${amount}</strong> auf deinem KursNavi-Konto gutgeschrieben.<br>Das Guthaben wird automatisch bei deiner naechsten Buchung verrechnet.`,
+    student_body_free: (course) => `Deine Buchung fuer <strong>${course}</strong> wurde storniert.<br><br>Da der Kurs kostenlos war, wurde kein Guthaben erstellt.`,
     teacher_subject: 'Buchung storniert: ',
     teacher_title: 'Buchung storniert',
-    teacher_body: (email, course) => `<strong>${email}</strong> hat die Buchung für <strong>${course}</strong> storniert.<br>Die Stornierung wurde automatisch gemäss der Plattform-Richtlinie verarbeitet.`,
+    teacher_body: (email, course) => `<strong>${email}</strong> hat die Buchung fuer <strong>${course}</strong> storniert.<br>Die Stornierung wurde automatisch gemaess der Plattform-Richtlinie verarbeitet.`,
     cta: 'Zum Dashboard'
   },
   fr: {
-    student_subject: 'Crédit confirmé : ',
-    student_title: 'Crédit ajouté',
-    student_body: (course, amount) => `Votre réservation pour <strong>${course}</strong> a été annulée.<br><br>Un crédit de <strong>CHF ${amount}</strong> a été ajouté à votre compte KursNavi.<br>Le crédit sera automatiquement déduit lors de votre prochaine réservation.`,
-    teacher_subject: 'Réservation annulée : ',
-    teacher_title: 'Réservation annulée',
-    teacher_body: (email, course) => `<strong>${email}</strong> a annulé sa réservation pour <strong>${course}</strong>.<br>L'annulation a été traitée automatiquement selon la politique de la plateforme.`,
+    student_subject: 'Credit confirme : ',
+    student_title: 'Credit ajoute',
+    student_body: (course, amount) => `Votre reservation pour <strong>${course}</strong> a ete annulee.<br><br>Un credit de <strong>CHF ${amount}</strong> a ete ajoute a votre compte KursNavi.<br>Le credit sera automatiquement deduit lors de votre prochaine reservation.`,
+    student_body_free: (course) => `Votre reservation pour <strong>${course}</strong> a ete annulee.<br><br>Comme le cours etait gratuit, aucun credit n'a ete ajoute.`,
+    teacher_subject: 'Reservation annulee : ',
+    teacher_title: 'Reservation annulee',
+    teacher_body: (email, course) => `<strong>${email}</strong> a annule sa reservation pour <strong>${course}</strong>.<br>L'annulation a ete traitee automatiquement selon la politique de la plateforme.`,
     cta: 'Voir le tableau de bord'
   },
   it: {
     student_subject: 'Credito confermato: ',
     student_title: 'Credito aggiunto',
-    student_body: (course, amount) => `La tua prenotazione per <strong>${course}</strong> è stata annullata.<br><br>Un credito di <strong>CHF ${amount}</strong> è stato aggiunto al tuo conto KursNavi.<br>Il credito verrà detratto automaticamente dalla prossima prenotazione.`,
+    student_body: (course, amount) => `La tua prenotazione per <strong>${course}</strong> e stata annullata.<br><br>Un credito di <strong>CHF ${amount}</strong> e stato aggiunto al tuo conto KursNavi.<br>Il credito verra detratto automaticamente dalla prossima prenotazione.`,
+    student_body_free: (course) => `La tua prenotazione per <strong>${course}</strong> e stata annullata.<br><br>Poiche il corso era gratuito, non e stato aggiunto alcun credito.`,
     teacher_subject: 'Prenotazione annullata: ',
     teacher_title: 'Prenotazione annullata',
-    teacher_body: (email, course) => `<strong>${email}</strong> ha annullato la prenotazione per <strong>${course}</strong>.<br>L'annullamento è stato elaborato automaticamente secondo la politica della piattaforma.`,
+    teacher_body: (email, course) => `<strong>${email}</strong> ha annullato la prenotazione per <strong>${course}</strong>.<br>L'annullamento e stato elaborato automaticamente secondo la politica della piattaforma.`,
     cta: 'Vai alla dashboard'
   }
 };
@@ -88,6 +92,49 @@ function isWithinAutoRefundWindow(booking) {
   );
 }
 
+async function cancelFreeBooking({ supabase, bookingId, userId, fallbackTicketPeriodId }) {
+  const { data: updatedBooking, error: bookingUpdateError } = await supabase
+    .from('bookings')
+    .update({
+      status: 'refunded',
+      refunded_at: new Date().toISOString()
+    })
+    .eq('id', bookingId)
+    .eq('user_id', userId)
+    .eq('status', 'confirmed')
+    .select('ticket_period_id')
+    .maybeSingle();
+
+  if (bookingUpdateError) {
+    throw bookingUpdateError;
+  }
+
+  if (updatedBooking) {
+    return {
+      new_balance_cents: 0,
+      ticket_period_id: updatedBooking.ticket_period_id ?? fallbackTicketPeriodId,
+      already_processed: false
+    };
+  }
+
+  const { data: currentBooking, error: currentBookingError } = await supabase
+    .from('bookings')
+    .select('status, refunded_at, ticket_period_id')
+    .eq('id', bookingId)
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (currentBookingError) {
+    throw currentBookingError;
+  }
+
+  return {
+    new_balance_cents: 0,
+    ticket_period_id: currentBooking?.ticket_period_id ?? fallbackTicketPeriodId,
+    already_processed: currentBooking?.status === 'refunded' || !!currentBooking?.refunded_at
+  };
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -133,7 +180,7 @@ export default async function handler(req, res) {
 
     if (!isWithinAutoRefundWindow(booking)) {
       return res.status(400).json({
-        error: 'Automatische Stornierung nicht mehr möglich. Du kannst stattdessen eine Kulanzanfrage an den Anbieter senden.',
+        error: 'Automatische Stornierung nicht mehr moeglich. Du kannst stattdessen eine Kulanzanfrage an den Anbieter senden.',
         goodwill_available: true
       });
     }
@@ -154,21 +201,42 @@ export default async function handler(req, res) {
 
     const creditAmountCents = creditUsedCents + stripePaidCents;
     const courseTitle = booking.courses?.title || 'Kurs';
-    const { data: refundResult, error: refundError } = await supabase.rpc('refund_booking_to_credit', {
-      p_booking_id: bookingId,
-      p_user_id: userId,
-      p_amount_cents: creditAmountCents,
-      p_description: `Stornierung: ${courseTitle}`
-    });
+    let refundMeta;
 
-    if (refundError) {
-      console.error('Atomic booking refund failed:', refundError);
-      return res.status(500).json({ error: 'Gutschrift konnte nicht verarbeitet werden.' });
+    if (creditAmountCents > 0) {
+      const { data: refundResult, error: refundError } = await supabase.rpc('refund_booking_to_credit', {
+        p_booking_id: bookingId,
+        p_user_id: userId,
+        p_amount_cents: creditAmountCents,
+        p_description: `Stornierung: ${courseTitle}`
+      });
+
+      if (refundError) {
+        console.error('Atomic booking refund failed:', refundError);
+        return res.status(500).json({ error: 'Gutschrift konnte nicht verarbeitet werden.' });
+      }
+
+      refundMeta = refundResult?.[0] || {
+        new_balance_cents: 0,
+        ticket_period_id: booking.ticket_period_id,
+        already_processed: false
+      };
+    } else {
+      try {
+        refundMeta = await cancelFreeBooking({
+          supabase,
+          bookingId,
+          userId,
+          fallbackTicketPeriodId: booking.ticket_period_id
+        });
+      } catch (freeBookingError) {
+        console.error('Free booking cancellation failed:', freeBookingError);
+        return res.status(500).json({ error: 'Buchung konnte nicht storniert werden.' });
+      }
     }
-    const refundMeta = refundResult?.[0];
+
     const alreadyProcessed = !!refundMeta?.already_processed;
 
-    // Release ticket if applicable
     const ticketPeriodId = refundMeta?.ticket_period_id ?? booking.ticket_period_id;
     if (ticketPeriodId && !alreadyProcessed) {
       const { error: releaseError } = await supabase.rpc('release_ticket', {
@@ -181,17 +249,18 @@ export default async function handler(req, res) {
 
     const creditAmountCHF = (creditAmountCents / 100).toFixed(2);
     const newBalanceCents = refundMeta?.new_balance_cents || 0;
+    const isFreeCancellation = creditAmountCents <= 0;
 
     if (alreadyProcessed) {
       return res.status(200).json({
         success: true,
         message: 'Buchung war bereits storniert',
         credit_amount_chf: creditAmountCHF,
-        new_balance_chf: (newBalanceCents / 100).toFixed(2)
+        new_balance_chf: (newBalanceCents / 100).toFixed(2),
+        credit_added: !isFreeCancellation
       });
     }
 
-    // Send emails
     const { data: userProfile } = await supabase
       .from('profiles')
       .select('email, language')
@@ -210,7 +279,9 @@ export default async function handler(req, res) {
           subject: `${sTexts.student_subject}${courseTitle}`,
           html: generateEmailHtml(
             sTexts.student_title,
-            sTexts.student_body(courseTitle, creditAmountCHF),
+            isFreeCancellation
+              ? sTexts.student_body_free(courseTitle)
+              : sTexts.student_body(courseTitle, creditAmountCHF),
             sTexts.cta,
             dashboardUrl
           )
@@ -251,9 +322,10 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       success: true,
-      message: 'Buchung storniert — Guthaben gutgeschrieben',
+      message: isFreeCancellation ? 'Buchung storniert' : 'Buchung storniert - Guthaben gutgeschrieben',
       credit_amount_chf: creditAmountCHF,
-      new_balance_chf: (newBalanceCents / 100).toFixed(2)
+      new_balance_chf: (newBalanceCents / 100).toFixed(2),
+      credit_added: !isFreeCancellation
     });
   } catch (error) {
     console.error('Refund Error:', error);

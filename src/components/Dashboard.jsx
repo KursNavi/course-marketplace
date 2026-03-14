@@ -209,11 +209,11 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t, isImp
 
             // Step 4: Sign out and redirect
             await supabase.auth.signOut();
-            showNotification?.('Ihr Konto wurde erfolgreich gelöscht', 'success');
+            showNotification?.('Ihr Konto wurde erfolgreich gelÃƒÂ¶scht', 'success');
             window.location.href = '/';
         } catch (err) {
             console.error('Error deleting account:', err);
-            showNotification?.('Fehler beim Löschen des Kontos: ' + (err.message || 'Unbekannter Fehler'), 'error');
+            showNotification?.('Fehler beim LÃƒÂ¶schen des Kontos: ' + (err.message || 'Unbekannter Fehler'), 'error');
             setDeleting(false);
         }
     };
@@ -376,7 +376,7 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t, isImp
                             body: JSON.stringify({
                                 type: 'verification',
                                 subject: "Neue Verifizierung (Mehrere Dateien): " + user.email,
-                                message: `User: ${user.email}\nAnzahl Dateien: ${newDocUrls.length}\nBitte im Admin Panel prüfen.`
+                                message: `User: ${user.email}\nAnzahl Dateien: ${newDocUrls.length}\nBitte im Admin Panel prÃƒÂ¼fen.`
                             })
                         }).catch(err => console.error("Contact API failed", err));
                     }
@@ -402,7 +402,7 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t, isImp
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div><label className="block text-sm font-bold text-gray-700 mb-1">{isTeacher ? (t?.lbl_main_location || "Hauptstandort") : "Standort"}</label><input type="text" name="city" value={formData.city} onChange={handleChange} placeholder="" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" /></div>
-                    <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_canton}</label><div className="relative"><select name="canton" value={formData.canton} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none appearance-none bg-white"><option value="">Kanton wählen</option>{SWISS_CANTONS.filter(c => c !== "Online").map(c => <option key={c} value={c}>{c}</option>)}</select><ChevronDown className="absolute right-3 top-3 text-gray-400 w-4 h-4 pointer-events-none" /></div></div>
+                    <div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_canton}</label><div className="relative"><select name="canton" value={formData.canton} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none appearance-none bg-white"><option value="">Kanton wÃƒÂ¤hlen</option>{SWISS_CANTONS.filter(c => c !== "Online").map(c => <option key={c} value={c}>{c}</option>)}</select><ChevronDown className="absolute right-3 top-3 text-gray-400 w-4 h-4 pointer-events-none" /></div></div>
                 </div>
                 {isTeacher && (
                     <>
@@ -456,7 +456,7 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t, isImp
                                 onClick={() => setAdditionalLocations([...additionalLocations, { city: '', canton: '' }])}
                                 className="mt-2 text-sm font-bold text-primary hover:text-orange-600 flex items-center gap-1 transition"
                             >
-                                <Plus className="w-4 h-4" /> Standort hinzufügen
+                                <Plus className="w-4 h-4" /> Standort hinzufÃƒÂ¼gen
                             </button>
                             <p className="text-xs text-gray-400 mt-1 italic">Tipp: Falls du Kurse an verschiedenen Orten anbietest, liste diese hier auf.</p>
                         </div>
@@ -480,7 +480,7 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t, isImp
                         <select name="preferred_language" value={formData.preferred_language} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none appearance-none bg-white">
                             <option value="de">Deutsch (German)</option>
                             <option value="en">English</option>
-                            <option value="fr">Français (French)</option>
+                            <option value="fr">FranÃƒÂ§ais (French)</option>
                             <option value="it">Italiano (Italian)</option>
                         </select>
                         <ChevronDown className="absolute right-3 top-3 text-gray-400 w-4 h-4 pointer-events-none" />
@@ -492,7 +492,7 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t, isImp
                         {/* NEW FIELDS: Biography & Certificates */}
 
                 <div className="border-t pt-6 mt-6">
-                    <h3 className="text-lg font-bold mb-4 text-dark flex items-center"><User className="w-5 h-5 mr-2 text-primary" /> {t?.lbl_bio || "Über mich / uns (Bio / Anbietervorstellung)"}</h3>
+                    <h3 className="text-lg font-bold mb-4 text-dark flex items-center"><User className="w-5 h-5 mr-2 text-primary" /> {t?.lbl_bio || "ÃƒÅ“ber mich / uns (Bio / Anbietervorstellung)"}</h3>
                     <div className="space-y-6">
                         <div>
                             <textarea
@@ -500,13 +500,13 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t, isImp
                                 rows="5"
                                 value={formData.bio_text}
                                 onChange={handleChange}
-                                placeholder="Erzähle etwas über deine Erfahrung..."
+                                placeholder="ErzÃƒÂ¤hle etwas ÃƒÂ¼ber deine Erfahrung..."
                                 className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary outline-none resize-y block bg-gray-50 focus:bg-white transition-colors"
                             ></textarea>
                         </div>
                         <div className="pt-4">
                             <h3 className="text-lg font-bold mb-4 text-dark flex items-center"><PenTool className="w-5 h-5 mr-2 text-primary" /> {t?.lbl_qualifications || "Zertifikate & Qualifikationen"}</h3>
-                            <textarea name="certificates" rows="3" value={formData.certificates} onChange={handleChange} placeholder="z.B. Master in Pädagogik&#10;Dipl. Yoga Instruktor..." className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none bg-gray-50 focus:bg-white transition-colors"></textarea>
+                            <textarea name="certificates" rows="3" value={formData.certificates} onChange={handleChange} placeholder="z.B. Master in PÃƒÂ¤dagogik&#10;Dipl. Yoga Instruktor..." className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none bg-gray-50 focus:bg-white transition-colors"></textarea>
                         </div>
                     </div>
                 </div>
@@ -532,7 +532,7 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t, isImp
                             <div className="bg-green-100 text-green-800 px-4 py-6 rounded-xl flex flex-col items-center justify-center font-bold text-center">
                                 <CheckCircle className="w-12 h-12 mb-2 text-green-600" /> 
                                 <span className="text-lg">Dein Account ist verifiziert!</span>
-                                <p className="text-sm font-normal text-green-700 mt-1">Dein Profil trägt jetzt den Status "Verifiziert".</p>
+                                <p className="text-sm font-normal text-green-700 mt-1">Dein Profil trÃƒÂ¤gt jetzt den Status "Verifiziert".</p>
                             </div>
                         ) : (
                             <div className="space-y-6">
@@ -542,7 +542,7 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t, isImp
                                                 <Clock className="w-5 h-5 text-yellow-600" />
                                                 <h4 className="font-bold text-yellow-800">Verifizierung in Bearbeitung</h4>
                                             </div>
-                                            <p className="text-sm text-yellow-700 mb-4">Wir haben deine Dokumente erhalten. Bitte stelle sicher, dass du die Gebühr beglichen hast, damit wir die Prüfung abschliessen können.</p>
+                                            <p className="text-sm text-yellow-700 mb-4">Wir haben deine Dokumente erhalten. Bitte stelle sicher, dass du die GebÃƒÂ¼hr beglichen hast, damit wir die PrÃƒÂ¼fung abschliessen kÃƒÂ¶nnen.</p>
                                             
                                             <div className="flex flex-col sm:flex-row gap-3">
                                                                                                 <button
@@ -553,7 +553,7 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t, isImp
                                                         const body = [
                                                             "Hallo KursNavi Team",
                                                             "",
-                                                            "ich möchte die Verifizierung abschliessen. Bitte sendet mir die Zahlungsinfos/Rechnung.",
+                                                            "ich mÃƒÂ¶chte die Verifizierung abschliessen. Bitte sendet mir die Zahlungsinfos/Rechnung.",
                                                             "",
                                                             `Account E-Mail: ${user?.email || ""}`,
                                                             "",
@@ -587,8 +587,8 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t, isImp
                                                 <div className="relative">
                                                     <input type="file" multiple onChange={handleDocUpload} disabled={uploadingDoc} className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 cursor-pointer bg-white border rounded-lg p-1" />
                                                 </div>
-                                                <p className="text-xs text-gray-400 mt-1">Du kannst mehrere Dateien auswählen (Zertifikate, Diplome, Ausweis).</p>
-                                                {uploadingDoc && <p className="text-xs text-blue-500 mt-1">Upload läuft...</p>}
+                                                <p className="text-xs text-gray-400 mt-1">Du kannst mehrere Dateien auswÃƒÂ¤hlen (Zertifikate, Diplome, Ausweis).</p>
+                                                {uploadingDoc && <p className="text-xs text-blue-500 mt-1">Upload lÃƒÂ¤uft...</p>}
                                             </div>
                                     </div>
                                 )}
@@ -598,7 +598,7 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t, isImp
                     </div>
                 )}
 
-                {/* STRIPE CONNECT - Auszahlungen für Anbieter */}
+                {/* STRIPE CONNECT - Auszahlungen fÃƒÂ¼r Anbieter */}
                 {isTeacher && (
                     <div className="border-t pt-6 mt-6">
                         <h3 className="text-lg font-bold mb-4 text-dark flex items-center">
@@ -631,16 +631,16 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t, isImp
                                                     if (data.url) {
                                                         window.open(data.url, '_blank');
                                                     } else {
-                                                        showNotification("Fehler beim Öffnen des Dashboards");
+                                                        showNotification("Fehler beim Ãƒâ€“ffnen des Dashboards");
                                                     }
                                                 } catch (error) {
                                                     console.error('Error opening connect dashboard:', error);
-                                                    showNotification("Fehler beim Öffnen des Dashboards");
+                                                    showNotification("Fehler beim Ãƒâ€“ffnen des Dashboards");
                                                 }
                                             }}
                                             className="bg-green-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-green-700 transition shadow-md text-sm"
                                         >
-                                            Auszahlungs-Dashboard öffnen
+                                            Auszahlungs-Dashboard ÃƒÂ¶ffnen
                                         </button>
                                     </div>
                                 </div>
@@ -715,7 +715,7 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t, isImp
                                         onClick={async () => {
                                             try {
                                                 if (!stripeCustomerId) {
-                                                    showNotification("Du hast noch keine Zahlungen getätigt. Der Zugang zum Kundenportal ist nach der ersten Zahlung verfügbar.");
+                                                    showNotification("Du hast noch keine Zahlungen getÃƒÂ¤tigt. Der Zugang zum Kundenportal ist nach der ersten Zahlung verfÃƒÂ¼gbar.");
                                                     return;
                                                 }
 
@@ -737,11 +737,11 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t, isImp
                                                 if (data.url) {
                                                     window.location.href = data.url;
                                                 } else {
-                                                    showNotification("Fehler beim Öffnen des Kundenportals");
+                                                    showNotification("Fehler beim Ãƒâ€“ffnen des Kundenportals");
                                                 }
                                             } catch (error) {
                                                 console.error('Error opening customer portal:', error);
-                                                showNotification("Fehler beim Öffnen des Kundenportals");
+                                                showNotification("Fehler beim Ãƒâ€“ffnen des Kundenportals");
                                             }
                                         }}
                                         className="bg-primary text-white px-6 py-2 rounded-lg font-bold hover:bg-orange-600 transition shadow-md text-sm"
@@ -757,7 +757,7 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t, isImp
                 {!isImpersonating && (
                 <div className="border-t pt-6 mt-6"><h3 className="text-lg font-bold mb-4 text-dark flex items-center"><Lock className="w-4 h-4 mr-2" /> {t.lbl_account_security}</h3><div className="space-y-4"><div><label className="block text-sm font-bold text-gray-700 mb-1">Email</label><input type="email" name="email" value={formData.email} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none bg-gray-50" /></div><div className="grid grid-cols-1 md:grid-cols-2 gap-6"><div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_new_password}</label><div className="relative"><input type={showPassword ? "text" : "password"} name="password" value={formData.password} onChange={handleChange} placeholder="******" className="w-full px-4 py-2 pr-10 border rounded-lg focus:ring-2 focus:ring-primary outline-none" /><button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700">{showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}</button></div></div><div><label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_confirm_password}</label><div className="relative"><input type={showConfirmPassword ? "text" : "password"} name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} placeholder="******" className="w-full px-4 py-2 pr-10 border rounded-lg focus:ring-2 focus:ring-primary outline-none" /><button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700">{showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}</button></div></div></div></div></div>
                 )}
-                <div className="pt-2"><button type="submit" disabled={saving || isImpersonating} title={isImpersonating ? 'Profil-Änderungen sind bei Impersonation nicht möglich' : ''} className="bg-primary text-white px-6 py-3 rounded-lg font-bold hover:bg-orange-600 transition flex items-center shadow-md disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed">{saving ? <Loader className="animate-spin w-5 h-5 mr-2" /> : <Save className="w-5 h-5 mr-2" />}{t.btn_save}</button></div>
+                <div className="pt-2"><button type="submit" disabled={saving || isImpersonating} title={isImpersonating ? 'Profil-Ãƒâ€žnderungen sind bei Impersonation nicht mÃƒÂ¶glich' : ''} className="bg-primary text-white px-6 py-3 rounded-lg font-bold hover:bg-orange-600 transition flex items-center shadow-md disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed">{saving ? <Loader className="animate-spin w-5 h-5 mr-2" /> : <Save className="w-5 h-5 mr-2" />}{t.btn_save}</button></div>
             </form>
 
             {/* Data Export Section */}
@@ -767,7 +767,7 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t, isImp
                     Daten exportieren
                 </h3>
                 <p className="text-gray-600 mb-4">
-                    Laden Sie eine Kopie Ihrer gespeicherten Daten als JSON-Datei herunter. Der Export enthält:
+                    Laden Sie eine Kopie Ihrer gespeicherten Daten als JSON-Datei herunter. Der Export enthÃƒÂ¤lt:
                 </p>
                 <ul className="list-disc list-inside text-gray-600 mb-6 space-y-1 text-sm">
                     <li>Ihr Profil und Einstellungen</li>
@@ -795,22 +795,22 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t, isImp
                 </button>
             </div>
 
-            {/* Delete Account Section — hidden during impersonation */}
+            {/* Delete Account Section Ã¢â‚¬â€ hidden during impersonation */}
             {!isImpersonating && (
             <div className="bg-white rounded-xl shadow-sm border border-red-100 p-6 md:p-8 mt-8">
                 <h3 className="text-lg font-bold text-red-600 mb-4 flex items-center">
                     <Trash2 className="w-5 h-5 mr-2" />
-                    Konto löschen
+                    Konto lÃƒÂ¶schen
                 </h3>
                 <p className="text-gray-600 mb-4">
-                    Wenn Sie Ihr Konto löschen, werden alle Ihre Daten unwiderruflich entfernt. Dies umfasst:
+                    Wenn Sie Ihr Konto lÃƒÂ¶schen, werden alle Ihre Daten unwiderruflich entfernt. Dies umfasst:
                 </p>
                 <ul className="list-disc list-inside text-gray-600 mb-6 space-y-1 text-sm">
                     <li>Ihr Profil und alle Einstellungen</li>
                     <li>Ihre Merkliste und gespeicherte Kurse</li>
                     <li>Buchungsdaten und Kurshistorie</li>
                     {user?.credit_balance_cents > 0 && (
-                        <li className="text-red-600 font-medium">Ihr Guthaben von CHF {(user.credit_balance_cents / 100).toFixed(2)} verfällt unwiderruflich</li>
+                        <li className="text-red-600 font-medium">Ihr Guthaben von CHF {(user.credit_balance_cents / 100).toFixed(2)} verfÃƒÂ¤llt unwiderruflich</li>
                     )}
                 </ul>
                 <button
@@ -819,7 +819,7 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t, isImp
                     className="px-4 py-2 bg-red-50 text-red-600 border border-red-200 rounded-lg font-medium hover:bg-red-100 transition-colors flex items-center"
                 >
                     <Trash2 className="w-4 h-4 mr-2" />
-                    Konto unwiderruflich löschen
+                    Konto unwiderruflich lÃƒÂ¶schen
                 </button>
             </div>
             )}
@@ -833,25 +833,25 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t, isImp
                                 <AlertCircle className="w-6 h-6 text-red-600" aria-hidden="true" />
                             </div>
                             <div>
-                                <h3 id="delete-modal-title" className="text-lg font-bold text-gray-900">Konto löschen?</h3>
-                                <p className="text-sm text-gray-500">Diese Aktion kann nicht rückgängig gemacht werden</p>
+                                <h3 id="delete-modal-title" className="text-lg font-bold text-gray-900">Konto lÃƒÂ¶schen?</h3>
+                                <p className="text-sm text-gray-500">Diese Aktion kann nicht rÃƒÂ¼ckgÃƒÂ¤ngig gemacht werden</p>
                             </div>
                         </div>
 
                         <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
                             <p className="text-sm text-red-700">
-                                <strong>Achtung:</strong> Alle Ihre Daten werden permanent gelöscht, einschliesslich Ihrer Merkliste, Buchungen und Ihres Profils.
+                                <strong>Achtung:</strong> Alle Ihre Daten werden permanent gelÃƒÂ¶scht, einschliesslich Ihrer Merkliste, Buchungen und Ihres Profils.
                             </p>
                             {user?.credit_balance_cents > 0 && (
                                 <p className="text-sm text-red-700 mt-2 font-semibold">
-                                    Ihr Guthaben von CHF {(user.credit_balance_cents / 100).toFixed(2)} verfällt bei Kontolöschung unwiderruflich.
+                                    Ihr Guthaben von CHF {(user.credit_balance_cents / 100).toFixed(2)} verfÃƒÂ¤llt bei KontolÃƒÂ¶schung unwiderruflich.
                                 </p>
                             )}
                         </div>
 
                         <div className="mb-6">
                             <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Geben Sie Ihr Passwort ein, um zu bestätigen:
+                                Geben Sie Ihr Passwort ein, um zu bestÃƒÂ¤tigen:
                             </label>
                             <input
                                 type="password"
@@ -893,12 +893,12 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t, isImp
                                 {deleting ? (
                                     <>
                                         <Loader className="w-4 h-4 mr-2 animate-spin" />
-                                        Wird gelöscht...
+                                        Wird gelÃƒÂ¶scht...
                                     </>
                                 ) : (
                                     <>
                                         <Trash2 className="w-4 h-4 mr-2" />
-                                        Endgültig löschen
+                                        EndgÃƒÂ¼ltig lÃƒÂ¶schen
                                     </>
                                 )}
                             </button>
@@ -912,7 +912,7 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t, isImp
 
 // --- HELPER COMPONENT: Subscription Management ---
 const SubscriptionSection = ({ user, currentTier, packageExpiresAt, checkoutLoading, setCheckoutLoading, showNotification }) => {
-    // Stripe Checkout für alle bezahlten Pakete (Pro/Premium/Enterprise)
+    // Stripe Checkout fÃƒÂ¼r alle bezahlten Pakete (Pro/Premium/Enterprise)
     const handleCheckout = async (tierId) => {
         setCheckoutLoading(tierId);
         try {
@@ -957,7 +957,7 @@ const SubscriptionSection = ({ user, currentTier, packageExpiresAt, checkoutLoad
                     Du nutzt aktuell das <span className="font-bold text-dark">{(PLANS.find(p => p.id === currentTier) || PLANS[0]).title}</span> Paket.
                     {packageExpiresAt && currentTier !== 'basic' && (
                         <span className="text-sm text-gray-400 ml-2">
-                            (gültig bis {new Date(packageExpiresAt).toLocaleDateString('de-CH')})
+                            (gÃƒÂ¼ltig bis {new Date(packageExpiresAt).toLocaleDateString('de-CH')})
                         </span>
                     )}
                 </p>
@@ -972,7 +972,7 @@ const SubscriptionSection = ({ user, currentTier, packageExpiresAt, checkoutLoad
                             return (
                                 <div>
                                     <div className="mb-2 text-center text-xs text-gray-500">
-                                        Gültig bis: {new Date(packageExpiresAt).toLocaleDateString('de-CH')}
+                                        GÃƒÂ¼ltig bis: {new Date(packageExpiresAt).toLocaleDateString('de-CH')}
                                     </div>
                                     <button
                                         type="button"
@@ -983,7 +983,7 @@ const SubscriptionSection = ({ user, currentTier, packageExpiresAt, checkoutLoad
                                         {checkoutLoading === plan.id ? (
                                             <><Loader className="w-4 h-4 animate-spin" /> Laden...</>
                                         ) : (
-                                            'Verlängern'
+                                            'VerlÃƒÂ¤ngern'
                                         )}
                                     </button>
                                 </div>
@@ -1025,7 +1025,7 @@ const SubscriptionSection = ({ user, currentTier, packageExpiresAt, checkoutLoad
                                 disabled
                                 className="w-full rounded-lg border border-gray-200 py-2 text-gray-400"
                             >
-                                Nicht verfügbar
+                                Nicht verfÃƒÂ¼gbar
                             </button>
                         );
                     }}
@@ -1041,13 +1041,13 @@ const CaptureServiceModal = ({ isOpen, onClose, user, includedServices, usedServ
     const [courses, setCourses] = useState([{ url: '', notes: '' }]);
     const [isLoading, setIsLoading] = useState(false);
 
-    // Preisberechnung: 75 CHF für die ersten 3, dann 50 CHF
-    // Abzüglich der noch verfügbaren inkludierten Services (von vorne angerechnet)
+    // Preisberechnung: 75 CHF fÃƒÂ¼r die ersten 3, dann 50 CHF
+    // AbzÃƒÂ¼glich der noch verfÃƒÂ¼gbaren inkludierten Services (von vorne angerechnet)
     const calculatePrice = () => {
         const totalCourses = courses.length;
         const availableServices = Math.max(0, includedServices - usedServices);
 
-        // Preise für alle Kurse berechnen (ohne Rabatt)
+        // Preise fÃƒÂ¼r alle Kurse berechnen (ohne Rabatt)
         const prices = [];
         for (let i = 0; i < totalCourses; i++) {
             prices.push(i < 3 ? 75 : 50);
@@ -1085,10 +1085,10 @@ const CaptureServiceModal = ({ isOpen, onClose, user, includedServices, usedServ
     };
 
     const handleSubmit = async () => {
-        // Validierung: Alle URLs müssen ausgefüllt sein
+        // Validierung: Alle URLs mÃƒÂ¼ssen ausgefÃƒÂ¼llt sein
         const invalidCourses = courses.filter(c => !c.url.trim());
         if (invalidCourses.length > 0) {
-            showNotification('Bitte fülle alle URL-Felder aus.', 'error');
+            showNotification('Bitte fÃƒÂ¼lle alle URL-Felder aus.', 'error');
             return;
         }
 
@@ -1113,7 +1113,7 @@ const CaptureServiceModal = ({ isOpen, onClose, user, includedServices, usedServ
             if (data.url) {
                 window.location.href = data.url;
             } else if (data.success && pricing.total === 0) {
-                // Komplett kostenlos - direkt bestätigen
+                // Komplett kostenlos - direkt bestÃƒÂ¤tigen
                 showNotification('Erfassungsservice erfolgreich gebucht!', 'success');
                 onClose();
             } else {
@@ -1149,7 +1149,7 @@ const CaptureServiceModal = ({ isOpen, onClose, user, includedServices, usedServ
                         <p className="text-green-800 text-sm flex items-center">
                             <CheckCircle className="w-4 h-4 mr-2" />
                             <span>
-                                <strong>{Math.max(0, includedServices - usedServices)}</strong> von {includedServices} inkludierten Services noch verfügbar
+                                <strong>{Math.max(0, includedServices - usedServices)}</strong> von {includedServices} inkludierten Services noch verfÃƒÂ¼gbar
                                 {usedServices > 0 && <span className="text-green-600"> ({usedServices} bereits genutzt)</span>}
                             </span>
                         </p>
@@ -1159,8 +1159,8 @@ const CaptureServiceModal = ({ isOpen, onClose, user, includedServices, usedServ
                 {/* Course Form */}
                 <div className="p-6 space-y-4">
                     <p className="text-sm text-gray-500 mb-4">
-                        Gib für jeden Kurs die URL an (z.B. Link zu deiner Website oder einem PDF).
-                        Im Notizfeld kannst du zusätzliche Informationen angeben.
+                        Gib fÃƒÂ¼r jeden Kurs die URL an (z.B. Link zu deiner Website oder einem PDF).
+                        Im Notizfeld kannst du zusÃƒÂ¤tzliche Informationen angeben.
                     </p>
 
                     {courses.map((course, index) => (
@@ -1206,7 +1206,7 @@ const CaptureServiceModal = ({ isOpen, onClose, user, includedServices, usedServ
                                     <textarea
                                         value={course.notes}
                                         onChange={(e) => updateCourse(index, 'notes', e.target.value)}
-                                        placeholder="Zusätzliche Informationen zum Kurs..."
+                                        placeholder="ZusÃƒÂ¤tzliche Informationen zum Kurs..."
                                         rows={2}
                                         className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
                                     />
@@ -1219,7 +1219,7 @@ const CaptureServiceModal = ({ isOpen, onClose, user, includedServices, usedServ
                         onClick={addCourse}
                         className="w-full border-2 border-dashed border-gray-300 rounded-xl py-3 text-gray-500 hover:border-primary hover:text-primary transition flex items-center justify-center"
                     >
-                        <Plus className="w-5 h-5 mr-2" /> Weiteren Kurs hinzufügen
+                        <Plus className="w-5 h-5 mr-2" /> Weiteren Kurs hinzufÃƒÂ¼gen
                     </button>
                 </div>
 
@@ -1367,7 +1367,7 @@ const GoodwillDecisionModal = ({
 
                 <div className="px-6 py-5 space-y-5">
                     <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">Rückerstattung</label>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">RÃƒÂ¼ckerstattung</label>
                         <div className="grid grid-cols-4 gap-2">
                             {[0, 25, 50, 100].map((value) => (
                                 <button
@@ -1382,7 +1382,7 @@ const GoodwillDecisionModal = ({
                         </div>
                         {refundPercent < 100 && (
                             <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mt-3">
-                                Kulante Entscheidungen wirken sich in der Regel positiv auf das Kundenerlebnis aus. Bei weniger als 100 % kannst du optional eine kurze Erklärung mitschicken.
+                                Kulante Entscheidungen wirken sich in der Regel positiv auf das Kundenerlebnis aus. Bei weniger als 100 % kannst du optional eine kurze ErklÃƒÂ¤rung mitschicken.
                             </p>
                         )}
                     </div>
@@ -1393,7 +1393,7 @@ const GoodwillDecisionModal = ({
                             value={message}
                             onChange={(e) => setMessage(e.target.value)}
                             rows={4}
-                            placeholder="Optional: kurze Erklärung oder Hinweis zur Entscheidung"
+                            placeholder="Optional: kurze ErklÃƒÂ¤rung oder Hinweis zur Entscheidung"
                             className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
                         />
                     </div>
@@ -1535,7 +1535,12 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                 throw new Error(data.error || 'Refund fehlgeschlagen');
             }
 
-            showNotification(`Buchung storniert. CHF ${data.credit_amount_chf || ''} als Guthaben gutgeschrieben.`);
+            const creditAmount = Number(data.credit_amount_chf || 0);
+            showNotification(
+                creditAmount > 0
+                    ? `Buchung storniert. CHF ${data.credit_amount_chf} als Guthaben gutgeschrieben.`
+                    : 'Buchung storniert.'
+            );
 
             // Update credit balance in user state
             if (data.new_balance_chf && setUser) {
@@ -1548,7 +1553,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
             }
         } catch (error) {
             console.error('Refund error:', error);
-            showNotification(error.message || 'Stornierung fehlgeschlagen. Bitte versuche es später erneut.', 'error');
+            showNotification(error.message || 'Stornierung fehlgeschlagen. Bitte versuche es spÃƒÂ¤ter erneut.', 'error');
         } finally {
             setRefundingBookingId(null);
         }
@@ -1580,14 +1585,14 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                 throw new Error(data.error || 'Einspruch fehlgeschlagen');
             }
 
-            showNotification('Einspruch eingereicht. Unser Team wird den Fall prüfen und sich bei dir melden.');
+            showNotification('Einspruch eingereicht. Unser Team wird den Fall prÃƒÂ¼fen und sich bei dir melden.');
 
             if (refreshBookings) {
                 await refreshBookings(userId);
             }
         } catch (error) {
             console.error('Dispute error:', error);
-            showNotification(error.message || 'Einspruch fehlgeschlagen. Bitte versuche es später erneut.');
+            showNotification(error.message || 'Einspruch fehlgeschlagen. Bitte versuche es spÃƒÂ¤ter erneut.');
         } finally {
             setDisputingBookingId(null);
         }
@@ -1623,7 +1628,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
             }
         } catch (error) {
             console.error('Goodwill request error:', error);
-            showNotification(error.message || 'Kulanzanfrage fehlgeschlagen. Bitte versuche es später erneut.');
+            showNotification(error.message || 'Kulanzanfrage fehlgeschlagen. Bitte versuche es spÃƒÂ¤ter erneut.');
         } finally {
             setGoodwillSubmittingId(null);
         }
@@ -1653,7 +1658,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                 throw new Error(data.error || 'Kulanzentscheidung fehlgeschlagen');
             }
 
-            showNotification(refundPercent === 0 ? 'Kulanzanfrage abgelehnt.' : `Kulanz-Rückerstattung (${refundPercent} %) wurde ausgeführt.`);
+            showNotification(refundPercent === 0 ? 'Kulanzanfrage abgelehnt.' : `Kulanz-RÃƒÂ¼ckerstattung (${refundPercent} %) wurde ausgefÃƒÂ¼hrt.`);
             if (refreshTeacherEarnings) {
                 await refreshTeacherEarnings(user.id);
             }
@@ -1694,14 +1699,14 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                 throw new Error(data.error || 'Fehler beim Markieren');
             }
 
-            showNotification('Buchung als durchgeführt markiert. Auszahlung wird in 2 Tagen freigegeben.', 'success');
+            showNotification('Buchung als durchgefÃƒÂ¼hrt markiert. Auszahlung wird in 2 Tagen freigegeben.', 'success');
 
             if (refreshTeacherEarnings) {
                 await refreshTeacherEarnings(user.id);
             }
         } catch (error) {
             console.error('Mark delivered error:', error);
-            showNotification(error.message || 'Markierung fehlgeschlagen. Bitte versuche es später erneut.');
+            showNotification(error.message || 'Markierung fehlgeschlagen. Bitte versuche es spÃƒÂ¤ter erneut.');
         } finally {
             setDeliveringBookingId(null);
         }
@@ -1720,14 +1725,14 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
         }
     };
 
-    const openRefundDialog = (bookingId) => {
+    const openRefundDialog = (booking) => {
         setActionReason('');
         setActionDialog({
             type: 'refund',
-            targetId: bookingId,
+            targetId: booking?.booking_id,
             title: 'Buchung stornieren?',
-            message: 'Die Buchung wird storniert und der Betrag als Guthaben auf deinem KursNavi-Konto gutgeschrieben. Das Guthaben wird automatisch bei deiner nächsten Buchung verrechnet.',
-            confirmLabel: 'Stornierung bestätigen',
+            message: 'Die Buchung wird storniert und der Betrag als Guthaben auf deinem KursNavi-Konto gutgeschrieben. Das Guthaben wird automatisch bei deiner nÃƒÂ¤chsten Buchung verrechnet.',
+            confirmLabel: 'Stornierung bestÃƒÂ¤tigen',
             tone: 'danger'
         });
     };
@@ -1738,11 +1743,11 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
             type: 'dispute',
             targetId: bookingId,
             title: 'Einspruch einreichen',
-            message: 'Beschreibe kurz, weshalb du Einspruch einlegen möchtest. Die Auszahlung an den Anbieter bleibt bis zur Klärung blockiert.',
+            message: 'Beschreibe kurz, weshalb du Einspruch einlegen mÃƒÂ¶chtest. Die Auszahlung an den Anbieter bleibt bis zur KlÃƒÂ¤rung blockiert.',
             confirmLabel: 'Einspruch senden',
             tone: 'warning',
             needsReason: true,
-            reasonLabel: 'Grund für den Einspruch',
+            reasonLabel: 'Grund fÃƒÂ¼r den Einspruch',
             reasonPlaceholder: 'z.B. Kurs nicht stattgefunden oder Leistung nicht wie beschrieben'
         });
     };
@@ -1753,12 +1758,12 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
             type: 'goodwillRequest',
             targetId: bookingId,
             title: 'Kulanzanfrage senden',
-            message: 'Deine Anfrage wird an den Anbieter weitergeleitet. Der Anbieter kann 0 %, 25 %, 50 % oder 100 % Rückerstattung bewilligen.',
+            message: 'Deine Anfrage wird an den Anbieter weitergeleitet. Der Anbieter kann 0 %, 25 %, 50 % oder 100 % RÃƒÂ¼ckerstattung bewilligen.',
             confirmLabel: 'Kulanzanfrage senden',
             tone: 'warning',
             needsReason: true,
             reasonLabel: 'Nachricht an den Anbieter (optional)',
-            reasonPlaceholder: 'Optional: kurze Erklärung, weshalb du um Kulanz bittest'
+            reasonPlaceholder: 'Optional: kurze ErklÃƒÂ¤rung, weshalb du um Kulanz bittest'
         });
     };
 
@@ -1767,9 +1772,9 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
         setActionDialog({
             type: 'deliver',
             targetId: bookingId,
-            title: 'Buchung als durchgeführt markieren?',
-            message: 'Damit bestätigst du die Leistungserbringung. Die Auszahlung wird 2 Tage später freigegeben.',
-            confirmLabel: 'Durchführung bestätigen',
+            title: 'Buchung als durchgefÃƒÂ¼hrt markieren?',
+            message: 'Damit bestÃƒÂ¤tigst du die Leistungserbringung. Die Auszahlung wird 2 Tage spÃƒÂ¤ter freigegeben.',
+            confirmLabel: 'DurchfÃƒÂ¼hrung bestÃƒÂ¤tigen',
             tone: 'warning'
         });
     };
@@ -1780,12 +1785,12 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
             type: 'cancelEvent',
             targetId: eventId,
             title: 'Termin absagen?',
-            message: 'Alle bestätigten Buchungen für diesen Termin werden automatisch erstattet.',
+            message: 'Alle bestÃƒÂ¤tigten Buchungen fÃƒÂ¼r diesen Termin werden automatisch erstattet.',
             confirmLabel: 'Termin absagen',
             tone: 'danger',
             needsReason: true,
-            reasonLabel: 'Grund für die Absage (optional)',
-            reasonPlaceholder: 'Optionaler Hinweis für Teilnehmer und Support'
+            reasonLabel: 'Grund fÃƒÂ¼r die Absage (optional)',
+            reasonPlaceholder: 'Optionaler Hinweis fÃƒÂ¼r Teilnehmer und Support'
         });
     };
 
@@ -1794,7 +1799,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
         setGoodwillDecisionMessage('');
         setGoodwillDialog({
             bookingId,
-            message: `${studentName || 'Der Lernende'} hat eine Kulanzanfrage gestellt. Du kannst 0 %, 25 %, 50 % oder 100 % Rückerstattung gewähren.${requestMessage ? `\n\nNachricht: ${requestMessage}` : ''}`
+            message: `${studentName || 'Der Lernende'} hat eine Kulanzanfrage gestellt. Du kannst 0 %, 25 %, 50 % oder 100 % RÃƒÂ¼ckerstattung gewÃƒÂ¤hren.${requestMessage ? `\n\nNachricht: ${requestMessage}` : ''}`
         });
     };
 
@@ -2009,7 +2014,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                 const prioIds = new Set(data.filter(c => c.is_prio).map(c => c.id));
                 const allCourseIds = data.map(c => c.id);
 
-                // Alphabetisch sortierte Kurse (für Auswahl bei Limit)
+                // Alphabetisch sortierte Kurse (fÃƒÂ¼r Auswahl bei Limit)
                 const sortedByTitle = [...data].sort((a, b) =>
                     (a.title || '').localeCompare(b.title || '', 'de')
                 );
@@ -2036,9 +2041,9 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                     // Die ersten maxPrio Kurse (alphabetisch) als Prio behalten
                     const allowedPrioIds = new Set(sortedByTitle.slice(0, maxPrio).map(c => c.id));
 
-                    // Kurse die jetzt nicht mehr Prio sein dürfen
+                    // Kurse die jetzt nicht mehr Prio sein dÃƒÂ¼rfen
                     const toRemovePrio = [...prioIds].filter(id => !allowedPrioIds.has(id));
-                    // Kurse die Prio werden müssen (falls sie es noch nicht sind)
+                    // Kurse die Prio werden mÃƒÂ¼ssen (falls sie es noch nicht sind)
                     const toAddPrio = [...allowedPrioIds].filter(id => !prioIds.has(id));
 
                     // Prio entfernen
@@ -2048,7 +2053,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                             .update({ is_prio: false })
                             .eq('id', courseId);
                     }
-                    // Prio hinzufügen
+                    // Prio hinzufÃƒÂ¼gen
                     for (const courseId of toAddPrio) {
                         await supabase
                             .from('courses')
@@ -2061,7 +2066,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                 // Default-Auswahl: Wenn noch keine Prio-Kurse markiert sind,
                 // die ersten Kurse (alphabetisch, bis maxPrioCourses) automatisch als Prio setzen
                 else if (prioIds.size === 0 && data.length > maxPrio && maxPrio > 0) {
-                    // Alphabetisch sortiert - die ersten X auswählen
+                    // Alphabetisch sortiert - die ersten X auswÃƒÂ¤hlen
                     const selectedCourseIds = sortedByTitle.slice(0, maxPrio).map(c => c.id);
 
                     // Update in DB (RLS Policy stellt sicher, dass nur eigene Kurse aktualisiert werden)
@@ -2097,9 +2102,9 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
         const maxPrio = currentPlan?.maxPrioCourses || 0;
         const currentPrioCount = prioCourseIds.size;
 
-        // Wenn wir hinzufügen wollen und das Limit erreicht ist
+        // Wenn wir hinzufÃƒÂ¼gen wollen und das Limit erreicht ist
         if (!isCurrentlyPrio && currentPrioCount >= maxPrio && maxPrio !== Infinity) {
-            showNotification(`Du hast bereits ${maxPrio} Prio-Kurse ausgewählt (Maximum für ${currentPlan?.title}).`);
+            showNotification(`Du hast bereits ${maxPrio} Prio-Kurse ausgewÃƒÂ¤hlt (Maximum fÃƒÂ¼r ${currentPlan?.title}).`);
             return;
         }
 
@@ -2112,7 +2117,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
         }
         setPrioCourseIds(newPrioIds);
 
-        // DB Update - direkt mit user_id Filter für Sicherheit
+        // DB Update - direkt mit user_id Filter fÃƒÂ¼r Sicherheit
         const { error } = await supabase
             .from('courses')
             .update({ is_prio: !isCurrentlyPrio })
@@ -2179,7 +2184,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
              dashView === 'merkliste' ? (
                 <div>
                     <h2 className="text-2xl font-bold mb-6 text-dark">Merkliste</h2>
-                    <p className="text-gray-500 mb-6">Beobachte Kurse anderer Anbieter — praktisch für die Wettbewerbsanalyse.</p>
+                    <p className="text-gray-500 mb-6">Beobachte Kurse anderer Anbieter Ã¢â‚¬â€ praktisch fÃƒÂ¼r die Wettbewerbsanalyse.</p>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {(savedCourses || []).length > 0 ? (savedCourses || []).map(course => (
                             <div key={course.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col transition hover:shadow-md">
@@ -2192,7 +2197,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                 <h3 className="font-bold text-dark cursor-pointer hover:text-primary transition" onClick={() => handleNavigateToCourse(course)}>
                                     {course.title}
                                 </h3>
-                                <p className="text-sm text-gray-500 mt-1">{course.instructor_name} • {course.canton}</p>
+                                <p className="text-sm text-gray-500 mt-1">{course.instructor_name} Ã¢â‚¬Â¢ {course.canton}</p>
                                 {course.price != null && (
                                     <p className="text-sm font-bold text-dark mt-2">CHF {formatPriceCHF(course.price)}</p>
                                 )}
@@ -2221,11 +2226,11 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                         <span className="text-2xl font-bold capitalize">{currentPlan.title}</span>
                                     </div>
                                     <p className="text-xs text-gray-400 mt-1">
-                                        {isEnterprisePlan ? 'Unbegrenzte Prio-Kurse' : `${currentPlan.maxPrioCourses} Prio-Kurse`} • bis {currentPlan.maxCategoriesPerCourse} Kategorien/Kurs • {currentPlan.includedCaptureServices > 0 ? `${currentPlan.includedCaptureServices} Erfassungsservices inkl.` : 'keine Erfassungsservices inklusive'}
+                                        {isEnterprisePlan ? 'Unbegrenzte Prio-Kurse' : `${currentPlan.maxPrioCourses} Prio-Kurse`} Ã¢â‚¬Â¢ bis {currentPlan.maxCategoriesPerCourse} Kategorien/Kurs Ã¢â‚¬Â¢ {currentPlan.includedCaptureServices > 0 ? `${currentPlan.includedCaptureServices} Erfassungsservices inkl.` : 'keine Erfassungsservices inklusive'}
                                     </p>
                                     {packageExpiresAt && userTier !== 'basic' && (
                                         <p className="text-xs text-yellow-400 mt-1">
-                                            Gültig bis: {new Date(packageExpiresAt).toLocaleDateString('de-CH')}
+                                            GÃƒÂ¼ltig bis: {new Date(packageExpiresAt).toLocaleDateString('de-CH')}
                                         </p>
                                     )}
                                 </div>
@@ -2260,16 +2265,16 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                 </div>
                                 <div>
                                     <h3 className="text-lg font-bold text-dark font-heading">Keine Zeit, Kurse zu erfassen?</h3>
-                                    <p className="text-sm text-gray-600 mt-1 max-w-lg">Wir übernehmen das für dich! Sende uns einfach deine Unterlagen (PDF/Link). Wir optimieren Texte & Bilder.</p>
+                                    <p className="text-sm text-gray-600 mt-1 max-w-lg">Wir ÃƒÂ¼bernehmen das fÃƒÂ¼r dich! Sende uns einfach deine Unterlagen (PDF/Link). Wir optimieren Texte & Bilder.</p>
                                     <div className="flex flex-wrap gap-4 mt-3 text-xs font-medium text-gray-500">
                                         <span className="flex items-center"><CheckCircle className="w-3 h-3 mr-1 text-green-500"/> SEO-Optimierung</span>
                                         <span className="flex items-center"><CheckCircle className="w-3 h-3 mr-1 text-green-500"/> Bild-Bearbeitung</span>
-                                        <span className="flex items-center"><CheckCircle className="w-3 h-3 mr-1 text-green-500"/> Qualitäts-Check</span>
+                                        <span className="flex items-center"><CheckCircle className="w-3 h-3 mr-1 text-green-500"/> QualitÃƒÂ¤ts-Check</span>
                                     </div>
                                 </div>
                             </div>
                             <div className="text-right flex flex-col items-end">
-                                <span className="text-xs text-gray-400 mb-1 bg-white px-2 py-0.5 rounded border">ab 4. Kurs günstiger</span>
+                                <span className="text-xs text-gray-400 mb-1 bg-white px-2 py-0.5 rounded border">ab 4. Kurs gÃƒÂ¼nstiger</span>
                                 <button
                                     type="button"
                                     onClick={() => setShowCaptureServiceModal(true)}
@@ -2287,12 +2292,12 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                             <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm flex items-center"><div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mr-4"><Clock className="text-purple-600" /></div><div><p className="text-sm text-gray-500">Aktive Kurse</p><p className="text-2xl font-bold text-dark">{courseCount}</p></div></div>
                         </div>
 
-                        <h2 className="text-xl font-bold mb-4 font-heading text-dark">Buchungs-Historie (Schüler)</h2>
+                        <h2 className="text-xl font-bold mb-4 font-heading text-dark">Buchungs-Historie (SchÃƒÂ¼ler)</h2>
                         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-8">
                              {teacherEarnings.length > 0 ? (
                                 <div className="overflow-x-auto">
                                     <table className="w-full text-left">
-                                            <thead className="bg-beige border-b border-gray-200"><tr><th className="px-6 py-4 font-semibold text-gray-600">Datum</th><th className="px-6 py-4 font-semibold text-gray-600">Kurs</th><th className="px-6 py-4 font-semibold text-gray-600">Schüler</th><th className="px-6 py-4 font-semibold text-gray-600">Auszahlung (Netto)</th><th className="px-6 py-4 font-semibold text-gray-600">Status</th><th className="px-6 py-4 font-semibold text-gray-600">Aktion</th></tr></thead>
+                                            <thead className="bg-beige border-b border-gray-200"><tr><th className="px-6 py-4 font-semibold text-gray-600">Datum</th><th className="px-6 py-4 font-semibold text-gray-600">Kurs</th><th className="px-6 py-4 font-semibold text-gray-600">SchÃƒÂ¼ler</th><th className="px-6 py-4 font-semibold text-gray-600">Auszahlung (Netto)</th><th className="px-6 py-4 font-semibold text-gray-600">Status</th><th className="px-6 py-4 font-semibold text-gray-600">Aktion</th></tr></thead>
                                             <tbody className="divide-y divide-gray-100">{teacherEarnings.map(earning => {
                                                 const isFlex = earning.bookingType === 'platform_flex';
                                                 const isPartialGoodwillRefund = earning.goodwillStatus === 'approved' && earning.goodwillRefundPercent > 0 && earning.goodwillRefundPercent < 100;
@@ -2316,7 +2321,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                                         : earning.disputedAt
                                                             ? <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Einspruch</span>
                                                             : isFlex && !earning.deliveredAt
-                                                                ? <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">Warte auf Bestätigung</span>
+                                                                ? <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">Warte auf BestÃƒÂ¤tigung</span>
                                                                 : isFlex && earning.deliveredAt
                                                                     ? <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">Auszahlung geplant</span>
                                                                     : <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Offen</span>
@@ -2339,21 +2344,21 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                                                 disabled={tooEarly || deliveringBookingId === earning.id}
                                                                 onClick={() => openDeliveredDialog(earning.id)}
                                                                 className={`inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-bold transition ${tooEarly ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-green-50 text-green-700 hover:bg-green-100 border border-green-200'}`}
-                                                                title={tooEarly ? 'Frühestens 48h nach Zahlung möglich' : 'Buchung als durchgeführt markieren'}
+                                                                title={tooEarly ? 'FrÃƒÂ¼hestens 48h nach Zahlung mÃƒÂ¶glich' : 'Buchung als durchgefÃƒÂ¼hrt markieren'}
                                                             >
                                                                 {deliveringBookingId === earning.id ? <Loader className="w-3 h-3 mr-1 animate-spin" /> : <CheckCircle className="w-3 h-3 mr-1" />}
-                                                                {tooEarly ? '48h-Sperre' : 'Durchgeführt'}
+                                                                {tooEarly ? '48h-Sperre' : 'DurchgefÃƒÂ¼hrt'}
                                                             </button>
                                                         )}
                                                         {!hasPendingGoodwill && isFlex && earning.deliveredAt && !earning.isPaidOut && (
-                                                            <span className="inline-flex items-center text-xs text-green-600"><Check className="w-3 h-3 mr-1" />Bestätigt</span>
+                                                            <span className="inline-flex items-center text-xs text-green-600"><Check className="w-3 h-3 mr-1" />BestÃƒÂ¤tigt</span>
                                                         )}
                                                     </td>
                                                 </tr>);
                                             })}</tbody>
                                     </table>
                                 </div>
-                             ) : <div className="p-8 text-center text-gray-500">Noch keine Buchungen über die Plattform.</div>}
+                             ) : <div className="p-8 text-center text-gray-500">Noch keine Buchungen ÃƒÂ¼ber die Plattform.</div>}
                         </div>
 
                         <div className="flex items-center justify-between mb-4">
@@ -2391,9 +2396,9 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                                     {showPrioInfo && (
                                                         <div className="absolute left-0 top-6 z-50 w-72 bg-dark text-white text-xs p-3 rounded-lg shadow-xl">
                                                             <p className="font-bold mb-1">Was sind Prio-Kurse?</p>
-                                                            <p>Prio-Kurse erhalten einen Ranking-Bonus und werden in den Suchergebnissen höher angezeigt. Die Anzahl der verfügbaren Prio-Slots hängt von deinem Abo ab.</p>
+                                                            <p>Prio-Kurse erhalten einen Ranking-Bonus und werden in den Suchergebnissen hÃƒÂ¶her angezeigt. Die Anzahl der verfÃƒÂ¼gbaren Prio-Slots hÃƒÂ¤ngt von deinem Abo ab.</p>
                                                             {myCourses.length > (currentPlan?.maxPrioCourses || 0) && (
-                                                                <p className="mt-2 text-yellow-300">Wähle unten aus, welche deiner Kurse priorisiert werden sollen.</p>
+                                                                <p className="mt-2 text-yellow-300">WÃƒÂ¤hle unten aus, welche deiner Kurse priorisiert werden sollen.</p>
                                                             )}
                                                             <div className="absolute -top-1.5 left-2 w-3 h-3 bg-dark transform rotate-45"></div>
                                                         </div>
@@ -2406,12 +2411,12 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                                 ) : myCourses.length <= currentPlan?.maxPrioCourses ? (
                                                     <span className="text-green-600">Alle deine Kurse sind automatisch Prio-Kurse</span>
                                                 ) : (
-                                                    <span>Wähle aus, welche Kurse priorisiert werden sollen</span>
+                                                    <span>WÃƒÂ¤hle aus, welche Kurse priorisiert werden sollen</span>
                                                 )}
                                             </p>
                                         </div>
                                     </div>
-                                    {/* Zähler nur für nicht-Enterprise-User anzeigen */}
+                                    {/* ZÃƒÂ¤hler nur fÃƒÂ¼r nicht-Enterprise-User anzeigen */}
                                     {!isEnterprisePlan && (
                                         <div className="flex items-center gap-2">
                                             <div className={`px-4 py-2 rounded-lg font-bold text-sm ${
@@ -2503,7 +2508,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                                                     <MapPin className="w-4 h-4 text-gray-400 flex-shrink-0" />
                                                                     {allLocations.join(', ')}
                                                                 </span>
-                                                            ) : <span className="text-gray-400 text-sm italic">–</span>;
+                                                            ) : <span className="text-gray-400 text-sm italic">Ã¢â‚¬â€œ</span>;
                                                         })()}
                                                     </td>
                                                     <td className="px-6 py-4">
@@ -2511,7 +2516,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                                             <span className="text-xs px-2 py-1 rounded font-bold bg-yellow-100 text-yellow-700 border border-yellow-200">Entwurf</span>
                                                         )}
                                                         {(course.status === 'published' || !course.status) && (
-                                                            <span className="text-xs px-2 py-1 rounded font-bold bg-green-100 text-green-700 border border-green-200">Veröffentlicht</span>
+                                                            <span className="text-xs px-2 py-1 rounded font-bold bg-green-100 text-green-700 border border-green-200">VerÃƒÂ¶ffentlicht</span>
                                                         )}
                                                     </td>
                                                     <td className="px-6 py-4">
@@ -2529,7 +2534,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                                     <td className="px-6 py-4 flex gap-2">
                                                         {/* Quick Publish/Pause Toggle */}
                                                         {course.status === 'draft' && (
-                                                            <button onClick={() => handleUpdateCourseStatus(course.id, 'published')} className="text-green-600 hover:text-green-700 bg-green-50 p-2 rounded-full" title="Veröffentlichen">
+                                                            <button onClick={() => handleUpdateCourseStatus(course.id, 'published')} className="text-green-600 hover:text-green-700 bg-green-50 p-2 rounded-full" title="VerÃƒÂ¶ffentlichen">
                                                                 <Play className="w-4 h-4" />
                                                             </button>
                                                         )}
@@ -2539,8 +2544,8 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                                             </button>
                                                         )}
                                                         <button onClick={() => handleEditCourse(course)} className="text-blue-500 hover:text-blue-700 bg-blue-50 p-2 rounded-full" title="Bearbeiten"><PenTool className="w-4 h-4" /></button>
-                                                        <button onClick={() => handleDeleteCourse(course.id)} className="text-red-500 hover:text-red-700 bg-red-50 p-2 rounded-full" title="Löschen"><Trash2 className="w-4 h-4" /></button>
-                                                        {/* Termine expand button – only for platform courses with events */}
+                                                        <button onClick={() => handleDeleteCourse(course.id)} className="text-red-500 hover:text-red-700 bg-red-50 p-2 rounded-full" title="LÃƒÂ¶schen"><Trash2 className="w-4 h-4" /></button>
+                                                        {/* Termine expand button Ã¢â‚¬â€œ only for platform courses with events */}
                                                         {course.booking_type === 'platform' && course.course_events?.length > 0 && (
                                                             <button
                                                                 onClick={() => setExpandedCourseEvents(expandedCourseEvents === course.id ? null : course.id)}
@@ -2556,7 +2561,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                                 {expandedCourseEvents === course.id && course.course_events?.length > 0 && (
                                                     <tr>
                                                         <td colSpan="99" className="px-6 py-3 bg-gray-50">
-                                                            <div className="text-sm font-bold text-gray-600 mb-2">Termine für «{course.title}»</div>
+                                                            <div className="text-sm font-bold text-gray-600 mb-2">Termine fÃƒÂ¼r Ã‚Â«{course.title}Ã‚Â»</div>
                                                             <div className="space-y-2">
                                                                 {course.course_events
                                                                     .sort((a, b) => new Date(a.start_date) - new Date(b.start_date))
@@ -2569,7 +2574,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                                                                 <Calendar className={`w-4 h-4 flex-shrink-0 ${isCancelled ? 'text-red-400' : 'text-gray-400'}`} />
                                                                                 <div>
                                                                                     <span className={`font-medium ${isCancelled ? 'text-red-600 line-through' : 'text-dark'}`}>
-                                                                                        {ev.start_date ? new Date(ev.start_date).toLocaleDateString('de-CH', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' }) : '–'}
+                                                                                        {ev.start_date ? new Date(ev.start_date).toLocaleDateString('de-CH', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' }) : 'Ã¢â‚¬â€œ'}
                                                                                     </span>
                                                                                     {ev.location && <span className="text-gray-500 text-xs ml-2">{ev.location}</span>}
                                                                                     {bookingCount > 0 && <span className="text-xs text-blue-600 ml-2">({bookingCount} Buchung{bookingCount !== 1 ? 'en' : ''})</span>}
@@ -2610,7 +2615,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                 <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-4">
                                     <p className="text-sm font-medium text-green-800">Dein Guthaben</p>
                                     <p className="text-2xl font-bold text-green-700">CHF {((user.credit_balance_cents / 100).toFixed(2)).replace(/\B(?=(\d{3})+(?!\d))/g, "'")}</p>
-                                    <p className="text-xs text-green-600 mt-1">Wird automatisch bei deiner nächsten Buchung verrechnet.</p>
+                                    <p className="text-xs text-green-600 mt-1">Wird automatisch bei deiner nÃƒÂ¤chsten Buchung verrechnet.</p>
                                 </div>
                             )}
                             <h2 className="text-xl font-bold mb-4 text-dark">{t.my_bookings}</h2>
@@ -2653,7 +2658,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                                         <span className="text-[10px] font-bold bg-purple-100 text-purple-700 px-2 py-0.5 rounded">Flexibel</span>
                                                     )}
                                                 </div>
-                                                <p className="text-sm text-gray-500">{booking.instructor_name} • {booking.canton}</p>
+                                                <p className="text-sm text-gray-500">{booking.instructor_name} Ã¢â‚¬Â¢ {booking.canton}</p>
 
                                                 {/* Event info for platform bookings, or flex message */}
                                                 {showFlexBookingMessage ? (
@@ -2661,7 +2666,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                                 ) : booking.event ? (
                                                     <p className="text-xs text-gray-500 mt-2">
                                                         {booking.event.start_date && new Date(booking.event.start_date).toLocaleDateString('de-CH')}
-                                                        {booking.event.location && ` • ${booking.event.location}`}
+                                                        {booking.event.location && ` Ã¢â‚¬Â¢ ${booking.event.location}`}
                                                     </p>
                                                 ) : null}
 
@@ -2672,11 +2677,11 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                                         </div>
                                                     ) : isEventCancelled ? (
                                                         <div className="text-red-600 text-sm font-medium flex items-center">
-                                                            <XCircle className="w-4 h-4 mr-1" /> Termin abgesagt – Rückerstattung folgt
+                                                            <XCircle className="w-4 h-4 mr-1" /> Termin abgesagt Ã¢â‚¬â€œ RÃƒÂ¼ckerstattung folgt
                                                         </div>
                                                     ) : (
                                                         <div className="text-green-600 text-sm font-medium flex items-center">
-                                                            <CheckCircle className="w-4 h-4 mr-1" /> {t.booking_confirmed || 'Bestätigt'}
+                                                            <CheckCircle className="w-4 h-4 mr-1" /> {t.booking_confirmed || 'BestÃƒÂ¤tigt'}
                                                         </div>
                                                     )}
                                                 </div>
@@ -2687,7 +2692,9 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                                         <p className="text-xs text-gray-500 font-medium">
                                                             {isPartialGoodwillRefund
                                                                 ? `Diese Buchung wurde storniert. Rueckerstattet wurden ${booking.goodwill_refund_percent} % (CHF ${((booking.goodwill_refund_amount_cents || 0) / 100).toFixed(2)}).`
-                                                                : 'Diese Buchung wurde storniert. Der Betrag wurde als Guthaben gutgeschrieben.'}
+                                                                : Number(booking.price || 0) > 0
+                                                                    ? 'Diese Buchung wurde storniert. Der Betrag wurde als Guthaben gutgeschrieben.'
+                                                                    : 'Diese Buchung wurde storniert.'}
                                                         </p>
                                                         {booking.refunded_at && (
                                                             <p className="text-[10px] text-gray-400 mt-1">
@@ -2698,7 +2705,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                                 ) : canRefund ? (
                                                     <div className="mt-3 pt-3 border-t border-gray-100">
                                                         <button
-                                                            onClick={() => openRefundDialog(booking.booking_id)}
+                                                            onClick={() => openRefundDialog(booking)}
                                                             className="text-xs text-red-600 hover:text-red-700 hover:underline font-medium"
                                                         >
                                                             Buchung stornieren
@@ -2744,7 +2751,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                                             {goodwillSubmittingId === booking.booking_id ? 'Wird gesendet...' : 'Kulanzanfrage senden'}
                                                         </button>
                                                         <p className="text-[10px] text-gray-400 mt-1">
-                                                            Nach Ablauf der automatischen Stornofrist kann der Anbieter freiwillig 0 %, 25 %, 50 % oder 100 % rückerstatten.
+                                                            Nach Ablauf der automatischen Stornofrist kann der Anbieter freiwillig 0 %, 25 %, 50 % oder 100 % rÃƒÂ¼ckerstatten.
                                                         </p>
                                                     </div>
                                                 ) : canDispute ? (
@@ -2762,7 +2769,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                                     </div>
                                                 ) : (
                                                     <p className="text-xs text-gray-400 mt-2 leading-relaxed">
-                                                        {t.no_cancellation_hint || 'Stornierung, Rückerstattung oder Umbuchung nach Absprache mit dem Anbieter.'}
+                                                        {t.no_cancellation_hint || 'Stornierung, RÃƒÂ¼ckerstattung oder Umbuchung nach Absprache mit dem Anbieter.'}
                                                     </p>
                                                 )}
                                             </div>
@@ -2790,7 +2797,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                             <h3 className="font-bold text-dark cursor-pointer hover:text-primary transition" onClick={() => handleNavigateToCourse(course)}>
                                                 {course.title}
                                             </h3>
-                                            <p className="text-sm text-gray-500">{course.instructor_name} • {course.canton}</p>
+                                            <p className="text-sm text-gray-500">{course.instructor_name} Ã¢â‚¬Â¢ {course.canton}</p>
 
                                             <div className="mt-4 flex items-center justify-between">
                                                 <button
@@ -2847,7 +2854,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                         <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
                             <Crown className="w-12 h-12 text-green-600 animate-bounce" aria-hidden="true" />
                         </div>
-                        <h2 id="success-modal-title" className="text-3xl font-bold font-heading text-dark mb-4">Herzlichen Glückwunsch!</h2>
+                        <h2 id="success-modal-title" className="text-3xl font-bold font-heading text-dark mb-4">Herzlichen GlÃƒÂ¼ckwunsch!</h2>
                         <p className="text-gray-600 mb-8 text-lg leading-relaxed">
                             Dein Upgrade war erfolgreich! <br/>
                             Du hast jetzt Zugriff auf alle <strong>{currentPlan?.title || userTier}</strong> Features. <br/>
@@ -2857,7 +2864,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                             onClick={() => setShowSuccessModal(false)}
                             className="bg-primary text-white px-10 py-4 rounded-full font-bold hover:bg-orange-600 transition w-full shadow-lg hover:shadow-orange-500/30 text-lg"
                         >
-                            Los geht's! ðŸš€
+                            Los geht's! ÃƒÂ°Ã…Â¸Ã…Â¡Ã¢â€šÂ¬
                         </button>
                     </div>
                 </div>
@@ -2880,7 +2887,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                         <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
                             <Crown className="w-12 h-12 text-green-600 animate-bounce" />
                         </div>
-                        <h2 className="text-3xl font-bold font-heading text-dark mb-4">Herzlichen Glückwunsch!</h2>
+                        <h2 className="text-3xl font-bold font-heading text-dark mb-4">Herzlichen GlÃƒÂ¼ckwunsch!</h2>
                         <p className="text-gray-600 mb-8 text-lg leading-relaxed">
                             Dein Paket-Upgrade war erfolgreich!<br/>
                             Du hast jetzt Zugriff auf alle <strong>{currentPlan?.title || userTier}</strong> Features.<br/>
