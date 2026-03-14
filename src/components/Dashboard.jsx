@@ -948,6 +948,10 @@ const SubscriptionSection = ({ user, currentTier, packageExpiresAt, checkoutLoad
     };
 
     const tierOrder = ['basic', 'pro', 'premium', 'enterprise'];
+    const renewalWindowMs = 90 * 24 * 60 * 60 * 1000;
+    const isWithinRenewalWindow = packageExpiresAt
+        ? (new Date(packageExpiresAt).getTime() - Date.now()) <= renewalWindowMs
+        : false;
 
     return (
         <div className="space-y-6 animate-in fade-in">
@@ -967,8 +971,9 @@ const SubscriptionSection = ({ user, currentTier, packageExpiresAt, checkoutLoad
                     renderAction={({ plan, colors, isCurrent }) => {
                         const isUpgrade = tierOrder.indexOf(plan.id) > tierOrder.indexOf(currentTier);
                         const isPaidCurrent = isCurrent && plan.id !== 'basic' && packageExpiresAt;
+                        const canRenewNow = isPaidCurrent && isWithinRenewalWindow;
 
-                        if (isPaidCurrent) {
+                        if (canRenewNow) {
                             return (
                                 <div>
                                     <div className="mb-2 text-center text-xs text-gray-500">
