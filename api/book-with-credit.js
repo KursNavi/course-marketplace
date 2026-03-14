@@ -6,6 +6,7 @@ import {
   sendCourseBookingEmails
 } from './_lib/course-booking-email.js';
 import { getDashboardUrl } from './_lib/base-url.js';
+import { restoreRefundedFlexBooking } from './_lib/rebook-flex.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -228,6 +229,49 @@ export default async function handler(req, res) {
 
     if (insertError) {
       console.error('Booking insert failed:', insertError);
+
+      if (insertError.code === '23505' && effectiveBookingType === 'platform_flex' && !eventId) {
+        try {
+          const restoredBooking = await restoreRefundedFlexBooking({
+            supabase,
+            userId,
+            courseId,
+            paidAt,
+            autoRefundUntil,
+            payoutEligibleAt,
+            stripePaymentIntentId: null,
+            stripeCheckoutSessionId: null,
+            ticketPeriodId: periodId,
+            guardianAttestation,
+            paidViaCredit: !isFreeCourse,
+            creditUsedCents: isFreeCourse ? 0 : coursePriceCents
+          });
+
+          if (restoredBooking) {
+            return res.status(200).json({
+              success: true,
+              restored_booking: true,
+              new_balance_chf: (newBalanceCents / 100).toFixed(2)
+            });
+          }
+        } catch (restoreError) {
+          console.error('Flex rebooking restore failed:', restoreError);
+        }
+
+        if (periodId) {
+          await supabase.rpc('release_ticket', { p_period_id: periodId });
+        }
+        if (!isFreeCourse) {
+          await supabase.rpc('add_credit', {
+            p_user_id: userId,
+            p_amount_cents: coursePriceCents,
+            p_type: 'cancellation_credit',
+            p_description: 'Rückbuchung: Buchung fehlgeschlagen'
+          });
+        }
+        return res.status(400).json({ error: 'Buchung existiert bereits' });
+      }
+
       // Release ticket + re-credit
       if (periodId) {
         await supabase.rpc('release_ticket', { p_period_id: periodId });

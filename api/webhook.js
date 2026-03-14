@@ -5,6 +5,7 @@ import PDFDocument from 'pdfkit';
 import { getDashboardUrl } from './_lib/base-url.js';
 import { getEmailConfig, resolveUserEmail, sendEmailOrThrow } from './_lib/email-config.js';
 import { getRequiredSanitizedEnv } from './_lib/env.js';
+import { restoreRefundedFlexBooking } from './_lib/rebook-flex.js';
 
 export const config = {
   api: {
@@ -527,6 +528,31 @@ export default async function handler(req, res) {
       });
 
       if (insertError) {
+        if (insertError.code === '23505' && bookingType === 'platform_flex' && !eventId) {
+          try {
+            const restoredBooking = await restoreRefundedFlexBooking({
+              supabase,
+              userId,
+              courseId,
+              paidAt,
+              autoRefundUntil,
+              payoutEligibleAt,
+              stripePaymentIntentId: session.payment_intent,
+              stripeCheckoutSessionId: session.id,
+              ticketPeriodId: periodId,
+              guardianAttestation: metadata.guardianAttestation === 'true',
+              paidViaCredit: false,
+              creditUsedCents: deductedCreditCents
+            });
+
+            if (restoredBooking) {
+              return res.status(200).json({ received: true, note: 'Restored refunded flex booking' });
+            }
+          } catch (restoreError) {
+            console.error('Flex rebooking restore failed:', restoreError);
+          }
+        }
+
         if (deductedCreditCents > 0 && userId) {
           await supabase.rpc('add_credit', {
             p_user_id: userId,
