@@ -1,6 +1,5 @@
-import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
-import { getRequiredSanitizedEnv } from './_lib/env.js';
+import { getStripeClient, logStripeError, toStripeClientMessage } from './_lib/stripe.js';
 
 function getBaseUrl(req) {
     const forwardedProto = req.headers['x-forwarded-proto'];
@@ -20,7 +19,7 @@ export default async function handler(req, res) {
     }
 
     try {
-        const stripe = new Stripe(getRequiredSanitizedEnv('STRIPE_SECRET_KEY'));
+        const stripe = getStripeClient();
         const supabase = createClient(
             process.env.SUPABASE_URL,
             process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -159,7 +158,10 @@ export default async function handler(req, res) {
         return res.status(200).json({ url: session.url });
 
     } catch (error) {
-        console.error('Package Checkout Error:', error);
-        return res.status(500).json({ error: error.message });
+        logStripeError('Package Checkout Error', error);
+        return res.status(500).json({
+            error: toStripeClientMessage(error, 'Checkout konnte nicht gestartet werden. Bitte versuche es erneut.'),
+            type: error?.type || 'unknown',
+        });
     }
 }
