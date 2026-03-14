@@ -79,6 +79,18 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Nicht genügend Guthaben' });
     }
 
+    const getEventCutoffDate = (value) => {
+      if (!value) return null;
+      const normalizedValue = String(value).trim();
+      if (!normalizedValue) return null;
+
+      const parsed = normalizedValue.includes('T')
+        ? new Date(normalizedValue)
+        : new Date(`${normalizedValue}T23:59:59`);
+
+      return Number.isNaN(parsed.getTime()) ? null : parsed;
+    };
+
     // 3. Determine effective booking type
     let effectiveBookingType = course.booking_type;
     let eventStartAt = null;
@@ -94,9 +106,10 @@ export default async function handler(req, res) {
           .eq('course_id', courseId)
           .is('cancelled_at', null);
 
-        const hasFutureEvents = (possibleEvents || []).some((event) => (
-          event?.start_date && new Date(`${event.start_date}T23:59:59`) >= new Date()
-        ));
+        const hasFutureEvents = (possibleEvents || []).some((event) => {
+          const cutoff = getEventCutoffDate(event?.start_date);
+          return cutoff ? cutoff >= new Date() : false;
+        });
 
         if (hasFutureEvents) {
           return res.status(400).json({ error: 'Event-ID erforderlich für Direktbuchung' });
@@ -117,7 +130,8 @@ export default async function handler(req, res) {
         if (Number(eventData.course_id) !== Number(courseId)) {
           return res.status(400).json({ error: 'Event gehört nicht zu diesem Kurs' });
         }
-        if (eventData.start_date && new Date(`${eventData.start_date}T23:59:59`) < new Date()) {
+        const eventCutoff = getEventCutoffDate(eventData.start_date);
+        if (eventCutoff && eventCutoff < new Date()) {
           return res.status(400).json({ error: 'Dieser Termin liegt in der Vergangenheit' });
         }
         if (eventData.cancelled_at) {

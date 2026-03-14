@@ -1041,7 +1041,21 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
 
     // UX Logic: Has the user entered a Valid Date?
     const hasDatedEvents = events.some(ev => !!ev.start_date);
-    const isEventPast = (value) => !!value && new Date(`${value}T23:59:59`) < new Date();
+    const getEventCutoffDate = (value) => {
+        if (!value) return null;
+        const normalizedValue = String(value).trim();
+        if (!normalizedValue) return null;
+
+        const parsed = normalizedValue.includes('T')
+            ? new Date(normalizedValue)
+            : new Date(`${normalizedValue}T23:59:59`);
+
+        return Number.isNaN(parsed.getTime()) ? null : parsed;
+    };
+    const isEventPast = (value) => {
+        const cutoff = getEventCutoffDate(value);
+        return cutoff ? cutoff < new Date() : false;
+    };
     const archivedBookedEvents = events.filter(ev => (ev.bookingCount || 0) > 0 && isEventPast(ev.start_date));
     const visibleEvents = events.filter(ev => !((ev.bookingCount || 0) > 0 && isEventPast(ev.start_date)));
 

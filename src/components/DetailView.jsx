@@ -347,9 +347,23 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
         }
     }, [course]);
     
+    const getEventCutoffDate = (value) => {
+        if (!value) return null;
+        if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value;
+
+        const normalizedValue = String(value).trim();
+        if (!normalizedValue) return null;
+
+        const parsed = normalizedValue.includes('T')
+            ? new Date(normalizedValue)
+            : new Date(`${normalizedValue}T23:59:59`);
+
+        return Number.isNaN(parsed.getTime()) ? null : parsed;
+    };
+
     const isUpcomingEventDate = (value) => {
-        if (!value) return false;
-        return new Date(`${value}T23:59:59`) >= new Date();
+        const cutoff = getEventCutoffDate(value);
+        return cutoff ? cutoff >= new Date() : false;
     };
 
     // --- SMART BOOKING HANDLER ---
