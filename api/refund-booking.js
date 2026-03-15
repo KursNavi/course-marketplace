@@ -270,6 +270,33 @@ export default async function handler(req, res) {
       return res.status(404).json({ error: 'Buchung nicht gefunden' });
     }
 
+    if (booking.status === 'refunded' || booking.refunded_at) {
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('credit_balance_cents')
+        .eq('id', userId)
+        .single();
+
+      if (profileError) {
+        console.error('Profile lookup after already-refunded booking failed:', profileError);
+        return res.status(500).json({ error: 'Interner Fehler' });
+      }
+
+      const alreadyRefundedAmountCents = Math.max(
+        booking.credit_used_cents || 0,
+        Math.round((Number(booking.courses?.price) || 0) * 100)
+      );
+
+      return res.status(200).json({
+        success: true,
+        message: 'Buchung war bereits storniert',
+        credit_amount_chf: (alreadyRefundedAmountCents / 100).toFixed(2),
+        new_balance_chf: ((profile?.credit_balance_cents || 0) / 100).toFixed(2),
+        credit_added: false,
+        already_processed: true
+      });
+    }
+
     if (booking.status !== 'confirmed') {
       return res.status(400).json({ error: 'Buchung ist nicht aktiv' });
     }
