@@ -1072,6 +1072,7 @@ const CaptureServiceModal = ({ isOpen, onClose, user, includedServices, usedServ
     };
 
     const pricing = calculatePrice();
+    const freeCoursesLabel = pricing.freeCount === 1 ? '1 Kurs' : `${pricing.freeCount} Kurse`;
 
     const addCourse = () => {
         setCourses([...courses, { url: '', notes: '' }]);
@@ -1236,9 +1237,9 @@ const CaptureServiceModal = ({ isOpen, onClose, user, includedServices, usedServ
                             <span>{courses.length}</span>
                         </div>
                         {pricing.freeCount > 0 && (
-                            <div className="flex justify-between text-green-600">
-                                <span>Davon inklusive:</span>
-                                <span>-{pricing.freeCount} Kurse (CHF 0.-)</span>
+                            <div className="flex justify-between items-start gap-4 text-green-700">
+                                <span>Davon durch dein Abo kostenlos abgedeckt:</span>
+                                <span className="text-right font-medium">{freeCoursesLabel}</span>
                             </div>
                         )}
                         {pricing.paidCount > 0 && (
