@@ -785,37 +785,47 @@ export default function KursNaviPro() {  // 1. Initial State Logic
   };
 
   const fetchBookings = async (userId) => {
-    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-    const { data } = await supabase
-      .from('bookings')
-      .select('*, courses(*), course_events(*)')
-      .eq('user_id', userId)
-      .in('status', ['confirmed', 'refunded'])
-      .or(`status.eq.confirmed,refunded_at.gt.${thirtyDaysAgo}`);
-    // Merge booking data with course data so Dashboard can show booking-specific info
-    setMyBookings(data ? data.map(booking => ({
-      ...booking.courses,
-      booking_id: booking.id,
-      booking_type: booking.booking_type,
-      booking_status: booking.status,
-      paid_at: booking.paid_at,
-      delivered_at: booking.delivered_at,
-      auto_refund_until: booking.auto_refund_until,
-      is_paid: booking.is_paid,
-      disputed_at: booking.disputed_at,
-      refunded_at: booking.refunded_at,
-      goodwill_status: booking.goodwill_status,
-      goodwill_requested_at: booking.goodwill_requested_at,
-      goodwill_request_message: booking.goodwill_request_message,
-      goodwill_decided_at: booking.goodwill_decided_at,
-      goodwill_decision_message: booking.goodwill_decision_message,
-      goodwill_refund_percent: booking.goodwill_refund_percent,
-      goodwill_refund_amount_cents: booking.goodwill_refund_amount_cents,
-      payout_eligible_at: booking.payout_eligible_at,
-      event_id: booking.event_id,
-      event: booking.course_events
-    })).filter(Boolean) : []);
-  };
+      try {
+        const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+        const { data, error } = await supabase
+          .from('bookings')
+          .select('*, courses(*), course_events(*)')
+          .eq('user_id', userId)
+          .in('status', ['confirmed', 'refunded'])
+          .or(`status.eq.confirmed,refunded_at.gt.${thirtyDaysAgo}`);
+
+        if (error) {
+          throw error;
+        }
+
+        // Merge booking data with course data so Dashboard can show booking-specific info
+        setMyBookings(data ? data.map(booking => ({
+          ...booking.courses,
+          booking_id: booking.id,
+          booking_type: booking.booking_type,
+          booking_status: booking.status,
+          paid_at: booking.paid_at,
+          delivered_at: booking.delivered_at,
+          auto_refund_until: booking.auto_refund_until,
+          is_paid: booking.is_paid,
+          disputed_at: booking.disputed_at,
+          refunded_at: booking.refunded_at,
+          goodwill_status: booking.goodwill_status,
+          goodwill_requested_at: booking.goodwill_requested_at,
+          goodwill_request_message: booking.goodwill_request_message,
+          goodwill_decided_at: booking.goodwill_decided_at,
+          goodwill_decision_message: booking.goodwill_decision_message,
+          goodwill_refund_percent: booking.goodwill_refund_percent,
+          goodwill_refund_amount_cents: booking.goodwill_refund_amount_cents,
+          payout_eligible_at: booking.payout_eligible_at,
+          event_id: booking.event_id,
+          event: booking.course_events
+        })).filter(Boolean) : []);
+      } catch (error) {
+        console.warn('Failed to fetch bookings:', error);
+        setMyBookings([]);
+      }
+    };
 
   const fetchSavedCourses = async (userId) => {
     if (!userId) { setSavedCourses([]); setSavedCourseIds([]); return; }
