@@ -54,16 +54,28 @@ export default async function handler(req, res) {
         const includedByTier = { basic: 0, pro: 0, premium: 5, enterprise: 15 };
         const { data: profile, error: profileError } = await supabase
             .from('profiles')
-            .select('package_tier, used_capture_services, stripe_customer_id')
+            .select('package_tier, stripe_customer_id')
             .eq('id', userId)
             .single();
         if (profileError || !profile) {
+            console.error('Profile lookup error:', profileError);
             return res.status(400).json({ error: 'Profil nicht gefunden' });
         }
 
+        // used_capture_services may not exist yet — default to 0 if column missing
+        let usedCaptureServices = 0;
+        try {
+            const { data: captureData } = await supabase
+                .from('profiles')
+                .select('used_capture_services')
+                .eq('id', userId)
+                .maybeSingle();
+            usedCaptureServices = Number(captureData?.used_capture_services || 0);
+        } catch (_) { /* column may not exist */ }
+
         const tier = (profile.package_tier || 'basic').toLowerCase();
         const includedServices = includedByTier[tier] || 0;
-        const usedServices = Number(profile.used_capture_services || 0);
+        const usedServices = usedCaptureServices;
         const availableServices = Math.max(0, includedServices - usedServices);
 
         const prices = Array.from({ length: courses.length }, (_, i) => (i < 3 ? 75 : 50));
