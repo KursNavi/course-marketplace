@@ -1101,9 +1101,19 @@ const CaptureServiceModal = ({ isOpen, onClose, user, includedServices, usedServ
         setIsLoading(true);
 
         try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session?.access_token) {
+                showNotification('Bitte melde dich erneut an.', 'error');
+                setIsLoading(false);
+                return;
+            }
+
             const response = await fetch('/api/create-capture-service-checkout', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session.access_token}`
+                },
                 body: JSON.stringify({
                     userId: user?.id,
                     userEmail: user?.email,
