@@ -1567,6 +1567,40 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
         } catch (error) {
             console.error('Refund error:', error);
             if (!refundSucceeded) {
+                try {
+                    const { data: bookingState, error: bookingStateError } = await supabase
+                        .from('bookings')
+                        .select('status, refunded_at, credit_used_cents, courses(price)')
+                        .eq('id', bookingId)
+                        .eq('user_id', userId)
+                        .maybeSingle();
+
+                    if (!bookingStateError && bookingState && (bookingState.status === 'refunded' || bookingState.refunded_at)) {
+                        const refundedCents = Math.max(
+                            Number(bookingState.credit_used_cents || 0),
+                            Math.round((Number(bookingState.courses?.price) || 0) * 100)
+                        );
+
+                        showNotification(
+                            refundedCents > 0
+                                ? `Buchung storniert. CHF ${(refundedCents / 100).toFixed(2)} als Guthaben gutgeschrieben.`
+                                : 'Buchung storniert.'
+                        );
+
+                        if (refreshBookings) {
+                            try {
+                                await refreshBookings(userId);
+                            } catch (refreshError) {
+                                console.warn('Bookings refresh after refund state recovery failed:', refreshError);
+                            }
+                        }
+
+                        return;
+                    }
+                } catch (recoveryError) {
+                    console.warn('Refund recovery check failed:', recoveryError);
+                }
+
                 showNotification(error.message || 'Stornierung fehlgeschlagen. Bitte versuche es später erneut.', 'error');
             }
         } finally {
