@@ -9,6 +9,8 @@ on:
 jobs:
   validate:
     runs-on: ubuntu-latest
+    env:
+      HAS_E2E_SECRETS: ${{ secrets.SUPABASE_URL_TEST }}
 
     steps:
       - name: Checkout
@@ -35,8 +37,24 @@ jobs:
       - name: Test
         run: npm test
 
-      - name: E2E
-        run: npm run test:e2e
+      - name: E2E (harness)
+        run: npm run test:e2e:harness
+
+      - name: E2E (app — hybrid)
+        if: env.HAS_E2E_SECRETS != ''
+        env:
+          SUPABASE_URL_TEST: ${{ secrets.SUPABASE_URL_TEST }}
+          SUPABASE_PUBLISHABLE_KEY_TEST: ${{ secrets.SUPABASE_PUBLISHABLE_KEY_TEST }}
+          SUPABASE_SECRET_KEY_TEST: ${{ secrets.SUPABASE_SECRET_KEY_TEST }}
+          E2E_PROVIDER_EMAIL: ${{ secrets.E2E_PROVIDER_EMAIL }}
+          E2E_PROVIDER_PASSWORD: ${{ secrets.E2E_PROVIDER_PASSWORD }}
+          E2E_PROVIDER_ID: ${{ secrets.E2E_PROVIDER_ID }}
+          E2E_LEARNER_EMAIL: ${{ secrets.E2E_LEARNER_EMAIL }}
+          E2E_LEARNER_PASSWORD: ${{ secrets.E2E_LEARNER_PASSWORD }}
+          E2E_LEARNER_ID: ${{ secrets.E2E_LEARNER_ID }}
+        run: |
+          npm run seed:e2e
+          npm run test:e2e:app
 
       - name: Build
         run: npm run build
