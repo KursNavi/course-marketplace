@@ -1561,17 +1561,28 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                     : 'Buchung storniert.'
             );
 
-            // Update credit balance in user state
-            if (data.new_balance_chf && setUser) {
-                setUser(prev => prev ? { ...prev, credit_balance_cents: Math.round(parseFloat(data.new_balance_chf) * 100) } : prev);
-            }
-
             // Refresh bookings list
             if (refreshBookings) {
                 try {
                     await refreshBookings(userId);
                 } catch (refreshError) {
                     console.warn('Bookings refresh after refund failed:', refreshError);
+                }
+            }
+
+            // Refresh credit balance from DB (authoritative source)
+            if (setUser) {
+                try {
+                    const { data: freshProfile } = await supabase
+                        .from('profiles')
+                        .select('credit_balance_cents')
+                        .eq('id', userId)
+                        .single();
+                    if (freshProfile) {
+                        setUser(prev => prev ? { ...prev, credit_balance_cents: freshProfile.credit_balance_cents || 0 } : prev);
+                    }
+                } catch (creditRefreshError) {
+                    console.warn('Credit balance refresh failed:', creditRefreshError);
                 }
             }
         } catch (error) {
@@ -1602,6 +1613,22 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                 await refreshBookings(userId);
                             } catch (refreshError) {
                                 console.warn('Bookings refresh after refund state recovery failed:', refreshError);
+                            }
+                        }
+
+                        // Refresh credit balance from DB (recovery path)
+                        if (setUser) {
+                            try {
+                                const { data: freshProfile } = await supabase
+                                    .from('profiles')
+                                    .select('credit_balance_cents')
+                                    .eq('id', userId)
+                                    .single();
+                                if (freshProfile) {
+                                    setUser(prev => prev ? { ...prev, credit_balance_cents: freshProfile.credit_balance_cents || 0 } : prev);
+                                }
+                            } catch (e) {
+                                console.warn('Credit balance refresh (recovery) failed:', e);
                             }
                         }
 
