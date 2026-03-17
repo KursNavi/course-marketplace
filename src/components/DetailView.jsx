@@ -9,7 +9,7 @@ import { getBereichByAreaSlug, getBereichUrl } from '../lib/bereichLandingConfig
 import { DEFAULT_COURSE_IMAGE } from '../lib/imageUtils';
 import { getCourseCategoryText, getPrimaryCategory, getPrimaryCategoryLabel, getPrimaryCategorySlug, isSyntheticCategory } from '../lib/courseMetadata';
 
-const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, savedCourseIds, onToggleSaveCourse, showNotification, refreshBookings }) => {
+const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, setUser, savedCourseIds, onToggleSaveCourse, showNotification, refreshBookings }) => {
     const [showLeadModal, setShowLeadModal] = useState(false);
     const [leadStatus, setLeadStatus] = useState('idle'); // idle, submitting, success
 
@@ -439,6 +439,22 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, sav
 
                 if (typeof refreshBookings === 'function' && user?.id) {
                     await refreshBookings(user.id);
+                }
+
+                // Refresh credit balance from DB
+                if (setUser && user?.id) {
+                    try {
+                        const { data: freshProfile } = await supabase
+                            .from('profiles')
+                            .select('credit_balance_cents')
+                            .eq('id', user.id)
+                            .single();
+                        if (freshProfile) {
+                            setUser(prev => prev ? { ...prev, credit_balance_cents: freshProfile.credit_balance_cents || 0 } : prev);
+                        }
+                    } catch (e) {
+                        console.warn('Credit balance refresh after booking failed:', e);
+                    }
                 }
 
                 window.history.replaceState({}, document.title, '/dashboard');

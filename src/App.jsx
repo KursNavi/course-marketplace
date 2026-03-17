@@ -1795,6 +1795,7 @@ useEffect(() => {
           t={t}
           setSelectedTeacher={setSelectedTeacher}
           user={user}
+          setUser={setUser}
           savedCourseIds={savedCourseIds}
           onToggleSaveCourse={toggleSaveCourse}
           showNotification={showNotification}
