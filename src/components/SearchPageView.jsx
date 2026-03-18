@@ -774,7 +774,7 @@ const SearchPageView = ({
                                 <Compass className="w-6 h-6 text-white" />
                               </div>
                               <span className="text-[11px] font-bold uppercase tracking-widest text-white/70 mb-2">Themenwelt</span>
-                              <h3 className="font-bold text-white text-base mb-2 font-heading">Welche Ausbildung passt zu dir?</h3>
+                              <h3 className="font-bold text-white text-base mb-2 font-heading">{bereichConfig.typeKey === 'beruflich' ? 'Welche Ausbildung passt zu dir?' : 'Welcher Kurs passt zu dir?'}</h3>
                               <p className="text-sm text-white/80 mb-5 leading-relaxed">Unser Ratgeber hilft dir, den passenden Kurs zu finden.</p>
                               <span className="inline-flex items-center gap-1.5 text-sm font-bold text-white bg-white/20 backdrop-blur-sm rounded-full px-5 py-2 group-hover:bg-white/30 transition-colors duration-300">
                                 Ratgeber entdecken <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
