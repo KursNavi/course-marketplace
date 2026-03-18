@@ -1864,6 +1864,14 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                         {/* A: PRICE / LINK FIELDS */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                             <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-1">Anzahl Lektionen (Optional)</label>
+                                <input type="number" name="sessionCount" value={sessionCount} onChange={(e) => { setSessionCount(e.target.value); markDirty(); }} placeholder="z.B. 5" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-1">Lektionsdauer (Optional)</label>
+                                <input type="text" name="sessionLength" value={sessionLength} onChange={(e) => { setSessionLength(e.target.value); markDirty(); }} placeholder="z.B. 2 Stunden" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+                            </div>
+                            <div>
                                 <label className="block text-sm font-bold text-gray-700 mb-1">Preis (CHF)</label>
                                 <input type="number" min="0" name="price" value={price} onChange={(e) => { setPrice(e.target.value); markDirty(); }} placeholder={bookingType === 'lead' ? "Optional" : "0 = Kostenlos"} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
                                 {(bookingType === 'platform' || bookingType === 'platform_flex') && (!price || Number(price) === 0) && (
@@ -1876,14 +1884,6 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                                     <textarea name="freeReason" value={freeReason} onChange={(e) => { setFreeReason(e.target.value); markDirty(); }} placeholder="z.B. Schnupperkurs, Probetraining, ehrenamtliches Angebot…" rows={2} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none resize-none" />
                                 </div>
                             )}
-                            <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-1">Anzahl Lektionen</label>
-                                <input type="number" name="sessionCount" value={sessionCount} onChange={(e) => { setSessionCount(e.target.value); markDirty(); }} placeholder="z.B. 5" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-1">Lektionsdauer {(bookingType === 'platform' || bookingType === 'platform_flex') && '*'}</label>
-                                <input required={bookingType === 'platform' || bookingType === 'platform_flex'} type="text" name="sessionLength" value={sessionLength} onChange={(e) => { setSessionLength(e.target.value); markDirty(); }} placeholder="z.B. 2 Stunden" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
-                            </div>
                             <div>
                                 <label className="block text-sm font-bold text-gray-700 mb-1">Webseite (Optional)</label>
                                 <input type="url" name="providerUrl" value={providerUrl} onChange={(e) => { setProviderUrl(e.target.value); markDirty(); }} placeholder="https://..." className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
