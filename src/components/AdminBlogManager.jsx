@@ -349,7 +349,7 @@ export default function AdminBlogManager({ showNotification, setView, courses })
             <ToolBtn onClick={() => insertTag('<h2>', '</h2>')} label="H2" />
             <ToolBtn onClick={() => insertTag('<h3>', '</h3>')} label="H3" />
             <ToolBtn onClick={() => insertTag('<strong>', '</strong>')} icon={<Bold size={16}/>} />
-            <ToolBtn onClick={() => insertTag('<ul>\n<li>', '</li>\n</ul>')} label="List" />
+            <ToolBtn onClick={() => insertText('<ul>\n<li>Punkt 1</li>\n<li>Punkt 2</li>\n<li>Punkt 3</li>\n</ul>')} label="List" />
             <div className="w-px h-6 bg-gray-300 mx-1"></div>
             <button onClick={() => setLinkToolMode(linkToolMode === 'generic' ? null : 'generic')} className={`px-3 py-1 text-xs font-bold rounded flex items-center ${linkToolMode === 'generic' ? 'bg-green-600 text-white' : 'bg-white hover:bg-green-50 text-green-600'}`}><Globe size={14} className="mr-1"/> Link</button>
             <button onClick={() => setLinkToolMode(linkToolMode === 'course' ? null : 'course')} className={`px-3 py-1 text-xs font-bold rounded flex items-center ${linkToolMode === 'course' ? 'bg-blue-600 text-white' : 'bg-white hover:bg-blue-50 text-blue-600'}`}><LinkIcon size={14} className="mr-1"/> Kurs-Link</button>
