@@ -168,6 +168,7 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t, isImp
 
             if (signInError) {
                 setDeleteError('Falsches Passwort. Bitte versuchen Sie es erneut.');
+                setDeletePassword('');
                 setDeleting(false);
                 return;
             }
@@ -312,11 +313,20 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t, isImp
         }
 
         if (formData.email !== user.email || formData.password) {
-            if (formData.password && formData.password !== formData.confirmPassword) { showNotification("Passwords do not match!"); setSaving(false); return; }
-            const updates = {}; if (formData.email !== user.email) updates.email = formData.email; if (formData.password) updates.password = formData.password;
+            if (formData.password && formData.password !== formData.confirmPassword) { showNotification("Passwörter stimmen nicht überein"); setSaving(false); return; }
+            const updates = {};
+            const emailChanged = formData.email !== user.email;
+            if (emailChanged) updates.email = formData.email;
+            if (formData.password) updates.password = formData.password;
             const { error: authError } = await supabase.auth.updateUser(updates);
-            if (authError) { showNotification("Error updating account: " + authError.message); } else { showNotification(t.msg_auth_success); }
-        } else { showNotification("Profile saved successfully!"); }
+            if (authError) {
+                showNotification("Fehler beim Aktualisieren des Kontos: " + authError.message);
+            } else if (emailChanged) {
+                showNotification("Bestätigungs-E-Mail wurde an " + formData.email + " gesendet. Bitte bestätigen Sie die neue Adresse.");
+            } else {
+                showNotification("Passwort aktualisiert");
+            }
+        } else { showNotification("Profil gespeichert"); }
 
         // Update local user state with new name
         if (formData.full_name && setUser) {

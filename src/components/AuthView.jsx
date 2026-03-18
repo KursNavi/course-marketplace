@@ -87,7 +87,7 @@ const AuthView = ({ setView, setUser, showNotification, lang }) => {
                 }
                 showNotification(t.msg_welcome_back_toast);
             }
-        } catch (error) { showNotification(error.message); } finally { setLoading(false); }
+        } catch (error) { setPassword(''); showNotification(error.message); } finally { setLoading(false); }
     };
     
     // RENDER: Success Page (After Registration)
