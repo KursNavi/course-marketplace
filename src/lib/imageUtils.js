@@ -63,15 +63,19 @@ export async function computeImageHash(file) {
 
 /**
  * Prüft ob ein Bild mit diesem Hash bereits im Storage existiert
+ * @param {string} hash - Der SHA-256 Hash der Datei
+ * @param {string} pathPrefix - Optionaler Pfad-Prefix (z.B. 'blog/')
  * @returns {string|null} Die Public URL wenn vorhanden, sonst null
  */
-export async function getExistingImageByHash(hash) {
+export async function getExistingImageByHash(hash, pathPrefix = '') {
     const fileName = `${hash}.jpg`;
+    const fullPath = pathPrefix ? `${pathPrefix}${fileName}` : fileName;
+    const folder = pathPrefix ? pathPrefix.replace(/\/$/, '') : '';
 
     // Versuche die Datei zu listen um zu prüfen ob sie existiert
     const { data, error } = await supabase.storage
         .from(BUCKET_NAME)
-        .list('', { search: fileName });
+        .list(folder, { search: fileName });
 
     if (error || !data) return null;
 
@@ -80,21 +84,25 @@ export async function getExistingImageByHash(hash) {
 
     const { data: { publicUrl } } = supabase.storage
         .from(BUCKET_NAME)
-        .getPublicUrl(fileName);
+        .getPublicUrl(fullPath);
 
     return publicUrl;
 }
 
 /**
  * Lädt ein Bild mit Hash-basiertem Namen hoch
+ * @param {File} file - Die Bilddatei
+ * @param {string} hash - Der SHA-256 Hash der Datei
+ * @param {string} pathPrefix - Optionaler Pfad-Prefix (z.B. 'blog/')
  * @returns {string} Die Public URL des Bildes
  */
-export async function uploadImageWithHash(file, hash) {
+export async function uploadImageWithHash(file, hash, pathPrefix = '') {
     const fileName = `${hash}.jpg`;
+    const fullPath = pathPrefix ? `${pathPrefix}${fileName}` : fileName;
 
     const { error: uploadError } = await supabase.storage
         .from(BUCKET_NAME)
-        .upload(fileName, file, { upsert: false });
+        .upload(fullPath, file, { upsert: false });
 
     if (uploadError) {
         // Falls Datei bereits existiert, ist das OK - wir verwenden sie einfach
@@ -106,7 +114,7 @@ export async function uploadImageWithHash(file, hash) {
 
     const { data: { publicUrl } } = supabase.storage
         .from(BUCKET_NAME)
-        .getPublicUrl(fileName);
+        .getPublicUrl(fullPath);
 
     return publicUrl;
 }
