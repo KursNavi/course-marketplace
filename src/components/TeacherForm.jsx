@@ -1959,7 +1959,7 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                                     {bookingType === 'platform_flex' && <p className="text-xs text-blue-700">Flexible Buchung: Wähle deine Region(en). Der Termin wird nach der Buchung vereinbart.</p>}
                                     {bookingType === 'lead' && <p className="text-xs text-blue-700">Datum optional. Wenn keine fixen Termine, bitte Region wählen.</p>}
                                     {bookingType === 'platform' && <p className="text-xs text-blue-700">Datum, Ort und Zeit sind für Direktbuchungen erforderlich.</p>}
-                                    {bookingType !== 'platform_flex' && <p className="text-xs text-amber-700 mt-2">Termine mit bestehenden Buchungen sind gesperrt. Vergangene gebuchte Termine werden automatisch archiviert und hier nicht mehr bearbeitbar angezeigt.</p>}
+                                    {bookingType === 'platform' && <p className="text-xs text-amber-700 mt-2">Termine mit bestehenden Buchungen sind gesperrt. Vergangene gebuchte Termine werden automatisch archiviert und hier nicht mehr bearbeitbar angezeigt.</p>}
                                 </div>
                                 {bookingType !== 'platform_flex' && (
                                     <button type="button" onClick={addEvent} className="bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-bold hover:bg-blue-700 flex items-center"><Plus className="w-4 h-4 mr-1"/> Termin hinzufügen</button>
