@@ -67,6 +67,7 @@ export default function BlogList({ articles, setView, setSelectedArticle }) {
   const handleRead = (article) => {
     setSelectedArticle(article);
     setView('blog-detail');
+    window.history.pushState({ view: 'blog-detail' }, '', `/blog/${article.slug || article.id}`);
     window.scrollTo(0,0);
   };
 

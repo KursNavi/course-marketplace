@@ -251,6 +251,8 @@ export default function KursNaviPro() {  // 1. Initial State Logic
   const [savedCourseIds, setSavedCourseIds] = useState([]);
   const [teacherEarnings, setTeacherEarnings] = useState([]);
   const [articles, setArticles] = useState([]); // Blog State
+  const articlesRef = useRef([]);
+  useEffect(() => { articlesRef.current = articles; }, [articles]);
   const [selectedArticle, setSelectedArticle] = useState(null);
    const [loading, setLoading] = useState(true);
    const [fetchError, setFetchError] = useState(false);
@@ -1293,6 +1295,17 @@ export default function KursNaviPro() {  // 1. Initial State Logic
         setView('search');
         window.history.replaceState({ view: 'search' }, '', '/search');
         return;
+      }
+
+      // Blog-Detail: Artikel aus URL-Slug auflösen
+      if (nextView === 'blog-detail' && path.startsWith('/blog/')) {
+        const slug = path.split('/')[2];
+        const found = (articlesRef.current || []).find(a => a.slug === slug);
+        if (found) {
+          setSelectedArticle(found);
+          setView('blog-detail');
+          return;
+        }
       }
 
       // 3) Nicht-Detail: Kurs zurücksetzen und View normal setzen
