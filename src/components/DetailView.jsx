@@ -23,6 +23,7 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
 
     // Booking attestation state (for platform/platform_flex bookings)
     const [guardianAttested, setGuardianAttested] = useState(false);
+    const [bookingInProgress, setBookingInProgress] = useState(false);
 
     const { taxonomy, getTypeLabel, getAreaLabel } = useTaxonomy();
 
@@ -398,6 +399,9 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
             return;
         }
 
+        if (bookingInProgress) return;
+        setBookingInProgress(true);
+
         try {
             const { data: { session } } = await supabase.auth.getSession();
             if (!session?.access_token) {
@@ -467,6 +471,8 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
         } catch (error) {
             console.warn("Checkout error:", error);
             showNotification && showNotification(error.message || 'Ein Fehler ist aufgetreten', 'error');
+        } finally {
+            setBookingInProgress(false);
         }
     };
 
@@ -922,16 +928,20 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
                                             </div>
                                         ) : (
                                             <button
-                                                onClick={() => !ev.isFull && handleBookingAction(ev)}
-                                                disabled={(ev.isFull && effectiveBookingType === 'platform') || (effectiveBookingType !== 'lead' && !guardianAttested)}
+                                                onClick={() => !ev.isFull && !bookingInProgress && handleBookingAction(ev)}
+                                                disabled={(ev.isFull && effectiveBookingType === 'platform') || (effectiveBookingType !== 'lead' && !guardianAttested) || bookingInProgress}
                                                 className={`w-full py-2.5 rounded-lg font-bold text-sm transition flex items-center justify-center
-                                                    ${(ev.isFull && effectiveBookingType === 'platform') || (effectiveBookingType !== 'lead' && !guardianAttested)
+                                                    ${(ev.isFull && effectiveBookingType === 'platform') || (effectiveBookingType !== 'lead' && !guardianAttested) || bookingInProgress
                                                         ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                                                         : 'bg-primary text-white hover:bg-orange-600 shadow-sm hover:shadow active:scale-95'}`}
                                             >
-                                                {effectiveBookingType === 'lead' && <Mail className="w-4 h-4 mr-2" />}
-                                                {(ev.isFull && effectiveBookingType === 'platform') ? 'Ausgebucht' :
-                                                 (effectiveBookingType === 'lead' ? 'Anfrage senden' : t.btn_book || 'Jetzt Buchen')}
+                                                {bookingInProgress ? (
+                                                    <><div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div> Wird gebucht...</>
+                                                ) : (
+                                                    <>{effectiveBookingType === 'lead' && <Mail className="w-4 h-4 mr-2" />}
+                                                    {(ev.isFull && effectiveBookingType === 'platform') ? 'Ausgebucht' :
+                                                     (effectiveBookingType === 'lead' ? 'Anfrage senden' : t.btn_book || 'Jetzt Buchen')}</>
+                                                )}
                                             </button>
                                         )}
                                     </div>
@@ -1037,18 +1047,22 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
                                 </div>
                             ) : (
                                 <button
-                                    onClick={() => (effectiveBookingType === 'platform_flex' || effectiveBookingType === 'lead') && handleBookingAction()}
-                                    disabled={effectiveBookingType === 'platform' || (effectiveBookingType === 'platform_flex' && (!ticketAvailable || !guardianAttested))}
+                                    onClick={() => !bookingInProgress && (effectiveBookingType === 'platform_flex' || effectiveBookingType === 'lead') && handleBookingAction()}
+                                    disabled={effectiveBookingType === 'platform' || (effectiveBookingType === 'platform_flex' && (!ticketAvailable || !guardianAttested)) || bookingInProgress}
                                     className={`w-full font-bold py-3 rounded-lg transition shadow-sm flex items-center justify-center
-                                        ${effectiveBookingType === 'platform' || (effectiveBookingType === 'platform_flex' && (!ticketAvailable || !guardianAttested))
+                                        ${effectiveBookingType === 'platform' || (effectiveBookingType === 'platform_flex' && (!ticketAvailable || !guardianAttested)) || bookingInProgress
                                             ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                                             : 'bg-primary text-white hover:bg-orange-600'}`}
                                 >
-                                    {effectiveBookingType === 'platform'
-                                        ? 'Derzeit nicht buchbar'
-                                        : effectiveBookingType === 'platform_flex'
-                                            ? (ticketAvailable ? `Jetzt buchen (${getPriceLabel(course)})` : 'Ausgebucht')
-                                            : <><Mail className="w-4 h-4 mr-2"/> Anfrage senden</>}
+                                    {bookingInProgress ? (
+                                        <><div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div> Wird gebucht...</>
+                                    ) : (
+                                        effectiveBookingType === 'platform'
+                                            ? 'Derzeit nicht buchbar'
+                                            : effectiveBookingType === 'platform_flex'
+                                                ? (ticketAvailable ? `Jetzt buchen (${getPriceLabel(course)})` : 'Ausgebucht')
+                                                : <><Mail className="w-4 h-4 mr-2"/> Anfrage senden</>
+                                    )}
                                 </button>
                             )}
                             {user?.credit_balance_cents > 0 && effectiveBookingType !== 'lead' && course.price > 0 && (() => {
