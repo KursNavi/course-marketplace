@@ -398,7 +398,9 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
         if (emailChanged) updates.email = profileData.email;
         if (profileData.password) updates.password = profileData.password;
 
-        const { error: authError } = await supabase.auth.updateUser(updates);
+        const { error: authError } = await supabase.auth.updateUser(updates, {
+          emailRedirectTo: 'https://kursnavi.ch'
+        });
         if (authError) {
           showNotification?.('Fehler beim Aktualisieren des Kontos: ' + authError.message, 'error');
         } else if (emailChanged && !profileData.password) {

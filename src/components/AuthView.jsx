@@ -48,6 +48,7 @@ const AuthView = ({ setView, setUser, showNotification, lang }) => {
                 email,
                 password,
                 options: {
+                    emailRedirectTo: 'https://kursnavi.ch',
                     data: {
                         full_name: fullName,
                         role: role,
