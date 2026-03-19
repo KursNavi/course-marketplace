@@ -383,6 +383,30 @@ export default function KursNaviPro() {  // 1. Initial State Logic
 
   const showNotification = (msg, type = 'success') => { setNotification(msg); setNotificationType(type); setTimeout(() => setNotification(null), 5000); };
 
+  // Handle Supabase auth hash fragments (#message=...&sb=)
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (!hash.includes('message=')) return;
+    const params = new URLSearchParams(hash.replace('#', ''));
+    const message = params.get('message');
+    if (!message) return;
+
+    // Map English Supabase messages to German
+    const messageMap = {
+      'Confirmation link accepted. Please proceed to confirm link sent to the other email':
+        'Bestätigungslink akzeptiert. Bitte bestätige auch den Link, der an deine andere E-Mail-Adresse gesendet wurde.',
+      'Email confirmed':
+        'E-Mail-Adresse bestätigt.',
+      'Signup confirmation email sent':
+        'Bestätigungs-E-Mail wurde gesendet.',
+    };
+    const translated = messageMap[message] || message;
+    showNotification(translated, 'success');
+
+    // Clean up the hash from the URL
+    window.history.replaceState(null, '', window.location.pathname + window.location.search);
+  }, []);
+
   const handleLogout = async () => { await supabase.auth.signOut(); showNotification("Logged out successfully"); setView('home'); };
 
   const runAdminAction = useCallback(async (payload) => {
