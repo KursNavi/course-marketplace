@@ -317,7 +317,8 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
         website_url: formattedUrl,
         additional_locations: validLocations.length > 0 ? JSON.stringify(validLocations) : '',
         logo_url: profileData.logo_url,
-        show_email_publicly: profileData.show_email_publicly
+        show_email_publicly: profileData.show_email_publicly,
+        email: profileData.email
       };
 
       // Include cover image only for Enterprise
@@ -388,15 +389,24 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
 
       // Handle email/password changes
       if (profileData.email !== user.email || profileData.password) {
+        if (profileData.password && profileData.password !== profileData.confirmPassword) {
+          showNotification?.('Passwörter stimmen nicht überein', 'error');
+          return;
+        }
         const updates = {};
-        if (profileData.email !== user.email) updates.email = profileData.email;
+        const emailChanged = profileData.email !== user.email;
+        if (emailChanged) updates.email = profileData.email;
         if (profileData.password) updates.password = profileData.password;
 
         const { error: authError } = await supabase.auth.updateUser(updates);
         if (authError) {
           showNotification?.('Fehler beim Aktualisieren des Kontos: ' + authError.message, 'error');
+        } else if (emailChanged && !profileData.password) {
+          showNotification?.('Bestätigungs-E-Mail wurde an ' + profileData.email + ' gesendet. Bitte bestätigen Sie die neue Adresse.', 'success');
+        } else if (emailChanged && profileData.password) {
+          showNotification?.('Passwort aktualisiert. Bestätigungs-E-Mail wurde an ' + profileData.email + ' gesendet.', 'success');
         } else {
-          showNotification?.(t?.msg_auth_success || 'Konto aktualisiert');
+          showNotification?.('Passwort aktualisiert', 'success');
         }
       } else {
         showNotification?.('Profil gespeichert', 'success');
