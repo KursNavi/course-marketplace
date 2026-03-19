@@ -318,7 +318,9 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t, isImp
             const emailChanged = formData.email !== user.email;
             if (emailChanged) updates.email = formData.email;
             if (formData.password) updates.password = formData.password;
-            const { error: authError } = await supabase.auth.updateUser(updates);
+            const { error: authError } = await supabase.auth.updateUser(updates, {
+                emailRedirectTo: 'https://kursnavi.ch'
+            });
             if (authError) {
                 showNotification("Fehler beim Aktualisieren des Kontos: " + authError.message);
             } else if (emailChanged) {

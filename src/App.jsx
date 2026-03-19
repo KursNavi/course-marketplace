@@ -1545,7 +1545,16 @@ export default function KursNaviPro() {  // 1. Initial State Logic
     });
 
     // Änderungen an Auth-Status
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      // Sync email to profiles table after email change confirmation
+      if (event === 'USER_UPDATED' && session?.user) {
+        supabase.from('profiles')
+          .update({ email: session.user.email })
+          .eq('id', session.user.id)
+          .then(({ error }) => {
+            if (error) console.warn('Email sync to profiles failed:', error.message);
+          });
+      }
       applySession(session);
     });
 
