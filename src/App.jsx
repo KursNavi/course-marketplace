@@ -1500,11 +1500,21 @@ export default function KursNaviPro() {  // 1. Initial State Logic
         // Profil-Extras laden (oder erstellen falls fehlend)
         let { data } = await supabase
           .from('profiles')
-          .select('preferred_language, is_professional, package_tier, role, full_name, credit_balance_cents')
+          .select('preferred_language, is_professional, package_tier, role, full_name, credit_balance_cents, email')
           .eq('id', session.user.id)
           .single();
 
         if (cancelled) return;
+
+        // Sync email from auth to profiles if they differ
+        if (data && data.email !== session.user.email) {
+          supabase.from('profiles')
+            .update({ email: session.user.email })
+            .eq('id', session.user.id)
+            .then(({ error }) => {
+              if (error) console.warn('Email sync to profiles failed:', error.message);
+            });
+        }
 
         // Safety net: Profil erstellen falls es nicht existiert
         if (!data) {
