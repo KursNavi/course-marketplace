@@ -379,6 +379,9 @@ const CategorySuggestionModal = ({ isOpen, onClose, taxonomy, types, showNotific
 };
 
 const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotification, setEditingCourse, isAdminImpersonating = false }) => {
+    // Stripe Connect: Auszahlung eingerichtet?
+    const payoutReady = user?.stripe_connect_onboarding_complete === true;
+
     // --- LIMITS REMOVED: Unbegrenzte Kurse für alle ---
 
     // Load taxonomy from DB (with fallback to constants.js)
@@ -428,7 +431,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
     const [showUnsavedChangesModal, setShowUnsavedChangesModal] = useState(false);
 
     // Booking & Link State
-    const [bookingType, setBookingType] = useState(draft?.bookingType || 'platform'); // 'platform', 'platform_flex', or 'lead'
+    const [bookingType, setBookingType] = useState(draft?.bookingType || (payoutReady ? 'platform' : 'lead')); // 'platform', 'platform_flex', or 'lead'
     const [ticketLimit30d, setTicketLimit30d] = useState(draft?.ticketLimit30d || '');
 
     // Form Field State (controlled inputs to preserve data on validation errors / tab switches)
@@ -1141,6 +1144,12 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
         if (!titleVal || !descriptionVal) { window.alert("Titel und Beschreibung sind erforderlich."); return; }
         if (!catType || !catArea || !catSpec) { window.alert("Bitte wählen Sie eine vollständige Kategorie aus."); return; }
 
+        // 1b. Payout Validation — Direkt-/Flex-Buchung nur mit Stripe Connect
+        if (!payoutReady && bookingType !== 'lead') {
+            window.alert("Direktbuchungen und flexible Buchungen sind erst möglich, wenn Sie Ihre Auszahlung eingerichtet haben. Bitte wählen Sie «Anfrage (Lead)» oder richten Sie zuerst Ihre Auszahlung ein.");
+            return;
+        }
+
         // 2. Booking Specific Validation
         let potentialEvents = events.map(ev => ({
             ...ev,
@@ -1842,13 +1851,13 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                     <div>
                         <h3 className="text-lg font-bold text-dark mb-4">Buchungs-Optionen</h3>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <label className={`cursor-pointer border p-4 rounded-xl transition relative overflow-hidden ${bookingType === 'platform' ? 'border-primary bg-orange-50 ring-1 ring-primary' : 'hover:bg-gray-50'}`}>
+                            <label className={`border p-4 rounded-xl transition relative overflow-hidden ${!payoutReady ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} ${bookingType === 'platform' ? 'border-primary bg-orange-50 ring-1 ring-primary' : !payoutReady ? '' : 'hover:bg-gray-50'}`}>
                                 {bookingType === 'platform' && <div className="absolute top-0 right-0 bg-primary text-white text-[10px] px-2 py-0.5 rounded-bl">Empfohlen</div>}
-                                <div className="flex items-center mb-2"><input type="radio" name="bookingType" value="platform" checked={bookingType === 'platform'} onChange={() => { setBookingType('platform'); markDirty(); }} className="mr-2 accent-primary"/> <span className="font-bold">Direktbuchung</span></div>
+                                <div className="flex items-center mb-2"><input type="radio" name="bookingType" value="platform" checked={bookingType === 'platform'} disabled={!payoutReady} onChange={() => { setBookingType('platform'); markDirty(); }} className="mr-2 accent-primary"/> <span className="font-bold">Direktbuchung</span></div>
                                 <p className="text-xs text-gray-500">Mit festem Termin. Zahlung via KursNavi.</p>
                             </label>
-                            <label className={`cursor-pointer border p-4 rounded-xl transition relative overflow-hidden ${bookingType === 'platform_flex' ? 'border-primary bg-orange-50 ring-1 ring-primary' : 'hover:bg-gray-50'}`}>
-                                <div className="flex items-center mb-2"><input type="radio" name="bookingType" value="platform_flex" checked={bookingType === 'platform_flex'} onChange={() => { setBookingType('platform_flex'); markDirty(); }} className="mr-2 accent-primary"/> <span className="font-bold">Flexibel</span></div>
+                            <label className={`border p-4 rounded-xl transition relative overflow-hidden ${!payoutReady ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} ${bookingType === 'platform_flex' ? 'border-primary bg-orange-50 ring-1 ring-primary' : !payoutReady ? '' : 'hover:bg-gray-50'}`}>
+                                <div className="flex items-center mb-2"><input type="radio" name="bookingType" value="platform_flex" checked={bookingType === 'platform_flex'} disabled={!payoutReady} onChange={() => { setBookingType('platform_flex'); markDirty(); }} className="mr-2 accent-primary"/> <span className="font-bold">Flexibel</span></div>
                                 <p className="text-xs text-gray-500">Termin wird nach Buchung vereinbart. Zahlung via KursNavi.</p>
                             </label>
                             <label className={`cursor-pointer border p-4 rounded-xl transition ${bookingType === 'lead' ? 'border-primary bg-orange-50 ring-1 ring-primary' : 'hover:bg-gray-50'}`}>
@@ -1856,6 +1865,13 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                                 <p className="text-xs text-gray-500">Kontaktformular. Keine Zahlung.</p>
                             </label>
                         </div>
+                        {!payoutReady && (
+                            <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                                <p className="text-sm text-amber-800">
+                                    Um Direktbuchungen oder flexible Buchungen anzubieten, richten Sie zuerst Ihre <button type="button" onClick={() => setView('dashboard')} className="underline font-semibold hover:text-amber-900">Auszahlung ein</button>.
+                                </p>
+                            </div>
+                        )}
                     </div>
 
                     {/* DYNAMIC FIELDS */}
