@@ -153,6 +153,13 @@ const AuthView = ({ setView, setUser, showNotification, lang }) => {
                             </button>
                         </div>
                     </div>
+                    {!isSignUp && (
+                        <div className="text-right -mt-1">
+                            <button type="button" onClick={() => { window.history.pushState({}, '', '/set-password'); setView('set-password'); }} className="text-sm text-primary hover:underline font-sans">
+                                {t.setpw_forgot_link}
+                            </button>
+                        </div>
+                    )}
                     {isSignUp && (
                         <div>
                             <label htmlFor="auth-confirm-password" className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_confirm_password}</label>

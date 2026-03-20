@@ -92,6 +92,7 @@ const RatgeberHubView = lazyWithRetry(() => import('./components/RatgeberHubView
 const BereichLandingPage = lazyWithRetry(() => import('./components/BereichLandingPage'));
 const SzenarioArtikelView = lazyWithRetry(() => import('./components/SzenarioArtikelView'));
 const NotFoundPage = lazyWithRetry(() => import('./components/NotFoundPage'));
+const SetPasswordView = lazyWithRetry(() => import('./components/SetPasswordView'));
 
 // --- DEBUG: ERROR BOUNDARY (Fängt Abstürze ab) ---
 class ErrorBoundary extends React.Component {
@@ -178,7 +179,8 @@ export default function KursNaviPro() {  // 1. Initial State Logic
           '/datenschutz': 'datenschutz',
           '/impressum': 'impressum',
           '/widerruf-storno': 'widerruf',
-          '/vertrauen-sicherheit': 'trust'
+          '/vertrauen-sicherheit': 'trust',
+          '/set-password': 'set-password'
       };
       
       if (routes[path]) return routes[path];
@@ -231,6 +233,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
   const [routePath, setRoutePath] = useState(() => `${window.location.pathname}${window.location.search}`);
   const [user, setUser] = useState(null);
   const [, setSession] = useState(null);
+  const [isRecoveryMode, setIsRecoveryMode] = useState(false);
 
   // Admin Impersonation State
   const [impersonatedUser, setImpersonatedUser] = useState(null);
@@ -1580,6 +1583,14 @@ export default function KursNaviPro() {  // 1. Initial State Logic
 
     // Änderungen an Auth-Status
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      // Handle password recovery flow
+      if (event === 'PASSWORD_RECOVERY') {
+        setIsRecoveryMode(true);
+        window.history.replaceState({}, '', '/set-password');
+        setView('set-password');
+        applySession(session);
+        return;
+      }
       // Sync email to profiles table after email change confirmation
       if (event === 'USER_UPDATED' && session?.user) {
         supabase.from('profiles')
@@ -1880,6 +1891,7 @@ useEffect(() => {
       {view === 'teacher-profile' && selectedTeacher && ( <TeacherProfileView teacher={selectedTeacher} courses={publishedCourses} setView={setView} setSelectedCourse={setSelectedCourse} t={t} getCatLabel={getCatLabel} /> )}
       {view === 'how-it-works' && <HowItWorksPage t={t} setView={setView} />}
       {view === 'login' && <AuthView setView={setView} setUser={setUser} showNotification={showNotification} lang={lang} />}
+      {view === 'set-password' && <SetPasswordView setView={setView} showNotification={showNotification} lang={lang} mode={isRecoveryMode ? 'reset' : 'request'} />}
       {view === 'about' && <AboutPage t={t} setView={setView} />}
       {view === 'contact' && <ContactPage t={t} setView={setView} showNotification={showNotification} />}
       
