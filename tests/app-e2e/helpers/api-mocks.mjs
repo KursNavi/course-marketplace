@@ -48,6 +48,26 @@ const DEFAULT_MOCKS = {
       new_balance_chf: '0.00',
       credit_added: false
     }
+  },
+  '/api/contact': {
+    status: 200,
+    body: { success: true }
+  },
+  '/api/stripe-management': {
+    status: 200,
+    body: { url: 'https://connect.stripe.com/setup/test-onboarding' }
+  },
+  '/api/cancel-event': {
+    status: 200,
+    body: { success: true, refunded_count: 0 }
+  },
+  '/api/request-goodwill-refund': {
+    status: 200,
+    body: { success: true }
+  },
+  '/api/subscribe': {
+    status: 200,
+    body: { success: true }
   }
 };
 
