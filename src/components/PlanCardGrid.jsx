@@ -57,8 +57,6 @@ const getAccentClasses = (accent) => {
   }
 };
 
-export { getAccentClasses };
-
 export default function PlanCardGrid({
   currentTier = null,
   onPlanSelect = null,
