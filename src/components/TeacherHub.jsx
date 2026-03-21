@@ -81,6 +81,11 @@ const courseModels = [
   },
 ];
 
+const accentMap = {
+  emerald: { panel: 'border-emerald-200 bg-emerald-50', surface: 'bg-emerald-100 text-emerald-800', icon: 'text-emerald-600' },
+  orange: { panel: 'border-orange-200 bg-orange-50', surface: 'bg-orange-100 text-orange-800', icon: 'text-orange-600' },
+};
+
 const comparisonRows = [
   { feature: 'Kurslisting', traditional: 'Ja', kursnavi: 'Ja' },
   { feature: 'Anfragen', traditional: 'Ja', kursnavi: 'Ja' },
