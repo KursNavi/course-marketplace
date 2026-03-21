@@ -4,6 +4,7 @@ import { formatPriceCHF } from '../lib/formatPrice';
 import { BASE_URL } from '../lib/siteConfig';
 import { enhanceImages, normalizeEditorialImageUrl } from '../lib/seoUtils';
 import { shouldHandleClientNavigation } from '../lib/navigation';
+import { trackArticleView } from '../lib/analytics';
 
 export default function BlogDetail({ article, setView, courses }) {
   const heroImage = normalizeEditorialImageUrl(article?.image_url, article?.title);
@@ -15,6 +16,7 @@ export default function BlogDetail({ article, setView, courses }) {
 
   useEffect(() => {
     if(!article) return;
+    trackArticleView(article);
 
     // Page Title - prefer custom meta_title
     document.title = `${article.meta_title || article.title} | KursNavi Magazin`;

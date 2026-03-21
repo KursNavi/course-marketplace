@@ -8,6 +8,7 @@ import { BASE_URL, buildCoursePath } from '../lib/siteConfig';
 import { getBereichByAreaSlug, getBereichUrl } from '../lib/bereichLandingConfig';
 import { DEFAULT_COURSE_IMAGE } from '../lib/imageUtils';
 import { getCourseCategoryText, getPrimaryCategory, getPrimaryCategoryLabel, getPrimaryCategorySlug, isSyntheticCategory } from '../lib/courseMetadata';
+import { trackCourseView, trackPurchase, trackContactLead } from '../lib/analytics';
 
 const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, setUser, savedCourseIds, onToggleSaveCourse, showNotification, refreshBookings }) => {
     const [showLeadModal, setShowLeadModal] = useState(false);
@@ -40,6 +41,7 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
         const key = `det_${course.id}`;
         if (sessionStorage.getItem(key)) return;
         sessionStorage.setItem(key, '1');
+        trackCourseView(course);
 
         supabase.from('course_views').insert({
             course_id: course.id,
@@ -440,6 +442,7 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
                 showNotification && showNotification(data.free_booking
                     ? 'Buchung erfolgreich! Dieser Kurs ist kostenlos.'
                     : 'Buchung erfolgreich! Bezahlt mit deinem Guthaben.');
+                trackPurchase(course, creditData.booking_id || creditData.id, data.free_booking ? 0 : (course.base_price || 0));
 
                 if (typeof refreshBookings === 'function' && user?.id) {
                     await refreshBookings(user.id);
@@ -494,6 +497,7 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
             const data = await resp.json().catch(() => ({}));
             if (!resp.ok) throw new Error(data.error || 'Anfrage konnte nicht gesendet werden.');
             setLeadStatus('success');
+            trackContactLead(course.id);
             setTimeout(() => { setShowLeadModal(false); setLeadStatus('idle'); }, 2500);
         } catch (err) {
             console.error('Lead submit error:', err);

@@ -9,6 +9,7 @@ import { isImageUsedByOtherCourses, deleteImageFromStorage } from './lib/imageUt
 import { BASE_URL, slugify as siteSlugify, buildCoursePath as siteBuildCoursePath } from './lib/siteConfig';
 import { buildSyntheticCategories, getNormalizedDeliveryTypes, getPrimaryCategorySlug, normalizeCategoryType } from './lib/courseMetadata';
 import { refreshCoursesAfterMutation } from './lib/courseRefresh';
+import { trackPageView } from './lib/analytics';
 import { useTaxonomy } from './hooks/useTaxonomy';
 
 const CHUNK_RELOAD_KEY = 'chunk_reload';
@@ -1426,15 +1427,25 @@ export default function KursNaviPro() {  // 1. Initial State Logic
       window.dispatchEvent(new Event('locationchange'));
     };
 
+    // GA4 Pageview bei jedem Routenwechsel (setTimeout damit document.title aktuell ist)
+    const trackRoute = () => {
+      setTimeout(() => {
+        trackPageView(window.location.pathname + window.location.search, document.title);
+      }, 0);
+    };
+
     window.addEventListener('popstate', handlePopState);
     window.addEventListener('locationchange', syncFromUrl);
+    window.addEventListener('locationchange', trackRoute);
 
     // Initial einmal synchronisieren
     syncFromUrl();
+    trackRoute();
 
     return () => {
       window.removeEventListener('popstate', handlePopState);
       window.removeEventListener('locationchange', syncFromUrl);
+      window.removeEventListener('locationchange', trackRoute);
       window.history.pushState = originalPushState;
       window.history.replaceState = originalReplaceState;
     };

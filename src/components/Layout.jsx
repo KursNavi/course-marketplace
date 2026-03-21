@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Menu, X, Globe, LogOut, LayoutDashboard, ChevronDown, Mail, ArrowRight, Check, Loader2, Briefcase, Palette, Smile, Shield } from 'lucide-react';
 import { SEGMENT_CONFIG } from '../lib/constants';
 import { MegaMenu, MobileMenuCategory } from './MegaMenu';
+import { trackNewsletter } from '../lib/analytics';
 
 // BRANDING: The "Compass & Book" Logo [Source: 9]
 // Recreated as SVG: A 4-point star (compass) floating above an abstract open book.
@@ -417,6 +418,7 @@ export const Footer = ({ t, setView }) => {
 
       if (res.ok) {
         setStatus(already ? 'already' : 'success');
+        if (!already) trackNewsletter();
         setEmail('');
       } else if (already) {
         setStatus('already');

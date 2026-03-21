@@ -10,6 +10,7 @@ import { BASE_URL, buildCoursePath } from '../lib/siteConfig';
 import { getBereichByAreaSlug, getBereichUrl } from '../lib/bereichLandingConfig';
 import { SEARCH_STRINGS } from '../lib/searchStrings';
 import { getNormalizedDeliveryTypes } from '../lib/courseMetadata';
+import { trackSearch } from '../lib/analytics';
 
 import { DEFAULT_COURSE_IMAGE } from '../lib/imageUtils';
 const fallbackImage = DEFAULT_COURSE_IMAGE;
@@ -171,6 +172,12 @@ const SearchPageView = ({
             }
         };
     }, [filteredCourses.length, loading, searchQuery, searchType, searchArea, selectedLocations]);
+
+    // GA4: Track search when results are loaded
+    useEffect(() => {
+        if (loading) return;
+        trackSearch(searchQuery, filteredCourses.length);
+    }, [filteredCourses.length, loading, searchQuery]);
 
     // Track impressions for rendered course cards (session-deduplicated, batch insert)
     useEffect(() => {

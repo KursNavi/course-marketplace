@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { Loader, Mail, Eye, EyeOff } from 'lucide-react';
 import { TRANSLATIONS } from '../lib/constants';
 import { supabase } from '../lib/supabase';
+import { trackSignup, trackLogin } from '../lib/analytics';
 
 const AuthView = ({ setView, setUser, showNotification, lang }) => {
     const [isSignUp, setIsSignUp] = useState(false); 
@@ -70,6 +71,7 @@ const AuthView = ({ setView, setUser, showNotification, lang }) => {
                     if (profileError) console.warn('Profile insert failed (will retry on login):', profileError.message);
                 }
                 localStorage.removeItem('selectedPackage');
+                trackSignup('email');
                 setShowSuccess(true); // Switch to success page
             } else {
                 const { data, error } = await supabase.auth.signInWithPassword({ email, password });
@@ -81,7 +83,8 @@ const AuthView = ({ setView, setUser, showNotification, lang }) => {
                     role: userMetadata?.role || 'student',
                     name: userMetadata?.full_name || data.user.email.split('@')[0]
                 };
-                setUser(loggedInUser); 
+                setUser(loggedInUser);
+                trackLogin('email');
 
                 if (!restorePendingBookingFlow()) {
                     if (loggedInUser.role === 'teacher' || loggedInUser.role === 'admin') setView('dashboard'); else setView('home');
