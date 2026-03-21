@@ -179,16 +179,7 @@ const TeacherHub = ({ setView, user, showNotification }) => {
       return;
     }
 
-    // Logged in + Enterprise → contact via email
-    if (planId === 'enterprise') {
-      openEmailDraft({
-        subject: 'Demo Anfrage: Enterprise Paket',
-        intro: 'Ich möchte eine Demo für das Enterprise-Paket buchen.',
-      });
-      return;
-    }
-
-    // Logged in + Pro/Premium → go to dashboard (checkout happens there)
+    // Logged in + Pro/Premium/Enterprise → go to dashboard (checkout happens there)
     setView('dashboard');
     if (showNotification) showNotification(`Wechsle zum Dashboard – dort können Sie das ${String(planId).charAt(0).toUpperCase()}${String(planId).slice(1)}-Paket buchen.`);
   };
@@ -506,8 +497,6 @@ const TeacherHub = ({ setView, user, showNotification }) => {
                 let label;
                 if (!user) {
                   label = 'Anbieterkonto erstellen';
-                } else if (plan.id === 'enterprise') {
-                  label = 'Demo buchen';
                 } else if (plan.id === 'basic') {
                   label = 'Zum Dashboard';
                 } else {
