@@ -165,24 +165,32 @@ const TeacherHub = ({ setView, user, showNotification }) => {
   };
 
   const handlePlanCta = (planId) => {
-    if (planId === 'basic') {
-      handlePrimaryCta();
+    // Not logged in → register / login with selected package
+    if (!user) {
+      localStorage.setItem('selectedPackage', planId);
+      setView('login');
+      window.scrollTo(0, 0);
       return;
     }
 
-    const subjectMap = {
-      pro: 'Upgrade Anfrage: Pro Paket',
-      premium: 'Upgrade Anfrage: Premium Paket',
-      enterprise: 'Demo Anfrage: Enterprise Paket',
-    };
+    // Logged in + Basic → go to dashboard
+    if (planId === 'basic') {
+      setView('dashboard');
+      return;
+    }
 
-    openEmailDraft({
-      subject: subjectMap[planId] || 'Anfrage zu Anbieter-Paketen',
-      intro:
-        planId === 'enterprise'
-          ? 'Ich möchte eine Demo für das Enterprise-Paket buchen.'
-          : `Ich möchte mehr über das ${String(planId).charAt(0).toUpperCase()}${String(planId).slice(1)}-Paket erfahren.`,
-    });
+    // Logged in + Enterprise → contact via email
+    if (planId === 'enterprise') {
+      openEmailDraft({
+        subject: 'Demo Anfrage: Enterprise Paket',
+        intro: 'Ich möchte eine Demo für das Enterprise-Paket buchen.',
+      });
+      return;
+    }
+
+    // Logged in + Pro/Premium → go to dashboard (checkout happens there)
+    setView('dashboard');
+    if (showNotification) showNotification(`Wechsle zum Dashboard – dort können Sie das ${String(planId).charAt(0).toUpperCase()}${String(planId).slice(1)}-Paket buchen.`);
   };
 
   const handleDemoCta = () => {
@@ -495,18 +503,27 @@ const TeacherHub = ({ setView, user, showNotification }) => {
           <div className="mt-12">
             <PlanCardGrid
               renderAction={({ plan, colors }) => {
-                const btnClass = plan.id === 'basic'
-                  ? 'border-green-500 text-green-700 hover:bg-green-50'
-                  : plan.buttonVariant === 'solid'
-                    ? colors.btnSolid
-                    : colors.btnOutline;
+                let label;
+                if (!user) {
+                  label = 'Anbieterkonto erstellen';
+                } else if (plan.id === 'enterprise') {
+                  label = 'Demo buchen';
+                } else if (plan.id === 'basic') {
+                  label = 'Zum Dashboard';
+                } else {
+                  label = 'Upgrade kaufen';
+                }
+
+                const btnClass = plan.buttonVariant === 'solid'
+                  ? colors.btnSolid
+                  : colors.btnOutline;
                 return (
                   <button
                     type="button"
                     onClick={() => handlePlanCta(plan.id)}
                     className={`w-full rounded-lg border py-2.5 font-bold transition ${btnClass}`}
                   >
-                    {plan.id === 'enterprise' ? 'Demo buchen' : plan.id === 'basic' ? 'Anbieterkonto erstellen' : 'Mehr erfahren'}
+                    {label}
                   </button>
                 );
               }}
