@@ -10,11 +10,11 @@ import {
   MessageSquare,
   Search,
   ShieldCheck,
-  Sparkles,
   TrendingUp,
   Users,
 } from 'lucide-react';
 import { BASE_URL } from '../lib/siteConfig';
+import PlanCardGrid from './PlanCardGrid';
 
 const heroBullets = [
   'Anfragen oder Direktbuchungen',
@@ -89,45 +89,6 @@ const comparisonRows = [
   { feature: 'Analysen', traditional: 'Nein', kursnavi: 'Ja' },
 ];
 
-const pricingGroups = [
-  {
-    title: 'Marktplatz',
-    subtitle: 'Starter (Kostenlos)',
-    highlight: 'Kostenlos starten und Anfragen sammeln',
-    layout: 'single',
-    plans: [
-      {
-        id: 'basic',
-        name: 'Kostenlos starten',
-        price: '0 CHF',
-        period: '/ Jahr',
-        accent: 'emerald',
-        badge: 'Marktplatz',
-        features: ['Kurse veröffentlichen', 'Anfragen erhalten', 'Optionale Direktbuchung'],
-        note: 'Provision nur bei Direktbuchungen',
-      },
-    ],
-  },
-  {
-    title: 'Sichtbarkeit & Wachstum',
-    subtitle: 'Pro / Premium / Enterprise',
-    highlight: 'Mehr Sichtbarkeit, mehr Daten, mehr Anfragen',
-    layout: 'triple',
-    plans: [
-      { id: 'pro', name: 'Sichtbarkeit ausbauen', price: '290 CHF', period: '/ Jahr', accent: 'sky', badge: 'Pro', features: ['Besseres Ranking', 'Analysen', 'Mehrere Kategorien'] },
-      { id: 'premium', name: 'Reichweite maximieren', price: '690 CHF', period: '/ Jahr', accent: 'violet', badge: 'Premium', features: ['Hervorgehobene Platzierung', 'Erweiterte Analysen', 'Priorisiertes Ranking'] },
-      { id: 'enterprise', name: 'Für grosse Anbieter', price: '1490 CHF', period: '/ Jahr', accent: 'amber', badge: 'Enterprise', features: ['Unbegrenzte Kurse', 'Maximale Ranking-Priorität', 'Onboarding-Support', 'Import-Service'] },
-    ],
-  },
-];
-
-const accentMap = {
-  emerald: { panel: 'border-emerald-200 bg-emerald-50', surface: 'bg-emerald-100 text-emerald-800', icon: 'text-emerald-600', button: 'border-emerald-500 text-emerald-700 hover:bg-emerald-50' },
-  orange: { panel: 'border-orange-200 bg-orange-50', surface: 'bg-orange-100 text-orange-800', icon: 'text-orange-600', button: 'bg-primary text-white hover:bg-orange-600' },
-  sky: { panel: 'border-sky-200 bg-sky-50', surface: 'bg-sky-100 text-sky-800', icon: 'text-sky-600', button: 'bg-sky-600 text-white hover:bg-sky-700' },
-  violet: { panel: 'border-violet-200 bg-violet-50', surface: 'bg-violet-100 text-violet-800', icon: 'text-violet-600', button: 'bg-violet-600 text-white hover:bg-violet-700' },
-  amber: { panel: 'border-amber-200 bg-amber-50', surface: 'bg-amber-100 text-amber-800', icon: 'text-amber-600', button: 'bg-amber-500 text-white hover:bg-amber-600' },
-};
 
 const valueBullets = [
   'Mehr Sichtbarkeit in Suche, Kategorien und Regionen',
@@ -513,86 +474,55 @@ const TeacherHub = ({ setView, user, showNotification }) => {
 
       <section id="pricing" className="bg-[linear-gradient(180deg,#19242c_0%,#111827_100%)] px-4 py-24 text-white md:py-28">
         <div className="mx-auto max-w-7xl">
-          <div className="grid gap-10 xl:grid-cols-[0.8fr_1.2fr] xl:items-start">
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-orange-200">Preise</p>
-              <h2 className="mt-4 text-4xl font-bold leading-tight md:text-5xl">Pakete für Sichtbarkeit und Wachstum</h2>
-              <p className="mt-5 text-lg leading-relaxed text-gray-300">Starter ist Ihr kostenloser Marktplatz-Einstieg. Bezahlte Pakete steigern Ranking, Reichweite und Anfragepotenzial.</p>
+          {/* Header */}
+          <div className="mx-auto max-w-3xl text-center">
+            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-orange-200">Preise</p>
+            <h2 className="mt-4 text-4xl font-bold leading-tight md:text-5xl">Pakete für Sichtbarkeit und Wachstum</h2>
+            <p className="mt-5 text-lg leading-relaxed text-gray-300">Starter ist Ihr kostenloser Marktplatz-Einstieg. Bezahlte Pakete steigern Ranking, Reichweite und Anfragepotenzial.</p>
+          </div>
 
-              <div className="mt-8 overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.04]">
-                <img src="/images/platform/hero-professional.svg" alt="Abstrakte Plattform-Illustration" className="h-56 w-full object-cover opacity-90" />
+          {/* Provision note */}
+          <div className="mx-auto mt-10 max-w-2xl rounded-2xl border border-orange-400/20 bg-orange-500/10 px-6 py-4 text-center">
+            <p className="text-lg font-bold text-white">Anfrage-Kurse haben keine Provision. Provision fällt nur bei Direktbuchungen an.</p>
+          </div>
+
+          {/* Plan cards — same component as Dashboard, with inline descriptions */}
+          <div className="mt-12">
+            <PlanCardGrid
+              showDescriptions
+              renderAction={({ plan, colors }) => {
+                const btnClass = plan.id === 'basic'
+                  ? 'border-green-500 text-green-700 hover:bg-green-50'
+                  : plan.buttonVariant === 'solid'
+                    ? colors.btnSolid
+                    : colors.btnOutline;
+                return (
+                  <button
+                    type="button"
+                    onClick={() => handlePlanCta(plan.id)}
+                    className={`w-full rounded-lg border py-2.5 font-bold transition ${btnClass}`}
+                  >
+                    {plan.id === 'enterprise' ? 'Demo buchen' : plan.id === 'basic' ? 'Anbieterkonto erstellen' : 'Mehr erfahren'}
+                  </button>
+                );
+              }}
+            />
+          </div>
+
+          {/* Erfassungsservice callout */}
+          <div className="mt-10 rounded-2xl border border-white/10 bg-white/[0.05] p-6 md:flex md:items-center md:justify-between md:gap-6">
+            <div className="flex items-start gap-4">
+              <div className="rounded-2xl bg-white/10 p-3">
+                <ClipboardList className="h-6 w-6 text-orange-200" />
               </div>
-
-              <div className="mt-8 rounded-[2rem] border border-orange-400/20 bg-orange-500/10 p-6">
-                <p className="text-lg font-bold text-white">Anfrage-Kurse haben keine Provision. Provision fällt nur bei Direktbuchungen an.</p>
+              <div>
+                <p className="text-lg font-bold text-white">Import- und Erfassungsservice</p>
+                <p className="mt-2 text-gray-300">Wenn Sie viele Kurse migrieren möchten, unterstützt KursNavi Ihr Team beim Onboarding und Import.</p>
               </div>
             </div>
-
-            <div className="space-y-8">
-              {pricingGroups.map((group) => (
-                <div key={group.title} className="rounded-[2rem] border border-white/10 bg-white/[0.05] p-6 backdrop-blur md:p-8">
-                  <div className="flex flex-col gap-3 border-b border-white/10 pb-6 md:flex-row md:items-end md:justify-between">
-                    <div>
-                      <p className="text-sm font-semibold uppercase tracking-[0.22em] text-orange-200">{group.title}</p>
-                      <h3 className="mt-2 text-2xl font-bold">{group.subtitle}</h3>
-                    </div>
-                    <p className="text-sm text-gray-300">{group.highlight}</p>
-                  </div>
-
-                  <div className={`mt-6 grid gap-6 ${group.layout === 'triple' ? 'lg:grid-cols-3' : ''}`}>
-                    {group.plans.map((plan) => {
-                      const accent = accentMap[plan.accent];
-                      const isStarter = plan.id === 'basic';
-                      return (
-                        <div key={plan.id} className={`flex h-full flex-col rounded-[1.75rem] border bg-white p-6 text-gray-900 shadow-xl ${isStarter ? 'border-emerald-200 ring-2 ring-emerald-200' : 'border-white/60'}`}>
-                          <div className="flex items-start justify-between gap-4">
-                            <div>
-                              <span className={`inline-flex rounded-full px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] ${accent.surface}`}>{plan.badge}</span>
-                              <h4 className="mt-4 text-2xl font-bold text-gray-900">{plan.name}</h4>
-                            </div>
-                            {plan.id !== 'basic' ? <LineChart className={`h-8 w-8 ${accent.icon}`} /> : <Sparkles className={`h-8 w-8 ${accent.icon}`} />}
-                          </div>
-
-                          <div className="mt-6">
-                            <span className="text-4xl font-bold text-gray-900">{plan.price}</span>
-                            <span className="ml-2 text-sm text-gray-500">{plan.period}</span>
-                          </div>
-
-                          <div className="mt-6 flex-1 space-y-3">
-                            {plan.features.map((feature) => (
-                              <div key={feature} className="flex items-start gap-3">
-                                <CheckCircle className={`mt-0.5 h-5 w-5 shrink-0 ${accent.icon}`} />
-                                <span className="text-gray-700">{feature}</span>
-                              </div>
-                            ))}
-                          </div>
-
-                          {plan.note ? <div className="mt-6 rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">{plan.note}</div> : null}
-
-                          <button type="button" onClick={() => handlePlanCta(plan.id)} className={`mt-6 inline-flex items-center justify-center rounded-xl px-5 py-3 font-bold transition ${accent.button}`}>
-                            {plan.id === 'enterprise' ? 'Demo buchen' : plan.id === 'basic' ? 'Anbieterkonto erstellen' : 'Mehr erfahren'}
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
-              <div className="rounded-[2rem] border border-white/10 bg-white/[0.05] p-6 md:flex md:items-center md:justify-between md:gap-6">
-                <div className="flex items-start gap-4">
-                  <div className="rounded-2xl bg-white/10 p-3">
-                    <ClipboardList className="h-6 w-6 text-orange-200" />
-                  </div>
-                  <div>
-                    <p className="text-lg font-bold text-white">Import- und Erfassungsservice</p>
-                    <p className="mt-2 text-gray-300">Wenn Sie viele Kurse migrieren möchten, unterstützt KursNavi Ihr Team beim Onboarding und Import.</p>
-                  </div>
-                </div>
-                <div className="mt-4 text-left md:mt-0 md:text-right">
-                  <p className="text-2xl font-bold text-white">75 CHF pro Kurs</p>
-                  <p className="text-sm text-gray-400">ab dem 4. Kurs: 50 CHF</p>
-                </div>
-              </div>
+            <div className="mt-4 text-left md:mt-0 md:text-right">
+              <p className="text-2xl font-bold text-white">75 CHF pro Kurs</p>
+              <p className="text-sm text-gray-400">ab dem 4. Kurs: 50 CHF</p>
             </div>
           </div>
         </div>

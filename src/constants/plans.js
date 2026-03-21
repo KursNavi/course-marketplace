@@ -2,6 +2,7 @@ export const PLANS = [
   {
     id: "basic",
     title: "Basic",
+    tagline: "Kostenloser Einstieg",
     priceText: "0 CHF",
     periodText: "/Jahr",
     accent: "green",
@@ -9,6 +10,7 @@ export const PLANS = [
     lift: false,
     buttonVariant: "outline",
     ctaLabel: "Basic wählen",
+    savingsNote: null,
 
     // --- Machine-readable Paketlogik (v3.1) ---
     priceAnnualCHF: 0,
@@ -22,19 +24,20 @@ export const PLANS = [
     bookingFactorWithoutKursNavi: 1.0,
 
     features: [
-      { text: "Unbegrenzte Kurse" },
-      { text: "Keine Prio-Kurse", dim: true, excluded: true },
-      { text: "1 Kategorie pro Kurs" },
-      { text: "15% Komm. (inkl. Stripe)" },
-      { text: "Standard Listing" },
-      { text: "Keine Erfassungsservices inklusive", dim: true, excluded: true },
-      { text: "Zusätzlicher Ranking-Bonus bei Direktbuchung", isStrong: true },
-      { text: "Basic Analytics" },
+      { text: "Unbegrenzte Kurse", description: "Veröffentlichen Sie beliebig viele Kurse auf der Plattform." },
+      { text: "Keine Prio-Kurse", dim: true, excluded: true, description: "Ab dem Pro-Paket verfügbar." },
+      { text: "1 Kategorie pro Kurs", separator: true, description: "Jeder Kurs wird in einer Kategorie gelistet." },
+      { text: "15% Komm. bei Direktbuchung (inkl. Stripe)", description: "Anfrage-Kurse bleiben provisionsfrei." },
+      { text: "Zusätzlicher Ranking-Bonus bei Direktbuchung", isStrong: true, description: "Kurse mit aktivierter Direktbuchung werden in der Suche höher gerankt." },
+      { text: "Standard Listing", separator: true, description: "Ihre Kurse erscheinen in der normalen Suchreihenfolge." },
+      { text: "Keine Erfassungsservices inklusive", dim: true, excluded: true, description: "Separat buchbar ab 75 CHF pro Kurs." },
+      { text: "Basic Analytics", description: "Einfache Statistiken zu Aufrufen und Anfragen." },
     ],
   },
   {
     id: "pro",
     title: "Pro",
+    tagline: "Für wachsende Anbieter",
     priceText: "290 CHF",
     periodText: "/Jahr",
     accent: "blue",
@@ -42,6 +45,7 @@ export const PLANS = [
     lift: true,
     buttonVariant: "solid",
     ctaLabel: "Pro wählen",
+    savingsNote: "3% weniger Kommission als Basic",
 
     // --- Machine-readable Paketlogik (v3.1) ---
     priceAnnualCHF: 290,
@@ -56,18 +60,19 @@ export const PLANS = [
 
     features: [
       { text: "Unbegrenzte Kurse" },
-      { text: "5 Prio-Kurse", isStrong: true },
-      { text: "Bis 3 Kategorien pro Kurs" },
-      { text: "12% Komm. bei Buchung" },
-      { text: "Erhöhtes Ranking", isStrong: true },
-      { text: "Keine Erfassungsservices inklusive", dim: true, excluded: true },
-      { text: "Zusätzlicher Ranking-Bonus bei Direktbuchung", isStrong: true },
-      { text: "Medium Analytics", isStrong: true },
+      { text: "5 Prio-Kurse", isStrong: true, description: "Werden in Suchergebnissen bevorzugt angezeigt." },
+      { text: "Erhöhtes Ranking für Prio-Kurse", isStrong: true, description: "Ihre Prio-Kurse erscheinen weiter oben in den Suchergebnissen." },
+      { text: "Bis 3 Kategorien pro Kurs", separator: true, description: "Mehr Sichtbarkeit in verschiedenen Bereichen." },
+      { text: "12% Komm. bei Direktbuchung", description: "3% weniger als im Basic-Paket." },
+      { text: "Zusätzlicher Ranking-Bonus bei Direktbuchung", isStrong: true, description: "Kurse mit Direktbuchung erhalten automatisch einen Ranking-Vorteil." },
+      { text: "Keine Erfassungsservices inklusive", dim: true, excluded: true, separator: true, description: "Separat buchbar ab 75 CHF pro Kurs." },
+      { text: "Medium Analytics", isStrong: true, description: "Performance-Daten und Teilnehmer-Insights." },
     ],
   },
   {
     id: "premium",
     title: "Premium",
+    tagline: "Maximale Reichweite",
     priceText: "690 CHF",
     periodText: "/Jahr",
     accent: "purple",
@@ -75,6 +80,7 @@ export const PLANS = [
     lift: false,
     buttonVariant: "outline",
     ctaLabel: "Premium wählen",
+    savingsNote: "5% weniger Kommission + 5 Erfassungsservices",
 
     // --- Machine-readable Paketlogik (v3.1) ---
     priceAnnualCHF: 690,
@@ -89,18 +95,19 @@ export const PLANS = [
 
     features: [
       { text: "Unbegrenzte Kurse" },
-      { text: "15 Prio-Kurse", isStrong: true },
-      { text: "Bis 3 Kategorien pro Kurs" },
-      { text: "10% Komm. bei Buchung" },
-      { text: "Erhöhtes Ranking", isStrong: true },
-      { text: "5 Erfassungsservices inklusive", isStrong: true },
-      { text: "Zusätzlicher Ranking-Bonus bei Direktbuchung", isStrong: true },
-      { text: "Advanced Analytics", isStrong: true },
+      { text: "15 Prio-Kurse", isStrong: true, description: "Werden in Suchergebnissen bevorzugt angezeigt." },
+      { text: "Erhöhtes Ranking für Prio-Kurse", isStrong: true, description: "Ihre Prio-Kurse erscheinen weiter oben in den Suchergebnissen." },
+      { text: "Bis 3 Kategorien pro Kurs", separator: true, description: "Mehr Sichtbarkeit in verschiedenen Bereichen." },
+      { text: "10% Komm. bei Direktbuchung", description: "5% weniger als im Basic-Paket." },
+      { text: "Zusätzlicher Ranking-Bonus bei Direktbuchung", isStrong: true, description: "Kurse mit Direktbuchung erhalten automatisch einen Ranking-Vorteil." },
+      { text: "5 Erfassungsservices inklusive", isStrong: true, separator: true, description: "Wir erstellen professionelle Kursseiten für Sie." },
+      { text: "Advanced Analytics", isStrong: true, description: "Vollständige Performance- und Marktdaten." },
     ],
   },
   {
     id: "enterprise",
     title: "Enterprise",
+    tagline: "Für grosse Organisationen",
     priceText: "1'490 CHF",
     periodText: "/Jahr",
     accent: "orange",
@@ -108,6 +115,7 @@ export const PLANS = [
     lift: false,
     buttonVariant: "outline",
     ctaLabel: "Kontaktieren",
+    savingsNote: "Tiefste Kommission + alle Kurse priorisiert",
 
     // --- Machine-readable Paketlogik (v3.1) ---
     priceAnnualCHF: 1490,
@@ -122,13 +130,13 @@ export const PLANS = [
 
     features: [
       { text: "Unbegrenzte Kurse", isStrong: true },
-      { text: "Unbegrenzte Prio-Kurse", isStrong: true },
-      { text: "Bis 5 Kategorien pro Kurs" },
-      { text: "8% Komm. bei Buchung" },
-      { text: "Erhöhtes Ranking", isStrong: true },
-      { text: "15 Erfassungsservices inklusive", isStrong: true },
-      { text: "Zusätzlicher Ranking-Bonus bei Direktbuchung", isStrong: true },
-      { text: "Advanced Analytics", isStrong: true },
+      { text: "Unbegrenzte Prio-Kurse", isStrong: true, description: "Alle Kurse erhalten maximale Sichtbarkeit." },
+      { text: "Erhöhtes Ranking für Prio-Kurse", isStrong: true, description: "Alle Kurse erscheinen weiter oben in den Suchergebnissen." },
+      { text: "Bis 5 Kategorien pro Kurs", separator: true, description: "Maximale Sichtbarkeit in verschiedenen Bereichen." },
+      { text: "8% Komm. bei Direktbuchung", description: "Tiefste verfügbare Kommission." },
+      { text: "Zusätzlicher Ranking-Bonus bei Direktbuchung", isStrong: true, description: "Kurse mit Direktbuchung erhalten automatisch einen Ranking-Vorteil." },
+      { text: "15 Erfassungsservices inklusive", isStrong: true, separator: true, description: "Umfangreiches Onboarding-Paket inklusive." },
+      { text: "Advanced Analytics", isStrong: true, description: "Vollständige Performance- und Marktdaten." },
     ],
   },
 ];
