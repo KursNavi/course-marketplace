@@ -33,7 +33,7 @@ test.describe('Student Registration (app-e2e)', () => {
     await page.locator('#agb').check();
 
     // Intercept the Supabase auth signup request to prevent real user creation
-    await page.route('**/auth/v1/signup', async (route) => {
+    await page.route('**/auth/v1/signup**', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
