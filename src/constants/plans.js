@@ -24,12 +24,12 @@ export const PLANS = [
     bookingFactorWithoutKursNavi: 1.0,
 
     features: [
-      { text: "Unbegrenzte Kurse", description: "Veröffentlichen Sie beliebig viele Kurse auf der Plattform." },
+      { text: "Unbegrenzte Kurse" },
       { text: "Keine Prio-Kurse", dim: true, excluded: true, description: "Ab dem Pro-Paket verfügbar." },
-      { text: "1 Kategorie pro Kurs", separator: true, description: "Jeder Kurs wird in einer Kategorie gelistet." },
+      { text: "1 Kategorie pro Kurs", separator: true },
       { text: "15% Komm. bei Direktbuchung (inkl. Stripe)", description: "Anfrage-Kurse bleiben provisionsfrei." },
       { text: "Zusätzlicher Ranking-Bonus bei Direktbuchung", isStrong: true, description: "Kurse mit aktivierter Direktbuchung werden in der Suche höher gerankt." },
-      { text: "Standard Listing", separator: true, description: "Ihre Kurse erscheinen in der normalen Suchreihenfolge." },
+      { text: "Standard Listing", separator: true },
       { text: "Keine Erfassungsservices inklusive", dim: true, excluded: true, description: "Separat buchbar ab 75 CHF pro Kurs." },
       { text: "Basic Analytics", description: "Einfache Statistiken zu Aufrufen und Anfragen." },
     ],
@@ -60,7 +60,7 @@ export const PLANS = [
 
     features: [
       { text: "Unbegrenzte Kurse" },
-      { text: "5 Prio-Kurse", isStrong: true, description: "Werden in Suchergebnissen bevorzugt angezeigt." },
+      { text: "5 Prio-Kurse", isStrong: true },
       { text: "Erhöhtes Ranking für Prio-Kurse", isStrong: true, description: "Ihre Prio-Kurse erscheinen weiter oben in den Suchergebnissen." },
       { text: "Bis 3 Kategorien pro Kurs", separator: true, description: "Mehr Sichtbarkeit in verschiedenen Bereichen." },
       { text: "12% Komm. bei Direktbuchung", description: "3% weniger als im Basic-Paket." },
@@ -95,7 +95,7 @@ export const PLANS = [
 
     features: [
       { text: "Unbegrenzte Kurse" },
-      { text: "15 Prio-Kurse", isStrong: true, description: "Werden in Suchergebnissen bevorzugt angezeigt." },
+      { text: "15 Prio-Kurse", isStrong: true },
       { text: "Erhöhtes Ranking für Prio-Kurse", isStrong: true, description: "Ihre Prio-Kurse erscheinen weiter oben in den Suchergebnissen." },
       { text: "Bis 3 Kategorien pro Kurs", separator: true, description: "Mehr Sichtbarkeit in verschiedenen Bereichen." },
       { text: "10% Komm. bei Direktbuchung", description: "5% weniger als im Basic-Paket." },
@@ -129,8 +129,8 @@ export const PLANS = [
     bookingFactorWithoutKursNavi: 1.0,
 
     features: [
-      { text: "Unbegrenzte Kurse", isStrong: true },
-      { text: "Unbegrenzte Prio-Kurse", isStrong: true, description: "Alle Kurse erhalten maximale Sichtbarkeit." },
+      { text: "Unbegrenzte Kurse" },
+      { text: "Unbegrenzte Prio-Kurse", isStrong: true },
       { text: "Erhöhtes Ranking für Prio-Kurse", isStrong: true, description: "Alle Kurse erscheinen weiter oben in den Suchergebnissen." },
       { text: "Bis 5 Kategorien pro Kurs", separator: true, description: "Maximale Sichtbarkeit in verschiedenen Bereichen." },
       { text: "8% Komm. bei Direktbuchung", description: "Tiefste verfügbare Kommission." },

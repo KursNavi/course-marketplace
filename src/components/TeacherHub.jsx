@@ -494,7 +494,6 @@ const TeacherHub = ({ setView, user, showNotification }) => {
           {/* Plan cards — same component as Dashboard, with inline descriptions */}
           <div className="mt-12">
             <PlanCardGrid
-              showDescriptions
               renderAction={({ plan, colors }) => {
                 const btnClass = plan.id === 'basic'
                   ? 'border-green-500 text-green-700 hover:bg-green-50'

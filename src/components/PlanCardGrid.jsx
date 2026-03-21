@@ -1,5 +1,5 @@
 import React from 'react';
-import { CheckCircle, XCircle } from 'lucide-react';
+import { CheckCircle, XCircle, Info } from 'lucide-react';
 import { PLANS } from '../constants/plans';
 
 const getAccentClasses = (accent) => {
@@ -63,7 +63,6 @@ export default function PlanCardGrid({
   currentTier = null,
   onPlanSelect = null,
   renderAction = null,
-  showDescriptions = false,
   className = '',
 }) {
   return (
@@ -123,12 +122,16 @@ export default function PlanCardGrid({
                     ) : (
                       <CheckCircle className={`mt-0.5 mr-2 h-4 w-4 shrink-0 ${colors.icon}`} />
                     )}
-                    <div className="flex-1 min-w-0">
-                      <span className={textClass}>{feature.text}</span>
-                      {showDescriptions && feature.description && (
-                        <p className="mt-0.5 text-xs leading-relaxed text-gray-400">{feature.description}</p>
-                      )}
-                    </div>
+                    <span className={textClass}>{feature.text}</span>
+                    {feature.description && (
+                      <div className="group/tip relative ml-auto shrink-0 pl-1">
+                        <Info className="h-3.5 w-3.5 text-gray-300 cursor-help transition-colors hover:text-gray-500" />
+                        <div className="invisible group-hover/tip:visible opacity-0 group-hover/tip:opacity-100 transition-all absolute bottom-full right-0 mb-2 z-20 w-48 rounded-lg bg-gray-900 px-3 py-2 text-xs font-normal leading-relaxed text-white shadow-lg">
+                          {feature.description}
+                          <div className="absolute top-full right-3 border-4 border-transparent border-t-gray-900" />
+                        </div>
+                      </div>
+                    )}
                   </li>
                 );
               })}
