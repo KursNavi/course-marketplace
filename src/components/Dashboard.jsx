@@ -923,7 +923,7 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t, isImp
 };
 
 // --- HELPER COMPONENT: Subscription Management ---
-const SubscriptionSection = ({ user, currentTier, packageExpiresAt, checkoutLoading, setCheckoutLoading, showNotification }) => {
+const SubscriptionSection = ({ user, currentTier, packageExpiresAt, pendingPackageTier, pendingPackageExpiresAt, checkoutLoading, setCheckoutLoading, showNotification }) => {
     // Stripe Checkout für alle bezahlten Pakete (Pro/Premium/Enterprise)
     const handleCheckout = async (tierId) => {
         setCheckoutLoading(tierId);
@@ -978,10 +978,26 @@ const SubscriptionSection = ({ user, currentTier, packageExpiresAt, checkoutLoad
                     )}
                 </p>
 
+                {pendingPackageTier && pendingPackageExpiresAt && (
+                    <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 p-4 flex items-start gap-3">
+                        <Clock className="w-5 h-5 text-blue-500 mt-0.5 shrink-0" />
+                        <div>
+                            <p className="font-semibold text-blue-800">
+                                Geplanter Wechsel zu {(PLANS.find(p => p.id === pendingPackageTier) || {}).title || pendingPackageTier}
+                            </p>
+                            <p className="text-sm text-blue-600">
+                                Ab {new Date(packageExpiresAt).toLocaleDateString('de-CH')} wechselst du automatisch zum {(PLANS.find(p => p.id === pendingPackageTier) || {}).title} Paket
+                                (gültig bis {new Date(pendingPackageExpiresAt).toLocaleDateString('de-CH')}).
+                            </p>
+                        </div>
+                    </div>
+                )}
+
                 <PlanCardGrid
                     currentTier={currentTier}
                     renderAction={({ plan, colors, isCurrent }) => {
                         const isUpgrade = tierOrder.indexOf(plan.id) > tierOrder.indexOf(currentTier);
+                        const isLowerTier = tierOrder.indexOf(plan.id) < tierOrder.indexOf(currentTier);
                         const isPaidCurrent = isCurrent && plan.id !== 'basic' && packageExpiresAt;
                         const canRenewNow = isPaidCurrent && isWithinRenewalWindow;
 
@@ -1031,6 +1047,39 @@ const SubscriptionSection = ({ user, currentTier, packageExpiresAt, checkoutLoad
                                         <><Loader className="w-4 h-4 animate-spin" /> Laden...</>
                                     ) : (
                                         'Upgrade kaufen'
+                                    )}
+                                </button>
+                            );
+                        }
+
+                        {/* Lower tier: scheduled downgrade within renewal window */}
+                        if (isLowerTier && plan.id !== 'basic' && isWithinRenewalWindow) {
+                            if (pendingPackageTier === plan.id) {
+                                return (
+                                    <div className="text-center">
+                                        <div className="mb-1 text-xs text-blue-600 font-medium">
+                                            Geplant ab {new Date(packageExpiresAt).toLocaleDateString('de-CH')}
+                                        </div>
+                                        <button type="button" disabled
+                                            className="w-full rounded-lg border border-blue-200 bg-blue-50 py-2 text-blue-600 font-bold">
+                                            Bereits gebucht
+                                        </button>
+                                    </div>
+                                );
+                            }
+
+                            const expiryDate = new Date(packageExpiresAt).toLocaleDateString('de-CH');
+                            return (
+                                <button
+                                    type="button"
+                                    onClick={() => handleCheckout(plan.id)}
+                                    disabled={!!checkoutLoading}
+                                    className="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-blue-400 py-2 font-bold text-blue-700 shadow-sm transition hover:bg-blue-50"
+                                >
+                                    {checkoutLoading === plan.id ? (
+                                        <><Loader className="w-4 h-4 animate-spin" /> Laden...</>
+                                    ) : (
+                                        `Ab ${expiryDate} buchen`
                                     )}
                                 </button>
                             );
@@ -1516,6 +1565,9 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
     const [showCaptureSuccessModal, setShowCaptureSuccessModal] = useState(false); // Capture Service Success Modal
     const [showPackageSuccessModal, setShowPackageSuccessModal] = useState(false); // Package Upgrade Success Modal
     const [packageExpiresAt, setPackageExpiresAt] = useState(null); // Ablaufdatum des Pakets
+    const [pendingPackageTier, setPendingPackageTier] = useState(null); // Geplanter Paketwechsel
+    const [pendingPackageExpiresAt, setPendingPackageExpiresAt] = useState(null);
+    const [isScheduledDowngradeSuccess, setIsScheduledDowngradeSuccess] = useState(false);
     const [checkoutLoading, setCheckoutLoading] = useState(null); // Tier-ID being processed
     const [usedCaptureServices, setUsedCaptureServices] = useState(0); // Genutzte Erfassungsservices
     const [authUid, setAuthUid] = useState(null);
@@ -1964,12 +2016,13 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
             const sessionId = query.get('session_id');
 
             const finalizePackageReturn = async () => {
+                let scheduledDowngrade = false;
                 if (sessionId) {
                     const { data: { session } } = await supabase.auth.getSession();
 
                     if (session?.access_token) {
                         try {
-                            await fetch('/api/confirm-package-checkout', {
+                            const confirmRes = await fetch('/api/confirm-package-checkout', {
                                 method: 'POST',
                                 headers: {
                                     'Content-Type': 'application/json',
@@ -1977,6 +2030,10 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                 },
                                 body: JSON.stringify({ sessionId }),
                             });
+                            const confirmData = await confirmRes.json().catch(() => ({}));
+                            if (confirmData.isScheduledDowngrade) {
+                                scheduledDowngrade = true;
+                            }
                         } catch (error) {
                             console.warn('Package checkout confirmation failed:', error);
                         }
@@ -1987,7 +2044,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
 
                 const { data, error } = await supabase
                     .from('profiles')
-                    .select('package_tier, package_expires_at')
+                    .select('package_tier, package_expires_at, pending_package_tier, pending_package_expires_at')
                     .eq('id', user?.id)
                     .maybeSingle();
 
@@ -2008,9 +2065,13 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                         setUserTier(resolvedTier);
                         setPackageExpiresAt(data.package_expires_at || null);
                     }
+
+                    setPendingPackageTier(data.pending_package_tier || null);
+                    setPendingPackageExpiresAt(data.pending_package_expires_at || null);
                 }
 
                 if (!stopped) {
+                    setIsScheduledDowngradeSuccess(!!scheduledDowngrade);
                     setShowPackageSuccessModal(true);
                     window.history.replaceState(null, '', window.location.pathname);
                 }
@@ -2049,7 +2110,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
         (async () => {
             const { data, error, status } = await supabase
                 .from('profiles')
-                .select('package_tier, package_expires_at')
+                .select('package_tier, package_expires_at, pending_package_tier, pending_package_expires_at')
                 .eq('id', uid)
                 .maybeSingle();
 
@@ -2074,6 +2135,9 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
             };
 
             const resolved = parseTier(data.package_tier);
+
+            setPendingPackageTier(data.pending_package_tier || null);
+            setPendingPackageExpiresAt(data.pending_package_expires_at || null);
 
             // Check if paid package has expired (client-side display only)
             if (data.package_expires_at && new Date(data.package_expires_at) < new Date() && resolved !== 'enterprise') {
@@ -2275,7 +2339,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                     <UserProfileSection user={user} setUser={setUser} showNotification={showNotification} setLang={changeLanguage} t={t} isImpersonating={isImpersonating} />
                 )
              ) :
-             dashView === 'subscription' ? ( <SubscriptionSection user={user} currentTier={userTier} packageExpiresAt={packageExpiresAt} checkoutLoading={checkoutLoading} setCheckoutLoading={setCheckoutLoading} showNotification={showNotification} /> ) :
+             dashView === 'subscription' ? ( <SubscriptionSection user={user} currentTier={userTier} packageExpiresAt={packageExpiresAt} pendingPackageTier={pendingPackageTier} pendingPackageExpiresAt={pendingPackageExpiresAt} checkoutLoading={checkoutLoading} setCheckoutLoading={setCheckoutLoading} showNotification={showNotification} /> ) :
              dashView === 'analytics' ? (
                 <AnalyticsDashboard user={user} userTier={userTier} courses={courses} teacherEarnings={teacherEarnings} setDashView={setDashView} />
              ) :
@@ -2978,24 +3042,38 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                 showNotification={showNotification}
             />
 
-            {/* PACKAGE UPGRADE SUCCESS MODAL */}
+            {/* PACKAGE UPGRADE / SCHEDULED DOWNGRADE SUCCESS MODAL */}
             {showPackageSuccessModal && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-300">
                     <div className="bg-white rounded-2xl p-8 max-w-md w-full text-center shadow-2xl border-4 border-primary/20 transform animate-in zoom-in-95 duration-300">
-                        <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
-                            <Crown className="w-12 h-12 text-green-600 animate-bounce" />
+                        <div className={`w-24 h-24 ${isScheduledDowngradeSuccess ? 'bg-blue-100' : 'bg-green-100'} rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner`}>
+                            {isScheduledDowngradeSuccess
+                                ? <Clock className="w-12 h-12 text-blue-600" />
+                                : <Crown className="w-12 h-12 text-green-600 animate-bounce" />
+                            }
                         </div>
-                        <h2 className="text-3xl font-bold font-heading text-dark mb-4">Herzlichen Glückwunsch!</h2>
+                        <h2 className="text-3xl font-bold font-heading text-dark mb-4">
+                            {isScheduledDowngradeSuccess ? 'Paketwechsel geplant!' : 'Herzlichen Glückwunsch!'}
+                        </h2>
                         <p className="text-gray-600 mb-8 text-lg leading-relaxed">
-                            Dein Paket-Upgrade war erfolgreich!<br/>
-                            Du hast jetzt Zugriff auf alle <strong>{currentPlan?.title || userTier}</strong> Features.<br/>
-                            <span className="text-sm text-gray-400 mt-2 block">Viel Erfolg mit deinen Kursen!</span>
+                            {isScheduledDowngradeSuccess ? (
+                                <>
+                                    Dein Paketwechsel wurde erfolgreich geplant!<br/>
+                                    Du behältst dein aktuelles Paket bis zum Ablauf und wechselst dann automatisch.
+                                </>
+                            ) : (
+                                <>
+                                    Dein Paket-Upgrade war erfolgreich!<br/>
+                                    Du hast jetzt Zugriff auf alle <strong>{currentPlan?.title || userTier}</strong> Features.<br/>
+                                    <span className="text-sm text-gray-400 mt-2 block">Viel Erfolg mit deinen Kursen!</span>
+                                </>
+                            )}
                         </p>
                         <button
-                            onClick={() => setShowPackageSuccessModal(false)}
+                            onClick={() => { setShowPackageSuccessModal(false); setIsScheduledDowngradeSuccess(false); }}
                             className="bg-primary text-white px-10 py-4 rounded-full font-bold hover:bg-orange-600 transition w-full shadow-lg hover:shadow-orange-500/30 text-lg"
                         >
-                            Los geht's!
+                            {isScheduledDowngradeSuccess ? 'Verstanden' : 'Los geht\'s!'}
                         </button>
                     </div>
                 </div>

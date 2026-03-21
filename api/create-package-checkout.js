@@ -48,11 +48,11 @@ export default async function handler(req, res) {
             return res.status(400).json({ error: 'Ungültiges Paket. Nur Pro, Premium oder Enterprise buchbar.' });
         }
 
-        // --- Check current tier (prevent downgrade) ---
+        // --- Check current tier ---
         const tierOrder = ['basic', 'pro', 'premium', 'enterprise'];
         const { data: profile, error: profileError } = await supabase
             .from('profiles')
-            .select('package_tier, stripe_customer_id, package_expires_at')
+            .select('package_tier, stripe_customer_id, package_expires_at, pending_package_tier')
             .eq('id', userId)
             .single();
 
@@ -64,9 +64,21 @@ export default async function handler(req, res) {
         const currentIdx = tierOrder.indexOf(currentTier);
         const targetIdx = tierOrder.indexOf(targetTier);
 
-        // Allow same tier (renewal) or upgrade only
-        if (targetIdx < currentIdx) {
+        // Downgrade: only allowed within 90-day renewal window
+        const hasActivePackage = profile.package_expires_at
+            && new Date(profile.package_expires_at) > new Date();
+        const isDowngrade = targetIdx < currentIdx && hasActivePackage;
+
+        if (targetIdx < currentIdx && !isDowngrade) {
             return res.status(400).json({ error: 'Downgrade nicht möglich über Checkout' });
+        }
+
+        if (isDowngrade) {
+            const renewalWindowMs = 90 * 24 * 60 * 60 * 1000;
+            const msUntilExpiry = new Date(profile.package_expires_at).getTime() - Date.now();
+            if (msUntilExpiry > renewalWindowMs) {
+                return res.status(400).json({ error: 'Geplanter Wechsel nur im 90-Tage-Erneuerungsfenster möglich.' });
+            }
         }
 
         // --- Server-side prices (tamper-proof) ---
@@ -92,13 +104,11 @@ export default async function handler(req, res) {
                 .eq('id', userId);
         }
 
-        // --- Determine if this is a renewal or upgrade ---
-        const hasActivePackage = profile.package_expires_at
-            && new Date(profile.package_expires_at) > new Date();
+        // --- Determine if this is a renewal, upgrade, or scheduled downgrade ---
         const isRenewal = currentTier === targetTier && hasActivePackage;
         const isUpgrade = targetIdx > currentIdx && currentTier !== 'basic' && hasActivePackage;
 
-        // --- Proration: credit remaining value of current plan on upgrade ---
+        // --- Pricing ---
         let finalPrice = price;
         let credit = 0;
         let description = '';
@@ -122,6 +132,10 @@ export default async function handler(req, res) {
             description = credit > 0
                 ? `Upgrade ${currentLabel} → ${label} (Restguthaben CHF ${credit.toFixed(2)} verrechnet)`
                 : `Upgrade auf ${label} Paket – 1 Jahr Laufzeit`;
+        } else if (isDowngrade) {
+            // Scheduled downgrade: full price, starts after current package expires
+            const activationDate = new Date(profile.package_expires_at).toLocaleDateString('de-CH');
+            description = `${label} Paket ab ${activationDate} – 1 Jahr Laufzeit (geplanter Wechsel)`;
         } else {
             description = `${label} Paket – 1 Jahr Laufzeit`;
         }
@@ -150,6 +164,7 @@ export default async function handler(req, res) {
                 currentTier,
                 targetTier,
                 isRenewal: isRenewal ? 'true' : 'false',
+                isScheduledDowngrade: isDowngrade ? 'true' : 'false',
                 currentExpiresAt: profile.package_expires_at || '',
                 credit: credit.toFixed(2),
             },

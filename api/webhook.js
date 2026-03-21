@@ -163,13 +163,20 @@ function hasActivePackage(expiresAt) {
   return !!expiresAt && new Date(expiresAt) > new Date();
 }
 
-function computePackageAmountCents(currentTier, currentExpiresAt, targetTier) {
+function computePackageAmountCents(currentTier, currentExpiresAt, targetTier, isScheduledDowngrade) {
   const price = PACKAGE_PRICES_CHF[targetTier];
   if (!price) return null;
 
   const currentIdx = PACKAGE_TIER_ORDER.indexOf(currentTier);
   const targetIdx = PACKAGE_TIER_ORDER.indexOf(targetTier);
-  if (currentIdx === -1 || targetIdx === -1 || targetIdx < currentIdx) {
+  if (currentIdx === -1 || targetIdx === -1) return null;
+
+  // Scheduled downgrade: full price of target tier
+  if (isScheduledDowngrade) {
+    return Math.round(price * 100);
+  }
+
+  if (targetIdx < currentIdx) {
     return null;
   }
 
@@ -191,15 +198,21 @@ function computePackageAmountCents(currentTier, currentExpiresAt, targetTier) {
   return Math.round(finalPrice * 100);
 }
 
-function resolvePackageTargetTier(currentTier, currentExpiresAt, requestedTargetTier, amountTotal) {
+function resolvePackageTargetTier(currentTier, currentExpiresAt, requestedTargetTier, amountTotal, isScheduledDowngrade) {
   const normalizedCurrent = normalizePackageTier(currentTier);
   const normalizedRequested = normalizePackageTier(requestedTargetTier);
+
+  // For scheduled downgrades, trust the metadata (already validated at checkout creation)
+  if (isScheduledDowngrade) {
+    return normalizedRequested;
+  }
+
   const currentIdx = PACKAGE_TIER_ORDER.indexOf(normalizedCurrent);
 
   const candidates = PACKAGE_TIER_ORDER
     .filter((tier) => ['pro', 'premium', 'enterprise'].includes(tier))
     .filter((tier) => PACKAGE_TIER_ORDER.indexOf(tier) >= currentIdx)
-    .filter((tier) => computePackageAmountCents(normalizedCurrent, currentExpiresAt, tier) === amountTotal);
+    .filter((tier) => computePackageAmountCents(normalizedCurrent, currentExpiresAt, tier, false) === amountTotal);
 
   if (candidates.includes(normalizedRequested)) {
     return normalizedRequested;
@@ -685,11 +698,12 @@ export default async function handler(req, res) {
       const requestedTargetTier = metadata.targetTier;
       const customerEmail = session.customer_details?.email;
       const amountTotal = session.amount_total;
+      const isScheduledDowngrade = metadata.isScheduledDowngrade === 'true';
 
       // 1. Idempotency check
       const { data: existingProfile } = await supabase
         .from('profiles')
-        .select('package_tier, package_expires_at, package_stripe_session_id')
+        .select('package_tier, package_expires_at, package_stripe_session_id, pending_package_stripe_session_id')
         .eq('id', userId)
         .maybeSingle();
 
@@ -699,11 +713,17 @@ export default async function handler(req, res) {
         currentTier,
         currentExpiresAt,
         requestedTargetTier,
-        amountTotal
+        amountTotal,
+        isScheduledDowngrade
       );
       const { isRenewal, newExpiresAt } = calculatePackageExpiry(currentTier, currentExpiresAt, targetTier);
 
-      if (existingProfile?.package_stripe_session_id === session.id) {
+      // Idempotency: check if already processed as scheduled downgrade
+      if (isScheduledDowngrade && existingProfile?.pending_package_stripe_session_id === session.id) {
+        return res.status(200).json({ received: true, note: 'Scheduled downgrade already processed' });
+      }
+
+      if (!isScheduledDowngrade && existingProfile?.package_stripe_session_id === session.id) {
         if (normalizePackageTier(existingProfile?.package_tier) !== targetTier) {
           const { error: correctionError } = await supabase
             .from('profiles')
@@ -729,63 +749,126 @@ export default async function handler(req, res) {
         });
       }
 
-      // 2. Calculate new expiry date
-      // 3. Update profile
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({
-          package_tier: targetTier,
-          package_expires_at: newExpiresAt.toISOString(),
-          package_stripe_session_id: session.id,
-          package_reminder_sent: null, // Reset reminders for new cycle
-        })
-        .eq('id', userId);
-
-      if (updateError) {
-        console.error('Failed to update package tier:', updateError);
-      }
-
       // 4. Tier label for emails
       const tierLabels = { pro: 'Pro', premium: 'Premium', enterprise: 'Enterprise' };
       const tierLabel = tierLabels[targetTier] || targetTier;
-      const expiryFormatted = newExpiresAt.toLocaleDateString('de-CH');
 
-      // 5. Send confirmation email to user
-      try {
-        await sendEmailOrThrow(resend, 'webhook-package-upgrade-customer', {
-          from: emailConfig.from,
-          to: customerEmail,
-          subject: `Dein KursNavi ${tierLabel} Paket ist aktiv!`,
-          html: generateEmailHtml(
-            isRenewal ? 'Abo erfolgreich verlängert!' : `Willkommen beim ${tierLabel} Paket!`,
-            `<p>Vielen Dank für ${isRenewal ? 'die Verlängerung' : 'dein Upgrade zum'} <strong>${tierLabel}</strong> Paket.</p>
-             <p>Dein Abo ist gültig bis: <strong>${expiryFormatted}</strong></p>
-             <p>Betrag: <strong>CHF ${(amountTotal / 100).toFixed(2)}</strong></p>`,
-            'Zum Dashboard'
-          )
-        });
-      } catch (emailError) {
-        console.error('Package upgrade email failed:', emailError);
-      }
+      if (isScheduledDowngrade) {
+        // Scheduled downgrade: write to pending_* fields, keep current package active
+        const pendingExpiresAt = new Date(currentExpiresAt);
+        pendingExpiresAt.setFullYear(pendingExpiresAt.getFullYear() + 1);
 
-      // 6. Notify admin
-      try {
-        await sendEmailOrThrow(resend, 'webhook-package-upgrade-admin', {
-          from: emailConfig.from,
-          to: emailConfig.adminEmail,
-          subject: `Neues ${tierLabel} Paket: ${customerEmail}`,
-          html: generateEmailHtml(
-            `Neues ${tierLabel} Paket ${isRenewal ? '(Verlängerung)' : '(Upgrade)'}`,
-            `<p><strong>Kunde:</strong> ${customerEmail}</p>
-             <p><strong>Paket:</strong> ${tierLabel}</p>
-             <p><strong>Gültig bis:</strong> ${expiryFormatted}</p>
-             <p><strong>Betrag:</strong> CHF ${(amountTotal / 100).toFixed(2)}</p>
-             <p><strong>Typ:</strong> ${isRenewal ? 'Verlängerung' : 'Neu-Upgrade'}</p>`,
-            'Admin Panel öffnen'
-          )
-        });
-      } catch (adminEmailError) {
-        console.error('Admin notification for package upgrade failed:', adminEmailError);
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({
+            pending_package_tier: targetTier,
+            pending_package_expires_at: pendingExpiresAt.toISOString(),
+            pending_package_stripe_session_id: session.id,
+          })
+          .eq('id', userId);
+
+        if (updateError) {
+          console.error('Failed to schedule package change:', updateError);
+        }
+
+        const activationDate = new Date(currentExpiresAt).toLocaleDateString('de-CH');
+        const pendingExpiryFormatted = pendingExpiresAt.toLocaleDateString('de-CH');
+
+        // Email to customer
+        try {
+          await sendEmailOrThrow(resend, 'webhook-package-scheduled-downgrade-customer', {
+            from: emailConfig.from,
+            to: customerEmail,
+            subject: `Geplanter Paketwechsel zu ${tierLabel} bestätigt`,
+            html: generateEmailHtml(
+              'Paketwechsel geplant',
+              `<p>Du hast das <strong>${tierLabel}</strong> Paket ab dem <strong>${activationDate}</strong> gebucht.</p>
+               <p>Bis dahin behältst du alle Features deines aktuellen Pakets.</p>
+               <p>Gültig bis: <strong>${pendingExpiryFormatted}</strong></p>
+               <p>Betrag: <strong>CHF ${(amountTotal / 100).toFixed(2)}</strong></p>`,
+              'Zum Dashboard'
+            )
+          });
+        } catch (emailError) {
+          console.error('Scheduled downgrade email failed:', emailError);
+        }
+
+        // Notify admin
+        try {
+          await sendEmailOrThrow(resend, 'webhook-package-scheduled-downgrade-admin', {
+            from: emailConfig.from,
+            to: emailConfig.adminEmail,
+            subject: `Geplanter Paketwechsel: ${customerEmail} → ${tierLabel}`,
+            html: generateEmailHtml(
+              'Geplanter Paketwechsel',
+              `<p><strong>Kunde:</strong> ${customerEmail}</p>
+               <p><strong>Wechsel zu:</strong> ${tierLabel}</p>
+               <p><strong>Aktivierung:</strong> ${activationDate}</p>
+               <p><strong>Betrag:</strong> CHF ${(amountTotal / 100).toFixed(2)}</p>`,
+              'Admin Panel öffnen'
+            )
+          });
+        } catch (adminEmailError) {
+          console.error('Admin notification for scheduled downgrade failed:', adminEmailError);
+        }
+      } else {
+        // Immediate upgrade/renewal: update package_* fields and clear any pending downgrade
+        const expiryFormatted = newExpiresAt.toLocaleDateString('de-CH');
+
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({
+            package_tier: targetTier,
+            package_expires_at: newExpiresAt.toISOString(),
+            package_stripe_session_id: session.id,
+            package_reminder_sent: null,
+            pending_package_tier: null,
+            pending_package_expires_at: null,
+            pending_package_stripe_session_id: null,
+          })
+          .eq('id', userId);
+
+        if (updateError) {
+          console.error('Failed to update package tier:', updateError);
+        }
+
+        // 5. Send confirmation email to user
+        try {
+          await sendEmailOrThrow(resend, 'webhook-package-upgrade-customer', {
+            from: emailConfig.from,
+            to: customerEmail,
+            subject: `Dein KursNavi ${tierLabel} Paket ist aktiv!`,
+            html: generateEmailHtml(
+              isRenewal ? 'Abo erfolgreich verlängert!' : `Willkommen beim ${tierLabel} Paket!`,
+              `<p>Vielen Dank für ${isRenewal ? 'die Verlängerung' : 'dein Upgrade zum'} <strong>${tierLabel}</strong> Paket.</p>
+               <p>Dein Abo ist gültig bis: <strong>${expiryFormatted}</strong></p>
+               <p>Betrag: <strong>CHF ${(amountTotal / 100).toFixed(2)}</strong></p>`,
+              'Zum Dashboard'
+            )
+          });
+        } catch (emailError) {
+          console.error('Package upgrade email failed:', emailError);
+        }
+
+        // 6. Notify admin
+        try {
+          await sendEmailOrThrow(resend, 'webhook-package-upgrade-admin', {
+            from: emailConfig.from,
+            to: emailConfig.adminEmail,
+            subject: `Neues ${tierLabel} Paket: ${customerEmail}`,
+            html: generateEmailHtml(
+              `Neues ${tierLabel} Paket ${isRenewal ? '(Verlängerung)' : '(Upgrade)'}`,
+              `<p><strong>Kunde:</strong> ${customerEmail}</p>
+               <p><strong>Paket:</strong> ${tierLabel}</p>
+               <p><strong>Gültig bis:</strong> ${expiryFormatted}</p>
+               <p><strong>Betrag:</strong> CHF ${(amountTotal / 100).toFixed(2)}</p>
+               <p><strong>Typ:</strong> ${isRenewal ? 'Verlängerung' : 'Neu-Upgrade'}</p>`,
+              'Admin Panel öffnen'
+            )
+          });
+        } catch (adminEmailError) {
+          console.error('Admin notification for package upgrade failed:', adminEmailError);
+        }
       }
     }
   }

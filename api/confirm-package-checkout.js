@@ -14,13 +14,20 @@ function hasActivePackage(expiresAt) {
   return !!expiresAt && new Date(expiresAt) > new Date();
 }
 
-function computePackageAmountCents(currentTier, currentExpiresAt, targetTier) {
+function computePackageAmountCents(currentTier, currentExpiresAt, targetTier, isScheduledDowngrade) {
   const price = PACKAGE_PRICES_CHF[targetTier];
   if (!price) return null;
 
   const currentIdx = PACKAGE_TIER_ORDER.indexOf(currentTier);
   const targetIdx = PACKAGE_TIER_ORDER.indexOf(targetTier);
-  if (currentIdx === -1 || targetIdx === -1 || targetIdx < currentIdx) {
+  if (currentIdx === -1 || targetIdx === -1) return null;
+
+  // Scheduled downgrade: full price of target tier
+  if (isScheduledDowngrade) {
+    return Math.round(price * 100);
+  }
+
+  if (targetIdx < currentIdx) {
     return null;
   }
 
@@ -42,15 +49,21 @@ function computePackageAmountCents(currentTier, currentExpiresAt, targetTier) {
   return Math.round(finalPrice * 100);
 }
 
-function resolvePackageTargetTier(currentTier, currentExpiresAt, requestedTargetTier, amountTotal) {
+function resolvePackageTargetTier(currentTier, currentExpiresAt, requestedTargetTier, amountTotal, isScheduledDowngrade) {
   const normalizedCurrent = normalizePackageTier(currentTier);
   const normalizedRequested = normalizePackageTier(requestedTargetTier);
+
+  // For scheduled downgrades, trust the metadata (already validated at checkout creation)
+  if (isScheduledDowngrade) {
+    return normalizedRequested;
+  }
+
   const currentIdx = PACKAGE_TIER_ORDER.indexOf(normalizedCurrent);
 
   const candidates = PACKAGE_TIER_ORDER
     .filter((tier) => ['pro', 'premium', 'enterprise'].includes(tier))
     .filter((tier) => PACKAGE_TIER_ORDER.indexOf(tier) >= currentIdx)
-    .filter((tier) => computePackageAmountCents(normalizedCurrent, currentExpiresAt, tier) === amountTotal);
+    .filter((tier) => computePackageAmountCents(normalizedCurrent, currentExpiresAt, tier, false) === amountTotal);
 
   if (candidates.includes(normalizedRequested)) {
     return normalizedRequested;
@@ -115,7 +128,7 @@ export default async function handler(req, res) {
 
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('package_tier, package_expires_at, package_stripe_session_id')
+      .select('package_tier, package_expires_at, package_stripe_session_id, pending_package_stripe_session_id')
       .eq('id', user.id)
       .single();
 
@@ -125,13 +138,25 @@ export default async function handler(req, res) {
 
     const currentTier = normalizePackageTier(metadata.currentTier || profile.package_tier);
     const currentExpiresAt = metadata.currentExpiresAt || profile.package_expires_at || null;
+    const isScheduledDowngrade = metadata.isScheduledDowngrade === 'true';
     const targetTier = resolvePackageTargetTier(
       currentTier,
       currentExpiresAt,
       metadata.targetTier,
-      session.amount_total
+      session.amount_total,
+      isScheduledDowngrade
     );
     const { newExpiresAt } = calculatePackageExpiry(currentTier, currentExpiresAt, targetTier);
+
+    // Idempotency: check if this session was already processed as a scheduled downgrade
+    if (isScheduledDowngrade && profile.pending_package_stripe_session_id === session.id) {
+      return res.status(200).json({
+        received: true,
+        note: 'Already processed (scheduled downgrade)',
+        isScheduledDowngrade: true,
+        targetTier,
+      });
+    }
 
     if (profile.package_stripe_session_id === session.id) {
       if (normalizePackageTier(profile.package_tier) !== targetTier) {
@@ -153,6 +178,33 @@ export default async function handler(req, res) {
       });
     }
 
+    if (isScheduledDowngrade) {
+      // Scheduled downgrade: write to pending_* fields, keep current package active
+      const pendingExpiresAt = new Date(currentExpiresAt);
+      pendingExpiresAt.setFullYear(pendingExpiresAt.getFullYear() + 1);
+
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({
+          pending_package_tier: targetTier,
+          pending_package_expires_at: pendingExpiresAt.toISOString(),
+          pending_package_stripe_session_id: session.id,
+        })
+        .eq('id', user.id);
+
+      if (updateError) {
+        return res.status(500).json({ error: 'Failed to schedule package change', details: updateError });
+      }
+
+      return res.status(200).json({
+        received: true,
+        isScheduledDowngrade: true,
+        targetTier,
+        pendingPackageExpiresAt: pendingExpiresAt.toISOString(),
+      });
+    }
+
+    // Immediate upgrade/renewal: update package_* fields and clear any pending downgrade
     const { error: updateError } = await supabase
       .from('profiles')
       .update({
@@ -160,6 +212,9 @@ export default async function handler(req, res) {
         package_expires_at: newExpiresAt.toISOString(),
         package_stripe_session_id: session.id,
         package_reminder_sent: null,
+        pending_package_tier: null,
+        pending_package_expires_at: null,
+        pending_package_stripe_session_id: null,
       })
       .eq('id', user.id);
 

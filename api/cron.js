@@ -391,7 +391,7 @@ export default async function handler(req, res) {
 
     const { data: expiredProfiles, error: expiryError } = await supabase
       .from('profiles')
-      .select('id, email, package_tier, package_expires_at')
+      .select('id, email, package_tier, package_expires_at, pending_package_tier, pending_package_expires_at, pending_package_stripe_session_id')
       .neq('package_tier', 'basic')
       .lt('package_expires_at', nowISO)
       .not('package_expires_at', 'is', null);
@@ -405,57 +405,123 @@ export default async function handler(req, res) {
         const tierLabel = { pro: 'Pro', premium: 'Premium', enterprise: 'Enterprise' }[profile.package_tier] || profile.package_tier;
         const expiryDate = new Date(profile.package_expires_at).toLocaleDateString('de-CH');
 
-        // Downgrade to basic
-        const { error: downgradeError } = await supabase
-          .from('profiles')
-          .update({
-            package_tier: 'basic',
-            package_expires_at: null,
-            package_stripe_session_id: null,
-          })
-          .eq('id', profile.id);
+        if (profile.pending_package_tier) {
+          // Activate the pre-paid pending package
+          const pendingTierLabel = { pro: 'Pro', premium: 'Premium', enterprise: 'Enterprise' }[profile.pending_package_tier] || profile.pending_package_tier;
+          const pendingExpiryFormatted = profile.pending_package_expires_at
+            ? new Date(profile.pending_package_expires_at).toLocaleDateString('de-CH')
+            : '–';
 
-        if (downgradeError) {
-          console.error(`Failed to downgrade profile ${profile.id}:`, downgradeError);
-          continue;
-        }
+          const { error: activateError } = await supabase
+            .from('profiles')
+            .update({
+              package_tier: profile.pending_package_tier,
+              package_expires_at: profile.pending_package_expires_at,
+              package_stripe_session_id: profile.pending_package_stripe_session_id,
+              package_reminder_sent: null,
+              pending_package_tier: null,
+              pending_package_expires_at: null,
+              pending_package_stripe_session_id: null,
+            })
+            .eq('id', profile.id);
 
-        expiredPackages++;
+          if (activateError) {
+            console.error(`Failed to activate pending package for ${profile.id}:`, activateError);
+            continue;
+          }
 
-        // Notify user about expiry
-        try {
-          await sendEmailOrThrow(resend, 'cron-package-expired-customer', {
-            from: emailConfig.from,
-            to: profile.email,
-            subject: 'Dein KursNavi Abo ist abgelaufen',
-            html: generateEmailHtml(
-              'Dein Abo ist abgelaufen',
-              `<p>Dein <strong>${tierLabel}</strong> Paket ist am ${expiryDate} abgelaufen.</p>
-               <p>Du bist jetzt auf dem kostenlosen Basic-Plan. Um alle Features weiter zu nutzen, kannst du dein Abo jederzeit erneuern.</p>`,
-              'Jetzt erneuern'
-            )
-          });
-          emailsSent++;
-        } catch (emailErr) {
-          console.error(`Expiry email to ${profile.email} failed:`, emailErr);
-        }
+          expiredPackages++;
 
-        // Notify admin
-        try {
-          await sendEmailOrThrow(resend, 'cron-package-expired-admin', {
-            from: emailConfig.from,
-            to: ADMIN_EMAIL,
-            subject: `Abo abgelaufen: ${profile.email} (${tierLabel})`,
-            html: generateEmailHtml(
-              'Abo abgelaufen',
-              `<p><strong>Kunde:</strong> ${profile.email}</p>
-               <p><strong>Paket:</strong> ${tierLabel}</p>
-               <p><strong>Abgelaufen am:</strong> ${expiryDate}</p>`,
-              'Admin Panel öffnen'
-            )
-          });
-        } catch (adminErr) {
-          console.error(`Admin expiry notification failed:`, adminErr);
+          // Notify user about activation
+          try {
+            await sendEmailOrThrow(resend, 'cron-package-activated-customer', {
+              from: emailConfig.from,
+              to: profile.email,
+              subject: `Dein ${pendingTierLabel} Paket ist jetzt aktiv!`,
+              html: generateEmailHtml(
+                'Dein neues Paket ist aktiv',
+                `<p>Dein <strong>${tierLabel}</strong> Paket ist am ${expiryDate} abgelaufen.</p>
+                 <p>Dein vorgebuchtes <strong>${pendingTierLabel}</strong> Paket ist jetzt aktiv.</p>
+                 <p>Gültig bis: <strong>${pendingExpiryFormatted}</strong></p>`,
+                'Zum Dashboard'
+              )
+            });
+            emailsSent++;
+          } catch (emailErr) {
+            console.error(`Activation email to ${profile.email} failed:`, emailErr);
+          }
+
+          // Notify admin
+          try {
+            await sendEmailOrThrow(resend, 'cron-package-activated-admin', {
+              from: emailConfig.from,
+              to: ADMIN_EMAIL,
+              subject: `Paketwechsel aktiviert: ${profile.email} (${tierLabel} → ${pendingTierLabel})`,
+              html: generateEmailHtml(
+                'Geplanter Paketwechsel aktiviert',
+                `<p><strong>Kunde:</strong> ${profile.email}</p>
+                 <p><strong>Bisheriges Paket:</strong> ${tierLabel} (abgelaufen am ${expiryDate})</p>
+                 <p><strong>Neues Paket:</strong> ${pendingTierLabel}</p>
+                 <p><strong>Gültig bis:</strong> ${pendingExpiryFormatted}</p>`,
+                'Admin Panel öffnen'
+              )
+            });
+          } catch (adminErr) {
+            console.error(`Admin activation notification failed:`, adminErr);
+          }
+        } else {
+          // No pending package – downgrade to basic
+          const { error: downgradeError } = await supabase
+            .from('profiles')
+            .update({
+              package_tier: 'basic',
+              package_expires_at: null,
+              package_stripe_session_id: null,
+            })
+            .eq('id', profile.id);
+
+          if (downgradeError) {
+            console.error(`Failed to downgrade profile ${profile.id}:`, downgradeError);
+            continue;
+          }
+
+          expiredPackages++;
+
+          // Notify user about expiry
+          try {
+            await sendEmailOrThrow(resend, 'cron-package-expired-customer', {
+              from: emailConfig.from,
+              to: profile.email,
+              subject: 'Dein KursNavi Abo ist abgelaufen',
+              html: generateEmailHtml(
+                'Dein Abo ist abgelaufen',
+                `<p>Dein <strong>${tierLabel}</strong> Paket ist am ${expiryDate} abgelaufen.</p>
+                 <p>Du bist jetzt auf dem kostenlosen Basic-Plan. Um alle Features weiter zu nutzen, kannst du dein Abo jederzeit erneuern.</p>`,
+                'Jetzt erneuern'
+              )
+            });
+            emailsSent++;
+          } catch (emailErr) {
+            console.error(`Expiry email to ${profile.email} failed:`, emailErr);
+          }
+
+          // Notify admin
+          try {
+            await sendEmailOrThrow(resend, 'cron-package-expired-admin', {
+              from: emailConfig.from,
+              to: ADMIN_EMAIL,
+              subject: `Abo abgelaufen: ${profile.email} (${tierLabel})`,
+              html: generateEmailHtml(
+                'Abo abgelaufen',
+                `<p><strong>Kunde:</strong> ${profile.email}</p>
+                 <p><strong>Paket:</strong> ${tierLabel}</p>
+                 <p><strong>Abgelaufen am:</strong> ${expiryDate}</p>`,
+                'Admin Panel öffnen'
+              )
+            });
+          } catch (adminErr) {
+            console.error(`Admin expiry notification failed:`, adminErr);
+          }
         }
       }
     }
