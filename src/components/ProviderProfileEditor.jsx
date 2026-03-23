@@ -428,55 +428,46 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
     }
   };
 
-  // Publish/Unpublish profile
+  // Publish/Unpublish profile via server API (service role bypasses RLS)
   const togglePublish = async () => {
     if (!canPublish) return;
-
-    // Auto-generate slug if not set
-    if (!isPublished && !profileData.slug && profileData.full_name) {
-      const generated = generateProviderSlug(profileData.full_name, []);
-      setNewSlug(generated);
-      setProfileData(prev => ({ ...prev, slug: generated }));
-    }
 
     try {
       setSaving(true);
 
-      // Ensure fresh auth session before write operation
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         showNotification?.('Sitzung abgelaufen – bitte Seite neu laden', 'error');
         return;
       }
 
-      const updateData = {
-        profile_published_at: isPublished ? null : new Date().toISOString()
-      };
+      const res = await fetch('/api/provider', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'toggle-publish',
+          providerId: session.user.id,
+          authToken: session.access_token,
+          publish: !isPublished
+        })
+      });
 
-      // Auto-generate slug on first publish if not set
-      if (!isPublished && !profileData.slug && profileData.full_name) {
-        updateData.slug = generateProviderSlug(profileData.full_name, []);
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || 'Update fehlgeschlagen');
       }
 
-      const { data: updated, error } = await supabase
-        .from('profiles')
-        .update(updateData)
-        .eq('id', session.user.id)
-        .select('profile_published_at, slug');
+      const result = await res.json();
 
-      if (error) throw error;
-
-      if (!updated || updated.length === 0) {
-        console.error('togglePublish: 0 rows updated', { userId: session.user.id, updateData });
-        throw new Error('Profil-Update wurde nicht gespeichert');
-      }
-
-      const row = updated[0];
       setProfileData(prev => ({
         ...prev,
-        profile_published_at: row.profile_published_at,
-        slug: row.slug || prev.slug
+        profile_published_at: result.profile_published_at,
+        slug: result.slug || prev.slug
       }));
+
+      if (result.slug && !profileData.slug) {
+        setNewSlug(result.slug);
+      }
 
       showNotification?.(
         isPublished ? 'Profil ist jetzt offline' : 'Profil wurde veröffentlicht!',
@@ -484,7 +475,7 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
       );
     } catch (err) {
       console.error('Error toggling publish:', err);
-      showNotification?.('Fehler beim Aktualisieren', 'error');
+      showNotification?.(err.message || 'Fehler beim Aktualisieren', 'error');
     } finally {
       setSaving(false);
     }

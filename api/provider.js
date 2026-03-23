@@ -762,6 +762,72 @@ export default async function handler(req, res) {
     }
 
     // ============================================
+    // ACTION: toggle-publish - Publish or unpublish provider profile
+    // ============================================
+    if (action === 'toggle-publish') {
+      if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'Method not allowed' });
+      }
+
+      const { providerId, authToken, publish } = req.body;
+
+      if (!providerId || !authToken) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      // Verify the auth token matches the provider
+      const { data: authUser, error: authError } = await supabase.auth.getUser(authToken);
+      if (authError || !authUser?.user || authUser.user.id !== providerId) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+
+      // Check tier eligibility
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('package_tier, slug, full_name')
+        .eq('id', providerId)
+        .single();
+
+      if (!profile) {
+        return res.status(404).json({ error: 'Profile not found' });
+      }
+
+      const tier = (profile.package_tier || 'basic').toLowerCase();
+      if (!['pro', 'premium', 'enterprise'].includes(tier)) {
+        return res.status(403).json({ error: 'Pro-Paket oder höher erforderlich' });
+      }
+
+      const updateData = {
+        profile_published_at: publish ? new Date().toISOString() : null
+      };
+
+      // Auto-generate slug on first publish if not set
+      if (publish && !profile.slug && profile.full_name) {
+        const slugBase = profile.full_name.toLowerCase()
+          .replace(/[äÄ]/g, 'ae').replace(/[öÖ]/g, 'oe').replace(/[üÜ]/g, 'ue')
+          .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+        updateData.slug = slugBase || `anbieter-${providerId.slice(0, 8)}`;
+      }
+
+      const { data: updated, error: updateError } = await supabase
+        .from('profiles')
+        .update(updateData)
+        .eq('id', providerId)
+        .select('profile_published_at, slug')
+        .single();
+
+      if (updateError) {
+        console.error('toggle-publish update error:', updateError);
+        return res.status(500).json({ error: 'Update fehlgeschlagen' });
+      }
+
+      return res.status(200).json({
+        profile_published_at: updated.profile_published_at,
+        slug: updated.slug
+      });
+    }
+
+    // ============================================
     // ACTION: debug - Debug course matching (admin only)
     // ============================================
     if (action === 'debug') {
