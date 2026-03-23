@@ -442,6 +442,13 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
     try {
       setSaving(true);
 
+      // Ensure fresh auth session before write operation
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        showNotification?.('Sitzung abgelaufen – bitte Seite neu laden', 'error');
+        return;
+      }
+
       const updateData = {
         profile_published_at: isPublished ? null : new Date().toISOString()
       };
@@ -454,20 +461,21 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
       const { data: updated, error } = await supabase
         .from('profiles')
         .update(updateData)
-        .eq('id', user.id)
-        .select('profile_published_at, slug')
-        .single();
+        .eq('id', session.user.id)
+        .select('profile_published_at, slug');
 
       if (error) throw error;
 
-      if (!updated) {
+      if (!updated || updated.length === 0) {
+        console.error('togglePublish: 0 rows updated', { userId: session.user.id, updateData });
         throw new Error('Profil-Update wurde nicht gespeichert');
       }
 
+      const row = updated[0];
       setProfileData(prev => ({
         ...prev,
-        profile_published_at: updated.profile_published_at,
-        slug: updated.slug || prev.slug
+        profile_published_at: row.profile_published_at,
+        slug: row.slug || prev.slug
       }));
 
       showNotification?.(
