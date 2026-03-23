@@ -809,21 +809,53 @@ export default async function handler(req, res) {
         updateData.slug = slugBase || `anbieter-${providerId.slice(0, 8)}`;
       }
 
+      // Read value BEFORE update
+      const { data: before } = await supabase
+        .from('profiles')
+        .select('profile_published_at')
+        .eq('id', providerId)
+        .single();
+
+      console.log('toggle-publish BEFORE:', { providerId, publish, before_value: before?.profile_published_at, updateData });
+
       const { data: updated, error: updateError } = await supabase
         .from('profiles')
         .update(updateData)
         .eq('id', providerId)
-        .select('profile_published_at, slug')
-        .single();
+        .select('profile_published_at, slug');
 
       if (updateError) {
         console.error('toggle-publish update error:', updateError);
-        return res.status(500).json({ error: 'Update fehlgeschlagen' });
+        return res.status(500).json({ error: 'Update fehlgeschlagen', details: updateError.message });
+      }
+
+      console.log('toggle-publish UPDATE result:', { rows: updated?.length, data: updated });
+
+      // Verify by re-reading
+      const { data: after } = await supabase
+        .from('profiles')
+        .select('profile_published_at')
+        .eq('id', providerId)
+        .single();
+
+      console.log('toggle-publish AFTER re-read:', { after_value: after?.profile_published_at });
+
+      const row = updated?.[0];
+      if (!row) {
+        return res.status(500).json({
+          error: 'Update hat keine Zeilen betroffen',
+          debug: { before: before?.profile_published_at, after: after?.profile_published_at }
+        });
       }
 
       return res.status(200).json({
-        profile_published_at: updated.profile_published_at,
-        slug: updated.slug
+        profile_published_at: after?.profile_published_at ?? row.profile_published_at,
+        slug: row.slug,
+        debug: {
+          before: before?.profile_published_at,
+          update_returned: row.profile_published_at,
+          after_reread: after?.profile_published_at
+        }
       });
     }
 

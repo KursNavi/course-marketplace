@@ -458,6 +458,7 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
       }
 
       const result = await res.json();
+      console.log('togglePublish API response:', result);
 
       setProfileData(prev => ({
         ...prev,
