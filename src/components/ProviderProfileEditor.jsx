@@ -1406,108 +1406,109 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
       )}
 
       {/* Delete Account Section (hidden during admin impersonation) */}
-      {!isImpersonating && <div className="bg-white rounded-xl shadow-sm border border-red-100 p-6 md:p-8">
-        <h3 className="text-lg font-bold text-red-600 mb-4 flex items-center">
-          <Trash2 className="w-5 h-5 mr-2" />
-          Konto löschen
-        </h3>
-        <p className="text-gray-600 mb-4">
-          Wenn Sie Ihr Konto löschen, werden alle Ihre Daten unwiderruflich entfernt. Dies umfasst:
-        </p>
-        <ul className="list-disc list-inside text-gray-600 mb-6 space-y-1 text-sm">
-          <li>Ihr Profil und alle Einstellungen</li>
-          <li>Alle Ihre Kurse und Kurstermine</li>
-          <li>Buchungsdaten und Teilnehmerlisten</li>
-          <li>Hochgeladene Bilder und Dokumente</li>
-        </ul>
-        <button
-          type="button"
-          onClick={() => setShowDeleteModal(true)}
-          className="px-4 py-2 bg-red-50 text-red-600 border border-red-200 rounded-lg font-medium hover:bg-red-100 transition-colors flex items-center"
-        >
-          <Trash2 className="w-4 h-4 mr-2" />
-          Konto unwiderruflich löschen
-        </button>
-      </div>
+      {!isImpersonating && <>
+        <div className="bg-white rounded-xl shadow-sm border border-red-100 p-6 md:p-8">
+          <h3 className="text-lg font-bold text-red-600 mb-4 flex items-center">
+            <Trash2 className="w-5 h-5 mr-2" />
+            Konto löschen
+          </h3>
+          <p className="text-gray-600 mb-4">
+            Wenn Sie Ihr Konto löschen, werden alle Ihre Daten unwiderruflich entfernt. Dies umfasst:
+          </p>
+          <ul className="list-disc list-inside text-gray-600 mb-6 space-y-1 text-sm">
+            <li>Ihr Profil und alle Einstellungen</li>
+            <li>Alle Ihre Kurse und Kurstermine</li>
+            <li>Buchungsdaten und Teilnehmerlisten</li>
+            <li>Hochgeladene Bilder und Dokumente</li>
+          </ul>
+          <button
+            type="button"
+            onClick={() => setShowDeleteModal(true)}
+            className="px-4 py-2 bg-red-50 text-red-600 border border-red-200 rounded-lg font-medium hover:bg-red-100 transition-colors flex items-center"
+          >
+            <Trash2 className="w-4 h-4 mr-2" />
+            Konto unwiderruflich löschen
+          </button>
+        </div>
 
-      {/* Delete Confirmation Modal */}
-      {showDeleteModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
-                <AlertCircle className="w-6 h-6 text-red-600" />
+        {/* Delete Confirmation Modal */}
+        {showDeleteModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+                  <AlertCircle className="w-6 h-6 text-red-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900">Konto löschen?</h3>
+                  <p className="text-sm text-gray-500">Diese Aktion kann nicht rückgängig gemacht werden</p>
+                </div>
               </div>
-              <div>
-                <h3 className="text-lg font-bold text-gray-900">Konto löschen?</h3>
-                <p className="text-sm text-gray-500">Diese Aktion kann nicht rückgängig gemacht werden</p>
+
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                <p className="text-sm text-red-700">
+                  <strong>Achtung:</strong> Alle Ihre Daten werden permanent gelöscht, einschliesslich aller Kurse, Buchungen und Ihres Profils.
+                </p>
               </div>
-            </div>
 
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
-              <p className="text-sm text-red-700">
-                <strong>Achtung:</strong> Alle Ihre Daten werden permanent gelöscht, einschliesslich aller Kurse, Buchungen und Ihres Profils.
-              </p>
-            </div>
-
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Geben Sie Ihr Passwort ein, um zu bestätigen:
-              </label>
-              <input
-                type="password"
-                value={deletePassword}
-                onChange={(e) => {
-                  setDeletePassword(e.target.value);
-                  setDeleteError('');
-                }}
-                placeholder="Ihr Passwort"
-                className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-red-400 focus:border-red-400 outline-none ${
-                  deleteError ? 'border-red-500 bg-red-50' : 'border-gray-300'
-                }`}
-                autoComplete="current-password"
-              />
-              {deleteError && (
-                <p className="text-sm text-red-600 mt-2">{deleteError}</p>
-              )}
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={() => {
-                  setShowDeleteModal(false);
-                  setDeletePassword('');
-                  setDeleteError('');
-                }}
-                disabled={deleting}
-                className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors disabled:opacity-50"
-              >
-                Abbrechen
-              </button>
-              <button
-                type="button"
-                onClick={handleDeleteAccount}
-                disabled={!deletePassword || deleting}
-                className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-              >
-                {deleting ? (
-                  <>
-                    <Loader className="w-4 h-4 mr-2 animate-spin" />
-                    Wird gelöscht...
-                  </>
-                ) : (
-                  <>
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Endgültig löschen
-                  </>
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Geben Sie Ihr Passwort ein, um zu bestätigen:
+                </label>
+                <input
+                  type="password"
+                  value={deletePassword}
+                  onChange={(e) => {
+                    setDeletePassword(e.target.value);
+                    setDeleteError('');
+                  }}
+                  placeholder="Ihr Passwort"
+                  className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-red-400 focus:border-red-400 outline-none ${
+                    deleteError ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                  }`}
+                  autoComplete="current-password"
+                />
+                {deleteError && (
+                  <p className="text-sm text-red-600 mt-2">{deleteError}</p>
                 )}
-              </button>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowDeleteModal(false);
+                    setDeletePassword('');
+                    setDeleteError('');
+                  }}
+                  disabled={deleting}
+                  className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors disabled:opacity-50"
+                >
+                  Abbrechen
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDeleteAccount}
+                  disabled={!deletePassword || deleting}
+                  className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                >
+                  {deleting ? (
+                    <>
+                      <Loader className="w-4 h-4 mr-2 animate-spin" />
+                      Wird gelöscht...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Endgültig löschen
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
-    </div>}
+        )}
+      </>}
     </div>
   );
 }
