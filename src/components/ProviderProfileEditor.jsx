@@ -451,17 +451,23 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
         updateData.slug = generateProviderSlug(profileData.full_name, []);
       }
 
-      const { error } = await supabase
+      const { data: updated, error } = await supabase
         .from('profiles')
         .update(updateData)
-        .eq('id', user.id);
+        .eq('id', user.id)
+        .select('profile_published_at, slug')
+        .single();
 
       if (error) throw error;
 
+      if (!updated) {
+        throw new Error('Profil-Update wurde nicht gespeichert');
+      }
+
       setProfileData(prev => ({
         ...prev,
-        profile_published_at: updateData.profile_published_at,
-        slug: updateData.slug || prev.slug
+        profile_published_at: updated.profile_published_at,
+        slug: updated.slug || prev.slug
       }));
 
       showNotification?.(
