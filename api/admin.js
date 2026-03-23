@@ -12,6 +12,9 @@ import { createClient } from '@supabase/supabase-js';
  * - POST action=save-course        → Create/update a course (impersonation)
  * - POST action=delete-course      → Delete a course (impersonation)
  * - POST action=set-course-status  → Update course status (impersonation)
+ * - POST action=save-profile       → Save provider profile (impersonation)
+ * - POST action=upload-profile-image → Upload provider logo/cover (impersonation)
+ * - POST action=set-course-prio    → Toggle course prio flag (impersonation)
  */
 
 const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
@@ -457,6 +460,154 @@ export default async function handler(req, res) {
       const { error } = await supabaseAdmin
         .from('courses')
         .update({ status: newStatus })
+        .eq('id', courseId);
+
+      if (error) return res.status(500).json({ error: error.message });
+
+      return res.status(200).json({ ok: true });
+    }
+
+    // ============================================
+    // ACTION: save-profile - Save provider profile fields (impersonation)
+    // ============================================
+    if (action === 'save-profile') {
+      if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'Method not allowed' });
+      }
+
+      const body = parseBody(req);
+      const { userId, profileUpdates, syncInstructorName } = body;
+
+      if (!userId || !isValidUUID(userId)) {
+        return res.status(400).json({ error: 'Missing or invalid userId' });
+      }
+
+      if (!profileUpdates || typeof profileUpdates !== 'object') {
+        return res.status(400).json({ error: 'Missing profileUpdates' });
+      }
+
+      // Whitelist allowed fields
+      const allowedFields = [
+        'full_name', 'city', 'canton', 'bio_text', 'certificates',
+        'preferred_language', 'website_url', 'additional_locations',
+        'logo_url', 'cover_image_url', 'show_email_publicly', 'email', 'slug'
+      ];
+
+      const filtered = {};
+      for (const key of allowedFields) {
+        if (key in profileUpdates) filtered[key] = profileUpdates[key];
+      }
+
+      if (Object.keys(filtered).length === 0) {
+        return res.status(400).json({ error: 'No valid fields to update' });
+      }
+
+      const { error } = await supabaseAdmin
+        .from('profiles')
+        .update(filtered)
+        .eq('id', userId);
+
+      if (error) return res.status(500).json({ error: error.message });
+
+      // Sync instructor_name on all courses if requested
+      if (syncInstructorName && filtered.full_name) {
+        await supabaseAdmin
+          .from('courses')
+          .update({ instructor_name: filtered.full_name })
+          .eq('user_id', userId);
+      }
+
+      return res.status(200).json({ ok: true });
+    }
+
+    // ============================================
+    // ACTION: upload-profile-image - Upload provider logo or cover image (impersonation)
+    // ============================================
+    if (action === 'upload-profile-image') {
+      if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'Method not allowed' });
+      }
+
+      const body = parseBody(req);
+      const { userId, imageBase64, fileName, type } = body;
+
+      if (!userId || !isValidUUID(userId)) {
+        return res.status(400).json({ error: 'Missing or invalid userId' });
+      }
+
+      if (!imageBase64 || !fileName) {
+        return res.status(400).json({ error: 'Missing imageBase64 or fileName' });
+      }
+
+      if (!['logo', 'cover'].includes(type)) {
+        return res.status(400).json({ error: 'type must be logo or cover' });
+      }
+
+      const buffer = Buffer.from(imageBase64, 'base64');
+      if (buffer.length > 2 * 1024 * 1024) {
+        return res.status(400).json({ error: 'Bild darf maximal 2MB gross sein' });
+      }
+
+      const ext = fileName.split('.').pop() || 'jpg';
+      const mimeMap = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp', gif: 'image/gif' };
+      const contentType = mimeMap[ext.toLowerCase()] || 'image/jpeg';
+      const storagePath = `providers/${userId}/${type}_${Date.now()}.${ext}`;
+
+      const { error: uploadError } = await supabaseAdmin.storage
+        .from('course-images')
+        .upload(storagePath, buffer, { upsert: true, contentType });
+
+      if (uploadError) {
+        console.error('upload-profile-image storage error:', uploadError);
+        return res.status(500).json({ error: 'Upload fehlgeschlagen' });
+      }
+
+      const { data: urlData } = supabaseAdmin.storage
+        .from('course-images')
+        .getPublicUrl(storagePath);
+
+      const fieldName = type === 'logo' ? 'logo_url' : 'cover_image_url';
+      const publicUrl = urlData.publicUrl;
+
+      const { error: dbError } = await supabaseAdmin
+        .from('profiles')
+        .update({ [fieldName]: publicUrl })
+        .eq('id', userId);
+
+      if (dbError) {
+        console.error('upload-profile-image db error:', dbError);
+        return res.status(500).json({ error: 'Profil-Update fehlgeschlagen' });
+      }
+
+      return res.status(200).json({ ok: true, publicUrl });
+    }
+
+    // ============================================
+    // ACTION: set-course-prio - Toggle course prio flag (impersonation)
+    // ============================================
+    if (action === 'set-course-prio') {
+      if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'Method not allowed' });
+      }
+
+      const body = parseBody(req);
+      const { userId, courseId, isPrio } = body;
+
+      if (!userId || !isValidUUID(userId) || !courseId) {
+        return res.status(400).json({ error: 'Missing userId or courseId' });
+      }
+
+      const { course, error: courseError } = await getOwnedCourse(supabaseAdmin, courseId);
+      if (courseError || !course) {
+        return res.status(404).json({ error: 'Kurs nicht gefunden' });
+      }
+      if (course.user_id !== userId) {
+        return res.status(403).json({ error: 'Kurs gehört nicht zum impersonierten Anbieter' });
+      }
+
+      const { error } = await supabaseAdmin
+        .from('courses')
+        .update({ is_prio: !!isPrio })
         .eq('id', courseId);
 
       if (error) return res.status(500).json({ error: error.message });

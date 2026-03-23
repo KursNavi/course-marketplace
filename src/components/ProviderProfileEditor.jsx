@@ -20,7 +20,7 @@ import { DEFAULT_COVER_IMAGE } from '../lib/imageUtils';
  * For all teachers: Basic profile fields (name, location, bio, etc.)
  * For Pro+ teachers: Additional public profile features (logo, slug, publish)
  */
-export default function ProviderProfileEditor({ user, showNotification, setUser, setLang, t }) {
+export default function ProviderProfileEditor({ user, showNotification, setUser, setLang, t, isImpersonating }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
@@ -88,6 +88,23 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
   const showCoverImage = hasCoverImage(tier);
   const isPublished = !!profileData.profile_published_at;
   const isTeacher = user?.role === 'teacher';
+
+  // Helper for admin impersonation writes (same pattern as TeacherForm saveCourseViaAdmin)
+  const callAdminApi = async (payload) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) throw new Error('Nicht eingeloggt');
+    const response = await fetch('/api/admin', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`
+      },
+      body: JSON.stringify(payload)
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || 'Admin-Aktion fehlgeschlagen');
+    return data;
+  };
 
   // Load profile data
   useEffect(() => {
@@ -331,39 +348,53 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
         profileUpdates.slug = newSlug;
       }
 
-      // Try to update with all fields, with progressive fallback for missing columns
-      let { error } = await supabase
-        .from('profiles')
-        .update(profileUpdates)
-        .eq('id', user.id);
+      if (isImpersonating) {
+        // Route through admin API (service role key bypasses RLS)
+        await callAdminApi({
+          action: 'save-profile',
+          userId: user.id,
+          profileUpdates,
+          syncInstructorName: isTeacher && !!profileData.full_name
+        });
+      } else {
+        // Direct Supabase update with progressive fallback for missing columns
+        let { error } = await supabase
+          .from('profiles')
+          .update(profileUpdates)
+          .eq('id', user.id);
 
-      // If update fails, try removing potentially missing columns one by one
-      if (error) {
-        console.warn('Full update failed:', error.message);
+        if (error) {
+          console.warn('Full update failed:', error.message);
+          const optionalColumns = ['show_email_publicly', 'logo_url', 'cover_image_url'];
+          let lastError = error;
 
-        // List of columns that might not exist yet (from migration)
-        const optionalColumns = ['show_email_publicly', 'logo_url', 'cover_image_url'];
-        let lastError = error;
-
-        for (const col of optionalColumns) {
-          if (profileUpdates[col] !== undefined) {
-            delete profileUpdates[col];
-            console.warn(`Retrying without ${col}`);
-
-            const retry = await supabase
-              .from('profiles')
-              .update(profileUpdates)
-              .eq('id', user.id);
-
-            if (!retry.error) {
-              lastError = null;
-              break;
+          for (const col of optionalColumns) {
+            if (profileUpdates[col] !== undefined) {
+              delete profileUpdates[col];
+              console.warn(`Retrying without ${col}`);
+              const retry = await supabase
+                .from('profiles')
+                .update(profileUpdates)
+                .eq('id', user.id);
+              if (!retry.error) { lastError = null; break; }
+              lastError = retry.error;
             }
-            lastError = retry.error;
           }
+          if (lastError) throw lastError;
         }
 
-        if (lastError) throw lastError;
+        // Update auth metadata with new name (only for own profile, not impersonation)
+        if (profileData.full_name) {
+          await supabase.auth.updateUser({ data: { full_name: profileData.full_name } });
+        }
+
+        // Update instructor_name on all courses
+        if (isTeacher && profileData.full_name) {
+          await supabase
+            .from('courses')
+            .update({ instructor_name: profileData.full_name })
+            .eq('user_id', user.id);
+        }
       }
 
       // Update local state
@@ -372,23 +403,8 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
         setEditingSlug(false);
       }
 
-      // Update auth metadata with new name
-      if (profileData.full_name) {
-        await supabase.auth.updateUser({
-          data: { full_name: profileData.full_name }
-        });
-      }
-
-      // Update instructor_name on all courses
-      if (isTeacher && profileData.full_name) {
-        await supabase
-          .from('courses')
-          .update({ instructor_name: profileData.full_name })
-          .eq('user_id', user.id);
-      }
-
-      // Handle email/password changes
-      if (profileData.email !== user.email || profileData.password) {
+      // Handle email/password changes (only for own profile)
+      if (!isImpersonating && (profileData.email !== user.email || profileData.password)) {
         if (profileData.password && profileData.password !== profileData.confirmPassword) {
           showNotification?.('Passwörter stimmen nicht überein', 'error');
           return;
@@ -495,38 +511,54 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
 
     try {
       setUploading(true);
-
-      const fileExt = file.name.split('.').pop();
-      // Use existing course-images bucket with providers/ prefix
-      const fileName = `providers/${user.id}/${type}_${Date.now()}.${fileExt}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('course-images')
-        .upload(fileName, file, { upsert: true });
-
-      if (uploadError) throw uploadError;
-
-      const { data: urlData } = supabase.storage
-        .from('course-images')
-        .getPublicUrl(fileName);
-
       const fieldName = type === 'logo' ? 'logo_url' : 'cover_image_url';
-      const publicUrl = urlData.publicUrl;
 
-      // Update local state
-      setProfileData(prev => ({ ...prev, [fieldName]: publicUrl }));
+      if (isImpersonating) {
+        // Convert file to base64 and send through admin API
+        const base64 = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result.split(',')[1]);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
 
-      // Also save directly to database
-      const { error: dbError } = await supabase
-        .from('profiles')
-        .update({ [fieldName]: publicUrl })
-        .eq('id', user.id);
+        const result = await callAdminApi({
+          action: 'upload-profile-image',
+          userId: user.id,
+          imageBase64: base64,
+          fileName: file.name,
+          type
+        });
 
-      if (dbError) {
-        console.warn('Could not save image URL to database:', dbError.message);
-        showNotification?.('Bild hochgeladen (bitte Profil speichern)', 'warning');
-      } else {
+        setProfileData(prev => ({ ...prev, [fieldName]: result.publicUrl }));
         showNotification?.('Bild hochgeladen und gespeichert', 'success');
+      } else {
+        const fileExt = file.name.split('.').pop();
+        const storageName = `providers/${user.id}/${type}_${Date.now()}.${fileExt}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('course-images')
+          .upload(storageName, file, { upsert: true });
+        if (uploadError) throw uploadError;
+
+        const { data: urlData } = supabase.storage
+          .from('course-images')
+          .getPublicUrl(storageName);
+        const publicUrl = urlData.publicUrl;
+
+        setProfileData(prev => ({ ...prev, [fieldName]: publicUrl }));
+
+        const { error: dbError } = await supabase
+          .from('profiles')
+          .update({ [fieldName]: publicUrl })
+          .eq('id', user.id);
+
+        if (dbError) {
+          console.warn('Could not save image URL to database:', dbError.message);
+          showNotification?.('Bild hochgeladen (bitte Profil speichern)', 'warning');
+        } else {
+          showNotification?.('Bild hochgeladen und gespeichert', 'success');
+        }
       }
     } catch (err) {
       console.error('Error uploading image:', err);
@@ -1185,8 +1217,8 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
             </div>
           </div>
 
-          {/* Account Security */}
-          <div className="border-t pt-6 mt-6">
+          {/* Account Security (hidden during admin impersonation) */}
+          {!isImpersonating && <div className="border-t pt-6 mt-6">
             <h3 className="text-lg font-bold mb-4 text-gray-800 flex items-center">
               <Lock className="w-4 h-4 mr-2" />
               {t?.lbl_account_security || 'Account-Sicherheit'}
@@ -1249,7 +1281,7 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
                 </div>
               </div>
             </div>
-          </div>
+          </div>}
 
           {/* Save Button */}
           <div className="pt-6 border-t border-gray-100 flex justify-end">
@@ -1373,8 +1405,8 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
         </div>
       )}
 
-      {/* Delete Account Section */}
-      <div className="bg-white rounded-xl shadow-sm border border-red-100 p-6 md:p-8">
+      {/* Delete Account Section (hidden during admin impersonation) */}
+      {!isImpersonating && <div className="bg-white rounded-xl shadow-sm border border-red-100 p-6 md:p-8">
         <h3 className="text-lg font-bold text-red-600 mb-4 flex items-center">
           <Trash2 className="w-5 h-5 mr-2" />
           Konto löschen
@@ -1475,6 +1507,7 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
           </div>
         </div>
       )}
+    </div>}
     </div>
   );
 }

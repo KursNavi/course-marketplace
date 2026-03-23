@@ -2186,41 +2186,38 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
 
                 // Enterprise: Alle Kurse sind automatisch Prio
                 if (maxPrio === Infinity) {
-                    // Alle Kurse die noch nicht Prio sind, auf Prio setzen
-                    const nonPrioIds = allCourseIds.filter(id => !prioIds.has(id));
-                    if (nonPrioIds.length > 0) {
-                        for (const courseId of nonPrioIds) {
-                            await supabase
-                                .from('courses')
-                                .update({ is_prio: true })
-                                .eq('id', courseId);
+                    if (!isImpersonating) {
+                        const nonPrioIds = allCourseIds.filter(id => !prioIds.has(id));
+                        if (nonPrioIds.length > 0) {
+                            for (const courseId of nonPrioIds) {
+                                await supabase
+                                    .from('courses')
+                                    .update({ is_prio: true })
+                                    .eq('id', courseId);
+                            }
                         }
                     }
                     setPrioCourseIds(new Set(allCourseIds));
                 }
                 // Downgrade: Mehr Prio-Kurse als erlaubt -> nur die ersten X (alphabetisch) behalten
                 else if (prioIds.size > maxPrio && maxPrio > 0) {
-                    // Die ersten maxPrio Kurse (alphabetisch) als Prio behalten
                     const allowedPrioIds = new Set(sortedByTitle.slice(0, maxPrio).map(c => c.id));
-
-                    // Kurse die jetzt nicht mehr Prio sein dürfen
                     const toRemovePrio = [...prioIds].filter(id => !allowedPrioIds.has(id));
-                    // Kurse die Prio werden müssen (falls sie es noch nicht sind)
                     const toAddPrio = [...allowedPrioIds].filter(id => !prioIds.has(id));
 
-                    // Prio entfernen
-                    for (const courseId of toRemovePrio) {
-                        await supabase
-                            .from('courses')
-                            .update({ is_prio: false })
-                            .eq('id', courseId);
-                    }
-                    // Prio hinzufügen
-                    for (const courseId of toAddPrio) {
-                        await supabase
-                            .from('courses')
-                            .update({ is_prio: true })
-                            .eq('id', courseId);
+                    if (!isImpersonating) {
+                        for (const courseId of toRemovePrio) {
+                            await supabase
+                                .from('courses')
+                                .update({ is_prio: false })
+                                .eq('id', courseId);
+                        }
+                        for (const courseId of toAddPrio) {
+                            await supabase
+                                .from('courses')
+                                .update({ is_prio: true })
+                                .eq('id', courseId);
+                        }
                     }
 
                     setPrioCourseIds(allowedPrioIds);
@@ -2228,15 +2225,15 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                 // Default-Auswahl: Wenn noch keine Prio-Kurse markiert sind,
                 // die ersten Kurse (alphabetisch, bis maxPrioCourses) automatisch als Prio setzen
                 else if (prioIds.size === 0 && data.length > maxPrio && maxPrio > 0) {
-                    // Alphabetisch sortiert - die ersten X auswählen
                     const selectedCourseIds = sortedByTitle.slice(0, maxPrio).map(c => c.id);
 
-                    // Update in DB (RLS Policy stellt sicher, dass nur eigene Kurse aktualisiert werden)
-                    for (const courseId of selectedCourseIds) {
-                        await supabase
-                            .from('courses')
-                            .update({ is_prio: true })
-                            .eq('id', courseId);
+                    if (!isImpersonating) {
+                        for (const courseId of selectedCourseIds) {
+                            await supabase
+                                .from('courses')
+                                .update({ is_prio: true })
+                                .eq('id', courseId);
+                        }
                     }
 
                     setPrioCourseIds(new Set(selectedCourseIds));
@@ -2251,9 +2248,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
 
     // Handler: Toggle Prio-Status eines Kurses
     const handleTogglePrio = async (courseId, isCurrentlyPrio) => {
-        // Frische UID holen, um sicherzustellen dass wir die aktuelle Auth-UID haben
-        const { data: authData } = await supabase.auth.getUser();
-        const currentUid = authData?.user?.id || uid;
+        const currentUid = isImpersonating ? user?.id : ((await supabase.auth.getUser()).data?.user?.id || uid);
 
         if (!currentUid) {
             console.error("handleTogglePrio: No user ID available");
@@ -2264,7 +2259,6 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
         const maxPrio = currentPlan?.maxPrioCourses || 0;
         const currentPrioCount = prioCourseIds.size;
 
-        // Wenn wir hinzufügen wollen und das Limit erreicht ist
         if (!isCurrentlyPrio && currentPrioCount >= maxPrio && maxPrio !== Infinity) {
             showNotification(`Du hast bereits ${maxPrio} Prio-Kurse ausgewählt (Maximum für ${currentPlan?.title}).`);
             return;
@@ -2279,18 +2273,36 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
         }
         setPrioCourseIds(newPrioIds);
 
-        // DB Update - direkt mit user_id Filter für Sicherheit
-        const { error } = await supabase
-            .from('courses')
-            .update({ is_prio: !isCurrentlyPrio })
-            .eq('id', courseId)
-            .eq('user_id', currentUid);
-
-        if (error) {
-            console.error("Failed to update prio status:", error);
-            // Zeige den genauen Fehler an
-            showNotification(`Fehler: ${error.message || error.code || 'Unbekannter Fehler'}`);
-            // Rollback
+        try {
+            if (isImpersonating) {
+                const { data: { session } } = await supabase.auth.getSession();
+                if (!session?.access_token) throw new Error('Nicht eingeloggt');
+                const response = await fetch('/api/admin', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${session.access_token}`
+                    },
+                    body: JSON.stringify({
+                        action: 'set-course-prio',
+                        userId: user?.id,
+                        courseId,
+                        isPrio: !isCurrentlyPrio
+                    })
+                });
+                const data = await response.json().catch(() => ({}));
+                if (!response.ok) throw new Error(data.error || 'Prio-Update fehlgeschlagen');
+            } else {
+                const { error } = await supabase
+                    .from('courses')
+                    .update({ is_prio: !isCurrentlyPrio })
+                    .eq('id', courseId)
+                    .eq('user_id', currentUid);
+                if (error) throw error;
+            }
+        } catch (err) {
+            console.error("Failed to update prio status:", err);
+            showNotification(`Fehler: ${err.message || 'Unbekannter Fehler'}`);
             setPrioCourseIds(prioCourseIds);
         }
     };
@@ -2334,7 +2346,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
 
             {dashView === 'profile' || dashView === 'settings' ? (
                 user.role === 'teacher' ? (
-                    <ProviderProfileEditor user={user} setUser={setUser} showNotification={showNotification} setLang={changeLanguage} t={t} />
+                    <ProviderProfileEditor user={user} setUser={setUser} showNotification={showNotification} setLang={changeLanguage} t={t} isImpersonating={isImpersonating} />
                 ) : (
                     <UserProfileSection user={user} setUser={setUser} showNotification={showNotification} setLang={changeLanguage} t={t} isImpersonating={isImpersonating} />
                 )
