@@ -2223,8 +2223,8 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                     setPrioCourseIds(allowedPrioIds);
                 }
                 // Default-Auswahl: Wenn noch keine Prio-Kurse markiert sind,
-                // die ersten Kurse (alphabetisch, bis maxPrioCourses) automatisch als Prio setzen
-                else if (prioIds.size === 0 && data.length > maxPrio && maxPrio > 0) {
+                // automatisch Kurse als Prio setzen (alle wenn <= maxPrio, sonst die ersten X alphabetisch)
+                else if (prioIds.size === 0 && data.length > 0 && maxPrio > 0) {
                     const selectedCourseIds = sortedByTitle.slice(0, maxPrio).map(c => c.id);
 
                     if (!isImpersonating) {
@@ -2582,10 +2582,10 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                             <p className="text-sm text-gray-600">
                                                 {isEnterprisePlan ? (
                                                     <span className="text-green-600 font-medium">Unbegrenzte Prio-Kurse (Enterprise)</span>
-                                                ) : myCourses.length <= currentPlan?.maxPrioCourses ? (
-                                                    <span className="text-green-600">Alle deine Kurse sind automatisch Prio-Kurse</span>
-                                                ) : (
+                                                ) : myCourses.length > currentPlan?.maxPrioCourses ? (
                                                     <span>Wähle aus, welche Kurse priorisiert werden sollen</span>
+                                                ) : (
+                                                    <span className="text-green-600">Du hast genug Prio-Slots für alle deine Kurse</span>
                                                 )}
                                             </p>
                                         </div>
