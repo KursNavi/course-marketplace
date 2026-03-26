@@ -32,20 +32,37 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
   auth: {
     autoRefreshToken: false,
     persistSession: false,
+    flowType: 'implicit',
   },
 })
 
 async function main() {
+  // Try profiles table first
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('id, full_name, email')
-    .eq('email', oldEmail)
+    .ilike('email', oldEmail)
     .maybeSingle()
 
   if (profileError) throw new Error(profileError.message)
-  if (!profile) throw new Error(`Kein Profil gefunden für ${oldEmail}`)
 
-  const { error: authError } = await supabase.auth.admin.updateUserById(profile.id, {
+  let userId, userName
+
+  if (profile) {
+    userId = profile.id
+    userName = profile.full_name
+  } else {
+    // Fallback: search in auth.users via Admin API
+    console.log(`Nicht in profiles gefunden, suche in auth.users...`)
+    const { data: { users }, error: listError } = await supabase.auth.admin.listUsers()
+    if (listError) throw new Error(listError.message)
+    const authUser = users.find(u => u.email === oldEmail)
+    if (!authUser) throw new Error(`Kein User gefunden für ${oldEmail} (weder in profiles noch in auth.users)`)
+    userId = authUser.id
+    userName = authUser.user_metadata?.full_name || authUser.email
+  }
+
+  const { error: authError } = await supabase.auth.admin.updateUserById(userId, {
     email: newEmail,
     email_confirm: true,
   })
@@ -55,7 +72,7 @@ async function main() {
   const { error: profileUpdateError } = await supabase
     .from('profiles')
     .update({ email: newEmail })
-    .eq('id', profile.id)
+    .eq('id', userId)
 
   if (profileUpdateError) {
     throw new Error(`profiles Update fehlgeschlagen: ${profileUpdateError.message}`)
@@ -69,8 +86,8 @@ async function main() {
 
   console.log('Erfolgreich freigeschaltet:')
   console.log({
-    id: profile.id,
-    full_name: profile.full_name,
+    id: userId,
+    full_name: userName,
     old_email: oldEmail,
     new_email: newEmail,
     reset_sent_to: newEmail,
