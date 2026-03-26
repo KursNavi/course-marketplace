@@ -20,7 +20,7 @@ import { DEFAULT_COVER_IMAGE } from '../lib/imageUtils';
  * For all teachers: Basic profile fields (name, location, bio, etc.)
  * For Pro+ teachers: Additional public profile features (logo, slug, publish)
  */
-export default function ProviderProfileEditor({ user, showNotification, setUser, setLang, t, isImpersonating }) {
+export default function ProviderProfileEditor({ user, showNotification, setUser, setLang, t, isImpersonating, setDashView }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
@@ -800,7 +800,7 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
                 Mit einem Pro-Paket erscheinen Sie im Anbieter-Verzeichnis und können Ihr Profil veröffentlichen.
               </p>
               <button
-                onClick={() => window.location.href = '/teacher-hub'}
+                onClick={() => setDashView('subscription')}
                 className="mt-3 px-4 py-2 bg-orange-500 text-white rounded-lg text-sm font-medium hover:bg-orange-600 transition-colors"
               >
                 Pakete vergleichen

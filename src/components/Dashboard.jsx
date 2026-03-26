@@ -2346,7 +2346,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
 
             {dashView === 'profile' || dashView === 'settings' ? (
                 user.role === 'teacher' ? (
-                    <ProviderProfileEditor user={user} setUser={setUser} showNotification={showNotification} setLang={changeLanguage} t={t} isImpersonating={isImpersonating} />
+                    <ProviderProfileEditor user={user} setUser={setUser} showNotification={showNotification} setLang={changeLanguage} t={t} isImpersonating={isImpersonating} setDashView={setDashView} />
                 ) : (
                     <UserProfileSection user={user} setUser={setUser} showNotification={showNotification} setLang={changeLanguage} t={t} isImpersonating={isImpersonating} />
                 )
