@@ -654,6 +654,9 @@ export const TRANSLATIONS = {
     setpw_back_to_login: "Back to Login",
     setpw_link_expired_title: "Link expired",
     setpw_link_expired_text: "Your password reset link has expired or has already been used. Please request a new link below.",
+    setpw_verify_title: "Reset Your Password",
+    setpw_verify_text: "Click the button below to verify your identity and set a new password.",
+    setpw_verify_btn: "Continue to Password Reset",
   },
   de: {
     nav_explore: "Entdecken", nav_about: "Über uns", nav_contact: "Kontakt", nav_login: "Anmelden", nav_logout: "Abmelden", nav_dashboard: "Dashboard",
@@ -822,6 +825,9 @@ export const TRANSLATIONS = {
     setpw_back_to_login: "Zurück zum Login",
     setpw_link_expired_title: "Link abgelaufen",
     setpw_link_expired_text: "Dein Link zum Zurücksetzen des Passworts ist abgelaufen oder wurde bereits verwendet. Bitte fordere unten einen neuen Link an.",
+    setpw_verify_title: "Passwort zurücksetzen",
+    setpw_verify_text: "Klicke auf den Button unten, um deine Identität zu bestätigen und ein neues Passwort zu setzen.",
+    setpw_verify_btn: "Weiter zum Passwort setzen",
   },
   fr: {
     nav_explore: "Explorer", nav_about: "À propos", nav_contact: "Contact", nav_login: "Connexion", nav_logout: "Déconnexion", nav_dashboard: "Tableau de bord",
@@ -990,6 +996,9 @@ export const TRANSLATIONS = {
     setpw_back_to_login: "Retour à la connexion",
     setpw_link_expired_title: "Lien expiré",
     setpw_link_expired_text: "Votre lien de réinitialisation a expiré ou a déjà été utilisé. Veuillez demander un nouveau lien ci-dessous.",
+    setpw_verify_title: "Réinitialiser le mot de passe",
+    setpw_verify_text: "Cliquez sur le bouton ci-dessous pour vérifier votre identité et définir un nouveau mot de passe.",
+    setpw_verify_btn: "Continuer",
   },
   it: {
     nav_explore: "Esplora", nav_about: "Chi siamo", nav_contact: "Contatto", nav_login: "Accedi", nav_logout: "Esci", nav_dashboard: "Dashboard",
@@ -1158,5 +1167,8 @@ export const TRANSLATIONS = {
     setpw_back_to_login: "Torna al login",
     setpw_link_expired_title: "Link scaduto",
     setpw_link_expired_text: "Il tuo link per reimpostare la password è scaduto o è già stato utilizzato. Richiedi un nuovo link qui sotto.",
+    setpw_verify_title: "Reimposta la password",
+    setpw_verify_text: "Clicca sul pulsante qui sotto per verificare la tua identità e impostare una nuova password.",
+    setpw_verify_btn: "Continua",
   }
 };

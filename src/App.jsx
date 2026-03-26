@@ -236,6 +236,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
   const [, setSession] = useState(null);
   const [isRecoveryMode, setIsRecoveryMode] = useState(false);
   const [passwordLinkExpired, setPasswordLinkExpired] = useState(false);
+  const [pendingResetToken, setPendingResetToken] = useState(null);
 
   // Admin Impersonation State
   const [impersonatedUser, setImpersonatedUser] = useState(null);
@@ -388,27 +389,18 @@ export default function KursNaviPro() {  // 1. Initial State Logic
 
   const showNotification = (msg, type = 'success') => { setNotification(msg); setNotificationType(type); setTimeout(() => setNotification(null), 5000); };
 
-  // Handle direct token verification from custom email template links
-  // (/set-password?token_hash=...&type=recovery)
-  // This bypasses Supabase's server-side verify endpoint, preventing email
-  // security scanners from consuming the token before the real user clicks.
+  // Store token from email link for manual verification (user must click a button).
+  // Auto-verification fails because Proofpoint URL Defense scans pages with a
+  // headless browser, executing JS and consuming the token before the real user.
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const tokenHash = params.get('token_hash');
     const type = params.get('type');
     if (!tokenHash || !type) return;
 
-    // Clean URL immediately to prevent double-processing
-    window.history.replaceState(null, '', window.location.pathname);
-
-    supabase.auth.verifyOtp({ token_hash: tokenHash, type }).then(({ error }) => {
-      if (error) {
-        setPasswordLinkExpired(true);
-        window.history.replaceState(null, '', '/set-password');
-        setView('set-password');
-      }
-      // On success, onAuthStateChange fires PASSWORD_RECOVERY → handled below
-    });
+    window.history.replaceState(null, '', '/set-password');
+    setPendingResetToken({ tokenHash, type });
+    setView('set-password');
   }, []);
 
   // Handle Supabase auth hash fragments (#message=...&sb= and #error=...&sb=)
@@ -1945,7 +1937,7 @@ useEffect(() => {
       {view === 'teacher-profile' && selectedTeacher && ( <TeacherProfileView teacher={selectedTeacher} courses={publishedCourses} setView={setView} setSelectedCourse={setSelectedCourse} t={t} getCatLabel={getCatLabel} /> )}
       {view === 'how-it-works' && <HowItWorksPage t={t} setView={setView} />}
       {view === 'login' && <AuthView setView={setView} setUser={setUser} showNotification={showNotification} lang={lang} />}
-      {view === 'set-password' && <SetPasswordView setView={setView} showNotification={showNotification} lang={lang} mode={isRecoveryMode ? 'reset' : 'request'} linkExpired={passwordLinkExpired} onLinkExpiredDismiss={() => setPasswordLinkExpired(false)} />}
+      {view === 'set-password' && <SetPasswordView setView={setView} showNotification={showNotification} lang={lang} mode={isRecoveryMode ? 'reset' : 'request'} linkExpired={passwordLinkExpired} onLinkExpiredDismiss={() => setPasswordLinkExpired(false)} pendingResetToken={pendingResetToken} onTokenVerified={() => { setPendingResetToken(null); setIsRecoveryMode(true); }} onTokenFailed={() => { setPendingResetToken(null); setPasswordLinkExpired(true); }} />}
       {view === 'about' && <AboutPage t={t} setView={setView} />}
       {view === 'contact' && <ContactPage t={t} setView={setView} showNotification={showNotification} />}
       

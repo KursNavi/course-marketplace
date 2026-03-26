@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Loader, Mail, Eye, EyeOff, KeyRound, AlertTriangle } from 'lucide-react';
+import { Loader, Mail, Eye, EyeOff, KeyRound, AlertTriangle, ShieldCheck } from 'lucide-react';
 import { TRANSLATIONS } from '../lib/constants';
 import { supabase } from '../lib/supabase';
 
-const SetPasswordView = ({ setView, showNotification, lang, mode, linkExpired, onLinkExpiredDismiss }) => {
+const SetPasswordView = ({ setView, showNotification, lang, mode, linkExpired, onLinkExpiredDismiss, pendingResetToken, onTokenVerified, onTokenFailed }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
@@ -26,6 +26,23 @@ const SetPasswordView = ({ setView, showNotification, lang, mode, linkExpired, o
             if (onLinkExpiredDismiss) onLinkExpiredDismiss();
         } catch (error) {
             showNotification(error.message, 'error');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleVerifyToken = async () => {
+        if (!pendingResetToken) return;
+        setLoading(true);
+        try {
+            const { error } = await supabase.auth.verifyOtp({
+                token_hash: pendingResetToken.tokenHash,
+                type: pendingResetToken.type,
+            });
+            if (error) throw error;
+            if (onTokenVerified) onTokenVerified();
+        } catch (error) {
+            if (onTokenFailed) onTokenFailed();
         } finally {
             setLoading(false);
         }
@@ -77,6 +94,30 @@ const SetPasswordView = ({ setView, showNotification, lang, mode, linkExpired, o
                         className="w-full bg-primary text-white py-3 rounded-lg font-bold hover:bg-orange-600 transition font-heading"
                     >
                         {t.btn_go_to_login}
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    // Token verification screen (user clicked email link, must click button to verify)
+    if (pendingResetToken) {
+        return (
+            <div className="min-h-[80vh] flex items-center justify-center px-4 bg-beige">
+                <div className="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full border border-gray-100 text-center">
+                    <div className="flex justify-center mb-6">
+                        <div className="bg-primaryLight p-4 rounded-full">
+                            <ShieldCheck className="w-10 h-10 text-primary" />
+                        </div>
+                    </div>
+                    <h2 className="text-2xl font-bold mb-3 font-heading text-dark">{t.setpw_verify_title}</h2>
+                    <p className="text-gray-600 mb-8 font-sans">{t.setpw_verify_text}</p>
+                    <button
+                        disabled={loading}
+                        onClick={handleVerifyToken}
+                        className="w-full bg-primary text-white py-3 rounded-lg font-bold hover:bg-orange-600 transition disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed font-heading"
+                    >
+                        {loading ? <Loader className="animate-spin mx-auto" /> : t.setpw_verify_btn}
                     </button>
                 </div>
             </div>
