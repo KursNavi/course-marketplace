@@ -388,6 +388,29 @@ export default function KursNaviPro() {  // 1. Initial State Logic
 
   const showNotification = (msg, type = 'success') => { setNotification(msg); setNotificationType(type); setTimeout(() => setNotification(null), 5000); };
 
+  // Handle direct token verification from custom email template links
+  // (/set-password?token_hash=...&type=recovery)
+  // This bypasses Supabase's server-side verify endpoint, preventing email
+  // security scanners from consuming the token before the real user clicks.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tokenHash = params.get('token_hash');
+    const type = params.get('type');
+    if (!tokenHash || !type) return;
+
+    // Clean URL immediately to prevent double-processing
+    window.history.replaceState(null, '', window.location.pathname);
+
+    supabase.auth.verifyOtp({ token_hash: tokenHash, type }).then(({ error }) => {
+      if (error) {
+        setPasswordLinkExpired(true);
+        window.history.replaceState(null, '', '/set-password');
+        setView('set-password');
+      }
+      // On success, onAuthStateChange fires PASSWORD_RECOVERY → handled below
+    });
+  }, []);
+
   // Handle Supabase auth hash fragments (#message=...&sb= and #error=...&sb=)
   useEffect(() => {
     const hash = window.location.hash;
