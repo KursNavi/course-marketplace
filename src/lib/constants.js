@@ -652,6 +652,8 @@ export const TRANSLATIONS = {
     setpw_err_min_length: "Password must be at least 6 characters.",
     setpw_success_changed: "Password successfully updated!",
     setpw_back_to_login: "Back to Login",
+    setpw_link_expired_title: "Link expired",
+    setpw_link_expired_text: "Your password reset link has expired or has already been used. Please request a new link below.",
   },
   de: {
     nav_explore: "Entdecken", nav_about: "Über uns", nav_contact: "Kontakt", nav_login: "Anmelden", nav_logout: "Abmelden", nav_dashboard: "Dashboard",
@@ -818,6 +820,8 @@ export const TRANSLATIONS = {
     setpw_err_min_length: "Das Passwort muss mindestens 6 Zeichen lang sein.",
     setpw_success_changed: "Passwort erfolgreich aktualisiert!",
     setpw_back_to_login: "Zurück zum Login",
+    setpw_link_expired_title: "Link abgelaufen",
+    setpw_link_expired_text: "Dein Link zum Zurücksetzen des Passworts ist abgelaufen oder wurde bereits verwendet. Bitte fordere unten einen neuen Link an.",
   },
   fr: {
     nav_explore: "Explorer", nav_about: "À propos", nav_contact: "Contact", nav_login: "Connexion", nav_logout: "Déconnexion", nav_dashboard: "Tableau de bord",
@@ -984,6 +988,8 @@ export const TRANSLATIONS = {
     setpw_err_min_length: "Le mot de passe doit contenir au moins 6 caractères.",
     setpw_success_changed: "Mot de passe mis à jour avec succès !",
     setpw_back_to_login: "Retour à la connexion",
+    setpw_link_expired_title: "Lien expiré",
+    setpw_link_expired_text: "Votre lien de réinitialisation a expiré ou a déjà été utilisé. Veuillez demander un nouveau lien ci-dessous.",
   },
   it: {
     nav_explore: "Esplora", nav_about: "Chi siamo", nav_contact: "Contatto", nav_login: "Accedi", nav_logout: "Esci", nav_dashboard: "Dashboard",
@@ -1150,5 +1156,7 @@ export const TRANSLATIONS = {
     setpw_err_min_length: "La password deve contenere almeno 6 caratteri.",
     setpw_success_changed: "Password aggiornata con successo!",
     setpw_back_to_login: "Torna al login",
+    setpw_link_expired_title: "Link scaduto",
+    setpw_link_expired_text: "Il tuo link per reimpostare la password è scaduto o è già stato utilizzato. Richiedi un nuovo link qui sotto.",
   }
 };

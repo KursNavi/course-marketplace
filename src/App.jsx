@@ -235,6 +235,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
   const [user, setUser] = useState(null);
   const [, setSession] = useState(null);
   const [isRecoveryMode, setIsRecoveryMode] = useState(false);
+  const [passwordLinkExpired, setPasswordLinkExpired] = useState(false);
 
   // Admin Impersonation State
   const [impersonatedUser, setImpersonatedUser] = useState(null);
@@ -387,11 +388,29 @@ export default function KursNaviPro() {  // 1. Initial State Logic
 
   const showNotification = (msg, type = 'success') => { setNotification(msg); setNotificationType(type); setTimeout(() => setNotification(null), 5000); };
 
-  // Handle Supabase auth hash fragments (#message=...&sb=)
+  // Handle Supabase auth hash fragments (#message=...&sb= and #error=...&sb=)
   useEffect(() => {
     const hash = window.location.hash;
-    if (!hash.includes('message=')) return;
+    if (!hash || hash.length < 2) return;
     const params = new URLSearchParams(hash.replace('#', ''));
+
+    // Handle Supabase auth error fragments (e.g. expired password reset links)
+    const errorCode = params.get('error_code');
+    if (errorCode) {
+      if (errorCode === 'otp_expired') {
+        setPasswordLinkExpired(true);
+        window.history.replaceState(null, '', '/set-password');
+        setView('set-password');
+      } else {
+        const desc = params.get('error_description')?.replace(/\+/g, ' ');
+        showNotification(desc || 'Ein Fehler ist aufgetreten.', 'error');
+        window.history.replaceState(null, '', window.location.pathname + window.location.search);
+      }
+      return;
+    }
+
+    // Handle success message fragments
+    if (!hash.includes('message=')) return;
     const message = params.get('message');
     if (!message) return;
 
@@ -1903,7 +1922,7 @@ useEffect(() => {
       {view === 'teacher-profile' && selectedTeacher && ( <TeacherProfileView teacher={selectedTeacher} courses={publishedCourses} setView={setView} setSelectedCourse={setSelectedCourse} t={t} getCatLabel={getCatLabel} /> )}
       {view === 'how-it-works' && <HowItWorksPage t={t} setView={setView} />}
       {view === 'login' && <AuthView setView={setView} setUser={setUser} showNotification={showNotification} lang={lang} />}
-      {view === 'set-password' && <SetPasswordView setView={setView} showNotification={showNotification} lang={lang} mode={isRecoveryMode ? 'reset' : 'request'} />}
+      {view === 'set-password' && <SetPasswordView setView={setView} showNotification={showNotification} lang={lang} mode={isRecoveryMode ? 'reset' : 'request'} linkExpired={passwordLinkExpired} onLinkExpiredDismiss={() => setPasswordLinkExpired(false)} />}
       {view === 'about' && <AboutPage t={t} setView={setView} />}
       {view === 'contact' && <ContactPage t={t} setView={setView} showNotification={showNotification} />}
       

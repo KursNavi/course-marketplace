@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Loader, Mail, Eye, EyeOff, KeyRound } from 'lucide-react';
+import { Loader, Mail, Eye, EyeOff, KeyRound, AlertTriangle } from 'lucide-react';
 import { TRANSLATIONS } from '../lib/constants';
 import { supabase } from '../lib/supabase';
 
-const SetPasswordView = ({ setView, showNotification, lang, mode }) => {
+const SetPasswordView = ({ setView, showNotification, lang, mode, linkExpired, onLinkExpiredDismiss }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
@@ -23,6 +23,7 @@ const SetPasswordView = ({ setView, showNotification, lang, mode }) => {
             });
             if (error) throw error;
             setEmailSent(true);
+            if (onLinkExpiredDismiss) onLinkExpiredDismiss();
         } catch (error) {
             showNotification(error.message, 'error');
         } finally {
@@ -130,6 +131,15 @@ const SetPasswordView = ({ setView, showNotification, lang, mode }) => {
                         <KeyRound className="w-10 h-10 text-primary" />
                     </div>
                 </div>
+                {linkExpired && (
+                    <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-5 flex items-start gap-3">
+                        <AlertTriangle className="w-5 h-5 text-orange-500 mt-0.5 flex-shrink-0" />
+                        <div>
+                            <p className="text-sm font-bold text-orange-800 font-heading">{t.setpw_link_expired_title}</p>
+                            <p className="text-sm text-orange-700 mt-1 font-sans">{t.setpw_link_expired_text}</p>
+                        </div>
+                    </div>
+                )}
                 <h2 className="text-2xl font-bold mb-2 text-center font-heading text-dark">{t.setpw_forgot_title}</h2>
                 <p className="text-gray-600 mb-6 text-center text-sm font-sans">{t.setpw_forgot_text}</p>
                 <form onSubmit={handleRequestReset} className="space-y-4 font-sans">
