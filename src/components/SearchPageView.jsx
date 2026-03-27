@@ -409,56 +409,43 @@ const SearchPageView = ({
         }
     }, [filteredCourses, loading]);
 
-    // --- RANKING LOGIC (v3.1) ---
-    // Formula: Score = Plan * Booking * (0.6 + 0.4*Freshness) * (1 + RandomEpsilon)
+    // --- RANKING LOGIC (v4.1) ---
+    // Formula: Score = Plan * Booking + SeededRandom(0..0.15)
+    // Prio-Kurse immer vor Standard-Kursen, innerhalb jeder Stufe echt zufällig
     // Bei aktivem Datumsfilter: Kurse MIT Datum zuerst, dann Kurse OHNE Datum
+    //
+    // sortSeed wird einmal pro Seitenaufruf erzeugt (useState-Initializer).
+    // Innerhalb useMemo wird nur ein deterministischer Pseudo-Zufall (Math.sin)
+    // mit diesem Seed verwendet — dadurch lint-sicher (keine Seiteneffekte).
+    const [sortSeed] = React.useState(() => Math.random());
     const sortedCourses = useMemo(() => {
-        // Helper: Prüft ob Kurs ein Datum hat
         const hasDate = (c) => {
             if (c.start_date) return true;
             if (Array.isArray(c.course_events) && c.course_events.some(ev => ev.start_date)) return true;
             return false;
         };
 
-        const getScore = (c) => {
-            // 1. Plan Factor (Fallback logic for legacy data)
-            // is_prio: Kurs hat Prio-Status vom Nutzer erhalten (begrenzt durch Plan)
-            // is_pro: Legacy/Admin-Flag für Pro-Status
+        // Pre-compute one random score per course (seeded PRNG, deterministic within a session)
+        const scoreMap = new Map();
+        filteredCourses.forEach((c, i) => {
             const planF = c.plan_factor || (c.is_prio ? 1.2 : (c.is_pro ? 1.2 : 1.0));
-
-            // 2. Booking Factor (Placeholder until booking system is live)
             const bookF = c.booking_factor || 1.0;
-
-            // 3. Freshness Score (0-1)
-            let freshScore = 0.5;
-            if (c.created_at) {
-                const daysOld = (new Date() - new Date(c.created_at)) / (1000 * 60 * 60 * 24);
-                freshScore = Math.max(0, 1 - (daysOld / 90));
-            }
-            const timeFactor = 0.6 + (0.4 * freshScore);
-
-            // 4. Stable Random Epsilon (-0.03 to +0.03)
-            const seed = (c.id || "0").toString().split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-            const randomJitter = Math.sin(seed) * 0.03;
-
-            return planF * bookF * timeFactor * (1 + randomJitter);
-        };
+            // Seeded pseudo-random: varies per page load (sortSeed) and per course (i)
+            const hash = Math.sin(sortSeed * 10000 + i + 1) * 10000;
+            const randomJitter = (hash - Math.floor(hash)) * 0.15;
+            scoreMap.set(c.id, planF * bookF + randomJitter);
+        });
 
         return [...filteredCourses].sort((a, b) => {
-            // Bei aktivem Datumsfilter: Kurse mit Datum zuerst
             if (filterDateFrom || filterDateTo) {
                 const aHasDate = hasDate(a);
                 const bHasDate = hasDate(b);
-
-                // Kurse mit Datum vor Kursen ohne Datum
                 if (aHasDate && !bHasDate) return -1;
                 if (!aHasDate && bHasDate) return 1;
             }
-
-            // Innerhalb der Gruppe: nach Score sortieren
-            return getScore(b) - getScore(a);
+            return scoreMap.get(b.id) - scoreMap.get(a.id);
         });
-    }, [filteredCourses, filterDateFrom, filterDateTo]);
+    }, [filteredCourses, filterDateFrom, filterDateTo, sortSeed]);
 
     // Get segment config for banner
     const getActiveSegmentConfig = () => {
