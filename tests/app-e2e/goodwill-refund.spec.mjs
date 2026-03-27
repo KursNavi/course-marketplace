@@ -14,10 +14,13 @@ test.describe('Goodwill Refund Request (app-e2e)', () => {
     // Wait for dashboard to load — student dashboard shows heading
     await expect(page.locator('h1')).toBeVisible({ timeout: 10_000 });
 
+    // Wait for bookings to load (async fetch after dashboard renders)
+    await page.waitForTimeout(2_000);
+
     // Look for a booking with a "Kulanzanfrage" option
     const goodwillBtn = page.getByRole('button', { name: /Kulanz/i }).first();
 
-    if (!await goodwillBtn.isVisible({ timeout: 5_000 }).catch(() => false)) {
+    if (!await goodwillBtn.isVisible({ timeout: 10_000 }).catch(() => false)) {
       test.skip(true, 'No bookings with goodwill refund option found for test student');
     }
 
