@@ -30,26 +30,18 @@ test.describe('Merkliste (app-e2e)', () => {
 
     // Navigate to dashboard
     await page.goto('/dashboard');
-    await expect(page.getByText(/Übersicht/)).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator('h1')).toBeVisible({ timeout: 10_000 });
 
-    // Click Merkliste tab
-    const merklisteTab = page.getByRole('button', { name: 'Merkliste' });
-    if (await merklisteTab.isVisible({ timeout: 3_000 }).catch(() => false)) {
-      await merklisteTab.click();
+    // Student dashboard shows Merkliste section directly (no tab switching needed)
+    // The saved course should appear in the Merkliste section
+    await expect(page.getByText(course.title)).toBeVisible({ timeout: 5_000 });
 
-      // Wait for content to load
-      await page.waitForTimeout(2_000);
-
-      // The saved course should appear in the list
-      await expect(page.getByText(course.title)).toBeVisible({ timeout: 5_000 });
-
-      // Remove from Merkliste
-      const removeBtn = page.getByRole('button', { name: /Entfernen/i }).first();
-      if (await removeBtn.isVisible({ timeout: 2_000 }).catch(() => false)) {
-        await removeBtn.click();
-        // Course should disappear
-        await expect(page.getByText(course.title)).not.toBeVisible({ timeout: 5_000 });
-      }
+    // Remove from Merkliste
+    const removeBtn = page.getByRole('button', { name: /Entfernen/i }).first();
+    if (await removeBtn.isVisible({ timeout: 2_000 }).catch(() => false)) {
+      await removeBtn.click();
+      // Course should disappear
+      await expect(page.getByText(course.title)).not.toBeVisible({ timeout: 5_000 });
     }
   });
 });

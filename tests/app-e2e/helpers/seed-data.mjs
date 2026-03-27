@@ -26,7 +26,7 @@ async function query(table, filter, select = 'id') {
 /** Fetch any published course (optionally filtered). */
 export function fetchCourse(extraFilter = '') {
   const filter = `status=eq.published${extraFilter ? '&' + extraFilter : ''}`;
-  return query('courses', filter, 'id,title,slug,booking_type');
+  return query('courses', filter, 'id,title,booking_type');
 }
 
 /** Fetch a published lead-type course. */
@@ -48,8 +48,8 @@ export function fetchArticle() {
 export function fetchProvider() {
   return query(
     'profiles',
-    'provider_slug=not.is.null&provider_profile_published=eq.true',
-    'id,full_name,provider_slug'
+    'slug=not.is.null&profile_published_at=not.is.null',
+    'id,full_name,slug'
   );
 }
 
