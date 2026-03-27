@@ -409,10 +409,12 @@ const SearchPageView = ({
         }
     }, [filteredCourses, loading]);
 
-    // --- RANKING LOGIC (v4.0) ---
+    // --- RANKING LOGIC (v4.1) ---
     // Formula: Score = Plan * Booking + Random(0..0.15)
     // Prio-Kurse immer vor Standard-Kursen, innerhalb jeder Stufe echt zufällig
     // Bei aktivem Datumsfilter: Kurse MIT Datum zuerst, dann Kurse OHNE Datum
+    // WICHTIG: Scores werden einmalig pro Kurs berechnet (nicht bei jedem Vergleich),
+    // damit sort() konsistente Vergleiche bekommt.
     const sortedCourses = useMemo(() => {
         const hasDate = (c) => {
             if (c.start_date) return true;
@@ -420,19 +422,14 @@ const SearchPageView = ({
             return false;
         };
 
-        const getScore = (c) => {
-            // 1. Plan Factor (Prio/Pro-Boost)
+        // Pre-compute one stable random score per course
+        const scoreMap = new Map();
+        for (const c of filteredCourses) {
             const planF = c.plan_factor || (c.is_prio ? 1.2 : (c.is_pro ? 1.2 : 1.0));
-
-            // 2. Booking Factor (Placeholder for future use)
             const bookF = c.booking_factor || 1.0;
-
-            // 3. True random jitter (0 to 0.15) — shuffles within each tier on every page load
-            // Amplitude chosen so prio (1.2) never loses to standard (max 1.15)
             const randomJitter = Math.random() * 0.15;
-
-            return planF * bookF + randomJitter;
-        };
+            scoreMap.set(c.id, planF * bookF + randomJitter);
+        }
 
         return [...filteredCourses].sort((a, b) => {
             if (filterDateFrom || filterDateTo) {
@@ -441,7 +438,7 @@ const SearchPageView = ({
                 if (aHasDate && !bHasDate) return -1;
                 if (!aHasDate && bHasDate) return 1;
             }
-            return getScore(b) - getScore(a);
+            return scoreMap.get(b.id) - scoreMap.get(a.id);
         });
     }, [filteredCourses, filterDateFrom, filterDateTo]);
 
