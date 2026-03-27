@@ -27,9 +27,11 @@ function isWithinAutoRefundWindow(booking) {
 function calculateRefundPercent(eventStartDate) {
   if (!eventStartDate) return 0;
   const now = new Date();
+  now.setHours(0, 0, 0, 0);
   const start = new Date(eventStartDate);
+  start.setHours(0, 0, 0, 0);
   const msPerDay = 24 * 60 * 60 * 1000;
-  const daysUntilStart = Math.floor((start.getTime() - now.getTime()) / msPerDay);
+  const daysUntilStart = Math.round((start.getTime() - now.getTime()) / msPerDay);
   if (daysUntilStart >= 14) return 100;
   if (daysUntilStart >= 3) return 50;
   return 0;
