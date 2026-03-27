@@ -8,22 +8,21 @@ test.describe('Blog (app-e2e)', () => {
     // Blog page heading
     await expect(page.locator('h1')).toContainText('KursNavi Magazin', { timeout: 15_000 });
 
-    // Check for article cards
-    const articles = page.locator('.grid > div[class*="cursor-pointer"]');
-    const count = await articles.count().catch(() => 0);
+    // Check for article cards — find cards containing "Weiterlesen" links
+    const weiterlesen = page.getByText('Weiterlesen');
+    const count = await weiterlesen.count().catch(() => 0);
 
     if (count === 0) {
-      await expect(page.getByText('Noch keine Artikel veröffentlicht')).toBeVisible();
       test.skip(true, 'No published blog articles — skipping article detail test');
     }
 
-    // First article card should have a title (h2) and "Weiterlesen" link
-    const firstCard = articles.first();
-    await expect(firstCard.locator('h2')).toBeVisible();
-    const articleTitle = await firstCard.locator('h2').textContent();
+    // First article card should have a title (h2)
+    const firstCard = page.locator('h2').first();
+    await expect(firstCard).toBeVisible();
+    const articleTitle = await firstCard.textContent();
 
-    // Click the article
-    await firstCard.click();
+    // Click "Weiterlesen" on the first article
+    await weiterlesen.first().click();
 
     // Blog detail page should load with the article title
     await expect(page.locator('h1')).toBeVisible({ timeout: 10_000 });

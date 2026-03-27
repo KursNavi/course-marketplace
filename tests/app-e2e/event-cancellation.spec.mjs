@@ -14,10 +14,8 @@ test.describe('Event Cancellation by Teacher (app-e2e)', () => {
     await expect(page.getByText('Dein Plan')).toBeVisible({ timeout: 10_000 });
 
     // Expand a course to show its events
-    // Course rows may have an expand/chevron button
-    const expandBtn = page.locator(
-      'button:has(.lucide-chevron-down), button:has(.lucide-chevron-right)'
-    ).first();
+    // Dashboard uses a Calendar icon button with title="Termine anzeigen"
+    const expandBtn = page.locator('button[title="Termine anzeigen"]').first();
 
     if (!await expandBtn.isVisible({ timeout: 5_000 }).catch(() => false)) {
       test.skip(true, 'No expandable courses found — teacher may have no courses with events');

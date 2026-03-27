@@ -46,8 +46,8 @@ test.describe('Paid Booking → Stripe (app-e2e)', () => {
       await attestation.check();
     }
 
-    // Click a booking button — either per-event "Jetzt Buchen" or flex booking button
-    const bookBtn = page.getByRole('button', { name: /Jetzt buchen|Jetzt Buchen/i }).first();
+    // Click a booking button — per-event "Jetzt Buchen", "Kurs buchen", or flex booking
+    const bookBtn = page.getByRole('button', { name: /buchen/i }).first();
     if (await bookBtn.isVisible({ timeout: 3_000 }).catch(() => false)) {
       await bookBtn.click();
     } else {
