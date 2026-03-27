@@ -409,11 +409,11 @@ const SearchPageView = ({
         }
     }, [filteredCourses, loading]);
 
-    // --- RANKING LOGIC (v3.1) ---
-    // Formula: Score = Plan * Booking * (0.6 + 0.4*Freshness) * (1 + RandomEpsilon)
+    // --- RANKING LOGIC (v4.0) ---
+    // Formula: Score = Plan * Booking + Random(0..0.15)
+    // Prio-Kurse immer vor Standard-Kursen, innerhalb jeder Stufe echt zufällig
     // Bei aktivem Datumsfilter: Kurse MIT Datum zuerst, dann Kurse OHNE Datum
     const sortedCourses = useMemo(() => {
-        // Helper: Prüft ob Kurs ein Datum hat
         const hasDate = (c) => {
             if (c.start_date) return true;
             if (Array.isArray(c.course_events) && c.course_events.some(ev => ev.start_date)) return true;
@@ -421,41 +421,26 @@ const SearchPageView = ({
         };
 
         const getScore = (c) => {
-            // 1. Plan Factor (Fallback logic for legacy data)
-            // is_prio: Kurs hat Prio-Status vom Nutzer erhalten (begrenzt durch Plan)
-            // is_pro: Legacy/Admin-Flag für Pro-Status
+            // 1. Plan Factor (Prio/Pro-Boost)
             const planF = c.plan_factor || (c.is_prio ? 1.2 : (c.is_pro ? 1.2 : 1.0));
 
-            // 2. Booking Factor (Placeholder until booking system is live)
+            // 2. Booking Factor (Placeholder for future use)
             const bookF = c.booking_factor || 1.0;
 
-            // 3. Freshness Score (0-1)
-            let freshScore = 0.5;
-            if (c.created_at) {
-                const daysOld = (new Date() - new Date(c.created_at)) / (1000 * 60 * 60 * 24);
-                freshScore = Math.max(0, 1 - (daysOld / 90));
-            }
-            const timeFactor = 0.6 + (0.4 * freshScore);
+            // 3. True random jitter (0 to 0.15) — shuffles within each tier on every page load
+            // Amplitude chosen so prio (1.2) never loses to standard (max 1.15)
+            const randomJitter = Math.random() * 0.15;
 
-            // 4. Stable Random Epsilon (-0.03 to +0.03)
-            const seed = (c.id || "0").toString().split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-            const randomJitter = Math.sin(seed) * 0.03;
-
-            return planF * bookF * timeFactor * (1 + randomJitter);
+            return planF * bookF + randomJitter;
         };
 
         return [...filteredCourses].sort((a, b) => {
-            // Bei aktivem Datumsfilter: Kurse mit Datum zuerst
             if (filterDateFrom || filterDateTo) {
                 const aHasDate = hasDate(a);
                 const bHasDate = hasDate(b);
-
-                // Kurse mit Datum vor Kursen ohne Datum
                 if (aHasDate && !bHasDate) return -1;
                 if (!aHasDate && bHasDate) return 1;
             }
-
-            // Innerhalb der Gruppe: nach Score sortieren
             return getScore(b) - getScore(a);
         });
     }, [filteredCourses, filterDateFrom, filterDateTo]);
