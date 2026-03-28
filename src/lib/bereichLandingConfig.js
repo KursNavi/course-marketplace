@@ -32,11 +32,11 @@ export const BEREICH_LANDING_CONFIG = {
       { slug: 'berufseinstieg', icon: '🎓', label: { de: 'Berufseinstieg' }, text: { de: 'Du willst Fitnesstrainer werden? Starte mit der Basis-Ausbildung.' }, searchParams: { spec: 'Fitness-Trainer-Ausbildung', focus: 'Basis-Ausbildung' }, ctaLabel: { de: 'Einstiegskurse entdecken' } },
       { slug: 'quereinstieg', icon: '🔄', label: { de: 'Quereinstieg' }, text: { de: 'Du willst als Quereinsteiger in die Fitnessbranche einsteigen? Wir zeigen dir den Weg.' }, searchParams: { spec: 'Fitness-Trainer-Ausbildung' }, ctaLabel: { de: 'Quereinsteiger-Kurse entdecken' } },
       { slug: 'weiterbildung', icon: '📈', label: { de: 'Weiterbildung' }, text: { de: 'Schon Trainer? Spezialisiere dich in Functional Training, Ernährung oder Personal Training.' }, searchParams: { spec: 'Trainingsmethoden & Spezialisierungen' }, ctaLabel: { de: 'Weiterbildungskurse entdecken' } },
-      { slug: 'diplom-aufstieg', icon: '🏆', label: { de: 'Diplom & Aufstieg' }, text: { de: 'Bereit für den nächsten Schritt? Diplom-Lehrgang und eidg. Fachausweis.' }, searchParams: { spec: 'Zertifikate & Pruefungsvorbereitung' }, ctaLabel: { de: 'Diplom-Kurse entdecken' } },
+      { slug: 'diplom-aufstieg', icon: '🏆', label: { de: 'Diplom & Aufstieg' }, text: { de: 'Bereit für den nächsten Schritt? Diplom-Lehrgang und eidg. Fachausweis.' }, searchParams: { spec: 'Zertifikate & Prüfungsvorbereitung' }, ctaLabel: { de: 'Diplom-Kurse entdecken' } },
       { slug: 'nebenerwerb', icon: '⚡', label: { de: 'Nebenerwerb' }, text: { de: 'Deine Leidenschaft zum Beruf machen - auch nebenberuflich.' }, searchParams: { spec: 'Group-Fitness / Kursleitung' }, ctaLabel: { de: 'Kurse für den Nebenerwerb entdecken' } },
-      { slug: 'selbststaendigkeit', icon: '🏢', label: { de: 'Selbstständigkeit' }, text: { de: 'Eigenes Studio? Lerne alles über Business, Recht und Versicherung.' }, searchParams: { spec: 'Business & Selbststaendigkeit' }, ctaLabel: { de: 'Business-Kurse entdecken' } },
+      { slug: 'selbststaendigkeit', icon: '🏢', label: { de: 'Selbstständigkeit' }, text: { de: 'Eigenes Studio? Lerne alles über Business, Recht und Versicherung.' }, searchParams: { spec: 'Business & Selbstständigkeit' }, ctaLabel: { de: 'Business-Kurse entdecken' } },
       { slug: 'spezialisierung', icon: '🎯', label: { de: 'Spezialisierung' }, text: { de: 'Rückentraining, Antara, Kampfsport - finde deine Nische.' }, searchParams: { spec: 'Trainingsmethoden & Spezialisierungen' }, ctaLabel: { de: 'Spezialisierungskurse entdecken' } },
-      { slug: 'zertifizierung', icon: '✅', label: { de: 'Zertifizierung' }, text: { de: 'Qualitop, QualiCert, eidg. FA - welches Zertifikat passt zu dir?' }, searchParams: { spec: 'Zertifikate & Pruefungsvorbereitung' }, ctaLabel: { de: 'Zertifizierungskurse entdecken' } },
+      { slug: 'zertifizierung', icon: '✅', label: { de: 'Zertifizierung' }, text: { de: 'Qualitop, QualiCert, eidg. FA - welches Zertifikat passt zu dir?' }, searchParams: { spec: 'Zertifikate & Prüfungsvorbereitung' }, ctaLabel: { de: 'Zertifizierungskurse entdecken' } },
     ],
 
     specialtyDescriptions: {
@@ -60,15 +60,15 @@ export const BEREICH_LANDING_CONFIG = {
         de: 'Yoga- und Pilates-Ausbildungen für ganzheitliches Training. Achtsamkeit und Körperbewusstsein.',
         icon: '🧘'
       },
-      'Ernaehrung & Coaching': {
+      'Ernährung & Coaching': {
         de: 'Sporternährung, Ernährungsberatung und Coaching-Kompetenzen. CAS, Lehrgänge und Seminare.',
         icon: '🥗'
       },
-      'Zertifikate & Pruefungsvorbereitung': {
+      'Zertifikate & Prüfungsvorbereitung': {
         de: 'Vorbereitung auf eidg. Prüfungen, Fitness-Lizenzen und Branchenzertifikate.',
         icon: '📋'
       },
-      'Business & Selbststaendigkeit': {
+      'Business & Selbstständigkeit': {
         de: 'Unternehmer-Workshops für Selbstständigkeit, Recht, Versicherung, Datenschutz und Vertriebs-Know-how.',
         icon: '💼'
       }
@@ -80,8 +80,8 @@ export const BEREICH_LANDING_CONFIG = {
       { label: { de: 'Group-Fitness Kursformate' }, params: { spec: 'Group-Fitness / Kursleitung' } },
       { label: { de: 'Rücken & Core Training' }, params: { spec: 'Trainingsmethoden & Spezialisierungen' } },
       { label: { de: 'Yoga & Pilates' }, params: { spec: 'Mind-Body (Yoga & Pilates)' } },
-      { label: { de: 'Diplom & eidg. Prüfung' }, params: { spec: 'Zertifikate & Pruefungsvorbereitung' } },
-      { label: { de: 'Ernährung & Coaching' }, params: { spec: 'Ernaehrung & Coaching' } },
+      { label: { de: 'Diplom & eidg. Prüfung' }, params: { spec: 'Zertifikate & Prüfungsvorbereitung' } },
+      { label: { de: 'Ernährung & Coaching' }, params: { spec: 'Ernährung & Coaching' } },
       { label: { de: 'Online Kurse' }, params: {}, extraParams: { delivery: 'online_live,self_study' } },
     ],
 
