@@ -393,28 +393,6 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
         />
       )}
 
-      {/* VORDEFINIERTE SUCHLINKS */}
-      {config.predefinedSearches && (
-        <div className="bg-white py-16">
-          <div className="max-w-6xl mx-auto px-4">
-            <h2 className="text-2xl font-heading font-bold text-dark mb-2 text-center">{sectionTitles.searchesTitle?.[lang] || sectionTitles.searchesTitle?.de || 'Beliebte Suchen'}</h2>
-            <p className="text-gray-500 text-center mb-8">{sectionTitles.searchesSubtitle?.[lang] || sectionTitles.searchesSubtitle?.de || 'Schnelleinstieg zu den gefragtesten Ausbildungen'}</p>
-            <div className="flex flex-wrap justify-center gap-3">
-              {config.predefinedSearches.map((search, i) => (
-                <button
-                  key={i}
-                  onClick={() => handlePredefinedSearch(search)}
-                  className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full border-2 ${theme.borderLight} ${theme.bgLight} ${theme.text} font-medium text-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200`}
-                >
-                  <Search className="w-3.5 h-3.5" />
-                  {search.label[lang] || search.label.de}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* FAQ SECTION */}
       {config.faqs && config.faqs.length > 0 && (
         <div className="max-w-3xl mx-auto px-4 py-16">
