@@ -4,6 +4,7 @@ import { getBereichBySlug, getBereichUrl } from '../lib/bereichLandingConfig';
 import { SEGMENT_CONFIG } from '../lib/constants';
 import { useTaxonomy } from '../hooks/useTaxonomy';
 import { BASE_URL } from '../lib/siteConfig';
+import { buildFaqPageJsonLd } from '../lib/seoUtils';
 import { shouldHandleClientNavigation } from '../lib/navigation';
 import RegionalDiscoverySection from './RegionalDiscoverySection';
 
@@ -26,8 +27,8 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
   useEffect(() => {
     if (!config) return;
 
-    const title = `${config.title[lang] || config.title.de} | KursNavi`;
-    document.title = title;
+    const pageTitle = `${config.title[lang] || config.title.de} | KursNavi`;
+    document.title = pageTitle;
 
     const metaDesc = config.subtitle[lang] || config.subtitle.de;
     let metaTag = document.querySelector('meta[name="description"]');
@@ -47,6 +48,28 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
       document.head.appendChild(canonicalTag);
     }
     canonicalTag.href = canonicalUrl;
+
+    // OG Tags
+    const ogTags = {
+      'og:title': pageTitle,
+      'og:description': metaDesc,
+      'og:url': canonicalUrl,
+      'og:image': `${BASE_URL}/og-default.svg`,
+      'og:type': 'website',
+      'og:locale': 'de_CH',
+      'og:site_name': 'KursNavi'
+    };
+    const createdOgTags = [];
+    Object.entries(ogTags).forEach(([property, content]) => {
+      let tag = document.querySelector(`meta[property="${property}"]`);
+      if (!tag) {
+        tag = document.createElement('meta');
+        tag.setAttribute('property', property);
+        document.head.appendChild(tag);
+        createdOgTags.push(tag);
+      }
+      tag.content = content;
+    });
 
     // BreadcrumbList Schema
     const segmentLabel = theme.label?.[lang] || theme.label?.de || segment;
@@ -71,9 +94,22 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
     }
     breadcrumbScript.text = JSON.stringify(breadcrumbData);
 
+    // FAQPage Schema (GEO: helps AI engines understand Q&A content)
+    let faqScript = null;
+    if (config.faqs && config.faqs.length > 0) {
+      const faqData = buildFaqPageJsonLd(config.faqs, lang);
+      faqScript = document.createElement('script');
+      faqScript.type = 'application/ld+json';
+      faqScript.setAttribute('data-schema', 'bereich-faq');
+      faqScript.text = JSON.stringify(faqData);
+      document.head.appendChild(faqScript);
+    }
+
     return () => {
-      const script = document.querySelector('script[data-schema="bereich-breadcrumb"]');
-      if (script) script.remove();
+      createdOgTags.forEach(tag => tag.remove());
+      const bc = document.querySelector('script[data-schema="bereich-breadcrumb"]');
+      if (bc) bc.remove();
+      if (faqScript && faqScript.parentNode) faqScript.remove();
     };
   }, [config, segment, slug, lang]);
 

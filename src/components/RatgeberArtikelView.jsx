@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { ArrowLeft, ChevronRight, BookOpen, Clock, Share2 } from 'lucide-react';
 import { findArticle, RATGEBER_STRUCTURE } from '../lib/ratgeberStructure';
 import { SEGMENT_CONFIG } from '../lib/constants';
 import { RATGEBER_CONTENT } from '../lib/ratgeberContent';
-import { enhanceImages } from '../lib/seoUtils';
+import { enhanceImages, buildArticleJsonLd, buildBreadcrumbJsonLd } from '../lib/seoUtils';
+import { BASE_URL } from '../lib/siteConfig';
 import { shouldHandleClientNavigation } from '../lib/navigation';
 
 /**
@@ -22,6 +23,88 @@ const RatgeberArtikelView = ({ lang = 'de' }) => {
 
   // Find article data
   const articleData = findArticle(categorySlug, clusterSlug, articleSlug);
+
+  // SEO — must be called before any conditional returns (React rules of hooks)
+  useEffect(() => {
+    if (!articleData) return;
+
+    const { cluster, category } = articleData;
+    const pageTitle = `${articleData.title[lang] || articleData.title.de} | KursNavi Ratgeber`;
+    const metaDesc = articleData.teaser[lang] || articleData.teaser.de;
+    const canonicalUrl = `${BASE_URL}/ratgeber/${categorySlug}/${clusterSlug}/${articleSlug}`;
+
+    document.title = pageTitle;
+
+    let metaTag = document.querySelector('meta[name="description"]');
+    if (!metaTag) {
+      metaTag = document.createElement('meta');
+      metaTag.name = 'description';
+      document.head.appendChild(metaTag);
+    }
+    metaTag.content = metaDesc;
+
+    let canonicalTag = document.querySelector('link[rel="canonical"]');
+    if (!canonicalTag) {
+      canonicalTag = document.createElement('link');
+      canonicalTag.rel = 'canonical';
+      document.head.appendChild(canonicalTag);
+    }
+    canonicalTag.href = canonicalUrl;
+
+    // OG Tags
+    const ogTags = {
+      'og:title': pageTitle,
+      'og:description': metaDesc,
+      'og:url': canonicalUrl,
+      'og:image': `${BASE_URL}/og-default.svg`,
+      'og:type': 'article',
+      'og:locale': 'de_CH',
+      'og:site_name': 'KursNavi'
+    };
+    const createdOgTags = [];
+    Object.entries(ogTags).forEach(([property, content]) => {
+      let tag = document.querySelector(`meta[property="${property}"]`);
+      if (!tag) {
+        tag = document.createElement('meta');
+        tag.setAttribute('property', property);
+        document.head.appendChild(tag);
+        createdOgTags.push(tag);
+      }
+      tag.content = content;
+    });
+
+    // Article JSON-LD
+    const articleSchema = buildArticleJsonLd({
+      title: articleData.title[lang] || articleData.title.de,
+      description: metaDesc,
+      url: canonicalUrl
+    });
+    const articleScript = document.createElement('script');
+    articleScript.type = 'application/ld+json';
+    articleScript.setAttribute('data-schema', 'ratgeber-article');
+    articleScript.text = JSON.stringify(articleSchema);
+    document.head.appendChild(articleScript);
+
+    // BreadcrumbList JSON-LD
+    const breadcrumbData = buildBreadcrumbJsonLd([
+      { name: 'Home', url: BASE_URL },
+      { name: 'Ratgeber', url: `${BASE_URL}/ratgeber` },
+      { name: category.label[lang] || category.label.de, url: `${BASE_URL}/ratgeber/${categorySlug}` },
+      { name: cluster.label[lang] || cluster.label.de, url: `${BASE_URL}/ratgeber/${categorySlug}/${clusterSlug}` },
+      { name: articleData.title[lang] || articleData.title.de, url: canonicalUrl }
+    ]);
+    const breadcrumbScript = document.createElement('script');
+    breadcrumbScript.type = 'application/ld+json';
+    breadcrumbScript.setAttribute('data-schema', 'ratgeber-breadcrumb');
+    breadcrumbScript.text = JSON.stringify(breadcrumbData);
+    document.head.appendChild(breadcrumbScript);
+
+    return () => {
+      createdOgTags.forEach(tag => tag.remove());
+      if (articleScript.parentNode) articleScript.remove();
+      if (breadcrumbScript.parentNode) breadcrumbScript.remove();
+    };
+  }, [articleData, categorySlug, clusterSlug, articleSlug, lang]);
 
   if (!articleData) {
     return (

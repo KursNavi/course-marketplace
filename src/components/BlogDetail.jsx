@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { Calendar, User, ArrowLeft, ArrowRight, MapPin, Search, ExternalLink as ExternalLinkIcon } from 'lucide-react';
 import { formatPriceCHF } from '../lib/formatPrice';
 import { BASE_URL } from '../lib/siteConfig';
-import { enhanceImages, normalizeEditorialImageUrl } from '../lib/seoUtils';
+import { enhanceImages, normalizeEditorialImageUrl, buildArticleJsonLd } from '../lib/seoUtils';
 import { shouldHandleClientNavigation } from '../lib/navigation';
 import { trackArticleView } from '../lib/analytics';
 
@@ -50,14 +50,15 @@ export default function BlogDetail({ article, setView, courses }) {
         'og:title': article.meta_title || article.title,
         'og:description': ogDescription,
         'og:url': canonicalUrl,
-        'og:image': heroImage || `${BASE_URL}/og-default.jpg`,
+        'og:image': heroImage || `${BASE_URL}/og-default.svg`,
         'og:type': 'article',
+        'og:locale': 'de_CH',
         'og:site_name': 'KursNavi',
         'article:published_time': article.created_at,
         'twitter:card': 'summary_large_image',
         'twitter:title': article.meta_title || article.title,
         'twitter:description': ogDescription,
-        'twitter:image': heroImage || `${BASE_URL}/og-default.jpg`
+        'twitter:image': heroImage || `${BASE_URL}/og-default.svg`
     };
 
     const createdTags = [];
@@ -112,12 +113,27 @@ export default function BlogDetail({ article, setView, courses }) {
     }
     breadcrumbScript.text = JSON.stringify(breadcrumbData);
 
+    // Article JSON-LD Schema
+    const articleData = buildArticleJsonLd({
+        title: article.meta_title || article.title,
+        description: metaDescription,
+        url: canonicalUrl,
+        image: heroImage || `${BASE_URL}/og-default.svg`,
+        datePublished: article.published_at || article.created_at
+    });
+    const articleScript = document.createElement('script');
+    articleScript.type = 'application/ld+json';
+    articleScript.setAttribute('data-schema', 'blog-article');
+    articleScript.text = JSON.stringify(articleData);
+    document.head.appendChild(articleScript);
+
     // Cleanup: Remove created tags when component unmounts or article changes
     return () => {
         createdTags.forEach(tag => tag.remove());
         if (createdBreadcrumbScript && breadcrumbScript) {
             breadcrumbScript.remove();
         }
+        if (articleScript.parentNode) articleScript.remove();
     };
   }, [article, heroImage]);
 

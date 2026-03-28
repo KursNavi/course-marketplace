@@ -184,6 +184,7 @@ export const Home = ({
         'og:url': canonicalUrl,
         'og:image': `${BASE_URL}/og-default.svg`,
         'og:type': 'website',
+        'og:locale': 'de_CH',
         'og:site_name': 'KursNavi',
         'twitter:card': 'summary_large_image',
         'twitter:title': 'KursNavi - Der Schweizer Kursmarktplatz',

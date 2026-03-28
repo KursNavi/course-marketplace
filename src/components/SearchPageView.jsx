@@ -108,6 +108,8 @@ const SearchPageView = ({
             'og:description': pageDescription,
             'og:url': window.location.href,
             'og:type': 'website',
+            'og:image': `${BASE_URL}/og-default.svg`,
+            'og:locale': 'de_CH',
             'og:site_name': 'KursNavi',
             'twitter:card': 'summary',
             'twitter:title': pageTitle,

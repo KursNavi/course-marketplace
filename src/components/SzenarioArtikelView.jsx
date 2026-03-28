@@ -3,7 +3,7 @@ import { ChevronRight, Clock, ArrowRight, BookOpen } from 'lucide-react';
 import { BEREICH_LANDING_CONFIG, getBereichBySlug, getBereichUrl, findSzenario } from '../lib/bereichLandingConfig';
 import { SZENARIO_CONTENT } from '../lib/szenarioContent';
 import { SEGMENT_CONFIG } from '../lib/constants';
-import { enhanceImages, estimateReadingTime } from '../lib/seoUtils';
+import { enhanceImages, estimateReadingTime, buildArticleJsonLd, buildBreadcrumbJsonLd } from '../lib/seoUtils';
 import { BASE_URL } from '../lib/siteConfig';
 import { shouldHandleClientNavigation } from '../lib/navigation';
 
@@ -44,8 +44,8 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
   useEffect(() => {
     if (!scenario || !bereichConfig) return;
 
-    const title = `${scenario.label[lang] || scenario.label.de} — ${bereichConfig.title[lang] || bereichConfig.title.de} | KursNavi`;
-    document.title = title;
+    const pageTitle = `${scenario.label[lang] || scenario.label.de} — ${bereichConfig.title[lang] || bereichConfig.title.de} | KursNavi`;
+    document.title = pageTitle;
 
     const metaDesc = scenario.text[lang] || scenario.text.de;
     let metaTag = document.querySelector('meta[name="description"]');
@@ -64,6 +64,62 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
       document.head.appendChild(canonicalTag);
     }
     canonicalTag.href = canonicalUrl;
+
+    // OG Tags
+    const ogTags = {
+      'og:title': pageTitle,
+      'og:description': metaDesc,
+      'og:url': canonicalUrl,
+      'og:image': `${BASE_URL}/og-default.svg`,
+      'og:type': 'article',
+      'og:locale': 'de_CH',
+      'og:site_name': 'KursNavi'
+    };
+    const createdOgTags = [];
+    Object.entries(ogTags).forEach(([property, content]) => {
+      let tag = document.querySelector(`meta[property="${property}"]`);
+      if (!tag) {
+        tag = document.createElement('meta');
+        tag.setAttribute('property', property);
+        document.head.appendChild(tag);
+        createdOgTags.push(tag);
+      }
+      tag.content = content;
+    });
+
+    // Article JSON-LD
+    const segmentLabel = SEGMENT_CONFIG[segment]?.label?.[lang] || SEGMENT_CONFIG[segment]?.label?.de || segment;
+    const bereichTitle = bereichConfig.title[lang] || bereichConfig.title.de;
+    const articleData = buildArticleJsonLd({
+      title: scenario.label[lang] || scenario.label.de,
+      description: metaDesc,
+      url: canonicalUrl
+    });
+    const articleScript = document.createElement('script');
+    articleScript.type = 'application/ld+json';
+    articleScript.setAttribute('data-schema', 'szenario-article');
+    articleScript.text = JSON.stringify(articleData);
+    document.head.appendChild(articleScript);
+
+    // BreadcrumbList JSON-LD
+    const bereichUrl = `${BASE_URL}/bereich/${segment}/${slug}`;
+    const breadcrumbData = buildBreadcrumbJsonLd([
+      { name: 'Home', url: BASE_URL },
+      { name: segmentLabel, url: `${BASE_URL}/search?type=${bereichConfig.typeKey}` },
+      { name: bereichTitle, url: bereichUrl },
+      { name: scenario.label[lang] || scenario.label.de, url: canonicalUrl }
+    ]);
+    const breadcrumbScript = document.createElement('script');
+    breadcrumbScript.type = 'application/ld+json';
+    breadcrumbScript.setAttribute('data-schema', 'szenario-breadcrumb');
+    breadcrumbScript.text = JSON.stringify(breadcrumbData);
+    document.head.appendChild(breadcrumbScript);
+
+    return () => {
+      createdOgTags.forEach(tag => tag.remove());
+      if (articleScript.parentNode) articleScript.remove();
+      if (breadcrumbScript.parentNode) breadcrumbScript.remove();
+    };
   }, [scenario, bereichConfig, segment, slug, szenarioSlug, lang]);
 
   // Inject clickable buttons into .cta-box elements

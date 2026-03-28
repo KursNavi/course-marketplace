@@ -117,39 +117,43 @@ export default function ProviderProfilePage({ t, setView, setSelectedCourse }) {
     }
     metaDescTag.content = metaDescription;
 
+    const canonicalUrl = `${BASE_URL}/anbieter/${provider.slug}`;
+
     let canonicalTag = document.querySelector('link[rel="canonical"]');
     if (!canonicalTag) {
       canonicalTag = document.createElement('link');
       canonicalTag.rel = 'canonical';
       document.head.appendChild(canonicalTag);
     }
-    canonicalTag.href = `${BASE_URL}/anbieter/${provider.slug}`;
-
+    canonicalTag.href = canonicalUrl;
     const ogTags = {
       'og:title': `${provider.name} - Kursanbieter`,
       'og:description': metaDescription,
-      'og:url': `${BASE_URL}/anbieter/${provider.slug}`,
-      'og:image': provider.logoUrl || `${BASE_URL}/og-default.jpg`,
+      'og:url': canonicalUrl,
+      'og:image': provider.logoUrl || `${BASE_URL}/og-default.svg`,
       'og:type': 'profile',
+      'og:locale': 'de_CH',
       'og:site_name': 'KursNavi'
     };
 
+    const createdOgTags = [];
     Object.entries(ogTags).forEach(([property, content]) => {
       let tag = document.querySelector(`meta[property="${property}"]`);
       if (!tag) {
         tag = document.createElement('meta');
         tag.setAttribute('property', property);
         document.head.appendChild(tag);
+        createdOgTags.push(tag);
       }
       tag.content = content;
     });
 
+    // EducationalOrganization + LocalBusiness Schema
     const schemaData = {
       "@context": "https://schema.org",
-      "@type": "EducationalOrganization",
+      "@type": ["EducationalOrganization", "LocalBusiness"],
       "name": provider.name,
-      "url": `${BASE_URL}/anbieter/${provider.slug}`,
-      "logo": provider.logoUrl,
+      "url": canonicalUrl,
       "description": provider.description,
       "address": {
         "@type": "PostalAddress",
@@ -158,6 +162,9 @@ export default function ProviderProfilePage({ t, setView, setSelectedCourse }) {
         "addressCountry": "CH"
       }
     };
+    if (provider.logoUrl) schemaData.logo = provider.logoUrl;
+    if (provider.phone) schemaData.telephone = provider.phone;
+    if (provider.email) schemaData.email = provider.email;
 
     const sameAs = [provider.websiteUrl, provider.socialLinkedin, provider.socialInstagram, provider.socialFacebook, provider.socialYoutube].filter(Boolean);
     if (sameAs.length > 0) schemaData.sameAs = sameAs;
@@ -171,8 +178,26 @@ export default function ProviderProfilePage({ t, setView, setSelectedCourse }) {
     }
     schemaScript.textContent = JSON.stringify(schemaData);
 
+    // BreadcrumbList JSON-LD
+    const breadcrumbData = {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Home", "item": BASE_URL },
+        { "@type": "ListItem", "position": 2, "name": "Anbieter", "item": `${BASE_URL}/anbieter` },
+        { "@type": "ListItem", "position": 3, "name": provider.name, "item": canonicalUrl }
+      ]
+    };
+    const breadcrumbScript = document.createElement('script');
+    breadcrumbScript.type = 'application/ld+json';
+    breadcrumbScript.setAttribute('data-schema', 'provider-breadcrumb');
+    breadcrumbScript.textContent = JSON.stringify(breadcrumbData);
+    document.head.appendChild(breadcrumbScript);
+
     return () => {
+      createdOgTags.forEach(tag => tag.remove());
       schemaScript?.remove();
+      if (breadcrumbScript.parentNode) breadcrumbScript.remove();
     };
   }, [provider]);
 

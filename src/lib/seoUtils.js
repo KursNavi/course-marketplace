@@ -95,6 +95,27 @@ export function buildBreadcrumbJsonLd(items) {
 }
 
 /**
+ * Build FAQPage JSON-LD structured data
+ * @param {Array<{q: {de: string}, a: {de: string}}>} faqs
+ * @param {string} lang - Active language code (e.g. 'de')
+ */
+export function buildFaqPageJsonLd(faqs, lang = 'de') {
+  if (!faqs || faqs.length === 0) return null;
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqs.map((faq) => ({
+      '@type': 'Question',
+      name: faq.q[lang] || faq.q.de,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: faq.a[lang] || faq.a.de
+      }
+    }))
+  };
+}
+
+/**
  * Inject lazy loading and async decoding into HTML img tags
  */
 export function enhanceImages(html) {
