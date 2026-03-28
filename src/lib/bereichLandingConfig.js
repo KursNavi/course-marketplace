@@ -87,12 +87,6 @@ export const BEREICH_LANDING_CONFIG = {
         { label: 'Ganze Schweiz', params: {}, anchorText: 'Alle Sport- und Fitness-Ausbildungen in der Schweiz' },
         { label: 'Online-live', params: { delivery: 'online_live' }, anchorText: 'Online-live Sport- und Fitness-Ausbildungen' },
       ],
-      deepLinks: [
-        { anchorText: 'Fitness-Trainer-Ausbildung in Zürich', params: { loc: 'Zürich', spec: 'Fitness-Trainer-Ausbildung' } },
-        { anchorText: 'Personal Trainer Ausbildung in Bern', params: { loc: 'Bern', spec: 'Personal-Trainer-Ausbildung' } },
-        { anchorText: 'Group Fitness Ausbildung in Basel', params: { loc: 'Basel-Stadt', spec: 'Group-Fitness / Kursleitung' } },
-        { anchorText: 'Yoga & Pilates Ausbildung in Luzern', params: { loc: 'Luzern', spec: 'Mind-Body (Yoga & Pilates)' } },
-      ],
     },
 
     predefinedSearches: [
@@ -227,12 +221,6 @@ export const BEREICH_LANDING_CONFIG = {
         { label: 'St. Gallen', params: { loc: 'St. Gallen' }, anchorText: 'Yoga- und Achtsamkeitskurse in St. Gallen' },
         { label: 'Ganze Schweiz', params: {}, anchorText: 'Alle Yoga- und Achtsamkeitskurse in der Schweiz' },
         { label: 'Online-live', params: { delivery: 'online_live' }, anchorText: 'Online-live Yoga- und Achtsamkeitskurse in der Schweiz' },
-      ],
-      deepLinks: [
-        { anchorText: 'Yogakurse in Zürich', params: { loc: 'Zürich', spec: 'Yoga' } },
-        { anchorText: 'Achtsamkeitskurse in Bern', params: { loc: 'Bern', spec: 'Meditation & Achtsamkeit' } },
-        { anchorText: 'Meditationskurse in Basel', params: { loc: 'Basel-Stadt', spec: 'Meditation & Achtsamkeit' } },
-        { anchorText: 'Online-live Yoga Schweiz', params: { delivery: 'online_live', spec: 'Yoga' } },
       ],
     },
 

@@ -11,6 +11,7 @@ import { getBereichByAreaSlug, getBereichUrl } from '../lib/bereichLandingConfig
 import { SEARCH_STRINGS } from '../lib/searchStrings';
 import { getNormalizedDeliveryTypes } from '../lib/courseMetadata';
 import { trackSearch } from '../lib/analytics';
+import { getSearchHeader } from '../lib/searchHeaderConfig';
 
 import { DEFAULT_COURSE_IMAGE } from '../lib/imageUtils';
 const fallbackImage = DEFAULT_COURSE_IMAGE;
@@ -454,6 +455,13 @@ const SearchPageView = ({
     };
     const activeSegmentConfig = getActiveSegmentConfig();
 
+    // Dynamic SEO header based on active filters (area + location/delivery)
+    const dynamicHeader = useMemo(() => getSearchHeader({
+        area: searchArea,
+        locations: selectedLocations,
+        deliveryTypes: selectedDeliveryTypes,
+    }), [searchArea, selectedLocations, selectedDeliveryTypes]);
+
     return (
         <div className="min-h-screen bg-beige">
             {/* SEGMENT HERO - shows active segment with background image, title and subtitle */}
@@ -499,10 +507,10 @@ const SearchPageView = ({
                                 </div>
                                 <div>
                                     <h1 className={`text-2xl md:text-3xl font-bold font-heading ${activeSegmentConfig.textDark}`}>
-                                        {activeSegmentConfig.heroTitle?.de || getLabel(searchType, 'type')}
+                                        {dynamicHeader?.title || activeSegmentConfig.heroTitle?.de || getLabel(searchType, 'type')}
                                     </h1>
                                     <p className="text-gray-600 mt-1">
-                                        {activeSegmentConfig.heroSubtitle?.de || ''}
+                                        {dynamicHeader?.subtitle || activeSegmentConfig.heroSubtitle?.de || ''}
                                     </p>
                                 </div>
                             </div>

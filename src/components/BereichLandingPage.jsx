@@ -388,10 +388,8 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
           title={config.regionalDiscovery.title?.[lang] || config.regionalDiscovery.title?.de}
           subtitle={config.regionalDiscovery.subtitle?.[lang] || config.regionalDiscovery.subtitle?.de}
           regions={config.regionalDiscovery.regions}
-          deepLinks={config.regionalDiscovery.deepLinks}
           theme={theme}
           buildSearchUrl={buildSearchUrl}
-          lang={lang}
         />
       )}
 
