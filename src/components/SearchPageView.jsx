@@ -455,12 +455,14 @@ const SearchPageView = ({
     };
     const activeSegmentConfig = getActiveSegmentConfig();
 
-    // Dynamic SEO header based on active filters (area + location/delivery)
+    // Dynamic SEO header based on active filters (area + specialty + focus + location/delivery)
     const dynamicHeader = useMemo(() => getSearchHeader({
         area: searchArea,
         locations: selectedLocations,
         deliveryTypes: selectedDeliveryTypes,
-    }), [searchArea, selectedLocations, selectedDeliveryTypes]);
+        specialty: searchSpecialty,
+        focus: searchFocus,
+    }), [searchArea, selectedLocations, selectedDeliveryTypes, searchSpecialty, searchFocus]);
 
     return (
         <div className="min-h-screen bg-beige">
