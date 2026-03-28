@@ -131,6 +131,7 @@ export const BEREICH_LANDING_CONFIG = {
       specialtiesTitle: { de: 'Ausbildungsbereiche' },
       specialtiesSubtitle: { de: 'Alle Schwerpunkte auf einen Blick' },
       searchesSubtitle: { de: 'Schnelleinstieg zu den gefragtesten Ausbildungen' },
+      trustTitle: { de: 'Qualitätssiegel in der Schweizer Fitnessbranche' },
       ctaTitle: { de: 'Bereit für den nächsten Schritt?' },
       ctaButton: { de: 'Alle Kurse anzeigen' }
     },
@@ -142,9 +143,9 @@ export const BEREICH_LANDING_CONFIG = {
     ],
 
     trustLogos: [
-      { name: 'Qualitop', description: { de: 'Qualitätszertifikat für Fitnesscenter und Ausbildungen in der Schweiz' } },
-      { name: 'QualiCert', description: { de: 'Zertifizierung für Bewegungs- und Gesundheitsangebote' } },
-      { name: 'Fitness-Guide', description: { de: 'Schweizer Ausbildungsstandard für Fitness-Professionals' } },
+      { name: 'Qualitop', description: { de: 'Qualitop ist ein Schweizer Qualitätslabel für Fitnesscenter und Fitnessausbildungen. Anbieter mit diesem Label werden von einer unabhängigen Stelle geprüft. Das Zertifikat ist bei mehreren Krankenkassen als Qualitätsmerkmal anerkannt.' } },
+      { name: 'QualiCert', description: { de: 'QualiCert ist eine unabhängige Schweizer Zertifizierungsstelle für Angebote im Bereich Bewegung, Sport und Gesundheitsförderung. Eine QualiCert-Zertifizierung bestätigt, dass ein Anbieter oder eine Ausbildung geprüfte Qualitätskriterien erfüllt.' } },
+      { name: 'Fitness-Guide (SFGV)', description: { de: 'Der Fitness-Guide des SFGV beschreibt ein anerkanntes Ausbildungsrahmenwerk für die Schweizer Fitnessbranche. Er definiert Ausbildungsstufen und Kompetenzprofile und hilft dabei, Kursangebote einzuordnen.' } },
     ]
   },
 
@@ -280,7 +281,7 @@ export const BEREICH_LANDING_CONFIG = {
       searchesTitle: { de: 'Beliebte Suchen' },
       searchesSubtitle: { de: 'Schnelleinstieg zu gefragten Yoga- und Achtsamkeitsformaten' },
       faqTitle: { de: 'Häufige Fragen' },
-      trustTitle: { de: 'Qualität & Orientierung' },
+      trustTitle: { de: 'Worauf du bei der Kurswahl achten solltest' },
       ctaTitle: { de: 'Bereit für deine Praxis?' },
       ctaButton: { de: 'Alle Yoga-Kurse anzeigen' }
     },
@@ -292,9 +293,9 @@ export const BEREICH_LANDING_CONFIG = {
     ],
 
     trustLogos: [
-      { name: 'Klare Level-Angaben', description: { de: 'Einsteiger, Mittelstufe oder Fortgeschritten: verständliche Einstufung für bessere Kurswahl.' } },
-      { name: 'Transparente Kursinfos', description: { de: 'Ziele, Ablauf, Intensität und Format sollten vor der Buchung klar beschrieben sein.' } },
-      { name: 'Sicherer Einstieg', description: { de: 'Gute Kurse arbeiten mit Varianten, Rücksicht auf Grenzen und respektvoller Lernatmosphäre.' } },
+      { name: 'Level-Angaben prüfen', description: { de: 'Achte auf klare Einstufungen wie „Einsteiger", „All Levels" oder „Mittelstufe". Gut beschriebene Kurse nennen auch Voraussetzungen und helfen dir einzuschätzen, ob das Angebot zu dir passt.' } },
+      { name: 'Kursinfos vor der Buchung lesen', description: { de: 'Ziele, Ablauf, Intensität, Format und Dauer sollten im Kursangebot klar beschrieben sein. Wenn wesentliche Infos fehlen, lohnt sich eine Nachfrage beim Anbieter.' } },
+      { name: 'Auf individuelle Anpassung achten', description: { de: 'Gute Lehrpersonen bieten Varianten an, gehen auf persönliche Grenzen ein und schaffen eine respektvolle Lernatmosphäre. Das ist besonders wichtig bei körperlichen oder atemorientierten Formaten.' } },
     ]
   },
 };
