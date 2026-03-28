@@ -74,15 +74,38 @@ export const BEREICH_LANDING_CONFIG = {
       }
     },
 
+    regionalDiscovery: {
+      title: { de: 'Sport- und Fitness-Angebote in deiner Region' },
+      subtitle: { de: 'Entdecke Ausbildungen und Kurse im Bereich Sport und Fitness in deiner Nähe – von Zürich bis Basel oder online-live in der ganzen Schweiz.' },
+      regions: [
+        { label: 'Zürich', params: { loc: 'Zürich' }, anchorText: 'Sport- und Fitness-Ausbildungen in Zürich' },
+        { label: 'Bern', params: { loc: 'Bern' }, anchorText: 'Sport- und Fitness-Ausbildungen in Bern' },
+        { label: 'Basel', params: { loc: 'Basel-Stadt' }, anchorText: 'Sport- und Fitness-Ausbildungen in Basel' },
+        { label: 'Luzern', params: { loc: 'Luzern' }, anchorText: 'Sport- und Fitness-Ausbildungen in Luzern' },
+        { label: 'Aargau', params: { loc: 'Aargau' }, anchorText: 'Sport- und Fitness-Ausbildungen im Aargau' },
+        { label: 'St. Gallen', params: { loc: 'St. Gallen' }, anchorText: 'Sport- und Fitness-Ausbildungen in St. Gallen' },
+        { label: 'Ganze Schweiz', params: {}, anchorText: 'Alle Sport- und Fitness-Ausbildungen in der Schweiz' },
+        { label: 'Online-live', params: { delivery: 'online_live' }, anchorText: 'Online-live Sport- und Fitness-Ausbildungen' },
+      ],
+      deepLinks: [
+        { anchorText: 'Fitness-Trainer-Ausbildung in Zürich', params: { loc: 'Zürich', spec: 'Fitness-Trainer-Ausbildung' } },
+        { anchorText: 'Personal Trainer Ausbildung in Bern', params: { loc: 'Bern', spec: 'Personal-Trainer-Ausbildung' } },
+        { anchorText: 'Group Fitness Ausbildung in Basel', params: { loc: 'Basel-Stadt', spec: 'Group-Fitness / Kursleitung' } },
+        { anchorText: 'Yoga & Pilates Ausbildung in Luzern', params: { loc: 'Luzern', spec: 'Mind-Body (Yoga & Pilates)' } },
+      ],
+    },
+
     predefinedSearches: [
       { label: { de: 'Fitnesstrainer Basiskurs' }, params: { spec: 'Fitness-Trainer-Ausbildung', focus: 'Basis-Ausbildung' } },
       { label: { de: 'Personal Trainer Lehrgang' }, params: { spec: 'Personal-Trainer-Ausbildung' } },
       { label: { de: 'Group-Fitness Kursformate' }, params: { spec: 'Group-Fitness / Kursleitung' } },
-      { label: { de: 'Rücken & Core Training' }, params: { spec: 'Trainingsmethoden & Spezialisierungen' } },
-      { label: { de: 'Yoga & Pilates' }, params: { spec: 'Mind-Body (Yoga & Pilates)' } },
+      { label: { de: 'Fitness Trainer Ausbildung Zürich' }, params: { spec: 'Fitness-Trainer-Ausbildung' }, extraParams: { loc: 'Zürich' } },
+      { label: { de: 'Personal Trainer Ausbildung Bern' }, params: { spec: 'Personal-Trainer-Ausbildung' }, extraParams: { loc: 'Bern' } },
+      { label: { de: 'Group Fitness Ausbildung Basel' }, params: { spec: 'Group-Fitness / Kursleitung' }, extraParams: { loc: 'Basel-Stadt' } },
+      { label: { de: 'Sporternährung Kurs Zürich' }, params: { spec: 'Ernährung & Coaching' }, extraParams: { loc: 'Zürich' } },
+      { label: { de: 'Yoga Ausbildung Luzern' }, params: { spec: 'Mind-Body (Yoga & Pilates)' }, extraParams: { loc: 'Luzern' } },
       { label: { de: 'Diplom & eidg. Prüfung' }, params: { spec: 'Zertifikate & Prüfungsvorbereitung' } },
-      { label: { de: 'Ernährung & Coaching' }, params: { spec: 'Ernährung & Coaching' } },
-      { label: { de: 'Online Kurse' }, params: {}, extraParams: { delivery: 'online_live,self_study' } },
+      { label: { de: 'Online Fitness Ausbildung Schweiz' }, params: {}, extraParams: { delivery: 'online_live,self_study' } },
     ],
 
     faqs: [
@@ -117,6 +140,12 @@ export const BEREICH_LANDING_CONFIG = {
       ctaTitle: { de: 'Bereit für den nächsten Schritt?' },
       ctaButton: { de: 'Alle Kurse anzeigen' }
     },
+
+    ctaLinks: [
+      { label: { de: 'In Zürich entdecken' }, params: { loc: 'Zürich' } },
+      { label: { de: 'In Bern entdecken' }, params: { loc: 'Bern' } },
+      { label: { de: 'Online-live entdecken' }, params: { delivery: 'online_live' } },
+    ],
 
     trustLogos: [
       { name: 'Qualitop', description: { de: 'Qualitätszertifikat für Fitnesscenter und Ausbildungen in der Schweiz' } },
@@ -186,17 +215,38 @@ export const BEREICH_LANDING_CONFIG = {
       }
     },
 
+    regionalDiscovery: {
+      title: { de: 'Yoga- und Achtsamkeitskurse in deiner Region' },
+      subtitle: { de: 'Finde Yoga- und Achtsamkeitskurse in deiner Region oder entdecke online-live Angebote für die ganze Schweiz.' },
+      regions: [
+        { label: 'Zürich', params: { loc: 'Zürich' }, anchorText: 'Yoga- und Achtsamkeitskurse in Zürich' },
+        { label: 'Bern', params: { loc: 'Bern' }, anchorText: 'Yoga- und Achtsamkeitskurse in Bern' },
+        { label: 'Basel', params: { loc: 'Basel-Stadt' }, anchorText: 'Yoga- und Achtsamkeitskurse in Basel' },
+        { label: 'Luzern', params: { loc: 'Luzern' }, anchorText: 'Yoga- und Achtsamkeitskurse in Luzern' },
+        { label: 'Aargau', params: { loc: 'Aargau' }, anchorText: 'Yoga- und Achtsamkeitskurse im Aargau' },
+        { label: 'St. Gallen', params: { loc: 'St. Gallen' }, anchorText: 'Yoga- und Achtsamkeitskurse in St. Gallen' },
+        { label: 'Ganze Schweiz', params: {}, anchorText: 'Alle Yoga- und Achtsamkeitskurse in der Schweiz' },
+        { label: 'Online-live', params: { delivery: 'online_live' }, anchorText: 'Online-live Yoga- und Achtsamkeitskurse in der Schweiz' },
+      ],
+      deepLinks: [
+        { anchorText: 'Yogakurse in Zürich', params: { loc: 'Zürich', spec: 'Yoga' } },
+        { anchorText: 'Achtsamkeitskurse in Bern', params: { loc: 'Bern', spec: 'Meditation & Achtsamkeit' } },
+        { anchorText: 'Meditationskurse in Basel', params: { loc: 'Basel-Stadt', spec: 'Meditation & Achtsamkeit' } },
+        { anchorText: 'Online-live Yoga Schweiz', params: { delivery: 'online_live', spec: 'Yoga' } },
+      ],
+    },
+
     predefinedSearches: [
       { label: { de: 'Yoga für Anfänger (Hatha)' }, params: { spec: 'Yoga', focus: 'Hatha & Grundlagen' } },
       { label: { de: 'Vinyasa & Flow' }, params: { spec: 'Yoga', focus: 'Vinyasa & Flow' } },
       { label: { de: 'Yin & Restorative' }, params: { spec: 'Yoga', focus: 'Yin & Restorative' } },
-      { label: { de: 'Yoga Nidra' }, params: { spec: 'Meditation & Achtsamkeit', focus: 'Yoga Nidra' } },
-      { label: { de: 'Achtsamkeitstraining (MBSR/Alltag)' }, params: { spec: 'Meditation & Achtsamkeit', focus: 'Achtsamkeitstraining (MBSR/Alltag)' } },
+      { label: { de: 'Yogakurs Zürich' }, params: { spec: 'Yoga' }, extraParams: { loc: 'Zürich' } },
+      { label: { de: 'Yoga Kurs Bern' }, params: { spec: 'Yoga' }, extraParams: { loc: 'Bern' } },
+      { label: { de: 'Meditationskurs Basel' }, params: { spec: 'Meditation & Achtsamkeit' }, extraParams: { loc: 'Basel-Stadt' } },
+      { label: { de: 'Achtsamkeitskurs Luzern' }, params: { spec: 'Meditation & Achtsamkeit' }, extraParams: { loc: 'Luzern' } },
+      { label: { de: 'Yin Yoga Zürich' }, params: { spec: 'Yoga', focus: 'Yin & Restorative' }, extraParams: { loc: 'Zürich' } },
       { label: { de: 'Pranayama & Breathwork' }, params: { spec: 'Atemarbeit' } },
-      { label: { de: 'Klangmeditation / Sound Bath' }, params: { spec: 'Klang & Mantra', focus: 'Klangmeditation / Sound Bath' } },
-      { label: { de: 'Reiki' }, params: { spec: 'Energiearbeit', focus: 'Reiki' } },
-      { label: { de: 'Thai Yoga Massage' }, params: { spec: 'Bodywork & Massage', focus: 'Thai Yoga Massage' } },
-      { label: { de: 'Online Kurse' }, params: {}, extraParams: { delivery: 'online_live,self_study' } },
+      { label: { de: 'Online-live Yoga Schweiz' }, params: { spec: 'Yoga' }, extraParams: { delivery: 'online_live' } },
     ],
 
     faqs: [
@@ -246,6 +296,12 @@ export const BEREICH_LANDING_CONFIG = {
       ctaTitle: { de: 'Bereit für deine Praxis?' },
       ctaButton: { de: 'Alle Yoga-Kurse anzeigen' }
     },
+
+    ctaLinks: [
+      { label: { de: 'Kurse in Zürich' }, params: { loc: 'Zürich' } },
+      { label: { de: 'Kurse in Basel' }, params: { loc: 'Basel-Stadt' } },
+      { label: { de: 'Online-live entdecken' }, params: { delivery: 'online_live' } },
+    ],
 
     trustLogos: [
       { name: 'Klare Level-Angaben', description: { de: 'Einsteiger, Mittelstufe oder Fortgeschritten: verständliche Einstufung für bessere Kurswahl.' } },

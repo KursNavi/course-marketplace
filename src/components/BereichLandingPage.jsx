@@ -5,6 +5,7 @@ import { SEGMENT_CONFIG } from '../lib/constants';
 import { useTaxonomy } from '../hooks/useTaxonomy';
 import { BASE_URL } from '../lib/siteConfig';
 import { shouldHandleClientNavigation } from '../lib/navigation';
+import RegionalDiscoverySection from './RegionalDiscoverySection';
 
 export default function BereichLandingPage({ segment, slug, courses, lang = 'de', t }) {
   const config = getBereichBySlug(segment, slug);
@@ -161,6 +162,17 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
 
   const segmentLabel = theme.label?.[lang] || theme.label?.de || segment;
   const sectionTitles = config.sectionTitles || {};
+
+  // Build a full search URL with base params (type + area) + extra params
+  const buildSearchUrl = (extraParams = {}) => {
+    const params = new URLSearchParams();
+    params.set('type', config.typeKey);
+    params.set('area', config.areaSlug);
+    Object.entries(extraParams).forEach(([k, v]) => {
+      if (v) params.set(k, v);
+    });
+    return '/search?' + params.toString();
+  };
 
   return (
     <div className="min-h-screen bg-beige font-sans">
@@ -370,6 +382,19 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
         </div>
       </div>
 
+      {/* REGIONAL DISCOVERY SECTION */}
+      {config.regionalDiscovery && (
+        <RegionalDiscoverySection
+          title={config.regionalDiscovery.title?.[lang] || config.regionalDiscovery.title?.de}
+          subtitle={config.regionalDiscovery.subtitle?.[lang] || config.regionalDiscovery.subtitle?.de}
+          regions={config.regionalDiscovery.regions}
+          deepLinks={config.regionalDiscovery.deepLinks}
+          theme={theme}
+          buildSearchUrl={buildSearchUrl}
+          lang={lang}
+        />
+      )}
+
       {/* VORDEFINIERTE SUCHLINKS */}
       {config.predefinedSearches && (
         <div className="bg-white py-16">
@@ -451,13 +476,33 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
         <div className="max-w-4xl mx-auto px-4 text-center">
           <h2 className="text-xl font-heading font-bold text-dark mb-3">{sectionTitles.ctaTitle?.[lang] || sectionTitles.ctaTitle?.de || 'Bereit für den nächsten Schritt?'}</h2>
           <p className="text-gray-600 mb-6">{sectionTitles.ctaSubtitle?.[lang] || sectionTitles.ctaSubtitle?.de || `Entdecke alle ${totalCourses} Kurse in diesem Bereich.`}</p>
-          <button
-            onClick={() => navigateToSearch()}
-            className={`inline-flex items-center gap-2 px-8 py-3 rounded-full font-bold text-white ${theme.bgSolid} hover:opacity-90 transition-opacity shadow-lg`}
-          >
-            {sectionTitles.ctaButton?.[lang] || sectionTitles.ctaButton?.de || 'Alle Kurse anzeigen'}
-            <ArrowRight className="w-5 h-5" />
-          </button>
+          <div className="flex flex-wrap justify-center gap-3">
+            <button
+              onClick={() => navigateToSearch()}
+              className={`inline-flex items-center gap-2 px-8 py-3 rounded-full font-bold text-white ${theme.bgSolid} hover:opacity-90 transition-opacity shadow-lg`}
+            >
+              {sectionTitles.ctaButton?.[lang] || sectionTitles.ctaButton?.de || 'Alle Kurse anzeigen'}
+              <ArrowRight className="w-5 h-5" />
+            </button>
+            {config.ctaLinks && config.ctaLinks.map((link, i) => {
+              const url = buildSearchUrl(link.params);
+              return (
+                <a
+                  key={i}
+                  href={url}
+                  onClick={(e) => {
+                    if (!shouldHandleClientNavigation(e)) return;
+                    e.preventDefault();
+                    navigateToSearch(link.params);
+                  }}
+                  className={`inline-flex items-center gap-2 px-6 py-3 rounded-full font-semibold border-2 ${theme.borderLight} ${theme.text} bg-white hover:shadow-md hover:-translate-y-0.5 transition-all duration-200`}
+                >
+                  {link.label[lang] || link.label.de}
+                  <ArrowRight className="w-4 h-4" />
+                </a>
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>
