@@ -14,7 +14,7 @@ const getBaseUrl = () => {
     return window.location.origin;
   }
   // In server/build context, use env variable or production fallback
-  return (import.meta.env.VITE_SITE_URL || 'https://kursnavi.ch').replace(/\/$/, '');
+  return (import.meta.env?.VITE_SITE_URL || 'https://kursnavi.ch').replace(/\/$/, '');
 };
 
 export const SITE_URL = getBaseUrl();
