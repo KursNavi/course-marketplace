@@ -273,10 +273,15 @@ export const Home = ({
       {/* 1. HERO SECTION */}
       <div className="relative h-[720px] md:h-[600px] w-full flex items-center justify-center">
         {/* Background */}
-        <div 
-          className="absolute inset-0 bg-cover bg-center z-0"
-          style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop")' }}
-        ></div>
+        <img
+          src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop"
+          srcSet="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=800&auto=format&fit=crop 800w, https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop 1200w, https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1920&auto=format&fit=crop 1920w"
+          sizes="100vw"
+          alt=""
+          fetchPriority="high"
+          aria-hidden="true"
+          className="absolute inset-0 w-full h-full object-cover object-center z-0"
+        />
         <div className="absolute inset-0 bg-black/50 z-10"></div>
 
         {/* Content */}
