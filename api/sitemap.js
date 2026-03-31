@@ -1,6 +1,22 @@
 import { createClient } from '@supabase/supabase-js';
 
-import { buildCoursePath } from '../src/lib/siteConfig.js';
+// Inlined to avoid importing React-dependent modules (constants.js imports lucide-react)
+function slugify(input) {
+  return (input || '')
+    .toString().trim().toLowerCase()
+    .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
+    .replace(/&/g, ' und ')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+function buildCoursePath(course) {
+  if (!course) return '/search';
+  const topic = slugify(course.category_area || 'kurs');
+  const loc = slugify(course.canton || 'schweiz');
+  const title = slugify(course.title || 'detail');
+  return `/courses/${topic}/${loc}/${course.id}-${title}`;
+}
 
 export default async function handler(req, res) {
   // 1. Supabase Init (Robust Environment Check)
