@@ -1,6 +1,26 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { BASE_URL } from '../lib/siteConfig';
 
 const ContactPage = ({ t, setView, showNotification }) => {
+    useEffect(() => {
+        document.title = 'Kontakt – KursNavi';
+
+        let metaTag = document.querySelector('meta[name="description"]');
+        if (!metaTag) {
+            metaTag = document.createElement('meta');
+            metaTag.name = 'description';
+            document.head.appendChild(metaTag);
+        }
+        metaTag.content = 'Schreib uns – wir helfen dir bei Fragen zu Kursen, Buchungen oder deinem Anbieter-Account auf KursNavi.';
+
+        let canonicalTag = document.querySelector('link[rel="canonical"]');
+        if (!canonicalTag) {
+            canonicalTag = document.createElement('link');
+            canonicalTag.rel = 'canonical';
+            document.head.appendChild(canonicalTag);
+        }
+        canonicalTag.href = `${BASE_URL}/contact`;
+    }, []);
     
     // LOGIC: Handle Submit
     const handleContactSubmit = (e) => {

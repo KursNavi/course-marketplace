@@ -1,10 +1,34 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { ArrowLeft, ShieldCheck, Scale, FileText, Undo2, BadgeCheck } from 'lucide-react';
 import { LEGAL_CONTENT } from '../lib/legalText';
+import { BASE_URL } from '../lib/siteConfig';
 
 const LegalPage = ({ pageKey, lang = 'de', setView }) => {
   const langData = LEGAL_CONTENT[lang] || LEGAL_CONTENT['de'];
   const content = langData[pageKey];
+
+  useEffect(() => {
+    if (!content) return;
+
+    const canonicalUrl = `${BASE_URL}/${pageKey}`;
+    document.title = `${content.title} | KursNavi`;
+
+    let metaTag = document.querySelector('meta[name="description"]');
+    if (!metaTag) {
+      metaTag = document.createElement('meta');
+      metaTag.name = 'description';
+      document.head.appendChild(metaTag);
+    }
+    metaTag.content = (content.intro || content.title).substring(0, 160);
+
+    let canonicalTag = document.querySelector('link[rel="canonical"]');
+    if (!canonicalTag) {
+      canonicalTag = document.createElement('link');
+      canonicalTag.rel = 'canonical';
+      document.head.appendChild(canonicalTag);
+    }
+    canonicalTag.href = canonicalUrl;
+  }, [content, pageKey]);
 
   if (!content) {
     return (

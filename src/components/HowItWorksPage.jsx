@@ -1,7 +1,28 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Smile, Briefcase, HelpCircle, Plus, Minus } from 'lucide-react';
+import { BASE_URL } from '../lib/siteConfig';
 
 const HowItWorksPage = ({ t, setView }) => {
+    useEffect(() => {
+        document.title = 'So funktioniert KursNavi – Kurse finden, buchen & anbieten';
+
+        let metaTag = document.querySelector('meta[name="description"]');
+        if (!metaTag) {
+            metaTag = document.createElement('meta');
+            metaTag.name = 'description';
+            document.head.appendChild(metaTag);
+        }
+        metaTag.content = 'Schritt-für-Schritt erklärt: So findest und buchst du Kurse auf KursNavi – oder stellst deine Kurse als Anbieter ein.';
+
+        let canonicalTag = document.querySelector('link[rel="canonical"]');
+        if (!canonicalTag) {
+            canonicalTag = document.createElement('link');
+            canonicalTag.rel = 'canonical';
+            document.head.appendChild(canonicalTag);
+        }
+        canonicalTag.href = `${BASE_URL}/how-it-works`;
+    }, []);
+
     // Accordion State inside the component
     const [openFaq, setOpenFaq] = useState(null);
     const toggleFaq = (index) => {

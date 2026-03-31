@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { ChevronRight, BookOpen } from 'lucide-react';
 import { RATGEBER_STRUCTURE, findCluster } from '../lib/ratgeberStructure';
 import { SEGMENT_CONFIG } from '../lib/constants';
 import { shouldHandleClientNavigation } from '../lib/navigation';
+import { buildBreadcrumbJsonLd } from '../lib/seoUtils';
+import { BASE_URL } from '../lib/siteConfig';
 
 /**
  * RatgeberClusterView
@@ -19,6 +21,75 @@ const RatgeberClusterView = ({ lang = 'de' }) => {
 
   // Find cluster data
   const clusterData = findCluster(categorySlug, clusterSlug);
+
+  // SEO — must run before conditional return (rules of hooks)
+  useEffect(() => {
+    if (!clusterData) return;
+
+    const { category } = clusterData;
+    const label = clusterData.label[lang] || clusterData.label.de;
+    const description = clusterData.description[lang] || clusterData.description.de;
+    const canonicalUrl = `${BASE_URL}/ratgeber/${categorySlug}/${clusterSlug}`;
+    const pageTitle = `${label} – Ratgeber | KursNavi`;
+
+    document.title = pageTitle;
+
+    let metaTag = document.querySelector('meta[name="description"]');
+    if (!metaTag) {
+      metaTag = document.createElement('meta');
+      metaTag.name = 'description';
+      document.head.appendChild(metaTag);
+    }
+    metaTag.content = description;
+
+    let canonicalTag = document.querySelector('link[rel="canonical"]');
+    if (!canonicalTag) {
+      canonicalTag = document.createElement('link');
+      canonicalTag.rel = 'canonical';
+      document.head.appendChild(canonicalTag);
+    }
+    canonicalTag.href = canonicalUrl;
+
+    // OG Tags
+    const ogTags = {
+      'og:title': pageTitle,
+      'og:description': description,
+      'og:url': canonicalUrl,
+      'og:image': `${BASE_URL}/og-default.svg`,
+      'og:type': 'website',
+      'og:locale': 'de_CH',
+      'og:site_name': 'KursNavi'
+    };
+    const createdOgTags = [];
+    Object.entries(ogTags).forEach(([property, content]) => {
+      let tag = document.querySelector(`meta[property="${property}"]`);
+      if (!tag) {
+        tag = document.createElement('meta');
+        tag.setAttribute('property', property);
+        document.head.appendChild(tag);
+        createdOgTags.push(tag);
+      }
+      tag.content = content;
+    });
+
+    // BreadcrumbList JSON-LD
+    const breadcrumbData = buildBreadcrumbJsonLd([
+      { name: 'Home', url: BASE_URL },
+      { name: 'Ratgeber', url: `${BASE_URL}/ratgeber` },
+      { name: category.label[lang] || category.label.de, url: `${BASE_URL}/ratgeber/${categorySlug}` },
+      { name: label, url: canonicalUrl }
+    ]);
+    const breadcrumbScript = document.createElement('script');
+    breadcrumbScript.type = 'application/ld+json';
+    breadcrumbScript.setAttribute('data-schema', 'ratgeber-cluster-breadcrumb');
+    breadcrumbScript.text = JSON.stringify(breadcrumbData);
+    document.head.appendChild(breadcrumbScript);
+
+    return () => {
+      createdOgTags.forEach(tag => tag.remove());
+      if (breadcrumbScript.parentNode) breadcrumbScript.remove();
+    };
+  }, [clusterData, categorySlug, clusterSlug, lang]);
 
   if (!clusterData) {
     return (

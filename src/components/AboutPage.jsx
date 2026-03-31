@@ -1,8 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { BASE_URL } from '../lib/siteConfig';
 import { Search, Calendar, Smile, ArrowRight, Eye, Zap, Shield, Users, Rocket, ChevronDown, Heart, GraduationCap, Building2 } from 'lucide-react';
 
 const AboutPage = ({ t, setView }) => {
     const [openSection, setOpenSection] = useState('you');
+
+    useEffect(() => {
+        document.title = 'Über KursNavi – Die Kursplattform für die Schweiz';
+
+        let metaTag = document.querySelector('meta[name="description"]');
+        if (!metaTag) {
+            metaTag = document.createElement('meta');
+            metaTag.name = 'description';
+            document.head.appendChild(metaTag);
+        }
+        metaTag.content = 'Erfahre mehr über KursNavi, die schweizweite Plattform für Kurse und Weiterbildungen. Unsere Mission, Werte und das Team dahinter.';
+
+        let canonicalTag = document.querySelector('link[rel="canonical"]');
+        if (!canonicalTag) {
+            canonicalTag = document.createElement('link');
+            canonicalTag.rel = 'canonical';
+            document.head.appendChild(canonicalTag);
+        }
+        canonicalTag.href = `${BASE_URL}/about`;
+    }, []);
 
     const toggleSection = (key) => {
         setOpenSection(openSection === key ? null : key);
