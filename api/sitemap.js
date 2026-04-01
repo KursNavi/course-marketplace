@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { BEREICH_LANDING_CONFIG } from '../src/lib/bereichLandingConfig.js';
 
 // Inlined to avoid importing React-dependent modules (constants.js imports lucide-react)
 function slugify(input) {
@@ -190,7 +191,27 @@ export default async function handler(req, res) {
       }
     }
 
-    // 9. Construct Final XML
+    // 9. Generate Bereich Landing + Szenario URLs (derived from config — auto-updates as config grows)
+    let bereichUrls = '';
+    for (const bereich of Object.values(BEREICH_LANDING_CONFIG)) {
+      const bereichPath = `/bereich/${bereich.segment}/${bereich.slug}`;
+      bereichUrls += `
+      <url>
+          <loc>${baseUrl}${bereichPath}</loc>
+          <changefreq>weekly</changefreq>
+          <priority>0.8</priority>
+      </url>`;
+      for (const szenario of (bereich.scenarios || [])) {
+        bereichUrls += `
+      <url>
+          <loc>${baseUrl}${bereichPath}/${szenario.slug}</loc>
+          <changefreq>monthly</changefreq>
+          <priority>0.7</priority>
+      </url>`;
+      }
+    }
+
+    // 10. Construct Final XML
     const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
     <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
       ${staticPages}
@@ -198,6 +219,7 @@ export default async function handler(req, res) {
       ${blogUrls}
       ${providerUrls}
       ${ratgeberUrls}
+      ${bereichUrls}
     </urlset>`;
 
     // 6. Send Response
