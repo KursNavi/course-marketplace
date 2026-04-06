@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "dev:playwright": "node scripts/start-playwright-dev.mjs",
-    "build": "vite build",
+    "build": "vite build && node scripts/prerender-static.mjs",
     "lint": "eslint .",
     "check:mojibake": "node scripts/check-mojibake.mjs",
     "preview": "vite preview",
@@ -52,6 +52,7 @@
     "globals": "^16.5.0",
     "jsdom": "^28.1.0",
     "postcss": "^8.5.6",
+    "rollup-plugin-visualizer": "^7.0.1",
     "tailwindcss": "^3.4.16",
     "vite": "^7.2.4",
     "vitest": "^4.0.18"
