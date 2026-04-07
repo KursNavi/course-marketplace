@@ -54,6 +54,11 @@ function generateHtml(path, title, description) {
     /(<meta name="description" content=")[^"]*(")/,
     `$1${esc(description)}$2`
   );
+  // Insert canonical right after <meta name="robots"> so it appears near the top of <head>
+  html = html.replace(
+    /(<meta name="robots"[^>]*>)/,
+    `$1\n    <link rel="canonical" href="${canonical}" />`
+  );
   html = html.replace(
     /(<meta property="og:title" content=")[^"]*(")/,
     `$1${esc(title)}$2`
@@ -66,8 +71,6 @@ function generateHtml(path, title, description) {
     /(<meta property="og:url" content=")[^"]*(")/,
     `$1${canonical}$2`
   );
-  // Insert canonical before closing </head>
-  html = html.replace('</head>', `  <link rel="canonical" href="${canonical}" />\n  </head>`);
 
   return html;
 }
