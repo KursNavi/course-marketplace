@@ -33,9 +33,9 @@ test.describe('Course Edit (app-e2e)', () => {
     const titleInput = page.locator('input[name="title"]');
     await expect(titleInput).toBeVisible({ timeout: 10_000 });
 
-    // Read current title
+    // Wait for form data to load (async pre-fill) then read current title
+    await expect(titleInput).not.toHaveValue('', { timeout: 10_000 });
     const originalTitle = await titleInput.inputValue();
-    expect(originalTitle.length).toBeGreaterThan(0);
 
     // Modify the title with a timestamp suffix
     const newTitle = `${originalTitle} (E2E-Edit ${Date.now()})`;
