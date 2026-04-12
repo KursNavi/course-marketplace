@@ -1541,6 +1541,7 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                     <div>
                         <label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_description} *</label>
                         <textarea required name="description" value={description} onChange={(e) => { setDescription(e.target.value); markDirty(); }} rows="6" placeholder="Beschreibe deinen Kurs..." className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary outline-none resize-y block"></textarea>
+                        <p className="mt-2 text-sm text-gray-500">Die Beschreibung erscheint auf der Kursseite, wird aber nicht für die Textsuche ausgewertet. Damit dein Kurs bei Suchanfragen gefunden wird, trage wichtige Suchbegriffe bitte im Feld <span className="font-medium">«Keywords für die Textsuche»</span> weiter unten ein.</p>
                     </div>
 
                     <div>
@@ -1549,7 +1550,7 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                     </div>
 
                     <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-1">Keywords / Suchbegriffe (Optional)</label>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">Keywords für die Textsuche (Optional)</label>
                         <input type="text" name="keywords" value={keywords} onChange={(e) => { setKeywords(e.target.value); markDirty(); }} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
                     </div>
                 </div>
