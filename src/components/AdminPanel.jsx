@@ -236,6 +236,30 @@ const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView, user,
         ));
     };
 
+    const changeExpiry = async (userId, newDateStr) => {
+        try {
+            const headers = await getAuthHeaders();
+            const res = await fetch('/api/admin', {
+                method: 'POST',
+                headers,
+                body: JSON.stringify({ action: 'set-expiry', userId, package_expires_at: newDateStr || null })
+            });
+
+            if (!res.ok) {
+                const txt = await res.text();
+                throw new Error(txt || `HTTP ${res.status}`);
+            }
+
+            const isoExpiry = newDateStr ? new Date(newDateStr).toISOString() : null;
+            showNotification(newDateStr ? `Ablaufdatum gesetzt: ${newDateStr}` : 'Ablaufdatum entfernt');
+            setProfiles(prev => prev.map(p =>
+                p.id === userId ? { ...p, package_expires_at: isoExpiry } : p
+            ));
+        } catch (e) {
+            showNotification('Fehler beim Ändern des Ablaufdatums: ' + e.message);
+        }
+    };
+
 
     // Profiles are now server-side filtered by role via API ?role= parameter.
     // No client-side filtering needed.
@@ -359,8 +383,8 @@ const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView, user,
 
                                                 {/* PAKET STEUERUNG */}
                                                 <td className="px-6 py-4">
-                                                    <div className="flex flex-col gap-1">
-                                                        <select 
+                                                    <div className="flex flex-col gap-1.5">
+                                                        <select
                                                             className={`text-xs font-bold py-1 px-2 rounded border cursor-pointer outline-none ${
                                                                 user.package_tier === 'enterprise' ? 'bg-orange-100 text-orange-800 border-orange-200' :
                                                                 user.package_tier === 'premium' ? 'bg-purple-100 text-purple-800 border-purple-200' :
@@ -375,6 +399,17 @@ const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView, user,
                                                             <option value="premium">Premium</option>
                                                             <option value="enterprise">Enterprise</option>
                                                         </select>
+
+                                                        <div className="flex items-center gap-1">
+                                                            <span className="text-[10px] text-gray-400 whitespace-nowrap">Bis:</span>
+                                                            <input
+                                                                type="date"
+                                                                className="text-[10px] text-gray-600 border border-gray-200 rounded px-1 py-0.5 outline-none focus:ring-1 focus:ring-blue-400 cursor-pointer"
+                                                                value={user.package_expires_at ? user.package_expires_at.split('T')[0] : ''}
+                                                                onChange={(e) => changeExpiry(user.id, e.target.value)}
+                                                                title="Ablaufdatum des Pakets"
+                                                            />
+                                                        </div>
 
                                                         <span className="text-[10px] text-gray-400">
                                                             Prio-Kurse: {plan.maxPrioCourses === Infinity ? 'unbegrenzt' : plan.maxPrioCourses} · Kategorien/Kurs: {plan.maxCategoriesPerCourse}

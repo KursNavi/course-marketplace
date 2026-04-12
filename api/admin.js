@@ -702,8 +702,48 @@ export default async function handler(req, res) {
       });
     }
 
+    // ============================================
+    // ACTION: set-expiry - Set user package expiry date
+    // ============================================
+    if (action === 'set-expiry') {
+      if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'Method not allowed' });
+      }
+
+      const { userId, package_expires_at } = parseBody(req);
+
+      if (!userId) {
+        return res.status(400).json({ error: 'Missing userId' });
+      }
+
+      if (!isValidUUID(userId)) {
+        return res.status(400).json({ error: 'Invalid userId format' });
+      }
+
+      // Validate and normalise date if provided
+      let expiresAt = null;
+      if (package_expires_at) {
+        const parsed = new Date(package_expires_at);
+        if (isNaN(parsed.getTime())) {
+          return res.status(400).json({ error: 'Ungültiges Datumsformat für package_expires_at' });
+        }
+        expiresAt = parsed.toISOString();
+      }
+
+      const { data, error } = await supabaseAdmin
+        .from('profiles')
+        .update({ package_expires_at: expiresAt })
+        .eq('id', userId)
+        .select('package_expires_at')
+        .single();
+
+      if (error) return res.status(500).json({ error: error.message });
+
+      return res.status(200).json({ data });
+    }
+
     // Unknown action
-    return res.status(400).json({ error: 'Unknown action. Use: profiles, set-tier, set-verify, save-course, delete-course, set-course-status, or user-data' });
+    return res.status(400).json({ error: 'Unknown action. Use: profiles, set-tier, set-verify, set-expiry, save-course, delete-course, set-course-status, or user-data' });
 
   } catch (error) {
     console.error('Admin API error:', error);
