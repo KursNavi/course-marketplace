@@ -170,6 +170,7 @@ export default async function handler(req, res) {
         from: emailConfig.from,
         to: teacherEmail,
         replyTo: email,
+        bcc: emailConfig.adminEmail,
         subject: `Neue Kursanfrage: ${course.title}`,
         html: generateEmailHtml('Neue Kursanfrage', bodyHtml, 'Zum Dashboard')
       });
