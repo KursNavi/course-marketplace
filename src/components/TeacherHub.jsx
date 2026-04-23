@@ -87,7 +87,7 @@ const accentMap = {
 };
 
 const upgradeBenefits = [
-  { icon: TrendingUp, title: 'Bessere Platzierung', text: 'Sie können ausgewählte Kurse als Prio-Kurse markieren. Diese erscheinen in Suche und Kategorien weiter oben als nicht priorisierte Kurse – unabhängig davon, wann sie erfasst wurden. Pro gibt Ihnen 5 Prio-Kurse, Premium 15, Enterprise unbegrenzt viele.' },
+  { icon: TrendingUp, title: 'Bessere Platzierung', text: 'Sie können ausgewählte Kurse als Prio-Kurse markieren. Diese erscheinen in Suche und Kategorien weiter oben als nicht priorisierte Kurse. Pro gibt Ihnen 5 Prio-Kurse, Premium 15, Enterprise unbegrenzt viele.' },
   { icon: Search, title: 'Mehr Reichweite durch Kategorien', text: 'Im Basic-Paket erscheint jeder Kurs in nur einer Kategorie. Mit einem Upgrade können Sie jeden Kurs in bis zu 3 (Pro/Premium) oder 5 (Enterprise) Kategorien einordnen – und so deutlich mehr Interessenten erreichen.' },
   { icon: Users, title: 'Mehr Einblicke', text: 'Bezahlte Pakete geben Ihnen Zugriff auf detaillierte Analysen: Welche Kurse werden wie oft aufgerufen? Welche Kategorien performen besser? Woher kommen Ihre Anfragen? Diese Daten helfen Ihnen, Ihr Angebot gezielt zu verbessern.' },
 ];

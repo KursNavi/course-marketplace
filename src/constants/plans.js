@@ -61,7 +61,7 @@ export const PLANS = [
     features: [
       { text: "Unbegrenzte Kurse" },
       { text: "5 Prio-Kurse", isStrong: true, description: "Sie wählen 5 Kurse als Prio-Kurse. Diese werden in Suche und Kategorieseiten prominent ganz oben angezeigt – noch vor Kursen ohne Priorisierung." },
-      { text: "Erhöhtes Ranking für Prio-Kurse", isStrong: true, description: "Prio-Kurse erscheinen in allen relevanten Suchen und Kategorieübersichten weiter oben – unabhängig davon, wann der Kurs erfasst wurde." },
+      { text: "Erhöhtes Ranking für Prio-Kurse", isStrong: true, description: "Prio-Kurse erscheinen in allen relevanten Suchen und Kategorieübersichten weiter oben." },
       { text: "Bis 3 Kategorien pro Kurs", separator: true, description: "Pro Kurs können Sie bis zu 3 Kategorien wählen. So erscheint derselbe Kurs z.B. unter «Sport», «Fitness» und «Gesundheit» – und wird von deutlich mehr Interessenten gefunden." },
       { text: "12% Provision bei Direktbuchung", description: "3% weniger als im Basic-Paket. Gilt nur bei aktivierter Direktbuchung – Anfragen bleiben provisionsfrei." },
       { text: "Ranking-Bonus bei aktivierter Direktbuchung", isStrong: true, description: "Kurse mit aktivierter Direktbuchung erhalten zusätzlich einen Ranking-Vorteil gegenüber Kursen ohne Direktbuchung." },
@@ -96,7 +96,7 @@ export const PLANS = [
     features: [
       { text: "Unbegrenzte Kurse" },
       { text: "15 Prio-Kurse", isStrong: true, description: "Sie wählen 15 Kurse als Prio-Kurse. Diese werden in Suche und Kategorieseiten prominent ganz oben angezeigt – noch vor Kursen ohne Priorisierung." },
-      { text: "Erhöhtes Ranking für Prio-Kurse", isStrong: true, description: "Prio-Kurse erscheinen in allen relevanten Suchen und Kategorieübersichten weiter oben – unabhängig davon, wann der Kurs erfasst wurde." },
+      { text: "Erhöhtes Ranking für Prio-Kurse", isStrong: true, description: "Prio-Kurse erscheinen in allen relevanten Suchen und Kategorieübersichten weiter oben." },
       { text: "Bis 3 Kategorien pro Kurs", separator: true, description: "Pro Kurs können Sie bis zu 3 Kategorien wählen. So erscheint derselbe Kurs z.B. unter «Sport», «Fitness» und «Gesundheit» – und wird von deutlich mehr Interessenten gefunden." },
       { text: "10% Provision bei Direktbuchung", description: "5% weniger als im Basic-Paket. Gilt nur bei aktivierter Direktbuchung – Anfragen bleiben provisionsfrei." },
       { text: "Ranking-Bonus bei aktivierter Direktbuchung", isStrong: true, description: "Kurse mit aktivierter Direktbuchung erhalten zusätzlich einen Ranking-Vorteil gegenüber Kursen ohne Direktbuchung." },
@@ -131,7 +131,7 @@ export const PLANS = [
     features: [
       { text: "Unbegrenzte Kurse" },
       { text: "Unbegrenzte Prio-Kurse", isStrong: true, description: "Alle Ihre Kurse können als Prio-Kurse gesetzt werden – ohne Limit. So erscheinen sämtliche Angebote ganz oben in Suche und Kategorien." },
-      { text: "Erhöhtes Ranking für alle Kurse", isStrong: true, description: "Prio-Kurse erscheinen in allen relevanten Suchen und Kategorieübersichten weiter oben – unabhängig davon, wann der Kurs erfasst wurde." },
+      { text: "Erhöhtes Ranking für alle Kurse", isStrong: true, description: "Prio-Kurse erscheinen in allen relevanten Suchen und Kategorieübersichten weiter oben." },
       { text: "Bis 5 Kategorien pro Kurs", separator: true, description: "Pro Kurs bis zu 5 Kategorien – maximale Sichtbarkeit in Suche und Themenübersichten. Ein Kurs kann so z.B. unter «Sport», «Fitness», «Gesundheit», «Ernährung» und «Coaching» erscheinen." },
       { text: "8% Provision bei Direktbuchung", description: "Tiefste verfügbare Provision. Gilt nur bei aktivierter Direktbuchung – Anfragen bleiben provisionsfrei." },
       { text: "Ranking-Bonus bei aktivierter Direktbuchung", isStrong: true, description: "Kurse mit aktivierter Direktbuchung erhalten zusätzlich einen Ranking-Vorteil gegenüber Kursen ohne Direktbuchung." },
