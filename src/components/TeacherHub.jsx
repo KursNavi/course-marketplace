@@ -17,7 +17,7 @@ import PlanCardGrid from './PlanCardGrid';
 
 const heroBullets = [
   'Kostenlos starten',
-  'Anfragen ohne Provision',
+  'Anfragen erhalten ohne Provision',
   'Direktbuchung optional pro Kurs',
 ];
 
@@ -76,6 +76,7 @@ const courseModels = [
       'Buchung direkt online',
       'Weniger Administration',
       'Provision nur bei erfolgreicher Buchung',
+      'Ranking-Bonus in der Suche',
     ],
   },
 ];
@@ -87,7 +88,7 @@ const accentMap = {
 
 const upgradeBenefits = [
   { icon: TrendingUp, title: 'Bessere Platzierung', text: 'Prio-Kurse erscheinen weiter oben in Suche und Kategorien.' },
-  { icon: Search, title: 'Mehr Reichweite', text: 'Wichtige Kurse werden in mehr Themenbereichen ausgespielt.' },
+  { icon: Search, title: 'Mehr Reichweite durch Kategorien', text: 'Im Basic-Paket erscheint jeder Kurs in nur einer Kategorie. Mit einem Upgrade können Sie jeden Kurs in bis zu 3 (Pro/Premium) oder 5 (Enterprise) Kategorien einordnen – und so deutlich mehr Interessenten erreichen.' },
   { icon: Users, title: 'Mehr Einblicke', text: 'Analysen zeigen, welche Kurse und Kategorien performen.' },
 ];
 
@@ -341,7 +342,7 @@ const TeacherHub = ({ setView, user, showNotification }) => {
               </div>
               <div>
                 <p className="text-xl font-bold text-gray-900">Anfragen sind kostenlos.</p>
-                <p className="mt-2 leading-relaxed text-gray-600">Eine Provision fällt nur an, wenn ein Kurs direkt über KursNavi gebucht wird und Sie die Direktbuchung für diesen Kurs aktiviert haben.</p>
+                <p className="mt-2 leading-relaxed text-gray-600">Eine Provision fällt nur bei einer erfolgreichen Direktbuchung über KursNavi an. Wer nur das Anfrage-Modell nutzt, zahlt keine Provision.</p>
               </div>
             </div>
           </div>
