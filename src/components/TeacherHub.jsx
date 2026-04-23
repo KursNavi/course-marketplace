@@ -87,9 +87,9 @@ const accentMap = {
 };
 
 const upgradeBenefits = [
-  { icon: TrendingUp, title: 'Bessere Platzierung', text: 'Prio-Kurse erscheinen weiter oben in Suche und Kategorien.' },
+  { icon: TrendingUp, title: 'Bessere Platzierung', text: 'Sie können ausgewählte Kurse als Prio-Kurse markieren. Diese erscheinen in Suche und Kategorien weiter oben als nicht priorisierte Kurse – unabhängig davon, wann sie erfasst wurden. Pro gibt Ihnen 5 Prio-Kurse, Premium 15, Enterprise unbegrenzt viele.' },
   { icon: Search, title: 'Mehr Reichweite durch Kategorien', text: 'Im Basic-Paket erscheint jeder Kurs in nur einer Kategorie. Mit einem Upgrade können Sie jeden Kurs in bis zu 3 (Pro/Premium) oder 5 (Enterprise) Kategorien einordnen – und so deutlich mehr Interessenten erreichen.' },
-  { icon: Users, title: 'Mehr Einblicke', text: 'Analysen zeigen, welche Kurse und Kategorien performen.' },
+  { icon: Users, title: 'Mehr Einblicke', text: 'Bezahlte Pakete geben Ihnen Zugriff auf detaillierte Analysen: Welche Kurse werden wie oft aufgerufen? Welche Kategorien performen besser? Woher kommen Ihre Anfragen? Diese Daten helfen Ihnen, Ihr Angebot gezielt zu verbessern.' },
 ];
 
 const faqItems = [
@@ -155,35 +155,6 @@ const TeacherHub = ({ setView, user, showNotification }) => {
     linkCanonical.href = `${BASE_URL}/teacher-hub`;
   }, []);
 
-  const openEmailDraft = ({ subject, intro }) => {
-    const to = 'info@kursnavi.ch';
-    const name = user?.user_metadata?.full_name || user?.user_metadata?.name || '';
-    const email = user?.email || '';
-
-    const body = [
-      'Hallo KursNavi Team',
-      '',
-      intro,
-      '',
-      'Meine Angaben:',
-      name ? `Name: ${name}` : 'Name:',
-      email ? `E-Mail: ${email}` : 'E-Mail:',
-      'Firma:',
-      '',
-      'Danke und Gruss',
-    ].join('\n');
-
-    if (navigator?.clipboard?.writeText) {
-      navigator.clipboard.writeText(to).catch(() => {});
-    }
-
-    if (showNotification) {
-      showNotification('Ihr E-Mail-Programm sollte sich jetzt öffnen. Falls nicht: info@kursnavi.ch');
-    }
-
-    window.location.href = `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-  };
-
   const handlePrimaryCta = () => {
     if (!user) {
       localStorage.setItem('selectedPackage', 'basic');
@@ -213,11 +184,9 @@ const TeacherHub = ({ setView, user, showNotification }) => {
     if (showNotification) showNotification(`Wechsle zum Dashboard – dort können Sie das ${String(planId).charAt(0).toUpperCase()}${String(planId).slice(1)}-Paket buchen.`);
   };
 
-  const handleDemoCta = () => {
-    openEmailDraft({
-      subject: 'Demo-Anfrage KursNavi für Anbieter',
-      intro: 'Ich möchte eine Demo für KursNavi als Anbieter buchen.',
-    });
+  const handleContactCta = () => {
+    setView('contact');
+    window.scrollTo(0, 0);
   };
 
   return (
@@ -463,8 +432,8 @@ const TeacherHub = ({ setView, user, showNotification }) => {
               <button type="button" onClick={handlePrimaryCta} className="inline-flex items-center justify-center rounded-full bg-primary px-8 py-4 text-lg font-bold text-white transition hover:bg-orange-600">
                 Anbieterkonto erstellen
               </button>
-              <button type="button" onClick={handleDemoCta} className="inline-flex items-center justify-center rounded-full border border-white/20 px-8 py-4 text-lg font-bold text-white transition hover:border-white hover:bg-white/[0.05]">
-                Demo buchen
+              <button type="button" onClick={handleContactCta} className="inline-flex items-center justify-center rounded-full border border-white/20 px-8 py-4 text-lg font-bold text-white transition hover:border-white hover:bg-white/[0.05]">
+                Kontakt aufnehmen
               </button>
             </div>
           </div>

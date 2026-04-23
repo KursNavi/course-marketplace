@@ -135,7 +135,7 @@ export const PLANS = [
       { text: "Bis 5 Kategorien pro Kurs", separator: true, description: "Pro Kurs bis zu 5 Kategorien – maximale Sichtbarkeit in Suche und Themenübersichten. Ein Kurs kann so z.B. unter «Sport», «Fitness», «Gesundheit», «Ernährung» und «Coaching» erscheinen." },
       { text: "8% Provision bei Direktbuchung", description: "Tiefste verfügbare Provision. Gilt nur bei aktivierter Direktbuchung – Anfragen bleiben provisionsfrei." },
       { text: "Ranking-Bonus bei aktivierter Direktbuchung", isStrong: true, description: "Kurse mit aktivierter Direktbuchung erhalten zusätzlich einen Ranking-Vorteil gegenüber Kursen ohne Direktbuchung." },
-      { text: "15 Erfassungsservices inklusive", isStrong: true, separator: true, description: "Umfangreiches Onboarding-Paket inklusive." },
+      { text: "15 Erfassungsservices inklusive", isStrong: true, separator: true, description: "Wir erstellen professionelle Kursseiten für Sie." },
       { text: "Advanced Analytics", isStrong: true, description: "Vollständige Performance- und Marktdaten." },
     ],
   },
