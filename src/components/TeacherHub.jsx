@@ -116,32 +116,25 @@ const TeacherHub = ({ setView, user, showNotification }) => {
   const handlePrimaryCta = () => {
     if (!user) {
       localStorage.setItem('selectedPackage', 'basic');
-      setView('login');
-      window.scrollTo(0, 0);
+      window.history.pushState({ view: 'login' }, '', '/login');
       return;
     }
     if (showNotification) showNotification('Sie können jetzt Ihren Anbieter-Account aufsetzen.');
-    setView('dashboard');
+    window.history.pushState({ view: 'dashboard' }, '', '/dashboard');
   };
 
   const handlePlanCta = (planId) => {
     if (!user) {
       localStorage.setItem('selectedPackage', planId);
-      setView('login');
-      window.scrollTo(0, 0);
+      window.history.pushState({ view: 'login' }, '', '/login');
       return;
     }
-    if (planId === 'basic') {
-      setView('dashboard');
-      return;
-    }
-    setView('dashboard');
-    if (showNotification) showNotification(`Wechsle zum Dashboard – dort können Sie das ${String(planId).charAt(0).toUpperCase()}${String(planId).slice(1)}-Paket buchen.`);
+    if (showNotification && planId !== 'basic') showNotification(`Wechsle zum Dashboard – dort können Sie das ${String(planId).charAt(0).toUpperCase()}${String(planId).slice(1)}-Paket buchen.`);
+    window.history.pushState({ view: 'dashboard' }, '', '/dashboard');
   };
 
   const handleContactCta = () => {
-    setView('contact');
-    window.scrollTo(0, 0);
+    window.history.pushState({ view: 'contact' }, '', '/contact');
   };
 
   return (
