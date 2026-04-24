@@ -25,13 +25,9 @@ export const PLANS = [
 
     features: [
       { text: "Unbegrenzte Kurse" },
-      { text: "Keine Prio-Kurse", dim: true, excluded: true, description: "Ab dem Pro-Paket verfügbar." },
-      { text: "1 Kategorie pro Kurs", separator: true },
-      { text: "15% Komm. bei Direktbuchung (inkl. Stripe)", description: "Anfrage-Kurse bleiben provisionsfrei." },
-      { text: "Zusätzlicher Ranking-Bonus bei Direktbuchung", isStrong: true, description: "Kurse mit aktivierter Direktbuchung werden in der Suche höher gerankt." },
-      { text: "Standard Listing", separator: true },
-      { text: "Keine Erfassungsservices inklusive", dim: true, excluded: true, description: "Separat buchbar ab 75 CHF pro Kurs." },
-      { text: "Basic Analytics", description: "Einfache Statistiken zu Aufrufen und Anfragen." },
+      { text: "1 Themenbereich pro Kurs", description: "Jeder Kurs erscheint in einem Themenbereich. Mit einem Upgrade können Sie bis zu 3 oder 5 wählen." },
+      { text: "15% Gebühr bei Online-Buchung", description: "Gilt nur bei aktivierter Online-Buchung. Anfragen sind immer kostenlos." },
+      { text: "Einfache Kursstatistiken", description: "Aufrufe und Anfragen pro Kurs." },
     ],
   },
   {
@@ -60,13 +56,10 @@ export const PLANS = [
 
     features: [
       { text: "Unbegrenzte Kurse" },
-      { text: "5 Prio-Kurse", isStrong: true },
-      { text: "Erhöhtes Ranking für Prio-Kurse", isStrong: true, description: "Ihre Prio-Kurse erscheinen weiter oben in den Suchergebnissen." },
-      { text: "Bis 3 Kategorien pro Kurs", separator: true, description: "Mehr Sichtbarkeit in verschiedenen Bereichen." },
-      { text: "12% Komm. bei Direktbuchung", description: "3% weniger als im Basic-Paket." },
-      { text: "Zusätzlicher Ranking-Bonus bei Direktbuchung", isStrong: true, description: "Kurse mit Direktbuchung erhalten automatisch einen Ranking-Vorteil." },
-      { text: "Keine Erfassungsservices inklusive", dim: true, excluded: true, separator: true, description: "Separat buchbar ab 75 CHF pro Kurs." },
-      { text: "Medium Analytics", isStrong: true, description: "Performance-Daten und Teilnehmer-Insights." },
+      { text: "5 Kurse hervorheben", isStrong: true, description: "Wählen Sie 5 Kurse aus, die in Suche und Kategorien weiter oben angezeigt werden." },
+      { text: "Bis 3 Themenbereiche pro Kurs", separator: true, description: "Pro Kurs können Sie bis zu 3 Themenbereiche wählen. So erscheint derselbe Kurs z.B. unter «Sport», «Fitness» und «Gesundheit» – und wird von mehr Interessenten gefunden." },
+      { text: "12% Gebühr bei Online-Buchung", description: "3% weniger als im Basic-Paket. Gilt nur bei aktivierter Direktbuchung – Anfragen bleiben provisionsfrei." },
+      { text: "Erweiterte Kursstatistiken", isStrong: true, description: "Aufrufe, Anfragen und Einblicke nach Kurs und Themenbereich." },
     ],
   },
   {
@@ -95,13 +88,11 @@ export const PLANS = [
 
     features: [
       { text: "Unbegrenzte Kurse" },
-      { text: "15 Prio-Kurse", isStrong: true },
-      { text: "Erhöhtes Ranking für Prio-Kurse", isStrong: true, description: "Ihre Prio-Kurse erscheinen weiter oben in den Suchergebnissen." },
-      { text: "Bis 3 Kategorien pro Kurs", separator: true, description: "Mehr Sichtbarkeit in verschiedenen Bereichen." },
-      { text: "10% Komm. bei Direktbuchung", description: "5% weniger als im Basic-Paket." },
-      { text: "Zusätzlicher Ranking-Bonus bei Direktbuchung", isStrong: true, description: "Kurse mit Direktbuchung erhalten automatisch einen Ranking-Vorteil." },
-      { text: "5 Erfassungsservices inklusive", isStrong: true, separator: true, description: "Wir erstellen professionelle Kursseiten für Sie." },
-      { text: "Advanced Analytics", isStrong: true, description: "Vollständige Performance- und Marktdaten." },
+      { text: "15 Kurse hervorheben", isStrong: true, description: "Wählen Sie 15 Kurse aus, die in Suche und Kategorien weiter oben angezeigt werden." },
+      { text: "Bis 3 Themenbereiche pro Kurs", separator: true, description: "Pro Kurs können Sie bis zu 3 Themenbereiche wählen. So erscheint derselbe Kurs z.B. unter «Sport», «Fitness» und «Gesundheit» – und wird von mehr Interessenten gefunden." },
+      { text: "10% Gebühr bei Online-Buchung", description: "5% weniger als im Basic-Paket. Gilt nur bei aktivierter Direktbuchung – Anfragen bleiben provisionsfrei." },
+      { text: "5 Kursseiten-Erstellungen inklusive", isStrong: true, separator: true, description: "Wir erstellen professionelle Kursseiten für Sie." },
+      { text: "Vollständige Kursstatistiken", isStrong: true, description: "Aufrufe, Anfragen, Themenbereiche und Buchungsverläufe im Überblick." },
     ],
   },
   {
@@ -130,13 +121,11 @@ export const PLANS = [
 
     features: [
       { text: "Unbegrenzte Kurse" },
-      { text: "Unbegrenzte Prio-Kurse", isStrong: true },
-      { text: "Erhöhtes Ranking für Prio-Kurse", isStrong: true, description: "Alle Kurse erscheinen weiter oben in den Suchergebnissen." },
-      { text: "Bis 5 Kategorien pro Kurs", separator: true, description: "Maximale Sichtbarkeit in verschiedenen Bereichen." },
-      { text: "8% Komm. bei Direktbuchung", description: "Tiefste verfügbare Kommission." },
-      { text: "Zusätzlicher Ranking-Bonus bei Direktbuchung", isStrong: true, description: "Kurse mit Direktbuchung erhalten automatisch einen Ranking-Vorteil." },
-      { text: "15 Erfassungsservices inklusive", isStrong: true, separator: true, description: "Umfangreiches Onboarding-Paket inklusive." },
-      { text: "Advanced Analytics", isStrong: true, description: "Vollständige Performance- und Marktdaten." },
+      { text: "Alle Kurse hervorheben", isStrong: true, description: "Alle Ihre Kurse erscheinen in Suche und Kategorien weiter oben – ohne Limit." },
+      { text: "Bis 5 Themenbereiche pro Kurs", separator: true, description: "Pro Kurs bis zu 5 Themenbereiche – maximale Sichtbarkeit. Ein Kurs kann z.B. unter «Sport», «Fitness», «Gesundheit», «Ernährung» und «Coaching» erscheinen." },
+      { text: "8% Gebühr bei Online-Buchung", description: "Tiefste verfügbare Provision. Gilt nur bei aktivierter Direktbuchung – Anfragen bleiben provisionsfrei." },
+      { text: "15 Kursseiten-Erstellungen inklusive", isStrong: true, separator: true, description: "Wir erstellen professionelle Kursseiten für Sie." },
+      { text: "Vollständige Kursstatistiken", isStrong: true, description: "Aufrufe, Anfragen, Themenbereiche und Buchungsverläufe im Überblick." },
     ],
   },
 ];
