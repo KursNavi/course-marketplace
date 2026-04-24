@@ -192,7 +192,7 @@ const TeacherHub = ({ setView, user, showNotification }) => {
         <div className="mx-auto max-w-2xl rounded-2xl border border-emerald-100 bg-emerald-50 px-6 py-5 text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-600">Das Wichtigste kurz erklärt</p>
           <p className="mt-3 text-base leading-relaxed text-gray-700">
-            Sie können <strong>kostenlos starten</strong> und Anfragen erhalten. Eine Gebühr fällt nur an, wenn jemand Ihren Kurs <strong>direkt online bucht</strong>.
+            Sie können <strong>kostenlos starten</strong> und Anfragen erhalten. Eine Gebühr fällt nur an, wenn Sie die Online-Buchung für einen Kurs aktivieren – <strong>das bleibt immer Ihre Entscheidung</strong>.
           </p>
         </div>
       </div>
