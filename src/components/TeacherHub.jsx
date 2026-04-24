@@ -6,46 +6,41 @@ import {
   ClipboardList,
   CreditCard,
   MessageSquare,
-  Search,
-  TrendingUp,
-  Users,
 } from 'lucide-react';
 import { BASE_URL } from '../lib/siteConfig';
 import PlanCardGrid from './PlanCardGrid';
 
 const heroBullets = [
   'Kostenlos starten',
-  'Anfragen erhalten ohne Provision',
-  'Direktbuchung optional pro Kurs',
+  'Anfragen erhalten – keine Kosten',
+  'Online-Buchung optional',
 ];
-
 
 const courseModels = [
   {
     key: 'lead',
-    title: 'Anfrage-Modell',
+    title: 'Anfrage',
     eyebrow: 'Der einfachste Einstieg',
     icon: MessageSquare,
     accent: 'emerald',
-    description: 'Interessenten senden Ihnen eine Anfrage. Sie beantworten diese direkt und schliessen die Buchung selbst mit dem Teilnehmer ab.',
+    description: 'Interessenten schreiben Ihnen eine Nachricht. Sie antworten direkt und vereinbaren alles selbst.',
     features: [
-      'Keine Provision – Anfragen sind immer kostenlos',
-      'Volle Kontrolle über den Ablauf',
-      'Ideal für individuelle Beratung oder mehrere Rückfragen',
+      'Kostenlos – keine Gebühren',
+      'Sie bestimmen Ablauf und Preis',
+      'Ideal, wenn Rückfragen erwartet werden',
     ],
   },
   {
     key: 'booking',
-    title: 'Direktbuchung',
+    title: 'Online-Buchung',
     eyebrow: 'Optional pro Kurs',
     icon: CreditCard,
     accent: 'orange',
-    description: 'Interessenten buchen den Kurs direkt über KursNavi. Das reduziert manuellen Aufwand und macht die Buchung besonders einfach.',
+    description: 'Interessenten buchen direkt online – ohne Rückfragen, ohne Papierkram.',
     features: [
-      'Buchung direkt online',
-      'Weniger Administration',
-      'Provision nur bei erfolgreicher Buchung',
-      'Ranking-Bonus in der Suche',
+      'Buchung in wenigen Klicks',
+      'Weniger Aufwand für Sie',
+      'Gebühr nur bei erfolgreicher Buchung',
     ],
   },
 ];
@@ -55,24 +50,18 @@ const accentMap = {
   orange: { panel: 'border-orange-200 bg-orange-50', surface: 'bg-orange-100 text-orange-800', icon: 'text-orange-600' },
 };
 
-const upgradeBenefits = [
-  { icon: TrendingUp, title: 'Bessere Platzierung', text: 'Wichtige Kurse können Sie hervorheben – sie erscheinen dann in der Suche und in Kategorien weiter oben und werden schneller gefunden.' },
-  { icon: Search, title: 'Mehr Reichweite', text: 'Mit einem Upgrade erscheinen Ihre Kurse in mehreren Themenbereichen gleichzeitig – so finden Sie mehr Interessenten, die nach genau diesem Angebot suchen.' },
-  { icon: Users, title: 'Mehr Einblicke', text: 'Sie sehen, welche Kurse gut laufen, wie oft sie aufgerufen werden und wo sich eine Anpassung lohnen könnte.' },
-];
-
 const faqItems = [
   {
-    question: 'Muss ich für jeden Kurs Direktbuchung aktivieren?',
-    answer: 'Nein. Sie entscheiden pro Kurs, ob Sie nur Anfragen erhalten oder die Direktbuchung aktivieren möchten.',
+    question: 'Muss ich für jeden Kurs die Online-Buchung aktivieren?',
+    answer: 'Nein. Sie entscheiden pro Kurs, ob Sie nur Anfragen erhalten oder die Online-Buchung aktivieren möchten.',
   },
   {
     question: 'Kostet mich eine Anfrage etwas?',
-    answer: 'Nein. Anfragen sind provisionsfrei.',
+    answer: 'Nein. Anfragen sind immer kostenlos.',
   },
   {
-    question: 'Wann fällt eine Provision an?',
-    answer: 'Nur dann, wenn ein Kurs direkt über KursNavi gebucht wird und die Direktbuchung für diesen Kurs aktiviert ist.',
+    question: 'Wann fällt eine Gebühr an?',
+    answer: 'Nur dann, wenn jemand Ihren Kurs direkt online bucht und Sie die Online-Buchung für diesen Kurs aktiviert haben.',
   },
   {
     question: 'Kann ich kostenlos starten?',
@@ -113,7 +102,7 @@ const TeacherHub = ({ setView, user, showNotification }) => {
       document.head.appendChild(metaDesc);
     }
     metaDesc.content =
-      'Mehr Teilnehmer für Ihre Kurse: kostenlos starten, Anfragen ohne Provision erhalten und Direktbuchung optional aktivieren.';
+      'Mehr Teilnehmer für Ihre Kurse: kostenlos starten, Anfragen ohne Gebühren erhalten und Online-Buchung optional aktivieren.';
 
     let linkCanonical = document.querySelector('link[rel="canonical"]');
     if (!linkCanonical) {
@@ -131,7 +120,6 @@ const TeacherHub = ({ setView, user, showNotification }) => {
       window.scrollTo(0, 0);
       return;
     }
-
     if (showNotification) showNotification('Sie können jetzt Ihren Anbieter-Account aufsetzen.');
     setView('dashboard');
   };
@@ -143,12 +131,10 @@ const TeacherHub = ({ setView, user, showNotification }) => {
       window.scrollTo(0, 0);
       return;
     }
-
     if (planId === 'basic') {
       setView('dashboard');
       return;
     }
-
     setView('dashboard');
     if (showNotification) showNotification(`Wechsle zum Dashboard – dort können Sie das ${String(planId).charAt(0).toUpperCase()}${String(planId).slice(1)}-Paket buchen.`);
   };
@@ -176,8 +162,8 @@ const TeacherHub = ({ setView, user, showNotification }) => {
             Mehr passende Teilnehmer für Ihre Kurse
           </h1>
 
-          <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-gray-200 md:text-xl">
-            Präsentieren Sie Ihre Kurse auf KursNavi, erhalten Sie direkte Anfragen und aktivieren Sie auf Wunsch die Direktbuchung für einzelne Angebote.
+          <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-gray-200">
+            Schalten Sie Ihre Kurse kostenlos auf, empfangen Sie Anfragen und ermöglichen Sie auf Wunsch auch die Online-Buchung.
           </p>
 
           <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
@@ -201,6 +187,16 @@ const TeacherHub = ({ setView, user, showNotification }) => {
         </div>
       </section>
 
+      {/* ── Das Wichtigste ── */}
+      <div className="border-b border-gray-100 bg-white px-4 py-8">
+        <div className="mx-auto max-w-2xl rounded-2xl border border-emerald-100 bg-emerald-50 px-6 py-5 text-center">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-600">Das Wichtigste kurz erklärt</p>
+          <p className="mt-3 text-base leading-relaxed text-gray-700">
+            Sie können <strong>kostenlos starten</strong> und Anfragen erhalten. Eine Gebühr fällt nur an, wenn jemand Ihren Kurs <strong>direkt online bucht</strong>.
+          </p>
+        </div>
+      </div>
+
       {/* ── 2. So funktioniert es ── */}
       <section className="px-4 py-16 md:py-20">
         <div className="mx-auto max-w-5xl">
@@ -209,7 +205,7 @@ const TeacherHub = ({ setView, user, showNotification }) => {
             {[
               { n: '1', title: 'Kurs erstellen', text: 'Sie legen eine Kursseite an – mit Beschreibung, Bildern und Terminen.' },
               { n: '2', title: 'Sichtbar werden', text: 'Ihr Kurs erscheint in Suche und Kategorien auf KursNavi.' },
-              { n: '3', title: 'Anfragen erhalten', text: 'Interessenten melden sich bei Ihnen – oder buchen direkt, wenn Sie das aktiviert haben.' },
+              { n: '3', title: 'Teilnehmer gewinnen', text: 'Interessenten melden sich bei Ihnen – oder buchen direkt online, wenn Sie das aktiviert haben.' },
             ].map(({ n, title, text }) => (
               <div key={n} className="bg-white px-8 py-8">
                 <span className="text-4xl font-bold text-gray-100">{n}</span>
@@ -221,14 +217,14 @@ const TeacherHub = ({ setView, user, showNotification }) => {
         </div>
       </section>
 
-      {/* ── 3. Zwei Modelle ── */}
+      {/* ── 3. Zwei Wege ── */}
       <section className="bg-[linear-gradient(180deg,#fffaf5_0%,#f5efe7_100%)] px-4 py-20 md:py-24">
         <div className="mx-auto max-w-5xl">
           <div className="text-center">
-            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary">Zwei Kursmodelle</p>
-            <h2 className="mt-4 text-4xl font-bold leading-tight text-dark md:text-5xl">Zwei Wege, um Teilnehmer zu gewinnen</h2>
-            <p className="mx-auto mt-5 max-w-2xl text-lg leading-relaxed text-gray-600">
-              Sie entscheiden pro Kurs, wie Interessenten mit Ihnen in Kontakt treten.
+            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary">Anfrage oder Online-Buchung</p>
+            <h2 className="mt-4 text-4xl font-bold leading-tight text-dark md:text-5xl">Wie kommen Interessenten zu Ihnen?</h2>
+            <p className="mx-auto mt-4 max-w-xl text-lg leading-relaxed text-gray-600">
+              Sie entscheiden pro Kurs, welchen Weg Sie bevorzugen.
             </p>
           </div>
 
@@ -258,29 +254,25 @@ const TeacherHub = ({ setView, user, showNotification }) => {
               );
             })}
           </div>
-
         </div>
       </section>
 
-      {/* ── 4. Warum sich ein Upgrade lohnt ── */}
-      <section className="px-4 py-20 md:py-24">
-        <div className="mx-auto max-w-5xl">
-          <div className="text-center">
-            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary">Upgrade</p>
-            <h2 className="mt-4 text-4xl font-bold leading-tight text-dark md:text-5xl">Kostenlos starten, bei Bedarf mehr Sichtbarkeit nutzen</h2>
-            <p className="mx-auto mt-5 max-w-2xl text-lg leading-relaxed text-gray-600">
-              Mit dem kostenlosen Einstieg können Sie Kurse aufschalten und Anfragen erhalten. Ein Upgrade lohnt sich, wenn Sie mehr Sichtbarkeit, bessere Platzierungen oder mehr Einblicke in Ihre Kurse möchten.
-            </p>
-          </div>
-
-          <div className="mt-12 grid gap-6 md:grid-cols-3">
-            {upgradeBenefits.map(({ icon: Icon, title, text }) => (
-              <div key={title} className="rounded-[2rem] border border-gray-200 bg-white p-7 shadow-[0_12px_40px_rgba(34,34,34,0.06)]">
-                <div className="inline-flex rounded-2xl bg-orange-50 p-3 text-primary">
-                  <Icon className="h-6 w-6" />
-                </div>
-                <h3 className="mt-4 text-xl font-bold text-gray-900">{title}</h3>
-                <p className="mt-2 leading-relaxed text-gray-600">{text}</p>
+      {/* ── 4. Upgrade ── */}
+      <section className="px-4 py-16 md:py-20">
+        <div className="mx-auto max-w-3xl text-center">
+          <h2 className="text-3xl font-bold text-dark md:text-4xl">Kostenlos starten. Upgrade nur bei Bedarf.</h2>
+          <p className="mx-auto mt-4 max-w-xl text-lg leading-relaxed text-gray-600">
+            Mit dem kostenlosen Einstieg können Sie direkt loslegen. Ein Upgrade bringt mehr Sichtbarkeit.
+          </p>
+          <div className="mt-8 inline-flex flex-col gap-3 text-left">
+            {[
+              'Kurse weiter oben in der Suche anzeigen',
+              'Kurse in mehreren Themenbereichen sichtbar machen',
+              'Sehen, welche Kurse am meisten Interesse wecken',
+            ].map((item) => (
+              <div key={item} className="flex items-center gap-3">
+                <CheckCircle className="h-5 w-5 shrink-0 text-primary" />
+                <span className="text-gray-700">{item}</span>
               </div>
             ))}
           </div>
@@ -292,12 +284,12 @@ const TeacherHub = ({ setView, user, showNotification }) => {
         <div className="mx-auto max-w-7xl">
           <div className="mx-auto max-w-3xl text-center">
             <p className="text-sm font-semibold uppercase tracking-[0.24em] text-orange-200">Preise</p>
-            <h2 className="mt-4 text-4xl font-bold leading-tight md:text-5xl">Pakete für unterschiedliche Wachstumsziele</h2>
-            <p className="mt-5 text-lg leading-relaxed text-gray-300">Sie können kostenlos starten und erst upgraden, wenn Sie mehr Sichtbarkeit möchten.</p>
+            <h2 className="mt-4 text-4xl font-bold leading-tight md:text-5xl">Pakete im Überblick</h2>
+            <p className="mt-4 text-lg leading-relaxed text-gray-300">Kostenlos einsteigen, upgraden wenn Sie mehr Sichtbarkeit möchten.</p>
           </div>
 
           <div className="mx-auto mt-8 max-w-2xl rounded-2xl border border-orange-400/20 bg-orange-500/10 px-6 py-4 text-center">
-            <p className="font-bold text-white">Direktbuchung ist optional. Wenn Sie nur mit Anfragen arbeiten, fällt keine Provision an.</p>
+            <p className="font-bold text-white">Online-Buchung ist optional. Wer nur Anfragen empfängt, zahlt keine Gebühren.</p>
           </div>
 
           <div className="mt-10">
@@ -311,10 +303,7 @@ const TeacherHub = ({ setView, user, showNotification }) => {
                 } else {
                   label = 'Upgrade kaufen';
                 }
-
-                const btnClass = plan.buttonVariant === 'solid'
-                  ? colors.btnSolid
-                  : colors.btnOutline;
+                const btnClass = plan.buttonVariant === 'solid' ? colors.btnSolid : colors.btnOutline;
                 return (
                   <button
                     type="button"
@@ -335,7 +324,7 @@ const TeacherHub = ({ setView, user, showNotification }) => {
               </div>
               <div>
                 <p className="text-lg font-bold text-white">Unterstützung beim Onboarding</p>
-                <p className="mt-1 text-gray-300">Wenn Sie viele Kurse migrieren möchten, unterstützt KursNavi Sie beim Erfassen und Importieren Ihrer Angebote.</p>
+                <p className="mt-1 text-gray-300">Wenn Sie viele Kurse migrieren möchten, unterstützt KursNavi Sie beim Erfassen und Importieren.</p>
               </div>
             </div>
             <div className="mt-4 shrink-0 text-left md:mt-0 md:text-right">
@@ -353,7 +342,6 @@ const TeacherHub = ({ setView, user, showNotification }) => {
             <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary">Häufige Fragen</p>
             <h2 className="mt-4 text-4xl font-bold leading-tight text-dark">Noch Fragen?</h2>
           </div>
-
           <div className="mt-10 space-y-3">
             {faqItems.map((item) => (
               <FaqItem key={item.question} question={item.question} answer={item.answer} />
@@ -367,11 +355,10 @@ const TeacherHub = ({ setView, user, showNotification }) => {
         <div className="mx-auto max-w-6xl rounded-[2.75rem] bg-[linear-gradient(135deg,#171717_0%,#2b2730_55%,#55301b_100%)] px-8 py-12 text-white shadow-[0_24px_90px_rgba(18,18,18,0.22)] md:px-12 md:py-16">
           <div className="mx-auto max-w-2xl text-center">
             <p className="text-sm font-semibold uppercase tracking-[0.24em] text-orange-200">Jetzt starten</p>
-            <h2 className="mt-4 text-4xl font-bold leading-tight md:text-5xl">Starten Sie kostenlos mit Ihrem ersten Kurs.</h2>
+            <h2 className="mt-4 text-4xl font-bold leading-tight md:text-5xl">Starten Sie kostenlos.</h2>
             <p className="mt-5 text-lg leading-relaxed text-gray-300">
-              Beginnen Sie mit dem Anfrage-Modell und aktivieren Sie die Direktbuchung später nur dort, wo sie für Ihren Kurs wirklich sinnvoll ist.
+              Beginnen Sie mit Anfragen und schalten Sie die Online-Buchung später nur dort zu, wo sie wirklich sinnvoll ist.
             </p>
-
             <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
               <button type="button" onClick={handlePrimaryCta} className="inline-flex items-center justify-center rounded-full bg-primary px-8 py-4 text-lg font-bold text-white transition hover:bg-orange-600">
                 Anbieterkonto erstellen
@@ -392,7 +379,7 @@ const TeacherHub = ({ setView, user, showNotification }) => {
             '@type': 'WebPage',
             name: 'KursNavi - Für Anbieter',
             description:
-              'Landingpage für Kursanbieter: kostenlos starten, Anfragen ohne Provision erhalten und Direktbuchung optional aktivieren.',
+              'Landingpage für Kursanbieter: kostenlos starten, Anfragen ohne Gebühren erhalten und Online-Buchung optional aktivieren.',
             audience: {
               '@type': 'BusinessAudience',
               audienceType: 'Course Providers, Academies, Schools',
