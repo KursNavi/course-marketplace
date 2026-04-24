@@ -56,9 +56,9 @@ const accentMap = {
 };
 
 const upgradeBenefits = [
-  { icon: TrendingUp, title: 'Bessere Platzierung', text: 'Sie können ausgewählte Kurse als Prio-Kurse markieren. Diese erscheinen in Suche und Kategorien weiter oben als nicht priorisierte Kurse. Pro gibt Ihnen 5 Prio-Kurse, Premium 15, Enterprise unbegrenzt viele.' },
-  { icon: Search, title: 'Mehr Reichweite durch Kategorien', text: 'Im Basic-Paket erscheint jeder Kurs in nur einer Kategorie. Mit einem Upgrade können Sie jeden Kurs in bis zu 3 (Pro/Premium) oder 5 (Enterprise) Kategorien einordnen – und so deutlich mehr Interessenten erreichen.' },
-  { icon: Users, title: 'Mehr Einblicke', text: 'Bezahlte Pakete geben Ihnen Zugriff auf detaillierte Analysen: Welche Kurse werden wie oft aufgerufen? Welche Kategorien performen besser? Woher kommen Ihre Anfragen? Diese Daten helfen Ihnen, Ihr Angebot gezielt zu verbessern.' },
+  { icon: TrendingUp, title: 'Bessere Platzierung', text: 'Wichtige Kurse können Sie hervorheben – sie erscheinen dann in der Suche und in Kategorien weiter oben und werden schneller gefunden.' },
+  { icon: Search, title: 'Mehr Reichweite', text: 'Mit einem Upgrade erscheinen Ihre Kurse in mehreren Themenbereichen gleichzeitig – so finden Sie mehr Interessenten, die nach genau diesem Angebot suchen.' },
+  { icon: Users, title: 'Mehr Einblicke', text: 'Sie sehen, welche Kurse gut laufen, wie oft sie aufgerufen werden und wo sich eine Anpassung lohnen könnte.' },
 ];
 
 const faqItems = [
@@ -201,7 +201,27 @@ const TeacherHub = ({ setView, user, showNotification }) => {
         </div>
       </section>
 
-      {/* ── 2. Zwei Modelle ── */}
+      {/* ── 2. So funktioniert es ── */}
+      <section className="px-4 py-16 md:py-20">
+        <div className="mx-auto max-w-5xl">
+          <p className="text-center text-sm font-semibold uppercase tracking-[0.24em] text-primary">So funktioniert es</p>
+          <div className="mt-10 grid gap-px rounded-[2rem] overflow-hidden border border-gray-200 bg-gray-200 md:grid-cols-3">
+            {[
+              { n: '1', title: 'Kurs erstellen', text: 'Sie legen eine Kursseite an – mit Beschreibung, Bildern und Terminen.' },
+              { n: '2', title: 'Sichtbar werden', text: 'Ihr Kurs erscheint in Suche und Kategorien auf KursNavi.' },
+              { n: '3', title: 'Anfragen erhalten', text: 'Interessenten melden sich bei Ihnen – oder buchen direkt, wenn Sie das aktiviert haben.' },
+            ].map(({ n, title, text }) => (
+              <div key={n} className="bg-white px-8 py-8">
+                <span className="text-4xl font-bold text-gray-100">{n}</span>
+                <h3 className="mt-3 text-lg font-bold text-gray-900">{title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-gray-500">{text}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── 3. Zwei Modelle ── */}
       <section className="bg-[linear-gradient(180deg,#fffaf5_0%,#f5efe7_100%)] px-4 py-20 md:py-24">
         <div className="mx-auto max-w-5xl">
           <div className="text-center">
@@ -249,7 +269,7 @@ const TeacherHub = ({ setView, user, showNotification }) => {
             <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary">Upgrade</p>
             <h2 className="mt-4 text-4xl font-bold leading-tight text-dark md:text-5xl">Kostenlos starten, bei Bedarf mehr Sichtbarkeit nutzen</h2>
             <p className="mx-auto mt-5 max-w-2xl text-lg leading-relaxed text-gray-600">
-              Mit dem kostenlosen Einstieg können Sie Kurse aufschalten und Anfragen erhalten. Bezahlte Pakete lohnen sich für Anbieter, die mehr Reichweite, bessere Platzierungen und mehr Einblicke in die Performance ihrer Kurse möchten.
+              Mit dem kostenlosen Einstieg können Sie Kurse aufschalten und Anfragen erhalten. Ein Upgrade lohnt sich, wenn Sie mehr Sichtbarkeit, bessere Platzierungen oder mehr Einblicke in Ihre Kurse möchten.
             </p>
           </div>
 
