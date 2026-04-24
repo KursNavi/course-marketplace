@@ -8,7 +8,6 @@ import {
   Image as ImageIcon,
   MessageSquare,
   Search,
-  ShieldCheck,
   TrendingUp,
   Users,
 } from 'lucide-react';
@@ -60,7 +59,7 @@ const courseModels = [
     accent: 'emerald',
     description: 'Interessenten senden Ihnen eine Anfrage. Sie beantworten diese direkt und schliessen die Buchung selbst mit dem Teilnehmer ab.',
     features: [
-      'Keine Provision',
+      'Keine Provision – Anfragen sind immer kostenlos',
       'Volle Kontrolle über den Ablauf',
       'Ideal für individuelle Beratung oder mehrere Rückfragen',
     ],
@@ -304,17 +303,6 @@ const TeacherHub = ({ setView, user, showNotification }) => {
             })}
           </div>
 
-          <div className="mt-8 rounded-[2rem] border border-gray-200 bg-white p-6 shadow-sm md:p-8">
-            <div className="flex items-start gap-4">
-              <div className="rounded-2xl bg-orange-50 p-3 text-primary">
-                <ShieldCheck className="h-6 w-6" />
-              </div>
-              <div>
-                <p className="text-xl font-bold text-gray-900">Anfragen sind kostenlos.</p>
-                <p className="mt-2 leading-relaxed text-gray-600">Eine Provision fällt nur bei einer erfolgreichen Direktbuchung über KursNavi an. Wer nur das Anfrage-Modell nutzt, zahlt keine Provision.</p>
-              </div>
-            </div>
-          </div>
         </div>
       </section>
 
