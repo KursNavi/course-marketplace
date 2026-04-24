@@ -5,7 +5,6 @@ import {
   ChevronDown,
   ClipboardList,
   CreditCard,
-  Image as ImageIcon,
   MessageSquare,
   Search,
   TrendingUp,
@@ -20,35 +19,6 @@ const heroBullets = [
   'Direktbuchung optional pro Kurs',
 ];
 
-const howItWorksSteps = [
-  {
-    number: '01',
-    title: 'Kurs erfassen',
-    description: 'Erstellen Sie Ihre Kursseite mit Beschreibung, Bildern, Terminen und allen wichtigen Informationen.',
-    icon: ImageIcon,
-    accent: 'bg-orange-50 text-primary',
-    tags: ['Bilder', 'Beschreibung', 'Termine'],
-    tagColor: 'bg-orange-50 text-primary',
-  },
-  {
-    number: '02',
-    title: 'Gefunden werden',
-    description: 'Ihre Kurse erscheinen in Suche, Kategorien und passenden Themenbereichen auf KursNavi.',
-    icon: Search,
-    accent: 'bg-blue-50 text-sky-700',
-    tags: ['Suche', 'Kategorien', 'Themenbereiche'],
-    tagColor: 'bg-blue-50 text-sky-700',
-  },
-  {
-    number: '03',
-    title: 'Teilnehmer gewinnen',
-    description: 'Interessenten senden Ihnen eine Anfrage oder buchen direkt online, wenn Sie die Direktbuchung aktiviert haben.',
-    icon: Users,
-    accent: 'bg-emerald-50 text-emerald-700',
-    tags: ['Anfragen', 'Direktbuchung', 'Mehr Teilnehmer'],
-    tagColor: 'bg-emerald-50 text-emerald-700',
-  },
-];
 
 const courseModels = [
   {
@@ -231,41 +201,7 @@ const TeacherHub = ({ setView, user, showNotification }) => {
         </div>
       </section>
 
-      {/* ── 2. So funktioniert es ── */}
-      <section className="relative px-4 py-20 md:py-24">
-        <div className="mx-auto max-w-5xl">
-          <div className="text-center">
-            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary">So funktioniert KursNavi</p>
-            <h2 className="mt-4 text-4xl font-bold leading-tight text-dark md:text-5xl">So gewinnen Sie Teilnehmer über KursNavi</h2>
-            <p className="mx-auto mt-5 max-w-2xl text-lg leading-relaxed text-gray-600">
-              Der Einstieg ist einfach: Sie erfassen Ihre Kurse, werden auf KursNavi sichtbar und erhalten Anfragen oder Direktbuchungen.
-            </p>
-          </div>
-
-          <div className="mt-12 grid gap-6 md:grid-cols-3">
-            {howItWorksSteps.map((step) => {
-              const Icon = step.icon;
-              return (
-                <div key={step.number} className="rounded-[2rem] border border-gray-200 bg-white p-7 shadow-[0_12px_40px_rgba(34,34,34,0.06)]">
-                  <p className="text-sm font-semibold uppercase tracking-[0.22em] text-gray-400">{step.number}</p>
-                  <div className={`mt-5 inline-flex rounded-2xl p-3 ${step.accent}`}>
-                    <Icon className="h-6 w-6" />
-                  </div>
-                  <h3 className="mt-4 text-2xl font-bold text-gray-900">{step.title}</h3>
-                  <p className="mt-3 leading-relaxed text-gray-600">{step.description}</p>
-                  <div className="mt-5 flex flex-wrap gap-2">
-                    {step.tags.map((tag) => (
-                      <span key={tag} className={`rounded-full px-3 py-1 text-sm font-medium ${step.tagColor}`}>{tag}</span>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* ── 3. Zwei Modelle ── */}
+      {/* ── 2. Zwei Modelle ── */}
       <section className="bg-[linear-gradient(180deg,#fffaf5_0%,#f5efe7_100%)] px-4 py-20 md:py-24">
         <div className="mx-auto max-w-5xl">
           <div className="text-center">
