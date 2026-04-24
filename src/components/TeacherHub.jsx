@@ -164,8 +164,8 @@ const TeacherHub = ({ setView, user, showNotification }) => {
               Jetzt kostenlos starten
               <ArrowRight className="ml-2 h-5 w-5" />
             </button>
-            <button type="button" onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })} className="inline-flex items-center justify-center rounded-full border border-white/20 px-8 py-4 text-lg font-bold text-white transition hover:border-white hover:bg-white/[0.06]">
-              Preise ansehen
+            <button type="button" onClick={handleContactCta} className="inline-flex items-center justify-center rounded-full border border-white/20 px-8 py-4 text-lg font-bold text-white transition hover:border-white hover:bg-white/[0.06]">
+              Fragen? Kontakt aufnehmen
             </button>
           </div>
 
