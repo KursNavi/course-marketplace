@@ -41,7 +41,7 @@ export const PLANS = [
     lift: true,
     buttonVariant: "solid",
     ctaLabel: "Pro wählen",
-    savingsNote: "3% weniger Kommission als Basic",
+    savingsNote: "3% weniger Gebühr als Basic",
 
     // --- Machine-readable Paketlogik (v3.1) ---
     priceAnnualCHF: 290,
@@ -58,7 +58,7 @@ export const PLANS = [
       { text: "Unbegrenzte Kurse" },
       { text: "5 Kurse hervorheben", isStrong: true, description: "Wählen Sie 5 Kurse aus, die in Suche und Kategorien weiter oben angezeigt werden." },
       { text: "Bis 3 Themenbereiche pro Kurs", separator: true, description: "Pro Kurs können Sie bis zu 3 Themenbereiche wählen. So erscheint derselbe Kurs z.B. unter «Sport», «Fitness» und «Gesundheit» – und wird von mehr Interessenten gefunden." },
-      { text: "12% Gebühr bei Online-Buchung", description: "3% weniger als im Basic-Paket. Gilt nur bei aktivierter Direktbuchung – Anfragen bleiben provisionsfrei." },
+      { text: "12% Gebühr bei Online-Buchung", description: "3% weniger als im Basic-Paket. Gilt nur bei aktivierter Online-Buchung – Anfragen sind immer kostenlos." },
       { text: "Erweiterte Kursstatistiken", isStrong: true, description: "Aufrufe, Anfragen und Einblicke nach Kurs und Themenbereich." },
     ],
   },
@@ -73,7 +73,7 @@ export const PLANS = [
     lift: false,
     buttonVariant: "outline",
     ctaLabel: "Premium wählen",
-    savingsNote: "5% weniger Kommission + 5 Erfassungsservices",
+    savingsNote: "5% weniger Gebühr + 5 Erfassungsservices",
 
     // --- Machine-readable Paketlogik (v3.1) ---
     priceAnnualCHF: 690,
@@ -90,7 +90,7 @@ export const PLANS = [
       { text: "Unbegrenzte Kurse" },
       { text: "15 Kurse hervorheben", isStrong: true, description: "Wählen Sie 15 Kurse aus, die in Suche und Kategorien weiter oben angezeigt werden." },
       { text: "Bis 3 Themenbereiche pro Kurs", separator: true, description: "Pro Kurs können Sie bis zu 3 Themenbereiche wählen. So erscheint derselbe Kurs z.B. unter «Sport», «Fitness» und «Gesundheit» – und wird von mehr Interessenten gefunden." },
-      { text: "10% Gebühr bei Online-Buchung", description: "5% weniger als im Basic-Paket. Gilt nur bei aktivierter Direktbuchung – Anfragen bleiben provisionsfrei." },
+      { text: "10% Gebühr bei Online-Buchung", description: "5% weniger als im Basic-Paket. Gilt nur bei aktivierter Online-Buchung – Anfragen sind immer kostenlos." },
       { text: "5 Kursseiten-Erstellungen inklusive", isStrong: true, separator: true, description: "Wir erstellen professionelle Kursseiten für Sie." },
       { text: "Vollständige Kursstatistiken", isStrong: true, description: "Aufrufe, Anfragen, Themenbereiche und Buchungsverläufe im Überblick." },
     ],
@@ -106,7 +106,7 @@ export const PLANS = [
     lift: false,
     buttonVariant: "outline",
     ctaLabel: "Kontaktieren",
-    savingsNote: "Tiefste Kommission + alle Kurse priorisiert",
+    savingsNote: "Tiefste Gebühr + alle Kurse hervorgehoben",
 
     // --- Machine-readable Paketlogik (v3.1) ---
     priceAnnualCHF: 1490,
@@ -123,7 +123,7 @@ export const PLANS = [
       { text: "Unbegrenzte Kurse" },
       { text: "Alle Kurse hervorheben", isStrong: true, description: "Alle Ihre Kurse erscheinen in Suche und Kategorien weiter oben – ohne Limit." },
       { text: "Bis 5 Themenbereiche pro Kurs", separator: true, description: "Pro Kurs bis zu 5 Themenbereiche – maximale Sichtbarkeit. Ein Kurs kann z.B. unter «Sport», «Fitness», «Gesundheit», «Ernährung» und «Coaching» erscheinen." },
-      { text: "8% Gebühr bei Online-Buchung", description: "Tiefste verfügbare Provision. Gilt nur bei aktivierter Direktbuchung – Anfragen bleiben provisionsfrei." },
+      { text: "8% Gebühr bei Online-Buchung", description: "Tiefste verfügbare Gebühr. Gilt nur bei aktivierter Online-Buchung – Anfragen sind immer kostenlos." },
       { text: "15 Kursseiten-Erstellungen inklusive", isStrong: true, separator: true, description: "Wir erstellen professionelle Kursseiten für Sie." },
       { text: "Vollständige Kursstatistiken", isStrong: true, description: "Aufrufe, Anfragen, Themenbereiche und Buchungsverläufe im Überblick." },
     ],

@@ -91,7 +91,7 @@ const FaqItem = ({ question, answer }) => {
   );
 };
 
-const TeacherHub = ({ setView, user, showNotification }) => {
+const TeacherHub = ({ user, showNotification }) => {
   useEffect(() => {
     document.title = 'Kurse anbieten auf KursNavi | Für Anbieter in der Schweiz';
 
