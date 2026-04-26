@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { ArrowRight, Clock, MapPin, Info } from 'lucide-react';
+import { ArrowRight, Clock, MapPin } from 'lucide-react';
 import {
   SIMPLE_TOPIC_CONTENT,
   SEGMENT_LANDING_CONFIG,
@@ -8,22 +8,34 @@ import {
   segmentToDbType,
 } from '../lib/segmentLandingConfig';
 import { SEGMENT_CONFIG } from '../lib/constants';
-import { BASE_URL } from '../lib/siteConfig';
+import { BASE_URL, buildCoursePath } from '../lib/siteConfig';
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-/** Filter publishedCourses to those belonging to this segment's DB type */
-function filterCoursesBySegment(courses, dbType) {
+/**
+ * Filter courses by segment DB type AND topic keywords.
+ * A course must match the segment AND have at least one keyword in its title.
+ * If no keywords are defined, all segment courses are returned.
+ */
+function filterCoursesByTopic(courses, dbType, keywords) {
   if (!courses?.length || !dbType) return [];
-  return courses.filter((c) => {
-    if (c.category_type === dbType) return true;
-    if (Array.isArray(c.all_categories)) {
-      return c.all_categories.some((cat) => cat && cat.category_type === dbType);
-    }
-    return false;
+
+  const filtered = courses.filter((c) => {
+    const matchesSegment =
+      c.category_type === dbType ||
+      (Array.isArray(c.all_categories) &&
+        c.all_categories.some((cat) => cat && cat.category_type === dbType));
+    if (!matchesSegment) return false;
+
+    if (!keywords?.length) return true;
+
+    const title = (c.title || '').toLowerCase();
+    return keywords.some((kw) => title.includes(kw.toLowerCase()));
   });
+
+  return filtered;
 }
 
 /** Format price CHF */
@@ -37,18 +49,28 @@ function formatChf(price) {
 // Sub-components
 // ---------------------------------------------------------------------------
 
-function TopicHero({ title, subtitle, bgGradient, segCfg }) {
+function TopicHero({ title, subtitle, heroImage, segCfg }) {
   const gradient = segCfg?.gradient || 'from-blue-600/70 to-blue-900/90';
 
   return (
-    <div className={`relative bg-gradient-to-br ${gradient} overflow-hidden`} style={{ minHeight: '360px' }}>
-      <div className="absolute inset-0 opacity-10">
-        <div className="w-full h-full" style={{
-          backgroundImage: 'radial-gradient(circle at 20% 50%, white 1px, transparent 1px), radial-gradient(circle at 80% 20%, white 1px, transparent 1px)',
-          backgroundSize: '60px 60px'
-        }} />
-      </div>
-      <div className="relative z-10 max-w-4xl mx-auto px-4 py-20 text-white flex flex-col justify-center" style={{ minHeight: '360px' }}>
+    <div className="relative overflow-hidden" style={{ minHeight: '360px' }}>
+      {heroImage && (
+        <img
+          src={heroImage}
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover"
+          onError={(e) => { e.target.style.display = 'none'; }}
+        />
+      )}
+      <div
+        className={`absolute inset-0 ${heroImage
+          ? 'bg-gradient-to-b from-black/55 via-black/40 to-black/65'
+          : `bg-gradient-to-br ${gradient}`}`}
+      />
+      <div
+        className="relative z-10 max-w-4xl mx-auto px-4 py-20 text-white flex flex-col justify-center"
+        style={{ minHeight: '360px' }}
+      >
         <p className="text-xs font-bold tracking-widest uppercase mb-4 opacity-70">
           KursNavi · Thema
         </p>
@@ -63,10 +85,7 @@ function TopicHero({ title, subtitle, bgGradient, segCfg }) {
   );
 }
 
-function IntroSection({ intro, segCfg }) {
-  const borderColor = segCfg?.borderLight || 'border-blue-200';
-  const bgLight = segCfg?.bgLight || 'bg-blue-50';
-
+function IntroSection({ intro }) {
   return (
     <section className="max-w-4xl mx-auto px-4 py-10">
       <p className="text-gray-600 text-lg leading-relaxed">{intro}</p>
@@ -76,19 +95,15 @@ function IntroSection({ intro, segCfg }) {
 
 function OrientationPoints({ points, segCfg }) {
   const bgLight = segCfg?.bgLight || 'bg-blue-50';
-  const text = segCfg?.text || 'text-blue-600';
   const borderLight = segCfg?.borderLight || 'border-blue-200';
 
   return (
     <section className="max-w-7xl mx-auto px-4 pb-12">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         {points.map((p, i) => (
-          <div
-            key={i}
-            className={`${bgLight} border ${borderLight} rounded-2xl p-6`}
-          >
+          <div key={i} className={`${bgLight} border ${borderLight} rounded-2xl p-6`}>
             <div className="text-3xl mb-3">{p.icon}</div>
-            <h3 className={`font-bold text-dark text-base mb-2`}>{p.title}</h3>
+            <h3 className="font-bold text-dark text-base mb-2">{p.title}</h3>
             <p className="text-sm text-gray-500 leading-relaxed">{p.text}</p>
           </div>
         ))}
@@ -105,9 +120,8 @@ function CourseCard({ course, onClickCourse }) {
   return (
     <button
       onClick={() => onClickCourse(course)}
-      className="group text-left bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 overflow-hidden cursor-pointer"
+      className="group text-left bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 overflow-hidden cursor-pointer w-full"
     >
-      {/* Image */}
       <div className="relative h-40 bg-gray-100 overflow-hidden">
         {course.image_url ? (
           <img
@@ -128,8 +142,6 @@ function CourseCard({ course, onClickCourse }) {
           </span>
         )}
       </div>
-
-      {/* Content */}
       <div className="p-4">
         <h3 className="font-bold text-dark text-sm leading-snug mb-2 line-clamp-2 group-hover:text-primary transition-colors">
           {course.title}
@@ -162,7 +174,6 @@ function CoursesPreviewSection({ courses, onClickCourse, segCfg }) {
         <span className={`text-xs font-bold tracking-widest uppercase ${accentText}`}>Kursangebote</span>
       </div>
       <h2 className="text-2xl font-heading font-bold text-dark mb-6">Passende Kurse in diesem Bereich</h2>
-
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
         {courses.slice(0, 6).map((course) => (
           <CourseCard key={course.id} course={course} onClickCourse={onClickCourse} />
@@ -172,22 +183,10 @@ function CoursesPreviewSection({ courses, onClickCourse, segCfg }) {
   );
 }
 
-function ComingSoonHint({ hintText }) {
-  return (
-    <section className="max-w-4xl mx-auto px-4 py-6">
-      <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl p-4">
-        <Info className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-        <p className="text-sm text-amber-700 leading-relaxed">
-          {hintText || 'Weitere Inhalte und Ratgeber zu diesem Thema folgen in Kürze.'}
-        </p>
-      </div>
-    </section>
-  );
-}
-
 function CTASection({ setView, setSearchType, dbType }) {
   const handleGoToSearch = () => {
-    if (setSearchType) setSearchType(dbType === 'professionell' ? 'beruflich' : dbType);
+    const searchTypeParam = dbType === 'professionell' ? 'beruflich' : dbType;
+    if (setSearchType) setSearchType(searchTypeParam);
     window.history.pushState({}, '', '/search');
     setView('search');
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -211,12 +210,11 @@ function CTASection({ setView, setSearchType, dbType }) {
   );
 }
 
-function BackButton({ segment, setView }) {
-  // Map URL segment to view key and path
+function BackButton({ segment, setView, setSearchType }) {
   const segmentMap = {
-    'beruflich': { view: 'landing-prof', path: '/professional', label: 'Beruflich' },
-    'privat-hobby': { view: 'landing-private', path: '/private', label: 'Privat & Hobby' },
-    'kinder-jugend': { view: 'landing-kids', path: '/children', label: 'Kinder & Jugend' },
+    'beruflich': { searchType: 'beruflich', path: '/search?type=beruflich', label: 'Beruflich' },
+    'privat-hobby': { searchType: 'privat_hobby', path: '/search?type=privat_hobby', label: 'Privat & Hobby' },
+    'kinder-jugend': { searchType: 'kinder_jugend', path: '/search?type=kinder_jugend', label: 'Kinder & Jugend' },
   };
   const target = segmentMap[segment] || segmentMap['beruflich'];
 
@@ -224,8 +222,9 @@ function BackButton({ segment, setView }) {
     <div className="max-w-4xl mx-auto px-4 pt-6">
       <button
         onClick={() => {
+          if (setSearchType) setSearchType(target.searchType);
           window.history.pushState({}, '', target.path);
-          setView(target.view);
+          setView('search');
           window.scrollTo({ top: 0, behavior: 'smooth' });
         }}
         className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-primary transition-colors"
@@ -242,14 +241,14 @@ function BackButton({ segment, setView }) {
 // ---------------------------------------------------------------------------
 
 export default function SimpleTopicLandingPage({
-  segment,       // URL segment: 'beruflich' | 'privat-hobby' | 'kinder-jugend'
-  slug,          // URL slug: e.g. 'it-digital'
-  courses,       // all publishedCourses from App
+  segment,          // URL segment: 'beruflich' | 'privat-hobby' | 'kinder-jugend'
+  slug,             // URL slug: e.g. 'it-digital'
+  courses,          // all publishedCourses from App
   lang = 'de',
   setView,
   setSearchType,
+  setSelectedCourse,
 }) {
-  // Build lookup key - normalise dashes in segment for key lookup
   const contentKey = `${segment}/${slug}`;
   const content = SIMPLE_TOPIC_CONTENT[contentKey];
 
@@ -257,8 +256,16 @@ export default function SimpleTopicLandingPage({
   const segCfg = SEGMENT_CONFIG[segCfgKey];
   const dbType = segmentToDbType(segment);
 
-  // Filter courses for this segment
-  const segmentCourses = filterCoursesBySegment(courses, dbType);
+  // Find the matching thema image from SEGMENT_LANDING_CONFIG
+  const segLandingKey = resolveSegmentKey(segment);
+  const segLanding = SEGMENT_LANDING_CONFIG[segLandingKey];
+  const themaConfig =
+    segLanding?.themen?.find((t) => t.slug === slug) ||
+    segLanding?.kursarten?.find((k) => k.slug === slug);
+  const heroImage = themaConfig?.image || null;
+
+  // Filter courses for this specific topic using keywords
+  const topicCourses = filterCoursesByTopic(courses, dbType, content?.searchKeywords);
 
   // SEO
   useEffect(() => {
@@ -282,13 +289,13 @@ export default function SimpleTopicLandingPage({
     canonicalTag.href = `${BASE_URL}/thema/${segment}/${slug}`;
   }, [content, segment, slug]);
 
-  // Click a course card → navigate to detail
+  // Click a course card → navigate to detail view
   const handleCourseClick = (course) => {
-    if (course?.slug && course.topic_slug && course.location_slug) {
-      window.history.pushState({}, '', `/courses/${course.topic_slug}/${course.location_slug}/${course.slug}`);
-    }
-    // App listens to popstate/locationchange to update selectedCourse — we fire locationchange
-    window.dispatchEvent(new Event('locationchange'));
+    const path = buildCoursePath(course);
+    window.history.pushState({}, '', path);
+    if (setSelectedCourse) setSelectedCourse(course);
+    setView('detail');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   if (!content) {
@@ -309,33 +316,36 @@ export default function SimpleTopicLandingPage({
 
   return (
     <div className="min-h-screen bg-beige font-sans">
-      <BackButton segment={segment} setView={setView} />
+      <BackButton segment={segment} setView={setView} setSearchType={setSearchType} />
 
       <TopicHero
         title={content.title}
         subtitle={content.subtitle}
+        heroImage={heroImage}
         segCfg={segCfg}
       />
 
-      <IntroSection intro={content.intro} segCfg={segCfg} />
+      <IntroSection intro={content.intro} />
 
       {content.points?.length > 0 && (
         <OrientationPoints points={content.points} segCfg={segCfg} />
       )}
 
       <CoursesPreviewSection
-        courses={segmentCourses}
+        courses={topicCourses}
         onClickCourse={handleCourseClick}
         segCfg={segCfg}
       />
 
-      <ComingSoonHint hintText={content.hintText} />
+      {content.hintText && (
+        <section className="max-w-4xl mx-auto px-4 py-6">
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+            <p className="text-sm text-amber-700 leading-relaxed">{content.hintText}</p>
+          </div>
+        </section>
+      )}
 
-      <CTASection
-        setView={setView}
-        setSearchType={setSearchType}
-        dbType={dbType}
-      />
+      <CTASection setView={setView} setSearchType={setSearchType} dbType={dbType} />
     </div>
   );
 }

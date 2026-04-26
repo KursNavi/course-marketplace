@@ -229,6 +229,7 @@ export const SIMPLE_TOPIC_CONTENT = {
       { icon: '📈', title: 'Lohn- und Karriereschub', text: 'Ein anerkannter Abschluss öffnet Türen für bessere Positionen und höhere Löhne.' },
     ],
     searchType: 'beruflich',
+    searchKeywords: ['diplom', 'lehrgang', 'fachausweis', 'abschluss', 'zertifikat', 'eidg', 'ifa', 'höhere fachschule'],
     hintText: 'Weitere Ratgeber und Vergleiche zu Diplomen und Lehrgängen folgen in Kürze.',
   },
   'beruflich/fachkurse-skill-updates': {
@@ -243,6 +244,7 @@ export const SIMPLE_TOPIC_CONTENT = {
       { icon: '🌐', title: 'Online & Präsenz', text: 'Viele Angebote gibt es auch online – flexibel und ortsunabhängig.' },
     ],
     searchType: 'beruflich',
+    searchKeywords: ['fachkurs', 'seminar', 'weiterbildung', 'skill', 'update', 'kompetenz', 'praxiskurs'],
     hintText: 'Mehr Tipps zur Auswahl des richtigen Fachkurses folgen in Kürze.',
   },
   'beruflich/quereinstieg-neuorientierung': {
@@ -257,6 +259,7 @@ export const SIMPLE_TOPIC_CONTENT = {
       { icon: '💬', title: 'Beratung nutzen', text: 'Gute Kursanbieter beraten dich, welcher Weg für deine Situation am besten passt.' },
     ],
     searchType: 'beruflich',
+    searchKeywords: ['quereinstieg', 'neuorientierung', 'umschulung', 'berufswechsel', 'einstieg', 'neustart'],
     hintText: 'Ausführliche Ratgeber zum Thema Quereinstieg und Berufswechsel folgen in Kürze.',
   },
   'beruflich/it-digital': {
@@ -271,6 +274,7 @@ export const SIMPLE_TOPIC_CONTENT = {
       { icon: '🔐', title: 'Cybersecurity', text: 'IT-Sicherheit ist eines der am stärksten wachsenden Berufsfelder der Schweiz.' },
     ],
     searchType: 'beruflich',
+    searchKeywords: ['it', 'digital', 'coding', 'python', 'java', 'web', 'cloud', 'software', 'daten', 'informatik', 'computer', 'programmier', 'cybersecurity', 'ki', 'künstliche intelligenz'],
     hintText: 'Detaillierte Ratgeber und Vergleiche zu IT-Ausbildungen folgen in Kürze.',
   },
   'beruflich/fuehrung-management': {
@@ -285,6 +289,7 @@ export const SIMPLE_TOPIC_CONTENT = {
       { icon: '📣', title: 'Kommunikation & Verhandlung', text: 'Wirkungsvoll kommunizieren, überzeugend präsentieren und erfolgreich verhandeln.' },
     ],
     searchType: 'beruflich',
+    searchKeywords: ['führung', 'management', 'leadership', 'projekt', 'chef', 'kader', 'hr', 'personal', 'strategie', 'agile', 'scrum', 'cas'],
     hintText: 'Ratgeber zu Führungsausbildungen und Management-Zertifizierungen folgen in Kürze.',
   },
   'beruflich/kommunikation-sprachen': {
@@ -299,6 +304,7 @@ export const SIMPLE_TOPIC_CONTENT = {
       { icon: '🌏', title: 'Interkulturelle Kompetenz', text: 'Erfolgreich mit Menschen aus verschiedenen Kulturen zusammenarbeiten.' },
     ],
     searchType: 'beruflich',
+    searchKeywords: ['kommunikation', 'sprache', 'englisch', 'französisch', 'rhetorik', 'präsentation', 'sprachkurs', 'interkulturell', 'schreiben', 'vortrag'],
     hintText: 'Mehr Inhalte zu Sprachkursen und Kommunikationstraining folgen in Kürze.',
   },
 
@@ -315,6 +321,7 @@ export const SIMPLE_TOPIC_CONTENT = {
       { icon: '🌟', title: 'Einfach anfangen', text: 'Kein Vorwissen nötig – Workshops sind offen für alle Stufen.' },
     ],
     searchType: 'privat',
+    searchKeywords: ['workshop', 'halbtag', 'tagesworkshop', 'schnuppern', 'erleben', 'einmalig'],
     hintText: 'Mehr Workshop-Empfehlungen und Ratgeber folgen in Kürze.',
   },
   'privat-hobby/einsteigerkurse': {
@@ -329,6 +336,7 @@ export const SIMPLE_TOPIC_CONTENT = {
       { icon: '💡', title: 'Einfach ausprobieren', text: 'Kurse für Einsteiger sind oft kurzfristig buchbar – ideal zum Kennenlernen.' },
     ],
     searchType: 'privat',
+    searchKeywords: ['einsteiger', 'anfänger', 'beginner', 'grundkurs', 'erstmals', 'keine vorkenntnisse'],
     hintText: 'Weitere Empfehlungen für Einsteigerkurse folgen in Kürze.',
   },
   'privat-hobby/regelmaessige-kurse': {
@@ -343,6 +351,7 @@ export const SIMPLE_TOPIC_CONTENT = {
       { icon: '💪', title: 'Routine aufbauen', text: 'Ein fester Kurs im Wochenplan hilft, gesunde Gewohnheiten zu etablieren.' },
     ],
     searchType: 'privat',
+    searchKeywords: ['regelmässig', 'wöchentlich', 'monatlich', 'kursgruppe', 'dauerkurs', 'semester'],
     hintText: 'Mehr Tipps zur Auswahl regelmässiger Kurse folgen in Kürze.',
   },
   'privat-hobby/yoga-achtsamkeit': {
@@ -357,6 +366,7 @@ export const SIMPLE_TOPIC_CONTENT = {
       { icon: '💆', title: 'Für alle Level', text: 'Ob Anfänger oder Fortgeschrittener – es gibt passende Kurse für jede Stufe.' },
     ],
     searchType: 'privat',
+    searchKeywords: ['yoga', 'achtsamkeit', 'meditation', 'hatha', 'vinyasa', 'yin', 'mbsr', 'entspannung', 'pilates', 'mindfulness'],
     hintText: 'Ausführliche Yoga-Ratgeber und Kursvergleiche folgen in Kürze.',
   },
   'privat-hobby/musik': {
@@ -371,6 +381,7 @@ export const SIMPLE_TOPIC_CONTENT = {
       { icon: '🎹', title: 'Für Erwachsene', text: 'Es ist nie zu spät, ein Instrument zu lernen – speziell für Erwachsene gestaltete Kurse machen es möglich.' },
     ],
     searchType: 'privat',
+    searchKeywords: ['musik', 'gitarre', 'klavier', 'gesang', 'geige', 'schlagzeug', 'instrument', 'chor', 'piano', 'flöte', 'singen'],
     hintText: 'Mehr Musik-Ratgeber und Instrumentenguides folgen in Kürze.',
   },
   'privat-hobby/kochen-genuss': {
@@ -385,6 +396,7 @@ export const SIMPLE_TOPIC_CONTENT = {
       { icon: '🌍', title: 'Internationale Küchen', text: 'Japanisch, Indisch, Mexikanisch – entdecke die Welt auf dem Teller.' },
     ],
     searchType: 'privat',
+    searchKeywords: ['kochen', 'backen', 'küche', 'kochkurs', 'patisserie', 'wein', 'kulinar', 'gastro', 'rezept'],
     hintText: 'Kochkurs-Empfehlungen und Rezept-Tipps folgen in Kürze.',
   },
   'privat-hobby/kunst-kreativitaet': {
@@ -399,6 +411,7 @@ export const SIMPLE_TOPIC_CONTENT = {
       { icon: '✂️', title: 'Nähen, Stricken & mehr', text: 'Textile Kreativität verbindet Handwerk, Ästhetik und Entspannung.' },
     ],
     searchType: 'privat',
+    searchKeywords: ['malen', 'zeichnen', 'kunst', 'kreativ', 'töpfern', 'keramik', 'fotografie', 'nähen', 'stricken', 'aquarell', 'acryl'],
     hintText: 'Ausführliche Kreativ-Ratgeber und Kursempfehlungen folgen in Kürze.',
   },
 
@@ -415,6 +428,7 @@ export const SIMPLE_TOPIC_CONTENT = {
       { icon: '💻', title: 'Online möglich', text: 'Online-Nachhilfe ist flexibel und wird von vielen Anbietern angeboten.' },
     ],
     searchType: 'kinder',
+    searchKeywords: ['nachhilfe', 'prüfung', 'matura', 'mathe', 'mathematik', 'deutsch', 'englisch', 'schule', 'lernen', 'aufnahmeprüfung'],
     hintText: 'Mehr Ratgeber zur Schulförderung und Prüfungsvorbereitung folgen in Kürze.',
   },
   'kinder-jugend/ferienkurse-camps': {
@@ -429,6 +443,7 @@ export const SIMPLE_TOPIC_CONTENT = {
       { icon: '🗓️', title: 'Flexibel buchbar', text: 'Viele Angebote lassen sich kurzfristig und für verschiedene Ferienwochen buchen.' },
     ],
     searchType: 'kinder',
+    searchKeywords: ['ferien', 'camp', 'ferienkurs', 'schulferien', 'sommercamp', 'abenteuer', 'ferienbetreuung'],
     hintText: 'Empfehlungen für Ferienkurse und Camps in der Schweiz folgen in Kürze.',
   },
   'kinder-jugend/freizeitkurse': {
@@ -443,6 +458,7 @@ export const SIMPLE_TOPIC_CONTENT = {
       { icon: '🏡', title: 'In der Nähe', text: 'Viele Anbieter sind lokal tätig – ideal für Kurse nach der Schule.' },
     ],
     searchType: 'kinder',
+    searchKeywords: ['freizeit', 'kinder', 'jugend', 'nachmittag', 'hobby', 'aktivität', 'freizeitkurs'],
     hintText: 'Mehr Tipps für Freizeitkurse und Aktivitäten für Kinder folgen in Kürze.',
   },
   'kinder-jugend/nachhilfe': {
@@ -457,6 +473,7 @@ export const SIMPLE_TOPIC_CONTENT = {
       { icon: '👩‍🏫', title: 'Qualifizierte Lehrende', text: 'Ausgebildete Lehrerinnen und Lehrer oder erfahrene Studierende als Tutoren.' },
     ],
     searchType: 'kinder',
+    searchKeywords: ['nachhilfe', 'mathe', 'mathematik', 'deutsch', 'naturwissenschaft', 'biologie', 'chemie', 'physik', 'lernen', 'tutor'],
     hintText: 'Ratgeber zur Auswahl des richtigen Nachhilfeangebots folgen in Kürze.',
   },
   'kinder-jugend/musik-kinder': {
@@ -471,6 +488,7 @@ export const SIMPLE_TOPIC_CONTENT = {
       { icon: '🎤', title: 'Chor & Ensemble', text: 'Gemeinsam musizieren macht Spass und fördert Teamgeist und Zusammenhalt.' },
     ],
     searchType: 'kinder',
+    searchKeywords: ['musik', 'instrument', 'klavier', 'gitarre', 'flöte', 'schlagzeug', 'rhythmik', 'singen', 'chor', 'früherziehung', 'musikschule'],
     hintText: 'Musikschul-Vergleiche und Tipps zur Instrumentenwahl folgen in Kürze.',
   },
   'kinder-jugend/sport-bewegung': {
@@ -485,6 +503,7 @@ export const SIMPLE_TOPIC_CONTENT = {
       { icon: '🏊', title: 'Schwimmen', text: 'Schwimmkurse sind für alle Kinder eine wichtige und sicherheitsrelevante Grundlage.' },
     ],
     searchType: 'kinder',
+    searchKeywords: ['sport', 'fussball', 'turnen', 'schwimmen', 'kampfsport', 'judo', 'karate', 'basketball', 'volleyball', 'akrobatik', 'bewegung'],
     hintText: 'Sportkurs-Empfehlungen nach Altersgruppe folgen in Kürze.',
   },
   'kinder-jugend/mint-technik': {
@@ -499,6 +518,7 @@ export const SIMPLE_TOPIC_CONTENT = {
       { icon: '🌱', title: 'Für alle Geschlechter', text: 'Gute MINT-Kurse sind explizit inklusiv und fördern alle Kinder gleichermassen.' },
     ],
     searchType: 'kinder',
+    searchKeywords: ['mint', 'coding', 'robotik', 'informatik', 'programmieren', 'roboter', 'naturwissenschaft', 'technik', 'scratch', 'python', 'lego'],
     hintText: 'Mehr MINT-Kurs-Empfehlungen und Ratgeber für Eltern folgen in Kürze.',
   },
 };

@@ -1992,6 +1992,7 @@ useEffect(() => {
           lang={lang}
           setView={setView}
           setSearchType={setSearchType}
+          setSelectedCourse={setSelectedCourse}
         />
       )}
       {view === 'bereich-szenario' && (
