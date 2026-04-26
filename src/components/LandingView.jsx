@@ -100,53 +100,67 @@ function SegmentHero({ title, subtitle, bgImage, searchQuery, setSearchQuery, ha
   );
 }
 
-function AllTopicsSection({ kursarten, themen, setView, segCfg }) {
-  const accentText = segCfg?.text || 'text-blue-600';
-  // Themen (image tiles with potential Themenwelt badge) first, then Kursarten
-  const allTiles = [...themen, ...kursarten];
+function TileGrid({ tiles, setView }) {
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+      {tiles.map((tile) => {
+        const targetView = tile.isThemenwelt ? 'bereich-landing' : 'thema-landing';
+        return (
+          <button
+            key={tile.slug}
+            onClick={() => navigateTo(tile.href, setView, targetView)}
+            className="group relative overflow-hidden rounded-2xl aspect-[4/3] cursor-pointer text-left shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            aria-label={tile.label}
+          >
+            <img
+              src={tile.image}
+              alt=""
+              className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              loading="lazy"
+              onError={(e) => { e.target.style.display = 'none'; }}
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+            {tile.isThemenwelt && (
+              <span className="absolute top-2 right-2 inline-flex items-center gap-1 bg-white/90 text-primary text-xs font-bold px-2 py-0.5 rounded-full shadow">
+                <Sparkles className="w-3 h-3" /> Themenwelt
+              </span>
+            )}
+            <div className="absolute bottom-0 left-0 right-0 p-3">
+              <div className="text-xl mb-0.5">{tile.icon}</div>
+              <h3 className="text-white font-bold text-sm leading-snug">{tile.label}</h3>
+              <p className="text-white/70 text-xs leading-relaxed line-clamp-2 mt-0.5">{tile.desc}</p>
+            </div>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
+function ThemenSection({ themen, setView, segCfg }) {
+  const accentText = segCfg?.text || 'text-blue-600';
   return (
     <section className="max-w-7xl mx-auto px-4 pt-16 pb-8">
       <div className="flex items-center gap-2 mb-2">
-        <span className={`text-xs font-bold tracking-widest uppercase ${accentText}`}>Entdecken</span>
+        <span className={`text-xs font-bold tracking-widest uppercase ${accentText}`}>Themenwelten</span>
       </div>
-      <h2 className="text-2xl md:text-3xl font-heading font-bold text-dark mb-2">Alle Themenbereiche</h2>
-      <p className="text-gray-500 mb-8 max-w-xl">Wähle einen Bereich – wir zeigen dir passende Kurse und Orientierungsseiten.</p>
+      <h2 className="text-2xl md:text-3xl font-heading font-bold text-dark mb-2">Themen entdecken</h2>
+      <p className="text-gray-500 mb-8 max-w-xl">Tauche tiefer ein – mit kuratierten Themenwelten und Orientierungsseiten.</p>
+      <TileGrid tiles={themen} setView={setView} />
+    </section>
+  );
+}
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-        {allTiles.map((tile) => {
-          const targetView = tile.isThemenwelt ? 'bereich-landing' : 'thema-landing';
-          return (
-            <button
-              key={tile.slug}
-              onClick={() => navigateTo(tile.href, setView, targetView)}
-              className="group relative overflow-hidden rounded-2xl aspect-[4/3] cursor-pointer text-left shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-              aria-label={tile.label}
-            >
-              <img
-                src={tile.image}
-                alt=""
-                className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                loading="lazy"
-                onError={(e) => { e.target.style.display = 'none'; }}
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-
-              {tile.isThemenwelt && (
-                <span className="absolute top-2 right-2 inline-flex items-center gap-1 bg-white/90 text-primary text-xs font-bold px-2 py-0.5 rounded-full shadow">
-                  <Sparkles className="w-3 h-3" /> Themenwelt
-                </span>
-              )}
-
-              <div className="absolute bottom-0 left-0 right-0 p-3">
-                <div className="text-xl mb-0.5">{tile.icon}</div>
-                <h3 className="text-white font-bold text-sm leading-snug">{tile.label}</h3>
-                <p className="text-white/70 text-xs leading-relaxed line-clamp-2 mt-0.5">{tile.desc}</p>
-              </div>
-            </button>
-          );
-        })}
+function KursartenSection({ kursarten, setView, segCfg }) {
+  const accentText = segCfg?.text || 'text-blue-600';
+  return (
+    <section className="max-w-7xl mx-auto px-4 pb-12">
+      <div className="flex items-center gap-2 mb-2">
+        <span className={`text-xs font-bold tracking-widest uppercase ${accentText}`}>Kursarten</span>
       </div>
+      <h2 className="text-2xl md:text-3xl font-heading font-bold text-dark mb-2">Wonach suchst du?</h2>
+      <p className="text-gray-500 mb-8 max-w-xl">Wähle eine Kursart – wir zeigen dir passende Angebote.</p>
+      <TileGrid tiles={kursarten} setView={setView} />
     </section>
   );
 }
@@ -311,9 +325,14 @@ const LandingView = ({
         t={t}
       />
 
-      <AllTopicsSection
-        kursarten={landingCfg.kursarten}
+      <ThemenSection
         themen={landingCfg.themen}
+        setView={setView}
+        segCfg={segCfg}
+      />
+
+      <KursartenSection
+        kursarten={landingCfg.kursarten}
         setView={setView}
         segCfg={segCfg}
       />
