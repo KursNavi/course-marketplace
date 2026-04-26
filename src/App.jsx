@@ -92,6 +92,7 @@ const RatgeberArtikelView = lazyWithRetry(() => import('./components/RatgeberArt
 const RatgeberHubView = lazyWithRetry(() => import('./components/RatgeberHubView'));
 const BereichLandingPage = lazyWithRetry(() => import('./components/BereichLandingPage'));
 const SzenarioArtikelView = lazyWithRetry(() => import('./components/SzenarioArtikelView'));
+const SimpleTopicLandingPage = lazyWithRetry(() => import('./components/SimpleTopicLandingPage'));
 const NotFoundPage = lazyWithRetry(() => import('./components/NotFoundPage'));
 const SetPasswordView = lazyWithRetry(() => import('./components/SetPasswordView'));
 
@@ -203,6 +204,14 @@ export default function KursNaviPro() {  // 1. Initial State Logic
           if (parts.length === 2) return 'search';
       }
 
+      // SIMPLE TOPIC LANDING PAGE ROUTING
+      // URL: /thema/{segment}/{slug} e.g. /thema/beruflich/it-digital
+      if (path.startsWith('/thema/')) {
+          const parts = path.split('/').filter(Boolean);
+          if (parts.length >= 3) return 'thema-landing';
+          return 'not-found';
+      }
+
       // RATGEBER ROUTING
       if (path === '/ratgeber' || path.startsWith('/ratgeber/')) {
           const parts = path.split('/').filter(Boolean);
@@ -294,6 +303,16 @@ export default function KursNaviPro() {  // 1. Initial State Logic
       bereichParams = { segment: parts[1], slug: parts[2], szenarioSlug: parts[3] };
     } else if (parts.length >= 3) {
       bereichParams = { segment: parts[1], slug: parts[2], szenarioSlug: '' };
+    }
+  }
+
+  // Simple Topic Landing Page params (read live from URL)
+  // URL: /thema/{segment}/{slug}
+  let themaParams = { segment: '', slug: '' };
+  if (window.location.pathname.startsWith('/thema/')) {
+    const parts = window.location.pathname.split('/').filter(Boolean);
+    if (parts.length >= 3) {
+      themaParams = { segment: parts[1], slug: parts[2] };
     }
   }
 
@@ -1962,6 +1981,17 @@ useEffect(() => {
           courses={publishedCourses}
           lang={lang}
           t={t}
+        />
+      )}
+      {view === 'thema-landing' && (
+        <SimpleTopicLandingPage
+          key={routePath}
+          segment={themaParams.segment}
+          slug={themaParams.slug}
+          courses={publishedCourses}
+          lang={lang}
+          setView={setView}
+          setSearchType={setSearchType}
         />
       )}
       {view === 'bereich-szenario' && (
