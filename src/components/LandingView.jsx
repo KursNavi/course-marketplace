@@ -249,15 +249,15 @@ const LandingView = ({
         t={t}
       />
 
-      <KursartenSection
-        kursarten={landingCfg.kursarten}
-        urlSegment={urlSegment}
+      <ThemenSection
+        themen={landingCfg.themen}
         setView={setView}
         segCfg={segCfg}
       />
 
-      <ThemenSection
-        themen={landingCfg.themen}
+      <KursartenSection
+        kursarten={landingCfg.kursarten}
+        urlSegment={urlSegment}
         setView={setView}
         segCfg={segCfg}
       />
