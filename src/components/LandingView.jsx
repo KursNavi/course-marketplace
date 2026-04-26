@@ -137,29 +137,29 @@ function TileGrid({ tiles, setView }) {
   );
 }
 
-function ThemenSection({ themen, setView, segCfg }) {
+function TopicsAndTypesSection({ themen, kursarten, setView, segCfg }) {
   const accentText = segCfg?.text || 'text-blue-600';
+  const borderLight = segCfg?.borderLight || 'border-blue-100';
+
   return (
-    <section className="max-w-7xl mx-auto px-4 pt-16 pb-8">
+    <section className="max-w-7xl mx-auto px-4 pt-16 pb-12">
+      {/* --- Kursthemen --- */}
       <div className="flex items-center gap-2 mb-2">
-        <span className={`text-xs font-bold tracking-widest uppercase ${accentText}`}>Themenwelten</span>
+        <span className={`text-xs font-bold tracking-widest uppercase ${accentText}`}>Kursthemen</span>
       </div>
       <h2 className="text-2xl md:text-3xl font-heading font-bold text-dark mb-2">Themen entdecken</h2>
-      <p className="text-gray-500 mb-8 max-w-xl">Tauche tiefer ein – mit kuratierten Themenwelten und Orientierungsseiten.</p>
+      <p className="text-gray-500 mb-6 max-w-xl">Tauche tiefer ein – mit kuratierten Themenwelten und Orientierungsseiten.</p>
       <TileGrid tiles={themen} setView={setView} />
-    </section>
-  );
-}
 
-function KursartenSection({ kursarten, setView, segCfg }) {
-  const accentText = segCfg?.text || 'text-blue-600';
-  return (
-    <section className="max-w-7xl mx-auto px-4 pb-12">
+      {/* --- Divider --- */}
+      <div className={`border-t ${borderLight} my-10`} />
+
+      {/* --- Kursarten --- */}
       <div className="flex items-center gap-2 mb-2">
         <span className={`text-xs font-bold tracking-widest uppercase ${accentText}`}>Kursarten</span>
       </div>
       <h2 className="text-2xl md:text-3xl font-heading font-bold text-dark mb-2">Wonach suchst du?</h2>
-      <p className="text-gray-500 mb-8 max-w-xl">Wähle eine Kursart – wir zeigen dir passende Angebote.</p>
+      <p className="text-gray-500 mb-6 max-w-xl">Wähle eine Kursart – wir zeigen dir passende Angebote.</p>
       <TileGrid tiles={kursarten} setView={setView} />
     </section>
   );
@@ -325,13 +325,8 @@ const LandingView = ({
         t={t}
       />
 
-      <ThemenSection
+      <TopicsAndTypesSection
         themen={landingCfg.themen}
-        setView={setView}
-        segCfg={segCfg}
-      />
-
-      <KursartenSection
         kursarten={landingCfg.kursarten}
         setView={setView}
         segCfg={segCfg}
