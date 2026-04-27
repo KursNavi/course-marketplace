@@ -367,16 +367,16 @@ export const SIMPLE_TOPIC_CONTENT = {
     title: 'Yoga & Achtsamkeit',
     subtitle: 'Innere Balance, Entspannung und Körperbewusstsein',
     intro:
-      'Yoga und Achtsamkeitspraktiken helfen, den Alltag bewusster zu erleben, Stress zu reduzieren und in Verbindung mit dem eigenen Körper zu bleiben. In der Schweiz gibt es zahlreiche Angebote – von klassischem Hatha-Yoga bis zu modernen Achtsamkeitsprogrammen.',
+      'Yoga und Achtsamkeit helfen nicht nur beim Abschalten. Sie können auch dabei helfen, den passenden Zugang zu Bewegung, Regeneration, Fokus und Selbstwahrnehmung zu finden. Damit der Einstieg gelingt, reicht es nicht, nur den Stilnamen zu kennen. Entscheidend sind Ziel, Intensität, Alltagspassung und ein Format, in dem du dich sicher fühlst.',
     points: [
-      { icon: '🧘', title: 'Verschiedene Yoga-Stile', text: 'Hatha, Vinyasa, Yin, Restorative – entdecke, welcher Stil zu dir passt.' },
-      { icon: '🧠', title: 'Meditation & MBSR', text: 'Achtsamkeitsbasierte Kurse helfen, den Geist zu beruhigen und klarer zu denken.' },
-      { icon: '🌿', title: 'Online & Präsenz', text: 'Viele Angebote gibt es sowohl vor Ort als auch bequem von zu Hause aus.' },
-      { icon: '💆', title: 'Für alle Level', text: 'Ob Anfänger oder Fortgeschrittener – es gibt passende Kurse für jede Stufe.' },
+      { icon: '🧘', title: 'Stil und Format passend wählen', text: 'Von Hatha bis Yin, von Online-live bis vor Ort – der Stil ist erst die halbe Entscheidung. Das Format bestimmt, wie gut Yoga wirklich zu deinem Alltag passt.' },
+      { icon: '💬', title: 'Vertrauenscheck vor der Buchung', text: 'Gute Angebote nennen Level, Intensität und Ziel klar. Bei sensiblen Formaten wie Breathwork oder Reiki ist transparente Beschreibung besonders wichtig.' },
+      { icon: '💰', title: 'Klein einsteigen, dann vertiefen', text: 'Probelektion, Einzeleintritt oder kurzer Testzeitraum sind oft sinnvoller als ein grosses Paket. Wer 4 bis 8 Wochen sauber testet, entscheidet besser.' },
+      { icon: '🔄', title: 'Konstant statt ambitioniert', text: 'Eine gute Einheit pro Woche bringt mehr als unregelmässige Intensivblöcke. Routineaufbau schlägt Ambition fast immer.' },
     ],
     searchType: 'privat',
     searchKeywords: ['yoga', 'achtsamkeit', 'meditation', 'hatha', 'vinyasa', 'yin', 'mbsr', 'entspannung', 'pilates', 'mindfulness'],
-    hintText: 'Ausführliche Yoga-Ratgeber und Kursvergleiche folgen in Kürze.',
+    hintText: 'Alle Themen rund um Yoga & Achtsamkeit – von Anfänger-Tipps über Stilvergleich bis zu Breathwork und Energiearbeit – findest du in der Yoga-Themenwelt.',
   },
   'privat-hobby/musik': {
     title: 'Musik',
