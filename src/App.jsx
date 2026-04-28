@@ -92,7 +92,6 @@ const RatgeberArtikelView = lazyWithRetry(() => import('./components/RatgeberArt
 const RatgeberHubView = lazyWithRetry(() => import('./components/RatgeberHubView'));
 const BereichLandingPage = lazyWithRetry(() => import('./components/BereichLandingPage'));
 const SzenarioArtikelView = lazyWithRetry(() => import('./components/SzenarioArtikelView'));
-const SimpleTopicLandingPage = lazyWithRetry(() => import('./components/SimpleTopicLandingPage'));
 const NotFoundPage = lazyWithRetry(() => import('./components/NotFoundPage'));
 const SetPasswordView = lazyWithRetry(() => import('./components/SetPasswordView'));
 
@@ -204,14 +203,6 @@ export default function KursNaviPro() {  // 1. Initial State Logic
           if (parts.length === 2) return 'search';
       }
 
-      // SIMPLE TOPIC LANDING PAGE ROUTING
-      // URL: /thema/{segment}/{slug} e.g. /thema/beruflich/it-digital
-      if (path.startsWith('/thema/')) {
-          const parts = path.split('/').filter(Boolean);
-          if (parts.length >= 3) return 'thema-landing';
-          return 'not-found';
-      }
-
       // RATGEBER ROUTING
       if (path === '/ratgeber' || path.startsWith('/ratgeber/')) {
           const parts = path.split('/').filter(Boolean);
@@ -303,16 +294,6 @@ export default function KursNaviPro() {  // 1. Initial State Logic
       bereichParams = { segment: parts[1], slug: parts[2], szenarioSlug: parts[3] };
     } else if (parts.length >= 3) {
       bereichParams = { segment: parts[1], slug: parts[2], szenarioSlug: '' };
-    }
-  }
-
-  // Simple Topic Landing Page params (read live from URL)
-  // URL: /thema/{segment}/{slug}
-  let themaParams = { segment: '', slug: '' };
-  if (window.location.pathname.startsWith('/thema/')) {
-    const parts = window.location.pathname.split('/').filter(Boolean);
-    if (parts.length >= 3) {
-      themaParams = { segment: parts[1], slug: parts[2] };
     }
   }
 
@@ -1892,9 +1873,9 @@ useEffect(() => {
                      <Home lang={lang} t={t} courses={publishedCourses} setView={setView} setSearchType={setSearchType} setSearchArea={setSearchArea} setSearchSpecialty={setSearchSpecialty} setSearchFocus={setSearchFocus} setSelectedCatPath={setSelectedCatPath} searchQuery={searchQuery} setSearchQuery={setSearchQuery} catMenuOpen={catMenuOpen} setCatMenuOpen={setCatMenuOpen} catMenuRef={catMenuRef} selectedLocations={selectedLocations} setSelectedLocations={setSelectedLocations} locMenuOpen={locMenuOpen} setLocMenuOpen={setLocMenuOpen} locMenuRef={locMenuRef} getCatLabel={getCatLabel} filterPro={filterPro} setFilterPro={setFilterPro} filterDirectBooking={filterDirectBooking} setFilterDirectBooking={setFilterDirectBooking} selectedDeliveryTypes={selectedDeliveryTypes} setSelectedDeliveryTypes={setSelectedDeliveryTypes} deliveryMenuOpen={deliveryMenuOpen} setDeliveryMenuOpen={setDeliveryMenuOpen} deliveryMenuRef={deliveryMenuRef} />
             )}
             
-         {view === 'landing-private' && ( <LandingView title={t.landing_priv_title} subtitle={t.landing_priv_sub} variant="private" searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearchSubmit={handleSearchSubmit} setView={setView} setSearchType={setSearchType} setSelectedCourse={setSelectedCourse} publishedCourses={publishedCourses} t={t} /> )}
-         {view === 'landing-prof' && ( <LandingView title={t.landing_prof_title} subtitle={t.landing_prof_sub} variant="prof" searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearchSubmit={handleSearchSubmit} setView={setView} setSearchType={setSearchType} setSelectedCourse={setSelectedCourse} publishedCourses={publishedCourses} t={t} /> )}
-         {view === 'landing-kids' && ( <LandingView title={t.landing_kids_title} subtitle={t.landing_kids_sub} variant="kids" searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearchSubmit={handleSearchSubmit} setView={setView} setSearchType={setSearchType} setSelectedCourse={setSelectedCourse} publishedCourses={publishedCourses} t={t} /> )}
+         {view === 'landing-private' && ( <LandingView title={t.landing_priv_title} subtitle={t.landing_priv_sub} variant="private" searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearchSubmit={handleSearchSubmit} setSelectedCatPath={setSelectedCatPath} setView={setView} t={t} getCatLabel={getCatLabel} /> )}
+         {view === 'landing-prof' && ( <LandingView title={t.landing_prof_title} subtitle={t.landing_prof_sub} variant="prof" searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearchSubmit={handleSearchSubmit} setSelectedCatPath={setSelectedCatPath} setView={setView} t={t} getCatLabel={getCatLabel} /> )}
+         {view === 'landing-kids' && ( <LandingView title={t.landing_kids_title} subtitle={t.landing_kids_sub} variant="kids" searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearchSubmit={handleSearchSubmit} setSelectedCatPath={setSelectedCatPath} setView={setView} t={t} getCatLabel={getCatLabel} /> )}
 
       {view === 'search' && (
           <SearchPageView courses={courses} filteredCoursesPreCategory={filteredCoursesPreCategory} searchQuery={searchQuery} setSearchQuery={setSearchQuery} searchType={searchType} setSearchType={setSearchType} searchArea={searchArea} setSearchArea={setSearchArea} searchSpecialty={searchSpecialty} setSearchSpecialty={setSearchSpecialty} searchFocus={searchFocus} setSearchFocus={setSearchFocus} selectedLocations={selectedLocations} setSelectedLocations={setSelectedLocations} locMenuOpen={locMenuOpen} setLocMenuOpen={setLocMenuOpen} locMenuRef={locMenuRef} loading={loading} filteredCourses={filteredCourses} setSelectedCourse={setSelectedCourse} setView={setView} t={t} getCatLabel={getCatLabel} filterDateFrom={filterDateFrom} setFilterDateFrom={setFilterDateFrom} filterDateTo={filterDateTo} setFilterDateTo={setFilterDateTo} filterPriceMax={filterPriceMax} setFilterPriceMax={setFilterPriceMax} filterLevel={filterLevel} setFilterLevel={setFilterLevel} filterPro={filterPro} setFilterPro={setFilterPro} filterDirectBooking={filterDirectBooking} setFilterDirectBooking={setFilterDirectBooking} selectedLanguages={selectedLanguages} setSelectedLanguages={setSelectedLanguages} langMenuOpen={langMenuOpen} setLangMenuOpen={setLangMenuOpen} langMenuRef={langMenuRef} selectedDeliveryTypes={selectedDeliveryTypes} setSelectedDeliveryTypes={setSelectedDeliveryTypes} deliveryMenuOpen={deliveryMenuOpen} setDeliveryMenuOpen={setDeliveryMenuOpen} deliveryMenuRef={deliveryMenuRef} savedCourseIds={savedCourseIds} onToggleSaveCourse={toggleSaveCourse} user={user} selectedSaule={selectedSaule} setSelectedSaule={setSelectedSaule} fetchError={fetchError} onRetry={fetchCourses} setSelectedCatPath={setSelectedCatPath} />
@@ -1981,18 +1962,6 @@ useEffect(() => {
           courses={publishedCourses}
           lang={lang}
           t={t}
-        />
-      )}
-      {view === 'thema-landing' && (
-        <SimpleTopicLandingPage
-          key={routePath}
-          segment={themaParams.segment}
-          slug={themaParams.slug}
-          courses={publishedCourses}
-          lang={lang}
-          setView={setView}
-          setSearchType={setSearchType}
-          setSelectedCourse={setSelectedCourse}
         />
       )}
       {view === 'bereich-szenario' && (

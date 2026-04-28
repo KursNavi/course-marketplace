@@ -429,46 +429,6 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
         />
       )}
 
-      {/* EDITORIAL GUIDANCE SECTIONS */}
-      {config.editorialSections && config.editorialSections.length > 0 && (
-        <div className="max-w-3xl mx-auto px-4 py-14">
-          <div className="space-y-10">
-            {config.editorialSections.map((section, i) => (
-              <div key={i}>
-                <h2 className="text-xl font-heading font-bold text-dark mb-3">
-                  {section.heading[lang] || section.heading.de}
-                </h2>
-                {section.intro && (
-                  <p className="text-gray-600 leading-relaxed mb-3">
-                    {section.intro[lang] || section.intro.de}
-                  </p>
-                )}
-                {section.items && (
-                  section.isOrdered ? (
-                    <ol className="list-decimal space-y-1.5 text-gray-600 mb-3 pl-5">
-                      {(section.items[lang] || section.items.de).map((item, j) => (
-                        <li key={j} className="leading-relaxed">{item}</li>
-                      ))}
-                    </ol>
-                  ) : (
-                    <ul className="list-disc space-y-1.5 text-gray-600 mb-3 pl-5">
-                      {(section.items[lang] || section.items.de).map((item, j) => (
-                        <li key={j} className="leading-relaxed">{item}</li>
-                      ))}
-                    </ul>
-                  )
-                )}
-                {section.closing && (
-                  <p className="text-gray-600 leading-relaxed">
-                    {section.closing[lang] || section.closing.de}
-                  </p>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* FAQ SECTION */}
       {config.faqs && config.faqs.length > 0 && (
         <div className="max-w-3xl mx-auto px-4 py-16">

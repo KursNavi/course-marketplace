@@ -507,9 +507,9 @@ export const Footer = ({ t, setView }) => {
         <div>
           <h4 className="font-heading font-bold text-dark mb-4">{t.footer_discover}</h4>
           <ul className="space-y-2 text-sm text-gray-500 font-sans">
-            <li><a href="/professional" onClick={(e) => { e.preventDefault(); window.scrollTo(0, 0); window.history.pushState({}, '', '/professional'); window.dispatchEvent(new Event('locationchange')); }} className="hover:text-primary transition-colors">{t.nav_professional}</a></li>
-            <li><a href="/private" onClick={(e) => { e.preventDefault(); window.scrollTo(0, 0); window.history.pushState({}, '', '/private'); window.dispatchEvent(new Event('locationchange')); }} className="hover:text-primary transition-colors">{t.nav_private}</a></li>
-            <li><a href="/children" onClick={(e) => { e.preventDefault(); window.scrollTo(0, 0); window.history.pushState({}, '', '/children'); window.dispatchEvent(new Event('locationchange')); }} className="hover:text-primary transition-colors">{t.nav_kids}</a></li>
+            <li><a href="/search?type=beruflich" onClick={(e) => { e.preventDefault(); window.scrollTo(0, 0); window.history.pushState({ view: 'search' }, '', '/search?type=beruflich'); }} className="hover:text-primary transition-colors">{t.nav_professional}</a></li>
+            <li><a href="/search?type=privat_hobby" onClick={(e) => { e.preventDefault(); window.scrollTo(0, 0); window.history.pushState({ view: 'search' }, '', '/search?type=privat_hobby'); }} className="hover:text-primary transition-colors">{t.nav_private}</a></li>
+            <li><a href="/search?type=kinder_jugend" onClick={(e) => { e.preventDefault(); window.scrollTo(0, 0); window.history.pushState({ view: 'search' }, '', '/search?type=kinder_jugend'); }} className="hover:text-primary transition-colors">{t.nav_kids}</a></li>
             <li><a href="/blog" onClick={(e) => { e.preventDefault(); navTo('blog'); }} className="hover:text-primary transition-colors">{t.nav_news}</a></li>
             <li><a href="/anbieter" onClick={(e) => { e.preventDefault(); navTo('provider-directory'); }} className="hover:text-primary transition-colors">{t.nav_providers || 'Anbieter-Verzeichnis'}</a></li>
             <li><a href="/teacher-hub" onClick={(e) => { e.preventDefault(); navTo('teacher-hub'); }} className="hover:text-primary transition-colors">{t.nav_for_providers}</a></li>

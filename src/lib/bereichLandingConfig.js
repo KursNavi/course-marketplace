@@ -102,77 +102,6 @@ export const BEREICH_LANDING_CONFIG = {
       { label: { de: 'Online Fitness Ausbildung Schweiz' }, params: {}, extraParams: { delivery: 'online_live,self_study' } },
     ],
 
-    editorialSections: [
-      {
-        heading: { de: 'Woran du einen passenden Lehrgang erkennst' },
-        intro: { de: 'Nicht der werblichste Anbieter ist automatisch der beste. Für eine gute Entscheidung helfen vor allem diese sechs Fragen:' },
-        items: { de: [
-          'Welches Abschlussziel verfolge ich genau?',
-          'Wie viel Praxis ist vorgesehen und wie realistisch ist der Praxiserwerb?',
-          'Wie transparent sind Kosten, Zeitmodell und Voraussetzungen beschrieben?',
-          'Ist der Lehrgang förderfähig oder klar an ein anerkanntes Prüfungsziel angebunden?',
-          'Welche Qualitätssignale bringt der Anbieter mit?',
-          'Passt das Format zu meinem Berufsalltag oder nur auf dem Papier?',
-        ]},
-        closing: { de: 'Ein gutes Angebot erklärt nicht nur Inhalte, sondern auch Weg, Aufwand und Grenzen.' },
-      },
-      {
-        heading: { de: 'Qualität vergleichen statt nur Titel sammeln' },
-        intro: { de: 'Bei Sport- und Fitnessausbildungen lohnt sich ein Blick auf mehrere Ebenen gleichzeitig:' },
-        items: { de: [
-          'Abschlusslogik: Führt der Lehrgang zu einer klar einordenbaren Qualifikation oder bleibt unklar, wie anschlussfähig sie später ist?',
-          'Praxisbezug: Ist nachvollziehbar, wie du Trainingspraxis, Kundenkontakt oder branchentypische Erfahrung aufbaust?',
-          'Anbietertransparenz: Sind Dozierende, Curriculum, Zeitmodell, Prüfungslogik und Kosten sauber beschrieben?',
-          'Qualitätssignale: Gibt es erkennbare Standards oder Labels, die für Weiterbildung oder Gesundheitsförderung relevant sind?',
-          'Anschluss: Hilft dir der Weg nur für den Einstieg oder auch für spätere Spezialisierung, Kaderrollen oder Selbstständigkeit?',
-        ]},
-        closing: { de: 'Gerade Labels wie eduQua, Qualitop oder QualiCert können hilfreiche Signale sein. Sie ersetzen aber nicht die Prüfung, ob ein konkreter Lehrgang zu deinem Ziel, deinem Einsatzbereich und deinem Alltag passt.' },
-      },
-      {
-        heading: { de: 'Kosten realistisch einordnen' },
-        intro: { de: 'Bei beruflicher Weiterbildung scheitert die Entscheidung oft nicht an der Motivation, sondern an einer zu knappen Rechnung. Prüfe deshalb nicht nur die Kursgebühr, sondern das Gesamtbild:' },
-        items: { de: [
-          'Kurskosten',
-          'Prüfungsgebühren',
-          'Lernmaterial und Pflichtunterlagen',
-          'Reise- und Unterkunftskosten',
-          'mögliche Ausfallzeiten oder reduzierte Erwerbszeit',
-          'Reserve für Verschiebungen oder Zusatzmodule',
-        ]},
-        closing: { de: 'Bei vorbereitenden Kursen auf eidgenössische Prüfungen kann der Bund unter bestimmten Voraussetzungen einen Teil der Kurskosten mitfinanzieren. Entscheidend ist aber, dass der Kurs auf der Meldeliste steht und dass du zwischen förderfähigen Kurskosten und nicht gedeckten Nebenkosten sauber unterscheidest.' },
-      },
-      {
-        heading: { de: 'Vereinbarkeit ehrlich prüfen' },
-        intro: { de: 'Ein Lehrgang kann fachlich stark und trotzdem für deine aktuelle Lebenssituation unpassend sein. Achte deshalb auf:' },
-        items: { de: [
-          'Wochenend- oder Abendmodell',
-          'Blocktage und Verdichtung vor Prüfungen',
-          'Praxisstunden oder Praxiseinsätze',
-          'Lernzeit zwischen den Modulen',
-          'Pendelaufwand',
-          'Vereinbarkeit mit Hauptjob, Familie und Erholung',
-        ]},
-        closing: { de: 'Besonders bei Quereinstieg oder Nebenerwerb ist die Frage nicht nur, ob du es «schaffst», sondern ob du es über Monate stabil tragen kannst.' },
-      },
-      {
-        heading: { de: 'Förderung und Finanzierung sauber unterscheiden' },
-        intro: { de: 'Förderung entlastet, ersetzt aber keine Vollkostenrechnung. Für vorbereitende Kurse auf eidgenössische Prüfungen ist die Meldeliste zentral. Daneben können je nach Situation Arbeitgeberbeiträge, Ratenzahlungen oder andere Finanzierungswege helfen. Gute Anbieter sprechen diese Punkte klar an, statt nur mit dem maximal möglichen Bundesbeitrag zu werben.' },
-      },
-      {
-        heading: { de: 'So entscheidest du realistischer' },
-        intro: { de: 'Wenn du mehrere Wege vergleichst, hilft diese Reihenfolge:' },
-        items: { de: [
-          'Berufsbild und Ziel festlegen',
-          'nur Lehrgänge vergleichen, die fachlich wirklich zum Ziel passen',
-          'Praxis- und Abschlusslogik prüfen',
-          'Vollkosten und Alltagstauglichkeit gegenrechnen',
-          'erst dann Qualitätssignale, Tempo und Zusatznutzen vergleichen',
-        ]},
-        isOrdered: true,
-        closing: { de: 'So vermeidest du typische Fehlentscheidungen: zu teure Wege ohne Anschluss, schöne Titel ohne Praxiswert oder Ausbildungen, die sich im Alltag nicht durchhalten lassen.' },
-      },
-    ],
-
     faqs: [
       {
         q: { de: 'Brauche ich eine Grundausbildung vor der Spezialisierung?' },
@@ -184,23 +113,15 @@ export const BEREICH_LANDING_CONFIG = {
       },
       {
         q: { de: 'Welche Qualitätssiegel sind relevant?' },
-        a: { de: 'In der Schweiz signalisieren verschiedene Labels unterschiedliche Dinge: Qualitop steht für Qualität in Bewegungs- und Gesundheitsförderung, vor allem bei Fitnesscentern und Anbietern. QualiCert ist als Anerkennung für Kursanbieter und Kursleitung relevant – wobei die Zertifizierung der Kursleitung allein nicht automatisch für Krankenkassenbeiträge ausreicht; auch die Anbieterzertifizierung zählt. eduQua ist ein schweizerisches Qualitätslabel für Weiterbildungsanbieter generell. Ein Label allein beantwortet aber nicht, ob ein konkreter Lehrgang zu deinem Ziel und deinem Alltag passt.' }
+        a: { de: 'In der Schweiz sind Qualitop, QualiCert und Fitness-Guide wichtige Zertifizierungen. Sie stehen für hohe Ausbildungsstandards und werden von Versicherungen und Arbeitgebern anerkannt.' }
       },
       {
         q: { de: 'Wie läuft die eidg. Prüfungsvorbereitung ab?' },
-        a: { de: 'Die Vorbereitung auf den eidgenössischen Fachausweis umfasst mehrere Module und dauert in der Regel 1 bis 2 Jahre berufsbegleitend. Für die Bundesbeiträge (SBFI) ist entscheidend, dass der Kurs auf der Meldeliste steht. Für die Berufsprüfung sind maximal CHF 9\'500 anrechenbar (auf maximal CHF 19\'000 anrechenbare Kursgebühren), für die höhere Fachprüfung maximal CHF 10\'500 (auf maximal CHF 21\'000 anrechenbare Kursgebühren). Nebenkosten wie Prüfungsgebühren, Unterlagen oder Reisekosten sind in der Regel nicht anrechenbar.' }
+        a: { de: 'Die Vorbereitung auf den eidgenössischen Fachausweis umfasst mehrere Module und dauert in der Regel 1 bis 2 Jahre berufsbegleitend. Du kannst Bundesbeiträge von bis zu 50% der Kurskosten beantragen.' }
       },
       {
         q: { de: 'Welche Ausbildung passt als Nebenerwerb?' },
         a: { de: 'Group-Fitness-Instruktor oder Yoga/Pilates-Lehrer eignen sich besonders gut als Nebenerwerb. Die Ausbildungen sind kompakt und du kannst flexibel Kurse an Abenden oder Wochenenden geben.' }
-      },
-      {
-        q: { de: 'Woran erkenne ich, ob ein Lehrgang wirklich zu mir passt?' },
-        a: { de: 'Nicht der werblichste Anbieter ist automatisch der beste. Prüfe konkret: Welches Abschlussziel verfolge ich? Wie viel Praxis ist vorgesehen und wie realistisch ist der Praxiserwerb? Sind Kosten, Zeitmodell und Voraussetzungen transparent beschrieben? Ist der Lehrgang förderfähig oder klar an ein anerkanntes Prüfungsziel angebunden? Passt das Format wirklich zu meinem Berufsalltag – nicht nur auf dem Papier? Ein gutes Angebot erklärt nicht nur Inhalte, sondern auch Weg, Aufwand und Grenzen.' }
-      },
-      {
-        q: { de: 'Was gehört alles zur realistischen Kostenkalkulation bei einer Ausbildung?' },
-        a: { de: 'Die Kursgebühr ist nur ein Teil der Gesamtkosten. Rechne auch Prüfungsgebühren, Lernmaterial, Reise- und Unterkunftskosten bei Blocktagen, mögliche Ausfallzeiten oder reduziertes Erwerbseinkommen sowie eine Reserve für Verschiebungen oder Zusatzmodule mit ein. Bei vorbereitenden Kursen auf eidgenössische Prüfungen kann der Bund unter bestimmten Voraussetzungen einen Teil der anrechenbaren Kurskosten mitfinanzieren. Entscheidend ist, zwischen förderfähigen Kurskosten und nicht gedeckten Nebenkosten sauber zu unterscheiden.' }
       },
     ],
 
@@ -222,8 +143,8 @@ export const BEREICH_LANDING_CONFIG = {
     ],
 
     trustLogos: [
-      { name: 'Qualitop', description: { de: 'Qualitop ist ein Schweizer Qualitätslabel für Fitnesscenter und Gesundheitsanbieter im Bereich Bewegungs- und Gesundheitsförderung. Anbieter mit diesem Label werden von einer unabhängigen Stelle geprüft. Das Zertifikat ist bei mehreren Krankenkassen als Qualitätsmerkmal für Zusatzversicherungsleistungen anerkannt.' } },
-      { name: 'QualiCert', description: { de: 'QualiCert ist eine unabhängige Schweizer Zertifizierungsstelle für Angebote im Bereich Bewegung, Sport und Gesundheitsförderung. Sie zertifiziert sowohl Anbieter als auch einzelne Kursleiter. Wichtig: Die Zertifizierung der Kursleitung allein reicht nicht automatisch für Krankenkassenbeiträge – auch die Anbieterzertifizierung ist entscheidend.' } },
+      { name: 'Qualitop', description: { de: 'Qualitop ist ein Schweizer Qualitätslabel für Fitnesscenter und Fitnessausbildungen. Anbieter mit diesem Label werden von einer unabhängigen Stelle geprüft. Das Zertifikat ist bei mehreren Krankenkassen als Qualitätsmerkmal anerkannt.' } },
+      { name: 'QualiCert', description: { de: 'QualiCert ist eine unabhängige Schweizer Zertifizierungsstelle für Angebote im Bereich Bewegung, Sport und Gesundheitsförderung. Eine QualiCert-Zertifizierung bestätigt, dass ein Anbieter oder eine Ausbildung geprüfte Qualitätskriterien erfüllt.' } },
       { name: 'Fitness-Guide (SFGV)', description: { de: 'Der Fitness-Guide des SFGV beschreibt ein anerkanntes Ausbildungsrahmenwerk für die Schweizer Fitnessbranche. Er definiert Ausbildungsstufen und Kompetenzprofile und hilft dabei, Kursangebote einzuordnen.' } },
     ]
   },
@@ -317,80 +238,6 @@ export const BEREICH_LANDING_CONFIG = {
       { label: { de: 'Online-live Yoga Schweiz' }, params: { spec: 'Yoga' }, extraParams: { delivery: 'online_live' } },
     ],
 
-    editorialSections: [
-      {
-        heading: { de: 'Womit du am besten startest' },
-        intro: { de: 'Wenn du neu einsteigst, ist nicht die fortgeschrittenste Klasse die beste Wahl, sondern die klarste. Ein guter Start ist für viele Menschen ein Format, das:' },
-        items: { de: [
-          'das Level klar ausweist',
-          'genug Erklärung statt nur Tempo bietet',
-          'Varianten für unterschiedliche Körper mitdenkt',
-          'zum eigenen Wochenrhythmus passt',
-          'ohne Druck ausprobiert werden kann',
-        ]},
-        closing: { de: 'Wenn du vor allem Entspannung suchst, sind ruhige Formate wie Yin, Restorative, Yoga Nidra oder sanfte Meditation oft sinnvoller als dynamische Flows. Wenn du über Bewegung in die Praxis finden willst, sind Hatha oder ein sanftes Vinyasa meist besser als sehr intensive Klassen.' },
-      },
-      {
-        heading: { de: 'Was ein realistischer Einstieg kostet' },
-        intro: { de: 'Die Einstiegshürde liegt oft weniger bei der Beweglichkeit als bei der Unsicherheit rund um Aufwand und Kosten. Für den Start helfen einfache Fragen:' },
-        items: { de: [
-          'Gibt es eine Probelektion oder einen unkomplizierten Einzeleinstieg?',
-          'Buchst du einen laufenden Kurs, einen Workshop oder ein Abo?',
-          'Fallen Zusatzkosten für Material, Studio oder Onlineplattform an?',
-          'Passt die Kursfrequenz zu deinem Alltag, oder kaufst du mehr Verbindlichkeit als du realistisch halten kannst?',
-        ]},
-        closing: { de: 'Gerade am Anfang ist ein kleiner, klarer Einstieg meist sinnvoller als ein grosses Paket. Wer zuerst 4 bis 8 Wochen sauber testet, merkt schneller, ob Stil, Lehrperson und Rhythmus wirklich passen.' },
-      },
-      {
-        heading: { de: 'Welches Format senkt die Einstiegshürde?' },
-        intro: { de: 'Nicht nur der Stil, auch das Format entscheidet über die Passung:' },
-        items: { de: [
-          'Vor Ort: gut, wenn du direktes Feedback, klare Anleitung und Verbindlichkeit brauchst',
-          'Online live: gut, wenn du flexible Wege brauchst, aber trotzdem eine feste Kurszeit möchtest',
-          'Aufzeichnung: gut als Ergänzung, aber für den allerersten Einstieg oft schwieriger, weil Korrektur und Rückfragen fehlen',
-          'Workshop: gut zum Kennenlernen eines Themas, aber nicht immer ideal für eine nachhaltige Routine',
-          'Laufender Kurs: oft besser, wenn du Schritt für Schritt dranbleiben willst',
-        ]},
-        closing: { de: 'Wenn du dich leicht überforderst oder schnell abbrichst, ist ein ruhiger laufender Kurs mit klarer Einstufung oft die stabilere Wahl als ein intensives Einzelerlebnis.' },
-      },
-      {
-        heading: { de: 'Vertrauenscheck: Woran du seriöse Angebote erkennst' },
-        intro: { de: 'Gerade bei sensibleren Formaten wie Breathwork, Reiki oder Bodywork sollte die Beschreibung nicht nur schön klingen, sondern konkret sein. Gute Angebote zeigen:' },
-        items: { de: [
-          'was im Kurs tatsächlich gemacht wird',
-          'wie intensiv das Format ist',
-          'für wen es gut passt und für wen eher nicht',
-          'ob Berührung vorkommt und wie Einverständnis geregelt ist',
-          'ob du jederzeit pausieren oder aussetzen kannst',
-          'wer den Kurs leitet und wie die Person ausgebildet ist',
-        ]},
-        closing: { de: 'Ein Stilname allein reicht nicht als Vertrauenssignal. Wichtiger sind nachvollziehbare Beschreibung, respektvolle Kommunikation und ein Rahmen ohne Druck.' },
-      },
-      {
-        heading: { de: 'Besondere Vorsicht bei sensiblen Formaten' },
-        intro: { de: 'Ruhige Atemarbeit, Meditation oder sanfte Körperarbeit können für viele Menschen ein guter Zugang sein. Bei intensiveren Settings lohnt aber eine genauere Prüfung. Das gilt besonders dann, wenn:' },
-        items: { de: [
-          'sehr starke Erfahrungen versprochen werden',
-          'Grenzen oder Kontraindikationen gar nicht erwähnt werden',
-          'unklar bleibt, wer das Format anleitet',
-          'Heilsversprechen oder absolute Wirkungsbehauptungen gemacht werden',
-        ]},
-        closing: { de: 'Bei Breathwork, Reiki und Bodywork ist eine neutrale Einordnung wichtig: Diese Formate können als achtsame oder komplementäre Praxis interessant sein, sollten aber transparent beschrieben und nicht als Ersatz für medizinische oder psychotherapeutische Versorgung dargestellt werden.' },
-      },
-      {
-        heading: { de: 'So wählst du ohne dich zu verzetteln' },
-        intro: { de: 'Für die ersten Wochen reicht meist eine einfache Entscheidung:' },
-        items: { de: [
-          'Ziel für 4 bis 8 Wochen festlegen',
-          'maximal zwei passende Formate prüfen',
-          'lieber konstant als zu ambitioniert starten',
-          'nach jeder Einheit auf Körpergefühl, Schlaf, Energie und Motivation achten',
-        ]},
-        isOrdered: true,
-        closing: { de: 'Wenn du danach klarer siehst, kannst du gezielt vertiefen, einen Stil ergänzen oder ein sensibleres Spezialformat bewusst ausprobieren.' },
-      },
-    ],
-
     faqs: [
       {
         q: { de: 'Brauche ich Vorkenntnisse für Yoga oder Meditation?' },
@@ -423,14 +270,6 @@ export const BEREICH_LANDING_CONFIG = {
       {
         q: { de: 'Was brauche ich für den ersten Kurs?' },
         a: { de: 'Bequeme Kleidung, Wasser und Offenheit reichen oft aus. Vor Ort werden Matten teilweise gestellt, online brauchst du in der Regel selbst eine Matte und einen ruhigen Platz. Details stehen meist in der Kursbeschreibung.' }
-      },
-      {
-        q: { de: 'Was kostet ein realistischer Einstieg in Yoga oder Achtsamkeit?' },
-        a: { de: 'Die Einstiegshürde liegt oft weniger bei der Beweglichkeit als bei der Unsicherheit rund um Aufwand und Kosten. Klär vor der Buchung: Gibt es eine Probelektion oder einen unkomplizierten Einzeleintritt? Buchst du einen laufenden Kurs, einen Workshop oder ein Abo? Fallen Zusatzkosten für Material oder eine Onlineplattform an? Gerade am Anfang ist ein kleiner, klarer Einstieg meist sinnvoller als ein grosses Paket. Wer zuerst 4 bis 8 Wochen sauber testet, merkt schneller, ob Stil, Lehrperson und Rhythmus wirklich passen.' }
-      },
-      {
-        q: { de: 'Welches Format passt für den Einstieg – Vor Ort, Online oder Workshop?' },
-        a: { de: 'Das Format bestimmt, wie gut Yoga in deinen Alltag passt. Vor Ort ist gut, wenn du direktes Feedback und Verbindlichkeit brauchst. Online live ist flexibel und eignet sich gut, wenn du feste Kurszeiten ohne Anfahrt bevorzugst. Aufzeichnungen eignen sich als Ergänzung, aber für den allerersten Einstieg weniger, weil Korrektur und Rückfragen fehlen. Workshops helfen zum Kennenlernen, bauen aber keine nachhaltige Routine auf. Laufende Kurse sind oft besser, wenn du Schritt für Schritt dranbleiben willst. Wenn du dich leicht überforderst oder schnell abbrichst, ist ein ruhiger laufender Kurs mit klarer Einstufung oft die stabilere Wahl.' }
       }
     ],
 
@@ -454,9 +293,9 @@ export const BEREICH_LANDING_CONFIG = {
     ],
 
     trustLogos: [
-      { name: 'Level-Angaben prüfen', description: { de: 'Achte auf klare Einstufungen wie „Einsteiger", „All Levels" oder „Mittelstufe". Ein guter Einstieg bietet ausreichend Erklärung statt nur Tempo, Varianten für unterschiedliche Körper und die Möglichkeit, ohne Druck auszuprobieren. Das Level ist das erste, wichtigste Qualitätssignal.' } },
-      { name: 'Kursinfos vor der Buchung lesen', description: { de: 'Gute Angebote zeigen klar, was im Kurs tatsächlich gemacht wird, wie intensiv das Format ist und für wen es passt – und für wen eher nicht. Bei sensibleren Formaten wie Breathwork, Reiki oder Bodywork sollte ausserdem beschrieben sein, ob Berührung vorkommt und wie Einverständnis geregelt ist. Fehlen diese Infos, lohnt eine Nachfrage.' } },
-      { name: 'Auf individuelle Anpassung achten', description: { de: 'Gute Lehrpersonen bieten Varianten an und gehen auf persönliche Grenzen ein. Bei intensiveren Formaten ist es ein Warnsignal, wenn Kontraindikationen nicht erwähnt werden, Grenzen nicht respektiert werden oder mit absoluten Heilsversprechen gearbeitet wird.' } },
+      { name: 'Level-Angaben prüfen', description: { de: 'Achte auf klare Einstufungen wie „Einsteiger", „All Levels" oder „Mittelstufe". Gut beschriebene Kurse nennen auch Voraussetzungen und helfen dir einzuschätzen, ob das Angebot zu dir passt.' } },
+      { name: 'Kursinfos vor der Buchung lesen', description: { de: 'Ziele, Ablauf, Intensität, Format und Dauer sollten im Kursangebot klar beschrieben sein. Wenn wesentliche Infos fehlen, lohnt sich eine Nachfrage beim Anbieter.' } },
+      { name: 'Auf individuelle Anpassung achten', description: { de: 'Gute Lehrpersonen bieten Varianten an, gehen auf persönliche Grenzen ein und schaffen eine respektvolle Lernatmosphäre. Das ist besonders wichtig bei körperlichen oder atemorientierten Formaten.' } },
     ]
   },
 };
