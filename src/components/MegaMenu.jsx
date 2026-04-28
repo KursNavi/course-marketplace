@@ -55,6 +55,21 @@ export const MegaMenu = ({
     return () => document.removeEventListener('keydown', handleEscape);
   }, []);
 
+  // Navigate to segment landing page
+  const SEGMENT_TO_LANDING = {
+    beruflich: '/professional',
+    privat_hobby: '/private',
+    kinder_jugend: '/children',
+  };
+
+  const goToLanding = () => {
+    setIsOpen(false);
+    window.scrollTo(0, 0);
+    const path = SEGMENT_TO_LANDING[categoryKey] || `/search?type=${categoryKey}`;
+    window.history.pushState({}, '', path);
+    window.dispatchEvent(new Event('locationchange'));
+  };
+
   // Navigate to search with category filter
   const goToSearch = () => {
     setIsOpen(false);
@@ -114,7 +129,7 @@ export const MegaMenu = ({
     >
       {/* Trigger Button */}
       <button
-        onClick={goToSearch}
+        onClick={goToLanding}
         className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 font-sans ${
           isActive
             ? `${config.bgLight} ${config.text} border-b-2 ${config.border}`
@@ -256,6 +271,20 @@ export const MobileMenuCategory = ({
   const categoryData = RATGEBER_STRUCTURE[ratgeberKey];
   const bereiche = getBereicheForSegment(categoryKey);
 
+  const SEGMENT_TO_LANDING = {
+    beruflich: '/professional',
+    privat_hobby: '/private',
+    kinder_jugend: '/children',
+  };
+
+  const goToLanding = () => {
+    onClose?.();
+    window.scrollTo(0, 0);
+    const path = SEGMENT_TO_LANDING[categoryKey] || `/search?type=${categoryKey}`;
+    window.history.pushState({}, '', path);
+    window.dispatchEvent(new Event('locationchange'));
+  };
+
   const goToSearch = () => {
     onClose?.();
     window.scrollTo(0, 0);
@@ -304,7 +333,7 @@ export const MobileMenuCategory = ({
       {/* Main Category Button */}
       <div className="flex items-center">
         <button
-          onClick={goToSearch}
+          onClick={goToLanding}
           className={`flex-1 flex items-center text-left px-3 py-3 text-base font-medium transition-all font-sans ${
             isActive
               ? `${config.bgLight} ${config.text}`
