@@ -1988,11 +1988,9 @@ useEffect(() => {
           key={routePath}
           segment={themaParams.segment}
           slug={themaParams.slug}
-          courses={publishedCourses}
-          lang={lang}
           setView={setView}
           setSearchType={setSearchType}
-          setSelectedCourse={setSelectedCourse}
+          setSearchArea={setSearchArea}
         />
       )}
       {view === 'bereich-szenario' && (
