@@ -440,6 +440,13 @@ const SearchPageView = ({
                     }
                 });
             }
+            // Fallback for courses using top-level fields (old schema / migration)
+            if (areas.length === 0 && c.category_area) {
+                const topDbType = URL_TO_DB_TYPE[c.category_type] || c.category_type;
+                if (!dbSearchType || topDbType === dbSearchType || c.category_type === dbSearchType) {
+                    areas.push(c.category_area);
+                }
+            }
             return areas;
         })
     )].sort((a, b) => {
@@ -869,7 +876,7 @@ const SearchPageView = ({
                         )}
                         {searchArea && (
                             <span onClick={() => { setSearchArea(''); setSearchSpecialty(''); setSearchFocus(''); }} className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-orange-200 flex items-center">
-                                {dbAreas.find(a => a.slug === searchArea)?.label_de || searchArea} <X className="w-3 h-3 ml-1 opacity-50" />
+                                {getAreaLabelFromDB(searchArea) || searchArea} <X className="w-3 h-3 ml-1 opacity-50" />
                             </span>
                         )}
                         {searchSpecialty && (
