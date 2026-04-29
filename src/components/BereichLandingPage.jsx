@@ -387,7 +387,7 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
               {kursarten.map((k) => (
                 <button
                   key={k.slug}
-                  onClick={() => navigateToSearch()}
+                  onClick={() => navigateToSearch(k.sauleKey ? { saule: k.sauleKey } : {})}
                   className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 flex flex-col gap-3 hover:shadow-md hover:border-primary/20 transition group text-left"
                 >
                   <span className="text-3xl">{k.icon}</span>
