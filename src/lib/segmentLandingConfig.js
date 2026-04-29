@@ -21,6 +21,7 @@ export const SEGMENT_LANDING_CONFIG = {
     kursarten: [
       {
         slug: 'diplome-lehrgaenge',
+        sauleKey: 'diplome',
         icon: '🎓',
         label: 'Diplome & Lehrgänge',
         desc: 'Staatlich anerkannte Abschlüsse und eidgenössische Diplome für nachhaltige Karriereschritte.',
@@ -29,6 +30,7 @@ export const SEGMENT_LANDING_CONFIG = {
       },
       {
         slug: 'fachkurse-skill-updates',
+        sauleKey: 'fachkurse',
         icon: '⚡',
         label: 'Fachkurse & Skill-Updates',
         desc: 'Praxisnahe Weiterbildungen, die dich schnell fit für neue Anforderungen machen.',
@@ -37,6 +39,7 @@ export const SEGMENT_LANDING_CONFIG = {
       },
       {
         slug: 'quereinstieg-neuorientierung',
+        sauleKey: 'quereinstieg',
         icon: '🔄',
         label: 'Quereinstieg & Neuorientierung',
         desc: 'Wechsel die Branche oder finde eine neue Richtung – strukturiert und begleitet.',

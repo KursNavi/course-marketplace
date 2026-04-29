@@ -49,13 +49,13 @@ export default function SimpleTopicLandingPage({
   }, [publishedCourses, config?.areaAliases]);
 
   // Navigate to search pre-filtered with this topic's area + segment type
-  const handleGoToSearch = () => {
-    if (setSearchType) setSearchType(searchType);
-    if (setSearchArea && areaSlug) setSearchArea(areaSlug);
+  // Optionally pass a sauleKey (e.g. 'diplome') to pre-select a Berufliche Säule
+  const handleGoToSearch = (sauleKey = null) => {
     const params = new URLSearchParams({ type: searchType });
     if (areaSlug) params.set('area', areaSlug);
+    if (sauleKey) params.set('saule', sauleKey);
+    // pushState triggers syncFromUrl which sets all state from URL params
     window.history.pushState({}, '', `/search?${params.toString()}`);
-    setView('search');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -152,7 +152,7 @@ export default function SimpleTopicLandingPage({
             {kursarten.map((k) => (
               <button
                 key={k.slug}
-                onClick={handleGoToSearch}
+                onClick={() => handleGoToSearch(k.sauleKey || null)}
                 className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center gap-4 hover:shadow-md hover:border-primary/20 transition group text-left"
               >
                 <span className="text-2xl flex-shrink-0">{k.icon}</span>
