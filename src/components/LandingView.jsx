@@ -1,8 +1,7 @@
 import React from 'react';
-import { ArrowRight, Search, Sparkles, MapPin, Clock } from 'lucide-react';
+import { ArrowRight, Search, Sparkles } from 'lucide-react';
 import { SEGMENT_LANDING_CONFIG } from '../lib/segmentLandingConfig';
 import { SEGMENT_CONFIG } from '../lib/constants';
-import { buildCoursePath } from '../lib/siteConfig';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -20,35 +19,10 @@ const VARIANT_TO_SEARCH_TYPE = {
   kids: 'kinder_jugend',
 };
 
-const VARIANT_TO_DB_TYPE = {
-  prof: 'professionell',
-  private: 'privat',
-  kids: 'kinder',
-};
-
 function navigateTo(href, setView, viewKey) {
   window.history.pushState({}, '', href);
   setView(viewKey);
   window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-// Both slug form ("beruflich") and DB type form ("professionell") may appear in category_type.
-const SEGMENT_TYPE_ALIASES = {
-  professionell: ['beruflich', 'professionell'],
-  privat: ['privat_hobby', 'privat'],
-  kinder: ['kinder_jugend', 'kinder'],
-};
-
-function filterCoursesBySegment(courses, dbType) {
-  if (!courses?.length || !dbType) return [];
-  const aliases = SEGMENT_TYPE_ALIASES[dbType] || [dbType];
-  return courses.filter((c) => aliases.includes(c.category_type));
-}
-
-function formatChf(price) {
-  if (!price && price !== 0) return null;
-  if (price === 0) return 'Kostenlos';
-  return `CHF ${Number(price).toLocaleString('de-CH')}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -139,104 +113,21 @@ function TileGrid({ tiles, setView }) {
   );
 }
 
-function TopicsAndTypesSection({ themen, kursarten, setView, segCfg }) {
+function TopicsAndTypesSection({ themen, setView, segCfg }) {
   const accentText = segCfg?.text || 'text-blue-600';
-  const borderLight = segCfg?.borderLight || 'border-blue-100';
 
   return (
     <section className="max-w-7xl mx-auto px-4 pt-16 pb-12">
-      {/* --- Kursthemen --- */}
       <div className="flex items-center gap-2 mb-2">
         <span className={`text-xs font-bold tracking-widest uppercase ${accentText}`}>Kursthemen</span>
       </div>
       <h2 className="text-2xl md:text-3xl font-heading font-bold text-dark mb-2">Themen entdecken</h2>
       <p className="text-gray-500 mb-6 max-w-xl">Tauche tiefer ein – mit kuratierten Themenwelten und Orientierungsseiten.</p>
       <TileGrid tiles={themen} setView={setView} />
-
-      {/* --- Divider --- */}
-      <div className={`border-t ${borderLight} my-10`} />
-
-      {/* --- Kursarten --- */}
-      <div className="flex items-center gap-2 mb-2">
-        <span className={`text-xs font-bold tracking-widest uppercase ${accentText}`}>Kursarten</span>
-      </div>
-      <h2 className="text-2xl md:text-3xl font-heading font-bold text-dark mb-2">Wonach suchst du?</h2>
-      <p className="text-gray-500 mb-6 max-w-xl">Wähle eine Kursart – wir zeigen dir passende Angebote.</p>
-      <TileGrid tiles={kursarten} setView={setView} />
     </section>
   );
 }
 
-function CourseCard({ course, onClickCourse }) {
-  const price = formatChf(course.price);
-  const location = course.location || course.canton || '';
-  const duration = course.duration_label || '';
-
-  return (
-    <button
-      onClick={() => onClickCourse(course)}
-      className="group text-left bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 overflow-hidden cursor-pointer w-full"
-    >
-      <div className="relative h-36 bg-gray-100 overflow-hidden">
-        {course.image_url ? (
-          <img
-            src={course.image_url}
-            alt={course.title || ''}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-            loading="lazy"
-            onError={(e) => { e.target.style.display = 'none'; }}
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-4xl text-gray-200">📚</div>
-        )}
-        {price && (
-          <span className="absolute top-2 right-2 bg-white/95 text-dark text-xs font-bold px-2 py-0.5 rounded-full shadow">
-            {price}
-          </span>
-        )}
-      </div>
-      <div className="p-3">
-        <h3 className="font-bold text-dark text-sm leading-snug mb-1.5 line-clamp-2 group-hover:text-primary transition-colors">
-          {course.title}
-        </h3>
-        <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-gray-400">
-          {location && (
-            <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {location}</span>
-          )}
-          {duration && (
-            <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {duration}</span>
-          )}
-        </div>
-      </div>
-    </button>
-  );
-}
-
-function CoursesPreviewSection({ courses, onClickCourse, onShowAll, segCfg }) {
-  const accentText = segCfg?.text || 'text-blue-600';
-
-  if (!courses?.length) return null;
-
-  return (
-    <section className="max-w-7xl mx-auto px-4 pb-12">
-      <div className="flex items-center justify-between mb-2">
-        <span className={`text-xs font-bold tracking-widest uppercase ${accentText}`}>Kursangebote</span>
-        <button
-          onClick={onShowAll}
-          className={`text-sm font-semibold ${accentText} flex items-center gap-1 hover:underline`}
-        >
-          Alle anzeigen <ArrowRight className="w-3.5 h-3.5" />
-        </button>
-      </div>
-      <h2 className="text-2xl font-heading font-bold text-dark mb-6">Aktuelle Kurse</h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
-        {courses.slice(0, 6).map((course) => (
-          <CourseCard key={course.id} course={course} onClickCourse={onClickCourse} />
-        ))}
-      </div>
-    </section>
-  );
-}
 
 function SearchCTASection({ setView, setSearchType, searchTypeKey }) {
   const handleGoToSearch = () => {
@@ -277,15 +168,12 @@ const LandingView = ({
   handleSearchSubmit,
   setView,
   setSearchType,
-  setSelectedCourse,
-  publishedCourses,
   t,
 }) => {
   const segmentKey = VARIANT_TO_KEY[variant] || 'privat_hobby';
   const segCfg = SEGMENT_CONFIG[segmentKey];
   const landingCfg = SEGMENT_LANDING_CONFIG[segmentKey];
   const searchTypeKey = VARIANT_TO_SEARCH_TYPE[variant] || 'privat_hobby';
-  const dbType = VARIANT_TO_DB_TYPE[variant] || 'privat';
 
   const heroImages = {
     prof: 'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&q=80&w=2000',
@@ -293,23 +181,6 @@ const LandingView = ({
     kids: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&q=80&w=2000',
   };
   const bgImage = segCfg?.heroBg || heroImages[variant] || heroImages.prof;
-
-  const segmentCourses = filterCoursesBySegment(publishedCourses, dbType);
-
-  const handleCourseClick = (course) => {
-    const path = buildCoursePath(course);
-    window.history.pushState({}, '', path);
-    if (setSelectedCourse) setSelectedCourse(course);
-    setView('detail');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handleShowAll = () => {
-    if (setSearchType) setSearchType(searchTypeKey);
-    window.history.pushState({}, '', `/search?type=${searchTypeKey}`);
-    setView('search');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
 
   if (!landingCfg) {
     return <div className="p-8 text-center text-gray-400">Konfiguration fehlt.</div>;
@@ -329,15 +200,7 @@ const LandingView = ({
 
       <TopicsAndTypesSection
         themen={landingCfg.themen}
-        kursarten={landingCfg.kursarten}
         setView={setView}
-        segCfg={segCfg}
-      />
-
-      <CoursesPreviewSection
-        courses={segmentCourses}
-        onClickCourse={handleCourseClick}
-        onShowAll={handleShowAll}
         segCfg={segCfg}
       />
 

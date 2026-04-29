@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Search, ArrowRight, ChevronDown, ChevronRight, BookOpen, Award, HelpCircle } from 'lucide-react';
 import { getBereichBySlug, getBereichUrl } from '../lib/bereichLandingConfig';
+import { SEGMENT_LANDING_CONFIG } from '../lib/segmentLandingConfig';
 import { SEGMENT_CONFIG } from '../lib/constants';
 import { useTaxonomy } from '../hooks/useTaxonomy';
 import { BASE_URL } from '../lib/siteConfig';
@@ -371,6 +372,38 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
           </div>
         </div>
       )}
+
+      {/* KURSARTEN — wie möchtest du lernen? */}
+      {(() => {
+        const kursarten = SEGMENT_LANDING_CONFIG[segment]?.kursarten || [];
+        if (!kursarten.length) return null;
+        return (
+          <div className="max-w-5xl mx-auto px-4 py-12">
+            <h2 className="text-xl font-heading font-bold text-dark mb-1 text-center">Wie möchtest du lernen?</h2>
+            <p className="text-gray-500 text-center mb-8">
+              Wähle eine Kursart – die Suche öffnet sich mit diesem Thema vorausgewählt.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {kursarten.map((k) => (
+                <button
+                  key={k.slug}
+                  onClick={() => navigateToSearch()}
+                  className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 flex flex-col gap-3 hover:shadow-md hover:border-primary/20 transition group text-left"
+                >
+                  <span className="text-3xl">{k.icon}</span>
+                  <div>
+                    <div className="font-bold text-dark text-sm mb-0.5">{k.label}</div>
+                    <div className="text-xs text-gray-500 leading-relaxed">{k.desc}</div>
+                  </div>
+                  <div className={`flex items-center gap-1 text-xs font-semibold ${theme.text} mt-auto pt-1`}>
+                    Kurse anzeigen <ArrowRight className="w-3.5 h-3.5" />
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* AUSBILDUNGSBEREICHE — Directory-Liste */}
       <div className="bg-white py-16">

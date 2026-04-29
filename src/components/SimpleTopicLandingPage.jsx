@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { ArrowRight, ArrowLeft, Search } from 'lucide-react';
-import { SIMPLE_TOPIC_CONTENT } from '../lib/segmentLandingConfig';
+import { SIMPLE_TOPIC_CONTENT, SEGMENT_LANDING_CONFIG } from '../lib/segmentLandingConfig';
+import { buildCoursePath } from '../lib/siteConfig';
 
 // Segment URL → display label + back href
 const SEGMENT_META = {
@@ -9,7 +10,7 @@ const SEGMENT_META = {
   'kinder-jugend': { label: 'Kinder & Jugend', href: '/children' },
 };
 
-// Segment URL → search type key used for CTA
+// Segment URL → search type key (also the SEGMENT_LANDING_CONFIG key)
 const SEGMENT_TO_SEARCH_TYPE = {
   beruflich:      'beruflich',
   'privat-hobby': 'privat_hobby',
@@ -26,6 +27,8 @@ export default function SimpleTopicLandingPage({
   setView,
   setSearchType,
   setSearchArea,
+  publishedCourses,
+  setSelectedCourse,
 }) {
   const configKey = `${segment}/${slug}`;
   const config = SIMPLE_TOPIC_CONTENT[configKey];
@@ -34,6 +37,18 @@ export default function SimpleTopicLandingPage({
   const searchType = SEGMENT_TO_SEARCH_TYPE[segment] || 'privat_hobby';
   const areaSlug = config?.areaAliases?.[0] ?? null;
 
+  // Kursarten from segment config
+  const kursarten = SEGMENT_LANDING_CONFIG[searchType]?.kursarten || [];
+
+  // Filter published courses by area (up to 6) — only on themen pages with areaAliases
+  const topicCourses = useMemo(() => {
+    if (!publishedCourses?.length || !config?.areaAliases?.length) return [];
+    return publishedCourses
+      .filter(c => config.areaAliases.some(a => c.category_area === a))
+      .slice(0, 6);
+  }, [publishedCourses, config?.areaAliases]);
+
+  // Navigate to search pre-filtered with this topic's area + segment type
   const handleGoToSearch = () => {
     if (setSearchType) setSearchType(searchType);
     if (setSearchArea && areaSlug) setSearchArea(areaSlug);
@@ -41,6 +56,14 @@ export default function SimpleTopicLandingPage({
     if (areaSlug) params.set('area', areaSlug);
     window.history.pushState({}, '', `/search?${params.toString()}`);
     setView('search');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleCourseClick = (course) => {
+    const path = buildCoursePath(course);
+    window.history.pushState({}, '', path);
+    if (setSelectedCourse) setSelectedCourse(course);
+    setView('detail');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -71,6 +94,9 @@ export default function SimpleTopicLandingPage({
       </div>
     );
   }
+
+  // Only show kursarten on themen pages (those with areaAliases), not on editorial kursart pages
+  const showKursarten = kursarten.length > 0 && config.areaAliases?.length > 0;
 
   return (
     <div className="min-h-screen bg-beige font-sans">
@@ -115,8 +141,86 @@ export default function SimpleTopicLandingPage({
         </section>
       )}
 
-      {/* ── Course search CTA ───────────────────────────────────────────────── */}
-      {config.showCourseList && areaSlug && (
+      {/* ── Kursarten ──────────────────────────────────────────────────────── */}
+      {showKursarten && (
+        <section className="max-w-5xl mx-auto px-4 pb-10">
+          <h2 className="text-lg font-heading font-bold text-dark mb-1">Wie möchtest du lernen?</h2>
+          <p className="text-sm text-gray-500 mb-4">
+            Wähle eine Kursart – die Suche öffnet sich mit diesem Thema vorausgewählt.
+          </p>
+          <div className="flex flex-col gap-3">
+            {kursarten.map((k) => (
+              <button
+                key={k.slug}
+                onClick={handleGoToSearch}
+                className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center gap-4 hover:shadow-md hover:border-primary/20 transition group text-left"
+              >
+                <span className="text-2xl flex-shrink-0">{k.icon}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="font-semibold text-dark text-sm">{k.label}</div>
+                  <div className="text-xs text-gray-500 mt-0.5 line-clamp-1">{k.desc}</div>
+                </div>
+                <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-primary transition flex-shrink-0" />
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ── Aktuelle Kurse ─────────────────────────────────────────────────── */}
+      {config.showCourseList && areaSlug && topicCourses.length > 0 && (
+        <section className="max-w-5xl mx-auto px-4 pb-12">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-heading font-bold text-dark">Aktuelle Kurse</h2>
+            <button
+              onClick={handleGoToSearch}
+              className="text-sm text-primary font-semibold hover:underline flex items-center gap-1"
+            >
+              Alle anzeigen <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            {topicCourses.map((course) => (
+              <button
+                key={course.id}
+                onClick={() => handleCourseClick(course)}
+                className="text-left bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 overflow-hidden w-full"
+              >
+                <div className="relative h-32 bg-gray-100 overflow-hidden">
+                  {course.image_url ? (
+                    <img
+                      src={course.image_url}
+                      alt={course.title || ''}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                      onError={(e) => { e.target.style.display = 'none'; }}
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-3xl text-gray-200">📚</div>
+                  )}
+                  {course.price > 0 && (
+                    <span className="absolute top-2 right-2 bg-white/95 text-dark text-xs font-bold px-2 py-0.5 rounded-full shadow">
+                      CHF {Number(course.price).toLocaleString('de-CH')}
+                    </span>
+                  )}
+                </div>
+                <div className="p-3">
+                  <h3 className="font-bold text-dark text-sm leading-snug mb-1 line-clamp-2">
+                    {course.title}
+                  </h3>
+                  <div className="flex gap-2 text-xs text-gray-400 flex-wrap">
+                    {course.location && <span>📍 {course.location}</span>}
+                    {course.duration_label && <span>🕐 {course.duration_label}</span>}
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ── Course search CTA (fallback when no courses found or not loaded) ── */}
+      {config.showCourseList && areaSlug && topicCourses.length === 0 && (
         <section className="max-w-5xl mx-auto px-4 pb-12">
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center">
             <h2 className="text-xl font-heading font-bold text-dark mb-2">Passende Kurse entdecken</h2>
