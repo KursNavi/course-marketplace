@@ -161,7 +161,7 @@ export const SEGMENT_LANDING_CONFIG = {
     themen: [
       {
         slug: 'sport-fitness',
-        label: 'Sport & Fitness',
+        label: 'Sport, Fitness & Bewegung',
         icon: '🏃',
         desc: 'Fitness, Kraft, Ausdauer, Teamsport & Outdoor',
         isThemenwelt: false,
@@ -170,7 +170,7 @@ export const SEGMENT_LANDING_CONFIG = {
       },
       {
         slug: 'yoga-achtsamkeit',
-        label: 'Yoga & Achtsamkeit',
+        label: 'Yoga, Entspannung & Mental',
         icon: '🧘',
         desc: 'Entspannung, Meditation & innere Balance',
         isThemenwelt: false,
@@ -188,7 +188,7 @@ export const SEGMENT_LANDING_CONFIG = {
       },
       {
         slug: 'kunst-kreativ',
-        label: 'Kunst & Kreativität',
+        label: 'Kunst, Design & Kreatives',
         icon: '🎨',
         desc: 'Malen, Fotografie, Keramik, Nähen & Design',
         isThemenwelt: false,
@@ -197,7 +197,7 @@ export const SEGMENT_LANDING_CONFIG = {
       },
       {
         slug: 'kochen-genuss',
-        label: 'Kochen & Genuss',
+        label: 'Kochen, Backen & Genuss',
         icon: '🍳',
         desc: 'Kochkurse, Backen, Wein & internationale Küchen',
         isThemenwelt: false,
@@ -206,7 +206,7 @@ export const SEGMENT_LANDING_CONFIG = {
       },
       {
         slug: 'sprachen',
-        label: 'Sprachen',
+        label: 'Sprachen & Reisen',
         icon: '🗣️',
         desc: 'Englisch, Französisch, Italienisch & weitere Sprachen',
         isThemenwelt: false,
@@ -215,7 +215,7 @@ export const SEGMENT_LANDING_CONFIG = {
       },
       {
         slug: 'heim-natur',
-        label: 'Heim & Natur',
+        label: 'Heim, Handwerk & Natur',
         icon: '🏡',
         desc: 'Heimwerken, Garten, Tiere & Handwerk',
         isThemenwelt: false,
@@ -257,7 +257,7 @@ export const SEGMENT_LANDING_CONFIG = {
     themen: [
       {
         slug: 'frühkindliche-bildung',
-        label: 'Frühkindliche Bildung',
+        label: 'Frühkind & Eltern-Kind (0-5)',
         icon: '👶',
         desc: 'Eltern-Kind-Turnen, Musikgarten & Spielgruppen (0–5)',
         isThemenwelt: false,
@@ -266,7 +266,7 @@ export const SEGMENT_LANDING_CONFIG = {
       },
       {
         slug: 'schule-lernen',
-        label: 'Schule & Lernen',
+        label: 'Schule, Nachhilfe & Lernen',
         icon: '📚',
         desc: 'Nachhilfe, Lerncoaching & Prüfungsvorbereitung',
         isThemenwelt: false,
@@ -284,7 +284,7 @@ export const SEGMENT_LANDING_CONFIG = {
       },
       {
         slug: 'coding-technik',
-        label: 'Coding & Technik',
+        label: 'Technik, Coding & Medien',
         icon: '🤖',
         desc: 'Programmieren, Robotik & Medienkompetenz',
         isThemenwelt: false,
@@ -302,7 +302,7 @@ export const SEGMENT_LANDING_CONFIG = {
       },
       {
         slug: 'elternbildung',
-        label: 'Elternbildung',
+        label: 'Elternbildung & Familie',
         icon: '👨‍👩‍👧',
         desc: 'Geburtsvorbereitung, Erziehung & Erste Hilfe am Kind',
         isThemenwelt: false,

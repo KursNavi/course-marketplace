@@ -290,9 +290,18 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
                 {t?.btn_search || 'Suchen'}
               </button>
             </div>
-            {totalCourses > 0 && (
-              <p className="text-sm text-white/80 mt-2 ml-1">{totalCourses} Kurse in diesem Bereich</p>
-            )}
+            <div className="mt-3 flex flex-wrap items-center gap-3">
+              {totalCourses > 0 && (
+                <p className="text-sm text-white/80 ml-1">{totalCourses} Kurse in diesem Bereich</p>
+              )}
+              <button
+                type="button"
+                onClick={() => navigateToSearch()}
+                className="inline-flex items-center gap-2 bg-white/15 hover:bg-white/25 border border-white/30 text-white font-semibold px-5 py-2 rounded-full transition-colors text-sm"
+              >
+                Alle Kurse anzeigen <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
           </form>
         </div>
       </div>
