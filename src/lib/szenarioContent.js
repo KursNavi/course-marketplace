@@ -103,6 +103,16 @@ export const SZENARIO_CONTENT = {
 <li><strong>Ratenzahlung:</strong> Viele Anbieter (z. B. SAFS, Star Education) bieten flexible Zahlungsmodelle.</li>
 </ul>
 
+<h2>Quereinstieg: zuerst Tragbarkeit, dann Tempo</h2>
+<p>Beim Quereinstieg ist nicht nur wichtig, ob dich der Beruf interessiert, sondern wie du die Übergangszeit organisierst. Prüfe deshalb vor der Buchung:</p>
+<ul>
+<li>Wie schnell musst du erste Praxis aufbauen?</li>
+<li>Bleibt dein bisheriger Job parallel bestehen oder reduzierst du Pensum?</li>
+<li>Welche Kosten fallen an, bevor überhaupt erste Einnahmen oder Praxisstunden entstehen?</li>
+<li>Wie lange kannst du eine Phase mit höherem Aufwand realistisch tragen?</li>
+</ul>
+<p>Ein guter Quereinstieg ist meist nicht der schnellste, sondern der, den du sauber finanzieren und im Alltag durchhalten kannst.</p>
+
 <h2>So gelingt der Quereinstieg Schritt für Schritt</h2>
 
 <h3>Schritt 1: Orientierung und Richtungswahl</h3>
@@ -220,6 +230,18 @@ export const SZENARIO_CONTENT = {
 <p>Für die Vorbereitung auf eidgenössische Prüfungen kannst du <strong>Bundesbeiträge von bis zu 50% der Kurskosten</strong> beantragen — via das Staatssekretariat für Bildung, Forschung und Innovation (SBFI). Der Maximalbetrag beläuft sich auf <strong>CHF 9'500 für den Fachausweis</strong> und <strong>CHF 10'500 für das Diplom</strong>. Du musst die Prüfung nur absolvieren, nicht bestehen. Der Kurs muss auf der offiziellen "Meldeliste" des SBFI stehen.</p>
 </div>
 
+<h2>Vor der Anmeldung die Vollkosten prüfen</h2>
+<p>Gerade beim Aufstieg zu eidgenössischen Abschlüssen reicht die Kursgebühr als Entscheidungsgrundlage nicht aus. Rechne mindestens diese Punkte mit:</p>
+<ul>
+<li>Vorbereitende Kurskosten</li>
+<li>Prüfungsgebühren</li>
+<li>Fachliteratur und Pflichtunterlagen</li>
+<li>Reise und Unterkunft bei Blocktagen</li>
+<li>Reduzierte Erwerbszeit oder entgangene Einsätze</li>
+<li>Reserve für zeitliche Verschiebungen</li>
+</ul>
+<p>Wenn der Lehrgang auf eine eidgenössische Prüfung vorbereitet, ist für die Bundesbeiträge die Meldeliste entscheidend. Der mögliche Bundesbeitrag entlastet die Kurskosten, deckt aber nicht automatisch dein Gesamtbudget.</p>
+
 <h2>Was du damit erreichst</h2>
 <p>Der Fachausweis ist <strong>Voraussetzung für viele Kaderstellen</strong> und für die Krankenkassen-Anerkennung entscheidend. Das Diplom öffnet zwei Spezialisierungsrichtungen:</p>
 <ul>
@@ -287,6 +309,16 @@ export const SZENARIO_CONTENT = {
 
 <h3>Personal Trainer (Abend/Wochenende)</h3>
 <p>Mit einer Personal-Trainer-Ausbildung kannst du nach Feierabend oder am Wochenende Kunden betreuen. Weniger Lektionen, aber höhere Stundensätze — und du baust einen langfristigen Kundenstamm auf.</p>
+
+<h2>Nebenerwerb realistisch planen</h2>
+<p>Nebenberuflich in die Branche einzusteigen klingt oft leichter, als es später im Kalender wirkt. Deshalb lohnt vor dem Start eine ehrliche Wochenrechnung:</p>
+<ul>
+<li>Wie viele fixe Slots pro Woche kannst du wirklich über Monate halten?</li>
+<li>Wie viel Vor- und Nachbereitung braucht eine Lektion oder ein Kunde?</li>
+<li>Ist Pendelzeit mitgerechnet?</li>
+<li>Bleibt genug Reserve für Hauptjob, Erholung und spontane Verschiebungen?</li>
+</ul>
+<p>Ein Nebenerwerb wird eher stabil, wenn du mit wenig, aber verlässlich startest. Zwei gute Slots pro Woche sind oft tragfähiger als ein ambitionierter Aufbau, der nach wenigen Monaten kippt.</p>
 
 <div class="info-box">
 <h3>💡 Rechtliches: Was du als Nebenerwerbstätiger wissen musst</h3>
@@ -478,6 +510,16 @@ export const SZENARIO_CONTENT = {
 <h3>Fitness-Guide — das Bewertungssystem für Center</h3>
 <p>Das Schweizer Ratingsystem (1–5 Sterne) für Fitnesscenter, das die Betreuungsdichte und Qualifikation der Mitarbeitenden bewertet. Relevant für Trainer, die in zertifizierten Centern arbeiten möchten.</p>
 
+<h2>Was ein Label aussagt – und was nicht</h2>
+<p>Qualitätslabels und Anerkennungen helfen bei der Einordnung, aber sie beantworten nicht jede Frage automatisch.</p>
+<ul>
+<li><strong>eduQua:</strong> spricht für systematische Qualität bei Weiterbildungsanbietern generell.</li>
+<li><strong>Qualitop:</strong> ist vor allem im Bereich Bewegungs- und Gesundheitsförderung ein relevantes Signal für Anbieter.</li>
+<li><strong>QualiCert:</strong> ist als Anerkennung für Anbieter und Versicherungsbeiträge relevant – die Zertifizierung der Kursleitung allein reicht aber nicht automatisch für Krankenkassenbeiträge; auch die Anbieterzertifizierung ist entscheidend.</li>
+<li><strong>Eidgenössischer Abschluss:</strong> ist kein Label, sondern ein staatlich verankerter Abschluss mit eigener Wertigkeit.</li>
+</ul>
+<p>Wichtig ist deshalb nicht, möglichst viele Logos zu sammeln, sondern zu verstehen, welche Anerkennung für deinen späteren Einsatz wirklich zählt: Anstellung im Center, selbstständige Kursangebote, Krankenkassenbezug, Kaderrolle oder eidgenössischer Aufstieg.</p>
+
 <h2>Krankenkassen-Rückerstattungen: Wer zahlt was?</h2>
 <p>Die meisten Schweizer Krankenkassen unterstützen Fitness-Aktivitäten über die Zusatzversicherung — aber nur bei zertifizierten Anbietern. Hier die wichtigsten Kassen im Überblick (Stand 2025/2026):</p>
 
@@ -580,6 +622,15 @@ export const SZENARIO_CONTENT = {
 </ul>
 </div>
 
+<h2>Was den Einstieg wirklich leichter macht</h2>
+<p>Viele brechen nicht ab, weil Yoga nichts für sie ist, sondern weil der erste Rahmen unpassend war. Für den Anfang helfen vor allem drei Dinge:</p>
+<ul>
+<li><strong>Niedrige Buchungshürde:</strong> Probelektion, Einzeleintritt oder kurzer Testzeitraum statt sofort langem Paket.</li>
+<li><strong>Klares Format:</strong> Lieber ein ruhiger laufender Kurs als ein überladenes Spezialformat.</li>
+<li><strong>Realistischer Rhythmus:</strong> Eine gute Einheit pro Woche ist oft hilfreicher als ein zu ambitionierter Start.</li>
+</ul>
+<p>Wenn du zwischen mehreren Kursen schwankst, wähle nicht den beeindruckendsten Titel, sondern den Kurs, den du in den nächsten 4 bis 8 Wochen wirklich regelmässig besuchen kannst.</p>
+
 <div class="cta-box">
 <h3>Jetzt mit einem passenden Kurs starten</h3>
 <p>Finde anfängerfreundliche Yoga-Angebote mit klarer Einstufung, strukturierter Anleitung und sicherem Aufbau.</p>
@@ -629,6 +680,16 @@ export const SZENARIO_CONTENT = {
 <li>Pro Stil 2-3 Sessions testen.</li>
 <li>Ergebnis am nächsten Tag bewerten: Energie, Schlaf, Spannung, Motivation.</li>
 </ol>
+
+<h2>Stilwahl und Format gehören zusammen</h2>
+<p>Auch ein passender Stil kann im falschen Format scheitern. Frage deshalb nicht nur „Welcher Stil passt zu mir?", sondern auch:</p>
+<ul>
+<li>Brauche ich vor Ort mehr Orientierung?</li>
+<li>Ist ein Online-live-Kurs für meinen Alltag realistischer?</li>
+<li>Will ich erst einen Workshop testen oder lieber eine stabile Routine aufbauen?</li>
+<li>Passt die Kurszeit zu meinem Energielevel oder nur theoretisch in meinen Kalender?</li>
+</ul>
+<p>Wenn dein Alltag unruhig ist, hilft oft ein Format mit wenig Reibung: kurze Anfahrt oder gutes Online-live-Angebot, klare Einstufung und möglichst wenig Zusatzorganisation.</p>
 
 <div class="checklist">
 <h3>Praktischer Auswahl-Check</h3>
@@ -796,6 +857,17 @@ export const SZENARIO_CONTENT = {
 <h2>Kontraindikationen: wann besonders vorsichtig sein</h2>
 <p>Bei intensiven Atemformaten sollte vorab geklärt werden, ob gesundheitliche oder psychische Faktoren vorliegen, die eine Anpassung oder ein ruhigeres Format sinnvoll machen. Seriöse Kurse weisen darauf transparent hin und bieten Alternativen.</p>
 
+<h2>Vertrauenscheck für Breathwork-Angebote</h2>
+<p>Breathwork ist nicht automatisch riskant, aber sehr unterschiedlich. Gerade deshalb solltest du vor der Buchung genauer hinschauen. Gute Angebote machen mindestens diese Punkte klar:</p>
+<ul>
+<li>Welche Methode wird angeleitet?</li>
+<li>Geht es um ruhige Regulation oder um ein intensives Format?</li>
+<li>Wie läuft die Session konkret ab?</li>
+<li>Gibt es ein Vorgespräch oder klare Hinweise, für wen das Format nicht gedacht ist?</li>
+<li>Ist es in Ordnung, jederzeit langsamer zu werden oder auszusetzen?</li>
+</ul>
+<p>Ein Warnsignal ist, wenn nur mit grossen Versprechen gearbeitet wird, aber Intensität, Ablauf und Grenzen unklar bleiben. Für Einsteiger ist meist ein ruhiger, regulierender Einstieg sinnvoller als ein bewusst sehr intensives Setting.</p>
+
 <h2>So wählst du ein passendes Kursniveau</h2>
 <div class="checklist">
 <h3>Vor der Buchung prüfen</h3>
@@ -884,6 +956,17 @@ export const SZENARIO_CONTENT = {
 <li>Respektvoller Umgang mit Einverständnis und persönlichen Grenzen</li>
 </ul>
 
+<h2>Nüchtern prüfen, ob das Setting für dich stimmt</h2>
+<p>Bei Reiki und Energiearbeit ist nicht entscheidend, wie gross die Versprechen sind, sondern wie transparent der Rahmen ist. Achte vor allem auf:</p>
+<ul>
+<li>Klare Beschreibung von Ablauf und Ziel</li>
+<li>Respektvolle Sprache ohne Absolutheitsanspruch</li>
+<li>Offene Kommunikation darüber, was das Format leisten soll und was nicht</li>
+<li>Sichtbare Qualifikation oder nachvollziehbarer Hintergrund der leitenden Person</li>
+<li>Raum für Fragen, Grenzen und eigenes Tempo</li>
+</ul>
+<p>Ein seriöses Angebot muss nicht alles wissenschaftlich beweisen. Es sollte aber sauber einordnen, worum es geht, und keine Heilung oder sichere Wirkung versprechen.</p>
+
 <div class="info-box">
 <h3>Einordnung statt Schwarz-Weiss</h3>
 <p>Viele erleben Energiearbeit als wohltuend und regulierend. Gleichzeitig sollte sie als ergänzendes Angebot verstanden werden - nicht als Ersatz für medizinische oder psychotherapeutische Versorgung.</p>
@@ -932,6 +1015,18 @@ export const SZENARIO_CONTENT = {
 <h3>Professioneller Rahmen ist Pflicht</h3>
 <p>Zu gutem Bodywork gehören immer klare Kommunikation, informierte Zustimmung, Hygiene und respektvolle Grenzsetzung. Das ist ein Qualitätskriterium, kein Bonus.</p>
 </div>
+
+<h2>Einverständnis ist hier kein Detail</h2>
+<p>Bei Bodywork und Thai Yoga Massage gehören Berührung, Nähe und Körpergrenzen direkt zum Setting. Darum ist die wichtigste Vertrauensfrage nicht nur, ob ein Angebot entspannend klingt, sondern ob der Rahmen sauber geregelt ist.</p>
+<p>Vor der Buchung sollte klar sein:</p>
+<ul>
+<li>ob das Angebot in der Gruppe oder im 1:1 stattfindet</li>
+<li>wie Berührung angekündigt und abgestimmt wird</li>
+<li>ob du jederzeit Nein sagen oder etwas abbrechen kannst</li>
+<li>wie mit Intimität, Kleidung, Lagerung und Privatsphäre umgegangen wird</li>
+<li>ob Kontraindikationen und körperliche Beschwerden angesprochen werden</li>
+</ul>
+<p>Gerade Einsteiger bleiben eher bei einem Angebot, wenn sie sich nicht erklären oder rechtfertigen müssen, sondern Grenzen selbstverständlich respektiert werden.</p>
 
 <h2>Vor der Buchung klären</h2>
 <div class="checklist">
