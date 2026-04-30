@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronDown, ChevronRight, ChevronLeft, MapPin, Globe, Monitor } from 'lucide-react';
 import { SWISS_CANTONS, DELIVERY_TYPES, COURSE_LANGUAGES, TYPE_DISPLAY_LABELS, BERUF_SAEULEN } from '../lib/constants';
-import { GraduationCap, BookOpen, Compass } from 'lucide-react';
+import { Clock, BookOpen, Award, GraduationCap } from 'lucide-react';
 import { useTaxonomy } from '../hooks/useTaxonomy';
 
 export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCatPath, catMenuOpen, setCatMenuOpen, t, catMenuRef }) => {
@@ -320,12 +320,12 @@ export const DeliveryTypeFilter = ({ selectedDeliveryTypes, setSelectedDeliveryT
     );
 };
 
-const SAEULEN_ICONS = { diplome: GraduationCap, fachkurse: BookOpen, quereinstieg: Compass };
+const SAEULEN_ICONS = { workshop: Clock, fachkurs: BookOpen, zertifikatslehrgang: Award, ausbildung: GraduationCap };
 
 export const SaeulenFilter = ({ selectedSaule, setSelectedSaule }) => {
     return (
         <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-xs text-gray-400 mr-1 hidden md:inline">Berufliche Säule:</span>
+            <span className="text-xs text-gray-400 mr-1 hidden md:inline">Kursformat:</span>
             {Object.entries(BERUF_SAEULEN).map(([key, config]) => {
                 const Icon = SAEULEN_ICONS[key];
                 const active = selectedSaule === key;

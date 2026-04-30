@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
-import { ArrowLeft, Loader, Calendar, Plus, Trash2, ExternalLink, Globe, MapPin, Lightbulb, X, Send, ChevronDown, Images, Check, GraduationCap, BookOpen, Compass } from 'lucide-react';
+import { ArrowLeft, Loader, Calendar, Plus, Trash2, ExternalLink, Globe, MapPin, Lightbulb, X, Send, ChevronDown, Images, Check, Clock, BookOpen, Award, GraduationCap } from 'lucide-react';
 import { KursNaviLogo } from './Layout';
 import { SWISS_CANTONS, NEW_TAXONOMY, CATEGORY_TYPES, COURSE_LEVELS, DELIVERY_TYPES, COURSE_LANGUAGES, TYPE_DISPLAY_LABELS, BERUF_SAEULEN } from '../lib/constants';
 import { supabase } from '../lib/supabase';
@@ -1719,18 +1719,18 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                             </div>
                         </div>
 
-                        {/* 3-Säulen: Nur für berufliche Kurse (Mehrfachauswahl) */}
+                        {/* Kursformat: Nur für berufliche Kurse (Mehrfachauswahl) */}
                         {(categories[0]?.type === 'professionell' || categories[0]?.type === 'beruflich') && (
                             <div className="bg-white/60 p-4 rounded-lg border border-blue-200/60 mt-4">
                                 <span className="text-sm font-bold text-blue-900 block mb-1">
-                                    Berufliche Säule(n)
+                                    Kursformat / Art der Weiterbildung
                                 </span>
                                 <span className="text-xs text-gray-500 block mb-3">
-                                    Welche Art(en) beruflicher Weiterbildung bietet dieser Kurs? Mehrfachauswahl möglich.
+                                    Welchem Format entspricht dieser Kurs? Mehrfachauswahl möglich.
                                 </span>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
                                     {Object.entries(BERUF_SAEULEN).map(([key, config]) => {
-                                        const Icon = { diplome: GraduationCap, fachkurse: BookOpen, quereinstieg: Compass }[key];
+                                        const Icon = { workshop: Clock, fachkurs: BookOpen, zertifikatslehrgang: Award, ausbildung: GraduationCap }[key];
                                         const isSelected = berufSaeulen.includes(key);
                                         return (
                                             <label
