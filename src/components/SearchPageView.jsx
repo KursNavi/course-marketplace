@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useCallback } from 'react';
 import { Search, ChevronRight, User, X, Shield, MapPin, CheckCircle, Loader, Bell, ArrowDown, ArrowRight, Sparkles, Bookmark, BookmarkCheck, CreditCard, Info, EyeOff, Briefcase, Palette, Smile, BookOpen, Compass, SearchX, AlertTriangle, RotateCcw } from 'lucide-react';
 import { LocationDropdown, LanguageDropdown, DeliveryTypeFilter, SaeulenFilter } from './Filters';
 import { Globe } from 'lucide-react';
-import { CATEGORY_TYPES, AGE_GROUPS, COURSE_LEVELS, DELIVERY_TYPES, SEGMENT_CONFIG, TYPE_DISPLAY_LABELS, BERUF_SAEULEN } from '../lib/constants';
+import { CATEGORY_TYPES, AGE_GROUPS, COURSE_LEVELS, DELIVERY_TYPES, SEGMENT_CONFIG, TYPE_DISPLAY_LABELS, BERUF_SAEULEN, NEW_TAXONOMY } from '../lib/constants';
 import { formatPriceCHF, getPriceLabel } from '../lib/formatPrice';
 import { useTaxonomy } from '../hooks/useTaxonomy';
 import { supabase } from '../lib/supabase';
@@ -504,10 +504,13 @@ const SearchPageView = ({
         if (scope === 'age') return AGE_GROUPS?.[key]?.de || key;
 
         if (scope === 'area') {
-            // First check labelMap from all_categories (new schema)
+            // First check NEW_TAXONOMY (authoritative frontend source)
+            for (const seg of Object.values(NEW_TAXONOMY)) {
+                if (seg[key]?.label?.de) return seg[key].label.de;
+            }
+            // Then check labelMap from all_categories (DB)
             if (labelMap.areas[key]) return labelMap.areas[key];
-
-            // Use DB taxonomy
+            // Finally, DB taxonomy
             return getAreaLabelFromDB(key);
         }
 
