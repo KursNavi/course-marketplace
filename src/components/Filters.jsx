@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronDown, ChevronRight, ChevronLeft, MapPin, Globe, Monitor } from 'lucide-react';
-import { SWISS_CANTONS, DELIVERY_TYPES, COURSE_LANGUAGES, TYPE_DISPLAY_LABELS, BERUF_SAEULEN } from '../lib/constants';
+import { SWISS_CANTONS, DELIVERY_TYPES, COURSE_LANGUAGES, TYPE_DISPLAY_LABELS, BERUF_SAEULEN, NEW_TAXONOMY } from '../lib/constants';
 import { GraduationCap, BookOpen, Compass } from 'lucide-react';
 import { useTaxonomy } from '../hooks/useTaxonomy';
 
@@ -20,6 +20,16 @@ export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCat
     const activeTypes = types.length > 0
         ? Object.fromEntries(types.map(t => [t.id, { de: t.label_de, en: t.label_en, fr: t.label_fr, it: t.label_it }]))
         : {};
+
+    // Helper to get area label: NEW_TAXONOMY first (authoritative), then DB label
+    const getAreaLabel = (area) => {
+        if (area?.slug) {
+            for (const seg of Object.values(NEW_TAXONOMY)) {
+                if (seg[area.slug]?.label?.de) return seg[area.slug].label.de;
+            }
+        }
+        return area?.label_de || area?.slug || '';
+    };
 
     // Helper to format slug to readable label (e.g. "bildung_soziales" -> "Bildung & Soziales")
     const formatSlugToLabel = (slug) => {
@@ -125,10 +135,10 @@ export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCat
                             areas
                                 .filter(area => area.level1_id === lvl1 || area.type_id === lvl1)
                                 .filter(area => (courseCounts.level2[area.id] || 0) > 0)
-                                .sort((a, b) => (a.label_de || '').localeCompare(b.label_de || '', 'de'))
+                                .sort((a, b) => getAreaLabel(a).localeCompare(getAreaLabel(b), 'de'))
                                 .map(area => (
                                 <button type="button" key={area.id} onClick={() => { setLvl2(area.id); setLvl3(null); }} className={`w-full text-left p-3 mx-2 my-1 rounded-lg cursor-pointer text-sm flex justify-between items-center transition ${lvl2 === area.id ? 'bg-primaryLight font-bold text-primary' : 'text-gray-700 hover:bg-gray-50'}`}>
-                                    {area.label_de}
+                                    {getAreaLabel(area)}
                                     <ChevronRight className={`w-4 h-4 ${lvl2 === area.id ? 'text-primary' : 'text-gray-300'}`} aria-hidden="true" />
                                 </button>
                             ))
