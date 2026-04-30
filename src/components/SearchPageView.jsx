@@ -430,6 +430,8 @@ const SearchPageView = ({
     const dbSearchType = searchType ? (URL_TO_DB_TYPE[searchType] || searchType) : '';
 
     // Level 2-4: Alphabetically sorted by label
+    // Only include area slugs that exist in the DB taxonomy (prevents stale/old slugs from appearing)
+    const dbAreaSlugSet = new Set(dbAreas.map(a => a.slug).filter(Boolean));
     const availableAreas = [...new Set(
         baseCourses.flatMap(c => {
             const areas = [];
@@ -449,7 +451,7 @@ const SearchPageView = ({
             }
             return areas;
         })
-    )].sort((a, b) => {
+    )].filter(slug => dbAreaSlugSet.size === 0 || dbAreaSlugSet.has(slug)).sort((a, b) => {
         // Sort by label (German alphabetical)
         const labelA = labelMap.areas[a] || a;
         const labelB = labelMap.areas[b] || b;
@@ -506,7 +508,6 @@ const SearchPageView = ({
         if (scope === 'area') {
             // First check labelMap from all_categories (new schema)
             if (labelMap.areas[key]) return labelMap.areas[key];
-
             // Use DB taxonomy
             return getAreaLabelFromDB(key);
         }
