@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useCallback } from 'react';
 import { Search, ChevronRight, User, X, Shield, MapPin, CheckCircle, Loader, Bell, ArrowDown, ArrowRight, Sparkles, Bookmark, BookmarkCheck, CreditCard, Info, EyeOff, Briefcase, Palette, Smile, BookOpen, Compass, SearchX, AlertTriangle, RotateCcw } from 'lucide-react';
 import { LocationDropdown, LanguageDropdown, DeliveryTypeFilter, SaeulenFilter } from './Filters';
 import { Globe } from 'lucide-react';
-import { CATEGORY_TYPES, AGE_GROUPS, COURSE_LEVELS, DELIVERY_TYPES, SEGMENT_CONFIG, TYPE_DISPLAY_LABELS, BERUF_SAEULEN, NEW_TAXONOMY } from '../lib/constants';
+import { CATEGORY_TYPES, AGE_GROUPS, COURSE_LEVELS, DELIVERY_TYPES, SEGMENT_CONFIG, TYPE_DISPLAY_LABELS, BERUF_SAEULEN } from '../lib/constants';
 import { formatPriceCHF, getPriceLabel } from '../lib/formatPrice';
 import { useTaxonomy } from '../hooks/useTaxonomy';
 import { supabase } from '../lib/supabase';
@@ -430,6 +430,8 @@ const SearchPageView = ({
     const dbSearchType = searchType ? (URL_TO_DB_TYPE[searchType] || searchType) : '';
 
     // Level 2-4: Alphabetically sorted by label
+    // Only include area slugs that exist in the DB taxonomy (prevents stale/old slugs from appearing)
+    const dbAreaSlugSet = new Set(dbAreas.map(a => a.slug).filter(Boolean));
     const availableAreas = [...new Set(
         baseCourses.flatMap(c => {
             const areas = [];
@@ -449,7 +451,7 @@ const SearchPageView = ({
             }
             return areas;
         })
-    )].sort((a, b) => {
+    )].filter(slug => dbAreaSlugSet.size === 0 || dbAreaSlugSet.has(slug)).sort((a, b) => {
         // Sort by label (German alphabetical)
         const labelA = labelMap.areas[a] || a;
         const labelB = labelMap.areas[b] || b;
@@ -504,13 +506,9 @@ const SearchPageView = ({
         if (scope === 'age') return AGE_GROUPS?.[key]?.de || key;
 
         if (scope === 'area') {
-            // First check NEW_TAXONOMY (authoritative frontend source)
-            for (const seg of Object.values(NEW_TAXONOMY)) {
-                if (seg[key]?.label?.de) return seg[key].label.de;
-            }
-            // Then check labelMap from all_categories (DB)
+            // First check labelMap from all_categories (new schema)
             if (labelMap.areas[key]) return labelMap.areas[key];
-            // Finally, DB taxonomy
+            // Use DB taxonomy
             return getAreaLabelFromDB(key);
         }
 
