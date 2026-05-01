@@ -30,23 +30,23 @@ test.describe('Search & Filters (app-e2e)', () => {
 
   test('area URL param: dropdown shows area label, chip shows readable name', async ({ page }) => {
     // Navigate directly to search with type + area pre-selected (as done by topic landing pages)
-    await page.goto('/search?type=beruflich&area=business_mgmt');
+    await page.goto('/search?type=beruflich&area=wirtschaft_management');
 
     const resultsCounter = page.getByTestId('results-counter');
     await expect(resultsCounter).toBeVisible({ timeout: 15_000 });
     await expect(resultsCounter).not.toContainText('Lade', { timeout: 10_000 });
 
-    // The Bereich select must have business_mgmt as its current value (not the empty placeholder)
-    // We locate the select by checking its first option is "— Bereich —" / "— Themenwelt —"
-    const areaSelect = page.locator('select').nth(0);
+    // The Bereich select must have wirtschaft_management as its current value (not the empty placeholder)
+    const areaSelect = page.getByTestId('select-bereich');
     const selectedValue = await areaSelect.inputValue();
-    expect(selectedValue).toBe('business_mgmt');
+    expect(selectedValue).toBe('wirtschaft_management');
 
-    // The filter chips container must NOT show the raw DB slug "business_mgmt"
-    // It should show a human-readable label like "Business, Management & Leadership"
+    // The filter chips container must NOT show the raw DB slug
+    // It should show a human-readable label like "Wirtschaft & Management"
     const chips = page.getByTestId('filter-chips');
     await expect(chips).toBeVisible({ timeout: 5_000 });
-    await expect(chips).not.toContainText('business_mgmt');
+    await expect(chips).not.toContainText('wirtschaft_management');
+    await expect(chips).toContainText('Wirtschaft & Management');
   });
 
   test('filter reset clears all active filters', async ({ page }) => {

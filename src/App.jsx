@@ -325,10 +325,24 @@ export default function KursNaviPro() {  // 1. Initial State Logic
   const [selectedDeliveryTypes, setSelectedDeliveryTypes] = useState([]);
   const [deliveryMenuOpen, setDeliveryMenuOpen] = useState(false);
   const deliveryMenuRef = useRef(null);
-  const [searchType, setSearchType] = useState("");
-  const [searchArea, setSearchArea] = useState("");
-  const [searchSpecialty, setSearchSpecialty] = useState("");
-  const [searchFocus, setSearchFocus] = useState("");
+  // Initialize search filters from URL params so the URL-sync effect doesn't strip
+  // them on first render (avoids React StrictMode double-effect race condition).
+  const [searchType, setSearchType] = useState(() => {
+    if (window.location.pathname !== '/search') return "";
+    return new URLSearchParams(window.location.search).get('type') || "";
+  });
+  const [searchArea, setSearchArea] = useState(() => {
+    if (window.location.pathname !== '/search') return "";
+    return new URLSearchParams(window.location.search).get('area') || "";
+  });
+  const [searchSpecialty, setSearchSpecialty] = useState(() => {
+    if (window.location.pathname !== '/search') return "";
+    return new URLSearchParams(window.location.search).get('spec') || "";
+  });
+  const [searchFocus, setSearchFocus] = useState(() => {
+    if (window.location.pathname !== '/search') return "";
+    return new URLSearchParams(window.location.search).get('focus') || "";
+  });
   const [catMenuOpen, setCatMenuOpen] = useState(false);
   const [selectedCatPath, setSelectedCatPath] = useState([]);
   const [filterDateFrom, setFilterDateFrom] = useState("");
