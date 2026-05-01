@@ -96,7 +96,7 @@ export default function SimpleTopicLandingPage({
         <h1 className="text-2xl font-bold text-dark mb-2">Seite nicht gefunden</h1>
         <p className="text-gray-500 mb-6">Diese Themenseite existiert nicht (mehr).</p>
         <button
-          onClick={handleGoToSearch}
+          onClick={() => handleGoToSearch()}
           className="inline-flex items-center gap-2 bg-primary text-white font-semibold px-6 py-3 rounded-full hover:bg-orange-600 transition"
         >
           Alle Kurse durchsuchen <ArrowRight className="w-4 h-4" />
@@ -183,7 +183,7 @@ export default function SimpleTopicLandingPage({
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-heading font-bold text-dark">Aktuelle Kurse</h2>
             <button
-              onClick={handleGoToSearch}
+              onClick={() => handleGoToSearch()}
               className="text-sm text-primary font-semibold hover:underline flex items-center gap-1"
             >
               Alle anzeigen <ArrowRight className="w-3.5 h-3.5" />
@@ -238,7 +238,7 @@ export default function SimpleTopicLandingPage({
               Alle Kurse zu diesem Thema – mit allen Filtern und tagesaktuellen Angeboten.
             </p>
             <button
-              onClick={handleGoToSearch}
+              onClick={() => handleGoToSearch()}
               className="inline-flex items-center gap-2 bg-primary text-white font-semibold px-6 py-3 rounded-full hover:bg-orange-600 transition shadow"
             >
               <Search className="w-4 h-4" />
@@ -265,7 +265,7 @@ export default function SimpleTopicLandingPage({
             </p>
           </div>
           <button
-            onClick={handleGoToSearch}
+            onClick={() => handleGoToSearch()}
             className="inline-flex items-center gap-2 bg-primary text-white font-semibold px-6 py-3 rounded-full hover:bg-orange-600 transition shadow"
           >
             <Search className="w-4 h-4" />
