@@ -501,47 +501,61 @@ export const SIMPLE_TOPIC_CONTENT = {
   },
 
   // ---- BERUFLICH KURSARTEN (editorial only, no specific DB category) ----
-  'beruflich/diplome-lehrgaenge': {
-    title: 'Diplome & Lehrgänge',
-    subtitle: 'Staatlich anerkannte Abschlüsse für deine Karriere',
+  'beruflich/workshop-tagesseminar': {
+    title: 'Workshop & Tagesseminar',
+    subtitle: 'Kompaktes Lernen – intensiv, ohne langfristige Verpflichtung',
     intro:
-      'Ob eidgenössisches Diplom, Lehrgang mit Zertifikat oder branchenanerkannter Abschluss – in der Schweiz gibt es vielfältige Möglichkeiten, deine Qualifikationen offiziell zu dokumentieren und deinen Marktwert zu steigern.',
+      'Ein Workshop oder Tagesseminar ist die ideale Form, wenn du schnell und gezielt Wissen aufbauen oder auffrischen möchtest. 1 bis 5 Tage reichen oft, um neue Fähigkeiten praxisnah zu erwerben – ganz ohne monatelange Verpflichtung.',
     points: [
-      { icon: '🎓', title: 'Eidgenössische Abschlüsse', text: 'Eidg. Fachausweis und Diplom sind staatlich anerkannt und schweizweit geschätzt.' },
-      { icon: '📋', title: 'Branchenzertifikate', text: 'Viele Branchen haben eigene anerkannte Zertifikate – von Fitness bis Finanzen.' },
-      { icon: '🗓️', title: 'Berufsbegleitend möglich', text: 'Die meisten Lehrgänge sind so gestaltet, dass du sie neben dem Job absolvieren kannst.' },
-      { icon: '📈', title: 'Lohn- und Karriereschub', text: 'Ein anerkannter Abschluss öffnet Türen für bessere Positionen und höhere Löhne.' },
+      { icon: '📅', title: 'Kompakt und flexibel', text: '1–5 Tage, oft an Wochenenden oder Abenden – passend auch für volle Terminkalender.' },
+      { icon: '⚡', title: 'Sofort anwendbar', text: 'Praxisorientierter Stoff, den du direkt am nächsten Tag im Berufsalltag einsetzen kannst.' },
+      { icon: '🎯', title: 'Thematisch fokussiert', text: 'Kein Ballast – du lernst genau das, was du für dein aktuelles Ziel brauchst.' },
+      { icon: '💡', title: 'Ideal zum Kennenlernen', text: 'Teste ein neues Thema oder einen Anbieter, bevor du dich für einen längeren Lehrgang entscheidest.' },
     ],
     showCourseList: false,
-    hintText: 'Weitere Ratgeber und Vergleiche zu Diplomen und Lehrgängen folgen in Kürze.',
+    hintText: 'Ratgeber zur Auswahl des richtigen Workshops folgen in Kürze.',
   },
-  'beruflich/fachkurse-skill-updates': {
-    title: 'Fachkurse & Skill-Updates',
-    subtitle: 'Bleib aktuell – praxisnah und effizient',
+  'beruflich/fachkurs-seminarreihe': {
+    title: 'Fachkurs & Seminarreihe',
+    subtitle: 'Strukturierte Weiterbildung – modular und praxisnah',
     intro:
-      'Der Arbeitsmarkt verändert sich schnell. Mit gezielten Fachkursen und Skill-Updates hältst du dein Wissen frisch, kannst neue Aufgaben übernehmen und bist für deinen Arbeitgeber noch wertvoller.',
+      'Ein Fachkurs oder eine Seminarreihe bietet mehr Tiefe als ein einzelner Workshop, ohne den Aufwand eines langen Lehrgangs. In aufeinander aufbauenden Modulen erarbeitest du Wissen systematisch und erhältst eine Kursbestätigung als Nachweis.',
     points: [
-      { icon: '⚡', title: 'Kurze Formate', text: 'Viele Fachkurse dauern nur 1–3 Tage – ideal für Berufstätige mit wenig Zeit.' },
-      { icon: '🎯', title: 'Gezielt auf Bedarf', text: 'Wähle genau das Thema, das du gerade brauchst – kein Ballast, nur Relevanz.' },
-      { icon: '💡', title: 'Praxistransfer', text: 'Gute Fachkurse vermitteln Wissen, das du am nächsten Tag direkt einsetzen kannst.' },
-      { icon: '🌐', title: 'Online & Präsenz', text: 'Viele Angebote gibt es auch online – flexibel und ortsunabhängig.' },
+      { icon: '📚', title: 'Mehrere aufbauende Module', text: 'Systematischer Wissensaufbau über mehrere Wochen oder Monate – mit rotem Faden.' },
+      { icon: '🗓️', title: 'Berufsbegleitend', text: 'Abend- und Wochenendtermine machen es möglich, Kurs und Job zu kombinieren.' },
+      { icon: '📜', title: 'Kursbestätigung', text: 'Du erhältst am Ende ein Zertifikat oder eine Kursbestätigung als Nachweis deiner Weiterbildung.' },
+      { icon: '🎯', title: 'Praxistransfer', text: 'Gute Fachkurse zeigen dir, wie du das Gelernte sofort im Berufsalltag einsetzen kannst.' },
     ],
     showCourseList: false,
     hintText: 'Mehr Tipps zur Auswahl des richtigen Fachkurses folgen in Kürze.',
   },
-  'beruflich/quereinstieg-neuorientierung': {
-    title: 'Quereinstieg & Neuorientierung',
-    subtitle: 'Einen neuen Weg einschlagen – strukturiert und sicher',
+  'beruflich/zertifikatslehrgang': {
+    title: 'Zertifikatslehrgang',
+    subtitle: 'Anerkannter Abschluss – mehr als nur ein Kurs',
     intro:
-      'Ein Quereinstieg ist eine mutige Entscheidung. Mit der richtigen Ausbildung oder Umschulung gelingt der Wechsel in eine neue Branche oft einfacher als gedacht. Wir zeigen dir, welche Wege es gibt.',
+      'Ein Zertifikatslehrgang endet mit einem anerkannten Abschluss, der deinen Lebenslauf stärkt und deinen Marktwert erhöht. CAS, SQS-Zertifikate und branchenanerkannte Diplome sind Nachweise, auf die Arbeitgeber und Kunden achten.',
     points: [
-      { icon: '🔄', title: 'Branchenwechsel', text: 'Viele Branchen suchen aktiv nach Quereinsteigern mit frischer Perspektive.' },
-      { icon: '🗺️', title: 'Orientierungskurse', text: 'Teste eine neue Richtung mit kurzen Einstiegskursen, bevor du eine grosse Entscheidung triffst.' },
-      { icon: '🤝', title: 'Anerkannte Abschlüsse nachholen', text: 'Verkürzte Ausbildungswege machen es möglich, schneller zur Qualifikation zu kommen.' },
-      { icon: '💬', title: 'Beratung nutzen', text: 'Gute Kursanbieter beraten dich, welcher Weg für deine Situation am besten passt.' },
+      { icon: '🏅', title: 'Anerkannter Abschluss', text: 'CAS (Certificate of Advanced Studies), SQS-Zertifikate oder branchenanerkannte Diplome – schweizweit geschätzt.' },
+      { icon: '⏱️', title: '3–12 Monate', text: 'Genug Zeit für echte Tiefe, aber noch überschaubar – meist berufsbegleitend möglich.' },
+      { icon: '🔍', title: 'Prüfung oder Projektarbeit', text: 'Der Abschluss wird durch eine Prüfung oder Abschlussarbeit dokumentiert und beglaubigt.' },
+      { icon: '📈', title: 'Sichtbare Karrierewirkung', text: 'Anerkannte Zertifikate öffnen Türen zu neuen Stellen, Führungsrollen und besseren Löhnen.' },
     ],
     showCourseList: false,
-    hintText: 'Ausführliche Ratgeber zum Thema Quereinstieg und Berufswechsel folgen in Kürze.',
+    hintText: 'Ratgeber zu Zertifikatslehrgängen und CAS-Programmen folgen in Kürze.',
+  },
+  'beruflich/ausbildung-diplom': {
+    title: 'Ausbildung & Diplom',
+    subtitle: 'Vollständige Berufsausbildung mit eidg. Anerkennung',
+    intro:
+      'Eine Ausbildung oder ein eidgenössisch anerkanntes Diplom ist die höchste Stufe der beruflichen Weiterbildung in der Schweiz. Ob Fachausweis, HF-Diplom oder MAS – diese Abschlüsse öffnen Türen zu Führungsrollen und besseren Löhnen.',
+    points: [
+      { icon: '🎓', title: 'Staatlich anerkannt', text: 'Eidg. Fachausweis (BP), Diplom HFP und HF-Abschlüsse sind schweizweit und international anerkannt.' },
+      { icon: '🏆', title: 'Maximale Karrierewirkung', text: 'Der höchste berufsbildende Abschluss – Grundlage für Führungspositionen und Selbstständigkeit.' },
+      { icon: '🗓️', title: '1–3 Jahre, berufsbegleitend', text: 'Umfassende Ausbildung, die du in den meisten Fällen neben dem Job absolvieren kannst.' },
+      { icon: '🏫', title: 'Höhere Berufsbildung', text: 'Das Rückgrat der Schweizer Berufsbildungslandschaft – anspruchsvoll und anerkannt.' },
+    ],
+    showCourseList: false,
+    hintText: 'Ratgeber zu Ausbildungen, Fachausweisen und HF-Diplomen folgen in Kürze.',
   },
 
   // ---- PRIVAT & HOBBY THEMEN ----
