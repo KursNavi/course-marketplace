@@ -663,22 +663,6 @@ export const SIMPLE_TOPIC_CONTENT = {
   },
 
   // ---- PRIVAT & HOBBY THEMEN (new slugs matching dropdown exactly) ----
-  'privat-hobby/sport-fitness': {
-    title: 'Sport & Fitness',
-    subtitle: 'Fitness, Kraft, Ausdauer, Teamsport & Outdoor',
-    intro:
-      'Sport und Bewegung sind das Fundament eines gesunden Lebens. In der Schweiz gibt es ein riesiges Angebot an Fitnesskursen, Teamsport, Outdoor-Aktivitäten und mehr – für alle Fitness-Level und Altersgruppen.',
-    points: [
-      { icon: '💪', title: 'Fitness & Kraft', text: 'Von Functional Training bis Gewichtheben – praxisnahe Kurse für alle Level.' },
-      { icon: '🏃', title: 'Ausdauer & Cardio', text: 'Laufen, Cycling, HIIT – effektiv trainieren und die Kondition verbessern.' },
-      { icon: '⚽', title: 'Teamsport', text: 'Fussball, Volleyball, Basket – Spass und Gemeinschaft im Sport.' },
-      { icon: '🥾', title: 'Outdoor & Abenteuer', text: 'Wandern, Klettern, Wassersport – die Natur als Trainingsort.' },
-    ],
-    showCourseList: true,
-    typeAliases: ['privat_hobby', 'privat'],
-    areaAliases: ['sport_fitness'],
-    hintText: 'Fitnesskurs-Empfehlungen und Sportarten-Vergleiche folgen in Kürze.',
-  },
   'privat-hobby/kunst-kreativ': {
     title: 'Kunst & Kreativität',
     subtitle: 'Malen, Zeichnen, Gestalten – kreativ sein macht glücklich',
@@ -889,22 +873,6 @@ export const SIMPLE_TOPIC_CONTENT = {
   },
 
   // ---- KINDER & JUGEND THEMEN (new slugs matching dropdown exactly) ----
-  'kinder-jugend/fruehkindliche-bildung': {
-    title: 'Frühkindliche Bildung',
-    subtitle: 'Eltern-Kind-Turnen, Musikgarten & Spielgruppen (0–5)',
-    intro:
-      'Die ersten Lebensjahre sind prägend. Frühkindliche Bildungsangebote unterstützen Kleinkinder in ihrer motorischen, sprachlichen und sozialen Entwicklung – und helfen Eltern, diese wichtige Phase aktiv zu begleiten.',
-    points: [
-      { icon: '🎵', title: 'Musikgarten & Rhythmik', text: 'Musik und Bewegung fördern Sprachentwicklung, Koordination und Kreativität schon ab Geburt.' },
-      { icon: '🤸', title: 'Eltern-Kind-Turnen', text: 'Gemeinsame Bewegung stärkt die Bindung und unterstützt die motorische Entwicklung.' },
-      { icon: '👶', title: 'Spielgruppen', text: 'Soziale Kontakte knüpfen, spielerisch lernen – ideal für Kinder ab ca. 2 Jahren.' },
-      { icon: '🌱', title: 'Sprachförderung', text: 'Frühzeitige Sprachförderung legt den Grundstein für Schulerfolg und Kommunikation.' },
-    ],
-    showCourseList: true,
-    typeAliases: ['kinder_jugend', 'kinder'],
-    areaAliases: ['fruehkind'],
-    hintText: 'Mehr Tipps zu frühkindlicher Bildung und Angeboten in deiner Region folgen in Kürze.',
-  },
   'kinder-jugend/schule-lernen': {
     title: 'Schule & Lernen',
     subtitle: 'Nachhilfe, Lerncoaching & Prüfungsvorbereitung',
@@ -968,22 +936,6 @@ export const SIMPLE_TOPIC_CONTENT = {
     typeAliases: ['kinder_jugend', 'kinder'],
     areaAliases: ['events_ferien', 'ferien'],
     hintText: 'Empfehlungen für Feriencamps und Lager in der Schweiz folgen in Kürze.',
-  },
-  'kinder-jugend/elternbildung': {
-    title: 'Elternbildung',
-    subtitle: 'Geburtsvorbereitung, Erziehung & Erste Hilfe am Kind',
-    intro:
-      'Eltern sein ist die grösste Aufgabe – und gleichzeitig eine, für die es kaum formale Ausbildung gibt. Elternbildungskurse geben praktisches Wissen, stärken das Vertrauen und schaffen Raum für Austausch.',
-    points: [
-      { icon: '🤰', title: 'Geburtsvorbereitung', text: 'Geburtsvorbereitungskurse für werdende Eltern – Wissen, Übungen und emotionale Begleitung.' },
-      { icon: '👶', title: 'Baby-Kurse', text: 'Erste Hilfe am Kind, Babymassage, Babyschwimmen – für die ersten Lebensmonate.' },
-      { icon: '🤝', title: 'Erziehung & Entwicklung', text: 'Elternkurse zu Trotzphasen, Grenzen setzen, Kommunikation mit Kindern.' },
-      { icon: '💙', title: 'Beziehung & Bindung', text: 'Sichere Bindung aufbauen, Beziehung stärken – gut für Eltern und Kind.' },
-    ],
-    showCourseList: true,
-    typeAliases: ['kinder_jugend', 'kinder'],
-    areaAliases: ['eltern'],
-    hintText: 'Weitere Empfehlungen für Elternbildung und Familienkurse folgen in Kürze.',
   },
 
   // ---- KINDER & JUGEND THEMEN (new slugs matching dropdown exactly) ----
