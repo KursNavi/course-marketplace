@@ -756,6 +756,11 @@ const SearchPageView = ({
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                         <select value={searchArea} onChange={(e) => { setSearchArea(e.target.value); setSearchSpecialty(""); setSearchFocus(""); }} className={`w-full px-3 py-1.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 ${searchType ? 'bg-white border-gray-200' : 'bg-gray-50 border-gray-200'} ${!searchArea ? 'text-gray-400' : 'text-gray-900'}`} disabled={!searchType}>
                             <option value="" className="text-gray-400">— {t.lbl_area || 'Themenwelt'} —</option>
+                            {/* Sicherstellen dass der aktive Bereich immer als Option vorhanden ist
+                                (z.B. beim Laden via URL-Parameter bevor Kursdaten verfügbar sind) */}
+                            {searchArea && !availableAreas.includes(searchArea) && (
+                                <option key={`__current_${searchArea}`} value={searchArea} className="text-gray-900">{getLabel(searchArea, 'area')}</option>
+                            )}
                             {availableAreas.map(area => (<option key={area} value={area} className="text-gray-900">{getLabel(area, 'area')}</option>))}
                         </select>
                         <select value={searchSpecialty} onChange={(e) => { setSearchSpecialty(e.target.value); setSearchFocus(""); }} className={`w-full px-3 py-1.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 ${searchArea ? 'bg-white border-gray-200' : 'bg-gray-50 border-gray-200'} ${!searchSpecialty ? 'text-gray-400' : 'text-gray-900'}`} disabled={!searchArea}>
@@ -877,7 +882,7 @@ const SearchPageView = ({
                         )}
                         {searchArea && (
                             <span onClick={() => { setSearchArea(''); setSearchSpecialty(''); setSearchFocus(''); }} className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-orange-200 flex items-center">
-                                {getAreaLabelFromDB(searchArea) || searchArea} <X className="w-3 h-3 ml-1 opacity-50" />
+                                {getLabel(searchArea, 'area')} <X className="w-3 h-3 ml-1 opacity-50" />
                             </span>
                         )}
                         {searchSpecialty && (
