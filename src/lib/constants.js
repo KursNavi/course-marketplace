@@ -80,26 +80,32 @@ export const COURSE_LEVELS = {
   all_levels: { de: "Alle Niveaus / gemischtes Niveau", en: "All Levels / Mixed", fr: "Tous niveaux", it: "Tutti i livelli" }
 };
 
-// --- 3-SÄULEN (Berufliche Kurs-Klassifikation) ---
+// --- KURSFORMAT (Berufliche Kurs-Klassifikation nach Format + Abschluss) ---
 // Orthogonal zur Fach-Taxonomie, nur für professionelle/berufliche Kurse
 export const BERUF_SAEULEN = {
-  diplome: {
-    de: "Diplome & Höhere Abschlüsse",
-    shortDe: "Diplome",
-    subtitle: "Karrieresprung",
-    description: "Eidg. Abschlüsse (BP/HFP/HF), CAS/DAS/MAS"
+  workshop: {
+    de: "Workshop & Tagesseminar",
+    shortDe: "Workshop",
+    subtitle: "1–5 Tage",
+    description: "Kompakte Einzel- und Mehrtagesveranstaltungen, Teilnahmebestätigung"
   },
-  fachkurse: {
-    de: "Fachkurse & Praxis-Zertifikate",
-    shortDe: "Fachkurse",
-    subtitle: "Skill-Update",
-    description: "Zertifikatskurse, Seminare, Branchen-Zertifikate"
+  fachkurs: {
+    de: "Fachkurs & Seminarreihe",
+    shortDe: "Fachkurs",
+    subtitle: "Wochen–3 Monate",
+    description: "Strukturierte Weiterbildung in mehreren Modulen, Kursbestätigung"
   },
-  quereinstieg: {
-    de: "Quereinstieg & Berufsbildung",
-    shortDe: "Quereinstieg",
-    subtitle: "Neuorientierung",
-    description: "Berufliche Grundbildung (EFZ/EBA), Bootcamps"
+  zertifikatslehrgang: {
+    de: "Zertifikatslehrgang",
+    shortDe: "Zertifikat",
+    subtitle: "3–12 Monate",
+    description: "Anerkanntes Zertifikat (CAS, SQS, branchenanerkannt)"
+  },
+  ausbildung: {
+    de: "Ausbildung & Diplom",
+    shortDe: "Ausbildung",
+    subtitle: "1–3 Jahre",
+    description: "Eidg. Fachausweis (BP), HF-Diplom, DAS/MAS"
   }
 };
 
