@@ -350,7 +350,7 @@ export const SIMPLE_TOPIC_CONTENT = {
     ],
     showCourseList: true,
     typeAliases: ['beruflich', 'professionell'],
-    areaAliases: ['soft_skills', 'berufssprachen', 'sprachen_beruf'],
+    areaAliases: ['soft_skills_prof', 'berufssprachen', 'soft_skills', 'sprachen_beruf'],
     hintText: 'Mehr Inhalte zu Sprachkursen und Kommunikationstraining folgen in Kürze.',
   },
   'beruflich/bildung-pruefung': {
@@ -432,7 +432,7 @@ export const SIMPLE_TOPIC_CONTENT = {
     ],
     showCourseList: true,
     typeAliases: ['beruflich', 'professionell'],
-    areaAliases: ['soft_skills'],
+    areaAliases: ['soft_skills_prof', 'soft_skills'],
     hintText: 'Ausführliche Ratgeber zu Soft-Skill-Trainings folgen in Kürze.',
   },
   'beruflich/marketing': {
@@ -464,7 +464,7 @@ export const SIMPLE_TOPIC_CONTENT = {
     ],
     showCourseList: true,
     typeAliases: ['beruflich', 'professionell'],
-    areaAliases: ['gesundheit_beruf'],
+    areaAliases: ['gesundheit_resilienz', 'gesundheit_beruf'],
     hintText: 'Mehr Ratgeber zu Gesundheitsberufen und Prävention folgen in Kürze.',
   },
   'beruflich/berufssprachen': {
