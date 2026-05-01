@@ -512,7 +512,8 @@ export const SIMPLE_TOPIC_CONTENT = {
       { icon: '🎯', title: 'Thematisch fokussiert', text: 'Kein Ballast – du lernst genau das, was du für dein aktuelles Ziel brauchst.' },
       { icon: '💡', title: 'Ideal zum Kennenlernen', text: 'Teste ein neues Thema oder einen Anbieter, bevor du dich für einen längeren Lehrgang entscheidest.' },
     ],
-    showCourseList: false,
+    showCourseList: true,
+    sauleKey: 'workshop',
     hintText: 'Ratgeber zur Auswahl des richtigen Workshops folgen in Kürze.',
   },
   'beruflich/fachkurs-seminarreihe': {
@@ -526,7 +527,8 @@ export const SIMPLE_TOPIC_CONTENT = {
       { icon: '📜', title: 'Kursbestätigung', text: 'Du erhältst am Ende ein Zertifikat oder eine Kursbestätigung als Nachweis deiner Weiterbildung.' },
       { icon: '🎯', title: 'Praxistransfer', text: 'Gute Fachkurse zeigen dir, wie du das Gelernte sofort im Berufsalltag einsetzen kannst.' },
     ],
-    showCourseList: false,
+    showCourseList: true,
+    sauleKey: 'fachkurs',
     hintText: 'Mehr Tipps zur Auswahl des richtigen Fachkurses folgen in Kürze.',
   },
   'beruflich/zertifikatslehrgang': {
@@ -540,7 +542,8 @@ export const SIMPLE_TOPIC_CONTENT = {
       { icon: '🔍', title: 'Prüfung oder Projektarbeit', text: 'Der Abschluss wird durch eine Prüfung oder Abschlussarbeit dokumentiert und beglaubigt.' },
       { icon: '📈', title: 'Sichtbare Karrierewirkung', text: 'Anerkannte Zertifikate öffnen Türen zu neuen Stellen, Führungsrollen und besseren Löhnen.' },
     ],
-    showCourseList: false,
+    showCourseList: true,
+    sauleKey: 'zertifikatslehrgang',
     hintText: 'Ratgeber zu Zertifikatslehrgängen und CAS-Programmen folgen in Kürze.',
   },
   'beruflich/ausbildung-diplom': {
@@ -554,7 +557,8 @@ export const SIMPLE_TOPIC_CONTENT = {
       { icon: '🗓️', title: '1–3 Jahre, berufsbegleitend', text: 'Umfassende Ausbildung, die du in den meisten Fällen neben dem Job absolvieren kannst.' },
       { icon: '🏫', title: 'Höhere Berufsbildung', text: 'Das Rückgrat der Schweizer Berufsbildungslandschaft – anspruchsvoll und anerkannt.' },
     ],
-    showCourseList: false,
+    showCourseList: true,
+    sauleKey: 'ausbildung',
     hintText: 'Ratgeber zu Ausbildungen, Fachausweisen und HF-Diplomen folgen in Kürze.',
   },
 

@@ -36,17 +36,27 @@ export default function SimpleTopicLandingPage({
   const segmentMeta = SEGMENT_META[segment] || { label: 'Übersicht', href: '/' };
   const searchType = SEGMENT_TO_SEARCH_TYPE[segment] || 'privat_hobby';
   const areaSlug = config?.areaAliases?.[0] ?? null;
+  const sauleKey = config?.sauleKey ?? null;
 
   // Kursarten from segment config
   const kursarten = SEGMENT_LANDING_CONFIG[searchType]?.kursarten || [];
 
-  // Filter published courses by area (up to 6) — only on themen pages with areaAliases
+  // Filter published courses by area OR by saule (beruf_saeulen), up to 6
   const topicCourses = useMemo(() => {
-    if (!publishedCourses?.length || !config?.areaAliases?.length) return [];
+    if (!publishedCourses?.length) return [];
+    if (!config?.areaAliases?.length && !sauleKey) return [];
     return publishedCourses
-      .filter(c => config.areaAliases.some(a => c.category_area === a))
+      .filter(c => {
+        const matchesArea = config?.areaAliases?.length
+          ? config.areaAliases.some(a => c.category_area === a)
+          : false;
+        const matchesSaule = sauleKey
+          ? Array.isArray(c.beruf_saeulen) && c.beruf_saeulen.includes(sauleKey)
+          : false;
+        return matchesArea || matchesSaule;
+      })
       .slice(0, 6);
-  }, [publishedCourses, config?.areaAliases]);
+  }, [publishedCourses, config?.areaAliases, sauleKey]);
 
   // Navigate to search pre-filtered with this topic's area + segment type
   // Optionally pass a sauleKey (e.g. 'diplome') to pre-select a Berufliche Säule
@@ -168,7 +178,7 @@ export default function SimpleTopicLandingPage({
       )}
 
       {/* ── Aktuelle Kurse ─────────────────────────────────────────────────── */}
-      {config.showCourseList && areaSlug && topicCourses.length > 0 && (
+      {config.showCourseList && (areaSlug || sauleKey) && topicCourses.length > 0 && (
         <section className="max-w-5xl mx-auto px-4 pb-12">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-heading font-bold text-dark">Aktuelle Kurse</h2>
