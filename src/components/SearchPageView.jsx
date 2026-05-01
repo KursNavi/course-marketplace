@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useCallback } from 'react';
 import { Search, ChevronRight, User, X, Shield, MapPin, CheckCircle, Loader, Bell, ArrowDown, ArrowRight, Sparkles, Bookmark, BookmarkCheck, CreditCard, Info, EyeOff, Briefcase, Palette, Smile, BookOpen, Compass, SearchX, AlertTriangle, RotateCcw } from 'lucide-react';
 import { LocationDropdown, LanguageDropdown, DeliveryTypeFilter, SaeulenFilter } from './Filters';
 import { Globe } from 'lucide-react';
-import { CATEGORY_TYPES, AGE_GROUPS, COURSE_LEVELS, DELIVERY_TYPES, SEGMENT_CONFIG, TYPE_DISPLAY_LABELS, BERUF_SAEULEN } from '../lib/constants';
+import { CATEGORY_TYPES, AGE_GROUPS, COURSE_LEVELS, DELIVERY_TYPES, SEGMENT_CONFIG, TYPE_DISPLAY_LABELS, BERUF_SAEULEN, NEW_TAXONOMY } from '../lib/constants';
 import { formatPriceCHF, getPriceLabel } from '../lib/formatPrice';
 import { useTaxonomy } from '../hooks/useTaxonomy';
 import { supabase } from '../lib/supabase';
@@ -240,13 +240,21 @@ const SearchPageView = ({
     // Helper to get area label from DB taxonomy
     const getAreaLabelFromDB = (areaSlug) => {
         if (!areaSlug) return '';
-        // Try exact match first
-        let area = dbAreas.find(a => a.slug === areaSlug);
-        // Try partial match (e.g. it_digital -> it_digitales)
+        // Try exact match on slug (DB mode) or string id (fallback mode has no slug field)
+        let area = dbAreas.find(a => a.slug === areaSlug || String(a.id) === areaSlug);
+        // Try safe partial match (guard against undefined slug in fallback mode)
         if (!area) {
-            area = dbAreas.find(a => a.slug.startsWith(areaSlug) || areaSlug.startsWith(a.slug));
+            area = dbAreas.find(a => {
+                const s = a.slug || (typeof a.id === 'string' ? a.id : '');
+                return s && (s.startsWith(areaSlug) || areaSlug.startsWith(s));
+            });
         }
-        return area?.label_de || areaSlug;
+        if (area?.label_de) return area.label_de;
+        // Final fallback: hardcoded taxonomy constants (always available, no DB needed)
+        for (const typeData of Object.values(NEW_TAXONOMY)) {
+            if (typeData[areaSlug]?.label?.de) return typeData[areaSlug].label.de;
+        }
+        return areaSlug;
     };
 
     // --- SEO LOGIC: Zero-Result Rule + Dynamic Meta Tags ---
