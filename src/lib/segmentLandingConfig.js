@@ -318,7 +318,7 @@ export const SIMPLE_TOPIC_CONTENT = {
     ],
     showCourseList: true,
     typeAliases: ['beruflich', 'professionell'],
-    areaAliases: ['it_digital', '4'],
+    areaAliases: ['it_digitales', 'it_digital'],
     hintText: 'Detaillierte Ratgeber und Vergleiche zu IT-Ausbildungen folgen in Kürze.',
   },
   'beruflich/fuehrung-management': {
@@ -334,7 +334,7 @@ export const SIMPLE_TOPIC_CONTENT = {
     ],
     showCourseList: true,
     typeAliases: ['beruflich', 'professionell'],
-    areaAliases: ['business_mgmt', '1'],
+    areaAliases: ['wirtschaft_management', 'business_mgmt'],
     hintText: 'Ratgeber zu Führungsausbildungen und Management-Zertifizierungen folgen in Kürze.',
   },
   'beruflich/kommunikation-sprachen': {
@@ -350,7 +350,7 @@ export const SIMPLE_TOPIC_CONTENT = {
     ],
     showCourseList: true,
     typeAliases: ['beruflich', 'professionell'],
-    areaAliases: ['soft_skills', 'sprachen_beruf', '5'],
+    areaAliases: ['soft_skills', 'berufssprachen', 'sprachen_beruf'],
     hintText: 'Mehr Inhalte zu Sprachkursen und Kommunikationstraining folgen in Kürze.',
   },
   'beruflich/bildung-pruefung': {
@@ -366,7 +366,7 @@ export const SIMPLE_TOPIC_CONTENT = {
     ],
     showCourseList: true,
     typeAliases: ['beruflich', 'professionell'],
-    areaAliases: ['bildung_pruefung'],
+    areaAliases: ['bildung_soziales', 'bildung_pruefung'],
     hintText: 'Ratgeber zu Bildungsabschlüssen und Prüfungsvorbereitungen folgen in Kürze.',
   },
   'beruflich/finanzen-rechnungswesen': {
@@ -382,7 +382,7 @@ export const SIMPLE_TOPIC_CONTENT = {
     ],
     showCourseList: true,
     typeAliases: ['beruflich', 'professionell'],
-    areaAliases: ['finanzen', '2'],
+    areaAliases: ['finanzen_recht', 'finanzen'],
     hintText: 'Mehr Ratgeber zu Finanz- und Rechnungswesenausbildungen folgen in Kürze.',
   },
 
@@ -400,7 +400,7 @@ export const SIMPLE_TOPIC_CONTENT = {
     ],
     showCourseList: true,
     typeAliases: ['beruflich', 'professionell'],
-    areaAliases: ['business_mgmt'],
+    areaAliases: ['wirtschaft_management', 'business_mgmt'],
     hintText: 'Ratgeber zu Führungsausbildungen und Management-Zertifizierungen folgen in Kürze.',
   },
   'beruflich/finanzen-recht': {
@@ -416,7 +416,7 @@ export const SIMPLE_TOPIC_CONTENT = {
     ],
     showCourseList: true,
     typeAliases: ['beruflich', 'professionell'],
-    areaAliases: ['finanzen', 'hr_recht'],
+    areaAliases: ['finanzen_recht', 'finanzen', 'hr_recht'],
     hintText: 'Mehr Ratgeber zu Finanz- und Rechtsausbildungen folgen in Kürze.',
   },
   'beruflich/soft-skills': {
@@ -480,7 +480,7 @@ export const SIMPLE_TOPIC_CONTENT = {
     ],
     showCourseList: true,
     typeAliases: ['beruflich', 'professionell'],
-    areaAliases: ['sprachen_beruf'],
+    areaAliases: ['berufssprachen', 'sprachen_beruf'],
     hintText: 'Mehr Empfehlungen zu Berufssprachen-Kursen folgen in Kürze.',
   },
   'beruflich/bildung-soziales': {
@@ -496,7 +496,7 @@ export const SIMPLE_TOPIC_CONTENT = {
     ],
     showCourseList: true,
     typeAliases: ['beruflich', 'professionell'],
-    areaAliases: ['bildung_pruefung'],
+    areaAliases: ['bildung_soziales', 'bildung_pruefung'],
     hintText: 'Ratgeber zu Bildungsabschlüssen und Sozialberufen folgen in Kürze.',
   },
 
