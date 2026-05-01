@@ -318,7 +318,7 @@ export const SIMPLE_TOPIC_CONTENT = {
     ],
     showCourseList: true,
     typeAliases: ['beruflich', 'professionell'],
-    areaAliases: ['it_digital', '4'],
+    areaAliases: ['it_digitales', 'it_digital'],
     hintText: 'Detaillierte Ratgeber und Vergleiche zu IT-Ausbildungen folgen in Kürze.',
   },
   'beruflich/fuehrung-management': {
@@ -334,7 +334,7 @@ export const SIMPLE_TOPIC_CONTENT = {
     ],
     showCourseList: true,
     typeAliases: ['beruflich', 'professionell'],
-    areaAliases: ['business_mgmt', '1'],
+    areaAliases: ['wirtschaft_management', 'business_mgmt'],
     hintText: 'Ratgeber zu Führungsausbildungen und Management-Zertifizierungen folgen in Kürze.',
   },
   'beruflich/kommunikation-sprachen': {
@@ -350,7 +350,7 @@ export const SIMPLE_TOPIC_CONTENT = {
     ],
     showCourseList: true,
     typeAliases: ['beruflich', 'professionell'],
-    areaAliases: ['soft_skills', 'sprachen_beruf', '5'],
+    areaAliases: ['soft_skills_prof', 'berufssprachen', 'soft_skills', 'sprachen_beruf'],
     hintText: 'Mehr Inhalte zu Sprachkursen und Kommunikationstraining folgen in Kürze.',
   },
   'beruflich/bildung-pruefung': {
@@ -366,7 +366,7 @@ export const SIMPLE_TOPIC_CONTENT = {
     ],
     showCourseList: true,
     typeAliases: ['beruflich', 'professionell'],
-    areaAliases: ['bildung_pruefung'],
+    areaAliases: ['bildung_soziales', 'bildung_pruefung'],
     hintText: 'Ratgeber zu Bildungsabschlüssen und Prüfungsvorbereitungen folgen in Kürze.',
   },
   'beruflich/finanzen-rechnungswesen': {
@@ -382,7 +382,7 @@ export const SIMPLE_TOPIC_CONTENT = {
     ],
     showCourseList: true,
     typeAliases: ['beruflich', 'professionell'],
-    areaAliases: ['finanzen', '2'],
+    areaAliases: ['finanzen_recht', 'finanzen'],
     hintText: 'Mehr Ratgeber zu Finanz- und Rechnungswesenausbildungen folgen in Kürze.',
   },
 
@@ -400,7 +400,7 @@ export const SIMPLE_TOPIC_CONTENT = {
     ],
     showCourseList: true,
     typeAliases: ['beruflich', 'professionell'],
-    areaAliases: ['business_mgmt'],
+    areaAliases: ['wirtschaft_management', 'business_mgmt'],
     hintText: 'Ratgeber zu Führungsausbildungen und Management-Zertifizierungen folgen in Kürze.',
   },
   'beruflich/finanzen-recht': {
@@ -416,7 +416,7 @@ export const SIMPLE_TOPIC_CONTENT = {
     ],
     showCourseList: true,
     typeAliases: ['beruflich', 'professionell'],
-    areaAliases: ['finanzen', 'hr_recht'],
+    areaAliases: ['finanzen_recht', 'finanzen', 'hr_recht'],
     hintText: 'Mehr Ratgeber zu Finanz- und Rechtsausbildungen folgen in Kürze.',
   },
   'beruflich/soft-skills': {
@@ -432,7 +432,7 @@ export const SIMPLE_TOPIC_CONTENT = {
     ],
     showCourseList: true,
     typeAliases: ['beruflich', 'professionell'],
-    areaAliases: ['soft_skills'],
+    areaAliases: ['soft_skills_prof', 'soft_skills'],
     hintText: 'Ausführliche Ratgeber zu Soft-Skill-Trainings folgen in Kürze.',
   },
   'beruflich/marketing': {
@@ -464,7 +464,7 @@ export const SIMPLE_TOPIC_CONTENT = {
     ],
     showCourseList: true,
     typeAliases: ['beruflich', 'professionell'],
-    areaAliases: ['gesundheit_beruf'],
+    areaAliases: ['gesundheit_resilienz', 'gesundheit_beruf'],
     hintText: 'Mehr Ratgeber zu Gesundheitsberufen und Prävention folgen in Kürze.',
   },
   'beruflich/berufssprachen': {
@@ -480,7 +480,7 @@ export const SIMPLE_TOPIC_CONTENT = {
     ],
     showCourseList: true,
     typeAliases: ['beruflich', 'professionell'],
-    areaAliases: ['sprachen_beruf'],
+    areaAliases: ['berufssprachen', 'sprachen_beruf'],
     hintText: 'Mehr Empfehlungen zu Berufssprachen-Kursen folgen in Kürze.',
   },
   'beruflich/bildung-soziales': {
@@ -496,7 +496,7 @@ export const SIMPLE_TOPIC_CONTENT = {
     ],
     showCourseList: true,
     typeAliases: ['beruflich', 'professionell'],
-    areaAliases: ['bildung_pruefung'],
+    areaAliases: ['bildung_soziales', 'bildung_pruefung'],
     hintText: 'Ratgeber zu Bildungsabschlüssen und Sozialberufen folgen in Kürze.',
   },
 
@@ -576,7 +576,7 @@ export const SIMPLE_TOPIC_CONTENT = {
     ],
     showCourseList: true,
     typeAliases: ['privat_hobby', 'privat', '2'],
-    areaAliases: ['yoga_mental', '7'],
+    areaAliases: ['yoga_achtsamkeit', 'yoga_mental'],
     hintText: 'Alle Themen rund um Yoga & Achtsamkeit – von Anfänger-Tipps über Stilvergleich bis zu Breathwork und Energiearbeit – findest du in der Yoga-Themenwelt.',
   },
   'privat-hobby/musik': {
@@ -592,7 +592,7 @@ export const SIMPLE_TOPIC_CONTENT = {
     ],
     showCourseList: true,
     typeAliases: ['privat_hobby', 'privat', '2'],
-    areaAliases: ['musik', '11'],
+    areaAliases: ['musik'],
     hintText: 'Mehr Musik-Ratgeber und Instrumentenguides folgen in Kürze.',
   },
   'privat-hobby/sprachen': {
@@ -608,7 +608,7 @@ export const SIMPLE_TOPIC_CONTENT = {
     ],
     showCourseList: true,
     typeAliases: ['privat_hobby', 'privat', '2'],
-    areaAliases: ['sprachen_privat'],
+    areaAliases: ['sprachen', 'sprachen_privat'],
     hintText: 'Mehr Sprachtipps und Kursempfehlungen folgen in Kürze.',
   },
   'privat-hobby/tiere-hundeschule': {
@@ -624,7 +624,7 @@ export const SIMPLE_TOPIC_CONTENT = {
     ],
     showCourseList: true,
     typeAliases: ['privat_hobby', 'privat', '2'],
-    areaAliases: ['heim_garten', '8'],
+    areaAliases: ['freizeit_natur', 'heim_garten'],
     specialtyAliases: ['Tiere & Hundeschule', 'Hunde'],
     hintText: 'Tipps zur Hundeschulen-Auswahl in deiner Region folgen in Kürze.',
   },
@@ -642,7 +642,7 @@ export const SIMPLE_TOPIC_CONTENT = {
     ],
     showCourseList: true,
     typeAliases: ['privat_hobby', 'privat', '2'],
-    areaAliases: ['kochen_genuss'],
+    areaAliases: ['kochen_backen', 'kochen_genuss'],
     hintText: 'Kochkurs-Empfehlungen und Rezept-Tipps folgen in Kürze.',
   },
   'privat-hobby/kunst-kreativitaet': {
@@ -658,27 +658,11 @@ export const SIMPLE_TOPIC_CONTENT = {
     ],
     showCourseList: true,
     typeAliases: ['privat_hobby', 'privat', '2'],
-    areaAliases: ['kunst_kreativitaet'],
+    areaAliases: ['kunst', 'kunst_kreativitaet'],
     hintText: 'Ausführliche Kreativ-Ratgeber und Kursempfehlungen folgen in Kürze.',
   },
 
   // ---- PRIVAT & HOBBY THEMEN (new slugs matching dropdown exactly) ----
-  'privat-hobby/sport-fitness': {
-    title: 'Sport & Fitness',
-    subtitle: 'Fitness, Kraft, Ausdauer, Teamsport & Outdoor',
-    intro:
-      'Sport und Bewegung sind das Fundament eines gesunden Lebens. In der Schweiz gibt es ein riesiges Angebot an Fitnesskursen, Teamsport, Outdoor-Aktivitäten und mehr – für alle Fitness-Level und Altersgruppen.',
-    points: [
-      { icon: '💪', title: 'Fitness & Kraft', text: 'Von Functional Training bis Gewichtheben – praxisnahe Kurse für alle Level.' },
-      { icon: '🏃', title: 'Ausdauer & Cardio', text: 'Laufen, Cycling, HIIT – effektiv trainieren und die Kondition verbessern.' },
-      { icon: '⚽', title: 'Teamsport', text: 'Fussball, Volleyball, Basket – Spass und Gemeinschaft im Sport.' },
-      { icon: '🥾', title: 'Outdoor & Abenteuer', text: 'Wandern, Klettern, Wassersport – die Natur als Trainingsort.' },
-    ],
-    showCourseList: true,
-    typeAliases: ['privat_hobby', 'privat'],
-    areaAliases: ['sport_fitness'],
-    hintText: 'Fitnesskurs-Empfehlungen und Sportarten-Vergleiche folgen in Kürze.',
-  },
   'privat-hobby/kunst-kreativ': {
     title: 'Kunst & Kreativität',
     subtitle: 'Malen, Zeichnen, Gestalten – kreativ sein macht glücklich',
@@ -692,7 +676,7 @@ export const SIMPLE_TOPIC_CONTENT = {
     ],
     showCourseList: true,
     typeAliases: ['privat_hobby', 'privat'],
-    areaAliases: ['kunst_kreativ'],
+    areaAliases: ['kunst', 'kunst_kreativ'],
     hintText: 'Ausführliche Kreativ-Ratgeber und Kursempfehlungen folgen in Kürze.',
   },
   'privat-hobby/heim-natur': {
@@ -708,7 +692,7 @@ export const SIMPLE_TOPIC_CONTENT = {
     ],
     showCourseList: true,
     typeAliases: ['privat_hobby', 'privat'],
-    areaAliases: ['heim_garten'],
+    areaAliases: ['diy_handwerk', 'heim_garten'],
     hintText: 'Mehr Tipps rund um Heim, Garten und Tiere folgen in Kürze.',
   },
   'privat-hobby/alltag-persoenlichkeit': {
@@ -724,7 +708,7 @@ export const SIMPLE_TOPIC_CONTENT = {
     ],
     showCourseList: true,
     typeAliases: ['privat_hobby', 'privat'],
-    areaAliases: ['alltag_leben'],
+    areaAliases: ['soft_skills', 'allgemeinbildung', 'alltag_leben'],
     hintText: 'Weitere Empfehlungen zur Persönlichkeitsentwicklung folgen in Kürze.',
   },
 
@@ -742,7 +726,7 @@ export const SIMPLE_TOPIC_CONTENT = {
     ],
     showCourseList: true,
     typeAliases: ['privat_hobby', 'privat'],
-    areaAliases: ['gesundheit_resilienz'],
+    areaAliases: ['gesundheit', 'gesundheit_resilienz'],
     hintText: 'Weitere Empfehlungen zu Gesundheitskursen und Prävention folgen in Kürze.',
   },
   'privat-hobby/tiere-natur': {
@@ -758,7 +742,7 @@ export const SIMPLE_TOPIC_CONTENT = {
     ],
     showCourseList: true,
     typeAliases: ['privat_hobby', 'privat'],
-    areaAliases: ['tiere_natur'],
+    areaAliases: ['freizeit_natur', 'tiere_natur'],
     hintText: 'Mehr Tipps zu Tierkursen und Naturangeboten in deiner Region folgen in Kürze.',
   },
 
@@ -820,7 +804,7 @@ export const SIMPLE_TOPIC_CONTENT = {
     ],
     showCourseList: true,
     typeAliases: ['kinder_jugend', 'kinder'],
-    areaAliases: ['freizeit_hobbys', '15'],
+    areaAliases: ['sport', 'freizeit_hobbys'],
     hintText: 'Sportkurs-Empfehlungen nach Altersgruppe folgen in Kürze.',
   },
   'kinder-jugend/mint-technik': {
@@ -852,7 +836,7 @@ export const SIMPLE_TOPIC_CONTENT = {
     ],
     showCourseList: true,
     typeAliases: ['kinder_jugend', 'kinder'],
-    areaAliases: ['ferien'],
+    areaAliases: ['events_ferien', 'ferien'],
     hintText: 'Empfehlungen für Ferienkurse und Camps in der Schweiz folgen in Kürze.',
   },
   'kinder-jugend/musik-kinder': {
@@ -868,7 +852,7 @@ export const SIMPLE_TOPIC_CONTENT = {
     ],
     showCourseList: true,
     typeAliases: ['kinder_jugend', 'kinder'],
-    areaAliases: ['18'],
+    areaAliases: ['musik_kinder'],
     hintText: 'Musikschul-Vergleiche und Tipps zur Instrumentenwahl folgen in Kürze.',
   },
   'kinder-jugend/sprachen-lernen': {
@@ -884,27 +868,11 @@ export const SIMPLE_TOPIC_CONTENT = {
     ],
     showCourseList: true,
     typeAliases: ['kinder_jugend', 'kinder'],
-    areaAliases: ['schule_lernen'],
+    areaAliases: ['schule_bildung', 'schule_lernen'],
     hintText: 'Weitere Empfehlungen für Sprach- und Lernkurse für Kinder folgen in Kürze.',
   },
 
   // ---- KINDER & JUGEND THEMEN (new slugs matching dropdown exactly) ----
-  'kinder-jugend/fruehkindliche-bildung': {
-    title: 'Frühkindliche Bildung',
-    subtitle: 'Eltern-Kind-Turnen, Musikgarten & Spielgruppen (0–5)',
-    intro:
-      'Die ersten Lebensjahre sind prägend. Frühkindliche Bildungsangebote unterstützen Kleinkinder in ihrer motorischen, sprachlichen und sozialen Entwicklung – und helfen Eltern, diese wichtige Phase aktiv zu begleiten.',
-    points: [
-      { icon: '🎵', title: 'Musikgarten & Rhythmik', text: 'Musik und Bewegung fördern Sprachentwicklung, Koordination und Kreativität schon ab Geburt.' },
-      { icon: '🤸', title: 'Eltern-Kind-Turnen', text: 'Gemeinsame Bewegung stärkt die Bindung und unterstützt die motorische Entwicklung.' },
-      { icon: '👶', title: 'Spielgruppen', text: 'Soziale Kontakte knüpfen, spielerisch lernen – ideal für Kinder ab ca. 2 Jahren.' },
-      { icon: '🌱', title: 'Sprachförderung', text: 'Frühzeitige Sprachförderung legt den Grundstein für Schulerfolg und Kommunikation.' },
-    ],
-    showCourseList: true,
-    typeAliases: ['kinder_jugend', 'kinder'],
-    areaAliases: ['fruehkind'],
-    hintText: 'Mehr Tipps zu frühkindlicher Bildung und Angeboten in deiner Region folgen in Kürze.',
-  },
   'kinder-jugend/schule-lernen': {
     title: 'Schule & Lernen',
     subtitle: 'Nachhilfe, Lerncoaching & Prüfungsvorbereitung',
@@ -918,7 +886,7 @@ export const SIMPLE_TOPIC_CONTENT = {
     ],
     showCourseList: true,
     typeAliases: ['kinder_jugend', 'kinder'],
-    areaAliases: ['schule_lernen'],
+    areaAliases: ['schule_bildung', 'schule_lernen'],
     hintText: 'Weitere Empfehlungen für Lernkurse und Nachhilfe folgen in Kürze.',
   },
   'kinder-jugend/hobbys-sport': {
@@ -934,7 +902,7 @@ export const SIMPLE_TOPIC_CONTENT = {
     ],
     showCourseList: true,
     typeAliases: ['kinder_jugend', 'kinder'],
-    areaAliases: ['freizeit_hobbys'],
+    areaAliases: ['sport', 'freizeit_hobbys'],
     hintText: 'Weitere Freizeitkurs-Empfehlungen für Kinder folgen in Kürze.',
   },
   'kinder-jugend/coding-technik': {
@@ -966,24 +934,8 @@ export const SIMPLE_TOPIC_CONTENT = {
     ],
     showCourseList: true,
     typeAliases: ['kinder_jugend', 'kinder'],
-    areaAliases: ['ferien'],
+    areaAliases: ['events_ferien', 'ferien'],
     hintText: 'Empfehlungen für Feriencamps und Lager in der Schweiz folgen in Kürze.',
-  },
-  'kinder-jugend/elternbildung': {
-    title: 'Elternbildung',
-    subtitle: 'Geburtsvorbereitung, Erziehung & Erste Hilfe am Kind',
-    intro:
-      'Eltern sein ist die grösste Aufgabe – und gleichzeitig eine, für die es kaum formale Ausbildung gibt. Elternbildungskurse geben praktisches Wissen, stärken das Vertrauen und schaffen Raum für Austausch.',
-    points: [
-      { icon: '🤰', title: 'Geburtsvorbereitung', text: 'Geburtsvorbereitungskurse für werdende Eltern – Wissen, Übungen und emotionale Begleitung.' },
-      { icon: '👶', title: 'Baby-Kurse', text: 'Erste Hilfe am Kind, Babymassage, Babyschwimmen – für die ersten Lebensmonate.' },
-      { icon: '🤝', title: 'Erziehung & Entwicklung', text: 'Elternkurse zu Trotzphasen, Grenzen setzen, Kommunikation mit Kindern.' },
-      { icon: '💙', title: 'Beziehung & Bindung', text: 'Sichere Bindung aufbauen, Beziehung stärken – gut für Eltern und Kind.' },
-    ],
-    showCourseList: true,
-    typeAliases: ['kinder_jugend', 'kinder'],
-    areaAliases: ['eltern'],
-    hintText: 'Weitere Empfehlungen für Elternbildung und Familienkurse folgen in Kürze.',
   },
 
   // ---- KINDER & JUGEND THEMEN (new slugs matching dropdown exactly) ----
@@ -1016,7 +968,7 @@ export const SIMPLE_TOPIC_CONTENT = {
     ],
     showCourseList: true,
     typeAliases: ['kinder_jugend', 'kinder'],
-    areaAliases: ['musik'],
+    areaAliases: ['musik_kinder', 'musik'],
     hintText: 'Musikschul-Vergleiche und Tipps zur Instrumentenwahl folgen in Kürze.',
   },
   'kinder-jugend/schule-bildung': {
@@ -1098,7 +1050,7 @@ export const SIMPLE_TOPIC_CONTENT = {
     ],
     showCourseList: true,
     typeAliases: ['kinder_jugend', 'kinder'],
-    areaAliases: ['schule_lernen'],
+    areaAliases: ['schule_bildung', 'schule_lernen'],
     hintText: 'Weitere Empfehlungen für Sprach- und Lernkurse für Kinder folgen in Kürze.',
   },
   'kinder-jugend/nachhilfe-pruefungsvorbereitung': {
@@ -1114,7 +1066,7 @@ export const SIMPLE_TOPIC_CONTENT = {
     ],
     showCourseList: true,
     typeAliases: ['kinder_jugend', 'kinder'],
-    areaAliases: ['schule_lernen'],
+    areaAliases: ['schule_bildung', 'schule_lernen'],
     hintText: 'Weitere Empfehlungen für Sprach- und Lernkurse für Kinder folgen in Kürze.',
   },
 };

@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useCallback } from 'react';
 import { Search, ChevronRight, User, X, Shield, MapPin, CheckCircle, Loader, Bell, ArrowDown, ArrowRight, Sparkles, Bookmark, BookmarkCheck, CreditCard, Info, EyeOff, Briefcase, Palette, Smile, BookOpen, Compass, SearchX, AlertTriangle, RotateCcw } from 'lucide-react';
 import { LocationDropdown, LanguageDropdown, DeliveryTypeFilter, SaeulenFilter } from './Filters';
 import { Globe } from 'lucide-react';
-import { CATEGORY_TYPES, AGE_GROUPS, COURSE_LEVELS, DELIVERY_TYPES, SEGMENT_CONFIG, TYPE_DISPLAY_LABELS, BERUF_SAEULEN } from '../lib/constants';
+import { CATEGORY_TYPES, AGE_GROUPS, COURSE_LEVELS, DELIVERY_TYPES, SEGMENT_CONFIG, TYPE_DISPLAY_LABELS, BERUF_SAEULEN, NEW_TAXONOMY } from '../lib/constants';
 import { formatPriceCHF, getPriceLabel } from '../lib/formatPrice';
 import { useTaxonomy } from '../hooks/useTaxonomy';
 import { supabase } from '../lib/supabase';
@@ -240,13 +240,21 @@ const SearchPageView = ({
     // Helper to get area label from DB taxonomy
     const getAreaLabelFromDB = (areaSlug) => {
         if (!areaSlug) return '';
-        // Try exact match first
-        let area = dbAreas.find(a => a.slug === areaSlug);
-        // Try partial match (e.g. it_digital -> it_digitales)
+        // Try exact match on slug (DB mode) or string id (fallback mode has no slug field)
+        let area = dbAreas.find(a => a.slug === areaSlug || String(a.id) === areaSlug);
+        // Try safe partial match (guard against undefined slug in fallback mode)
         if (!area) {
-            area = dbAreas.find(a => a.slug.startsWith(areaSlug) || areaSlug.startsWith(a.slug));
+            area = dbAreas.find(a => {
+                const s = a.slug || (typeof a.id === 'string' ? a.id : '');
+                return s && (s.startsWith(areaSlug) || areaSlug.startsWith(s));
+            });
         }
-        return area?.label_de || areaSlug;
+        if (area?.label_de) return area.label_de;
+        // Final fallback: hardcoded taxonomy constants (always available, no DB needed)
+        for (const typeData of Object.values(NEW_TAXONOMY)) {
+            if (typeData[areaSlug]?.label?.de) return typeData[areaSlug].label.de;
+        }
+        return areaSlug;
     };
 
     // --- SEO LOGIC: Zero-Result Rule + Dynamic Meta Tags ---
@@ -756,6 +764,11 @@ const SearchPageView = ({
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                         <select value={searchArea} onChange={(e) => { setSearchArea(e.target.value); setSearchSpecialty(""); setSearchFocus(""); }} className={`w-full px-3 py-1.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 ${searchType ? 'bg-white border-gray-200' : 'bg-gray-50 border-gray-200'} ${!searchArea ? 'text-gray-400' : 'text-gray-900'}`} disabled={!searchType}>
                             <option value="" className="text-gray-400">— {t.lbl_area || 'Themenwelt'} —</option>
+                            {/* Sicherstellen dass der aktive Bereich immer als Option vorhanden ist
+                                (z.B. beim Laden via URL-Parameter bevor Kursdaten verfügbar sind) */}
+                            {searchArea && !availableAreas.includes(searchArea) && (
+                                <option key={`__current_${searchArea}`} value={searchArea} className="text-gray-900">{getLabel(searchArea, 'area')}</option>
+                            )}
                             {availableAreas.map(area => (<option key={area} value={area} className="text-gray-900">{getLabel(area, 'area')}</option>))}
                         </select>
                         <select value={searchSpecialty} onChange={(e) => { setSearchSpecialty(e.target.value); setSearchFocus(""); }} className={`w-full px-3 py-1.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 ${searchArea ? 'bg-white border-gray-200' : 'bg-gray-50 border-gray-200'} ${!searchSpecialty ? 'text-gray-400' : 'text-gray-900'}`} disabled={!searchArea}>
@@ -877,7 +890,7 @@ const SearchPageView = ({
                         )}
                         {searchArea && (
                             <span onClick={() => { setSearchArea(''); setSearchSpecialty(''); setSearchFocus(''); }} className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-orange-200 flex items-center">
-                                {getAreaLabelFromDB(searchArea) || searchArea} <X className="w-3 h-3 ml-1 opacity-50" />
+                                {getLabel(searchArea, 'area')} <X className="w-3 h-3 ml-1 opacity-50" />
                             </span>
                         )}
                         {searchSpecialty && (
