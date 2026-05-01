@@ -576,7 +576,7 @@ export const SIMPLE_TOPIC_CONTENT = {
     ],
     showCourseList: true,
     typeAliases: ['privat_hobby', 'privat', '2'],
-    areaAliases: ['yoga_mental', '7'],
+    areaAliases: ['yoga_achtsamkeit', 'yoga_mental'],
     hintText: 'Alle Themen rund um Yoga & Achtsamkeit – von Anfänger-Tipps über Stilvergleich bis zu Breathwork und Energiearbeit – findest du in der Yoga-Themenwelt.',
   },
   'privat-hobby/musik': {
@@ -592,7 +592,7 @@ export const SIMPLE_TOPIC_CONTENT = {
     ],
     showCourseList: true,
     typeAliases: ['privat_hobby', 'privat', '2'],
-    areaAliases: ['musik', '11'],
+    areaAliases: ['musik'],
     hintText: 'Mehr Musik-Ratgeber und Instrumentenguides folgen in Kürze.',
   },
   'privat-hobby/sprachen': {
@@ -608,7 +608,7 @@ export const SIMPLE_TOPIC_CONTENT = {
     ],
     showCourseList: true,
     typeAliases: ['privat_hobby', 'privat', '2'],
-    areaAliases: ['sprachen_privat'],
+    areaAliases: ['sprachen', 'sprachen_privat'],
     hintText: 'Mehr Sprachtipps und Kursempfehlungen folgen in Kürze.',
   },
   'privat-hobby/tiere-hundeschule': {
@@ -624,7 +624,7 @@ export const SIMPLE_TOPIC_CONTENT = {
     ],
     showCourseList: true,
     typeAliases: ['privat_hobby', 'privat', '2'],
-    areaAliases: ['heim_garten', '8'],
+    areaAliases: ['freizeit_natur', 'heim_garten'],
     specialtyAliases: ['Tiere & Hundeschule', 'Hunde'],
     hintText: 'Tipps zur Hundeschulen-Auswahl in deiner Region folgen in Kürze.',
   },
@@ -642,7 +642,7 @@ export const SIMPLE_TOPIC_CONTENT = {
     ],
     showCourseList: true,
     typeAliases: ['privat_hobby', 'privat', '2'],
-    areaAliases: ['kochen_genuss'],
+    areaAliases: ['kochen_backen', 'kochen_genuss'],
     hintText: 'Kochkurs-Empfehlungen und Rezept-Tipps folgen in Kürze.',
   },
   'privat-hobby/kunst-kreativitaet': {
@@ -658,7 +658,7 @@ export const SIMPLE_TOPIC_CONTENT = {
     ],
     showCourseList: true,
     typeAliases: ['privat_hobby', 'privat', '2'],
-    areaAliases: ['kunst_kreativitaet'],
+    areaAliases: ['kunst', 'kunst_kreativitaet'],
     hintText: 'Ausführliche Kreativ-Ratgeber und Kursempfehlungen folgen in Kürze.',
   },
 
@@ -692,7 +692,7 @@ export const SIMPLE_TOPIC_CONTENT = {
     ],
     showCourseList: true,
     typeAliases: ['privat_hobby', 'privat'],
-    areaAliases: ['kunst_kreativ'],
+    areaAliases: ['kunst', 'kunst_kreativ'],
     hintText: 'Ausführliche Kreativ-Ratgeber und Kursempfehlungen folgen in Kürze.',
   },
   'privat-hobby/heim-natur': {
@@ -708,7 +708,7 @@ export const SIMPLE_TOPIC_CONTENT = {
     ],
     showCourseList: true,
     typeAliases: ['privat_hobby', 'privat'],
-    areaAliases: ['heim_garten'],
+    areaAliases: ['diy_handwerk', 'heim_garten'],
     hintText: 'Mehr Tipps rund um Heim, Garten und Tiere folgen in Kürze.',
   },
   'privat-hobby/alltag-persoenlichkeit': {
@@ -724,7 +724,7 @@ export const SIMPLE_TOPIC_CONTENT = {
     ],
     showCourseList: true,
     typeAliases: ['privat_hobby', 'privat'],
-    areaAliases: ['alltag_leben'],
+    areaAliases: ['soft_skills', 'allgemeinbildung', 'alltag_leben'],
     hintText: 'Weitere Empfehlungen zur Persönlichkeitsentwicklung folgen in Kürze.',
   },
 
@@ -742,7 +742,7 @@ export const SIMPLE_TOPIC_CONTENT = {
     ],
     showCourseList: true,
     typeAliases: ['privat_hobby', 'privat'],
-    areaAliases: ['gesundheit_resilienz'],
+    areaAliases: ['gesundheit', 'gesundheit_resilienz'],
     hintText: 'Weitere Empfehlungen zu Gesundheitskursen und Prävention folgen in Kürze.',
   },
   'privat-hobby/tiere-natur': {
@@ -758,7 +758,7 @@ export const SIMPLE_TOPIC_CONTENT = {
     ],
     showCourseList: true,
     typeAliases: ['privat_hobby', 'privat'],
-    areaAliases: ['tiere_natur'],
+    areaAliases: ['freizeit_natur', 'tiere_natur'],
     hintText: 'Mehr Tipps zu Tierkursen und Naturangeboten in deiner Region folgen in Kürze.',
   },
 
@@ -820,7 +820,7 @@ export const SIMPLE_TOPIC_CONTENT = {
     ],
     showCourseList: true,
     typeAliases: ['kinder_jugend', 'kinder'],
-    areaAliases: ['freizeit_hobbys', '15'],
+    areaAliases: ['sport', 'freizeit_hobbys'],
     hintText: 'Sportkurs-Empfehlungen nach Altersgruppe folgen in Kürze.',
   },
   'kinder-jugend/mint-technik': {
@@ -852,7 +852,7 @@ export const SIMPLE_TOPIC_CONTENT = {
     ],
     showCourseList: true,
     typeAliases: ['kinder_jugend', 'kinder'],
-    areaAliases: ['ferien'],
+    areaAliases: ['events_ferien', 'ferien'],
     hintText: 'Empfehlungen für Ferienkurse und Camps in der Schweiz folgen in Kürze.',
   },
   'kinder-jugend/musik-kinder': {
@@ -868,7 +868,7 @@ export const SIMPLE_TOPIC_CONTENT = {
     ],
     showCourseList: true,
     typeAliases: ['kinder_jugend', 'kinder'],
-    areaAliases: ['18'],
+    areaAliases: ['musik_kinder'],
     hintText: 'Musikschul-Vergleiche und Tipps zur Instrumentenwahl folgen in Kürze.',
   },
   'kinder-jugend/sprachen-lernen': {
@@ -884,7 +884,7 @@ export const SIMPLE_TOPIC_CONTENT = {
     ],
     showCourseList: true,
     typeAliases: ['kinder_jugend', 'kinder'],
-    areaAliases: ['schule_lernen'],
+    areaAliases: ['schule_bildung', 'schule_lernen'],
     hintText: 'Weitere Empfehlungen für Sprach- und Lernkurse für Kinder folgen in Kürze.',
   },
 
@@ -918,7 +918,7 @@ export const SIMPLE_TOPIC_CONTENT = {
     ],
     showCourseList: true,
     typeAliases: ['kinder_jugend', 'kinder'],
-    areaAliases: ['schule_lernen'],
+    areaAliases: ['schule_bildung', 'schule_lernen'],
     hintText: 'Weitere Empfehlungen für Lernkurse und Nachhilfe folgen in Kürze.',
   },
   'kinder-jugend/hobbys-sport': {
@@ -934,7 +934,7 @@ export const SIMPLE_TOPIC_CONTENT = {
     ],
     showCourseList: true,
     typeAliases: ['kinder_jugend', 'kinder'],
-    areaAliases: ['freizeit_hobbys'],
+    areaAliases: ['sport', 'freizeit_hobbys'],
     hintText: 'Weitere Freizeitkurs-Empfehlungen für Kinder folgen in Kürze.',
   },
   'kinder-jugend/coding-technik': {
@@ -966,7 +966,7 @@ export const SIMPLE_TOPIC_CONTENT = {
     ],
     showCourseList: true,
     typeAliases: ['kinder_jugend', 'kinder'],
-    areaAliases: ['ferien'],
+    areaAliases: ['events_ferien', 'ferien'],
     hintText: 'Empfehlungen für Feriencamps und Lager in der Schweiz folgen in Kürze.',
   },
   'kinder-jugend/elternbildung': {
@@ -1016,7 +1016,7 @@ export const SIMPLE_TOPIC_CONTENT = {
     ],
     showCourseList: true,
     typeAliases: ['kinder_jugend', 'kinder'],
-    areaAliases: ['musik'],
+    areaAliases: ['musik_kinder', 'musik'],
     hintText: 'Musikschul-Vergleiche und Tipps zur Instrumentenwahl folgen in Kürze.',
   },
   'kinder-jugend/schule-bildung': {
@@ -1098,7 +1098,7 @@ export const SIMPLE_TOPIC_CONTENT = {
     ],
     showCourseList: true,
     typeAliases: ['kinder_jugend', 'kinder'],
-    areaAliases: ['schule_lernen'],
+    areaAliases: ['schule_bildung', 'schule_lernen'],
     hintText: 'Weitere Empfehlungen für Sprach- und Lernkurse für Kinder folgen in Kürze.',
   },
   'kinder-jugend/nachhilfe-pruefungsvorbereitung': {
@@ -1114,7 +1114,7 @@ export const SIMPLE_TOPIC_CONTENT = {
     ],
     showCourseList: true,
     typeAliases: ['kinder_jugend', 'kinder'],
-    areaAliases: ['schule_lernen'],
+    areaAliases: ['schule_bildung', 'schule_lernen'],
     hintText: 'Weitere Empfehlungen für Sprach- und Lernkurse für Kinder folgen in Kürze.',
   },
 };
