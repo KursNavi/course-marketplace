@@ -145,28 +145,36 @@ export const SEGMENT_LANDING_CONFIG = {
   privat_hobby: {
     kursarten: [
       {
-        slug: 'workshops',
+        slug: 'workshop-event',
         icon: '🎨',
-        label: 'Workshops',
-        desc: 'Kompakte Tages- und Halbtagesworkshops zum Ausprobieren und Vertiefen.',
+        label: 'Workshop & Event',
+        desc: 'Einmalig, ein Nachmittag oder ein Tag. Kein Vorwissen nötig – einfach ausprobieren.',
         image: 'https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&q=80&w=800',
-        href: '/thema/privat-hobby/workshops',
+        href: '/thema/privat-hobby/workshop-event',
       },
       {
-        slug: 'einsteigerkurse',
+        slug: 'einfuehrungskurs',
         icon: '🌱',
-        label: 'Kurse für Einsteiger',
-        desc: 'Kein Vorwissen nötig – starte neu und entdecke deine nächste Leidenschaft.',
+        label: 'Einführungskurs',
+        desc: 'Strukturierter Einstieg in 4–8 Einheiten. Für alle, die ein Thema richtig kennenlernen wollen.',
         image: 'https://images.unsplash.com/photo-1488190211105-8b0e65b80b4e?auto=format&fit=crop&q=80&w=800',
-        href: '/thema/privat-hobby/einsteigerkurse',
+        href: '/thema/privat-hobby/einfuehrungskurs',
       },
       {
-        slug: 'regelmaessige-kurse',
+        slug: 'wochenkurs',
         icon: '🗓️',
-        label: 'Regelmässige Kurse',
-        desc: 'Feste Kursgruppen für kontinuierliches Lernen und soziale Verbindung.',
+        label: 'Wochenkurs',
+        desc: 'Regelmässig, wöchentlich oder monatlich. Für Hobbys, die man langfristig pflegen möchte.',
         image: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&q=80&w=800',
-        href: '/thema/privat-hobby/regelmaessige-kurse',
+        href: '/thema/privat-hobby/wochenkurs',
+      },
+      {
+        slug: 'retreat-intensiv',
+        icon: '🌿',
+        label: 'Retreat & Intensiv',
+        desc: 'Mehrere Tage am Stück, konzentriert. Wochenend-Workshop oder Kreativwoche.',
+        image: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&q=80&w=800',
+        href: '/thema/privat-hobby/retreat-intensiv',
       },
     ],
     // Themen = exakt die Kategorien aus dem Suchfilter-Dropdown
@@ -246,12 +254,12 @@ export const SEGMENT_LANDING_CONFIG = {
         href: '/thema/kinder-jugend/freizeitkurse',
       },
       {
-        slug: 'events-workshops',
-        icon: '🎉',
-        label: 'Event & Workshop',
-        desc: 'Einmalige Erlebnisse, Geburtstags-Workshops und besondere Veranstaltungen.',
+        slug: 'kindergeburtstag-event',
+        icon: '🎂',
+        label: 'Kindergeburtstag & Event',
+        desc: 'Geburtstagsfeiern, einmalige Workshops und besondere Erlebnisse für Kinder.',
         image: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&q=80&w=800',
-        href: '/thema/kinder-jugend/events-workshops',
+        href: '/thema/kinder-jugend/kindergeburtstag-event',
       },
     ],
     // Themen = exakt die Kategorien aus dem Suchfilter-Dropdown
@@ -762,7 +770,69 @@ export const SIMPLE_TOPIC_CONTENT = {
     hintText: 'Mehr Tipps zu Tierkursen und Naturangeboten in deiner Region folgen in Kürze.',
   },
 
-  // ---- PRIVAT & HOBBY KURSARTEN (editorial only) ----
+  // ---- PRIVAT & HOBBY KURSARTEN (neue Tiles) ----
+  'privat-hobby/workshop-event': {
+    title: 'Workshop & Event',
+    subtitle: 'Einmalig, kein Vorwissen nötig – einfach ausprobieren',
+    intro:
+      'Workshops und Events sind die einfachste Art, etwas Neues zu erleben. Kein Abo, keine Verpflichtung – ein Nachmittag oder ein Tag, und du weisst, ob es dir liegt. In der Schweiz gibt es eine riesige Auswahl für alle Interessen.',
+    points: [
+      { icon: '🎨', title: 'Für alle offen', text: 'Kein Vorwissen nötig – Workshops starten bei null und sind für jede Altersstufe geeignet.' },
+      { icon: '🎁', title: 'Perfektes Erlebnisgeschenk', text: 'Ein Workshop-Gutschein ist persönlicher als Blumen und unvergesslicher als ein Gutschein.' },
+      { icon: '👫', title: 'Geselliges Format', text: 'Workshops bringen Gleichgesinnte zusammen – ideal auch zu zweit oder als Gruppe.' },
+      { icon: '📅', title: 'Flexibel buchbar', text: 'Einmalig, kurzfristig und ohne Abo – perfekt für Leute mit vollem Alltag.' },
+    ],
+    showCourseList: true,
+    typeAliases: ['privat', 'privat_hobby'],
+    hintText: 'Mehr Workshop-Empfehlungen und Ratgeber folgen in Kürze.',
+  },
+  'privat-hobby/einfuehrungskurs': {
+    title: 'Einführungskurs',
+    subtitle: 'Strukturierter Einstieg in 4–8 Einheiten',
+    intro:
+      'Ein Einführungskurs ist mehr als ein Workshop – er baut über mehrere Einheiten auf und gibt dir die Zeit, ein Thema wirklich kennenzulernen. Ideal für alle, die sich ernsthaft mit einem neuen Hobby oder Thema beschäftigen wollen.',
+    points: [
+      { icon: '🌱', title: 'Kein Vorwissen nötig', text: 'Einführungskurse erklären alles von Grund auf – du brauchst nur Neugier.' },
+      { icon: '🤝', title: 'Alle auf Augenhöhe', text: 'Alle in der Gruppe starten neu – das nimmt Druck und macht Lernen leichter.' },
+      { icon: '📈', title: 'Sichtbarer Fortschritt', text: 'In 4–8 Einheiten erreichst du ein echtes Grundniveau, das sich anfühlt.' },
+      { icon: '🔀', title: 'Weiterführung möglich', text: 'Nach einem Einführungskurs weisst du, ob du vertiefen oder wechseln möchtest.' },
+    ],
+    showCourseList: true,
+    typeAliases: ['privat', 'privat_hobby'],
+    hintText: 'Mehr Tipps zur Auswahl von Einführungskursen folgen in Kürze.',
+  },
+  'privat-hobby/wochenkurs': {
+    title: 'Wochenkurs',
+    subtitle: 'Regelmässig dabei – wöchentlich oder monatlich',
+    intro:
+      'Wochenkurse sind für Menschen, die ein Hobby nicht nur ausprobieren, sondern wirklich leben wollen. Woche für Woche dabei sein schafft Routine, Fortschritt und soziale Verbindung.',
+    points: [
+      { icon: '🗓️', title: 'Feste Kursgruppe', text: 'Immer die gleichen Gesichter – das fördert Motivation und echte Freundschaften.' },
+      { icon: '📈', title: 'Nachhaltiger Fortschritt', text: 'Regelmässige Praxis macht den Unterschied – nach einem Jahr merkst du es deutlich.' },
+      { icon: '🏡', title: 'Lokale Gemeinschaft', text: 'Wochenkurse finden meist in der Nähe statt – ein sozialer Anker im Alltag.' },
+      { icon: '💪', title: 'Gesunde Routine', text: 'Ein fester Kursabend hilft, ein Hobby dauerhaft in den Alltag zu integrieren.' },
+    ],
+    showCourseList: true,
+    typeAliases: ['privat', 'privat_hobby'],
+    hintText: 'Mehr Tipps zur Auswahl von Wochenkursen folgen in Kürze.',
+  },
+  'privat-hobby/retreat-intensiv': {
+    title: 'Retreat & Intensivkurs',
+    subtitle: 'Mehrere Tage am Stück – konzentriert und tiefgehend',
+    intro:
+      'Ein Retreat oder Intensivkurs ist etwas ganz Besonderes: mehrere Tage lang vollständig eintauchen, ohne Ablenkung. Ob Yoga-Retreat, Kreativwochenende oder Schreibklausur – diese Formate ermöglichen Erfahrungen, die ein wöchentlicher Kurs nie bieten kann.',
+    points: [
+      { icon: '🌿', title: 'Tiefe statt Breite', text: 'Wenn man sich mehrere Tage widmet, entstehen Durchbrüche, die sonst Monate dauern.' },
+      { icon: '🏔️', title: 'Besondere Orte', text: 'Retreats finden oft an inspirierenden Orten statt – in der Natur, auf dem Berg oder am See.' },
+      { icon: '🔋', title: 'Auftanken', text: 'Intensivkurse sind auch Erholung – bewusstes Abschalten vom Alltag.' },
+      { icon: '🎯', title: 'Für Fortgeschrittene und Einsteiger', text: 'Es gibt Retreats für jeden Stand – vom ersten Yoga-Wochenende bis zur Vertiefungsklausur.' },
+    ],
+    showCourseList: true,
+    typeAliases: ['privat', 'privat_hobby'],
+    hintText: 'Retreat- und Intensivkurs-Empfehlungen für die Schweiz folgen in Kürze.',
+  },
+
+  // ---- PRIVAT & HOBBY KURSARTEN (alte Slugs – bleiben erreichbar) ----
   'privat-hobby/workshops': {
     title: 'Workshops',
     subtitle: 'Ausprobieren, Erleben, Begeistern – in kompaktem Format',
@@ -1071,21 +1141,21 @@ export const SIMPLE_TOPIC_CONTENT = {
     hintText: 'Mehr Tipps für Freizeitkurse und Aktivitäten für Kinder folgen in Kürze.',
   },
 
-  'kinder-jugend/events-workshops': {
-    title: 'Event & Workshop',
-    subtitle: 'Einmalige Erlebnisse, Geburtstags-Workshops & besondere Veranstaltungen',
+  'kinder-jugend/kindergeburtstag-event': {
+    title: 'Kindergeburtstag & Event',
+    subtitle: 'Geburtstagsfeiern, Workshops & einmalige Erlebnisse für Kinder',
     intro:
-      'Events und Workshops für Kinder sind einmalige oder seltene Angebote – ohne langfristige Verpflichtung. Sie eignen sich perfekt zum Ausprobieren, als Geburtstagserlebnis oder einfach für einen besonderen Nachmittag.',
+      'Ein Kindergeburtstag als Kurs oder Workshop ist eine besondere Alternative zur klassischen Feier – und auch für Kinder, die einfach ein einmaliges Erlebnis suchen, gibt es tolle Angebote in der Schweiz.',
     points: [
-      { icon: '🎉', title: 'Geburtstags-Workshops', text: 'Kochen, Basteln, Zaubern oder Sport – unvergessliche Erlebnisse für die ganze Gruppe.' },
-      { icon: '🔬', title: 'Entdeckungsworkshops', text: 'Experimente, MINT, Kunst oder Natur – einmalige Sessions zum Staunen und Lernen.' },
-      { icon: '🎭', title: 'Theater & Aufführungen', text: 'Mitmachtheater, Zirkus-Workshops oder Tanzevents für Kinder und Jugendliche.' },
-      { icon: '📅', title: 'Keine langfristige Bindung', text: 'Einfach buchen, mitmachen und danach entscheiden, ob mehr daraus wird.' },
+      { icon: '🎂', title: 'Geburtstag mit Erlebnis', text: 'Kochen, Basteln, Zaubern, Sport oder Kreatives – unvergessliche Feiern für die ganze Gruppe.' },
+      { icon: '🔬', title: 'Entdeckungs-Workshops', text: 'Experimente, MINT, Kunst oder Natur – einmalige Sessions zum Staunen und Mitmachen.' },
+      { icon: '🎭', title: 'Theater, Zirkus & mehr', text: 'Mitmachtheater, Zirkus-Workshops oder Tanzevents für Kinder und Jugendliche.' },
+      { icon: '📅', title: 'Einmalig, keine Verpflichtung', text: 'Einfach buchen, geniessen – ohne Abo oder langfristige Bindung.' },
     ],
     showCourseList: true,
     typeAliases: ['kinder_jugend', 'kinder'],
     areaAliases: ['events_ferien', 'freizeit_hobbys'],
-    hintText: 'Mehr Empfehlungen für Kinder-Events und Workshops in der Schweiz folgen in Kürze.',
+    hintText: 'Mehr Empfehlungen für Kindergeburtstage und Kinder-Events in der Schweiz folgen in Kürze.',
   },
 
   // ---- URLs die erreichbar bleiben, aber keine prominenten Kurse zeigen ----

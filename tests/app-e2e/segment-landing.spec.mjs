@@ -4,7 +4,7 @@ test.describe('Segment Landing Page — Themen, Kursarten, CTA', () => {
 
   const segments = [
     { name: 'Beruflich', path: '/professional', kursartLabel: 'Workshop & Tagesseminar', themaLabel: 'Sport & Fitness' },
-    { name: 'Privat & Hobby', path: '/private', kursartLabel: 'Workshops', themaLabel: 'Yoga & Achtsamkeit' },
+    { name: 'Privat & Hobby', path: '/private', kursartLabel: 'Workshop & Event', themaLabel: 'Yoga & Achtsamkeit' },
     { name: 'Kinder & Jugend', path: '/children', kursartLabel: 'Feriencamp', themaLabel: 'Events & Ferien' },
   ];
 
