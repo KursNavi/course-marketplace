@@ -110,7 +110,7 @@ export const SEGMENT_LANDING_CONFIG = {
         desc: 'Online-Marketing, Verkauf & Kommunikation',
         isThemenwelt: false,
         href: '/thema/beruflich/marketing',
-        image: 'https://images.unsplash.com/photo-1432888622747-4eb9a8f5e907?auto=format&fit=crop&q=80&w=800',
+        image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=800',
       },
       {
         slug: 'gesundheit-resilienz',
