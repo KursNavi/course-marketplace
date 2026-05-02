@@ -222,20 +222,36 @@ export const SEGMENT_LANDING_CONFIG = {
   kinder_jugend: {
     kursarten: [
       {
-        slug: 'ferienkurse-camps',
-        icon: '☀️',
-        label: 'Ferienkurse & Camps',
-        desc: 'Sinnvolle und spannende Freizeitgestaltung in den Schulferien.',
+        slug: 'feriencamps',
+        icon: '🏕️',
+        label: 'Feriencamp',
+        desc: 'Ganztägige Betreuung & Aktivitäten in den Schulferien. Ideal für berufstätige Eltern.',
         image: 'https://images.unsplash.com/photo-1471922694854-ff1b63b20054?auto=format&fit=crop&q=80&w=800',
-        href: '/thema/kinder-jugend/ferienkurse-camps',
+        href: '/thema/kinder-jugend/feriencamps',
+      },
+      {
+        slug: 'ferienkurse',
+        icon: '☀️',
+        label: 'Ferienkurs',
+        desc: 'Spassige Kurse und Aktivitäten in den Ferien – ohne Ganztagesbetreuung.',
+        image: 'https://images.unsplash.com/photo-1596495578065-6e0763fa1178?auto=format&fit=crop&q=80&w=800',
+        href: '/thema/kinder-jugend/ferienkurse',
       },
       {
         slug: 'freizeitkurse',
         icon: '🎯',
-        label: 'Freizeitkurse',
-        desc: 'Regelmässige Aktivitäten, die Kinder begeistern und weiterentwickeln.',
+        label: 'Freizeitkurs',
+        desc: 'Regelmässige Kurse übers Schuljahr – Sport, Musik, Kreativität und mehr.',
         image: 'https://images.unsplash.com/photo-1587825140708-dfaf72ae4b04?auto=format&fit=crop&q=80&w=800',
         href: '/thema/kinder-jugend/freizeitkurse',
+      },
+      {
+        slug: 'events-workshops',
+        icon: '🎉',
+        label: 'Event & Workshop',
+        desc: 'Einmalige Erlebnisse, Geburtstags-Workshops und besondere Veranstaltungen.',
+        image: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&q=80&w=800',
+        href: '/thema/kinder-jugend/events-workshops',
       },
     ],
     // Themen = exakt die Kategorien aus dem Suchfilter-Dropdown
@@ -922,20 +938,37 @@ export const SIMPLE_TOPIC_CONTENT = {
     hintText: 'Mehr MINT-Kurs-Empfehlungen für Kinder und Jugendliche folgen in Kürze.',
   },
   'kinder-jugend/feriencamps': {
-    title: 'Feriencamps & Betreuung',
-    subtitle: 'Sportcamps, Kreativcamps & Outdoorlager',
+    title: 'Feriencamp',
+    subtitle: 'Ganztägige Betreuung & Aktivitäten in den Schulferien',
     intro:
-      'Feriencamps bieten Kindern und Jugendlichen die Möglichkeit, neue Freundschaften zu schliessen, Neues auszuprobieren und die Ferienzeit sinnvoll und unvergesslich zu gestalten.',
+      'Feriencamps bieten Kindern eine ganztägige Struktur in den Schulferien – mit Programm, Betreuung und unvergesslichen Erlebnissen. Ideal für berufstätige Eltern, die eine verlässliche Lösung für die Ferienwochen suchen.',
     points: [
-      { icon: '☀️', title: 'Thematische Camps', text: 'Sport, Musik, Coding, Kunst – für fast jedes Interesse gibt es spezialisierte Camps.' },
-      { icon: '🏕️', title: 'Outdoorlager', text: 'Natur erleben, Abenteuer bestehen, zusammen als Gruppe wachsen.' },
-      { icon: '👫', title: 'Neue Freundschaften', text: 'Feriencamps sind ideale Orte, um Gleichaltrige mit ähnlichen Interessen kennenzulernen.' },
-      { icon: '🗓️', title: 'Flexibel buchbar', text: 'Viele Camps lassen sich kurzfristig und für verschiedene Ferienwochen buchen.' },
+      { icon: '🏕️', title: 'Ganztägige Betreuung', text: 'Kinder sind den ganzen Tag gut aufgehoben – mit fachkundigem Personal und strukturiertem Programm.' },
+      { icon: '☀️', title: 'Thematische Camps', text: 'Sport, Musik, Coding, Kunst, Natur – es gibt Camps für fast jedes Interesse.' },
+      { icon: '👫', title: 'Soziales Miteinander', text: 'Kinder schliessen neue Freundschaften und lernen, im Team zu agieren.' },
+      { icon: '🗓️', title: 'Wochenweise buchbar', text: 'Viele Anbieter ermöglichen eine flexible Buchung nach Ferienwochen und Standort.' },
     ],
     showCourseList: true,
     typeAliases: ['kinder_jugend', 'kinder'],
     areaAliases: ['events_ferien', 'ferien'],
-    hintText: 'Empfehlungen für Feriencamps und Lager in der Schweiz folgen in Kürze.',
+    hintText: 'Empfehlungen für Feriencamps mit Betreuung in der Schweiz folgen in Kürze.',
+  },
+
+  'kinder-jugend/ferienkurse': {
+    title: 'Ferienkurs',
+    subtitle: 'Spassige Aktivitäten in den Ferien – ohne Ganztagesbetreuung',
+    intro:
+      'Ferienkurse bieten Kindern spannende Beschäftigung in den Schulferien – ohne den Anspruch auf eine Ganztagesbetreuung. Perfekt für Kinder, die etwas Neues ausprobieren möchten, während die Eltern nur teilweise arbeiten oder flexibel sind.',
+    points: [
+      { icon: '☀️', title: 'Ferien sinnvoll nutzen', text: 'Halbtägige oder kurze Kurse in der Ferienzeit – Kinder lernen Neues, ohne den ganzen Tag weg zu sein.' },
+      { icon: '🎨', title: 'Breites Angebot', text: 'Kunst, Basteln, Kochen, Tanzen, Sport – eine grosse Auswahl für alle Interessen.' },
+      { icon: '🌱', title: 'Neues entdecken', text: 'Ohne Leistungsdruck neue Hobbys und Talente kennenlernen.' },
+      { icon: '👶', title: 'Für alle Altersgruppen', text: 'Vom Kleinkind bis zum Teenager – gut zugeschnitten auf die jeweilige Altersstufe.' },
+    ],
+    showCourseList: true,
+    typeAliases: ['kinder_jugend', 'kinder'],
+    areaAliases: ['events_ferien', 'ferien'],
+    hintText: 'Empfehlungen für Ferienkurse in der Schweiz folgen in Kürze.',
   },
 
   // ---- KINDER & JUGEND THEMEN (new slugs matching dropdown exactly) ----
@@ -1022,18 +1055,37 @@ export const SIMPLE_TOPIC_CONTENT = {
 
   // ---- KINDER & JUGEND KURSARTEN (editorial only) ----
   'kinder-jugend/freizeitkurse': {
-    title: 'Freizeitkurse für Kinder',
-    subtitle: 'Regelmässige Aktivitäten, die begeistern',
+    title: 'Freizeitkurs',
+    subtitle: 'Regelmässige Kurse übers Schuljahr – Sport, Musik, Kreativität und mehr',
     intro:
-      'Regelmässige Freizeitkurse geben Kindern und Jugendlichen Struktur, soziale Kontakte und die Möglichkeit, etwas aufzubauen, das ihnen Freude macht.',
+      'Regelmässige Freizeitkurse geben Kindern und Jugendlichen Struktur, soziale Kontakte und die Möglichkeit, eine Fähigkeit oder ein Hobby über Zeit aufzubauen. Sie finden meist wöchentlich oder zweiwöchentlich statt.',
     points: [
       { icon: '🎯', title: 'Breites Angebot', text: 'Sport, Musik, Kunst, Theater – für jede Persönlichkeit gibt es das passende Angebot.' },
       { icon: '🌱', title: 'Kontinuierlich entwickeln', text: 'Regelmässige Kurse fördern Ausdauer, Konzentration und Selbstvertrauen.' },
       { icon: '👫', title: 'Soziale Kompetenz', text: 'In Kursen lernen Kinder Teamarbeit, Rücksichtnahme und Konfliktlösung.' },
-      { icon: '🏡', title: 'In der Nähe', text: 'Viele Anbieter sind lokal tätig – ideal für Kurse nach der Schule.' },
+      { icon: '🏡', title: 'In der Nähe', text: 'Viele Anbieter sind lokal tätig – ideal für Kurse nach der Schule oder am Wochenende.' },
     ],
-    showCourseList: false,
+    showCourseList: true,
+    typeAliases: ['kinder_jugend', 'kinder'],
+    areaAliases: ['freizeit_hobbys', 'sport', 'musik_kinder'],
     hintText: 'Mehr Tipps für Freizeitkurse und Aktivitäten für Kinder folgen in Kürze.',
+  },
+
+  'kinder-jugend/events-workshops': {
+    title: 'Event & Workshop',
+    subtitle: 'Einmalige Erlebnisse, Geburtstags-Workshops & besondere Veranstaltungen',
+    intro:
+      'Events und Workshops für Kinder sind einmalige oder seltene Angebote – ohne langfristige Verpflichtung. Sie eignen sich perfekt zum Ausprobieren, als Geburtstagserlebnis oder einfach für einen besonderen Nachmittag.',
+    points: [
+      { icon: '🎉', title: 'Geburtstags-Workshops', text: 'Kochen, Basteln, Zaubern oder Sport – unvergessliche Erlebnisse für die ganze Gruppe.' },
+      { icon: '🔬', title: 'Entdeckungsworkshops', text: 'Experimente, MINT, Kunst oder Natur – einmalige Sessions zum Staunen und Lernen.' },
+      { icon: '🎭', title: 'Theater & Aufführungen', text: 'Mitmachtheater, Zirkus-Workshops oder Tanzevents für Kinder und Jugendliche.' },
+      { icon: '📅', title: 'Keine langfristige Bindung', text: 'Einfach buchen, mitmachen und danach entscheiden, ob mehr daraus wird.' },
+    ],
+    showCourseList: true,
+    typeAliases: ['kinder_jugend', 'kinder'],
+    areaAliases: ['events_ferien', 'freizeit_hobbys'],
+    hintText: 'Mehr Empfehlungen für Kinder-Events und Workshops in der Schweiz folgen in Kürze.',
   },
 
   // ---- URLs die erreichbar bleiben, aber keine prominenten Kurse zeigen ----
