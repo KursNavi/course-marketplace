@@ -9,7 +9,7 @@ import { shouldHandleClientNavigation } from '../lib/navigation';
  *
  * Renders a hover-activated dropdown menu for each main category.
  * Shows:
- * - "Zu den Angeboten" link (to search)
+ * - "Zu den Kursen" link (to search)
  * - 4 Themen-Cluster links (to cluster overview pages)
  */
 export const MegaMenu = ({
@@ -101,10 +101,10 @@ export const MegaMenu = ({
   // Translations
   const t = {
     toOffers: {
-      de: 'Zu den Angeboten',
-      en: 'View Offers',
-      fr: 'Voir les offres',
-      it: 'Vedi offerte'
+      de: 'Zu den Kursen',
+      en: 'View Courses',
+      fr: 'Voir les cours',
+      it: 'Vedi corsi'
     },
     ratgeber: {
       de: 'Ratgeber',
@@ -147,7 +147,7 @@ export const MegaMenu = ({
           className="absolute left-0 top-full mt-1 w-72 bg-white rounded-xl shadow-2xl border border-gray-100 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200"
           style={{ minWidth: '280px' }}
         >
-          {/* "Zu den Angeboten" - Primary Action */}
+          {/* "Zu den Kursen" - Primary Action */}
           <a
             href={`/search?type=${categoryKey}`}
             onClick={(e) => {
@@ -309,10 +309,10 @@ export const MobileMenuCategory = ({
 
   const t = {
     toOffers: {
-      de: 'Zu den Angeboten',
-      en: 'View Offers',
-      fr: 'Voir les offres',
-      it: 'Vedi offerte'
+      de: 'Zu den Kursen',
+      en: 'View Courses',
+      fr: 'Voir les cours',
+      it: 'Vedi corsi'
     },
     ratgeber: {
       de: 'Ratgeber',

@@ -125,10 +125,10 @@ function SegmentEditorialTop({ searchType, segCfg, setView }) {
 
             {/* ── KURSARTEN ── */}
             <section className="max-w-7xl mx-auto px-4 pt-14 pb-6">
-                <p className={`text-xs font-bold tracking-widest uppercase mb-2 ${accentText}`}>Angebote</p>
+                <p className={`text-xs font-bold tracking-widest uppercase mb-2 ${accentText}`}>Kursarten</p>
                 <h2 className="text-2xl md:text-3xl font-heading font-bold text-dark mb-2">Wonach suchst du?</h2>
                 <p className="text-gray-500 mb-8 max-w-xl text-sm">
-                    Wähle eine Kursart für eine eigene Übersichtsseite – oder scroll einfach nach unten für alle Angebote.
+                    Wähle eine Kursart für eine eigene Übersichtsseite – oder scroll einfach nach unten für alle Kurse.
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
                     {config.kursarten.map((k) => (
