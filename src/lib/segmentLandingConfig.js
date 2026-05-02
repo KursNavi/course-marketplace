@@ -254,12 +254,20 @@ export const SEGMENT_LANDING_CONFIG = {
         href: '/thema/kinder-jugend/freizeitkurse',
       },
       {
-        slug: 'kindergeburtstag-event',
+        slug: 'kindergeburtstag',
         icon: '🎂',
-        label: 'Kindergeburtstag & Event',
-        desc: 'Geburtstagsfeiern, einmalige Workshops und besondere Erlebnisse für Kinder.',
+        label: 'Kindergeburtstag',
+        desc: 'Geburtstagsfeiern als Erlebnis-Workshop – unvergesslich für Kind und Gruppe.',
+        image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&q=80&w=800',
+        href: '/thema/kinder-jugend/kindergeburtstag',
+      },
+      {
+        slug: 'events-workshops',
+        icon: '🎉',
+        label: 'Event & Workshop',
+        desc: 'Einmalige Erlebnisse, Entdeckungsworkshops und besondere Veranstaltungen.',
         image: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&q=80&w=800',
-        href: '/thema/kinder-jugend/kindergeburtstag-event',
+        href: '/thema/kinder-jugend/events-workshops',
       },
     ],
     // Themen = exakt die Kategorien aus dem Suchfilter-Dropdown
@@ -1141,21 +1149,37 @@ export const SIMPLE_TOPIC_CONTENT = {
     hintText: 'Mehr Tipps für Freizeitkurse und Aktivitäten für Kinder folgen in Kürze.',
   },
 
-  'kinder-jugend/kindergeburtstag-event': {
-    title: 'Kindergeburtstag & Event',
-    subtitle: 'Geburtstagsfeiern, Workshops & einmalige Erlebnisse für Kinder',
+  'kinder-jugend/kindergeburtstag': {
+    title: 'Kindergeburtstag',
+    subtitle: 'Geburtstagsfeiern als Erlebnis-Workshop – unvergesslich für Kind und Gruppe',
     intro:
-      'Ein Kindergeburtstag als Kurs oder Workshop ist eine besondere Alternative zur klassischen Feier – und auch für Kinder, die einfach ein einmaliges Erlebnis suchen, gibt es tolle Angebote in der Schweiz.',
+      'Ein Kindergeburtstag als Workshop ist eine besondere Alternative zur klassischen Feier zuhause. Das Kind und seine Gäste erleben gemeinsam etwas – unter Anleitung, an einem tollen Ort, mit Programm und oft auch Verpflegung.',
     points: [
-      { icon: '🎂', title: 'Geburtstag mit Erlebnis', text: 'Kochen, Basteln, Zaubern, Sport oder Kreatives – unvergessliche Feiern für die ganze Gruppe.' },
-      { icon: '🔬', title: 'Entdeckungs-Workshops', text: 'Experimente, MINT, Kunst oder Natur – einmalige Sessions zum Staunen und Mitmachen.' },
-      { icon: '🎭', title: 'Theater, Zirkus & mehr', text: 'Mitmachtheater, Zirkus-Workshops oder Tanzevents für Kinder und Jugendliche.' },
-      { icon: '📅', title: 'Einmalig, keine Verpflichtung', text: 'Einfach buchen, geniessen – ohne Abo oder langfristige Bindung.' },
+      { icon: '🎂', title: 'Erlebnis statt Stress', text: 'Kein Aufräumen, kein Vorbereiten – der Anbieter übernimmt Organisation und Programm.' },
+      { icon: '🎨', title: 'Riesige Themenvielfalt', text: 'Kochen, Backen, Basteln, Sport, Zaubern, Coding, Tiere – für jedes Kind das Passende.' },
+      { icon: '👫', title: 'Für die ganze Gruppe', text: 'Geburtstags-Workshops sind auf Gruppen ausgelegt – alle Gäste sind aktiv dabei.' },
+      { icon: '🎁', title: 'Erinnerung fürs Leben', text: 'Ein erlebnisorientierter Geburtstag bleibt dem Kind länger in Erinnerung als Geschenke.' },
     ],
     showCourseList: true,
     typeAliases: ['kinder_jugend', 'kinder'],
     areaAliases: ['events_ferien', 'freizeit_hobbys'],
-    hintText: 'Mehr Empfehlungen für Kindergeburtstage und Kinder-Events in der Schweiz folgen in Kürze.',
+    hintText: 'Empfehlungen für Kindergeburtstags-Workshops in der Schweiz folgen in Kürze.',
+  },
+  'kinder-jugend/events-workshops': {
+    title: 'Event & Workshop',
+    subtitle: 'Einmalige Erlebnisse, Entdeckungsworkshops & besondere Veranstaltungen',
+    intro:
+      'Events und Workshops für Kinder sind einmalige Angebote ohne langfristige Verpflichtung. Perfekt zum Ausprobieren, für besondere Nachmittage oder als spontanes Erlebnis zwischendurch.',
+    points: [
+      { icon: '🔬', title: 'Entdeckungs-Workshops', text: 'Experimente, MINT, Kunst oder Natur – einmalige Sessions zum Staunen und Lernen.' },
+      { icon: '🎭', title: 'Theater, Zirkus & Tanz', text: 'Mitmachtheater, Zirkus-Workshops oder Tanzevents für Kinder und Jugendliche.' },
+      { icon: '🌟', title: 'Besondere Erlebnisse', text: 'Von der Schnupperstunde bis zum Tagesausflug – Abwechslung und neue Eindrücke.' },
+      { icon: '📅', title: 'Keine Verpflichtung', text: 'Einfach buchen, mitmachen und danach entscheiden, ob mehr daraus wird.' },
+    ],
+    showCourseList: true,
+    typeAliases: ['kinder_jugend', 'kinder'],
+    areaAliases: ['events_ferien', 'freizeit_hobbys'],
+    hintText: 'Mehr Empfehlungen für Kinder-Events und Workshops in der Schweiz folgen in Kürze.',
   },
 
   // ---- URLs die erreichbar bleiben, aber keine prominenten Kurse zeigen ----
