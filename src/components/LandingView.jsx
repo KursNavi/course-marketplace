@@ -113,18 +113,49 @@ function TileGrid({ tiles, setView }) {
   );
 }
 
-function TopicsAndTypesSection({ themen, setView, segCfg }) {
+function TopicsAndTypesSection({ kursarten, themen, setView, segCfg }) {
   const accentText = segCfg?.text || 'text-blue-600';
+  const accentBorder = segCfg?.border || 'border-blue-200';
 
   return (
-    <section className="max-w-7xl mx-auto px-4 pt-16 pb-12">
-      <div className="flex items-center gap-2 mb-2">
-        <span className={`text-xs font-bold tracking-widest uppercase ${accentText}`}>Kursthemen</span>
-      </div>
-      <h2 className="text-2xl md:text-3xl font-heading font-bold text-dark mb-2">Themen entdecken</h2>
-      <p className="text-gray-500 mb-6 max-w-xl">Tauche tiefer ein – mit kuratierten Themenwelten und Orientierungsseiten.</p>
-      <TileGrid tiles={themen} setView={setView} />
-    </section>
+    <>
+      {/* Kursarten */}
+      {kursarten?.length > 0 && (
+        <section className="max-w-7xl mx-auto px-4 pt-16 pb-8">
+          <div className="flex items-center gap-2 mb-2">
+            <span className={`text-xs font-bold tracking-widest uppercase ${accentText}`}>Kursarten</span>
+          </div>
+          <h2 className="text-2xl md:text-3xl font-heading font-bold text-dark mb-2">Wie möchtest du lernen?</h2>
+          <p className="text-gray-500 mb-6 max-w-xl">Wähle eine Kursart für eine eigene Übersichtsseite – oder scroll nach unten für alle Themen.</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {kursarten.map((k) => (
+              <button
+                key={k.slug}
+                onClick={() => navigateTo(k.href, setView, 'thema-landing')}
+                className={`group text-left bg-white border ${accentBorder} rounded-2xl p-6 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer`}
+              >
+                <div className="text-4xl mb-4">{k.icon}</div>
+                <h3 className="text-lg font-bold text-dark mb-2 group-hover:text-primary transition-colors">{k.label}</h3>
+                <p className="text-sm text-gray-500 leading-relaxed mb-4">{k.desc}</p>
+                <span className={`inline-flex items-center gap-1 text-sm font-semibold ${accentText}`}>
+                  Entdecken <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </span>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Themen */}
+      <section className="max-w-7xl mx-auto px-4 pt-4 pb-12">
+        <div className="flex items-center gap-2 mb-2">
+          <span className={`text-xs font-bold tracking-widest uppercase ${accentText}`}>Kursthemen</span>
+        </div>
+        <h2 className="text-2xl md:text-3xl font-heading font-bold text-dark mb-2">Themen entdecken</h2>
+        <p className="text-gray-500 mb-6 max-w-xl">Tauche tiefer ein – mit kuratierten Themenwelten und Orientierungsseiten.</p>
+        <TileGrid tiles={themen} setView={setView} />
+      </section>
+    </>
   );
 }
 
@@ -148,7 +179,7 @@ function SearchCTASection({ setView, setSearchType, searchTypeKey }) {
           onClick={handleGoToSearch}
           className="inline-flex items-center gap-2 bg-primary text-white font-semibold px-6 py-3 rounded-full hover:bg-orange-600 transition shadow"
         >
-          Alle Kurse durchsuchen <ArrowRight className="w-4 h-4" />
+          Zu den Angeboten <ArrowRight className="w-4 h-4" />
         </button>
       </div>
     </section>
@@ -199,6 +230,7 @@ const LandingView = ({
       />
 
       <TopicsAndTypesSection
+        kursarten={landingCfg.kursarten}
         themen={landingCfg.themen}
         setView={setView}
         segCfg={segCfg}
