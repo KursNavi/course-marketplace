@@ -110,7 +110,7 @@ export const SEGMENT_LANDING_CONFIG = {
         desc: 'Online-Marketing, Verkauf & Kommunikation',
         isThemenwelt: false,
         href: '/thema/beruflich/marketing',
-        image: 'https://images.unsplash.com/photo-1432888622747-4eb9a8f5e907?auto=format&fit=crop&q=80&w=800',
+        image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=800',
       },
       {
         slug: 'gesundheit-resilienz',
@@ -145,28 +145,36 @@ export const SEGMENT_LANDING_CONFIG = {
   privat_hobby: {
     kursarten: [
       {
-        slug: 'workshops',
+        slug: 'workshop-event',
         icon: '🎨',
-        label: 'Workshops',
-        desc: 'Kompakte Tages- und Halbtagesworkshops zum Ausprobieren und Vertiefen.',
+        label: 'Workshop & Event',
+        desc: 'Einmalig, ein Nachmittag oder ein Tag. Kein Vorwissen nötig – einfach ausprobieren.',
         image: 'https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&q=80&w=800',
-        href: '/thema/privat-hobby/workshops',
+        href: '/thema/privat-hobby/workshop-event',
       },
       {
-        slug: 'einsteigerkurse',
+        slug: 'einfuehrungskurs',
         icon: '🌱',
-        label: 'Kurse für Einsteiger',
-        desc: 'Kein Vorwissen nötig – starte neu und entdecke deine nächste Leidenschaft.',
+        label: 'Einführungskurs',
+        desc: 'Strukturierter Einstieg in 4–8 Einheiten. Für alle, die ein Thema richtig kennenlernen wollen.',
         image: 'https://images.unsplash.com/photo-1488190211105-8b0e65b80b4e?auto=format&fit=crop&q=80&w=800',
-        href: '/thema/privat-hobby/einsteigerkurse',
+        href: '/thema/privat-hobby/einfuehrungskurs',
       },
       {
-        slug: 'regelmaessige-kurse',
+        slug: 'wochenkurs',
         icon: '🗓️',
-        label: 'Regelmässige Kurse',
-        desc: 'Feste Kursgruppen für kontinuierliches Lernen und soziale Verbindung.',
+        label: 'Wochenkurs',
+        desc: 'Regelmässig, wöchentlich oder monatlich. Für Hobbys, die man langfristig pflegen möchte.',
         image: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&q=80&w=800',
-        href: '/thema/privat-hobby/regelmaessige-kurse',
+        href: '/thema/privat-hobby/wochenkurs',
+      },
+      {
+        slug: 'retreat-intensiv',
+        icon: '🌿',
+        label: 'Retreat & Intensiv',
+        desc: 'Mehrere Tage am Stück, konzentriert. Wochenend-Workshop oder Kreativwoche.',
+        image: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&q=80&w=800',
+        href: '/thema/privat-hobby/retreat-intensiv',
       },
     ],
     // Themen = exakt die Kategorien aus dem Suchfilter-Dropdown
@@ -222,20 +230,44 @@ export const SEGMENT_LANDING_CONFIG = {
   kinder_jugend: {
     kursarten: [
       {
-        slug: 'ferienkurse-camps',
-        icon: '☀️',
-        label: 'Ferienkurse & Camps',
-        desc: 'Sinnvolle und spannende Freizeitgestaltung in den Schulferien.',
+        slug: 'feriencamps',
+        icon: '🏕️',
+        label: 'Feriencamp',
+        desc: 'Ganztägige Betreuung & Aktivitäten in den Schulferien. Ideal für berufstätige Eltern.',
         image: 'https://images.unsplash.com/photo-1471922694854-ff1b63b20054?auto=format&fit=crop&q=80&w=800',
-        href: '/thema/kinder-jugend/ferienkurse-camps',
+        href: '/thema/kinder-jugend/feriencamps',
+      },
+      {
+        slug: 'ferienkurse',
+        icon: '☀️',
+        label: 'Ferienkurs',
+        desc: 'Spassige Kurse und Aktivitäten in den Ferien – ohne Ganztagesbetreuung.',
+        image: 'https://images.unsplash.com/photo-1596495578065-6e0763fa1178?auto=format&fit=crop&q=80&w=800',
+        href: '/thema/kinder-jugend/ferienkurse',
       },
       {
         slug: 'freizeitkurse',
         icon: '🎯',
-        label: 'Freizeitkurse',
-        desc: 'Regelmässige Aktivitäten, die Kinder begeistern und weiterentwickeln.',
+        label: 'Freizeitkurs',
+        desc: 'Regelmässige Kurse übers Schuljahr – Sport, Musik, Kreativität und mehr.',
         image: 'https://images.unsplash.com/photo-1587825140708-dfaf72ae4b04?auto=format&fit=crop&q=80&w=800',
         href: '/thema/kinder-jugend/freizeitkurse',
+      },
+      {
+        slug: 'kindergeburtstag',
+        icon: '🎂',
+        label: 'Kindergeburtstag',
+        desc: 'Geburtstagsfeiern als Erlebnis-Workshop – unvergesslich für Kind und Gruppe.',
+        image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&q=80&w=800',
+        href: '/thema/kinder-jugend/kindergeburtstag',
+      },
+      {
+        slug: 'events-workshops',
+        icon: '🎉',
+        label: 'Event & Workshop',
+        desc: 'Einmalige Erlebnisse, Entdeckungsworkshops und besondere Veranstaltungen.',
+        image: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&q=80&w=800',
+        href: '/thema/kinder-jugend/events-workshops',
       },
     ],
     // Themen = exakt die Kategorien aus dem Suchfilter-Dropdown
@@ -746,7 +778,69 @@ export const SIMPLE_TOPIC_CONTENT = {
     hintText: 'Mehr Tipps zu Tierkursen und Naturangeboten in deiner Region folgen in Kürze.',
   },
 
-  // ---- PRIVAT & HOBBY KURSARTEN (editorial only) ----
+  // ---- PRIVAT & HOBBY KURSARTEN (neue Tiles) ----
+  'privat-hobby/workshop-event': {
+    title: 'Workshop & Event',
+    subtitle: 'Einmalig, kein Vorwissen nötig – einfach ausprobieren',
+    intro:
+      'Workshops und Events sind die einfachste Art, etwas Neues zu erleben. Kein Abo, keine Verpflichtung – ein Nachmittag oder ein Tag, und du weisst, ob es dir liegt. In der Schweiz gibt es eine riesige Auswahl für alle Interessen.',
+    points: [
+      { icon: '🎨', title: 'Für alle offen', text: 'Kein Vorwissen nötig – Workshops starten bei null und sind für jede Altersstufe geeignet.' },
+      { icon: '🎁', title: 'Perfektes Erlebnisgeschenk', text: 'Ein Workshop-Gutschein ist persönlicher als Blumen und unvergesslicher als ein Gutschein.' },
+      { icon: '👫', title: 'Geselliges Format', text: 'Workshops bringen Gleichgesinnte zusammen – ideal auch zu zweit oder als Gruppe.' },
+      { icon: '📅', title: 'Flexibel buchbar', text: 'Einmalig, kurzfristig und ohne Abo – perfekt für Leute mit vollem Alltag.' },
+    ],
+    showCourseList: true,
+    typeAliases: ['privat', 'privat_hobby'],
+    hintText: 'Mehr Workshop-Empfehlungen und Ratgeber folgen in Kürze.',
+  },
+  'privat-hobby/einfuehrungskurs': {
+    title: 'Einführungskurs',
+    subtitle: 'Strukturierter Einstieg in 4–8 Einheiten',
+    intro:
+      'Ein Einführungskurs ist mehr als ein Workshop – er baut über mehrere Einheiten auf und gibt dir die Zeit, ein Thema wirklich kennenzulernen. Ideal für alle, die sich ernsthaft mit einem neuen Hobby oder Thema beschäftigen wollen.',
+    points: [
+      { icon: '🌱', title: 'Kein Vorwissen nötig', text: 'Einführungskurse erklären alles von Grund auf – du brauchst nur Neugier.' },
+      { icon: '🤝', title: 'Alle auf Augenhöhe', text: 'Alle in der Gruppe starten neu – das nimmt Druck und macht Lernen leichter.' },
+      { icon: '📈', title: 'Sichtbarer Fortschritt', text: 'In 4–8 Einheiten erreichst du ein echtes Grundniveau, das sich anfühlt.' },
+      { icon: '🔀', title: 'Weiterführung möglich', text: 'Nach einem Einführungskurs weisst du, ob du vertiefen oder wechseln möchtest.' },
+    ],
+    showCourseList: true,
+    typeAliases: ['privat', 'privat_hobby'],
+    hintText: 'Mehr Tipps zur Auswahl von Einführungskursen folgen in Kürze.',
+  },
+  'privat-hobby/wochenkurs': {
+    title: 'Wochenkurs',
+    subtitle: 'Regelmässig dabei – wöchentlich oder monatlich',
+    intro:
+      'Wochenkurse sind für Menschen, die ein Hobby nicht nur ausprobieren, sondern wirklich leben wollen. Woche für Woche dabei sein schafft Routine, Fortschritt und soziale Verbindung.',
+    points: [
+      { icon: '🗓️', title: 'Feste Kursgruppe', text: 'Immer die gleichen Gesichter – das fördert Motivation und echte Freundschaften.' },
+      { icon: '📈', title: 'Nachhaltiger Fortschritt', text: 'Regelmässige Praxis macht den Unterschied – nach einem Jahr merkst du es deutlich.' },
+      { icon: '🏡', title: 'Lokale Gemeinschaft', text: 'Wochenkurse finden meist in der Nähe statt – ein sozialer Anker im Alltag.' },
+      { icon: '💪', title: 'Gesunde Routine', text: 'Ein fester Kursabend hilft, ein Hobby dauerhaft in den Alltag zu integrieren.' },
+    ],
+    showCourseList: true,
+    typeAliases: ['privat', 'privat_hobby'],
+    hintText: 'Mehr Tipps zur Auswahl von Wochenkursen folgen in Kürze.',
+  },
+  'privat-hobby/retreat-intensiv': {
+    title: 'Retreat & Intensivkurs',
+    subtitle: 'Mehrere Tage am Stück – konzentriert und tiefgehend',
+    intro:
+      'Ein Retreat oder Intensivkurs ist etwas ganz Besonderes: mehrere Tage lang vollständig eintauchen, ohne Ablenkung. Ob Yoga-Retreat, Kreativwochenende oder Schreibklausur – diese Formate ermöglichen Erfahrungen, die ein wöchentlicher Kurs nie bieten kann.',
+    points: [
+      { icon: '🌿', title: 'Tiefe statt Breite', text: 'Wenn man sich mehrere Tage widmet, entstehen Durchbrüche, die sonst Monate dauern.' },
+      { icon: '🏔️', title: 'Besondere Orte', text: 'Retreats finden oft an inspirierenden Orten statt – in der Natur, auf dem Berg oder am See.' },
+      { icon: '🔋', title: 'Auftanken', text: 'Intensivkurse sind auch Erholung – bewusstes Abschalten vom Alltag.' },
+      { icon: '🎯', title: 'Für Fortgeschrittene und Einsteiger', text: 'Es gibt Retreats für jeden Stand – vom ersten Yoga-Wochenende bis zur Vertiefungsklausur.' },
+    ],
+    showCourseList: true,
+    typeAliases: ['privat', 'privat_hobby'],
+    hintText: 'Retreat- und Intensivkurs-Empfehlungen für die Schweiz folgen in Kürze.',
+  },
+
+  // ---- PRIVAT & HOBBY KURSARTEN (alte Slugs – bleiben erreichbar) ----
   'privat-hobby/workshops': {
     title: 'Workshops',
     subtitle: 'Ausprobieren, Erleben, Begeistern – in kompaktem Format',
@@ -922,20 +1016,37 @@ export const SIMPLE_TOPIC_CONTENT = {
     hintText: 'Mehr MINT-Kurs-Empfehlungen für Kinder und Jugendliche folgen in Kürze.',
   },
   'kinder-jugend/feriencamps': {
-    title: 'Feriencamps & Betreuung',
-    subtitle: 'Sportcamps, Kreativcamps & Outdoorlager',
+    title: 'Feriencamp',
+    subtitle: 'Ganztägige Betreuung & Aktivitäten in den Schulferien',
     intro:
-      'Feriencamps bieten Kindern und Jugendlichen die Möglichkeit, neue Freundschaften zu schliessen, Neues auszuprobieren und die Ferienzeit sinnvoll und unvergesslich zu gestalten.',
+      'Feriencamps bieten Kindern eine ganztägige Struktur in den Schulferien – mit Programm, Betreuung und unvergesslichen Erlebnissen. Ideal für berufstätige Eltern, die eine verlässliche Lösung für die Ferienwochen suchen.',
     points: [
-      { icon: '☀️', title: 'Thematische Camps', text: 'Sport, Musik, Coding, Kunst – für fast jedes Interesse gibt es spezialisierte Camps.' },
-      { icon: '🏕️', title: 'Outdoorlager', text: 'Natur erleben, Abenteuer bestehen, zusammen als Gruppe wachsen.' },
-      { icon: '👫', title: 'Neue Freundschaften', text: 'Feriencamps sind ideale Orte, um Gleichaltrige mit ähnlichen Interessen kennenzulernen.' },
-      { icon: '🗓️', title: 'Flexibel buchbar', text: 'Viele Camps lassen sich kurzfristig und für verschiedene Ferienwochen buchen.' },
+      { icon: '🏕️', title: 'Ganztägige Betreuung', text: 'Kinder sind den ganzen Tag gut aufgehoben – mit fachkundigem Personal und strukturiertem Programm.' },
+      { icon: '☀️', title: 'Thematische Camps', text: 'Sport, Musik, Coding, Kunst, Natur – es gibt Camps für fast jedes Interesse.' },
+      { icon: '👫', title: 'Soziales Miteinander', text: 'Kinder schliessen neue Freundschaften und lernen, im Team zu agieren.' },
+      { icon: '🗓️', title: 'Wochenweise buchbar', text: 'Viele Anbieter ermöglichen eine flexible Buchung nach Ferienwochen und Standort.' },
     ],
     showCourseList: true,
     typeAliases: ['kinder_jugend', 'kinder'],
     areaAliases: ['events_ferien', 'ferien'],
-    hintText: 'Empfehlungen für Feriencamps und Lager in der Schweiz folgen in Kürze.',
+    hintText: 'Empfehlungen für Feriencamps mit Betreuung in der Schweiz folgen in Kürze.',
+  },
+
+  'kinder-jugend/ferienkurse': {
+    title: 'Ferienkurs',
+    subtitle: 'Spassige Aktivitäten in den Ferien – ohne Ganztagesbetreuung',
+    intro:
+      'Ferienkurse bieten Kindern spannende Beschäftigung in den Schulferien – ohne den Anspruch auf eine Ganztagesbetreuung. Perfekt für Kinder, die etwas Neues ausprobieren möchten, während die Eltern nur teilweise arbeiten oder flexibel sind.',
+    points: [
+      { icon: '☀️', title: 'Ferien sinnvoll nutzen', text: 'Halbtägige oder kurze Kurse in der Ferienzeit – Kinder lernen Neues, ohne den ganzen Tag weg zu sein.' },
+      { icon: '🎨', title: 'Breites Angebot', text: 'Kunst, Basteln, Kochen, Tanzen, Sport – eine grosse Auswahl für alle Interessen.' },
+      { icon: '🌱', title: 'Neues entdecken', text: 'Ohne Leistungsdruck neue Hobbys und Talente kennenlernen.' },
+      { icon: '👶', title: 'Für alle Altersgruppen', text: 'Vom Kleinkind bis zum Teenager – gut zugeschnitten auf die jeweilige Altersstufe.' },
+    ],
+    showCourseList: true,
+    typeAliases: ['kinder_jugend', 'kinder'],
+    areaAliases: ['events_ferien', 'ferien'],
+    hintText: 'Empfehlungen für Ferienkurse in der Schweiz folgen in Kürze.',
   },
 
   // ---- KINDER & JUGEND THEMEN (new slugs matching dropdown exactly) ----
@@ -1022,18 +1133,53 @@ export const SIMPLE_TOPIC_CONTENT = {
 
   // ---- KINDER & JUGEND KURSARTEN (editorial only) ----
   'kinder-jugend/freizeitkurse': {
-    title: 'Freizeitkurse für Kinder',
-    subtitle: 'Regelmässige Aktivitäten, die begeistern',
+    title: 'Freizeitkurs',
+    subtitle: 'Regelmässige Kurse übers Schuljahr – Sport, Musik, Kreativität und mehr',
     intro:
-      'Regelmässige Freizeitkurse geben Kindern und Jugendlichen Struktur, soziale Kontakte und die Möglichkeit, etwas aufzubauen, das ihnen Freude macht.',
+      'Regelmässige Freizeitkurse geben Kindern und Jugendlichen Struktur, soziale Kontakte und die Möglichkeit, eine Fähigkeit oder ein Hobby über Zeit aufzubauen. Sie finden meist wöchentlich oder zweiwöchentlich statt.',
     points: [
       { icon: '🎯', title: 'Breites Angebot', text: 'Sport, Musik, Kunst, Theater – für jede Persönlichkeit gibt es das passende Angebot.' },
       { icon: '🌱', title: 'Kontinuierlich entwickeln', text: 'Regelmässige Kurse fördern Ausdauer, Konzentration und Selbstvertrauen.' },
       { icon: '👫', title: 'Soziale Kompetenz', text: 'In Kursen lernen Kinder Teamarbeit, Rücksichtnahme und Konfliktlösung.' },
-      { icon: '🏡', title: 'In der Nähe', text: 'Viele Anbieter sind lokal tätig – ideal für Kurse nach der Schule.' },
+      { icon: '🏡', title: 'In der Nähe', text: 'Viele Anbieter sind lokal tätig – ideal für Kurse nach der Schule oder am Wochenende.' },
     ],
-    showCourseList: false,
+    showCourseList: true,
+    typeAliases: ['kinder_jugend', 'kinder'],
+    areaAliases: ['freizeit_hobbys', 'sport', 'musik_kinder'],
     hintText: 'Mehr Tipps für Freizeitkurse und Aktivitäten für Kinder folgen in Kürze.',
+  },
+
+  'kinder-jugend/kindergeburtstag': {
+    title: 'Kindergeburtstag',
+    subtitle: 'Geburtstagsfeiern als Erlebnis-Workshop – unvergesslich für Kind und Gruppe',
+    intro:
+      'Ein Kindergeburtstag als Workshop ist eine besondere Alternative zur klassischen Feier zuhause. Das Kind und seine Gäste erleben gemeinsam etwas – unter Anleitung, an einem tollen Ort, mit Programm und oft auch Verpflegung.',
+    points: [
+      { icon: '🎂', title: 'Erlebnis statt Stress', text: 'Kein Aufräumen, kein Vorbereiten – der Anbieter übernimmt Organisation und Programm.' },
+      { icon: '🎨', title: 'Riesige Themenvielfalt', text: 'Kochen, Backen, Basteln, Sport, Zaubern, Coding, Tiere – für jedes Kind das Passende.' },
+      { icon: '👫', title: 'Für die ganze Gruppe', text: 'Geburtstags-Workshops sind auf Gruppen ausgelegt – alle Gäste sind aktiv dabei.' },
+      { icon: '🎁', title: 'Erinnerung fürs Leben', text: 'Ein erlebnisorientierter Geburtstag bleibt dem Kind länger in Erinnerung als Geschenke.' },
+    ],
+    showCourseList: true,
+    typeAliases: ['kinder_jugend', 'kinder'],
+    areaAliases: ['events_ferien', 'freizeit_hobbys'],
+    hintText: 'Empfehlungen für Kindergeburtstags-Workshops in der Schweiz folgen in Kürze.',
+  },
+  'kinder-jugend/events-workshops': {
+    title: 'Event & Workshop',
+    subtitle: 'Einmalige Erlebnisse, Entdeckungsworkshops & besondere Veranstaltungen',
+    intro:
+      'Events und Workshops für Kinder sind einmalige Angebote ohne langfristige Verpflichtung. Perfekt zum Ausprobieren, für besondere Nachmittage oder als spontanes Erlebnis zwischendurch.',
+    points: [
+      { icon: '🔬', title: 'Entdeckungs-Workshops', text: 'Experimente, MINT, Kunst oder Natur – einmalige Sessions zum Staunen und Lernen.' },
+      { icon: '🎭', title: 'Theater, Zirkus & Tanz', text: 'Mitmachtheater, Zirkus-Workshops oder Tanzevents für Kinder und Jugendliche.' },
+      { icon: '🌟', title: 'Besondere Erlebnisse', text: 'Von der Schnupperstunde bis zum Tagesausflug – Abwechslung und neue Eindrücke.' },
+      { icon: '📅', title: 'Keine Verpflichtung', text: 'Einfach buchen, mitmachen und danach entscheiden, ob mehr daraus wird.' },
+    ],
+    showCourseList: true,
+    typeAliases: ['kinder_jugend', 'kinder'],
+    areaAliases: ['events_ferien', 'freizeit_hobbys'],
+    hintText: 'Mehr Empfehlungen für Kinder-Events und Workshops in der Schweiz folgen in Kürze.',
   },
 
   // ---- URLs die erreichbar bleiben, aber keine prominenten Kurse zeigen ----

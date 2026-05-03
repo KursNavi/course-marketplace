@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useRef, useCallback } from 'react';
 import { Search, ChevronRight, User, X, Shield, MapPin, CheckCircle, Loader, Bell, ArrowDown, ArrowRight, Sparkles, Bookmark, BookmarkCheck, CreditCard, Info, EyeOff, Briefcase, Palette, Smile, BookOpen, Compass, SearchX, AlertTriangle, RotateCcw } from 'lucide-react';
-import { LocationDropdown, LanguageDropdown, DeliveryTypeFilter, SaeulenFilter } from './Filters';
+import { LocationDropdown, LanguageDropdown, DeliveryTypeFilter, SaeulenFilter, KursartFilter, PRIVAT_KURSART_ICONS, KINDER_KURSART_ICONS } from './Filters';
 import { Globe } from 'lucide-react';
-import { CATEGORY_TYPES, AGE_GROUPS, COURSE_LEVELS, DELIVERY_TYPES, SEGMENT_CONFIG, TYPE_DISPLAY_LABELS, BERUF_SAEULEN, NEW_TAXONOMY } from '../lib/constants';
+import { CATEGORY_TYPES, AGE_GROUPS, COURSE_LEVELS, DELIVERY_TYPES, SEGMENT_CONFIG, TYPE_DISPLAY_LABELS, BERUF_SAEULEN, PRIVAT_KURSARTEN, KINDER_KURSARTEN, NEW_TAXONOMY } from '../lib/constants';
 import { formatPriceCHF, getPriceLabel } from '../lib/formatPrice';
 import { useTaxonomy } from '../hooks/useTaxonomy';
 import { supabase } from '../lib/supabase';
@@ -12,7 +12,6 @@ import { SEARCH_STRINGS } from '../lib/searchStrings';
 import { getNormalizedDeliveryTypes } from '../lib/courseMetadata';
 import { trackSearch } from '../lib/analytics';
 import { getSearchHeader } from '../lib/searchHeaderConfig';
-import { SEGMENT_LANDING_CONFIG } from '../lib/segmentLandingConfig';
 
 import { DEFAULT_COURSE_IMAGE } from '../lib/imageUtils';
 const fallbackImage = DEFAULT_COURSE_IMAGE;
@@ -32,178 +31,6 @@ const URL_TO_DB_TYPE = {
 // Segment editorial section helpers
 // ---------------------------------------------------------------------------
 
-// Map searchType (beruflich/professionell/privat_hobby/privat/kinder_jugend/kinder)
-// to the key used in SEGMENT_LANDING_CONFIG
-const SEARCH_TYPE_TO_CONFIG_KEY = {
-    beruflich: 'beruflich',
-    professionell: 'beruflich',
-    privat_hobby: 'privat_hobby',
-    privat: 'privat_hobby',
-    kinder_jugend: 'kinder_jugend',
-    kinder: 'kinder_jugend',
-};
-
-// Map searchType to URL segment (dashes, for /thema/{segment}/{slug})
-const SEARCH_TYPE_TO_URL_SEGMENT = {
-    beruflich: 'beruflich',
-    professionell: 'beruflich',
-    privat_hobby: 'privat-hobby',
-    privat: 'privat-hobby',
-    kinder_jugend: 'kinder-jugend',
-    kinder: 'kinder-jugend',
-};
-
-/**
- * SegmentEditorialTop
- *
- * Shown at the top of the SearchPageView when a segment filter (beruflich /
- * privat_hobby / kinder_jugend) is active but no sub-area has been selected yet.
- *
- * Contains:
- *  – an atmospheric full-width hero
- *  – Kursarten tile grid (3 tiles → /thema/{segment}/{slug})
- *  – Themen tile grid (4 tiles → either /bereich/... or /thema/...)
- *  – a "scroll to results" CTA
- */
-function SegmentEditorialTop({ searchType, segCfg, setView }) {
-    const configKey = SEARCH_TYPE_TO_CONFIG_KEY[searchType] || searchType;
-    const urlSegment = SEARCH_TYPE_TO_URL_SEGMENT[searchType] || searchType;
-    const config = SEGMENT_LANDING_CONFIG[configKey];
-
-    if (!config || !segCfg) return null;
-
-    const navTo = (href, viewKey) => {
-        window.history.pushState({}, '', href);
-        setView(viewKey);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    };
-
-    const scrollToResults = () => {
-        const el = document.getElementById('search-results-anchor');
-        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    };
-
-    const accentText = segCfg.text || 'text-blue-600';
-    const accentBorder = segCfg.borderLight || 'border-blue-200';
-    const accentBg = segCfg.bgLight || 'bg-blue-50';
-
-    return (
-        <div>
-            {/* ── HERO ── */}
-            <div className="relative overflow-hidden" style={{ minHeight: '460px' }}>
-                {segCfg.heroBg && (
-                    <img
-                        src={segCfg.heroBg}
-                        alt=""
-                        className="absolute inset-0 w-full h-full object-cover"
-                        loading="eager"
-                        onError={(e) => { e.target.style.display = 'none'; }}
-                    />
-                )}
-                <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/40 to-black/65" />
-                <div
-                    className="relative z-10 flex flex-col items-center justify-center text-center text-white px-4 pt-20 pb-16 max-w-4xl mx-auto"
-                    style={{ minHeight: '460px' }}
-                >
-                    <p className="text-xs font-bold tracking-widest uppercase mb-4 opacity-70">
-                        KursNavi · Kursguide Schweiz
-                    </p>
-                    <h1 className="text-4xl md:text-6xl font-heading font-bold mb-5 leading-tight drop-shadow-md">
-                        {segCfg.heroTitle?.de}
-                    </h1>
-                    <p className="text-lg md:text-xl text-white/85 mb-8 max-w-2xl font-light leading-relaxed">
-                        {segCfg.heroSubtitle?.de}
-                    </p>
-                    <button
-                        onClick={scrollToResults}
-                        className="inline-flex items-center gap-2 bg-white/15 hover:bg-white/25 text-white border border-white/30 font-semibold px-5 py-2.5 rounded-full transition backdrop-blur-sm text-sm"
-                    >
-                        Alle Kurse entdecken <ArrowDown className="w-4 h-4" />
-                    </button>
-                </div>
-            </div>
-
-            {/* ── KURSARTEN ── */}
-            <section className="max-w-7xl mx-auto px-4 pt-14 pb-6">
-                <p className={`text-xs font-bold tracking-widest uppercase mb-2 ${accentText}`}>Angebote</p>
-                <h2 className="text-2xl md:text-3xl font-heading font-bold text-dark mb-2">Wonach suchst du?</h2>
-                <p className="text-gray-500 mb-8 max-w-xl text-sm">
-                    Wähle eine Kursart für eine eigene Übersichtsseite – oder scroll einfach nach unten für alle Angebote.
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-                    {config.kursarten.map((k) => (
-                        <button
-                            key={k.slug}
-                            onClick={() => navTo(`/thema/${urlSegment}/${k.slug}`, 'thema-landing')}
-                            className={`group text-left bg-white border ${accentBorder} rounded-2xl p-6 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer`}
-                        >
-                            <div className="text-4xl mb-4">{k.icon}</div>
-                            <h3 className="text-lg font-bold text-dark mb-2 group-hover:text-primary transition-colors">{k.label}</h3>
-                            <p className="text-sm text-gray-500 leading-relaxed mb-4">{k.desc}</p>
-                            <span className={`inline-flex items-center gap-1 text-sm font-semibold ${accentText}`}>
-                                Entdecken <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                            </span>
-                        </button>
-                    ))}
-                </div>
-            </section>
-
-            {/* ── THEMEN ── */}
-            <section className="max-w-7xl mx-auto px-4 pt-4 pb-14">
-                <p className={`text-xs font-bold tracking-widest uppercase mb-2 ${accentText}`}>Themenwelten</p>
-                <h2 className="text-2xl md:text-3xl font-heading font-bold text-dark mb-2">Themen entdecken</h2>
-                <p className="text-gray-500 mb-8 max-w-xl text-sm">
-                    Tauche tiefer in ein Thema ein – mit kuratierten Übersichten und Ratgebern.
-                </p>
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                    {config.themen.map((thema) => {
-                        const targetView = thema.isThemenwelt ? 'bereich-landing' : 'thema-landing';
-                        return (
-                            <button
-                                key={thema.slug}
-                                onClick={() => navTo(thema.href, targetView)}
-                                className="group relative overflow-hidden rounded-2xl cursor-pointer text-left shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                                style={{ aspectRatio: '4/3' }}
-                                aria-label={thema.label}
-                            >
-                                <img
-                                    src={thema.image}
-                                    alt=""
-                                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                                    loading="lazy"
-                                    onError={(e) => { e.target.style.display = 'none'; }}
-                                />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-                                {thema.isThemenwelt && (
-                                    <span className="absolute top-3 right-3 inline-flex items-center gap-1 bg-white/90 text-primary text-xs font-bold px-2.5 py-1 rounded-full shadow">
-                                        <Sparkles className="w-3 h-3" /> Themenwelt
-                                    </span>
-                                )}
-                                <div className="absolute bottom-0 left-0 right-0 p-4">
-                                    <div className="text-2xl mb-1">{thema.icon}</div>
-                                    <h3 className="text-white font-bold text-sm leading-snug mb-0.5">{thema.label}</h3>
-                                    <p className="text-white/70 text-xs leading-relaxed hidden sm:block">{thema.desc}</p>
-                                    <span className="mt-1 inline-flex items-center gap-1 text-white/85 text-xs font-semibold">
-                                        Mehr erfahren <ArrowRight className="w-3 h-3" />
-                                    </span>
-                                </div>
-                            </button>
-                        );
-                    })}
-                </div>
-            </section>
-
-            {/* ── DIVIDER before search results ── */}
-            <div className={`border-t ${accentBorder} ${accentBg}`}>
-                <div className="max-w-7xl mx-auto px-4 py-4 flex items-center gap-3">
-                    <div className={`h-px flex-1 ${accentBorder} border-t`} />
-                    <span className="text-sm text-gray-500 font-medium">Alle Kurse im Überblick</span>
-                    <div className={`h-px flex-1 ${accentBorder} border-t`} />
-                </div>
-            </div>
-        </div>
-    );
-}
 
 // ---------------------------------------------------------------------------
 
@@ -223,6 +50,7 @@ const SearchPageView = ({
     savedCourseIds, onToggleSaveCourse,
     user,
     selectedSaule, setSelectedSaule,
+    selectedKursart, setSelectedKursart,
     fetchError, onRetry,
     setSelectedCatPath
 }) => {
@@ -664,15 +492,6 @@ const SearchPageView = ({
 
     return (
         <div className="min-h-screen bg-beige">
-            {/* EDITORIAL TOP — shown when a segment is active but no sub-area is selected yet */}
-            {activeSegmentConfig && !searchArea && (
-                <SegmentEditorialTop
-                    searchType={searchType}
-                    segCfg={activeSegmentConfig}
-                    setView={setView}
-                />
-            )}
-
             {/* COMPACT SEGMENT HEADER — shown only when a sub-area (or deeper filter) is active */}
             {activeSegmentConfig && searchArea && (
                 <div className="relative overflow-hidden">
@@ -722,7 +541,6 @@ const SearchPageView = ({
             )}
 
             {/* Anchor for "scroll to results" button in the editorial section */}
-            <div id="search-results-anchor" />
             <div className="bg-white border-b pt-3 pb-2 sticky top-20 z-30 shadow-sm">
                 <div className="max-w-7xl mx-auto px-4 space-y-2">
                     {/* Search row */}
@@ -781,9 +599,31 @@ const SearchPageView = ({
                         </select>
                     </div>
 
-                    {/* 3-SÄULEN FILTER — nur für berufliche Kurse */}
+                    {/* SÄULEN FILTER — nur für berufliche Kurse */}
                     {(searchType === 'beruflich' || searchType === 'professionell') && (
                         <SaeulenFilter selectedSaule={selectedSaule} setSelectedSaule={setSelectedSaule} />
+                    )}
+
+                    {/* KURSART FILTER — Privat & Hobby */}
+                    {(searchType === 'privat' || searchType === 'privat_hobby') && (
+                        <KursartFilter
+                            kursarten={PRIVAT_KURSARTEN}
+                            icons={PRIVAT_KURSART_ICONS}
+                            selectedKursart={selectedKursart}
+                            setSelectedKursart={setSelectedKursart}
+                            colorScheme="orange"
+                        />
+                    )}
+
+                    {/* KURSART FILTER — Kinder & Jugend */}
+                    {(searchType === 'kinder' || searchType === 'kinder_jugend') && (
+                        <KursartFilter
+                            kursarten={KINDER_KURSARTEN}
+                            icons={KINDER_KURSART_ICONS}
+                            selectedKursart={selectedKursart}
+                            setSelectedKursart={setSelectedKursart}
+                            colorScheme="green"
+                        />
                     )}
 
                     <div className="flex gap-3 overflow-x-auto pb-1 items-center border-t pt-2 border-gray-100">
