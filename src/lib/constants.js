@@ -109,6 +109,68 @@ export const BERUF_SAEULEN = {
   }
 };
 
+// --- KURSFORMAT Privat & Hobby ---
+export const PRIVAT_KURSARTEN = {
+  workshop_event: {
+    de: "Workshop & Event",
+    shortDe: "Workshop",
+    subtitle: "einmalig",
+    description: "Einmalige Tages- oder Halbtagesveranstaltung, kein Vorwissen nötig"
+  },
+  einfuehrungskurs: {
+    de: "Einführungskurs",
+    shortDe: "Einführung",
+    subtitle: "4–8 Einheiten",
+    description: "Strukturierter Einstieg in ein neues Thema über mehrere Einheiten"
+  },
+  wochenkurs: {
+    de: "Wochenkurs",
+    shortDe: "Wochenkurs",
+    subtitle: "laufend",
+    description: "Regelmässig, wöchentlich oder monatlich"
+  },
+  retreat_intensiv: {
+    de: "Retreat & Intensiv",
+    shortDe: "Retreat",
+    subtitle: "mehrtägig",
+    description: "Mehrere Tage am Stück, konzentriert und tiefgehend"
+  },
+};
+
+// --- KURSFORMAT Kinder & Jugend ---
+export const KINDER_KURSARTEN = {
+  feriencamp: {
+    de: "Feriencamp",
+    shortDe: "Feriencamp",
+    subtitle: "Ferien, Ganztag",
+    description: "Ganztägige Betreuung & Aktivitäten in den Schulferien"
+  },
+  ferienkurs: {
+    de: "Ferienkurs",
+    shortDe: "Ferienkurs",
+    subtitle: "Ferien, halbtags",
+    description: "Spassige Aktivitäten in den Ferien, kein Ganztag"
+  },
+  freizeitkurs: {
+    de: "Freizeitkurs",
+    shortDe: "Freizeitkurs",
+    subtitle: "regelmässig",
+    description: "Regelmässige Kurse übers Schuljahr – Sport, Musik, Kreativität"
+  },
+  kindergeburtstag: {
+    de: "Kindergeburtstag",
+    shortDe: "Geburtstag",
+    subtitle: "einmalig",
+    description: "Geburtstagsfeiern als Erlebnis-Workshop für Kind und Gruppe"
+  },
+  events_workshops: {
+    de: "Event & Workshop",
+    shortDe: "Event",
+    subtitle: "einmalig",
+    description: "Einmalige Erlebnisse, Entdeckungsworkshops und besondere Veranstaltungen"
+  },
+};
+
 export const AGE_GROUPS = {
   age_0_3: { de: "0–3 Jahre", en: "0–3 Years", fr: "0–3 ans", it: "0–3 anni" },
   age_4_6: { de: "4–6 Jahre", en: "4–6 Years", fr: "4–6 ans", it: "4–6 anni" },
