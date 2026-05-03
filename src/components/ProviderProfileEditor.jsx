@@ -21,14 +21,15 @@ import { DEFAULT_COVER_IMAGE } from '../lib/imageUtils';
  * For Pro+ teachers: Additional public profile features (logo, slug, publish)
  */
 export default function ProviderProfileEditor({ user, showNotification, setUser, setLang, t, isImpersonating, setDashView, initialScrollTo, onScrollComplete }) {
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    if (!initialScrollTo) return;
+    if (!initialScrollTo || loading) return;
     const el = document.getElementById(initialScrollTo);
     if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
     onScrollComplete?.();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [loading]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
