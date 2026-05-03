@@ -1211,8 +1211,17 @@ export default function KursNaviPro() {  // 1. Initial State Logic
                 }
             } catch (e) { /* ignore parse errors */ }
         }
-        const isOnlineCourse = courseLocations.includes('Online');
-        matchesLocation = isOnlineCourse || selectedLocations.some(selLoc => courseLocations.includes(selLoc));
+        const courseIsOnline = courseLocations.includes('Online');
+        const courseIsAusland = courseLocations.includes('Ausland');
+        // Per-filter matching:
+        // - "Online" filter → only matches online courses
+        // - "Ausland" filter → only matches abroad courses
+        // - Canton filter → matches courses in that canton OR any online course (accessible from anywhere)
+        matchesLocation = selectedLocations.some(selLoc => {
+            if (selLoc === 'Online')  return courseIsOnline;
+            if (selLoc === 'Ausland') return courseIsAusland;
+            return courseLocations.includes(selLoc) || courseIsOnline;
+        });
     }
 
     // Boolean search with AND/OR operators
