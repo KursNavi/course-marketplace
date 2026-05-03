@@ -667,6 +667,7 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
     // Filter & Sort Logic: Priority same Category -> then fill with others
     const candidates = (courses || []).filter(c => c.id !== course.id);
     const currentPrimaryCat = Array.isArray(course.all_categories) && (course.all_categories.find(c => c.is_primary) || course.all_categories[0]);
+    const isKinderCourse = (currentPrimaryCat?.category_type || course.category_type) === 'kinder';
     const currentAreaSlug = currentPrimaryCat?.category_area || course.category_area;
     const sameCategory = candidates.filter(c => {
         const pCat = Array.isArray(c.all_categories) && (c.all_categories.find(x => x.is_primary) || c.all_categories[0]);
@@ -880,12 +881,12 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
                                     className="mt-0.5 mr-2.5 accent-primary shrink-0"
                                 />
                                 <span className="text-xs text-gray-700 leading-relaxed">
-                                    {course.requires_guardian_booking
+                                    {isKinderCourse
                                         ? 'Ich bestätige, dass ich mindestens 18 Jahre alt bin, diese Buchung als erziehungsberechtigte Person vornehme und als buchende Person Vertragspartner/in sowie zahlungspflichtig bin.'
                                         : 'Ich bestätige, dass ich mindestens 18 Jahre alt bin und diese Buchung für mich selbst oder mit Einverständnis der teilnehmenden Person vornehme. Mir ist bewusst, dass ich als buchende Person Vertragspartner/in und zahlungspflichtig bin.'}
                                 </span>
                             </label>
-                            {course.requires_guardian_booking && (
+                            {isKinderCourse && (
                                 <p className="text-xs text-amber-700 mt-2 pl-5 font-medium">
                                     Hinweis: Dieser Kurs richtet sich an Minderjährige. Die Buchung muss durch eine erziehungsberechtigte Person erfolgen.
                                 </p>
@@ -999,12 +1000,12 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
                                             className="mt-0.5 mr-2.5 accent-primary shrink-0"
                                         />
                                         <span className="text-xs text-gray-700 leading-relaxed">
-                                            {course.requires_guardian_booking
+                                            {isKinderCourse
                                                 ? 'Ich best\u00e4tige, dass ich mindestens 18 Jahre alt bin, diese Buchung als erziehungsberechtigte Person vornehme und als buchende Person Vertragspartner/in sowie zahlungspflichtig bin.'
                                                 : 'Ich best\u00e4tige, dass ich mindestens 18 Jahre alt bin und diese Buchung f\u00fcr mich selbst oder mit Einverst\u00e4ndnis der teilnehmenden Person vornehme. Mir ist bewusst, dass ich als buchende Person Vertragspartner/in und zahlungspflichtig bin.'}
                                         </span>
                                     </label>
-                                    {course.requires_guardian_booking && (
+                                    {isKinderCourse && (
                                         <p className="text-xs text-amber-700 mt-2 pl-5 font-medium">
                                             Hinweis: Dieser Kurs richtet sich an Minderj\u00e4hrige. Die Buchung muss durch eine erziehungsberechtigte Person erfolgen.
                                         </p>
@@ -1036,12 +1037,12 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
                                             className="mt-0.5 mr-2.5 accent-primary shrink-0"
                                         />
                                         <span className="text-xs text-gray-700 leading-relaxed">
-                                            {course.requires_guardian_booking
+                                            {isKinderCourse
                                                 ? 'Ich best\u00e4tige, dass ich mindestens 18 Jahre alt bin, diese Buchung als erziehungsberechtigte Person vornehme und als buchende Person Vertragspartner/in sowie zahlungspflichtig bin.'
                                                 : 'Ich best\u00e4tige, dass ich mindestens 18 Jahre alt bin und diese Buchung f\u00fcr mich selbst oder mit Einverst\u00e4ndnis der teilnehmenden Person vornehme. Mir ist bewusst, dass ich als buchende Person Vertragspartner/in und zahlungspflichtig bin.'}
                                         </span>
                                     </label>
-                                    {course.requires_guardian_booking && (
+                                    {isKinderCourse && (
                                         <p className="text-xs text-amber-700 mt-2 pl-5 font-medium">
                                             Hinweis: Dieser Kurs richtet sich an Minderj\u00e4hrige. Die Buchung muss durch eine erziehungsberechtigte Person erfolgen.
                                         </p>
