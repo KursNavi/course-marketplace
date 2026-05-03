@@ -1800,8 +1800,8 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                                                         className="text-orange-500 focus:ring-orange-400"
                                                     />
                                                     <span className="text-sm font-medium text-gray-800">{config.shortDe}</span>
-                                                    <span className="text-[10px] text-gray-400">({config.subtitle})</span>
                                                 </div>
+                                                <span className="text-[10px] text-gray-400 ml-5">{config.subtitle}</span>
                                                 <span className="text-xs text-gray-500 mt-1 ml-5">{config.description}</span>
                                             </label>
                                         );
@@ -1833,8 +1833,8 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                                                         className="text-green-600 focus:ring-green-500"
                                                     />
                                                     <span className="text-sm font-medium text-gray-800">{config.shortDe}</span>
-                                                    <span className="text-[10px] text-gray-400">({config.subtitle})</span>
                                                 </div>
+                                                <span className="text-[10px] text-gray-400 ml-5">{config.subtitle}</span>
                                                 <span className="text-xs text-gray-500 mt-1 ml-5">{config.description}</span>
                                             </label>
                                         );
@@ -2011,17 +2011,6 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                                                 className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none"
                                             />
                                             <p className="text-xs text-gray-500 mt-1">Ab welchem Alter ist der Kurs geeignet?</p>
-                                        </div>
-                                        <div className="flex items-start pt-6">
-                                            <label className="flex items-center cursor-pointer">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={requiresGuardianBooking}
-                                                    onChange={(e) => { setRequiresGuardianBooking(e.target.checked); markDirty(); }}
-                                                    className="mr-2 accent-primary"
-                                                />
-                                                <span className="text-sm text-gray-700">Buchung nur durch Erziehungsberechtigte</span>
-                                            </label>
                                         </div>
                                     </div>
                                 </div>
