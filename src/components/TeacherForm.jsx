@@ -1767,8 +1767,8 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                                                     />
                                                     <Icon className="w-4 h-4 text-blue-600" />
                                                     <span className="text-sm font-medium text-gray-800">{config.shortDe}</span>
-                                                    <span className="text-[10px] text-gray-400">({config.subtitle})</span>
                                                 </div>
+                                                <span className="text-[10px] text-gray-400 ml-6">{config.subtitle}</span>
                                                 <span className="text-xs text-gray-500 mt-1 ml-6">{config.description}</span>
                                             </label>
                                         );
