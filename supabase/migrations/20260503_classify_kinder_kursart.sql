@@ -70,8 +70,15 @@ WHERE id IN (SELECT * FROM _temp_kinder_course_ids())
     OR title    ILIKE '%semester%'         OR description ILIKE '%semester%'
     OR title    ILIKE '%schuljahr%'        OR description ILIKE '%schuljahr%'
     OR description ILIKE '%nach der schule%'
+    OR description ILIKE '%nach schule%'
     OR description ILIKE '%nachmittag%'
     OR description ILIKE '%jeden %'
+    OR title       ILIKE '%schwimmkurs%'      OR description ILIKE '%schwimmkurs%'
+    OR title       ILIKE '%babyschwimmen%'    OR description ILIKE '%babyschwimmen%'
+    OR title       ILIKE '%kinderschwimmen%'  OR description ILIKE '%kinderschwimmen%'
+    OR title       ILIKE '%sprachkurs%'       OR description ILIKE '%sprachkurs%'
+    OR description ILIKE '%kursreihe%'
+    OR description ILIKE '%aufeinander aufbauend%'
   );
 
 -- Schritt 5: events_workshops — Catch-all für alle verbleibenden Kinder-Kurse

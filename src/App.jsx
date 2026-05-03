@@ -1330,9 +1330,13 @@ export default function KursNaviPro() {  // 1. Initial State Logic
     let matchesKursart = true;
     if (selectedKursart) {
         const normType = normalizeCategoryType(course.category_type);
-        if (normType === 'privat') {
+        const hasPrivatType = normType === 'privat' ||
+            (Array.isArray(course.all_categories) && course.all_categories.some(cat => cat && cat.category_type === 'privat'));
+        const hasKinderType = normType === 'kinder' ||
+            (Array.isArray(course.all_categories) && course.all_categories.some(cat => cat && cat.category_type === 'kinder'));
+        if (hasPrivatType) {
             matchesKursart = course.privat_kursart === selectedKursart;
-        } else if (normType === 'kinder') {
+        } else if (hasKinderType) {
             matchesKursart = course.kinder_kursart === selectedKursart;
         }
     }

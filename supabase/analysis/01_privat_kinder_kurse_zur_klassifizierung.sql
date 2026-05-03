@@ -1,5 +1,6 @@
 -- Alle Privat- und Kinder-Kurse mit Titel + Beschreibung zur Klassifizierung
 -- Zweck: Vor der Klassifizierung prüfen, welche Kurse vorhanden sind
+-- HINWEIS: privat_kursart / kinder_kursart nur nach Migration 20260503_add_privat_kinder_kursart.sql verfügbar
 -- Eine Query — einzeln in Supabase SQL Editor ausführen
 SELECT
     c.id,
@@ -7,8 +8,6 @@ SELECT
     l1.slug           AS segment,
     l2.label_de       AS bereich,
     LEFT(c.description, 250) AS beschreibung_kurz,
-    c.privat_kursart,
-    c.kinder_kursart,
     c.status
 FROM courses c
 JOIN course_category_assignments cca ON cca.course_id = c.id AND cca.is_primary = true

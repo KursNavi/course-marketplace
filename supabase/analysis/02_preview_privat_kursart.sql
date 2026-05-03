@@ -18,6 +18,12 @@ SELECT
         WHEN c.title       ILIKE '%klausur%'          THEN 'retreat_intensiv'
         WHEN c.description ILIKE '%klausur%'          THEN 'retreat_intensiv'
 
+        -- Ausnahme: Probestunden / Schnuppertermine → immer workshop_event
+        WHEN c.title       ILIKE '%probestunde%'         THEN 'workshop_event'
+        WHEN c.title       ILIKE '%schnuppertermin%'    THEN 'workshop_event'
+        WHEN c.title       ILIKE '%schnupperkurs%'      THEN 'workshop_event'
+        WHEN c.title       ILIKE '%schnupperunterricht%' THEN 'workshop_event'
+
         -- wochenkurs: regelmässig, wöchentlich, Semester
         WHEN c.title       ILIKE '%wöchentlich%'      THEN 'wochenkurs'
         WHEN c.description ILIKE '%wöchentlich%'      THEN 'wochenkurs'
@@ -33,6 +39,8 @@ SELECT
         WHEN c.description ILIKE '%jeden mittwoch%'   THEN 'wochenkurs'
         WHEN c.description ILIKE '%jeden donnerstag%' THEN 'wochenkurs'
         WHEN c.description ILIKE '%jeden freitag%'    THEN 'wochenkurs'
+        WHEN c.title       ILIKE '%laufender kurs%'   THEN 'wochenkurs'
+        WHEN c.description ILIKE '%laufender kurs%'   THEN 'wochenkurs'
 
         -- einfuehrungskurs: Einsteiger, Grundkurs, Anfänger
         WHEN c.title       ILIKE '%einführungskurs%'  THEN 'einfuehrungskurs'

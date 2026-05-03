@@ -30,6 +30,17 @@ WHERE id IN (SELECT * FROM _temp_privat_course_ids())
     OR (title   ILIKE '%wochenende%' AND (title ILIKE '%kurs%' OR title ILIKE '%workshop%'))
   );
 
+-- Schritt 1b: Probestunden / Schnuppertermine → workshop_event (vor wochenkurs-Check)
+UPDATE courses SET privat_kursart = 'workshop_event'
+WHERE id IN (SELECT * FROM _temp_privat_course_ids())
+  AND privat_kursart IS NULL
+  AND (
+    title ILIKE '%probestunde%'
+    OR title ILIKE '%schnuppertermin%'
+    OR title ILIKE '%schnupperkurs%'
+    OR title ILIKE '%schnupperunterricht%'
+  );
+
 -- Schritt 2: wochenkurs — regelmässig, Semester, wöchentlich
 UPDATE courses SET privat_kursart = 'wochenkurs'
 WHERE id IN (SELECT * FROM _temp_privat_course_ids())
