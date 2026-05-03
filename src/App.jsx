@@ -715,7 +715,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
       // V3.0 Data Sync (robust): Lade Kurse + Events zuerst, Profile danach separat (kein fragiler Join)
       const { data: courseData, error: courseError } = await supabase
         .from('courses')
-        .select(`*, course_events(*, bookings(count))`)
+        .select(`*, course_events(*, bookings(count)), course_locations(*)`)
         .order('created_at', { ascending: false });
 
       if (courseError) throw courseError;
@@ -1189,6 +1189,8 @@ export default function KursNaviPro() {  // 1. Initial State Logic
         if (Array.isArray(course.course_events)) {
             course.course_events.forEach(ev => {
                 if (ev.canton) courseLocations.push(ev.canton);
+                // Online-Events have canton=null and location='Online'
+                if (!ev.canton && ev.location) courseLocations.push(ev.location);
             });
         }
         if (course.address) {
@@ -1209,8 +1211,17 @@ export default function KursNaviPro() {  // 1. Initial State Logic
                 }
             } catch (e) { /* ignore parse errors */ }
         }
-        const isOnlineCourse = courseLocations.includes('Online');
-        matchesLocation = isOnlineCourse || selectedLocations.some(selLoc => courseLocations.includes(selLoc));
+        const courseIsOnline = courseLocations.includes('Online');
+        const courseIsAusland = courseLocations.includes('Ausland');
+        // Per-filter matching:
+        // - "Online" filter → only matches online courses
+        // - "Ausland" filter → only matches abroad courses
+        // - Canton filter → matches courses in that canton OR any online course (accessible from anywhere)
+        matchesLocation = selectedLocations.some(selLoc => {
+            if (selLoc === 'Online')  return courseIsOnline;
+            if (selLoc === 'Ausland') return courseIsAusland;
+            return courseLocations.includes(selLoc) || courseIsOnline;
+        });
     }
 
     // Boolean search with AND/OR operators

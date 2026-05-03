@@ -195,12 +195,18 @@ export const LocationDropdown = ({ selectedLocations, setSelectedLocations, locM
             </button>
             {locMenuOpen && (
                 <div className="absolute top-10 left-0 w-[calc(100vw-2rem)] md:w-[560px] bg-white rounded-xl shadow-2xl border border-gray-100 p-4">
-                    {/* Online – special item */}
-                    <label className="flex items-center space-x-2 p-2 mb-2 hover:bg-gray-50 rounded cursor-pointer border-b border-gray-100 pb-3">
-                        <input type="checkbox" checked={selectedLocations.includes('Online')} onChange={() => toggleLoc('Online')} className="rounded border-gray-300 text-primary focus:ring-primary" />
-                        <span className="text-sm font-medium text-gray-700">Online</span>
-                        <Globe className="w-4 h-4 text-gray-400" />
-                    </label>
+                    {/* Online + Ausland – special items above canton grid */}
+                    <div className="flex gap-4 pb-3 mb-2 border-b border-gray-100">
+                        <label className="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
+                            <input type="checkbox" checked={selectedLocations.includes('Online')} onChange={() => toggleLoc('Online')} className="rounded border-gray-300 text-primary focus:ring-primary" />
+                            <span className="text-sm font-medium text-gray-700">Online</span>
+                            <Globe className="w-4 h-4 text-gray-400" />
+                        </label>
+                        <label className="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
+                            <input type="checkbox" checked={selectedLocations.includes('Ausland')} onChange={() => toggleLoc('Ausland')} className="rounded border-gray-300 text-primary focus:ring-primary" />
+                            <span className="text-sm font-medium text-gray-700">Ausland</span>
+                        </label>
+                    </div>
                     {/* Cantons in 3-column grid, Liechtenstein last with FL tag */}
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-x-2">
                         {[...displayList.filter(l => l !== 'Online' && l !== 'Liechtenstein'), 'Liechtenstein'].map(loc => (
