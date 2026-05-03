@@ -1189,6 +1189,8 @@ export default function KursNaviPro() {  // 1. Initial State Logic
         if (Array.isArray(course.course_events)) {
             course.course_events.forEach(ev => {
                 if (ev.canton) courseLocations.push(ev.canton);
+                // Online-Events have canton=null and location='Online'
+                if (!ev.canton && ev.location) courseLocations.push(ev.location);
             });
         }
         if (course.address) {
