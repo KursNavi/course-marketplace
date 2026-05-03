@@ -558,7 +558,7 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
 
     const hasEvents = displayEvents.length > 0;
     const isPastEventFallback = course.booking_type === 'platform' && !hasEvents;
-    const effectiveBookingType = isPastEventFallback ? 'platform_flex' : course.booking_type;
+    const effectiveBookingType = isPastEventFallback ? 'lead' : course.booking_type;
 
     // --- RENDER HELPERS ---
     const renderDescription = (text) => {
@@ -958,21 +958,18 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
                         <div className="bg-gray-50 rounded-xl p-5 border border-gray-200 mb-6 text-center">
                             <Map className="w-8 h-8 text-gray-400 mx-auto mb-3" />
                             <h3 className="font-bold text-dark text-sm mb-2">
-                                {effectiveBookingType === 'platform_flex' ? 'Flexibler Termin' : 'Flexible Verfügbarkeit'}
+                                {isPastEventFallback ? 'Keine aktuellen Termine' : effectiveBookingType === 'platform_flex' ? 'Flexibler Termin' : 'Flexible Verfügbarkeit'}
                             </h3>
                             <p className="text-xs text-gray-500 mb-4">
-                                {effectiveBookingType === 'platform_flex'
-                                    ? 'Bitte vereinbare den Termin direkt mit dem Anbieter.'
-                                    : 'Dieser Kurs hat keine festen Termine oder findet an flexiblen Orten statt.'}
+                                {isPastEventFallback
+                                    ? 'Alle früheren Termine sind vorbei. Sende eine Anfrage, um über neue Termine informiert zu werden.'
+                                    : effectiveBookingType === 'platform_flex'
+                                        ? 'Bitte vereinbare den Termin direkt mit dem Anbieter.'
+                                        : 'Dieser Kurs hat keine festen Termine oder findet an flexiblen Orten statt.'}
                             </p>
-                            {isPastEventFallback && (
-                                <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-4">
-                                    Alle früheren Termine sind bereits vorbei. Dieser Kurs wird deshalb automatisch als flexible Direktbuchung angezeigt.
-                                </p>
-                            )}
                             {course.address && course.address.length > 2 && (
                                 <div className="text-xs font-medium text-gray-700 bg-white p-2 rounded border border-gray-200 mb-4">
-                                    {effectiveBookingType === 'platform_flex' ? 'Ort: ' : 'Regionen: '}{course.address}
+                                    {(effectiveBookingType === 'platform_flex' || isPastEventFallback) ? 'Ort: ' : 'Regionen: '}{course.address}
                                 </div>
                             )}
 

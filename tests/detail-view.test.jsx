@@ -84,4 +84,52 @@ describe('DetailView', () => {
     expect(screen.getByText('Reisevorbereitung')).toBeInTheDocument();
     expect(screen.queryByText('sprachen_privat')).not.toBeInTheDocument();
   });
+
+  it('shows lead inquiry (Anfrage senden) when all platform course events are in the past', () => {
+    const course = {
+      id: '789',
+      title: 'Abgelaufener Kurs',
+      description: 'Kurs mit vergangenen Terminen.',
+      instructor_name: 'Test Anbieter',
+      booking_type: 'platform',
+      price: 150,
+      canton: 'Zürich',
+      address: 'Zürich',
+      category_type: 'privat',
+      all_categories: [],
+      course_events: [
+        {
+          id: 'evt-past',
+          start_date: '2020-03-15',
+          location: 'Zürich',
+          canton: 'ZH',
+          schedule_description: '',
+          max_participants: 10,
+          bookings: [],
+          cancelled_at: null,
+        },
+      ],
+    };
+
+    render(
+      <DetailView
+        course={course}
+        courses={[]}
+        setView={vi.fn()}
+        t={{ lbl_description: 'Beschreibung', lbl_learn_goals: 'Lernziele', btn_book: 'Jetzt buchen' }}
+        setSelectedTeacher={vi.fn()}
+        user={null}
+        savedCourseIds={[]}
+        onToggleSaveCourse={vi.fn()}
+        showNotification={vi.fn()}
+      />
+    );
+
+    // Widget-Titel sollte "Keine aktuellen Termine" zeigen
+    expect(screen.getByText('Keine aktuellen Termine')).toBeInTheDocument();
+    // Button sollte "Anfrage senden" zeigen (Lead-Verhalten)
+    expect(screen.getByText('Anfrage senden')).toBeInTheDocument();
+    // Der vergangene Termin darf nicht als Datum angezeigt werden
+    expect(screen.queryByText('15.03.2020')).not.toBeInTheDocument();
+  });
 });
