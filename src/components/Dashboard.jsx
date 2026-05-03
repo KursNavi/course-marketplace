@@ -1563,6 +1563,17 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
         if (tab) { sessionStorage.removeItem('dashOpenTab'); return tab; }
         return 'overview';
     });
+    const [scrollToSection, setScrollToSection] = useState(() => {
+        const section = sessionStorage.getItem('dashScrollTo');
+        if (section) { sessionStorage.removeItem('dashScrollTo'); return section; }
+        return null;
+    });
+    useEffect(() => {
+        if (!scrollToSection) return;
+        const el = document.getElementById(scrollToSection);
+        if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+        setScrollToSection(null);
+    }, [scrollToSection, dashView]);
     const [userTier, setUserTier] = useState('basic'); // basic, pro, premium, enterprise
     const [showSuccessModal, setShowSuccessModal] = useState(false); // NEW: Success Modal State
     const [showCaptureServiceModal, setShowCaptureServiceModal] = useState(false); // Capture Service Modal

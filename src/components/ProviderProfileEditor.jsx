@@ -1303,7 +1303,7 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
 
       {/* Stripe Connect - Auszahlungen für Anbieter */}
       {isTeacher && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 md:p-8">
+        <div id="auszahlungen" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 md:p-8">
           <h3 className="text-lg font-bold mb-4 text-gray-800 flex items-center">
             <CreditCard className="w-5 h-5 mr-2 text-orange-500" /> Auszahlungen einrichten
           </h3>
