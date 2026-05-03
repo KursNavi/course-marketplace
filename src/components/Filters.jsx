@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronDown, ChevronRight, ChevronLeft, MapPin, Globe, Monitor } from 'lucide-react';
-import { SWISS_CANTONS, DELIVERY_TYPES, COURSE_LANGUAGES, TYPE_DISPLAY_LABELS, BERUF_SAEULEN } from '../lib/constants';
-import { Clock, BookOpen, Award, GraduationCap } from 'lucide-react';
+import { SWISS_CANTONS, DELIVERY_TYPES, COURSE_LANGUAGES, TYPE_DISPLAY_LABELS, BERUF_SAEULEN, PRIVAT_KURSARTEN, KINDER_KURSARTEN } from '../lib/constants';
+import { Clock, BookOpen, Award, GraduationCap, Sparkles, Sprout, CalendarDays, Mountain, Sun, CloudSun, Music2, Cake, Zap } from 'lucide-react';
 import { useTaxonomy } from '../hooks/useTaxonomy';
 
 export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCatPath, catMenuOpen, setCatMenuOpen, t, catMenuRef }) => {
@@ -321,6 +321,8 @@ export const DeliveryTypeFilter = ({ selectedDeliveryTypes, setSelectedDeliveryT
 };
 
 const SAEULEN_ICONS = { workshop: Clock, fachkurs: BookOpen, zertifikatslehrgang: Award, ausbildung: GraduationCap };
+const PRIVAT_KURSART_ICONS = { workshop_event: Sparkles, einfuehrungskurs: Sprout, wochenkurs: CalendarDays, retreat_intensiv: Mountain };
+const KINDER_KURSART_ICONS = { feriencamp: Sun, ferienkurs: CloudSun, freizeitkurs: Music2, kindergeburtstag: Cake, events_workshops: Zap };
 
 export const SaeulenFilter = ({ selectedSaule, setSelectedSaule }) => {
     return (
@@ -363,3 +365,56 @@ export const SaeulenFilter = ({ selectedSaule, setSelectedSaule }) => {
         </div>
     );
 };
+
+// Generischer Kursart-Filter für Privat & Hobby und Kinder & Jugend
+export const KursartFilter = ({ kursarten, icons, selectedKursart, setSelectedKursart, colorScheme = 'orange' }) => {
+    const activeStyle = colorScheme === 'green'
+        ? 'bg-green-100 border-green-300 text-green-800 shadow-sm'
+        : 'bg-orange-100 border-orange-300 text-orange-800 shadow-sm';
+    const hoverStyle = colorScheme === 'green'
+        ? 'hover:border-green-200 hover:bg-green-50'
+        : 'hover:border-orange-200 hover:bg-orange-50';
+    const subtitleStyle = colorScheme === 'green' ? 'text-green-600' : 'text-orange-600';
+
+    return (
+        <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-xs text-gray-400 mr-1 hidden md:inline">Kursart:</span>
+            {Object.entries(kursarten).map(([key, config]) => {
+                const Icon = icons[key];
+                const active = selectedKursart === key;
+                return (
+                    <button
+                        key={key}
+                        type="button"
+                        onClick={() => setSelectedKursart(active ? '' : key)}
+                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border text-xs font-medium transition-all ${
+                            active
+                                ? activeStyle
+                                : `bg-white border-gray-200 text-gray-600 ${hoverStyle}`
+                        }`}
+                        title={config.description}
+                        aria-pressed={active}
+                    >
+                        {Icon && <Icon className="w-3.5 h-3.5" aria-hidden="true" />}
+                        <span>{config.shortDe}</span>
+                        <span className={`text-[10px] hidden sm:inline ${active ? subtitleStyle : 'text-gray-400'}`}>
+                            ({config.subtitle})
+                        </span>
+                    </button>
+                );
+            })}
+            {selectedKursart && (
+                <button
+                    type="button"
+                    onClick={() => setSelectedKursart('')}
+                    className="text-xs text-gray-400 hover:text-red-500 ml-1"
+                    aria-label="Kursart-Filter zurücksetzen"
+                >
+                    ✕
+                </button>
+            )}
+        </div>
+    );
+};
+
+export { PRIVAT_KURSART_ICONS, KINDER_KURSART_ICONS };

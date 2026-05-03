@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useRef, useCallback } from 'react';
 import { Search, ChevronRight, User, X, Shield, MapPin, CheckCircle, Loader, Bell, ArrowDown, ArrowRight, Sparkles, Bookmark, BookmarkCheck, CreditCard, Info, EyeOff, Briefcase, Palette, Smile, BookOpen, Compass, SearchX, AlertTriangle, RotateCcw } from 'lucide-react';
-import { LocationDropdown, LanguageDropdown, DeliveryTypeFilter, SaeulenFilter } from './Filters';
+import { LocationDropdown, LanguageDropdown, DeliveryTypeFilter, SaeulenFilter, KursartFilter, PRIVAT_KURSART_ICONS, KINDER_KURSART_ICONS } from './Filters';
 import { Globe } from 'lucide-react';
-import { CATEGORY_TYPES, AGE_GROUPS, COURSE_LEVELS, DELIVERY_TYPES, SEGMENT_CONFIG, TYPE_DISPLAY_LABELS, BERUF_SAEULEN, NEW_TAXONOMY } from '../lib/constants';
+import { CATEGORY_TYPES, AGE_GROUPS, COURSE_LEVELS, DELIVERY_TYPES, SEGMENT_CONFIG, TYPE_DISPLAY_LABELS, BERUF_SAEULEN, PRIVAT_KURSARTEN, KINDER_KURSARTEN, NEW_TAXONOMY } from '../lib/constants';
 import { formatPriceCHF, getPriceLabel } from '../lib/formatPrice';
 import { useTaxonomy } from '../hooks/useTaxonomy';
 import { supabase } from '../lib/supabase';
@@ -50,6 +50,7 @@ const SearchPageView = ({
     savedCourseIds, onToggleSaveCourse,
     user,
     selectedSaule, setSelectedSaule,
+    selectedKursart, setSelectedKursart,
     fetchError, onRetry,
     setSelectedCatPath
 }) => {
@@ -598,9 +599,31 @@ const SearchPageView = ({
                         </select>
                     </div>
 
-                    {/* 3-SÄULEN FILTER — nur für berufliche Kurse */}
+                    {/* SÄULEN FILTER — nur für berufliche Kurse */}
                     {(searchType === 'beruflich' || searchType === 'professionell') && (
                         <SaeulenFilter selectedSaule={selectedSaule} setSelectedSaule={setSelectedSaule} />
+                    )}
+
+                    {/* KURSART FILTER — Privat & Hobby */}
+                    {(searchType === 'privat' || searchType === 'privat_hobby') && (
+                        <KursartFilter
+                            kursarten={PRIVAT_KURSARTEN}
+                            icons={PRIVAT_KURSART_ICONS}
+                            selectedKursart={selectedKursart}
+                            setSelectedKursart={setSelectedKursart}
+                            colorScheme="orange"
+                        />
+                    )}
+
+                    {/* KURSART FILTER — Kinder & Jugend */}
+                    {(searchType === 'kinder' || searchType === 'kinder_jugend') && (
+                        <KursartFilter
+                            kursarten={KINDER_KURSARTEN}
+                            icons={KINDER_KURSART_ICONS}
+                            selectedKursart={selectedKursart}
+                            setSelectedKursart={setSelectedKursart}
+                            colorScheme="green"
+                        />
                     )}
 
                     <div className="flex gap-3 overflow-x-auto pb-1 items-center border-t pt-2 border-gray-100">
