@@ -1568,12 +1568,6 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
         if (section) { sessionStorage.removeItem('dashScrollTo'); return section; }
         return null;
     });
-    useEffect(() => {
-        if (!scrollToSection) return;
-        const el = document.getElementById(scrollToSection);
-        if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
-        setScrollToSection(null);
-    }, [scrollToSection, dashView]);
     const [userTier, setUserTier] = useState('basic'); // basic, pro, premium, enterprise
     const [showSuccessModal, setShowSuccessModal] = useState(false); // NEW: Success Modal State
     const [showCaptureServiceModal, setShowCaptureServiceModal] = useState(false); // Capture Service Modal
@@ -2361,7 +2355,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
 
             {dashView === 'profile' || dashView === 'settings' ? (
                 user.role === 'teacher' ? (
-                    <ProviderProfileEditor user={user} setUser={setUser} showNotification={showNotification} setLang={changeLanguage} t={t} isImpersonating={isImpersonating} setDashView={setDashView} />
+                    <ProviderProfileEditor user={user} setUser={setUser} showNotification={showNotification} setLang={changeLanguage} t={t} isImpersonating={isImpersonating} setDashView={setDashView} initialScrollTo={scrollToSection} onScrollComplete={() => setScrollToSection(null)} />
                 ) : (
                     <UserProfileSection user={user} setUser={setUser} showNotification={showNotification} setLang={changeLanguage} t={t} isImpersonating={isImpersonating} />
                 )
