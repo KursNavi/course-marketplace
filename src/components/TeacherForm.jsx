@@ -1333,8 +1333,8 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
             is_pro: user?.is_professional ?? initialData?.is_pro ?? false,
             status: courseStatus,
             beruf_saeulen: (catType === 'professionell' || catType === 'beruflich') && berufSaeulen.length > 0 ? berufSaeulen : null,
-            privat_kursart: catType === 'privat' && privatKursart ? privatKursart : null,
-            kinder_kursart: catType === 'kinder' && kinderKursart ? kinderKursart : null,
+            ...(catType === 'privat' && privatKursart ? { privat_kursart: privatKursart } : {}),
+            ...(catType === 'kinder' && kinderKursart ? { kinder_kursart: kinderKursart } : {}),
             min_age: minAge ? Number(minAge) : null,
             requires_guardian_booking: requiresGuardianBooking,
             free_reason: (Number(price) === 0 || !price) && (bookingType === 'platform' || bookingType === 'platform_flex') ? freeReason.trim() : null
