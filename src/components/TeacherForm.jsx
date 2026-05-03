@@ -481,13 +481,13 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
     }, [imagePreview]);
 
     // Schedule State
-    const [events, setEvents] = useState(draft?.events || [{ id: null, bookingCount: 0, start_date: '', street: '', city: '', max_participants: 0, canton: '', schedule_description: '' }]);
+    const [events, setEvents] = useState(draft?.events || [{ id: null, bookingCount: 0, type: 'presence', start_date: '', street: '', city: '', max_participants: 0, canton: '', schedule_description: '', location_abroad: '' }]);
 
     // Fallback Regions
     const [fallbackCantons, setFallbackCantons] = useState(draft?.fallbackCantons || []);
 
     // Locations for lead/flex courses (array: multiple locations per course)
-    const [locations, setLocations] = useState(draft?.locations || [{ type: 'presence', street: '', city: '', canton: '' }]);
+    const [locations, setLocations] = useState(draft?.locations || [{ type: 'presence', street: '', city: '', canton: '', location_abroad: '' }]);
 
     // Category Suggestion Modal State
     const [showCategorySuggestionModal, setShowCategorySuggestionModal] = useState(false);
@@ -675,9 +675,10 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
                     setLocations(sorted.map(loc => ({
                         id: loc.id,
                         type: loc.location_type || 'presence',
-                        street: loc.street || '',
+                        street: loc.location_type === 'presence' ? (loc.street || '') : '',
                         city: loc.city || '',
-                        canton: loc.canton || ''
+                        canton: loc.location_type === 'presence' ? (loc.canton || '') : '',
+                        location_abroad: loc.location_type === 'ausland' ? (loc.street || '') : ''
                     })));
                 } else if (initialData.canton) {
                     // Legacy: old course with just a canton field
@@ -701,7 +702,17 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
             // Reconstruct Events & Address Split
             if (initialData.course_events && initialData.course_events.length > 0) {
                 setEvents(initialData.course_events.map(e => {
-                    const loc = e.location || '';
+                    // Detect location type from legacy data
+                    let type = 'presence';
+                    let location_abroad = '';
+                    if (e.canton === 'Online' || e.location === 'Online') {
+                        type = 'online';
+                    } else if (e.canton === 'Ausland') {
+                        type = 'ausland';
+                        location_abroad = e.location || '';
+                    }
+
+                    const loc = type === 'presence' ? (e.location || '') : '';
                     const lastComma = loc.lastIndexOf(',');
                     let street = '', city = loc;
                     if (lastComma !== -1) {
@@ -711,12 +722,14 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
                     return {
                         id: e.id || null,
                         bookingCount: Array.isArray(e.bookings) ? (e.bookings[0]?.count || 0) : (e.bookings?.count || 0),
+                        type,
                         start_date: e.start_date ? e.start_date.split('T')[0] : '',
-                        street: street,
-                        city: city,
+                        street,
+                        city,
                         max_participants: e.max_participants,
-                        canton: e.canton || initialData.canton || '',
-                        schedule_description: e.schedule_description || ''
+                        canton: type === 'presence' ? (e.canton || initialData.canton || '') : '',
+                        schedule_description: e.schedule_description || '',
+                        location_abroad
                     };
                 }));
             }
@@ -964,7 +977,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
         markDirty();
     };
 
-    const addEvent = () => { setEvents([...events, { id: null, bookingCount: 0, start_date: '', street: '', city: '', max_participants: 0, canton: '', schedule_description: '' }]); markDirty(); };
+    const addEvent = () => { setEvents([...events, { id: null, bookingCount: 0, type: 'presence', start_date: '', street: '', city: '', max_participants: 0, canton: '', schedule_description: '', location_abroad: '' }]); markDirty(); };
     const removeEvent = (index) => {
         const target = events[index];
         if ((target?.bookingCount || 0) > 0) return;
@@ -979,7 +992,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
         markDirty();
     };
 
-    const addLocation = () => { setLocations([...locations, { type: 'presence', street: '', city: '', canton: '' }]); markDirty(); };
+    const addLocation = () => { setLocations([...locations, { type: 'presence', street: '', city: '', canton: '', location_abroad: '' }]); markDirty(); };
     const removeLocation = (index) => { if (locations.length > 1) { setLocations(locations.filter((_, i) => i !== index)); markDirty(); } };
     const updateLocation = (index, field, value) => {
         const updated = [...locations];
@@ -1192,17 +1205,19 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
         // 2. Booking Specific Validation
         let potentialEvents = events.map(ev => ({
             ...ev,
-            location: (ev.street && ev.city) ? `${ev.street}, ${ev.city}` : (ev.city || ev.street || '') 
+            location: ev.type === 'online' ? 'Online'
+                    : ev.type === 'ausland' ? (ev.location_abroad?.trim() || 'Ausland')
+                    : (ev.street && ev.city) ? `${ev.street}, ${ev.city}` : (ev.city || ev.street || '')
         }));
 
         let validEvents = potentialEvents.filter(ev => {
             if (!ev.start_date) return false;
-            if (bookingType === 'platform') return ev.city && ev.street && ev.canton;
+            if (bookingType === 'platform' && (!ev.type || ev.type === 'presence')) return ev.city && ev.street && ev.canton;
             return true;
         });
 
         if (bookingType === 'platform') {
-            if (validEvents.length === 0) { window.alert("Für Direktbuchungen benötigen wir mindestens einen Termin mit Datum, Strasse, Ort und Kanton."); return; }
+            if (validEvents.length === 0) { window.alert("Für Direktbuchungen benötigen wir mindestens einen Termin mit Datum. Präsenz-Termine benötigen zusätzlich Strasse, Ort und Kanton."); return; }
         }
 
         if (bookingType === 'platform_flex' || bookingType === 'lead') {
@@ -1472,7 +1487,7 @@ if (bookingType === 'platform') {
                     course_id: activeCourseId,
                     start_date: ev.start_date,
                     location: ev.location,
-                    canton: ev.canton || (fallbackCantons.length > 0 ? fallbackCantons[0] : null),
+                    canton: ev.type === 'online' ? null : ev.type === 'ausland' ? 'Ausland' : (ev.canton || null),
                     schedule_description: ev.schedule_description,
                     max_participants: parseInt(ev.max_participants) || 0
                 };
@@ -1517,7 +1532,8 @@ if (bookingType === 'platform') {
             const locationPayloads = locations.map((loc, i) => ({
                 course_id: activeCourseId,
                 location_type: loc.type,
-                street: loc.type === 'presence' ? (loc.street?.trim() || null) : null,
+                street: loc.type === 'presence' ? (loc.street?.trim() || null)
+                      : loc.type === 'ausland' ? (loc.location_abroad?.trim() || null) : null,
                 city: loc.type === 'presence' ? (loc.city?.trim() || null) : null,
                 canton: loc.type === 'presence' ? (loc.canton || null) : (loc.type === 'ausland' ? 'Ausland' : null),
                 sort_order: i
@@ -2108,13 +2124,29 @@ if (bookingType === 'platform') {
                                 {visibleEvents.map((ev, i) => {
                                     const originalIndex = events.indexOf(ev);
                                     const isLockedEvent = (ev.bookingCount || 0) > 0;
+                                    const evType = ev.type || 'presence';
                                     return (
-                                    <div key={ev.id || i} className={`bg-white p-4 rounded-lg shadow-sm flex flex-col gap-4 border ${isLockedEvent ? 'border-amber-300 bg-amber-50/40' : 'border-gray-200'}`}>
+                                    <div key={ev.id || i} className={`bg-white p-4 rounded-lg shadow-sm flex flex-col gap-3 border ${isLockedEvent ? 'border-amber-300 bg-amber-50/40' : 'border-gray-200'}`}>
                                         {isLockedEvent && (
                                             <div className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
                                                 Dieser Termin hat bereits {ev.bookingCount} Buchung{ev.bookingCount === 1 ? '' : 'en'} und ist deshalb nicht mehr veränderbar.
                                             </div>
                                         )}
+                                        {/* Typ-Auswahl */}
+                                        <div className="flex gap-2">
+                                            {[
+                                                { value: 'presence', label: 'Präsenz' },
+                                                { value: 'online',   label: 'Online'  },
+                                                { value: 'ausland',  label: 'Ausland' }
+                                            ].map(({ value, label }) => (
+                                                <button key={value} type="button" disabled={isLockedEvent}
+                                                    onClick={() => !isLockedEvent && updateEvent(originalIndex, 'type', value)}
+                                                    className={`px-3 py-1 rounded-full text-xs font-medium border transition-all ${evType === value ? 'bg-blue-600 text-white border-blue-700' : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'} ${isLockedEvent ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                                                    {label}
+                                                </button>
+                                            ))}
+                                        </div>
+                                        {/* Datum + Zeit */}
                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                             <div>
                                                 <label className="text-xs font-bold text-gray-500 uppercase">Datum *</label>
@@ -2125,27 +2157,51 @@ if (bookingType === 'platform') {
                                                 <input type="text" disabled={isLockedEvent} value={ev.schedule_description} onChange={e => updateEvent(originalIndex, 'schedule_description', e.target.value)} placeholder="z.B. Sa & So, 09:00 - 17:00" className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white disabled:bg-gray-100 disabled:text-gray-500" />
                                             </div>
                                         </div>
-                                        <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-                                            <div className="md:col-span-5">
-                                                <label className="text-xs font-bold text-gray-500 uppercase">Strasse / Nr. *</label>
-                                                <input type="text" disabled={isLockedEvent} required value={ev.street} onChange={e => updateEvent(originalIndex, 'street', e.target.value)} placeholder="Musterstrasse 12" className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white disabled:bg-gray-100 disabled:text-gray-500" />
+                                        {/* Adressfelder — abhängig vom Typ */}
+                                        {evType === 'presence' && (
+                                            <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+                                                <div className="md:col-span-5">
+                                                    <label className="text-xs font-bold text-gray-500 uppercase">Strasse / Nr. *</label>
+                                                    <input type="text" disabled={isLockedEvent} required value={ev.street} onChange={e => updateEvent(originalIndex, 'street', e.target.value)} placeholder="Musterstrasse 12" className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white disabled:bg-gray-100 disabled:text-gray-500" />
+                                                </div>
+                                                <div className="md:col-span-3">
+                                                    <label className="text-xs font-bold text-gray-500 uppercase">PLZ / Ort *</label>
+                                                    <input type="text" disabled={isLockedEvent} required value={ev.city} onChange={e => updateEvent(originalIndex, 'city', e.target.value)} placeholder="8000 Zürich" className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white disabled:bg-gray-100 disabled:text-gray-500" />
+                                                </div>
+                                                <div className="md:col-span-2">
+                                                    <label className="text-xs font-bold text-gray-500 uppercase">Kanton *</label>
+                                                    <select disabled={isLockedEvent} required value={ev.canton} onChange={e => updateEvent(originalIndex, 'canton', e.target.value)} className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white disabled:bg-gray-100 disabled:text-gray-500">
+                                                        <option value="">Wählen...</option>
+                                                        {SWISS_CANTONS.filter(c => c !== "Ausland" && c !== "Online").map(c => <option key={c} value={c}>{c}</option>)}
+                                                    </select>
+                                                </div>
+                                                <div className="md:col-span-2">
+                                                    <label className="text-xs font-bold text-gray-500 uppercase">Plätze</label>
+                                                    <input type="number" disabled={isLockedEvent} min="0" value={ev.max_participants} onChange={e => updateEvent(originalIndex, 'max_participants', e.target.value)} className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white disabled:bg-gray-100 disabled:text-gray-500" title="0 = Unbegrenzt" />
+                                                </div>
                                             </div>
-                                            <div className="md:col-span-2">
-                                                <label className="text-xs font-bold text-gray-500 uppercase">PLZ / Ort *</label>
-                                                <input type="text" disabled={isLockedEvent} required value={ev.city} onChange={e => updateEvent(originalIndex, 'city', e.target.value)} placeholder="8000 Zürich" className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white disabled:bg-gray-100 disabled:text-gray-500" />
+                                        )}
+                                        {evType === 'online' && (
+                                            <div className="flex items-center gap-4">
+                                                <p className="text-sm text-gray-500 flex-1">Kurs findet online statt — keine Adresse erforderlich.</p>
+                                                <div>
+                                                    <label className="text-xs font-bold text-gray-500 uppercase">Plätze</label>
+                                                    <input type="number" disabled={isLockedEvent} min="0" value={ev.max_participants} onChange={e => updateEvent(originalIndex, 'max_participants', e.target.value)} className="w-32 px-3 py-2 border rounded bg-gray-50 focus:bg-white disabled:bg-gray-100 disabled:text-gray-500" title="0 = Unbegrenzt" />
+                                                </div>
                                             </div>
-                                            <div className="md:col-span-3">
-                                                <label className="text-xs font-bold text-gray-500 uppercase">Kanton *</label>
-                                                <select disabled={isLockedEvent} required value={ev.canton} onChange={e => updateEvent(originalIndex, 'canton', e.target.value)} className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white disabled:bg-gray-100 disabled:text-gray-500">
-                                                    <option value="">Wählen...</option>
-                                                    {SWISS_CANTONS.filter(c => c !== "Ausland").map(c => <option key={c} value={c}>{c}</option>)}
-                                                </select>
+                                        )}
+                                        {evType === 'ausland' && (
+                                            <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+                                                <div className="md:col-span-10">
+                                                    <label className="text-xs font-bold text-gray-500 uppercase">Adresse im Ausland (Optional)</label>
+                                                    <input type="text" disabled={isLockedEvent} value={ev.location_abroad || ''} onChange={e => updateEvent(originalIndex, 'location_abroad', e.target.value)} placeholder="z.B. München, Deutschland" className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white disabled:bg-gray-100 disabled:text-gray-500" />
+                                                </div>
+                                                <div className="md:col-span-2">
+                                                    <label className="text-xs font-bold text-gray-500 uppercase">Plätze</label>
+                                                    <input type="number" disabled={isLockedEvent} min="0" value={ev.max_participants} onChange={e => updateEvent(originalIndex, 'max_participants', e.target.value)} className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white disabled:bg-gray-100 disabled:text-gray-500" title="0 = Unbegrenzt" />
+                                                </div>
                                             </div>
-                                            <div className="md:col-span-2">
-                                                <label className="text-xs font-bold text-gray-500 uppercase">Plätze</label>
-                                                <input type="number" disabled={isLockedEvent} min="0" value={ev.max_participants} onChange={e => updateEvent(originalIndex, 'max_participants', e.target.value)} className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white disabled:bg-gray-100 disabled:text-gray-500" title="0 = Unbegrenzt" />
-                                            </div>
-                                        </div>
+                                        )}
                                         <button type="button" disabled={isLockedEvent} onClick={() => removeEvent(originalIndex)} className="text-red-500 text-xs hover:underline flex items-center self-end disabled:opacity-40 disabled:cursor-not-allowed"><Trash2 className="w-3 h-3 mr-1" /> Entfernen</button>
                                     </div>
                                 )})}
@@ -2198,7 +2254,7 @@ if (bookingType === 'platform') {
                                                     <label className="text-xs font-bold text-gray-500 uppercase">Kanton *</label>
                                                     <select value={loc.canton} data-testid={`location-canton-${i}`} onChange={e => updateLocation(i, 'canton', e.target.value)} className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white">
                                                         <option value="">Wählen...</option>
-                                                        {SWISS_CANTONS.filter(c => c !== "Ausland").map(c => <option key={c} value={c}>{c}</option>)}
+                                                        {SWISS_CANTONS.filter(c => c !== "Ausland" && c !== "Online").map(c => <option key={c} value={c}>{c}</option>)}
                                                     </select>
                                                 </div>
                                             </div>
@@ -2207,7 +2263,10 @@ if (bookingType === 'platform') {
                                             <p className="text-sm text-gray-500">Kurs findet online statt — keine Adresse erforderlich.</p>
                                         )}
                                         {loc.type === 'ausland' && (
-                                            <p className="text-sm text-gray-500">Kurs findet im Ausland statt.</p>
+                                            <div>
+                                                <label className="text-xs font-bold text-gray-500 uppercase">Adresse im Ausland (Optional)</label>
+                                                <input type="text" value={loc.location_abroad || ''} onChange={e => updateLocation(i, 'location_abroad', e.target.value)} placeholder="z.B. München, Deutschland" className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white" />
+                                            </div>
                                         )}
                                         {locations.length > 1 && (
                                             <button type="button" onClick={() => removeLocation(i)} className="text-red-500 text-xs hover:underline flex items-center mt-2">
