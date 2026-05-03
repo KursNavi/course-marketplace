@@ -105,8 +105,9 @@ export default function SimpleTopicLandingPage({
     );
   }
 
-  // Only show kursarten on themen pages (those with areaAliases), not on editorial kursart pages
-  const showKursarten = kursarten.length > 0 && config.areaAliases?.length > 0;
+  // Only show kursarten on themen pages, not on pages that ARE a kursart themselves
+  const isKursartPage = kursarten.some(k => k.slug === slug);
+  const showKursarten = !isKursartPage && kursarten.length > 0 && config.areaAliases?.length > 0;
 
   return (
     <div className="min-h-screen bg-beige font-sans">
