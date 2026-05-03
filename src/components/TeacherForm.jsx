@@ -1946,7 +1946,7 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                         {!payoutReady && (
                             <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
                                 <p className="text-sm text-amber-800">
-                                    Um Direktbuchungen oder flexible Buchungen anzubieten, richten Sie zuerst Ihre <button type="button" onClick={() => setView('dashboard')} className="underline font-semibold hover:text-amber-900">Auszahlung ein</button>.
+                                    Um Direktbuchungen oder flexible Buchungen anzubieten, richten Sie zuerst Ihre <button type="button" onClick={() => { sessionStorage.setItem('dashOpenTab', 'profile'); setView('dashboard'); }} className="underline font-semibold hover:text-amber-900">Auszahlung ein</button>.
                                 </p>
                             </div>
                         )}
