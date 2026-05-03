@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { ArrowLeft, Loader, Calendar, Plus, Trash2, ExternalLink, Globe, MapPin, Lightbulb, X, Send, ChevronDown, Images, Check, Clock, BookOpen, Award, GraduationCap } from 'lucide-react';
 import { KursNaviLogo } from './Layout';
-import { SWISS_CANTONS, NEW_TAXONOMY, CATEGORY_TYPES, COURSE_LEVELS, DELIVERY_TYPES, COURSE_LANGUAGES, TYPE_DISPLAY_LABELS, BERUF_SAEULEN } from '../lib/constants';
+import { SWISS_CANTONS, NEW_TAXONOMY, CATEGORY_TYPES, COURSE_LEVELS, DELIVERY_TYPES, COURSE_LANGUAGES, TYPE_DISPLAY_LABELS, BERUF_SAEULEN, PRIVAT_KURSARTEN, KINDER_KURSARTEN } from '../lib/constants';
 import { supabase } from '../lib/supabase';
 import { useTaxonomy } from '../hooks/useTaxonomy';
 import { computeImageHash, getExistingImageByHash, uploadImageWithHash, getUserCourseImages, deleteImageFromLibrary, isUnsplashUrl, importUnsplashImage, DEFAULT_COURSE_IMAGE } from '../lib/imageUtils';
@@ -458,6 +458,8 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
     const [courseLanguages, setCourseLanguages] = useState(draft?.courseLanguages || ['Deutsch']);
     const [deliveryTypes, setDeliveryTypes] = useState(draft?.deliveryTypes || ['presence']);
     const [berufSaeulen, setBerufSaeulen] = useState(draft?.berufSaeulen || []);
+    const [privatKursart, setPrivatKursart] = useState(draft?.privatKursart || '');
+    const [kinderKursart, setKinderKursart] = useState(draft?.kinderKursart || '');
     const [minAge, setMinAge] = useState(draft?.minAge || '');
     const [requiresGuardianBooking, setRequiresGuardianBooking] = useState(draft?.requiresGuardianBooking || false);
 
@@ -537,7 +539,10 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
             deliveryTypes,
             courseStatus,
             events,
-            fallbackCantons
+            fallbackCantons,
+            berufSaeulen,
+            privatKursart,
+            kinderKursart
         };
 
         // Always update the ref synchronously so cleanup can use it
@@ -552,7 +557,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
                 console.warn('Failed to save draft:', e);
             }
         }
-    }, [isDirty, draftKey, bookingType, ticketLimit30d, title, description, objectives, keywords, prerequisites, price, freeReason, sessionCount, sessionLength, providerUrl, categories, selectedLevel, courseLanguages, deliveryTypes, courseStatus, events, fallbackCantons, initialData?.id]);
+    }, [isDirty, draftKey, bookingType, ticketLimit30d, title, description, objectives, keywords, prerequisites, price, freeReason, sessionCount, sessionLength, providerUrl, categories, selectedLevel, courseLanguages, deliveryTypes, courseStatus, events, fallbackCantons, berufSaeulen, privatKursart, kinderKursart, initialData?.id]);
 
     // Save draft on unmount (safety net for fast tab switches)
     useEffect(() => {
@@ -639,6 +644,8 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
 
             if (initialData.level) setSelectedLevel(initialData.level);
             if (Array.isArray(initialData.beruf_saeulen)) setBerufSaeulen(initialData.beruf_saeulen);
+            if (initialData.privat_kursart) setPrivatKursart(initialData.privat_kursart);
+            if (initialData.kinder_kursart) setKinderKursart(initialData.kinder_kursart);
             if (initialData.min_age != null) setMinAge(String(initialData.min_age));
             if (initialData.requires_guardian_booking) setRequiresGuardianBooking(true);
             // Support both old 'language' (string) and new 'languages' (array) field
@@ -917,6 +924,8 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
                 if (index === 0 && value !== 'professionell' && value !== 'beruflich') {
                     setBerufSaeulen([]);
                 }
+                if (index === 0 && value !== 'privat') setPrivatKursart('');
+                if (index === 0 && value !== 'kinder') setKinderKursart('');
             } else if (field === 'area') {
                 row.area = value;
                 row.specialty = '';
@@ -1324,6 +1333,8 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
             is_pro: user?.is_professional ?? initialData?.is_pro ?? false,
             status: courseStatus,
             beruf_saeulen: (catType === 'professionell' || catType === 'beruflich') && berufSaeulen.length > 0 ? berufSaeulen : null,
+            ...(catType === 'privat' && privatKursart ? { privat_kursart: privatKursart } : {}),
+            ...(catType === 'kinder' && kinderKursart ? { kinder_kursart: kinderKursart } : {}),
             min_age: minAge ? Number(minAge) : null,
             requires_guardian_booking: requiresGuardianBooking,
             free_reason: (Number(price) === 0 || !price) && (bookingType === 'platform' || bookingType === 'platform_flex') ? freeReason.trim() : null
@@ -1756,9 +1767,75 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                                                     />
                                                     <Icon className="w-4 h-4 text-blue-600" />
                                                     <span className="text-sm font-medium text-gray-800">{config.shortDe}</span>
-                                                    <span className="text-[10px] text-gray-400">({config.subtitle})</span>
                                                 </div>
+                                                <span className="text-[10px] text-gray-400 ml-6">{config.subtitle}</span>
                                                 <span className="text-xs text-gray-500 mt-1 ml-6">{config.description}</span>
+                                            </label>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Kursformat: Nur für Privat & Hobby (Single-Select) */}
+                        {(categories[0]?.type === 'privat') && (
+                            <div className="bg-white/60 p-4 rounded-lg border border-orange-200/60 mt-4">
+                                <span className="text-sm font-bold text-orange-900 block mb-1">
+                                    Kursformat
+                                </span>
+                                <span className="text-xs text-gray-500 block mb-3">
+                                    Welchem Format entspricht dieser Kurs? (Einfachauswahl)
+                                </span>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                                    {Object.entries(PRIVAT_KURSARTEN).map(([key, config]) => {
+                                        const isSelected = privatKursart === key;
+                                        return (
+                                            <label key={key} className={`flex flex-col p-3 rounded-lg border cursor-pointer transition ${
+                                                isSelected ? 'bg-orange-50 border-orange-400 ring-2 ring-orange-200' : 'bg-white border-gray-200 hover:border-orange-200'
+                                            }`}>
+                                                <div className="flex items-center gap-2">
+                                                    <input type="radio" name="privat_kursart" value={key}
+                                                        checked={isSelected}
+                                                        onChange={() => { setPrivatKursart(key); markDirty(); }}
+                                                        className="text-orange-500 focus:ring-orange-400"
+                                                    />
+                                                    <span className="text-sm font-medium text-gray-800">{config.shortDe}</span>
+                                                </div>
+                                                <span className="text-[10px] text-gray-400 ml-5">{config.subtitle}</span>
+                                                <span className="text-xs text-gray-500 mt-1 ml-5">{config.description}</span>
+                                            </label>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Kursformat: Nur für Kinder & Jugend (Single-Select) */}
+                        {(categories[0]?.type === 'kinder') && (
+                            <div className="bg-white/60 p-4 rounded-lg border border-green-200/60 mt-4">
+                                <span className="text-sm font-bold text-green-900 block mb-1">
+                                    Kursformat
+                                </span>
+                                <span className="text-xs text-gray-500 block mb-3">
+                                    Welchem Format entspricht dieser Kurs? (Einfachauswahl)
+                                </span>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
+                                    {Object.entries(KINDER_KURSARTEN).map(([key, config]) => {
+                                        const isSelected = kinderKursart === key;
+                                        return (
+                                            <label key={key} className={`flex flex-col p-3 rounded-lg border cursor-pointer transition ${
+                                                isSelected ? 'bg-green-50 border-green-400 ring-2 ring-green-200' : 'bg-white border-gray-200 hover:border-green-200'
+                                            }`}>
+                                                <div className="flex items-center gap-2">
+                                                    <input type="radio" name="kinder_kursart" value={key}
+                                                        checked={isSelected}
+                                                        onChange={() => { setKinderKursart(key); markDirty(); }}
+                                                        className="text-green-600 focus:ring-green-500"
+                                                    />
+                                                    <span className="text-sm font-medium text-gray-800">{config.shortDe}</span>
+                                                </div>
+                                                <span className="text-[10px] text-gray-400 ml-5">{config.subtitle}</span>
+                                                <span className="text-xs text-gray-500 mt-1 ml-5">{config.description}</span>
                                             </label>
                                         );
                                     })}
@@ -1869,7 +1946,7 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                         {!payoutReady && (
                             <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
                                 <p className="text-sm text-amber-800">
-                                    Um Direktbuchungen oder flexible Buchungen anzubieten, richten Sie zuerst Ihre <button type="button" onClick={() => setView('dashboard')} className="underline font-semibold hover:text-amber-900">Auszahlung ein</button>.
+                                    Um Direktbuchungen oder flexible Buchungen anzubieten, richten Sie zuerst Ihre <button type="button" onClick={() => { sessionStorage.setItem('dashOpenTab', 'profile'); sessionStorage.setItem('dashScrollTo', 'auszahlungen'); setView('dashboard'); }} className="underline font-semibold hover:text-amber-900">Auszahlung ein</button>.
                                 </p>
                             </div>
                         )}
@@ -1934,17 +2011,6 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                                                 className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none"
                                             />
                                             <p className="text-xs text-gray-500 mt-1">Ab welchem Alter ist der Kurs geeignet?</p>
-                                        </div>
-                                        <div className="flex items-start pt-6">
-                                            <label className="flex items-center cursor-pointer">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={requiresGuardianBooking}
-                                                    onChange={(e) => { setRequiresGuardianBooking(e.target.checked); markDirty(); }}
-                                                    className="mr-2 accent-primary"
-                                                />
-                                                <span className="text-sm text-gray-700">Buchung nur durch Erziehungsberechtigte</span>
-                                            </label>
                                         </div>
                                     </div>
                                 </div>

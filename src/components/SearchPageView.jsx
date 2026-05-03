@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useCallback } from 'react';
 import { Search, ChevronRight, User, X, Shield, MapPin, CheckCircle, Loader, Bell, ArrowDown, ArrowRight, Sparkles, Bookmark, BookmarkCheck, CreditCard, Info, EyeOff, Briefcase, Palette, Smile, BookOpen, Compass, SearchX, AlertTriangle, RotateCcw } from 'lucide-react';
-import { LocationDropdown, LanguageDropdown, DeliveryTypeFilter, SaeulenFilter, KursartFilter, PRIVAT_KURSART_ICONS, KINDER_KURSART_ICONS } from './Filters';
+import { LocationDropdown, LanguageDropdown, DeliveryTypeFilter, SaeulenFilter, KursartFilter } from './Filters';
+import { PRIVAT_KURSART_ICONS, KINDER_KURSART_ICONS } from '../lib/kursartIcons';
 import { Globe } from 'lucide-react';
 import { CATEGORY_TYPES, AGE_GROUPS, COURSE_LEVELS, DELIVERY_TYPES, SEGMENT_CONFIG, TYPE_DISPLAY_LABELS, BERUF_SAEULEN, PRIVAT_KURSARTEN, KINDER_KURSARTEN, NEW_TAXONOMY } from '../lib/constants';
 import { formatPriceCHF, getPriceLabel } from '../lib/formatPrice';

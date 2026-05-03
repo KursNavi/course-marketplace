@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronDown, ChevronRight, ChevronLeft, MapPin, Globe, Monitor } from 'lucide-react';
 import { SWISS_CANTONS, DELIVERY_TYPES, COURSE_LANGUAGES, TYPE_DISPLAY_LABELS, BERUF_SAEULEN, PRIVAT_KURSARTEN, KINDER_KURSARTEN } from '../lib/constants';
-import { Clock, BookOpen, Award, GraduationCap, Sparkles, Sprout, CalendarDays, Mountain, Sun, CloudSun, Music2, Cake, Zap } from 'lucide-react';
+import { Clock, BookOpen, Award, GraduationCap } from 'lucide-react';
 import { useTaxonomy } from '../hooks/useTaxonomy';
 
 export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCatPath, catMenuOpen, setCatMenuOpen, t, catMenuRef }) => {
@@ -321,8 +321,6 @@ export const DeliveryTypeFilter = ({ selectedDeliveryTypes, setSelectedDeliveryT
 };
 
 const SAEULEN_ICONS = { workshop: Clock, fachkurs: BookOpen, zertifikatslehrgang: Award, ausbildung: GraduationCap };
-const PRIVAT_KURSART_ICONS = { workshop_event: Sparkles, einfuehrungskurs: Sprout, wochenkurs: CalendarDays, retreat_intensiv: Mountain };
-const KINDER_KURSART_ICONS = { feriencamp: Sun, ferienkurs: CloudSun, freizeitkurs: Music2, kindergeburtstag: Cake, events_workshops: Zap };
 
 export const SaeulenFilter = ({ selectedSaule, setSelectedSaule }) => {
     return (
@@ -417,4 +415,3 @@ export const KursartFilter = ({ kursarten, icons, selectedKursart, setSelectedKu
     );
 };
 
-export { PRIVAT_KURSART_ICONS, KINDER_KURSART_ICONS };

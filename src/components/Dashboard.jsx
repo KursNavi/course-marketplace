@@ -1558,7 +1558,16 @@ const getCategoryLabel = (key, lang = 'de', dbTaxonomy = null) => {
 
 // --- MAIN DASHBOARD COMPONENT ---
 const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBookings, savedCourses, savedCourseIds, onToggleSaveCourse, handleDeleteCourse, handleEditCourse, handleUpdateCourseStatus, handleCancelEvent, showNotification, changeLanguage, setSelectedCourse, refreshBookings, refreshTeacherEarnings, isImpersonating }) => {
-    const [dashView, setDashView] = useState('overview');
+    const [dashView, setDashView] = useState(() => {
+        const tab = sessionStorage.getItem('dashOpenTab');
+        if (tab) { sessionStorage.removeItem('dashOpenTab'); return tab; }
+        return 'overview';
+    });
+    const [scrollToSection, setScrollToSection] = useState(() => {
+        const section = sessionStorage.getItem('dashScrollTo');
+        if (section) { sessionStorage.removeItem('dashScrollTo'); return section; }
+        return null;
+    });
     const [userTier, setUserTier] = useState('basic'); // basic, pro, premium, enterprise
     const [showSuccessModal, setShowSuccessModal] = useState(false); // NEW: Success Modal State
     const [showCaptureServiceModal, setShowCaptureServiceModal] = useState(false); // Capture Service Modal
@@ -2346,7 +2355,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
 
             {dashView === 'profile' || dashView === 'settings' ? (
                 user.role === 'teacher' ? (
-                    <ProviderProfileEditor user={user} setUser={setUser} showNotification={showNotification} setLang={changeLanguage} t={t} isImpersonating={isImpersonating} setDashView={setDashView} />
+                    <ProviderProfileEditor user={user} setUser={setUser} showNotification={showNotification} setLang={changeLanguage} t={t} isImpersonating={isImpersonating} setDashView={setDashView} initialScrollTo={scrollToSection} onScrollComplete={() => setScrollToSection(null)} />
                 ) : (
                     <UserProfileSection user={user} setUser={setUser} showNotification={showNotification} setLang={changeLanguage} t={t} isImpersonating={isImpersonating} />
                 )
