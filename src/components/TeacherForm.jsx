@@ -486,10 +486,8 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
     // Fallback Regions
     const [fallbackCantons, setFallbackCantons] = useState(draft?.fallbackCantons || []);
 
-    // Exact location for lead/flex courses (no dates, just a fixed address)
-    const [locationStreet, setLocationStreet] = useState(draft?.locationStreet || '');
-    const [locationCity, setLocationCity] = useState(draft?.locationCity || '');
-    const [locationCanton, setLocationCanton] = useState(draft?.locationCanton || '');
+    // Locations for lead/flex courses (array: multiple locations per course)
+    const [locations, setLocations] = useState(draft?.locations || [{ type: 'presence', street: '', city: '', canton: '' }]);
 
     // Category Suggestion Modal State
     const [showCategorySuggestionModal, setShowCategorySuggestionModal] = useState(false);
@@ -545,9 +543,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
             courseStatus,
             events,
             fallbackCantons,
-            locationStreet,
-            locationCity,
-            locationCanton,
+            locations,
             berufSaeulen,
             privatKursart,
             kinderKursart
@@ -565,7 +561,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
                 console.warn('Failed to save draft:', e);
             }
         }
-    }, [isDirty, draftKey, bookingType, ticketLimit30d, title, description, objectives, keywords, prerequisites, price, freeReason, sessionCount, sessionLength, providerUrl, categories, selectedLevel, courseLanguages, deliveryTypes, courseStatus, events, fallbackCantons, locationStreet, locationCity, locationCanton, berufSaeulen, privatKursart, kinderKursart, initialData?.id]);
+    }, [isDirty, draftKey, bookingType, ticketLimit30d, title, description, objectives, keywords, prerequisites, price, freeReason, sessionCount, sessionLength, providerUrl, categories, selectedLevel, courseLanguages, deliveryTypes, courseStatus, events, fallbackCantons, locations, berufSaeulen, privatKursart, kinderKursart, initialData?.id]);
 
     // Save draft on unmount (safety net for fast tab switches)
     useEffect(() => {
@@ -672,10 +668,22 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
             setCourseStatus(initialData.status || 'published');
 
 
-            // Load exact location fields for lead/flex courses
-            if (initialData.location_street) setLocationStreet(initialData.location_street);
-            if (initialData.location_city) setLocationCity(initialData.location_city);
-            if (initialData.canton) setLocationCanton(initialData.canton);
+            // Load course_locations for lead/flex courses
+            if (initialData.booking_type !== 'platform') {
+                if (initialData.course_locations && initialData.course_locations.length > 0) {
+                    const sorted = [...initialData.course_locations].sort((a, b) => a.sort_order - b.sort_order);
+                    setLocations(sorted.map(loc => ({
+                        id: loc.id,
+                        type: loc.location_type || 'presence',
+                        street: loc.street || '',
+                        city: loc.city || '',
+                        canton: loc.canton || ''
+                    })));
+                } else if (initialData.canton) {
+                    // Legacy: old course with just a canton field
+                    setLocations([{ type: 'presence', street: '', city: '', canton: initialData.canton }]);
+                }
+            }
 
             // Legacy fallback: if no course_events but has address, use address for fallback cantons
             if ((!initialData.course_events || initialData.course_events.length === 0)) {
@@ -971,6 +979,15 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
         markDirty();
     };
 
+    const addLocation = () => { setLocations([...locations, { type: 'presence', street: '', city: '', canton: '' }]); markDirty(); };
+    const removeLocation = (index) => { if (locations.length > 1) { setLocations(locations.filter((_, i) => i !== index)); markDirty(); } };
+    const updateLocation = (index, field, value) => {
+        const updated = [...locations];
+        updated[index] = { ...updated[index], [field]: value };
+        setLocations(updated);
+        markDirty();
+    };
+
     const toggleFallbackCanton = (c) => {
         if (fallbackCantons.includes(c)) setFallbackCantons(fallbackCantons.filter(x => x !== c));
         else setFallbackCantons([...fallbackCantons, c]);
@@ -1189,9 +1206,15 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
         }
 
         if (bookingType === 'platform_flex' || bookingType === 'lead') {
-            if (!locationStreet.trim() || !locationCity.trim() || !locationCanton) {
-                window.alert("Bitte gib eine vollständige Adresse ein (Strasse/Nr., PLZ/Ort und Kanton).");
+            if (locations.length === 0) {
+                window.alert("Bitte gib mindestens einen Standort an.");
                 return;
+            }
+            for (const loc of locations) {
+                if (loc.type === 'presence' && !loc.canton) {
+                    window.alert("Bitte wähle für jeden Präsenz-Standort einen Kanton aus.");
+                    return;
+                }
             }
         }
 
@@ -1271,9 +1294,19 @@ if (bookingType === 'platform') {
         publicLocationLabel = fallbackCantons.join(', ');
     }
 } else {
-    // lead/flex: use the exact address fields (no date)
-    mainCanton = locationCanton;
-    publicLocationLabel = locationCity || locationCanton;
+    // lead/flex: derive public label from first presence location (or online/ausland)
+    const firstPresence = locations.find(l => l.type === 'presence');
+    const firstLoc = firstPresence || locations[0];
+    if (firstLoc?.type === 'presence') {
+        mainCanton = firstLoc.canton || '';
+        publicLocationLabel = firstLoc.city || firstLoc.canton || '';
+    } else if (firstLoc?.type === 'online') {
+        mainCanton = '';
+        publicLocationLabel = 'Online';
+    } else if (firstLoc?.type === 'ausland') {
+        mainCanton = 'Ausland';
+        publicLocationLabel = 'Ausland';
+    }
     mainDate = null;
 }
 
@@ -1324,8 +1357,6 @@ if (bookingType === 'platform') {
             canton: mainCanton,
             address: publicLocationLabel, // öffentliche "Label"-Location (ohne Strasse)
             start_date: mainDate,
-            location_street: bookingType !== 'platform' ? (locationStreet.trim() || null) : null,
-            location_city: bookingType !== 'platform' ? (locationCity.trim() || null) : null,
             image_url: imageUrl,
             description: descriptionVal,
             keywords: keywordsVal,
@@ -1475,6 +1506,29 @@ if (bookingType === 'platform') {
                         return;
                     }
                 }
+            }
+        }
+
+        // 7b. Save course_locations for lead/flex (replaces the old simple columns)
+        if (activeCourseId && bookingType !== 'platform') {
+            // Delete all existing locations for this course, then re-insert
+            await supabase.from('course_locations').delete().eq('course_id', activeCourseId);
+
+            const locationPayloads = locations.map((loc, i) => ({
+                course_id: activeCourseId,
+                location_type: loc.type,
+                street: loc.type === 'presence' ? (loc.street?.trim() || null) : null,
+                city: loc.type === 'presence' ? (loc.city?.trim() || null) : null,
+                canton: loc.type === 'presence' ? (loc.canton || null) : (loc.type === 'ausland' ? 'Ausland' : null),
+                sort_order: i
+            }));
+
+            const { error: locError } = await supabase.from('course_locations').insert(locationPayloads);
+            if (locError) {
+                console.error(locError);
+                showNotification("Fehler beim Speichern der Standorte: " + locError.message);
+                setIsSubmitting(false);
+                return;
             }
         }
 
@@ -2099,30 +2153,69 @@ if (bookingType === 'platform') {
                         </div>
                         ) : (
                         <div className="bg-blue-50 p-6 rounded-xl border border-blue-100">
-                            <h3 className="text-lg font-bold text-blue-900 flex items-center mb-1"><MapPin className="w-5 h-5 mr-2" /> Standort *</h3>
+                            <div className="flex justify-between items-center mb-1">
+                                <h3 className="text-lg font-bold text-blue-900 flex items-center">
+                                    <MapPin className="w-5 h-5 mr-2" /> Standort(e) *
+                                </h3>
+                                <button type="button" onClick={addLocation} className="bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-bold hover:bg-blue-700 flex items-center">
+                                    <Plus className="w-4 h-4 mr-1"/> Standort hinzufügen
+                                </button>
+                            </div>
                             <p className="text-xs text-blue-700 mb-4">
                                 {bookingType === 'platform_flex'
-                                    ? 'Der genaue Termin wird nach der Buchung mit dir vereinbart. Gib hier deinen Standort an.'
-                                    : 'Gib hier deinen Standort an, damit Interessierte wissen, wo der Kurs stattfindet.'}
+                                    ? 'Der genaue Termin wird nach der Buchung vereinbart. Gib hier an, wo du tätig bist.'
+                                    : 'Gib hier an, wo der Kurs stattfindet. Mehrere Standorte möglich.'}
                             </p>
-                            <div className="bg-white p-4 rounded-lg border border-gray-200">
-                                <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-                                    <div className="md:col-span-5">
-                                        <label className="text-xs font-bold text-gray-500 uppercase">Strasse / Nr. *</label>
-                                        <input type="text" value={locationStreet} onChange={(e) => { setLocationStreet(e.target.value); markDirty(); }} placeholder="Musterstrasse 12" className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white" />
+                            <div className="space-y-3">
+                                {locations.map((loc, i) => (
+                                    <div key={i} className="bg-white p-4 rounded-lg border border-gray-200">
+                                        {/* Typ-Auswahl */}
+                                        <div className="flex gap-2 mb-3">
+                                            {[
+                                                { value: 'presence', label: 'Präsenz' },
+                                                { value: 'online',   label: 'Online'  },
+                                                { value: 'ausland',  label: 'Ausland' }
+                                            ].map(({ value, label }) => (
+                                                <button key={value} type="button"
+                                                    onClick={() => updateLocation(i, 'type', value)}
+                                                    className={`px-3 py-1 rounded-full text-xs font-medium border transition-all ${loc.type === value ? 'bg-blue-600 text-white border-blue-700' : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'}`}>
+                                                    {label}
+                                                </button>
+                                            ))}
+                                        </div>
+                                        {/* Adressfelder — nur bei Präsenz */}
+                                        {loc.type === 'presence' && (
+                                            <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
+                                                <div className="md:col-span-5">
+                                                    <label className="text-xs font-bold text-gray-500 uppercase">Strasse / Nr.</label>
+                                                    <input type="text" value={loc.street} onChange={e => updateLocation(i, 'street', e.target.value)} placeholder="Musterstrasse 12" className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white" />
+                                                </div>
+                                                <div className="md:col-span-4">
+                                                    <label className="text-xs font-bold text-gray-500 uppercase">PLZ / Ort</label>
+                                                    <input type="text" value={loc.city} onChange={e => updateLocation(i, 'city', e.target.value)} placeholder="8000 Zürich" className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white" />
+                                                </div>
+                                                <div className="md:col-span-3">
+                                                    <label className="text-xs font-bold text-gray-500 uppercase">Kanton *</label>
+                                                    <select value={loc.canton} data-testid={`location-canton-${i}`} onChange={e => updateLocation(i, 'canton', e.target.value)} className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white">
+                                                        <option value="">Wählen...</option>
+                                                        {SWISS_CANTONS.filter(c => c !== "Ausland").map(c => <option key={c} value={c}>{c}</option>)}
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        )}
+                                        {loc.type === 'online' && (
+                                            <p className="text-sm text-gray-500">Kurs findet online statt — keine Adresse erforderlich.</p>
+                                        )}
+                                        {loc.type === 'ausland' && (
+                                            <p className="text-sm text-gray-500">Kurs findet im Ausland statt.</p>
+                                        )}
+                                        {locations.length > 1 && (
+                                            <button type="button" onClick={() => removeLocation(i)} className="text-red-500 text-xs hover:underline flex items-center mt-2">
+                                                <Trash2 className="w-3 h-3 mr-1" /> Entfernen
+                                            </button>
+                                        )}
                                     </div>
-                                    <div className="md:col-span-4">
-                                        <label className="text-xs font-bold text-gray-500 uppercase">PLZ / Ort *</label>
-                                        <input type="text" value={locationCity} onChange={(e) => { setLocationCity(e.target.value); markDirty(); }} placeholder="8000 Zürich" className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white" />
-                                    </div>
-                                    <div className="md:col-span-3">
-                                        <label className="text-xs font-bold text-gray-500 uppercase">Kanton *</label>
-                                        <select value={locationCanton} onChange={(e) => { setLocationCanton(e.target.value); markDirty(); }} className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white">
-                                            <option value="">Wählen...</option>
-                                            {SWISS_CANTONS.filter(c => c !== "Ausland").map(c => <option key={c} value={c}>{c}</option>)}
-                                        </select>
-                                    </div>
-                                </div>
+                                ))}
                             </div>
                         </div>
                         )}

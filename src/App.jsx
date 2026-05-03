@@ -715,7 +715,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
       // V3.0 Data Sync (robust): Lade Kurse + Events zuerst, Profile danach separat (kein fragiler Join)
       const { data: courseData, error: courseError } = await supabase
         .from('courses')
-        .select(`*, course_events(*, bookings(count))`)
+        .select(`*, course_events(*, bookings(count)), course_locations(*)`)
         .order('created_at', { ascending: false });
 
       if (courseError) throw courseError;
