@@ -53,11 +53,10 @@ test.describe('Course Creation (hybrid app-e2e)', () => {
     // 6. Price
     await page.locator('input[name="price"]').fill('200');
 
-    // 7. Region — for lead courses without events, select a fallback canton
-    const zurichButton = page.getByRole('button', { name: 'Zürich' });
-    if (await zurichButton.isVisible({ timeout: 2_000 }).catch(() => false)) {
-      await zurichButton.click();
-    }
+    // 7. Location — lead courses now require an exact address (street, city, canton)
+    await page.locator('input[placeholder="Musterstrasse 12"]').fill('Teststrasse 1');
+    await page.locator('input[placeholder="8000 Zürich"]').fill('8000 Zürich');
+    await page.locator('select').filter({ hasText: 'Wählen...' }).last().selectOption('Zürich');
 
     // 8. Publication status — switch from draft to published
     await page.locator('input[name="courseStatus"][value="published"]').click();

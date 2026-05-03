@@ -486,6 +486,11 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
     // Fallback Regions
     const [fallbackCantons, setFallbackCantons] = useState(draft?.fallbackCantons || []);
 
+    // Exact location for lead/flex courses (no dates, just a fixed address)
+    const [locationStreet, setLocationStreet] = useState(draft?.locationStreet || '');
+    const [locationCity, setLocationCity] = useState(draft?.locationCity || '');
+    const [locationCanton, setLocationCanton] = useState(draft?.locationCanton || '');
+
     // Category Suggestion Modal State
     const [showCategorySuggestionModal, setShowCategorySuggestionModal] = useState(false);
 
@@ -540,6 +545,9 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
             courseStatus,
             events,
             fallbackCantons,
+            locationStreet,
+            locationCity,
+            locationCanton,
             berufSaeulen,
             privatKursart,
             kinderKursart
@@ -557,7 +565,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
                 console.warn('Failed to save draft:', e);
             }
         }
-    }, [isDirty, draftKey, bookingType, ticketLimit30d, title, description, objectives, keywords, prerequisites, price, freeReason, sessionCount, sessionLength, providerUrl, categories, selectedLevel, courseLanguages, deliveryTypes, courseStatus, events, fallbackCantons, berufSaeulen, privatKursart, kinderKursart, initialData?.id]);
+    }, [isDirty, draftKey, bookingType, ticketLimit30d, title, description, objectives, keywords, prerequisites, price, freeReason, sessionCount, sessionLength, providerUrl, categories, selectedLevel, courseLanguages, deliveryTypes, courseStatus, events, fallbackCantons, locationStreet, locationCity, locationCanton, berufSaeulen, privatKursart, kinderKursart, initialData?.id]);
 
     // Save draft on unmount (safety net for fast tab switches)
     useEffect(() => {
@@ -663,6 +671,11 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
             // Load course status (default to 'published' for existing courses without status)
             setCourseStatus(initialData.status || 'published');
 
+
+            // Load exact location fields for lead/flex courses
+            if (initialData.location_street) setLocationStreet(initialData.location_street);
+            if (initialData.location_city) setLocationCity(initialData.location_city);
+            if (initialData.canton) setLocationCanton(initialData.canton);
 
             // Legacy fallback: if no course_events but has address, use address for fallback cantons
             if ((!initialData.course_events || initialData.course_events.length === 0)) {
@@ -1175,10 +1188,9 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
             if (validEvents.length === 0) { window.alert("Für Direktbuchungen benötigen wir mindestens einen Termin mit Datum, Strasse, Ort und Kanton."); return; }
         }
 
-        if (bookingType === 'platform_flex') {
-            const hasRegions = fallbackCantons.length > 0;
-            if (!hasRegions) {
-                window.alert("Für flexible Buchungen benötigen wir mindestens einen Kanton/Region.");
+        if (bookingType === 'platform_flex' || bookingType === 'lead') {
+            if (!locationStreet.trim() || !locationCity.trim() || !locationCanton) {
+                window.alert("Bitte gib eine vollständige Adresse ein (Strasse/Nr., PLZ/Ort und Kanton).");
                 return;
             }
         }
@@ -1187,14 +1199,6 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
         if ((bookingType === 'platform' || bookingType === 'platform_flex') && (!price || Number(price) === 0) && !freeReason.trim()) {
             window.alert("Bitte geben Sie einen Grund an, warum dieser Kurs kostenlos ist.");
             return;
-        }
-
-        if (bookingType === 'lead') {
-            const hasRegions = fallbackCantons.length > 0;
-            if (validEvents.length === 0 && !hasRegions) {
-                window.alert("Bitte geben Sie entweder einen konkreten Termin (mit Datum) ODER mindestens einen Kanton/Region an.");
-                return;
-            }
         }
 
         // Kinder-Kurs: Mindestalter ist Pflicht
@@ -1254,24 +1258,23 @@ let publicLocationLabel = "";
 let mainCanton = "";
 let mainDate = null;
 
-const sortedEvents = [...validEvents].sort((a, b) => a.start_date.localeCompare(b.start_date));
-const firstEvent = sortedEvents[0];
-
-if (firstEvent) {
-    mainDate = firstEvent.start_date;
-    mainCanton = firstEvent.canton || (fallbackCantons.length > 0 ? fallbackCantons[0] : '');
-
-    // publicLocationLabel: show only city (no street) for platform bookings
-    if (bookingType === 'platform') {
+if (bookingType === 'platform') {
+    const sortedEvents = [...validEvents].sort((a, b) => a.start_date.localeCompare(b.start_date));
+    const firstEvent = sortedEvents[0];
+    if (firstEvent) {
+        mainDate = firstEvent.start_date;
+        mainCanton = firstEvent.canton || (fallbackCantons.length > 0 ? fallbackCantons[0] : '');
         publicLocationLabel = firstEvent.city || mainCanton || "";
-    } else {
-        publicLocationLabel = mainCanton || "";
     }
-}
-
-if (!publicLocationLabel && fallbackCantons.length > 0) {
-    mainCanton = mainCanton || fallbackCantons[0];
-    publicLocationLabel = fallbackCantons.join(', ');
+    if (!publicLocationLabel && fallbackCantons.length > 0) {
+        mainCanton = mainCanton || fallbackCantons[0];
+        publicLocationLabel = fallbackCantons.join(', ');
+    }
+} else {
+    // lead/flex: use the exact address fields (no date)
+    mainCanton = locationCanton;
+    publicLocationLabel = locationCity || locationCanton;
+    mainDate = null;
 }
 
 
@@ -1321,6 +1324,8 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
             canton: mainCanton,
             address: publicLocationLabel, // öffentliche "Label"-Location (ohne Strasse)
             start_date: mainDate,
+            location_street: bookingType !== 'platform' ? (locationStreet.trim() || null) : null,
+            location_city: bookingType !== 'platform' ? (locationCity.trim() || null) : null,
             image_url: imageUrl,
             description: descriptionVal,
             keywords: keywordsVal,
@@ -1386,8 +1391,8 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
 
 
 
-        // 7. Update Events Table
-        if (!isAdminImpersonating && activeCourseId) {
+        // 7. Update Events Table (only for platform/Direktbuchung — lead/flex use address fields instead)
+        if (!isAdminImpersonating && activeCourseId && bookingType === 'platform') {
             // Dedupe check: no two events may share (start_date, location, canton)
             const eventKeys = validEvents.map(ev =>
                 `${ev.start_date}|${ev.location || ''}|${ev.canton || (fallbackCantons.length > 0 ? fallbackCantons[0] : '')}`
@@ -2030,39 +2035,16 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                         })()}
 
                         {/* B: DATES & LOCATIONS */}
+                        {bookingType === 'platform' ? (
                         <div className="bg-blue-50 p-6 rounded-xl border border-blue-100">
                              <div className="flex justify-between items-center mb-4">
                                 <div>
                                     <h3 className="text-lg font-bold text-blue-900 flex items-center"><Calendar className="w-5 h-5 mr-2" /> Termine & Standorte</h3>
-                                    {bookingType === 'platform_flex' && <p className="text-xs text-blue-700">Flexible Buchung: Wähle deine Region(en). Der Termin wird nach der Buchung vereinbart.</p>}
-                                    {bookingType === 'lead' && <p className="text-xs text-blue-700">Datum optional. Wenn keine fixen Termine, bitte Region wählen.</p>}
-                                    {bookingType === 'platform' && <p className="text-xs text-blue-700">Datum, Ort und Zeit sind für Direktbuchungen erforderlich.</p>}
-                                    {bookingType === 'platform' && <p className="text-xs text-amber-700 mt-2">Termine mit bestehenden Buchungen sind gesperrt. Vergangene gebuchte Termine werden automatisch archiviert und hier nicht mehr bearbeitbar angezeigt.</p>}
+                                    <p className="text-xs text-blue-700">Datum, Ort und Zeit sind für Direktbuchungen erforderlich.</p>
+                                    <p className="text-xs text-amber-700 mt-2">Termine mit bestehenden Buchungen sind gesperrt. Vergangene gebuchte Termine werden automatisch archiviert und hier nicht mehr bearbeitbar angezeigt.</p>
                                 </div>
-                                {bookingType !== 'platform_flex' && (
-                                    <button type="button" onClick={addEvent} className="bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-bold hover:bg-blue-700 flex items-center"><Plus className="w-4 h-4 mr-1"/> Termin hinzufügen</button>
-                                )}
+                                <button type="button" onClick={addEvent} className="bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-bold hover:bg-blue-700 flex items-center"><Plus className="w-4 h-4 mr-1"/> Termin hinzufügen</button>
                             </div>
-
-                            {/* Fallback Region Selector - for platform_flex always show, for others only when no dated events */}
-                            {(bookingType === 'platform_flex' || (bookingType !== 'platform' && !hasDatedEvents)) && (
-                                <div className="mb-6 bg-white p-5 rounded-lg border-2 border-orange-200 shadow-sm animate-in fade-in">
-                                    <h4 className="font-bold text-orange-900 flex items-center gap-2 mb-3">
-                                        <MapPin className="w-4 h-4"/> {bookingType === 'platform_flex' ? 'Wähle deine Region(en) *' : 'Keine fixen Termine? Wähle deine Region(en):'}
-                                    </h4>
-                                    <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto">
-                                        {SWISS_CANTONS.filter(c => c !== "Ausland").map(c => (
-                                            <button key={c} type="button" onClick={() => toggleFallbackCanton(c)} className={`px-3 py-1 rounded-full text-xs font-medium border transition-all ${fallbackCantons.includes(c) ? 'bg-orange-500 text-white border-orange-600 shadow-md transform scale-105' : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'}`}>
-                                                {c}
-                                            </button>
-                                        ))}
-                                    </div>
-                                    <p className="text-xs text-gray-400 mt-2">{bookingType === 'platform_flex' ? 'Der Termin wird nach der Buchung direkt mit dem Teilnehmer vereinbart.' : 'Diese Regionen werden in der Suche verwendet.'}</p>
-                                </div>
-                            )}
-
-                            {/* Event list - hide for platform_flex since they don't need events */}
-                            {bookingType !== 'platform_flex' && (
                             <div className="space-y-4">
                                 {archivedBookedEvents.length > 0 && (
                                     <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-800">
@@ -2081,27 +2063,26 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                                         )}
                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                             <div>
-                                                <label className="text-xs font-bold text-gray-500 uppercase">Datum {bookingType === 'platform' && '*'}</label>
-                                                <input type="date" disabled={isLockedEvent} required={bookingType === 'platform'} value={ev.start_date} onChange={e => updateEvent(originalIndex, 'start_date', e.target.value)} className={`w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white disabled:bg-gray-100 disabled:text-gray-500 ${bookingType !== 'platform' && !ev.start_date ? 'border-orange-300' : ''}`} />
+                                                <label className="text-xs font-bold text-gray-500 uppercase">Datum *</label>
+                                                <input type="date" disabled={isLockedEvent} required value={ev.start_date} onChange={e => updateEvent(originalIndex, 'start_date', e.target.value)} className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white disabled:bg-gray-100 disabled:text-gray-500" />
                                             </div>
                                             <div className="md:col-span-2">
                                                 <label className="text-xs font-bold text-gray-500 uppercase">Zeit / Details (Optional)</label>
                                                 <input type="text" disabled={isLockedEvent} value={ev.schedule_description} onChange={e => updateEvent(originalIndex, 'schedule_description', e.target.value)} placeholder="z.B. Sa & So, 09:00 - 17:00" className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white disabled:bg-gray-100 disabled:text-gray-500" />
                                             </div>
                                         </div>
-
                                         <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
                                             <div className="md:col-span-5">
-                                                <label className="text-xs font-bold text-gray-500 uppercase">Strasse / Nr. {bookingType === 'platform' && '*'}</label>
-                                                <input type="text" disabled={isLockedEvent} required={bookingType === 'platform'} value={ev.street} onChange={e => updateEvent(originalIndex, 'street', e.target.value)} placeholder="Musterstrasse 12" className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white disabled:bg-gray-100 disabled:text-gray-500" />
+                                                <label className="text-xs font-bold text-gray-500 uppercase">Strasse / Nr. *</label>
+                                                <input type="text" disabled={isLockedEvent} required value={ev.street} onChange={e => updateEvent(originalIndex, 'street', e.target.value)} placeholder="Musterstrasse 12" className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white disabled:bg-gray-100 disabled:text-gray-500" />
                                             </div>
                                             <div className="md:col-span-2">
-                                                <label className="text-xs font-bold text-gray-500 uppercase">PLZ / Ort {bookingType === 'platform' && '*'}</label>
-                                                <input type="text" disabled={isLockedEvent} required={bookingType === 'platform'} value={ev.city} onChange={e => updateEvent(originalIndex, 'city', e.target.value)} placeholder="8000 Zürich" className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white disabled:bg-gray-100 disabled:text-gray-500" />
+                                                <label className="text-xs font-bold text-gray-500 uppercase">PLZ / Ort *</label>
+                                                <input type="text" disabled={isLockedEvent} required value={ev.city} onChange={e => updateEvent(originalIndex, 'city', e.target.value)} placeholder="8000 Zürich" className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white disabled:bg-gray-100 disabled:text-gray-500" />
                                             </div>
                                             <div className="md:col-span-3">
-                                                <label className="text-xs font-bold text-gray-500 uppercase">Kanton {bookingType === 'platform' && '*'}</label>
-                                                <select disabled={isLockedEvent} required={bookingType === 'platform'} value={ev.canton} onChange={e => updateEvent(originalIndex, 'canton', e.target.value)} className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white disabled:bg-gray-100 disabled:text-gray-500">
+                                                <label className="text-xs font-bold text-gray-500 uppercase">Kanton *</label>
+                                                <select disabled={isLockedEvent} required value={ev.canton} onChange={e => updateEvent(originalIndex, 'canton', e.target.value)} className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white disabled:bg-gray-100 disabled:text-gray-500">
                                                     <option value="">Wählen...</option>
                                                     {SWISS_CANTONS.filter(c => c !== "Ausland").map(c => <option key={c} value={c}>{c}</option>)}
                                                 </select>
@@ -2115,8 +2096,36 @@ if (!publicLocationLabel && fallbackCantons.length > 0) {
                                     </div>
                                 )})}
                             </div>
-                            )}
                         </div>
+                        ) : (
+                        <div className="bg-blue-50 p-6 rounded-xl border border-blue-100">
+                            <h3 className="text-lg font-bold text-blue-900 flex items-center mb-1"><MapPin className="w-5 h-5 mr-2" /> Standort *</h3>
+                            <p className="text-xs text-blue-700 mb-4">
+                                {bookingType === 'platform_flex'
+                                    ? 'Der genaue Termin wird nach der Buchung mit dir vereinbart. Gib hier deinen Standort an.'
+                                    : 'Gib hier deinen Standort an, damit Interessierte wissen, wo der Kurs stattfindet.'}
+                            </p>
+                            <div className="bg-white p-4 rounded-lg border border-gray-200">
+                                <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+                                    <div className="md:col-span-5">
+                                        <label className="text-xs font-bold text-gray-500 uppercase">Strasse / Nr. *</label>
+                                        <input type="text" value={locationStreet} onChange={(e) => { setLocationStreet(e.target.value); markDirty(); }} placeholder="Musterstrasse 12" className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white" />
+                                    </div>
+                                    <div className="md:col-span-4">
+                                        <label className="text-xs font-bold text-gray-500 uppercase">PLZ / Ort *</label>
+                                        <input type="text" value={locationCity} onChange={(e) => { setLocationCity(e.target.value); markDirty(); }} placeholder="8000 Zürich" className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white" />
+                                    </div>
+                                    <div className="md:col-span-3">
+                                        <label className="text-xs font-bold text-gray-500 uppercase">Kanton *</label>
+                                        <select value={locationCanton} onChange={(e) => { setLocationCanton(e.target.value); markDirty(); }} className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white">
+                                            <option value="">Wählen...</option>
+                                            {SWISS_CANTONS.filter(c => c !== "Ausland").map(c => <option key={c} value={c}>{c}</option>)}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        )}
 
                     </div>
                 </div>
