@@ -16,6 +16,8 @@ const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView, user,
     const [totalCount, setTotalCount] = useState(0);
 
     const [debouncedSearch, setDebouncedSearch] = useState('');
+    const [sortBy, setSortBy] = useState('created_at');
+    const [sortDir, setSortDir] = useState('desc');
 
     const getAuthHeaders = async () => {
         const { data: { session } } = await supabase.auth.getSession();
@@ -28,11 +30,13 @@ const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView, user,
         };
     };
 
-    // Reset search and pagination on tab change
+    // Reset search, sort and pagination on tab change
     useEffect(() => {
         setSearchQuery('');
         setDebouncedSearch('');
         setCurrentPage(1);
+        setSortBy('created_at');
+        setSortDir('desc');
     }, [activeTab]);
 
     // Debounce search input
@@ -51,7 +55,7 @@ const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView, user,
 
         // 1) Try Admin API (Service Role, bypasses RLS)
         try {
-            const params = new URLSearchParams({ action: 'profiles', limit: String(pageSize), offset: String(offset) });
+            const params = new URLSearchParams({ action: 'profiles', limit: String(pageSize), offset: String(offset), sortBy, sortDir });
             if (roleFilter) params.set('role', roleFilter);
             if (debouncedSearch) params.set('q', debouncedSearch);
             const headers = await getAuthHeaders();
@@ -92,7 +96,7 @@ const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView, user,
         }
 
         setLoading(false);
-    }, [currentPage, pageSize, debouncedSearch, activeTab]);
+    }, [currentPage, pageSize, debouncedSearch, activeTab, sortBy, sortDir]);
 
     useEffect(() => {
         if (isAuthenticated) {
@@ -261,6 +265,26 @@ const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView, user,
     };
 
 
+    const handleSort = (field) => {
+        if (sortBy === field) {
+            setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+        } else {
+            setSortBy(field);
+            setSortDir('desc');
+        }
+        setCurrentPage(1);
+    };
+
+    const fmtDate = (iso) => {
+        if (!iso) return '–';
+        return new Date(iso).toLocaleDateString('de-CH', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    };
+
+    const SortIcon = ({ field }) => {
+        if (sortBy !== field) return <span className="ml-1 text-gray-300">⇅</span>;
+        return <span className="ml-1 text-blue-600">{sortDir === 'asc' ? '↑' : '↓'}</span>;
+    };
+
     // Profiles are now server-side filtered by role via API ?role= parameter.
     // No client-side filtering needed.
 
@@ -360,6 +384,22 @@ const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView, user,
                                         {activeTab !== 'courses' && <th className="px-6 py-4 font-semibold text-gray-600">Ort</th>}
                                         {activeTab === 'courses' && <th className="px-6 py-4 font-semibold text-gray-600">Preis</th>}
                                         <th className="px-6 py-4 font-semibold text-gray-600">{t.admin_col_status || "Verifiziert"}</th>
+                                        {(activeTab === 'teachers' || activeTab === 'students') && (
+                                            <th
+                                                className="px-6 py-4 font-semibold text-gray-600 cursor-pointer hover:text-blue-600 select-none whitespace-nowrap"
+                                                onClick={() => handleSort('created_at')}
+                                            >
+                                                Anmeldedatum<SortIcon field="created_at" />
+                                            </th>
+                                        )}
+                                        {(activeTab === 'teachers' || activeTab === 'students') && (
+                                            <th
+                                                className="px-6 py-4 font-semibold text-gray-600 cursor-pointer hover:text-blue-600 select-none whitespace-nowrap"
+                                                onClick={() => handleSort('last_sign_in_at')}
+                                            >
+                                                Letzter Login<SortIcon field="last_sign_in_at" />
+                                            </th>
+                                        )}
                                         <th className="px-6 py-4 font-semibold text-gray-600 text-right">{t.admin_col_actions || "Aktionen"}</th>
                                     </tr>
                                 </thead>
@@ -429,6 +469,9 @@ const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView, user,
                                                     )}
                                                 </td>
 
+                                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">{fmtDate(user.created_at)}</td>
+                                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">{fmtDate(user.last_sign_in_at)}</td>
+
                                                 <td className="px-6 py-4 text-right flex items-center justify-end gap-2">
                                                     <button
                                                         onClick={() => handleImpersonate(user, 'teachers')}
@@ -477,6 +520,8 @@ const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView, user,
                                             <td className="px-6 py-4 text-gray-500">{user.email}</td>
                                             <td className="px-6 py-4">{user.city}, {user.canton}</td>
                                             <td className="px-6 py-4"><span className="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs">Student</span></td>
+                                            <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">{fmtDate(user.created_at)}</td>
+                                            <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">{fmtDate(user.last_sign_in_at)}</td>
                                             <td className="px-6 py-4 text-right">
                                                 <button
                                                     onClick={() => handleImpersonate(user, 'students')}

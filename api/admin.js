@@ -93,32 +93,75 @@ export default async function handler(req, res) {
       const offset = Math.max(parseInt(req.query.offset) || 0, 0);
       const search = (req.query.q || '').trim();
       const role = (req.query.role || '').trim().toLowerCase();
+      const sortBy = (req.query.sortBy || 'created_at').trim();
+      const sortAsc = req.query.sortDir === 'asc';
 
-      let query = supabaseAdmin
+      // Helper: fetch auth users and return a map { userId -> last_sign_in_at }
+      const getAuthMap = async () => {
+        const { data: authData } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
+        const map = {};
+        for (const u of (authData?.users || [])) {
+          map[u.id] = u.last_sign_in_at || null;
+        }
+        return map;
+      };
+
+      let baseQuery = supabaseAdmin
         .from('profiles')
         .select('*', { count: 'exact' });
 
       if (role === 'teacher') {
-        query = query.eq('role', 'teacher');
+        baseQuery = baseQuery.eq('role', 'teacher');
       } else if (role === 'student') {
-        query = query.eq('role', 'student');
+        baseQuery = baseQuery.eq('role', 'student');
       }
 
       if (search) {
-        query = query.or(
+        baseQuery = baseQuery.or(
           `full_name.ilike.%${search}%,email.ilike.%${search}%`
         );
       }
 
-      query = query.order('created_at', { ascending: false });
-      query = query.range(offset, offset + limit - 1);
+      // Sort by last_sign_in_at: fetch all matching rows, merge auth data, sort in memory
+      if (sortBy === 'last_sign_in_at') {
+        const { data: allData, error: allError, count } = await baseQuery;
+        if (allError) return res.status(500).json({ error: allError.message });
 
-      const { data, error, count } = await query;
+        const authMap = await getAuthMap();
+        const merged = (allData || []).map(p => ({ ...p, last_sign_in_at: authMap[p.id] || null }));
 
+        merged.sort((a, b) => {
+          const aT = a.last_sign_in_at ? new Date(a.last_sign_in_at).getTime() : 0;
+          const bT = b.last_sign_in_at ? new Date(b.last_sign_in_at).getTime() : 0;
+          return sortAsc ? aT - bT : bT - aT;
+        });
+
+        return res.status(200).json({
+          data: merged.slice(offset, offset + limit),
+          pagination: {
+            total: count || 0,
+            limit,
+            offset,
+            hasMore: (offset + limit) < (count || 0)
+          }
+        });
+      }
+
+      // Sort by profile column (created_at, full_name, email)
+      const validSortFields = ['created_at', 'full_name', 'email'];
+      const dbSortField = validSortFields.includes(sortBy) ? sortBy : 'created_at';
+      baseQuery = baseQuery.order(dbSortField, { ascending: sortAsc });
+      baseQuery = baseQuery.range(offset, offset + limit - 1);
+
+      const { data, error, count } = await baseQuery;
       if (error) return res.status(500).json({ error: error.message });
 
+      // Enrich page with last_sign_in_at from auth
+      const authMap = await getAuthMap();
+      const enriched = (data || []).map(p => ({ ...p, last_sign_in_at: authMap[p.id] || null }));
+
       return res.status(200).json({
-        data: data || [],
+        data: enriched,
         pagination: {
           total: count || 0,
           limit,
