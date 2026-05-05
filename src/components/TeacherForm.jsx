@@ -1412,7 +1412,9 @@ if (bookingType === 'platform') {
                     coursePayload: newCourse,
                     courseId: activeCourseId,
                     validEvents,
-                    categories: consolidatedCategories
+                    categories: consolidatedCategories,
+                    locations,
+                    bookingType
                 });
                 activeCourseId = result.courseId;
                 showNotification(activeCourseId && initialData?.id ? "Kurs aktualisiert!" : t.success_msg);
@@ -1525,7 +1527,8 @@ if (bookingType === 'platform') {
         }
 
         // 7b. Save course_locations for lead/flex (replaces the old simple columns)
-        if (activeCourseId && bookingType !== 'platform') {
+        // When admin is impersonating, this is handled via saveCourseViaAdmin (service role bypasses RLS)
+        if (!isAdminImpersonating && activeCourseId && bookingType !== 'platform') {
             // Delete all existing locations for this course, then re-insert
             await supabase.from('course_locations').delete().eq('course_id', activeCourseId);
 
