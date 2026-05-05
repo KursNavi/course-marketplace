@@ -9,6 +9,7 @@ import { getBereichByAreaSlug, getBereichUrl } from '../lib/bereichLandingConfig
 import { DEFAULT_COURSE_IMAGE } from '../lib/imageUtils';
 import { getCourseCategoryText, getPrimaryCategory, getPrimaryCategoryLabel, getPrimaryCategorySlug, isSyntheticCategory } from '../lib/courseMetadata';
 import { trackCourseView, trackPurchase, trackContactLead } from '../lib/analytics';
+import { getRobotsPolicy } from '../lib/seoUtils';
 
 const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, setUser, savedCourseIds, onToggleSaveCourse, showNotification, refreshBookings }) => {
     const [showLeadModal, setShowLeadModal] = useState(false);
@@ -155,6 +156,8 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
     useEffect(() => {
         if (!course) return;
 
+        const createdTags = [];
+
         const locationLabel = course.canton || 'Schweiz';
         document.title = `${course.title} in ${locationLabel} | KursNavi`;
 
@@ -163,13 +166,15 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
         const titleSlug = (course.title || 'detail').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
         const canonicalUrl = `${BASE_URL}/courses/${topicSlug}/${locSlug}/${course.id}-${titleSlug}`;
 
-        // --- FIX 1: Dynamic Meta Description ---
-        const metaDescription = `${course.title} in ${locationLabel} - ${(course.description || '').substring(0, 155)}...`;
+        // --- FIX 1: Dynamic Meta Description (max 160 chars) ---
+        const rawDesc = `${course.title} in ${locationLabel} – ${(course.description || '').replace(/\s+/g, ' ').trim()}`;
+        const metaDescription = rawDesc.length > 160 ? rawDesc.substring(0, 157) + '...' : rawDesc;
         let metaDescTag = document.querySelector('meta[name="description"]');
         if (!metaDescTag) {
             metaDescTag = document.createElement('meta');
             metaDescTag.name = 'description';
             document.head.appendChild(metaDescTag);
+            createdTags.push(metaDescTag);
         }
         metaDescTag.content = metaDescription;
 
@@ -179,11 +184,22 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
             canonicalTag = document.createElement('link');
             canonicalTag.rel = 'canonical';
             document.head.appendChild(canonicalTag);
+            createdTags.push(canonicalTag);
         }
         canonicalTag.href = canonicalUrl;
 
         // Clean up stale hreflang tags from other pages
         document.querySelectorAll('link[rel="alternate"][hreflang]').forEach(tag => tag.remove());
+
+        // --- Robots ---
+        let robotsTag = document.querySelector('meta[name="robots"]');
+        if (!robotsTag) {
+            robotsTag = document.createElement('meta');
+            robotsTag.name = 'robots';
+            document.head.appendChild(robotsTag);
+            createdTags.push(robotsTag);
+        }
+        robotsTag.content = getRobotsPolicy();
 
         // --- FIX 3: Open Graph Tags (Social Sharing) ---
         const ogTags = {
@@ -191,7 +207,7 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
             'og:description': metaDescription,
             'og:url': canonicalUrl,
             'og:image': course.image_url || `${BASE_URL}/og-default.svg`,
-            'og:type': 'product',
+            'og:type': 'website',
             'og:locale': 'de_CH',
             'og:site_name': 'KursNavi',
             'twitter:card': 'summary_large_image',
@@ -210,6 +226,7 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
                     tag.setAttribute('property', property);
                 }
                 document.head.appendChild(tag);
+                createdTags.push(tag);
             }
             tag.content = content;
         });
@@ -345,7 +362,7 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
         document.head.appendChild(breadcrumbScript);
 
         return () => {
-            // Cleanup
+            createdTags.forEach(tag => { if (tag.parentNode) tag.parentNode.removeChild(tag); });
             if (script.parentNode) script.parentNode.removeChild(script);
             if (breadcrumbScript.parentNode) breadcrumbScript.parentNode.removeChild(breadcrumbScript);
         }
