@@ -1,7 +1,8 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { ArrowRight, ArrowLeft, Search } from 'lucide-react';
 import { SIMPLE_TOPIC_CONTENT, SEGMENT_LANDING_CONFIG } from '../lib/segmentLandingConfig';
 import { buildCoursePath } from '../lib/siteConfig';
+import { buildCanonical, getRobotsPolicy } from '../lib/seoUtils';
 
 // Segment URL → display label + back href
 const SEGMENT_META = {
@@ -57,6 +58,57 @@ export default function SimpleTopicLandingPage({
       })
       .slice(0, 6);
   }, [publishedCourses, config?.areaAliases, sauleKey]);
+
+  // SEO meta tags
+  useEffect(() => {
+    if (!config) return;
+
+    const pageTitle = `${config.title} | KursNavi`;
+    document.title = pageTitle;
+
+    const metaDesc = config.subtitle;
+    const canonicalUrl = buildCanonical(`/thema/${segment}/${slug}`);
+    const robots = getRobotsPolicy();
+
+    let descTag = document.querySelector('meta[name="description"]');
+    if (!descTag) {
+      descTag = document.createElement('meta');
+      descTag.name = 'description';
+      document.head.appendChild(descTag);
+    }
+    descTag.content = metaDesc;
+
+    let canonicalTag = document.querySelector('link[rel="canonical"]');
+    if (!canonicalTag) {
+      canonicalTag = document.createElement('link');
+      canonicalTag.rel = 'canonical';
+      document.head.appendChild(canonicalTag);
+    }
+    canonicalTag.href = canonicalUrl;
+
+    let robotsTag = document.querySelector('meta[name="robots"]');
+    if (!robotsTag) {
+      robotsTag = document.createElement('meta');
+      robotsTag.name = 'robots';
+      document.head.appendChild(robotsTag);
+    }
+    robotsTag.content = robots;
+
+    const ogTags = {
+      'og:title': pageTitle,
+      'og:description': metaDesc,
+      'og:url': canonicalUrl,
+    };
+    Object.entries(ogTags).forEach(([property, content]) => {
+      let tag = document.querySelector(`meta[property="${property}"]`);
+      if (!tag) {
+        tag = document.createElement('meta');
+        tag.setAttribute('property', property);
+        document.head.appendChild(tag);
+      }
+      tag.content = content;
+    });
+  }, [config, segment, slug]);
 
   // Navigate to search pre-filtered with this topic's area + segment type
   // Optionally pass a sauleKey (e.g. 'diplome') to pre-select a Berufliche Säule

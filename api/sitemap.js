@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { BEREICH_LANDING_CONFIG } from '../src/lib/bereichLandingConfig.js';
+import { SIMPLE_TOPIC_CONTENT } from '../src/lib/segmentLandingConfig.js';
 
 // Inlined to avoid importing React-dependent modules (constants.js imports lucide-react)
 function slugify(input) {
@@ -211,7 +212,18 @@ export default async function handler(req, res) {
       }
     }
 
-    // 10. Construct Final XML
+    // 10. Generate Thema URLs (Simple Topic Landing Pages — auto-updates as config grows)
+    let themaUrls = '';
+    for (const key of Object.keys(SIMPLE_TOPIC_CONTENT)) {
+      themaUrls += `
+      <url>
+          <loc>${baseUrl}/thema/${key}</loc>
+          <changefreq>weekly</changefreq>
+          <priority>0.7</priority>
+      </url>`;
+    }
+
+    // 11. Construct Final XML
     const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
     <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
       ${staticPages}
@@ -220,6 +232,7 @@ export default async function handler(req, res) {
       ${providerUrls}
       ${ratgeberUrls}
       ${bereichUrls}
+      ${themaUrls}
     </urlset>`;
 
     // 6. Send Response

@@ -20,6 +20,7 @@ import { readFileSync, writeFileSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { BEREICH_LANDING_CONFIG } from '../src/lib/bereichLandingConfig.js';
+import { SIMPLE_TOPIC_CONTENT } from '../src/lib/segmentLandingConfig.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const distDir = join(__dirname, '..', 'dist');
@@ -341,6 +342,15 @@ for (const bereich of Object.values(BEREICH_LANDING_CONFIG)) {
       szenario.text.de
     );
   }
+}
+
+// Thema landing pages (simple topic pages — auto-updates as config grows)
+for (const [key, config] of Object.entries(SIMPLE_TOPIC_CONTENT)) {
+  writeRoute(
+    `/thema/${key}`,
+    `${config.title} | KursNavi`,
+    config.subtitle
+  );
 }
 
 console.log(`\n✓ ${count} static HTML files generated.\n`);
