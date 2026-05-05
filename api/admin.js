@@ -274,7 +274,9 @@ export default async function handler(req, res) {
         courseId = null,
         course,
         validEvents = [],
-        categories = []
+        categories = [],
+        locations = [],
+        bookingType = ''
       } = parseBody(req);
 
       if (!userId || !isValidUUID(userId)) {
@@ -413,6 +415,38 @@ export default async function handler(req, res) {
 
         if (insertAssignmentsError) {
           return res.status(500).json({ error: insertAssignmentsError.message });
+        }
+      }
+
+      // Save course_locations for lead/flex courses (service role bypasses RLS)
+      if (bookingType !== 'platform' && Array.isArray(locations)) {
+        const { error: deleteLocError } = await supabaseAdmin
+          .from('course_locations')
+          .delete()
+          .eq('course_id', activeCourseId);
+
+        if (deleteLocError) {
+          return res.status(500).json({ error: deleteLocError.message });
+        }
+
+        if (locations.length > 0) {
+          const locationPayloads = locations.map((loc, i) => ({
+            course_id: activeCourseId,
+            location_type: loc.type,
+            street: loc.type === 'presence' ? (loc.street?.trim() || null)
+                  : loc.type === 'ausland' ? (loc.location_abroad?.trim() || null) : null,
+            city: loc.type === 'presence' ? (loc.city?.trim() || null) : null,
+            canton: loc.type === 'presence' ? (loc.canton || null) : (loc.type === 'ausland' ? 'Ausland' : null),
+            sort_order: i
+          }));
+
+          const { error: insertLocError } = await supabaseAdmin
+            .from('course_locations')
+            .insert(locationPayloads);
+
+          if (insertLocError) {
+            return res.status(500).json({ error: insertLocError.message });
+          }
         }
       }
 
