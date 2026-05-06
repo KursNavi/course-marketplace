@@ -6,6 +6,7 @@ import {
 import { BASE_URL, buildCoursePath } from '../lib/siteConfig';
 import { formatPriceCHF, getPriceLabel } from '../lib/formatPrice';
 import { getCourseCategoryText } from '../lib/courseMetadata';
+import { getRobotsPolicy, buildCanonical } from '../lib/seoUtils';
 
 const SORT_OPTIONS = [
   { value: 'newest', label: 'Neueste zuerst' },
@@ -101,15 +102,40 @@ export default function ProviderProfilePage({ t, setView, setSelectedCourse }) {
     fetchProvider();
   }, [slug]);
 
-  // SEO: Set meta tags
+  // SEO: noindex when provider not found
+  useEffect(() => {
+    if (!error) return;
+    let robotsTag = document.querySelector('meta[name="robots"]');
+    const created = !robotsTag;
+    if (!robotsTag) {
+      robotsTag = document.createElement('meta');
+      robotsTag.name = 'robots';
+      document.head.appendChild(robotsTag);
+    }
+    const prev = robotsTag.content;
+    robotsTag.content = 'noindex,nofollow';
+    return () => {
+      if (created) robotsTag.remove();
+      else robotsTag.content = prev;
+    };
+  }, [error]);
+
+  // SEO: Set meta tags once provider data is loaded
   useEffect(() => {
     if (!provider) return;
 
-    document.title = `${provider.name} - Kursanbieter | KursNavi`;
+    // Title
+    document.title = `${provider.name} | KursNavi`;
 
-    const metaDescription = (provider.description || '').substring(0, 155) + '...';
+    // Description: trim cleanly, fallback for empty profiles
+    const rawDesc = provider.description || '';
+    const metaDescription = rawDesc.length > 155
+      ? rawDesc.substring(0, 152) + '...'
+      : rawDesc || `${provider.name} – Kursanbieter auf KursNavi.`;
 
+    // Meta description tag
     let metaDescTag = document.querySelector('meta[name="description"]');
+    const createdDescTag = !metaDescTag;
     if (!metaDescTag) {
       metaDescTag = document.createElement('meta');
       metaDescTag.name = 'description';
@@ -117,21 +143,34 @@ export default function ProviderProfilePage({ t, setView, setSelectedCourse }) {
     }
     metaDescTag.content = metaDescription;
 
-    const canonicalUrl = `${BASE_URL}/anbieter/${provider.slug}`;
-
+    // Canonical URL
+    const canonicalUrl = buildCanonical(`/anbieter/${provider.slug}`);
     let canonicalTag = document.querySelector('link[rel="canonical"]');
+    const createdCanonical = !canonicalTag;
     if (!canonicalTag) {
       canonicalTag = document.createElement('link');
       canonicalTag.rel = 'canonical';
       document.head.appendChild(canonicalTag);
     }
     canonicalTag.href = canonicalUrl;
+
+    // Robots
+    let robotsTag = document.querySelector('meta[name="robots"]');
+    const createdRobots = !robotsTag;
+    if (!robotsTag) {
+      robotsTag = document.createElement('meta');
+      robotsTag.name = 'robots';
+      document.head.appendChild(robotsTag);
+    }
+    robotsTag.content = getRobotsPolicy();
+
+    // OG Tags
     const ogTags = {
-      'og:title': `${provider.name} - Kursanbieter`,
+      'og:title': `${provider.name} | KursNavi`,
       'og:description': metaDescription,
       'og:url': canonicalUrl,
       'og:image': provider.logoUrl || `${BASE_URL}/og-default.svg`,
-      'og:type': 'profile',
+      'og:type': 'website',
       'og:locale': 'de_CH',
       'og:site_name': 'KursNavi'
     };
@@ -195,6 +234,9 @@ export default function ProviderProfilePage({ t, setView, setSelectedCourse }) {
     document.head.appendChild(breadcrumbScript);
 
     return () => {
+      if (createdDescTag) metaDescTag.remove();
+      if (createdCanonical) canonicalTag.remove();
+      if (createdRobots) robotsTag.remove();
       createdOgTags.forEach(tag => tag.remove());
       schemaScript?.remove();
       if (breadcrumbScript.parentNode) breadcrumbScript.remove();
