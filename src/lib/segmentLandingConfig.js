@@ -104,15 +104,6 @@ export const SEGMENT_LANDING_CONFIG = {
         image: 'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&q=80&w=800',
       },
       {
-        slug: 'marketing',
-        label: 'Marketing',
-        icon: '📣',
-        desc: 'Online-Marketing, Verkauf & Kommunikation',
-        isThemenwelt: false,
-        href: '/thema/beruflich/marketing',
-        image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=800',
-      },
-      {
         slug: 'gesundheit-resilienz',
         label: 'Gesundheit & Resilienz',
         icon: '🌿',
@@ -185,7 +176,7 @@ export const SEGMENT_LANDING_CONFIG = {
         icon: '🧘',
         desc: 'Entspannung, Meditation & innere Balance',
         isThemenwelt: true,
-        href: '/bereich/privat_hobby/yoga-achtsamkeit',
+        href: '/bereich/privat-hobby/yoga-achtsamkeit',
         image: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&q=80&w=800',
       },
       {
@@ -466,22 +457,6 @@ export const SIMPLE_TOPIC_CONTENT = {
     typeAliases: ['beruflich', 'professionell'],
     areaAliases: ['soft_skills_prof', 'soft_skills'],
     hintText: 'Ausführliche Ratgeber zu Soft-Skill-Trainings folgen in Kürze.',
-  },
-  'beruflich/marketing': {
-    title: 'Marketing',
-    subtitle: 'Online-Marketing, Verkauf & Kommunikation',
-    intro:
-      'Marketing verändert sich rasant – und Schweizer Unternehmen brauchen Fachleute, die sowohl klassische als auch digitale Marketingmethoden beherrschen. Die Weiterbildungslandschaft bietet Kurse für alle Niveaus.',
-    points: [
-      { icon: '📱', title: 'Digitales Marketing', text: 'Social Media, SEO, Google Ads, E-Mail-Marketing – die wichtigsten Online-Kanäle im Griff.' },
-      { icon: '🎯', title: 'Verkauf & Vertrieb', text: 'Verkaufspsychologie, Kundenakquise und Beziehungsaufbau für langfristigen Erfolg.' },
-      { icon: '✍️', title: 'Content & Copywriting', text: 'Texte, die überzeugen – für Website, Social Media und Werbemittel.' },
-      { icon: '📊', title: 'Marktforschung & Analytics', text: 'Daten verstehen, Zielgruppen kennen, fundierte Entscheidungen treffen.' },
-    ],
-    showCourseList: true,
-    typeAliases: ['beruflich', 'professionell'],
-    areaAliases: ['marketing'],
-    hintText: 'Ausführliche Ratgeber zu Marketing-Ausbildungen folgen in Kürze.',
   },
   'beruflich/gesundheit-resilienz': {
     title: 'Gesundheit & Resilienz',
