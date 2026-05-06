@@ -68,6 +68,32 @@ describe('ProviderProfilePage', () => {
     );
   });
 
+  it('sets SEO meta tags after provider loads', async () => {
+    render(<ProviderProfilePage t={{}} setView={vi.fn()} setSelectedCourse={vi.fn()} />);
+
+    await waitFor(() => expect(screen.getByText('ICH')).toBeInTheDocument());
+
+    expect(document.title).toBe('ICH | KursNavi');
+    expect(document.querySelector('meta[name="description"]')?.content).toBe('Testprofil');
+    expect(document.querySelector('link[rel="canonical"]')?.href).toBe('https://kursnavi.ch/anbieter/ich');
+    expect(document.querySelector('meta[name="robots"]')?.content).toBeTruthy();
+    expect(document.querySelector('meta[property="og:type"]')?.content).toBe('website');
+    expect(document.querySelector('script[data-schema="provider"]')).toBeTruthy();
+  });
+
+  it('sets noindex robots tag when provider is not found', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 404,
+      json: async () => ({ error: 'Not found' }),
+    });
+
+    render(<ProviderProfilePage t={{}} setView={vi.fn()} setSelectedCourse={vi.fn()} />);
+
+    await waitFor(() => expect(screen.getByText('Anbieter nicht gefunden')).toBeInTheDocument());
+    expect(document.querySelector('meta[name="robots"]')?.content).toBe('noindex,nofollow');
+  });
+
   it('opens the course detail when a listed course is clicked', async () => {
     const setView = vi.fn();
     const setSelectedCourse = vi.fn();
