@@ -142,6 +142,64 @@ export const LEGAL_CONTENT = {
         }
       ]
     },
+    widerruf: {
+      title: "Widerruf & Stornierung",
+      company: "LifeSkills360 GmbH",
+      intro: "Ihre Rechte bei Stornierung und Widerruf von Kursbuchungen auf KursNavi (www.kursnavi.ch).",
+      sections: [
+        {
+          heading: "1. Kostenlose Stornierung innerhalb der Frist",
+          text: "Bei Direktbuchungskursen über KursNavi gelten folgende kostenlose Stornofristen:\n• Termingebundene Kurse: kostenlose Stornierung bis 14 Tage vor dem Kurstermin.\n• Flexible Direktbuchungen: kostenlose Stornierung bis 7 Tage nach Zahlung.\n\nBei Stornierung innerhalb dieser Fristen wird der bezahlte Betrag als Plattform-Guthaben auf dem KursNavi-Konto gutgeschrieben. Das Guthaben verfällt nicht und wird automatisch bei der nächsten Buchung verrechnet. Eine Barauszahlung oder Rücküberweisung des Guthabens ist nicht möglich."
+        },
+        {
+          heading: "2. Kulanzanfrage nach Ablauf der Stornofrist",
+          text: "Nach Ablauf der automatischen Stornofrist können Sie über KursNavi eine Kulanzanfrage an den Anbieter senden. Der Anbieter entscheidet nach eigenem Ermessen über eine Rückerstattung von 0 %, 25 %, 50 % oder 100 % des Kurspreises. KursNavi vermittelt diesen Prozess technisch, trifft jedoch keine eigene Kulanzentscheidung."
+        },
+        {
+          heading: "3. Kursabsage durch den Anbieter",
+          text: "Sagt ein Anbieter einen Direktbuchungskurs ab oder findet der Kurs nicht statt, haben Sie grundsätzlich Anspruch auf vollständige Rückerstattung des bezahlten Kursentgelts – unabhängig von der Stornofrist. KursNavi leitet die technische Rückabwicklung über den ursprünglichen Zahlungsweg ein."
+        },
+        {
+          heading: "4. Gesetzliches Widerrufsrecht",
+          text: "Nach Schweizer Recht (OR) besteht bei zeitgebundenen Kursveranstaltungen (d.h. Kurse mit festem Termin oder Kursbeginn) kein allgemeines gesetzliches Widerrufsrecht von 14 Tagen. Massgeblich sind die KursNavi-Stornoregeln gemäss AGB Ziffer 10.\n\nBei Lead-Kursen (Kursanfragen ohne Direktbuchung) findet über KursNavi weder eine Buchung noch eine Zahlung statt; ein Widerruf ist in diesem Fall nicht anwendbar."
+        },
+        {
+          heading: "5. Kontakt bei Fragen",
+          text: "Bei Fragen zu Stornierungen, Kulanzanfragen oder Rückerstattungen wenden Sie sich bitte an:\nE-Mail: info@kursnavi.ch\nWeb: https://www.kursnavi.ch"
+        }
+      ]
+    },
+    trust: {
+      title: "Vertrauen & Sicherheit",
+      company: "LifeSkills360 GmbH",
+      intro: "So schützen wir dich und deine Buchungen auf KursNavi – Informationen zu geprüften Anbietern, sicherer Zahlung und Datenschutz.",
+      sections: [
+        {
+          heading: "1. Geprüfte Kursanbieter",
+          text: "KursNavi bietet optionale Anbieter-Labels («Professioneller Anbieter», «Zertifizierter Anbieter») für Anbieter, die interne Kriterien erfüllen – u.a. Identitäts- und Plausibilitätsprüfung sowie Unternehmensnachweis. Diese Labels sind keine staatliche Zertifizierung, geben dir aber eine erste Orientierung zur Seriosität des Anbieters.\n\nJeder Anbieter ist für Inhalt, Qualität, Sicherheit und Rechtmässigkeit seiner Kurse selbst verantwortlich."
+        },
+        {
+          heading: "2. Sichere Zahlungsabwicklung",
+          text: "Direktbuchungen werden über Stripe abgewickelt, einen der weltweit führenden Zahlungsdienstleister. KursNavi speichert keine Kreditkartendaten. Deine Zahlungsdaten werden ausschliesslich verschlüsselt an Stripe übermittelt und dort nach höchsten Sicherheitsstandards (PCI-DSS) verarbeitet.\n\nBei technischen Zahlungsproblemen wende dich bitte an info@kursnavi.ch."
+        },
+        {
+          heading: "3. Datenschutz",
+          text: "Deine persönlichen Daten werden nur für den Betrieb der Plattform und die Vertragsabwicklung verwendet. Wir geben deine Daten nicht ohne Grund an Dritte weiter. Details findest du in unserer Datenschutzerklärung unter www.kursnavi.ch/datenschutz."
+        },
+        {
+          heading: "4. Käuferschutz bei Direktbuchungen",
+          text: "KursNavi bietet bei Direktbuchungen einen mehrstufigen Schutz:\n• Kostenlose Stornierung innerhalb der Fristen (Details unter www.kursnavi.ch/widerruf-storno)\n• Kulanzanfragen an Anbieter nach Fristablauf\n• Einspruchmöglichkeit vor Auszahlung an den Anbieter bei Nichtdurchführung oder erheblichen Leistungsmängeln\n• Volle Rückerstattung bei Kursabsage durch den Anbieter"
+        },
+        {
+          heading: "5. Sicherheit bei Kinder- und Jugendkursen",
+          text: "Anbieter von Kursen für Minderjährige sind verpflichtet, das Mindestalter klar zu deklarieren, angemessene Aufsicht sicherzustellen und Sicherheits- sowie Notfallprozesse zu implementieren. KursNavi prüft stichprobenartig die Einhaltung dieser Anforderungen und kann Anbieter bei Verstössen sperren."
+        },
+        {
+          heading: "6. Kontakt & Meldung von Problemen",
+          text: "Hast du Bedenken zu einem Anbieter oder einem Kurs? Melde uns das bitte:\nE-Mail: info@kursnavi.ch\nWeb: https://www.kursnavi.ch\n\nWir nehmen alle Meldungen ernst und prüfen sie sorgfältig."
+        }
+      ]
+    },
   },
   en: {
     back_btn: "Back",
@@ -283,6 +341,64 @@ export const LEGAL_CONTENT = {
         {
           heading: "Disclaimer",
           text: "The editorial content on KursNavi is intended for general guidance only. Despite careful review, we do not guarantee accuracy, completeness or timeliness. In individual cases, the information provided by the respective providers and the competent official authorities shall prevail.\n\nDespite careful content control, we assume no liability for the content of external links. The operators of the linked pages are solely responsible for their content.\n\nAny liability of LifeSkills360 is otherwise governed by mandatory statutory provisions and the applicable Terms and Conditions."
+        }
+      ]
+    },
+    widerruf: {
+      title: "Cancellation & Withdrawal",
+      company: "LifeSkills360 GmbH",
+      intro: "Your rights regarding cancellation and withdrawal of course bookings on KursNavi (www.kursnavi.ch).",
+      sections: [
+        {
+          heading: "1. Free Cancellation Within the Deadline",
+          text: "For direct bookings on KursNavi, the following free cancellation periods apply:\n• Fixed-date courses: free cancellation up to 14 days before the course date.\n• Flexible direct bookings: free cancellation up to 7 days after payment.\n\nIf cancelled within these periods, the amount paid is credited as platform credit to your KursNavi account. Credit does not expire and is automatically deducted from your next booking. Cash refunds or bank transfers of credit are not possible."
+        },
+        {
+          heading: "2. Goodwill Request After the Cancellation Deadline",
+          text: "After the free cancellation period has expired, you may submit a goodwill request to the provider via KursNavi. The provider decides at their own discretion on a refund of 0%, 25%, 50% or 100% of the course price. KursNavi facilitates this process technically but does not make its own goodwill decisions."
+        },
+        {
+          heading: "3. Course Cancellation by the Provider",
+          text: "If a provider cancels a direct booking course or the course does not take place, you are generally entitled to a full refund of the course fee paid – regardless of the cancellation deadline. KursNavi will initiate the technical reversal via the original payment method."
+        },
+        {
+          heading: "4. Statutory Right of Withdrawal",
+          text: "Under Swiss law (CO), there is no general 14-day statutory right of withdrawal for time-bound course events (i.e. courses with a fixed date or start). The KursNavi cancellation rules pursuant to GTC Section 10 are authoritative.\n\nFor lead courses (course enquiries without direct booking), neither a booking nor a payment is made via KursNavi; withdrawal is not applicable in this case."
+        },
+        {
+          heading: "5. Contact",
+          text: "For questions about cancellations, goodwill requests or refunds, please contact:\nEmail: info@kursnavi.ch\nWeb: https://www.kursnavi.ch"
+        }
+      ]
+    },
+    trust: {
+      title: "Trust & Safety",
+      company: "LifeSkills360 GmbH",
+      intro: "How we protect you and your bookings on KursNavi – information on verified providers, secure payments and data protection.",
+      sections: [
+        {
+          heading: "1. Verified Course Providers",
+          text: "KursNavi offers optional provider labels ('Professional Provider', 'Certified Provider') for providers who meet internal criteria – including identity and plausibility checks as well as proof of business. These labels are not a governmental certification but give you an initial orientation regarding the provider's trustworthiness.\n\nEach provider is solely responsible for the content, quality, safety and legality of their courses."
+        },
+        {
+          heading: "2. Secure Payment Processing",
+          text: "Direct bookings are processed via Stripe, one of the world's leading payment service providers. KursNavi does not store any credit card data. Your payment data is transmitted exclusively in encrypted form to Stripe and processed there to the highest security standards (PCI-DSS).\n\nFor technical payment issues, please contact info@kursnavi.ch."
+        },
+        {
+          heading: "3. Data Protection",
+          text: "Your personal data is used only for the operation of the platform and contract processing. We do not pass on your data to third parties without good reason. Details can be found in our privacy policy at www.kursnavi.ch/datenschutz."
+        },
+        {
+          heading: "4. Buyer Protection for Direct Bookings",
+          text: "KursNavi offers multi-level protection for direct bookings:\n• Free cancellation within the deadlines (details at www.kursnavi.ch/widerruf-storno)\n• Goodwill requests to providers after the deadline\n• Option to object before payment to the provider in case of non-performance or significant deficiencies\n• Full refund if the course is cancelled by the provider"
+        },
+        {
+          heading: "5. Safety for Children's and Youth Courses",
+          text: "Providers of courses for minors are required to clearly declare the minimum age, ensure adequate supervision and implement safety and emergency procedures. KursNavi carries out spot checks to verify compliance with these requirements and may suspend providers in case of violations."
+        },
+        {
+          heading: "6. Contact & Reporting Problems",
+          text: "Do you have concerns about a provider or a course? Please report them to us:\nEmail: info@kursnavi.ch\nWeb: https://www.kursnavi.ch\n\nWe take all reports seriously and review them carefully."
         }
       ]
     },
@@ -430,6 +546,60 @@ export const LEGAL_CONTENT = {
         }
       ]
     },
+    widerruf: {
+      title: "Annulation & Rétractation",
+      company: "LifeSkills360 GmbH",
+      intro: "Vos droits en matière d'annulation et de rétractation pour les réservations de cours sur KursNavi (www.kursnavi.ch).",
+      sections: [
+        {
+          heading: "1. Annulation gratuite dans les délais",
+          text: "Pour les réservations directes sur KursNavi, les délais d'annulation gratuits suivants s'appliquent :\n• Cours à date fixe : annulation gratuite jusqu'à 14 jours avant la date du cours.\n• Réservations directes flexibles : annulation gratuite jusqu'à 7 jours après le paiement.\n\nEn cas d'annulation dans ces délais, le montant payé est crédité sous forme de crédit plateforme sur votre compte KursNavi. Le crédit n'expire pas et est automatiquement déduit de votre prochaine réservation. Les remboursements en espèces ou les virements bancaires du crédit ne sont pas possibles."
+        },
+        {
+          heading: "2. Demande de geste commercial après expiration du délai",
+          text: "Après expiration du délai d'annulation gratuit, vous pouvez soumettre une demande de geste commercial au prestataire via KursNavi. Le prestataire décide à sa discrétion d'un remboursement de 0 %, 25 %, 50 % ou 100 % du prix du cours. KursNavi facilite ce processus techniquement mais ne prend pas ses propres décisions de geste commercial."
+        },
+        {
+          heading: "3. Annulation du cours par le prestataire",
+          text: "Si un prestataire annule un cours à réservation directe ou si le cours n'a pas lieu, vous avez généralement droit à un remboursement intégral des frais de cours payés – indépendamment du délai d'annulation. KursNavi initiera la reversal technique via la méthode de paiement originale."
+        },
+        {
+          heading: "4. Droit légal de rétractation",
+          text: "Selon le droit suisse (CO), il n'existe pas de droit légal général de rétractation de 14 jours pour les événements de cours à date fixe. Les règles d'annulation de KursNavi conformément aux CGV article 10 font foi.\n\nPour les cours lead (demandes de cours sans réservation directe), ni une réservation ni un paiement n'est effectué via KursNavi ; la rétractation n'est pas applicable dans ce cas."
+        },
+        {
+          heading: "5. Contact",
+          text: "Pour toute question concernant les annulations, les demandes de geste commercial ou les remboursements, veuillez contacter :\nE-mail : info@kursnavi.ch\nWeb : https://www.kursnavi.ch"
+        }
+      ]
+    },
+    trust: {
+      title: "Confiance & Sécurité",
+      company: "LifeSkills360 GmbH",
+      intro: "Comment nous vous protégeons, vous et vos réservations sur KursNavi – informations sur les prestataires vérifiés, les paiements sécurisés et la protection des données.",
+      sections: [
+        {
+          heading: "1. Prestataires de cours vérifiés",
+          text: "KursNavi propose des labels de prestataire optionnels ('Prestataire professionnel', 'Prestataire certifié') pour les prestataires qui remplissent des critères internes – notamment des contrôles d'identité et de plausibilité ainsi qu'une preuve d'entreprise. Ces labels ne sont pas une certification gouvernementale mais vous donnent une première orientation sur la fiabilité du prestataire."
+        },
+        {
+          heading: "2. Traitement sécurisé des paiements",
+          text: "Les réservations directes sont traitées via Stripe, l'un des principaux prestataires de services de paiement au monde. KursNavi ne stocke aucune donnée de carte de crédit. Vos données de paiement sont transmises exclusivement sous forme cryptée à Stripe et y sont traitées selon les normes de sécurité les plus élevées (PCI-DSS)."
+        },
+        {
+          heading: "3. Protection des données",
+          text: "Vos données personnelles ne sont utilisées que pour le fonctionnement de la plateforme et le traitement des contrats. Nous ne transmettons pas vos données à des tiers sans raison valable. Les détails sont disponibles dans notre déclaration de confidentialité sur www.kursnavi.ch/datenschutz."
+        },
+        {
+          heading: "4. Protection de l'acheteur pour les réservations directes",
+          text: "KursNavi offre une protection à plusieurs niveaux pour les réservations directes :\n• Annulation gratuite dans les délais\n• Demandes de geste commercial auprès des prestataires après le délai\n• Option d'opposition avant paiement au prestataire en cas de non-exécution\n• Remboursement intégral si le cours est annulé par le prestataire"
+        },
+        {
+          heading: "5. Contact",
+          text: "Vous avez des préoccupations concernant un prestataire ou un cours ? Signalez-les nous :\nE-mail : info@kursnavi.ch\nWeb : https://www.kursnavi.ch"
+        }
+      ]
+    },
   },
   it: {
     back_btn: "Indietro",
@@ -571,6 +741,60 @@ export const LEGAL_CONTENT = {
         {
           heading: "Esclusione di Responsabilità",
           text: "Nonostante un attento controllo dei contenuti, non ci assumiamo alcuna responsabilità per i contenuti dei link esterni. I gestori delle pagine collegate sono gli unici responsabili del loro contenuto."
+        }
+      ]
+    },
+    widerruf: {
+      title: "Annullamento & Recesso",
+      company: "LifeSkills360 GmbH",
+      intro: "I suoi diritti in materia di annullamento e recesso per le prenotazioni di corsi su KursNavi (www.kursnavi.ch).",
+      sections: [
+        {
+          heading: "1. Annullamento gratuito entro il termine",
+          text: "Per le prenotazioni dirette su KursNavi si applicano i seguenti termini di annullamento gratuito:\n• Corsi a data fissa: annullamento gratuito fino a 14 giorni prima della data del corso.\n• Prenotazioni dirette flessibili: annullamento gratuito fino a 7 giorni dopo il pagamento.\n\nIn caso di annullamento entro questi termini, l'importo pagato viene accreditato come credito piattaforma sul conto KursNavi. Il credito non scade e viene detratto automaticamente dalla prossima prenotazione. Rimborsi in contanti o bonifici bancari del credito non sono possibili."
+        },
+        {
+          heading: "2. Richiesta di buona volontà dopo la scadenza del termine",
+          text: "Dopo la scadenza del termine di annullamento gratuito, è possibile inviare una richiesta di buona volontà al fornitore tramite KursNavi. Il fornitore decide a propria discrezione un rimborso dello 0%, 25%, 50% o 100% del prezzo del corso. KursNavi facilita questo processo tecnicamente ma non prende proprie decisioni di buona volontà."
+        },
+        {
+          heading: "3. Annullamento del corso da parte del fornitore",
+          text: "Se un fornitore annulla un corso a prenotazione diretta o il corso non ha luogo, ha generalmente diritto al rimborso completo della quota del corso pagata – indipendentemente dal termine di annullamento. KursNavi avvierà lo storno tecnico tramite il metodo di pagamento originale."
+        },
+        {
+          heading: "4. Diritto legale di recesso",
+          text: "Secondo il diritto svizzero (CO), non esiste un diritto legale generale di recesso di 14 giorni per gli eventi di corsi a data fissa. Le regole di annullamento di KursNavi ai sensi dell'art. 10 CGA sono determinanti."
+        },
+        {
+          heading: "5. Contatto",
+          text: "Per domande su annullamenti, richieste di buona volontà o rimborsi, si prega di contattare:\nEmail: info@kursnavi.ch\nWeb: https://www.kursnavi.ch"
+        }
+      ]
+    },
+    trust: {
+      title: "Fiducia & Sicurezza",
+      company: "LifeSkills360 GmbH",
+      intro: "Come proteggiamo lei e le sue prenotazioni su KursNavi – informazioni su fornitori verificati, pagamenti sicuri e protezione dei dati.",
+      sections: [
+        {
+          heading: "1. Fornitori di corsi verificati",
+          text: "KursNavi offre etichette fornitore opzionali ('Fornitore professionale', 'Fornitore certificato') per i fornitori che soddisfano criteri interni – tra cui controlli di identità e plausibilità nonché prova aziendale. Queste etichette non sono una certificazione governativa ma forniscono un primo orientamento sull'affidabilità del fornitore."
+        },
+        {
+          heading: "2. Elaborazione sicura dei pagamenti",
+          text: "Le prenotazioni dirette vengono elaborate tramite Stripe, uno dei principali fornitori di servizi di pagamento al mondo. KursNavi non memorizza dati di carte di credito. I dati di pagamento vengono trasmessi esclusivamente in forma crittografata a Stripe ed elaborati secondo i più elevati standard di sicurezza (PCI-DSS)."
+        },
+        {
+          heading: "3. Protezione dei dati",
+          text: "I dati personali vengono utilizzati solo per il funzionamento della piattaforma e l'elaborazione dei contratti. Non trasferiamo i dati a terzi senza motivo valido. I dettagli sono disponibili nella nostra informativa sulla privacy su www.kursnavi.ch/datenschutz."
+        },
+        {
+          heading: "4. Protezione dell'acquirente per le prenotazioni dirette",
+          text: "KursNavi offre protezione a più livelli per le prenotazioni dirette:\n• Annullamento gratuito entro i termini\n• Richieste di buona volontà ai fornitori dopo la scadenza\n• Possibilità di opposizione prima del pagamento al fornitore in caso di inadempimento\n• Rimborso completo se il corso viene annullato dal fornitore"
+        },
+        {
+          heading: "5. Contatto",
+          text: "Ha dubbi su un fornitore o un corso? La preghiamo di segnalarcelo:\nEmail: info@kursnavi.ch\nWeb: https://www.kursnavi.ch"
         }
       ]
     },
