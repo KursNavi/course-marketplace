@@ -17,7 +17,7 @@ const VARIANT_TO_KEY = {
 const VARIANT_META = {
   prof: {
     title: 'Berufliche Weiterbildung & Kurse Schweiz | KursNavi',
-    description: 'Finde Weiterbildungen, Ausbildungen und Zertifikatskurse für deine Karriere in der Schweiz. Vergleiche Angebote von geprüften Anbietern und melde dich direkt an.',
+    description: 'Finde Weiterbildungen, Ausbildungen und Zertifikatskurse für deine Karriere in der Schweiz. Vergleiche Angebote von geprüften Anbietern und melde dich an.',
     path: '/professional',
   },
   private: {

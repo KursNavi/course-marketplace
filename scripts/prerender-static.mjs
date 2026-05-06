@@ -72,6 +72,10 @@ function generateHtml(path, title, description) {
     /(<meta property="og:url" content=")[^"]*(")/,
     `$1${canonical}$2`
   );
+  html = html.replace(
+    /(<meta property="og:image" content=")[^"]*(")/,
+    `$1${BASE_URL}/og-default.png$2`
+  );
 
   return html;
 }
@@ -135,7 +139,7 @@ const STATIC_PAGES = [
   {
     path: '/professional',
     title: 'Berufliche Weiterbildung & Kurse Schweiz | KursNavi',
-    description: 'Finde Weiterbildungen, Ausbildungen und Zertifikatskurse für deine Karriere in der Schweiz. Vergleiche Angebote von geprüften Anbietern und melde dich direkt an.',
+    description: 'Finde Weiterbildungen, Ausbildungen und Zertifikatskurse für deine Karriere in der Schweiz. Vergleiche Angebote von geprüften Anbietern und melde dich an.',
   },
   {
     path: '/children',
