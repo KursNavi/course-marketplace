@@ -230,7 +230,7 @@ export const BEREICH_LANDING_CONFIG = {
 
   yoga_achtsamkeit: {
     slug: 'yoga-achtsamkeit',
-    segment: 'privat_hobby',
+    segment: 'privat-hobby',
     areaSlug: 'yoga_achtsamkeit',
     typeKey: 'privat_hobby',
     title: {
@@ -468,9 +468,14 @@ export const getBereichBySlug = (segment, slug) => {
   );
 };
 
-/** Alle Bereiche eines Segments (für MegaMenu / Home) */
+/** Alle Bereiche eines Segments (für MegaMenu / Home).
+ * Akzeptiert sowohl 'privat_hobby' als auch 'privat-hobby' als Argument,
+ * da categoryKey intern Unterstriche nutzt, URL-Segmente aber Bindestriche. */
 export const getBereicheForSegment = (segment) => {
-  return Object.values(BEREICH_LANDING_CONFIG).filter(b => b.segment === segment);
+  const normalized = (segment || '').replace(/_/g, '-');
+  return Object.values(BEREICH_LANDING_CONFIG).filter(
+    b => b.segment === segment || b.segment === normalized
+  );
 };
 
 /** Config anhand DB area slug finden */
