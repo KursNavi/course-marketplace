@@ -169,7 +169,7 @@ export default function ProviderProfilePage({ t, setView, setSelectedCourse }) {
       'og:title': `${provider.name} | KursNavi`,
       'og:description': metaDescription,
       'og:url': canonicalUrl,
-      'og:image': provider.logoUrl || `${BASE_URL}/og-default.svg`,
+      'og:image': provider.logoUrl || `${BASE_URL}/og-default.png`,
       'og:type': 'website',
       'og:locale': 'de_CH',
       'og:site_name': 'KursNavi'

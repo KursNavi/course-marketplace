@@ -55,7 +55,7 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
       'og:title': pageTitle,
       'og:description': metaDesc,
       'og:url': canonicalUrl,
-      'og:image': `${BASE_URL}/og-default.svg`,
+      'og:image': `${BASE_URL}/og-default.png`,
       'og:type': 'website',
       'og:locale': 'de_CH',
       'og:site_name': 'KursNavi'

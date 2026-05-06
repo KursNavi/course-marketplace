@@ -182,14 +182,14 @@ export const Home = ({
         'og:title': 'KursNavi - Der Schweizer Kursmarktplatz',
         'og:description': metaDescription,
         'og:url': canonicalUrl,
-        'og:image': `${BASE_URL}/og-default.svg`,
+        'og:image': `${BASE_URL}/og-default.png`,
         'og:type': 'website',
         'og:locale': 'de_CH',
         'og:site_name': 'KursNavi',
         'twitter:card': 'summary_large_image',
         'twitter:title': 'KursNavi - Der Schweizer Kursmarktplatz',
         'twitter:description': metaDescription,
-        'twitter:image': `${BASE_URL}/og-default.svg`
+        'twitter:image': `${BASE_URL}/og-default.png`
     };
 
     Object.entries(ogTags).forEach(([property, content]) => {
@@ -212,7 +212,7 @@ export const Home = ({
         "@type": "Organization",
         "name": "KursNavi",
         "url": BASE_URL,
-        "logo": `${BASE_URL}/og-default.svg`,
+        "logo": `${BASE_URL}/og-default.png`,
         "description": "Der Schweizer Kursmarktplatz für Weiterbildung, Freizeit und Kinderkurse",
         "address": {
             "@type": "PostalAddress",

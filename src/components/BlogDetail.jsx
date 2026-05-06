@@ -50,7 +50,7 @@ export default function BlogDetail({ article, setView, courses }) {
         'og:title': article.meta_title || article.title,
         'og:description': ogDescription,
         'og:url': canonicalUrl,
-        'og:image': heroImage || `${BASE_URL}/og-default.svg`,
+        'og:image': heroImage || `${BASE_URL}/og-default.png`,
         'og:type': 'article',
         'og:locale': 'de_CH',
         'og:site_name': 'KursNavi',
@@ -58,7 +58,7 @@ export default function BlogDetail({ article, setView, courses }) {
         'twitter:card': 'summary_large_image',
         'twitter:title': article.meta_title || article.title,
         'twitter:description': ogDescription,
-        'twitter:image': heroImage || `${BASE_URL}/og-default.svg`
+        'twitter:image': heroImage || `${BASE_URL}/og-default.png`
     };
 
     const createdTags = [];
@@ -118,7 +118,7 @@ export default function BlogDetail({ article, setView, courses }) {
         title: article.meta_title || article.title,
         description: metaDescription,
         url: canonicalUrl,
-        image: heroImage || `${BASE_URL}/og-default.svg`,
+        image: heroImage || `${BASE_URL}/og-default.png`,
         datePublished: article.published_at || article.created_at
     });
     const articleScript = document.createElement('script');
