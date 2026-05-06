@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { ArrowRight, Sparkles } from 'lucide-react';
 import { SEGMENT_LANDING_CONFIG } from '../lib/segmentLandingConfig';
 import { SEGMENT_CONFIG } from '../lib/constants';
+import { buildCanonical, getRobotsPolicy } from '../lib/seoUtils';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -11,6 +12,24 @@ const VARIANT_TO_KEY = {
   prof: 'beruflich',
   private: 'privat_hobby',
   kids: 'kinder_jugend',
+};
+
+const VARIANT_META = {
+  prof: {
+    title: 'Berufliche Weiterbildung Schweiz | KursNavi',
+    description: 'Finde Weiterbildungen, Ausbildungen und Zertifikatskurse für deine Karriere in der Schweiz.',
+    path: '/professional',
+  },
+  private: {
+    title: 'Privatkurse & Hobbykurse Schweiz | KursNavi',
+    description: 'Entdecke Kurse für deine Freizeit, Hobbys und persönliche Entwicklung in der Schweiz.',
+    path: '/private',
+  },
+  kids: {
+    title: 'Kinderkurse Schweiz | KursNavi',
+    description: 'Entdecke Kurse und Freizeitangebote für Kinder und Jugendliche in der Schweiz.',
+    path: '/children',
+  },
 };
 
 const VARIANT_TO_SEARCH_TYPE = {
@@ -193,6 +212,60 @@ const LandingView = ({
   const segCfg = SEGMENT_CONFIG[segmentKey];
   const landingCfg = SEGMENT_LANDING_CONFIG[segmentKey];
   const searchTypeKey = VARIANT_TO_SEARCH_TYPE[variant] || 'privat_hobby';
+
+  // SEO Meta Tags — sync on every variant change (e.g. SPA navigation)
+  useEffect(() => {
+    const meta = VARIANT_META[variant];
+    if (!meta) return;
+
+    document.title = meta.title;
+
+    let descTag = document.querySelector('meta[name="description"]');
+    if (!descTag) {
+      descTag = document.createElement('meta');
+      descTag.name = 'description';
+      document.head.appendChild(descTag);
+    }
+    descTag.content = meta.description;
+
+    let robotsTag = document.querySelector('meta[name="robots"]');
+    if (!robotsTag) {
+      robotsTag = document.createElement('meta');
+      robotsTag.name = 'robots';
+      document.head.appendChild(robotsTag);
+    }
+    robotsTag.content = getRobotsPolicy();
+
+    const canonicalUrl = buildCanonical(meta.path);
+    let canonicalTag = document.querySelector('link[rel="canonical"]');
+    if (!canonicalTag) {
+      canonicalTag = document.createElement('link');
+      canonicalTag.rel = 'canonical';
+      document.head.appendChild(canonicalTag);
+    }
+    canonicalTag.href = canonicalUrl;
+
+    const ogTags = {
+      'og:title': meta.title,
+      'og:description': meta.description,
+      'og:url': canonicalUrl,
+    };
+    const createdOgTags = [];
+    Object.entries(ogTags).forEach(([property, content]) => {
+      let tag = document.querySelector(`meta[property="${property}"]`);
+      if (!tag) {
+        tag = document.createElement('meta');
+        tag.setAttribute('property', property);
+        document.head.appendChild(tag);
+        createdOgTags.push(tag);
+      }
+      tag.content = content;
+    });
+
+    return () => {
+      createdOgTags.forEach((tag) => tag.remove());
+    };
+  }, [variant]);
 
   const heroImages = {
     prof: 'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&q=80&w=2000',
