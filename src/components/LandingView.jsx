@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { ArrowRight, Sparkles } from 'lucide-react';
 import { SEGMENT_LANDING_CONFIG } from '../lib/segmentLandingConfig';
 import { SEGMENT_CONFIG } from '../lib/constants';
-import { buildCanonical, getRobotsPolicy } from '../lib/seoUtils';
+import { buildCanonical, getRobotsPolicy, DEFAULT_OG_IMAGE } from '../lib/seoUtils';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -16,18 +16,18 @@ const VARIANT_TO_KEY = {
 
 const VARIANT_META = {
   prof: {
-    title: 'Berufliche Weiterbildung Schweiz | KursNavi',
-    description: 'Finde Weiterbildungen, Ausbildungen und Zertifikatskurse für deine Karriere in der Schweiz.',
+    title: 'Berufliche Weiterbildung & Kurse Schweiz | KursNavi',
+    description: 'Finde Weiterbildungen, Ausbildungen und Zertifikatskurse für deine Karriere in der Schweiz. Vergleiche Angebote von geprüften Anbietern und melde dich direkt an.',
     path: '/professional',
   },
   private: {
-    title: 'Privatkurse & Hobbykurse Schweiz | KursNavi',
-    description: 'Entdecke Kurse für deine Freizeit, Hobbys und persönliche Entwicklung in der Schweiz.',
+    title: 'Privatkurse & Hobbykurse in der Schweiz | KursNavi',
+    description: 'Entdecke Kurse für deine Freizeit, Hobbys und persönliche Entwicklung in der Schweiz. Von Yoga bis Kreativkurse – finde dein nächstes Hobby.',
     path: '/private',
   },
   kids: {
-    title: 'Kinderkurse Schweiz | KursNavi',
-    description: 'Entdecke Kurse und Freizeitangebote für Kinder und Jugendliche in der Schweiz.',
+    title: 'Kinderkurse & Jugendkurse in der Schweiz | KursNavi',
+    description: 'Entdecke Kurse und Freizeitangebote für Kinder und Jugendliche in der Schweiz. Sport, Kreativität, Musik und mehr – für jedes Alter das Richtige.',
     path: '/children',
   },
 };
@@ -249,6 +249,7 @@ const LandingView = ({
       'og:title': meta.title,
       'og:description': meta.description,
       'og:url': canonicalUrl,
+      'og:image': buildCanonical(DEFAULT_OG_IMAGE),
     };
     const createdOgTags = [];
     Object.entries(ogTags).forEach(([property, content]) => {

@@ -1,5 +1,4 @@
 <svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
-  <!-- Background Gradient -->
   <defs>
     <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" style="stop-color:#FFF5F0;stop-opacity:1" />
@@ -7,28 +6,43 @@
     </linearGradient>
   </defs>
 
+  <!-- Background -->
   <rect width="1200" height="630" fill="url(#bgGradient)"/>
 
-  <!-- Logo Icon (Compass + Book) -->
-  <g transform="translate(500, 200)">
-    <!-- 4-Point Star (Compass) -->
+  <!-- Top accent bar -->
+  <rect x="0" y="0" width="1200" height="8" fill="#E85D30"/>
+
+  <!-- Logo Icon (Compass + Book), centered at top -->
+  <g transform="translate(500, 40)">
     <path d="M100 0L115 50L165 65L115 80L100 130L85 80L35 65L85 50L100 0Z" fill="#E85D30" opacity="0.9"/>
-    <!-- Book (Left Page) -->
     <path d="M20 100L90 120V160L20 140V100Z" fill="#1C1C1C" opacity="0.85"/>
-    <!-- Book (Right Page) -->
     <path d="M110 120L180 100V140L110 160V120Z" fill="#1C1C1C" opacity="0.85"/>
   </g>
 
-  <!-- KursNavi Text -->
-  <text x="600" y="420" font-family="Arial, sans-serif" font-size="80" font-weight="bold" text-anchor="middle" fill="#1C1C1C">
+  <!-- KursNavi brand -->
+  <text x="600" y="255" font-family="Arial, sans-serif" font-size="72" font-weight="bold" text-anchor="middle" fill="#1C1C1C">
     Kurs<tspan fill="#E85D30">Navi</tspan>
   </text>
 
-  <!-- Tagline -->
-  <text x="600" y="480" font-family="Arial, sans-serif" font-size="32" text-anchor="middle" fill="#6B7280">
-    Der Schweizer Kursmarktplatz
+  <!-- Divider -->
+  <rect x="490" y="272" width="220" height="3" fill="#E85D30" opacity="0.4" rx="1.5"/>
+
+  <!-- Headline (clear, prominent) -->
+  <text x="600" y="345" font-family="Arial, sans-serif" font-size="42" font-weight="bold" text-anchor="middle" fill="#1C1C1C">
+    Kurse &amp; Weiterbildung in der Schweiz
   </text>
 
-  <!-- Bottom Accent Line -->
-  <rect x="400" y="520" width="400" height="4" fill="#E85D30" opacity="0.6" rx="2"/>
+  <!-- Subline -->
+  <text x="600" y="400" font-family="Arial, sans-serif" font-size="28" text-anchor="middle" fill="#6B7280">
+    Finde, vergleiche und buche Kurse – schweizweit
+  </text>
+
+  <!-- CTA Button -->
+  <rect x="400" y="448" width="400" height="68" rx="34" fill="#E85D30"/>
+  <text x="600" y="491" font-family="Arial, sans-serif" font-size="28" font-weight="bold" text-anchor="middle" dominant-baseline="middle" fill="white">
+    Jetzt Kurs finden
+  </text>
+
+  <!-- Bottom subtle line -->
+  <rect x="0" y="622" width="1200" height="8" fill="#E85D30" opacity="0.3"/>
 </svg>

@@ -206,14 +206,14 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
             'og:title': `${course.title} in ${locationLabel}`,
             'og:description': metaDescription,
             'og:url': canonicalUrl,
-            'og:image': course.image_url || `${BASE_URL}/og-default.svg`,
+            'og:image': course.image_url || `${BASE_URL}/og-default.png`,
             'og:type': 'website',
             'og:locale': 'de_CH',
             'og:site_name': 'KursNavi',
             'twitter:card': 'summary_large_image',
             'twitter:title': `${course.title} in ${locationLabel}`,
             'twitter:description': metaDescription,
-            'twitter:image': course.image_url || `${BASE_URL}/og-default.svg`
+            'twitter:image': course.image_url || `${BASE_URL}/og-default.png`
         };
 
         Object.entries(ogTags).forEach(([property, content]) => {

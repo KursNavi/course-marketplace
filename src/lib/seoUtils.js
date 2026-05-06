@@ -228,4 +228,4 @@ export function getDisclaimerText(slug) {
   return 'Dieser Artikel dient der allgemeinen Information. Förderbedingungen und Beträge können sich ändern. Prüfe aktuelle Konditionen direkt bei den genannten Stellen.';
 }
 
-export const DEFAULT_OG_IMAGE = '/og-default.svg';
+export const DEFAULT_OG_IMAGE = '/og-default.png';
