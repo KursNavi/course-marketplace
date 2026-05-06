@@ -92,13 +92,16 @@ export default async function handler(req, res) {
       '/anbieter',
       '/agb',
       '/datenschutz',
-      '/impressum'
+      '/impressum',
+      '/vertrauen-sicherheit',
+      '/widerruf-storno'
     ].map((page) => {
+      const isLegal = ['/vertrauen-sicherheit', '/widerruf-storno'].includes(page);
       return `
       <url>
           <loc>${baseUrl}${page}</loc>
-          <changefreq>weekly</changefreq>
-          <priority>${page === '' ? '1.0' : '0.8'}</priority>
+          <changefreq>${isLegal ? 'yearly' : 'weekly'}</changefreq>
+          <priority>${page === '' ? '1.0' : isLegal ? '0.5' : '0.8'}</priority>
       </url>`;
     }).join('');
 
