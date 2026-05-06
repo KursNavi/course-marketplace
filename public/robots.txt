@@ -4,6 +4,7 @@ Allow: /
 # Private Bereiche schützen (Crawl Budget sparen)
 Disallow: /dashboard
 Disallow: /control-room-2025
+Disallow: /admin-blog
 Disallow: /create-course
 Disallow: /success
 Disallow: /login

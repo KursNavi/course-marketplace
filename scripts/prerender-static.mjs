@@ -161,6 +161,16 @@ const STATIC_PAGES = [
     title: 'Impressum | KursNavi',
     description: 'Impressum und rechtliche Informationen zu KursNavi.',
   },
+  {
+    path: '/vertrauen-sicherheit',
+    title: 'Vertrauen & Sicherheit | KursNavi',
+    description: 'So schützt KursNavi deine Daten und deine Buchungen – Informationen zu Datenschutz, Zahlungssicherheit und vertrauenswürdigen Kursanbietern.',
+  },
+  {
+    path: '/widerruf-storno',
+    title: 'Widerruf & Stornierung | KursNavi',
+    description: 'Deine Rechte bei Widerruf und Stornierung von Kursbuchungen auf KursNavi – Fristen, Voraussetzungen und das Verfahren im Überblick.',
+  },
 ];
 
 // ─── Ratgeber data ───────────────────────────────────────────────────────────
