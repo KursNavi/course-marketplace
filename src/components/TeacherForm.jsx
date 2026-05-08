@@ -735,12 +735,23 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
             }
 
         } else if (user && user.id) {
-             supabase.from('profiles').select('preferred_language').eq('id', user.id).single()
+             supabase.from('profiles').select('preferred_language, street, city, canton').eq('id', user.id).single()
              .then(({ data }) => {
-                 // Only update if component is mounted AND user hasn't made changes
-                 if (data?.preferred_language && isMounted && !formDataRef.current?.isDirty) {
+                 if (!isMounted || formDataRef.current?.isDirty) return;
+                 // Pre-fill course language from profile preference
+                 if (data?.preferred_language) {
                     const map = { de: 'Deutsch', fr: 'Französisch', it: 'Italienisch', en: 'Englisch' };
                     if (map[data.preferred_language]) setCourseLanguages([map[data.preferred_language]]);
+                 }
+                 // Pre-fill first location from profile Hauptstandort (only if no draft)
+                 if (!draft && data?.canton) {
+                    setLocations([{
+                        type: 'presence',
+                        street: data.street || '',
+                        city: data.city || '',
+                        canton: data.canton || '',
+                        location_abroad: ''
+                    }]);
                  }
              });
         }
