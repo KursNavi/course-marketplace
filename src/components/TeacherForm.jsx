@@ -519,6 +519,9 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
     // Track if initial data loading is complete (to avoid saving draft during initialization)
     const initCompleteRef = useRef(false);
 
+    // Store profile Hauptstandort for pre-filling new events
+    const profileLocationRef = useRef(null);
+
     // Use useLayoutEffect to update ref SYNCHRONOUSLY after render (before unmount cleanup runs)
     // This ensures formDataRef always has the latest values when the component unmounts
     useLayoutEffect(() => {
@@ -735,12 +738,27 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
             }
 
         } else if (user && user.id) {
-             supabase.from('profiles').select('preferred_language').eq('id', user.id).single()
+             supabase.from('profiles').select('preferred_language, street, city, canton').eq('id', user.id).single()
              .then(({ data }) => {
-                 // Only update if component is mounted AND user hasn't made changes
-                 if (data?.preferred_language && isMounted && !formDataRef.current?.isDirty) {
+                 if (!isMounted || formDataRef.current?.isDirty) return;
+                 // Pre-fill course language from profile preference
+                 if (data?.preferred_language) {
                     const map = { de: 'Deutsch', fr: 'Französisch', it: 'Italienisch', en: 'Englisch' };
                     if (map[data.preferred_language]) setCourseLanguages([map[data.preferred_language]]);
+                 }
+                 // Store profile location so addEvent can use it for pre-filling
+                 if (data?.canton) {
+                    profileLocationRef.current = {
+                        street: data.street || '',
+                        city: data.city || '',
+                        canton: data.canton || ''
+                    };
+                 }
+                 // Pre-fill first location (lead/flex) and first event (platform) from profile Hauptstandort
+                 if (!draft && data?.canton) {
+                    const profileLoc = { type: 'presence', street: data.street || '', city: data.city || '', canton: data.canton || '', location_abroad: '' };
+                    setLocations([profileLoc]);
+                    setEvents([{ id: null, bookingCount: 0, ...profileLoc, start_date: '', max_participants: 0, schedule_description: '' }]);
                  }
              });
         }
@@ -977,7 +995,11 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
         markDirty();
     };
 
-    const addEvent = () => { setEvents([...events, { id: null, bookingCount: 0, type: 'presence', start_date: '', street: '', city: '', max_participants: 0, canton: '', schedule_description: '', location_abroad: '' }]); markDirty(); };
+    const addEvent = () => {
+        const loc = profileLocationRef.current;
+        setEvents([...events, { id: null, bookingCount: 0, type: 'presence', start_date: '', street: loc?.street || '', city: loc?.city || '', max_participants: 0, canton: loc?.canton || '', schedule_description: '', location_abroad: '' }]);
+        markDirty();
+    };
     const removeEvent = (index) => {
         const target = events[index];
         if ((target?.bookingCount || 0) > 0) return;

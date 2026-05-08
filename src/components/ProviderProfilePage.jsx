@@ -196,6 +196,7 @@ export default function ProviderProfilePage({ t, setView, setSelectedCourse }) {
       "description": provider.description,
       "address": {
         "@type": "PostalAddress",
+        ...(provider.location?.street ? { "streetAddress": provider.location.street } : {}),
         "addressLocality": provider.location?.city,
         "addressRegion": provider.location?.canton,
         "addressCountry": "CH"
@@ -412,10 +413,10 @@ export default function ProviderProfilePage({ t, setView, setSelectedCourse }) {
                 )}
               </div>
 
-              {(provider.location?.city || provider.location?.canton) && (
+              {(provider.location?.street || provider.location?.city || provider.location?.canton) && (
                 <p className="flex items-center text-gray-600 mb-4">
-                  <MapPin className="w-4 h-4 mr-2" />
-                  {[provider.location.city, provider.location.canton].filter(Boolean).join(', ')}
+                  <MapPin className="w-4 h-4 mr-2 flex-shrink-0" />
+                  {[provider.location.street, provider.location.city, provider.location.canton].filter(Boolean).join(', ')}
                 </p>
               )}
 
@@ -423,7 +424,7 @@ export default function ProviderProfilePage({ t, setView, setSelectedCourse }) {
                 <div className="flex flex-wrap gap-2 mb-4">
                   {provider.additionalLocations.map((loc, idx) => (
                     <span key={idx} className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
-                      {[loc.city, loc.canton].filter(Boolean).join(', ')}
+                      {[loc.street, loc.city, loc.canton].filter(Boolean).join(', ')}
                     </span>
                   ))}
                 </div>
@@ -617,7 +618,7 @@ export default function ProviderProfilePage({ t, setView, setSelectedCourse }) {
                     <MapPin className="w-5 h-5 text-orange-500 flex-shrink-0 mt-0.5" />
                     <div>
                       <p className="font-medium text-gray-900">
-                        {[provider.location.city, provider.location.canton].filter(Boolean).join(', ')}
+                        {[provider.location.street, provider.location.city, provider.location.canton].filter(Boolean).join(', ')}
                       </p>
                       <p className="text-sm text-gray-500">Hauptstandort</p>
                     </div>

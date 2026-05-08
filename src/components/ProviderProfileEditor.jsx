@@ -38,6 +38,7 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
   const [profileData, setProfileData] = useState({
     // Basic fields (all teachers)
     full_name: '',
+    street: '',
     city: '',
     canton: '',
     bio_text: '',
@@ -124,7 +125,7 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
 
         // Base columns that always exist
         const baseColumns = `
-          full_name, city, canton, bio_text, certificates,
+          full_name, street, city, canton, bio_text, certificates,
           preferred_language, website_url, additional_locations,
           verification_status, package_tier,
           stripe_connect_account_id, stripe_connect_onboarding_complete
@@ -165,6 +166,7 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
 
         setProfileData({
           full_name: data.full_name || '',
+          street: data.street || '',
           city: data.city || '',
           canton: data.canton || '',
           bio_text: data.bio_text || '',
@@ -330,10 +332,11 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
         formattedUrl = `https://${formattedUrl}`;
       }
 
-      const validLocations = additionalLocations.filter(loc => loc.city.trim());
+      const validLocations = additionalLocations.filter(loc => loc.canton?.trim());
 
       const profileUpdates = {
         full_name: profileData.full_name,
+        street: profileData.street?.trim() || null,
         city: profileData.city,
         canton: profileData.canton,
         preferred_language: profileData.preferred_language,
@@ -852,24 +855,27 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
           </div>
 
           {/* Location */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-1">
-                {isTeacher ? (t?.lbl_main_location || 'Hauptstandort') : 'Standort'}
-              </label>
+          <div className="space-y-3">
+            <label className="block text-sm font-bold text-gray-700">
+              {isTeacher ? (t?.lbl_main_location || 'Hauptstandort') : 'Standort'}
+            </label>
+            <input
+              type="text"
+              name="street"
+              value={profileData.street}
+              onChange={handleChange}
+              placeholder="Strasse und Hausnummer (optional)"
+              className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-400 focus:border-orange-400 outline-none"
+            />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <input
                 type="text"
                 name="city"
                 value={profileData.city}
                 onChange={handleChange}
-                placeholder="Stadt"
+                placeholder="PLZ / Stadt (optional)"
                 className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-400 focus:border-orange-400 outline-none"
               />
-            </div>
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-1">
-                {t?.lbl_canton || 'Kanton'}
-              </label>
               <div className="relative">
                 <select
                   name="canton"
@@ -877,7 +883,7 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
                   onChange={handleChange}
                   className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-400 focus:border-orange-400 outline-none appearance-none bg-white"
                 >
-                  <option value="">Kanton wählen</option>
+                  <option value="">Kanton wählen *</option>
                   {SWISS_CANTONS.filter(c => c !== 'Online').map(c => (
                     <option key={c} value={c}>{c}</option>
                   ))}
@@ -894,51 +900,67 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
                 <MapPin className="w-4 h-4 mr-1 text-gray-400" />
                 {t?.lbl_additional_locations || 'Weitere Standorte'}
               </label>
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {additionalLocations.map((loc, idx) => (
-                  <div key={idx} className="flex items-center gap-2">
+                  <div key={idx} className="p-3 border border-gray-200 rounded-lg space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-gray-500 font-medium">Standort {idx + 1}</span>
+                      <button
+                        type="button"
+                        onClick={() => setAdditionalLocations(additionalLocations.filter((_, i) => i !== idx))}
+                        className="p-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition"
+                        title="Standort entfernen"
+                      >
+                        <XCircle className="w-4 h-4" />
+                      </button>
+                    </div>
                     <input
                       type="text"
-                      value={loc.city}
+                      value={loc.street || ''}
                       onChange={(e) => {
                         const updated = [...additionalLocations];
-                        updated[idx] = { ...updated[idx], city: e.target.value };
+                        updated[idx] = { ...updated[idx], street: e.target.value };
                         setAdditionalLocations(updated);
                       }}
-                      placeholder="Stadt / Ort"
-                      className="flex-1 px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-400 outline-none"
+                      placeholder="Strasse und Hausnummer (optional)"
+                      className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-400 outline-none"
                     />
-                    <div className="relative">
-                      <select
-                        value={loc.canton}
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={loc.city || ''}
                         onChange={(e) => {
                           const updated = [...additionalLocations];
-                          updated[idx] = { ...updated[idx], canton: e.target.value };
+                          updated[idx] = { ...updated[idx], city: e.target.value };
                           setAdditionalLocations(updated);
                         }}
-                        className="w-40 px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-400 outline-none appearance-none bg-white"
-                      >
-                        <option value="">Kanton</option>
-                        {SWISS_CANTONS.filter(c => c !== 'Online').map(c => (
-                          <option key={c} value={c}>{c}</option>
-                        ))}
-                      </select>
-                      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
+                        placeholder="PLZ / Stadt (optional)"
+                        className="flex-1 px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-400 outline-none"
+                      />
+                      <div className="relative">
+                        <select
+                          value={loc.canton || ''}
+                          onChange={(e) => {
+                            const updated = [...additionalLocations];
+                            updated[idx] = { ...updated[idx], canton: e.target.value };
+                            setAdditionalLocations(updated);
+                          }}
+                          className="w-40 px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-400 outline-none appearance-none bg-white"
+                        >
+                          <option value="">Kanton *</option>
+                          {SWISS_CANTONS.filter(c => c !== 'Online').map(c => (
+                            <option key={c} value={c}>{c}</option>
+                          ))}
+                        </select>
+                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
+                      </div>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => setAdditionalLocations(additionalLocations.filter((_, i) => i !== idx))}
-                      className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
-                      title="Standort entfernen"
-                    >
-                      <XCircle className="w-4 h-4" />
-                    </button>
                   </div>
                 ))}
               </div>
               <button
                 type="button"
-                onClick={() => setAdditionalLocations([...additionalLocations, { city: '', canton: '' }])}
+                onClick={() => setAdditionalLocations([...additionalLocations, { street: '', city: '', canton: '' }])}
                 className="mt-2 text-sm font-bold text-orange-500 hover:text-orange-600 flex items-center gap-1 transition"
               >
                 <Plus className="w-4 h-4" /> Standort hinzufügen

@@ -121,7 +121,7 @@ export default async function handler(req, res) {
         .from('profiles')
         .select(`
           id, full_name, slug, logo_url, cover_image_url,
-          show_email_publicly, profile_published_at, website_url, city, canton,
+          show_email_publicly, profile_published_at, website_url, street, city, canton,
           additional_locations, verification_status, package_tier, bio_text, certificates,
           phone, social_linkedin, social_instagram, social_facebook, social_youtube
         `)
@@ -278,7 +278,7 @@ export default async function handler(req, res) {
         showEmailPublicly: provider.show_email_publicly || false,
         contactEmail: contactEmail,
         phone: provider.phone || null,
-        location: { city: provider.city, canton: provider.canton },
+        location: { street: provider.street || null, city: provider.city, canton: provider.canton },
         additionalLocations: additionalLocations,
         isVerified: provider.verification_status === 'verified',
         certificates: provider.certificates || [],
@@ -306,6 +306,7 @@ export default async function handler(req, res) {
         description: provider.bio_text,
         address: {
           '@type': 'PostalAddress',
+          ...(provider.street ? { streetAddress: provider.street } : {}),
           addressLocality: provider.city,
           addressRegion: provider.canton,
           addressCountry: 'CH'
