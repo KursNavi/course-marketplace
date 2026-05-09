@@ -2013,12 +2013,10 @@ if (bookingType === 'platform') {
                             </div>
                         </div>
 
-                        {selectedLevel !== 'beginner' && selectedLevel !== 'all_levels' && (
-                            <div className="mt-4 pt-4 border-t border-orange-200/50">
-                                <span className="text-xs text-gray-500 block mb-1">Voraussetzungen</span>
-                                <textarea name="prerequisites" value={prerequisites} onChange={(e) => { setPrerequisites(e.target.value); markDirty(); }} rows="2" className="w-full px-3 py-2 border rounded-lg focus:ring-primary bg-white text-sm" placeholder="z.B. Eigener Laptop, Grundkenntnisse in..." />
-                            </div>
-                        )}
+                        <div className="mt-4 pt-4 border-t border-orange-200/50">
+                            <span className="text-xs text-gray-500 block mb-1">Voraussetzungen <span className="text-gray-400">(optional)</span></span>
+                            <textarea name="prerequisites" value={prerequisites} onChange={(e) => { setPrerequisites(e.target.value); markDirty(); }} rows="2" className="w-full px-3 py-2 border rounded-lg focus:ring-primary bg-white text-sm" placeholder="z.B. Eigener Laptop, Grundkenntnisse in..." />
+                        </div>
                     </div>
                 </div>
 
