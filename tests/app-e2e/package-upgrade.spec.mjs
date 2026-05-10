@@ -28,7 +28,8 @@ test.describe('Package Upgrade (hybrid app-e2e)', () => {
 
     // Navigate to dashboard
     await page.goto('/dashboard');
-    await expect(page.getByText('Dein Plan')).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText('Wähle einen Bereich, um loszulegen.')).toBeVisible({ timeout: 10_000 });
+    await page.getByRole('button', { name: 'Anderes' }).click();
 
     // Click "Abo upgraden / verwalten" to open the subscription section
     await page.getByRole('button', { name: /abo upgraden/i }).click();

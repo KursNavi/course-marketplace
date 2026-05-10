@@ -10,9 +10,9 @@ test.describe('Provider Profile Edit (app-e2e)', () => {
 
     // Navigate to dashboard
     await page.goto('/dashboard');
-    await expect(page.getByText('Dein Plan')).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText('Wähle einen Bereich, um loszulegen.')).toBeVisible({ timeout: 10_000 });
 
-    // Click the Profil tab
+    // Click the Profil tile
     await page.getByRole('button', { name: 'Profil' }).click();
 
     // Profile form should load
@@ -51,7 +51,7 @@ test.describe('Provider Profile Edit (app-e2e)', () => {
     await loginAsTeacher(page);
 
     await page.goto('/dashboard');
-    await expect(page.getByText('Dein Plan')).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText('Wähle einen Bereich, um loszulegen.')).toBeVisible({ timeout: 10_000 });
 
     await page.getByRole('button', { name: 'Profil' }).click();
 

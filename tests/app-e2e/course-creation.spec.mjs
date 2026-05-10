@@ -62,7 +62,7 @@ test.describe('Course Creation (hybrid app-e2e)', () => {
 
     // ── Submit ──────────────────────────────────────────────
 
-    await page.getByRole('button', { name: 'Veröffentlichen' }).click();
+    await page.getByRole('button', { name: 'Kurs speichern' }).click();
 
     // ── Verify success ──────────────────────────────────────
 

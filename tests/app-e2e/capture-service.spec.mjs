@@ -26,7 +26,8 @@ test.describe('Capture Service / Listungsservice (hybrid app-e2e)', () => {
 
     // Navigate to dashboard
     await page.goto('/dashboard');
-    await expect(page.getByText('Dein Plan')).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText('Wähle einen Bereich, um loszulegen.')).toBeVisible({ timeout: 10_000 });
+    await page.getByRole('button', { name: 'Kursangebot' }).click();
 
     // Click "Service buchen (ab CHF 50.-)" to open the CaptureServiceModal
     await page.getByRole('button', { name: /service buchen/i }).click();
