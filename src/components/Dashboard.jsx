@@ -2341,11 +2341,14 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                  <div><h1 className="text-3xl font-bold text-dark font-heading">{user.role === 'teacher' ? t.teacher_dash : t.student_dash}</h1><p className="text-gray-500">Welcome back, {user.name}</p></div>
                 {dashView !== 'overview' && (
                     <button
-                        onClick={() => setDashView('overview')}
+                        onClick={() => {
+                            const anderesViews = ['analytics', 'subscription', 'merkliste'];
+                            setDashView(anderesViews.includes(dashView) ? 'anderes' : 'overview');
+                        }}
                         className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-primary transition font-medium"
                     >
                         <ChevronRight className="w-4 h-4 rotate-180" />
-                        Zurück zur Übersicht
+                        Zurück
                     </button>
                 )}
                 

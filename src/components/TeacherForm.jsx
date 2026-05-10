@@ -844,6 +844,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
             return;
         }
         setEditingCourse(null);
+        sessionStorage.setItem('dashOpenTab', 'kursangebot');
         setView('dashboard');
     };
 
@@ -856,6 +857,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
         }
         setShowUnsavedChangesModal(false);
         setEditingCourse(null);
+        sessionStorage.setItem('dashOpenTab', 'kursangebot');
         setView('dashboard');
     };
 
@@ -1990,80 +1992,38 @@ if (bookingType === 'platform') {
 
                     {/* DYNAMIC FIELDS */}
                     <div className="animate-in fade-in slide-in-from-top-4 duration-300">
-                        
-                        {/* A: PRICE / LINK FIELDS */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                            <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-1">Anzahl Lektionen (Optional)</label>
-                                <input type="text" name="sessionCount" value={sessionCount} onChange={(e) => { setSessionCount(e.target.value); markDirty(); }} placeholder="z.B. 8 Einheiten à 60 Min." className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-1">Lektionsdauer (Optional)</label>
-                                <input type="text" name="sessionLength" value={sessionLength} onChange={(e) => { setSessionLength(e.target.value); markDirty(); }} placeholder="z.B. 2 Stunden" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-1">Preis (CHF)</label>
-                                <input type="number" min="0" name="price" value={price} onChange={(e) => { setPrice(e.target.value); markDirty(); }} placeholder={bookingType === 'lead' ? "Optional" : "0 = Kostenlos"} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
-                                {(bookingType === 'platform' || bookingType === 'platform_flex') && (!price || Number(price) === 0) && (
-                                    <p className="text-xs text-amber-600 mt-1">Kein Preis = Kostenloser Kurs (Grund erforderlich)</p>
-                                )}
-                            </div>
-                            {(bookingType === 'platform' || bookingType === 'platform_flex') && (!price || Number(price) === 0) && (
-                                <div className="md:col-span-2">
-                                    <label className="block text-sm font-bold text-gray-700 mb-1">Warum ist dieser Kurs kostenlos? *</label>
-                                    <textarea name="freeReason" value={freeReason} onChange={(e) => { setFreeReason(e.target.value); markDirty(); }} placeholder="z.B. Schnupperkurs, Probetraining, ehrenamtliches Angebot…" rows={2} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none resize-none" />
+
+                        {/* Direkt/Flex: Pflichtfelder Preis, Lektionen, Dauer */}
+                        {(bookingType === 'platform' || bookingType === 'platform_flex') && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-700 mb-1">Preis (CHF) <span className="text-red-500">*</span></label>
+                                    <input type="number" min="0" name="price" value={price} onChange={(e) => { setPrice(e.target.value); markDirty(); }} placeholder="0 = Kostenlos" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+                                    {(!price || Number(price) === 0) && (
+                                        <p className="text-xs text-amber-600 mt-1">Kein Preis = Kostenloser Kurs (Grund erforderlich)</p>
+                                    )}
                                 </div>
-                            )}
-                            <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-1">Webseite (Optional)</label>
-                                <input type="url" name="providerUrl" value={providerUrl} onChange={(e) => { setProviderUrl(e.target.value); markDirty(); }} placeholder="https://..." className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
-                            </div>
-                            {(bookingType === 'platform' || bookingType === 'platform_flex') && (
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-700 mb-1">Anzahl Lektionen <span className="text-red-500">*</span></label>
+                                    <input type="text" name="sessionCount" value={sessionCount} onChange={(e) => { setSessionCount(e.target.value); markDirty(); }} placeholder="z.B. 8 Einheiten à 60 Min." className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-700 mb-1">Lektionsdauer <span className="text-red-500">*</span></label>
+                                    <input type="text" name="sessionLength" value={sessionLength} onChange={(e) => { setSessionLength(e.target.value); markDirty(); }} placeholder="z.B. 2 Stunden" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+                                </div>
                                 <div>
                                     <label className="block text-sm font-bold text-gray-700 mb-1">Max. Buchungen pro 30 Tage</label>
                                     <input type="number" min="1" name="ticketLimit30d" value={ticketLimit30d} onChange={(e) => { setTicketLimit30d(e.target.value); markDirty(); }} placeholder="Leer = unbegrenzt" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
-                                    <p className="text-xs text-gray-500 mt-1">Begrenzt die Anzahl Buchungen in 30 Tagen. Nach Ablauf wird das Kontingent zurückgesetzt.</p>
+                                    <p className="text-xs text-gray-500 mt-1">Begrenzt die Anzahl Buchungen in 30 Tagen.</p>
                                 </div>
-                            )}
-                        </div>
-
-                        {/* C: KINDER-KURS EINSTELLUNGEN / MINDESTALTER */}
-                        {(() => {
-                            const isKinder = categories[0]?.type === 'kinder' || categories[0]?.type === 'kinder_jugend';
-                            return isKinder ? (
-                                <div className="bg-yellow-50 p-4 rounded-xl border border-yellow-200 mb-6">
-                                    <h4 className="text-sm font-bold text-yellow-900 mb-3">Kinder-Kurs Einstellungen</h4>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="block text-sm font-bold text-gray-700 mb-1">Mindestalter *</label>
-                                            <input
-                                                type="number"
-                                                min="0"
-                                                max="18"
-                                                value={minAge}
-                                                onChange={(e) => { setMinAge(e.target.value); markDirty(); }}
-                                                placeholder="z.B. 6"
-                                                required
-                                                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none"
-                                            />
-                                            <p className="text-xs text-gray-500 mt-1">Ab welchem Alter ist der Kurs geeignet?</p>
-                                        </div>
+                                {(!price || Number(price) === 0) && (
+                                    <div className="md:col-span-2">
+                                        <label className="block text-sm font-bold text-gray-700 mb-1">Warum ist dieser Kurs kostenlos? *</label>
+                                        <textarea name="freeReason" value={freeReason} onChange={(e) => { setFreeReason(e.target.value); markDirty(); }} placeholder="z.B. Schnupperkurs, Probetraining, ehrenamtliches Angebot…" rows={2} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none resize-none" />
                                     </div>
-                                </div>
-                            ) : (
-                                <div className="mb-6">
-                                    <label className="block text-sm font-bold text-gray-700 mb-1">Mindestalter (Optional)</label>
-                                    <input
-                                        type="number"
-                                        min="0"
-                                        value={minAge}
-                                        onChange={(e) => { setMinAge(e.target.value); markDirty(); }}
-                                        placeholder="Leer = kein Mindestalter"
-                                        className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none"
-                                    />
-                                </div>
-                            );
-                        })()}
+                                )}
+                            </div>
+                        )}
 
                         {/* B: DATES & LOCATIONS */}
                         {bookingType === 'platform' ? (
@@ -2243,25 +2203,11 @@ if (bookingType === 'platform') {
                     </div>
                 </div>
 
-                {/* === ABSCHNITT C: BEREITS VORAUSGEFÜLLT === */}
+                {/* === ABSCHNITT C: SONSTIGE KURSDETAILS === */}
                 <div className="border-t border-gray-100 pt-2">
-                    <h2 className="text-lg font-bold text-dark">Bereits vorausgefüllt</h2>
-                    <p className="text-sm text-gray-500 mt-0.5">Sinnvolle Standardwerte — passe sie bei Bedarf an.</p>
+                    <h2 className="text-lg font-bold text-dark">Sonstige Kursdetails</h2>
                 </div>
                 <div className="bg-gray-50 p-6 rounded-xl border border-gray-200 space-y-6">
-                    {/* Lernziele */}
-                    <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-1">Lernziele</label>
-                        <p className="text-xs text-gray-500 mb-2">Was lernen Teilnehmende in diesem Kurs? Ein Lernziel pro Zeile.</p>
-                        <textarea
-                            name="objectives"
-                            value={objectives}
-                            onChange={(e) => { setObjectives(e.target.value); markDirty(); }}
-                            rows={3}
-                            placeholder={"z.B. Du kannst nach dem Kurs sicher auf dem Snowboard fahren\nDu kennst die grundlegenden Techniken"}
-                            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none resize-none bg-white"
-                        />
-                    </div>
                     {/* Kursformat (Lieferart) */}
                     <div>
                         <label className="block text-sm font-bold text-gray-700 mb-2">Kursformat</label>
@@ -2330,6 +2276,19 @@ if (bookingType === 'platform') {
                     <p className="text-sm text-gray-500 mt-0.5">Diese Felder kannst du leer lassen.</p>
                 </div>
                 <div className="space-y-4">
+                    {/* Lernziele */}
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">Lernziele</label>
+                        <p className="text-xs text-gray-500 mb-2">Was lernen Teilnehmende in diesem Kurs? Ein Lernziel pro Zeile.</p>
+                        <textarea
+                            name="objectives"
+                            value={objectives}
+                            onChange={(e) => { setObjectives(e.target.value); markDirty(); }}
+                            rows={3}
+                            placeholder={"z.B. Du kannst nach dem Kurs sicher auf dem Snowboard fahren\nDu kennst die grundlegenden Techniken"}
+                            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none resize-none"
+                        />
+                    </div>
                     {/* Voraussetzungen */}
                     <div>
                         <label className="block text-sm font-bold text-gray-700 mb-1">Voraussetzungen</label>
@@ -2342,9 +2301,37 @@ if (bookingType === 'platform') {
                             className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none resize-none"
                         />
                     </div>
+                    {/* Lead: Lektionen, Dauer, Preis, Webseite hier (optional) */}
+                    {bookingType === 'lead' && (<>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-1">Anzahl Lektionen</label>
+                                <input type="text" name="sessionCount" value={sessionCount} onChange={(e) => { setSessionCount(e.target.value); markDirty(); }} placeholder="z.B. 8 Einheiten à 60 Min." className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-1">Lektionsdauer</label>
+                                <input type="text" name="sessionLength" value={sessionLength} onChange={(e) => { setSessionLength(e.target.value); markDirty(); }} placeholder="z.B. 2 Stunden" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-1">Preis (CHF)</label>
+                                <input type="number" min="0" name="price" value={price} onChange={(e) => { setPrice(e.target.value); markDirty(); }} placeholder="Optional" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-1">Webseite</label>
+                                <input type="url" name="providerUrl" value={providerUrl} onChange={(e) => { setProviderUrl(e.target.value); markDirty(); }} placeholder="https://..." className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+                            </div>
+                        </div>
+                    </>)}
+                    {/* Direkt/Flex: nur Webseite hier (rest ist in Abschnitt B) */}
+                    {(bookingType === 'platform' || bookingType === 'platform_flex') && (
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-1">Webseite</label>
+                            <input type="url" name="providerUrl" value={providerUrl} onChange={(e) => { setProviderUrl(e.target.value); markDirty(); }} placeholder="https://..." className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+                        </div>
+                    )}
                     {/* Preis-Beschreibung (Freitext) */}
                     <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-1">Preis-Beschreibung (Optional)</label>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">Preis-Beschreibung</label>
                         <input
                             type="text"
                             value={priceInfo}
@@ -2354,6 +2341,37 @@ if (bookingType === 'platform') {
                         />
                         <p className="text-xs text-gray-500 mt-1">Wird auf der Kursseite angezeigt. Ergänzt oder ersetzt den numerischen Preis.</p>
                     </div>
+                    {/* Mindestalter */}
+                    {(() => {
+                        const isKinder = categories[0]?.type === 'kinder' || categories[0]?.type === 'kinder_jugend';
+                        return isKinder ? (
+                            <div className="bg-yellow-50 p-4 rounded-xl border border-yellow-200">
+                                <h4 className="text-sm font-bold text-yellow-900 mb-3">Kinder-Kurs Einstellungen</h4>
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-700 mb-1">Mindestalter *</label>
+                                    <input
+                                        type="number" min="0" max="18"
+                                        value={minAge}
+                                        onChange={(e) => { setMinAge(e.target.value); markDirty(); }}
+                                        placeholder="z.B. 6" required
+                                        className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none"
+                                    />
+                                    <p className="text-xs text-gray-500 mt-1">Ab welchem Alter ist der Kurs geeignet?</p>
+                                </div>
+                            </div>
+                        ) : (
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-1">Mindestalter</label>
+                                <input
+                                    type="number" min="0"
+                                    value={minAge}
+                                    onChange={(e) => { setMinAge(e.target.value); markDirty(); }}
+                                    placeholder="Leer = kein Mindestalter"
+                                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none"
+                                />
+                            </div>
+                        );
+                    })()}
                 </div>
 
                 {/* --- STATUS SECTION --- */}
