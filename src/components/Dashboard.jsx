@@ -2446,7 +2446,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                         {myCourses.map(course => {
                                             const isPrio = prioCourseIds.has(course.id);
                                             const canEnablePrio = isPrio || prioCourseIds.size < (currentPlan?.maxPrioCourses || 0);
-                                            const allPrio = currentPlan?.maxPrioCourses > 0 && (isEnterprisePlan || myCourses.length <= (currentPlan?.maxPrioCourses || 0));
+                                            const allPrio = isEnterprisePlan;
                                             return (
                                                 <React.Fragment key={course.id}>
                                                     <tr className={`hover:bg-gray-50 ${(allPrio || isPrio) ? 'bg-yellow-50/30' : ''}`}>
