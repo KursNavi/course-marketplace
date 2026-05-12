@@ -2741,6 +2741,16 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                         </div>
                     </>
                 ) : (
+                    <>
+                    <div className="flex justify-end mb-4">
+                        <button
+                            onClick={() => setDashView('settings')}
+                            className="flex items-center gap-2 text-sm text-gray-600 hover:text-primary font-medium transition"
+                        >
+                            <Settings className="w-4 h-4" />
+                            {t?.dash_settings || 'Einstellungen'}
+                        </button>
+                    </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         {/* LEFT: Bookings */}
                         <div>
@@ -2957,6 +2967,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                             </div>
                         </div>
                     </div>
+                    </>
                 )}
                 </>
             )}
