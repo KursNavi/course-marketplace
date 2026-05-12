@@ -18,7 +18,8 @@ test.describe('Course Edit (app-e2e)', () => {
 
     // Navigate to dashboard
     await page.goto('/dashboard');
-    await expect(page.getByText('Dein Plan')).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText('Wähle einen Bereich, um loszulegen.')).toBeVisible({ timeout: 10_000 });
+    await page.getByRole('button', { name: 'Kursangebot' }).click();
 
     // Find the first "Bearbeiten" button in the course management table
     const editBtn = page.getByRole('button', { name: 'Bearbeiten' }).first();
@@ -63,8 +64,8 @@ test.describe('Course Edit (app-e2e)', () => {
       if (form) form.noValidate = true;
     });
 
-    // Save the course — button is "Kurs aktualisieren" when editing
-    await page.getByRole('button', { name: /Kurs aktualisieren/i }).click();
+    // Save the course
+    await page.getByRole('button', { name: /Kurs speichern/i }).click();
 
     // Check if there was a validation alert
     if (alerts.length > 0) {
@@ -83,7 +84,7 @@ test.describe('Course Edit (app-e2e)', () => {
       await expect(page.locator('input[name="title"]')).toBeVisible({ timeout: 10_000 });
       await page.locator('input[name="title"]').fill(originalTitle);
       await page.evaluate(() => { const f = document.querySelector('form'); if (f) f.noValidate = true; });
-      await page.getByRole('button', { name: /Kurs aktualisieren/i }).click();
+      await page.getByRole('button', { name: /Kurs speichern/i }).click();
       await expect(page.getByText(originalTitle)).toBeVisible({ timeout: 20_000 });
     }
   });

@@ -11,7 +11,8 @@ test.describe('Event Cancellation by Teacher (app-e2e)', () => {
 
     // Navigate to dashboard
     await page.goto('/dashboard');
-    await expect(page.getByText('Dein Plan')).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText('Wähle einen Bereich, um loszulegen.')).toBeVisible({ timeout: 10_000 });
+    await page.getByRole('button', { name: 'Kursangebot' }).click();
 
     // Expand a course to show its events
     // Dashboard uses a Calendar icon button with title="Termine anzeigen"

@@ -16,6 +16,7 @@ export function formatPriceCHF(value) {
  */
 export function getPriceLabel(course, currencyPrefix = 'CHF') {
     if (!course) return '';
+    if (course.price_info) return course.price_info;
     const type = course.booking_type || 'platform';
     const rawPrice = course.price;
     const hasExplicitPrice = rawPrice !== null && rawPrice !== undefined && rawPrice !== '';

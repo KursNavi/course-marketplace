@@ -441,6 +441,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
     const [keywords, setKeywords] = useState(draft?.keywords || '');
     const [prerequisites, setPrerequisites] = useState(draft?.prerequisites || '');
     const [price, setPrice] = useState(draft?.price || '');
+    const [priceInfo, setPriceInfo] = useState(draft?.priceInfo || '');
     const [freeReason, setFreeReason] = useState(draft?.freeReason || '');
     const [sessionCount, setSessionCount] = useState(draft?.sessionCount || '');
     const [sessionLength, setSessionLength] = useState(draft?.sessionLength || '');
@@ -623,6 +624,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
             if (initialData.free_reason) setFreeReason(initialData.free_reason);
             if (initialData.session_count) setSessionCount(String(initialData.session_count));
             if (initialData.session_length) setSessionLength(initialData.session_length);
+            if (initialData.price_info) setPriceInfo(initialData.price_info);
             if (initialData.provider_url) setProviderUrl(initialData.provider_url);
 
             // Kategorie(n) wiederherstellen (primary + optional)
@@ -842,6 +844,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
             return;
         }
         setEditingCourse(null);
+        sessionStorage.setItem('dashOpenTab', 'kursangebot');
         setView('dashboard');
     };
 
@@ -854,6 +857,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
         }
         setShowUnsavedChangesModal(false);
         setEditingCourse(null);
+        sessionStorage.setItem('dashOpenTab', 'kursangebot');
         setView('dashboard');
     };
 
@@ -1399,8 +1403,9 @@ if (bookingType === 'platform') {
             keywords: keywordsVal,
             objectives: objectivesList,
             prerequisites: prerequisitesVal,
-            session_count: sessionCount ? Number(sessionCount) : null,
+            session_count: sessionCount || null,
             session_length: sessionLength || '',
+            ...(priceInfo ? { price_info: priceInfo } : {}),
             provider_url: providerUrl,
             user_id: user?.id || initialData?.user_id,
             is_pro: user?.is_professional ?? initialData?.is_pro ?? false,
@@ -1618,6 +1623,7 @@ if (bookingType === 'platform') {
         showNotification(initialData?.id ? "Kurs aktualisiert!" : t.success_msg);
         await refreshCoursesAfterMutation(fetchCourses, { followupDelayMs: courseStatus === 'published' ? 600 : 0 });
         setEditingCourse(null);
+        sessionStorage.setItem('dashOpenTab', 'kursangebot');
         setView('dashboard');
         setIsSubmitting(false);
     };
@@ -1642,33 +1648,37 @@ if (bookingType === 'platform') {
             <form onSubmit={handlePublishCourse} className="space-y-8">
                 {initialData && <input type="hidden" name="course_id" value={initialData.id} />}
                 
-                {/* --- 1. TITLE & DESCRIPTION --- */}
+                {/* === ABSCHNITT A: PFLICHTANGABEN === */}
+                <div className="space-y-1">
+                    <h2 className="text-lg font-bold text-dark">Pflichtangaben</h2>
+                    <p className="text-sm text-gray-500">Diese Felder müssen ausgefüllt werden, bevor du den Kurs speichern kannst.</p>
+                </div>
                 <div className="space-y-6">
                      <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_title} *</label>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_title} <span className="text-red-500">*</span></label>
                         <input required type="text" name="title" value={title} onChange={(e) => { setTitle(e.target.value); markDirty(); }} className="w-full px-4 py-3 text-lg border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
                     </div>
 
                     <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_description} *</label>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_description} <span className="text-red-500">*</span></label>
                         <textarea required name="description" value={description} onChange={(e) => { setDescription(e.target.value); markDirty(); }} rows="6" placeholder="Beschreibe deinen Kurs..." className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary outline-none resize-y block"></textarea>
-                        <p className="mt-2 text-sm text-gray-500">Die Beschreibung erscheint auf der Kursseite, wird aber nicht für die Textsuche ausgewertet. Damit dein Kurs bei Suchanfragen gefunden wird, trage wichtige Suchbegriffe bitte im Feld <span className="font-medium">«Keywords für die Textsuche»</span> weiter unten ein.</p>
+                        <p className="mt-2 text-sm text-gray-500">Die Beschreibung erscheint auf der Kursseite, wird aber nicht für die Textsuche ausgewertet. Damit dein Kurs bei Suchanfragen gefunden wird, trage wichtige Suchbegriffe bitte im Feld <span className="font-medium">«Keywords»</span> im optionalen Abschnitt ein.</p>
                     </div>
 
                     <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_learn_goals}</label>
-                        <textarea required name="objectives" value={objectives} onChange={(e) => { setObjectives(e.target.value); markDirty(); }} rows="4" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" placeholder="Ein Ziel pro Zeile..."></textarea>
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-1">Keywords für die Textsuche (Optional)</label>
-                        <input type="text" name="keywords" value={keywords} onChange={(e) => { setKeywords(e.target.value); markDirty(); }} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+                        <label className="block text-sm font-bold text-gray-700 mb-1">Keywords für die Textsuche</label>
+                        <input type="text" name="keywords" value={keywords} onChange={(e) => { setKeywords(e.target.value); markDirty(); }} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" placeholder="z.B. Yoga, Anfänger, Entspannung, Zürich" />
+                        <p className="text-xs text-gray-400 mt-1">Wichtige Suchbegriffe, durch Komma getrennt</p>
                     </div>
                 </div>
 
                 <div className="border-t border-gray-100"></div>
 
-                {/* --- 2. IMAGES & CATEGORIES & LEVEL --- */}
+                <div className="border-t border-gray-100 pt-2">
+                    <h2 className="text-lg font-bold text-dark">Kursbild &amp; Kategorie <span className="text-red-500">*</span></h2>
+                    <p className="text-sm text-gray-500 mt-0.5">Ein Bild und mindestens eine Kategorie sind Pflicht.</p>
+                </div>
+                {/* --- 2. IMAGES & CATEGORIES --- */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div className="md:col-span-2">
                         <label className="block text-sm font-bold text-gray-700 mb-1">Kursbild</label>
@@ -1943,89 +1953,19 @@ if (bookingType === 'platform') {
                             </div>
                         )}
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4 pt-4 border-t border-orange-200/50">
-                             <div>
-                                <span className="text-xs text-gray-500 block mb-1">Niveau</span>
-                                <select name="level" value={selectedLevel} onChange={(e) => { setSelectedLevel(e.target.value); markDirty(); }} className="w-full px-3 py-2 border rounded-lg focus:ring-primary bg-white text-sm">
-                                    {Object.keys(COURSE_LEVELS).map(key => <option key={key} value={key}>{COURSE_LEVELS[key].de}</option>)}
-                                </select>
-                            </div>
-                            <div>
-                                <span className="text-xs text-gray-500 block mb-1">Kurssprache(n)</span>
-                                <div className="relative">
-                                    <Globe className="absolute left-2.5 top-2.5 text-gray-400 w-4 h-4 pointer-events-none" />
-                                    <div className="w-full pl-9 pr-3 py-2 border rounded-lg bg-white text-sm min-h-[38px]">
-                                        <div className="flex flex-wrap gap-1">
-                                            {Object.keys(COURSE_LANGUAGES).map(lang => (
-                                                <label key={lang} className="inline-flex items-center cursor-pointer">
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={courseLanguages.includes(lang)}
-                                                        onChange={(e) => {
-                                                            if (e.target.checked) {
-                                                                setCourseLanguages([...courseLanguages, lang]);
-                                                            } else {
-                                                                // Mindestens eine Sprache muss ausgewählt sein
-                                                                if (courseLanguages.length > 1) {
-                                                                    setCourseLanguages(courseLanguages.filter(l => l !== lang));
-                                                                }
-                                                            }
-                                                            markDirty();
-                                                        }}
-                                                        className="sr-only"
-                                                    />
-                                                    <span className={`px-2 py-0.5 rounded-full text-xs transition ${courseLanguages.includes(lang) ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
-                                                        {COURSE_LANGUAGES[lang].de}
-                                                    </span>
-                                                </label>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div>
-                                <span className="text-xs text-gray-500 block mb-1">Kursformat (Mehrfachauswahl möglich)</span>
-                                <div className="flex flex-wrap gap-2 mt-1">
-                                    {Object.keys(DELIVERY_TYPES).map(key => (
-                                        <label key={key} className="cursor-pointer">
-                                            <input
-                                                type="checkbox"
-                                                checked={deliveryTypes.includes(key)}
-                                                onChange={(e) => {
-                                                    if (e.target.checked) {
-                                                        setDeliveryTypes([...deliveryTypes, key]);
-                                                    } else {
-                                                        // Mindestens ein Format muss ausgewählt bleiben
-                                                        if (deliveryTypes.length > 1) {
-                                                            setDeliveryTypes(deliveryTypes.filter(t => t !== key));
-                                                        }
-                                                    }
-                                                    markDirty();
-                                                }}
-                                                className="sr-only"
-                                            />
-                                            <span className={`px-3 py-1.5 rounded-full text-sm transition ${deliveryTypes.includes(key) ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
-                                                {DELIVERY_TYPES[key].de}
-                                            </span>
-                                        </label>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="mt-4 pt-4 border-t border-orange-200/50">
-                            <span className="text-xs text-gray-500 block mb-1">Voraussetzungen <span className="text-gray-400">(optional)</span></span>
-                            <textarea name="prerequisites" value={prerequisites} onChange={(e) => { setPrerequisites(e.target.value); markDirty(); }} rows="2" className="w-full px-3 py-2 border rounded-lg focus:ring-primary bg-white text-sm" placeholder="z.B. Eigener Laptop, Grundkenntnisse in..." />
-                        </div>
                     </div>
                 </div>
 
-                <div className="border-t border-gray-100"></div>
+                {/* === ABSCHNITT B: BUCHUNG & STANDORT === */}
+                <div className="border-t border-gray-100 pt-2">
+                    <h2 className="text-lg font-bold text-dark">Buchung &amp; Standort <span className="text-red-500">*</span></h2>
+                    <p className="text-sm text-gray-500 mt-0.5">Wie können Interessierte buchen? Je nach Buchungsart werden Standort-Angaben benötigt.</p>
+                </div>
 
                 {/* --- 3. BOOKING OPTIONS --- */}
                 <div className="bg-white rounded-xl space-y-6">
                     <div>
-                        <h3 className="text-lg font-bold text-dark mb-4">Buchungs-Optionen</h3>
+                        <h3 className="text-base font-semibold text-dark mb-4">Buchungsoptionen</h3>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <label className={`border p-4 rounded-xl transition relative overflow-hidden ${!payoutReady ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} ${bookingType === 'platform' ? 'border-primary bg-orange-50 ring-1 ring-primary' : !payoutReady ? '' : 'hover:bg-gray-50'}`}>
                                 {bookingType === 'platform' && <div className="absolute top-0 right-0 bg-primary text-white text-[10px] px-2 py-0.5 rounded-bl">Empfohlen</div>}
@@ -2052,80 +1992,38 @@ if (bookingType === 'platform') {
 
                     {/* DYNAMIC FIELDS */}
                     <div className="animate-in fade-in slide-in-from-top-4 duration-300">
-                        
-                        {/* A: PRICE / LINK FIELDS */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                            <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-1">Anzahl Lektionen (Optional)</label>
-                                <input type="number" name="sessionCount" value={sessionCount} onChange={(e) => { setSessionCount(e.target.value); markDirty(); }} placeholder="z.B. 5" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-1">Lektionsdauer (Optional)</label>
-                                <input type="text" name="sessionLength" value={sessionLength} onChange={(e) => { setSessionLength(e.target.value); markDirty(); }} placeholder="z.B. 2 Stunden" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-1">Preis (CHF)</label>
-                                <input type="number" min="0" name="price" value={price} onChange={(e) => { setPrice(e.target.value); markDirty(); }} placeholder={bookingType === 'lead' ? "Optional" : "0 = Kostenlos"} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
-                                {(bookingType === 'platform' || bookingType === 'platform_flex') && (!price || Number(price) === 0) && (
-                                    <p className="text-xs text-amber-600 mt-1">Kein Preis = Kostenloser Kurs (Grund erforderlich)</p>
-                                )}
-                            </div>
-                            {(bookingType === 'platform' || bookingType === 'platform_flex') && (!price || Number(price) === 0) && (
-                                <div className="md:col-span-2">
-                                    <label className="block text-sm font-bold text-gray-700 mb-1">Warum ist dieser Kurs kostenlos? *</label>
-                                    <textarea name="freeReason" value={freeReason} onChange={(e) => { setFreeReason(e.target.value); markDirty(); }} placeholder="z.B. Schnupperkurs, Probetraining, ehrenamtliches Angebot…" rows={2} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none resize-none" />
+
+                        {/* Direkt/Flex: Pflichtfelder Preis, Lektionen, Dauer */}
+                        {(bookingType === 'platform' || bookingType === 'platform_flex') && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-700 mb-1">Preis (CHF) <span className="text-red-500">*</span></label>
+                                    <input type="number" min="0" name="price" value={price} onChange={(e) => { setPrice(e.target.value); markDirty(); }} placeholder="0 = Kostenlos" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+                                    {(!price || Number(price) === 0) && (
+                                        <p className="text-xs text-amber-600 mt-1">Kein Preis = Kostenloser Kurs (Grund erforderlich)</p>
+                                    )}
                                 </div>
-                            )}
-                            <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-1">Webseite (Optional)</label>
-                                <input type="url" name="providerUrl" value={providerUrl} onChange={(e) => { setProviderUrl(e.target.value); markDirty(); }} placeholder="https://..." className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
-                            </div>
-                            {(bookingType === 'platform' || bookingType === 'platform_flex') && (
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-700 mb-1">Anzahl Lektionen <span className="text-red-500">*</span></label>
+                                    <input type="text" name="sessionCount" value={sessionCount} onChange={(e) => { setSessionCount(e.target.value); markDirty(); }} placeholder="z.B. 8 Einheiten à 60 Min." className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-700 mb-1">Lektionsdauer <span className="text-red-500">*</span></label>
+                                    <input type="text" name="sessionLength" value={sessionLength} onChange={(e) => { setSessionLength(e.target.value); markDirty(); }} placeholder="z.B. 2 Stunden" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+                                </div>
                                 <div>
                                     <label className="block text-sm font-bold text-gray-700 mb-1">Max. Buchungen pro 30 Tage</label>
                                     <input type="number" min="1" name="ticketLimit30d" value={ticketLimit30d} onChange={(e) => { setTicketLimit30d(e.target.value); markDirty(); }} placeholder="Leer = unbegrenzt" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
-                                    <p className="text-xs text-gray-500 mt-1">Begrenzt die Anzahl Buchungen in 30 Tagen. Nach Ablauf wird das Kontingent zurückgesetzt.</p>
+                                    <p className="text-xs text-gray-500 mt-1">Begrenzt die Anzahl Buchungen in 30 Tagen.</p>
                                 </div>
-                            )}
-                        </div>
-
-                        {/* C: KINDER-KURS EINSTELLUNGEN / MINDESTALTER */}
-                        {(() => {
-                            const isKinder = categories[0]?.type === 'kinder' || categories[0]?.type === 'kinder_jugend';
-                            return isKinder ? (
-                                <div className="bg-yellow-50 p-4 rounded-xl border border-yellow-200 mb-6">
-                                    <h4 className="text-sm font-bold text-yellow-900 mb-3">Kinder-Kurs Einstellungen</h4>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="block text-sm font-bold text-gray-700 mb-1">Mindestalter *</label>
-                                            <input
-                                                type="number"
-                                                min="0"
-                                                max="18"
-                                                value={minAge}
-                                                onChange={(e) => { setMinAge(e.target.value); markDirty(); }}
-                                                placeholder="z.B. 6"
-                                                required
-                                                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none"
-                                            />
-                                            <p className="text-xs text-gray-500 mt-1">Ab welchem Alter ist der Kurs geeignet?</p>
-                                        </div>
+                                {(!price || Number(price) === 0) && (
+                                    <div className="md:col-span-2">
+                                        <label className="block text-sm font-bold text-gray-700 mb-1">Warum ist dieser Kurs kostenlos? *</label>
+                                        <textarea name="freeReason" value={freeReason} onChange={(e) => { setFreeReason(e.target.value); markDirty(); }} placeholder="z.B. Schnupperkurs, Probetraining, ehrenamtliches Angebot…" rows={2} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none resize-none" />
                                     </div>
-                                </div>
-                            ) : (
-                                <div className="mb-6">
-                                    <label className="block text-sm font-bold text-gray-700 mb-1">Mindestalter (Optional)</label>
-                                    <input
-                                        type="number"
-                                        min="0"
-                                        value={minAge}
-                                        onChange={(e) => { setMinAge(e.target.value); markDirty(); }}
-                                        placeholder="Leer = kein Mindestalter"
-                                        className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none"
-                                    />
-                                </div>
-                            );
-                        })()}
+                                )}
+                            </div>
+                        )}
 
                         {/* B: DATES & LOCATIONS */}
                         {bookingType === 'platform' ? (
@@ -2305,6 +2203,177 @@ if (bookingType === 'platform') {
                     </div>
                 </div>
 
+                {/* === ABSCHNITT C: SONSTIGE KURSDETAILS === */}
+                <div className="border-t border-gray-100 pt-2">
+                    <h2 className="text-lg font-bold text-dark">Sonstige Kursdetails</h2>
+                </div>
+                <div className="bg-gray-50 p-6 rounded-xl border border-gray-200 space-y-6">
+                    {/* Kursformat (Lieferart) */}
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-2">Kursformat</label>
+                        <p className="text-xs text-gray-500 mb-3">Wie wird der Kurs durchgeführt? Mehrfachauswahl möglich.</p>
+                        <div className="flex flex-wrap gap-3">
+                            {Object.entries(DELIVERY_TYPES).map(([key, val]) => (
+                                <label key={key} className={`flex items-center gap-2 px-4 py-2 rounded-full border cursor-pointer text-sm transition ${deliveryTypes.includes(key) ? 'bg-gray-700 text-white border-gray-700' : 'bg-white text-gray-700 border-gray-300 hover:border-gray-400'}`}>
+                                    <input
+                                        type="checkbox"
+                                        value={key}
+                                        checked={deliveryTypes.includes(key)}
+                                        onChange={() => {
+                                            setDeliveryTypes(prev =>
+                                                prev.includes(key) ? prev.filter(d => d !== key) : [...prev, key]
+                                            );
+                                            markDirty();
+                                        }}
+                                        className="hidden"
+                                    />
+                                    {val.de}
+                                </label>
+                            ))}
+                        </div>
+                    </div>
+                    {/* Niveau */}
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">Niveau</label>
+                        <select
+                            value={selectedLevel}
+                            onChange={(e) => { setSelectedLevel(e.target.value); markDirty(); }}
+                            className="w-full md:w-1/2 px-4 py-2 border rounded-lg bg-white focus:ring-2 focus:ring-primary outline-none"
+                        >
+                            {Object.entries(COURSE_LEVELS).map(([key, val]) => (
+                                <option key={key} value={key}>{val.de}</option>
+                            ))}
+                        </select>
+                    </div>
+                    {/* Kurssprache */}
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-2">Kurssprache</label>
+                        <div className="flex flex-wrap gap-3">
+                            {Object.keys(COURSE_LANGUAGES).map(lang => (
+                                <label key={lang} className={`flex items-center gap-2 px-4 py-2 rounded-full border cursor-pointer text-sm transition ${courseLanguages.includes(lang) ? 'bg-gray-700 text-white border-gray-700' : 'bg-white text-gray-700 border-gray-300 hover:border-gray-400'}`}>
+                                    <input
+                                        type="checkbox"
+                                        value={lang}
+                                        checked={courseLanguages.includes(lang)}
+                                        onChange={() => {
+                                            setCourseLanguages(prev =>
+                                                prev.includes(lang) ? prev.filter(l => l !== lang) : [...prev, lang]
+                                            );
+                                            markDirty();
+                                        }}
+                                        className="hidden"
+                                    />
+                                    {lang}
+                                </label>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+
+                {/* === ABSCHNITT D: OPTIONAL === */}
+                <div className="border-t border-gray-100 pt-2">
+                    <h2 className="text-lg font-bold text-dark">Optional</h2>
+                    <p className="text-sm text-gray-500 mt-0.5">Diese Felder kannst du leer lassen.</p>
+                </div>
+                <div className="space-y-4">
+                    {/* Lernziele */}
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">Lernziele</label>
+                        <p className="text-xs text-gray-500 mb-2">Was lernen Teilnehmende in diesem Kurs? Ein Lernziel pro Zeile.</p>
+                        <textarea
+                            name="objectives"
+                            value={objectives}
+                            onChange={(e) => { setObjectives(e.target.value); markDirty(); }}
+                            rows={3}
+                            placeholder={"z.B. Du kannst nach dem Kurs sicher auf dem Snowboard fahren\nDu kennst die grundlegenden Techniken"}
+                            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none resize-none"
+                        />
+                    </div>
+                    {/* Voraussetzungen */}
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">Voraussetzungen</label>
+                        <textarea
+                            name="prerequisites"
+                            value={prerequisites}
+                            onChange={(e) => { setPrerequisites(e.target.value); markDirty(); }}
+                            rows={2}
+                            placeholder="z.B. Grundkenntnisse in Excel, keine Vorkenntnisse nötig"
+                            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none resize-none"
+                        />
+                    </div>
+                    {/* Lead: Lektionen, Dauer, Preis, Webseite hier (optional) */}
+                    {bookingType === 'lead' && (<>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-1">Anzahl Lektionen</label>
+                                <input type="text" name="sessionCount" value={sessionCount} onChange={(e) => { setSessionCount(e.target.value); markDirty(); }} placeholder="z.B. 8 Einheiten à 60 Min." className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-1">Lektionsdauer</label>
+                                <input type="text" name="sessionLength" value={sessionLength} onChange={(e) => { setSessionLength(e.target.value); markDirty(); }} placeholder="z.B. 2 Stunden" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-1">Preis (CHF)</label>
+                                <input type="number" min="0" name="price" value={price} onChange={(e) => { setPrice(e.target.value); markDirty(); }} placeholder="Optional" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-1">Webseite</label>
+                                <input type="url" name="providerUrl" value={providerUrl} onChange={(e) => { setProviderUrl(e.target.value); markDirty(); }} placeholder="https://..." className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+                            </div>
+                        </div>
+                    </>)}
+                    {/* Direkt/Flex: nur Webseite hier (rest ist in Abschnitt B) */}
+                    {(bookingType === 'platform' || bookingType === 'platform_flex') && (
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-1">Webseite</label>
+                            <input type="url" name="providerUrl" value={providerUrl} onChange={(e) => { setProviderUrl(e.target.value); markDirty(); }} placeholder="https://..." className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+                        </div>
+                    )}
+                    {/* Preis-Beschreibung (Freitext) */}
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">Preis-Beschreibung</label>
+                        <input
+                            type="text"
+                            value={priceInfo}
+                            onChange={(e) => { setPriceInfo(e.target.value); markDirty(); }}
+                            placeholder="z.B. CHF 150 pro Person, ab CHF 80, auf Anfrage"
+                            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">Wird auf der Kursseite angezeigt. Ergänzt oder ersetzt den numerischen Preis.</p>
+                    </div>
+                    {/* Mindestalter */}
+                    {(() => {
+                        const isKinder = categories[0]?.type === 'kinder' || categories[0]?.type === 'kinder_jugend';
+                        return isKinder ? (
+                            <div className="bg-yellow-50 p-4 rounded-xl border border-yellow-200">
+                                <h4 className="text-sm font-bold text-yellow-900 mb-3">Kinder-Kurs Einstellungen</h4>
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-700 mb-1">Mindestalter *</label>
+                                    <input
+                                        type="number" min="0" max="18"
+                                        value={minAge}
+                                        onChange={(e) => { setMinAge(e.target.value); markDirty(); }}
+                                        placeholder="z.B. 6" required
+                                        className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none"
+                                    />
+                                    <p className="text-xs text-gray-500 mt-1">Ab welchem Alter ist der Kurs geeignet?</p>
+                                </div>
+                            </div>
+                        ) : (
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-1">Mindestalter</label>
+                                <input
+                                    type="number" min="0"
+                                    value={minAge}
+                                    onChange={(e) => { setMinAge(e.target.value); markDirty(); }}
+                                    placeholder="Leer = kein Mindestalter"
+                                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none"
+                                />
+                            </div>
+                        );
+                    })()}
+                </div>
+
                 {/* --- STATUS SECTION --- */}
                 <div className="bg-gray-50 p-6 rounded-xl border border-gray-100">
                     <h3 className="text-lg font-bold text-dark mb-4">Veröffentlichungs-Status</h3>
@@ -2329,7 +2398,7 @@ if (bookingType === 'platform') {
                 <div className="pt-6 flex justify-end">
                     <button type="submit" disabled={isSubmitting} className="bg-primary text-white px-8 py-3 rounded-xl font-bold hover:bg-orange-600 shadow-lg hover:-translate-y-0.5 transition flex items-center font-heading disabled:opacity-50 disabled:cursor-not-allowed">
                         {isSubmitting ? <Loader className="animate-spin w-5 h-5 mr-2 text-white" /> : <KursNaviLogo className="w-5 h-5 mr-2 text-white" />}
-                        {initialData ? t.btn_update : t.btn_publish}
+                        Kurs speichern
                     </button>
                 </div>
             </form>
