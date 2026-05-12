@@ -2451,13 +2451,8 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                                 <React.Fragment key={course.id}>
                                                     <tr className={`hover:bg-gray-50 ${(allPrio || isPrio) ? 'bg-yellow-50/30' : ''}`}>
                                                         <td className="px-6 py-4">
-                                                            <div className="font-bold text-dark flex items-center gap-2">
+                                                            <div className="font-bold text-dark">
                                                                 {course.title}
-                                                                {(allPrio || isPrio) && (
-                                                                    <span className="text-xs px-1.5 py-0.5 rounded bg-yellow-100 text-yellow-700 border border-yellow-200 flex items-center gap-0.5">
-                                                                        <Star className="w-3 h-3 fill-yellow-500" /> Prio
-                                                                    </span>
-                                                                )}
                                                             </div>
                                                         </td>
                                                         <td className="px-6 py-4">
