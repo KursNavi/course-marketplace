@@ -126,7 +126,7 @@ export const LEGAL_CONTENT = {
       sections: [
         {
           heading: "Betreiber",
-          text: "LifeSkills360 GmbH\nHandelsregisternummer: CHE-350.398.166"
+          text: "LifeSkills360 GmbH\nTalrain 25, 6043 Adligenswil\nHandelsregisternummer: CHE-350.398.166"
         },
         {
           heading: "Kontakt",
@@ -328,7 +328,7 @@ export const LEGAL_CONTENT = {
       sections: [
         {
           heading: "Operator",
-          text: "LifeSkills360 GmbH\nCommercial Register Number: CHE-350.398.166"
+          text: "LifeSkills360 GmbH\nTalrain 25, 6043 Adligenswil\nCommercial Register Number: CHE-350.398.166"
         },
         {
           heading: "Contact",
@@ -530,7 +530,7 @@ export const LEGAL_CONTENT = {
       sections: [
         {
           heading: "Exploitant",
-          text: "LifeSkills360 GmbH\nNuméro du registre du commerce : CHE-350.398.166"
+          text: "LifeSkills360 GmbH\nTalrain 25, 6043 Adligenswil\nNuméro du registre du commerce : CHE-350.398.166"
         },
         {
           heading: "Contact",
@@ -728,7 +728,7 @@ export const LEGAL_CONTENT = {
       sections: [
         {
           heading: "Gestore",
-          text: "LifeSkills360 GmbH\nNumero di registro di commercio: CHE-350.398.166"
+          text: "LifeSkills360 GmbH\nTalrain 25, 6043 Adligenswil\nNumero di registro di commercio: CHE-350.398.166"
         },
         {
           heading: "Contatto",
