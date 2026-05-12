@@ -1076,8 +1076,8 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
             </div>
           )}
 
-          {/* Logo (Pro+ only) */}
-          {isEligible && (
+          {/* Logo (für alle Anbieter) */}
+          {isTeacher && (
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">
                 Logo
