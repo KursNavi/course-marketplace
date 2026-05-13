@@ -800,10 +800,30 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
                             <User className="w-5 h-5 mr-3 text-gray-400 shrink-0"/>
                             <span className="font-medium group-hover:underline">{course.instructor_name}</span>
                         </button>
-                        <div className="flex items-center text-gray-700">
-                            <MapPin className="w-5 h-5 mr-3 text-gray-400 shrink-0"/>
-                            <span>{course.address || course.city || course.canton}</span>
-                        </div>
+                        {(() => {
+                            const presenceLocs = Array.isArray(course.course_locations)
+                                ? course.course_locations
+                                    .filter(l => l.location_type === 'presence')
+                                    .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+                                : [];
+                            let locationText;
+                            if (presenceLocs.length > 1) {
+                                const cantons = [...new Set(presenceLocs.map(l => l.canton).filter(Boolean))];
+                                locationText = cantons.join(', ');
+                            } else if (presenceLocs.length === 1) {
+                                const loc = presenceLocs[0];
+                                locationText = [loc.street, loc.city].filter(Boolean).join(', ') || loc.canton || '';
+                            } else {
+                                locationText = course.address || course.city || course.canton || '';
+                            }
+                            if (!locationText) return null;
+                            return (
+                                <div className="flex items-center text-gray-700">
+                                    <MapPin className="w-5 h-5 mr-3 text-gray-400 shrink-0"/>
+                                    <span>{locationText}</span>
+                                </div>
+                            );
+                        })()}
                         {course.session_length && (
                             <div className="flex items-center text-gray-700">
                                 <Clock className="w-5 h-5 mr-3 text-gray-400 shrink-0"/>
