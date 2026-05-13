@@ -2503,7 +2503,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                                                         <Calendar className="w-3.5 h-3.5" />
                                                                     </button>
                                                                 )}
-                                                                <button onClick={() => handleDeleteCourse(course.id)} className="text-red-400 hover:text-red-600 p-1 rounded-md bg-red-50 hover:bg-red-100 transition" title="Kurs löschen"><Trash2 className="w-3.5 h-3.5" /></button>
+                                                                <button onClick={() => handleDeleteCourse(course.id)} className="text-xs px-2 py-1 rounded-md font-medium bg-red-50 text-red-500 hover:bg-red-100 hover:text-red-700 transition flex items-center gap-1"><Trash2 className="w-3 h-3" />Löschen</button>
                                                             </div>
                                                         </td>
                                                     </tr>
