@@ -423,7 +423,7 @@ const AdminCategoryManager = ({ showNotification }) => {
                                 </div>
                             </div>
                             <button
-                                onClick={() => startAdd('area', type.id)}
+                                onClick={() => startAdd('area', type.numericId || type.id)}
                                 className="p-1.5 text-green-600 hover:bg-green-50 rounded"
                                 title="Bereich hinzufügen"
                             >
@@ -489,7 +489,7 @@ const AdminCategoryManager = ({ showNotification }) => {
                                                 </div>
                                             </div>
                                             <button
-                                                onClick={() => startAdd('specialty', area.id)}
+                                                onClick={() => startAdd('specialty', area.numericId || area.id)}
                                                 className="p-1 text-green-600 hover:bg-green-50 rounded"
                                                 title="Spezialgebiet hinzufügen"
                                             >
