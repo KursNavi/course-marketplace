@@ -85,6 +85,38 @@ describe('DetailView', () => {
     expect(screen.queryByText('sprachen_privat')).not.toBeInTheDocument();
   });
 
+  it('hides Lernziele heading when objectives are empty or missing', () => {
+    const course = {
+      id: '999',
+      title: 'Kurs ohne Lernziele',
+      description: 'Keine Lernziele angegeben.',
+      objectives: [],
+      instructor_name: 'Test Anbieter',
+      booking_type: 'lead',
+      price: 0,
+      canton: 'Online',
+      address: 'Online',
+      category_type: 'privat',
+      all_categories: [],
+    };
+
+    render(
+      <DetailView
+        course={course}
+        courses={[]}
+        setView={vi.fn()}
+        t={{ lbl_description: 'Beschreibung', lbl_learn_goals: 'Lernziele', btn_book: 'Jetzt buchen' }}
+        setSelectedTeacher={vi.fn()}
+        user={null}
+        savedCourseIds={[]}
+        onToggleSaveCourse={vi.fn()}
+        showNotification={vi.fn()}
+      />
+    );
+
+    expect(screen.queryByText('Lernziele')).not.toBeInTheDocument();
+  });
+
   it('shows lead inquiry (Anfrage senden) when all platform course events are in the past', () => {
     const course = {
       id: '789',

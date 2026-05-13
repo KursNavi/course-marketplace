@@ -737,10 +737,14 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
                         <h3 className="text-xl font-bold text-dark mb-4">{t.lbl_description}</h3>
                         {renderDescription(course.description)}
 
-                        <h3 className="text-xl font-bold text-dark mb-4">{t.lbl_learn_goals}</h3>
-                        <ul className="list-disc pl-5 space-y-2 mb-8">
-                            {course.objectives && course.objectives.map((obj, i) => <li key={i}>{obj}</li>)}
-                        </ul>
+                        {course.objectives && course.objectives.length > 0 && (
+                            <>
+                                <h3 className="text-xl font-bold text-dark mb-4">{t.lbl_learn_goals}</h3>
+                                <ul className="list-disc pl-5 space-y-2 mb-8">
+                                    {course.objectives.map((obj, i) => <li key={i}>{obj}</li>)}
+                                </ul>
+                            </>
+                        )}
                         
                         {course.prerequisites && (
                             <div className="bg-orange-50 p-4 rounded-xl border border-orange-100 text-sm text-orange-900 flex items-start gap-3">
