@@ -507,6 +507,23 @@ export const SIMPLE_TOPIC_CONTENT = {
     hintText: 'Ratgeber zu Bildungsabschlüssen und Sozialberufen folgen in Kürze.',
   },
 
+  'beruflich/marketing': {
+    title: 'Marketing & Verkauf',
+    subtitle: 'Marketingstrategie, Online-Marketing & Verkaufstechniken',
+    intro:
+      'Von Marketingstrategie bis Online-Marketing, von Verkaufstraining bis CRM – die Schweiz bietet ein breites Angebot an praxisnahen Kursen für Marketing- und Vertriebsprofis aller Erfahrungsstufen.',
+    points: [
+      { icon: '📣', title: 'Marketingstrategie', text: 'Marken positionieren, Kampagnen planen, Zielgruppen präzise ansprechen.' },
+      { icon: '📱', title: 'Online-Marketing & Social Media', text: 'SEO, SEA, Social Media und Content Marketing – digitale Kanäle wirkungsvoll nutzen.' },
+      { icon: '🤝', title: 'Verkauf & Vertrieb', text: 'Verkaufstechniken, Einwandbehandlung und Kundenbindung für nachhaltigen Vertriebserfolg.' },
+      { icon: '⚙️', title: 'CRM & Marketing Automation', text: 'Kundendaten nutzen, Prozesse automatisieren und den Marketingerfolg messen.' },
+    ],
+    showCourseList: true,
+    typeAliases: ['beruflich', 'professionell'],
+    areaAliases: ['wirtschaft_management', 'marketing'],
+    hintText: 'Ratgeber zu Marketingausbildungen und Zertifizierungen folgen in Kürze.',
+  },
+
   // ---- BERUFLICH KURSARTEN (editorial only, no specific DB category) ----
   'beruflich/workshop-tagesseminar': {
     title: 'Workshop & Tagesseminar',
