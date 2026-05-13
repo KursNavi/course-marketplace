@@ -631,8 +631,65 @@ export default function KursNaviPro() {  // 1. Initial State Logic
       setEditingCourse(course);
       setView('create');
   };
-  
-  const handleSearchSubmit = () => { 
+
+  const handleDuplicateCourse = async (courseId) => {
+    try {
+      // Fetch full course data
+      const { data: original, error: fetchError } = await supabase
+        .from('courses')
+        .select('*')
+        .eq('id', courseId)
+        .single();
+      if (fetchError) throw fetchError;
+
+      // Build copy payload — exclude DB-managed fields and events
+      const { id, created_at, updated_at, course_events, ...rest } = original;
+      const copy = {
+        ...rest,
+        title: `Kopie von ${original.title}`,
+        status: 'draft',
+        start_date: null,
+      };
+
+      const { data: inserted, error: insertError } = await supabase
+        .from('courses')
+        .insert([copy])
+        .select()
+        .single();
+      if (insertError) throw insertError;
+
+      const newId = inserted.id;
+
+      // Copy course_category_assignments
+      const { data: cats } = await supabase
+        .from('course_category_assignments')
+        .select('level3_id, level4_id, is_primary')
+        .eq('course_id', courseId);
+      if (cats && cats.length > 0) {
+        await supabase.from('course_category_assignments').insert(
+          cats.map(c => ({ ...c, course_id: newId }))
+        );
+      }
+
+      // Copy course_locations (lead/flex courses)
+      const { data: locs } = await supabase
+        .from('course_locations')
+        .select('street, city, canton, sort_order')
+        .eq('course_id', courseId);
+      if (locs && locs.length > 0) {
+        await supabase.from('course_locations').insert(
+          locs.map(l => ({ ...l, course_id: newId }))
+        );
+      }
+
+      await refreshCoursesAfterMutation(fetchCourses);
+      showNotification('Kurs wurde kopiert. Du kannst ihn jetzt bearbeiten.');
+    } catch (err) {
+      showNotification('Fehler beim Kopieren: ' + err.message);
+    }
+  };
+
+  const handleSearchSubmit = () => {
       setView('search');
       window.scrollTo({ top: 0, behavior: 'smooth' }); 
   };
@@ -2053,7 +2110,7 @@ useEffect(() => {
       {view === 'ratgeber-cluster' && <RatgeberClusterView key={routePath} lang={lang} />}
       {view === 'ratgeber-artikel' && <RatgeberArtikelView key={routePath} lang={lang} />}
       {view === 'not-found' && <NotFoundPage setView={setView} />}
-      {view === 'dashboard' && effectiveUser && <Dashboard user={effectiveUser} setUser={impersonatedUser ? () => {} : setUser} t={t} setView={setView} courses={courses} teacherEarnings={teacherEarnings} myBookings={myBookings} savedCourses={savedCourses} savedCourseIds={savedCourseIds} onToggleSaveCourse={toggleSaveCourse} handleDeleteCourse={handleDeleteCourse} handleEditCourse={handleEditCourse} handleUpdateCourseStatus={handleUpdateCourseStatus} handleCancelEvent={handleCancelEvent} showNotification={showNotification} changeLanguage={changeLanguage} setSelectedCourse={setSelectedCourse} refreshBookings={fetchBookings} refreshTeacherEarnings={fetchTeacherEarnings} isImpersonating={!!impersonatedUser} />}
+      {view === 'dashboard' && effectiveUser && <Dashboard user={effectiveUser} setUser={impersonatedUser ? () => {} : setUser} t={t} setView={setView} courses={courses} teacherEarnings={teacherEarnings} myBookings={myBookings} savedCourses={savedCourses} savedCourseIds={savedCourseIds} onToggleSaveCourse={toggleSaveCourse} handleDeleteCourse={handleDeleteCourse} handleEditCourse={handleEditCourse} handleDuplicateCourse={handleDuplicateCourse} handleUpdateCourseStatus={handleUpdateCourseStatus} handleCancelEvent={handleCancelEvent} showNotification={showNotification} changeLanguage={changeLanguage} setSelectedCourse={setSelectedCourse} refreshBookings={fetchBookings} refreshTeacherEarnings={fetchTeacherEarnings} isImpersonating={!!impersonatedUser} />}
       {view === 'create' && effectiveUser?.role === 'teacher' && <TeacherForm key={editingCourse?.id || 'new'} t={t} setView={setView} user={effectiveUser} fetchCourses={fetchCourses} showNotification={showNotification} setEditingCourse={setEditingCourse} initialData={editingCourse} isAdminImpersonating={!!impersonatedUser} />}
       </Suspense>
       </main>

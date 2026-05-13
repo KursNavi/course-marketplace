@@ -5,7 +5,7 @@ import {
     ChevronDown, User, DollarSign, PenTool, Trash2, ArrowRight, Plus, MapPin,
     Crown, BarChart3,
     CreditCard, Check, Shield, ExternalLink, Play, Pause, FileEdit, Info, Star, AlertCircle,
-    Eye, EyeOff, Calendar, ChevronRight, Ban, Download
+    Eye, EyeOff, Calendar, ChevronRight, Ban, Download, Copy
 } from 'lucide-react';
 import { SWISS_CANTONS, CATEGORY_TYPES, NEW_TAXONOMY, CATEGORY_LABELS } from "../lib/constants";
 import { PLANS } from "../constants/plans";
@@ -1557,7 +1557,7 @@ const getCategoryLabel = (key, lang = 'de', dbTaxonomy = null) => {
 };
 
 // --- MAIN DASHBOARD COMPONENT ---
-const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBookings, savedCourses, savedCourseIds, onToggleSaveCourse, handleDeleteCourse, handleEditCourse, handleUpdateCourseStatus, handleCancelEvent, showNotification, changeLanguage, setSelectedCourse, refreshBookings, refreshTeacherEarnings, isImpersonating }) => {
+const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBookings, savedCourses, savedCourseIds, onToggleSaveCourse, handleDeleteCourse, handleEditCourse, handleDuplicateCourse, handleUpdateCourseStatus, handleCancelEvent, showNotification, changeLanguage, setSelectedCourse, refreshBookings, refreshTeacherEarnings, isImpersonating }) => {
     const [dashView, setDashView] = useState(() => {
         const tab = sessionStorage.getItem('dashOpenTab');
         if (tab) { sessionStorage.removeItem('dashOpenTab'); return tab; }
@@ -2488,6 +2488,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                                             <div className="flex flex-wrap items-center gap-2">
                                                                 <button onClick={() => handleEditCourse(course)} className="text-sm px-3 py-1.5 rounded-lg font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 transition">Bearbeiten</button>
                                                                 <button onClick={() => handleNavigateToCourse(course)} className="text-sm px-3 py-1.5 rounded-lg font-medium bg-gray-50 text-gray-700 hover:bg-gray-100 transition">Vorschau</button>
+                                                                <button onClick={() => handleDuplicateCourse(course.id)} className="text-sm px-3 py-1.5 rounded-lg font-medium bg-purple-50 text-purple-700 hover:bg-purple-100 transition flex items-center gap-1.5" title="Kurs kopieren"><Copy className="w-3.5 h-3.5" />Kopieren</button>
                                                                 {course.status === 'draft' ? (
                                                                     <button onClick={() => handleUpdateCourseStatus(course.id, 'published')} className="text-sm px-3 py-1.5 rounded-lg font-medium bg-green-50 text-green-700 hover:bg-green-100 transition">Veröffentlichen</button>
                                                                 ) : (
