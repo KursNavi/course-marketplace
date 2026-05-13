@@ -5,7 +5,7 @@ import {
     ChevronDown, User, DollarSign, PenTool, Trash2, ArrowRight, Plus, MapPin,
     Crown, BarChart3,
     CreditCard, Check, Shield, ExternalLink, Play, Pause, FileEdit, Info, Star, AlertCircle,
-    Eye, EyeOff, Calendar, ChevronRight, Ban, Download
+    Eye, EyeOff, Calendar, ChevronRight, Ban, Download, Copy
 } from 'lucide-react';
 import { SWISS_CANTONS, CATEGORY_TYPES, NEW_TAXONOMY, CATEGORY_LABELS } from "../lib/constants";
 import { PLANS } from "../constants/plans";
@@ -1557,7 +1557,7 @@ const getCategoryLabel = (key, lang = 'de', dbTaxonomy = null) => {
 };
 
 // --- MAIN DASHBOARD COMPONENT ---
-const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBookings, savedCourses, savedCourseIds, onToggleSaveCourse, handleDeleteCourse, handleEditCourse, handleUpdateCourseStatus, handleCancelEvent, showNotification, changeLanguage, setSelectedCourse, refreshBookings, refreshTeacherEarnings, isImpersonating }) => {
+const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBookings, savedCourses, savedCourseIds, onToggleSaveCourse, handleDeleteCourse, handleEditCourse, handleDuplicateCourse, handleUpdateCourseStatus, handleCancelEvent, showNotification, changeLanguage, setSelectedCourse, refreshBookings, refreshTeacherEarnings, isImpersonating }) => {
     const [dashView, setDashView] = useState(() => {
         const tab = sessionStorage.getItem('dashOpenTab');
         if (tab) { sessionStorage.removeItem('dashOpenTab'); return tab; }
@@ -2436,12 +2436,12 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                 <table className="w-full text-left">
                                     <thead className="bg-beige border-b border-gray-200">
                                         <tr>
-                                            <th className="px-6 py-4 font-semibold text-gray-600">Kursname</th>
-                                            <th className="px-6 py-4 font-semibold text-gray-600">Sichtbarkeit</th>
+                                            <th className="px-4 py-3 font-semibold text-gray-600 w-2/5">Kursname</th>
+                                            <th className="px-4 py-3 font-semibold text-gray-600 whitespace-nowrap">Sichtbarkeit</th>
                                             {currentPlan?.maxPrioCourses > 0 && !isEnterprisePlan && (
-                                                <th className="px-4 py-4 font-semibold text-gray-600 text-center w-16">Prio</th>
+                                                <th className="px-3 py-3 font-semibold text-gray-600 text-center w-12">Prio</th>
                                             )}
-                                            <th className="px-6 py-4 font-semibold text-gray-600">Aktionen</th>
+                                            <th className="px-4 py-3 font-semibold text-gray-600">Aktionen</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-100">
@@ -2452,24 +2452,24 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                             return (
                                                 <React.Fragment key={course.id}>
                                                     <tr className={`hover:bg-gray-50 ${(allPrio || isPrio) ? 'bg-yellow-50/30' : ''}`}>
-                                                        <td className="px-6 py-4">
-                                                            <div className="font-bold text-dark">
+                                                        <td className="px-4 py-3 w-2/5">
+                                                            <div className="font-bold text-dark break-words">
                                                                 {course.title}
                                                             </div>
                                                         </td>
-                                                        <td className="px-6 py-4">
+                                                        <td className="px-4 py-3 whitespace-nowrap">
                                                             {course.status === 'draft' ? (
-                                                                <span className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full font-bold bg-gray-100 text-gray-500 border border-gray-200">
+                                                                <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full font-bold bg-gray-100 text-gray-500 border border-gray-200">
                                                                     <EyeOff className="w-3 h-3" /> Nicht veröffentlicht
                                                                 </span>
                                                             ) : (
-                                                                <span className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full font-bold bg-green-100 text-green-700 border border-green-200">
+                                                                <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full font-bold bg-green-100 text-green-700 border border-green-200">
                                                                     <Eye className="w-3 h-3" /> Veröffentlicht
                                                                 </span>
                                                             )}
                                                         </td>
                                                         {currentPlan?.maxPrioCourses > 0 && !isEnterprisePlan && (
-                                                            <td className="px-4 py-4 text-center">
+                                                            <td className="px-3 py-3 text-center">
                                                                 <label className="relative inline-flex items-center cursor-pointer">
                                                                     <input
                                                                         type="checkbox"
@@ -2484,25 +2484,26 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                                                 </label>
                                                             </td>
                                                         )}
-                                                        <td className="px-6 py-4">
-                                                            <div className="flex flex-wrap items-center gap-2">
-                                                                <button onClick={() => handleEditCourse(course)} className="text-sm px-3 py-1.5 rounded-lg font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 transition">Bearbeiten</button>
-                                                                <button onClick={() => handleNavigateToCourse(course)} className="text-sm px-3 py-1.5 rounded-lg font-medium bg-gray-50 text-gray-700 hover:bg-gray-100 transition">Vorschau</button>
+                                                        <td className="px-4 py-3">
+                                                            <div className="flex flex-wrap items-center gap-1.5">
+                                                                <button onClick={() => handleEditCourse(course)} className="text-xs px-2 py-1 rounded-md font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 transition flex items-center gap-1"><FileEdit className="w-3 h-3" />Bearbeiten</button>
+                                                                <button onClick={() => handleNavigateToCourse(course)} className="text-xs px-2 py-1 rounded-md font-medium bg-gray-50 text-gray-700 hover:bg-gray-100 transition flex items-center gap-1"><Eye className="w-3 h-3" />Vorschau</button>
+                                                                <button onClick={() => handleDuplicateCourse(course.id)} className="text-xs px-2 py-1 rounded-md font-medium bg-purple-50 text-purple-700 hover:bg-purple-100 transition flex items-center gap-1" title="Kurs kopieren"><Copy className="w-3 h-3" />Kopieren</button>
                                                                 {course.status === 'draft' ? (
-                                                                    <button onClick={() => handleUpdateCourseStatus(course.id, 'published')} className="text-sm px-3 py-1.5 rounded-lg font-medium bg-green-50 text-green-700 hover:bg-green-100 transition">Veröffentlichen</button>
+                                                                    <button onClick={() => handleUpdateCourseStatus(course.id, 'published')} className="text-xs px-2 py-1 rounded-md font-medium bg-green-50 text-green-700 hover:bg-green-100 transition flex items-center gap-1"><CheckCircle className="w-3 h-3" />Veröffentlichen</button>
                                                                 ) : (
-                                                                    <button onClick={() => handleUpdateCourseStatus(course.id, 'draft')} className="text-sm px-3 py-1.5 rounded-lg font-medium bg-yellow-50 text-yellow-700 hover:bg-yellow-100 transition">Vom Marktplatz nehmen</button>
+                                                                    <button onClick={() => handleUpdateCourseStatus(course.id, 'draft')} className="text-xs px-2 py-1 rounded-md font-medium bg-yellow-50 text-yellow-700 hover:bg-yellow-100 transition flex items-center gap-1"><EyeOff className="w-3 h-3" />Vom Marktplatz nehmen</button>
                                                                 )}
                                                                 {course.booking_type === 'platform' && course.course_events?.length > 0 && (
                                                                     <button
                                                                         onClick={() => setExpandedCourseEvents(expandedCourseEvents === course.id ? null : course.id)}
-                                                                        className={`text-gray-500 hover:text-gray-700 p-1.5 rounded-lg ${expandedCourseEvents === course.id ? 'bg-gray-200' : 'bg-gray-50'}`}
+                                                                        className={`text-gray-500 hover:text-gray-700 p-1 rounded-md ${expandedCourseEvents === course.id ? 'bg-gray-200' : 'bg-gray-50'}`}
                                                                         title="Termine anzeigen"
                                                                     >
-                                                                        <Calendar className="w-4 h-4" />
+                                                                        <Calendar className="w-3.5 h-3.5" />
                                                                     </button>
                                                                 )}
-                                                                <button onClick={() => handleDeleteCourse(course.id)} className="text-red-400 hover:text-red-600 p-1.5 rounded-lg bg-red-50 hover:bg-red-100 transition" title="Kurs löschen"><Trash2 className="w-4 h-4" /></button>
+                                                                <button onClick={() => handleDeleteCourse(course.id)} className="text-xs px-2 py-1 rounded-md font-medium bg-red-50 text-red-500 hover:bg-red-100 hover:text-red-700 transition flex items-center gap-1"><Trash2 className="w-3 h-3" />Löschen</button>
                                                             </div>
                                                         </td>
                                                     </tr>
