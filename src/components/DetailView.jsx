@@ -713,14 +713,11 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
             }
         }} className="flex items-center text-gray-500 hover:text-primary mb-6 transition-colors"><ArrowLeft className="w-4 h-4 mr-2"/> Zurück zur Suche</button>
 
-        {/* Status Banner for Draft courses (only visible to owner) */}
+        {/* Preview Banner for Draft courses (only visible to owner) */}
         {user?.id && String(course.user_id) === String(user.id) && course.status === 'draft' && (
             <div className="bg-yellow-100 border border-yellow-300 text-yellow-800 px-4 py-3 rounded-xl mb-6 flex items-center">
                 <AlertCircle className="w-5 h-5 mr-3 shrink-0" />
-                <div>
-                    <span className="font-bold">Entwurf</span>
-                    <span className="ml-2">– Dieser Kurs ist nur für dich sichtbar. Veröffentliche ihn im Dashboard.</span>
-                </div>
+                <span className="font-medium">Vorschau – dieser Kurs ist nicht öffentlich sichtbar.</span>
             </div>
         )}
 
