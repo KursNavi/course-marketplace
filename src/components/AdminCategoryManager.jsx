@@ -439,7 +439,7 @@ const AdminCategoryManager = ({ showNotification }) => {
                         </div>
 
                         {/* Add Area Form */}
-                        {addingTo?.entity === 'area' && addingTo?.parentId === type.id && (
+                        {addingTo?.entity === 'area' && addingTo?.parentId === (type.numericId || type.id) && (
                             <div className="bg-blue-50 border-l-4 border-blue-400 p-4 ml-8">
                                 <h4 className="font-bold text-blue-900 mb-2">Neuer Bereich (Ebene 2)</h4>
                                 <div className="grid grid-cols-2 gap-2">
@@ -505,7 +505,7 @@ const AdminCategoryManager = ({ showNotification }) => {
                                         </div>
 
                                         {/* Add Specialty Form */}
-                                        {addingTo?.entity === 'specialty' && addingTo?.parentId === area.id && (
+                                        {addingTo?.entity === 'specialty' && addingTo?.parentId === (area.numericId || area.id) && (
                                             <div className="bg-green-50 p-3 ml-8 border-l-2 border-green-300">
                                                 <div className="flex gap-2">
                                                     <input
