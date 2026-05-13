@@ -2329,6 +2329,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
 
     const handleNavigateToCourse = (course) => {
         const full = (courses || []).find(c => String(c.id) === String(course?.id)) || course;
+        window.history.pushState({ view: 'dashboard' }, '', '/dashboard');
         setSelectedCourse(full);
         setView('detail');
         window.scrollTo(0, 0);
