@@ -184,11 +184,13 @@ export default function ProviderDirectory({ t, setView }) {
     };
   }, [types, selectedType, changeType]);
 
-  // SEO: Set meta tags
+  // SEO: Grunddaten sofort beim Mount setzen (unabhängig vom API-Ergebnis)
+  // → Google's Renderer sieht Titel, Description und Canonical ohne auf Supabase zu warten
   useEffect(() => {
-    document.title = 'Kursanbieter-Verzeichnis | KursNavi';
+    const pageTitle = 'Kursanbieter in der Schweiz | KursNavi';
+    const metaDescription = 'Entdecke geprüfte Kursanbieter und Bildungsinstitutionen in der Schweiz. Finde den passenden Anbieter für deine Weiterbildung.';
 
-    const metaDescription = 'Entdecken Sie verifizierte Kursanbieter in der Schweiz. Finden Sie Schulen, Trainer und Experten für Weiterbildung, Hobbykurse und Kinderkurse.';
+    document.title = pageTitle;
 
     let metaDescTag = document.querySelector('meta[name="description"]');
     if (!metaDescTag) {
@@ -198,7 +200,6 @@ export default function ProviderDirectory({ t, setView }) {
     }
     metaDescTag.content = metaDescription;
 
-    // Canonical
     let canonicalTag = document.querySelector('link[rel="canonical"]');
     if (!canonicalTag) {
       canonicalTag = document.createElement('link');
@@ -206,8 +207,12 @@ export default function ProviderDirectory({ t, setView }) {
       document.head.appendChild(canonicalTag);
     }
     canonicalTag.href = `${BASE_URL}/anbieter`;
+  }, []);
 
-    // Schema.org ItemList
+  // SEO: Schema.org ItemList – wird aktualisiert sobald Anbieter geladen sind
+  useEffect(() => {
+    const metaDescription = 'Entdecke geprüfte Kursanbieter und Bildungsinstitutionen in der Schweiz. Finde den passenden Anbieter für deine Weiterbildung.';
+
     const schemaData = {
       "@context": "https://schema.org",
       "@type": "ItemList",
