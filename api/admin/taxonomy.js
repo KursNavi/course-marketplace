@@ -318,7 +318,8 @@ async function handleConsolidatedMutation(supabase, action, entity, data, res) {
                 .select('id')
                 .eq('slug', insertData.level1_id)
                 .single();
-            if (parentData) insertData.level1_id = parentData.id;
+            if (!parentData) throw new Error(`Typ mit Slug "${insertData.level1_id}" nicht gefunden`);
+            insertData.level1_id = parentData.id;
         }
         if ((entity === 'specialty' || entity === 'level3') && insertData.level2_id && isNaN(Number(insertData.level2_id))) {
             const { data: parentData } = await supabase
@@ -326,7 +327,8 @@ async function handleConsolidatedMutation(supabase, action, entity, data, res) {
                 .select('id')
                 .eq('slug', insertData.level2_id)
                 .single();
-            if (parentData) insertData.level2_id = parentData.id;
+            if (!parentData) throw new Error(`Bereich mit Slug "${insertData.level2_id}" nicht gefunden`);
+            insertData.level2_id = parentData.id;
         }
         if ((entity === 'focus' || entity === 'level4') && insertData.level3_id && isNaN(Number(insertData.level3_id))) {
             const { data: parentData } = await supabase
@@ -334,7 +336,8 @@ async function handleConsolidatedMutation(supabase, action, entity, data, res) {
                 .select('id')
                 .eq('slug', insertData.level3_id)
                 .single();
-            if (parentData) insertData.level3_id = parentData.id;
+            if (!parentData) throw new Error(`Spezialgebiet mit Slug "${insertData.level3_id}" nicht gefunden`);
+            insertData.level3_id = parentData.id;
         }
 
         const { error } = await supabase.from(tableName).insert(insertData);
