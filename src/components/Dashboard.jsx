@@ -2435,7 +2435,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                     <thead className="bg-beige border-b border-gray-200">
                                         <tr>
                                             <th className="px-6 py-4 font-semibold text-gray-600">Kursname</th>
-                                            <th className="px-6 py-4 font-semibold text-gray-600">Status</th>
+                                            <th className="px-6 py-4 font-semibold text-gray-600">Sichtbarkeit</th>
                                             {currentPlan?.maxPrioCourses > 0 && !isEnterprisePlan && (
                                                 <th className="px-4 py-4 font-semibold text-gray-600 text-center w-16">Prio</th>
                                             )}
@@ -2457,21 +2457,13 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                                         </td>
                                                         <td className="px-6 py-4">
                                                             {course.status === 'draft' ? (
-                                                                <button
-                                                                    onClick={() => handleUpdateCourseStatus(course.id, 'published')}
-                                                                    className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full font-bold bg-yellow-100 text-yellow-700 border border-yellow-200 hover:bg-green-100 hover:text-green-700 hover:border-green-200 transition"
-                                                                    title="Klicken zum Veröffentlichen"
-                                                                >
-                                                                    <EyeOff className="w-3 h-3" /> Entwurf
-                                                                </button>
+                                                                <span className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full font-bold bg-gray-100 text-gray-500 border border-gray-200">
+                                                                    <EyeOff className="w-3 h-3" /> Nicht veröffentlicht
+                                                                </span>
                                                             ) : (
-                                                                <button
-                                                                    onClick={() => handleUpdateCourseStatus(course.id, 'draft')}
-                                                                    className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full font-bold bg-green-100 text-green-700 border border-green-200 hover:bg-yellow-100 hover:text-yellow-700 hover:border-yellow-200 transition"
-                                                                    title="Klicken für Entwurf"
-                                                                >
+                                                                <span className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full font-bold bg-green-100 text-green-700 border border-green-200">
                                                                     <Eye className="w-3 h-3" /> Veröffentlicht
-                                                                </button>
+                                                                </span>
                                                             )}
                                                         </td>
                                                         {currentPlan?.maxPrioCourses > 0 && !isEnterprisePlan && (
@@ -2491,18 +2483,24 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                                             </td>
                                                         )}
                                                         <td className="px-6 py-4">
-                                                            <div className="flex gap-2">
-                                                                <button onClick={() => handleEditCourse(course)} className="text-blue-500 hover:text-blue-700 bg-blue-50 p-2 rounded-full" title="Bearbeiten"><PenTool className="w-4 h-4" /></button>
-                                                                <button onClick={() => handleDeleteCourse(course.id)} className="text-red-500 hover:text-red-700 bg-red-50 p-2 rounded-full" title="Löschen"><Trash2 className="w-4 h-4" /></button>
+                                                            <div className="flex flex-wrap items-center gap-2">
+                                                                <button onClick={() => handleEditCourse(course)} className="text-sm px-3 py-1.5 rounded-lg font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 transition">Bearbeiten</button>
+                                                                <button onClick={() => handleNavigateToCourse(course)} className="text-sm px-3 py-1.5 rounded-lg font-medium bg-gray-50 text-gray-700 hover:bg-gray-100 transition">Vorschau</button>
+                                                                {course.status === 'draft' ? (
+                                                                    <button onClick={() => handleUpdateCourseStatus(course.id, 'published')} className="text-sm px-3 py-1.5 rounded-lg font-medium bg-green-50 text-green-700 hover:bg-green-100 transition">Veröffentlichen</button>
+                                                                ) : (
+                                                                    <button onClick={() => handleUpdateCourseStatus(course.id, 'draft')} className="text-sm px-3 py-1.5 rounded-lg font-medium bg-yellow-50 text-yellow-700 hover:bg-yellow-100 transition">Vom Marktplatz nehmen</button>
+                                                                )}
                                                                 {course.booking_type === 'platform' && course.course_events?.length > 0 && (
                                                                     <button
                                                                         onClick={() => setExpandedCourseEvents(expandedCourseEvents === course.id ? null : course.id)}
-                                                                        className={`text-gray-500 hover:text-gray-700 p-2 rounded-full ${expandedCourseEvents === course.id ? 'bg-gray-200' : 'bg-gray-50'}`}
+                                                                        className={`text-gray-500 hover:text-gray-700 p-1.5 rounded-lg ${expandedCourseEvents === course.id ? 'bg-gray-200' : 'bg-gray-50'}`}
                                                                         title="Termine anzeigen"
                                                                     >
                                                                         <Calendar className="w-4 h-4" />
                                                                     </button>
                                                                 )}
+                                                                <button onClick={() => handleDeleteCourse(course.id)} className="text-red-400 hover:text-red-600 p-1.5 rounded-lg bg-red-50 hover:bg-red-100 transition" title="Kurs löschen"><Trash2 className="w-4 h-4" /></button>
                                                             </div>
                                                         </td>
                                                     </tr>
