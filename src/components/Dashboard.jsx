@@ -1325,7 +1325,7 @@ const CaptureServiceModal = ({ isOpen, onClose, user, includedServices, usedServ
                         </div>
                     </div>
                     <p className="text-xs text-gray-400 mt-2">
-                        Preise: CHF 75.- pro Kurs (1-3), CHF 50.- ab dem 4. Kurs
+                        CHF 75.- pro Kurs | Mengenrabatt: ab dem 4. Kurs nur CHF 50.-
                     </p>
                 </div>
 
@@ -2575,14 +2575,14 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                             </div>
                         </div>
                         <div className="text-right flex flex-col items-end">
-                            <span className="text-xs text-gray-400 mb-1 bg-white px-2 py-0.5 rounded border">ab 4. Kurs günstiger</span>
                             <button
                                 type="button"
                                 onClick={() => setShowCaptureServiceModal(true)}
                                 className="bg-white border-2 border-primary text-primary px-5 py-2 rounded-lg font-bold shadow-sm hover:bg-primary hover:text-white transition whitespace-nowrap flex items-center"
                             >
-                                Service buchen (ab CHF 50.-) <ArrowRight className="w-4 h-4 ml-2"/>
+                                Service buchen (CHF 75.-/Kurs) <ArrowRight className="w-4 h-4 ml-2"/>
                             </button>
+                            <span className="text-xs text-green-600 mt-1.5 font-medium">Mengenrabatt: ab dem 4. Kurs nur CHF 50.-</span>
                         </div>
                     </div>
                 </div>
