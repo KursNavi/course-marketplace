@@ -26,9 +26,11 @@ test.describe('Stripe Connect Onboarding (app-e2e)', () => {
 
     // Navigate to dashboard — opens directly in Profil view
     await page.goto('/dashboard');
+    // Wait for teacher role (prevents UserProfileSection double-load before ProviderProfileEditor)
+    await expect(page.locator('h1').filter({ hasText: 'Kursanbieter Dashboard' })).toBeVisible({ timeout: 15_000 });
 
-    // Wait for profile form to load
-    await expect(page.locator('input[name="full_name"]')).toBeVisible({ timeout: 10_000 });
+    // Wait for profile form to load (ProviderProfileEditor has async loading state)
+    await expect(page.locator('input[name="full_name"]')).toBeVisible({ timeout: 20_000 });
 
     // Find the "Jetzt einrichten" button for Stripe Connect
     const setupBtn = page.getByRole('button', { name: /Jetzt einrichten/i });

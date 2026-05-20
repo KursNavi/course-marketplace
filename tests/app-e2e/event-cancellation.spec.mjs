@@ -12,7 +12,7 @@ test.describe('Event Cancellation by Teacher (app-e2e)', () => {
 
     // Navigate to dashboard — opens directly in Kursangebot view
     await page.goto('/dashboard');
-    await expect(page.getByRole('heading', { name: 'Meine Kurse' })).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator('h2').filter({ hasText: 'Meine Kurse' })).toBeVisible({ timeout: 10_000 });
 
     // Expand a course to show its events
     // Dashboard uses a Calendar icon button with title="Termine anzeigen"

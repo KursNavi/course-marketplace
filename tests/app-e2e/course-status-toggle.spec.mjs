@@ -11,7 +11,7 @@ test.describe('Course Draft/Publish Toggle (app-e2e)', () => {
 
     // Navigate to dashboard — opens directly in Kursangebot view
     await page.goto('/dashboard');
-    await expect(page.getByRole('heading', { name: 'Meine Kurse' })).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator('h2').filter({ hasText: 'Meine Kurse' })).toBeVisible({ timeout: 10_000 });
 
     // The course table shows "Veröffentlicht" buttons for published courses (click to set draft)
     const draftBtn = page.getByRole('button', { name: 'Veröffentlicht' }).first();

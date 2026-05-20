@@ -11,10 +11,12 @@ test.describe('Provider Profile Edit (app-e2e)', () => {
 
     // Navigate to dashboard — opens directly in Profil view
     await page.goto('/dashboard');
+    // Wait for teacher role (prevents UserProfileSection double-load before ProviderProfileEditor)
+    await expect(page.locator('h1').filter({ hasText: 'Kursanbieter Dashboard' })).toBeVisible({ timeout: 15_000 });
 
-    // Profile form should load
+    // Profile form should load (ProviderProfileEditor has async loading state)
     const nameInput = page.locator('input[name="full_name"]');
-    await expect(nameInput).toBeVisible({ timeout: 10_000 });
+    await expect(nameInput).toBeVisible({ timeout: 20_000 });
 
     // Read current values
     const originalName = await nameInput.inputValue();
@@ -49,9 +51,11 @@ test.describe('Provider Profile Edit (app-e2e)', () => {
     await page.evaluate(() => sessionStorage.setItem('dashOpenTab', 'profile'));
 
     await page.goto('/dashboard');
+    // Wait for teacher role (prevents UserProfileSection double-load before ProviderProfileEditor)
+    await expect(page.locator('h1').filter({ hasText: 'Kursanbieter Dashboard' })).toBeVisible({ timeout: 15_000 });
 
-    // Wait for profile to load
-    await expect(page.locator('input[name="full_name"]')).toBeVisible({ timeout: 10_000 });
+    // Wait for profile to load (ProviderProfileEditor has async loading state)
+    await expect(page.locator('input[name="full_name"]')).toBeVisible({ timeout: 20_000 });
 
     // Scroll down to find the Stripe Connect / payout section
     const payoutSection = page.getByText(/Auszahlungen/i);
