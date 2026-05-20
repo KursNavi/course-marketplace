@@ -22,11 +22,10 @@ test.describe('Stripe Connect Onboarding (app-e2e)', () => {
     });
 
     await loginAsTeacher(page);
+    await page.evaluate(() => sessionStorage.setItem('dashOpenTab', 'profile'));
 
-    // Navigate to dashboard > Profil tile
+    // Navigate to dashboard — opens directly in Profil view
     await page.goto('/dashboard');
-    await expect(page.getByText('Wähle einen Bereich, um loszulegen.')).toBeVisible({ timeout: 10_000 });
-    await page.getByRole('button', { name: 'Profil' }).click();
 
     // Wait for profile form to load
     await expect(page.locator('input[name="full_name"]')).toBeVisible({ timeout: 10_000 });

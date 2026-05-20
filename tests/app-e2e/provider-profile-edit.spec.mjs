@@ -7,13 +7,10 @@ test.describe('Provider Profile Edit (app-e2e)', () => {
   test('teacher can edit profile settings', async ({ page }) => {
     await mockApiRoutes(page);
     await loginAsTeacher(page);
+    await page.evaluate(() => sessionStorage.setItem('dashOpenTab', 'profile'));
 
-    // Navigate to dashboard
+    // Navigate to dashboard — opens directly in Profil view
     await page.goto('/dashboard');
-    await expect(page.getByText('Wähle einen Bereich, um loszulegen.')).toBeVisible({ timeout: 10_000 });
-
-    // Click the Profil tile
-    await page.getByRole('button', { name: 'Profil' }).click();
 
     // Profile form should load
     const nameInput = page.locator('input[name="full_name"]');
@@ -49,11 +46,9 @@ test.describe('Provider Profile Edit (app-e2e)', () => {
   test('teacher can view Stripe Connect setup section', async ({ page }) => {
     await mockApiRoutes(page);
     await loginAsTeacher(page);
+    await page.evaluate(() => sessionStorage.setItem('dashOpenTab', 'profile'));
 
     await page.goto('/dashboard');
-    await expect(page.getByText('Wähle einen Bereich, um loszulegen.')).toBeVisible({ timeout: 10_000 });
-
-    await page.getByRole('button', { name: 'Profil' }).click();
 
     // Wait for profile to load
     await expect(page.locator('input[name="full_name"]')).toBeVisible({ timeout: 10_000 });

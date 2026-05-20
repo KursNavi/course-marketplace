@@ -10,9 +10,12 @@ test.describe('Course Creation (hybrid app-e2e)', () => {
     await mockApiRoutes(page);
 
     await loginAsTeacher(page);
+    await page.evaluate(() => sessionStorage.setItem('dashOpenTab', 'kursangebot'));
 
-    // Navigate to course creation form
-    await page.goto('/create-course');
+    // Navigate to dashboard — opens in Kursangebot, then click Neuer Kurs
+    await page.goto('/dashboard');
+    await expect(page.getByRole('heading', { name: 'Meine Kurse' })).toBeVisible({ timeout: 10_000 });
+    await page.getByRole('button', { name: /neuer kurs/i }).click();
 
     // Wait for the form to render (title input is always present)
     const titleInput = page.locator('input[name="title"]');

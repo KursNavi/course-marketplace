@@ -7,11 +7,11 @@ test.describe('Course Draft/Publish Toggle (app-e2e)', () => {
   test('teacher can toggle course between published and draft', async ({ page }) => {
     await mockApiRoutes(page);
     await loginAsTeacher(page);
+    await page.evaluate(() => sessionStorage.setItem('dashOpenTab', 'kursangebot'));
 
-    // Navigate to dashboard
+    // Navigate to dashboard — opens directly in Kursangebot view
     await page.goto('/dashboard');
-    await expect(page.getByText('Wähle einen Bereich, um loszulegen.')).toBeVisible({ timeout: 10_000 });
-    await page.getByRole('button', { name: 'Kursangebot' }).click();
+    await expect(page.getByRole('heading', { name: 'Meine Kurse' })).toBeVisible({ timeout: 10_000 });
 
     // The course table shows "Veröffentlicht" buttons for published courses (click to set draft)
     const draftBtn = page.getByRole('button', { name: 'Veröffentlicht' }).first();

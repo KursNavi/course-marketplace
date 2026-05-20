@@ -34,14 +34,14 @@ test.describe('Merkliste (app-e2e)', () => {
 
     // Student dashboard shows Merkliste section directly (no tab switching needed)
     // The saved course should appear in the Merkliste section
-    await expect(page.getByText(course.title)).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText(course.title).first()).toBeVisible({ timeout: 5_000 });
 
     // Remove from Merkliste
     const removeBtn = page.getByRole('button', { name: /Entfernen/i }).first();
     if (await removeBtn.isVisible({ timeout: 2_000 }).catch(() => false)) {
       await removeBtn.click();
       // Course should disappear
-      await expect(page.getByText(course.title)).not.toBeVisible({ timeout: 5_000 });
+      await expect(page.getByText(course.title).first()).not.toBeVisible({ timeout: 5_000 });
     }
   });
 });

@@ -15,11 +15,11 @@ test.describe('Course Edit (app-e2e)', () => {
     });
 
     await loginAsTeacher(page);
+    await page.evaluate(() => sessionStorage.setItem('dashOpenTab', 'kursangebot'));
 
-    // Navigate to dashboard
+    // Navigate to dashboard — opens directly in Kursangebot view
     await page.goto('/dashboard');
-    await expect(page.getByText('Wähle einen Bereich, um loszulegen.')).toBeVisible({ timeout: 10_000 });
-    await page.getByRole('button', { name: 'Kursangebot' }).click();
+    await expect(page.getByRole('heading', { name: 'Meine Kurse' })).toBeVisible({ timeout: 10_000 });
 
     // Find the first "Bearbeiten" button in the course management table
     const editBtn = page.getByRole('button', { name: 'Bearbeiten' }).first();
@@ -99,9 +99,9 @@ test.describe('Course Edit (app-e2e)', () => {
     });
 
     await loginAsTeacher(page);
+    await page.evaluate(() => sessionStorage.setItem('dashOpenTab', 'kursangebot'));
     await page.goto('/dashboard');
-    await expect(page.getByText('Wähle einen Bereich, um loszulegen.')).toBeVisible({ timeout: 10_000 });
-    await page.getByRole('button', { name: 'Kursangebot' }).click();
+    await expect(page.getByRole('heading', { name: 'Meine Kurse' })).toBeVisible({ timeout: 10_000 });
 
     const editBtn = page.getByRole('button', { name: 'Bearbeiten' }).first();
     if (!await editBtn.isVisible({ timeout: 5_000 }).catch(() => false)) {

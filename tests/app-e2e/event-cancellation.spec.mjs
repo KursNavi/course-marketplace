@@ -8,11 +8,11 @@ test.describe('Event Cancellation by Teacher (app-e2e)', () => {
     const { getInterceptedRequests } = await mockApiRoutes(page);
 
     await loginAsTeacher(page);
+    await page.evaluate(() => sessionStorage.setItem('dashOpenTab', 'kursangebot'));
 
-    // Navigate to dashboard
+    // Navigate to dashboard — opens directly in Kursangebot view
     await page.goto('/dashboard');
-    await expect(page.getByText('Wähle einen Bereich, um loszulegen.')).toBeVisible({ timeout: 10_000 });
-    await page.getByRole('button', { name: 'Kursangebot' }).click();
+    await expect(page.getByRole('heading', { name: 'Meine Kurse' })).toBeVisible({ timeout: 10_000 });
 
     // Expand a course to show its events
     // Dashboard uses a Calendar icon button with title="Termine anzeigen"

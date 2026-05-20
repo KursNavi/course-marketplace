@@ -25,11 +25,11 @@ test.describe('Package Upgrade (hybrid app-e2e)', () => {
     });
 
     await loginAsTeacher(page);
+    await page.evaluate(() => sessionStorage.setItem('dashOpenTab', 'anderes'));
 
-    // Navigate to dashboard
+    // Navigate to dashboard — opens directly in Anderes view
     await page.goto('/dashboard');
-    await expect(page.getByText('Wähle einen Bereich, um loszulegen.')).toBeVisible({ timeout: 10_000 });
-    await page.getByRole('button', { name: 'Anderes' }).click();
+    await expect(page.getByText('Weitere Funktionen')).toBeVisible({ timeout: 10_000 });
 
     // Click "Abo upgraden / verwalten" to open the subscription section
     await page.getByRole('button', { name: /abo upgraden/i }).click();
