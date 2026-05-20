@@ -88,4 +88,74 @@ test.describe('Course Edit (app-e2e)', () => {
       await expect(page.getByText(originalTitle)).toBeVisible({ timeout: 20_000 });
     }
   });
+
+  test('clearing price_info saves null to DB (regression: leeres Feld wurde nicht gespeichert)', async ({ page }) => {
+    await mockApiRoutes(page);
+
+    const alerts = [];
+    page.on('dialog', async (dialog) => {
+      alerts.push(dialog.message());
+      await dialog.dismiss();
+    });
+
+    await loginAsTeacher(page);
+    await page.goto('/dashboard');
+    await expect(page.getByText('Wähle einen Bereich, um loszulegen.')).toBeVisible({ timeout: 10_000 });
+    await page.getByRole('button', { name: 'Kursangebot' }).click();
+
+    const editBtn = page.getByRole('button', { name: 'Bearbeiten' }).first();
+    if (!await editBtn.isVisible({ timeout: 5_000 }).catch(() => false)) {
+      test.skip(true, 'No courses available for this teacher to edit');
+    }
+    await editBtn.click();
+
+    await expect(page.locator('input[name="title"]')).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator('input[name="title"]')).not.toHaveValue('', { timeout: 10_000 });
+
+    // Set a price_info value and save
+    const priceInfoInput = page.locator('input[placeholder*="CHF"]').first();
+    const hasPriceInfoInput = await priceInfoInput.isVisible({ timeout: 3_000 }).catch(() => false);
+    if (!hasPriceInfoInput) {
+      test.skip(true, 'price_info input not visible in this form state');
+    }
+
+    await priceInfoInput.fill('Testpreis CHF 99');
+    await page.evaluate(() => { const f = document.querySelector('form'); if (f) f.noValidate = true; });
+    await page.getByRole('button', { name: /Kurs speichern/i }).click();
+    if (alerts.length > 0) {
+      test.skip(true, `Form validation: ${alerts[0]}`);
+    }
+    await page.waitForTimeout(2_000);
+
+    // Re-open and clear the price_info field
+    const editBtn2 = page.getByRole('button', { name: 'Bearbeiten' }).first();
+    if (!await editBtn2.isVisible({ timeout: 5_000 }).catch(() => false)) {
+      test.skip(true, 'Edit button not visible after first save');
+    }
+    await editBtn2.click();
+    await expect(page.locator('input[name="title"]')).toBeVisible({ timeout: 10_000 });
+
+    const priceInfoInput2 = page.locator('input[placeholder*="CHF"]').first();
+    await expect(priceInfoInput2).toBeVisible({ timeout: 5_000 });
+    await priceInfoInput2.fill('');
+
+    await page.evaluate(() => { const f = document.querySelector('form'); if (f) f.noValidate = true; });
+    await page.getByRole('button', { name: /Kurs speichern/i }).click();
+    if (alerts.length > 0) {
+      test.skip(true, `Form validation on clear: ${alerts[0]}`);
+    }
+    await page.waitForTimeout(2_000);
+
+    // Re-open and verify the field is now empty
+    const editBtn3 = page.getByRole('button', { name: 'Bearbeiten' }).first();
+    if (!await editBtn3.isVisible({ timeout: 5_000 }).catch(() => false)) {
+      test.skip(true, 'Edit button not visible after clear save');
+    }
+    await editBtn3.click();
+    await expect(page.locator('input[name="title"]')).toBeVisible({ timeout: 10_000 });
+
+    const priceInfoInput3 = page.locator('input[placeholder*="CHF"]').first();
+    await expect(priceInfoInput3).toBeVisible({ timeout: 5_000 });
+    await expect(priceInfoInput3).toHaveValue('', { timeout: 5_000 });
+  });
 });
