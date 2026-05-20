@@ -40,8 +40,8 @@ test.describe('Merkliste (app-e2e)', () => {
     const removeBtn = page.getByRole('button', { name: /Entfernen/i }).first();
     if (await removeBtn.isVisible({ timeout: 2_000 }).catch(() => false)) {
       await removeBtn.click();
-      // Course should disappear
-      await expect(page.getByText(course.title).first()).not.toBeVisible({ timeout: 5_000 });
+      // Wait for Supabase state update and React re-render (async remove)
+      await expect(page.getByText(course.title).first()).not.toBeVisible({ timeout: 15_000 });
     }
   });
 });

@@ -6,6 +6,7 @@ config({ path: '.env.test.local' });
 
 export default defineConfig({
   timeout: 60_000,
+  workers: 1,
   fullyParallel: false,
   reporter: 'list',
   use: {
