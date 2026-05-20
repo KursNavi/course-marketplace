@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { loginAsTeacher } from './helpers/auth.mjs';
+import { loginAsTeacher, waitForDashboardReady } from './helpers/auth.mjs';
 import { mockApiRoutes } from './helpers/api-mocks.mjs';
 
 test.describe('Course Duplicate (app-e2e)', () => {
@@ -12,6 +12,7 @@ test.describe('Course Duplicate (app-e2e)', () => {
 
     // Navigate to dashboard — opens directly in Kursangebot view
     await page.goto('/dashboard');
+    await waitForDashboardReady(page);
     await expect(page.locator('h2').filter({ hasText: 'Meine Kurse' })).toBeVisible({ timeout: 10_000 });
 
     // Find the first "Kopieren" button in the course list

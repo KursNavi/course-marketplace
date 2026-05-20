@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { loginAsTeacher } from './helpers/auth.mjs';
+import { loginAsTeacher, waitForDashboardReady } from './helpers/auth.mjs';
 import { mockApiRoutes } from './helpers/api-mocks.mjs';
 
 const MOCK_STRIPE_URL = 'https://checkout.stripe.com/c/test-package-session';
@@ -29,6 +29,7 @@ test.describe('Package Upgrade (hybrid app-e2e)', () => {
 
     // Navigate to dashboard — opens directly in Anderes view
     await page.goto('/dashboard');
+    await waitForDashboardReady(page);
     // Wait for teacher role before checking anderes section content
     await expect(page.locator('h1').filter({ hasText: 'Kursanbieter Dashboard' })).toBeVisible({ timeout: 15_000 });
     await expect(page.getByText('Weitere Funktionen')).toBeVisible({ timeout: 10_000 });

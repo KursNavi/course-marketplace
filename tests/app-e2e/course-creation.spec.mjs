@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { loginAsTeacher } from './helpers/auth.mjs';
+import { loginAsTeacher, waitForDashboardReady } from './helpers/auth.mjs';
 import { mockApiRoutes } from './helpers/api-mocks.mjs';
 
 test.describe('Course Creation (hybrid app-e2e)', () => {
@@ -14,7 +14,8 @@ test.describe('Course Creation (hybrid app-e2e)', () => {
 
     // Navigate to dashboard — opens in Kursangebot, then click Neuer Kurs
     await page.goto('/dashboard');
-    await expect(page.locator('h2').filter({ hasText: 'Meine Kurse' })).toBeVisible({ timeout: 15_000 });
+    await waitForDashboardReady(page);
+    await expect(page.locator('h2').filter({ hasText: 'Meine Kurse' })).toBeVisible({ timeout: 10_000 });
     await page.locator('button').filter({ hasText: /Neuer Kurs/i }).click();
 
     // Wait for the form to render (title input is always present)

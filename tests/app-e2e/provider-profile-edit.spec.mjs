@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { loginAsTeacher } from './helpers/auth.mjs';
+import { loginAsTeacher, waitForDashboardReady } from './helpers/auth.mjs';
 import { mockApiRoutes } from './helpers/api-mocks.mjs';
 
 test.describe('Provider Profile Edit (app-e2e)', () => {
@@ -11,6 +11,7 @@ test.describe('Provider Profile Edit (app-e2e)', () => {
 
     // Navigate to dashboard — opens directly in Profil view
     await page.goto('/dashboard');
+    await waitForDashboardReady(page);
     // Wait for teacher role (prevents UserProfileSection double-load before ProviderProfileEditor)
     await expect(page.locator('h1').filter({ hasText: 'Kursanbieter Dashboard' })).toBeVisible({ timeout: 15_000 });
 
@@ -51,6 +52,7 @@ test.describe('Provider Profile Edit (app-e2e)', () => {
     await page.evaluate(() => sessionStorage.setItem('dashOpenTab', 'profile'));
 
     await page.goto('/dashboard');
+    await waitForDashboardReady(page);
     // Wait for teacher role (prevents UserProfileSection double-load before ProviderProfileEditor)
     await expect(page.locator('h1').filter({ hasText: 'Kursanbieter Dashboard' })).toBeVisible({ timeout: 15_000 });
 

@@ -50,6 +50,16 @@ export async function loginAsTeacher(page) {
 }
 
 /**
+ * Wait for the dashboard to be fully authenticated after a page.goto('/dashboard').
+ * After a full-page reload the Supabase session must be re-established from localStorage.
+ * Waiting for 'Mein Bereich' (nav button visible only when user is authenticated)
+ * guarantees that effectiveUser is set and Dashboard has mounted before proceeding.
+ */
+export async function waitForDashboardReady(page, timeout = 30_000) {
+  await page.getByRole('button', { name: 'Mein Bereich' }).waitFor({ timeout });
+}
+
+/**
  * Log in as the learner / student test user.
  */
 export async function loginAsStudent(page) {

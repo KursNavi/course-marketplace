@@ -123,6 +123,15 @@ async function main() {
     }, { onConflict: 'id' })
   );
 
+  // 2b. Ensure user_metadata.role is set in auth.users so the app resolves
+  //     the teacher role immediately from the JWT (no profiles-table round-trip needed).
+  await assertOk(
+    `Set user_metadata.role=teacher for provider (${PROVIDER_ID})`,
+    await supabase.auth.admin.updateUserById(PROVIDER_ID, {
+      user_metadata: { role: 'teacher' },
+    })
+  );
+
   // 3. Seed a published lead course (for the inquiry / detail-view test)
   const seedCourse = await assertOk(
     'Insert seed course (E2E-Seed Testkurs)',

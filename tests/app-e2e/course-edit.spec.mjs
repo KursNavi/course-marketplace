@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { loginAsTeacher } from './helpers/auth.mjs';
+import { loginAsTeacher, waitForDashboardReady } from './helpers/auth.mjs';
 import { mockApiRoutes } from './helpers/api-mocks.mjs';
 
 test.describe('Course Edit (app-e2e)', () => {
@@ -19,6 +19,7 @@ test.describe('Course Edit (app-e2e)', () => {
 
     // Navigate to dashboard — opens directly in Kursangebot view
     await page.goto('/dashboard');
+    await waitForDashboardReady(page);
     await expect(page.locator('h2').filter({ hasText: 'Meine Kurse' })).toBeVisible({ timeout: 10_000 });
 
     // Find the first "Bearbeiten" button in the course management table
@@ -101,6 +102,7 @@ test.describe('Course Edit (app-e2e)', () => {
     await loginAsTeacher(page);
     await page.evaluate(() => sessionStorage.setItem('dashOpenTab', 'kursangebot'));
     await page.goto('/dashboard');
+    await waitForDashboardReady(page);
     await expect(page.locator('h2').filter({ hasText: 'Meine Kurse' })).toBeVisible({ timeout: 10_000 });
 
     const editBtn = page.getByRole('button', { name: 'Bearbeiten' }).first();
