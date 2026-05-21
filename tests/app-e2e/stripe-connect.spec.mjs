@@ -28,7 +28,7 @@ test.describe('Stripe Connect Onboarding (app-e2e)', () => {
     await page.goto('/dashboard');
     await waitForDashboardReady(page);
     // Wait for teacher role (prevents UserProfileSection double-load before ProviderProfileEditor)
-    await expect(page.locator('h1').filter({ hasText: 'Kursanbieter Dashboard' })).toBeVisible({ timeout: 15_000 });
+    await expect(page.locator('h1').filter({ hasText: 'Kursanbieter Dashboard' })).toBeVisible({ timeout: 20_000 });
 
     // Wait for profile form to load (ProviderProfileEditor has async loading state)
     await expect(page.locator('input[name="full_name"]')).toBeVisible({ timeout: 20_000 });

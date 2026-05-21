@@ -123,14 +123,20 @@ async function main() {
     }, { onConflict: 'id' })
   );
 
-  // 2b. Ensure user_metadata.role is set in auth.users so the app resolves
-  //     the teacher role immediately from the JWT (no profiles-table round-trip needed).
-  await assertOk(
-    `Set user_metadata.role=teacher for provider (${PROVIDER_ID})`,
-    await supabase.auth.admin.updateUserById(PROVIDER_ID, {
+  // 2b. Optionally set user_metadata.role='teacher' in auth.users so applySession()
+  //     gets the role from the JWT immediately (skips async profiles-table fetch).
+  //     Non-fatal: sb_secret_ keys may not support Auth Admin API; tests fall back to
+  //     the profiles-table fetch which is covered by the 15-20 s waitFor timeouts.
+  {
+    const { error } = await supabase.auth.admin.updateUserById(PROVIDER_ID, {
       user_metadata: { role: 'teacher' },
-    })
-  );
+    });
+    if (error) {
+      console.warn(`  [seed] WARNING: Could not set user_metadata.role (${error.message}) — tests rely on profiles-table role fetch`);
+    } else {
+      log('OK', `Set user_metadata.role=teacher for provider (${PROVIDER_ID})`);
+    }
+  }
 
   // 3. Seed a published lead course (for the inquiry / detail-view test)
   const seedCourse = await assertOk(

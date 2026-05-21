@@ -31,7 +31,7 @@ test.describe('Package Upgrade (hybrid app-e2e)', () => {
     await page.goto('/dashboard');
     await waitForDashboardReady(page);
     // Wait for teacher role before checking anderes section content
-    await expect(page.locator('h1').filter({ hasText: 'Kursanbieter Dashboard' })).toBeVisible({ timeout: 15_000 });
+    await expect(page.locator('h1').filter({ hasText: 'Kursanbieter Dashboard' })).toBeVisible({ timeout: 20_000 });
     await expect(page.getByText('Weitere Funktionen')).toBeVisible({ timeout: 10_000 });
 
     // Click "Abo upgraden / verwalten" to open the subscription section
