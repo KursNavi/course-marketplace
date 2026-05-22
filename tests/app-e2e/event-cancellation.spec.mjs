@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { loginAsTeacher, waitForDashboardReady } from './helpers/auth.mjs';
+import { loginAsTeacherAndOpenTab } from './helpers/auth.mjs';
 import { mockApiRoutes } from './helpers/api-mocks.mjs';
 
 test.describe('Event Cancellation by Teacher (app-e2e)', () => {
@@ -7,13 +7,8 @@ test.describe('Event Cancellation by Teacher (app-e2e)', () => {
   test('teacher can cancel a course event', async ({ page }) => {
     const { getInterceptedRequests } = await mockApiRoutes(page);
 
-    await loginAsTeacher(page);
-    await page.evaluate(() => sessionStorage.setItem('dashOpenTab', 'kursangebot'));
-
-    // Navigate to dashboard — opens directly in Kursangebot view
-    await page.goto('/dashboard');
-    await waitForDashboardReady(page);
-    await expect(page.locator('h2').filter({ hasText: 'Meine Kurse' })).toBeVisible({ timeout: 10_000 });
+    await loginAsTeacherAndOpenTab(page, 'kursangebot');
+    await expect(page.locator('h2').filter({ hasText: 'Meine Kurse' })).toBeVisible({ timeout: 5_000 });
 
     // Expand a course to show its events
     // Dashboard uses a Calendar icon button with title="Termine anzeigen"

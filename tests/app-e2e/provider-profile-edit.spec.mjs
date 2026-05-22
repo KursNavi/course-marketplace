@@ -1,19 +1,14 @@
 import { test, expect } from '@playwright/test';
-import { loginAsTeacher, waitForDashboardReady } from './helpers/auth.mjs';
+import { loginAsTeacherAndOpenTab } from './helpers/auth.mjs';
 import { mockApiRoutes } from './helpers/api-mocks.mjs';
 
 test.describe('Provider Profile Edit (app-e2e)', () => {
 
   test('teacher can edit profile settings', async ({ page }) => {
     await mockApiRoutes(page);
-    await loginAsTeacher(page);
-    await page.evaluate(() => sessionStorage.setItem('dashOpenTab', 'profile'));
 
-    // Navigate to dashboard — opens directly in Profil view
-    await page.goto('/dashboard');
-    await waitForDashboardReady(page);
-    // Wait for teacher role (prevents UserProfileSection double-load before ProviderProfileEditor)
-    await expect(page.locator('h1').filter({ hasText: 'Kursanbieter Dashboard' })).toBeVisible({ timeout: 20_000 });
+    // Login and open Profil tab (teacher role confirmed, no page reload needed)
+    await loginAsTeacherAndOpenTab(page, 'profile');
 
     // Profile form should load (ProviderProfileEditor has async loading state)
     const nameInput = page.locator('input[name="full_name"]');
@@ -48,13 +43,9 @@ test.describe('Provider Profile Edit (app-e2e)', () => {
 
   test('teacher can view Stripe Connect setup section', async ({ page }) => {
     await mockApiRoutes(page);
-    await loginAsTeacher(page);
-    await page.evaluate(() => sessionStorage.setItem('dashOpenTab', 'profile'));
 
-    await page.goto('/dashboard');
-    await waitForDashboardReady(page);
-    // Wait for teacher role (prevents UserProfileSection double-load before ProviderProfileEditor)
-    await expect(page.locator('h1').filter({ hasText: 'Kursanbieter Dashboard' })).toBeVisible({ timeout: 20_000 });
+    // Login and open Profil tab (teacher role confirmed, no page reload needed)
+    await loginAsTeacherAndOpenTab(page, 'profile');
 
     // Wait for profile to load (ProviderProfileEditor has async loading state)
     await expect(page.locator('input[name="full_name"]')).toBeVisible({ timeout: 20_000 });

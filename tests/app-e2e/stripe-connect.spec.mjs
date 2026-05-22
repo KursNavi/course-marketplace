@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { loginAsTeacher, waitForDashboardReady } from './helpers/auth.mjs';
+import { loginAsTeacherAndOpenTab } from './helpers/auth.mjs';
 import { mockApiRoutes } from './helpers/api-mocks.mjs';
 
 const MOCK_CONNECT_URL = 'https://connect.stripe.com/setup/test-onboarding';
@@ -21,14 +21,8 @@ test.describe('Stripe Connect Onboarding (app-e2e)', () => {
       await route.abort();
     });
 
-    await loginAsTeacher(page);
-    await page.evaluate(() => sessionStorage.setItem('dashOpenTab', 'profile'));
-
-    // Navigate to dashboard — opens directly in Profil view
-    await page.goto('/dashboard');
-    await waitForDashboardReady(page);
-    // Wait for teacher role (prevents UserProfileSection double-load before ProviderProfileEditor)
-    await expect(page.locator('h1').filter({ hasText: 'Kursanbieter Dashboard' })).toBeVisible({ timeout: 20_000 });
+    // Login and open Profil tab (teacher role confirmed, no page reload needed)
+    await loginAsTeacherAndOpenTab(page, 'profile');
 
     // Wait for profile form to load (ProviderProfileEditor has async loading state)
     await expect(page.locator('input[name="full_name"]')).toBeVisible({ timeout: 20_000 });

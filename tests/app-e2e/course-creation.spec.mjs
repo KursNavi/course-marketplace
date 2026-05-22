@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { loginAsTeacher, waitForDashboardReady } from './helpers/auth.mjs';
+import { loginAsTeacherAndOpenTab } from './helpers/auth.mjs';
 import { mockApiRoutes } from './helpers/api-mocks.mjs';
 
 test.describe('Course Creation (hybrid app-e2e)', () => {
@@ -9,13 +9,10 @@ test.describe('Course Creation (hybrid app-e2e)', () => {
     // but other background fetches (e.g. admin, taxonomy refresh) might hit /api/*
     await mockApiRoutes(page);
 
-    await loginAsTeacher(page);
-    await page.evaluate(() => sessionStorage.setItem('dashOpenTab', 'kursangebot'));
-
-    // Navigate to dashboard — opens in Kursangebot, then click Neuer Kurs
-    await page.goto('/dashboard');
-    await waitForDashboardReady(page);
-    await expect(page.locator('h2').filter({ hasText: 'Meine Kurse' })).toBeVisible({ timeout: 10_000 });
+    // Login and navigate to Kursangebot tab without a full page reload.
+    // (page.goto('/dashboard') triggers a cold profiles fetch in CI — use tile click instead.)
+    await loginAsTeacherAndOpenTab(page, 'kursangebot');
+    await expect(page.locator('h2').filter({ hasText: 'Meine Kurse' })).toBeVisible({ timeout: 5_000 });
     await page.locator('button').filter({ hasText: /Neuer Kurs/i }).click();
 
     // Wait for the form to render (title input is always present)
