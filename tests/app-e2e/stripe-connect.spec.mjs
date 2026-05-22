@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { loginAsTeacher } from './helpers/auth.mjs';
+import { loginAsTeacherAndOpenTab } from './helpers/auth.mjs';
 import { mockApiRoutes } from './helpers/api-mocks.mjs';
 
 const MOCK_CONNECT_URL = 'https://connect.stripe.com/setup/test-onboarding';
@@ -21,15 +21,11 @@ test.describe('Stripe Connect Onboarding (app-e2e)', () => {
       await route.abort();
     });
 
-    await loginAsTeacher(page);
+    // Login and open Profil tab (teacher role confirmed, no page reload needed)
+    await loginAsTeacherAndOpenTab(page, 'profile');
 
-    // Navigate to dashboard > Profil tile
-    await page.goto('/dashboard');
-    await expect(page.getByText('Wähle einen Bereich, um loszulegen.')).toBeVisible({ timeout: 10_000 });
-    await page.getByRole('button', { name: 'Profil' }).click();
-
-    // Wait for profile form to load
-    await expect(page.locator('input[name="full_name"]')).toBeVisible({ timeout: 10_000 });
+    // Wait for profile form to load (ProviderProfileEditor has async loading state)
+    await expect(page.locator('input[name="full_name"]')).toBeVisible({ timeout: 20_000 });
 
     // Find the "Jetzt einrichten" button for Stripe Connect
     const setupBtn = page.getByRole('button', { name: /Jetzt einrichten/i });

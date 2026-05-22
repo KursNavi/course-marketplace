@@ -1,17 +1,14 @@
 import { test, expect } from '@playwright/test';
-import { loginAsTeacher } from './helpers/auth.mjs';
+import { loginAsTeacherAndOpenTab } from './helpers/auth.mjs';
 import { mockApiRoutes } from './helpers/api-mocks.mjs';
 
 test.describe('Course Draft/Publish Toggle (app-e2e)', () => {
 
   test('teacher can toggle course between published and draft', async ({ page }) => {
     await mockApiRoutes(page);
-    await loginAsTeacher(page);
 
-    // Navigate to dashboard
-    await page.goto('/dashboard');
-    await expect(page.getByText('Wähle einen Bereich, um loszulegen.')).toBeVisible({ timeout: 10_000 });
-    await page.getByRole('button', { name: 'Kursangebot' }).click();
+    await loginAsTeacherAndOpenTab(page, 'kursangebot');
+    await expect(page.locator('h2').filter({ hasText: 'Meine Kurse' })).toBeVisible({ timeout: 5_000 });
 
     // The course table shows "Veröffentlicht" buttons for published courses (click to set draft)
     const draftBtn = page.getByRole('button', { name: 'Veröffentlicht' }).first();

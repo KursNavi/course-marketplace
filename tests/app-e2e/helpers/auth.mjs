@@ -50,6 +50,40 @@ export async function loginAsTeacher(page) {
 }
 
 /**
+ * Wait for the dashboard to be fully authenticated after a page.goto('/dashboard').
+ * After a full-page reload the Supabase session must be re-established from localStorage.
+ * Waiting for 'Mein Bereich' (nav button visible only when user is authenticated)
+ * guarantees that effectiveUser is set and Dashboard has mounted before proceeding.
+ */
+export async function waitForDashboardReady(page, timeout = 30_000) {
+  await page.getByRole('button', { name: 'Mein Bereich' }).waitFor({ timeout });
+}
+
+/**
+ * Log in as teacher and navigate to a specific dashboard tab WITHOUT a full page reload.
+ *
+ * page.goto('/dashboard') after login forces a cold Supabase profiles fetch to re-resolve
+ * the teacher role — which is consistently slow in CI. This helper avoids that:
+ * - Teacher login already warms up the Supabase connection and starts the profiles fetch.
+ * - We wait for the h1 "Kursanbieter Dashboard" (appears only when role === 'teacher').
+ * - Then we click the overview tile to open the requested tab (client-side, no reload).
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {'kursangebot' | 'profile' | 'anderes'} tab
+ * @param {number} [timeout] - how long to wait for teacher role (default 30 s)
+ */
+export async function loginAsTeacherAndOpenTab(page, tab, timeout = 30_000) {
+  await loginAsTeacher(page);
+  // h1 "Kursanbieter Dashboard" only renders when user.role === 'teacher'
+  await page.locator('h1').filter({ hasText: 'Kursanbieter Dashboard' }).waitFor({ timeout });
+  // Click the appropriate overview tile (no page reload — keeps the warm connection)
+  const tileLabel = { kursangebot: 'Kursangebot', profile: 'Profil', anderes: 'Anderes' }[tab];
+  if (tileLabel) {
+    await page.locator('button').filter({ hasText: tileLabel }).first().click();
+  }
+}
+
+/**
  * Log in as the learner / student test user.
  */
 export async function loginAsStudent(page) {

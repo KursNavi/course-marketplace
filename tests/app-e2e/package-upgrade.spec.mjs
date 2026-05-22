@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { loginAsTeacher } from './helpers/auth.mjs';
+import { loginAsTeacherAndOpenTab } from './helpers/auth.mjs';
 import { mockApiRoutes } from './helpers/api-mocks.mjs';
 
 const MOCK_STRIPE_URL = 'https://checkout.stripe.com/c/test-package-session';
@@ -24,12 +24,9 @@ test.describe('Package Upgrade (hybrid app-e2e)', () => {
       await route.abort();
     });
 
-    await loginAsTeacher(page);
-
-    // Navigate to dashboard
-    await page.goto('/dashboard');
-    await expect(page.getByText('Wähle einen Bereich, um loszulegen.')).toBeVisible({ timeout: 10_000 });
-    await page.getByRole('button', { name: 'Anderes' }).click();
+    // Login and open Anderes tab (teacher role confirmed, no page reload needed)
+    await loginAsTeacherAndOpenTab(page, 'anderes');
+    await expect(page.getByText('Weitere Funktionen')).toBeVisible({ timeout: 10_000 });
 
     // Click "Abo upgraden / verwalten" to open the subscription section
     await page.getByRole('button', { name: /abo upgraden/i }).click();

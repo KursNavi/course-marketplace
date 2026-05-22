@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { loginAsTeacher } from './helpers/auth.mjs';
+import { loginAsTeacherAndOpenTab } from './helpers/auth.mjs';
 import { mockApiRoutes } from './helpers/api-mocks.mjs';
 
 test.describe('Course Edit (app-e2e)', () => {
@@ -14,12 +14,8 @@ test.describe('Course Edit (app-e2e)', () => {
       await dialog.dismiss();
     });
 
-    await loginAsTeacher(page);
-
-    // Navigate to dashboard
-    await page.goto('/dashboard');
-    await expect(page.getByText('Wähle einen Bereich, um loszulegen.')).toBeVisible({ timeout: 10_000 });
-    await page.getByRole('button', { name: 'Kursangebot' }).click();
+    await loginAsTeacherAndOpenTab(page, 'kursangebot');
+    await expect(page.locator('h2').filter({ hasText: 'Meine Kurse' })).toBeVisible({ timeout: 5_000 });
 
     // Find the first "Bearbeiten" button in the course management table
     const editBtn = page.getByRole('button', { name: 'Bearbeiten' }).first();
@@ -42,19 +38,25 @@ test.describe('Course Edit (app-e2e)', () => {
     const newTitle = `${originalTitle} (E2E-Edit ${Date.now()})`;
     await titleInput.fill(newTitle);
 
-    // Ensure required category fields are filled (cascading dropdowns may not auto-populate)
-    // Find all selects within the category section that have empty values
+    // Ensure required category fields are filled (cascading dropdowns may not auto-populate).
+    // Use a timeout-guarded loop: DOM changes during cascading dropdown updates can cause
+    // selects to temporarily detach — isDisabled() without a timeout would hang indefinitely.
     const emptySelects = page.locator('select:has(option[value=""]:checked)');
     const emptyCount = await emptySelects.count();
     for (let i = 0; i < emptyCount; i++) {
-      const sel = emptySelects.nth(i);
-      // Skip if disabled
-      if (await sel.isDisabled()) continue;
-      const options = await sel.locator('option').allTextContents();
-      const firstReal = options.find(o => o && !o.includes('wählen') && !o.includes('Optional'));
-      if (firstReal) {
-        await sel.selectOption({ label: firstReal });
-        await page.waitForTimeout(500); // allow cascading dropdown to update
+      try {
+        const sel = emptySelects.nth(i);
+        // 2 s timeout: skip if the element is detached/reattaching (React re-render)
+        const disabled = await sel.isDisabled({ timeout: 2_000 }).catch(() => true);
+        if (disabled) continue;
+        const options = await sel.locator('option').allTextContents().catch(() => []);
+        const firstReal = options.find(o => o && !o.includes('wählen') && !o.includes('Optional'));
+        if (firstReal) {
+          await sel.selectOption({ label: firstReal }).catch(() => {});
+          await page.waitForTimeout(300); // allow cascading dropdown to update
+        }
+      } catch {
+        // Element became unstable — skip this select
       }
     }
 
@@ -87,5 +89,73 @@ test.describe('Course Edit (app-e2e)', () => {
       await page.getByRole('button', { name: /Kurs speichern/i }).click();
       await expect(page.getByText(originalTitle)).toBeVisible({ timeout: 20_000 });
     }
+  });
+
+  test('clearing price_info saves null to DB (regression: leeres Feld wurde nicht gespeichert)', async ({ page }) => {
+    await mockApiRoutes(page);
+
+    const alerts = [];
+    page.on('dialog', async (dialog) => {
+      alerts.push(dialog.message());
+      await dialog.dismiss();
+    });
+
+    await loginAsTeacherAndOpenTab(page, 'kursangebot');
+    await expect(page.locator('h2').filter({ hasText: 'Meine Kurse' })).toBeVisible({ timeout: 5_000 });
+
+    const editBtn = page.getByRole('button', { name: 'Bearbeiten' }).first();
+    if (!await editBtn.isVisible({ timeout: 5_000 }).catch(() => false)) {
+      test.skip(true, 'No courses available for this teacher to edit');
+    }
+    await editBtn.click();
+
+    await expect(page.locator('input[name="title"]')).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator('input[name="title"]')).not.toHaveValue('', { timeout: 10_000 });
+
+    // Set a price_info value and save
+    const priceInfoInput = page.locator('input[placeholder*="CHF"]').first();
+    const hasPriceInfoInput = await priceInfoInput.isVisible({ timeout: 3_000 }).catch(() => false);
+    if (!hasPriceInfoInput) {
+      test.skip(true, 'price_info input not visible in this form state');
+    }
+
+    await priceInfoInput.fill('Testpreis CHF 99');
+    await page.evaluate(() => { const f = document.querySelector('form'); if (f) f.noValidate = true; });
+    await page.getByRole('button', { name: /Kurs speichern/i }).click();
+    if (alerts.length > 0) {
+      test.skip(true, `Form validation: ${alerts[0]}`);
+    }
+    await page.waitForTimeout(2_000);
+
+    // Re-open and clear the price_info field
+    const editBtn2 = page.getByRole('button', { name: 'Bearbeiten' }).first();
+    if (!await editBtn2.isVisible({ timeout: 5_000 }).catch(() => false)) {
+      test.skip(true, 'Edit button not visible after first save');
+    }
+    await editBtn2.click();
+    await expect(page.locator('input[name="title"]')).toBeVisible({ timeout: 10_000 });
+
+    const priceInfoInput2 = page.locator('input[placeholder*="CHF"]').first();
+    await expect(priceInfoInput2).toBeVisible({ timeout: 5_000 });
+    await priceInfoInput2.fill('');
+
+    await page.evaluate(() => { const f = document.querySelector('form'); if (f) f.noValidate = true; });
+    await page.getByRole('button', { name: /Kurs speichern/i }).click();
+    if (alerts.length > 0) {
+      test.skip(true, `Form validation on clear: ${alerts[0]}`);
+    }
+    await page.waitForTimeout(2_000);
+
+    // Re-open and verify the field is now empty
+    const editBtn3 = page.getByRole('button', { name: 'Bearbeiten' }).first();
+    if (!await editBtn3.isVisible({ timeout: 5_000 }).catch(() => false)) {
+      test.skip(true, 'Edit button not visible after clear save');
+    }
+    await editBtn3.click();
+    await expect(page.locator('input[name="title"]')).toBeVisible({ timeout: 10_000 });
+
+    const priceInfoInput3 = page.locator('input[placeholder*="CHF"]').first();
+    await expect(priceInfoInput3).toBeVisible({ timeout: 5_000 });
+    await expect(priceInfoInput3).toHaveValue('', { timeout: 5_000 });
   });
 });

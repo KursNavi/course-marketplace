@@ -79,12 +79,29 @@ async function assertOk(label, result) {
 async function main() {
   console.log(`\nSeeding E2E test data on: ${process.env.SUPABASE_URL_TEST}\n`);
 
+  // 0. Schema-Check: verify that all required columns exist on the test DB.
+  //    Columns added via migration files must be applied to the test project before tests run.
+  log('CHECK', 'Schema column: courses.price_info');
+  {
+    const { error } = await supabase.from('courses').select('price_info').limit(1);
+    if (error && error.message?.includes('price_info')) {
+      console.warn('\n  [seed] WARNING: Column "price_info" is missing from the test Supabase project.');
+      console.warn('  [seed] Please run the following SQL in the Supabase Dashboard SQL Editor:');
+      console.warn('  [seed]   https://supabase.com/dashboard/project/omoapbvfligjfznzivyu/sql');
+      console.warn('  [seed]   SQL: ALTER TABLE courses ADD COLUMN IF NOT EXISTS price_info TEXT;');
+      console.warn('  [seed]   (see: supabase/migrations/20260510_add_price_info_to_courses.sql)');
+      console.warn('  [seed] Continuing seed — tests affected by this will skip automatically.\n');
+    } else {
+      log('OK', 'Column courses.price_info exists');
+    }
+  }
+
   // 1. Clean up stale E2E data from previous runs
   log('CLEANUP', 'Removing old E2E courses and related data');
   const { data: oldCourses } = await supabase
     .from('courses')
     .select('id')
-    .like('title', `${E2E_PREFIX}%`);
+    .or(`title.like.${E2E_PREFIX}%,title.like.Kopie von ${E2E_PREFIX}%`);
 
   if (oldCourses?.length) {
     const ids = oldCourses.map(c => c.id);
@@ -122,6 +139,21 @@ async function main() {
       preferred_language: 'de',
     }, { onConflict: 'id' })
   );
+
+  // 2b. Optionally set user_metadata.role='teacher' in auth.users so applySession()
+  //     gets the role from the JWT immediately (skips async profiles-table fetch).
+  //     Non-fatal: sb_secret_ keys may not support Auth Admin API; tests fall back to
+  //     the profiles-table fetch which is covered by the 15-20 s waitFor timeouts.
+  {
+    const { error } = await supabase.auth.admin.updateUserById(PROVIDER_ID, {
+      user_metadata: { role: 'teacher' },
+    });
+    if (error) {
+      console.warn(`  [seed] WARNING: Could not set user_metadata.role (${error.message}) — tests rely on profiles-table role fetch`);
+    } else {
+      log('OK', `Set user_metadata.role=teacher for provider (${PROVIDER_ID})`);
+    }
+  }
 
   // 3. Seed a published lead course (for the inquiry / detail-view test)
   const seedCourse = await assertOk(

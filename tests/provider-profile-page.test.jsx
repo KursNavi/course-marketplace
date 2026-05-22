@@ -73,12 +73,15 @@ describe('ProviderProfilePage', () => {
 
     await waitFor(() => expect(screen.getByText('ICH')).toBeInTheDocument());
 
-    expect(document.title).toBe('ICH | KursNavi');
-    expect(document.querySelector('meta[name="description"]')?.content).toBe('Testprofil');
-    expect(document.querySelector('link[rel="canonical"]')?.href).toBe('https://kursnavi.ch/anbieter/ich');
-    expect(document.querySelector('meta[name="robots"]')?.content).toBeTruthy();
-    expect(document.querySelector('meta[property="og:type"]')?.content).toBe('website');
-    expect(document.querySelector('script[data-schema="provider"]')).toBeTruthy();
+    // SEO effects run asynchronously after render — wrap in waitFor to avoid CI timing races
+    await waitFor(() => {
+      expect(document.title).toBe('ICH | KursNavi');
+      expect(document.querySelector('meta[name="description"]')?.content).toBe('Testprofil');
+      expect(document.querySelector('link[rel="canonical"]')?.href).toBe('https://kursnavi.ch/anbieter/ich');
+      expect(document.querySelector('meta[name="robots"]')?.content).toBeTruthy();
+      expect(document.querySelector('meta[property="og:type"]')?.content).toBe('website');
+      expect(document.querySelector('script[data-schema="provider"]')).toBeTruthy();
+    });
   });
 
   it('sets noindex robots tag when provider is not found', async () => {

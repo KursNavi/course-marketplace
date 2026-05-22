@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { loginAsTeacher } from './helpers/auth.mjs';
+import { loginAsTeacherAndOpenTab } from './helpers/auth.mjs';
 import { mockApiRoutes } from './helpers/api-mocks.mjs';
 
 test.describe('Course Duplicate (app-e2e)', () => {
@@ -7,12 +7,8 @@ test.describe('Course Duplicate (app-e2e)', () => {
   test('teacher can copy a course via Kopieren button', async ({ page }) => {
     await mockApiRoutes(page);
 
-    await loginAsTeacher(page);
-
-    // Navigate to dashboard and open Kursangebot tab
-    await page.goto('/dashboard');
-    await expect(page.getByText('Wähle einen Bereich, um loszulegen.')).toBeVisible({ timeout: 10_000 });
-    await page.getByRole('button', { name: 'Kursangebot' }).click();
+    await loginAsTeacherAndOpenTab(page, 'kursangebot');
+    await expect(page.locator('h2').filter({ hasText: 'Meine Kurse' })).toBeVisible({ timeout: 5_000 });
 
     // Find the first "Kopieren" button in the course list
     const copyBtn = page.getByRole('button', { name: 'Kopieren' }).first();
@@ -33,6 +29,6 @@ test.describe('Course Duplicate (app-e2e)', () => {
 
     // The new "Kopie von ..." course should appear in the table
     const expectedTitle = `Kopie von ${originalTitle?.trim()}`;
-    await expect(page.getByText(expectedTitle)).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText(expectedTitle).first()).toBeVisible({ timeout: 10_000 });
   });
 });

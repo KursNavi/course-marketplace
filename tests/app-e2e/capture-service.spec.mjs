@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { loginAsTeacher } from './helpers/auth.mjs';
+import { loginAsTeacherAndOpenTab } from './helpers/auth.mjs';
 import { mockApiRoutes } from './helpers/api-mocks.mjs';
 
 const MOCK_STRIPE_URL = 'https://checkout.stripe.com/c/test-capture-session';
@@ -22,12 +22,10 @@ test.describe('Capture Service / Listungsservice (hybrid app-e2e)', () => {
       await route.abort();
     });
 
-    await loginAsTeacher(page);
-
-    // Navigate to dashboard
-    await page.goto('/dashboard');
-    await expect(page.getByText('Wähle einen Bereich, um loszulegen.')).toBeVisible({ timeout: 10_000 });
-    await page.getByRole('button', { name: 'Kursangebot' }).click();
+    // Login and open Kursangebot tab without a full page reload.
+    // (page.goto('/dashboard') triggers a cold profiles fetch in CI — use tile click instead.)
+    await loginAsTeacherAndOpenTab(page, 'kursangebot');
+    await expect(page.locator('h2').filter({ hasText: 'Meine Kurse' })).toBeVisible({ timeout: 5_000 });
 
     // Click "Service buchen (CHF 75.-/Kurs)" to open the CaptureServiceModal
     await page.getByRole('button', { name: /service buchen/i }).click();

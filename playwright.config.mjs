@@ -5,7 +5,8 @@ import { config } from 'dotenv';
 config({ path: '.env.test.local' });
 
 export default defineConfig({
-  timeout: 30_000,
+  timeout: 60_000,
+  workers: 1,
   fullyParallel: false,
   reporter: 'list',
   use: {

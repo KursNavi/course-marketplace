@@ -1405,7 +1405,7 @@ if (bookingType === 'platform') {
             prerequisites: prerequisitesVal,
             session_count: sessionCount || null,
             session_length: sessionLength || '',
-            ...(priceInfo ? { price_info: priceInfo } : {}),
+            price_info: priceInfo || null,
             provider_url: providerUrl,
             user_id: user?.id || initialData?.user_id,
             is_pro: user?.is_professional ?? initialData?.is_pro ?? false,

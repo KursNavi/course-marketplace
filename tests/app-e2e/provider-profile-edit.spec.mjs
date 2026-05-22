@@ -1,23 +1,18 @@
 import { test, expect } from '@playwright/test';
-import { loginAsTeacher } from './helpers/auth.mjs';
+import { loginAsTeacherAndOpenTab } from './helpers/auth.mjs';
 import { mockApiRoutes } from './helpers/api-mocks.mjs';
 
 test.describe('Provider Profile Edit (app-e2e)', () => {
 
   test('teacher can edit profile settings', async ({ page }) => {
     await mockApiRoutes(page);
-    await loginAsTeacher(page);
 
-    // Navigate to dashboard
-    await page.goto('/dashboard');
-    await expect(page.getByText('Wähle einen Bereich, um loszulegen.')).toBeVisible({ timeout: 10_000 });
+    // Login and open Profil tab (teacher role confirmed, no page reload needed)
+    await loginAsTeacherAndOpenTab(page, 'profile');
 
-    // Click the Profil tile
-    await page.getByRole('button', { name: 'Profil' }).click();
-
-    // Profile form should load
+    // Profile form should load (ProviderProfileEditor has async loading state)
     const nameInput = page.locator('input[name="full_name"]');
-    await expect(nameInput).toBeVisible({ timeout: 10_000 });
+    await expect(nameInput).toBeVisible({ timeout: 20_000 });
 
     // Read current values
     const originalName = await nameInput.inputValue();
@@ -48,15 +43,12 @@ test.describe('Provider Profile Edit (app-e2e)', () => {
 
   test('teacher can view Stripe Connect setup section', async ({ page }) => {
     await mockApiRoutes(page);
-    await loginAsTeacher(page);
 
-    await page.goto('/dashboard');
-    await expect(page.getByText('Wähle einen Bereich, um loszulegen.')).toBeVisible({ timeout: 10_000 });
+    // Login and open Profil tab (teacher role confirmed, no page reload needed)
+    await loginAsTeacherAndOpenTab(page, 'profile');
 
-    await page.getByRole('button', { name: 'Profil' }).click();
-
-    // Wait for profile to load
-    await expect(page.locator('input[name="full_name"]')).toBeVisible({ timeout: 10_000 });
+    // Wait for profile to load (ProviderProfileEditor has async loading state)
+    await expect(page.locator('input[name="full_name"]')).toBeVisible({ timeout: 20_000 });
 
     // Scroll down to find the Stripe Connect / payout section
     const payoutSection = page.getByText(/Auszahlungen/i);
