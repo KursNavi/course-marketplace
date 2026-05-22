@@ -38,19 +38,25 @@ test.describe('Course Edit (app-e2e)', () => {
     const newTitle = `${originalTitle} (E2E-Edit ${Date.now()})`;
     await titleInput.fill(newTitle);
 
-    // Ensure required category fields are filled (cascading dropdowns may not auto-populate)
-    // Find all selects within the category section that have empty values
+    // Ensure required category fields are filled (cascading dropdowns may not auto-populate).
+    // Use a timeout-guarded loop: DOM changes during cascading dropdown updates can cause
+    // selects to temporarily detach — isDisabled() without a timeout would hang indefinitely.
     const emptySelects = page.locator('select:has(option[value=""]:checked)');
     const emptyCount = await emptySelects.count();
     for (let i = 0; i < emptyCount; i++) {
-      const sel = emptySelects.nth(i);
-      // Skip if disabled
-      if (await sel.isDisabled()) continue;
-      const options = await sel.locator('option').allTextContents();
-      const firstReal = options.find(o => o && !o.includes('wählen') && !o.includes('Optional'));
-      if (firstReal) {
-        await sel.selectOption({ label: firstReal });
-        await page.waitForTimeout(500); // allow cascading dropdown to update
+      try {
+        const sel = emptySelects.nth(i);
+        // 2 s timeout: skip if the element is detached/reattaching (React re-render)
+        const disabled = await sel.isDisabled({ timeout: 2_000 }).catch(() => true);
+        if (disabled) continue;
+        const options = await sel.locator('option').allTextContents().catch(() => []);
+        const firstReal = options.find(o => o && !o.includes('wählen') && !o.includes('Optional'));
+        if (firstReal) {
+          await sel.selectOption({ label: firstReal }).catch(() => {});
+          await page.waitForTimeout(300); // allow cascading dropdown to update
+        }
+      } catch {
+        // Element became unstable — skip this select
       }
     }
 

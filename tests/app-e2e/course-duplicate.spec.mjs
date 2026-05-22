@@ -29,6 +29,6 @@ test.describe('Course Duplicate (app-e2e)', () => {
 
     // The new "Kopie von ..." course should appear in the table
     const expectedTitle = `Kopie von ${originalTitle?.trim()}`;
-    await expect(page.getByText(expectedTitle)).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText(expectedTitle).first()).toBeVisible({ timeout: 10_000 });
   });
 });
