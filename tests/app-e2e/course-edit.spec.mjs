@@ -87,7 +87,7 @@ test.describe('Course Edit (app-e2e)', () => {
       await page.locator('input[name="title"]').fill(originalTitle);
       await page.evaluate(() => { const f = document.querySelector('form'); if (f) f.noValidate = true; });
       await page.getByRole('button', { name: /Kurs speichern/i }).click();
-      await expect(page.getByText(originalTitle)).toBeVisible({ timeout: 20_000 });
+      await expect(page.getByText(originalTitle, { exact: true })).toBeVisible({ timeout: 20_000 });
     }
   });
 
