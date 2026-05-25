@@ -780,39 +780,33 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
                     </p>
 
                     <div className="border-t border-gray-100 pt-4 mb-4 space-y-3">
-                        {course.instructor_has_public_profile ? (
-                            <a
-                                href={`/anbieter/${course.instructor_slug}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                onClick={(e) => {
-                                    if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
-                                        e.preventDefault();
-                                        window.history.pushState({}, '', `/anbieter/${course.instructor_slug}`);
+                        <button
+                            onClick={async (e) => {
+                                const openInNewTab = e.ctrlKey || e.metaKey || e.shiftKey;
+                                const newTab = openInNewTab ? window.open('', '_blank') : null;
+                                const { data } = await supabase.from('profiles').select('*').eq('id', course.user_id).single();
+                                if (!data) { newTab?.close(); return; }
+                                const tier = (data.package_tier || 'basic').toLowerCase();
+                                const hasPublicProfile = ['pro', 'premium', 'enterprise'].includes(tier) && data.slug && data.profile_published_at;
+                                if (hasPublicProfile && newTab) {
+                                    newTab.location.href = `/anbieter/${data.slug}`;
+                                } else {
+                                    newTab?.close();
+                                    if (hasPublicProfile) {
+                                        window.history.pushState({}, '', `/anbieter/${data.slug}`);
                                         setView('provider-profile');
-                                        window.scrollTo(0, 0);
+                                    } else {
+                                        setSelectedTeacher(data);
+                                        setView('teacher-profile');
                                     }
-                                }}
-                                className="flex items-center text-gray-700 hover:text-primary transition-colors w-full group"
-                            >
-                                <User className="w-5 h-5 mr-3 text-gray-400 shrink-0"/>
-                                <span className="font-medium group-hover:underline">{course.instructor_name}</span>
-                            </a>
-                        ) : (
-                            <button
-                                onClick={async () => {
-                                    const { data } = await supabase.from('profiles').select('*').eq('id', course.user_id).single();
-                                    if (!data) return;
-                                    setSelectedTeacher(data);
-                                    setView('teacher-profile');
                                     window.scrollTo(0, 0);
-                                }}
-                                className="flex items-center text-gray-700 hover:text-primary transition-colors w-full group"
-                            >
-                                <User className="w-5 h-5 mr-3 text-gray-400 shrink-0"/>
-                                <span className="font-medium group-hover:underline">{course.instructor_name}</span>
-                            </button>
-                        )}
+                                }
+                            }}
+                            className="flex items-center text-gray-700 hover:text-primary transition-colors w-full group"
+                        >
+                            <User className="w-5 h-5 mr-3 text-gray-400 shrink-0"/>
+                            <span className="font-medium group-hover:underline">{course.instructor_name}</span>
+                        </button>
                         {(() => {
                             const presenceLocs = Array.isArray(course.course_locations)
                                 ? course.course_locations
