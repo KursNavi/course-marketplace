@@ -784,7 +784,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
       if (userIds.length > 0) {
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
-          .select('id, bio_text, certificates, additional_locations, city, canton, verification_status')
+          .select('id, bio_text, certificates, additional_locations, city, canton, verification_status, slug, package_tier, profile_published_at')
           .in('id', userIds);
 
         if (!profileError && profileData) {
@@ -847,12 +847,15 @@ export default function KursNaviPro() {  // 1. Initial State Logic
           };
         });
 
+        const instructorTier = (prof?.package_tier || 'basic').toLowerCase();
         const normalizedWithFallbacks = {
           ...normalized,
           instructor_bio: prof?.bio_text,
           instructor_certificates: prof?.certificates,
           additional_locations: prof?.additional_locations,
           instructor_verified: prof?.verification_status === 'verified',
+          instructor_slug: prof?.slug || null,
+          instructor_has_public_profile: ['pro', 'premium', 'enterprise'].includes(instructorTier) && !!prof?.slug && !!prof?.profile_published_at,
           all_categories: courseCategories.length > 0 ? courseCategories : buildSyntheticCategories(normalized), // Add real or synthesized categories
           category_paths: categoryPaths, // Add category_paths for TeacherForm
         };
