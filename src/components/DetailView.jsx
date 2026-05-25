@@ -787,12 +787,8 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
                                 const { data } = await supabase.from('profiles').select('*').eq('id', course.user_id).single();
                                 if (!data) { newTab?.close(); return; }
                                 const tier = (data.package_tier || 'basic').toLowerCase();
-                                const isPro = ['pro', 'premium', 'enterprise'].includes(tier);
-                                // For new tab: tier + slug is enough (profile_published_at may be null in test envs)
-                                const canOpenNewTab = isPro && !!data.slug;
-                                // For normal SPA navigation: keep original strict check
-                                const hasPublicProfile = isPro && data.slug && data.profile_published_at;
-                                if (canOpenNewTab && newTab) {
+                                const hasPublicProfile = ['pro', 'premium', 'enterprise'].includes(tier) && data.slug && data.profile_published_at;
+                                if (hasPublicProfile && newTab) {
                                     newTab.location.href = `/anbieter/${data.slug}`;
                                 } else {
                                     newTab?.close();
