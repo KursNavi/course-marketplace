@@ -8,6 +8,7 @@ import {
     Eye, EyeOff, Calendar, ChevronRight, Ban, Download, Copy
 } from 'lucide-react';
 import { SWISS_CANTONS, CATEGORY_TYPES, NEW_TAXONOMY, CATEGORY_LABELS } from "../lib/constants";
+import { buildCoursePath } from '../lib/siteConfig';
 import { PLANS } from "../constants/plans";
 
 import { DEFAULT_COURSE_IMAGE } from '../lib/imageUtils';
@@ -2487,7 +2488,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                                         <td className="px-4 py-3">
                                                             <div className="flex flex-wrap items-center gap-1.5">
                                                                 <button onClick={() => handleEditCourse(course)} className="text-xs px-2 py-1 rounded-md font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 transition flex items-center gap-1"><FileEdit className="w-3 h-3" />Bearbeiten</button>
-                                                                <button onClick={() => handleNavigateToCourse(course)} className="text-xs px-2 py-1 rounded-md font-medium bg-gray-50 text-gray-700 hover:bg-gray-100 transition flex items-center gap-1"><Eye className="w-3 h-3" />Vorschau</button>
+                                                                <a href={buildCoursePath(course)} target="_blank" rel="noopener noreferrer" onClick={(e) => { if (!e.ctrlKey && !e.metaKey && !e.shiftKey) { e.preventDefault(); handleNavigateToCourse(course); } }} className="text-xs px-2 py-1 rounded-md font-medium bg-gray-50 text-gray-700 hover:bg-gray-100 transition flex items-center gap-1"><Eye className="w-3 h-3" />Vorschau</a>
                                                                 <button onClick={() => handleDuplicateCourse(course.id)} className="text-xs px-2 py-1 rounded-md font-medium bg-purple-50 text-purple-700 hover:bg-purple-100 transition flex items-center gap-1" title="Kurs kopieren"><Copy className="w-3 h-3" />Kopieren</button>
                                                                 {course.status === 'draft' ? (
                                                                     <button onClick={() => handleUpdateCourseStatus(course.id, 'published')} className="text-xs px-2 py-1 rounded-md font-medium bg-green-50 text-green-700 hover:bg-green-100 transition flex items-center gap-1"><CheckCircle className="w-3 h-3" />Veröffentlichen</button>
