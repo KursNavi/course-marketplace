@@ -1486,26 +1486,18 @@ export default function KursNaviPro() {  // 1. Initial State Logic
         const profilePart = path.split('/')[2];
         if (profilePart) {
           const isFullUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(profilePart);
-          let loadQuery;
           if (isFullUuid) {
             // Legacy: vollständige UUID in URL
-            loadQuery = supabase.from('profiles').select('*').eq('id', profilePart).single();
+            supabase.from('profiles').select('*').eq('id', profilePart).single()
+              .then(({ data }) => { if (data) setSelectedTeacher(data); });
           } else {
-            // Name-slug-{8hexChars} Format oder echter Slug
-            const shortIdMatch = profilePart.match(/-([0-9a-f]{8})$/i);
-            if (shortIdMatch) {
-              // name-slug-4463ddda → UUID-Range: 4463ddda-0000-... bis 4463ddda-ffff-...
-              const s = shortIdMatch[1];
-              loadQuery = supabase.from('profiles').select('*')
-                .gte('id', `${s}-0000-0000-0000-000000000000`)
-                .lte('id', `${s}-ffff-ffff-ffff-ffffffffffff`)
-                .maybeSingle();
-            } else {
-              // Echter Slug (Lehrer hat eigenen Profil-Slug)
-              loadQuery = supabase.from('profiles').select('*').eq('slug', profilePart).single();
-            }
+            // Slug oder Name-Slug: zuerst slug, dann full_name (case-insensitiv)
+            const nameSearch = profilePart.replace(/-/g, ' ');
+            supabase.from('profiles').select('*')
+              .or(`slug.eq.${profilePart},full_name.ilike.${nameSearch}`)
+              .limit(1)
+              .then(({ data }) => { if (data?.[0]) setSelectedTeacher(data[0]); });
           }
-          if (loadQuery) loadQuery.then(({ data }) => { if (data) setSelectedTeacher(data); });
         }
         setView('teacher-profile');
         return;
