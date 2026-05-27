@@ -796,7 +796,15 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
                                         window.history.pushState({}, '', `/anbieter/${data.slug}`);
                                         setView('provider-profile');
                                     } else {
-                                        const profileUrlPart = data.slug || data.id;
+                                        let profileUrlPart = data.slug;
+                                        if (!profileUrlPart) {
+                                            const namePart = (data.full_name || 'anbieter')
+                                                .toLowerCase()
+                                                .replace(/ä/g,'ae').replace(/ö/g,'oe').replace(/ü/g,'ue').replace(/ß/g,'ss')
+                                                .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+                                            const shortId = (data.id || '').replace(/-/g, '').slice(0, 8);
+                                            profileUrlPart = `${namePart}-${shortId}`;
+                                        }
                                         window.history.pushState({}, '', `/profil/${profileUrlPart}`);
                                         setSelectedTeacher(data);
                                         setView('teacher-profile');

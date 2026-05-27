@@ -1485,13 +1485,27 @@ export default function KursNaviPro() {  // 1. Initial State Logic
       if (nextView === 'teacher-profile' && path.startsWith('/profil/')) {
         const profilePart = path.split('/')[2];
         if (profilePart) {
-          const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(profilePart);
-          const query = isUuid
-            ? supabase.from('profiles').select('*').eq('id', profilePart).single()
-            : supabase.from('profiles').select('*').eq('slug', profilePart).single();
-          query.then(({ data }) => {
-            if (data) setSelectedTeacher(data);
-          });
+          const isFullUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(profilePart);
+          let loadQuery;
+          if (isFullUuid) {
+            // Legacy: vollständige UUID in URL
+            loadQuery = supabase.from('profiles').select('*').eq('id', profilePart).single();
+          } else {
+            // Name-slug-{8hexChars} Format oder echter Slug
+            const shortIdMatch = profilePart.match(/-([0-9a-f]{8})$/i);
+            if (shortIdMatch) {
+              // name-slug-4463ddda → UUID-Range: 4463ddda-0000-... bis 4463ddda-ffff-...
+              const s = shortIdMatch[1];
+              loadQuery = supabase.from('profiles').select('*')
+                .gte('id', `${s}-0000-0000-0000-000000000000`)
+                .lte('id', `${s}-ffff-ffff-ffff-ffffffffffff`)
+                .maybeSingle();
+            } else {
+              // Echter Slug (Lehrer hat eigenen Profil-Slug)
+              loadQuery = supabase.from('profiles').select('*').eq('slug', profilePart).single();
+            }
+          }
+          if (loadQuery) loadQuery.then(({ data }) => { if (data) setSelectedTeacher(data); });
         }
         setView('teacher-profile');
         return;
