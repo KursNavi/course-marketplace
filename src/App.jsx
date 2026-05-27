@@ -1483,9 +1483,13 @@ export default function KursNaviPro() {  // 1. Initial State Logic
 
       // Teacher-Profil: Lehrerdaten aus DB laden (basic teacher, kein öffentliches Profil)
       if (nextView === 'teacher-profile' && path.startsWith('/profil/')) {
-        const teacherId = path.split('/')[2];
-        if (teacherId) {
-          supabase.from('profiles').select('*').eq('id', teacherId).single().then(({ data }) => {
+        const profilePart = path.split('/')[2];
+        if (profilePart) {
+          const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(profilePart);
+          const query = isUuid
+            ? supabase.from('profiles').select('*').eq('id', profilePart).single()
+            : supabase.from('profiles').select('*').eq('slug', profilePart).single();
+          query.then(({ data }) => {
             if (data) setSelectedTeacher(data);
           });
         }
