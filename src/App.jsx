@@ -195,6 +195,9 @@ export default function KursNaviPro() {  // 1. Initial State Logic
       if (path === '/anbieter') return 'provider-directory';
       if (path.startsWith('/anbieter/')) return 'provider-profile';
 
+      // TEACHER PROFILE ROUTING (basic teachers without public profile)
+      if (path.startsWith('/profil/')) return 'teacher-profile';
+
       // BEREICH LANDING PAGE ROUTING
       if (path.startsWith('/bereich/')) {
           const parts = path.split('/').filter(Boolean);
@@ -1475,6 +1478,18 @@ export default function KursNaviPro() {  // 1. Initial State Logic
         setSelectedCourse(null);
         setView('search');
         window.history.replaceState({ view: 'search' }, '', '/search');
+        return;
+      }
+
+      // Teacher-Profil: Lehrerdaten aus DB laden (basic teacher, kein öffentliches Profil)
+      if (nextView === 'teacher-profile' && path.startsWith('/profil/')) {
+        const teacherId = path.split('/')[2];
+        if (teacherId) {
+          supabase.from('profiles').select('*').eq('id', teacherId).single().then(({ data }) => {
+            if (data) setSelectedTeacher(data);
+          });
+        }
+        setView('teacher-profile');
         return;
       }
 

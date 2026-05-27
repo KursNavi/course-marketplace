@@ -796,6 +796,7 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
                                         window.history.pushState({}, '', `/anbieter/${data.slug}`);
                                         setView('provider-profile');
                                     } else {
+                                        window.history.pushState({}, '', `/profil/${data.id}`);
                                         setSelectedTeacher(data);
                                         setView('teacher-profile');
                                     }
