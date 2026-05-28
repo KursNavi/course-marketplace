@@ -32,16 +32,20 @@ test.describe('Merkliste (app-e2e)', () => {
     await page.goto('/dashboard');
     await expect(page.locator('h1')).toBeVisible({ timeout: 10_000 });
 
-    // Student dashboard shows Merkliste section directly (no tab switching needed)
+    // Target only the Merkliste section on the right side of the student dashboard.
+    // The student dashboard also shows bookings (left column) which may contain the
+    // same course title — scoping to the Merkliste container avoids false matches.
+    const merklisteSection = page.locator('h2:has-text("Merkliste") + div');
+
     // The saved course should appear in the Merkliste section
-    await expect(page.getByText(course.title).first()).toBeVisible({ timeout: 15_000 });
+    await expect(merklisteSection.getByText(course.title)).toBeVisible({ timeout: 15_000 });
 
     // Remove from Merkliste
-    const removeBtn = page.getByRole('button', { name: /Entfernen/i }).first();
+    const removeBtn = merklisteSection.getByRole('button', { name: /Entfernen/i });
     if (await removeBtn.isVisible({ timeout: 2_000 }).catch(() => false)) {
       await removeBtn.click();
       // Wait for Supabase state update and React re-render (async remove)
-      await expect(page.getByText(course.title).first()).not.toBeVisible({ timeout: 30_000 });
+      await expect(merklisteSection.getByText(course.title)).not.toBeVisible({ timeout: 30_000 });
     }
   });
 });
