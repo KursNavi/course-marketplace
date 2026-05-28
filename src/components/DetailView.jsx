@@ -781,6 +781,7 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
 
                     <div className="border-t border-gray-100 pt-4 mb-4 space-y-3">
                         <button
+                            data-testid="instructor-profile-btn"
                             onClick={async (e) => {
                                 const openInNewTab = e.ctrlKey || e.metaKey || e.shiftKey;
                                 const newTab = openInNewTab ? window.open('', '_blank') : null;

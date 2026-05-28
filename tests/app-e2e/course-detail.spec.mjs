@@ -16,15 +16,13 @@ test.describe('Course Detail Page (app-e2e)', () => {
     await page.goto(`/courses/e2e/test/${course.id}-${course.slug || 'test'}`);
     await expect(page.locator('h1')).toBeVisible({ timeout: 15_000 });
 
-    // Find the instructor name button (first button inside the sticky sidebar)
-    const sidebarButtons = page.locator('.sticky button');
-    const count = await sidebarButtons.count();
-    if (count === 0) {
-      test.skip(true, 'No sidebar buttons found');
+    const instructorBtn = page.locator('[data-testid="instructor-profile-btn"]');
+    if (!await instructorBtn.isVisible({ timeout: 5_000 }).catch(() => false)) {
+      test.skip(true, 'Instructor button not visible');
     }
 
     const startUrl = page.url();
-    await sidebarButtons.first().click();
+    await instructorBtn.click();
 
     // Wait for URL to change away from the course detail URL
     await page.waitForFunction(
