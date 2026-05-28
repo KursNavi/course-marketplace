@@ -195,6 +195,9 @@ export default function KursNaviPro() {  // 1. Initial State Logic
       if (path === '/anbieter') return 'provider-directory';
       if (path.startsWith('/anbieter/')) return 'provider-profile';
 
+      // TEACHER PROFILE ROUTING (basic teachers without public profile)
+      if (path.startsWith('/profil/')) return 'teacher-profile';
+
       // BEREICH LANDING PAGE ROUTING
       if (path.startsWith('/bereich/')) {
           const parts = path.split('/').filter(Boolean);
@@ -1475,6 +1478,28 @@ export default function KursNaviPro() {  // 1. Initial State Logic
         setSelectedCourse(null);
         setView('search');
         window.history.replaceState({ view: 'search' }, '', '/search');
+        return;
+      }
+
+      // Teacher-Profil: Lehrerdaten aus DB laden (basic teacher, kein öffentliches Profil)
+      if (nextView === 'teacher-profile' && path.startsWith('/profil/')) {
+        const profilePart = path.split('/')[2];
+        if (profilePart) {
+          const isFullUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(profilePart);
+          if (isFullUuid) {
+            // Legacy: vollständige UUID in URL
+            supabase.from('profiles').select('*').eq('id', profilePart).single()
+              .then(({ data }) => { if (data) setSelectedTeacher(data); });
+          } else {
+            // Slug oder Name-Slug: zuerst slug, dann full_name (case-insensitiv)
+            const nameSearch = profilePart.replace(/-/g, ' ');
+            supabase.from('profiles').select('*')
+              .or(`slug.eq.${profilePart},full_name.ilike.${nameSearch}`)
+              .limit(1)
+              .then(({ data }) => { if (data?.[0]) setSelectedTeacher(data[0]); });
+          }
+        }
+        setView('teacher-profile');
         return;
       }
 

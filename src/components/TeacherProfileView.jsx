@@ -18,7 +18,23 @@ const TeacherProfileView = ({ teacher, courses, setView, setSelectedCourse, t })
 
     useEffect(() => {
         window.scrollTo(0, 0);
-    }, [teacher?.id]);
+        if (teacher?.full_name) {
+            document.title = `${teacher.full_name} | KursNavi`;
+        }
+        // Kein öffentliches Profil → nicht von Suchmaschinen indexieren
+        let robotsTag = document.querySelector('meta[name="robots"]');
+        const createdRobots = !robotsTag;
+        if (!robotsTag) {
+            robotsTag = document.createElement('meta');
+            robotsTag.name = 'robots';
+            document.head.appendChild(robotsTag);
+        }
+        robotsTag.content = 'noindex,nofollow';
+        return () => {
+            if (createdRobots) robotsTag.remove();
+            else robotsTag.content = 'index,follow';
+        };
+    }, [teacher?.id, teacher?.full_name]);
 
     const teacherCourses = useMemo(() => courses.filter(c => c.user_id === teacher.id), [courses, teacher.id]);
 

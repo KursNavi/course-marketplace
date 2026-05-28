@@ -781,6 +781,7 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
 
                     <div className="border-t border-gray-100 pt-4 mb-4 space-y-3">
                         <button
+                            data-testid="instructor-profile-btn"
                             onClick={async (e) => {
                                 const openInNewTab = e.ctrlKey || e.metaKey || e.shiftKey;
                                 const newTab = openInNewTab ? window.open('', '_blank') : null;
@@ -796,6 +797,11 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
                                         window.history.pushState({}, '', `/anbieter/${data.slug}`);
                                         setView('provider-profile');
                                     } else {
+                                        const profileUrlPart = data.slug || (data.full_name || 'anbieter')
+                                            .toLowerCase()
+                                            .replace(/ä/g,'ae').replace(/ö/g,'oe').replace(/ü/g,'ue').replace(/ß/g,'ss')
+                                            .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+                                        window.history.pushState({}, '', `/profil/${profileUrlPart}`);
                                         setSelectedTeacher(data);
                                         setView('teacher-profile');
                                     }
