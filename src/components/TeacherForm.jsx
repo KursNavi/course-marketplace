@@ -482,7 +482,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
     }, [imagePreview]);
 
     // Schedule State
-    const [events, setEvents] = useState(draft?.events || [{ id: null, bookingCount: 0, type: 'presence', start_date: '', street: '', city: '', max_participants: 0, canton: '', schedule_description: '', location_abroad: '' }]);
+    const [events, setEvents] = useState(draft?.events || [{ id: null, bookingCount: 0, type: 'presence', start_date: '', end_date: '', street: '', city: '', max_participants: 0, canton: '', schedule_description: '', location_abroad: '' }]);
 
     // Fallback Regions
     const [fallbackCantons, setFallbackCantons] = useState(draft?.fallbackCantons || []);
@@ -729,6 +729,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
                         bookingCount: Array.isArray(e.bookings) ? (e.bookings[0]?.count || 0) : (e.bookings?.count || 0),
                         type,
                         start_date: e.start_date ? e.start_date.split('T')[0] : '',
+                        end_date: e.end_date ? e.end_date.split('T')[0] : '',
                         street,
                         city,
                         max_participants: e.max_participants,
@@ -1001,7 +1002,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
 
     const addEvent = () => {
         const loc = profileLocationRef.current;
-        setEvents([...events, { id: null, bookingCount: 0, type: 'presence', start_date: '', street: loc?.street || '', city: loc?.city || '', max_participants: 0, canton: loc?.canton || '', schedule_description: '', location_abroad: '' }]);
+        setEvents([...events, { id: null, bookingCount: 0, type: 'presence', start_date: '', end_date: '', street: loc?.street || '', city: loc?.city || '', max_participants: 0, canton: loc?.canton || '', schedule_description: '', location_abroad: '' }]);
         markDirty();
     };
     const removeEvent = (index) => {
@@ -1515,6 +1516,7 @@ if (bookingType === 'platform') {
                 const eventPayload = {
                     course_id: activeCourseId,
                     start_date: ev.start_date,
+                    end_date: ev.end_date || null,
                     location: ev.location,
                     canton: ev.type === 'online' ? null : ev.type === 'ausland' ? 'Ausland' : (ev.canton || null),
                     schedule_description: ev.schedule_description,
@@ -2229,11 +2231,15 @@ if (bookingType === 'platform') {
                                                 </button>
                                             ))}
                                         </div>
-                                        {/* Datum + Zeit */}
-                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        {/* Datum + End-Datum + Zeit */}
+                                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                                             <div>
-                                                <label className="text-xs font-bold text-gray-500 uppercase">Datum</label>
+                                                <label className="text-xs font-bold text-gray-500 uppercase">Startdatum</label>
                                                 <input type="date" value={ev.start_date} onChange={e => updateEvent(i, 'start_date', e.target.value)} className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white" />
+                                            </div>
+                                            <div>
+                                                <label className="text-xs font-bold text-gray-500 uppercase">Enddatum (optional)</label>
+                                                <input type="date" value={ev.end_date || ''} min={ev.start_date || undefined} onChange={e => updateEvent(i, 'end_date', e.target.value)} className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white" />
                                             </div>
                                             <div className="md:col-span-2">
                                                 <label className="text-xs font-bold text-gray-500 uppercase">Zeit / Details (Optional)</label>
