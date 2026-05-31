@@ -2030,13 +2030,10 @@ if (bookingType === 'platform') {
                         {/* B: DATES & LOCATIONS */}
                         {bookingType === 'platform' ? (
                         <div className="bg-blue-50 p-6 rounded-xl border border-blue-100">
-                             <div className="flex justify-between items-center mb-4">
-                                <div>
-                                    <h3 className="text-lg font-bold text-blue-900 flex items-center"><Calendar className="w-5 h-5 mr-2" /> Termine & Standorte</h3>
-                                    <p className="text-xs text-blue-700">Datum, Ort und Zeit sind für Direktbuchungen erforderlich.</p>
-                                    <p className="text-xs text-amber-700 mt-2">Termine mit bestehenden Buchungen sind gesperrt. Vergangene gebuchte Termine werden automatisch archiviert und hier nicht mehr bearbeitbar angezeigt.</p>
-                                </div>
-                                <button type="button" onClick={addEvent} className="bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-bold hover:bg-blue-700 flex items-center"><Plus className="w-4 h-4 mr-1"/> Termin hinzufügen</button>
+                             <div className="mb-4">
+                                <h3 className="text-lg font-bold text-blue-900 flex items-center"><Calendar className="w-5 h-5 mr-2" /> Termine & Standorte</h3>
+                                <p className="text-xs text-blue-700">Datum, Ort und Zeit sind für Direktbuchungen erforderlich.</p>
+                                <p className="text-xs text-amber-700 mt-2">Termine mit bestehenden Buchungen sind gesperrt. Vergangene gebuchte Termine werden automatisch archiviert und hier nicht mehr bearbeitbar angezeigt.</p>
                             </div>
                             <div className="space-y-4">
                                 {archivedBookedEvents.length > 0 && (
@@ -2129,16 +2126,14 @@ if (bookingType === 'platform') {
                                     </div>
                                 )})}
                             </div>
+                            <button type="button" onClick={addEvent} className="mt-4 bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-bold hover:bg-blue-700 flex items-center"><Plus className="w-4 h-4 mr-1"/> Termin hinzufügen</button>
                         </div>
                         ) : (
                         <div className="bg-blue-50 p-6 rounded-xl border border-blue-100">
-                            <div className="flex justify-between items-center mb-1">
+                            <div className="mb-1">
                                 <h3 className="text-lg font-bold text-blue-900 flex items-center">
                                     <MapPin className="w-5 h-5 mr-2" /> Standort(e) *
                                 </h3>
-                                <button type="button" onClick={addLocation} className="bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-bold hover:bg-blue-700 flex items-center">
-                                    <Plus className="w-4 h-4 mr-1"/> Standort hinzufügen
-                                </button>
                             </div>
                             <p className="text-xs text-blue-700 mb-4">
                                 {bookingType === 'platform_flex'
@@ -2199,18 +2194,18 @@ if (bookingType === 'platform') {
                                     </div>
                                 ))}
                             </div>
+                            <button type="button" onClick={addLocation} className="mt-4 bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-bold hover:bg-blue-700 flex items-center">
+                                <Plus className="w-4 h-4 mr-1"/> Standort hinzufügen
+                            </button>
                         </div>
                         )}
 
                         {/* Optionale Termine für Lead-Kurse */}
                         {bookingType === 'lead' && (
                         <div className="bg-green-50 p-6 rounded-xl border border-green-100 mt-4">
-                            <div className="flex justify-between items-center mb-1">
-                                <div>
-                                    <h3 className="text-lg font-bold text-green-900 flex items-center"><Calendar className="w-5 h-5 mr-2" /> Termine (optional)</h3>
-                                    <p className="text-xs text-green-700 mt-1">Hast du bereits Termine geplant? Füge sie hier hinzu — sie werden auf der Kursseite angezeigt und im Datumsfilter berücksichtigt. Leere Termine werden nicht gespeichert.</p>
-                                </div>
-                                <button type="button" onClick={addEvent} className="bg-green-600 text-white px-3 py-1 rounded-full text-sm font-bold hover:bg-green-700 flex items-center shrink-0 ml-4"><Plus className="w-4 h-4 mr-1"/> Termin hinzufügen</button>
+                            <div className="mb-1">
+                                <h3 className="text-lg font-bold text-green-900 flex items-center"><Calendar className="w-5 h-5 mr-2" /> Termine (optional)</h3>
+                                <p className="text-xs text-green-700 mt-1">Hast du bereits Termine geplant? Füge sie hier hinzu — sie werden auf der Kursseite angezeigt und im Datumsfilter berücksichtigt. Leere Termine werden nicht gespeichert.</p>
                             </div>
                             <div className="space-y-4 mt-4">
                                 {events.map((ev, i) => {
@@ -2273,6 +2268,7 @@ if (bookingType === 'platform') {
                                     );
                                 })}
                             </div>
+                            <button type="button" onClick={addEvent} className="mt-4 bg-green-600 text-white px-3 py-1 rounded-full text-sm font-bold hover:bg-green-700 flex items-center"><Plus className="w-4 h-4 mr-1"/> Termin hinzufügen</button>
                         </div>
                         )}
 
