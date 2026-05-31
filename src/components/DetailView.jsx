@@ -967,7 +967,14 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
                                             )}
                                         </div>
                                         
-                                        {!user && effectiveBookingType !== 'lead' ? (
+                                        {effectiveBookingType === 'lead' ? (
+                                            (ev.location || ev.canton) ? (
+                                                <div className="text-xs text-gray-500 flex items-center gap-1 pt-1">
+                                                    <MapPin className="w-3 h-3 shrink-0" />
+                                                    <span>{ev.location || ev.canton}</span>
+                                                </div>
+                                            ) : null
+                                        ) : !user ? (
                                             <div className="w-full">
                                                 <button
                                                     onClick={() => {
@@ -986,24 +993,31 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
                                         ) : (
                                             <button
                                                 onClick={() => !ev.isFull && !bookingInProgress && handleBookingAction(ev)}
-                                                disabled={(ev.isFull && effectiveBookingType === 'platform') || (effectiveBookingType !== 'lead' && !guardianAttested) || bookingInProgress}
+                                                disabled={(ev.isFull && effectiveBookingType === 'platform') || !guardianAttested || bookingInProgress}
                                                 className={`w-full py-2.5 rounded-lg font-bold text-sm transition flex items-center justify-center
-                                                    ${(ev.isFull && effectiveBookingType === 'platform') || (effectiveBookingType !== 'lead' && !guardianAttested) || bookingInProgress
+                                                    ${(ev.isFull && effectiveBookingType === 'platform') || !guardianAttested || bookingInProgress
                                                         ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                                                         : 'bg-primary text-white hover:bg-orange-600 shadow-sm hover:shadow active:scale-95'}`}
                                             >
                                                 {bookingInProgress ? (
                                                     <><div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div> Wird gebucht...</>
                                                 ) : (
-                                                    <>{effectiveBookingType === 'lead' && <Mail className="w-4 h-4 mr-2" />}
-                                                    {(ev.isFull && effectiveBookingType === 'platform') ? 'Ausgebucht' :
-                                                     (effectiveBookingType === 'lead' ? 'Anfrage senden' : t.btn_book || 'Jetzt Buchen')}</>
+                                                    <>{(ev.isFull && effectiveBookingType === 'platform') ? 'Ausgebucht' : (t.btn_book || 'Jetzt Buchen')}</>
                                                 )}
                                             </button>
                                         )}
                                     </div>
                                 ))}
                             </div>
+                            {effectiveBookingType === 'lead' && (
+                                <button
+                                    onClick={() => handleBookingAction()}
+                                    className="w-full py-3 rounded-xl font-bold text-sm transition flex items-center justify-center bg-primary text-white hover:bg-orange-600 shadow-sm hover:shadow active:scale-95 mb-2"
+                                >
+                                    <Mail className="w-4 h-4 mr-2" />
+                                    Anfrage senden
+                                </button>
+                            )}
                         </>
                     ) : (
                         <div className="bg-gray-50 rounded-xl p-5 border border-gray-200 mb-6 text-center">
