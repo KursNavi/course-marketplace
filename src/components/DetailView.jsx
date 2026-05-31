@@ -913,8 +913,8 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
                         {isSaved ? 'Gemerkt' : 'Kurs merken'}
                     </button>
 
-                    {/* Provider cannot book courses */}
-                    {user?.role === 'teacher' ? (
+                    {/* Provider cannot book courses (not shown for lead/inquiry courses) */}
+                    {user?.role === 'teacher' && effectiveBookingType !== 'lead' ? (
                         <div className="mb-4 p-4 rounded-lg border border-amber-200 bg-amber-50 text-center">
                             <Info className="w-5 h-5 text-amber-600 mx-auto mb-2" />
                             <p className="text-sm font-medium text-amber-800">Als Kursanbieter kannst du keine Kurse buchen.</p>
@@ -948,62 +948,88 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
                     {hasEvents ? (
                         <>
                             <h3 className="font-bold text-dark mb-3 flex items-center"><Calendar className="w-4 h-4 mr-2"/> Termine</h3>
-                            <div className="space-y-3 mb-6 max-h-96 overflow-y-auto pr-1 custom-scrollbar">
-                                {displayEvents.map((ev, i) => (
-                                    <div key={i} className={`p-4 rounded-xl border transition ${ev.isFull ? 'bg-gray-50 border-gray-200 opacity-60' : 'bg-white border-gray-200 hover:border-primary/30 hover:shadow-md'}`}>
-                                        <div className="flex justify-between items-start mb-3">
-                                            <div>
-                                                <div className="font-bold text-dark">
-                                                    {ev.start_date ? new Date(ev.start_date).toLocaleDateString('de-CH') : 'Termin nach Absprache'}
-                                                </div>
-                                                {ev.schedule_description && <div className="text-xs text-gray-500 mt-1">{ev.schedule_description}</div>}
+                            {effectiveBookingType === 'lead' ? (
+                                <>
+                                <div className="mb-4">
+                                    {displayEvents.map((ev, i) => {
+                                        const startStr = ev.start_date ? new Date(ev.start_date).toLocaleDateString('de-CH') : '';
+                                        const endStr = ev.end_date ? new Date(ev.end_date).toLocaleDateString('de-CH') : '';
+                                        const dateLabel = startStr
+                                            ? (endStr && endStr !== startStr ? `${startStr} – ${endStr}` : startStr)
+                                            : 'Termin nach Absprache';
+                                        const locationLabel = ev.location || ev.canton || '';
+                                        return (
+                                            <div key={i} className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5 py-2 border-b border-gray-100 last:border-0 text-sm">
+                                                <span className="font-medium text-dark">{dateLabel}</span>
+                                                {ev.schedule_description && <><span className="text-gray-300">·</span><span className="text-gray-500">{ev.schedule_description}</span></>}
+                                                {locationLabel && <><span className="text-gray-300">·</span><span className="text-gray-500">{locationLabel}</span></>}
                                             </div>
-                                            {effectiveBookingType === 'platform' && (
-                                                ev.isUnlimited 
-                                                ? <span className="text-[10px] font-bold bg-gray-100 text-gray-700 px-2 py-1 rounded">Unbegrenzt</span>
-                                                : ev.isFull
-                                                    ? <span className="text-[10px] font-bold bg-red-100 text-red-600 px-2 py-1 rounded">VOLL</span>
-                                                    : <span className="text-[10px] font-bold bg-green-100 text-green-700 px-2 py-1 rounded">{ev.spotsLeft} frei</span>
+                                        );
+                                    })}
+                                </div>
+                                <button
+                                    onClick={() => handleBookingAction()}
+                                    className="w-full py-3 rounded-xl font-bold text-sm transition flex items-center justify-center bg-primary text-white hover:bg-orange-600 shadow-sm hover:shadow active:scale-95 mb-2"
+                                >
+                                    <Mail className="w-4 h-4 mr-2" />
+                                    Anfrage senden
+                                </button>
+                                </>
+                            ) : (
+                                <div className="space-y-3 mb-6 max-h-96 overflow-y-auto pr-1 custom-scrollbar">
+                                    {displayEvents.map((ev, i) => (
+                                        <div key={i} className={`p-4 rounded-xl border transition ${ev.isFull ? 'bg-gray-50 border-gray-200 opacity-60' : 'bg-white border-gray-200 hover:border-primary/30 hover:shadow-md'}`}>
+                                            <div className="flex justify-between items-start mb-3">
+                                                <div>
+                                                    <div className="font-bold text-dark">
+                                                        {ev.start_date ? new Date(ev.start_date).toLocaleDateString('de-CH') : 'Termin nach Absprache'}
+                                                    </div>
+                                                    {ev.schedule_description && <div className="text-xs text-gray-500 mt-1">{ev.schedule_description}</div>}
+                                                </div>
+                                                {effectiveBookingType === 'platform' && (
+                                                    ev.isUnlimited
+                                                    ? <span className="text-[10px] font-bold bg-gray-100 text-gray-700 px-2 py-1 rounded">Unbegrenzt</span>
+                                                    : ev.isFull
+                                                        ? <span className="text-[10px] font-bold bg-red-100 text-red-600 px-2 py-1 rounded">VOLL</span>
+                                                        : <span className="text-[10px] font-bold bg-green-100 text-green-700 px-2 py-1 rounded">{ev.spotsLeft} frei</span>
+                                                )}
+                                            </div>
+                                            {!user ? (
+                                                <div className="w-full">
+                                                    <button
+                                                        onClick={() => {
+                                                            localStorage.setItem('pendingCourseId', course.id);
+                                                            if (ev?.id) localStorage.setItem('pendingEventId', ev.id);
+                                                            localStorage.setItem('postLoginRedirectPath', `${window.location.pathname}${window.location.search}`);
+                                                            setView('login');
+                                                        }}
+                                                        className="w-full py-2.5 rounded-lg font-bold text-sm transition flex items-center justify-center bg-primary text-white hover:bg-orange-600 shadow-sm hover:shadow active:scale-95"
+                                                    >
+                                                        <LogIn className="w-4 h-4 mr-2" />
+                                                        Anmelden & buchen
+                                                    </button>
+                                                    <p className="text-[11px] text-gray-500 text-center mt-1.5">Zum Buchen ist ein Konto erforderlich</p>
+                                                </div>
+                                            ) : (
+                                                <button
+                                                    onClick={() => !ev.isFull && !bookingInProgress && handleBookingAction(ev)}
+                                                    disabled={(ev.isFull && effectiveBookingType === 'platform') || !guardianAttested || bookingInProgress}
+                                                    className={`w-full py-2.5 rounded-lg font-bold text-sm transition flex items-center justify-center
+                                                        ${(ev.isFull && effectiveBookingType === 'platform') || !guardianAttested || bookingInProgress
+                                                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                                            : 'bg-primary text-white hover:bg-orange-600 shadow-sm hover:shadow active:scale-95'}`}
+                                                >
+                                                    {bookingInProgress ? (
+                                                        <><div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div> Wird gebucht...</>
+                                                    ) : (
+                                                        <>{(ev.isFull && effectiveBookingType === 'platform') ? 'Ausgebucht' : (t.btn_book || 'Jetzt Buchen')}</>
+                                                    )}
+                                                </button>
                                             )}
                                         </div>
-                                        
-                                        {!user && effectiveBookingType !== 'lead' ? (
-                                            <div className="w-full">
-                                                <button
-                                                    onClick={() => {
-                                                        localStorage.setItem('pendingCourseId', course.id);
-                                                        if (ev?.id) localStorage.setItem('pendingEventId', ev.id);
-                                                        localStorage.setItem('postLoginRedirectPath', `${window.location.pathname}${window.location.search}`);
-                                                        setView('login');
-                                                    }}
-                                                    className="w-full py-2.5 rounded-lg font-bold text-sm transition flex items-center justify-center bg-primary text-white hover:bg-orange-600 shadow-sm hover:shadow active:scale-95"
-                                                >
-                                                    <LogIn className="w-4 h-4 mr-2" />
-                                                    Anmelden & buchen
-                                                </button>
-                                                <p className="text-[11px] text-gray-500 text-center mt-1.5">Zum Buchen ist ein Konto erforderlich</p>
-                                            </div>
-                                        ) : (
-                                            <button
-                                                onClick={() => !ev.isFull && !bookingInProgress && handleBookingAction(ev)}
-                                                disabled={(ev.isFull && effectiveBookingType === 'platform') || (effectiveBookingType !== 'lead' && !guardianAttested) || bookingInProgress}
-                                                className={`w-full py-2.5 rounded-lg font-bold text-sm transition flex items-center justify-center
-                                                    ${(ev.isFull && effectiveBookingType === 'platform') || (effectiveBookingType !== 'lead' && !guardianAttested) || bookingInProgress
-                                                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                                        : 'bg-primary text-white hover:bg-orange-600 shadow-sm hover:shadow active:scale-95'}`}
-                                            >
-                                                {bookingInProgress ? (
-                                                    <><div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div> Wird gebucht...</>
-                                                ) : (
-                                                    <>{effectiveBookingType === 'lead' && <Mail className="w-4 h-4 mr-2" />}
-                                                    {(ev.isFull && effectiveBookingType === 'platform') ? 'Ausgebucht' :
-                                                     (effectiveBookingType === 'lead' ? 'Anfrage senden' : t.btn_book || 'Jetzt Buchen')}</>
-                                                )}
-                                            </button>
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
+                                    ))}
+                                </div>
+                            )}
                         </>
                     ) : (
                         <div className="bg-gray-50 rounded-xl p-5 border border-gray-200 mb-6 text-center">

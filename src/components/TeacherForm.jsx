@@ -482,7 +482,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
     }, [imagePreview]);
 
     // Schedule State
-    const [events, setEvents] = useState(draft?.events || [{ id: null, bookingCount: 0, type: 'presence', start_date: '', street: '', city: '', max_participants: 0, canton: '', schedule_description: '', location_abroad: '' }]);
+    const [events, setEvents] = useState(draft?.events || [{ id: null, bookingCount: 0, type: 'presence', start_date: '', end_date: '', street: '', city: '', max_participants: 0, canton: '', schedule_description: '', location_abroad: '' }]);
 
     // Fallback Regions
     const [fallbackCantons, setFallbackCantons] = useState(draft?.fallbackCantons || []);
@@ -729,6 +729,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
                         bookingCount: Array.isArray(e.bookings) ? (e.bookings[0]?.count || 0) : (e.bookings?.count || 0),
                         type,
                         start_date: e.start_date ? e.start_date.split('T')[0] : '',
+                        end_date: e.end_date ? e.end_date.split('T')[0] : '',
                         street,
                         city,
                         max_participants: e.max_participants,
@@ -1001,7 +1002,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
 
     const addEvent = () => {
         const loc = profileLocationRef.current;
-        setEvents([...events, { id: null, bookingCount: 0, type: 'presence', start_date: '', street: loc?.street || '', city: loc?.city || '', max_participants: 0, canton: loc?.canton || '', schedule_description: '', location_abroad: '' }]);
+        setEvents([...events, { id: null, bookingCount: 0, type: 'presence', start_date: '', end_date: '', street: loc?.street || '', city: loc?.city || '', max_participants: 0, canton: loc?.canton || '', schedule_description: '', location_abroad: '' }]);
         markDirty();
     };
     const removeEvent = (index) => {
@@ -1466,8 +1467,8 @@ if (bookingType === 'platform') {
 
 
 
-        // 7. Update Events Table (only for platform/Direktbuchung — lead/flex use address fields instead)
-        if (!isAdminImpersonating && activeCourseId && bookingType === 'platform') {
+        // 7. Update Events Table (platform/Direktbuchung and lead courses with optional dates)
+        if (!isAdminImpersonating && activeCourseId && (bookingType === 'platform' || bookingType === 'lead')) {
             // Dedupe check: no two events may share (start_date, location, canton)
             const eventKeys = validEvents.map(ev =>
                 `${ev.start_date}|${ev.location || ''}|${ev.canton || (fallbackCantons.length > 0 ? fallbackCantons[0] : '')}`
@@ -1515,6 +1516,7 @@ if (bookingType === 'platform') {
                 const eventPayload = {
                     course_id: activeCourseId,
                     start_date: ev.start_date,
+                    end_date: ev.end_date || null,
                     location: ev.location,
                     canton: ev.type === 'online' ? null : ev.type === 'ausland' ? 'Ausland' : (ev.canton || null),
                     schedule_description: ev.schedule_description,
@@ -2196,6 +2198,80 @@ if (bookingType === 'platform') {
                                         )}
                                     </div>
                                 ))}
+                            </div>
+                        </div>
+                        )}
+
+                        {/* Optionale Termine für Lead-Kurse */}
+                        {bookingType === 'lead' && (
+                        <div className="bg-green-50 p-6 rounded-xl border border-green-100 mt-4">
+                            <div className="flex justify-between items-center mb-1">
+                                <div>
+                                    <h3 className="text-lg font-bold text-green-900 flex items-center"><Calendar className="w-5 h-5 mr-2" /> Termine (optional)</h3>
+                                    <p className="text-xs text-green-700 mt-1">Hast du bereits Termine geplant? Füge sie hier hinzu — sie werden auf der Kursseite angezeigt und im Datumsfilter berücksichtigt. Leere Termine werden nicht gespeichert.</p>
+                                </div>
+                                <button type="button" onClick={addEvent} className="bg-green-600 text-white px-3 py-1 rounded-full text-sm font-bold hover:bg-green-700 flex items-center shrink-0 ml-4"><Plus className="w-4 h-4 mr-1"/> Termin hinzufügen</button>
+                            </div>
+                            <div className="space-y-4 mt-4">
+                                {events.map((ev, i) => {
+                                    const evType = ev.type || 'presence';
+                                    return (
+                                    <div key={ev.id || i} className="bg-white p-4 rounded-lg border border-gray-200 flex flex-col gap-3">
+                                        {/* Typ-Auswahl */}
+                                        <div className="flex gap-2">
+                                            {[
+                                                { value: 'presence', label: 'Präsenz' },
+                                                { value: 'online',   label: 'Online'  },
+                                                { value: 'ausland',  label: 'Ausland' }
+                                            ].map(({ value, label }) => (
+                                                <button key={value} type="button"
+                                                    onClick={() => updateEvent(i, 'type', value)}
+                                                    className={`px-3 py-1 rounded-full text-xs font-medium border transition-all ${evType === value ? 'bg-green-600 text-white border-green-700' : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'}`}>
+                                                    {label}
+                                                </button>
+                                            ))}
+                                        </div>
+                                        {/* Datum + End-Datum + Zeit */}
+                                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                            <div>
+                                                <label className="text-xs font-bold text-gray-500 uppercase">Startdatum</label>
+                                                <input type="date" value={ev.start_date} onChange={e => updateEvent(i, 'start_date', e.target.value)} className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white" />
+                                            </div>
+                                            <div>
+                                                <label className="text-xs font-bold text-gray-500 uppercase">Enddatum (optional)</label>
+                                                <input type="date" value={ev.end_date || ''} min={ev.start_date || undefined} onChange={e => updateEvent(i, 'end_date', e.target.value)} className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white" />
+                                            </div>
+                                            <div className="md:col-span-2">
+                                                <label className="text-xs font-bold text-gray-500 uppercase">Zeit / Details (Optional)</label>
+                                                <input type="text" value={ev.schedule_description} onChange={e => updateEvent(i, 'schedule_description', e.target.value)} placeholder="z.B. Sa & So, 09:00 – 17:00" className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white" />
+                                            </div>
+                                        </div>
+                                        {/* Ort-Felder — je nach Typ */}
+                                        {evType === 'presence' && (
+                                            <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+                                                <div className="md:col-span-7">
+                                                    <label className="text-xs font-bold text-gray-500 uppercase">PLZ / Ort (Optional)</label>
+                                                    <input type="text" value={ev.city} onChange={e => updateEvent(i, 'city', e.target.value)} placeholder="8000 Zürich" className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white" />
+                                                </div>
+                                                <div className="md:col-span-5">
+                                                    <label className="text-xs font-bold text-gray-500 uppercase">Kanton (für Filter)</label>
+                                                    <select value={ev.canton} onChange={e => updateEvent(i, 'canton', e.target.value)} className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white">
+                                                        <option value="">Wählen...</option>
+                                                        {SWISS_CANTONS.filter(c => c !== "Ausland" && c !== "Online").map(c => <option key={c} value={c}>{c}</option>)}
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        )}
+                                        {evType === 'ausland' && (
+                                            <div>
+                                                <label className="text-xs font-bold text-gray-500 uppercase">Adresse im Ausland (Optional)</label>
+                                                <input type="text" value={ev.location_abroad || ''} onChange={e => updateEvent(i, 'location_abroad', e.target.value)} placeholder="z.B. München, Deutschland" className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white" />
+                                            </div>
+                                        )}
+                                        <button type="button" onClick={() => removeEvent(i)} className="text-red-500 text-xs hover:underline flex items-center self-end"><Trash2 className="w-3 h-3 mr-1" /> Entfernen</button>
+                                    </div>
+                                    );
+                                })}
                             </div>
                         </div>
                         )}

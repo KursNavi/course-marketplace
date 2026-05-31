@@ -1318,17 +1318,24 @@ export default function KursNaviPro() {  // 1. Initial State Logic
     if (filterDateFrom || filterDateTo) {
         const fromTime = filterDateFrom ? new Date(filterDateFrom).getTime() : 0;
         const toTime = filterDateTo ? new Date(filterDateTo).getTime() : Infinity;
-        const courseDates = [];
-        if (course.start_date) courseDates.push(new Date(course.start_date).getTime());
-        if (Array.isArray(course.course_events)) {
-            course.course_events.forEach(ev => {
-                if (ev.start_date) courseDates.push(new Date(ev.start_date).getTime());
-            });
-        }
-        if (courseDates.length === 0) {
-            matchesDate = true;
+        // Range overlap: event [evStart, evEnd] overlaps filter [fromTime, toTime]
+        // when evStart ≤ toTime AND evEnd ≥ fromTime
+        const rangeMatches = (evStart, evEnd) => {
+            if (!evStart) return false;
+            const s = new Date(evStart).getTime();
+            const e = evEnd ? new Date(evEnd).getTime() : s; // no end_date = single day
+            return s <= toTime && e >= fromTime;
+        };
+        const hasDates = course.start_date ||
+            (Array.isArray(course.course_events) && course.course_events.some(ev => ev.start_date));
+        if (!hasDates) {
+            matchesDate = true; // courses without dates always pass
         } else {
-            matchesDate = courseDates.some(d => d >= fromTime && d <= toTime);
+            matchesDate =
+                rangeMatches(course.start_date, null) ||
+                (Array.isArray(course.course_events) && course.course_events.some(ev =>
+                    rangeMatches(ev.start_date, ev.end_date)
+                ));
         }
     }
 
