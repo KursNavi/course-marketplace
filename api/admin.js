@@ -365,6 +365,7 @@ export default async function handler(req, res) {
         const eventPayload = {
           course_id: activeCourseId,
           start_date: ev.start_date,
+          end_date: ev.end_date || null,
           location: ev.location,
           canton: ev.canton || null,
           schedule_description: ev.schedule_description,
