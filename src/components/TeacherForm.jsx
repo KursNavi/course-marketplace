@@ -1548,6 +1548,7 @@ if (bookingType === 'platform') {
                         const msg = insertEventError.message?.includes('course_events_dedupe_uq')
                             ? "Zwei Termine dürfen nicht dasselbe Startdatum, denselben Ort und Kanton haben."
                             : "Fehler beim Erstellen eines Termins: " + insertEventError.message;
+                        showNotification(msg);
                         setIsSubmitting(false);
                         return;
                     }
