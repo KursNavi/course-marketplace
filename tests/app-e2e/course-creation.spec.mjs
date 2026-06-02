@@ -30,11 +30,6 @@ test.describe('Course Creation (hybrid app-e2e)', () => {
       'Automatisch erstellter Testkurs via Playwright E2E.'
     );
 
-    // 3. Learning objectives
-    await page.locator('textarea[name="objectives"]').fill(
-      'Lernziel 1: Playwright kennenlernen\nLernziel 2: E2E-Tests schreiben'
-    );
-
     // 4. Category — select first available options in cascading dropdowns
     const catType = page.locator('select[name="category_type_0"]');
     await catType.selectOption({ index: 1 }); // first non-default option
@@ -58,12 +53,9 @@ test.describe('Course Creation (hybrid app-e2e)', () => {
     // (street and city are optional; type defaults to 'presence')
     await page.getByTestId('location-canton-0').selectOption('Zürich');
 
-    // 8. Publication status — switch from draft to published
-    await page.locator('input[name="courseStatus"][value="published"]').click();
+    // ── Submit — click "Jetzt veröffentlichen" ───────────────
 
-    // ── Submit ──────────────────────────────────────────────
-
-    await page.getByRole('button', { name: 'Kurs speichern' }).click();
+    await page.getByRole('button', { name: /Jetzt veröffentlichen/i }).click();
 
     // ── Verify success ──────────────────────────────────────
 
