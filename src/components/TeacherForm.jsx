@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
-import { ArrowLeft, Loader, Calendar, Plus, Trash2, ExternalLink, Globe, MapPin, Lightbulb, X, Send, ChevronDown, Images, Check, Clock, BookOpen, Award, GraduationCap } from 'lucide-react';
+import { ArrowLeft, Loader, Calendar, Plus, Trash2, Globe, MapPin, Lightbulb, X, Send, ChevronDown, ChevronUp, Images, Check, Clock, BookOpen, Award, GraduationCap, Upload } from 'lucide-react';
 import { KursNaviLogo } from './Layout';
 import { SWISS_CANTONS, NEW_TAXONOMY, CATEGORY_TYPES, COURSE_LEVELS, DELIVERY_TYPES, COURSE_LANGUAGES, TYPE_DISPLAY_LABELS, BERUF_SAEULEN, PRIVAT_KURSARTEN, KINDER_KURSARTEN } from '../lib/constants';
 import { supabase } from '../lib/supabase';
@@ -431,7 +431,9 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
     const [showUnsavedChangesModal, setShowUnsavedChangesModal] = useState(false);
 
     // Booking & Link State
-    const [bookingType, setBookingType] = useState(draft?.bookingType || (payoutReady ? 'platform' : 'lead')); // 'platform', 'platform_flex', or 'lead'
+    // Neue Kurse starten standardmässig mit "Anfrage" — sicherste Option, kein Stripe nötig.
+    // Bestehende Kurse laden ihre bookingType über den initialData-useEffect.
+    const [bookingType, setBookingType] = useState(draft?.bookingType || 'lead'); // 'platform', 'platform_flex', or 'lead'
     const [ticketLimit30d, setTicketLimit30d] = useState(draft?.ticketLimit30d || '');
 
     // Form Field State (controlled inputs to preserve data on validation errors / tab switches)
@@ -493,6 +495,11 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
     // Category Suggestion Modal State
     const [showCategorySuggestionModal, setShowCategorySuggestionModal] = useState(false);
 
+    // UX section states
+    // locationMode: 'locations' = Feste Standort(e), 'events' = Konkrete Termine
+    const [locationMode, setLocationMode] = useState(draft?.locationMode || 'locations');
+    const [showOptionalDetails, setShowOptionalDetails] = useState(false);
+
     // Image Library State (for reusing existing images)
     const [showImageLibrary, setShowImageLibrary] = useState(false);
     const [existingImages, setExistingImages] = useState([]);
@@ -523,6 +530,10 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
     // Store profile Hauptstandort for pre-filling new events
     const profileLocationRef = useRef(null);
 
+    // Refs for two-button submit (draft / publish)
+    const pendingStatusRef = useRef(null);
+    const formRef = useRef(null);
+
     // Use useLayoutEffect to update ref SYNCHRONOUSLY after render (before unmount cleanup runs)
     // This ensures formDataRef always has the latest values when the component unmounts
     useLayoutEffect(() => {
@@ -550,7 +561,8 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
             locations,
             berufSaeulen,
             privatKursart,
-            kinderKursart
+            kinderKursart,
+            locationMode
         };
 
         // Always update the ref synchronously so cleanup can use it
@@ -565,7 +577,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
                 console.warn('Failed to save draft:', e);
             }
         }
-    }, [isDirty, draftKey, bookingType, ticketLimit30d, title, description, objectives, keywords, prerequisites, price, freeReason, sessionCount, sessionLength, providerUrl, categories, selectedLevel, courseLanguages, deliveryTypes, courseStatus, events, fallbackCantons, locations, berufSaeulen, privatKursart, kinderKursart, initialData?.id]);
+    }, [isDirty, draftKey, bookingType, ticketLimit30d, title, description, objectives, keywords, prerequisites, price, freeReason, sessionCount, sessionLength, providerUrl, categories, selectedLevel, courseLanguages, deliveryTypes, courseStatus, events, fallbackCantons, locations, berufSaeulen, privatKursart, kinderKursart, locationMode, initialData?.id]);
 
     // Save draft on unmount (safety net for fast tab switches)
     useEffect(() => {
@@ -622,8 +634,11 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
             if (initialData.prerequisites) setPrerequisites(initialData.prerequisites);
             if (initialData.price !== undefined && initialData.price !== null) setPrice(String(initialData.price));
             if (initialData.free_reason) setFreeReason(initialData.free_reason);
-            if (initialData.session_count) setSessionCount(String(initialData.session_count));
-            if (initialData.session_length) setSessionLength(initialData.session_length);
+            // Merge session_count + session_length into one display field (sessionLength)
+            if (initialData.session_count || initialData.session_length) {
+                const parts = [initialData.session_count, initialData.session_length].filter(Boolean);
+                setSessionLength(parts.length === 2 ? `${parts[0]} à ${parts[1]}` : parts[0]);
+            }
             if (initialData.price_info) setPriceInfo(initialData.price_info);
             if (initialData.provider_url) setProviderUrl(initialData.provider_url);
 
@@ -724,6 +739,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
                         street = loc.substring(0, lastComma).trim();
                         city = loc.substring(lastComma + 1).trim();
                     }
+                    const canton = type === 'presence' ? (e.canton || initialData.canton || '') : '';
                     return {
                         id: e.id || null,
                         bookingCount: Array.isArray(e.bookings) ? (e.bookings[0]?.count || 0) : (e.bookings?.count || 0),
@@ -733,12 +749,34 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
                         street,
                         city,
                         max_participants: e.max_participants,
-                        canton: type === 'presence' ? (e.canton || initialData.canton || '') : '',
+                        canton,
                         schedule_description: e.schedule_description || '',
-                        location_abroad
+                        location_abroad,
+                        showLoc: !!(canton || city)
                     };
                 }));
             }
+
+            // Set locationMode based on existing data (backward compat)
+            // If course_events exist → events mode; otherwise → locations mode
+            const hasEvents = Array.isArray(initialData.course_events) && initialData.course_events.some(ev => ev.start_date);
+            if (initialData.booking_type === 'platform') {
+                setLocationMode('events'); // platform always uses events
+            } else {
+                setLocationMode(hasEvents ? 'events' : 'locations');
+            }
+
+            // Open optional section automatically if any optional field has a value
+            const hasOptionalValues = (
+                (Array.isArray(initialData.objectives) && initialData.objectives.length > 0) ||
+                !!initialData.prerequisites ||
+                !!initialData.provider_url ||
+                (initialData.min_age != null) ||
+                (initialData.level && initialData.level !== 'all_levels') ||
+                (Array.isArray(initialData.languages) && initialData.languages.join(',') !== 'Deutsch') ||
+                !!initialData.session_count || !!initialData.session_length
+            );
+            if (hasOptionalValues) setShowOptionalDetails(true);
 
         } else if (user && user.id) {
              supabase.from('profiles').select('preferred_language, street, city, canton').eq('id', user.id).single()
@@ -761,9 +799,13 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
                  if (!draft && data?.canton) {
                     const profileLoc = { type: 'presence', street: data.street || '', city: data.city || '', canton: data.canton || '', location_abroad: '' };
                     setLocations([profileLoc]);
-                    setEvents([{ id: null, bookingCount: 0, ...profileLoc, start_date: '', max_participants: 0, schedule_description: '' }]);
+                    setEvents([{ id: null, bookingCount: 0, ...profileLoc, start_date: '', max_participants: 0, schedule_description: '', showLoc: true }]);
                  }
              });
+             // Set default Kursart for new courses based on default segment (privat → Wochenkurs)
+             if (!draft) {
+                 setPrivatKursart(curr => curr || 'wochenkurs');
+             }
         }
 
         // Mark form as initialized to prevent re-loading initialData on prop changes
@@ -817,6 +859,20 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
 
         return () => { isMounted = false; };
     }, [user?.id]);
+
+    // Auto-set Kursart defaults when segment type changes (only if kursart not yet set)
+    useEffect(() => {
+        if (!hasInitializedRef.current) return; // skip during initialization
+        const type = categories[0]?.type;
+        if (!type) return;
+        if ((type === 'kinder' || type === 'kinder_jugend') && !kinderKursart) {
+            setKinderKursart('freizeitkurs');
+        } else if ((type === 'privat' || type === 'privat_hobby') && !privatKursart) {
+            setPrivatKursart('wochenkurs');
+        } else if ((type === 'professionell' || type === 'beruflich') && berufSaeulen.length === 0) {
+            setBerufSaeulen(['fachkurs']);
+        }
+    }, [categories[0]?.type]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Warn user when leaving with unsaved changes (browser back/close)
     // Also attempt to save draft before unload
@@ -1002,7 +1058,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
 
     const addEvent = () => {
         const loc = profileLocationRef.current;
-        setEvents([...events, { id: null, bookingCount: 0, type: 'presence', start_date: '', end_date: '', street: loc?.street || '', city: loc?.city || '', max_participants: 0, canton: loc?.canton || '', schedule_description: '', location_abroad: '' }]);
+        setEvents([...events, { id: null, bookingCount: 0, type: 'presence', start_date: '', end_date: '', street: loc?.street || '', city: loc?.city || '', max_participants: 0, canton: loc?.canton || '', schedule_description: '', location_abroad: '', showLoc: !!(loc?.canton) }]);
         markDirty();
     };
     const removeEvent = (index) => {
@@ -1183,6 +1239,10 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
 
         const formData = new FormData(e.target);
 
+        // Resolve submit intent from pending ref (set by action buttons) or fall back to state
+        const finalStatus = pendingStatusRef.current ?? courseStatus;
+        pendingStatusRef.current = null;
+
         // Metadata (use controlled state values)
         const titleVal = title;
         const descriptionVal = description;
@@ -1215,12 +1275,13 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
         const catSpec = primaryCategory.specialty;
         const catFocus = primaryCategory.focus;
 
-        const level = formData.get('level');
+        const level = selectedLevel; // use state directly (select may be in collapsible section)
 
         if (isSubmitting) return;
 
         // 1. Core Validation
         if (!titleVal || !descriptionVal) { window.alert("Titel und Beschreibung sind erforderlich."); return; }
+        if (!keywordsVal.trim()) { window.alert("Bitte gib Suchbegriffe ein. Diese helfen, dass dein Kurs gefunden wird."); return; }
         if (!catType || !catArea || !catSpec) { window.alert("Bitte wählen Sie eine vollständige Kategorie aus."); return; }
 
         // 1b. Payout Validation — Direkt-/Flex-Buchung nur mit Stripe Connect
@@ -1247,7 +1308,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
             if (validEvents.length === 0) { window.alert("Für Direktbuchungen benötigen wir mindestens einen Termin mit Datum. Präsenz-Termine benötigen zusätzlich Strasse, Ort und Kanton."); return; }
         }
 
-        if (bookingType === 'platform_flex' || bookingType === 'lead') {
+        if ((bookingType === 'platform_flex' || bookingType === 'lead') && locationMode === 'locations') {
             if (locations.length === 0) {
                 window.alert("Bitte gib mindestens einen Standort an.");
                 return;
@@ -1260,9 +1321,23 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
             }
         }
 
+        if ((bookingType === 'platform_flex' || bookingType === 'lead') && locationMode === 'events') {
+            if (validEvents.length === 0) {
+                window.alert("Bitte gib mindestens einen Termin mit Datum an.");
+                return;
+            }
+        }
+
+        // Preis: bei Direktbuchung/Flex ist ein Preis erforderlich
+        if ((bookingType === 'platform' || bookingType === 'platform_flex') && !price) {
+            window.alert("Bitte gib einen Preis ein. Für kostenlose Kurse trage 0 ein und begründe dies.");
+            setIsSubmitting(false);
+            return;
+        }
         // Kostenloser Kurs: free_reason ist Pflicht
-        if ((bookingType === 'platform' || bookingType === 'platform_flex') && (!price || Number(price) === 0) && !freeReason.trim()) {
-            window.alert("Bitte geben Sie einen Grund an, warum dieser Kurs kostenlos ist.");
+        if ((bookingType === 'platform' || bookingType === 'platform_flex') && Number(price) === 0 && !freeReason.trim()) {
+            window.alert("Bitte gib an, warum dieser Kurs kostenlos ist.");
+            setIsSubmitting(false);
             return;
         }
 
@@ -1323,7 +1398,7 @@ let publicLocationLabel = "";
 let mainCanton = "";
 let mainDate = null;
 
-if (bookingType === 'platform') {
+if (bookingType === 'platform' || locationMode === 'events') {
     const sortedEvents = [...validEvents].sort((a, b) => a.start_date.localeCompare(b.start_date));
     const firstEvent = sortedEvents[0];
     if (firstEvent) {
@@ -1336,7 +1411,7 @@ if (bookingType === 'platform') {
         publicLocationLabel = fallbackCantons.join(', ');
     }
 } else {
-    // lead/flex: derive public label from first presence location (or online/ausland)
+    // lead/flex in locations mode: derive public label from first presence location
     const firstPresence = locations.find(l => l.type === 'presence');
     const firstLoc = firstPresence || locations[0];
     if (firstLoc?.type === 'presence') {
@@ -1404,13 +1479,13 @@ if (bookingType === 'platform') {
             keywords: keywordsVal,
             objectives: objectivesList,
             prerequisites: prerequisitesVal,
-            session_count: sessionCount || null,
-            session_length: sessionLength || '',
+            session_count: null, // merged into session_length
+            session_length: sessionLength || null,
             price_info: priceInfo || null,
             provider_url: providerUrl,
             user_id: user?.id || initialData?.user_id,
             is_pro: user?.is_professional ?? initialData?.is_pro ?? false,
-            status: courseStatus,
+            status: finalStatus,
             beruf_saeulen: (catType === 'professionell' || catType === 'beruflich') && berufSaeulen.length > 0 ? berufSaeulen : null,
             ...(catType === 'privat' && privatKursart ? { privat_kursart: privatKursart } : {}),
             ...(catType === 'kinder' && kinderKursart ? { kinder_kursart: kinderKursart } : {}),
@@ -1467,8 +1542,8 @@ if (bookingType === 'platform') {
 
 
 
-        // 7. Update Events Table (platform/Direktbuchung and lead courses with optional dates)
-        if (!isAdminImpersonating && activeCourseId && (bookingType === 'platform' || bookingType === 'lead')) {
+        // 7. Update Events Table (platform always; lead/flex when in events mode)
+        if (!isAdminImpersonating && activeCourseId && (bookingType === 'platform' || locationMode === 'events')) {
             // Dedupe check: no two events may share (start_date, location, canton)
             const eventKeys = validEvents.map(ev =>
                 `${ev.start_date}|${ev.location || ''}|${ev.canton || (fallbackCantons.length > 0 ? fallbackCantons[0] : '')}`
@@ -1556,28 +1631,48 @@ if (bookingType === 'platform') {
             }
         }
 
-        // 7b. Save course_locations for lead/flex (replaces the old simple columns)
-        // When admin is impersonating, this is handled via saveCourseViaAdmin (service role bypasses RLS)
+        // 7b. Save course_locations for lead/flex
+        // In 'locations' mode: save from locations state
+        // In 'events' mode: mirror unique presence cantons from events (for search filter)
         if (!isAdminImpersonating && activeCourseId && bookingType !== 'platform') {
             // Delete all existing locations for this course, then re-insert
             await supabase.from('course_locations').delete().eq('course_id', activeCourseId);
 
-            const locationPayloads = locations.map((loc, i) => ({
-                course_id: activeCourseId,
-                location_type: loc.type,
-                street: loc.type === 'presence' ? (loc.street?.trim() || null)
-                      : loc.type === 'ausland' ? (loc.location_abroad?.trim() || null) : null,
-                city: loc.type === 'presence' ? (loc.city?.trim() || null) : null,
-                canton: loc.type === 'presence' ? (loc.canton || null) : (loc.type === 'ausland' ? 'Ausland' : null),
-                sort_order: i
-            }));
+            let locationPayloads = [];
 
-            const { error: locError } = await supabase.from('course_locations').insert(locationPayloads);
-            if (locError) {
-                console.error(locError);
-                showNotification("Fehler beim Speichern der Standorte: " + locError.message);
-                setIsSubmitting(false);
-                return;
+            if (locationMode === 'locations') {
+                locationPayloads = locations.map((loc, i) => ({
+                    course_id: activeCourseId,
+                    location_type: loc.type,
+                    street: loc.type === 'presence' ? (loc.street?.trim() || null)
+                          : loc.type === 'ausland' ? (loc.location_abroad?.trim() || null) : null,
+                    city: loc.type === 'presence' ? (loc.city?.trim() || null) : null,
+                    canton: loc.type === 'presence' ? (loc.canton || null) : (loc.type === 'ausland' ? 'Ausland' : null),
+                    sort_order: i
+                }));
+            } else {
+                // events mode: mirror unique presence cantons from events
+                const seen = new Set();
+                locationPayloads = validEvents
+                    .filter(ev => ev.type === 'presence' && ev.canton && !seen.has(ev.canton) && seen.add(ev.canton))
+                    .map((ev, i) => ({
+                        course_id: activeCourseId,
+                        location_type: 'presence',
+                        street: ev.street?.trim() || null,
+                        city: ev.city?.trim() || null,
+                        canton: ev.canton,
+                        sort_order: i
+                    }));
+            }
+
+            if (locationPayloads.length > 0) {
+                const { error: locError } = await supabase.from('course_locations').insert(locationPayloads);
+                if (locError) {
+                    console.error(locError);
+                    showNotification("Fehler beim Speichern der Standorte: " + locError.message);
+                    setIsSubmitting(false);
+                    return;
+                }
             }
         }
 
@@ -1642,50 +1737,58 @@ if (bookingType === 'platform') {
         );
     }
 
+    // Compute missing required fields for the Section 6 indicator
+    const isKinder = categories[0]?.type === 'kinder' || categories[0]?.type === 'kinder_jugend';
+    const missingRequiredFields = [];
+    if (!title.trim()) missingRequiredFields.push('Kurstitel');
+    if (!description.trim()) missingRequiredFields.push('Beschreibung');
+    if (!keywords.trim()) missingRequiredFields.push('Suchbegriffe');
+    if (!categories[0]?.area) missingRequiredFields.push('Bereich (Kategorie)');
+    else if (!categories[0]?.specialty) missingRequiredFields.push('Spezialgebiet (Kategorie)');
+    if (!imagePreview && !selectedExistingImage && !initialData?.image_url) missingRequiredFields.push('Kursbild');
+    // Ort/Termine je nach Modus
+    if (bookingType === 'platform' || locationMode === 'events') {
+        if (visibleEvents.filter(ev => ev.start_date).length === 0 && events.filter(ev => ev.start_date).length === 0) {
+            missingRequiredFields.push('Mindestens ein Termin mit Datum');
+        }
+    } else if (locationMode === 'locations' && bookingType !== 'platform') {
+        const hasValidLoc = locations.some(l => l.type !== 'presence' || l.canton);
+        if (!hasValidLoc) missingRequiredFields.push('Standort');
+    }
+    if (isKinder && !minAge) missingRequiredFields.push('Mindestalter (Kinderkurs)');
+
     return (
     <div className="max-w-4xl mx-auto px-4 py-8 animate-in fade-in slide-in-from-bottom-4 duration-500 font-sans">
         <button onClick={handleBack} className="flex items-center text-gray-500 hover:text-gray-900 mb-6 transition-colors"><ArrowLeft className="w-4 h-4 mr-2" /> {t.btn_back_dash}</button>
         <div className="bg-white p-8 rounded-2xl shadow-xl border border-gray-200">
             <div className="mb-8 border-b pb-4"><h1 className="text-3xl font-bold text-dark font-heading">{initialData ? t.edit_course : t.create_course}</h1></div>
             
-            <form onSubmit={handlePublishCourse} className="space-y-8">
+            <form ref={formRef} onSubmit={handlePublishCourse} className="space-y-8">
                 {initialData && <input type="hidden" name="course_id" value={initialData.id} />}
                 
-                {/* === ABSCHNITT A: PFLICHTANGABEN === */}
-                <div className="space-y-1">
-                    <h2 className="text-lg font-bold text-dark">Pflichtangaben</h2>
-                    <p className="text-sm text-gray-500">Diese Felder müssen ausgefüllt werden, bevor du den Kurs speichern kannst.</p>
+                {/* === ABSCHNITT 1: GRUNDANGABEN === */}
+                <div className="border-t border-gray-100 pt-2">
+                    <h2 className="text-lg font-bold text-dark">1. Grundangaben <span className="text-red-500">*</span></h2>
+                    <p className="text-sm text-gray-500 mt-0.5">Titel und Beschreibung deines Kurses.</p>
                 </div>
                 <div className="space-y-6">
-                     <div>
+                    <div>
                         <label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_title} <span className="text-red-500">*</span></label>
                         <input required type="text" name="title" value={title} onChange={(e) => { setTitle(e.target.value); markDirty(); }} className="w-full px-4 py-3 text-lg border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
                     </div>
-
                     <div>
                         <label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_description} <span className="text-red-500">*</span></label>
                         <textarea required name="description" value={description} onChange={(e) => { setDescription(e.target.value); markDirty(); }} rows="6" placeholder="Beschreibe deinen Kurs..." className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary outline-none resize-y block"></textarea>
-                        <p className="mt-2 text-sm text-gray-500">Die Beschreibung erscheint auf der Kursseite, wird aber nicht für die Textsuche ausgewertet. Damit dein Kurs bei Suchanfragen gefunden wird, trage wichtige Suchbegriffe bitte im Feld <span className="font-medium">«Keywords»</span> im optionalen Abschnitt ein.</p>
                     </div>
-
                     <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-1">Keywords für die Textsuche</label>
-                        <input type="text" name="keywords" value={keywords} onChange={(e) => { setKeywords(e.target.value); markDirty(); }} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" placeholder="z.B. Yoga, Anfänger, Entspannung, Zürich" />
-                        <p className="text-xs text-gray-400 mt-1">Wichtige Suchbegriffe, durch Komma getrennt</p>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">Suchbegriffe für die Suche <span className="text-red-500">*</span></label>
+                        <input type="text" name="keywords" value={keywords} onChange={(e) => { setKeywords(e.target.value); markDirty(); }} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" placeholder="z.B. Klavier, Musik, Anfänger, Kinder, Zürich" />
+                        <p className="text-xs text-gray-500 mt-1">Diese Begriffe helfen, dass dein Kurs über die Suche gefunden wird. Trenne mehrere Begriffe mit Komma.</p>
                     </div>
-                </div>
-
-                <div className="border-t border-gray-100"></div>
-
-                <div className="border-t border-gray-100 pt-2">
-                    <h2 className="text-lg font-bold text-dark">Kursbild &amp; Kategorie <span className="text-red-500">*</span></h2>
-                    <p className="text-sm text-gray-500 mt-0.5">Ein Bild und mindestens eine Kategorie sind Pflicht.</p>
-                </div>
-                {/* --- 2. IMAGES & CATEGORIES --- */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div className="md:col-span-2">
-                        <label className="block text-sm font-bold text-gray-700 mb-1">Kursbild</label>
-                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-gray-50 p-4 rounded-xl border border-dashed border-gray-300">
+                    {/* Kursbild */}
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">Kursbild <span className="text-red-500">*</span></label>
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 rounded-xl border border-dashed border-gray-300">
                             {(imagePreview || selectedExistingImage || initialData?.image_url) && (
                                 <div className="relative shrink-0">
                                     <img
@@ -1694,457 +1797,365 @@ if (bookingType === 'platform') {
                                         alt="Kursbildvorschau"
                                     />
                                     {imagePreview && (
-                                        <span className="absolute -top-1 -right-1 bg-green-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold">
-                                            Neu
-                                        </span>
+                                        <span className="absolute -top-1 -right-1 bg-green-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold">Neu</span>
                                     )}
                                     {selectedExistingImage && !imagePreview && (
-                                        <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold">
-                                            Bibliothek
-                                        </span>
+                                        <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold">Bibliothek</span>
                                     )}
                                 </div>
                             )}
-                            <div className="flex flex-col sm:flex-row gap-3 w-full">
-                                <input type="file" name="courseImage" accept="image/*" onChange={handleImageChange} className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-white hover:file:bg-orange-600 cursor-pointer" />
+                            <div className="flex flex-wrap gap-3">
+                                <input type="file" id="courseImageInput" name="courseImage" accept="image/*" onChange={handleImageChange} className="hidden" />
+                                <label htmlFor="courseImageInput" className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-full text-sm font-medium text-gray-700 hover:bg-gray-100 hover:border-gray-400 cursor-pointer transition">
+                                    <Upload className="w-4 h-4" />
+                                    Bild hochladen
+                                </label>
                                 <button
                                     type="button"
                                     onClick={openImageLibrary}
-                                    className="shrink-0 flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-full text-sm font-medium text-gray-700 hover:bg-gray-100 hover:border-gray-400 transition"
+                                    className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-full text-sm font-medium text-gray-700 hover:bg-gray-100 hover:border-gray-400 transition"
                                 >
                                     <Images className="w-4 h-4" />
-                                    Aus Bibliothek
+                                    Aus Bibliothek wählen
                                 </button>
                             </div>
                         </div>
-                        <p className="text-xs text-gray-500 mt-1">Lade ein neues Bild hoch oder wähle ein bereits hochgeladenes aus der Bibliothek.</p>
-                    </div>
-
-                    {/* Taxonomy Box */}
-                    <div className="md:col-span-2 bg-beige p-6 rounded-xl border border-orange-100 space-y-4">
-                        <h3 className="font-bold text-orange-900 mb-2">Kategorie & Einordnung</h3>
-                        <div className="space-y-4">
-                            {categories.map((row, idx) => (
-                                <div key={idx} className="bg-white/60 p-4 rounded-lg border border-orange-200/60">
-                                    <div className="flex items-center justify-between mb-3">
-                                        <span className="text-sm font-bold text-orange-900">
-                                            Kategorie {idx + 1} {idx === 0 ? '(Pflicht)' : '(Optional)'}
-                                        </span>
-
-                                        {idx > 0 && (
-                                            <button
-                                                type="button"
-                                                onClick={() => removeCategoryRow(idx)}
-                                                className="text-red-600 text-xs hover:underline flex items-center"
-                                            >
-                                                <Trash2 className="w-3 h-3 mr-1" /> Entfernen
-                                            </button>
-                                        )}
-                                    </div>
-
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                                        <div>
-                                            <span className="text-xs text-gray-500 block mb-1">Typ {idx === 0 ? '*' : ''}</span>
-                                            <select
-                                                name={`category_type_${idx}`}
-                                                value={row.type}
-                                                onChange={(e) => updateCategoryRow(idx, 'type', e.target.value)}
-                                                className="w-full px-3 py-2 border rounded-lg focus:ring-primary bg-white text-sm"
-                                                required={idx === 0}
-                                            >
-                                                {idx > 0 && <option value="">Bitte wählen...</option>}
-                                                {(types.length > 0 ? types : Object.keys(CATEGORY_TYPES).map(id => ({ id, slug: id, label_de: CATEGORY_TYPES[id].de }))).map(type => (
-                                                    <option key={type.slug || type.id} value={type.slug || type.id}>{TYPE_DISPLAY_LABELS[type.slug] || type.label_de}</option>
-                                                ))}
-                                            </select>
-                                        </div>
-
-                                        <div>
-                                            <span className="text-xs text-gray-500 block mb-1">Bereich {idx === 0 ? '*' : ''}</span>
-                                            <select
-                                                name={`category_area_${idx}`}
-                                                value={row.area}
-                                                onChange={(e) => updateCategoryRow(idx, 'area', e.target.value)}
-                                                className="w-full px-3 py-2 border rounded-lg focus:ring-primary bg-white text-sm"
-                                                disabled={!row.type}
-                                                required={idx === 0}
-                                            >
-                                                <option value="">Bitte wählen...</option>
-                                                {row.type && getAreasLocal(row.type).map(key => {
-                                                    const label = taxonomy?.[row.type]?.[key]?.label?.de
-                                                        || NEW_TAXONOMY[row.type]?.[key]?.label?.de
-                                                        || key;
-                                                    return <option key={key} value={key}>{label}</option>;
-                                                })}
-                                            </select>
-                                        </div>
-
-                                        <div>
-                                            <span className="text-xs text-gray-500 block mb-1">Spezialgebiet {idx === 0 ? '*' : ''}</span>
-                                            <select
-                                                name={`category_specialty_${idx}`}
-                                                value={row.specialty}
-                                                onChange={(e) => updateCategoryRow(idx, 'specialty', e.target.value)}
-                                                className="w-full px-3 py-2 border rounded-lg focus:ring-primary bg-white text-sm"
-                                                disabled={!row.area}
-                                                required={idx === 0}
-                                            >
-                                                <option value="">Bitte wählen...</option>
-                                                {row.type && row.area && getSpecialtiesLocal(row.type, row.area).map(spec => (
-                                                    <option key={spec} value={spec}>{spec}</option>
-                                                ))}
-                                            </select>
-                                        </div>
-
-                                        <div>
-                                            <span className="text-xs text-gray-500 block mb-1">Fokus</span>
-                                            <select
-                                                name={`category_focus_${idx}`}
-                                                value={row.focus}
-                                                onChange={(e) => updateCategoryRow(idx, 'focus', e.target.value)}
-                                                className="w-full px-3 py-2 border rounded-lg focus:ring-primary bg-white text-sm"
-                                                disabled={!row.specialty || getFocusOptions(row.type, row.area, row.specialty).length === 0}
-                                            >
-                                                <option value="">Optional...</option>
-                                                {row.type && row.area && row.specialty && getFocusOptions(row.type, row.area, row.specialty).map(f => (
-                                                    <option key={f} value={f}>{f}</option>
-                                                ))}
-                                            </select>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-
-                            <div className="flex items-center justify-between pt-1">
-                                <p className="text-xs text-gray-500">
-                                    Dein Paket erlaubt bis zu <span className="font-bold">{maxCategories}</span> Kategorien.
-                                </p>
-
-                                <button
-                                    type="button"
-                                    onClick={addCategoryRow}
-                                    disabled={categories.length >= maxCategories}
-                                    className="bg-white text-orange-700 border border-orange-200 px-3 py-1 rounded-full text-sm font-bold hover:bg-orange-50 flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    <Plus className="w-4 h-4 mr-1" /> Kategorie hinzufügen
-                                </button>
-                            </div>
-
-                            {/* Category Suggestion Button */}
-                            <div className="pt-3 border-t border-orange-200/50 mt-3">
-                                <button
-                                    type="button"
-                                    onClick={() => setShowCategorySuggestionModal(true)}
-                                    className="text-sm text-purple-600 hover:text-purple-800 font-medium flex items-center gap-1.5 hover:underline transition"
-                                >
-                                    <Lightbulb className="w-4 h-4" />
-                                    Kategorie fehlt? Neue vorschlagen
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Kursformat: Nur für berufliche Kurse (Mehrfachauswahl) */}
-                        {(categories[0]?.type === 'professionell' || categories[0]?.type === 'beruflich') && (
-                            <div className="bg-white/60 p-4 rounded-lg border border-blue-200/60 mt-4">
-                                <span className="text-sm font-bold text-blue-900 block mb-1">
-                                    Kursformat / Art der Weiterbildung
-                                </span>
-                                <span className="text-xs text-gray-500 block mb-3">
-                                    Welchem Format entspricht dieser Kurs? Mehrfachauswahl möglich.
-                                </span>
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-                                    {Object.entries(BERUF_SAEULEN).map(([key, config]) => {
-                                        const Icon = { workshop: Clock, fachkurs: BookOpen, zertifikatslehrgang: Award, ausbildung: GraduationCap }[key];
-                                        const isSelected = berufSaeulen.includes(key);
-                                        return (
-                                            <label
-                                                key={key}
-                                                className={`flex flex-col p-3 rounded-lg border cursor-pointer transition ${
-                                                    isSelected
-                                                        ? 'bg-blue-50 border-blue-400 ring-2 ring-blue-200'
-                                                        : 'bg-white border-gray-200 hover:border-blue-200'
-                                                }`}
-                                            >
-                                                <div className="flex items-center gap-2">
-                                                    <input
-                                                        type="checkbox"
-                                                        value={key}
-                                                        checked={isSelected}
-                                                        onChange={() => {
-                                                            setBerufSaeulen(prev =>
-                                                                prev.includes(key) ? prev.filter(s => s !== key) : [...prev, key]
-                                                            );
-                                                            markDirty();
-                                                        }}
-                                                        className="rounded text-blue-600 focus:ring-blue-500"
-                                                    />
-                                                    <Icon className="w-4 h-4 text-blue-600" />
-                                                    <span className="text-sm font-medium text-gray-800">{config.shortDe}</span>
-                                                </div>
-                                                <span className="text-[10px] text-gray-400 ml-6">{config.subtitle}</span>
-                                                <span className="text-xs text-gray-500 mt-1 ml-6">{config.description}</span>
-                                            </label>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Kursformat: Nur für Privat & Hobby (Single-Select) */}
-                        {(categories[0]?.type === 'privat') && (
-                            <div className="bg-white/60 p-4 rounded-lg border border-orange-200/60 mt-4">
-                                <span className="text-sm font-bold text-orange-900 block mb-1">
-                                    Kursformat
-                                </span>
-                                <span className="text-xs text-gray-500 block mb-3">
-                                    Welchem Format entspricht dieser Kurs? (Einfachauswahl)
-                                </span>
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-                                    {Object.entries(PRIVAT_KURSARTEN).map(([key, config]) => {
-                                        const isSelected = privatKursart === key;
-                                        return (
-                                            <label key={key} className={`flex flex-col p-3 rounded-lg border cursor-pointer transition ${
-                                                isSelected ? 'bg-orange-50 border-orange-400 ring-2 ring-orange-200' : 'bg-white border-gray-200 hover:border-orange-200'
-                                            }`}>
-                                                <div className="flex items-center gap-2">
-                                                    <input type="radio" name="privat_kursart" value={key}
-                                                        checked={isSelected}
-                                                        onChange={() => { setPrivatKursart(key); markDirty(); }}
-                                                        className="text-orange-500 focus:ring-orange-400"
-                                                    />
-                                                    <span className="text-sm font-medium text-gray-800">{config.shortDe}</span>
-                                                </div>
-                                                <span className="text-[10px] text-gray-400 ml-5">{config.subtitle}</span>
-                                                <span className="text-xs text-gray-500 mt-1 ml-5">{config.description}</span>
-                                            </label>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Kursformat: Nur für Kinder & Jugend (Single-Select) */}
-                        {(categories[0]?.type === 'kinder') && (
-                            <div className="bg-white/60 p-4 rounded-lg border border-green-200/60 mt-4">
-                                <span className="text-sm font-bold text-green-900 block mb-1">
-                                    Kursformat
-                                </span>
-                                <span className="text-xs text-gray-500 block mb-3">
-                                    Welchem Format entspricht dieser Kurs? (Einfachauswahl)
-                                </span>
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
-                                    {Object.entries(KINDER_KURSARTEN).map(([key, config]) => {
-                                        const isSelected = kinderKursart === key;
-                                        return (
-                                            <label key={key} className={`flex flex-col p-3 rounded-lg border cursor-pointer transition ${
-                                                isSelected ? 'bg-green-50 border-green-400 ring-2 ring-green-200' : 'bg-white border-gray-200 hover:border-green-200'
-                                            }`}>
-                                                <div className="flex items-center gap-2">
-                                                    <input type="radio" name="kinder_kursart" value={key}
-                                                        checked={isSelected}
-                                                        onChange={() => { setKinderKursart(key); markDirty(); }}
-                                                        className="text-green-600 focus:ring-green-500"
-                                                    />
-                                                    <span className="text-sm font-medium text-gray-800">{config.shortDe}</span>
-                                                </div>
-                                                <span className="text-[10px] text-gray-400 ml-5">{config.subtitle}</span>
-                                                <span className="text-xs text-gray-500 mt-1 ml-5">{config.description}</span>
-                                            </label>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                        )}
-
+                        <p className="text-xs text-gray-500 mt-1">Erforderlich für Veröffentlichung. Lade ein neues Bild hoch oder wähle eines aus deiner Bibliothek.</p>
                     </div>
                 </div>
 
-                {/* === ABSCHNITT B: BUCHUNG & STANDORT === */}
+                {/* === ABSCHNITT 2: KATEGORIE & KURSART === */}
                 <div className="border-t border-gray-100 pt-2">
-                    <h2 className="text-lg font-bold text-dark">Buchung &amp; Standort <span className="text-red-500">*</span></h2>
-                    <p className="text-sm text-gray-500 mt-0.5">Wie können Interessierte buchen? Je nach Buchungsart werden Standort-Angaben benötigt.</p>
+                    <h2 className="text-lg font-bold text-dark">2. Kategorie &amp; Kursart <span className="text-red-500">*</span></h2>
+                    <p className="text-sm text-gray-500 mt-0.5">Hilf Interessierten, deinen Kurs zu finden.</p>
                 </div>
-
-                {/* --- 3. BOOKING OPTIONS --- */}
-                <div className="bg-white rounded-xl space-y-6">
-                    <div>
-                        <h3 className="text-base font-semibold text-dark mb-4">Buchungsoptionen</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <label className={`border p-4 rounded-xl transition relative overflow-hidden ${!payoutReady ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} ${bookingType === 'platform' ? 'border-primary bg-orange-50 ring-1 ring-primary' : !payoutReady ? '' : 'hover:bg-gray-50'}`}>
-                                {bookingType === 'platform' && <div className="absolute top-0 right-0 bg-primary text-white text-[10px] px-2 py-0.5 rounded-bl">Empfohlen</div>}
-                                <div className="flex items-center mb-2"><input type="radio" name="bookingType" value="platform" checked={bookingType === 'platform'} disabled={!payoutReady} onChange={() => { setBookingType('platform'); markDirty(); }} className="mr-2 accent-primary"/> <span className="font-bold">Direktbuchung</span></div>
-                                <p className="text-xs text-gray-500">Mit festem Termin. Zahlung via KursNavi.</p>
-                            </label>
-                            <label className={`border p-4 rounded-xl transition relative overflow-hidden ${!payoutReady ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} ${bookingType === 'platform_flex' ? 'border-primary bg-orange-50 ring-1 ring-primary' : !payoutReady ? '' : 'hover:bg-gray-50'}`}>
-                                <div className="flex items-center mb-2"><input type="radio" name="bookingType" value="platform_flex" checked={bookingType === 'platform_flex'} disabled={!payoutReady} onChange={() => { setBookingType('platform_flex'); markDirty(); }} className="mr-2 accent-primary"/> <span className="font-bold">Flexibel</span></div>
-                                <p className="text-xs text-gray-500">Termin wird nach Buchung vereinbart. Zahlung via KursNavi.</p>
-                            </label>
-                            <label className={`cursor-pointer border p-4 rounded-xl transition ${bookingType === 'lead' ? 'border-primary bg-orange-50 ring-1 ring-primary' : 'hover:bg-gray-50'}`}>
-                                <div className="flex items-center mb-2"><input type="radio" name="bookingType" value="lead" checked={bookingType === 'lead'} onChange={() => { setBookingType('lead'); markDirty(); }} className="mr-2 accent-primary"/> <span className="font-bold">Anfrage (Lead)</span></div>
-                                <p className="text-xs text-gray-500">Kontaktformular. Keine Zahlung.</p>
-                            </label>
-                        </div>
-                        {!payoutReady && (
-                            <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                                <p className="text-sm text-amber-800">
-                                    Um Direktbuchungen oder flexible Buchungen anzubieten, richten Sie zuerst Ihre <button type="button" onClick={() => { sessionStorage.setItem('dashOpenTab', 'profile'); sessionStorage.setItem('dashScrollTo', 'auszahlungen'); setView('dashboard'); }} className="underline font-semibold hover:text-amber-900">Auszahlung ein</button>.
-                                </p>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* DYNAMIC FIELDS */}
-                    <div className="animate-in fade-in slide-in-from-top-4 duration-300">
-
-                        {/* Direkt/Flex: Pflichtfelder Preis, Lektionen, Dauer */}
-                        {(bookingType === 'platform' || bookingType === 'platform_flex') && (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                                <div>
-                                    <label className="block text-sm font-bold text-gray-700 mb-1">Preis (CHF) <span className="text-red-500">*</span></label>
-                                    <input type="number" min="0" name="price" value={price} onChange={(e) => { setPrice(e.target.value); markDirty(); }} placeholder="0 = Kostenlos" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
-                                    {(!price || Number(price) === 0) && (
-                                        <p className="text-xs text-amber-600 mt-1">Kein Preis = Kostenloser Kurs (Grund erforderlich)</p>
+                <div className="bg-beige p-6 rounded-xl border border-orange-100 space-y-4">
+                    <div className="space-y-4">
+                        {categories.map((row, idx) => (
+                            <div key={idx} className="bg-white/60 p-4 rounded-lg border border-orange-200/60">
+                                <div className="flex items-center justify-between mb-3">
+                                    <span className="text-sm font-bold text-orange-900">
+                                        Kategorie {idx + 1} {idx === 0 ? '(Pflicht)' : '(Optional)'}
+                                    </span>
+                                    {idx > 0 && (
+                                        <button
+                                            type="button"
+                                            onClick={() => removeCategoryRow(idx)}
+                                            className="text-red-600 text-xs hover:underline flex items-center"
+                                        >
+                                            <Trash2 className="w-3 h-3 mr-1" /> Entfernen
+                                        </button>
                                     )}
                                 </div>
-                                <div>
-                                    <label className="block text-sm font-bold text-gray-700 mb-1">Anzahl Lektionen <span className="text-red-500">*</span></label>
-                                    <input type="text" name="sessionCount" value={sessionCount} onChange={(e) => { setSessionCount(e.target.value); markDirty(); }} placeholder="z.B. 8 Einheiten à 60 Min." className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-bold text-gray-700 mb-1">Lektionsdauer <span className="text-red-500">*</span></label>
-                                    <input type="text" name="sessionLength" value={sessionLength} onChange={(e) => { setSessionLength(e.target.value); markDirty(); }} placeholder="z.B. 2 Stunden" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-bold text-gray-700 mb-1">Max. Buchungen pro 30 Tage</label>
-                                    <input type="number" min="1" name="ticketLimit30d" value={ticketLimit30d} onChange={(e) => { setTicketLimit30d(e.target.value); markDirty(); }} placeholder="Leer = unbegrenzt" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
-                                    <p className="text-xs text-gray-500 mt-1">Begrenzt die Anzahl Buchungen in 30 Tagen.</p>
-                                </div>
-                                {(!price || Number(price) === 0) && (
-                                    <div className="md:col-span-2">
-                                        <label className="block text-sm font-bold text-gray-700 mb-1">Warum ist dieser Kurs kostenlos? *</label>
-                                        <textarea name="freeReason" value={freeReason} onChange={(e) => { setFreeReason(e.target.value); markDirty(); }} placeholder="z.B. Schnupperkurs, Probetraining, ehrenamtliches Angebot…" rows={2} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none resize-none" />
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                    <div>
+                                        <span className="text-xs text-gray-500 block mb-1">Typ {idx === 0 ? '*' : ''}</span>
+                                        <select
+                                            name={`category_type_${idx}`}
+                                            value={row.type}
+                                            onChange={(e) => updateCategoryRow(idx, 'type', e.target.value)}
+                                            className="w-full px-3 py-2 border rounded-lg focus:ring-primary bg-white text-sm"
+                                            required={idx === 0}
+                                        >
+                                            {idx > 0 && <option value="">Bitte wählen...</option>}
+                                            {(types.length > 0 ? types : Object.keys(CATEGORY_TYPES).map(id => ({ id, slug: id, label_de: CATEGORY_TYPES[id].de }))).map(type => (
+                                                <option key={type.slug || type.id} value={type.slug || type.id}>{TYPE_DISPLAY_LABELS[type.slug] || type.label_de}</option>
+                                            ))}
+                                        </select>
                                     </div>
-                                )}
+                                    <div>
+                                        <span className="text-xs text-gray-500 block mb-1">Bereich {idx === 0 ? '*' : ''}</span>
+                                        <select
+                                            name={`category_area_${idx}`}
+                                            value={row.area}
+                                            onChange={(e) => updateCategoryRow(idx, 'area', e.target.value)}
+                                            className="w-full px-3 py-2 border rounded-lg focus:ring-primary bg-white text-sm"
+                                            disabled={!row.type}
+                                            required={idx === 0}
+                                        >
+                                            <option value="">Bitte wählen...</option>
+                                            {row.type && getAreasLocal(row.type).map(key => {
+                                                const label = taxonomy?.[row.type]?.[key]?.label?.de
+                                                    || NEW_TAXONOMY[row.type]?.[key]?.label?.de
+                                                    || key;
+                                                return <option key={key} value={key}>{label}</option>;
+                                            })}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <span className="text-xs text-gray-500 block mb-1">Spezialgebiet {idx === 0 ? '*' : ''}</span>
+                                        <select
+                                            name={`category_specialty_${idx}`}
+                                            value={row.specialty}
+                                            onChange={(e) => updateCategoryRow(idx, 'specialty', e.target.value)}
+                                            className="w-full px-3 py-2 border rounded-lg focus:ring-primary bg-white text-sm"
+                                            disabled={!row.area}
+                                            required={idx === 0}
+                                        >
+                                            <option value="">Bitte wählen...</option>
+                                            {row.type && row.area && getSpecialtiesLocal(row.type, row.area).map(spec => (
+                                                <option key={spec} value={spec}>{spec}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <span className="text-xs text-gray-500 block mb-1">Fokus</span>
+                                        <select
+                                            name={`category_focus_${idx}`}
+                                            value={row.focus}
+                                            onChange={(e) => updateCategoryRow(idx, 'focus', e.target.value)}
+                                            className="w-full px-3 py-2 border rounded-lg focus:ring-primary bg-white text-sm"
+                                            disabled={!row.specialty || getFocusOptions(row.type, row.area, row.specialty).length === 0}
+                                        >
+                                            <option value="">Optional...</option>
+                                            {row.type && row.area && row.specialty && getFocusOptions(row.type, row.area, row.specialty).map(f => (
+                                                <option key={f} value={f}>{f}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                        <div className="flex items-center justify-between pt-1">
+                            <p className="text-xs text-gray-500">
+                                Dein Paket erlaubt bis zu <span className="font-bold">{maxCategories}</span> Kategorien.
+                            </p>
+                            <button
+                                type="button"
+                                onClick={addCategoryRow}
+                                disabled={categories.length >= maxCategories}
+                                className="bg-white text-orange-700 border border-orange-200 px-3 py-1 rounded-full text-sm font-bold hover:bg-orange-50 flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <Plus className="w-4 h-4 mr-1" /> Kategorie hinzufügen
+                            </button>
+                        </div>
+                        <div className="pt-3 border-t border-orange-200/50 mt-3">
+                            <button
+                                type="button"
+                                onClick={() => setShowCategorySuggestionModal(true)}
+                                className="text-sm text-purple-600 hover:text-purple-800 font-medium flex items-center gap-1.5 hover:underline transition"
+                            >
+                                <Lightbulb className="w-4 h-4" />
+                                Kategorie fehlt? Neue vorschlagen
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Kursart: berufliche Kurse */}
+                    {(categories[0]?.type === 'professionell' || categories[0]?.type === 'beruflich') && (
+                        <div className="bg-white/60 p-4 rounded-lg border border-blue-200/60 mt-4">
+                            <span className="text-sm font-bold text-blue-900 block mb-1">Kursart / Art der Weiterbildung</span>
+                            <span className="text-xs text-gray-500 block mb-3">Welchem Format entspricht dieser Kurs? Mehrfachauswahl möglich.</span>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                                {Object.entries(BERUF_SAEULEN).map(([key, config]) => {
+                                    const Icon = { workshop: Clock, fachkurs: BookOpen, zertifikatslehrgang: Award, ausbildung: GraduationCap }[key];
+                                    const isSelected = berufSaeulen.includes(key);
+                                    return (
+                                        <label key={key} className={`flex flex-col p-3 rounded-lg border cursor-pointer transition ${isSelected ? 'bg-blue-50 border-blue-400 ring-2 ring-blue-200' : 'bg-white border-gray-200 hover:border-blue-200'}`}>
+                                            <div className="flex items-center gap-2">
+                                                <input type="checkbox" value={key} checked={isSelected}
+                                                    onChange={() => { setBerufSaeulen(prev => prev.includes(key) ? prev.filter(s => s !== key) : [...prev, key]); markDirty(); }}
+                                                    className="rounded text-blue-600 focus:ring-blue-500"
+                                                />
+                                                <Icon className="w-4 h-4 text-blue-600" />
+                                                <span className="text-sm font-medium text-gray-800">{config.shortDe}</span>
+                                            </div>
+                                            <span className="text-[10px] text-gray-400 ml-6">{config.subtitle}</span>
+                                            <span className="text-xs text-gray-500 mt-1 ml-6">{config.description}</span>
+                                        </label>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Kursart: Privat & Hobby */}
+                    {categories[0]?.type === 'privat' && (
+                        <div className="bg-white/60 p-4 rounded-lg border border-orange-200/60 mt-4">
+                            <span className="text-sm font-bold text-orange-900 block mb-1">Kursart</span>
+                            <span className="text-xs text-gray-500 block mb-3">Welchem Format entspricht dieser Kurs? (Einfachauswahl)</span>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                                {Object.entries(PRIVAT_KURSARTEN).map(([key, config]) => {
+                                    const isSelected = privatKursart === key;
+                                    return (
+                                        <label key={key} className={`flex flex-col p-3 rounded-lg border cursor-pointer transition ${isSelected ? 'bg-orange-50 border-orange-400 ring-2 ring-orange-200' : 'bg-white border-gray-200 hover:border-orange-200'}`}>
+                                            <div className="flex items-center gap-2">
+                                                <input type="radio" name="privat_kursart" value={key} checked={isSelected}
+                                                    onChange={() => { setPrivatKursart(key); markDirty(); }}
+                                                    className="text-orange-500 focus:ring-orange-400"
+                                                />
+                                                <span className="text-sm font-medium text-gray-800 whitespace-nowrap">{config.shortDe}</span>
+                                            </div>
+                                            <span className="text-[10px] text-gray-400 ml-5">{config.subtitle}</span>
+                                            <span className="text-xs text-gray-500 mt-1 ml-5">{config.description}</span>
+                                        </label>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Kursart: Kinder & Jugend */}
+                    {categories[0]?.type === 'kinder' && (
+                        <div className="bg-white/60 p-4 rounded-lg border border-green-200/60 mt-4">
+                            <span className="text-sm font-bold text-green-900 block mb-1">Kursart</span>
+                            <span className="text-xs text-gray-500 block mb-3">Welchem Format entspricht dieser Kurs? (Einfachauswahl)</span>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
+                                {Object.entries(KINDER_KURSARTEN).map(([key, config]) => {
+                                    const isSelected = kinderKursart === key;
+                                    return (
+                                        <label key={key} className={`flex flex-col p-3 rounded-lg border cursor-pointer transition ${isSelected ? 'bg-green-50 border-green-400 ring-2 ring-green-200' : 'bg-white border-gray-200 hover:border-green-200'}`}>
+                                            <div className="flex items-center gap-2">
+                                                <input type="radio" name="kinder_kursart" value={key} checked={isSelected}
+                                                    onChange={() => { setKinderKursart(key); markDirty(); }}
+                                                    className="text-green-600 focus:ring-green-500"
+                                                />
+                                                <span className="text-sm font-medium text-gray-800 whitespace-nowrap">{config.shortDe}</span>
+                                            </div>
+                                            <span className="text-[10px] text-gray-400 ml-5">{config.subtitle}</span>
+                                            <span className="text-xs text-gray-500 mt-1 ml-5">{config.description}</span>
+                                        </label>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* === ABSCHNITT 3: BUCHUNG & PREIS === */}
+                <div className="border-t border-gray-100 pt-2">
+                    <h2 className="text-lg font-bold text-dark">3. Buchung &amp; Preis</h2>
+                    <p className="text-sm text-gray-500 mt-0.5">Wie können Interessierte buchen und was kostet der Kurs?</p>
+                </div>
+                <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <label className={`border p-4 rounded-xl transition relative overflow-hidden ${!payoutReady ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} ${bookingType === 'platform' ? 'border-primary bg-orange-50 ring-1 ring-primary' : !payoutReady ? '' : 'hover:bg-gray-50'}`}>
+                            <div className="flex items-center mb-2"><input type="radio" name="bookingType" value="platform" checked={bookingType === 'platform'} disabled={!payoutReady} onChange={() => { setBookingType('platform'); markDirty(); }} className="mr-2 accent-primary"/> <span className="font-bold">Direktbuchung</span></div>
+                            <p className="text-xs text-gray-500">Mit festem Termin. Zahlung via KursNavi.</p>
+                        </label>
+                        <label className={`border p-4 rounded-xl transition relative overflow-hidden ${!payoutReady ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} ${bookingType === 'platform_flex' ? 'border-primary bg-orange-50 ring-1 ring-primary' : !payoutReady ? '' : 'hover:bg-gray-50'}`}>
+                            <div className="flex items-center mb-2"><input type="radio" name="bookingType" value="platform_flex" checked={bookingType === 'platform_flex'} disabled={!payoutReady} onChange={() => { setBookingType('platform_flex'); markDirty(); }} className="mr-2 accent-primary"/> <span className="font-bold">Flexibel</span></div>
+                            <p className="text-xs text-gray-500">Termin wird nach Buchung vereinbart. Zahlung via KursNavi.</p>
+                        </label>
+                        <label className={`cursor-pointer border p-4 rounded-xl transition ${bookingType === 'lead' ? 'border-primary bg-orange-50 ring-1 ring-primary' : 'hover:bg-gray-50'}`}>
+                            <div className="flex items-center mb-2"><input type="radio" name="bookingType" value="lead" checked={bookingType === 'lead'} onChange={() => { setBookingType('lead'); markDirty(); }} className="mr-2 accent-primary"/> <span className="font-bold">Anfrage</span></div>
+                            <p className="text-xs text-gray-500">Interessierte senden dir eine Nachricht. Keine Zahlung über KursNavi.</p>
+                        </label>
+                    </div>
+                    {!payoutReady && (
+                        <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                            <p className="text-sm text-amber-800">
+                                Für Direktbuchungen und flexible Buchungen musst du zuerst deine <button type="button" onClick={() => { sessionStorage.setItem('dashOpenTab', 'profile'); sessionStorage.setItem('dashScrollTo', 'auszahlungen'); setView('dashboard'); }} className="underline font-semibold hover:text-amber-900">Auszahlung einrichten</button>. Für Anfrage-Kurse ist keine Einrichtung nötig.
+                            </p>
+                        </div>
+                    )}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-1">
+                                Preis (CHF) {(bookingType === 'platform' || bookingType === 'platform_flex') ? <span className="text-red-500">*</span> : <span className="text-gray-400 font-normal">(optional)</span>}
+                            </label>
+                            <input type="number" min="0" name="price" value={price} onChange={(e) => { setPrice(e.target.value); markDirty(); }} placeholder="z.B. 150" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+                            {(bookingType === 'platform' || bookingType === 'platform_flex') && price !== '' && Number(price) === 0 && (
+                                <p className="text-xs text-amber-600 mt-1">Kostenloser Kurs – bitte Grund angeben</p>
+                            )}
+                        </div>
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-1">Preis-Beschreibung <span className="text-gray-400 font-normal">(optional)</span></label>
+                            <input type="text" value={priceInfo} onChange={(e) => { setPriceInfo(e.target.value); markDirty(); }} placeholder="z.B. CHF 150 pro Person, ab CHF 80, auf Anfrage" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+                            <p className="text-xs text-gray-500 mt-1">Ergänzt oder ersetzt den numerischen Preis auf der Kursseite.</p>
+                        </div>
+                        {(bookingType === 'platform' || bookingType === 'platform_flex') && (
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-1">Max. Buchungen pro 30 Tage</label>
+                                <input type="number" min="1" name="ticketLimit30d" value={ticketLimit30d} onChange={(e) => { setTicketLimit30d(e.target.value); markDirty(); }} placeholder="Leer = unbegrenzt" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+                                <p className="text-xs text-gray-500 mt-1">Begrenzt die Anzahl Buchungen in 30 Tagen.</p>
                             </div>
                         )}
+                        {(bookingType === 'platform' || bookingType === 'platform_flex') && price !== '' && Number(price) === 0 && (
+                            <div className="md:col-span-2">
+                                <label className="block text-sm font-bold text-gray-700 mb-1">Warum ist dieser Kurs kostenlos? *</label>
+                                <textarea name="freeReason" value={freeReason} onChange={(e) => { setFreeReason(e.target.value); markDirty(); }} placeholder="z.B. Schnupperkurs, Probetraining, ehrenamtliches Angebot…" rows={2} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none resize-none" />
+                            </div>
+                        )}
+                    </div>
+                </div>
 
-                        {/* B: DATES & LOCATIONS */}
-                        {bookingType === 'platform' ? (
-                        <div className="bg-blue-50 p-6 rounded-xl border border-blue-100">
-                             <div className="mb-4">
-                                <h3 className="text-lg font-bold text-blue-900 flex items-center"><Calendar className="w-5 h-5 mr-2" /> Termine & Standorte</h3>
-                                <p className="text-xs text-blue-700">Datum, Ort und Zeit sind für Direktbuchungen erforderlich.</p>
-                                <p className="text-xs text-amber-700 mt-2">Termine mit bestehenden Buchungen sind gesperrt. Vergangene gebuchte Termine werden automatisch archiviert und hier nicht mehr bearbeitbar angezeigt.</p>
-                            </div>
-                            <div className="space-y-4">
-                                {archivedBookedEvents.length > 0 && (
-                                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-800">
-                                        {archivedBookedEvents.length} vergangene(r) Termin(e) mit bestehenden Buchungen wurden archiviert und bleiben im Hintergrund erhalten.
-                                    </div>
-                                )}
-                                {visibleEvents.map((ev, i) => {
-                                    const originalIndex = events.indexOf(ev);
-                                    const isLockedEvent = (ev.bookingCount || 0) > 0;
-                                    const evType = ev.type || 'presence';
-                                    return (
-                                    <div key={ev.id || i} className={`bg-white p-4 rounded-lg shadow-sm flex flex-col gap-3 border ${isLockedEvent ? 'border-amber-300 bg-amber-50/40' : 'border-gray-200'}`}>
-                                        {isLockedEvent && (
-                                            <div className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-                                                Dieser Termin hat bereits {ev.bookingCount} Buchung{ev.bookingCount === 1 ? '' : 'en'} und ist deshalb nicht mehr veränderbar.
-                                            </div>
-                                        )}
-                                        {/* Typ-Auswahl */}
-                                        <div className="flex gap-2">
-                                            {[
-                                                { value: 'presence', label: 'Präsenz' },
-                                                { value: 'online',   label: 'Online'  },
-                                                { value: 'ausland',  label: 'Ausland' }
-                                            ].map(({ value, label }) => (
-                                                <button key={value} type="button" disabled={isLockedEvent}
-                                                    onClick={() => !isLockedEvent && updateEvent(originalIndex, 'type', value)}
-                                                    className={`px-3 py-1 rounded-full text-xs font-medium border transition-all ${evType === value ? 'bg-blue-600 text-white border-blue-700' : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'} ${isLockedEvent ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                                                    {label}
-                                                </button>
-                                            ))}
-                                        </div>
-                                        {/* Datum + Zeit */}
-                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                            <div>
-                                                <label className="text-xs font-bold text-gray-500 uppercase">Datum *</label>
-                                                <input type="date" disabled={isLockedEvent} required value={ev.start_date} onChange={e => updateEvent(originalIndex, 'start_date', e.target.value)} className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white disabled:bg-gray-100 disabled:text-gray-500" />
-                                            </div>
-                                            <div className="md:col-span-2">
-                                                <label className="text-xs font-bold text-gray-500 uppercase">Zeit / Details (Optional)</label>
-                                                <input type="text" disabled={isLockedEvent} value={ev.schedule_description} onChange={e => updateEvent(originalIndex, 'schedule_description', e.target.value)} placeholder="z.B. Sa & So, 09:00 - 17:00" className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white disabled:bg-gray-100 disabled:text-gray-500" />
-                                            </div>
-                                        </div>
-                                        {/* Adressfelder — abhängig vom Typ */}
-                                        {evType === 'presence' && (
-                                            <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-                                                <div className="md:col-span-5">
-                                                    <label className="text-xs font-bold text-gray-500 uppercase">Strasse / Nr. *</label>
-                                                    <input type="text" disabled={isLockedEvent} required value={ev.street} onChange={e => updateEvent(originalIndex, 'street', e.target.value)} placeholder="Musterstrasse 12" className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white disabled:bg-gray-100 disabled:text-gray-500" />
-                                                </div>
-                                                <div className="md:col-span-3">
-                                                    <label className="text-xs font-bold text-gray-500 uppercase">PLZ / Ort *</label>
-                                                    <input type="text" disabled={isLockedEvent} required value={ev.city} onChange={e => updateEvent(originalIndex, 'city', e.target.value)} placeholder="8000 Zürich" className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white disabled:bg-gray-100 disabled:text-gray-500" />
-                                                </div>
-                                                <div className="md:col-span-2">
-                                                    <label className="text-xs font-bold text-gray-500 uppercase">Kanton *</label>
-                                                    <select disabled={isLockedEvent} required value={ev.canton} onChange={e => updateEvent(originalIndex, 'canton', e.target.value)} className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white disabled:bg-gray-100 disabled:text-gray-500">
-                                                        <option value="">Wählen...</option>
-                                                        {SWISS_CANTONS.filter(c => c !== "Ausland" && c !== "Online").map(c => <option key={c} value={c}>{c}</option>)}
-                                                    </select>
-                                                </div>
-                                                <div className="md:col-span-2">
-                                                    <label className="text-xs font-bold text-gray-500 uppercase">Plätze</label>
-                                                    <input type="number" disabled={isLockedEvent} min="0" value={ev.max_participants} onChange={e => updateEvent(originalIndex, 'max_participants', e.target.value)} className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white disabled:bg-gray-100 disabled:text-gray-500" title="0 = Unbegrenzt" />
-                                                </div>
-                                            </div>
-                                        )}
-                                        {evType === 'online' && (
-                                            <div className="flex items-center gap-4">
-                                                <p className="text-sm text-gray-500 flex-1">Kurs findet online statt — keine Adresse erforderlich.</p>
-                                                <div>
-                                                    <label className="text-xs font-bold text-gray-500 uppercase">Plätze</label>
-                                                    <input type="number" disabled={isLockedEvent} min="0" value={ev.max_participants} onChange={e => updateEvent(originalIndex, 'max_participants', e.target.value)} className="w-32 px-3 py-2 border rounded bg-gray-50 focus:bg-white disabled:bg-gray-100 disabled:text-gray-500" title="0 = Unbegrenzt" />
-                                                </div>
-                                            </div>
-                                        )}
-                                        {evType === 'ausland' && (
-                                            <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-                                                <div className="md:col-span-10">
-                                                    <label className="text-xs font-bold text-gray-500 uppercase">Adresse im Ausland (Optional)</label>
-                                                    <input type="text" disabled={isLockedEvent} value={ev.location_abroad || ''} onChange={e => updateEvent(originalIndex, 'location_abroad', e.target.value)} placeholder="z.B. München, Deutschland" className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white disabled:bg-gray-100 disabled:text-gray-500" />
-                                                </div>
-                                                <div className="md:col-span-2">
-                                                    <label className="text-xs font-bold text-gray-500 uppercase">Plätze</label>
-                                                    <input type="number" disabled={isLockedEvent} min="0" value={ev.max_participants} onChange={e => updateEvent(originalIndex, 'max_participants', e.target.value)} className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white disabled:bg-gray-100 disabled:text-gray-500" title="0 = Unbegrenzt" />
-                                                </div>
-                                            </div>
-                                        )}
-                                        <button type="button" disabled={isLockedEvent} onClick={() => removeEvent(originalIndex)} className="text-red-500 text-xs hover:underline flex items-center self-end disabled:opacity-40 disabled:cursor-not-allowed"><Trash2 className="w-3 h-3 mr-1" /> Entfernen</button>
-                                    </div>
-                                )})}
-                            </div>
-                            <button type="button" onClick={addEvent} className="mt-4 bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-bold hover:bg-blue-700 flex items-center"><Plus className="w-4 h-4 mr-1"/> Termin hinzufügen</button>
+                {/* === ABSCHNITT 4: ORT & TERMINE === */}
+                <div className="border-t border-gray-100 pt-2">
+                    <h2 className="text-lg font-bold text-dark">4. Ort &amp; Termine <span className="text-red-500">*</span></h2>
+                    <p className="text-sm text-gray-500 mt-0.5">Wo und wie findet dein Kurs statt?</p>
+                </div>
+                <div className="space-y-4">
+                    {/* Durchführung (Delivery Types) */}
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">Durchführung</label>
+                        <p className="text-xs text-gray-500 mb-3">Wie wird der Kurs durchgeführt? Mehrfachauswahl möglich.</p>
+                        <div className="flex flex-wrap gap-3">
+                            {Object.entries(DELIVERY_TYPES).map(([key, val]) => (
+                                <label key={key} className={`flex items-center gap-2 px-4 py-2 rounded-full border cursor-pointer text-sm transition ${deliveryTypes.includes(key) ? 'bg-gray-700 text-white border-gray-700' : 'bg-white text-gray-700 border-gray-300 hover:border-gray-400'}`}>
+                                    <input
+                                        type="checkbox"
+                                        value={key}
+                                        checked={deliveryTypes.includes(key)}
+                                        onChange={() => { setDeliveryTypes(prev => prev.includes(key) ? prev.filter(d => d !== key) : [...prev, key]); markDirty(); }}
+                                        className="hidden"
+                                    />
+                                    {val.de}
+                                </label>
+                            ))}
                         </div>
-                        ) : (
-                        <div className="bg-blue-50 p-6 rounded-xl border border-blue-100">
-                            <div className="mb-1">
-                                <h3 className="text-lg font-bold text-blue-900 flex items-center">
-                                    <MapPin className="w-5 h-5 mr-2" /> Standort(e) *
-                                </h3>
+                    </div>
+
+                    {/* Ort & Termine Modus-Auswahl */}
+                    {(bookingType === 'lead' || bookingType === 'platform_flex') ? (
+                        <div>
+                            <p className="text-sm font-bold text-gray-700 mb-2">Wie möchtest du Ort und Termine erfassen?</p>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => { setLocationMode('locations'); markDirty(); }}
+                                    className={`text-left p-4 rounded-xl border-2 transition ${locationMode === 'locations' ? 'border-gray-700 bg-gray-50' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'}`}
+                                >
+                                    <div className="flex items-center gap-2 mb-1.5">
+                                        <MapPin className={`w-4 h-4 shrink-0 ${locationMode === 'locations' ? 'text-gray-800' : 'text-gray-400'}`} />
+                                        <span className={`font-bold text-sm ${locationMode === 'locations' ? 'text-gray-900' : 'text-gray-600'}`}>Feste Standorte</span>
+                                    </div>
+                                    <p className="text-xs text-gray-500 leading-relaxed">Für laufende Kurse, regelmässige Angebote oder Anfragen ohne fixes Datum.</p>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => { setLocationMode('events'); markDirty(); }}
+                                    className={`text-left p-4 rounded-xl border-2 transition ${locationMode === 'events' ? 'border-gray-700 bg-gray-50' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'}`}
+                                >
+                                    <div className="flex items-center gap-2 mb-1.5">
+                                        <Calendar className={`w-4 h-4 shrink-0 ${locationMode === 'events' ? 'text-gray-800' : 'text-gray-400'}`} />
+                                        <span className={`font-bold text-sm ${locationMode === 'events' ? 'text-gray-900' : 'text-gray-600'}`}>Konkrete Termine</span>
+                                    </div>
+                                    <p className="text-xs text-gray-500 leading-relaxed">Für Kurse mit festen Daten, z.B. Workshops, Camps oder Events.</p>
+                                </button>
                             </div>
-                            <p className="text-xs text-blue-700 mb-4">
+                        </div>
+                    ) : bookingType === 'platform' ? (
+                        <p className="text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
+                            <Calendar className="w-3.5 h-3.5 inline mr-1.5 text-gray-400" />
+                            Bei Direktbuchung braucht dein Kurs mindestens einen konkreten Termin. Interessierte buchen direkt einen Platz für diesen Termin.
+                        </p>
+                    ) : null}
+
+                    {/* Lead + Flex in locations mode: Standorte */}
+                    {(bookingType === 'lead' || bookingType === 'platform_flex') && locationMode === 'locations' && (
+                        <div className="border border-gray-200 rounded-xl p-4">
+                            <h3 className="text-base font-bold text-gray-800 flex items-center mb-1">
+                                <MapPin className="w-4 h-4 mr-2 text-gray-500" /> Hauptstandort *
+                            </h3>
+                            <p className="text-xs text-gray-500 mb-4">
                                 {bookingType === 'platform_flex'
                                     ? 'Der genaue Termin wird nach der Buchung vereinbart. Gib hier an, wo du tätig bist.'
-                                    : 'Gib hier an, wo der Kurs stattfindet. Mehrere Standorte möglich.'}
+                                    : 'Wo bietest du diesen Kurs an? Der Kanton ist für die regionale Suche wichtig.'}
                             </p>
                             <div className="space-y-3">
                                 {locations.map((loc, i) => (
-                                    <div key={i} className="bg-white p-4 rounded-lg border border-gray-200">
-                                        {/* Typ-Auswahl */}
+                                    <div key={i} className="bg-gray-50 p-4 rounded-lg border border-gray-200">
                                         <div className="flex gap-2 mb-3">
                                             {[
                                                 { value: 'presence', label: 'Präsenz' },
@@ -2153,28 +2164,28 @@ if (bookingType === 'platform') {
                                             ].map(({ value, label }) => (
                                                 <button key={value} type="button"
                                                     onClick={() => updateLocation(i, 'type', value)}
-                                                    className={`px-3 py-1 rounded-full text-xs font-medium border transition-all ${loc.type === value ? 'bg-blue-600 text-white border-blue-700' : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'}`}>
+                                                    className={`px-3 py-1 rounded-full text-xs font-medium border transition-all ${loc.type === value ? 'bg-gray-700 text-white border-gray-700' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-100'}`}>
                                                     {label}
                                                 </button>
                                             ))}
                                         </div>
-                                        {/* Adressfelder — nur bei Präsenz */}
                                         {loc.type === 'presence' && (
                                             <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
                                                 <div className="md:col-span-5">
                                                     <label className="text-xs font-bold text-gray-500 uppercase">Strasse / Nr.</label>
-                                                    <input type="text" value={loc.street} onChange={e => updateLocation(i, 'street', e.target.value)} placeholder="Musterstrasse 12" className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white" />
+                                                    <input type="text" value={loc.street} onChange={e => updateLocation(i, 'street', e.target.value)} placeholder="Musterstrasse 12" className="w-full px-3 py-2 border rounded bg-white focus:ring-2 focus:ring-primary outline-none" />
                                                 </div>
                                                 <div className="md:col-span-4">
                                                     <label className="text-xs font-bold text-gray-500 uppercase">PLZ / Ort</label>
-                                                    <input type="text" value={loc.city} onChange={e => updateLocation(i, 'city', e.target.value)} placeholder="8000 Zürich" className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white" />
+                                                    <input type="text" value={loc.city} onChange={e => updateLocation(i, 'city', e.target.value)} placeholder="8000 Zürich" className="w-full px-3 py-2 border rounded bg-white focus:ring-2 focus:ring-primary outline-none" />
                                                 </div>
                                                 <div className="md:col-span-3">
                                                     <label className="text-xs font-bold text-gray-500 uppercase">Kanton *</label>
-                                                    <select value={loc.canton} data-testid={`location-canton-${i}`} onChange={e => updateLocation(i, 'canton', e.target.value)} className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white">
-                                                        <option value="">Wählen...</option>
+                                                    <select value={loc.canton} data-testid={`location-canton-${i}`} onChange={e => updateLocation(i, 'canton', e.target.value)} className="w-full px-3 py-2 border rounded bg-white focus:ring-2 focus:ring-primary outline-none">
+                                                        <option value="">Bitte wählen…</option>
                                                         {SWISS_CANTONS.filter(c => c !== "Ausland" && c !== "Online").map(c => <option key={c} value={c}>{c}</option>)}
                                                     </select>
+                                                    <p className="text-xs text-gray-400 mt-1">Bestimmt die Region in der Suche.</p>
                                                 </div>
                                             </div>
                                         )}
@@ -2184,7 +2195,7 @@ if (bookingType === 'platform') {
                                         {loc.type === 'ausland' && (
                                             <div>
                                                 <label className="text-xs font-bold text-gray-500 uppercase">Adresse im Ausland (Optional)</label>
-                                                <input type="text" value={loc.location_abroad || ''} onChange={e => updateLocation(i, 'location_abroad', e.target.value)} placeholder="z.B. München, Deutschland" className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white" />
+                                                <input type="text" value={loc.location_abroad || ''} onChange={e => updateLocation(i, 'location_abroad', e.target.value)} placeholder="z.B. München, Deutschland" className="w-full px-3 py-2 border rounded bg-white focus:ring-2 focus:ring-primary outline-none" />
                                             </div>
                                         )}
                                         {locations.length > 1 && (
@@ -2195,246 +2206,285 @@ if (bookingType === 'platform') {
                                     </div>
                                 ))}
                             </div>
-                            <button type="button" onClick={addLocation} className="mt-4 bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-bold hover:bg-blue-700 flex items-center">
-                                <Plus className="w-4 h-4 mr-1"/> Standort hinzufügen
+                            <button type="button" onClick={addLocation} className="mt-3 flex items-center text-sm text-gray-600 hover:text-gray-900 border border-gray-300 px-3 py-1.5 rounded-full hover:bg-gray-50 transition">
+                                <Plus className="w-4 h-4 mr-1"/> Weiteren Standort hinzufügen
                             </button>
                         </div>
-                        )}
+                    )}
 
-                        {/* Optionale Termine für Lead-Kurse */}
-                        {bookingType === 'lead' && (
-                        <div className="bg-green-50 p-6 rounded-xl border border-green-100 mt-4">
-                            <div className="mb-1">
-                                <h3 className="text-lg font-bold text-green-900 flex items-center"><Calendar className="w-5 h-5 mr-2" /> Termine (optional)</h3>
-                                <p className="text-xs text-green-700 mt-1">Hast du bereits Termine geplant? Füge sie hier hinzu — sie werden auf der Kursseite angezeigt und im Datumsfilter berücksichtigt. Leere Termine werden nicht gespeichert.</p>
-                            </div>
-                            <div className="space-y-4 mt-4">
+                    {/* Lead/Flex in events mode OR platform: Termine */}
+                    {((bookingType === 'lead' || bookingType === 'platform_flex') && locationMode === 'events') && (
+                        <div className="border border-gray-200 rounded-xl p-4">
+                            <h3 className="text-base font-bold text-gray-800 flex items-center mb-1"><Calendar className="w-4 h-4 mr-2 text-gray-500" /> Termine</h3>
+                            <p className="text-xs text-gray-500 mt-1 mb-4">Leere Termine werden nicht gespeichert. Wähle das Datum über das Kalenderfeld.</p>
+                            <div className="space-y-4">
                                 {events.map((ev, i) => {
                                     const evType = ev.type || 'presence';
                                     return (
-                                    <div key={ev.id || i} className="bg-white p-4 rounded-lg border border-gray-200 flex flex-col gap-3">
-                                        {/* Typ-Auswahl */}
-                                        <div className="flex gap-2">
-                                            {[
-                                                { value: 'presence', label: 'Präsenz' },
-                                                { value: 'online',   label: 'Online'  },
-                                                { value: 'ausland',  label: 'Ausland' }
-                                            ].map(({ value, label }) => (
-                                                <button key={value} type="button"
-                                                    onClick={() => updateEvent(i, 'type', value)}
-                                                    className={`px-3 py-1 rounded-full text-xs font-medium border transition-all ${evType === value ? 'bg-green-600 text-white border-green-700' : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'}`}>
-                                                    {label}
-                                                </button>
-                                            ))}
-                                        </div>
-                                        {/* Datum + End-Datum + Zeit */}
-                                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                                            <div>
-                                                <label className="text-xs font-bold text-gray-500 uppercase">Startdatum</label>
-                                                <input type="date" value={ev.start_date} onChange={e => updateEvent(i, 'start_date', e.target.value)} className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white" />
+                                        <div key={ev.id || i} className="bg-gray-50 p-4 rounded-lg border border-gray-200 flex flex-col gap-3">
+                                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                                <div>
+                                                    <label className="text-xs font-bold text-gray-500 uppercase">Startdatum</label>
+                                                    <input type="date" value={ev.start_date} onChange={e => updateEvent(i, 'start_date', e.target.value)} className="w-full px-3 py-2 border rounded bg-white focus:ring-2 focus:ring-primary outline-none" />
+                                                </div>
+                                                <div>
+                                                    <label className="text-xs font-bold text-gray-500 uppercase">Enddatum (optional)</label>
+                                                    <input type="date" value={ev.end_date || ''} min={ev.start_date || undefined} onChange={e => updateEvent(i, 'end_date', e.target.value)} className="w-full px-3 py-2 border rounded bg-white focus:ring-2 focus:ring-primary outline-none" />
+                                                </div>
+                                                <div className="md:col-span-2">
+                                                    <label className="text-xs font-bold text-gray-500 uppercase">Zeit / Details (Optional)</label>
+                                                    <input type="text" value={ev.schedule_description} onChange={e => updateEvent(i, 'schedule_description', e.target.value)} placeholder="z.B. Sa & So, 09:00 – 17:00" className="w-full px-3 py-2 border rounded bg-white focus:ring-2 focus:ring-primary outline-none" />
+                                                </div>
                                             </div>
+                                            {/* Toggle für abweichenden Ort */}
+                                            <button
+                                                type="button"
+                                                onClick={() => updateEvent(i, 'showLoc', !ev.showLoc)}
+                                                className="self-start text-xs text-gray-500 hover:text-gray-800 underline underline-offset-2 transition"
+                                            >
+                                                {ev.showLoc ? 'Ort ausblenden' : 'Abweichenden Ort angeben'}
+                                            </button>
+                                            {ev.showLoc && (
+                                                <div>
+                                                    <div className="flex gap-2 mb-2">
+                                                        {[
+                                                            { value: 'presence', label: 'Präsenz' },
+                                                            { value: 'online',   label: 'Online'  },
+                                                            { value: 'ausland',  label: 'Ausland' }
+                                                        ].map(({ value, label }) => (
+                                                            <button key={value} type="button"
+                                                                onClick={() => updateEvent(i, 'type', value)}
+                                                                className={`px-3 py-1 rounded-full text-xs font-medium border transition-all ${evType === value ? 'bg-gray-700 text-white border-gray-700' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-100'}`}>
+                                                                {label}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                    {evType === 'presence' && (
+                                                        <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
+                                                            <div className="md:col-span-7">
+                                                                <label className="text-xs font-bold text-gray-500 uppercase">PLZ / Ort</label>
+                                                                <input type="text" value={ev.city} onChange={e => updateEvent(i, 'city', e.target.value)} placeholder="8000 Zürich" className="w-full px-3 py-2 border rounded bg-white focus:ring-2 focus:ring-primary outline-none" />
+                                                            </div>
+                                                            <div className="md:col-span-5">
+                                                                <label className="text-xs font-bold text-gray-500 uppercase">Kanton (für Filter)</label>
+                                                                <select value={ev.canton} onChange={e => updateEvent(i, 'canton', e.target.value)} className="w-full px-3 py-2 border rounded bg-white focus:ring-2 focus:ring-primary outline-none">
+                                                                    <option value="">Bitte wählen…</option>
+                                                                    {SWISS_CANTONS.filter(c => c !== "Ausland" && c !== "Online").map(c => <option key={c} value={c}>{c}</option>)}
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                    {evType === 'ausland' && (
+                                                        <div>
+                                                            <label className="text-xs font-bold text-gray-500 uppercase">Adresse im Ausland (Optional)</label>
+                                                            <input type="text" value={ev.location_abroad || ''} onChange={e => updateEvent(i, 'location_abroad', e.target.value)} placeholder="z.B. München, Deutschland" className="w-full px-3 py-2 border rounded bg-white focus:ring-2 focus:ring-primary outline-none" />
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+                                            <button type="button" onClick={() => removeEvent(i)} className="text-red-500 text-xs hover:underline flex items-center self-end"><Trash2 className="w-3 h-3 mr-1" /> Entfernen</button>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                            <button type="button" onClick={addEvent} className="mt-3 flex items-center text-sm text-gray-600 hover:text-gray-900 border border-gray-300 px-3 py-1.5 rounded-full hover:bg-gray-50 transition"><Plus className="w-4 h-4 mr-1"/> Termin hinzufügen</button>
+                        </div>
+                    )}
+
+                    {/* Platform: Termine mit Buchungsschutz */}
+                    {bookingType === 'platform' && (
+                        <div className="border border-gray-200 rounded-xl p-4">
+                            <h3 className="text-base font-bold text-gray-800 flex items-center mb-1"><Calendar className="w-4 h-4 mr-2 text-gray-500" /> Termine &amp; Standorte</h3>
+                            <p className="text-xs text-gray-500 mb-1">Datum und Ort sind für Direktbuchungen erforderlich. Wähle das Datum über das Kalenderfeld.</p>
+                            <p className="text-xs text-amber-600 mb-4">Termine mit bestehenden Buchungen sind gesperrt. Vergangene gebuchte Termine werden automatisch archiviert.</p>
+                            <div className="space-y-4">
+                                {archivedBookedEvents.length > 0 && (
+                                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800">
+                                        {archivedBookedEvents.length} vergangene(r) Termin(e) mit Buchungen wurden archiviert und bleiben im Hintergrund erhalten.
+                                    </div>
+                                )}
+                                {visibleEvents.map((ev, i) => {
+                                    const originalIndex = events.indexOf(ev);
+                                    const isLockedEvent = (ev.bookingCount || 0) > 0;
+                                    const evType = ev.type || 'presence';
+                                    return (
+                                    <div key={ev.id || i} className={`bg-gray-50 p-4 rounded-lg border flex flex-col gap-3 ${isLockedEvent ? 'border-amber-300 bg-amber-50/40' : 'border-gray-200'}`}>
+                                        {isLockedEvent && (
+                                            <div className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                                                Dieser Termin hat bereits {ev.bookingCount} Buchung{ev.bookingCount === 1 ? '' : 'en'} und ist deshalb nicht mehr veränderbar.
+                                            </div>
+                                        )}
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                             <div>
-                                                <label className="text-xs font-bold text-gray-500 uppercase">Enddatum (optional)</label>
-                                                <input type="date" value={ev.end_date || ''} min={ev.start_date || undefined} onChange={e => updateEvent(i, 'end_date', e.target.value)} className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white" />
+                                                <label className="text-xs font-bold text-gray-500 uppercase">Datum *</label>
+                                                <input type="date" disabled={isLockedEvent} required value={ev.start_date} onChange={e => updateEvent(originalIndex, 'start_date', e.target.value)} className="w-full px-3 py-2 border rounded bg-white focus:ring-2 focus:ring-primary outline-none disabled:bg-gray-100 disabled:text-gray-500" />
                                             </div>
                                             <div className="md:col-span-2">
                                                 <label className="text-xs font-bold text-gray-500 uppercase">Zeit / Details (Optional)</label>
-                                                <input type="text" value={ev.schedule_description} onChange={e => updateEvent(i, 'schedule_description', e.target.value)} placeholder="z.B. Sa & So, 09:00 – 17:00" className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white" />
+                                                <input type="text" disabled={isLockedEvent} value={ev.schedule_description} onChange={e => updateEvent(originalIndex, 'schedule_description', e.target.value)} placeholder="z.B. Sa & So, 09:00 - 17:00" className="w-full px-3 py-2 border rounded bg-white focus:ring-2 focus:ring-primary outline-none disabled:bg-gray-100 disabled:text-gray-500" />
                                             </div>
                                         </div>
-                                        {/* Ort-Felder — je nach Typ */}
-                                        {evType === 'presence' && (
-                                            <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-                                                <div className="md:col-span-7">
-                                                    <label className="text-xs font-bold text-gray-500 uppercase">PLZ / Ort (Optional)</label>
-                                                    <input type="text" value={ev.city} onChange={e => updateEvent(i, 'city', e.target.value)} placeholder="8000 Zürich" className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white" />
+                                        {/* Toggle für Ort */}
+                                        {!isLockedEvent && (
+                                            <button
+                                                type="button"
+                                                onClick={() => updateEvent(originalIndex, 'showLoc', !ev.showLoc)}
+                                                className="self-start text-xs text-gray-500 hover:text-gray-800 underline underline-offset-2 transition"
+                                            >
+                                                {ev.showLoc ? 'Ort ausblenden' : 'Ort angeben / ändern'}
+                                            </button>
+                                        )}
+                                        {/* Adressfelder */}
+                                        {(ev.showLoc || isLockedEvent) && (
+                                            <div className="space-y-3">
+                                                <div className="flex gap-2">
+                                                    {[
+                                                        { value: 'presence', label: 'Präsenz' },
+                                                        { value: 'online',   label: 'Online'  },
+                                                        { value: 'ausland',  label: 'Ausland' }
+                                                    ].map(({ value, label }) => (
+                                                        <button key={value} type="button" disabled={isLockedEvent}
+                                                            onClick={() => !isLockedEvent && updateEvent(originalIndex, 'type', value)}
+                                                            className={`px-3 py-1 rounded-full text-xs font-medium border transition-all ${evType === value ? 'bg-gray-700 text-white border-gray-700' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-100'} ${isLockedEvent ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                                                            {label}
+                                                        </button>
+                                                    ))}
                                                 </div>
-                                                <div className="md:col-span-5">
-                                                    <label className="text-xs font-bold text-gray-500 uppercase">Kanton (für Filter)</label>
-                                                    <select value={ev.canton} onChange={e => updateEvent(i, 'canton', e.target.value)} className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white">
-                                                        <option value="">Wählen...</option>
-                                                        {SWISS_CANTONS.filter(c => c !== "Ausland" && c !== "Online").map(c => <option key={c} value={c}>{c}</option>)}
-                                                    </select>
-                                                </div>
+                                                {evType === 'presence' && (
+                                                    <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+                                                        <div className="md:col-span-5">
+                                                            <label className="text-xs font-bold text-gray-500 uppercase">Strasse / Nr. *</label>
+                                                            <input type="text" disabled={isLockedEvent} required value={ev.street} onChange={e => updateEvent(originalIndex, 'street', e.target.value)} placeholder="Musterstrasse 12" className="w-full px-3 py-2 border rounded bg-white focus:ring-2 focus:ring-primary outline-none disabled:bg-gray-100 disabled:text-gray-500" />
+                                                        </div>
+                                                        <div className="md:col-span-3">
+                                                            <label className="text-xs font-bold text-gray-500 uppercase">PLZ / Ort *</label>
+                                                            <input type="text" disabled={isLockedEvent} required value={ev.city} onChange={e => updateEvent(originalIndex, 'city', e.target.value)} placeholder="8000 Zürich" className="w-full px-3 py-2 border rounded bg-white focus:ring-2 focus:ring-primary outline-none disabled:bg-gray-100 disabled:text-gray-500" />
+                                                        </div>
+                                                        <div className="md:col-span-2">
+                                                            <label className="text-xs font-bold text-gray-500 uppercase">Kanton *</label>
+                                                            <select disabled={isLockedEvent} required value={ev.canton} onChange={e => updateEvent(originalIndex, 'canton', e.target.value)} className="w-full px-3 py-2 border rounded bg-white focus:ring-2 focus:ring-primary outline-none disabled:bg-gray-100 disabled:text-gray-500">
+                                                                <option value="">Bitte wählen…</option>
+                                                                {SWISS_CANTONS.filter(c => c !== "Ausland" && c !== "Online").map(c => <option key={c} value={c}>{c}</option>)}
+                                                            </select>
+                                                        </div>
+                                                        <div className="md:col-span-2">
+                                                            <label className="text-xs font-bold text-gray-500 uppercase">Plätze</label>
+                                                            <input type="number" disabled={isLockedEvent} min="0" value={ev.max_participants} onChange={e => updateEvent(originalIndex, 'max_participants', e.target.value)} className="w-full px-3 py-2 border rounded bg-white focus:ring-2 focus:ring-primary outline-none disabled:bg-gray-100 disabled:text-gray-500" title="0 = Unbegrenzt" />
+                                                        </div>
+                                                    </div>
+                                                )}
+                                                {evType === 'online' && (
+                                                    <div className="flex items-center gap-4">
+                                                        <p className="text-sm text-gray-500 flex-1">Kurs findet online statt — keine Adresse erforderlich.</p>
+                                                        <div>
+                                                            <label className="text-xs font-bold text-gray-500 uppercase">Plätze</label>
+                                                            <input type="number" disabled={isLockedEvent} min="0" value={ev.max_participants} onChange={e => updateEvent(originalIndex, 'max_participants', e.target.value)} className="w-32 px-3 py-2 border rounded bg-white focus:ring-2 focus:ring-primary outline-none disabled:bg-gray-100 disabled:text-gray-500" title="0 = Unbegrenzt" />
+                                                        </div>
+                                                    </div>
+                                                )}
+                                                {evType === 'ausland' && (
+                                                    <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+                                                        <div className="md:col-span-10">
+                                                            <label className="text-xs font-bold text-gray-500 uppercase">Adresse im Ausland (Optional)</label>
+                                                            <input type="text" disabled={isLockedEvent} value={ev.location_abroad || ''} onChange={e => updateEvent(originalIndex, 'location_abroad', e.target.value)} placeholder="z.B. München, Deutschland" className="w-full px-3 py-2 border rounded bg-white focus:ring-2 focus:ring-primary outline-none disabled:bg-gray-100 disabled:text-gray-500" />
+                                                        </div>
+                                                        <div className="md:col-span-2">
+                                                            <label className="text-xs font-bold text-gray-500 uppercase">Plätze</label>
+                                                            <input type="number" disabled={isLockedEvent} min="0" value={ev.max_participants} onChange={e => updateEvent(originalIndex, 'max_participants', e.target.value)} className="w-full px-3 py-2 border rounded bg-white focus:ring-2 focus:ring-primary outline-none disabled:bg-gray-100 disabled:text-gray-500" title="0 = Unbegrenzt" />
+                                                        </div>
+                                                    </div>
+                                                )}
                                             </div>
                                         )}
-                                        {evType === 'ausland' && (
-                                            <div>
-                                                <label className="text-xs font-bold text-gray-500 uppercase">Adresse im Ausland (Optional)</label>
-                                                <input type="text" value={ev.location_abroad || ''} onChange={e => updateEvent(i, 'location_abroad', e.target.value)} placeholder="z.B. München, Deutschland" className="w-full px-3 py-2 border rounded bg-gray-50 focus:bg-white" />
-                                            </div>
+                                        {!ev.showLoc && !isLockedEvent && (
+                                            <p className="text-xs text-gray-400 italic">Kein spezifischer Ort angegeben — du kannst einen Ort über den Link oben angeben.</p>
                                         )}
-                                        <button type="button" onClick={() => removeEvent(i)} className="text-red-500 text-xs hover:underline flex items-center self-end"><Trash2 className="w-3 h-3 mr-1" /> Entfernen</button>
+                                        <button type="button" disabled={isLockedEvent} onClick={() => removeEvent(originalIndex)} className="text-red-500 text-xs hover:underline flex items-center self-end disabled:opacity-40 disabled:cursor-not-allowed"><Trash2 className="w-3 h-3 mr-1" /> Entfernen</button>
                                     </div>
                                     );
                                 })}
                             </div>
-                            <button type="button" onClick={addEvent} className="mt-4 bg-green-600 text-white px-3 py-1 rounded-full text-sm font-bold hover:bg-green-700 flex items-center"><Plus className="w-4 h-4 mr-1"/> Termin hinzufügen</button>
-                        </div>
-                        )}
-
-                    </div>
-                </div>
-
-                {/* === ABSCHNITT C: SONSTIGE KURSDETAILS === */}
-                <div className="border-t border-gray-100 pt-2">
-                    <h2 className="text-lg font-bold text-dark">Sonstige Kursdetails</h2>
-                </div>
-                <div className="bg-gray-50 p-6 rounded-xl border border-gray-200 space-y-6">
-                    {/* Kursformat (Lieferart) */}
-                    <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-2">Kursformat</label>
-                        <p className="text-xs text-gray-500 mb-3">Wie wird der Kurs durchgeführt? Mehrfachauswahl möglich.</p>
-                        <div className="flex flex-wrap gap-3">
-                            {Object.entries(DELIVERY_TYPES).map(([key, val]) => (
-                                <label key={key} className={`flex items-center gap-2 px-4 py-2 rounded-full border cursor-pointer text-sm transition ${deliveryTypes.includes(key) ? 'bg-gray-700 text-white border-gray-700' : 'bg-white text-gray-700 border-gray-300 hover:border-gray-400'}`}>
-                                    <input
-                                        type="checkbox"
-                                        value={key}
-                                        checked={deliveryTypes.includes(key)}
-                                        onChange={() => {
-                                            setDeliveryTypes(prev =>
-                                                prev.includes(key) ? prev.filter(d => d !== key) : [...prev, key]
-                                            );
-                                            markDirty();
-                                        }}
-                                        className="hidden"
-                                    />
-                                    {val.de}
-                                </label>
-                            ))}
-                        </div>
-                    </div>
-                    {/* Niveau */}
-                    <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-1">Niveau</label>
-                        <select
-                            value={selectedLevel}
-                            onChange={(e) => { setSelectedLevel(e.target.value); markDirty(); }}
-                            className="w-full md:w-1/2 px-4 py-2 border rounded-lg bg-white focus:ring-2 focus:ring-primary outline-none"
-                        >
-                            {Object.entries(COURSE_LEVELS).map(([key, val]) => (
-                                <option key={key} value={key}>{val.de}</option>
-                            ))}
-                        </select>
-                    </div>
-                    {/* Kurssprache */}
-                    <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-2">Kurssprache</label>
-                        <div className="flex flex-wrap gap-3">
-                            {Object.keys(COURSE_LANGUAGES).map(lang => (
-                                <label key={lang} className={`flex items-center gap-2 px-4 py-2 rounded-full border cursor-pointer text-sm transition ${courseLanguages.includes(lang) ? 'bg-gray-700 text-white border-gray-700' : 'bg-white text-gray-700 border-gray-300 hover:border-gray-400'}`}>
-                                    <input
-                                        type="checkbox"
-                                        value={lang}
-                                        checked={courseLanguages.includes(lang)}
-                                        onChange={() => {
-                                            setCourseLanguages(prev =>
-                                                prev.includes(lang) ? prev.filter(l => l !== lang) : [...prev, lang]
-                                            );
-                                            markDirty();
-                                        }}
-                                        className="hidden"
-                                    />
-                                    {lang}
-                                </label>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-
-                {/* === ABSCHNITT D: OPTIONAL === */}
-                <div className="border-t border-gray-100 pt-2">
-                    <h2 className="text-lg font-bold text-dark">Optional</h2>
-                    <p className="text-sm text-gray-500 mt-0.5">Diese Felder kannst du leer lassen.</p>
-                </div>
-                <div className="space-y-4">
-                    {/* Lernziele */}
-                    <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-1">Lernziele</label>
-                        <p className="text-xs text-gray-500 mb-2">Was lernen Teilnehmende in diesem Kurs? Ein Lernziel pro Zeile.</p>
-                        <textarea
-                            name="objectives"
-                            value={objectives}
-                            onChange={(e) => { setObjectives(e.target.value); markDirty(); }}
-                            rows={3}
-                            placeholder={"z.B. Du kannst nach dem Kurs sicher auf dem Snowboard fahren\nDu kennst die grundlegenden Techniken"}
-                            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none resize-none"
-                        />
-                    </div>
-                    {/* Voraussetzungen */}
-                    <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-1">Voraussetzungen</label>
-                        <textarea
-                            name="prerequisites"
-                            value={prerequisites}
-                            onChange={(e) => { setPrerequisites(e.target.value); markDirty(); }}
-                            rows={2}
-                            placeholder="z.B. Grundkenntnisse in Excel, keine Vorkenntnisse nötig"
-                            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none resize-none"
-                        />
-                    </div>
-                    {/* Lead: Lektionen, Dauer, Preis, Webseite hier (optional) */}
-                    {bookingType === 'lead' && (<>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-1">Anzahl Lektionen</label>
-                                <input type="text" name="sessionCount" value={sessionCount} onChange={(e) => { setSessionCount(e.target.value); markDirty(); }} placeholder="z.B. 8 Einheiten à 60 Min." className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-1">Lektionsdauer</label>
-                                <input type="text" name="sessionLength" value={sessionLength} onChange={(e) => { setSessionLength(e.target.value); markDirty(); }} placeholder="z.B. 2 Stunden" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-1">Preis (CHF)</label>
-                                <input type="number" min="0" name="price" value={price} onChange={(e) => { setPrice(e.target.value); markDirty(); }} placeholder="Optional" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-1">Webseite</label>
-                                <input type="url" name="providerUrl" value={providerUrl} onChange={(e) => { setProviderUrl(e.target.value); markDirty(); }} placeholder="https://..." className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
-                            </div>
-                        </div>
-                    </>)}
-                    {/* Direkt/Flex: nur Webseite hier (rest ist in Abschnitt B) */}
-                    {(bookingType === 'platform' || bookingType === 'platform_flex') && (
-                        <div>
-                            <label className="block text-sm font-bold text-gray-700 mb-1">Webseite</label>
-                            <input type="url" name="providerUrl" value={providerUrl} onChange={(e) => { setProviderUrl(e.target.value); markDirty(); }} placeholder="https://..." className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+                            <button type="button" onClick={addEvent} className="mt-3 flex items-center text-sm text-gray-600 hover:text-gray-900 border border-gray-300 px-3 py-1.5 rounded-full hover:bg-gray-50 transition"><Plus className="w-4 h-4 mr-1"/> Termin hinzufügen</button>
                         </div>
                     )}
-                    {/* Preis-Beschreibung (Freitext) */}
-                    <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-1">Preis-Beschreibung</label>
-                        <input
-                            type="text"
-                            value={priceInfo}
-                            onChange={(e) => { setPriceInfo(e.target.value); markDirty(); }}
-                            placeholder="z.B. CHF 150 pro Person, ab CHF 80, auf Anfrage"
-                            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none"
-                        />
-                        <p className="text-xs text-gray-500 mt-1">Wird auf der Kursseite angezeigt. Ergänzt oder ersetzt den numerischen Preis.</p>
-                    </div>
-                    {/* Mindestalter */}
-                    {(() => {
-                        const isKinder = categories[0]?.type === 'kinder' || categories[0]?.type === 'kinder_jugend';
-                        return isKinder ? (
-                            <div className="bg-yellow-50 p-4 rounded-xl border border-yellow-200">
-                                <h4 className="text-sm font-bold text-yellow-900 mb-3">Kinder-Kurs Einstellungen</h4>
-                                <div>
-                                    <label className="block text-sm font-bold text-gray-700 mb-1">Mindestalter *</label>
-                                    <input
-                                        type="number" min="0" max="18"
-                                        value={minAge}
-                                        onChange={(e) => { setMinAge(e.target.value); markDirty(); }}
-                                        placeholder="z.B. 6" required
-                                        className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none"
-                                    />
-                                    <p className="text-xs text-gray-500 mt-1">Ab welchem Alter ist der Kurs geeignet?</p>
-                                </div>
+                </div>
+
+
+                {/* === ABSCHNITT 5: WEITERE DETAILS (collapsible) === */}
+                <div className="border-t border-gray-100 pt-2">
+                    <button
+                        type="button"
+                        onClick={() => setShowOptionalDetails(v => !v)}
+                        className="flex items-center justify-between w-full text-left"
+                    >
+                        <div>
+                            <h2 className="text-lg font-bold text-dark">5. Weitere Details <span className="text-gray-400 text-sm font-normal ml-1">(optional)</span></h2>
+                            <p className="text-sm text-gray-500 mt-0.5">Dauer, Niveau, Sprachen, Lernziele, Voraussetzungen, Mindestalter, Webseite.</p>
+                        </div>
+                        {showOptionalDetails ? <ChevronUp className="w-5 h-5 text-gray-400 shrink-0 ml-4" /> : <ChevronDown className="w-5 h-5 text-gray-400 shrink-0 ml-4" />}
+                    </button>
+                </div>
+                {showOptionalDetails && (
+                    <div className="space-y-4">
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-1">Dauer &amp; Umfang</label>
+                            <input type="text" name="sessionLength" value={sessionLength} onChange={(e) => { setSessionLength(e.target.value); markDirty(); }} placeholder="z.B. 10 Lektionen à 1 Stunde, 1 Wochenende oder 4 Abende à 2 Stunden" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-1">Niveau</label>
+                            <select
+                                value={selectedLevel}
+                                onChange={(e) => { setSelectedLevel(e.target.value); markDirty(); }}
+                                className="w-full md:w-1/2 px-4 py-2 border rounded-lg bg-white focus:ring-2 focus:ring-primary outline-none"
+                            >
+                                {Object.entries(COURSE_LEVELS).map(([key, val]) => (
+                                    <option key={key} value={key}>{val.de}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-2">Kurssprache</label>
+                            <div className="flex flex-wrap gap-3">
+                                {Object.keys(COURSE_LANGUAGES).map(lang => (
+                                    <label key={lang} className={`flex items-center gap-2 px-4 py-2 rounded-full border cursor-pointer text-sm transition ${courseLanguages.includes(lang) ? 'bg-gray-700 text-white border-gray-700' : 'bg-white text-gray-700 border-gray-300 hover:border-gray-400'}`}>
+                                        <input
+                                            type="checkbox"
+                                            value={lang}
+                                            checked={courseLanguages.includes(lang)}
+                                            onChange={() => { setCourseLanguages(prev => prev.includes(lang) ? prev.filter(l => l !== lang) : [...prev, lang]); markDirty(); }}
+                                            className="hidden"
+                                        />
+                                        {lang}
+                                    </label>
+                                ))}
                             </div>
-                        ) : (
+                        </div>
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-1">Lernziele</label>
+                            <p className="text-xs text-gray-500 mb-2">Was lernen Teilnehmende in diesem Kurs? Ein Lernziel pro Zeile.</p>
+                            <textarea
+                                name="objectives"
+                                value={objectives}
+                                onChange={(e) => { setObjectives(e.target.value); markDirty(); }}
+                                rows={3}
+                                placeholder={"z.B. Du kannst nach dem Kurs sicher auf dem Snowboard fahren\nDu kennst die grundlegenden Techniken"}
+                                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none resize-none"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-1">Voraussetzungen</label>
+                            <textarea
+                                name="prerequisites"
+                                value={prerequisites}
+                                onChange={(e) => { setPrerequisites(e.target.value); markDirty(); }}
+                                rows={2}
+                                placeholder="z.B. Grundkenntnisse in Excel, keine Vorkenntnisse nötig"
+                                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none resize-none"
+                            />
+                        </div>
+                        {!isKinder && (
                             <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-1">Mindestalter</label>
+                                <label className="block text-sm font-bold text-gray-700 mb-1">Mindestalter <span className="text-gray-400 font-normal">(optional)</span></label>
                                 <input
                                     type="number" min="0"
                                     value={minAge}
@@ -2443,38 +2493,75 @@ if (bookingType === 'platform') {
                                     className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none"
                                 />
                             </div>
-                        );
-                    })()}
-                </div>
-
-                {/* --- STATUS SECTION --- */}
-                <div className="bg-gray-50 p-6 rounded-xl border border-gray-100">
-                    <h3 className="text-lg font-bold text-dark mb-4">Veröffentlichungs-Status</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <label className={`cursor-pointer border-2 p-4 rounded-xl transition relative ${courseStatus === 'draft' ? 'border-yellow-400 bg-yellow-50' : 'border-gray-200 hover:bg-gray-50'}`}>
-                            <div className="flex items-center mb-2">
-                                <input type="radio" name="courseStatus" value="draft" checked={courseStatus === 'draft'} onChange={() => { setCourseStatus('draft'); setIsDirty(true); }} className="mr-2 accent-yellow-500"/>
-                                <span className="font-bold">Entwurf</span>
-                            </div>
-                            <p className="text-xs text-gray-500">Kurs ist nur für dich sichtbar. Kann jederzeit veröffentlicht werden.</p>
-                        </label>
-                        <label className={`cursor-pointer border-2 p-4 rounded-xl transition relative ${courseStatus === 'published' ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:bg-gray-50'}`}>
-                            <div className="flex items-center mb-2">
-                                <input type="radio" name="courseStatus" value="published" checked={courseStatus === 'published'} onChange={() => { setCourseStatus('published'); setIsDirty(true); }} className="mr-2 accent-green-500"/>
-                                <span className="font-bold">Veröffentlicht</span>
-                            </div>
-                            <p className="text-xs text-gray-500">Kurs ist öffentlich sichtbar und kann gebucht werden.</p>
-                        </label>
+                        )}
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-1">Webseite</label>
+                            <input type="url" name="providerUrl" value={providerUrl} onChange={(e) => { setProviderUrl(e.target.value); markDirty(); }} placeholder="https://..." className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+                        </div>
                     </div>
-                </div>
+                )}
 
-                <div className="pt-6 flex justify-end">
-                    <button type="submit" disabled={isSubmitting} className="bg-primary text-white px-8 py-3 rounded-xl font-bold hover:bg-orange-600 shadow-lg hover:-translate-y-0.5 transition flex items-center font-heading disabled:opacity-50 disabled:cursor-not-allowed">
-                        {isSubmitting ? <Loader className="animate-spin w-5 h-5 mr-2 text-white" /> : <KursNaviLogo className="w-5 h-5 mr-2 text-white" />}
-                        Kurs speichern
+                {/* === KINDERKURS-EINSTELLUNGEN (nur wenn isKinder) === */}
+                {isKinder && (
+                    <div className="border-t border-gray-100 pt-4">
+                        <h2 className="text-lg font-bold text-dark mb-2">Kinderkurs-Einstellungen</h2>
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-1">Mindestalter <span className="text-red-500">*</span></label>
+                            <input
+                                type="number" min="0" max="18"
+                                value={minAge}
+                                onChange={(e) => { setMinAge(e.target.value); markDirty(); }}
+                                placeholder="z.B. 6"
+                                className="w-full md:w-1/3 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none"
+                            />
+                            <p className="text-xs text-gray-500 mt-1">Ab welchem Alter ist der Kurs geeignet?</p>
+                        </div>
+                    </div>
+                )}
+
+                {/* === ABSCHNITT 6: VERÖFFENTLICHUNG === */}
+                <div className="border-t border-gray-100 pt-2">
+                    <h2 className="text-lg font-bold text-dark">6. Veröffentlichung</h2>
+                </div>
+                {missingRequiredFields.length > 0 ? (
+                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                        <p className="text-sm font-bold text-amber-800 mb-2">Veröffentlichen ist noch nicht möglich. Es fehlen:</p>
+                        <ul className="list-disc list-inside text-sm text-amber-700 space-y-1">
+                            {missingRequiredFields.map(f => <li key={f}>{f}</li>)}
+                        </ul>
+                    </div>
+                ) : (
+                    <p className="text-sm text-green-700 flex items-center gap-1.5">
+                        <Check className="w-4 h-4" /> Alle Pflichtfelder sind ausgefüllt.
+                    </p>
+                )}
+                <div className="pt-2 flex flex-col sm:flex-row gap-3 justify-end flex-wrap">
+                    {/* Save button: "Als Entwurf speichern" for new courses, "Änderungen speichern" when editing */}
+                    <button
+                        type="button"
+                        data-testid="save-course"
+                        disabled={isSubmitting}
+                        onClick={() => { pendingStatusRef.current = initialData?.id ? null : 'draft'; formRef.current?.requestSubmit(); }}
+                        className="px-8 py-3 rounded-xl font-bold border-2 border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition flex items-center justify-center font-heading disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {initialData?.id ? 'Änderungen speichern' : 'Als Entwurf speichern'}
                     </button>
+                    {/* Preview button: only active when course already exists (has ID) */}
+                    {/* Publish button: disabled when fields missing; only for new courses or drafts */}
+                    {(!initialData?.id || courseStatus === 'draft') && (
+                        <button
+                            type="button"
+                            disabled={isSubmitting || missingRequiredFields.length > 0}
+                            onClick={() => { pendingStatusRef.current = 'published'; formRef.current?.requestSubmit(); }}
+                            className="bg-primary text-white px-8 py-3 rounded-xl font-bold hover:bg-orange-600 shadow-lg hover:-translate-y-0.5 transition flex items-center justify-center font-heading disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {isSubmitting ? <Loader className="animate-spin w-5 h-5 mr-2 text-white" /> : <KursNaviLogo className="w-5 h-5 mr-2 text-white" />}
+                            Jetzt veröffentlichen
+                        </button>
+                    )}
                 </div>
             </form>
+
         </div>
 
         {/* Category Suggestion Modal */}

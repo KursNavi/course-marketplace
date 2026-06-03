@@ -4,7 +4,7 @@ import { mockApiRoutes } from './helpers/api-mocks.mjs';
 
 test.describe('Course Creation (hybrid app-e2e)', () => {
 
-  test('teacher can create a new lead course', async ({ page }) => {
+  test('teacher can create a new lead course (as draft)', async ({ page }) => {
     // Mock API routes — TeacherForm saves directly via Supabase client,
     // but other background fetches (e.g. admin, taxonomy refresh) might hit /api/*
     await mockApiRoutes(page);
@@ -30,10 +30,8 @@ test.describe('Course Creation (hybrid app-e2e)', () => {
       'Automatisch erstellter Testkurs via Playwright E2E.'
     );
 
-    // 3. Learning objectives
-    await page.locator('textarea[name="objectives"]').fill(
-      'Lernziel 1: Playwright kennenlernen\nLernziel 2: E2E-Tests schreiben'
-    );
+    // 3. Keywords (now required in Section 1)
+    await page.locator('input[name="keywords"]').fill('Test, E2E, Playwright');
 
     // 4. Category — select first available options in cascading dropdowns
     const catType = page.locator('select[name="category_type_0"]');
@@ -58,12 +56,9 @@ test.describe('Course Creation (hybrid app-e2e)', () => {
     // (street and city are optional; type defaults to 'presence')
     await page.getByTestId('location-canton-0').selectOption('Zürich');
 
-    // 8. Publication status — switch from draft to published
-    await page.locator('input[name="courseStatus"][value="published"]').click();
-
-    // ── Submit ──────────────────────────────────────────────
-
-    await page.getByRole('button', { name: 'Kurs speichern' }).click();
+    // ── Submit — save as draft (image upload not possible in E2E, so publish would be blocked) ─
+    // "Als Entwurf speichern" works without image and is always enabled.
+    await page.getByTestId('save-course').click();
 
     // ── Verify success ──────────────────────────────────────
 

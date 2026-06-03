@@ -66,8 +66,8 @@ test.describe('Course Edit (app-e2e)', () => {
       if (form) form.noValidate = true;
     });
 
-    // Save the course
-    await page.getByRole('button', { name: /Kurs speichern/i }).click();
+    // Save the course using data-testid (works for both "Änderungen speichern" and "Als Entwurf speichern")
+    await page.getByTestId('save-course').click();
 
     // Check if there was a validation alert
     if (alerts.length > 0) {
@@ -86,7 +86,7 @@ test.describe('Course Edit (app-e2e)', () => {
       await expect(page.locator('input[name="title"]')).toBeVisible({ timeout: 10_000 });
       await page.locator('input[name="title"]').fill(originalTitle);
       await page.evaluate(() => { const f = document.querySelector('form'); if (f) f.noValidate = true; });
-      await page.getByRole('button', { name: /Kurs speichern/i }).click();
+      await page.getByTestId('save-course').click();
       await expect(page.getByText(originalTitle, { exact: true })).toBeVisible({ timeout: 20_000 });
     }
   });
@@ -121,7 +121,7 @@ test.describe('Course Edit (app-e2e)', () => {
 
     await priceInfoInput.fill('Testpreis CHF 99');
     await page.evaluate(() => { const f = document.querySelector('form'); if (f) f.noValidate = true; });
-    await page.getByRole('button', { name: /Kurs speichern/i }).click();
+    await page.getByTestId('save-course').click();
     if (alerts.length > 0) {
       test.skip(true, `Form validation: ${alerts[0]}`);
     }
@@ -140,7 +140,7 @@ test.describe('Course Edit (app-e2e)', () => {
     await priceInfoInput2.fill('');
 
     await page.evaluate(() => { const f = document.querySelector('form'); if (f) f.noValidate = true; });
-    await page.getByRole('button', { name: /Kurs speichern/i }).click();
+    await page.getByTestId('save-course').click();
     if (alerts.length > 0) {
       test.skip(true, `Form validation on clear: ${alerts[0]}`);
     }
