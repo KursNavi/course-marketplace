@@ -814,21 +814,50 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
                             <span className="font-medium group-hover:underline">{course.instructor_name}</span>
                         </button>
                         {(() => {
-                            const presenceLocs = Array.isArray(course.course_locations)
-                                ? course.course_locations
-                                    .filter(l => l.location_type === 'presence')
-                                    .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+                            // Helper: extract the city portion from a location string.
+                            // Stored location can be "City" or "Street, City" — always take the last segment.
+                            const extractCity = (loc) => {
+                                if (!loc) return '';
+                                const idx = loc.lastIndexOf(',');
+                                return idx !== -1 ? loc.substring(idx + 1).trim() : loc.trim();
+                            };
+
+                            const presenceEvents = Array.isArray(course.course_events)
+                                ? course.course_events.filter(ev =>
+                                    ev.start_date && ev.canton &&
+                                    ev.canton !== 'Online' && ev.canton !== 'Ausland')
                                 : [];
+
                             let locationText;
-                            if (presenceLocs.length > 1) {
-                                const cantons = [...new Set(presenceLocs.map(l => l.canton).filter(Boolean))];
-                                locationText = cantons.join(', ');
-                            } else if (presenceLocs.length === 1) {
-                                const loc = presenceLocs[0];
-                                locationText = [loc.street, loc.city].filter(Boolean).join(', ') || loc.canton || '';
-                            } else {
-                                locationText = course.address || course.city || course.canton || '';
+                            if (presenceEvents.length > 0) {
+                                // Events mode: derive location from course_events (authoritative).
+                                // course_locations and course.address may be stale after a mode switch.
+                                const uniqueCantons = [...new Set(presenceEvents.map(ev => ev.canton).filter(Boolean))];
+                                if (uniqueCantons.length === 1) {
+                                    // Single canton: show the city of the first event
+                                    const city = extractCity(presenceEvents[0].location);
+                                    locationText = city || uniqueCantons[0];
+                                } else {
+                                    // Multiple cantons: list them (e.g. "Bern, Zürich, Aargau")
+                                    locationText = uniqueCantons.join(', ');
+                                }
+                            } else if (!Array.isArray(course.course_events) || course.course_events.length === 0) {
+                                // Locations mode: use course_locations as the authoritative source
+                                const presenceLocs = Array.isArray(course.course_locations)
+                                    ? course.course_locations
+                                        .filter(l => l.location_type === 'presence')
+                                        .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+                                    : [];
+                                if (presenceLocs.length > 1) {
+                                    const cantons = [...new Set(presenceLocs.map(l => l.canton).filter(Boolean))];
+                                    locationText = cantons.join(', ');
+                                } else if (presenceLocs.length === 1) {
+                                    const loc = presenceLocs[0];
+                                    locationText = [loc.street, loc.city].filter(Boolean).join(', ') || loc.canton || '';
+                                }
                             }
+                            // Final fallback to courses-table fields
+                            if (!locationText) locationText = course.address || course.city || course.canton || '';
                             if (!locationText) return null;
                             return (
                                 <div className="flex items-center text-gray-700">
@@ -957,7 +986,14 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
                                         const dateLabel = startStr
                                             ? (endStr && endStr !== startStr ? `${startStr} – ${endStr}` : startStr)
                                             : 'Termin nach Absprache';
-                                        const locationLabel = ev.location || ev.canton || '';
+                                        // Show only the city portion — ev.location may contain a
+                                        // "Street, City" string; for lead courses the exact address is
+                                        // shared by the teacher after contact, not needed publicly.
+                                        const rawLoc = ev.location || '';
+                                        const commaIdx = rawLoc.lastIndexOf(',');
+                                        const locationLabel = commaIdx !== -1
+                                            ? rawLoc.substring(commaIdx + 1).trim()
+                                            : (rawLoc || ev.canton || '');
                                         return (
                                             <div key={i} className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5 py-2 border-b border-gray-100 last:border-0 text-sm">
                                                 <span className="font-medium text-dark">{dateLabel}</span>

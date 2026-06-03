@@ -1058,7 +1058,11 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
 
     const addEvent = () => {
         const loc = profileLocationRef.current;
-        setEvents([...events, { id: null, bookingCount: 0, type: 'presence', start_date: '', end_date: '', street: loc?.street || '', city: loc?.city || '', max_participants: 0, canton: loc?.canton || '', schedule_description: '', location_abroad: '', showLoc: !!(loc?.canton) }]);
+        // For Direktbuchung (platform) the street is required and meaningful,
+        // so pre-fill from profile. For lead/flex events the profile street must
+        // NOT be pre-filled: the event location is a town/venue, not the office address.
+        const prefillStreet = bookingType === 'platform' ? (loc?.street || '') : '';
+        setEvents([...events, { id: null, bookingCount: 0, type: 'presence', start_date: '', end_date: '', street: prefillStreet, city: loc?.city || '', max_participants: 0, canton: loc?.canton || '', schedule_description: '', location_abroad: '', showLoc: !!(loc?.canton) }]);
         markDirty();
     };
     const removeEvent = (index) => {
@@ -1631,16 +1635,18 @@ if (bookingType === 'platform' || locationMode === 'events') {
             }
         }
 
-        // 7b. Save course_locations for lead/flex
-        // In 'locations' mode: save from locations state
-        // In 'events' mode: mirror unique presence cantons from events (for search filter)
-        if (!isAdminImpersonating && activeCourseId && bookingType !== 'platform') {
+        // 7b. Save course_locations (all booking types)
+        // In 'locations' mode (lead/flex only): save from locations state
+        // In 'events' mode (platform + lead/flex): mirror unique cantons from events for search filters
+        // Note: platform courses previously skipped this block, leaving stale locations in DB.
+        if (!isAdminImpersonating && activeCourseId) {
             // Delete all existing locations for this course, then re-insert
             await supabase.from('course_locations').delete().eq('course_id', activeCourseId);
 
             let locationPayloads = [];
 
-            if (locationMode === 'locations') {
+            if (locationMode === 'locations' && bookingType !== 'platform') {
+                // Feste Standorte (lead/flex only): save full address from locations state
                 locationPayloads = locations.map((loc, i) => ({
                     course_id: activeCourseId,
                     location_type: loc.type,
@@ -1651,14 +1657,16 @@ if (bookingType === 'platform' || locationMode === 'events') {
                     sort_order: i
                 }));
             } else {
-                // events mode: mirror unique presence cantons from events
+                // Events mode (platform + lead/flex): mirror unique presence cantons from events.
+                // Do NOT copy street — events are the authoritative source for the full address;
+                // course_locations in this mode serve only as a canton-based filter index.
                 const seen = new Set();
                 locationPayloads = validEvents
                     .filter(ev => ev.type === 'presence' && ev.canton && !seen.has(ev.canton) && seen.add(ev.canton))
                     .map((ev, i) => ({
                         course_id: activeCourseId,
                         location_type: 'presence',
-                        street: ev.street?.trim() || null,
+                        street: null,
                         city: ev.city?.trim() || null,
                         canton: ev.canton,
                         sort_order: i
