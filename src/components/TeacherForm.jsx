@@ -1984,7 +1984,7 @@ if (bookingType === 'platform' || locationMode === 'events') {
                                                     onChange={() => { setPrivatKursart(key); markDirty(); }}
                                                     className="text-orange-500 focus:ring-orange-400"
                                                 />
-                                                <span className="text-sm font-medium text-gray-800">{config.shortDe}</span>
+                                                <span className="text-sm font-medium text-gray-800 whitespace-nowrap">{config.shortDe}</span>
                                             </div>
                                             <span className="text-[10px] text-gray-400 ml-5">{config.subtitle}</span>
                                             <span className="text-xs text-gray-500 mt-1 ml-5">{config.description}</span>
@@ -2010,7 +2010,7 @@ if (bookingType === 'platform' || locationMode === 'events') {
                                                     onChange={() => { setKinderKursart(key); markDirty(); }}
                                                     className="text-green-600 focus:ring-green-500"
                                                 />
-                                                <span className="text-sm font-medium text-gray-800">{config.shortDe}</span>
+                                                <span className="text-sm font-medium text-gray-800 whitespace-nowrap">{config.shortDe}</span>
                                             </div>
                                             <span className="text-[10px] text-gray-400 ml-5">{config.subtitle}</span>
                                             <span className="text-xs text-gray-500 mt-1 ml-5">{config.description}</span>
@@ -2118,7 +2118,7 @@ if (bookingType === 'platform' || locationMode === 'events') {
                                 >
                                     <div className="flex items-center gap-2 mb-1.5">
                                         <MapPin className={`w-4 h-4 shrink-0 ${locationMode === 'locations' ? 'text-gray-800' : 'text-gray-400'}`} />
-                                        <span className={`font-bold text-sm ${locationMode === 'locations' ? 'text-gray-900' : 'text-gray-600'}`}>Feste Standort(e)</span>
+                                        <span className={`font-bold text-sm ${locationMode === 'locations' ? 'text-gray-900' : 'text-gray-600'}`}>Feste Standorte</span>
                                     </div>
                                     <p className="text-xs text-gray-500 leading-relaxed">Für laufende Kurse, regelmässige Angebote oder Anfragen ohne fixes Datum.</p>
                                 </button>
@@ -2146,7 +2146,7 @@ if (bookingType === 'platform' || locationMode === 'events') {
                     {(bookingType === 'lead' || bookingType === 'platform_flex') && locationMode === 'locations' && (
                         <div className="border border-gray-200 rounded-xl p-4">
                             <h3 className="text-base font-bold text-gray-800 flex items-center mb-1">
-                                <MapPin className="w-4 h-4 mr-2 text-gray-500" /> Hauptstandort(e) *
+                                <MapPin className="w-4 h-4 mr-2 text-gray-500" /> Hauptstandort *
                             </h3>
                             <p className="text-xs text-gray-500 mb-4">
                                 {bookingType === 'platform_flex'
@@ -2419,7 +2419,7 @@ if (bookingType === 'platform' || locationMode === 'events') {
                     >
                         <div>
                             <h2 className="text-lg font-bold text-dark">5. Weitere Details <span className="text-gray-400 text-sm font-normal ml-1">(optional)</span></h2>
-                            <p className="text-sm text-gray-500 mt-0.5">Dauer, Niveau, Sprachen, Lernziele, Voraussetzungen, Keywords, Webseite.</p>
+                            <p className="text-sm text-gray-500 mt-0.5">Dauer, Niveau, Sprachen, Lernziele, Voraussetzungen, Mindestalter, Webseite.</p>
                         </div>
                         {showOptionalDetails ? <ChevronUp className="w-5 h-5 text-gray-400 shrink-0 ml-4" /> : <ChevronDown className="w-5 h-5 text-gray-400 shrink-0 ml-4" />}
                     </button>
