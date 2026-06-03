@@ -1058,7 +1058,11 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
 
     const addEvent = () => {
         const loc = profileLocationRef.current;
-        setEvents([...events, { id: null, bookingCount: 0, type: 'presence', start_date: '', end_date: '', street: loc?.street || '', city: loc?.city || '', max_participants: 0, canton: loc?.canton || '', schedule_description: '', location_abroad: '', showLoc: !!(loc?.canton) }]);
+        // For Direktbuchung (platform) the street is required and meaningful,
+        // so pre-fill from profile. For lead/flex events the profile street must
+        // NOT be pre-filled: the event location is a town/venue, not the office address.
+        const prefillStreet = bookingType === 'platform' ? (loc?.street || '') : '';
+        setEvents([...events, { id: null, bookingCount: 0, type: 'presence', start_date: '', end_date: '', street: prefillStreet, city: loc?.city || '', max_participants: 0, canton: loc?.canton || '', schedule_description: '', location_abroad: '', showLoc: !!(loc?.canton) }]);
         markDirty();
     };
     const removeEvent = (index) => {

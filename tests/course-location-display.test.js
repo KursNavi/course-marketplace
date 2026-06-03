@@ -6,19 +6,39 @@
  * the actual event location (e.g. Braunwald).
  *
  * The logic under test mirrors the IIFE in DetailView.jsx around the
- * MapPin location block.
+ * MapPin location block, and the locationLabel logic in the lead events list.
  */
 import { describe, it, expect } from 'vitest';
+
+/** Mirrors extractCity helper from DetailView.jsx */
+function extractCity(loc) {
+    if (!loc) return '';
+    const idx = loc.lastIndexOf(',');
+    return idx !== -1 ? loc.substring(idx + 1).trim() : loc.trim();
+}
 
 /**
  * Mirrors the location display logic from DetailView.jsx (MapPin block).
  * Kept in sync manually — update when the component logic changes.
  */
 function getCourseLocationText(course) {
-    const hasConcreteEvents = Array.isArray(course.course_events) &&
-        course.course_events.some(ev => ev.start_date);
+    const presenceEvents = Array.isArray(course.course_events)
+        ? course.course_events.filter(ev =>
+            ev.start_date && ev.canton &&
+            ev.canton !== 'Online' && ev.canton !== 'Ausland')
+        : [];
+
     let locationText;
-    if (!hasConcreteEvents) {
+    if (presenceEvents.length > 0) {
+        // Events mode: derive from course_events (authoritative)
+        const uniqueCantons = [...new Set(presenceEvents.map(ev => ev.canton).filter(Boolean))];
+        if (uniqueCantons.length === 1) {
+            const city = extractCity(presenceEvents[0].location);
+            locationText = city || uniqueCantons[0];
+        } else {
+            locationText = uniqueCantons.join(', ');
+        }
+    } else if (!Array.isArray(course.course_events) || course.course_events.length === 0) {
         // Locations mode: use course_locations as authoritative source
         const presenceLocs = Array.isArray(course.course_locations)
             ? course.course_locations
@@ -33,66 +53,87 @@ function getCourseLocationText(course) {
             locationText = [loc.street, loc.city].filter(Boolean).join(', ') || loc.canton || '';
         }
     }
-    // Fall back to courses-table fields (set correctly from events during save)
+    // Final fallback
     if (!locationText) locationText = course.address || course.city || course.canton || '';
     return locationText || '';
 }
 
-describe('course location display logic (DetailView)', () => {
+/**
+ * Mirrors the locationLabel logic in the lead events list (DetailView.jsx).
+ */
+function getEventLocationLabel(ev) {
+    const rawLoc = ev.location || '';
+    const commaIdx = rawLoc.lastIndexOf(',');
+    return commaIdx !== -1
+        ? rawLoc.substring(commaIdx + 1).trim()
+        : (rawLoc || ev.canton || '');
+}
 
-    it('REGRESSION: shows event city for events-mode course, ignoring stale course_locations', () => {
-        // Sprachcamp Braunwald scenario:
-        // - course was previously a Bern lead course → old course_location exists
-        // - teacher switched to platform + concrete events in Braunwald
-        // - course_locations was NOT cleared (old bug) → stale Bern entry remains
+describe('getCourseLocationText — main location block (DetailView MapPin)', () => {
+
+    it('REGRESSION: Sprachcamp Braunwald — zeigt Braunwald, nicht alten Berner Hauptstandort', () => {
+        // Kurs war früher ein Lead-Kurs in Bern → alte course_location + stale courses.address = "3018 Bern"
+        // Dann wurden Events in Braunwald/Glarus gespeichert (location = "Stöckarkerstrasse 93, Braunwald")
         const course = {
-            booking_type: 'platform',
-            address: 'Braunwald',
+            booking_type: 'lead',
+            address: '3018 Bern',    // stale — nie aktualisiert
             city: null,
-            canton: 'Glarus',
+            canton: 'Bern',          // stale
             course_events: [
-                { id: 1, start_date: '2026-06-28T00:00:00+00', location: 'Braunwald', canton: 'Glarus' },
-                { id: 2, start_date: '2026-09-27T00:00:00+00', location: 'Braunwald', canton: 'Glarus' },
+                { id: 1, start_date: '2026-06-28T00:00:00+00', location: 'Stöckarkerstrasse 93, Braunwald', canton: 'Glarus' },
+                { id: 2, start_date: '2026-09-27T00:00:00+00', location: 'Stöckarkerstrasse 93, Braunwald', canton: 'Glarus' },
             ],
-            // Stale location from before the events-mode switch
             course_locations: [
-                { location_type: 'presence', street: 'Stöckackerstrasse 93', city: 'Bern', canton: 'Bern', sort_order: 0 }
+                { location_type: 'presence', street: 'Stöckarkerstrasse 93', city: 'Bern', canton: 'Bern', sort_order: 0 }
             ]
         };
 
         const result = getCourseLocationText(course);
 
-        expect(result).toBe('Braunwald');
-        expect(result).not.toContain('Stöckackerstrasse');
+        expect(result).toBe('Braunwald');           // City extracted from event location
+        expect(result).not.toContain('Stöckarker');
         expect(result).not.toContain('Bern');
+        expect(result).not.toContain('3018');
     });
 
-    it('REGRESSION: does not produce mixed address (street from old location + city from event)', () => {
-        // Scenario: stale location had street "Stöckackerstrasse 93"
-        // event has city "Braunwald" — must NOT combine to "Stöckackerstrasse 93 Braunwald"
+    it('REGRESSION: gemischte Adresse wird nicht angezeigt (Strasse aus altem Standort + Ort aus Termin)', () => {
+        const course = {
+            booking_type: 'lead',
+            address: '3018 Bern',
+            city: null,
+            canton: 'Bern',
+            course_events: [
+                { id: 1, start_date: '2026-09-28T00:00:00+00', location: 'Stöckarkerstrasse 93, Braunwald', canton: 'Glarus' }
+            ],
+            course_locations: [
+                { location_type: 'presence', street: 'Stöckarkerstrasse 93', city: 'Bern', canton: 'Bern', sort_order: 0 }
+            ]
+        };
+
+        const result = getCourseLocationText(course);
+
+        expect(result).not.toContain('Stöckarker');
+        expect(result).not.toContain('93');
+        expect(result).toBe('Braunwald');
+    });
+
+    it('zeigt den Ort direkt aus Events (keine Strasse)', () => {
         const course = {
             booking_type: 'lead',
             address: 'Braunwald',
             city: null,
             canton: 'Glarus',
             course_events: [
-                { id: 1, start_date: '2026-09-28T00:00:00+00', location: 'Braunwald', canton: 'Glarus' }
+                { id: 1, start_date: '2026-06-28T00:00:00+00', location: 'Braunwald', canton: 'Glarus' }
             ],
             course_locations: [
-                // Stale mirror with street (the old bug before Fix C in TeacherForm)
-                { location_type: 'presence', street: 'Stöckackerstrasse 93', city: 'Braunwald', canton: 'Glarus', sort_order: 0 }
+                { location_type: 'presence', street: null, city: 'Braunwald', canton: 'Glarus', sort_order: 0 }
             ]
         };
-
-        const result = getCourseLocationText(course);
-
-        expect(result).not.toContain('Stöckackerstrasse');
-        expect(result).not.toContain('93');
-        // Should show either Braunwald (from course.address) since events are present
-        expect(result).toBe('Braunwald');
+        expect(getCourseLocationText(course)).toBe('Braunwald');
     });
 
-    it('shows full address for locations-mode course (no events)', () => {
+    it('zeigt volle Adresse für Locations-Modus-Kurs (keine Events)', () => {
         const course = {
             booking_type: 'lead',
             address: 'Zürich',
@@ -103,11 +144,10 @@ describe('course location display logic (DetailView)', () => {
                 { location_type: 'presence', street: 'Bahnhofstrasse 1', city: 'Zürich', canton: 'Zürich', sort_order: 0 }
             ]
         };
-
         expect(getCourseLocationText(course)).toBe('Bahnhofstrasse 1, Zürich');
     });
 
-    it('shows cantons joined for multi-location course (no events)', () => {
+    it('zeigt Kantone für Kurs mit mehreren Standorten (keine Events)', () => {
         const course = {
             booking_type: 'lead',
             address: 'Bern',
@@ -119,11 +159,28 @@ describe('course location display logic (DetailView)', () => {
                 { location_type: 'presence', street: null, city: 'Zürich', canton: 'Zürich', sort_order: 1 }
             ]
         };
-
         expect(getCourseLocationText(course)).toBe('Bern, Zürich');
     });
 
-    it('falls back to course.canton when no locations and no events', () => {
+    it('zeigt mehrere Kantone für Multi-Ort-Event-Kurs', () => {
+        const course = {
+            booking_type: 'lead',
+            address: 'Belp',
+            city: null,
+            canton: 'Bern',
+            course_events: [
+                { id: 1, start_date: '2026-07-06T00:00:00+00', location: 'Belp', canton: 'Bern' },
+                { id: 2, start_date: '2026-07-06T00:00:00+00', location: 'Schaffhausen', canton: 'Schaffhausen' },
+                { id: 3, start_date: '2026-07-06T00:00:00+00', location: 'Zürich', canton: 'Zürich' },
+            ],
+            course_locations: []
+        };
+        const result = getCourseLocationText(course);
+        expect(result).toContain('Bern');
+        expect(result).toContain('Zürich');
+    });
+
+    it('Fallback auf courses.canton wenn keine Locations und keine Events', () => {
         const course = {
             booking_type: 'lead',
             address: null,
@@ -132,31 +189,10 @@ describe('course location display logic (DetailView)', () => {
             course_events: null,
             course_locations: []
         };
-
         expect(getCourseLocationText(course)).toBe('Aargau');
     });
 
-    it('correctly shows city for events-mode lead course after fix (no stale data)', () => {
-        // After the fix: course_locations mirrored from events, no street
-        const course = {
-            booking_type: 'lead',
-            address: 'Braunwald',
-            city: null,
-            canton: 'Glarus',
-            course_events: [
-                { id: 1, start_date: '2026-06-28T00:00:00+00', location: 'Braunwald', canton: 'Glarus' }
-            ],
-            course_locations: [
-                // Correctly mirrored (no street) after the TeacherForm fix
-                { location_type: 'presence', street: null, city: 'Braunwald', canton: 'Glarus', sort_order: 0 }
-            ]
-        };
-
-        const result = getCourseLocationText(course);
-        expect(result).toBe('Braunwald');
-    });
-
-    it('ignores online course_locations for main location display (events mode)', () => {
+    it('Online-Kurs: Fallback auf courses.address = Online', () => {
         const course = {
             booking_type: 'lead',
             address: 'Online',
@@ -167,8 +203,32 @@ describe('course location display logic (DetailView)', () => {
             ],
             course_locations: []
         };
-
+        // Online events have canton = 'Online' → filtered out from presenceEvents
+        // Falls through to course.address = 'Online'
         const result = getCourseLocationText(course);
         expect(result).toBe('Online');
+    });
+});
+
+describe('getEventLocationLabel — Termine-Liste (Lead-Kurse)', () => {
+
+    it('REGRESSION: zeigt nur Ort, nicht Strasse aus falsch gespeichertem Termin', () => {
+        const ev = { location: 'Stöckarkerstrasse 93, Braunwald', canton: 'Glarus' };
+        expect(getEventLocationLabel(ev)).toBe('Braunwald');
+    });
+
+    it('zeigt Ort direkt wenn kein Komma', () => {
+        const ev = { location: 'Braunwald', canton: 'Glarus' };
+        expect(getEventLocationLabel(ev)).toBe('Braunwald');
+    });
+
+    it('Fallback auf canton wenn location leer', () => {
+        const ev = { location: '', canton: 'Glarus' };
+        expect(getEventLocationLabel(ev)).toBe('Glarus');
+    });
+
+    it('Fallback auf canton wenn location null', () => {
+        const ev = { location: null, canton: 'Bern' };
+        expect(getEventLocationLabel(ev)).toBe('Bern');
     });
 });
