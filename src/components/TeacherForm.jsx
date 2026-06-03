@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
-import { ArrowLeft, Loader, Calendar, Plus, Trash2, ExternalLink, Globe, MapPin, Lightbulb, X, Send, ChevronDown, ChevronUp, Images, Check, Clock, BookOpen, Award, GraduationCap, Upload } from 'lucide-react';
+import { ArrowLeft, Loader, Calendar, Plus, Trash2, Globe, MapPin, Lightbulb, X, Send, ChevronDown, ChevronUp, Images, Check, Clock, BookOpen, Award, GraduationCap, Upload } from 'lucide-react';
 import { KursNaviLogo } from './Layout';
 import { SWISS_CANTONS, NEW_TAXONOMY, CATEGORY_TYPES, COURSE_LEVELS, DELIVERY_TYPES, COURSE_LANGUAGES, TYPE_DISPLAY_LABELS, BERUF_SAEULEN, PRIVAT_KURSARTEN, KINDER_KURSARTEN } from '../lib/constants';
 import { supabase } from '../lib/supabase';
@@ -2547,25 +2547,6 @@ if (bookingType === 'platform' || locationMode === 'events') {
                         {initialData?.id ? 'Änderungen speichern' : 'Als Entwurf speichern'}
                     </button>
                     {/* Preview button: only active when course already exists (has ID) */}
-                    <button
-                        type="button"
-                        disabled={!initialData?.id}
-                        onClick={() => {
-                            if (initialData?.id) {
-                                const slug = title.toLowerCase()
-                                    .replace(/[äöüÄÖÜ]/g, c => ({ ä: 'ae', ö: 'oe', ü: 'ue', Ä: 'ae', Ö: 'oe', Ü: 'ue' }[c] || c))
-                                    .replace(/ß/g, 'ss')
-                                    .replace(/[^a-z0-9]+/g, '-')
-                                    .replace(/(^-|-$)/g, '');
-                                window.open(`/kurs/${slug || 'kurs'}/${initialData.id}`, '_blank');
-                            }
-                        }}
-                        className="px-6 py-3 rounded-xl font-bold border-2 border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition flex items-center justify-center font-heading disabled:opacity-40 disabled:cursor-not-allowed"
-                        title={!initialData?.id ? 'Kurs zuerst speichern, dann Vorschau öffnen' : ''}
-                    >
-                        <ExternalLink className="w-4 h-4 mr-2" />
-                        Vorschau ansehen
-                    </button>
                     {/* Publish button: disabled when fields missing; only for new courses or drafts */}
                     {(!initialData?.id || courseStatus === 'draft') && (
                         <button
