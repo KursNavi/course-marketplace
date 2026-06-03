@@ -814,21 +814,28 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
                             <span className="font-medium group-hover:underline">{course.instructor_name}</span>
                         </button>
                         {(() => {
-                            const presenceLocs = Array.isArray(course.course_locations)
-                                ? course.course_locations
-                                    .filter(l => l.location_type === 'presence')
-                                    .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
-                                : [];
+                            // For courses with concrete events, derive location from events
+                            // (course_locations may be stale from a previous location-mode save)
+                            const hasConcreteEvents = Array.isArray(course.course_events) &&
+                                course.course_events.some(ev => ev.start_date);
                             let locationText;
-                            if (presenceLocs.length > 1) {
-                                const cantons = [...new Set(presenceLocs.map(l => l.canton).filter(Boolean))];
-                                locationText = cantons.join(', ');
-                            } else if (presenceLocs.length === 1) {
-                                const loc = presenceLocs[0];
-                                locationText = [loc.street, loc.city].filter(Boolean).join(', ') || loc.canton || '';
-                            } else {
-                                locationText = course.address || course.city || course.canton || '';
+                            if (!hasConcreteEvents) {
+                                // Locations mode: use course_locations as the authoritative source
+                                const presenceLocs = Array.isArray(course.course_locations)
+                                    ? course.course_locations
+                                        .filter(l => l.location_type === 'presence')
+                                        .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+                                    : [];
+                                if (presenceLocs.length > 1) {
+                                    const cantons = [...new Set(presenceLocs.map(l => l.canton).filter(Boolean))];
+                                    locationText = cantons.join(', ');
+                                } else if (presenceLocs.length === 1) {
+                                    const loc = presenceLocs[0];
+                                    locationText = [loc.street, loc.city].filter(Boolean).join(', ') || loc.canton || '';
+                                }
                             }
+                            // Fall back to courses-table fields (set correctly from events during save)
+                            if (!locationText) locationText = course.address || course.city || course.canton || '';
                             if (!locationText) return null;
                             return (
                                 <div className="flex items-center text-gray-700">
