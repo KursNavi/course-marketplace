@@ -2022,9 +2022,67 @@ if (bookingType === 'platform' || locationMode === 'events') {
                     )}
                 </div>
 
-                {/* === ABSCHNITT 3: ORT & TERMINE === */}
+                {/* === ABSCHNITT 3: BUCHUNG & PREIS === */}
                 <div className="border-t border-gray-100 pt-2">
-                    <h2 className="text-lg font-bold text-dark">3. Ort &amp; Termine <span className="text-red-500">*</span></h2>
+                    <h2 className="text-lg font-bold text-dark">3. Buchung &amp; Preis</h2>
+                    <p className="text-sm text-gray-500 mt-0.5">Wie können Interessierte buchen und was kostet der Kurs?</p>
+                </div>
+                <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <label className={`border p-4 rounded-xl transition relative overflow-hidden ${!payoutReady ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} ${bookingType === 'platform' ? 'border-primary bg-orange-50 ring-1 ring-primary' : !payoutReady ? '' : 'hover:bg-gray-50'}`}>
+                            <div className="flex items-center mb-2"><input type="radio" name="bookingType" value="platform" checked={bookingType === 'platform'} disabled={!payoutReady} onChange={() => { setBookingType('platform'); markDirty(); }} className="mr-2 accent-primary"/> <span className="font-bold">Direktbuchung</span></div>
+                            <p className="text-xs text-gray-500">Mit festem Termin. Zahlung via KursNavi.</p>
+                        </label>
+                        <label className={`border p-4 rounded-xl transition relative overflow-hidden ${!payoutReady ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} ${bookingType === 'platform_flex' ? 'border-primary bg-orange-50 ring-1 ring-primary' : !payoutReady ? '' : 'hover:bg-gray-50'}`}>
+                            <div className="flex items-center mb-2"><input type="radio" name="bookingType" value="platform_flex" checked={bookingType === 'platform_flex'} disabled={!payoutReady} onChange={() => { setBookingType('platform_flex'); markDirty(); }} className="mr-2 accent-primary"/> <span className="font-bold">Flexibel</span></div>
+                            <p className="text-xs text-gray-500">Termin wird nach Buchung vereinbart. Zahlung via KursNavi.</p>
+                        </label>
+                        <label className={`cursor-pointer border p-4 rounded-xl transition ${bookingType === 'lead' ? 'border-primary bg-orange-50 ring-1 ring-primary' : 'hover:bg-gray-50'}`}>
+                            <div className="flex items-center mb-2"><input type="radio" name="bookingType" value="lead" checked={bookingType === 'lead'} onChange={() => { setBookingType('lead'); markDirty(); }} className="mr-2 accent-primary"/> <span className="font-bold">Anfrage</span></div>
+                            <p className="text-xs text-gray-500">Interessierte senden dir eine Nachricht. Keine Zahlung über KursNavi.</p>
+                        </label>
+                    </div>
+                    {!payoutReady && (
+                        <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                            <p className="text-sm text-amber-800">
+                                Für Direktbuchungen und flexible Buchungen musst du zuerst deine <button type="button" onClick={() => { sessionStorage.setItem('dashOpenTab', 'profile'); sessionStorage.setItem('dashScrollTo', 'auszahlungen'); setView('dashboard'); }} className="underline font-semibold hover:text-amber-900">Auszahlung einrichten</button>. Für Anfrage-Kurse ist keine Einrichtung nötig.
+                            </p>
+                        </div>
+                    )}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-1">
+                                Preis (CHF) {(bookingType === 'platform' || bookingType === 'platform_flex') ? <span className="text-red-500">*</span> : <span className="text-gray-400 font-normal">(optional)</span>}
+                            </label>
+                            <input type="number" min="0" name="price" value={price} onChange={(e) => { setPrice(e.target.value); markDirty(); }} placeholder="z.B. 150" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+                            {(bookingType === 'platform' || bookingType === 'platform_flex') && price !== '' && Number(price) === 0 && (
+                                <p className="text-xs text-amber-600 mt-1">Kostenloser Kurs – bitte Grund angeben</p>
+                            )}
+                        </div>
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-1">Preis-Beschreibung <span className="text-gray-400 font-normal">(optional)</span></label>
+                            <input type="text" value={priceInfo} onChange={(e) => { setPriceInfo(e.target.value); markDirty(); }} placeholder="z.B. CHF 150 pro Person, ab CHF 80, auf Anfrage" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+                            <p className="text-xs text-gray-500 mt-1">Ergänzt oder ersetzt den numerischen Preis auf der Kursseite.</p>
+                        </div>
+                        {(bookingType === 'platform' || bookingType === 'platform_flex') && (
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-1">Max. Buchungen pro 30 Tage</label>
+                                <input type="number" min="1" name="ticketLimit30d" value={ticketLimit30d} onChange={(e) => { setTicketLimit30d(e.target.value); markDirty(); }} placeholder="Leer = unbegrenzt" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+                                <p className="text-xs text-gray-500 mt-1">Begrenzt die Anzahl Buchungen in 30 Tagen.</p>
+                            </div>
+                        )}
+                        {(bookingType === 'platform' || bookingType === 'platform_flex') && price !== '' && Number(price) === 0 && (
+                            <div className="md:col-span-2">
+                                <label className="block text-sm font-bold text-gray-700 mb-1">Warum ist dieser Kurs kostenlos? *</label>
+                                <textarea name="freeReason" value={freeReason} onChange={(e) => { setFreeReason(e.target.value); markDirty(); }} placeholder="z.B. Schnupperkurs, Probetraining, ehrenamtliches Angebot…" rows={2} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none resize-none" />
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* === ABSCHNITT 4: ORT & TERMINE === */}
+                <div className="border-t border-gray-100 pt-2">
+                    <h2 className="text-lg font-bold text-dark">4. Ort &amp; Termine <span className="text-red-500">*</span></h2>
                     <p className="text-sm text-gray-500 mt-0.5">Wo und wie findet dein Kurs statt?</p>
                 </div>
                 <div className="space-y-4">
@@ -2080,7 +2138,7 @@ if (bookingType === 'platform' || locationMode === 'events') {
                     ) : bookingType === 'platform' ? (
                         <p className="text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
                             <Calendar className="w-3.5 h-3.5 inline mr-1.5 text-gray-400" />
-                            Direktbuchungen erfordern Termine mit Datum — Interessierte buchen direkt einen bestimmten Platz.
+                            Bei Direktbuchung braucht dein Kurs mindestens einen konkreten Termin. Interessierte buchen direkt einen Platz für diesen Termin.
                         </p>
                     ) : null}
 
@@ -2351,64 +2409,6 @@ if (bookingType === 'platform' || locationMode === 'events') {
                     )}
                 </div>
 
-
-                {/* === ABSCHNITT 4: BUCHUNG & PREIS === */}
-                <div className="border-t border-gray-100 pt-2">
-                    <h2 className="text-lg font-bold text-dark">4. Buchung &amp; Preis</h2>
-                    <p className="text-sm text-gray-500 mt-0.5">Wie können Interessierte buchen und was kostet der Kurs?</p>
-                </div>
-                <div className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <label className={`border p-4 rounded-xl transition relative overflow-hidden ${!payoutReady ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} ${bookingType === 'platform' ? 'border-primary bg-orange-50 ring-1 ring-primary' : !payoutReady ? '' : 'hover:bg-gray-50'}`}>
-                            <div className="flex items-center mb-2"><input type="radio" name="bookingType" value="platform" checked={bookingType === 'platform'} disabled={!payoutReady} onChange={() => { setBookingType('platform'); markDirty(); }} className="mr-2 accent-primary"/> <span className="font-bold">Direktbuchung</span></div>
-                            <p className="text-xs text-gray-500">Mit festem Termin. Zahlung via KursNavi.</p>
-                        </label>
-                        <label className={`border p-4 rounded-xl transition relative overflow-hidden ${!payoutReady ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} ${bookingType === 'platform_flex' ? 'border-primary bg-orange-50 ring-1 ring-primary' : !payoutReady ? '' : 'hover:bg-gray-50'}`}>
-                            <div className="flex items-center mb-2"><input type="radio" name="bookingType" value="platform_flex" checked={bookingType === 'platform_flex'} disabled={!payoutReady} onChange={() => { setBookingType('platform_flex'); markDirty(); }} className="mr-2 accent-primary"/> <span className="font-bold">Flexibel</span></div>
-                            <p className="text-xs text-gray-500">Termin wird nach Buchung vereinbart. Zahlung via KursNavi.</p>
-                        </label>
-                        <label className={`cursor-pointer border p-4 rounded-xl transition ${bookingType === 'lead' ? 'border-primary bg-orange-50 ring-1 ring-primary' : 'hover:bg-gray-50'}`}>
-                            <div className="flex items-center mb-2"><input type="radio" name="bookingType" value="lead" checked={bookingType === 'lead'} onChange={() => { setBookingType('lead'); markDirty(); }} className="mr-2 accent-primary"/> <span className="font-bold">Anfrage</span></div>
-                            <p className="text-xs text-gray-500">Interessierte senden dir eine Nachricht. Keine Zahlung über KursNavi.</p>
-                        </label>
-                    </div>
-                    {!payoutReady && (
-                        <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                            <p className="text-sm text-amber-800">
-                                Für Direktbuchungen und flexible Buchungen musst du zuerst deine <button type="button" onClick={() => { sessionStorage.setItem('dashOpenTab', 'profile'); sessionStorage.setItem('dashScrollTo', 'auszahlungen'); setView('dashboard'); }} className="underline font-semibold hover:text-amber-900">Auszahlung einrichten</button>. Für Anfrage-Kurse ist keine Einrichtung nötig.
-                            </p>
-                        </div>
-                    )}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label className="block text-sm font-bold text-gray-700 mb-1">
-                                Preis (CHF) {(bookingType === 'platform' || bookingType === 'platform_flex') ? <span className="text-red-500">*</span> : <span className="text-gray-400 font-normal">(optional)</span>}
-                            </label>
-                            <input type="number" min="0" name="price" value={price} onChange={(e) => { setPrice(e.target.value); markDirty(); }} placeholder="z.B. 150" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
-                            {(bookingType === 'platform' || bookingType === 'platform_flex') && price !== '' && Number(price) === 0 && (
-                                <p className="text-xs text-amber-600 mt-1">Kostenloser Kurs – bitte Grund angeben</p>
-                            )}
-                        </div>
-                        <div>
-                            <label className="block text-sm font-bold text-gray-700 mb-1">Preis-Beschreibung <span className="text-gray-400 font-normal">(optional)</span></label>
-                            <input type="text" value={priceInfo} onChange={(e) => { setPriceInfo(e.target.value); markDirty(); }} placeholder="z.B. CHF 150 pro Person, ab CHF 80, auf Anfrage" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
-                            <p className="text-xs text-gray-500 mt-1">Ergänzt oder ersetzt den numerischen Preis auf der Kursseite.</p>
-                        </div>
-                        {(bookingType === 'platform' || bookingType === 'platform_flex') && (
-                            <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-1">Max. Buchungen pro 30 Tage</label>
-                                <input type="number" min="1" name="ticketLimit30d" value={ticketLimit30d} onChange={(e) => { setTicketLimit30d(e.target.value); markDirty(); }} placeholder="Leer = unbegrenzt" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
-                                <p className="text-xs text-gray-500 mt-1">Begrenzt die Anzahl Buchungen in 30 Tagen.</p>
-                            </div>
-                        )}
-                        {(bookingType === 'platform' || bookingType === 'platform_flex') && price !== '' && Number(price) === 0 && (
-                            <div className="md:col-span-2">
-                                <label className="block text-sm font-bold text-gray-700 mb-1">Warum ist dieser Kurs kostenlos? *</label>
-                                <textarea name="freeReason" value={freeReason} onChange={(e) => { setFreeReason(e.target.value); markDirty(); }} placeholder="z.B. Schnupperkurs, Probetraining, ehrenamtliches Angebot…" rows={2} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none resize-none" />
-                            </div>
-                        )}
-                    </div>
-                </div>
 
                 {/* === ABSCHNITT 5: WEITERE DETAILS (collapsible) === */}
                 <div className="border-t border-gray-100 pt-2">
