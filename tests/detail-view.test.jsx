@@ -164,4 +164,111 @@ describe('DetailView', () => {
     // Der vergangene Termin darf nicht als Datum angezeigt werden
     expect(screen.queryByText('15.03.2020')).not.toBeInTheDocument();
   });
+
+  it('hides past events for lead (Anfrage) courses and keeps the inquiry button visible', () => {
+    // Bugfix: lead courses should also hide past events publicly
+    const course = {
+      id: '790',
+      title: 'Anfrage-Kurs mit alten Terminen',
+      description: 'Nur vergangene Termine.',
+      instructor_name: 'Test Anbieter',
+      booking_type: 'lead',
+      price: 0,
+      canton: 'Bern',
+      address: 'Bern',
+      category_type: 'privat',
+      all_categories: [],
+      course_events: [
+        {
+          id: 'evt-lead-past',
+          start_date: '2020-04-26',
+          end_date: '2020-05-03',
+          location: 'Bern',
+          canton: 'BE',
+          schedule_description: 'St. Bernard',
+          max_participants: 0,
+          bookings: [],
+          cancelled_at: null,
+        },
+      ],
+    };
+
+    render(
+      <DetailView
+        course={course}
+        courses={[]}
+        setView={vi.fn()}
+        t={{ lbl_description: 'Beschreibung', lbl_learn_goals: 'Lernziele', btn_book: 'Jetzt buchen' }}
+        setSelectedTeacher={vi.fn()}
+        user={null}
+        savedCourseIds={[]}
+        onToggleSaveCourse={vi.fn()}
+        showNotification={vi.fn()}
+      />
+    );
+
+    // Der vergangene Termin darf nicht angezeigt werden
+    expect(screen.queryByText(/26\.04\.2020/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/03\.05\.2020/)).not.toBeInTheDocument();
+    expect(screen.queryByText('St. Bernard')).not.toBeInTheDocument();
+    // Stattdessen Fallback-Meldung
+    expect(screen.getByText('Keine aktuellen Termine')).toBeInTheDocument();
+    // Anfrage-Button bleibt sichtbar
+    expect(screen.getByText('Anfrage senden')).toBeInTheDocument();
+  });
+
+  it('keeps a running multi-day event visible when end_date is in the future', () => {
+    // A multi-day event that started in the past but ends in the future is still "current"
+    const futureEndDate = new Date();
+    futureEndDate.setDate(futureEndDate.getDate() + 7);
+    const pastStartDate = new Date();
+    pastStartDate.setDate(pastStartDate.getDate() - 3);
+
+    const fmtDate = (d) => d.toISOString().split('T')[0];
+
+    const course = {
+      id: '791',
+      title: 'Laufender Mehrtages-Kurs',
+      description: 'Läuft gerade.',
+      instructor_name: 'Test Anbieter',
+      booking_type: 'lead',
+      price: 0,
+      canton: 'Luzern',
+      address: 'Luzern',
+      category_type: 'privat',
+      all_categories: [],
+      course_events: [
+        {
+          id: 'evt-running',
+          start_date: fmtDate(pastStartDate),
+          end_date: fmtDate(futureEndDate),
+          location: 'Luzern',
+          canton: 'LU',
+          schedule_description: '',
+          max_participants: 0,
+          bookings: [],
+          cancelled_at: null,
+        },
+      ],
+    };
+
+    render(
+      <DetailView
+        course={course}
+        courses={[]}
+        setView={vi.fn()}
+        t={{ lbl_description: 'Beschreibung', lbl_learn_goals: 'Lernziele', btn_book: 'Jetzt buchen' }}
+        setSelectedTeacher={vi.fn()}
+        user={null}
+        savedCourseIds={[]}
+        onToggleSaveCourse={vi.fn()}
+        showNotification={vi.fn()}
+      />
+    );
+
+    // The running event must still show the "Termine" heading
+    expect(screen.getByText('Termine')).toBeInTheDocument();
+    // Must NOT show the "no events" fallback
+    expect(screen.queryByText('Keine aktuellen Termine')).not.toBeInTheDocument();
+  });
 });
