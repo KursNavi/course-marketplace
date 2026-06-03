@@ -431,7 +431,9 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
     const [showUnsavedChangesModal, setShowUnsavedChangesModal] = useState(false);
 
     // Booking & Link State
-    const [bookingType, setBookingType] = useState(draft?.bookingType || (payoutReady ? 'platform' : 'lead')); // 'platform', 'platform_flex', or 'lead'
+    // Neue Kurse starten standardmässig mit "Anfrage" — sicherste Option, kein Stripe nötig.
+    // Bestehende Kurse laden ihre bookingType über den initialData-useEffect.
+    const [bookingType, setBookingType] = useState(draft?.bookingType || 'lead'); // 'platform', 'platform_flex', or 'lead'
     const [ticketLimit30d, setTicketLimit30d] = useState(draft?.ticketLimit30d || '');
 
     // Form Field State (controlled inputs to preserve data on validation errors / tab switches)
@@ -1751,7 +1753,7 @@ if (bookingType === 'platform' || locationMode === 'events') {
         }
     } else if (locationMode === 'locations' && bookingType !== 'platform') {
         const hasValidLoc = locations.some(l => l.type !== 'presence' || l.canton);
-        if (!hasValidLoc) missingRequiredFields.push('Standort (Kanton)');
+        if (!hasValidLoc) missingRequiredFields.push('Standort');
     }
     if (isKinder && !minAge) missingRequiredFields.push('Mindestalter (Kinderkurs)');
 
@@ -2046,36 +2048,41 @@ if (bookingType === 'platform' || locationMode === 'events') {
                         </div>
                     </div>
 
-                    {/* Ort & Termine Modus-Auswahl (für lead und platform_flex) */}
-                    {(bookingType === 'lead' || bookingType === 'platform_flex') && (
+                    {/* Ort & Termine Modus-Auswahl */}
+                    {(bookingType === 'lead' || bookingType === 'platform_flex') ? (
                         <div>
-                            <label className="block text-sm font-bold text-gray-700 mb-2">Wie möchtest du Ort und Termine erfassen?</label>
+                            <p className="text-sm font-bold text-gray-700 mb-2">Wie möchtest du Ort und Termine erfassen?</p>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                 <button
                                     type="button"
                                     onClick={() => { setLocationMode('locations'); markDirty(); }}
-                                    className={`text-left p-4 rounded-xl border transition ${locationMode === 'locations' ? 'border-gray-700 bg-gray-50 ring-1 ring-gray-700' : 'border-gray-200 hover:bg-gray-50'}`}
+                                    className={`text-left p-4 rounded-xl border-2 transition ${locationMode === 'locations' ? 'border-gray-700 bg-gray-50' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'}`}
                                 >
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <MapPin className="w-4 h-4 shrink-0" />
-                                        <span className="font-semibold text-sm">Feste Standort(e)</span>
+                                    <div className="flex items-center gap-2 mb-1.5">
+                                        <MapPin className={`w-4 h-4 shrink-0 ${locationMode === 'locations' ? 'text-gray-800' : 'text-gray-400'}`} />
+                                        <span className={`font-bold text-sm ${locationMode === 'locations' ? 'text-gray-900' : 'text-gray-600'}`}>Feste Standort(e)</span>
                                     </div>
-                                    <p className="text-xs text-gray-500">Für Kurse, die laufend, regelmässig oder auf Anfrage an einem oder mehreren Orten stattfinden.</p>
+                                    <p className="text-xs text-gray-500 leading-relaxed">Für laufende Kurse, regelmässige Angebote oder Anfragen ohne fixes Datum.</p>
                                 </button>
                                 <button
                                     type="button"
                                     onClick={() => { setLocationMode('events'); markDirty(); }}
-                                    className={`text-left p-4 rounded-xl border transition ${locationMode === 'events' ? 'border-gray-700 bg-gray-50 ring-1 ring-gray-700' : 'border-gray-200 hover:bg-gray-50'}`}
+                                    className={`text-left p-4 rounded-xl border-2 transition ${locationMode === 'events' ? 'border-gray-700 bg-gray-50' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'}`}
                                 >
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <Calendar className="w-4 h-4 shrink-0" />
-                                        <span className="font-semibold text-sm">Konkrete Termine</span>
+                                    <div className="flex items-center gap-2 mb-1.5">
+                                        <Calendar className={`w-4 h-4 shrink-0 ${locationMode === 'events' ? 'text-gray-800' : 'text-gray-400'}`} />
+                                        <span className={`font-bold text-sm ${locationMode === 'events' ? 'text-gray-900' : 'text-gray-600'}`}>Konkrete Termine</span>
                                     </div>
-                                    <p className="text-xs text-gray-500">Für Kurse mit festen Daten. Der Ort wird direkt beim jeweiligen Termin erfasst.</p>
+                                    <p className="text-xs text-gray-500 leading-relaxed">Für Kurse mit festen Daten, z.B. Workshops, Camps oder Events.</p>
                                 </button>
                             </div>
                         </div>
-                    )}
+                    ) : bookingType === 'platform' ? (
+                        <p className="text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
+                            <Calendar className="w-3.5 h-3.5 inline mr-1.5 text-gray-400" />
+                            Direktbuchungen erfordern Termine mit Datum — Interessierte buchen direkt einen bestimmten Platz.
+                        </p>
+                    ) : null}
 
                     {/* Lead + Flex in locations mode: Standorte */}
                     {(bookingType === 'lead' || bookingType === 'platform_flex') && locationMode === 'locations' && (
@@ -2151,7 +2158,7 @@ if (bookingType === 'platform' || locationMode === 'events') {
                     {((bookingType === 'lead' || bookingType === 'platform_flex') && locationMode === 'events') && (
                         <div className="border border-gray-200 rounded-xl p-4">
                             <h3 className="text-base font-bold text-gray-800 flex items-center mb-1"><Calendar className="w-4 h-4 mr-2 text-gray-500" /> Termine</h3>
-                            <p className="text-xs text-gray-500 mt-1 mb-4">Leere Termine werden nicht gespeichert. Format: TT.MM.JJJJ</p>
+                            <p className="text-xs text-gray-500 mt-1 mb-4">Leere Termine werden nicht gespeichert. Wähle das Datum über das Kalenderfeld.</p>
                             <div className="space-y-4">
                                 {events.map((ev, i) => {
                                     const evType = ev.type || 'presence';
@@ -2230,7 +2237,7 @@ if (bookingType === 'platform' || locationMode === 'events') {
                     {bookingType === 'platform' && (
                         <div className="border border-gray-200 rounded-xl p-4">
                             <h3 className="text-base font-bold text-gray-800 flex items-center mb-1"><Calendar className="w-4 h-4 mr-2 text-gray-500" /> Termine &amp; Standorte</h3>
-                            <p className="text-xs text-gray-500 mb-1">Datum und Ort sind für Direktbuchungen erforderlich. Format: TT.MM.JJJJ</p>
+                            <p className="text-xs text-gray-500 mb-1">Datum und Ort sind für Direktbuchungen erforderlich. Wähle das Datum über das Kalenderfeld.</p>
                             <p className="text-xs text-amber-600 mb-4">Termine mit bestehenden Buchungen sind gesperrt. Vergangene gebuchte Termine werden automatisch archiviert.</p>
                             <div className="space-y-4">
                                 {archivedBookedEvents.length > 0 && (
