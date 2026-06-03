@@ -387,6 +387,17 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
         return cutoff ? cutoff >= new Date() : false;
     };
 
+    // An event is relevant (not yet past) if:
+    // - end_date exists and is today or in the future, OR
+    // - no end_date and start_date is today or in the future
+    const isRelevantEvent = (ev) => {
+        if (ev.end_date) {
+            const endCutoff = getEventCutoffDate(ev.end_date);
+            return endCutoff ? endCutoff >= new Date() : isUpcomingEventDate(ev.start_date);
+        }
+        return isUpcomingEventDate(ev.start_date);
+    };
+
     // --- SMART BOOKING HANDLER ---
     const handleBookingAction = async (courseEvent = null) => {
         const type = effectiveBookingType || 'platform';
@@ -547,9 +558,9 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
 
     // Filter out cancelled events and hide past fixed dates from learners
     const activeEvents = rawEvents.filter(ev => !ev.cancelled_at);
-    const visibleEvents = course.booking_type === 'platform'
-        ? activeEvents.filter(ev => isUpcomingEventDate(ev.start_date))
-        : activeEvents;
+    // Hide past events from the public view for all booking types.
+    // Uses end_date when available so a running multi-day course stays visible.
+    const visibleEvents = activeEvents.filter(ev => isRelevantEvent(ev));
 
     const displayEvents = visibleEvents.map(ev => {
         let bookedCount = 0;
@@ -574,7 +585,9 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
     }).sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
 
     const hasEvents = displayEvents.length > 0;
-    const isPastEventFallback = course.booking_type === 'platform' && !hasEvents;
+    // Show "past event" fallback when all events are done (applies to platform + lead).
+    // platform_flex uses flexible scheduling without fixed dates, so no fallback needed there.
+    const isPastEventFallback = !hasEvents && activeEvents.length > 0 && course.booking_type !== 'platform_flex';
     const effectiveBookingType = isPastEventFallback ? 'lead' : course.booking_type;
 
     // --- RENDER HELPERS ---
