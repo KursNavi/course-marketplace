@@ -494,7 +494,8 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
     const [showCategorySuggestionModal, setShowCategorySuggestionModal] = useState(false);
 
     // UX section states
-    const [showLeadTermine, setShowLeadTermine] = useState(draft?.showLeadTermine || false);
+    // locationMode: 'locations' = Feste Standort(e), 'events' = Konkrete Termine
+    const [locationMode, setLocationMode] = useState(draft?.locationMode || 'locations');
     const [showOptionalDetails, setShowOptionalDetails] = useState(false);
 
     // Image Library State (for reusing existing images)
@@ -559,7 +560,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
             berufSaeulen,
             privatKursart,
             kinderKursart,
-            showLeadTermine
+            locationMode
         };
 
         // Always update the ref synchronously so cleanup can use it
@@ -574,7 +575,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
                 console.warn('Failed to save draft:', e);
             }
         }
-    }, [isDirty, draftKey, bookingType, ticketLimit30d, title, description, objectives, keywords, prerequisites, price, freeReason, sessionCount, sessionLength, providerUrl, categories, selectedLevel, courseLanguages, deliveryTypes, courseStatus, events, fallbackCantons, locations, berufSaeulen, privatKursart, kinderKursart, showLeadTermine, initialData?.id]);
+    }, [isDirty, draftKey, bookingType, ticketLimit30d, title, description, objectives, keywords, prerequisites, price, freeReason, sessionCount, sessionLength, providerUrl, categories, selectedLevel, courseLanguages, deliveryTypes, courseStatus, events, fallbackCantons, locations, berufSaeulen, privatKursart, kinderKursart, locationMode, initialData?.id]);
 
     // Save draft on unmount (safety net for fast tab switches)
     useEffect(() => {
@@ -631,8 +632,11 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
             if (initialData.prerequisites) setPrerequisites(initialData.prerequisites);
             if (initialData.price !== undefined && initialData.price !== null) setPrice(String(initialData.price));
             if (initialData.free_reason) setFreeReason(initialData.free_reason);
-            if (initialData.session_count) setSessionCount(String(initialData.session_count));
-            if (initialData.session_length) setSessionLength(initialData.session_length);
+            // Merge session_count + session_length into one display field (sessionLength)
+            if (initialData.session_count || initialData.session_length) {
+                const parts = [initialData.session_count, initialData.session_length].filter(Boolean);
+                setSessionLength(parts.length === 2 ? `${parts[0]} à ${parts[1]}` : parts[0]);
+            }
             if (initialData.price_info) setPriceInfo(initialData.price_info);
             if (initialData.provider_url) setProviderUrl(initialData.provider_url);
 
@@ -751,20 +755,24 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
                 }));
             }
 
-            // Set showLeadTermine if lead course already has dated events
-            if (initialData.booking_type === 'lead' && initialData.course_events && initialData.course_events.some(ev => ev.start_date)) {
-                setShowLeadTermine(true);
+            // Set locationMode based on existing data (backward compat)
+            // If course_events exist → events mode; otherwise → locations mode
+            const hasEvents = Array.isArray(initialData.course_events) && initialData.course_events.some(ev => ev.start_date);
+            if (initialData.booking_type === 'platform') {
+                setLocationMode('events'); // platform always uses events
+            } else {
+                setLocationMode(hasEvents ? 'events' : 'locations');
             }
 
             // Open optional section automatically if any optional field has a value
             const hasOptionalValues = (
                 (Array.isArray(initialData.objectives) && initialData.objectives.length > 0) ||
                 !!initialData.prerequisites ||
-                !!initialData.keywords ||
                 !!initialData.provider_url ||
                 (initialData.min_age != null) ||
                 (initialData.level && initialData.level !== 'all_levels') ||
-                (Array.isArray(initialData.languages) && initialData.languages.join(',') !== 'Deutsch')
+                (Array.isArray(initialData.languages) && initialData.languages.join(',') !== 'Deutsch') ||
+                !!initialData.session_count || !!initialData.session_length
             );
             if (hasOptionalValues) setShowOptionalDetails(true);
 
@@ -792,6 +800,10 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
                     setEvents([{ id: null, bookingCount: 0, ...profileLoc, start_date: '', max_participants: 0, schedule_description: '', showLoc: true }]);
                  }
              });
+             // Set default Kursart for new courses based on default segment (privat → Wochenkurs)
+             if (!draft) {
+                 setPrivatKursart(curr => curr || 'wochenkurs');
+             }
         }
 
         // Mark form as initialized to prevent re-loading initialData on prop changes
@@ -845,6 +857,20 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
 
         return () => { isMounted = false; };
     }, [user?.id]);
+
+    // Auto-set Kursart defaults when segment type changes (only if kursart not yet set)
+    useEffect(() => {
+        if (!hasInitializedRef.current) return; // skip during initialization
+        const type = categories[0]?.type;
+        if (!type) return;
+        if ((type === 'kinder' || type === 'kinder_jugend') && !kinderKursart) {
+            setKinderKursart('freizeitkurs');
+        } else if ((type === 'privat' || type === 'privat_hobby') && !privatKursart) {
+            setPrivatKursart('wochenkurs');
+        } else if ((type === 'professionell' || type === 'beruflich') && berufSaeulen.length === 0) {
+            setBerufSaeulen(['fachkurs']);
+        }
+    }, [categories[0]?.type]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Warn user when leaving with unsaved changes (browser back/close)
     // Also attempt to save draft before unload
@@ -1253,6 +1279,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
 
         // 1. Core Validation
         if (!titleVal || !descriptionVal) { window.alert("Titel und Beschreibung sind erforderlich."); return; }
+        if (!keywordsVal.trim()) { window.alert("Bitte gib Suchbegriffe ein. Diese helfen, dass dein Kurs gefunden wird."); return; }
         if (!catType || !catArea || !catSpec) { window.alert("Bitte wählen Sie eine vollständige Kategorie aus."); return; }
 
         // 1b. Payout Validation — Direkt-/Flex-Buchung nur mit Stripe Connect
@@ -1279,7 +1306,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
             if (validEvents.length === 0) { window.alert("Für Direktbuchungen benötigen wir mindestens einen Termin mit Datum. Präsenz-Termine benötigen zusätzlich Strasse, Ort und Kanton."); return; }
         }
 
-        if (bookingType === 'platform_flex' || bookingType === 'lead') {
+        if ((bookingType === 'platform_flex' || bookingType === 'lead') && locationMode === 'locations') {
             if (locations.length === 0) {
                 window.alert("Bitte gib mindestens einen Standort an.");
                 return;
@@ -1289,6 +1316,13 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
                     window.alert("Bitte wähle für jeden Präsenz-Standort einen Kanton aus.");
                     return;
                 }
+            }
+        }
+
+        if ((bookingType === 'platform_flex' || bookingType === 'lead') && locationMode === 'events') {
+            if (validEvents.length === 0) {
+                window.alert("Bitte gib mindestens einen Termin mit Datum an.");
+                return;
             }
         }
 
@@ -1362,7 +1396,7 @@ let publicLocationLabel = "";
 let mainCanton = "";
 let mainDate = null;
 
-if (bookingType === 'platform') {
+if (bookingType === 'platform' || locationMode === 'events') {
     const sortedEvents = [...validEvents].sort((a, b) => a.start_date.localeCompare(b.start_date));
     const firstEvent = sortedEvents[0];
     if (firstEvent) {
@@ -1375,7 +1409,7 @@ if (bookingType === 'platform') {
         publicLocationLabel = fallbackCantons.join(', ');
     }
 } else {
-    // lead/flex: derive public label from first presence location (or online/ausland)
+    // lead/flex in locations mode: derive public label from first presence location
     const firstPresence = locations.find(l => l.type === 'presence');
     const firstLoc = firstPresence || locations[0];
     if (firstLoc?.type === 'presence') {
@@ -1443,8 +1477,8 @@ if (bookingType === 'platform') {
             keywords: keywordsVal,
             objectives: objectivesList,
             prerequisites: prerequisitesVal,
-            session_count: sessionCount || null,
-            session_length: sessionLength || '',
+            session_count: null, // merged into session_length
+            session_length: sessionLength || null,
             price_info: priceInfo || null,
             provider_url: providerUrl,
             user_id: user?.id || initialData?.user_id,
@@ -1506,8 +1540,8 @@ if (bookingType === 'platform') {
 
 
 
-        // 7. Update Events Table (platform/Direktbuchung and lead courses with optional dates)
-        if (!isAdminImpersonating && activeCourseId && (bookingType === 'platform' || bookingType === 'lead')) {
+        // 7. Update Events Table (platform always; lead/flex when in events mode)
+        if (!isAdminImpersonating && activeCourseId && (bookingType === 'platform' || locationMode === 'events')) {
             // Dedupe check: no two events may share (start_date, location, canton)
             const eventKeys = validEvents.map(ev =>
                 `${ev.start_date}|${ev.location || ''}|${ev.canton || (fallbackCantons.length > 0 ? fallbackCantons[0] : '')}`
@@ -1595,28 +1629,48 @@ if (bookingType === 'platform') {
             }
         }
 
-        // 7b. Save course_locations for lead/flex (replaces the old simple columns)
-        // When admin is impersonating, this is handled via saveCourseViaAdmin (service role bypasses RLS)
+        // 7b. Save course_locations for lead/flex
+        // In 'locations' mode: save from locations state
+        // In 'events' mode: mirror unique presence cantons from events (for search filter)
         if (!isAdminImpersonating && activeCourseId && bookingType !== 'platform') {
             // Delete all existing locations for this course, then re-insert
             await supabase.from('course_locations').delete().eq('course_id', activeCourseId);
 
-            const locationPayloads = locations.map((loc, i) => ({
-                course_id: activeCourseId,
-                location_type: loc.type,
-                street: loc.type === 'presence' ? (loc.street?.trim() || null)
-                      : loc.type === 'ausland' ? (loc.location_abroad?.trim() || null) : null,
-                city: loc.type === 'presence' ? (loc.city?.trim() || null) : null,
-                canton: loc.type === 'presence' ? (loc.canton || null) : (loc.type === 'ausland' ? 'Ausland' : null),
-                sort_order: i
-            }));
+            let locationPayloads = [];
 
-            const { error: locError } = await supabase.from('course_locations').insert(locationPayloads);
-            if (locError) {
-                console.error(locError);
-                showNotification("Fehler beim Speichern der Standorte: " + locError.message);
-                setIsSubmitting(false);
-                return;
+            if (locationMode === 'locations') {
+                locationPayloads = locations.map((loc, i) => ({
+                    course_id: activeCourseId,
+                    location_type: loc.type,
+                    street: loc.type === 'presence' ? (loc.street?.trim() || null)
+                          : loc.type === 'ausland' ? (loc.location_abroad?.trim() || null) : null,
+                    city: loc.type === 'presence' ? (loc.city?.trim() || null) : null,
+                    canton: loc.type === 'presence' ? (loc.canton || null) : (loc.type === 'ausland' ? 'Ausland' : null),
+                    sort_order: i
+                }));
+            } else {
+                // events mode: mirror unique presence cantons from events
+                const seen = new Set();
+                locationPayloads = validEvents
+                    .filter(ev => ev.type === 'presence' && ev.canton && !seen.has(ev.canton) && seen.add(ev.canton))
+                    .map((ev, i) => ({
+                        course_id: activeCourseId,
+                        location_type: 'presence',
+                        street: ev.street?.trim() || null,
+                        city: ev.city?.trim() || null,
+                        canton: ev.canton,
+                        sort_order: i
+                    }));
+            }
+
+            if (locationPayloads.length > 0) {
+                const { error: locError } = await supabase.from('course_locations').insert(locationPayloads);
+                if (locError) {
+                    console.error(locError);
+                    showNotification("Fehler beim Speichern der Standorte: " + locError.message);
+                    setIsSubmitting(false);
+                    return;
+                }
             }
         }
 
@@ -1686,11 +1740,19 @@ if (bookingType === 'platform') {
     const missingRequiredFields = [];
     if (!title.trim()) missingRequiredFields.push('Kurstitel');
     if (!description.trim()) missingRequiredFields.push('Beschreibung');
-    if (!categories[0]?.type) missingRequiredFields.push('Kategorie (Typ)');
-    else if (!categories[0]?.area) missingRequiredFields.push('Kategorie (Bereich)');
-    else if (!categories[0]?.specialty) missingRequiredFields.push('Kategorie (Spezialgebiet)');
+    if (!keywords.trim()) missingRequiredFields.push('Suchbegriffe');
+    if (!categories[0]?.area) missingRequiredFields.push('Bereich (Kategorie)');
+    else if (!categories[0]?.specialty) missingRequiredFields.push('Spezialgebiet (Kategorie)');
     if (!imagePreview && !selectedExistingImage && !initialData?.image_url) missingRequiredFields.push('Kursbild');
-    if (bookingType === 'platform' && visibleEvents.filter(ev => ev.start_date).length === 0) missingRequiredFields.push('Mindestens ein Termin mit Datum');
+    // Ort/Termine je nach Modus
+    if (bookingType === 'platform' || locationMode === 'events') {
+        if (visibleEvents.filter(ev => ev.start_date).length === 0 && events.filter(ev => ev.start_date).length === 0) {
+            missingRequiredFields.push('Mindestens ein Termin mit Datum');
+        }
+    } else if (locationMode === 'locations' && bookingType !== 'platform') {
+        const hasValidLoc = locations.some(l => l.type !== 'presence' || l.canton);
+        if (!hasValidLoc) missingRequiredFields.push('Standort (Kanton)');
+    }
     if (isKinder && !minAge) missingRequiredFields.push('Mindestalter (Kinderkurs)');
 
     return (
@@ -1715,7 +1777,11 @@ if (bookingType === 'platform') {
                     <div>
                         <label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_description} <span className="text-red-500">*</span></label>
                         <textarea required name="description" value={description} onChange={(e) => { setDescription(e.target.value); markDirty(); }} rows="6" placeholder="Beschreibe deinen Kurs..." className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary outline-none resize-y block"></textarea>
-                        <p className="mt-2 text-sm text-gray-500">Die Beschreibung erscheint auf der Kursseite. Für die Textsuche trage wichtige Suchbegriffe im Feld <span className="font-medium">«Keywords»</span> in Abschnitt 5 ein.</p>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">Suchbegriffe für die Suche <span className="text-red-500">*</span></label>
+                        <input type="text" name="keywords" value={keywords} onChange={(e) => { setKeywords(e.target.value); markDirty(); }} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" placeholder="z.B. Klavier, Musik, Anfänger, Kinder, Zürich" />
+                        <p className="text-xs text-gray-500 mt-1">Diese Begriffe helfen, dass dein Kurs über die Suche gefunden wird. Trenne mehrere Begriffe mit Komma.</p>
                     </div>
                     {/* Kursbild */}
                     <div>
@@ -1980,36 +2046,39 @@ if (bookingType === 'platform') {
                         </div>
                     </div>
 
-                    {/* Lead: Terminart-Toggle */}
-                    {bookingType === 'lead' && (
-                        <div className="border border-gray-200 rounded-xl p-4">
-                            <label className="block text-sm font-bold text-gray-700 mb-2">Terminart</label>
-                            <div className="flex gap-2">
+                    {/* Ort & Termine Modus-Auswahl (für lead und platform_flex) */}
+                    {(bookingType === 'lead' || bookingType === 'platform_flex') && (
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-2">Wie möchtest du Ort und Termine erfassen?</label>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                 <button
                                     type="button"
-                                    onClick={() => { setShowLeadTermine(false); markDirty(); }}
-                                    className={`px-4 py-2 rounded-full text-sm font-medium border transition ${!showLeadTermine ? 'bg-gray-700 text-white border-gray-700' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}
+                                    onClick={() => { setLocationMode('locations'); markDirty(); }}
+                                    className={`text-left p-4 rounded-xl border transition ${locationMode === 'locations' ? 'border-gray-700 bg-gray-50 ring-1 ring-gray-700' : 'border-gray-200 hover:bg-gray-50'}`}
                                 >
-                                    Auf Anfrage
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <MapPin className="w-4 h-4 shrink-0" />
+                                        <span className="font-semibold text-sm">Feste Standort(e)</span>
+                                    </div>
+                                    <p className="text-xs text-gray-500">Für Kurse, die laufend, regelmässig oder auf Anfrage an einem oder mehreren Orten stattfinden.</p>
                                 </button>
                                 <button
                                     type="button"
-                                    onClick={() => { setShowLeadTermine(true); markDirty(); }}
-                                    className={`px-4 py-2 rounded-full text-sm font-medium border transition ${showLeadTermine ? 'bg-gray-700 text-white border-gray-700' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}
+                                    onClick={() => { setLocationMode('events'); markDirty(); }}
+                                    className={`text-left p-4 rounded-xl border transition ${locationMode === 'events' ? 'border-gray-700 bg-gray-50 ring-1 ring-gray-700' : 'border-gray-200 hover:bg-gray-50'}`}
                                 >
-                                    Mit festen Terminen
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <Calendar className="w-4 h-4 shrink-0" />
+                                        <span className="font-semibold text-sm">Konkrete Termine</span>
+                                    </div>
+                                    <p className="text-xs text-gray-500">Für Kurse mit festen Daten. Der Ort wird direkt beim jeweiligen Termin erfasst.</p>
                                 </button>
                             </div>
-                            <p className="text-xs text-gray-500 mt-2">
-                                {showLeadTermine
-                                    ? 'Trage deine geplanten Termine ein — sie werden auf der Kursseite angezeigt und im Datumsfilter berücksichtigt.'
-                                    : 'Kurs läuft auf Anfrage. Interessierte kontaktieren dich über das Kontaktformular.'}
-                            </p>
                         </div>
                     )}
 
-                    {/* Lead + Flex: Standorte */}
-                    {(bookingType === 'lead' || bookingType === 'platform_flex') && (
+                    {/* Lead + Flex in locations mode: Standorte */}
+                    {(bookingType === 'lead' || bookingType === 'platform_flex') && locationMode === 'locations' && (
                         <div className="border border-gray-200 rounded-xl p-4">
                             <h3 className="text-base font-bold text-gray-800 flex items-center mb-1">
                                 <MapPin className="w-4 h-4 mr-2 text-gray-500" /> Hauptstandort(e) *
@@ -2078,8 +2147,8 @@ if (bookingType === 'platform') {
                         </div>
                     )}
 
-                    {/* Lead + showLeadTermine: Termine */}
-                    {bookingType === 'lead' && showLeadTermine && (
+                    {/* Lead/Flex in events mode OR platform: Termine */}
+                    {((bookingType === 'lead' || bookingType === 'platform_flex') && locationMode === 'events') && (
                         <div className="border border-gray-200 rounded-xl p-4">
                             <h3 className="text-base font-bold text-gray-800 flex items-center mb-1"><Calendar className="w-4 h-4 mr-2 text-gray-500" /> Termine</h3>
                             <p className="text-xs text-gray-500 mt-1 mb-4">Leere Termine werden nicht gespeichert. Format: TT.MM.JJJJ</p>
@@ -2284,7 +2353,6 @@ if (bookingType === 'platform') {
                 <div className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <label className={`border p-4 rounded-xl transition relative overflow-hidden ${!payoutReady ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} ${bookingType === 'platform' ? 'border-primary bg-orange-50 ring-1 ring-primary' : !payoutReady ? '' : 'hover:bg-gray-50'}`}>
-                            {bookingType === 'platform' && <div className="absolute top-0 right-0 bg-primary text-white text-[10px] px-2 py-0.5 rounded-bl">Empfohlen</div>}
                             <div className="flex items-center mb-2"><input type="radio" name="bookingType" value="platform" checked={bookingType === 'platform'} disabled={!payoutReady} onChange={() => { setBookingType('platform'); markDirty(); }} className="mr-2 accent-primary"/> <span className="font-bold">Direktbuchung</span></div>
                             <p className="text-xs text-gray-500">Mit festem Termin. Zahlung via KursNavi.</p>
                         </label>
@@ -2352,17 +2420,8 @@ if (bookingType === 'platform') {
                 {showOptionalDetails && (
                     <div className="space-y-4">
                         <div>
-                            <h3 className="text-sm font-semibold text-gray-600 mb-3">Dauer &amp; Umfang</h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-bold text-gray-700 mb-1">Anzahl Lektionen</label>
-                                    <input type="text" name="sessionCount" value={sessionCount} onChange={(e) => { setSessionCount(e.target.value); markDirty(); }} placeholder="z.B. 8 Einheiten" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-bold text-gray-700 mb-1">Lektionsdauer</label>
-                                    <input type="text" name="sessionLength" value={sessionLength} onChange={(e) => { setSessionLength(e.target.value); markDirty(); }} placeholder="z.B. 2 Stunden" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
-                                </div>
-                            </div>
+                            <label className="block text-sm font-bold text-gray-700 mb-1">Dauer &amp; Umfang</label>
+                            <input type="text" name="sessionLength" value={sessionLength} onChange={(e) => { setSessionLength(e.target.value); markDirty(); }} placeholder="z.B. 10 Lektionen à 1 Stunde, 1 Wochenende oder 4 Abende à 2 Stunden" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
                         </div>
                         <div>
                             <label className="block text-sm font-bold text-gray-700 mb-1">Niveau</label>
@@ -2432,11 +2491,6 @@ if (bookingType === 'platform') {
                             <label className="block text-sm font-bold text-gray-700 mb-1">Webseite</label>
                             <input type="url" name="providerUrl" value={providerUrl} onChange={(e) => { setProviderUrl(e.target.value); markDirty(); }} placeholder="https://..." className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
                         </div>
-                        <div>
-                            <label className="block text-sm font-bold text-gray-700 mb-1">Keywords für die Textsuche</label>
-                            <input type="text" name="keywords" value={keywords} onChange={(e) => { setKeywords(e.target.value); markDirty(); }} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" placeholder="z.B. Yoga, Anfänger, Entspannung, Zürich" />
-                            <p className="text-xs text-gray-400 mt-1">Wichtige Suchbegriffe, durch Komma getrennt</p>
-                        </div>
                     </div>
                 )}
 
@@ -2474,24 +2528,49 @@ if (bookingType === 'platform') {
                         <Check className="w-4 h-4" /> Alle Pflichtfelder sind ausgefüllt.
                     </p>
                 )}
-                <div className="pt-2 flex flex-col sm:flex-row gap-3 justify-end">
+                <div className="pt-2 flex flex-col sm:flex-row gap-3 justify-end flex-wrap">
+                    {/* Save button: "Als Entwurf speichern" for new courses, "Änderungen speichern" when editing */}
                     <button
                         type="button"
+                        data-testid="save-course"
                         disabled={isSubmitting}
-                        onClick={() => { pendingStatusRef.current = 'draft'; formRef.current?.requestSubmit(); }}
+                        onClick={() => { pendingStatusRef.current = initialData?.id ? null : 'draft'; formRef.current?.requestSubmit(); }}
                         className="px-8 py-3 rounded-xl font-bold border-2 border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition flex items-center justify-center font-heading disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        Als Entwurf speichern
+                        {initialData?.id ? 'Änderungen speichern' : 'Als Entwurf speichern'}
                     </button>
+                    {/* Preview button: only active when course already exists (has ID) */}
                     <button
                         type="button"
-                        disabled={isSubmitting || missingRequiredFields.length > 0}
-                        onClick={() => { pendingStatusRef.current = 'published'; formRef.current?.requestSubmit(); }}
-                        className="bg-primary text-white px-8 py-3 rounded-xl font-bold hover:bg-orange-600 shadow-lg hover:-translate-y-0.5 transition flex items-center justify-center font-heading disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled={!initialData?.id}
+                        onClick={() => {
+                            if (initialData?.id) {
+                                const slug = title.toLowerCase()
+                                    .replace(/[äöüÄÖÜ]/g, c => ({ ä: 'ae', ö: 'oe', ü: 'ue', Ä: 'ae', Ö: 'oe', Ü: 'ue' }[c] || c))
+                                    .replace(/ß/g, 'ss')
+                                    .replace(/[^a-z0-9]+/g, '-')
+                                    .replace(/(^-|-$)/g, '');
+                                window.open(`/kurs/${slug || 'kurs'}/${initialData.id}`, '_blank');
+                            }
+                        }}
+                        className="px-6 py-3 rounded-xl font-bold border-2 border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition flex items-center justify-center font-heading disabled:opacity-40 disabled:cursor-not-allowed"
+                        title={!initialData?.id ? 'Kurs zuerst speichern, dann Vorschau öffnen' : ''}
                     >
-                        {isSubmitting ? <Loader className="animate-spin w-5 h-5 mr-2 text-white" /> : <KursNaviLogo className="w-5 h-5 mr-2 text-white" />}
-                        Jetzt veröffentlichen
+                        <ExternalLink className="w-4 h-4 mr-2" />
+                        Vorschau ansehen
                     </button>
+                    {/* Publish button: disabled when fields missing; only for new courses or drafts */}
+                    {(!initialData?.id || courseStatus === 'draft') && (
+                        <button
+                            type="button"
+                            disabled={isSubmitting || missingRequiredFields.length > 0}
+                            onClick={() => { pendingStatusRef.current = 'published'; formRef.current?.requestSubmit(); }}
+                            className="bg-primary text-white px-8 py-3 rounded-xl font-bold hover:bg-orange-600 shadow-lg hover:-translate-y-0.5 transition flex items-center justify-center font-heading disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {isSubmitting ? <Loader className="animate-spin w-5 h-5 mr-2 text-white" /> : <KursNaviLogo className="w-5 h-5 mr-2 text-white" />}
+                            Jetzt veröffentlichen
+                        </button>
+                    )}
                 </div>
             </form>
 
