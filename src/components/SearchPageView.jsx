@@ -437,9 +437,11 @@ const SearchPageView = ({
         }
     }, [filteredCourses, loading]);
 
-    // --- RANKING LOGIC (v4.1) ---
-    // Formula: Score = Plan * Booking + SeededRandom(0..0.15)
-    // Prio-Kurse immer vor Standard-Kursen, innerhalb jeder Stufe echt zufällig
+    // --- RANKING LOGIC (v5.0) ---
+    // Formula: Score = Prio(1.2|1.0) * Booking + SeededRandom(0..0.15)
+    // Hervorgehobene Kurse (is_prio=true) immer vor Standard-Kursen.
+    // Alle hervorgehobenen Kurse bekommen denselben Bonus (1.2x), unabhängig vom Paket.
+    // Verifizierung (is_pro) ist nur ein Badge – kein Ranking-Faktor.
     // Bei aktivem Datumsfilter: Kurse MIT Datum zuerst, dann Kurse OHNE Datum
     //
     // sortSeed wird einmal pro Seitenaufruf erzeugt (useState-Initializer).
@@ -454,9 +456,13 @@ const SearchPageView = ({
         };
 
         // Pre-compute one random score per course (seeded PRNG, deterministic within a session)
+        // Ranking-Logik (v5.0): Nur is_prio gibt Sichtbarkeits-Bonus (1.2x).
+        // is_pro (Verifizierung) ist ein Vertrauenssignal, kein Ranking-Faktor.
+        // plan_factor wird nicht mehr genutzt: höhere Pakete erlauben mehr hervorgehobene
+        // Kurse, aber jeder hervorgehobene Kurs bekommt denselben Bonus.
         const scoreMap = new Map();
         filteredCourses.forEach((c, i) => {
-            const planF = c.plan_factor || (c.is_prio ? 1.2 : (c.is_pro ? 1.2 : 1.0));
+            const planF = c.is_prio ? 1.2 : 1.0;
             const bookF = c.booking_factor || 1.0;
             // Seeded pseudo-random: varies per page load (sortSeed) and per course (i)
             const hash = Math.sin(sortSeed * 10000 + i + 1) * 10000;

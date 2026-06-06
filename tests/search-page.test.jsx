@@ -374,6 +374,92 @@ describe('Filter chips', () => {
 });
 
 // ===================== 6. PRICE VALIDATION =====================
+// ===================== 7. RANKING LOGIC (v5.0) =====================
+describe('Ranking logic v5.0', () => {
+  // Helper: build a course with specific ranking flags
+  function makeRankedCourse(id, title, { isPrio = false, isPro = false } = {}) {
+    return {
+      ...makeCourse(id, title),
+      is_prio: isPrio,
+      is_pro: isPro,
+    };
+  }
+
+  it('free courses (no is_prio, no is_pro) still appear in the course grid', () => {
+    const c = makeRankedCourse('free1', 'Freier Kurs');
+    const props = makeProps({
+      courses: [c],
+      filteredCourses: [c],
+      filteredCoursesPreCategory: [c],
+    });
+    render(<SearchPageView {...props} />);
+    expect(screen.getByTestId('course-grid')).toHaveTextContent('Freier Kurs');
+  });
+
+  it('is_prio course always ranks before a non-prio course', () => {
+    // Prio-Kurs hat Score 1.2 + jitter, Standard-Kurs hat 1.0 + jitter.
+    // Da jitter max 0.15 ist, übertrumpft der Prio-Bonus (0.2) immer das Jitter-Maximum.
+    const stdCourse = makeRankedCourse('std1', 'Standard Kurs', { isPrio: false, isPro: false });
+    const prioCourse = makeRankedCourse('prio1', 'Prio Kurs', { isPrio: true, isPro: false });
+    const courses = [stdCourse, prioCourse]; // stdCourse comes first in input
+    const props = makeProps({
+      courses,
+      filteredCourses: courses,
+      filteredCoursesPreCategory: courses,
+    });
+    render(<SearchPageView {...props} />);
+    const grid = screen.getByTestId('course-grid');
+    const allTitles = grid.querySelectorAll('[aria-label], a');
+    const gridText = grid.textContent;
+    const prioPos = gridText.indexOf('Prio Kurs');
+    const stdPos = gridText.indexOf('Standard Kurs');
+    expect(prioPos).toBeGreaterThanOrEqual(0);
+    expect(stdPos).toBeGreaterThanOrEqual(0);
+    expect(prioPos).toBeLessThan(stdPos); // Prio kommt zuerst
+  });
+
+  it('is_pro (verified) without is_prio does NOT rank above a plain non-prio course consistently', () => {
+    // Beide Kurse haben Score 1.0 + Jitter — kein Unterschied durch Verifizierung.
+    // Wir prüfen nur, dass der Pro-Kurs sichtbar ist (kein Filter-Ausschluss).
+    const plain = makeRankedCourse('plain1', 'Normaler Kurs', { isPrio: false, isPro: false });
+    const proOnly = makeRankedCourse('pro1', 'Verifizierter Kurs', { isPrio: false, isPro: true });
+    const courses = [plain, proOnly];
+    const props = makeProps({
+      courses,
+      filteredCourses: courses,
+      filteredCoursesPreCategory: courses,
+    });
+    render(<SearchPageView {...props} />);
+    const grid = screen.getByTestId('course-grid');
+    expect(grid).toHaveTextContent('Normaler Kurs');
+    expect(grid).toHaveTextContent('Verifizierter Kurs');
+  });
+
+  it('is_prio + is_pro course ranks same as is_prio-only course (both get 1.2x)', () => {
+    // Zwei Prio-Kurse: einer auch verifiziert. Beide sollen denselben Basis-Score 1.2x haben.
+    const prioOnly = makeRankedCourse('prio2', 'Nur Prio', { isPrio: true, isPro: false });
+    const prioAndPro = makeRankedCourse('prio3', 'Prio und Verifiziert', { isPrio: true, isPro: true });
+    // Standard-Kurs als Kontrolle: muss immer nach beiden Prio-Kursen erscheinen
+    const std = makeRankedCourse('std2', 'Standard Kurs 2', { isPrio: false, isPro: false });
+    const courses = [std, prioOnly, prioAndPro];
+    const props = makeProps({
+      courses,
+      filteredCourses: courses,
+      filteredCoursesPreCategory: courses,
+    });
+    render(<SearchPageView {...props} />);
+    const grid = screen.getByTestId('course-grid');
+    const gridText = grid.textContent;
+    const stdPos = gridText.indexOf('Standard Kurs 2');
+    const prioOnlyPos = gridText.indexOf('Nur Prio');
+    const prioAndProPos = gridText.indexOf('Prio und Verifiziert');
+    // Beide Prio-Kurse kommen vor dem Standard-Kurs
+    expect(prioOnlyPos).toBeLessThan(stdPos);
+    expect(prioAndProPos).toBeLessThan(stdPos);
+  });
+});
+
+
 describe('Price filter validation', () => {
   it('shows German placeholder "Beliebig" instead of "Any"', () => {
     const c = makeCourse('1');

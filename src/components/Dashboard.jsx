@@ -2270,7 +2270,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
         const currentPrioCount = prioCourseIds.size;
 
         if (!isCurrentlyPrio && currentPrioCount >= maxPrio && maxPrio !== Infinity) {
-            showNotification(`Du hast bereits ${maxPrio} Prio-Kurse ausgewählt (Maximum für ${currentPlan?.title}).`);
+            showNotification(`Du hast bereits ${maxPrio} hervorgehobene Kurse ausgewählt (Maximum für ${currentPlan?.title}).`);
             return;
         }
 
@@ -2417,14 +2417,14 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                             <div className="flex items-start gap-3">
                                 <Star className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
                                 <div>
-                                    <p className="font-bold text-dark">Prio-Kurse</p>
+                                    <p className="font-bold text-dark">Hervorgehobene Kurse</p>
                                     <p className="text-sm text-gray-600 mt-1">
                                         Markierte Kurse erscheinen weiter oben in den Suchergebnissen von KursNavi.{' '}
                                         {isEnterprisePlan
-                                            ? 'Du hast unbegrenzte Prio-Slots (Enterprise).'
-                                            : `Du hast bereits ${prioCourseIds.size} von ${currentPlan.maxPrioCourses} Prio-Slots vergeben.`
+                                            ? 'Alle deine Kurse sind hervorgehoben (Enterprise).'
+                                            : `${prioCourseIds.size} von ${currentPlan.maxPrioCourses} hervorgehobenen Kursen verwendet.`
                                         }{' '}
-                                        Klicke auf das Sternchen neben einem Kurs, um ihn zu priorisieren oder zu depriorisieren.
+                                        Klicke auf das Sternchen neben einem Kurs, um ihn hervorzuheben oder die Hervorhebung zu entfernen.
                                     </p>
                                 </div>
                             </div>
@@ -2440,7 +2440,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                             <th className="px-4 py-3 font-semibold text-gray-600 w-2/5">Kursname</th>
                                             <th className="px-4 py-3 font-semibold text-gray-600 whitespace-nowrap">Sichtbarkeit</th>
                                             {currentPlan?.maxPrioCourses > 0 && !isEnterprisePlan && (
-                                                <th className="px-3 py-3 font-semibold text-gray-600 text-center w-12">Prio</th>
+                                                <th className="px-3 py-3 font-semibold text-gray-600 text-center w-12">Hervorgehoben</th>
                                             )}
                                             <th className="px-4 py-3 font-semibold text-gray-600">Aktionen</th>
                                         </tr>
@@ -2601,7 +2601,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                     <span className="text-2xl font-bold capitalize">{currentPlan.title}</span>
                                 </div>
                                 <p className="text-xs text-gray-400 mt-1">
-                                    {isEnterprisePlan ? 'Unbegrenzte Prio-Kurse' : `${currentPlan.maxPrioCourses} Prio-Kurse`} • bis {currentPlan.maxCategoriesPerCourse} Kategorien/Kurs • {currentPlan.includedCaptureServices > 0 ? `${currentPlan.includedCaptureServices} Erfassungsservices inkl.` : 'keine Erfassungsservices inklusive'}
+                                    {isEnterprisePlan ? 'Unbegrenzte hervorgehobene Kurse' : `${currentPlan.maxPrioCourses} hervorgehobene Kurse`} • bis {currentPlan.maxCategoriesPerCourse} Kategorien/Kurs • {currentPlan.includedCaptureServices > 0 ? `${currentPlan.includedCaptureServices} Erfassungsservices inkl.` : 'keine Erfassungsservices inklusive'}
                                 </p>
                                 {packageExpiresAt && userTier !== 'basic' && (
                                     <p className="text-xs text-yellow-400 mt-1">Gültig bis: {new Date(packageExpiresAt).toLocaleDateString('de-CH')}</p>

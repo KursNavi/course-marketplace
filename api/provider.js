@@ -515,7 +515,6 @@ export default async function handler(req, res) {
           isVerified: p.verification_status === 'verified',
           tier: p.package_tier,
           isFeatured: p.package_tier === 'enterprise',
-          tierScore: p.package_tier === 'enterprise' ? 2 : 1,
           hasBookableCourse: !!hasBookable[p.id],
           courseCount: courseCounts[p.id] || 0,
           categories: {
@@ -525,10 +524,14 @@ export default async function handler(req, res) {
           publishedAt: p.profile_published_at
         }))
         .sort((a, b) => {
-          // Ranking-Score: enterprise=+2, pro/premium=+1, buchbar über Plattform=+1
-          const scoreA = a.tierScore + (a.hasBookableCourse ? 1 : 0);
-          const scoreB = b.tierScore + (b.hasBookableCourse ? 1 : 0);
-          if (scoreB !== scoreA) return scoreB - scoreA;
+          // Anbieter-Ranking (v2.0): Alle bezahlten Pakete (pro/premium/enterprise)
+          // werden gleich behandelt — kein Extra-Score für höhere Paketstufe.
+          // Reihenfolge: verifiziert → buchbar → mehr aktive Kurse → Datum → ID
+          const verifiedDiff = (b.isVerified ? 1 : 0) - (a.isVerified ? 1 : 0);
+          if (verifiedDiff !== 0) return verifiedDiff;
+          const bookableDiff = (b.hasBookableCourse ? 1 : 0) - (a.hasBookableCourse ? 1 : 0);
+          if (bookableDiff !== 0) return bookableDiff;
+          if (b.courseCount !== a.courseCount) return b.courseCount - a.courseCount;
           // Deterministic tiebreaker for stable SEO/indexing
           const dateA = a.publishedAt ? new Date(a.publishedAt).getTime() : 0;
           const dateB = b.publishedAt ? new Date(b.publishedAt).getTime() : 0;
