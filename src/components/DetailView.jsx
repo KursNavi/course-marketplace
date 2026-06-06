@@ -1228,7 +1228,7 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
                                   e.preventDefault();
                                   window.location.href = buildCoursePath(rel);
                               }}
-                              className={`bg-white rounded-xl overflow-hidden hover:shadow-md cursor-pointer group transition-all ${rel.is_prio ? 'shadow border border-amber-200' : 'shadow-sm border border-gray-100'}`}
+                              className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md cursor-pointer group transition-all"
                               style={{textDecoration: 'none', color: 'inherit'}}
                          >
                             <div className="aspect-video overflow-hidden relative">
@@ -1241,7 +1241,6 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
                                     height="225"
                                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                                 />
-                                {/* is_prio: kein Text-Badge, nur dezenter Rahmen-Akzent auf der Karte */}
                                 <span className="absolute bottom-2 left-2 bg-white/90 px-2 py-0.5 rounded text-xs font-bold text-gray-700 flex items-center shadow-sm">
                                     <MapPin className="w-3 h-3 mr-1 text-primary"/> {rel.canton}
                                 </span>

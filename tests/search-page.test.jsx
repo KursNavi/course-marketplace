@@ -460,58 +460,31 @@ describe('Ranking logic v5.0', () => {
 });
 
 
-// ===================== 8. IS_PRIO PREMIUM CARD =====================
-// is_prio-Kurse erhalten eine hochwertigere Kartenvariante (grösseres Bild, mehr Padding etc.);
-// kein Nutzer-Badge, kein separater Fokusbereich, kein Qualitätsurteil.
-describe('is_prio premium card (kein Text-Badge, kein Fokusbereich)', () => {
-  function makePrioCourse(id, title = 'Hervorgehobener Kurs') {
-    return { ...makeCourse(id, title), is_prio: true };
-  }
-
-  it('card with is_prio=true gets data-testid="card-prio" and data-prio="true"', () => {
-    const c = makePrioCourse('p1');
+// ===================== 8. IS_PRIO RENDERING SAFETY =====================
+// is_prio beeinflusst das Ranking, aber nicht die visuelle Darstellung der Karte.
+// Alle Karten sehen einheitlich aus — kein Badge, keine Sonderoptik.
+describe('is_prio rendering safety (keine Sonderoptik)', () => {
+  it('course with is_prio=true renders without error and appears in the grid', () => {
+    const c = { ...makeCourse('p1', 'Prio Kurs'), is_prio: true };
     const props = makeProps({
       courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
     });
     render(<SearchPageView {...props} />);
-    const card = screen.getByTestId('card-prio');
-    expect(card).toBeInTheDocument();
-    expect(card).toHaveAttribute('data-prio', 'true');
+    expect(screen.getByTestId('course-grid')).toHaveTextContent('Prio Kurs');
   });
 
-  it('card with is_prio=false gets data-testid="course-card", no card-prio', () => {
+  it('course with is_prio=false renders normally', () => {
     const c = { ...makeCourse('np1', 'Normaler Kurs'), is_prio: false };
     const props = makeProps({
       courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
     });
     render(<SearchPageView {...props} />);
-    expect(screen.queryByTestId('card-prio')).not.toBeInTheDocument();
-    expect(screen.getByTestId('course-card')).toBeInTheDocument();
+    expect(screen.getByTestId('course-grid')).toHaveTextContent('Normaler Kurs');
   });
 
-  it('card with is_prio undefined (free tier) gets course-card, no card-prio', () => {
-    const c = makeCourse('f1', 'Gratis Kurs');
-    const props = makeProps({
-      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
-    });
-    render(<SearchPageView {...props} />);
-    expect(screen.queryByTestId('card-prio')).not.toBeInTheDocument();
-    expect(screen.getByTestId('course-card')).toBeInTheDocument();
-  });
-
-  it('does NOT show any badge text "Hervorgehoben" in the search grid', () => {
-    const prio = makePrioCourse('p2', 'Prio Kurs');
+  it('is_prio and non-prio courses both appear in the same grid', () => {
+    const prio = { ...makeCourse('p2', 'Prio Kurs'), is_prio: true };
     const plain = makeCourse('n2', 'Normaler Kurs');
-    const props = makeProps({
-      courses: [prio, plain], filteredCourses: [prio, plain], filteredCoursesPreCategory: [prio, plain],
-    });
-    render(<SearchPageView {...props} />);
-    expect(screen.getByTestId('course-grid')).not.toHaveTextContent('Hervorgehoben');
-  });
-
-  it('prio and normal cards both appear in the same course-grid (no separate section)', () => {
-    const prio = makePrioCourse('p3', 'Prio Kurs');
-    const plain = makeCourse('n3', 'Normaler Kurs');
     const props = makeProps({
       courses: [prio, plain], filteredCourses: [prio, plain], filteredCoursesPreCategory: [prio, plain],
     });
@@ -521,24 +494,16 @@ describe('is_prio premium card (kein Text-Badge, kein Fokusbereich)', () => {
     expect(grid).toHaveTextContent('Normaler Kurs');
   });
 
-  it('card-prio and Pro (instructor_verified) markers are independent', () => {
-    const c = { ...makeCourse('vp1', 'Verifiziert und Prio'), is_prio: true, instructor_verified: true };
+  it('no text badge appears for is_prio courses', () => {
+    const c = { ...makeCourse('p3', 'Prio Kurs'), is_prio: true };
     const props = makeProps({
       courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
     });
     render(<SearchPageView {...props} />);
-    expect(screen.getByTestId('card-prio')).toBeInTheDocument();
-    expect(screen.getByTestId('course-grid')).toHaveTextContent('Pro');
-  });
-
-  it('instructor_verified alone (no is_prio) does NOT add card-prio marker', () => {
-    const c = { ...makeCourse('v1', 'Nur Verifiziert'), instructor_verified: true };
-    const props = makeProps({
-      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
-    });
-    render(<SearchPageView {...props} />);
-    expect(screen.queryByTestId('card-prio')).not.toBeInTheDocument();
-    expect(screen.getByTestId('course-grid')).toHaveTextContent('Pro');
+    const grid = screen.getByTestId('course-grid');
+    expect(grid).not.toHaveTextContent('Hervorgehoben');
+    expect(grid).not.toHaveTextContent('Empfohlen');
+    expect(grid).not.toHaveTextContent('Gesponsert');
   });
 });
 

@@ -848,24 +848,20 @@ const SearchPageView = ({
                           .replace(/&/g, ' und ').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
                       const coursePath = buildCoursePath(course) || slugify(course.title || 'detail');
 
-                      // is_prio-Kurse erhalten eine hochwertigere Kartenvariante (grösseres Bild,
-                      // stärkerer Schatten, mehr Padding, Kurzbeschreibung);
-                      // kein Nutzer-Badge, um kein Qualitätsurteil zu suggerieren.
-                      const isPrio = !!course.is_prio;
                       items.push(
                       <a key={course.id} href={coursePath} onClick={(e) => {
                           if (e.ctrlKey || e.metaKey) return;
                           e.preventDefault();
                           window.history.pushState({ view: 'detail', courseId: course.id }, '', coursePath);
-                      }} data-testid={isPrio ? 'card-prio' : 'course-card'} data-prio={isPrio ? 'true' : undefined} className={`bg-white rounded-xl overflow-hidden hover:-translate-y-1 transition-all duration-300 cursor-pointer group ${isPrio ? 'shadow-md border border-amber-200 hover:shadow-xl' : 'shadow-sm border border-gray-100 hover:shadow-xl'}`} style={{textDecoration: 'none', color: 'inherit'}}>
-                        <div className={`relative overflow-hidden ${isPrio ? 'aspect-[4/3]' : 'aspect-video'}`}>
+                      }} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer group" style={{textDecoration: 'none', color: 'inherit'}}>
+                        <div className="relative aspect-video overflow-hidden">
                             <img
                                 src={course.image_url || fallbackImage}
                                 alt={`${course.title} - Kurs in ${course.canton}`}
                                 loading="lazy"
                                 decoding="async"
                                 width="600"
-                                height={isPrio ? 450 : 338}
+                                height="338"
                                 className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300"
                             />
                             <div className="absolute top-3 left-3 flex flex-col gap-1 items-start">
@@ -896,17 +892,10 @@ const SearchPageView = ({
                             </button>
                         </div>
 
-                        <div className={isPrio ? 'p-6' : 'p-5'}>
-                            <h3 className={`font-bold text-dark leading-tight line-clamp-2 mb-2 font-heading ${isPrio ? 'text-xl' : 'text-lg h-12'}`}>
+                        <div className="p-5">
+                            <h3 className="font-bold text-lg text-dark leading-tight line-clamp-2 h-12 mb-2 font-heading">
                                 {course.title}
                             </h3>
-
-                            {/* Kurzbeschreibung — nur für Prio-Karten */}
-                            {isPrio && course.description && (
-                                <p className="text-xs text-gray-500 line-clamp-2 mb-3 leading-relaxed">
-                                    {course.description}
-                                </p>
-                            )}
 
                             {/* Kursformat-Badges */}
                             {(() => {
@@ -923,17 +912,17 @@ const SearchPageView = ({
                                 );
                             })()}
 
-                            <div className={`flex items-center justify-between gap-2 pt-4 border-t ${isPrio ? 'border-amber-100' : 'border-gray-100'}`}>
+                            <div className="flex items-center justify-between gap-2 pt-4 border-t border-gray-100">
                                 {/* Anbieter-Badge */}
                                 <div className="min-w-0 flex-1">
-                                    <div className={`inline-flex items-center px-2 py-1 rounded text-xs text-gray-500 max-w-full ${isPrio ? 'bg-amber-50' : 'bg-beige'}`}>
+                                    <div className="inline-flex items-center bg-beige px-2 py-1 rounded text-xs text-gray-500 max-w-full">
                                         <User className="w-3 h-3 text-gray-500 mr-1 shrink-0" />
                                         <span className="truncate" title={course.instructor_name}>{course.instructor_name}</span>
                                     </div>
                                 </div>
 
                                 {/* Preis */}
-                                <span className={`font-heading font-bold text-primary leading-tight text-right whitespace-nowrap shrink-0 ${isPrio ? 'text-sm' : 'text-xs'}`}>
+                                <span className="font-heading font-bold text-primary text-xs leading-tight text-right whitespace-nowrap shrink-0">
                                     {getPriceLabel(course)}
                                 </span>
                             </div>
