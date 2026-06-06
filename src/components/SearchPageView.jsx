@@ -849,11 +849,13 @@ const SearchPageView = ({
                       const coursePath = buildCoursePath(course) || slugify(course.title || 'detail');
 
                       items.push(
+                      // is_prio-Kurse erhalten nur einen dezenten visuellen Akzent (Rahmen/Schatten);
+                      // kein Nutzer-Badge, um kein Qualitätsurteil zu suggerieren.
                       <a key={course.id} href={coursePath} onClick={(e) => {
                           if (e.ctrlKey || e.metaKey) return;
                           e.preventDefault();
                           window.history.pushState({ view: 'detail', courseId: course.id }, '', coursePath);
-                      }} className={`bg-white rounded-xl overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer group ${course.is_prio ? 'shadow border border-amber-200' : 'shadow-sm border border-gray-100'}`} style={{textDecoration: 'none', color: 'inherit'}}>
+                      }} data-testid={course.is_prio ? 'card-prio' : undefined} className={`bg-white rounded-xl overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer group ${course.is_prio ? 'shadow border border-amber-200' : 'shadow-sm border border-gray-100'}`} style={{textDecoration: 'none', color: 'inherit'}}>
                         <div className="relative aspect-video overflow-hidden">
                             <img
                                 src={course.image_url || fallbackImage}
@@ -870,7 +872,6 @@ const SearchPageView = ({
                                     <div className="bg-yellow-500/95 text-white px-2 py-1 rounded text-xs font-bold shadow-sm flex items-center"><EyeOff className="w-3 h-3 mr-1" /> Entwurf</div>
                                 )}
                                 {course.instructor_verified && <div className="bg-blue-600/90 text-white px-2 py-1 rounded text-xs font-bold shadow-sm flex items-center"><CheckCircle className="w-3 h-3 mr-1" /> Pro</div>}
-                                {course.is_prio && <div className="bg-amber-500/90 text-white px-2 py-1 rounded text-xs font-bold shadow-sm flex items-center" data-testid="badge-hervorgehoben"><Sparkles className="w-3 h-3 mr-1" /> Hervorgehoben</div>}
                                 {isSoldOut(course) && <div className="bg-red-500/90 text-white px-2 py-1 rounded text-xs font-bold shadow-sm">Ausgebucht</div>}
                             </div>
 
