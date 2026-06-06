@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, User, MapPin, Clock, CheckCircle, Calendar, Shield, ExternalLink, Mail, X, Send, Map, Info, Loader, Bookmark, BookmarkCheck, ChevronRight, AlertCircle, Compass, LogIn } from 'lucide-react';
+import { ArrowLeft, User, MapPin, Clock, CheckCircle, Calendar, Shield, ExternalLink, Mail, X, Send, Map, Info, Loader, Bookmark, BookmarkCheck, ChevronRight, AlertCircle, Compass, LogIn, Sparkles } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { formatPriceCHF, getPriceLabel } from '../lib/formatPrice';
 import { useTaxonomy } from '../hooks/useTaxonomy';
@@ -1228,7 +1228,7 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
                                   e.preventDefault();
                                   window.location.href = buildCoursePath(rel);
                               }}
-                              className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md cursor-pointer group transition-all"
+                              className={`bg-white rounded-xl overflow-hidden hover:shadow-md cursor-pointer group transition-all ${rel.is_prio ? 'shadow border border-amber-200' : 'shadow-sm border border-gray-100'}`}
                               style={{textDecoration: 'none', color: 'inherit'}}
                          >
                             <div className="aspect-video overflow-hidden relative">
@@ -1241,6 +1241,11 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
                                     height="225"
                                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                                 />
+                                {rel.is_prio && (
+                                    <div className="absolute top-2 left-2 bg-amber-500/90 text-white px-1.5 py-0.5 rounded text-[10px] font-bold shadow-sm flex items-center">
+                                        <Sparkles className="w-2.5 h-2.5 mr-1" /> Hervorgehoben
+                                    </div>
+                                )}
                                 <span className="absolute bottom-2 left-2 bg-white/90 px-2 py-0.5 rounded text-xs font-bold text-gray-700 flex items-center shadow-sm">
                                     <MapPin className="w-3 h-3 mr-1 text-primary"/> {rel.canton}
                                 </span>

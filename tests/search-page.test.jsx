@@ -460,6 +460,62 @@ describe('Ranking logic v5.0', () => {
 });
 
 
+// ===================== 8. HERVORGEHOBEN BADGE =====================
+describe('Hervorgehoben badge', () => {
+  function makePrioCourse(id, title = 'Hervorgehobener Kurs') {
+    return { ...makeCourse(id, title), is_prio: true };
+  }
+
+  it('shows badge "Hervorgehoben" for a course with is_prio=true', () => {
+    const c = makePrioCourse('p1');
+    const props = makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+    });
+    render(<SearchPageView {...props} />);
+    expect(screen.getByTestId('badge-hervorgehoben')).toBeInTheDocument();
+    expect(screen.getByTestId('badge-hervorgehoben')).toHaveTextContent('Hervorgehoben');
+  });
+
+  it('does NOT show badge for a course with is_prio=false', () => {
+    const c = { ...makeCourse('np1', 'Normaler Kurs'), is_prio: false };
+    const props = makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+    });
+    render(<SearchPageView {...props} />);
+    expect(screen.queryByTestId('badge-hervorgehoben')).not.toBeInTheDocument();
+  });
+
+  it('does NOT show badge when is_prio is undefined (free tier course)', () => {
+    const c = makeCourse('f1', 'Gratis Kurs');
+    const props = makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+    });
+    render(<SearchPageView {...props} />);
+    expect(screen.queryByTestId('badge-hervorgehoben')).not.toBeInTheDocument();
+  });
+
+  it('shows "Hervorgehoben" and "Pro" badges independently when both flags are set', () => {
+    const c = { ...makeCourse('vp1', 'Verifiziert und Hervorgehoben'), is_prio: true, instructor_verified: true };
+    const props = makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+    });
+    render(<SearchPageView {...props} />);
+    expect(screen.getByTestId('badge-hervorgehoben')).toBeInTheDocument();
+    // "Pro" badge text is present via instructor_verified
+    expect(screen.getByTestId('course-grid')).toHaveTextContent('Pro');
+  });
+
+  it('instructor_verified alone (no is_prio) does NOT show Hervorgehoben badge', () => {
+    const c = { ...makeCourse('v1', 'Nur Verifiziert'), instructor_verified: true };
+    const props = makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+    });
+    render(<SearchPageView {...props} />);
+    expect(screen.queryByTestId('badge-hervorgehoben')).not.toBeInTheDocument();
+    expect(screen.getByTestId('course-grid')).toHaveTextContent('Pro');
+  });
+});
+
 describe('Price filter validation', () => {
   it('shows German placeholder "Beliebig" instead of "Any"', () => {
     const c = makeCourse('1');
