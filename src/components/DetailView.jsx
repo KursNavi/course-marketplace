@@ -645,19 +645,16 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
         return out;
     };
 
-    // --- RANKING ENGINE (V3.0) ---
+    // --- RANKING ENGINE (V4.0) ---
+    // Verifizierung (is_pro) ist nur ein Badge – kein Ranking-Faktor.
+    // Hervorgehobene Kurse (is_prio) erhalten 1.2x Boost.
     const getRankingScore = (candidate) => {
-        // 1. Plan Factor (Basic=1.0, Pro=1.2)
-        const isPro = candidate.is_pro || false;
-        const planFactor = isPro ? 1.2 : 1.0;
+        // 1. Prio Factor: hervorgehobene Kurse kommen weiter vorne
+        const planFactor = candidate.is_prio ? 1.2 : 1.0;
 
         // 2. Booking Factor
-        // Lead/External: 1.0 | Basic+Booking: 1.3 | Pro+Booking: 1.2
         const isBookable = candidate.booking_type === 'platform' || candidate.booking_type === 'platform_flex';
-        let bookingFactor = 1.0;
-        if (isBookable) {
-            bookingFactor = isPro ? 1.2 : 1.3;
-        }
+        const bookingFactor = isBookable ? 1.3 : 1.0;
 
         // 3. Relevance (Word Match Boost)
         let relevanceScore = 1.0; // Basis
