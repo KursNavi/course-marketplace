@@ -460,42 +460,46 @@ describe('Ranking logic v5.0', () => {
 });
 
 
-// ===================== 8. IS_PRIO CARD ACCENT =====================
-// is_prio-Kurse erhalten nur einen dezenten visuellen Akzent (data-testid="card-prio");
-// kein Nutzer-Badge, um kein Qualitätsurteil zu suggerieren.
-describe('is_prio card accent (kein Text-Badge)', () => {
+// ===================== 8. IS_PRIO PREMIUM CARD =====================
+// is_prio-Kurse erhalten eine hochwertigere Kartenvariante (grösseres Bild, mehr Padding etc.);
+// kein Nutzer-Badge, kein separater Fokusbereich, kein Qualitätsurteil.
+describe('is_prio premium card (kein Text-Badge, kein Fokusbereich)', () => {
   function makePrioCourse(id, title = 'Hervorgehobener Kurs') {
     return { ...makeCourse(id, title), is_prio: true };
   }
 
-  it('card with is_prio=true gets data-testid="card-prio"', () => {
+  it('card with is_prio=true gets data-testid="card-prio" and data-prio="true"', () => {
     const c = makePrioCourse('p1');
     const props = makeProps({
       courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
     });
     render(<SearchPageView {...props} />);
-    expect(screen.getByTestId('card-prio')).toBeInTheDocument();
+    const card = screen.getByTestId('card-prio');
+    expect(card).toBeInTheDocument();
+    expect(card).toHaveAttribute('data-prio', 'true');
   });
 
-  it('card with is_prio=false does NOT get card-prio marker', () => {
+  it('card with is_prio=false gets data-testid="course-card", no card-prio', () => {
     const c = { ...makeCourse('np1', 'Normaler Kurs'), is_prio: false };
     const props = makeProps({
       courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
     });
     render(<SearchPageView {...props} />);
     expect(screen.queryByTestId('card-prio')).not.toBeInTheDocument();
+    expect(screen.getByTestId('course-card')).toBeInTheDocument();
   });
 
-  it('card with is_prio undefined (free tier) does NOT get card-prio marker', () => {
+  it('card with is_prio undefined (free tier) gets course-card, no card-prio', () => {
     const c = makeCourse('f1', 'Gratis Kurs');
     const props = makeProps({
       courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
     });
     render(<SearchPageView {...props} />);
     expect(screen.queryByTestId('card-prio')).not.toBeInTheDocument();
+    expect(screen.getByTestId('course-card')).toBeInTheDocument();
   });
 
-  it('does NOT show text "Hervorgehoben" on any search card', () => {
+  it('does NOT show any badge text "Hervorgehoben" in the search grid', () => {
     const prio = makePrioCourse('p2', 'Prio Kurs');
     const plain = makeCourse('n2', 'Normaler Kurs');
     const props = makeProps({
@@ -503,6 +507,18 @@ describe('is_prio card accent (kein Text-Badge)', () => {
     });
     render(<SearchPageView {...props} />);
     expect(screen.getByTestId('course-grid')).not.toHaveTextContent('Hervorgehoben');
+  });
+
+  it('prio and normal cards both appear in the same course-grid (no separate section)', () => {
+    const prio = makePrioCourse('p3', 'Prio Kurs');
+    const plain = makeCourse('n3', 'Normaler Kurs');
+    const props = makeProps({
+      courses: [prio, plain], filteredCourses: [prio, plain], filteredCoursesPreCategory: [prio, plain],
+    });
+    render(<SearchPageView {...props} />);
+    const grid = screen.getByTestId('course-grid');
+    expect(grid).toHaveTextContent('Prio Kurs');
+    expect(grid).toHaveTextContent('Normaler Kurs');
   });
 
   it('card-prio and Pro (instructor_verified) markers are independent', () => {
