@@ -16,6 +16,16 @@ import { useTaxonomy } from './hooks/useTaxonomy';
 // React's scroll-to-top in useLayoutEffect before scrollRestoration is set in useEffect.
 if (typeof window !== 'undefined') {
   window.history.scrollRestoration = 'manual';
+
+  // Redirect /anbieter → /search?tab=anbieter synchronously, before React initializes.
+  // This ensures the URL is correct from the very first render and all lazy useState
+  // initializers (searchTab, searchQuery, etc.) read the right URL immediately.
+  // /anbieter/{slug} (provider profiles) must NOT be redirected.
+  if (window.location.pathname === '/anbieter') {
+    const _p = new URLSearchParams(window.location.search);
+    _p.set('tab', 'anbieter');
+    window.history.replaceState({}, '', '/search?' + _p.toString());
+  }
 }
 
 const CHUNK_RELOAD_KEY = 'chunk_reload';
@@ -403,16 +413,19 @@ export default function KursNaviPro() {  // 1. Initial State Logic
     document.documentElement.lang = lang;
   }, [lang]);
 
-  // --- Scroll restoration on view change (back/forward) or scroll-to-top ---
+  // --- Scroll restoration on view change, tab change, or back/forward nav ---
+  // Dependencies: view (page change) + searchTab (tab switch within /search).
+  // requestAnimationFrame ensures the scroll happens after the browser has
+  // finished laying out the new DOM, fixing "tabs only visible after scrolling".
   useLayoutEffect(() => {
     if (scrollRestoreRef.current != null) {
       const y = scrollRestoreRef.current;
       scrollRestoreRef.current = null;
-      window.scrollTo(0, y);
+      requestAnimationFrame(() => window.scrollTo(0, y));
     } else {
-      window.scrollTo(0, 0);
+      requestAnimationFrame(() => window.scrollTo(0, 0));
     }
-  }, [view]);
+  }, [view, searchTab]);
 
     const getCatLabel = (key) => {
       if (!key) return '';
@@ -2078,7 +2091,14 @@ useEffect(() => {
                 <button
                   role="tab"
                   aria-selected={searchTab !== 'anbieter'}
-                  onClick={() => { setSearchTab('kurse'); window.scrollTo(0, 0); }}
+                  onClick={() => {
+                    if (searchTab === 'kurse') return; // already on Kurse tab
+                    const params = new URLSearchParams(window.location.search);
+                    params.delete('tab');
+                    const newUrl = '/search' + (params.toString() ? '?' + params.toString() : '');
+                    window.history.pushState({ view: 'search' }, '', newUrl);
+                    // syncFromUrl handles setSearchTab + setView via locationchange
+                  }}
                   className={`px-5 py-3 text-sm font-semibold border-b-2 transition-colors ${searchTab !== 'anbieter' ? 'border-orange-500 text-orange-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
                 >
                   Kurse
@@ -2086,7 +2106,13 @@ useEffect(() => {
                 <button
                   role="tab"
                   aria-selected={searchTab === 'anbieter'}
-                  onClick={() => { setSearchTab('anbieter'); window.scrollTo(0, 0); }}
+                  onClick={() => {
+                    if (searchTab === 'anbieter') return; // already on Anbieter tab
+                    const params = new URLSearchParams(window.location.search);
+                    params.set('tab', 'anbieter');
+                    window.history.pushState({ view: 'search' }, '', '/search?' + params.toString());
+                    // syncFromUrl handles setSearchTab + setView via locationchange
+                  }}
                   className={`px-5 py-3 text-sm font-semibold border-b-2 transition-colors ${searchTab === 'anbieter' ? 'border-orange-500 text-orange-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
                 >
                   Anbieter
