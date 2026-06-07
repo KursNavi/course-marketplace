@@ -193,8 +193,10 @@ export default function ProviderDirectory({ t, setView, embedded = false }) {
     syncTypeFromUrl(); // initial read
 
     window.addEventListener('popstate', syncTypeFromUrl);
+    window.addEventListener('locationchange', syncTypeFromUrl);
     return () => {
       window.removeEventListener('popstate', syncTypeFromUrl);
+      window.removeEventListener('locationchange', syncTypeFromUrl);
     };
   }, [types, selectedType, changeType]);
 

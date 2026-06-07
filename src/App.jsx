@@ -12,6 +12,12 @@ import { refreshCoursesAfterMutation } from './lib/courseRefresh';
 import { trackPageView } from './lib/analytics';
 import { useTaxonomy } from './hooks/useTaxonomy';
 
+// Disable browser scroll auto-restoration synchronously so it can't override
+// React's scroll-to-top in useLayoutEffect before scrollRestoration is set in useEffect.
+if (typeof window !== 'undefined') {
+  window.history.scrollRestoration = 'manual';
+}
+
 const CHUNK_RELOAD_KEY = 'chunk_reload';
 const CHUNK_RELOAD_COOLDOWN_MS = 10000;
 

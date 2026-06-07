@@ -112,15 +112,17 @@ export const Navbar = ({ t, user, lang = 'de', setLang, setView, handleLogout, s
     window.history.pushState({ view: viewName }, '', url);
   };
 
-  // Navigate to Anbieter tab in integrated search with a pre-selected segment
+  // Navigate to Anbieter tab in integrated search with a pre-selected segment.
+  // Preserve existing URL params (e.g. q) so the search query is not lost.
   const navToAnbieter = (segmentKey) => {
-    // Keep URL type param as the legacy slug (e.g. beruflich) so SearchPageView and
-    // ProviderDirectory can both read and normalize it consistently.
     setAnbieterMenuOpen(false);
     setMobileMenuOpen(false);
     setMobileAnbieterOpen(false);
     window.scrollTo(0, 0);
-    window.history.pushState({ view: 'search' }, '', `/search?tab=anbieter&type=${segmentKey}`);
+    const params = new URLSearchParams(window.location.search);
+    params.set('tab', 'anbieter');
+    params.set('type', segmentKey);
+    window.history.pushState({ view: 'search' }, '', `/search?${params.toString()}`);
   };
 
   return (
