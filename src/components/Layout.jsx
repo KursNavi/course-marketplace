@@ -169,7 +169,7 @@ export const Navbar = ({ t, user, lang = 'de', setLang, setView, handleLogout, s
                   <ChevronDown className={`w-3 h-3 ml-1 transition-transform duration-200 ${anbieterMenuOpen ? 'rotate-180' : ''}`} />
                 </span>
                 {anbieterMenuOpen && (
-                  <div className="absolute left-0 top-full mt-1 w-56 bg-white rounded-xl shadow-2xl border border-gray-100 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div data-testid="anbieter-dropdown" className="absolute left-0 top-full mt-1 w-56 bg-white rounded-xl shadow-2xl border border-gray-100 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
                     {segmentButtons.map(({ key, label, Icon, config }) => (
                       <button
                         key={key}

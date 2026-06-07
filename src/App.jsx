@@ -288,7 +288,10 @@ export default function KursNaviPro() {  // 1. Initial State Logic
    const [fetchError, setFetchError] = useState(false);
   
   // UI State
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(() => {
+    if (window.location.pathname !== '/search') return '';
+    return new URLSearchParams(window.location.search).get('q') || '';
+  });
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [selectedTeacher, setSelectedTeacher] = useState(null);
   const [editingCourse, setEditingCourse] = useState(null);

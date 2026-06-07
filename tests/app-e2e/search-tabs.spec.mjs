@@ -178,10 +178,11 @@ test.describe('Search Tabs — Kurse / Anbieter', () => {
     const anbieterMenu = page.getByText('Anbieter finden').first();
     await expect(anbieterMenu).toBeVisible({ timeout: 15_000 });
 
-    // Click on a segment option in the dropdown
+    // Click on a segment option scoped within the dropdown (avoids hitting the MegaMenu)
     await anbieterMenu.hover();
-    const segmentBtn = page.getByRole('button', { name: /Beruflich/i }).first();
-    if (await segmentBtn.isVisible({ timeout: 3_000 }).catch(() => false)) {
+    const dropdown = page.locator('[data-testid="anbieter-dropdown"]');
+    if (await dropdown.isVisible({ timeout: 3_000 }).catch(() => false)) {
+      const segmentBtn = dropdown.getByRole('button', { name: /Beruflich/i }).first();
       await segmentBtn.click();
       await expect(page).toHaveURL(/\/search\?.*tab=anbieter/, { timeout: 5_000 });
     }
