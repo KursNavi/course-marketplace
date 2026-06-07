@@ -15,7 +15,7 @@ import ProviderCard from './ProviderCard';
  * - SEO: Meta tags, canonical URL, schema.org
  * - Pagination/Load more
  */
-export default function ProviderDirectory({ t, setView }) {
+export default function ProviderDirectory({ t, setView, embedded = false }) {
   const [providers, setProviders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -272,7 +272,7 @@ export default function ProviderDirectory({ t, setView }) {
     (verifiedOnly ? 1 : 0);
 
   return (
-    <div className="min-h-screen bg-beige pt-24 pb-16">
+    <div className={`min-h-screen bg-beige ${embedded ? 'pt-6' : 'pt-24'} pb-16`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         {/* Header */}
         <div className="text-center mb-8">
