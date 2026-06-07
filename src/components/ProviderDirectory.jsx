@@ -29,8 +29,13 @@ export default function ProviderDirectory({ t, setView, embedded = false }) {
   const [selectedArea, setSelectedArea] = useState('');   // level2 id
   const [selectedSpecialty, setSelectedSpecialty] = useState(''); // level3 id
   const [selectedFocus, setSelectedFocus] = useState('');  // level4 id
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchInput, setSearchInput] = useState('');
+  // Initialize from URL q param so the search term is preserved when switching tabs
+  const [searchQuery, setSearchQuery] = useState(() => {
+    return new URLSearchParams(window.location.search).get('q') || '';
+  });
+  const [searchInput, setSearchInput] = useState(() => {
+    return new URLSearchParams(window.location.search).get('q') || '';
+  });
 
   const [verifiedOnly, setVerifiedOnly] = useState(false);
 
@@ -159,27 +164,36 @@ export default function ProviderDirectory({ t, setView, embedded = false }) {
     setSelectedFocus('');
   }, []);
 
-  // Read type from URL param and react to header category switches
+  // Normalize URL type slugs from the courses search (e.g. 'beruflich')
+  // to the DB taxonomy slugs used by ProviderDirectory ('professionell')
+  const URL_TO_DB_TYPE_PROVIDER = {
+    beruflich: 'professionell',
+    privat_hobby: 'privat',
+    kinder_jugend: 'kinder',
+  };
+
+  // Read type from URL param — normalize legacy course-search slugs to DB slugs
   useEffect(() => {
     if (types.length === 0) return;
 
     const syncTypeFromUrl = () => {
       const params = new URLSearchParams(window.location.search);
       const typeParam = params.get('type');
-      if (typeParam) {
-        const matched = types.find(t => t.slug === typeParam);
+      const normalizedType = typeParam
+        ? (URL_TO_DB_TYPE_PROVIDER[typeParam] || typeParam)
+        : null;
+      if (normalizedType) {
+        const matched = types.find(t => t.slug === normalizedType);
         if (matched && matched.id !== selectedType) changeType(matched.id);
       } else if (!selectedType) {
-        changeType(types[0].id);
+        changeType(types[0]?.id || '');
       }
     };
 
     syncTypeFromUrl(); // initial read
 
-    window.addEventListener('anbieter-type-change', syncTypeFromUrl);
     window.addEventListener('popstate', syncTypeFromUrl);
     return () => {
-      window.removeEventListener('anbieter-type-change', syncTypeFromUrl);
       window.removeEventListener('popstate', syncTypeFromUrl);
     };
   }, [types, selectedType, changeType]);

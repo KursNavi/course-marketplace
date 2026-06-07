@@ -62,9 +62,22 @@ async function mockProviderApi(page) {
 
 test.describe('Provider Directory & Profile (app-e2e)', () => {
 
-  test('visitor can browse provider directory', async ({ page }) => {
+  test('/anbieter redirects to /search?tab=anbieter', async ({ page }) => {
     await mockProviderApi(page);
     await page.goto('/anbieter');
+
+    // Client-side redirect should happen
+    await expect(page).toHaveURL(/\/search\?.*tab=anbieter/, { timeout: 10_000 });
+
+    // The Anbieter tab and provider directory should be visible
+    const anbieterTab = page.getByRole('tab', { name: 'Anbieter' });
+    await expect(anbieterTab).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator('h1')).toBeVisible({ timeout: 10_000 });
+  });
+
+  test('visitor can browse provider directory via /search?tab=anbieter', async ({ page }) => {
+    await mockProviderApi(page);
+    await page.goto('/search?tab=anbieter');
 
     // Wait for the directory to load
     await expect(page.locator('h1')).toBeVisible({ timeout: 15_000 });
@@ -80,7 +93,7 @@ test.describe('Provider Directory & Profile (app-e2e)', () => {
 
   test('provider directory filters by canton', async ({ page }) => {
     await mockProviderApi(page);
-    await page.goto('/anbieter');
+    await page.goto('/search?tab=anbieter');
     await expect(page.locator('h1')).toBeVisible({ timeout: 15_000 });
 
     const cantonSelect = page.locator('select').filter({ hasText: 'Alle Kantone' });

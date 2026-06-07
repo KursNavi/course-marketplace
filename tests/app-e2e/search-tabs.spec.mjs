@@ -35,10 +35,23 @@ async function mockProviderApi(page) {
 
 test.describe('Search Tabs — Kurse / Anbieter', () => {
 
+  test('tabs are immediately visible on page load (no loading spinner blocking)', async ({ page }) => {
+    await mockProviderApi(page);
+    await page.goto('/search');
+
+    // Tabs must be visible immediately — without needing to scroll
+    const kursTab = page.getByRole('tab', { name: 'Kurse' });
+    const anbieterTab = page.getByRole('tab', { name: 'Anbieter' });
+    await expect(kursTab).toBeVisible({ timeout: 10_000 });
+    await expect(anbieterTab).toBeVisible({ timeout: 5_000 });
+
+    // The global "Lade Kurse..." spinner must NOT appear when on search view
+    await expect(page.getByText('Lade Kurse...')).not.toBeVisible();
+  });
+
   test('default tab is Kurse and shows course results', async ({ page }) => {
     await page.goto('/search');
 
-    // Tab bar must be visible
     const kursTab = page.getByRole('tab', { name: 'Kurse' });
     const anbieterTab = page.getByRole('tab', { name: 'Anbieter' });
     await expect(kursTab).toBeVisible({ timeout: 15_000 });
@@ -48,12 +61,27 @@ test.describe('Search Tabs — Kurse / Anbieter', () => {
     await expect(kursTab).toHaveAttribute('aria-selected', 'true');
     await expect(anbieterTab).toHaveAttribute('aria-selected', 'false');
 
-    // Course results counter is visible (not provider directory)
+    // Course results counter is visible
     const resultsCounter = page.getByTestId('results-counter');
     await expect(resultsCounter).toBeVisible({ timeout: 10_000 });
 
     // URL does NOT contain tab=anbieter
     await expect(page).not.toHaveURL(/tab=anbieter/);
+  });
+
+  test('/search?tab=anbieter loads Anbieter tab directly without "Kurse laden"', async ({ page }) => {
+    await mockProviderApi(page);
+    await page.goto('/search?tab=anbieter');
+
+    // No "Lade Kurse..." spinner
+    await expect(page.getByText('Lade Kurse...')).not.toBeVisible();
+
+    const anbieterTab = page.getByRole('tab', { name: 'Anbieter' });
+    await expect(anbieterTab).toBeVisible({ timeout: 15_000 });
+    await expect(anbieterTab).toHaveAttribute('aria-selected', 'true');
+
+    // Provider directory heading is visible
+    await expect(page.locator('h1')).toBeVisible({ timeout: 10_000 });
   });
 
   test('clicking Anbieter tab shows provider directory and updates URL', async ({ page }) => {
@@ -90,7 +118,7 @@ test.describe('Search Tabs — Kurse / Anbieter', () => {
     await expect(resultsCounter).toBeVisible({ timeout: 10_000 });
   });
 
-  test('search query is preserved when switching to Anbieter tab', async ({ page }) => {
+  test('search query q is preserved when switching to Anbieter tab', async ({ page }) => {
     await mockProviderApi(page);
     await page.goto('/search?q=Yoga');
 
@@ -103,7 +131,17 @@ test.describe('Search Tabs — Kurse / Anbieter', () => {
     await expect(page).toHaveURL(/tab=anbieter/);
   });
 
-  test('segment filter is preserved when switching to Anbieter tab', async ({ page }) => {
+  test('Anbieter search field pre-fills from URL q param', async ({ page }) => {
+    await mockProviderApi(page);
+    await page.goto('/search?q=Yoga&tab=anbieter');
+
+    // Provider search input should contain 'Yoga'
+    const providerSearch = page.locator('input[placeholder*="Anbieter suchen"]');
+    await expect(providerSearch).toBeVisible({ timeout: 10_000 });
+    await expect(providerSearch).toHaveValue('Yoga');
+  });
+
+  test('segment type is preserved when switching to Anbieter tab', async ({ page }) => {
     await mockProviderApi(page);
     await page.goto('/search?type=beruflich');
 
@@ -114,18 +152,53 @@ test.describe('Search Tabs — Kurse / Anbieter', () => {
     // URL must contain type=beruflich and tab=anbieter
     await expect(page).toHaveURL(/type=beruflich/, { timeout: 5_000 });
     await expect(page).toHaveURL(/tab=anbieter/);
+
+    // Anbieter-Tab should show beruflich context ("berufliche Weiterbildung")
+    await expect(page.locator('h1')).toContainText('beruflich', { timeout: 10_000, ignoreCase: true });
   });
 
-  test('direct link /search?tab=anbieter loads Anbieter tab', async ({ page }) => {
+  test('/anbieter redirects to /search?tab=anbieter', async ({ page }) => {
     await mockProviderApi(page);
-    await page.goto('/search?tab=anbieter');
+    await page.goto('/anbieter');
 
+    // After redirect, URL should be /search?tab=anbieter
+    await expect(page).toHaveURL(/\/search\?.*tab=anbieter/, { timeout: 10_000 });
+
+    // Anbieter tab should be active
     const anbieterTab = page.getByRole('tab', { name: 'Anbieter' });
-    await expect(anbieterTab).toBeVisible({ timeout: 15_000 });
+    await expect(anbieterTab).toBeVisible({ timeout: 10_000 });
     await expect(anbieterTab).toHaveAttribute('aria-selected', 'true');
+  });
 
-    // Provider directory should be rendered (h1 visible)
-    await expect(page.locator('h1')).toBeVisible({ timeout: 10_000 });
+  test('header link "Anbieter finden" leads to /search?tab=anbieter', async ({ page }) => {
+    await mockProviderApi(page);
+    await page.goto('/');
+
+    // Hover over the "Anbieter finden" nav item to open the dropdown
+    const anbieterMenu = page.getByText('Anbieter finden').first();
+    await expect(anbieterMenu).toBeVisible({ timeout: 15_000 });
+
+    // Click on a segment option in the dropdown
+    await anbieterMenu.hover();
+    const segmentBtn = page.getByRole('button', { name: /Beruflich/i }).first();
+    if (await segmentBtn.isVisible({ timeout: 3_000 }).catch(() => false)) {
+      await segmentBtn.click();
+      await expect(page).toHaveURL(/\/search\?.*tab=anbieter/, { timeout: 5_000 });
+    }
+  });
+
+  test('q and type are preserved when switching Anbieter → Kurse', async ({ page }) => {
+    await mockProviderApi(page);
+    await page.goto('/search?q=Yoga&type=beruflich&tab=anbieter');
+
+    const kursTab = page.getByRole('tab', { name: 'Kurse' });
+    await expect(kursTab).toBeVisible({ timeout: 15_000 });
+    await kursTab.click();
+
+    // URL must retain q and type but not tab=anbieter
+    await expect(page).toHaveURL(/q=Yoga/, { timeout: 5_000 });
+    await expect(page).toHaveURL(/type=beruflich/);
+    await expect(page).not.toHaveURL(/tab=anbieter/);
   });
 
 });

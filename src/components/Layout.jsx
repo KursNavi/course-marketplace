@@ -112,16 +112,15 @@ export const Navbar = ({ t, user, lang = 'de', setLang, setView, handleLogout, s
     window.history.pushState({ view: viewName }, '', url);
   };
 
-  // Navigate to Anbietersuche with a pre-selected category
+  // Navigate to Anbieter tab in integrated search with a pre-selected segment
   const navToAnbieter = (segmentKey) => {
-    const slugMap = { beruflich: 'professionell', privat_hobby: 'privat', kinder_jugend: 'kinder' };
-    const dbSlug = slugMap[segmentKey] || segmentKey;
+    // Keep URL type param as the legacy slug (e.g. beruflich) so SearchPageView and
+    // ProviderDirectory can both read and normalize it consistently.
     setAnbieterMenuOpen(false);
     setMobileMenuOpen(false);
     setMobileAnbieterOpen(false);
     window.scrollTo(0, 0);
-    window.history.pushState({ view: 'provider-directory' }, '', `/anbieter?type=${dbSlug}`);
-    window.dispatchEvent(new Event('anbieter-type-change'));
+    window.history.pushState({ view: 'search' }, '', `/search?tab=anbieter&type=${segmentKey}`);
   };
 
   return (
@@ -511,7 +510,7 @@ export const Footer = ({ t, setView }) => {
             <li><a href="/private" onClick={(e) => { e.preventDefault(); window.scrollTo(0, 0); window.history.pushState({}, '', '/private'); window.dispatchEvent(new Event('locationchange')); }} className="hover:text-primary transition-colors">{t.nav_private}</a></li>
             <li><a href="/children" onClick={(e) => { e.preventDefault(); window.scrollTo(0, 0); window.history.pushState({}, '', '/children'); window.dispatchEvent(new Event('locationchange')); }} className="hover:text-primary transition-colors">{t.nav_kids}</a></li>
             <li><a href="/blog" onClick={(e) => { e.preventDefault(); navTo('blog'); }} className="hover:text-primary transition-colors">{t.nav_news}</a></li>
-            <li><a href="/anbieter" onClick={(e) => { e.preventDefault(); navTo('provider-directory'); }} className="hover:text-primary transition-colors">{t.nav_providers || 'Anbieter-Verzeichnis'}</a></li>
+            <li><a href="/search?tab=anbieter" onClick={(e) => { e.preventDefault(); window.scrollTo(0, 0); window.history.pushState({ view: 'search' }, '', '/search?tab=anbieter'); window.dispatchEvent(new Event('locationchange')); }} className="hover:text-primary transition-colors">{t.nav_providers || 'Anbieter finden'}</a></li>
             <li><a href="/teacher-hub" onClick={(e) => { e.preventDefault(); navTo('teacher-hub'); }} className="hover:text-primary transition-colors">{t.nav_for_providers}</a></li>
           </ul>
         </div>

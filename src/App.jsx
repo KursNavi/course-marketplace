@@ -192,7 +192,13 @@ export default function KursNaviPro() {  // 1. Initial State Logic
       if (path.startsWith('/blog/')) return 'blog-detail';
 
       // PROVIDER DIRECTORY & PROFILE ROUTING
-      if (path === '/anbieter') return 'provider-directory';
+      // /anbieter directory → redirect to integrated search with anbieter tab
+      if (path === '/anbieter') {
+        const params = new URLSearchParams(window.location.search);
+        params.set('tab', 'anbieter');
+        window.history.replaceState({}, '', '/search?' + params.toString());
+        return 'search';
+      }
       if (path.startsWith('/anbieter/')) return 'provider-profile';
 
       // TEACHER PROFILE ROUTING (basic teachers without public profile)
@@ -1440,6 +1446,19 @@ export default function KursNaviPro() {  // 1. Initial State Logic
       // Skip if triggered by our own URL-sync useEffect (not user navigation)
       if (isUrlSyncingRef.current) return;
       setRoutePath(`${window.location.pathname}${window.location.search}`);
+
+      // Redirect /anbieter directory (not individual profiles) to /search?tab=anbieter
+      if (window.location.pathname === '/anbieter') {
+        const params = new URLSearchParams(window.location.search);
+        params.set('tab', 'anbieter');
+        isUrlSyncingRef.current = true;
+        window.history.replaceState({ view: 'search' }, '', '/search?' + params.toString());
+        isUrlSyncingRef.current = false;
+        setSearchTab('anbieter');
+        setView('search');
+        return;
+      }
+
       const nextView = getInitialView();
       const path = window.location.pathname;
 
@@ -2023,8 +2042,10 @@ useEffect(() => {
         </div>
       }>
 
-      {/* GLOBAL LOADING STATE - Prevents White Screen / Redirects */}
-      {loading && (
+      {/* GLOBAL LOADING STATE - Prevents White Screen / Redirects
+          Suppressed on search view: SearchPageView and ProviderDirectory
+          handle their own loading states, so the tab bar renders immediately. */}
+      {loading && view !== 'search' && (
           <div className="flex flex-col items-center justify-center min-h-[60vh]">
               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mb-4"></div>
               <p className="text-gray-500 font-sans animate-pulse">Lade Kurse...</p>
@@ -2048,7 +2069,7 @@ useEffect(() => {
                 <button
                   role="tab"
                   aria-selected={searchTab !== 'anbieter'}
-                  onClick={() => setSearchTab('kurse')}
+                  onClick={() => { setSearchTab('kurse'); window.scrollTo(0, 0); }}
                   className={`px-5 py-3 text-sm font-semibold border-b-2 transition-colors ${searchTab !== 'anbieter' ? 'border-orange-500 text-orange-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
                 >
                   Kurse
@@ -2056,7 +2077,7 @@ useEffect(() => {
                 <button
                   role="tab"
                   aria-selected={searchTab === 'anbieter'}
-                  onClick={() => setSearchTab('anbieter')}
+                  onClick={() => { setSearchTab('anbieter'); window.scrollTo(0, 0); }}
                   className={`px-5 py-3 text-sm font-semibold border-b-2 transition-colors ${searchTab === 'anbieter' ? 'border-orange-500 text-orange-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
                 >
                   Anbieter
