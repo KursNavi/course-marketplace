@@ -126,9 +126,11 @@ describe('App navigation stability', () => {
     expect(window.location.pathname).toBe('/blog');
     expect(screen.queryByText(/APP ABGESTÜRZT/i)).not.toBeInTheDocument();
 
+    // /anbieter redirects to /search?tab=anbieter — ProviderDirectory is embedded in search view
     await navigateTo('/anbieter');
-    await waitFor(() => expect(screen.getByTestId('provider-page')).toBeInTheDocument());
-    expect(window.location.pathname).toBe('/anbieter');
+    await waitFor(() => expect(screen.getByTestId('provider-page')).toBeInTheDocument(), { timeout: 5_000 });
+    expect(window.location.pathname).toBe('/search');
+    expect(window.location.search).toContain('tab=anbieter');
     expect(screen.queryByText(/APP ABGESTÜRZT/i)).not.toBeInTheDocument();
   });
 });

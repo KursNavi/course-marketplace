@@ -112,16 +112,17 @@ export const Navbar = ({ t, user, lang = 'de', setLang, setView, handleLogout, s
     window.history.pushState({ view: viewName }, '', url);
   };
 
-  // Navigate to Anbietersuche with a pre-selected category
+  // Navigate to Anbieter tab in integrated search with a pre-selected segment.
+  // Preserve existing URL params (e.g. q) so the search query is not lost.
   const navToAnbieter = (segmentKey) => {
-    const slugMap = { beruflich: 'professionell', privat_hobby: 'privat', kinder_jugend: 'kinder' };
-    const dbSlug = slugMap[segmentKey] || segmentKey;
     setAnbieterMenuOpen(false);
     setMobileMenuOpen(false);
     setMobileAnbieterOpen(false);
     window.scrollTo(0, 0);
-    window.history.pushState({ view: 'provider-directory' }, '', `/anbieter?type=${dbSlug}`);
-    window.dispatchEvent(new Event('anbieter-type-change'));
+    const params = new URLSearchParams(window.location.search);
+    params.set('tab', 'anbieter');
+    params.set('type', segmentKey);
+    window.history.pushState({ view: 'search' }, '', `/search?${params.toString()}`);
   };
 
   return (
@@ -164,7 +165,7 @@ export const Navbar = ({ t, user, lang = 'de', setLang, setView, handleLogout, s
                 onMouseLeave={() => { anbieterTimeoutRef.current = setTimeout(() => setAnbieterMenuOpen(false), 150); }}
               >
                 <span className="flex items-center px-3 py-2 rounded-md text-sm font-medium text-gray-500 hover:text-primary transition-colors font-sans cursor-default select-none">
-                  {t.nav_providers || 'Anbietersuche'}
+                  {t.nav_providers || 'Anbieter finden'}
                   <ChevronDown className={`w-3 h-3 ml-1 transition-transform duration-200 ${anbieterMenuOpen ? 'rotate-180' : ''}`} />
                 </span>
                 {anbieterMenuOpen && (
@@ -268,7 +269,7 @@ export const Navbar = ({ t, user, lang = 'de', setLang, setView, handleLogout, s
                 onClick={() => setMobileAnbieterOpen(!mobileAnbieterOpen)}
                 className="flex items-center justify-between w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-primaryLight hover:text-primary font-sans"
               >
-                {t.nav_providers || 'Anbietersuche'}
+                {t.nav_providers || 'Anbieter finden'}
                 <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${mobileAnbieterOpen ? 'rotate-180' : ''}`} />
               </button>
               {mobileAnbieterOpen && (
@@ -511,7 +512,7 @@ export const Footer = ({ t, setView }) => {
             <li><a href="/private" onClick={(e) => { e.preventDefault(); window.scrollTo(0, 0); window.history.pushState({}, '', '/private'); window.dispatchEvent(new Event('locationchange')); }} className="hover:text-primary transition-colors">{t.nav_private}</a></li>
             <li><a href="/children" onClick={(e) => { e.preventDefault(); window.scrollTo(0, 0); window.history.pushState({}, '', '/children'); window.dispatchEvent(new Event('locationchange')); }} className="hover:text-primary transition-colors">{t.nav_kids}</a></li>
             <li><a href="/blog" onClick={(e) => { e.preventDefault(); navTo('blog'); }} className="hover:text-primary transition-colors">{t.nav_news}</a></li>
-            <li><a href="/anbieter" onClick={(e) => { e.preventDefault(); navTo('provider-directory'); }} className="hover:text-primary transition-colors">{t.nav_providers || 'Anbieter-Verzeichnis'}</a></li>
+            <li><a href="/search?tab=anbieter" onClick={(e) => { e.preventDefault(); window.scrollTo(0, 0); window.history.pushState({ view: 'search' }, '', '/search?tab=anbieter'); window.dispatchEvent(new Event('locationchange')); }} className="hover:text-primary transition-colors">{t.nav_providers || 'Anbieter finden'}</a></li>
             <li><a href="/teacher-hub" onClick={(e) => { e.preventDefault(); navTo('teacher-hub'); }} className="hover:text-primary transition-colors">{t.nav_for_providers}</a></li>
           </ul>
         </div>

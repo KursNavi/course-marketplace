@@ -12,6 +12,12 @@ import { refreshCoursesAfterMutation } from './lib/courseRefresh';
 import { trackPageView } from './lib/analytics';
 import { useTaxonomy } from './hooks/useTaxonomy';
 
+// Disable browser scroll auto-restoration synchronously so it can't override
+// React's scroll-to-top in useLayoutEffect before scrollRestoration is set in useEffect.
+if (typeof window !== 'undefined') {
+  window.history.scrollRestoration = 'manual';
+}
+
 const CHUNK_RELOAD_KEY = 'chunk_reload';
 const CHUNK_RELOAD_COOLDOWN_MS = 10000;
 
@@ -192,7 +198,13 @@ export default function KursNaviPro() {  // 1. Initial State Logic
       if (path.startsWith('/blog/')) return 'blog-detail';
 
       // PROVIDER DIRECTORY & PROFILE ROUTING
-      if (path === '/anbieter') return 'provider-directory';
+      // /anbieter directory → redirect to integrated search with anbieter tab
+      if (path === '/anbieter') {
+        const params = new URLSearchParams(window.location.search);
+        params.set('tab', 'anbieter');
+        window.history.replaceState({}, '', '/search?' + params.toString());
+        return 'search';
+      }
       if (path.startsWith('/anbieter/')) return 'provider-profile';
 
       // TEACHER PROFILE ROUTING (basic teachers without public profile)
@@ -356,6 +368,10 @@ export default function KursNaviPro() {  // 1. Initial State Logic
   const [filterDirectBooking, setFilterDirectBooking] = useState(false);
   const [selectedSaule, setSelectedSaule] = useState("");
   const [selectedKursart, setSelectedKursart] = useState("");
+  const [searchTab, setSearchTab] = useState(() => {
+    if (window.location.pathname !== '/search') return 'kurse';
+    return new URLSearchParams(window.location.search).get('tab') === 'anbieter' ? 'anbieter' : 'kurse';
+  });
 
   const catMenuRef = useRef(null);
   const locMenuRef = useRef(null);
@@ -1436,6 +1452,19 @@ export default function KursNaviPro() {  // 1. Initial State Logic
       // Skip if triggered by our own URL-sync useEffect (not user navigation)
       if (isUrlSyncingRef.current) return;
       setRoutePath(`${window.location.pathname}${window.location.search}`);
+
+      // Redirect /anbieter directory (not individual profiles) to /search?tab=anbieter
+      if (window.location.pathname === '/anbieter') {
+        const params = new URLSearchParams(window.location.search);
+        params.set('tab', 'anbieter');
+        isUrlSyncingRef.current = true;
+        window.history.replaceState({ view: 'search' }, '', '/search?' + params.toString());
+        isUrlSyncingRef.current = false;
+        setSearchTab('anbieter');
+        setView('search');
+        return;
+      }
+
       const nextView = getInitialView();
       const path = window.location.pathname;
 
@@ -1545,11 +1574,12 @@ export default function KursNaviPro() {  // 1. Initial State Logic
       const bookingParam = query.get('booking');
       const sauleParam = query.get('saule');
       const kursartParam = query.get('kursart');
+      const tabParam = query.get('tab');
 
       // Reset filters first when navigating to search, then apply URL params
       if (nextView === 'search') {
         const hasAnyParam = typeParam || areaParam || specParam || focusParam || qParam || locParam || levelParam
-          || langParam || deliveryParam || fromParam || toParam || priceParam || proParam || bookingParam || sauleParam;
+          || langParam || deliveryParam || fromParam || toParam || priceParam || proParam || bookingParam || sauleParam || tabParam;
         // Only reset if no params are provided (clean /search navigation)
         if (!hasAnyParam) {
           setSearchType("");
@@ -1567,6 +1597,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
           setFilterPro(false);
           setFilterDirectBooking(false);
           setSelectedSaule("");
+          setSearchTab('kurse');
         } else {
           // Apply URL params — restore present ones, reset missing ones
           if (typeParam) setSearchType(typeParam); else setSearchType("");
@@ -1585,6 +1616,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
           setFilterDirectBooking(bookingParam === '1');
           if (sauleParam) setSelectedSaule(sauleParam); else setSelectedSaule("");
           if (kursartParam) setSelectedKursart(kursartParam); else setSelectedKursart("");
+          setSearchTab(tabParam === 'anbieter' ? 'anbieter' : 'kurse');
         }
       }
     };
@@ -1661,6 +1693,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
     if (filterDirectBooking) params.set('booking', '1');
     if (selectedSaule) params.set('saule', selectedSaule);
     if (selectedKursart) params.set('kursart', selectedKursart);
+    if (searchTab === 'anbieter') params.set('tab', 'anbieter');
 
     const newUrl = '/search' + (params.toString() ? '?' + params.toString() : '');
     const currentUrl = window.location.pathname + window.location.search;
@@ -1671,7 +1704,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
     }
   }, [view, searchType, searchArea, searchSpecialty, searchFocus, searchQuery,
       selectedLocations, filterLevel, selectedLanguages, selectedDeliveryTypes,
-      filterDateFrom, filterDateTo, filterPriceMax, filterPro, filterDirectBooking, selectedSaule, selectedKursart]);
+      filterDateFrom, filterDateTo, filterPriceMax, filterPro, filterDirectBooking, selectedSaule, selectedKursart, searchTab]);
 
   useEffect(() => {
     let cancelled = false;
@@ -2015,8 +2048,10 @@ useEffect(() => {
         </div>
       }>
 
-      {/* GLOBAL LOADING STATE - Prevents White Screen / Redirects */}
-      {loading && (
+      {/* GLOBAL LOADING STATE - Prevents White Screen / Redirects
+          Suppressed on search view: SearchPageView and ProviderDirectory
+          handle their own loading states, so the tab bar renders immediately. */}
+      {loading && view !== 'search' && (
           <div className="flex flex-col items-center justify-center min-h-[60vh]">
               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mb-4"></div>
               <p className="text-gray-500 font-sans animate-pulse">Lade Kurse...</p>
@@ -2032,7 +2067,35 @@ useEffect(() => {
          {view === 'landing-kids' && ( <LandingView title={t.landing_kids_title} subtitle={t.landing_kids_sub} variant="kids" searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearchSubmit={handleSearchSubmit} setView={setView} setSearchType={setSearchType} t={t} /> )}
 
       {view === 'search' && (
-          <SearchPageView courses={courses} filteredCoursesPreCategory={filteredCoursesPreCategory} searchQuery={searchQuery} setSearchQuery={setSearchQuery} searchType={searchType} setSearchType={setSearchType} searchArea={searchArea} setSearchArea={setSearchArea} searchSpecialty={searchSpecialty} setSearchSpecialty={setSearchSpecialty} searchFocus={searchFocus} setSearchFocus={setSearchFocus} selectedLocations={selectedLocations} setSelectedLocations={setSelectedLocations} locMenuOpen={locMenuOpen} setLocMenuOpen={setLocMenuOpen} locMenuRef={locMenuRef} loading={loading} filteredCourses={filteredCourses} setSelectedCourse={setSelectedCourse} setView={setView} t={t} getCatLabel={getCatLabel} filterDateFrom={filterDateFrom} setFilterDateFrom={setFilterDateFrom} filterDateTo={filterDateTo} setFilterDateTo={setFilterDateTo} filterPriceMax={filterPriceMax} setFilterPriceMax={setFilterPriceMax} filterLevel={filterLevel} setFilterLevel={setFilterLevel} filterPro={filterPro} setFilterPro={setFilterPro} filterDirectBooking={filterDirectBooking} setFilterDirectBooking={setFilterDirectBooking} selectedLanguages={selectedLanguages} setSelectedLanguages={setSelectedLanguages} langMenuOpen={langMenuOpen} setLangMenuOpen={setLangMenuOpen} langMenuRef={langMenuRef} selectedDeliveryTypes={selectedDeliveryTypes} setSelectedDeliveryTypes={setSelectedDeliveryTypes} deliveryMenuOpen={deliveryMenuOpen} setDeliveryMenuOpen={setDeliveryMenuOpen} deliveryMenuRef={deliveryMenuRef} savedCourseIds={savedCourseIds} onToggleSaveCourse={toggleSaveCourse} user={user} selectedSaule={selectedSaule} setSelectedSaule={setSelectedSaule} selectedKursart={selectedKursart} setSelectedKursart={setSelectedKursart} fetchError={fetchError} onRetry={fetchCourses} setSelectedCatPath={setSelectedCatPath} />
+        <>
+          {/* Kurse / Anbieter Tab Bar */}
+          <div className="bg-white border-b shadow-sm">
+            <div className="max-w-7xl mx-auto px-4">
+              <div className="flex" role="tablist" aria-label="Kurse oder Anbieter suchen">
+                <button
+                  role="tab"
+                  aria-selected={searchTab !== 'anbieter'}
+                  onClick={() => { setSearchTab('kurse'); window.scrollTo(0, 0); }}
+                  className={`px-5 py-3 text-sm font-semibold border-b-2 transition-colors ${searchTab !== 'anbieter' ? 'border-orange-500 text-orange-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+                >
+                  Kurse
+                </button>
+                <button
+                  role="tab"
+                  aria-selected={searchTab === 'anbieter'}
+                  onClick={() => { setSearchTab('anbieter'); window.scrollTo(0, 0); }}
+                  className={`px-5 py-3 text-sm font-semibold border-b-2 transition-colors ${searchTab === 'anbieter' ? 'border-orange-500 text-orange-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+                >
+                  Anbieter
+                </button>
+              </div>
+            </div>
+          </div>
+          {searchTab === 'anbieter'
+            ? <ProviderDirectory t={t} setView={setView} embedded={true} />
+            : <SearchPageView courses={courses} filteredCoursesPreCategory={filteredCoursesPreCategory} searchQuery={searchQuery} setSearchQuery={setSearchQuery} searchType={searchType} setSearchType={setSearchType} searchArea={searchArea} setSearchArea={setSearchArea} searchSpecialty={searchSpecialty} setSearchSpecialty={setSearchSpecialty} searchFocus={searchFocus} setSearchFocus={setSearchFocus} selectedLocations={selectedLocations} setSelectedLocations={setSelectedLocations} locMenuOpen={locMenuOpen} setLocMenuOpen={setLocMenuOpen} locMenuRef={locMenuRef} loading={loading} filteredCourses={filteredCourses} setSelectedCourse={setSelectedCourse} setView={setView} t={t} getCatLabel={getCatLabel} filterDateFrom={filterDateFrom} setFilterDateFrom={setFilterDateFrom} filterDateTo={filterDateTo} setFilterDateTo={setFilterDateTo} filterPriceMax={filterPriceMax} setFilterPriceMax={setFilterPriceMax} filterLevel={filterLevel} setFilterLevel={setFilterLevel} filterPro={filterPro} setFilterPro={setFilterPro} filterDirectBooking={filterDirectBooking} setFilterDirectBooking={setFilterDirectBooking} selectedLanguages={selectedLanguages} setSelectedLanguages={setSelectedLanguages} langMenuOpen={langMenuOpen} setLangMenuOpen={setLangMenuOpen} langMenuRef={langMenuRef} selectedDeliveryTypes={selectedDeliveryTypes} setSelectedDeliveryTypes={setSelectedDeliveryTypes} deliveryMenuOpen={deliveryMenuOpen} setDeliveryMenuOpen={setDeliveryMenuOpen} deliveryMenuRef={deliveryMenuRef} savedCourseIds={savedCourseIds} onToggleSaveCourse={toggleSaveCourse} user={user} selectedSaule={selectedSaule} setSelectedSaule={setSelectedSaule} selectedKursart={selectedKursart} setSelectedKursart={setSelectedKursart} fetchError={fetchError} onRetry={fetchCourses} setSelectedCatPath={setSelectedCatPath} />
+          }
+        </>
       )}
 
             {view === 'category-location' && (
