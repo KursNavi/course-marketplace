@@ -57,7 +57,35 @@ export default function ProviderDirectory({ t, setView, embedded = false }) {
       subtitle: 'Finden Sie Anbieter für altersgerechte Kurse, Ferienprogramme und Förderangebote für Kinder und Jugendliche.'
     }
   };
-  const introText = INTRO_TEXTS[activeType?.slug] || INTRO_TEXTS.privat;
+
+  // Derive the segment slug from the URL synchronously so the title is correct on first render,
+  // without waiting for the taxonomy to load (fixes flash of wrong "Hobby & Freizeit" title).
+  const [urlDerivedSlug, setUrlDerivedSlug] = useState(() => {
+    const typeParam = new URLSearchParams(window.location.search).get('type');
+    return typeParam ? (URL_TO_DB_TYPE_PROVIDER[typeParam] || typeParam) : null;
+  });
+
+  // Keep urlDerivedSlug in sync when the URL changes (segment switch via tabs or history nav)
+  useEffect(() => {
+    const syncSlug = () => {
+      const typeParam = new URLSearchParams(window.location.search).get('type');
+      setUrlDerivedSlug(typeParam ? (URL_TO_DB_TYPE_PROVIDER[typeParam] || typeParam) : null);
+    };
+    window.addEventListener('popstate', syncSlug);
+    window.addEventListener('locationchange', syncSlug);
+    return () => {
+      window.removeEventListener('popstate', syncSlug);
+      window.removeEventListener('locationchange', syncSlug);
+    };
+  }, []);
+
+  // Use taxonomy-derived slug when available; fall back to URL-derived slug.
+  // No hardcoded default segment: show neutral title if nothing is resolved yet.
+  const resolvedSlug = activeType?.slug || urlDerivedSlug;
+  const introText = INTRO_TEXTS[resolvedSlug] || {
+    title: 'Anbieter in der Schweiz',
+    subtitle: 'Entdecke geprüfte Kursanbieter und Bildungsinstitutionen in der Schweiz.'
+  };
 
   // Pagination
   const [offset, setOffset] = useState(0);
