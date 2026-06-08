@@ -5,6 +5,14 @@ import { BASE_URL } from '../lib/siteConfig';
 import { useTaxonomy } from '../hooks/useTaxonomy';
 import ProviderCard from './ProviderCard';
 
+// Module-level constant — must NOT be inside the component to avoid TDZ errors
+// when referenced by useState lazy initializers or early useEffect calls.
+const URL_TO_DB_TYPE_PROVIDER = {
+  beruflich: 'professionell',
+  privat_hobby: 'privat',
+  kinder_jugend: 'kinder',
+};
+
 /**
  * ProviderDirectory Component
  * Public directory listing of Pro+ providers with published profiles
@@ -191,14 +199,6 @@ export default function ProviderDirectory({ t, setView, embedded = false }) {
     setSelectedSpecialty(newSpecialty);
     setSelectedFocus('');
   }, []);
-
-  // Normalize URL type slugs from the courses search (e.g. 'beruflich')
-  // to the DB taxonomy slugs used by ProviderDirectory ('professionell')
-  const URL_TO_DB_TYPE_PROVIDER = {
-    beruflich: 'professionell',
-    privat_hobby: 'privat',
-    kinder_jugend: 'kinder',
-  };
 
   // Read type from URL param — normalize legacy course-search slugs to DB slugs
   useEffect(() => {
