@@ -202,4 +202,45 @@ test.describe('Search Tabs — Kurse / Anbieter', () => {
     await expect(page).not.toHaveURL(/tab=anbieter/);
   });
 
+  test('browser back/forward restores tab, q and type', async ({ page }) => {
+    await mockProviderApi(page);
+    await page.goto('/search?q=Yoga');
+
+    // 1. Switch to Anbieter tab
+    const anbieterTab = page.getByRole('tab', { name: 'Anbieter' });
+    await expect(anbieterTab).toBeVisible({ timeout: 15_000 });
+    await anbieterTab.click();
+    await expect(page).toHaveURL(/tab=anbieter/, { timeout: 5_000 });
+    await expect(page).toHaveURL(/q=Yoga/);
+
+    // 2. Switch back to Kurse tab
+    const kursTab = page.getByRole('tab', { name: 'Kurse' });
+    await expect(kursTab).toBeVisible({ timeout: 5_000 });
+    await kursTab.click();
+    await expect(page).not.toHaveURL(/tab=anbieter/, { timeout: 5_000 });
+    await expect(page).toHaveURL(/q=Yoga/);
+
+    // 3. Browser Back → should return to Anbieter tab with q=Yoga
+    await page.goBack();
+    await expect(page).toHaveURL(/tab=anbieter/, { timeout: 5_000 });
+    await expect(page).toHaveURL(/q=Yoga/);
+    const anbieterTabBack = page.getByRole('tab', { name: 'Anbieter' });
+    await expect(anbieterTabBack).toHaveAttribute('aria-selected', 'true', { timeout: 5_000 });
+
+    // 4. Browser Forward → should return to Kurse tab with q=Yoga
+    await page.goForward();
+    await expect(page).not.toHaveURL(/tab=anbieter/, { timeout: 5_000 });
+    await expect(page).toHaveURL(/q=Yoga/);
+    const kursTabFwd = page.getByRole('tab', { name: 'Kurse' });
+    await expect(kursTabFwd).toHaveAttribute('aria-selected', 'true', { timeout: 5_000 });
+  });
+
+  test('/anbieter slug profile is NOT redirected to /search?tab=anbieter', async ({ page }) => {
+    // Provider profiles (/anbieter/{slug}) must open the profile page, not redirect
+    await page.goto('/anbieter/some-nonexistent-provider');
+    // Should NOT redirect to /search
+    await expect(page).not.toHaveURL(/\/search/, { timeout: 5_000 });
+    await expect(page).toHaveURL(/\/anbieter\//, { timeout: 5_000 });
+  });
+
 });
