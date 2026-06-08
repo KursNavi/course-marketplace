@@ -47,27 +47,8 @@ export default function ProviderDirectory({ t, setView, embedded = false }) {
 
   const [verifiedOnly, setVerifiedOnly] = useState(false);
 
-  // Derive active segment config for visual theming
-  const activeType = types.find(tp => tp.id === selectedType);
-  const segmentConfig = SEGMENT_CONFIG[activeType?.slug] || SEGMENT_CONFIG.privat;
-
-  const INTRO_TEXTS = {
-    professionell: {
-      title: 'Anbieter für berufliche Weiterbildung',
-      subtitle: 'Finden Sie Schulen und Trainer für Fachkurse, Zertifikate und berufliche Qualifikationen in der Schweiz.'
-    },
-    privat: {
-      title: 'Anbieter für Hobby & Freizeit',
-      subtitle: 'Entdecken Sie Kursanbieter für kreative Kurse, Hobbys und persönliche Weiterbildung in der ganzen Schweiz.'
-    },
-    kinder: {
-      title: 'Anbieter für Kinder & Jugendliche',
-      subtitle: 'Finden Sie Anbieter für altersgerechte Kurse, Ferienprogramme und Förderangebote für Kinder und Jugendliche.'
-    }
-  };
-
-  // Derive the segment slug from the URL synchronously so the title is correct on first render,
-  // without waiting for the taxonomy to load (fixes flash of wrong "Hobby & Freizeit" title).
+  // Derive the segment slug from the URL synchronously so the title/theme is correct on first render,
+  // without waiting for the taxonomy to load (fixes flash of wrong segment title/color).
   const [urlDerivedSlug, setUrlDerivedSlug] = useState(() => {
     const typeParam = new URLSearchParams(window.location.search).get('type');
     return typeParam ? (URL_TO_DB_TYPE_PROVIDER[typeParam] || typeParam) : null;
@@ -87,9 +68,27 @@ export default function ProviderDirectory({ t, setView, embedded = false }) {
     };
   }, []);
 
-  // Use taxonomy-derived slug when available; fall back to URL-derived slug.
-  // No hardcoded default segment: show neutral title if nothing is resolved yet.
+  // Derive active segment — use taxonomy-derived slug when available; fall back to URL-derived slug.
+  // No hardcoded default: show neutral title/theme if nothing is resolved yet.
+  const activeType = types.find(tp => tp.id === selectedType);
   const resolvedSlug = activeType?.slug || urlDerivedSlug;
+  const segmentConfig = SEGMENT_CONFIG[resolvedSlug] || SEGMENT_CONFIG.privat;
+
+  const INTRO_TEXTS = {
+    professionell: {
+      title: 'Anbieter für berufliche Weiterbildung',
+      subtitle: 'Finden Sie Schulen und Trainer für Fachkurse, Zertifikate und berufliche Qualifikationen in der Schweiz.'
+    },
+    privat: {
+      title: 'Anbieter für Hobby & Freizeit',
+      subtitle: 'Entdecken Sie Kursanbieter für kreative Kurse, Hobbys und persönliche Weiterbildung in der ganzen Schweiz.'
+    },
+    kinder: {
+      title: 'Anbieter für Kinder & Jugendliche',
+      subtitle: 'Finden Sie Anbieter für altersgerechte Kurse, Ferienprogramme und Förderangebote für Kinder und Jugendliche.'
+    }
+  };
+
   const introText = INTRO_TEXTS[resolvedSlug] || {
     title: 'Anbieter in der Schweiz',
     subtitle: 'Entdecke geprüfte Kursanbieter und Bildungsinstitutionen in der Schweiz.'
