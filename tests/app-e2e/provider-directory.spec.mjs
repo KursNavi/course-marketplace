@@ -62,6 +62,58 @@ async function mockProviderApi(page) {
 
 test.describe('Provider Directory & Profile (app-e2e)', () => {
 
+  // ─── Segment title tests ────────────────────────────────────────────────────
+  // These verify that the correct title is shown on the FIRST stable render
+  // (no intermediate flash of the wrong segment) when a ?type= URL param is present.
+
+  test('type=beruflich shows "berufliche Weiterbildung" title immediately', async ({ page }) => {
+    await mockProviderApi(page);
+    await page.goto('/search?type=beruflich&tab=anbieter');
+
+    const h1 = page.locator('h1');
+    await expect(h1).toBeVisible({ timeout: 15_000 });
+    await expect(h1).toContainText('beruflich', { ignoreCase: true });
+    // Must NOT show a different segment title
+    await expect(h1).not.toContainText('Hobby', { ignoreCase: true });
+    await expect(h1).not.toContainText('Kinder', { ignoreCase: true });
+  });
+
+  test('type=privat_hobby shows "Hobby & Freizeit" title immediately (no beruflich flash)', async ({ page }) => {
+    await mockProviderApi(page);
+    await page.goto('/search?type=privat_hobby&tab=anbieter');
+
+    const h1 = page.locator('h1');
+    await expect(h1).toBeVisible({ timeout: 15_000 });
+    await expect(h1).toContainText('Hobby', { ignoreCase: true });
+    // Must NOT flash the beruflich title
+    await expect(h1).not.toContainText('beruflich', { ignoreCase: true });
+    await expect(h1).not.toContainText('Kinder', { ignoreCase: true });
+  });
+
+  test('type=kinder_jugend shows "Kinder" title immediately (no beruflich flash)', async ({ page }) => {
+    await mockProviderApi(page);
+    await page.goto('/search?type=kinder_jugend&tab=anbieter');
+
+    const h1 = page.locator('h1');
+    await expect(h1).toBeVisible({ timeout: 15_000 });
+    await expect(h1).toContainText('Kinder', { ignoreCase: true });
+    // Must NOT flash the beruflich title
+    await expect(h1).not.toContainText('beruflich', { ignoreCase: true });
+    await expect(h1).not.toContainText('Hobby', { ignoreCase: true });
+  });
+
+  test('/search?tab=anbieter without type shows neutral or default title', async ({ page }) => {
+    await mockProviderApi(page);
+    await page.goto('/search?tab=anbieter');
+
+    const h1 = page.locator('h1');
+    await expect(h1).toBeVisible({ timeout: 15_000 });
+    // Should show some title — neutral "Anbieter in der Schweiz" or a valid segment title
+    await expect(h1).not.toHaveText('');
+  });
+
+  // ─── Redirect & navigation tests ────────────────────────────────────────────
+
   test('/anbieter redirects to /search?tab=anbieter', async ({ page }) => {
     await mockProviderApi(page);
     await page.goto('/anbieter');

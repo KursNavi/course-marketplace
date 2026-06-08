@@ -47,31 +47,16 @@ export default function ProviderDirectory({ t, setView, embedded = false }) {
 
   const [verifiedOnly, setVerifiedOnly] = useState(false);
 
-  // Derive the segment slug from the URL synchronously so the title/theme is correct on first render,
-  // without waiting for the taxonomy to load (fixes flash of wrong segment title/color).
-  const [urlDerivedSlug, setUrlDerivedSlug] = useState(() => {
-    const typeParam = new URLSearchParams(window.location.search).get('type');
-    return typeParam ? (URL_TO_DB_TYPE_PROVIDER[typeParam] || typeParam) : null;
-  });
+  // Read URL type param DIRECTLY on every render — no state, no lag.
+  // This guarantees the title/theme is correct even when activeType is stale
+  // (e.g. component stays mounted while segment changes, or taxonomy hasn't loaded yet).
+  const _urlTypeParam = new URLSearchParams(window.location.search).get('type');
+  const urlSegmentSlug = _urlTypeParam ? (URL_TO_DB_TYPE_PROVIDER[_urlTypeParam] || _urlTypeParam) : null;
 
-  // Keep urlDerivedSlug in sync when the URL changes (segment switch via tabs or history nav)
-  useEffect(() => {
-    const syncSlug = () => {
-      const typeParam = new URLSearchParams(window.location.search).get('type');
-      setUrlDerivedSlug(typeParam ? (URL_TO_DB_TYPE_PROVIDER[typeParam] || typeParam) : null);
-    };
-    window.addEventListener('popstate', syncSlug);
-    window.addEventListener('locationchange', syncSlug);
-    return () => {
-      window.removeEventListener('popstate', syncSlug);
-      window.removeEventListener('locationchange', syncSlug);
-    };
-  }, []);
-
-  // Derive active segment — use taxonomy-derived slug when available; fall back to URL-derived slug.
-  // No hardcoded default: show neutral title/theme if nothing is resolved yet.
+  // URL param ALWAYS wins (nullish coalescing ?? — only falls back to activeType when no type in URL).
+  // Using || would let a stale activeType.slug override the new URL param for one render.
   const activeType = types.find(tp => tp.id === selectedType);
-  const resolvedSlug = activeType?.slug || urlDerivedSlug;
+  const resolvedSlug = urlSegmentSlug ?? activeType?.slug ?? null;
   const segmentConfig = SEGMENT_CONFIG[resolvedSlug] || SEGMENT_CONFIG.privat;
 
   const INTRO_TEXTS = {
