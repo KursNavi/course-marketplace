@@ -344,13 +344,25 @@ export default function KursNaviPro() {  // 1. Initial State Logic
     }
   }
 
-  // Filter States
-  const [selectedLocations, setSelectedLocations] = useState([]);
+  // Filter States — lazy-initialized from URL to avoid URL-sync effect stripping params on first render
+  const [selectedLocations, setSelectedLocations] = useState(() => {
+    if (window.location.pathname !== '/search') return [];
+    const p = new URLSearchParams(window.location.search).get('loc');
+    return p ? p.split(',') : [];
+  });
   const [locMenuOpen, setLocMenuOpen] = useState(false);
-  const [selectedLanguages, setSelectedLanguages] = useState([]);
+  const [selectedLanguages, setSelectedLanguages] = useState(() => {
+    if (window.location.pathname !== '/search') return [];
+    const p = new URLSearchParams(window.location.search).get('lang');
+    return p ? p.split(',') : [];
+  });
   const [langMenuOpen, setLangMenuOpen] = useState(false);
   const langMenuRef = useRef(null);
-  const [selectedDeliveryTypes, setSelectedDeliveryTypes] = useState([]);
+  const [selectedDeliveryTypes, setSelectedDeliveryTypes] = useState(() => {
+    if (window.location.pathname !== '/search') return [];
+    const p = new URLSearchParams(window.location.search).get('delivery');
+    return p ? p.split(',') : [];
+  });
   const [deliveryMenuOpen, setDeliveryMenuOpen] = useState(false);
   const deliveryMenuRef = useRef(null);
   // Initialize search filters from URL params so the URL-sync effect doesn't strip
@@ -373,14 +385,38 @@ export default function KursNaviPro() {  // 1. Initial State Logic
   });
   const [catMenuOpen, setCatMenuOpen] = useState(false);
   const [selectedCatPath, setSelectedCatPath] = useState([]);
-  const [filterDateFrom, setFilterDateFrom] = useState("");
-  const [filterDateTo, setFilterDateTo] = useState("");
-  const [filterPriceMax, setFilterPriceMax] = useState("");
-  const [filterLevel, setFilterLevel] = useState("All");
-  const [filterPro, setFilterPro] = useState(false);
-  const [filterDirectBooking, setFilterDirectBooking] = useState(false);
-  const [selectedSaule, setSelectedSaule] = useState("");
-  const [selectedKursart, setSelectedKursart] = useState("");
+  const [filterDateFrom, setFilterDateFrom] = useState(() => {
+    if (window.location.pathname !== '/search') return '';
+    return new URLSearchParams(window.location.search).get('from') || '';
+  });
+  const [filterDateTo, setFilterDateTo] = useState(() => {
+    if (window.location.pathname !== '/search') return '';
+    return new URLSearchParams(window.location.search).get('to') || '';
+  });
+  const [filterPriceMax, setFilterPriceMax] = useState(() => {
+    if (window.location.pathname !== '/search') return '';
+    return new URLSearchParams(window.location.search).get('price') || '';
+  });
+  const [filterLevel, setFilterLevel] = useState(() => {
+    if (window.location.pathname !== '/search') return 'All';
+    return new URLSearchParams(window.location.search).get('level') || 'All';
+  });
+  const [filterPro, setFilterPro] = useState(() => {
+    if (window.location.pathname !== '/search') return false;
+    return new URLSearchParams(window.location.search).get('pro') === '1';
+  });
+  const [filterDirectBooking, setFilterDirectBooking] = useState(() => {
+    if (window.location.pathname !== '/search') return false;
+    return new URLSearchParams(window.location.search).get('booking') === '1';
+  });
+  const [selectedSaule, setSelectedSaule] = useState(() => {
+    if (window.location.pathname !== '/search') return '';
+    return new URLSearchParams(window.location.search).get('saule') || '';
+  });
+  const [selectedKursart, setSelectedKursart] = useState(() => {
+    if (window.location.pathname !== '/search') return '';
+    return new URLSearchParams(window.location.search).get('kursart') || '';
+  });
   const [searchTab, setSearchTab] = useState(() => {
     if (window.location.pathname !== '/search') return 'kurse';
     return new URLSearchParams(window.location.search).get('tab') === 'anbieter' ? 'anbieter' : 'kurse';

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useCallback } from 'react';
-import { Search, ChevronRight, User, X, Shield, MapPin, CheckCircle, Loader, Bell, ArrowDown, ArrowRight, Sparkles, Bookmark, BookmarkCheck, CreditCard, Info, EyeOff, Briefcase, Palette, Smile, BookOpen, Compass, SearchX, AlertTriangle, RotateCcw } from 'lucide-react';
+import { Search, ChevronRight, ChevronDown, Filter, User, X, Shield, MapPin, CheckCircle, Loader, Bell, ArrowDown, ArrowRight, Sparkles, Bookmark, BookmarkCheck, CreditCard, Info, EyeOff, Briefcase, Palette, Smile, BookOpen, Compass, SearchX, AlertTriangle, RotateCcw } from 'lucide-react';
 import { LocationDropdown, LanguageDropdown, DeliveryTypeFilter, SaeulenFilter, KursartFilter } from './Filters';
 import { PRIVAT_KURSART_ICONS, KINDER_KURSART_ICONS } from '../lib/kursartIcons';
 import { Globe } from 'lucide-react';
@@ -62,6 +62,13 @@ const SearchPageView = ({
     const hasMountedRef = useRef(false);
     // Price validation error state
     const [priceError, setPriceError] = React.useState(false);
+
+    // "Weitere Filter" expand/collapse — auto-open if any secondary filter is active via URL on load
+    const [showMoreFilters, setShowMoreFilters] = React.useState(() => {
+        if (typeof window === 'undefined') return false;
+        const p = new URLSearchParams(window.location.search);
+        return !!(p.get('lang') || p.get('price') || (p.get('level') && p.get('level') !== 'All') || p.get('pro') || p.get('booking'));
+    });
 
     // Load taxonomy from DB
     const { areas: dbAreas } = useTaxonomy();
@@ -398,6 +405,15 @@ const SearchPageView = ({
         setSearchQuery("");
     }, [setSearchQuery]);
 
+    // Count active secondary filters (Preis, Niveau, Kurssprache, Verifiziert, Direktbuchung)
+    const secondaryFilterCount = [
+        filterPriceMax && filterPriceMax !== '',
+        filterLevel && filterLevel !== 'All',
+        selectedLanguages.length > 0,
+        filterPro,
+        filterDirectBooking,
+    ].filter(Boolean).length;
+
     // --- EMPTY STATE DETECTION ---
     // Determine if the catalog is genuinely empty for the selected type/segment
     // vs. just the current filters producing 0 results
@@ -558,16 +574,17 @@ const SearchPageView = ({
                         </div>
                         <div className="flex items-center gap-2">
                             <LocationDropdown selectedLocations={selectedLocations} setSelectedLocations={setSelectedLocations} locMenuOpen={locMenuOpen} setLocMenuOpen={setLocMenuOpen} locMenuRef={locMenuRef} t={t} />
-                            <LanguageDropdown selectedLanguages={selectedLanguages} setSelectedLanguages={setSelectedLanguages} langMenuOpen={langMenuOpen} setLangMenuOpen={setLangMenuOpen} langMenuRef={langMenuRef} t={t} />
                             <DeliveryTypeFilter selectedDeliveryTypes={selectedDeliveryTypes} setSelectedDeliveryTypes={setSelectedDeliveryTypes} deliveryMenuOpen={deliveryMenuOpen} setDeliveryMenuOpen={setDeliveryMenuOpen} deliveryMenuRef={deliveryMenuRef} t={t} />
                         </div>
                     </div>
-                    <p className="text-xs text-gray-500 -mt-1 ml-3">{t.search_hint_boolean || 'Tipp: Kombiniere Begriffe mit AND oder OR'}</p>
+                    <p className="text-xs text-gray-500 -mt-1 ml-3">
+                        Tipp: Du kannst mehrere Begriffe kombinieren, z.B. <em>Yoga Zürich</em> oder <em>Excel online</em>.
+                    </p>
 
                     {/* SEGMENT PICKER - shown when no segment is selected */}
                     {!searchType && (
-                        <div className="flex items-center gap-2">
-                            <span className="text-xs text-gray-400 mr-1">Kategorie wählen:</span>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="text-xs text-gray-400 shrink-0">Bereich:</span>
                             {[
                                 { key: 'beruflich', dbKey: 'professionell' },
                                 { key: 'privat_hobby', dbKey: 'privat' },
@@ -576,8 +593,8 @@ const SearchPageView = ({
                                 const cfg = SEGMENT_CONFIG[key] || SEGMENT_CONFIG[dbKey];
                                 const Icon = cfg?.icon || Briefcase;
                                 return (
-                                    <button key={key} onClick={() => { setSearchType(key); setSearchArea(""); setSearchSpecialty(""); setSearchFocus(""); }} className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm font-medium transition-all hover:shadow-sm ${cfg?.bgLight || 'bg-gray-50'} ${cfg?.borderLight || 'border-gray-200'} ${cfg?.text || 'text-gray-600'} hover:opacity-80`}>
-                                        <Icon className="w-4 h-4" />
+                                    <button key={key} onClick={() => { setSearchType(key); setSearchArea(""); setSearchSpecialty(""); setSearchFocus(""); }} className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border text-xs font-medium transition-all hover:shadow-sm bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100`}>
+                                        <Icon className={`w-3.5 h-3.5 ${cfg?.text || 'text-gray-500'}`} />
                                         {cfg?.label?.de || key}
                                     </button>
                                 );
@@ -633,7 +650,8 @@ const SearchPageView = ({
                         />
                     )}
 
-                    <div className="flex gap-3 overflow-x-auto pb-1 items-center border-t pt-2 border-gray-100">
+                    {/* DATE FILTERS + WEITERE FILTER TOGGLE */}
+                    <div className="flex gap-2 flex-wrap items-center border-t pt-2 border-gray-100">
                         <label className="flex items-center bg-white px-2.5 py-1 rounded-lg border border-gray-200 cursor-pointer">
                             <span className="text-xs text-gray-400 mr-1.5 whitespace-nowrap">Von</span>
                             <input type="date" value={filterDateFrom} onChange={(e) => setFilterDateFrom(e.target.value)} className="bg-transparent text-xs outline-none text-gray-600 cursor-pointer" />
@@ -642,36 +660,53 @@ const SearchPageView = ({
                             <span className="text-xs text-gray-400 mr-1.5 whitespace-nowrap">Bis</span>
                             <input type="date" value={filterDateTo} onChange={(e) => setFilterDateTo(e.target.value)} className="bg-transparent text-xs outline-none text-gray-600 cursor-pointer" />
                         </label>
-                        <div className={`flex items-center space-x-1.5 bg-white px-2.5 py-1 rounded-lg border ${priceError ? 'border-red-400' : 'border-gray-200'}`}>
-                            <span className="text-xs text-gray-500">{t.lbl_max_price}</span>
-                            <input type="number" min="0" step="1" placeholder="Beliebig" value={filterPriceMax}
-                                onChange={(e) => {
-                                    const val = e.target.value;
-                                    if (val === '' || (Number(val) >= 0 && !isNaN(Number(val)))) {
-                                        setFilterPriceMax(val);
-                                        setPriceError(false);
-                                    } else {
-                                        setPriceError(true);
-                                    }
-                                }}
-                                onBlur={() => { if (filterPriceMax && Number(filterPriceMax) < 0) { setFilterPriceMax(''); setPriceError(false); } }}
-                                className={`w-16 bg-transparent text-xs outline-none ${priceError ? 'text-red-600' : 'text-gray-600'}`} />
-                            {priceError && <span className="text-[10px] text-red-500 whitespace-nowrap">Nur positive Zahlen</span>}
-                        </div>
-                        <select value={filterLevel} onChange={(e) => setFilterLevel(e.target.value)} className="bg-white border border-gray-200 rounded-lg px-2.5 py-1 text-xs outline-none text-gray-600"><option value="All">{t.opt_all_levels}</option>{Object.keys(COURSE_LEVELS).map(k => <option key={k} value={k}>{COURSE_LEVELS[k].de}</option>)}</select>
-                         <label className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-lg border cursor-pointer transition select-none ${filterPro ? 'bg-blue-50 border-blue-200' : 'bg-white border-gray-200'}`} title={t.tooltip_pro_verified_long || t.tooltip_pro_verified}>
-                            <input type="checkbox" checked={filterPro} onChange={(e) => setFilterPro(e.target.checked)} className="rounded text-primary focus:ring-primary w-3.5 h-3.5" />
-                            <span className={`text-xs font-medium ${filterPro ? 'text-blue-700' : 'text-gray-600'}`}>{t.lbl_professional_filter}</span>
-                            <Shield className="w-3 h-3 text-blue-500" />
-                            <Info className="w-3 h-3 text-gray-400 hover:text-blue-500 transition-colors" />
-                         </label>
-                         <label className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-lg border cursor-pointer transition select-none ${filterDirectBooking ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200'}`} title={t.tooltip_direct_booking_long || t.tooltip_direct_booking}>
-                            <input type="checkbox" checked={filterDirectBooking} onChange={(e) => setFilterDirectBooking(e.target.checked)} className="rounded text-primary focus:ring-primary w-3.5 h-3.5" />
-                            <span className={`text-xs font-medium ${filterDirectBooking ? 'text-green-700' : 'text-gray-600'}`}>{t.lbl_direct_booking_filter}</span>
-                            <CreditCard className="w-3 h-3 text-green-500" />
-                            <Info className="w-3 h-3 text-gray-400 hover:text-green-500 transition-colors" />
-                         </label>
+                        {/* "Weitere Filter" toggle button */}
+                        <button
+                            data-testid="btn-weitere-filter"
+                            onClick={() => setShowMoreFilters(v => !v)}
+                            className={`ml-auto flex items-center gap-1.5 px-3 py-1 rounded-lg border text-xs font-medium transition-colors ${showMoreFilters ? 'bg-gray-100 border-gray-300 text-gray-700' : 'bg-white border-gray-200 text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+                        >
+                            <Filter className="w-3.5 h-3.5" />
+                            Weitere Filter{secondaryFilterCount > 0 ? ` (${secondaryFilterCount})` : ''}
+                            <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${showMoreFilters ? 'rotate-180' : ''}`} />
+                        </button>
                     </div>
+
+                    {/* SECONDARY FILTERS: Kurssprache, Preis, Niveau, Verifiziert, Direktbuchung */}
+                    {showMoreFilters && (
+                        <div className="flex gap-3 flex-wrap pb-1 items-center border-t pt-2 border-gray-100 bg-gray-50 rounded-lg px-3 py-2 -mx-1">
+                            <LanguageDropdown selectedLanguages={selectedLanguages} setSelectedLanguages={setSelectedLanguages} langMenuOpen={langMenuOpen} setLangMenuOpen={setLangMenuOpen} langMenuRef={langMenuRef} t={t} />
+                            <div className={`flex items-center space-x-1.5 bg-white px-2.5 py-1 rounded-lg border ${priceError ? 'border-red-400' : 'border-gray-200'}`}>
+                                <span className="text-xs text-gray-500">{t.lbl_max_price}</span>
+                                <input type="number" min="0" step="1" placeholder="Beliebig" value={filterPriceMax}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        if (val === '' || (Number(val) >= 0 && !isNaN(Number(val)))) {
+                                            setFilterPriceMax(val);
+                                            setPriceError(false);
+                                        } else {
+                                            setPriceError(true);
+                                        }
+                                    }}
+                                    onBlur={() => { if (filterPriceMax && Number(filterPriceMax) < 0) { setFilterPriceMax(''); setPriceError(false); } }}
+                                    className={`w-16 bg-transparent text-xs outline-none ${priceError ? 'text-red-600' : 'text-gray-600'}`} />
+                                {priceError && <span className="text-[10px] text-red-500 whitespace-nowrap">Nur positive Zahlen</span>}
+                            </div>
+                            <select value={filterLevel} onChange={(e) => setFilterLevel(e.target.value)} className="bg-white border border-gray-200 rounded-lg px-2.5 py-1 text-xs outline-none text-gray-600"><option value="All">{t.opt_all_levels}</option>{Object.keys(COURSE_LEVELS).map(k => <option key={k} value={k}>{COURSE_LEVELS[k].de}</option>)}</select>
+                            <label className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-lg border cursor-pointer transition select-none ${filterPro ? 'bg-blue-50 border-blue-200' : 'bg-white border-gray-200'}`} title={t.tooltip_pro_verified_long || t.tooltip_pro_verified}>
+                                <input type="checkbox" checked={filterPro} onChange={(e) => setFilterPro(e.target.checked)} className="rounded text-primary focus:ring-primary w-3.5 h-3.5" />
+                                <span className={`text-xs font-medium ${filterPro ? 'text-blue-700' : 'text-gray-600'}`}>{t.lbl_professional_filter}</span>
+                                <Shield className="w-3 h-3 text-blue-500" />
+                                <Info className="w-3 h-3 text-gray-400 hover:text-blue-500 transition-colors" />
+                            </label>
+                            <label className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-lg border cursor-pointer transition select-none ${filterDirectBooking ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200'}`} title={t.tooltip_direct_booking_long || t.tooltip_direct_booking}>
+                                <input type="checkbox" checked={filterDirectBooking} onChange={(e) => setFilterDirectBooking(e.target.checked)} className="rounded text-primary focus:ring-primary w-3.5 h-3.5" />
+                                <span className={`text-xs font-medium ${filterDirectBooking ? 'text-green-700' : 'text-gray-600'}`}>{t.lbl_direct_booking_filter}</span>
+                                <CreditCard className="w-3 h-3 text-green-500" />
+                                <Info className="w-3 h-3 text-gray-400 hover:text-green-500 transition-colors" />
+                            </label>
+                        </div>
+                    )}
                 </div>
                  {/* --- ACTIVE FILTER CHIPS --- */}
                  {(selectedLanguages.length > 0 || selectedLocations.length > 0 ||
