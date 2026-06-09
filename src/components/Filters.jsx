@@ -194,7 +194,7 @@ export const LocationDropdown = ({ selectedLocations, setSelectedLocations, locM
                  <div className="flex items-center"><MapPin className="w-4 h-4 mr-2" aria-hidden="true" /><span>{selectedLocations.length > 0 ? `${selectedLocations.length} ausgewählt` : t.filter_label_loc}</span></div><ChevronDown className="w-4 h-4" aria-hidden="true" />
             </button>
             {locMenuOpen && (
-                <div className="absolute top-10 left-0 w-[calc(100vw-2rem)] md:w-[560px] bg-white rounded-xl shadow-2xl border border-gray-100 p-4">
+                <div className="absolute top-10 left-0 md:left-auto md:right-0 w-[calc(100vw-2rem)] md:w-[560px] max-w-[calc(100vw-2rem)] bg-white rounded-xl shadow-2xl border border-gray-100 p-4">
                     {/* Online + Ausland – special items above canton grid */}
                     <div className="flex gap-4 pb-3 mb-2 border-b border-gray-100">
                         <label className="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
@@ -250,7 +250,7 @@ export const LanguageDropdown = ({ selectedLanguages, setSelectedLanguages, lang
                 <ChevronDown className="w-4 h-4" aria-hidden="true" />
             </button>
             {langMenuOpen && (
-                <div className="absolute top-10 left-0 w-[250px] bg-white rounded-xl shadow-2xl border border-gray-100 p-4">
+                <div className="absolute top-10 left-0 w-[250px] max-w-[calc(100vw-2rem)] bg-white rounded-xl shadow-2xl border border-gray-100 p-4">
                     <div className="space-y-1">
                         {Object.keys(COURSE_LANGUAGES).map(lang => (
                             <label key={lang} className="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
@@ -302,7 +302,7 @@ export const DeliveryTypeFilter = ({ selectedDeliveryTypes, setSelectedDeliveryT
                 <ChevronDown className="w-4 h-4" aria-hidden="true" />
             </button>
             {deliveryMenuOpen && (
-                <div className="absolute top-10 left-0 w-[250px] bg-white rounded-xl shadow-2xl border border-gray-100 p-4">
+                <div className="absolute top-10 left-0 md:left-auto md:right-0 w-[250px] max-w-[calc(100vw-2rem)] bg-white rounded-xl shadow-2xl border border-gray-100 p-4">
                     <div className="space-y-1">
                         {Object.keys(DELIVERY_TYPES).map(key => (
                             <label key={key} className="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
