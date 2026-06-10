@@ -136,7 +136,7 @@ test.describe('Search Tabs — Kurse / Anbieter', () => {
     await page.goto('/search?q=Yoga&tab=anbieter');
 
     // Provider search input should contain 'Yoga'
-    const providerSearch = page.locator('input[placeholder*="Anbieter suchen"]');
+    const providerSearch = page.locator('input[placeholder*="Anbieter"]');
     await expect(providerSearch).toBeVisible({ timeout: 10_000 });
     await expect(providerSearch).toHaveValue('Yoga');
   });
@@ -241,6 +241,31 @@ test.describe('Search Tabs — Kurse / Anbieter', () => {
     // Should NOT redirect to /search
     await expect(page).not.toHaveURL(/\/search/, { timeout: 5_000 });
     await expect(page).toHaveURL(/\/anbieter\//, { timeout: 5_000 });
+  });
+
+  test('Anbieter-Tab does not crash with irrelevant Kurs params (price, pro)', async ({ page }) => {
+    await mockProviderApi(page);
+    // URL may contain course-specific params that ProviderDirectory should ignore gracefully
+    await page.goto('/search?tab=anbieter&price=200&pro=1');
+
+    // No JS error crash — directory heading must be visible
+    const h1 = page.locator('h1');
+    await expect(h1).toBeVisible({ timeout: 15_000 });
+    await expect(h1).not.toHaveText('');
+
+    // Anbieter tab is selected
+    const anbieterTab = page.getByRole('tab', { name: 'Anbieter' });
+    await expect(anbieterTab).toHaveAttribute('aria-selected', 'true', { timeout: 5_000 });
+  });
+
+  test('Anbieter search field has correct placeholder', async ({ page }) => {
+    await mockProviderApi(page);
+    await page.goto('/search?tab=anbieter');
+
+    await expect(page.locator('h1')).toBeVisible({ timeout: 15_000 });
+    const searchInput = page.locator('input[placeholder*="Anbieter"]');
+    await expect(searchInput).toBeVisible();
+    await expect(searchInput).toHaveAttribute('placeholder', /Kursleiter/);
   });
 
 });

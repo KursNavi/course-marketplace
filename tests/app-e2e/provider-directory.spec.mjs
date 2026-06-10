@@ -159,7 +159,58 @@ test.describe('Provider Directory & Profile (app-e2e)', () => {
 
     // Results area should still be present (either providers or empty state)
     const resultsCount = page.getByText(/Anbieter gefunden/);
-    const empty = page.getByText('Keine Anbieter gefunden');
+    const empty = page.getByText('Keine passenden Anbieter gefunden.');
     await expect(resultsCount.or(empty)).toBeVisible();
+  });
+
+  // ─── Empty State ────────────────────────────────────────────────────────────
+
+  test('empty state appears when no providers match a canton filter', async ({ page }) => {
+    // Override to return 0 results
+    await page.route('**/api/provider**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          providers: [],
+          pagination: { total: 0, limit: 24, offset: 0, hasMore: false },
+          filters: {}
+        })
+      });
+    });
+
+    await page.goto('/search?tab=anbieter');
+    await expect(page.locator('h1')).toBeVisible({ timeout: 15_000 });
+
+    // Empty state should be visible
+    const emptyState = page.getByTestId('provider-empty-state');
+    await expect(emptyState).toBeVisible({ timeout: 10_000 });
+    await expect(emptyState).toContainText('Keine passenden Anbieter gefunden.');
+    await expect(emptyState).toContainText('Passe deine Suche oder die Filter an.');
+  });
+
+  // ─── No package badges ───────────────────────────────────────────────────────
+
+  test('provider cards do not show package/tier badges', async ({ page }) => {
+    await mockProviderApi(page);
+    await page.goto('/search?tab=anbieter');
+    await expect(page.locator('h1')).toBeVisible({ timeout: 15_000 });
+
+    // No "Featured Anbieter" badge
+    await expect(page.getByText('Featured Anbieter')).not.toBeVisible();
+    // No Pro/Premium/Enterprise labels
+    await expect(page.getByText(/^Pro$/).first()).not.toBeVisible();
+  });
+
+  // ─── Search query in provider search field ───────────────────────────────────
+
+  test('provider search field takes q from URL on direct navigation', async ({ page }) => {
+    await mockProviderApi(page);
+    await page.goto('/search?q=Yoga&tab=anbieter');
+    await expect(page.locator('h1')).toBeVisible({ timeout: 15_000 });
+
+    const searchInput = page.locator('input[placeholder*="Anbieter"]');
+    await expect(searchInput).toBeVisible();
+    await expect(searchInput).toHaveValue('Yoga');
   });
 });
