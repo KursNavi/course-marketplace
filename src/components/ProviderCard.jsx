@@ -1,5 +1,5 @@
 import React from 'react';
-import { MapPin, CheckCircle, Star, BookOpen } from 'lucide-react';
+import { MapPin, CheckCircle, BookOpen } from 'lucide-react';
 
 /**
  * ProviderCard Component
@@ -17,33 +17,18 @@ export default function ProviderCard({ provider, onClick, segmentConfig }) {
     logoUrl,
     location,
     isVerified,
-    isFeatured,
     courseCount,
-    tier
   } = provider;
 
   // Segment-aware colors with orange fallback
   const accentText = segmentConfig?.text || 'text-orange-500';
   const accentBgLight = segmentConfig?.bgLight || 'bg-orange-50';
-  const accentBorderLight = segmentConfig?.borderLight || 'border-orange-200';
-  const accentGradient = segmentConfig?.gradient || 'from-orange-500/70 to-orange-400/90';
 
   return (
     <div
       onClick={() => onClick?.(slug)}
-      className={`
-        bg-white rounded-xl shadow-sm border overflow-hidden cursor-pointer
-        transition-all duration-300 hover:shadow-xl hover:-translate-y-1
-        ${isFeatured ? `${accentBorderLight} ring-2 ring-current/10` : 'border-gray-100'}
-      `}
+      className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
     >
-      {/* Featured Badge */}
-      {isFeatured && (
-        <div className={`bg-gradient-to-r ${accentGradient} text-white text-xs font-bold px-3 py-1 text-center`}>
-          <Star className="w-3 h-3 inline mr-1" />
-          Featured Anbieter
-        </div>
-      )}
 
       <div className="p-5">
         {/* Header: Logo + Name */}
