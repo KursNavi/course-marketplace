@@ -70,6 +70,15 @@ const SearchPageView = ({
         return !!(p.get('lang') || p.get('price') || (p.get('level') && p.get('level') !== 'All') || p.get('pro') || p.get('booking'));
     });
 
+    // Auto-open "Weitere Filter" when secondary filters become active via in-app navigation.
+    // The lazy init above handles direct page loads; this effect handles subsequent prop changes
+    // (e.g. user navigates from /search to /search?price=200&pro=1 within the SPA).
+    React.useEffect(() => {
+        if (filterPriceMax || filterPro || filterDirectBooking || selectedLanguages.length > 0 || (filterLevel && filterLevel !== 'All')) {
+            setShowMoreFilters(true);
+        }
+    }, [filterPriceMax, filterPro, filterDirectBooking, selectedLanguages, filterLevel]);
+
     // Load taxonomy from DB
     const { areas: dbAreas } = useTaxonomy();
 

@@ -88,11 +88,23 @@ test.describe('Search & Filters (app-e2e)', () => {
 
     // Badge must show count ≥ 1 (price=200 + pro=1 → 2)
     await expect(weitereBtn).toContainText('(2)');
-
-    // The section should be auto-opened when secondary filters are active
-    // (URL params auto-expand the panel on load)
-    // Just verify the button is there and labelled correctly
     await expect(weitereBtn).toContainText('Weitere Filter');
+  });
+
+  test('"Weitere Filter" auto-opens on direct navigation with price/pro in URL', async ({ page }) => {
+    // BUG 4: When URL has price/pro params, the "Weitere Filter" section must be open
+    await page.goto('/search?price=200&pro=1');
+
+    const resultsCounter = page.getByTestId('results-counter');
+    await expect(resultsCounter).toBeVisible({ timeout: 15_000 });
+
+    const weitereBtn = page.getByTestId('btn-weitere-filter');
+    await expect(weitereBtn).toBeVisible({ timeout: 5_000 });
+
+    // The panel must be open — price input should be visible without clicking the button
+    // (it's inside the collapsed section, so visible = panel is open)
+    const priceInput = page.locator('input[type="number"][placeholder="Beliebig"]');
+    await expect(priceInput).toBeVisible({ timeout: 5_000 });
   });
 
   test('URL params for secondary filters are preserved after toggle', async ({ page }) => {
