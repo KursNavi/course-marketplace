@@ -2234,7 +2234,7 @@ useEffect(() => {
       {view === 'admin-blog' && <AdminBlogManager showNotification={showNotification} setView={setView} courses={courses} />}
       {view === 'blog' && <BlogList articles={articles} setView={setView} setSelectedArticle={setSelectedArticle} />}
       {view === 'blog-detail' && <BlogDetail article={selectedArticle} setView={setView} courses={publishedCourses} />}
-      {view === 'provider-directory' && <ProviderDirectory t={t} setView={setView} />}
+      {/* provider-directory view removed — /anbieter always redirects to /search?tab=anbieter */}
       {view === 'provider-profile' && <ProviderProfilePage t={t} setView={setView} setSelectedCourse={setSelectedCourse} />}
       {view === 'bereich-landing' && (
         <BereichLandingPage
