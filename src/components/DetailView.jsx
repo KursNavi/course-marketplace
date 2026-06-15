@@ -10,6 +10,7 @@ import { DEFAULT_COURSE_IMAGE } from '../lib/imageUtils';
 import { getCourseCategoryText, getPrimaryCategory, getPrimaryCategoryLabel, getPrimaryCategorySlug, isSyntheticCategory } from '../lib/courseMetadata';
 import { trackCourseView, trackPurchase, trackContactLead } from '../lib/analytics';
 import { getRobotsPolicy } from '../lib/seoUtils';
+import { getRelatedCourses } from '../lib/courseRecommendations';
 
 const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, setUser, savedCourseIds, onToggleSaveCourse, showNotification, refreshBookings }) => {
     const [showLeadModal, setShowLeadModal] = useState(false);
@@ -645,71 +646,11 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
         return out;
     };
 
-    // --- RANKING ENGINE (V4.0) ---
-    // Verifizierung (is_pro) ist nur ein Badge – kein Ranking-Faktor.
-    // Hervorgehobene Kurse (is_prio) erhalten 1.2x Boost.
-    const getRankingScore = (candidate) => {
-        // 1. Prio Factor: hervorgehobene Kurse kommen weiter vorne
-        const planFactor = candidate.is_prio ? 1.2 : 1.0;
-
-        // 2. Booking Factor
-        const isBookable = candidate.booking_type === 'platform' || candidate.booking_type === 'platform_flex';
-        const bookingFactor = isBookable ? 1.3 : 1.0;
-
-        // 3. Relevance (Word Match Boost)
-        let relevanceScore = 1.0; // Basis
-        const currentWords = (course.title || '').toLowerCase().split(/\s+/).filter(w => w.length > 3);
-        const candidateWords = (candidate.title || '').toLowerCase().split(/\s+/);
-        const overlap = candidateWords.filter(w => currentWords.includes(w)).length;
-        relevanceScore += Math.min(0.5, overlap * 0.1); // Max +0.5 Bonus für Text-Matches
-
-        // 4. Freshness (Newer = Better)
-        const dateCreated = candidate.created_at ? new Date(candidate.created_at) : new Date('2024-01-01');
-        const daysOld = (new Date() - dateCreated) / (1000 * 60 * 60 * 24);
-        const freshnessScore = Math.max(0, 1 - (daysOld / 365)); // 1.0 = brand new
-
-        // 5. Time Score (Next Event proximity)
-        let timeScore = 0.5; // Neutral default
-        if (candidate.course_events && candidate.course_events.length > 0) {
-            const nextEvent = candidate.course_events.find(e => new Date(e.start_date) > new Date());
-            if (nextEvent) {
-                const daysToEvent = (new Date(nextEvent.start_date) - new Date()) / (1000 * 60 * 60 * 24);
-                if (daysToEvent < 14) timeScore = 1.0;      // < 2 Weeks
-                else if (daysToEvent < 60) timeScore = 0.8; // < 2 Months
-            }
-        }
-
-        // 6. Epsilon Randomness (-0.03 to +0.03)
-        const epsilon = (Math.random() * 0.06) - 0.03;
-
-        // Final Score Calculation
-        return relevanceScore 
-            * planFactor 
-            * bookingFactor 
-            * (0.5 + 0.5 * timeScore) 
-            * (0.6 + 0.4 * freshnessScore) 
-            * (1 + epsilon);
-    };
-
-    // Filter & Sort Logic: Priority same Category -> then fill with others
-    const candidates = (courses || []).filter(c => c.id !== course.id);
+    // --- EMPFEHLUNGSLOGIK ---
+    // Ähnliche Kurse: segmentbasiert, ohne Paket-Logik im Frontend.
+    // Logik ausgelagert in src/lib/courseRecommendations.js
     const currentPrimaryCat = Array.isArray(course.all_categories) && (course.all_categories.find(c => c.is_primary) || course.all_categories[0]);
-    const isKinderCourse = (currentPrimaryCat?.category_type || course.category_type) === 'kinder';
-    const currentAreaSlug = currentPrimaryCat?.category_area || course.category_area;
-    const sameCategory = candidates.filter(c => {
-        const pCat = Array.isArray(c.all_categories) && (c.all_categories.find(x => x.is_primary) || c.all_categories[0]);
-        return (pCat?.category_area || c.category_area) === currentAreaSlug;
-    });
-    const otherCategory = candidates.filter(c => {
-        const pCat = Array.isArray(c.all_categories) && (c.all_categories.find(x => x.is_primary) || c.all_categories[0]);
-        return (pCat?.category_area || c.category_area) !== currentAreaSlug;
-    });
-
-    const rankedSame = sameCategory.map(c => ({...c, score: getRankingScore(c)})).sort((a,b) => b.score - a.score);
-    const rankedOther = otherCategory.map(c => ({...c, score: getRankingScore(c)})).sort((a,b) => b.score - a.score);
-
-    // Take all from same category, then fill up to 5 with others
-    const relatedCourses = [...rankedSame, ...rankedOther].slice(0, 5);
+    const relatedCourses = getRelatedCourses(course, courses, { maxResults: 4 });
 
     const fallbackImage = DEFAULT_COURSE_IMAGE;
 
@@ -1214,12 +1155,10 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
 
         {relatedCourses.length > 0 && (
             <div className="mt-16 pt-10 border-t border-gray-200">
-                <h2 className="text-2xl font-bold font-heading text-dark mb-2">Nicht der richtige Kurs?</h2>
-                <p className="text-gray-500 mb-6">Entdecke diese Alternativen aus {(() => {
-                    return getPrimaryCategoryLabel(course) || 'unserem Angebot';
-                })()}</p>
-                
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+                <h2 className="text-2xl font-bold font-heading text-dark mb-2">Ähnliche Kurse</h2>
+                <p className="text-gray-500 mb-6">Entdecke weitere Kurse, die thematisch oder regional zu diesem Angebot passen.</p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     {relatedCourses.map(rel => (
                          <a key={rel.id}
                               href={buildCoursePath(rel)}
