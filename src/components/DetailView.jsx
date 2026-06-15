@@ -650,6 +650,7 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
     // Ähnliche Kurse: segmentbasiert, ohne Paket-Logik im Frontend.
     // Logik ausgelagert in src/lib/courseRecommendations.js
     const currentPrimaryCat = Array.isArray(course.all_categories) && (course.all_categories.find(c => c.is_primary) || course.all_categories[0]);
+    const isKinderCourse = (currentPrimaryCat?.category_type || course.category_type) === 'kinder';
     const relatedCourses = getRelatedCourses(course, courses, { maxResults: 4 });
 
     const fallbackImage = DEFAULT_COURSE_IMAGE;
