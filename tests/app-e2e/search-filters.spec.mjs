@@ -49,6 +49,60 @@ test.describe('Search & Filters (app-e2e)', () => {
     await expect(chips).toContainText('Wirtschaft & Management');
   });
 
+  test('"Weitere Filter" can be toggled open and closed', async ({ page }) => {
+    await page.goto('/search');
+
+    const resultsCounter = page.getByTestId('results-counter');
+    await expect(resultsCounter).toBeVisible({ timeout: 15_000 });
+    await expect(resultsCounter).not.toContainText('Lade', { timeout: 10_000 });
+
+    const weitereBtn = page.getByTestId('btn-weitere-filter');
+    await expect(weitereBtn).toBeVisible({ timeout: 5_000 });
+    await expect(weitereBtn).toContainText('Weitere Filter');
+
+    // Open
+    await weitereBtn.click();
+    await expect(weitereBtn).toContainText('Weitere Filter');
+
+    // Close again
+    await weitereBtn.click();
+    await expect(weitereBtn).toContainText('Weitere Filter');
+  });
+
+  test('"Weitere Filter" auto-opens with badge on direct load with price+pro URL params', async ({ page }) => {
+    await page.goto('/search?price=200&pro=1');
+
+    const resultsCounter = page.getByTestId('results-counter');
+    await expect(resultsCounter).toBeVisible({ timeout: 15_000 });
+
+    const weitereBtn = page.getByTestId('btn-weitere-filter');
+    await expect(weitereBtn).toBeVisible({ timeout: 5_000 });
+
+    // Badge must show count = 2 (price=200 + pro=1)
+    await expect(weitereBtn).toContainText('(2)');
+  });
+
+  test('"Weitere Filter" auto-opens on page.goto with price param', async ({ page }) => {
+    await page.goto('/search?price=150');
+
+    const resultsCounter = page.getByTestId('results-counter');
+    await expect(resultsCounter).toBeVisible({ timeout: 15_000 });
+
+    // URL must still contain price param
+    await expect(page).toHaveURL(/price=150/);
+
+    const weitereBtn = page.getByTestId('btn-weitere-filter');
+    await expect(weitereBtn).toBeVisible({ timeout: 5_000 });
+
+    // Badge must show count ≥ 1
+    await expect(weitereBtn).toContainText('(1)');
+
+    // Toggle open + close — URL must remain unchanged
+    await weitereBtn.click();
+    await weitereBtn.click();
+    await expect(page).toHaveURL(/price=150/);
+  });
+
   test('filter reset clears all active filters', async ({ page }) => {
     // Navigate to search and type a non-matching term
     await page.goto('/search');

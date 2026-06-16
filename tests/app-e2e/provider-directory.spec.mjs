@@ -62,6 +62,64 @@ async function mockProviderApi(page) {
 
 test.describe('Provider Directory & Profile (app-e2e)', () => {
 
+  // ─── Segment title / flash tests ──────────────────────────────────────────
+  // Verify that the correct title is shown on the FIRST stable render —
+  // no intermediate flash of the wrong segment when a ?type= URL param is present.
+
+  test('type=beruflich shows "berufliche Weiterbildung" title immediately', async ({ page }) => {
+    await mockProviderApi(page);
+    await page.goto('/search?type=beruflich&tab=anbieter');
+
+    const h1 = page.locator('h1');
+    await expect(h1).toBeVisible({ timeout: 15_000 });
+    await expect(h1).toContainText('beruflich', { ignoreCase: true });
+    await expect(h1).not.toContainText('Hobby', { ignoreCase: true });
+    await expect(h1).not.toContainText('Kinder', { ignoreCase: true });
+  });
+
+  test('type=privat_hobby shows "Hobby & Freizeit" title immediately (no beruflich flash)', async ({ page }) => {
+    await mockProviderApi(page);
+    await page.goto('/search?type=privat_hobby&tab=anbieter');
+
+    const h1 = page.locator('h1');
+    await expect(h1).toBeVisible({ timeout: 15_000 });
+    await expect(h1).toContainText('Hobby', { ignoreCase: true });
+    await expect(h1).not.toContainText('beruflich', { ignoreCase: true });
+    await expect(h1).not.toContainText('Kinder', { ignoreCase: true });
+  });
+
+  test('type=kinder_jugend shows "Kinder" title immediately (no beruflich flash)', async ({ page }) => {
+    await mockProviderApi(page);
+    await page.goto('/search?type=kinder_jugend&tab=anbieter');
+
+    const h1 = page.locator('h1');
+    await expect(h1).toBeVisible({ timeout: 15_000 });
+    await expect(h1).toContainText('Kinder', { ignoreCase: true });
+    await expect(h1).not.toContainText('beruflich', { ignoreCase: true });
+    await expect(h1).not.toContainText('Hobby', { ignoreCase: true });
+  });
+
+  test('type=privat_hobby&q=Yoga shows "Hobby" title and q param preserved', async ({ page }) => {
+    await mockProviderApi(page);
+    await page.goto('/search?type=privat_hobby&q=Yoga&tab=anbieter');
+
+    const h1 = page.locator('h1');
+    await expect(h1).toBeVisible({ timeout: 15_000 });
+    await expect(h1).toContainText('Hobby', { ignoreCase: true });
+    await expect(h1).not.toContainText('beruflich', { ignoreCase: true });
+  });
+
+  test('/search?tab=anbieter without type shows a title (neutral or default)', async ({ page }) => {
+    await mockProviderApi(page);
+    await page.goto('/search?tab=anbieter');
+
+    const h1 = page.locator('h1');
+    await expect(h1).toBeVisible({ timeout: 15_000 });
+    await expect(h1).not.toHaveText('');
+  });
+
+  // ─── Redirect & navigation tests ────────────────────────────────────────────
+
   test('/anbieter redirects to /search?tab=anbieter', async ({ page }) => {
     await mockProviderApi(page);
     await page.goto('/anbieter');

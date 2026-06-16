@@ -5,6 +5,14 @@ import { BASE_URL } from '../lib/siteConfig';
 import { useTaxonomy } from '../hooks/useTaxonomy';
 import ProviderCard from './ProviderCard';
 
+// Module-level constant — must NOT be inside the component to avoid TDZ errors
+// when referenced by useState lazy initializers or early useEffect calls.
+const URL_TO_DB_TYPE_PROVIDER = {
+  beruflich: 'professionell',
+  privat_hobby: 'privat',
+  kinder_jugend: 'kinder',
+};
+
 /**
  * ProviderDirectory Component
  * Public directory listing of Pro+ providers with published profiles
@@ -39,9 +47,16 @@ export default function ProviderDirectory({ t, setView, embedded = false }) {
 
   const [verifiedOnly, setVerifiedOnly] = useState(false);
 
-  // Derive active segment config for visual theming
+  // Read URL type param DIRECTLY on every render — no state, no lag.
+  // This guarantees the title/theme is correct even when activeType is stale
+  // (e.g. taxonomy hasn't loaded yet, or component stays mounted while segment changes).
+  const _urlTypeParam = new URLSearchParams(window.location.search).get('type');
+  const urlSegmentSlug = _urlTypeParam ? (URL_TO_DB_TYPE_PROVIDER[_urlTypeParam] || _urlTypeParam) : null;
+
   const activeType = types.find(tp => tp.id === selectedType);
-  const segmentConfig = SEGMENT_CONFIG[activeType?.slug] || SEGMENT_CONFIG.privat;
+  // URL param ALWAYS wins (nullish coalescing ?? — only falls back to activeType.slug when no type in URL)
+  const resolvedSlug = urlSegmentSlug ?? activeType?.slug ?? null;
+  const segmentConfig = SEGMENT_CONFIG[resolvedSlug] || SEGMENT_CONFIG.privat;
 
   const INTRO_TEXTS = {
     professionell: {
@@ -57,7 +72,10 @@ export default function ProviderDirectory({ t, setView, embedded = false }) {
       subtitle: 'Finden Sie Anbieter für altersgerechte Kurse, Ferienprogramme und Förderangebote für Kinder und Jugendliche.'
     }
   };
-  const introText = INTRO_TEXTS[activeType?.slug] || INTRO_TEXTS.privat;
+  const introText = INTRO_TEXTS[resolvedSlug] || {
+    title: 'Anbieter in der Schweiz',
+    subtitle: 'Entdecke geprüfte Kursanbieter und Bildungsinstitutionen in der Schweiz.'
+  };
 
   // Pagination
   const [offset, setOffset] = useState(0);
@@ -163,14 +181,6 @@ export default function ProviderDirectory({ t, setView, embedded = false }) {
     setSelectedSpecialty(newSpecialty);
     setSelectedFocus('');
   }, []);
-
-  // Normalize URL type slugs from the courses search (e.g. 'beruflich')
-  // to the DB taxonomy slugs used by ProviderDirectory ('professionell')
-  const URL_TO_DB_TYPE_PROVIDER = {
-    beruflich: 'professionell',
-    privat_hobby: 'privat',
-    kinder_jugend: 'kinder',
-  };
 
   // Read type from URL param — normalize legacy course-search slugs to DB slugs
   useEffect(() => {
