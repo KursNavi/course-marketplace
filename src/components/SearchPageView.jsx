@@ -70,6 +70,16 @@ const SearchPageView = ({
         return !!(p.get('lang') || p.get('price') || (p.get('level') && p.get('level') !== 'All') || p.get('pro') || p.get('booking'));
     });
 
+    // Auto-open "Weitere Filter" when secondary filters become active via in-app navigation.
+    // The lazy init above handles direct page loads; this effect handles subsequent prop changes
+    // (e.g. user navigates from /search to /search?price=200&pro=1 within the SPA).
+    React.useEffect(() => {
+        if (filterPriceMax || filterPro || filterDirectBooking || selectedLanguages.length > 0 || (filterLevel && filterLevel !== 'All')) {
+            setShowMoreFilters(true);
+        }
+    }, [filterPriceMax, filterPro, filterDirectBooking, selectedLanguages, filterLevel]);
+
+
     // Load taxonomy from DB
     const { areas: dbAreas } = useTaxonomy();
 
@@ -414,16 +424,6 @@ const SearchPageView = ({
         filterDirectBooking,
     ].filter(Boolean).length;
 
-    // Auto-open "Weitere Filter" when secondary filters become active via in-app navigation.
-    // Only opens (never force-closes) so the user can still manually close while filters are active.
-    const prevSecondaryCountRef = useRef(secondaryFilterCount);
-    useEffect(() => {
-        if (secondaryFilterCount > 0 && prevSecondaryCountRef.current === 0) {
-            setShowMoreFilters(true);
-        }
-        prevSecondaryCountRef.current = secondaryFilterCount;
-    }, [secondaryFilterCount]);
-
     // --- EMPTY STATE DETECTION ---
     // Determine if the catalog is genuinely empty for the selected type/segment
     // vs. just the current filters producing 0 results
@@ -584,16 +584,17 @@ const SearchPageView = ({
                         </div>
                         <div className="flex items-center gap-2">
                             <LocationDropdown selectedLocations={selectedLocations} setSelectedLocations={setSelectedLocations} locMenuOpen={locMenuOpen} setLocMenuOpen={setLocMenuOpen} locMenuRef={locMenuRef} t={t} />
-                            <LanguageDropdown selectedLanguages={selectedLanguages} setSelectedLanguages={setSelectedLanguages} langMenuOpen={langMenuOpen} setLangMenuOpen={setLangMenuOpen} langMenuRef={langMenuRef} t={t} />
                             <DeliveryTypeFilter selectedDeliveryTypes={selectedDeliveryTypes} setSelectedDeliveryTypes={setSelectedDeliveryTypes} deliveryMenuOpen={deliveryMenuOpen} setDeliveryMenuOpen={setDeliveryMenuOpen} deliveryMenuRef={deliveryMenuRef} t={t} />
                         </div>
                     </div>
-                    <p className="text-xs text-gray-500 -mt-1 ml-3">{t.search_hint_boolean || 'Tipp: Kombiniere Begriffe mit AND oder OR'}</p>
+                    <p className="text-xs text-gray-500 -mt-1 ml-3">
+                        Tipp: Du kannst mehrere Begriffe kombinieren, z.B. <em>Yoga Zürich</em> oder <em>Excel online</em>.
+                    </p>
 
                     {/* SEGMENT PICKER - shown when no segment is selected */}
                     {!searchType && (
-                        <div className="flex items-center gap-2">
-                            <span className="text-xs text-gray-400 mr-1">Kategorie wählen:</span>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="text-xs text-gray-400 shrink-0">Bereich:</span>
                             {[
                                 { key: 'beruflich', dbKey: 'professionell' },
                                 { key: 'privat_hobby', dbKey: 'privat' },
@@ -602,8 +603,8 @@ const SearchPageView = ({
                                 const cfg = SEGMENT_CONFIG[key] || SEGMENT_CONFIG[dbKey];
                                 const Icon = cfg?.icon || Briefcase;
                                 return (
-                                    <button key={key} onClick={() => { setSearchType(key); setSearchArea(""); setSearchSpecialty(""); setSearchFocus(""); }} className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm font-medium transition-all hover:shadow-sm ${cfg?.bgLight || 'bg-gray-50'} ${cfg?.borderLight || 'border-gray-200'} ${cfg?.text || 'text-gray-600'} hover:opacity-80`}>
-                                        <Icon className="w-4 h-4" />
+                                    <button key={key} onClick={() => { setSearchType(key); setSearchArea(""); setSearchSpecialty(""); setSearchFocus(""); }} className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border text-xs font-medium transition-all hover:shadow-sm bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100`}>
+                                        <Icon className={`w-3.5 h-3.5 ${cfg?.text || 'text-gray-500'}`} />
                                         {cfg?.label?.de || key}
                                     </button>
                                 );
@@ -659,7 +660,7 @@ const SearchPageView = ({
                         />
                     )}
 
-                    {/* DATE FILTERS + "WEITERE FILTER" TOGGLE */}
+                    {/* DATE FILTERS + WEITERE FILTER TOGGLE */}
                     <div className="flex gap-2 flex-wrap items-center border-t pt-2 border-gray-100">
                         <label className="flex items-center bg-white px-2.5 py-1 rounded-lg border border-gray-200 cursor-pointer">
                             <span className="text-xs text-gray-400 mr-1.5 whitespace-nowrap">Von</span>

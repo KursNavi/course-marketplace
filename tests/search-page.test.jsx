@@ -467,7 +467,7 @@ describe('Price filter validation', () => {
       courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
     });
     render(<SearchPageView {...props} />);
-    // Price input is inside "Weitere Filter" — open the panel first
+    // Price input is in the "Weitere Filter" section — open it first
     const weitereBtn = screen.getByTestId('btn-weitere-filter');
     fireEvent.click(weitereBtn);
     expect(screen.getByPlaceholderText('Beliebig')).toBeInTheDocument();
@@ -479,7 +479,7 @@ describe('Price filter validation', () => {
       courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
     });
     render(<SearchPageView {...props} />);
-    // Price input is inside "Weitere Filter" — open the panel first
+    // Price input is in the "Weitere Filter" section — open it first
     const weitereBtn = screen.getByTestId('btn-weitere-filter');
     fireEvent.click(weitereBtn);
     const priceInput = screen.getByPlaceholderText('Beliebig');

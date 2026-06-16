@@ -45,36 +45,46 @@ export default function ProviderDirectory({ t, setView, embedded = false }) {
     return new URLSearchParams(window.location.search).get('q') || '';
   });
 
-  const [verifiedOnly, setVerifiedOnly] = useState(false);
+  // Initialize from URL pro param so verified filter is preserved on direct navigation
+  const [verifiedOnly, setVerifiedOnly] = useState(() =>
+    new URLSearchParams(window.location.search).get('pro') === '1'
+  );
+
+  // Ref so the type sync effect doesn't need selectedType in its deps
+  // (avoids listener re-registration on every type change → no missed events)
+  const selectedTypeRef = useRef(selectedType);
+  useEffect(() => { selectedTypeRef.current = selectedType; }, [selectedType]);
 
   // Read URL type param DIRECTLY on every render — no state, no lag.
   // This guarantees the title/theme is correct even when activeType is stale
-  // (e.g. taxonomy hasn't loaded yet, or component stays mounted while segment changes).
+  // (e.g. component stays mounted while segment changes, or taxonomy hasn't loaded yet).
   const _urlTypeParam = new URLSearchParams(window.location.search).get('type');
   const urlSegmentSlug = _urlTypeParam ? (URL_TO_DB_TYPE_PROVIDER[_urlTypeParam] || _urlTypeParam) : null;
 
+  // URL param ALWAYS wins (nullish coalescing ?? — only falls back to activeType when no type in URL).
+  // Using || would let a stale activeType.slug override the new URL param for one render.
   const activeType = types.find(tp => tp.id === selectedType);
-  // URL param ALWAYS wins (nullish coalescing ?? — only falls back to activeType.slug when no type in URL)
   const resolvedSlug = urlSegmentSlug ?? activeType?.slug ?? null;
   const segmentConfig = SEGMENT_CONFIG[resolvedSlug] || SEGMENT_CONFIG.privat;
 
   const INTRO_TEXTS = {
     professionell: {
       title: 'Anbieter für berufliche Weiterbildung',
-      subtitle: 'Finden Sie Schulen und Trainer für Fachkurse, Zertifikate und berufliche Qualifikationen in der Schweiz.'
+      subtitle: 'Finde Schulen, Akademien und Kursleiter für Fachkurse, Zertifikate und berufliche Weiterbildung in der Schweiz.'
     },
     privat: {
       title: 'Anbieter für Hobby & Freizeit',
-      subtitle: 'Entdecken Sie Kursanbieter für kreative Kurse, Hobbys und persönliche Weiterbildung in der ganzen Schweiz.'
+      subtitle: 'Finde Kursanbieter und Kursleiter für Hobby, Freizeit und persönliche Weiterbildung in der Schweiz.'
     },
     kinder: {
       title: 'Anbieter für Kinder & Jugendliche',
-      subtitle: 'Finden Sie Anbieter für altersgerechte Kurse, Ferienprogramme und Förderangebote für Kinder und Jugendliche.'
+      subtitle: 'Finde geeignete Kursanbieter und Schulen für Kinder und Jugendliche in der Schweiz.'
     }
   };
+
   const introText = INTRO_TEXTS[resolvedSlug] || {
     title: 'Anbieter in der Schweiz',
-    subtitle: 'Entdecke geprüfte Kursanbieter und Bildungsinstitutionen in der Schweiz.'
+    subtitle: 'Finde passende Kursanbieter, Schulen und Kursleiter in der Schweiz.'
   };
 
   // Pagination
@@ -194,8 +204,8 @@ export default function ProviderDirectory({ t, setView, embedded = false }) {
         : null;
       if (normalizedType) {
         const matched = types.find(t => t.slug === normalizedType);
-        if (matched && matched.id !== selectedType) changeType(matched.id);
-      } else if (!selectedType) {
+        if (matched && matched.id !== selectedTypeRef.current) changeType(matched.id);
+      } else if (!selectedTypeRef.current) {
         changeType(types[0]?.id || '');
       }
     };
@@ -208,7 +218,37 @@ export default function ProviderDirectory({ t, setView, embedded = false }) {
       window.removeEventListener('popstate', syncTypeFromUrl);
       window.removeEventListener('locationchange', syncTypeFromUrl);
     };
-  }, [types, selectedType, changeType]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [types, changeType]);
+
+  // Sync q from URL on navigation (popstate / locationchange).
+  // Lazy init only runs at mount; this effect handles subsequent URL changes.
+  useEffect(() => {
+    const syncQFromUrl = () => {
+      const q = new URLSearchParams(window.location.search).get('q') || '';
+      setSearchQuery(q);
+      setSearchInput(q);
+    };
+    window.addEventListener('popstate', syncQFromUrl);
+    window.addEventListener('locationchange', syncQFromUrl);
+    return () => {
+      window.removeEventListener('popstate', syncQFromUrl);
+      window.removeEventListener('locationchange', syncQFromUrl);
+    };
+  }, []);
+
+  // Sync verifiedOnly from URL pro param on navigation (popstate / locationchange).
+  useEffect(() => {
+    const syncVerifiedFromUrl = () => {
+      setVerifiedOnly(new URLSearchParams(window.location.search).get('pro') === '1');
+    };
+    window.addEventListener('popstate', syncVerifiedFromUrl);
+    window.addEventListener('locationchange', syncVerifiedFromUrl);
+    return () => {
+      window.removeEventListener('popstate', syncVerifiedFromUrl);
+      window.removeEventListener('locationchange', syncVerifiedFromUrl);
+    };
+  }, []);
 
   // SEO: Grunddaten sofort beim Mount setzen (unabhängig vom API-Ergebnis)
   // → Google's Renderer sieht Titel, Description und Canonical ohne auf Supabase zu warten
@@ -276,21 +316,33 @@ export default function ProviderDirectory({ t, setView, embedded = false }) {
     setView('provider-profile');
   };
 
-  // Clear all filters
+  // Clear all filters — keep the URL type so segment stays consistent.
+  // Also updates the URL so App.jsx filterPro / filterQ stays in sync.
   const clearFilters = () => {
     setSelectedCanton('');
-    setSelectedType('');
-    setSelectedArea('');
-    setSelectedSpecialty('');
-    setSelectedFocus('');
+    // Re-read type from URL so segment is preserved (don't reset to '')
+    const urlType = new URLSearchParams(window.location.search).get('type');
+    const normalizedType = urlType ? (URL_TO_DB_TYPE_PROVIDER[urlType] || urlType) : null;
+    const matched = normalizedType ? types.find(t => t.slug === normalizedType) : null;
+    changeType(matched?.id || '');
     setSearchQuery('');
     setSearchInput('');
     setVerifiedOnly(false);
+
+    // Update URL: keep only segment context (type, tab=anbieter), remove all user filters
+    const newParams = new URLSearchParams();
+    if (urlType) newParams.set('type', urlType);
+    newParams.set('tab', 'anbieter');
+    window.history.replaceState(
+      window.history.state || {},
+      '',
+      '/search?' + newParams.toString()
+    );
   };
 
+  // selectedType is driven by URL segment — not a user-applied filter, so don't count it
   const activeFilterCount =
     (selectedCanton ? 1 : 0) +
-    (selectedType ? 1 : 0) +
     (selectedArea ? 1 : 0) +
     (selectedSpecialty ? 1 : 0) +
     (selectedFocus ? 1 : 0) +
@@ -318,7 +370,7 @@ export default function ProviderDirectory({ t, setView, embedded = false }) {
               type="text"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              placeholder="Anbieter suchen (z.B. Yoga, Kochen, Programmieren...)"
+              placeholder="Anbieter, Schule oder Kursleiter suchen"
               className="w-full pl-12 pr-24 py-3.5 bg-white border border-gray-200 rounded-xl text-base shadow-sm focus:outline-none focus:border-gray-400 focus:ring-2 focus:ring-gray-200"
             />
             <button
@@ -468,22 +520,24 @@ export default function ProviderDirectory({ t, setView, embedded = false }) {
 
         {/* Empty State */}
         {!loading && providers.length === 0 && !error && (
-          <div className="text-center py-20">
+          <div className="text-center py-20" data-testid="provider-empty-state">
             <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <Search className="w-8 h-8 text-orange-500" />
             </div>
             <h3 className="text-xl font-bold text-gray-900 mb-2">
-              Keine Anbieter gefunden
+              Keine passenden Anbieter gefunden.
             </h3>
             <p className="text-gray-600 mb-4">
-              Versuchen Sie, Ihre Filter anzupassen.
+              Passe deine Suche oder die Filter an.
             </p>
-            <button
-              onClick={clearFilters}
-              className="text-orange-500 font-medium hover:text-orange-600"
-            >
-              Alle Filter zurücksetzen
-            </button>
+            {activeFilterCount > 0 && (
+              <button
+                onClick={clearFilters}
+                className="text-orange-500 font-medium hover:text-orange-600"
+              >
+                Filter zurücksetzen
+              </button>
+            )}
           </div>
         )}
 
@@ -517,7 +571,7 @@ export default function ProviderDirectory({ t, setView, embedded = false }) {
         {loading && providers.length > 0 && (
           <div className="flex items-center justify-center py-8">
             <Loader className="w-6 h-6 text-orange-500 animate-spin" />
-            <span className="ml-2 text-gray-600">Laden...</span>
+            <span className="ml-2 text-gray-600">Weitere Anbieter werden geladen…</span>
           </div>
         )}
       </div>

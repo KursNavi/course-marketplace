@@ -344,13 +344,25 @@ export default function KursNaviPro() {  // 1. Initial State Logic
     }
   }
 
-  // Filter States
-  const [selectedLocations, setSelectedLocations] = useState([]);
+  // Filter States — lazy-initialized from URL to avoid URL-sync effect stripping params on first render
+  const [selectedLocations, setSelectedLocations] = useState(() => {
+    if (window.location.pathname !== '/search') return [];
+    const p = new URLSearchParams(window.location.search).get('loc');
+    return p ? p.split(',') : [];
+  });
   const [locMenuOpen, setLocMenuOpen] = useState(false);
-  const [selectedLanguages, setSelectedLanguages] = useState([]);
+  const [selectedLanguages, setSelectedLanguages] = useState(() => {
+    if (window.location.pathname !== '/search') return [];
+    const p = new URLSearchParams(window.location.search).get('lang');
+    return p ? p.split(',') : [];
+  });
   const [langMenuOpen, setLangMenuOpen] = useState(false);
   const langMenuRef = useRef(null);
-  const [selectedDeliveryTypes, setSelectedDeliveryTypes] = useState([]);
+  const [selectedDeliveryTypes, setSelectedDeliveryTypes] = useState(() => {
+    if (window.location.pathname !== '/search') return [];
+    const p = new URLSearchParams(window.location.search).get('delivery');
+    return p ? p.split(',') : [];
+  });
   const [deliveryMenuOpen, setDeliveryMenuOpen] = useState(false);
   const deliveryMenuRef = useRef(null);
   // Initialize search filters from URL params so the URL-sync effect doesn't strip
@@ -2222,7 +2234,7 @@ useEffect(() => {
       {view === 'admin-blog' && <AdminBlogManager showNotification={showNotification} setView={setView} courses={courses} />}
       {view === 'blog' && <BlogList articles={articles} setView={setView} setSelectedArticle={setSelectedArticle} />}
       {view === 'blog-detail' && <BlogDetail article={selectedArticle} setView={setView} courses={publishedCourses} />}
-      {view === 'provider-directory' && <ProviderDirectory t={t} setView={setView} />}
+      {/* provider-directory view removed — /anbieter always redirects to /search?tab=anbieter */}
       {view === 'provider-profile' && <ProviderProfilePage t={t} setView={setView} setSelectedCourse={setSelectedCourse} />}
       {view === 'bereich-landing' && (
         <BereichLandingPage

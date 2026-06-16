@@ -217,6 +217,142 @@ describe('DetailView', () => {
     expect(screen.getByText('Anfrage senden')).toBeInTheDocument();
   });
 
+  // --- Empfehlungsbereich ---
+
+  it('zeigt den Bereich "Ähnliche Kurse" wenn passende Kurse vorhanden sind', () => {
+    const course = {
+      id: '500',
+      title: 'Excel Grundlagen',
+      description: 'Tabellenkalkulationen meistern.',
+      instructor_name: 'Test Lehrer',
+      booking_type: 'lead',
+      price: 0,
+      canton: 'Zürich',
+      address: 'Zürich',
+      all_categories: [{ category_type: 'professionell', category_area: 'it_business', is_primary: true }],
+    };
+    const relatedCourse = {
+      id: '501',
+      title: 'PowerPoint Workshop',
+      description: 'Präsentationen erstellen.',
+      instructor_name: 'Test Lehrer',
+      booking_type: 'lead',
+      price: 0,
+      canton: 'Zürich',
+      address: 'Zürich',
+      all_categories: [{ category_type: 'professionell', category_area: 'it_business', is_primary: true }],
+    };
+    render(
+      <DetailView
+        course={course}
+        courses={[course, relatedCourse]}
+        setView={vi.fn()}
+        t={{ lbl_description: 'Beschreibung', lbl_learn_goals: 'Lernziele', btn_book: 'Jetzt buchen' }}
+        setSelectedTeacher={vi.fn()}
+        user={null}
+        savedCourseIds={[]}
+        onToggleSaveCourse={vi.fn()}
+        showNotification={vi.fn()}
+      />
+    );
+    expect(screen.getByText('Ähnliche Kurse')).toBeInTheDocument();
+    expect(screen.queryByText('Nicht der richtige Kurs?')).not.toBeInTheDocument();
+  });
+
+  it('blendet Empfehlungsbereich aus wenn keine ähnlichen Kurse vorhanden sind', () => {
+    const course = {
+      id: '502',
+      title: 'Einzelkurs ohne Ähnliche',
+      description: 'Einziger Kurs.',
+      instructor_name: 'Test Lehrer',
+      booking_type: 'lead',
+      price: 0,
+      canton: 'Zürich',
+      address: 'Zürich',
+      all_categories: [],
+    };
+    render(
+      <DetailView
+        course={course}
+        courses={[course]}
+        setView={vi.fn()}
+        t={{ lbl_description: 'Beschreibung', lbl_learn_goals: 'Lernziele', btn_book: 'Jetzt buchen' }}
+        setSelectedTeacher={vi.fn()}
+        user={null}
+        savedCourseIds={[]}
+        onToggleSaveCourse={vi.fn()}
+        showNotification={vi.fn()}
+      />
+    );
+    expect(screen.queryByText('Ähnliche Kurse')).not.toBeInTheDocument();
+  });
+
+  it('zeigt keine Kinder-Empfehlungen bei einem beruflichen Kurs', () => {
+    const beruflichCourse = {
+      id: '503',
+      title: 'Projektmanagement Kurs',
+      description: 'Projekte leiten lernen.',
+      instructor_name: 'Test Lehrer',
+      booking_type: 'lead',
+      price: 0,
+      canton: 'Bern',
+      address: 'Bern',
+      all_categories: [{ category_type: 'professionell', category_area: 'management', is_primary: true }],
+    };
+    const kinderCourse = {
+      id: '504',
+      title: 'Kindertanzen',
+      description: 'Tanzen für Kinder.',
+      instructor_name: 'Test Lehrer',
+      booking_type: 'lead',
+      price: 0,
+      canton: 'Bern',
+      address: 'Bern',
+      all_categories: [{ category_type: 'kinder', category_area: 'tanz_kinder', is_primary: true }],
+    };
+    render(
+      <DetailView
+        course={beruflichCourse}
+        courses={[beruflichCourse, kinderCourse]}
+        setView={vi.fn()}
+        t={{ lbl_description: 'Beschreibung', lbl_learn_goals: 'Lernziele', btn_book: 'Jetzt buchen' }}
+        setSelectedTeacher={vi.fn()}
+        user={null}
+        savedCourseIds={[]}
+        onToggleSaveCourse={vi.fn()}
+        showNotification={vi.fn()}
+      />
+    );
+    expect(screen.queryByText('Kindertanzen')).not.toBeInTheDocument();
+  });
+
+  it('stürzt nicht ab wenn courses=[] übergeben wird', () => {
+    const course = {
+      id: '505',
+      title: 'Leerer Kurs',
+      description: 'Kein Angebot.',
+      instructor_name: 'Test Lehrer',
+      booking_type: 'lead',
+      price: 0,
+      canton: 'Online',
+      address: 'Online',
+      all_categories: [],
+    };
+    expect(() => render(
+      <DetailView
+        course={course}
+        courses={[]}
+        setView={vi.fn()}
+        t={{ lbl_description: 'Beschreibung', lbl_learn_goals: 'Lernziele', btn_book: 'Jetzt buchen' }}
+        setSelectedTeacher={vi.fn()}
+        user={null}
+        savedCourseIds={[]}
+        onToggleSaveCourse={vi.fn()}
+        showNotification={vi.fn()}
+      />
+    )).not.toThrow();
+  });
+
   it('keeps a running multi-day event visible when end_date is in the future', () => {
     // A multi-day event that started in the past but ends in the future is still "current"
     const futureEndDate = new Date();
