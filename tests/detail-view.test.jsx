@@ -326,6 +326,228 @@ describe('DetailView', () => {
     expect(screen.queryByText('Kindertanzen')).not.toBeInTheDocument();
   });
 
+  // --- JSON-LD Schema Tests ---
+
+  const getJsonLdScripts = () =>
+    [...document.head.querySelectorAll('script[type="application/ld+json"]')]
+      .map(s => JSON.parse(s.text || s.textContent));
+
+  const renderCourse = (course) =>
+    render(
+      <DetailView
+        course={course}
+        courses={[]}
+        setView={vi.fn()}
+        t={{ lbl_description: 'Beschreibung', lbl_learn_goals: 'Lernziele', btn_book: 'Jetzt buchen' }}
+        setSelectedTeacher={vi.fn()}
+        user={null}
+        savedCourseIds={[]}
+        onToggleSaveCourse={vi.fn()}
+        showNotification={vi.fn()}
+      />
+    );
+
+  it('JSON-LD: Course-Schema wird immer ausgegeben', () => {
+    const course = {
+      id: 'jld-1',
+      title: 'Yoga Kurs',
+      description: 'Entspannung und Bewegung.',
+      instructor_name: 'Anna Muster',
+      booking_type: 'lead',
+      price: 0,
+      canton: 'Online',
+      address: 'Online',
+      all_categories: [],
+    };
+    renderCourse(course);
+    const schemas = getJsonLdScripts();
+    const courseSchema = schemas.find(s => s['@type'] === 'Course');
+    expect(courseSchema).toBeDefined();
+    expect(courseSchema.name).toBe('Yoga Kurs');
+  });
+
+  it('JSON-LD: EducationEvent mit startDate wenn zukünftiger Termin vorhanden', () => {
+    const futureDate = new Date();
+    futureDate.setDate(futureDate.getDate() + 14);
+    const futureDateStr = futureDate.toISOString().split('T')[0];
+
+    const course = {
+      id: 'jld-2',
+      title: 'Pilates Workshop',
+      description: 'Workshop Beschreibung.',
+      instructor_name: 'Max Trainer',
+      booking_type: 'platform',
+      price: 120,
+      canton: 'Zürich',
+      address: 'Zürich',
+      all_categories: [],
+      course_events: [
+        {
+          id: 'evt-future',
+          start_date: futureDateStr,
+          end_date: null,
+          max_participants: 10,
+          bookings: [],
+          cancelled_at: null,
+        },
+      ],
+    };
+    renderCourse(course);
+    const schemas = getJsonLdScripts();
+    const eventSchema = schemas.find(s => s['@type'] === 'EducationEvent');
+    expect(eventSchema).toBeDefined();
+    expect(eventSchema.startDate).toBe(futureDateStr);
+    expect(eventSchema.endDate).toBeUndefined();
+  });
+
+  it('JSON-LD: kein EducationEvent ohne Termin (flexibler Kurs)', () => {
+    const course = {
+      id: 'jld-3',
+      title: 'Flexibler Kurs',
+      description: 'Ohne festen Termin.',
+      instructor_name: 'Test Anbieter',
+      booking_type: 'flex',
+      price: 0,
+      canton: 'Online',
+      address: 'Online',
+      all_categories: [],
+      // no course_events
+    };
+    renderCourse(course);
+    const schemas = getJsonLdScripts();
+    const eventSchema = schemas.find(s => s['@type'] === 'EducationEvent');
+    expect(eventSchema).toBeUndefined();
+    // Course schema still present
+    expect(schemas.find(s => s['@type'] === 'Course')).toBeDefined();
+  });
+
+  it('JSON-LD: kein EducationEvent wenn alle Termine in der Vergangenheit', () => {
+    const course = {
+      id: 'jld-4',
+      title: 'Abgelaufener Kurs',
+      description: 'Termin war gestern.',
+      instructor_name: 'Test Anbieter',
+      booking_type: 'platform',
+      price: 80,
+      canton: 'Bern',
+      address: 'Bern',
+      all_categories: [],
+      course_events: [
+        {
+          id: 'evt-past',
+          start_date: '2020-01-15',
+          end_date: null,
+          max_participants: 0,
+          bookings: [],
+          cancelled_at: null,
+        },
+      ],
+    };
+    renderCourse(course);
+    const schemas = getJsonLdScripts();
+    const eventSchema = schemas.find(s => s['@type'] === 'EducationEvent');
+    expect(eventSchema).toBeUndefined();
+    // Course schema still present
+    expect(schemas.find(s => s['@type'] === 'Course')).toBeDefined();
+  });
+
+  it('JSON-LD: EducationEvent enthält endDate wenn Termin ein Enddatum hat', () => {
+    const futureStart = new Date();
+    futureStart.setDate(futureStart.getDate() + 7);
+    const futureEnd = new Date();
+    futureEnd.setDate(futureEnd.getDate() + 10);
+    const startStr = futureStart.toISOString().split('T')[0];
+    const endStr = futureEnd.toISOString().split('T')[0];
+
+    const course = {
+      id: 'jld-5',
+      title: 'Mehrtages-Workshop',
+      description: 'Intensivkurs über mehrere Tage.',
+      instructor_name: 'Profi Trainer',
+      booking_type: 'platform',
+      price: 500,
+      canton: 'Luzern',
+      address: 'Luzern',
+      all_categories: [],
+      course_events: [
+        {
+          id: 'evt-multi',
+          start_date: startStr,
+          end_date: endStr,
+          max_participants: 0,
+          bookings: [],
+          cancelled_at: null,
+        },
+      ],
+    };
+    renderCourse(course);
+    const schemas = getJsonLdScripts();
+    const eventSchema = schemas.find(s => s['@type'] === 'EducationEvent');
+    expect(eventSchema).toBeDefined();
+    expect(eventSchema.startDate).toBe(startStr);
+    expect(eventSchema.endDate).toBe(endStr);
+  });
+
+  it('JSON-LD: kein EducationEvent wenn Termin kein start_date hat', () => {
+    const course = {
+      id: 'jld-6',
+      title: 'Kurs ohne Datum',
+      description: 'Event-Objekt ohne start_date.',
+      instructor_name: 'Test Anbieter',
+      booking_type: 'lead',
+      price: 0,
+      canton: 'Online',
+      address: 'Online',
+      all_categories: [],
+      course_events: [
+        {
+          id: 'evt-no-date',
+          start_date: null,
+          end_date: null,
+          max_participants: 0,
+          bookings: [],
+          cancelled_at: null,
+        },
+      ],
+    };
+    renderCourse(course);
+    const schemas = getJsonLdScripts();
+    const eventSchema = schemas.find(s => s['@type'] === 'EducationEvent');
+    expect(eventSchema).toBeUndefined();
+  });
+
+  it('JSON-LD: kein EducationEvent für stornierte Termine', () => {
+    const futureDate = new Date();
+    futureDate.setDate(futureDate.getDate() + 5);
+    const futureDateStr = futureDate.toISOString().split('T')[0];
+
+    const course = {
+      id: 'jld-7',
+      title: 'Stornierter Kurs',
+      description: 'Termin wurde storniert.',
+      instructor_name: 'Test Anbieter',
+      booking_type: 'platform',
+      price: 100,
+      canton: 'Zürich',
+      address: 'Zürich',
+      all_categories: [],
+      course_events: [
+        {
+          id: 'evt-cancelled',
+          start_date: futureDateStr,
+          end_date: null,
+          max_participants: 0,
+          bookings: [],
+          cancelled_at: '2026-01-01T00:00:00Z',
+        },
+      ],
+    };
+    renderCourse(course);
+    const schemas = getJsonLdScripts();
+    const eventSchema = schemas.find(s => s['@type'] === 'EducationEvent');
+    expect(eventSchema).toBeUndefined();
+  });
+
   it('stürzt nicht ab wenn courses=[] übergeben wird', () => {
     const course = {
       id: '505',
