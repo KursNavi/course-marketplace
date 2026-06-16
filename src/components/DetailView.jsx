@@ -267,25 +267,19 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
             availability = "https://schema.org/SoldOut";
         }
 
-        // --- FIX 6: Hybrid Schema (Course + EducationEvent) ---
-        const schemaData = {
+        // --- Course Schema (always emitted, no EducationEvent fields) ---
+        const primaryCat = getPrimaryCategory(course);
+        const areaLabel = getPrimaryCategoryLabel(course) || null;
+
+        const courseSchema = {
             "@context": "https://schema.org",
-            "@type": ["Course", "EducationEvent"], // Hybrid!
+            "@type": "Course",
             "name": course.title,
             "description": course.description,
             "provider": {
                 "@type": "Organization",
                 "name": course.instructor_name,
                 "sameAs": `${BASE_URL}/teacher/${course.user_id}`
-            },
-            "location": {
-                "@type": "Place",
-                "name": course.address || course.city || locationLabel,
-                "address": {
-                    "@type": "PostalAddress",
-                    "addressRegion": locationLabel,
-                    "addressCountry": "CH"
-                }
             },
             "offers": {
                 "@type": "Offer",
@@ -296,43 +290,100 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
         };
 
         if (hasValidPrice) {
-            schemaData.offers.price = priceVal;
+            courseSchema.offers.price = priceVal;
         }
 
-        // Add Event-specific fields if we have course_events
-        if (rawEvents.length > 0 && rawEvents[0].start_date) {
-            const nextEvent = rawEvents.find(e => new Date(e.start_date) > new Date()) || rawEvents[0];
-            schemaData.startDate = nextEvent.start_date;
-
-            // Add eventSchedule for recurring courses
-            if (rawEvents.length > 1) {
-                schemaData.eventSchedule = rawEvents.map(ev => ({
-                    "@type": "Schedule",
-                    "startDate": ev.start_date,
-                    "scheduleTimezone": "Europe/Zurich"
-                }));
-            }
-        }
-
-        // Add course-specific fields
         if (course.session_length) {
-            schemaData.timeRequired = course.session_count
+            courseSchema.timeRequired = course.session_count
                 ? `${course.session_count}x ${course.session_length}`
                 : course.session_length;
         }
 
-        const primaryCat = getPrimaryCategory(course);
-        const areaLabel = getPrimaryCategoryLabel(course) || null;
         if (areaLabel) {
-            schemaData.educationalLevel = areaLabel;
+            courseSchema.educationalLevel = areaLabel;
         }
 
         const script = document.createElement('script');
         script.type = 'application/ld+json';
-        script.text = JSON.stringify(schemaData);
+        script.text = JSON.stringify(courseSchema);
         document.head.appendChild(script);
 
-        // --- FIX 7: BreadcrumbList Schema ---
+        // --- EducationEvent Schema (only when a non-cancelled future/running event with a valid startDate exists) ---
+        // An event is "current" if it hasn't ended: end_date >= now, or (no end_date and start_date >= now).
+        // Never emit EducationEvent without a concrete startDate to avoid Google Search Console errors.
+        let eventScript = null;
+        const activeSchemaEvents = rawEvents.filter(ev => !ev.cancelled_at && ev.start_date);
+        const now = new Date();
+        const nextSchemaEvent = activeSchemaEvents.find(ev => {
+            if (ev.end_date) {
+                const end = new Date(ev.end_date);
+                return !isNaN(end.getTime()) && end >= now;
+            }
+            const start = new Date(ev.start_date);
+            return !isNaN(start.getTime()) && start >= now;
+        });
+
+        if (nextSchemaEvent) {
+            const educationEventSchema = {
+                "@context": "https://schema.org",
+                "@type": "EducationEvent",
+                "name": course.title,
+                "description": course.description,
+                "startDate": nextSchemaEvent.start_date,
+                "organizer": {
+                    "@type": "Organization",
+                    "name": course.instructor_name,
+                    "sameAs": `${BASE_URL}/teacher/${course.user_id}`
+                },
+                "location": {
+                    "@type": "Place",
+                    "name": course.address || course.city || locationLabel,
+                    "address": {
+                        "@type": "PostalAddress",
+                        "addressRegion": locationLabel,
+                        "addressCountry": "CH"
+                    }
+                },
+                "offers": {
+                    "@type": "Offer",
+                    "priceCurrency": "CHF",
+                    "availability": availability,
+                    "url": canonicalUrl
+                }
+            };
+
+            if (nextSchemaEvent.end_date) {
+                educationEventSchema.endDate = nextSchemaEvent.end_date;
+            }
+
+            if (hasValidPrice) {
+                educationEventSchema.offers.price = priceVal;
+            }
+
+            // eventSchedule for recurring courses with multiple upcoming events
+            const futureSchemaEvents = activeSchemaEvents.filter(ev => {
+                const start = new Date(ev.start_date);
+                return !isNaN(start.getTime()) && start >= now;
+            });
+            if (futureSchemaEvents.length > 1) {
+                educationEventSchema.eventSchedule = futureSchemaEvents.map(ev => {
+                    const entry = {
+                        "@type": "Schedule",
+                        "startDate": ev.start_date,
+                        "scheduleTimezone": "Europe/Zurich"
+                    };
+                    if (ev.end_date) entry.endDate = ev.end_date;
+                    return entry;
+                });
+            }
+
+            eventScript = document.createElement('script');
+            eventScript.type = 'application/ld+json';
+            eventScript.text = JSON.stringify(educationEventSchema);
+            document.head.appendChild(eventScript);
+        }
+
+        // --- BreadcrumbList Schema ---
         const breadcrumbData = {
             "@context": "https://schema.org",
             "@type": "BreadcrumbList",
@@ -365,6 +416,7 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
         return () => {
             createdTags.forEach(tag => { if (tag.parentNode) tag.parentNode.removeChild(tag); });
             if (script.parentNode) script.parentNode.removeChild(script);
+            if (eventScript?.parentNode) eventScript.parentNode.removeChild(eventScript);
             if (breadcrumbScript.parentNode) breadcrumbScript.parentNode.removeChild(breadcrumbScript);
         }
     }, [course]);

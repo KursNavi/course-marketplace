@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx playwright test tests/app-e2e/search-filters.spec.mjs --reporter=line)",
+      "Bash(xargs grep -l \"refund\\\\|Refund\")",
+      "Bash(ls -lhtr /c/KursNavi/supabase/migrations/*.sql)"
+    ]
+  }
+}
