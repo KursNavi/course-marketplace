@@ -79,6 +79,7 @@ const SearchPageView = ({
         }
     }, [filterPriceMax, filterPro, filterDirectBooking, selectedLanguages, filterLevel]);
 
+
     // Load taxonomy from DB
     const { areas: dbAreas } = useTaxonomy();
 

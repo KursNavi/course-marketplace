@@ -102,6 +102,16 @@ test.describe('Provider Directory & Profile (app-e2e)', () => {
     await expect(h1).not.toContainText('Hobby', { ignoreCase: true });
   });
 
+  test('type=privat_hobby&q=Yoga shows "Hobby" title and q param preserved', async ({ page }) => {
+    await mockProviderApi(page);
+    await page.goto('/search?type=privat_hobby&q=Yoga&tab=anbieter');
+
+    const h1 = page.locator('h1');
+    await expect(h1).toBeVisible({ timeout: 15_000 });
+    await expect(h1).toContainText('Hobby', { ignoreCase: true });
+    await expect(h1).not.toContainText('beruflich', { ignoreCase: true });
+  });
+
   test('/search?tab=anbieter without type shows neutral or default title', async ({ page }) => {
     await mockProviderApi(page);
     await page.goto('/search?tab=anbieter');

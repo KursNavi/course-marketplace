@@ -119,7 +119,10 @@ test.describe('Search & Filters (app-e2e)', () => {
     const weitereBtn = page.getByTestId('btn-weitere-filter');
     await expect(weitereBtn).toBeVisible({ timeout: 5_000 });
 
-    // Open and close — URL must remain unchanged
+    // Badge must show count ≥ 1 (price=150 → 1)
+    await expect(weitereBtn).toContainText('(1)');
+
+    // Toggle open + close — URL must remain unchanged
     await weitereBtn.click();
     await weitereBtn.click();
     await expect(page).toHaveURL(/price=150/);
