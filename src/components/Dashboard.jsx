@@ -970,7 +970,7 @@ const SubscriptionSection = ({ user, currentTier, packageExpiresAt, pendingPacka
         <div className="space-y-6 animate-in fade-in">
             <div className="bg-white p-8 rounded-xl border border-gray-200 shadow-sm">
                 <h2 className="text-2xl font-bold mb-2 flex items-center"><Crown className="w-6 h-6 mr-2 text-primary"/> Dein Abo-Status</h2>
-                <p className="text-gray-600 mb-6">
+                <p className="text-gray-600 mb-2">
                     Du nutzt aktuell das <span className="font-bold text-dark">{(PLANS.find(p => p.id === currentTier) || PLANS[0]).title}</span> Paket.
                     {packageExpiresAt && currentTier !== 'basic' && (
                         <span className="text-sm text-gray-400 ml-2">
@@ -978,6 +978,16 @@ const SubscriptionSection = ({ user, currentTier, packageExpiresAt, pendingPacka
                         </span>
                     )}
                 </p>
+                {currentTier !== 'basic' && packageExpiresAt && (
+                    <p className="text-xs text-gray-400 mb-6">
+                        Laufzeit: 1 Jahr · Das Paket verlängert sich <strong>nicht automatisch</strong>. Nach Ablauf musst du es aktiv verlängern, um weiterhin von den Paketleistungen zu profitieren.
+                    </p>
+                )}
+                {(!packageExpiresAt || currentTier === 'basic') && (
+                    <p className="text-xs text-gray-400 mb-6">
+                        Bezahlte Pakete laufen jeweils 1 Jahr und verlängern sich nicht automatisch.
+                    </p>
+                )}
 
                 {pendingPackageTier && pendingPackageExpiresAt && (
                     <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 p-4 flex items-start gap-3">
@@ -1038,18 +1048,23 @@ const SubscriptionSection = ({ user, currentTier, packageExpiresAt, pendingPacka
 
                         if (isUpgrade) {
                             return (
-                                <button
-                                    type="button"
-                                    onClick={() => handleCheckout(plan.id)}
-                                    disabled={!!checkoutLoading}
-                                    className={`flex w-full items-center justify-center gap-2 rounded-lg py-2 font-bold shadow-md transition ${colors.btnSolid}`}
-                                >
-                                    {checkoutLoading === plan.id ? (
-                                        <><Loader className="w-4 h-4 animate-spin" /> Laden...</>
-                                    ) : (
-                                        'Upgrade kaufen'
-                                    )}
-                                </button>
+                                <div>
+                                    <p className="mb-2 text-center text-xs text-gray-400">
+                                        Neue Laufzeit: 1 Jahr ab Upgrade · Restwert wird pro rata angerechnet · keine Barauszahlung
+                                    </p>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleCheckout(plan.id)}
+                                        disabled={!!checkoutLoading}
+                                        className={`flex w-full items-center justify-center gap-2 rounded-lg py-2 font-bold shadow-md transition ${colors.btnSolid}`}
+                                    >
+                                        {checkoutLoading === plan.id ? (
+                                            <><Loader className="w-4 h-4 animate-spin" /> Laden...</>
+                                        ) : (
+                                            'Upgrade kaufen'
+                                        )}
+                                    </button>
+                                </div>
                             );
                         }
 

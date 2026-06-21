@@ -2,10 +2,11 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import React from 'react';
 
-const { signUpMock, signInWithPasswordMock, upsertMock } = vi.hoisted(() => ({
+const { signUpMock, signInWithPasswordMock, upsertMock, getSessionMock } = vi.hoisted(() => ({
   signUpMock: vi.fn(),
   signInWithPasswordMock: vi.fn(),
   upsertMock: vi.fn(),
+  getSessionMock: vi.fn(),
 }));
 
 vi.mock('../src/lib/constants', () => ({
@@ -47,11 +48,17 @@ vi.mock('../src/lib/supabase', () => ({
     auth: {
       signUp: signUpMock,
       signInWithPassword: signInWithPasswordMock,
+      getSession: getSessionMock,
     },
     from: () => ({
       upsert: upsertMock,
     }),
   },
+}));
+
+vi.mock('../src/lib/legalVersions', () => ({
+  TERMS_VERSION: '2026-06-21',
+  PRIVACY_VERSION: '2026-06-21',
 }));
 
 import AuthView from '../src/components/AuthView';
@@ -76,6 +83,9 @@ describe('AuthView', () => {
       error: null,
     });
     upsertMock.mockResolvedValue({ error: null });
+    getSessionMock.mockResolvedValue({ data: { session: { access_token: 'tok' } } });
+    // Consent-API-Aufruf abfangen (fire-and-forget)
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true }));
   });
 
   it('uses the basic package for learner signup even if a teacher package is stored', async () => {
@@ -113,6 +123,43 @@ describe('AuthView', () => {
       }),
     ]), { onConflict: 'id' });
     expect(localStorage.getItem('selectedPackage')).toBeNull();
+  });
+
+  it('blocks signup when AGB checkbox is not checked', async () => {
+    const showNotification = vi.fn();
+    render(<AuthView setView={vi.fn()} setUser={vi.fn()} showNotification={showNotification} lang="de" />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Registrieren' }));
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Max Muster' } });
+    fireEvent.change(screen.getByLabelText('E-Mail'), { target: { value: 'max@example.com' } });
+    fireEvent.change(screen.getByLabelText('Passwort'), { target: { value: 'secret123' } });
+    fireEvent.change(screen.getByLabelText('Passwort bestätigen'), { target: { value: 'secret123' } });
+    // AGB-Checkbox NICHT anklicken
+    fireEvent.click(screen.getByRole('button', { name: 'Registrieren' }));
+
+    await waitFor(() => expect(showNotification).toHaveBeenCalledWith('Bitte AGB akzeptieren'));
+    expect(signUpMock).not.toHaveBeenCalled();
+  });
+
+  it('AGB-Link zeigt auf /agb und Datenschutz-Link auf /datenschutz', async () => {
+    render(<AuthView setView={vi.fn()} setUser={vi.fn()} showNotification={vi.fn()} lang="de" />);
+
+    // In den Registrierungsmodus wechseln
+    fireEvent.click(screen.getByRole('button', { name: 'Registrieren' }));
+
+    const agbLink = screen.getByRole('link', { name: /AGB/i });
+    const datenschutzLink = screen.getByRole('link', { name: /Datenschutz/i });
+
+    expect(agbLink.getAttribute('href')).toBe('/agb');
+    expect(datenschutzLink.getAttribute('href')).toBe('/datenschutz');
+  });
+
+  it('AGB-Checkbox ist beim Start nicht vorangekreuzt', async () => {
+    render(<AuthView setView={vi.fn()} setUser={vi.fn()} showNotification={vi.fn()} lang="de" />);
+    fireEvent.click(screen.getByRole('button', { name: 'Registrieren' }));
+
+    const checkbox = screen.getByLabelText(/Ich akzeptiere/i);
+    expect(checkbox).not.toBeChecked();
   });
 
   it('returns learners to the pending booking route after login', async () => {

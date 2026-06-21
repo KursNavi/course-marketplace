@@ -4,6 +4,7 @@ import { Loader, Mail, Eye, EyeOff } from 'lucide-react';
 import { TRANSLATIONS } from '../lib/constants';
 import { supabase } from '../lib/supabase';
 import { trackSignup, trackLogin } from '../lib/analytics';
+import { TERMS_VERSION, PRIVACY_VERSION } from '../lib/legalVersions';
 
 const AuthView = ({ setView, setUser, showNotification, lang }) => {
     const [isSignUp, setIsSignUp] = useState(false); 
@@ -72,6 +73,26 @@ const AuthView = ({ setView, setUser, showNotification, lang }) => {
                 }
                 localStorage.removeItem('selectedPackage');
                 trackSignup('email');
+
+                // Consent-Nachweis serverseitig speichern (fire-and-forget)
+                supabase.auth.getSession().then(({ data: { session } }) => {
+                    if (session?.access_token) {
+                        fetch('/api/record-legal-acceptance', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${session.access_token}`,
+                            },
+                            body: JSON.stringify({
+                                context: 'registration',
+                                terms_version: TERMS_VERSION,
+                                privacy_version: PRIVACY_VERSION,
+                                metadata: { role },
+                            }),
+                        }).catch(() => { /* Consent-Speicherung ist nicht blockierend */ });
+                    }
+                });
+
                 setShowSuccess(true); // Switch to success page
             } else {
                 const { data, error } = await supabase.auth.signInWithPassword({ email, password });
