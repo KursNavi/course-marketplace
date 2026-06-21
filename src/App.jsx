@@ -2100,13 +2100,13 @@ useEffect(() => {
         </div>
       }>
 
-      {/* GLOBAL LOADING STATE - Prevents White Screen / Redirects
-          Suppressed on search view: SearchPageView and ProviderDirectory
-          handle their own loading states, so the tab bar renders immediately. */}
-      {loading && view !== 'search' && (
-          <div className="flex flex-col items-center justify-center min-h-[60vh]">
-              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mb-4"></div>
-              <p className="text-gray-500 font-sans animate-pulse">Lade Kurse...</p>
+      {/* GLOBAL LOADING STATE - Prevents White Screen on course-dependent views.
+          Only shown on 'home' and 'detail' which gate their content with !loading.
+          Static pages (AGB, Impressum, Landing, Blog, etc.) render immediately
+          and must NOT show this spinner. */}
+      {loading && (view === 'home' || view === 'detail') && (
+          <div className="flex items-center justify-center min-h-[60vh]">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
           </div>
       )}
 
