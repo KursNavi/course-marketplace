@@ -142,6 +142,13 @@ export default function PlanCardGrid({
               </div>
             )}
 
+            {/* Laufzeit-Hinweis für bezahlte Pakete */}
+            {plan.priceAnnualCHF > 0 && (
+              <p className="mb-3 text-center text-xs text-gray-400">
+                Laufzeit: 1 Jahr · keine automatische Verlängerung
+              </p>
+            )}
+
             {/* CTA */}
             {renderAction ? (
               renderAction({ plan, colors, isCurrent })
