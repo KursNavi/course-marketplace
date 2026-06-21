@@ -104,7 +104,7 @@ describe('LegalPage – Datenschutz', () => {
     expect(screen.getByText(/Swiss-U\.S\. Data Privacy Framework/i)).toBeTruthy();
   });
 
-  it('erwähnt Standardvertragsklauseln \(SCC\)', () => {
+  it('erwähnt Standardvertragsklauseln (SCC)', () => {
     render(<LegalPage {...defaultProps} />);
     expect(screen.getByText(/Standardvertragsklauseln \(SCC\)/i)).toBeTruthy();
   });
