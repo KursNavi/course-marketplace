@@ -60,6 +60,16 @@ describe('LegalPage – AGB', () => {
     // Mehrere Elemente enthalten diesen Begriff (AGB-Sektion 10 erwähnt ihn mehrfach)
     expect(screen.getAllByText(/Kurserstellungsservice/i).length).toBeGreaterThan(0);
   });
+
+  it('zeigt Stand: 21. Juni 2026 (im Intro und/oder Footer)', () => {
+    render(<LegalPage {...defaultProps} />);
+    expect(screen.getAllByText(/Stand: 21\. Juni 2026/i).length).toBeGreaterThan(0);
+  });
+
+  it('enthält Überschrift zur Stornierung ohne Stornogebühr', () => {
+    render(<LegalPage {...defaultProps} />);
+    expect(screen.getByText(/Automatische Stornierung ohne Stornogebühr/i)).toBeTruthy();
+  });
 });
 
 describe('LegalPage – Datenschutz', () => {
@@ -77,5 +87,25 @@ describe('LegalPage – Datenschutz', () => {
   it('enthält Direktbuchungsdaten-Abschnitt', () => {
     render(<LegalPage {...defaultProps} />);
     expect(screen.getByText(/ohne separate ausdrückliche Einwilligung ist nicht zulässig/i)).toBeTruthy();
+  });
+
+  it('erwähnt Sentry für Fehleranalyse', () => {
+    render(<LegalPage {...defaultProps} />);
+    expect(screen.getByText(/Sentry/i)).toBeTruthy();
+  });
+
+  it('enthält aktualisierte Cookiebot-Formulierung', () => {
+    render(<LegalPage {...defaultProps} />);
+    expect(screen.getByText(/Verwaltung und Dokumentation Ihrer Cookie-Einwilligungen/i)).toBeTruthy();
+  });
+
+  it('erwähnt Swiss-U.S. Data Privacy Framework', () => {
+    render(<LegalPage {...defaultProps} />);
+    expect(screen.getByText(/Swiss-U\.S\. Data Privacy Framework/i)).toBeTruthy();
+  });
+
+  it('erwähnt Standardvertragsklauseln (SCC)', () => {
+    render(<LegalPage {...defaultProps} />);
+    expect(screen.getByText(/Standardvertragsklauseln \(SCC\)/i)).toBeTruthy();
   });
 });
