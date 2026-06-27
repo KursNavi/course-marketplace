@@ -26,6 +26,13 @@ if (typeof window !== 'undefined') {
     _p.set('tab', 'anbieter');
     window.history.replaceState({}, '', '/search?' + _p.toString());
   }
+
+  // Normalize /app/app/* → /app/* (double-prefix bug, e.g. /app/app/agb → /app/agb).
+  // This can occur when navigation creates a relative "app/agb" link from an /app/* base path.
+  if (window.location.pathname.startsWith('/app/app/')) {
+    const normalized = '/app/' + window.location.pathname.slice('/app/app/'.length);
+    window.history.replaceState({}, '', normalized + window.location.search);
+  }
 }
 
 const CHUNK_RELOAD_KEY = 'chunk_reload';
@@ -198,7 +205,12 @@ export default function KursNaviPro() {  // 1. Initial State Logic
           '/impressum': 'impressum',
           '/widerruf-storno': 'widerruf',
           '/vertrauen-sicherheit': 'trust',
-          '/set-password': 'set-password'
+          '/set-password': 'set-password',
+          // Legal routes with /app/ prefix (QA / staging / preview environments)
+          '/app/agb': 'agb',
+          '/app/datenschutz': 'datenschutz',
+          '/app/impressum': 'impressum',
+          '/app/widerruf-storno': 'widerruf'
       };
       
       if (routes[path]) return routes[path];
@@ -1503,6 +1515,15 @@ export default function KursNaviPro() {  // 1. Initial State Logic
     const syncFromUrl = () => {
       // Skip if triggered by our own URL-sync useEffect (not user navigation)
       if (isUrlSyncingRef.current) return;
+
+      // Normalize /app/app/* → /app/* for in-app navigation (mirrors module-level normalisation)
+      if (window.location.pathname.startsWith('/app/app/')) {
+        const normalized = '/app/' + window.location.pathname.slice('/app/app/'.length);
+        isUrlSyncingRef.current = true;
+        window.history.replaceState({}, '', normalized + window.location.search);
+        isUrlSyncingRef.current = false;
+      }
+
       setRoutePath(`${window.location.pathname}${window.location.search}`);
 
       // Redirect /anbieter directory (not individual profiles) to /search?tab=anbieter

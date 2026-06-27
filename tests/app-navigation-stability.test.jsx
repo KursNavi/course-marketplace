@@ -133,4 +133,33 @@ describe('App navigation stability', () => {
     expect(window.location.search).toContain('tab=anbieter');
     expect(screen.queryByText(/APP ABGESTÜRZT/i)).not.toBeInTheDocument();
   });
+
+  it('/app/agb shows AGB page (not 404)', async () => {
+    render(<App />);
+    await waitFor(() => expect(screen.getByTestId('home-page')).toBeInTheDocument());
+
+    await navigateTo('/app/agb');
+    await waitFor(() => expect(screen.getByTestId('legal-agb')).toBeInTheDocument(), { timeout: 5_000 });
+    expect(screen.queryByText(/APP ABGESTÜRZT/i)).not.toBeInTheDocument();
+  });
+
+  it('/app/datenschutz shows Datenschutz page (not 404)', async () => {
+    render(<App />);
+    await waitFor(() => expect(screen.getByTestId('home-page')).toBeInTheDocument());
+
+    await navigateTo('/app/datenschutz');
+    await waitFor(() => expect(screen.getByTestId('legal-datenschutz')).toBeInTheDocument(), { timeout: 5_000 });
+    expect(screen.queryByText(/APP ABGESTÜRZT/i)).not.toBeInTheDocument();
+  });
+
+  it('/app/app/agb normalizes to /app/agb and shows AGB page (not 404)', async () => {
+    render(<App />);
+    await waitFor(() => expect(screen.getByTestId('home-page')).toBeInTheDocument());
+
+    await navigateTo('/app/app/agb');
+    // After normalization the URL should be /app/agb
+    await waitFor(() => expect(window.location.pathname).toBe('/app/agb'), { timeout: 5_000 });
+    await waitFor(() => expect(screen.getByTestId('legal-agb')).toBeInTheDocument(), { timeout: 5_000 });
+    expect(screen.queryByText(/APP ABGESTÜRZT/i)).not.toBeInTheDocument();
+  });
 });
