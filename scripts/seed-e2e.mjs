@@ -116,6 +116,8 @@ async function main() {
 
   // 2. Upsert profiles for test users
   // profiles.id = auth.users.id (confirmed via handle_new_user trigger + app code)
+  // verification_status='verified' + is_professional=true → fetchVerifiedProvider() finds this profile.
+  // slug + profile_published_at → appears in the public ProviderDirectory listing.
   await assertOk(
     `Upsert provider profile (${PROVIDER_ID})`,
     await supabase.from('profiles').upsert({
@@ -123,8 +125,12 @@ async function main() {
       full_name: 'E2E Anbieter',
       email: PROVIDER_EMAIL,
       role: 'teacher',
-      package_tier: 'basic',
+      package_tier: 'pro',
       preferred_language: 'de',
+      is_professional: true,
+      verification_status: 'verified',
+      slug: 'e2e-seed-anbieter',
+      profile_published_at: new Date().toISOString(),
     }, { onConflict: 'id' })
   );
 
@@ -156,6 +162,7 @@ async function main() {
   }
 
   // 3. Seed a published lead course (for the inquiry / detail-view test)
+  // is_pro=true → fetchVerifiedCourse() finds this course; also exercises the Verifiziert filter.
   const seedCourse = await assertOk(
     'Insert seed course (E2E-Seed Testkurs)',
     await supabase.from('courses').insert({
@@ -173,6 +180,7 @@ async function main() {
       description: 'Automatisch erstellter Testkurs für E2E-Tests. Wird bei jedem Seed-Lauf neu erstellt.',
       user_id: PROVIDER_ID,
       status: 'published',
+      is_pro: true,
     }).select('id').single()
   );
 

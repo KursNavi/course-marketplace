@@ -53,6 +53,20 @@ export function fetchProvider() {
   );
 }
 
+/** Fetch a verified provider (verification_status = 'verified') with a published profile. */
+export function fetchVerifiedProvider() {
+  return query(
+    'profiles',
+    'slug=not.is.null&profile_published_at=not.is.null&verification_status=eq.verified',
+    'id,full_name,slug,verification_status'
+  );
+}
+
+/** Fetch a published course belonging to a verified provider (is_pro = true). */
+export function fetchVerifiedCourse() {
+  return fetchCourse('is_pro=eq.true');
+}
+
 /** Check whether Supabase test env vars are set. */
 export function isSupabaseAvailable() {
   return cfg().ok;

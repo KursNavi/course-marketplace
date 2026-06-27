@@ -110,4 +110,52 @@ describe('ProviderProfilePage', () => {
     expect(setSelectedCourse).toHaveBeenCalledWith(expect.objectContaining({ id: 'course-1' }));
     expect(window.location.pathname).toBe('/courses/course-1');
   });
+
+  it('zeigt "Verifiziert"-Badge für verifizierten Anbieter', async () => {
+    render(<ProviderProfilePage t={{}} setView={vi.fn()} setSelectedCourse={vi.fn()} />);
+
+    await waitFor(() => expect(screen.getByText('ICH')).toBeInTheDocument());
+    // isVerified=true in providerPayload → "Verifiziert" appears in badge pill AND info section
+    expect(screen.getAllByText('Verifiziert').length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('zeigt kein "Featured"-Badge für Standard-Anbieter (entitlements leer)', async () => {
+    render(<ProviderProfilePage t={{}} setView={vi.fn()} setSelectedCourse={vi.fn()} />);
+
+    await waitFor(() => expect(screen.getByText('ICH')).toBeInTheDocument());
+    // entitlements={} → isFeatured=undefined → neither "Featured" nor "Hervorgehoben"
+    expect(screen.queryByText('Featured')).not.toBeInTheDocument();
+    expect(screen.queryByText('Hervorgehoben')).not.toBeInTheDocument();
+  });
+
+  it('zeigt kein Paketstatus-Badge ("Hervorgehoben"/"Featured") für Enterprise-Anbieter', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        ...providerPayload,
+        entitlements: { isFeatured: true },
+      }),
+    });
+
+    render(<ProviderProfilePage t={{}} setView={vi.fn()} setSelectedCourse={vi.fn()} />);
+
+    await waitFor(() => expect(screen.getByText('ICH')).toBeInTheDocument());
+    expect(screen.queryByText('Hervorgehoben')).not.toBeInTheDocument();
+    expect(screen.queryByText('Featured')).not.toBeInTheDocument();
+  });
+
+  it('zeigt kein "Verifiziert"-Badge für nicht verifizierten Anbieter', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        ...providerPayload,
+        provider: { ...providerPayload.provider, isVerified: false },
+      }),
+    });
+
+    render(<ProviderProfilePage t={{}} setView={vi.fn()} setSelectedCourse={vi.fn()} />);
+
+    await waitFor(() => expect(screen.getByText('ICH')).toBeInTheDocument());
+    expect(screen.queryByText('Verifiziert')).not.toBeInTheDocument();
+  });
 });
