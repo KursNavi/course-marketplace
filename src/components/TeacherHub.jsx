@@ -263,7 +263,7 @@ const TeacherHub = ({ user, showNotification }) => {
           </p>
           <div className="mt-8 inline-flex flex-col gap-3 text-left">
             {[
-              'Kurse weiter oben in der Suche anzeigen',
+              'Kurse in passenden Suchergebnissen und Empfehlungen sichtbarer machen',
               'Kurse in mehreren Themenbereichen sichtbar machen',
               'Sehen, welche Kurse am meisten Interesse wecken',
             ].map((item) => (

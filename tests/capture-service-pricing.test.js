@@ -39,6 +39,10 @@ describe('SERVICE_PRICING Konstanten', () => {
   it('update_price ist CHF 15', () => {
     expect(SERVICE_PRICING.update_price).toBe(15);
   });
+  it('keine alten Preise CHF 75 oder CHF 50', () => {
+    expect(SERVICE_PRICING.new_course_price).not.toBe(75);
+    expect(SERVICE_PRICING.update_price).not.toBe(50);
+  });
 });
 
 describe('PLANS includedCaptureServices', () => {
@@ -63,6 +67,29 @@ describe('PLANS Enterprise', () => {
   });
 });
 
+describe('PLANS - keine Ranking-Garantie / keine alten Preise', () => {
+  it('kein Feature enthält Ranking-Garantie-Formulierungen', () => {
+    // "keine Ranking-Garantie" ist erlaubt (Disclaimer) — nur positive Garantie-Behauptungen sind verboten
+    const forbidden = /weiter oben|ganz oben|top-platz(?:ierung)?|garantiert.{0,15}oben|bevorzugt ganz oben/i;
+    for (const plan of PLANS) {
+      for (const feature of plan.features) {
+        const text = feature.text + ' ' + (feature.description || '');
+        expect(text, `${plan.id}: "${feature.text}"`).not.toMatch(forbidden);
+      }
+    }
+  });
+
+  it('kein Feature enthält alte Preisangaben CHF 75 oder CHF 50', () => {
+    const forbidden = /75 CHF|CHF 75|50 CHF|CHF 50/i;
+    for (const plan of PLANS) {
+      for (const feature of plan.features) {
+        const text = feature.text + ' ' + (feature.description || '');
+        expect(text, `${plan.id}: "${feature.text}"`).not.toMatch(forbidden);
+      }
+    }
+  });
+});
+
 describe('Kursservice-Einheiten-Zählung (2 Aktualisierungen = 1 Einheit)', () => {
   it('1 neuer Kurs + 2 Aktualisierungen = 2 Einheiten', () => {
     expect(calcServiceUnits(1, 2)).toBe(2);
@@ -78,6 +105,33 @@ describe('Kursservice-Einheiten-Zählung (2 Aktualisierungen = 1 Einheit)', () =
   });
   it('1 neuer Kurs + 3 Aktualisierungen = 3 Einheiten', () => {
     expect(calcServiceUnits(1, 3)).toBe(3);
+  });
+});
+
+describe('Pro-Szenario: 1 neuer Kurs + 2 Aktualisierungen (5 inklusive)', () => {
+  const mk = (type) => ({ type, url: '' });
+
+  it('verbraucht 2 Service-Einheiten, nicht 3', () => {
+    const courses = [mk('new'), mk('update'), mk('update')];
+    const result = calcPricing(courses, 5); // Pro: 5 inklusive
+    expect(result.serviceUnits).toBe(2);
+  });
+
+  it('alle 2 Einheiten kostenlos gedeckt (Abo-Kontingent 5 > 2)', () => {
+    const courses = [mk('new'), mk('update'), mk('update')];
+    const result = calcPricing(courses, 5);
+    expect(result.freeServiceUnits).toBe(2);
+    expect(result.total).toBe(0);
+  });
+
+  it('API-Inkrement nutzt serviceUnits (2), nicht courses.length (3)', () => {
+    const courses = [mk('new'), mk('update'), mk('update')];
+    const serviceUnits = calcServiceUnits(
+      courses.filter(c => c.type !== 'update').length,
+      courses.filter(c => c.type === 'update').length
+    );
+    expect(serviceUnits).toBe(2);
+    expect(serviceUnits).not.toBe(courses.length); // 2 ≠ 3
   });
 });
 
@@ -108,18 +162,16 @@ describe('Preis-Zuweisung mit inkludierten Services', () => {
     expect(result.total).toBe(30); // 2 × CHF 15
   });
 
-  it('0 neue Kurse + 4 Aktualisierungen, 2 inklusive → 2 freie Updates, CHF 30', () => {
+  it('0 neue Kurse + 4 Aktualisierungen, 2 inklusive → alles kostenlos', () => {
     const courses = [mk('update'), mk('update'), mk('update'), mk('update')];
-    // serviceUnits = ceil(4/2) = 2, freeServiceUnits = min(2, 2) = 2
-    // freeNew=0, freeUpdates = min(4, 2*2) = 4 → alles kostenlos
+    // serviceUnits = ceil(4/2) = 2, freeServiceUnits = min(2, 2) = 2 → alles frei
     const result = calcPricing(courses, 2);
     expect(result.total).toBe(0);
   });
 
   it('0 neue Kurse + 4 Aktualisierungen, 1 inklusive → CHF 30', () => {
     const courses = [mk('update'), mk('update'), mk('update'), mk('update')];
-    // serviceUnits=2, freeServiceUnits=1
-    // freeNew=0, freeUpdates = min(4, 1*2)=2, paid=2
+    // serviceUnits=2, freeServiceUnits=1 → 2 gratis, 2 bezahlt
     const result = calcPricing(courses, 1);
     expect(result.freeUpdates).toBe(2);
     expect(result.paidUpdates).toBe(2);

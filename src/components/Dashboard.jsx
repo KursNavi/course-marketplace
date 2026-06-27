@@ -1007,6 +1007,18 @@ const SubscriptionSection = ({ user, currentTier, packageExpiresAt, pendingPacka
                 <PlanCardGrid
                     currentTier={currentTier}
                     renderAction={({ plan, colors, isCurrent }) => {
+                        // Enterprise ist contact-only – kein Checkout, kein Login
+                        if (plan.isContactOnly) {
+                            return (
+                                <a
+                                    href="mailto:info@kursnavi.ch?subject=Enterprise-Anfrage"
+                                    className={`w-full rounded-lg border py-2 font-bold transition text-center block ${colors.btnOutline}`}
+                                >
+                                    Angebot anfragen
+                                </a>
+                            );
+                        }
+
                         const isUpgrade = tierOrder.indexOf(plan.id) > tierOrder.indexOf(currentTier);
                         const isLowerTier = tierOrder.indexOf(plan.id) < tierOrder.indexOf(currentTier);
                         const isPaidCurrent = isCurrent && plan.id !== 'basic' && packageExpiresAt;
@@ -1162,13 +1174,15 @@ const CaptureServiceModal = ({ isOpen, onClose, user, includedServices, usedServ
             freeCount,
             paidCount,
             freeFlags,
+            serviceUnits,
+            freeServiceUnits,
             breakdown: courses.map(c => c.type === 'update' ? 15 : 30),
             paidBreakdown,
         };
     };
 
     const pricing = calculatePrice();
-    const freeCoursesLabel = pricing.freeCount === 1 ? '1 Kurs' : `${pricing.freeCount} Kurse`;
+    const freeUnitsLabel = pricing.freeServiceUnits === 1 ? '1 Service-Einheit' : `${pricing.freeServiceUnits} Service-Einheiten`;
 
     const addCourse = () => {
         setCourses([...courses, { url: '', notes: '', type: 'new' }]);
@@ -1267,7 +1281,7 @@ const CaptureServiceModal = ({ isOpen, onClose, user, includedServices, usedServ
                         <p className="text-green-800 text-sm flex items-center">
                             <CheckCircle className="w-4 h-4 mr-2" />
                             <span>
-                                <strong>{Math.max(0, includedServices - usedServices)}</strong> von {includedServices} inkludierten Kursservice-Einträgen noch verfügbar
+                                <strong>{Math.max(0, includedServices - usedServices)}</strong> von {includedServices} inkludierten Kursservice-Einheiten noch verfügbar
                                 {usedServices > 0 && <span className="text-green-600"> ({usedServices} bereits genutzt)</span>}
                             </span>
                         </p>
@@ -1375,10 +1389,10 @@ const CaptureServiceModal = ({ isOpen, onClose, user, includedServices, usedServ
                             <span>Anzahl Kurse:</span>
                             <span>{courses.length}</span>
                         </div>
-                        {pricing.freeCount > 0 && (
+                        {pricing.freeServiceUnits > 0 && (
                             <div className="flex justify-between items-start gap-4 text-green-700">
-                                <span>Davon durch dein Abo kostenlos abgedeckt:</span>
-                                <span className="text-right font-medium">{freeCoursesLabel}</span>
+                                <span>Durch dein Abo abgedeckt:</span>
+                                <span className="text-right font-medium">{freeUnitsLabel}</span>
                             </div>
                         )}
                         {pricing.paidCount > 0 && (

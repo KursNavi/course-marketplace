@@ -137,7 +137,7 @@ export default async function handler(req, res) {
             await supabase
                 .from('profiles')
                 .update({
-                    used_capture_services: usedServices + courses.length
+                    used_capture_services: usedServices + serviceUnits
                 })
                 .eq('id', userId);
 
