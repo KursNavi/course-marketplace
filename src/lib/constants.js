@@ -30,6 +30,8 @@ export const COURSE_LANGUAGES = {
 };
 
 // --- BUSINESS LOGIC (v2.1 SaaS Model) ---
+// @deprecated Nicht mehr für neue Logik verwenden. Massgebend sind PLANS in src/constants/plans.js
+// und entitlements.js. Diese Konstante bleibt zur Rückwärtskompatibilität erhalten.
 export const TIER_CONFIG = {
   basic: {
     label: "Basic",
@@ -49,7 +51,7 @@ export const TIER_CONFIG = {
   },
   premium: {
     label: "Premium",
-    price_year: 590,
+    price_year: 690, // Korrigiert (war 590)
     course_limit: 30,
     commission_percent: 10,
     features: ["Top Ranking & Badges", "Newsletter Features", "Reporting Dashboard", "Priorisierter Support", "Advanced Analytics"],
@@ -57,7 +59,7 @@ export const TIER_CONFIG = {
   },
   enterprise: {
     label: "Enterprise",
-    price_year: 1190, // Startpreis
+    price_year: 0, // Individuell – kein Fixpreis
     course_limit: 9999, // Unlimitiert
     commission_percent: 8,
     features: ["Unlimitiert Kurse", "Eigene Landingpage", "Account Manager", "Custom Reporting", "Advanced Analytics"],
@@ -65,10 +67,16 @@ export const TIER_CONFIG = {
   }
 };
 
+// Kursservice-Preise (für zusätzliche, nicht-inklusive Kurse)
 export const SERVICE_PRICING = {
-  base_price: 75, // CHF pro Kurs (für die ersten 3)
-  discount_price: 50, // CHF pro Kurs (ab dem 4.)
-  threshold: 3 // Ab hier gilt der Rabatt
+  new_course_price: 30,    // CHF pro neuem Kurs
+  update_price: 15,        // CHF pro einfacher Aktualisierung
+  // Einfache Aktualisierung: z.B. Datum, Preis, Ort, Durchführungsform, Link, kurze Textanpassung.
+  // Zwei einfache Aktualisierungen zählen als ein Kursservice.
+  /** @deprecated Alte Staffelpreise – nicht mehr verwenden */
+  base_price: 30,
+  /** @deprecated Alter Mengenrabattpreis – nicht mehr verwenden */
+  discount_price: 15,
 };
 
 // --- NEW TAXONOMY CONSTANTS ---

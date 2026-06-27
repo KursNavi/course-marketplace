@@ -48,10 +48,10 @@ export default async function handler(req, res) {
         }
 
         // Erstelle Beschreibung für Line Item
-        const courseUrls = courses.map((c, i) => `Kurs ${i + 1}: ${c.url}`).join('\n');
-        const _description = `Kurserfassungs-Service für ${courses.length} Kurs(e):\n${courseUrls}`;
+        const courseUrls = courses.map((c, i) => `${c.type === 'update' ? 'Aktualisierung' : 'Neuer Kurs'} ${i + 1}: ${c.url}`).join('\n');
+        const _description = `Kursservice für ${courses.length} Kurs/Aktualisierung(en):\n${courseUrls}`;
 
-        const includedByTier = { basic: 0, pro: 0, premium: 5, enterprise: 15 };
+        const includedByTier = { basic: 0, pro: 5, premium: 15, enterprise: 30 };
         const { data: profile, error: profileError } = await supabase
             .from('profiles')
             .select('package_tier, stripe_customer_id')
@@ -78,7 +78,8 @@ export default async function handler(req, res) {
         const usedServices = usedCaptureServices;
         const availableServices = Math.max(0, includedServices - usedServices);
 
-        const prices = Array.from({ length: courses.length }, (_, i) => (i < 3 ? 75 : 50));
+        // CHF 30 pro neuem Kurs, CHF 15 pro einfacher Aktualisierung
+        const prices = courses.map(c => c.type === 'update' ? 15 : 30);
         const freeCount = Math.min(availableServices, courses.length);
         const paidBreakdown = prices.slice(freeCount);
         const paidCount = Math.max(0, courses.length - freeCount);
@@ -148,10 +149,10 @@ export default async function handler(req, res) {
                         price_data: {
                             currency: 'chf',
                             product_data: {
-                                name: `Kurserfassungs-Service (${courses.length} Kurse)`,
+                                name: `Kursservice (${courses.length} Einträge)`,
                                 description: freeCount > 0
-                                    ? `${paidCount} kostenpflichtige Kurse (${freeCount} inklusive Services bereits angerechnet)`
-                                    : `${courses.length} Kurse zur professionellen Erfassung`,
+                                    ? `${paidCount} kostenpflichtige Einträge (${freeCount} inklusive Kursservice-Einträge bereits angerechnet)`
+                                    : `${courses.length} Einträge (neue Kurse / Aktualisierungen)`,
                             },
                             unit_amount: Math.round(totalAmount * 100), // Cents
                         },

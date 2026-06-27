@@ -536,8 +536,8 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t, isImp
                             <div className="flex items-start gap-4 mb-6">
                                 <div className="bg-white p-2 rounded-full shadow-sm"><CheckCircle className="w-6 h-6 text-blue-500" /></div>
                                 <div>
-                                    <h4 className="font-bold text-dark">Get Verified (CHF 75.00)</h4>
-                                    <p className="text-sm text-gray-600 mt-1">Upload your diplomas/certificates to receive the "Verified" badge and boost your bookings.</p>
+                                    <h4 className="font-bold text-dark">Verifizierungsprüfung</h4>
+                                    <p className="text-sm text-gray-600 mt-1">Lade deine Diplome oder Zertifikate hoch. Nach erfolgreicher Prüfung durch KursNavi erhältst du das Verifiziert-Badge auf deinem Profil. Die Verifizierungsprüfung ist in Bezahlpaketen inklusive.</p>
                                 </div>
                             </div>
 
@@ -555,7 +555,7 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t, isImp
                                                 <Clock className="w-5 h-5 text-yellow-600" />
                                                 <h4 className="font-bold text-yellow-800">Verifizierung in Bearbeitung</h4>
                                             </div>
-                                            <p className="text-sm text-yellow-700 mb-4">Wir haben deine Dokumente erhalten. Bitte stelle sicher, dass du die Gebühr beglichen hast, damit wir die Prüfung abschliessen können.</p>
+                                            <p className="text-sm text-yellow-700 mb-4">Wir haben deine Dokumente erhalten und führen die Prüfung durch. Das Verifiziert-Badge erscheint nach erfolgreicher Prüfung.</p>
                                             
                                             <div className="flex flex-col sm:flex-row gap-3">
                                                                                                 <button
@@ -1120,20 +1120,17 @@ const SubscriptionSection = ({ user, currentTier, packageExpiresAt, pendingPacka
 // --- MAIN DASHBOARD COMPONENT ---
 // --- CAPTURE SERVICE BOOKING MODAL ---
 const CaptureServiceModal = ({ isOpen, onClose, user, includedServices, usedServices, showNotification }) => {
-    const [courses, setCourses] = useState([{ url: '', notes: '' }]);
+    const [courses, setCourses] = useState([{ url: '', notes: '', type: 'new' }]);
     const [isLoading, setIsLoading] = useState(false);
 
-    // Preisberechnung: 75 CHF für die ersten 3, dann 50 CHF
+    // Preisberechnung: CHF 30 pro neuem Kurs, CHF 15 pro einfacher Aktualisierung
     // Abzüglich der noch verfügbaren inkludierten Services (von vorne angerechnet)
     const calculatePrice = () => {
         const totalCourses = courses.length;
         const availableServices = Math.max(0, includedServices - usedServices);
 
-        // Preise für alle Kurse berechnen (ohne Rabatt)
-        const prices = [];
-        for (let i = 0; i < totalCourses; i++) {
-            prices.push(i < 3 ? 75 : 50);
-        }
+        // Preis pro Kurs je nach Typ
+        const prices = courses.map(c => c.type === 'update' ? 15 : 30);
 
         // Die ersten "availableServices" werden abgezogen (sind kostenlos)
         const paidPrices = prices.slice(availableServices);
@@ -1152,7 +1149,7 @@ const CaptureServiceModal = ({ isOpen, onClose, user, includedServices, usedServ
     const freeCoursesLabel = pricing.freeCount === 1 ? '1 Kurs' : `${pricing.freeCount} Kurse`;
 
     const addCourse = () => {
-        setCourses([...courses, { url: '', notes: '' }]);
+        setCourses([...courses, { url: '', notes: '', type: 'new' }]);
     };
 
     const removeCourse = (index) => {
@@ -1229,20 +1226,26 @@ const CaptureServiceModal = ({ isOpen, onClose, user, includedServices, usedServ
                 <div className="bg-gradient-to-r from-orange-100 to-amber-50 p-6 border-b">
                     <div className="flex justify-between items-start">
                         <div>
-                            <h2 className="text-2xl font-bold text-dark font-heading">Kurserfassungs-Service buchen</h2>
-                            <p className="text-gray-600 mt-1">Wir erfassen deine Kurse professionell mit SEO-Optimierung</p>
+                            <h2 className="text-2xl font-bold text-dark font-heading">Kursservice buchen</h2>
+                            <p className="text-gray-600 mt-1">Wir erfassen oder aktualisieren deine Kurse für KursNavi.</p>
                         </div>
                         <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
                     </div>
                 </div>
 
-                {/* Info Banner */}
+                {/* Kursservice-Erklärung */}
+                <div className="bg-blue-50 border-b border-blue-100 px-6 py-3 text-sm text-blue-800">
+                    <p>Ein neuer Kurs zählt als ein Kurs. Zwei einfache Aktualisierungen zählen ebenfalls als ein Kurs. Einfache Aktualisierung: z.B. Datum, Preis, Ort, Durchführungsform, Link oder kurze Textanpassung.</p>
+                    <p className="mt-1 text-xs text-blue-600">Zusatzpreise: CHF 30 pro neuem Kurs · CHF 15 pro einfacher Aktualisierung</p>
+                </div>
+
+                {/* Inklusive-Banner */}
                 {includedServices > 0 && (
                     <div className="bg-green-50 border-b border-green-100 px-6 py-3">
                         <p className="text-green-800 text-sm flex items-center">
                             <CheckCircle className="w-4 h-4 mr-2" />
                             <span>
-                                <strong>{Math.max(0, includedServices - usedServices)}</strong> von {includedServices} inkludierten Services noch verfügbar
+                                <strong>{Math.max(0, includedServices - usedServices)}</strong> von {includedServices} inkludierten Kursservice-Einträgen noch verfügbar
                                 {usedServices > 0 && <span className="text-green-600"> ({usedServices} bereits genutzt)</span>}
                             </span>
                         </p>
@@ -1279,6 +1282,33 @@ const CaptureServiceModal = ({ isOpen, onClose, user, includedServices, usedServ
                                 )}
                             </div>
                             <div className="space-y-3">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Art</label>
+                                    <div className="flex gap-4 text-sm">
+                                        <label className="flex items-center gap-1.5 cursor-pointer">
+                                            <input
+                                                type="radio"
+                                                name={`course-type-${index}`}
+                                                value="new"
+                                                checked={course.type !== 'update'}
+                                                onChange={() => updateCourse(index, 'type', 'new')}
+                                                className="accent-primary"
+                                            />
+                                            <span>Neuer Kurs (CHF 30)</span>
+                                        </label>
+                                        <label className="flex items-center gap-1.5 cursor-pointer">
+                                            <input
+                                                type="radio"
+                                                name={`course-type-${index}`}
+                                                value="update"
+                                                checked={course.type === 'update'}
+                                                onChange={() => updateCourse(index, 'type', 'update')}
+                                                className="accent-primary"
+                                            />
+                                            <span>Einfache Aktualisierung (CHF 15)</span>
+                                        </label>
+                                    </div>
+                                </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">
                                         URL zum Kurs <span className="text-red-500">*</span>
@@ -1341,7 +1371,7 @@ const CaptureServiceModal = ({ isOpen, onClose, user, includedServices, usedServ
                         </div>
                     </div>
                     <p className="text-xs text-gray-400 mt-2">
-                        CHF 75.- pro Kurs | Mengenrabatt: ab dem 4. Kurs nur CHF 50.-
+                        Neuer Kurs: CHF 30 · Einfache Aktualisierung: CHF 15
                     </p>
                 </div>
 
@@ -2434,9 +2464,9 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                 <div>
                                     <p className="font-bold text-dark">Hervorgehobene Kurse</p>
                                     <p className="text-sm text-gray-600 mt-1">
-                                        Markierte Kurse erscheinen weiter oben in den Suchergebnissen von KursNavi.{' '}
+                                        Hervorgehobene Kurse erhalten zusätzliche Sichtbarkeit in passenden Suchergebnissen und Empfehlungen. Die Relevanz bleibt entscheidend.{' '}
                                         {isEnterprisePlan
-                                            ? 'Alle deine Kurse sind hervorgehoben (Enterprise).'
+                                            ? 'Alle deine Kurse sind hervorgehoben.'
                                             : `${prioCourseIds.size} von ${currentPlan.maxPrioCourses} hervorgehobenen Kursen verwendet.`
                                         }{' '}
                                         Klicke auf das Sternchen neben einem Kurs, um ihn hervorzuheben oder die Hervorhebung zu entfernen.
@@ -2597,9 +2627,9 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                 onClick={() => setShowCaptureServiceModal(true)}
                                 className="bg-white border-2 border-primary text-primary px-5 py-2 rounded-lg font-bold shadow-sm hover:bg-primary hover:text-white transition whitespace-nowrap flex items-center"
                             >
-                                Service buchen (CHF 75.-/Kurs) <ArrowRight className="w-4 h-4 ml-2"/>
+                                Kursservice buchen <ArrowRight className="w-4 h-4 ml-2"/>
                             </button>
-                            <span className="text-xs text-green-600 mt-1.5 font-medium">Mengenrabatt: ab dem 4. Kurs nur CHF 50.-</span>
+                            <span className="text-xs text-green-600 mt-1.5 font-medium">Neuer Kurs CHF 30 · Einfache Aktualisierung CHF 15</span>
                         </div>
                     </div>
                 </div>
@@ -2616,7 +2646,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                     <span className="text-2xl font-bold capitalize">{currentPlan.title}</span>
                                 </div>
                                 <p className="text-xs text-gray-400 mt-1">
-                                    {isEnterprisePlan ? 'Unbegrenzte hervorgehobene Kurse' : `${currentPlan.maxPrioCourses} hervorgehobene Kurse`} • bis {currentPlan.maxCategoriesPerCourse} Kategorien/Kurs • {currentPlan.includedCaptureServices > 0 ? `${currentPlan.includedCaptureServices} Erfassungsservices inkl.` : 'keine Erfassungsservices inklusive'}
+                                    {isEnterprisePlan ? 'Unbegrenzt hervorgehobene Kurse' : `${currentPlan.maxPrioCourses} hervorgehobene Kurse`} • bis {currentPlan.maxCategoriesPerCourse} Kategorien/Kurs • {currentPlan.includedCaptureServices > 0 ? `Kursservice für ${currentPlan.includedCaptureServices} Kurse inkl.` : 'kein Kursservice inklusive'}
                                 </p>
                                 {packageExpiresAt && userTier !== 'basic' && (
                                     <p className="text-xs text-yellow-400 mt-1">Gültig bis: {new Date(packageExpiresAt).toLocaleDateString('de-CH')}</p>
