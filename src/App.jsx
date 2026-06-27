@@ -184,9 +184,16 @@ class ErrorBoundary extends React.Component {
 // --- MAIN APP COMPONENT ---
 export default function KursNaviPro() {  // 1. Initial State Logic
   const getInitialView = () => {
-      const path = window.location.pathname;
+      // Strip /app/ prefix for QA/staging/preview environments where the app is served
+      // under a /app/ base path (e.g. /app/teacher-hub, /app/agb).
+      // No legitimate SPA routes start with /app/, so this is safe for all public paths.
+      let path = window.location.pathname;
+      if (path.startsWith('/app/')) {
+          path = '/' + path.slice('/app/'.length);
+      }
+
       if (path.startsWith('/control-room-2025')) return 'admin';
-      
+
       const routes = {
           '/search': 'search',
           '/dashboard': 'dashboard',
@@ -205,12 +212,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
           '/impressum': 'impressum',
           '/widerruf-storno': 'widerruf',
           '/vertrauen-sicherheit': 'trust',
-          '/set-password': 'set-password',
-          // Legal routes with /app/ prefix (QA / staging / preview environments)
-          '/app/agb': 'agb',
-          '/app/datenschutz': 'datenschutz',
-          '/app/impressum': 'impressum',
-          '/app/widerruf-storno': 'widerruf'
+          '/set-password': 'set-password'
       };
       
       if (routes[path]) return routes[path];

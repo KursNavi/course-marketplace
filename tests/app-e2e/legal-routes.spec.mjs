@@ -1,11 +1,12 @@
 import { test, expect } from '@playwright/test';
 
 /**
- * Tests for legal page routing.
- * Covers: /agb, /datenschutz, /app/agb, /app/app/agb (double-prefix normalisation).
+ * Tests for legal page routing and /app/* prefix compatibility.
+ * Covers: /agb, /datenschutz, /teacher-hub, /app/agb, /app/teacher-hub,
+ *         /app/app/agb (double-prefix normalisation).
  * Bug fixed: hotfix/legal-route-double-app-prefix
  */
-test.describe('Legal-Routen (agb / datenschutz)', () => {
+test.describe('Legal-Routen und /app/*-Präfix-Routen', () => {
 
   test('/agb lädt korrekt und zeigt keine 404', async ({ page }) => {
     await page.goto('/agb');
@@ -62,8 +63,16 @@ test.describe('Legal-Routen (agb / datenschutz)', () => {
     expect(href).toMatch(/^\//);
   });
 
-  test('Kein Regressionseffekt auf /teacher-hub', async ({ page }) => {
+  test('/teacher-hub lädt korrekt (Baseline)', async ({ page }) => {
     await page.goto('/teacher-hub');
+    await expect(page.getByText('404')).not.toBeVisible({ timeout: 10_000 });
+    await expect(page.locator('h1, h2').first()).toBeVisible({ timeout: 8_000 });
+  });
+
+  test('/app/teacher-hub lädt korrekt – Regression-Check (QA-Pfad)', async ({ page }) => {
+    await page.goto('/app/teacher-hub');
+
+    // Must not show 404 – QA previously tested pricing/paket preview via /app/teacher-hub
     await expect(page.getByText('404')).not.toBeVisible({ timeout: 10_000 });
     await expect(page.locator('h1, h2').first()).toBeVisible({ timeout: 8_000 });
   });
