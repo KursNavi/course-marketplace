@@ -52,7 +52,7 @@ function makeProps(overrides = {}) {
     loading: false,
     filteredCourses: [],
     setSelectedCourse: noop, setView: noop,
-    t: { search_refine: 'Suche verfeinern…', currency: 'CHF', lbl_max_price: 'Max', opt_all_levels: 'Alle', lbl_professional_filter: 'Pro', lbl_direct_booking_filter: 'Direkt' },
+    t: { search_refine: 'Suche verfeinern…', currency: 'CHF', lbl_max_price: 'Max', opt_all_levels: 'Alle', lbl_professional_filter: 'Verifiziert', lbl_direct_booking_filter: 'Direkt' },
     filterDateFrom: '', setFilterDateFrom: vi.fn(),
     filterDateTo: '', setFilterDateTo: vi.fn(),
     filterPriceMax: '', setFilterPriceMax: vi.fn(),
@@ -289,7 +289,7 @@ describe('Filter chips', () => {
     expect(chips).toHaveTextContent('500');
   });
 
-  it('shows pro and direct booking chips when toggled', () => {
+  it('shows Verifiziert (not Pro) and direct booking chips when toggled', () => {
     const c = makeCourse('1');
     const props = makeProps({
       courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
@@ -297,7 +297,8 @@ describe('Filter chips', () => {
     });
     render(<SearchPageView {...props} />);
     const chips = screen.getByTestId('filter-chips');
-    expect(chips).toHaveTextContent('Pro');
+    expect(chips).toHaveTextContent('Verifiziert');
+    expect(chips).not.toHaveTextContent('Pro');
     expect(chips).toHaveTextContent('Direkt');
   });
 
@@ -484,5 +485,58 @@ describe('Price filter validation', () => {
     fireEvent.click(weitereBtn);
     const priceInput = screen.getByPlaceholderText('Beliebig');
     expect(priceInput).toHaveAttribute('min', '0');
+  });
+});
+
+// ===================== 8. VERIFIZIERT-BADGE =====================
+describe('Verifiziert-Badge auf Kurskarten', () => {
+  function makeVerifiedCourse(id = 'v1', title = 'Verifizierter Yoga Kurs') {
+    return {
+      ...makeCourse(id, title),
+      instructor_verified: true,
+      is_pro: true,
+    };
+  }
+
+  it('zeigt "Verifiziert"-Badge auf der Kurskarte wenn instructor_verified=true', () => {
+    const c = makeVerifiedCourse();
+    const props = makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+    });
+    render(<SearchPageView {...props} />);
+    const grid = screen.getByTestId('course-grid');
+    expect(grid).toHaveTextContent('Verifiziert');
+  });
+
+  it('zeigt keinen "Featured"-Badge auf der Kurskarte', () => {
+    const c = makeVerifiedCourse();
+    const props = makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+    });
+    render(<SearchPageView {...props} />);
+    const grid = screen.getByTestId('course-grid');
+    expect(grid).not.toHaveTextContent('Featured');
+  });
+
+  it('zeigt kein "Verifiziert"-Badge wenn instructor_verified=false', () => {
+    const c = { ...makeCourse('u1', 'Nicht verifiziert'), instructor_verified: false, is_pro: false };
+    const props = makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+    });
+    render(<SearchPageView {...props} />);
+    const grid = screen.getByTestId('course-grid');
+    expect(grid).not.toHaveTextContent('Verifiziert');
+  });
+
+  it('Verifiziert-Filter-Chip heisst "Verifiziert", nicht "Pro" oder "Featured"', () => {
+    const c = makeVerifiedCourse();
+    const props = makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+      filterPro: true,
+    });
+    render(<SearchPageView {...props} />);
+    const chips = screen.getByTestId('filter-chips');
+    expect(chips).toHaveTextContent('Verifiziert');
+    expect(chips).not.toHaveTextContent('Featured');
   });
 });
