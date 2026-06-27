@@ -79,11 +79,20 @@ export default async function handler(req, res) {
         const availableServices = Math.max(0, includedServices - usedServices);
 
         // CHF 30 pro neuem Kurs, CHF 15 pro einfacher Aktualisierung
-        const prices = courses.map(c => c.type === 'update' ? 15 : 30);
-        const freeCount = Math.min(availableServices, courses.length);
-        const paidBreakdown = prices.slice(freeCount);
-        const paidCount = Math.max(0, courses.length - freeCount);
-        const totalAmount = paidBreakdown.reduce((sum, price) => sum + price, 0);
+        // 2 einfache Aktualisierungen = 1 Kursservice-Einheit (Kontingent-Zählung)
+        const newCount = courses.filter(c => c.type !== 'update').length;
+        const updateCount = courses.filter(c => c.type === 'update').length;
+        const serviceUnits = newCount + Math.ceil(updateCount / 2);
+        const freeServiceUnits = Math.min(availableServices, serviceUnits);
+
+        // Kostenlose Einheiten: erst neue Kurse (teurer), dann Aktualisierungen
+        const freeNew = Math.min(freeServiceUnits, newCount);
+        const freeUpdates = Math.min(updateCount, (freeServiceUnits - freeNew) * 2);
+        const paidNew = newCount - freeNew;
+        const paidUpdates = updateCount - freeUpdates;
+        const freeCount = freeNew + freeUpdates;
+        const paidCount = paidNew + paidUpdates;
+        const totalAmount = paidNew * 30 + paidUpdates * 15;
 
         // Speichere Anfrage in Supabase
         let requestId = null;

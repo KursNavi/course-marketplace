@@ -134,7 +134,7 @@ export const PLANS = [
       { text: "Anbieterprofil in der Anbietersuche", isStrong: true },
       { text: "Unbegrenzt hervorgehobene Kurse", isStrong: true, description: "Alle Kurse erhalten zusätzliche Sichtbarkeit in passenden Suchergebnissen und Empfehlungen. Die Relevanz bleibt entscheidend." },
       { text: "Verifizierungsprüfung inklusive", isStrong: true, description: "Bezahlpakete enthalten die Verifizierungsprüfung. Das Verifiziert-Badge erscheint nach erfolgreicher Prüfung durch KursNavi – Verifiziert ist ein Vertrauenssignal, keine Ranking-Garantie." },
-      { text: "Kursservice für 30 Kurse pro Jahr inklusive", isStrong: true, separator: true, description: "Wir erfassen oder aktualisieren deine Kurse für KursNavi. Grössere Importe und laufende Pflege nach Absprache." },
+      { text: "Individueller Kursservice nach Absprache", isStrong: true, separator: true, description: "Für grössere Kursbestände und laufende Pflege: Umfang und Konditionen werden individuell vereinbart." },
       { text: "Bis 5 Themenbereiche pro Kurs", description: "Pro Kurs bis zu 5 Themenbereiche – maximale Sichtbarkeit. Ein Kurs kann z.B. unter «Sport», «Fitness», «Gesundheit», «Ernährung» und «Coaching» erscheinen." },
       { text: "8% Gebühr bei Online-Buchung", description: "Tiefste verfügbare Gebühr. Gilt nur bei aktivierter Online-Buchung – Anfragen sind immer kostenlos." },
       { text: "Vollständige Kursstatistiken", isStrong: true, description: "Aufrufe, Anfragen, Themenbereiche und Buchungsverläufe im Überblick." },

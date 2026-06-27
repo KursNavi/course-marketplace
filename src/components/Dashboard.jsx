@@ -1124,24 +1124,46 @@ const CaptureServiceModal = ({ isOpen, onClose, user, includedServices, usedServ
     const [isLoading, setIsLoading] = useState(false);
 
     // Preisberechnung: CHF 30 pro neuem Kurs, CHF 15 pro einfacher Aktualisierung
-    // Abzüglich der noch verfügbaren inkludierten Services (von vorne angerechnet)
+    // 2 einfache Aktualisierungen = 1 Kursservice-Einheit (Kontingent-Zählung)
     const calculatePrice = () => {
-        const totalCourses = courses.length;
         const availableServices = Math.max(0, includedServices - usedServices);
+        const newCount = courses.filter(c => c.type !== 'update').length;
+        const updateCount = courses.filter(c => c.type === 'update').length;
 
-        // Preis pro Kurs je nach Typ
-        const prices = courses.map(c => c.type === 'update' ? 15 : 30);
+        // Kontingent-Zählung: 2 Aktualisierungen = 1 Einheit
+        const serviceUnits = newCount + Math.ceil(updateCount / 2);
+        const freeServiceUnits = Math.min(availableServices, serviceUnits);
 
-        // Die ersten "availableServices" werden abgezogen (sind kostenlos)
-        const paidPrices = prices.slice(availableServices);
-        const total = paidPrices.reduce((sum, p) => sum + p, 0);
+        // Kostenlose Einheiten: erst neue Kurse (teurer), dann Aktualisierungen
+        const freeNew = Math.min(freeServiceUnits, newCount);
+        const freeUpdates = Math.min(updateCount, (freeServiceUnits - freeNew) * 2);
+
+        const paidNew = newCount - freeNew;
+        const paidUpdates = updateCount - freeUpdates;
+        const total = paidNew * 30 + paidUpdates * 15;
+        const freeCount = freeNew + freeUpdates;
+        const paidCount = paidNew + paidUpdates;
+
+        // Pro-Eintrag-Flag: neue Kurse zuerst als kostenlos markieren, dann Aktualisierungen
+        let freeNewLeft = freeNew;
+        let freeUpdatesLeft = freeUpdates;
+        const freeFlags = courses.map(c => {
+            if (c.type !== 'update' && freeNewLeft > 0) { freeNewLeft--; return true; }
+            if (c.type === 'update' && freeUpdatesLeft > 0) { freeUpdatesLeft--; return true; }
+            return false;
+        });
+
+        const paidBreakdown = courses
+            .filter((_, i) => !freeFlags[i])
+            .map(c => c.type === 'update' ? 15 : 30);
 
         return {
             total,
-            freeCount: Math.min(availableServices, totalCourses),
-            paidCount: Math.max(0, totalCourses - availableServices),
-            breakdown: prices,
-            paidBreakdown: paidPrices
+            freeCount,
+            paidCount,
+            freeFlags,
+            breakdown: courses.map(c => c.type === 'update' ? 15 : 30),
+            paidBreakdown,
         };
     };
 
@@ -1264,7 +1286,7 @@ const CaptureServiceModal = ({ isOpen, onClose, user, includedServices, usedServ
                             <div className="flex justify-between items-center mb-3">
                                 <span className="font-semibold text-dark">
                                     Kurs {index + 1}
-                                    {index < pricing.freeCount ? (
+                                    {pricing.freeFlags[index] ? (
                                         <span className="ml-2 text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Inklusive</span>
                                     ) : (
                                         <span className="ml-2 text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full">
