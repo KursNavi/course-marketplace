@@ -128,7 +128,7 @@ describe('ProviderProfilePage', () => {
     expect(screen.queryByText('Hervorgehoben')).not.toBeInTheDocument();
   });
 
-  it('zeigt "Hervorgehoben" (nicht "Featured") für Enterprise-Anbieter', async () => {
+  it('zeigt kein Paketstatus-Badge ("Hervorgehoben"/"Featured") für Enterprise-Anbieter', async () => {
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
@@ -140,7 +140,7 @@ describe('ProviderProfilePage', () => {
     render(<ProviderProfilePage t={{}} setView={vi.fn()} setSelectedCourse={vi.fn()} />);
 
     await waitFor(() => expect(screen.getByText('ICH')).toBeInTheDocument());
-    expect(screen.getAllByText('Hervorgehoben').length).toBeGreaterThanOrEqual(1);
+    expect(screen.queryByText('Hervorgehoben')).not.toBeInTheDocument();
     expect(screen.queryByText('Featured')).not.toBeInTheDocument();
   });
 

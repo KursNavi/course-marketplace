@@ -181,7 +181,7 @@ test.describe('ProviderProfilePage — Hervorgehoben-Badge', () => {
   // Route pattern '**/api/provider**' is safe here — the /anbieter/{slug} page
   // makes exactly one API call: the provider profile fetch.
 
-  test('Enterprise-Anbieter zeigt "Hervorgehoben", nicht "Featured"', async ({ page }) => {
+  test('Enterprise-Anbieter zeigt kein Paketstatus-Badge ("Hervorgehoben"/"Featured")', async ({ page }) => {
     await page.route('**/api/provider**', async (route) => {
       await route.fulfill({
         status: 200,
@@ -205,8 +205,8 @@ test.describe('ProviderProfilePage — Hervorgehoben-Badge', () => {
     await page.goto('/anbieter/e2e-enterprise-anbieter');
     await expect(page.getByText('E2E Enterprise Anbieter').first()).toBeVisible({ timeout: 10_000 });
 
-    // Must show "Hervorgehoben" (German), NOT "Featured" (English)
-    await expect(page.getByText('Hervorgehoben', { exact: true })).toBeVisible();
+    // Paketstatus-Badges müssen öffentlich unsichtbar bleiben
+    await expect(page.getByText('Hervorgehoben', { exact: true })).not.toBeVisible();
     await expect(page.getByText('Featured', { exact: true })).not.toBeVisible();
   });
 

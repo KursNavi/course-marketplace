@@ -398,13 +398,6 @@ export default function ProviderProfilePage({ t, setView, setSelectedCourse }) {
                   {provider.name}
                 </h1>
 
-                {entitlements?.isFeatured && (
-                  <span className="inline-flex items-center text-sm font-medium text-orange-600 bg-orange-50 px-3 py-1 rounded-full">
-                    <Star className="w-4 h-4 mr-1.5 fill-current" />
-                    Hervorgehoben
-                  </span>
-                )}
-
                 {provider.isVerified && (
                   <span className="inline-flex items-center text-sm font-medium text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
                     <CheckCircle className="w-4 h-4 mr-1.5" />
