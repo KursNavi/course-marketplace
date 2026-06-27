@@ -45,7 +45,15 @@ export default async function handler(req, res) {
 
         const allowedTiers = ['pro', 'premium', 'enterprise'];
         if (!allowedTiers.includes(targetTier)) {
-            return res.status(400).json({ error: 'Ungültiges Paket. Nur Pro, Premium oder Enterprise buchbar.' });
+            return res.status(400).json({ error: 'Ungültiges Paket. Nur Pro oder Premium buchbar.' });
+        }
+
+        // Enterprise ist kein automatischer Checkout – individuell nach Absprache
+        if (targetTier === 'enterprise') {
+            return res.status(400).json({
+                error: 'Enterprise wird individuell abgestimmt. Bitte kontaktiere KursNavi unter info@kursnavi.ch.',
+                contactOnly: true,
+            });
         }
 
         // --- Check current tier ---
@@ -82,8 +90,9 @@ export default async function handler(req, res) {
         }
 
         // --- Server-side prices (tamper-proof) ---
-        const prices = { pro: 290, premium: 690, enterprise: 1490 };
-        const tierLabels = { pro: 'Pro', premium: 'Premium', enterprise: 'Enterprise' };
+        // Enterprise wird nicht über Checkout verkauft (contactOnly)
+        const prices = { pro: 290, premium: 690 };
+        const tierLabels = { pro: 'Pro', premium: 'Premium' };
         const price = prices[targetTier];
         const label = tierLabels[targetTier];
 

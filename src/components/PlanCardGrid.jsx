@@ -142,16 +142,30 @@ export default function PlanCardGrid({
               </div>
             )}
 
-            {/* Laufzeit-Hinweis für bezahlte Pakete */}
-            {plan.priceAnnualCHF > 0 && (
+            {/* Laufzeit-Hinweis für bezahlte Jahrespakete (nicht Enterprise) */}
+            {plan.priceAnnualCHF > 0 && !plan.isContactOnly && (
               <p className="mb-3 text-center text-xs text-gray-400">
                 Laufzeit: 1 Jahr · keine automatische Verlängerung
+              </p>
+            )}
+
+            {/* Enterprise: Kontakt-Hinweis statt Laufzeit */}
+            {plan.isContactOnly && (
+              <p className="mb-3 text-center text-xs text-gray-400">
+                Für grössere Kursbestände · individuell nach Absprache
               </p>
             )}
 
             {/* CTA */}
             {renderAction ? (
               renderAction({ plan, colors, isCurrent })
+            ) : plan.isContactOnly ? (
+              <a
+                href="mailto:info@kursnavi.ch?subject=Enterprise-Anfrage"
+                className={`w-full rounded-lg border py-2 font-bold transition text-center block ${colors.btnOutline}`}
+              >
+                {plan.ctaLabel}
+              </a>
             ) : (
               <button
                 type="button"

@@ -124,6 +124,10 @@ const TeacherHub = ({ user, showNotification }) => {
   };
 
   const handlePlanCta = (planId) => {
+    if (planId === 'enterprise') {
+      window.location.href = 'mailto:info@kursnavi.ch?subject=Enterprise-Anfrage';
+      return;
+    }
     if (!user) {
       localStorage.setItem('selectedPackage', planId);
       window.history.pushState({ view: 'login' }, '', '/login');
@@ -259,7 +263,7 @@ const TeacherHub = ({ user, showNotification }) => {
           </p>
           <div className="mt-8 inline-flex flex-col gap-3 text-left">
             {[
-              'Kurse weiter oben in der Suche anzeigen',
+              'Kurse in passenden Suchergebnissen und Empfehlungen sichtbarer machen',
               'Kurse in mehreren Themenbereichen sichtbar machen',
               'Sehen, welche Kurse am meisten Interesse wecken',
             ].map((item) => (
@@ -288,6 +292,17 @@ const TeacherHub = ({ user, showNotification }) => {
           <div className="mt-10">
             <PlanCardGrid
               renderAction={({ plan, colors }) => {
+                const btnClass = plan.buttonVariant === 'solid' ? colors.btnSolid : colors.btnOutline;
+                if (plan.isContactOnly) {
+                  return (
+                    <a
+                      href="mailto:info@kursnavi.ch?subject=Enterprise-Anfrage"
+                      className={`w-full rounded-lg border py-2.5 font-bold transition text-center block ${colors.btnOutline}`}
+                    >
+                      Angebot anfragen
+                    </a>
+                  );
+                }
                 let label;
                 if (!user) {
                   label = 'Anbieterkonto erstellen';
@@ -296,7 +311,6 @@ const TeacherHub = ({ user, showNotification }) => {
                 } else {
                   label = 'Upgrade kaufen';
                 }
-                const btnClass = plan.buttonVariant === 'solid' ? colors.btnSolid : colors.btnOutline;
                 return (
                   <button
                     type="button"
@@ -321,8 +335,8 @@ const TeacherHub = ({ user, showNotification }) => {
               </div>
             </div>
             <div className="mt-4 shrink-0 text-left md:mt-0 md:text-right">
-              <p className="text-2xl font-bold text-white">75 CHF pro Kurs</p>
-              <p className="text-sm text-gray-400">ab dem 4. Kurs: 50 CHF</p>
+              <p className="text-2xl font-bold text-white">CHF 30 pro neuem Kurs</p>
+              <p className="text-sm text-gray-400">CHF 15 pro einfacher Aktualisierung</p>
             </div>
           </div>
         </div>

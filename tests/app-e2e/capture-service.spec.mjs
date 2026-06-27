@@ -27,12 +27,12 @@ test.describe('Capture Service / Listungsservice (hybrid app-e2e)', () => {
     await loginAsTeacherAndOpenTab(page, 'kursangebot');
     await expect(page.locator('h2').filter({ hasText: 'Meine Kurse' })).toBeVisible({ timeout: 5_000 });
 
-    // Click "Service buchen (CHF 75.-/Kurs)" to open the CaptureServiceModal
-    await page.getByRole('button', { name: /service buchen/i }).click();
+    // Click "Kursservice buchen" to open the CaptureServiceModal
+    await page.getByRole('button', { name: /kursservice buchen/i }).click();
 
     // Wait for modal to appear
     const modal = page.locator('.fixed.inset-0');
-    await expect(modal.getByText('Kurserfassungs-Service buchen')).toBeVisible({ timeout: 5_000 });
+    await expect(modal.getByText('Kursservice buchen')).toBeVisible({ timeout: 5_000 });
 
     // Fill the URL field (first course entry)
     await modal.locator('input[type="url"]').first().fill('https://example.com/mein-testkurs');
