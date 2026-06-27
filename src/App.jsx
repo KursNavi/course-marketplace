@@ -26,6 +26,13 @@ if (typeof window !== 'undefined') {
     _p.set('tab', 'anbieter');
     window.history.replaceState({}, '', '/search?' + _p.toString());
   }
+
+  // Normalize /app/app/* → /app/* (double-prefix bug, e.g. /app/app/agb → /app/agb).
+  // This can occur when navigation creates a relative "app/agb" link from an /app/* base path.
+  if (window.location.pathname.startsWith('/app/app/')) {
+    const normalized = '/app/' + window.location.pathname.slice('/app/app/'.length);
+    window.history.replaceState({}, '', normalized + window.location.search);
+  }
 }
 
 const CHUNK_RELOAD_KEY = 'chunk_reload';
@@ -177,9 +184,16 @@ class ErrorBoundary extends React.Component {
 // --- MAIN APP COMPONENT ---
 export default function KursNaviPro() {  // 1. Initial State Logic
   const getInitialView = () => {
-      const path = window.location.pathname;
+      // Strip /app/ prefix for QA/staging/preview environments where the app is served
+      // under a /app/ base path (e.g. /app/teacher-hub, /app/agb).
+      // No legitimate SPA routes start with /app/, so this is safe for all public paths.
+      let path = window.location.pathname;
+      if (path.startsWith('/app/')) {
+          path = '/' + path.slice('/app/'.length);
+      }
+
       if (path.startsWith('/control-room-2025')) return 'admin';
-      
+
       const routes = {
           '/search': 'search',
           '/dashboard': 'dashboard',
@@ -1503,6 +1517,15 @@ export default function KursNaviPro() {  // 1. Initial State Logic
     const syncFromUrl = () => {
       // Skip if triggered by our own URL-sync useEffect (not user navigation)
       if (isUrlSyncingRef.current) return;
+
+      // Normalize /app/app/* → /app/* for in-app navigation (mirrors module-level normalisation)
+      if (window.location.pathname.startsWith('/app/app/')) {
+        const normalized = '/app/' + window.location.pathname.slice('/app/app/'.length);
+        isUrlSyncingRef.current = true;
+        window.history.replaceState({}, '', normalized + window.location.search);
+        isUrlSyncingRef.current = false;
+      }
+
       setRoutePath(`${window.location.pathname}${window.location.search}`);
 
       // Redirect /anbieter directory (not individual profiles) to /search?tab=anbieter
