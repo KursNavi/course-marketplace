@@ -608,7 +608,54 @@ describe('Segment context banner', () => {
   });
 });
 
-// ===================== 10. SEGMENT CONTEXT — SWITCH BUTTONS =====================
+// ===================== 10. AUTO-HINT BAR =====================
+describe('Auto-hint bar (separate from segment banner)', () => {
+  it('renders autotype-hint-bar when autoType=true and searchType is set', () => {
+    const c = makeCourse('1');
+    render(<SearchPageView {...makeProps({ courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c], searchType: 'privat_hobby', autoType: true })} />);
+    expect(screen.getByTestId('autotype-hint-bar')).toBeInTheDocument();
+  });
+
+  it('does NOT render autotype-hint-bar when autoType=false', () => {
+    const c = makeCourse('1');
+    render(<SearchPageView {...makeProps({ courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c], searchType: 'privat_hobby', autoType: false })} />);
+    expect(screen.queryByTestId('autotype-hint-bar')).not.toBeInTheDocument();
+  });
+
+  it('does NOT render autotype-hint-bar when no searchType (even if autoType=true)', () => {
+    const c = makeCourse('1');
+    render(<SearchPageView {...makeProps({ courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c], searchType: '', autoType: true })} />);
+    expect(screen.queryByTestId('autotype-hint-bar')).not.toBeInTheDocument();
+  });
+});
+
+// ===================== 11. RESET BUTTON IN CHIP ZONE =====================
+describe('Alle zurücksetzen button in chip zone', () => {
+  it('shows btn-reset-all-chips when a location filter is active', () => {
+    const c = makeCourse('1');
+    render(<SearchPageView {...makeProps({ courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c], selectedLocations: ['Zürich'] })} />);
+    expect(screen.getByTestId('btn-reset-all-chips')).toBeInTheDocument();
+  });
+
+  it('shows btn-reset-all-chips and searchQuery chip when only searchQuery is active', () => {
+    const c = makeCourse('1');
+    render(<SearchPageView {...makeProps({ courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c], searchQuery: 'Yoga' })} />);
+    const chips = screen.getByTestId('filter-chips');
+    expect(chips).toBeInTheDocument();
+    expect(screen.getByTestId('btn-reset-all-chips')).toBeInTheDocument();
+    // The searchQuery chip should display the query text
+    expect(chips).toHaveTextContent('Yoga');
+  });
+
+  it('does NOT show chip container when no filters and no searchQuery', () => {
+    const c = makeCourse('1');
+    render(<SearchPageView {...makeProps({ courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c], searchQuery: '' })} />);
+    // Still no chips if no real filter and no query
+    expect(screen.queryByTestId('filter-chips')).not.toBeInTheDocument();
+  });
+});
+
+// ===================== 12. SEGMENT CONTEXT — SWITCH BUTTONS =====================
 describe('Segment switch from banner', () => {
   it('clicking switch-segment button calls setSearchType and setAutoType(false)', () => {
     // autoType is now a prop — no URL mock needed

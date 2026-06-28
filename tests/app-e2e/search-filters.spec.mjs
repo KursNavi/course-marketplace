@@ -28,7 +28,7 @@ test.describe('Search & Filters (app-e2e)', () => {
     await expect(searchInput).toBeVisible({ timeout: 5_000 });
   });
 
-  test('area URL param: dropdown shows area label, chip shows readable name', async ({ page }) => {
+  test('area URL param: area chip shows readable label (no area dropdown)', async ({ page }) => {
     // Navigate directly to search with type + area pre-selected (as done by topic landing pages)
     await page.goto('/search?type=beruflich&area=wirtschaft_management');
 
@@ -36,13 +36,10 @@ test.describe('Search & Filters (app-e2e)', () => {
     await expect(resultsCounter).toBeVisible({ timeout: 15_000 });
     await expect(resultsCounter).not.toContainText('Lade', { timeout: 10_000 });
 
-    // The Bereich select must have wirtschaft_management as its current value (not the empty placeholder)
-    const areaSelect = page.getByTestId('select-bereich');
-    const selectedValue = await areaSelect.inputValue();
-    expect(selectedValue).toBe('wirtschaft_management');
+    // Bereich-Dropdown wurde entfernt — Bereich ist jetzt Kontext, kein Filter-Select
+    await expect(page.getByTestId('select-bereich')).not.toBeAttached();
 
-    // The filter chips container must NOT show the raw DB slug
-    // It should show a human-readable label like "Wirtschaft & Management"
+    // Filter chips must show a human-readable label, NOT the raw DB slug
     const chips = page.getByTestId('filter-chips');
     await expect(chips).toBeVisible({ timeout: 5_000 });
     await expect(chips).not.toContainText('wirtschaft_management');

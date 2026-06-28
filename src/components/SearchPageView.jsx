@@ -86,7 +86,7 @@ const SearchPageView = ({
     const [showMoreFilters, setShowMoreFilters] = React.useState(() => {
         if (typeof window === 'undefined') return false;
         const p = new URLSearchParams(window.location.search);
-        return !!(p.get('lang') || p.get('price') || (p.get('level') && p.get('level') !== 'All') || p.get('pro') || p.get('booking'));
+        return !!(p.get('lang') || p.get('price') || (p.get('level') && p.get('level') !== 'All') || p.get('pro') || p.get('booking') || p.get('spec') || p.get('focus'));
     });
 
     // autoType: Homepage sent user here with an auto-detected segment — show a switch hint.
@@ -98,10 +98,10 @@ const SearchPageView = ({
     // The lazy init above handles direct page loads; this effect handles subsequent prop changes
     // (e.g. user navigates from /search to /search?price=200&pro=1 within the SPA).
     React.useEffect(() => {
-        if (filterPriceMax || filterPro || filterDirectBooking || selectedLanguages.length > 0 || (filterLevel && filterLevel !== 'All')) {
+        if (filterPriceMax || filterPro || filterDirectBooking || selectedLanguages.length > 0 || (filterLevel && filterLevel !== 'All') || searchSpecialty || searchFocus) {
             setShowMoreFilters(true);
         }
-    }, [filterPriceMax, filterPro, filterDirectBooking, selectedLanguages, filterLevel]);
+    }, [filterPriceMax, filterPro, filterDirectBooking, selectedLanguages, filterLevel, searchSpecialty, searchFocus]);
 
 
     // Load taxonomy from DB
@@ -441,8 +441,10 @@ const SearchPageView = ({
         setSearchQuery("");
     }, [setSearchQuery]);
 
-    // Count active secondary filters (Preis, Niveau, Kurssprache, Verifiziert, Direktbuchung)
+    // Count active secondary filters (Fachgebiet, Fokus, Preis, Niveau, Kurssprache, Verifiziert, Direktbuchung)
     const secondaryFilterCount = [
+        !!searchSpecialty,
+        !!searchFocus,
         filterPriceMax && filterPriceMax !== '',
         filterLevel && filterLevel !== 'All',
         selectedLanguages.length > 0,
@@ -578,7 +580,7 @@ const SearchPageView = ({
                             </div>
                             {/* Mobile subtitle */}
                             <p className="text-xs text-gray-500 sm:hidden pl-7" data-testid="segment-context-subtitle-mobile">{meta.subtitle}</p>
-                            {/* Links row */}
+                            {/* Landing page link (secondary) */}
                             <div className="flex items-center gap-2 flex-wrap text-xs pl-7 sm:pl-0">
                                 <a
                                     href={meta.landingUrl}
@@ -593,34 +595,50 @@ const SearchPageView = ({
                                 >
                                     {meta.landingLabel}
                                 </a>
-                                {/* Auto-type hint: shown when homepage auto-detected the segment */}
-                                {isAutoType && (
-                                    <>
-                                        <span className="text-gray-300" aria-hidden="true">|</span>
-                                        <span className="text-gray-500" data-testid="autotype-hint-label">Auch in:</span>
-                                        {otherSegments.map(s => {
-                                            const oCfg = SEGMENT_CONFIG[s.key];
-                                            return (
-                                                <button
-                                                    key={s.key}
-                                                    data-testid={`switch-segment-${s.key}`}
-                                                    onClick={() => {
-                                                        setSearchType(s.key);
-                                                        setSearchArea('');
-                                                        setSearchSpecialty('');
-                                                        setSearchFocus('');
-                                                        setIsAutoType(false);
-                                                        if (setAutoType) setAutoType(false);
-                                                    }}
-                                                    className={`${oCfg?.text || 'text-gray-600'} hover:underline font-medium`}
-                                                >
-                                                    {s.label}
-                                                </button>
-                                            );
-                                        })}
-                                    </>
-                                )}
                             </div>
+                        </div>
+                    </div>
+                );
+            })()}
+
+            {/* AUTO-TYPE HINT BAR — visible only when homepage auto-detected the segment */}
+            {isAutoType && searchType && (() => {
+                const canonKey = CANONICAL_SEGMENT[searchType] || searchType;
+                const meta = SEGMENT_META[canonKey] || SEGMENT_META[searchType];
+                const otherSegs = OTHER_SEGMENTS.filter(s => s.key !== canonKey);
+                if (!meta) return null;
+                return (
+                    <div data-testid="autotype-hint-bar" className="bg-amber-50 border-b border-amber-100">
+                        <div className="max-w-7xl mx-auto px-4 py-2 flex items-center gap-2 flex-wrap">
+                            {/* Desktop text */}
+                            <span data-testid="autotype-hint-label" className="text-xs text-amber-800 hidden sm:inline">
+                                Du suchst zuerst in <strong>{meta.title}</strong>. Auch suchen in:
+                            </span>
+                            {/* Mobile text */}
+                            <span data-testid="autotype-hint-label-mobile" className="text-xs text-amber-800 sm:hidden">
+                                Zuerst {meta.title} · Auch:
+                            </span>
+                            {otherSegs.map((s, idx) => (
+                                <React.Fragment key={s.key}>
+                                    {idx > 0 && <span className="text-amber-300 hidden sm:inline" aria-hidden="true">·</span>}
+                                    {idx > 0 && <span className="text-amber-300 sm:hidden" aria-hidden="true">,</span>}
+                                    <button
+                                        data-testid={`switch-segment-${s.key}`}
+                                        onClick={() => {
+                                            const params = new URLSearchParams(window.location.search);
+                                            params.set('type', s.key);
+                                            params.delete('autoType'); params.delete('area');
+                                            params.delete('spec'); params.delete('focus');
+                                            window.history.pushState({ view: 'search' }, '', '/search?' + params.toString());
+                                            setSearchType(s.key);
+                                            setSearchArea(''); setSearchSpecialty(''); setSearchFocus('');
+                                            setIsAutoType(false);
+                                            if (setAutoType) setAutoType(false);
+                                        }}
+                                        className="text-xs font-semibold text-amber-700 hover:underline"
+                                    >{s.label}</button>
+                                </React.Fragment>
+                            ))}
                         </div>
                     </div>
                 );
@@ -742,9 +760,26 @@ const SearchPageView = ({
                         </button>
                     </div>
 
-                    {/* SECONDARY FILTERS: Kurssprache, Preis, Niveau, Verifiziert, Direktbuchung */}
+                    {/* SECONDARY FILTERS: Fachgebiet, Fokus, Kurssprache, Preis, Niveau, Verifiziert, Direktbuchung */}
                     {showMoreFilters && (
                         <div className="flex gap-3 flex-wrap pb-1 items-center border-t pt-2 border-gray-100 bg-gray-50 rounded-lg px-3 py-2 -mx-1">
+                            {/* Fachliche Filter: Fachgebiet + Fokus (ohne Bereich-Dropdown) */}
+                            {availableSpecialties.length > 0 && (
+                                <select data-testid="select-specialty" value={searchSpecialty}
+                                    onChange={(e) => { setSearchSpecialty(e.target.value); setSearchFocus(""); }}
+                                    className={`px-3 py-1.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-white border-gray-200 ${!searchSpecialty ? 'text-gray-400' : 'text-gray-900'}`}>
+                                    <option value="" className="text-gray-400">— {t.lbl_specialty || 'Fachgebiet'} —</option>
+                                    {availableSpecialties.map(spec => (<option key={spec} value={spec} className="text-gray-900">{spec}</option>))}
+                                </select>
+                            )}
+                            {searchSpecialty && availableFocuses.length > 0 && (
+                                <select data-testid="select-focus" value={searchFocus || ""}
+                                    onChange={(e) => setSearchFocus(e.target.value)}
+                                    className={`px-3 py-1.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-white border-gray-200 ${!searchFocus ? 'text-gray-400' : 'text-gray-900'}`}>
+                                    <option value="" className="text-gray-400">— {t.lbl_focus || 'Fokus'} —</option>
+                                    {availableFocuses.map(f => (<option key={f} value={f} className="text-gray-900">{f}</option>))}
+                                </select>
+                            )}
                             <LanguageDropdown selectedLanguages={selectedLanguages} setSelectedLanguages={setSelectedLanguages} langMenuOpen={langMenuOpen} setLangMenuOpen={setLangMenuOpen} langMenuRef={langMenuRef} t={t} />
                             <div className={`flex items-center space-x-1.5 bg-white px-2.5 py-1 rounded-lg border ${priceError ? 'border-red-400' : 'border-gray-200'}`}>
                                 <span className="text-xs text-gray-500">{t.lbl_max_price}</span>
@@ -784,8 +819,14 @@ const SearchPageView = ({
                    selectedDeliveryTypes.length > 0 || (filterPriceMax && filterPriceMax !== '') ||
                    (filterLevel && filterLevel !== 'All') || filterDateFrom || filterDateTo ||
                    filterPro || filterDirectBooking || selectedSaule ||
-                   searchArea || searchSpecialty || searchFocus) && (
-                    <div className="max-w-7xl mx-auto px-4 pt-2 flex gap-2 flex-wrap" data-testid="filter-chips">
+                   searchArea || searchSpecialty || searchFocus || searchQuery) && (
+                    <div className="max-w-7xl mx-auto px-4 pt-2 flex gap-2 flex-wrap items-center" data-testid="filter-chips">
+                        {/* Search query chip */}
+                        {searchQuery && (
+                            <span onClick={() => setSearchQuery('')} className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-gray-200 flex items-center">
+                                <Search className="w-3 h-3 mr-1" />„{searchQuery}" <X className="w-3 h-3 ml-1 opacity-50" />
+                            </span>
+                        )}
                         {selectedLanguages.map((lang, i) => (
                             <span key={`lang-${i}`} onClick={() => setSelectedLanguages(selectedLanguages.filter(l => l !== lang))} className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-purple-200 flex items-center">
                                 <Globe className="w-3 h-3 mr-1"/> {lang} <X className="w-3 h-3 ml-1 opacity-50" />
@@ -851,6 +892,15 @@ const SearchPageView = ({
                                 {searchFocus} <X className="w-3 h-3 ml-1 opacity-50" />
                             </span>
                         )}
+                        {/* Global reset button */}
+                        <button
+                            data-testid="btn-reset-all-chips"
+                            onClick={resetFilters}
+                            className="ml-auto text-xs text-gray-400 hover:text-gray-600 hover:underline flex items-center gap-1 shrink-0"
+                        >
+                            <X className="w-3 h-3" />
+                            Alle zurücksetzen
+                        </button>
                     </div>
                  )}
             </div>
