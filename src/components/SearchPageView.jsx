@@ -71,7 +71,8 @@ const SearchPageView = ({
     selectedSaule, setSelectedSaule,
     selectedKursart, setSelectedKursart,
     fetchError, onRetry,
-    setSelectedCatPath
+    setSelectedCatPath,
+    autoType, setAutoType,
 }) => {
 
     // Ref for scroll-to-results behavior
@@ -88,11 +89,10 @@ const SearchPageView = ({
         return !!(p.get('lang') || p.get('price') || (p.get('level') && p.get('level') !== 'All') || p.get('pro') || p.get('booking'));
     });
 
-    // autoType: Homepage sent user here with an auto-detected segment — show a switch hint
-    const [isAutoType, setIsAutoType] = React.useState(() => {
-        if (typeof window === 'undefined') return false;
-        return new URLSearchParams(window.location.search).get('autoType') === '1';
-    });
+    // autoType: Homepage sent user here with an auto-detected segment — show a switch hint.
+    // Driven by App.jsx state (via prop) so it works correctly on SPA navigation without remount.
+    const [isAutoType, setIsAutoType] = React.useState(autoType ?? false);
+    React.useEffect(() => { setIsAutoType(autoType ?? false); }, [autoType]);
 
     // Auto-open "Weitere Filter" when secondary filters become active via in-app navigation.
     // The lazy init above handles direct page loads; this effect handles subsequent prop changes
@@ -610,6 +610,7 @@ const SearchPageView = ({
                                                         setSearchSpecialty('');
                                                         setSearchFocus('');
                                                         setIsAutoType(false);
+                                                        if (setAutoType) setAutoType(false);
                                                     }}
                                                     className={`${oCfg?.text || 'text-gray-600'} hover:underline font-medium`}
                                                 >
@@ -691,26 +692,6 @@ const SearchPageView = ({
                         Tipp: Du kannst mehrere Begriffe kombinieren, z.B. <em>Yoga Zürich</em> oder <em>Excel online</em>.
                     </p>
 
-                    {/* TAXONOMY FILTERS (Level 2-4) - Level 1 selected via navigation or segment context banner */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                        <select data-testid="select-bereich" value={searchArea} onChange={(e) => { setSearchArea(e.target.value); setSearchSpecialty(""); setSearchFocus(""); }} className={`w-full px-3 py-1.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 ${searchType ? 'bg-white border-gray-200' : 'bg-gray-50 border-gray-200'} ${!searchArea ? 'text-gray-400' : 'text-gray-900'}`} disabled={!searchType}>
-                            <option value="" className="text-gray-400">— {t.lbl_area || 'Themenwelt'} —</option>
-                            {/* Sicherstellen dass der aktive Bereich immer als Option vorhanden ist
-                                (z.B. beim Laden via URL-Parameter bevor Kursdaten verfügbar sind) */}
-                            {searchArea && !availableAreas.includes(searchArea) && (
-                                <option key={`__current_${searchArea}`} value={searchArea} className="text-gray-900">{getLabel(searchArea, 'area')}</option>
-                            )}
-                            {availableAreas.map(area => (<option key={area} value={area} className="text-gray-900">{getLabel(area, 'area')}</option>))}
-                        </select>
-                        <select value={searchSpecialty} onChange={(e) => { setSearchSpecialty(e.target.value); setSearchFocus(""); }} className={`w-full px-3 py-1.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 ${searchArea ? 'bg-white border-gray-200' : 'bg-gray-50 border-gray-200'} ${!searchSpecialty ? 'text-gray-400' : 'text-gray-900'}`} disabled={!searchArea}>
-                            <option value="" className="text-gray-400">— {t.lbl_specialty || 'Fachgebiet'} —</option>
-                            {availableSpecialties.map(spec => (<option key={spec} value={spec} className="text-gray-900">{spec}</option>))}
-                        </select>
-                        <select value={searchFocus || ""} onChange={(e) => setSearchFocus(e.target.value)} className={`w-full px-3 py-1.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 ${searchSpecialty && availableFocuses.length > 0 ? 'bg-white border-gray-200' : 'bg-gray-50 border-gray-200'} ${!searchFocus ? 'text-gray-400' : 'text-gray-900'}`} disabled={!searchSpecialty || availableFocuses.length === 0}>
-                            <option value="" className="text-gray-400">— {t.lbl_focus || 'Fokus'} —</option>
-                            {availableFocuses.map(f => (<option key={f} value={f} className="text-gray-900">{f}</option>))}
-                        </select>
-                    </div>
 
                     {/* SÄULEN FILTER — nur für berufliche Kurse */}
                     {(searchType === 'beruflich' || searchType === 'professionell') && (

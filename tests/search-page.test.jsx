@@ -68,6 +68,7 @@ function makeProps(overrides = {}) {
     selectedSaule: '', setSelectedSaule: vi.fn(),
     fetchError: false, onRetry: vi.fn(),
     setSelectedCatPath: vi.fn(),
+    autoType: false, setAutoType: vi.fn(),
     ...overrides,
   };
 }
@@ -585,47 +586,54 @@ describe('Segment context banner', () => {
     expect(link).toHaveAttribute('href', '/professional');
   });
 
-  it('does NOT show auto-type hint when isAutoType is false (no autoType URL param)', () => {
+  it('does NOT show auto-type hint when autoType prop is false (default)', () => {
     const c = makeCourse('1');
-    render(<SearchPageView {...makeProps({ courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c], searchType: 'privat_hobby' })} />);
+    render(<SearchPageView {...makeProps({ courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c], searchType: 'privat_hobby', autoType: false })} />);
     expect(screen.queryByTestId('autotype-hint-label')).not.toBeInTheDocument();
+  });
+
+  it('shows auto-type hint when autoType prop is true', () => {
+    const c = makeCourse('1');
+    render(<SearchPageView {...makeProps({ courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c], searchType: 'privat_hobby', autoType: true })} />);
+    expect(screen.getByTestId('autotype-hint-label')).toBeInTheDocument();
+    // Switch buttons for other segments should appear
+    expect(screen.getByTestId('switch-segment-beruflich')).toBeInTheDocument();
+    expect(screen.getByTestId('switch-segment-kinder_jugend')).toBeInTheDocument();
+  });
+
+  it('does NOT render the Bereich/Themenwelt area dropdown (removed in segment-context phase)', () => {
+    const c = makeCourse('1');
+    render(<SearchPageView {...makeProps({ courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c], searchType: 'beruflich' })} />);
+    expect(document.querySelector('[data-testid="select-bereich"]')).not.toBeInTheDocument();
   });
 });
 
 // ===================== 10. SEGMENT CONTEXT — SWITCH BUTTONS =====================
 describe('Segment switch from banner', () => {
-  it('clicking switch-segment button calls setSearchType with new segment', () => {
-    // Simulate arriving from homepage with autoType=1 in URL
-    Object.defineProperty(window, 'location', {
-      value: { ...window.location, search: '?type=privat_hobby&autoType=1' },
-      writable: true,
-    });
+  it('clicking switch-segment button calls setSearchType and setAutoType(false)', () => {
+    // autoType is now a prop — no URL mock needed
     const setType = vi.fn();
     const setArea = vi.fn();
     const setSpec = vi.fn();
     const setFocus = vi.fn();
+    const setAutoTypeFn = vi.fn();
     const c = makeCourse('1');
     render(<SearchPageView {...makeProps({
       courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
       searchType: 'privat_hobby',
+      autoType: true,
       setSearchType: setType, setSearchArea: setArea,
       setSearchSpecialty: setSpec, setSearchFocus: setFocus,
+      setAutoType: setAutoTypeFn,
     })} />);
 
     // Should show "Auch in:" hint with switch buttons
-    const hintLabel = screen.getByTestId('autotype-hint-label');
-    expect(hintLabel).toBeInTheDocument();
+    expect(screen.getByTestId('autotype-hint-label')).toBeInTheDocument();
 
     // Click beruflich switch button
-    const switchBtn = screen.getByTestId('switch-segment-beruflich');
-    fireEvent.click(switchBtn);
+    fireEvent.click(screen.getByTestId('switch-segment-beruflich'));
     expect(setType).toHaveBeenCalledWith('beruflich');
     expect(setArea).toHaveBeenCalledWith('');
-
-    // Reset location
-    Object.defineProperty(window, 'location', {
-      value: { ...window.location, search: '' },
-      writable: true,
-    });
+    expect(setAutoTypeFn).toHaveBeenCalledWith(false);
   });
 });

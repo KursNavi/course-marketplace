@@ -399,57 +399,6 @@ export default function ProviderDirectory({ t, setView, embedded = false }) {
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-8">
           <div className="flex flex-col lg:flex-row gap-3 items-start lg:items-center flex-wrap">
 
-            {/* Level 2: Area (dependent on type) */}
-            {selectedType && filteredAreas.length > 0 && (
-              <div className="relative w-full sm:w-auto">
-                <select
-                  value={selectedArea}
-                  onChange={(e) => changeArea(e.target.value)}
-                  className="w-full sm:w-52 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm appearance-none cursor-pointer focus:outline-none focus:border-orange-400"
-                >
-                  <option value="">Alle Bereiche</option>
-                  {filteredAreas.map(area => (
-                    <option key={area.id} value={area.id}>{area.label_de}</option>
-                  ))}
-                </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-              </div>
-            )}
-
-            {/* Level 3: Specialty (dependent on area) */}
-            {selectedArea && filteredSpecialties.length > 0 && (
-              <div className="relative w-full sm:w-auto">
-                <select
-                  value={selectedSpecialty}
-                  onChange={(e) => changeSpecialty(e.target.value)}
-                  className="w-full sm:w-52 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm appearance-none cursor-pointer focus:outline-none focus:border-orange-400"
-                >
-                  <option value="">Alle Fachbereiche</option>
-                  {filteredSpecialties.map(spec => (
-                    <option key={spec.id} value={spec.id}>{spec.label_de}</option>
-                  ))}
-                </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-              </div>
-            )}
-
-            {/* Level 4: Focus (dependent on specialty) */}
-            {selectedSpecialty && filteredFocuses.length > 0 && (
-              <div className="relative w-full sm:w-auto">
-                <select
-                  value={selectedFocus}
-                  onChange={(e) => setSelectedFocus(e.target.value)}
-                  className="w-full sm:w-52 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm appearance-none cursor-pointer focus:outline-none focus:border-orange-400"
-                >
-                  <option value="">Alle Schwerpunkte</option>
-                  {filteredFocuses.map(focus => (
-                    <option key={focus.id} value={focus.id}>{focus.label_de}</option>
-                  ))}
-                </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-              </div>
-            )}
-
             {/* Canton Filter */}
             <div className="relative w-full sm:w-auto">
               <select
