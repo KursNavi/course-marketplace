@@ -730,8 +730,8 @@ const SearchPageView = ({
                 </div>
             )}
 
-            {/* Sticky filter bar */}
-            <div className="bg-white border-b pt-3 pb-2 sticky top-20 z-30 shadow-sm">
+            {/* Sticky filter bar (sticky only on sm+ to avoid mobile overflow) */}
+            <div className="bg-white border-b pt-3 pb-2 sm:sticky sm:top-20 z-30 shadow-sm">
                 <div className="max-w-7xl mx-auto px-4 space-y-2">
                     {/* Row 1: Search + Location */}
                     <div className="flex flex-col md:flex-row gap-2 items-stretch">
@@ -754,44 +754,92 @@ const SearchPageView = ({
                             const canonKey = CANONICAL_SEGMENT[searchType] || searchType;
                             const areaLabel = canonKey === 'beruflich' ? 'Fachbereich' : canonKey === 'kinder_jugend' ? 'Angebotsbereich' : 'Themenwelt';
                             const areaTestId = canonKey === 'beruflich' ? 'select-fachbereich' : canonKey === 'kinder_jugend' ? 'select-angebotsbereich' : 'select-themenwelt';
-                            const specPlaceholder = canonKey === 'beruflich' ? 'Zuerst Fachbereich wählen' : canonKey === 'kinder_jugend' ? 'Zuerst Angebotsbereich wählen' : 'Zuerst Themenwelt wählen';
                             const showSpecialty = !searchArea || availableSpecialties.length > 0;
                             const showFocus = !!searchArea && availableSpecialties.length > 0 && (!searchSpecialty || availableFocuses.length > 0);
+                            const selCls = (active) => `px-3 py-1.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-white border-gray-200 ${active ? 'text-gray-900' : 'text-gray-400'}`;
+                            const chipCls = 'text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-orange-200 flex items-center';
                             return (
                                 <React.Fragment>
-                                    {/* Level 2: Area */}
-                                    <select data-testid={areaTestId} value={searchArea}
-                                        onChange={(e) => { setSearchArea(e.target.value); setSearchSpecialty(''); setSearchFocus(''); }}
-                                        className={`px-3 py-1.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-white border-gray-200 ${!searchArea ? 'text-gray-400' : 'text-gray-900'}`}>
-                                        <option value="" className="text-gray-400">— {areaLabel} —</option>
-                                        {availableAreas.map(slug => (<option key={slug} value={slug} className="text-gray-900">{getLabel(slug, 'area')}</option>))}
-                                    </select>
-                                    {/* Level 3: Specialty — disabled until area chosen; hidden on mobile until area is set */}
-                                    {showSpecialty && (
-                                        <select data-testid="select-specialty" value={searchSpecialty} disabled={!searchArea}
-                                            onChange={(e) => { setSearchSpecialty(e.target.value); setSearchFocus(''); }}
-                                            className={!searchArea
-                                                ? 'hidden sm:block px-3 py-1.5 border rounded-lg text-sm bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed opacity-60'
-                                                : `px-3 py-1.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-white border-gray-200 ${!searchSpecialty ? 'text-gray-400' : 'text-gray-900'}`}>
-                                            <option value="" className="text-gray-400">
-                                                {!searchArea ? specPlaceholder : `— ${t.lbl_specialty || 'Fachgebiet'} —`}
-                                            </option>
-                                            {searchArea && availableSpecialties.map(spec => (<option key={spec} value={spec} className="text-gray-900">{spec}</option>))}
+                                    {/* MOBILE (sm:hidden): progressive compact cascade — one level at a time */}
+                                    <div data-testid="taxonomy-cascade-mobile" className="sm:hidden flex gap-2 flex-wrap items-center min-w-0">
+                                        {/* Area: show select when not chosen; chip when chosen */}
+                                        {!searchArea ? (
+                                            <select data-testid={`${areaTestId}-m`} value={searchArea}
+                                                onChange={(e) => { setSearchArea(e.target.value); setSearchSpecialty(''); setSearchFocus(''); }}
+                                                className={selCls(false)}>
+                                                <option value="" className="text-gray-400">— {areaLabel} —</option>
+                                                {availableAreas.map(slug => (<option key={slug} value={slug} className="text-gray-900">{getLabel(slug, 'area')}</option>))}
+                                            </select>
+                                        ) : (
+                                            <button data-testid="mobile-area-chip" onClick={() => { setSearchArea(''); setSearchSpecialty(''); setSearchFocus(''); }} className={chipCls}>
+                                                {getLabel(searchArea, 'area')} <X className="w-3 h-3 ml-1 opacity-50" />
+                                            </button>
+                                        )}
+                                        {/* Specialty: show select after area chosen (if options); show chip when chosen */}
+                                        {searchArea && !searchSpecialty && availableSpecialties.length > 0 && (
+                                            <select data-testid="select-specialty-m" value={searchSpecialty}
+                                                onChange={(e) => { setSearchSpecialty(e.target.value); setSearchFocus(''); }}
+                                                className={selCls(false)}>
+                                                <option value="" className="text-gray-400">— {t.lbl_specialty || 'Fachgebiet'} —</option>
+                                                {availableSpecialties.map(spec => (<option key={spec} value={spec} className="text-gray-900">{spec}</option>))}
+                                            </select>
+                                        )}
+                                        {searchArea && searchSpecialty && (
+                                            <button data-testid="mobile-specialty-chip" onClick={() => { setSearchSpecialty(''); setSearchFocus(''); }} className={chipCls}>
+                                                {searchSpecialty} <X className="w-3 h-3 ml-1 opacity-50" />
+                                            </button>
+                                        )}
+                                        {/* Focus: show select after specialty chosen (if options); show chip when chosen */}
+                                        {searchArea && searchSpecialty && !searchFocus && availableFocuses.length > 0 && (
+                                            <select data-testid="select-focus-m" value={searchFocus || ''}
+                                                onChange={(e) => setSearchFocus(e.target.value)}
+                                                className={selCls(false)}>
+                                                <option value="" className="text-gray-400">— {t.lbl_focus || 'Fokus'} —</option>
+                                                {availableFocuses.map(f => (<option key={f} value={f} className="text-gray-900">{f}</option>))}
+                                            </select>
+                                        )}
+                                        {searchArea && searchSpecialty && searchFocus && (
+                                            <button data-testid="mobile-focus-chip" onClick={() => setSearchFocus('')} className={chipCls}>
+                                                {searchFocus} <X className="w-3 h-3 ml-1 opacity-50" />
+                                            </button>
+                                        )}
+                                    </div>
+                                    {/* DESKTOP (hidden sm:flex): all three selects, disabled cascade */}
+                                    <div data-testid="taxonomy-cascade-desktop" className="hidden sm:flex gap-2 flex-wrap items-center">
+                                        {/* Level 2: Area */}
+                                        <select data-testid={areaTestId} value={searchArea}
+                                            onChange={(e) => { setSearchArea(e.target.value); setSearchSpecialty(''); setSearchFocus(''); }}
+                                            className={selCls(!!searchArea)}>
+                                            <option value="" className="text-gray-400">— {areaLabel} —</option>
+                                            {availableAreas.map(slug => (<option key={slug} value={slug} className="text-gray-900">{getLabel(slug, 'area')}</option>))}
                                         </select>
-                                    )}
-                                    {/* Level 4: Focus — disabled until specialty chosen; hidden on mobile until specialty is set */}
-                                    {showFocus && (
-                                        <select data-testid="select-focus" value={searchFocus || ''} disabled={!searchSpecialty}
-                                            onChange={(e) => setSearchFocus(e.target.value)}
-                                            className={!searchSpecialty
-                                                ? 'hidden sm:block px-3 py-1.5 border rounded-lg text-sm bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed opacity-60'
-                                                : `px-3 py-1.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-white border-gray-200 ${!searchFocus ? 'text-gray-400' : 'text-gray-900'}`}>
-                                            <option value="" className="text-gray-400">
-                                                {!searchSpecialty ? 'Zuerst Spezialgebiet wählen' : `— ${t.lbl_focus || 'Fokus'} —`}
-                                            </option>
-                                            {searchSpecialty && availableFocuses.map(f => (<option key={f} value={f} className="text-gray-900">{f}</option>))}
-                                        </select>
-                                    )}
+                                        {/* Level 3: Specialty */}
+                                        {showSpecialty && (
+                                            <select data-testid="select-specialty" value={searchSpecialty} disabled={!searchArea}
+                                                onChange={(e) => { setSearchSpecialty(e.target.value); setSearchFocus(''); }}
+                                                className={!searchArea
+                                                    ? 'px-3 py-1.5 border rounded-lg text-sm bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed opacity-60'
+                                                    : selCls(!!searchSpecialty)}>
+                                                <option value="" className="text-gray-400">
+                                                    {!searchArea ? (canonKey === 'beruflich' ? 'Zuerst Fachbereich wählen' : canonKey === 'kinder_jugend' ? 'Zuerst Angebotsbereich wählen' : 'Zuerst Themenwelt wählen') : `— ${t.lbl_specialty || 'Fachgebiet'} —`}
+                                                </option>
+                                                {searchArea && availableSpecialties.map(spec => (<option key={spec} value={spec} className="text-gray-900">{spec}</option>))}
+                                            </select>
+                                        )}
+                                        {/* Level 4: Focus */}
+                                        {showFocus && (
+                                            <select data-testid="select-focus" value={searchFocus || ''} disabled={!searchSpecialty}
+                                                onChange={(e) => setSearchFocus(e.target.value)}
+                                                className={!searchSpecialty
+                                                    ? 'px-3 py-1.5 border rounded-lg text-sm bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed opacity-60'
+                                                    : selCls(!!searchFocus)}>
+                                                <option value="" className="text-gray-400">
+                                                    {!searchSpecialty ? 'Zuerst Spezialgebiet wählen' : `— ${t.lbl_focus || 'Fokus'} —`}
+                                                </option>
+                                                {searchSpecialty && availableFocuses.map(f => (<option key={f} value={f} className="text-gray-900">{f}</option>))}
+                                            </select>
+                                        )}
+                                    </div>
                                 </React.Fragment>
                             );
                         })()}
@@ -942,17 +990,17 @@ const SearchPageView = ({
                             </span>
                         )}
                         {searchArea && (
-                            <span onClick={() => { setSearchArea(''); setSearchSpecialty(''); setSearchFocus(''); }} className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-orange-200 flex items-center">
+                            <span onClick={() => { setSearchArea(''); setSearchSpecialty(''); setSearchFocus(''); }} className="hidden sm:flex text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-orange-200 items-center">
                                 {getLabel(searchArea, 'area')} <X className="w-3 h-3 ml-1 opacity-50" />
                             </span>
                         )}
                         {searchSpecialty && (
-                            <span onClick={() => { setSearchSpecialty(''); setSearchFocus(''); }} className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-orange-200 flex items-center">
+                            <span onClick={() => { setSearchSpecialty(''); setSearchFocus(''); }} className="hidden sm:flex text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-orange-200 items-center">
                                 {searchSpecialty} <X className="w-3 h-3 ml-1 opacity-50" />
                             </span>
                         )}
                         {searchFocus && (
-                            <span onClick={() => setSearchFocus('')} className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-orange-200 flex items-center">
+                            <span onClick={() => setSearchFocus('')} className="hidden sm:flex text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-orange-200 items-center">
                                 {searchFocus} <X className="w-3 h-3 ml-1 opacity-50" />
                             </span>
                         )}

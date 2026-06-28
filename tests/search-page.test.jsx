@@ -972,8 +972,8 @@ describe('Primary taxonomy visible without Weitere Filter; operational filters i
   });
 });
 
-// ===================== 16. PROGRESSIVE CASCADE: MOBILE HIDDEN CLASSES + FOCUS-WITHOUT-OPTIONS =====================
-describe('Progressive cascade: mobile-hidden disabled placeholders and focus without options', () => {
+// ===================== 16. PROGRESSIVE MOBILE CASCADE: COMPACT CHIPS =====================
+describe('Progressive mobile cascade: compact chips replace disabled selects', () => {
   function makeTaxC16(id, type, area, specialty = null, focus = null) {
     return {
       id, title: `Kurs ${id}`, status: 'published', image_url: null, canton: 'Zürich',
@@ -984,60 +984,64 @@ describe('Progressive cascade: mobile-hidden disabled placeholders and focus wit
     };
   }
 
-  it('specialty select has "hidden sm:block" class when no area chosen (mobile progressive)', () => {
+  it('mobile area select shown when no area chosen (select-fachbereich-m)', () => {
     const c = makeTaxC16('1', 'professionell', 'it_digital', 'Webentwicklung');
     render(<SearchPageView {...makeProps({
       courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
       searchType: 'beruflich', searchArea: '',
     })} />);
-    const sel = document.querySelector('[data-testid="select-specialty"]');
-    expect(sel).toBeInTheDocument(); // rendered (CSS hides it on mobile)
-    expect(sel.className).toContain('hidden');
-    expect(sel.className).toContain('sm:block');
+    expect(document.querySelector('[data-testid="select-fachbereich-m"]')).toBeInTheDocument();
+    expect(document.querySelector('[data-testid="mobile-area-chip"]')).not.toBeInTheDocument();
   });
 
-  it('specialty select has NO hidden class when area is chosen (visible on all viewports)', () => {
+  it('mobile area chip replaces area select when area is chosen', () => {
     const c = makeTaxC16('1', 'professionell', 'it_digital', 'Webentwicklung');
     render(<SearchPageView {...makeProps({
       courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
       searchType: 'beruflich', searchArea: 'it_digital',
     })} />);
-    const sel = document.querySelector('[data-testid="select-specialty"]');
-    expect(sel).toBeInTheDocument();
-    expect(sel.className).not.toContain('hidden sm:block');
+    expect(document.querySelector('[data-testid="mobile-area-chip"]')).toBeInTheDocument();
+    expect(document.querySelector('[data-testid="select-fachbereich-m"]')).not.toBeInTheDocument();
   });
 
-  it('focus select has "hidden sm:block" class when area set but no specialty chosen', () => {
-    const c = makeTaxC16('1', 'professionell', 'it_digital', 'Webentwicklung', 'Frontend');
+  it('mobile specialty select appears after area is chosen (when specialties exist)', () => {
+    const c = makeTaxC16('1', 'professionell', 'it_digital', 'Webentwicklung');
     render(<SearchPageView {...makeProps({
       courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
       searchType: 'beruflich', searchArea: 'it_digital', searchSpecialty: '',
     })} />);
-    const sel = document.querySelector('[data-testid="select-focus"]');
-    expect(sel).toBeInTheDocument();
-    expect(sel.className).toContain('hidden');
-    expect(sel.className).toContain('sm:block');
+    expect(document.querySelector('[data-testid="select-specialty-m"]')).toBeInTheDocument();
+    expect(document.querySelector('[data-testid="mobile-specialty-chip"]')).not.toBeInTheDocument();
   });
 
-  it('focus select has NO hidden class when specialty is chosen (visible on all viewports)', () => {
+  it('mobile specialty chip replaces specialty select when specialty is chosen', () => {
     const c = makeTaxC16('1', 'professionell', 'it_digital', 'Webentwicklung', 'Frontend');
     render(<SearchPageView {...makeProps({
       courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
       searchType: 'beruflich', searchArea: 'it_digital', searchSpecialty: 'Webentwicklung',
     })} />);
-    const sel = document.querySelector('[data-testid="select-focus"]');
-    expect(sel).toBeInTheDocument();
-    expect(sel.className).not.toContain('hidden sm:block');
+    expect(document.querySelector('[data-testid="mobile-specialty-chip"]')).toBeInTheDocument();
+    expect(document.querySelector('[data-testid="select-specialty-m"]')).not.toBeInTheDocument();
   });
 
-  it('focus select is NOT rendered when specialty is set but no focus options exist (FIX 4)', () => {
-    // Course has specialty but NO focus options
+  it('mobile focus select appears when specialty chosen and focus options exist', () => {
+    const c = makeTaxC16('1', 'professionell', 'it_digital', 'Webentwicklung', 'Frontend');
+    render(<SearchPageView {...makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+      searchType: 'beruflich', searchArea: 'it_digital', searchSpecialty: 'Webentwicklung',
+    })} />);
+    expect(document.querySelector('[data-testid="select-focus-m"]')).toBeInTheDocument();
+    expect(document.querySelector('[data-testid="mobile-focus-chip"]')).not.toBeInTheDocument();
+  });
+
+  it('no mobile focus select when specialty is set but no focus options exist (FIX 4)', () => {
     const c = makeTaxC16('1', 'kinder', 'sport_bewegung', 'Fussball', null);
     render(<SearchPageView {...makeProps({
       courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
       searchType: 'kinder_jugend', searchArea: 'sport_bewegung', searchSpecialty: 'Fussball',
     })} />);
-    // showFocus = false when availableFocuses.length === 0 → not rendered
+    expect(document.querySelector('[data-testid="select-focus-m"]')).not.toBeInTheDocument();
+    expect(document.querySelector('[data-testid="mobile-focus-chip"]')).not.toBeInTheDocument();
     expect(document.querySelector('[data-testid="select-focus"]')).not.toBeInTheDocument();
   });
 
