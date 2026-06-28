@@ -92,6 +92,22 @@ export const Home = ({
   const visibleSpecialties = getActiveSpecialties();
   const visibleFocuses = getActiveFocuses();
 
+  // --- SUCHBEREICH STATE ---
+  // 'alle' = no explicit segment (auto-detect on search)
+  const [homeSegment, setHomeSegment] = useState('alle');
+
+  // Keyword-based auto-detection (Option B: no DB query)
+  const guessTypeFromQuery = (q) => {
+    const lower = q.toLowerCase();
+    const kinderKeywords = ['kinder', 'jugend', 'camp', 'feriencamp', 'geburtstag', 'kid', 'schüler'];
+    const beruflichKeywords = ['excel', 'zertifikat', 'zertifizierung', 'ausbildung', 'diplom',
+      'fachausweis', 'mba', 'cas', 'das', 'eidg', 'fachkraft', 'weiterbildung',
+      'berufs', 'karriere', 'lehrgang', 'seminar', 'brevet'];
+    if (kinderKeywords.some(kw => lower.includes(kw))) return 'kinder_jugend';
+    if (beruflichKeywords.some(kw => lower.includes(kw))) return 'beruflich';
+    return 'privat_hobby';
+  };
+
   // --- ACTIONS ---
 
   const handleSearch = (e) => {
@@ -100,10 +116,18 @@ export const Home = ({
     if (searchQuery) params.set('q', searchQuery);
     if (selectedLocations?.length) params.set('loc', selectedLocations.join(','));
     if (selectedDeliveryTypes?.length) params.set('delivery', selectedDeliveryTypes.join(','));
-    if (filterPro) params.set('pro', '1');
-    if (filterDirectBooking) params.set('booking', '1');
-    const qs = params.toString();
-    window.history.pushState({ view: 'search' }, '', '/search' + (qs ? '?' + qs : ''));
+
+    if (homeSegment && homeSegment !== 'alle') {
+      // Explicit segment chosen by user — no auto-type hint needed
+      params.set('type', homeSegment);
+    } else {
+      // Auto-detect segment from query, mark with autoType flag for search page hint
+      const guessedType = searchQuery ? guessTypeFromQuery(searchQuery) : 'privat_hobby';
+      params.set('type', guessedType);
+      params.set('autoType', '1');
+    }
+
+    window.history.pushState({ view: 'search' }, '', '/search?' + params.toString());
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -314,156 +338,39 @@ export const Home = ({
                 <p className="text-xs text-white/70 mt-1.5 ml-1">{t.search_hint_boolean || 'Tipp: Kombiniere Begriffe mit AND oder OR (z.B. "Yoga AND Zürich")'}</p>
             </form>
 
-            {/* Row 2: Filters */}
-            <div className="flex flex-col md:flex-row gap-3 relative z-50">
-                
-                {/* NEW 3-LEVEL CATEGORY DROPDOWN */}
-                <div className="flex-1 bg-white rounded-xl" ref={catMenuRef}>
-                    <button
-                        type="button"
-                        onClick={() => setCatMenuOpen(!catMenuOpen)}
-                        className={`w-full px-4 py-3 flex items-center justify-between font-medium rounded-xl transition-colors ${catMenuOpen ? 'bg-primary/10 text-primary ring-2 ring-primary/30' : 'text-gray-700 hover:bg-gray-50'}`}
-                    >
-                        <span className="flex items-center">
-                            <LayoutGrid className="w-4 h-4 mr-2" aria-hidden="true" />
-                            {catMenuOpen ? t.lbl_select_cat : t.filter_label_cat || 'Kategorie'}
-                        </span>
-                        <ChevronDown className={`w-4 h-4 transition-transform ${catMenuOpen ? 'rotate-180' : ''}`} />
-                    </button>
-
-                    {/* MEGA MENU (3-4 SPALTEN) */}
-                    {catMenuOpen && (() => {
-                        // Mobile step: which column to show on small screens
-                        const mobileStep = activeSpecialty && visibleFocuses.length > 0 ? 'fokus'
-                            : activeArea ? 'specialty'
-                            : 'area';
+            {/* Row 2: Suchbereich */}
+            <div className="mt-1 mb-3">
+                <p className="text-xs text-white/60 mb-2 text-left">Suchbereich</p>
+                <div className="flex gap-2 flex-wrap" data-testid="home-segment-selector">
+                    {[
+                        { key: 'alle',         label: 'Alle Bereiche', Icon: null },
+                        { key: 'beruflich',    label: t.nav_professional || 'Beruflich',      Icon: Briefcase },
+                        { key: 'privat_hobby', label: t.nav_private || 'Privat & Hobby',      Icon: Palette   },
+                        { key: 'kinder_jugend',label: t.nav_kids || 'Kinder & Jugend',        Icon: Smile     },
+                    ].map(({ key, label, Icon }) => {
+                        const isActive = homeSegment === key;
                         return (
-                        <div className="absolute top-full left-0 right-0 mt-2 w-[calc(100vw-2rem)] md:w-auto bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden z-50 text-left">
-
-                            {/* TOP ROW: SEGMENT ICON TABS */}
-                            <div className="flex border-b border-gray-200 bg-gray-50">
-                                {[
-                                  { key: 'beruflich', label: t.nav_professional || 'Beruflich', Icon: Briefcase, config: SEGMENT_CONFIG.beruflich },
-                                  { key: 'privat_hobby', label: t.nav_private || 'Privat & Hobby', Icon: Palette, config: SEGMENT_CONFIG.privat_hobby },
-                                  { key: 'kinder_jugend', label: t.nav_kids || 'Kinder & Jugend', Icon: Smile, config: SEGMENT_CONFIG.kinder_jugend },
-                                ].map(({ key, label, Icon, config }) => {
-                                    const isActive = activeType === key;
-                                    return (
-                                        <button
-                                            key={key}
-                                            onClick={() => { setActiveType(key); setActiveArea(null); setActiveSpecialty(null); }}
-                                            className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-bold transition-all ${
-                                                isActive
-                                                    ? `${config.bgLight} ${config.text} border-b-3 ${config.border}`
-                                                    : 'text-gray-500 hover:bg-gray-100'
-                                            }`}
-                                        >
-                                            <Icon className={`w-5 h-5 ${isActive ? config.text : 'text-gray-400'}`} />
-                                            <span className="hidden sm:inline">{label}</span>
-                                        </button>
-                                    );
-                                })}
-                            </div>
-
-                            {/* MOBILE: Back button */}
-                            {mobileStep !== 'area' && (
-                                <button
-                                    className="md:hidden flex items-center gap-1 px-4 py-2 text-sm text-primary font-medium border-b border-gray-100 w-full bg-gray-50"
-                                    onClick={() => {
-                                        if (mobileStep === 'fokus') setActiveSpecialty(null);
-                                        else if (mobileStep === 'specialty') setActiveArea(null);
-                                    }}
-                                >
-                                    <ChevronLeft className="w-4 h-4" />
-                                    {t.btn_back || 'Zurück'}
-                                </button>
-                            )}
-
-                            {/* CONTENT ROWS */}
-                            <div className="flex h-[400px]">
-
-                            {/* SPALTE 1: BEREICH / Themenwelt */}
-                            <div className={`${mobileStep === 'area' ? '' : 'hidden md:block'} w-full md:w-1/3 border-r border-gray-100 py-2 overflow-y-auto bg-gray-50`}>
-                                <div className="px-4 py-2 text-xs font-bold text-gray-400 uppercase">{t.lbl_area}</div>
-                                {visibleAreas.length > 0 ? (
-                                    visibleAreas.map(areaKey => (
-                                        <div
-                                            key={areaKey}
-                                            onMouseEnter={() => { setActiveArea(areaKey); setActiveSpecialty(null); }}
-                                            onClick={() => {
-                                                if (window.innerWidth < 768) {
-                                                    setActiveArea(areaKey); setActiveSpecialty(null);
-                                                } else {
-                                                    handleCategorySelect(activeType, areaKey);
-                                                }
-                                            }}
-                                            className={`px-4 py-2 cursor-pointer text-sm flex justify-between items-center transition-colors ${activeArea === areaKey ? 'text-primary font-bold bg-orange-50' : 'text-gray-700 hover:bg-gray-50'}`}
-                                        >
-                                            {getAreaLabel(activeType, areaKey)}
-                                            <ChevronRight className={`w-3 h-3 ${activeArea === areaKey ? 'text-primary' : 'text-gray-300'}`} />
-                                        </div>
-                                    ))
-                                ) : (
-                                    <div className="p-4 text-xs text-gray-400 italic">{t.msg_no_courses}</div>
-                                )}
-                            </div>
-
-                            {/* SPALTE 2: SPEZIALGEBIET / Fachgebiet */}
-                            <div className={`${mobileStep === 'specialty' ? '' : 'hidden md:block'} w-full md:w-1/3 border-r border-gray-100 py-2 overflow-y-auto bg-gray-50/50`}>
-                                <div className="px-4 py-2 text-xs font-bold text-gray-400 uppercase">{t.lbl_specialty}</div>
-                                {visibleSpecialties.length > 0 ? (
-                                    visibleSpecialties.map(spec => (
-                                            <button
-                                                key={spec.label}
-                                                onMouseEnter={() => setActiveSpecialty(spec.label)}
-                                                onClick={() => {
-                                                    if (window.innerWidth < 768 && spec.hasFocuses) {
-                                                        setActiveSpecialty(spec.label);
-                                                    } else {
-                                                        handleCategorySelect(activeType, activeArea, spec.label);
-                                                    }
-                                                }}
-                                                className={`w-full text-left px-4 py-2 text-sm transition-colors flex items-center justify-between group ${activeSpecialty === spec.label ? 'bg-orange-100 text-primary font-bold' : 'text-gray-600 hover:bg-orange-100 hover:text-primary'}`}
-                                            >
-                                                <span className="flex items-center">
-                                                    <span className={`w-1.5 h-1.5 rounded-full mr-2 transition-colors ${activeSpecialty === spec.label ? 'bg-primary' : 'bg-gray-300 group-hover:bg-primary'}`}></span>
-                                                    {spec.label}
-                                                </span>
-                                                {spec.hasFocuses && <ChevronRight className={`w-3 h-3 ${activeSpecialty === spec.label ? 'text-primary' : 'text-gray-300'}`} />}
-                                            </button>
-                                        ))
-                                ) : (
-                                    <div className="p-4 text-xs text-gray-400 italic">
-                                        {activeArea ? t.msg_all_topics : t.msg_select_area}
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* SPALTE 3: FOKUS */}
-                            <div className={`${mobileStep === 'fokus' ? '' : 'hidden md:block'} w-full md:w-1/3 py-2 overflow-y-auto`}>
-                                {visibleFocuses.length > 0 ? (
-                                    <>
-                                        <div className="px-4 py-2 text-xs font-bold text-gray-400 uppercase">{t.lbl_focus || 'Fokus'}</div>
-                                        {visibleFocuses.map(focusKey => (
-                                            <button
-                                                key={focusKey}
-                                                onClick={() => handleCategorySelect(activeType, activeArea, activeSpecialty, focusKey)}
-                                                className="w-full text-left px-4 py-2 hover:bg-orange-100 text-sm text-gray-600 hover:text-primary transition-colors flex items-center group"
-                                            >
-                                                <span className="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-primary mr-2 transition-colors"></span>
-                                                {focusKey}
-                                            </button>
-                                        ))}
-                                    </>
-                                ) : null}
-                            </div>
-
-                            </div>{/* End CONTENT ROWS flex */}
-                        </div>
+                            <button
+                                key={key}
+                                type="button"
+                                data-testid={`home-segment-${key}`}
+                                onClick={() => setHomeSegment(key)}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all border ${
+                                    isActive
+                                        ? 'bg-white text-dark border-white shadow-sm'
+                                        : 'bg-white/15 text-white/80 border-white/30 hover:bg-white/25'
+                                }`}
+                            >
+                                {Icon && <Icon className="w-3.5 h-3.5" />}
+                                {label}
+                            </button>
                         );
-                    })()}
+                    })}
                 </div>
+            </div>
 
+            {/* Row 3: Location + Delivery Type */}
+            <div className="flex gap-3 flex-col sm:flex-row relative z-50">
                 {/* LOCATION DROPDOWN */}
                 <div className="flex-1 bg-white rounded-xl">
                     <LocationDropdown
@@ -489,22 +396,6 @@ export const Home = ({
                         buttonClassName={`w-full px-4 py-3 flex items-center justify-between font-medium rounded-xl transition-colors ${deliveryMenuOpen ? 'bg-primary/10 text-primary ring-2 ring-primary/30' : 'text-gray-700 hover:bg-gray-50'}`}
                     />
                 </div>
-            </div>
-
-            {/* Row 3: Filter Checkboxes */}
-            <div className="flex justify-center gap-3 mt-3 flex-wrap">
-                <label className={`flex items-center space-x-2 px-4 py-2 rounded-xl cursor-pointer transition select-none ${filterPro ? 'bg-blue-500/90 border-blue-400' : 'bg-white/20 border-white/30'} border backdrop-blur-sm`} title={t.tooltip_pro_verified_long || t.tooltip_pro_verified}>
-                    <input type="checkbox" checked={filterPro} onChange={(e) => setFilterPro(e.target.checked)} className="rounded text-blue-500 focus:ring-blue-400 bg-white/80" />
-                    <span className={`text-sm font-medium ${filterPro ? 'text-white' : 'text-white/90'}`}>{t.lbl_professional_filter}</span>
-                    <Shield className={`w-4 h-4 ${filterPro ? 'text-white' : 'text-white/80'}`} />
-                    <Info className={`w-4 h-4 ${filterPro ? 'text-white/70' : 'text-white/60'} hover:text-white transition-colors`} />
-                </label>
-                <label className={`flex items-center space-x-2 px-4 py-2 rounded-xl cursor-pointer transition select-none ${filterDirectBooking ? 'bg-green-500/90 border-green-400' : 'bg-white/20 border-white/30'} border backdrop-blur-sm`} title={t.tooltip_direct_booking_long || t.tooltip_direct_booking}>
-                    <input type="checkbox" checked={filterDirectBooking} onChange={(e) => setFilterDirectBooking(e.target.checked)} className="rounded text-green-500 focus:ring-green-400 bg-white/80" />
-                    <span className={`text-sm font-medium ${filterDirectBooking ? 'text-white' : 'text-white/90'}`}>{t.lbl_direct_booking_filter}</span>
-                    <CreditCard className={`w-4 h-4 ${filterDirectBooking ? 'text-white' : 'text-white/80'}`} />
-                    <Info className={`w-4 h-4 ${filterDirectBooking ? 'text-white/70' : 'text-white/60'} hover:text-white transition-colors`} />
-                </label>
             </div>
           </div>
 
