@@ -66,6 +66,7 @@ function makeProps(overrides = {}) {
     savedCourseIds: [], onToggleSaveCourse: noop,
     user: null,
     selectedSaule: '', setSelectedSaule: vi.fn(),
+    selectedKursart: '', setSelectedKursart: vi.fn(),
     fetchError: false, onRetry: vi.fn(),
     setSelectedCatPath: vi.fn(),
     autoType: false, setAutoType: vi.fn(),
@@ -702,22 +703,28 @@ describe('Level 2 taxonomy (Fachbereich/Themenwelt/Angebotsbereich) in Weitere F
     expect(document.querySelector('[data-testid="select-fachbereich"]')).not.toBeInTheDocument();
   });
 
-  it('counts area in secondaryFilterCount — badge shows (1) when only area is active', () => {
+  it('does NOT count area in secondaryFilterCount — area is now a primary filter', () => {
     const c = makeCourseTyped('1', 'professionell', 'it_digital');
     render(<SearchPageView {...makeProps({
       courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
       searchType: 'beruflich', searchArea: 'it_digital',
     })} />);
-    expect(screen.getByTestId('btn-weitere-filter')).toHaveTextContent('(1)');
+    // Area moved to primary row — badge must NOT count it
+    const btn = screen.getByTestId('btn-weitere-filter');
+    expect(btn).not.toHaveTextContent('(1)');
+    expect(btn).not.toHaveTextContent('(2)');
   });
 
-  it('counts area + specialty = (2) in badge when both active', () => {
+  it('does NOT count specialty in secondaryFilterCount — specialty is a primary filter', () => {
     const c = makeCourseTyped('1', 'professionell', 'it_digital');
     render(<SearchPageView {...makeProps({
       courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
       searchType: 'beruflich', searchArea: 'it_digital', searchSpecialty: 'Webentwicklung',
     })} />);
-    expect(screen.getByTestId('btn-weitere-filter')).toHaveTextContent('(2)');
+    // Neither area nor specialty are secondary — badge count stays 0
+    const btn = screen.getByTestId('btn-weitere-filter');
+    expect(btn).not.toHaveTextContent('(1)');
+    expect(btn).not.toHaveTextContent('(2)');
   });
 
   it('area select not shown when no courses have areas for the segment', () => {
@@ -754,7 +761,7 @@ describe('Cascade logic: Fachbereich/Themenwelt/Angebotsbereich → Spezialgebie
     render(<SearchPageView {...makeProps({
       courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
       searchType: 'beruflich', searchArea: '',
-      filterPriceMax: '100', // ensures Weitere Filter opens
+      // Note: no filterPriceMax needed — taxonomy cascade is in the primary filter bar
     })} />);
     const sel = document.querySelector('[data-testid="select-specialty"]');
     expect(sel).toBeInTheDocument();
@@ -767,7 +774,6 @@ describe('Cascade logic: Fachbereich/Themenwelt/Angebotsbereich → Spezialgebie
     render(<SearchPageView {...makeProps({
       courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
       searchType: 'privat_hobby', searchArea: '',
-      filterPriceMax: '100',
     })} />);
     const sel = document.querySelector('[data-testid="select-specialty"]');
     expect(sel).toBeInTheDocument();
@@ -780,7 +786,6 @@ describe('Cascade logic: Fachbereich/Themenwelt/Angebotsbereich → Spezialgebie
     render(<SearchPageView {...makeProps({
       courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
       searchType: 'kinder_jugend', searchArea: '',
-      filterPriceMax: '100',
     })} />);
     const sel = document.querySelector('[data-testid="select-specialty"]');
     expect(sel).toBeInTheDocument();
@@ -880,6 +885,90 @@ describe('Cascade logic: Fachbereich/Themenwelt/Angebotsbereich → Spezialgebie
     })} />);
     expect(setSpec).toHaveBeenCalledWith('');
     expect(setFocus).toHaveBeenCalledWith('');
+  });
+});
+
+// ===================== 15. PRIMARY TAXONOMY + SECONDARY OPERATIONAL FILTERS =====================
+describe('Primary taxonomy visible without Weitere Filter; operational filters in Weitere Filter', () => {
+  function makeTaxC(id, type, area) {
+    return {
+      id, title: `Kurs ${id}`, status: 'published', image_url: null, canton: 'Zürich',
+      instructor_name: 'Trainer', booking_type: 'platform', price: 100,
+      delivery_types: ['presence'],
+      all_categories: [{ category_type: type, category_area: area }],
+      created_at: new Date().toISOString(),
+    };
+  }
+
+  it('select-fachbereich is in DOM without opening Weitere Filter (primary filter)', () => {
+    const c = makeTaxC('1', 'professionell', 'it_digital');
+    render(<SearchPageView {...makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+      searchType: 'beruflich',
+    })} />);
+    expect(document.querySelector('[data-testid="select-fachbereich"]')).toBeInTheDocument();
+  });
+
+  it('select-specialty is in DOM without opening Weitere Filter (primary filter)', () => {
+    // Specialty select renders when there are specialties available for the chosen area
+    const c = {
+      id: '1', title: 'Kurs 1', status: 'published', image_url: null, canton: 'Zürich',
+      instructor_name: 'Trainer', booking_type: 'platform', price: 100,
+      delivery_types: ['presence'],
+      all_categories: [{ category_type: 'professionell', category_area: 'it_digital', category_specialty_label: 'Webentwicklung', category_focus_label: null }],
+      created_at: new Date().toISOString(),
+    };
+    render(<SearchPageView {...makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+      searchType: 'beruflich', searchArea: 'it_digital',
+    })} />);
+    expect(document.querySelector('[data-testid="select-specialty"]')).toBeInTheDocument();
+  });
+
+  it('date inputs are NOT in DOM before opening Weitere Filter', () => {
+    const c = makeTaxC('1', 'professionell', 'it_digital');
+    render(<SearchPageView {...makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+    })} />);
+    expect(document.querySelectorAll('input[type="date"]').length).toBe(0);
+  });
+
+  it('date inputs appear after opening Weitere Filter', () => {
+    const c = makeTaxC('1', 'professionell', 'it_digital');
+    render(<SearchPageView {...makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+    })} />);
+    fireEvent.click(screen.getByTestId('btn-weitere-filter'));
+    expect(document.querySelectorAll('input[type="date"]').length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('badge counts selectedDeliveryTypes as secondary — NOT area', () => {
+    const c = makeTaxC('1', 'professionell', 'it_digital');
+    render(<SearchPageView {...makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+      searchType: 'beruflich', searchArea: 'it_digital',
+      selectedDeliveryTypes: ['presence'],
+    })} />);
+    // delivery is secondary (1), area is primary (not counted)
+    expect(screen.getByTestId('btn-weitere-filter')).toHaveTextContent('(1)');
+  });
+
+  it('badge counts filterDateFrom as one secondary filter', () => {
+    const c = makeTaxC('1', 'professionell', 'it_digital');
+    render(<SearchPageView {...makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+      filterDateFrom: '2026-07-01',
+    })} />);
+    expect(screen.getByTestId('btn-weitere-filter')).toHaveTextContent('(1)');
+  });
+
+  it('badge counts selectedKursart as one secondary filter (privat_hobby)', () => {
+    const c = makeTaxC('1', 'privat', 'yoga_pilates');
+    render(<SearchPageView {...makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+      searchType: 'privat_hobby', selectedKursart: 'Tageskurs',
+    })} />);
+    expect(screen.getByTestId('btn-weitere-filter')).toHaveTextContent('(1)');
   });
 });
 

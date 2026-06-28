@@ -86,7 +86,7 @@ const SearchPageView = ({
     const [showMoreFilters, setShowMoreFilters] = React.useState(() => {
         if (typeof window === 'undefined') return false;
         const p = new URLSearchParams(window.location.search);
-        return !!(p.get('lang') || p.get('price') || (p.get('level') && p.get('level') !== 'All') || p.get('pro') || p.get('booking') || p.get('spec') || p.get('focus') || p.get('area'));
+        return !!(p.get('lang') || p.get('price') || (p.get('level') && p.get('level') !== 'All') || p.get('pro') || p.get('booking') || p.get('delivery') || p.get('from') || p.get('to') || p.get('saule') || p.get('kursart'));
     });
 
     // autoType: Homepage sent user here with an auto-detected segment — show a switch hint.
@@ -98,10 +98,10 @@ const SearchPageView = ({
     // The lazy init above handles direct page loads; this effect handles subsequent prop changes
     // (e.g. user navigates from /search to /search?price=200&pro=1 within the SPA).
     React.useEffect(() => {
-        if (filterPriceMax || filterPro || filterDirectBooking || selectedLanguages.length > 0 || (filterLevel && filterLevel !== 'All') || searchSpecialty || searchFocus || searchArea) {
+        if (filterPriceMax || filterPro || filterDirectBooking || selectedLanguages.length > 0 || (filterLevel && filterLevel !== 'All') || selectedDeliveryTypes.length > 0 || filterDateFrom || filterDateTo || selectedSaule || selectedKursart) {
             setShowMoreFilters(true);
         }
-    }, [filterPriceMax, filterPro, filterDirectBooking, selectedLanguages, filterLevel, searchSpecialty, searchFocus, searchArea]);
+    }, [filterPriceMax, filterPro, filterDirectBooking, selectedLanguages, filterLevel, selectedDeliveryTypes, filterDateFrom, filterDateTo, selectedSaule, selectedKursart]);
 
     // Load taxonomy from DB
     const { areas: dbAreas } = useTaxonomy();
@@ -468,16 +468,18 @@ const SearchPageView = ({
         setSearchQuery("");
     }, [setSearchQuery]);
 
-    // Count active secondary filters (Fachbereich/Themenwelt/Angebotsbereich, Fachgebiet, Fokus, Preis, Niveau, Kurssprache, Verifiziert, Direktbuchung)
+    // Count active secondary filters (Kursformat, Kursart, Säulen, Datum, Kurssprache, Preis, Niveau, Verifiziert, Direktbuchung)
     const secondaryFilterCount = [
-        !!searchArea,
-        !!searchSpecialty,
-        !!searchFocus,
+        selectedDeliveryTypes.length > 0,
+        !!filterDateFrom,
+        !!filterDateTo,
         filterPriceMax && filterPriceMax !== '',
         filterLevel && filterLevel !== 'All',
         selectedLanguages.length > 0,
         filterPro,
         filterDirectBooking,
+        !!selectedSaule,
+        !!selectedKursart,
     ].filter(Boolean).length;
 
     // --- EMPTY STATE DETECTION ---
@@ -720,10 +722,10 @@ const SearchPageView = ({
                 </div>
             )}
 
-            {/* Anchor for "scroll to results" button in the editorial section */}
+            {/* Sticky filter bar */}
             <div className="bg-white border-b pt-3 pb-2 sticky top-20 z-30 shadow-sm">
                 <div className="max-w-7xl mx-auto px-4 space-y-2">
-                    {/* Search row */}
+                    {/* Row 1: Search + Location */}
                     <div className="flex flex-col md:flex-row gap-2 items-stretch">
                         <div className="relative flex-grow w-full md:w-auto">
                             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -731,51 +733,60 @@ const SearchPageView = ({
                         </div>
                         <div className="flex items-center gap-2">
                             <LocationDropdown selectedLocations={selectedLocations} setSelectedLocations={setSelectedLocations} locMenuOpen={locMenuOpen} setLocMenuOpen={setLocMenuOpen} locMenuRef={locMenuRef} t={t} />
-                            <DeliveryTypeFilter selectedDeliveryTypes={selectedDeliveryTypes} setSelectedDeliveryTypes={setSelectedDeliveryTypes} deliveryMenuOpen={deliveryMenuOpen} setDeliveryMenuOpen={setDeliveryMenuOpen} deliveryMenuRef={deliveryMenuRef} t={t} />
                         </div>
                     </div>
                     <p className="text-xs text-gray-500 -mt-1 ml-3">
                         Tipp: Du kannst mehrere Begriffe kombinieren, z.B. <em>Yoga Zürich</em> oder <em>Excel online</em>.
                     </p>
 
-
-                    {/* SÄULEN FILTER — nur für berufliche Kurse */}
-                    {(searchType === 'beruflich' || searchType === 'professionell') && (
-                        <SaeulenFilter selectedSaule={selectedSaule} setSelectedSaule={setSelectedSaule} />
-                    )}
-
-                    {/* KURSART FILTER — Privat & Hobby */}
-                    {(searchType === 'privat' || searchType === 'privat_hobby') && (
-                        <KursartFilter
-                            kursarten={PRIVAT_KURSARTEN}
-                            icons={PRIVAT_KURSART_ICONS}
-                            selectedKursart={selectedKursart}
-                            setSelectedKursart={setSelectedKursart}
-                            colorScheme="orange"
-                        />
-                    )}
-
-                    {/* KURSART FILTER — Kinder & Jugend */}
-                    {(searchType === 'kinder' || searchType === 'kinder_jugend') && (
-                        <KursartFilter
-                            kursarten={KINDER_KURSARTEN}
-                            icons={KINDER_KURSART_ICONS}
-                            selectedKursart={selectedKursart}
-                            setSelectedKursart={setSelectedKursart}
-                            colorScheme="green"
-                        />
-                    )}
-
-                    {/* DATE FILTERS + WEITERE FILTER TOGGLE */}
+                    {/* Row 2: Fachliche Filter (Cascade: Level 2 → 3 → 4) + Weitere Filter button */}
                     <div className="flex gap-2 flex-wrap items-center border-t pt-2 border-gray-100">
-                        <label className="flex items-center bg-white px-2.5 py-1 rounded-lg border border-gray-200 cursor-pointer">
-                            <span className="text-xs text-gray-400 mr-1.5 whitespace-nowrap">Von</span>
-                            <input type="date" value={filterDateFrom} onChange={(e) => setFilterDateFrom(e.target.value)} className="bg-transparent text-xs outline-none text-gray-600 cursor-pointer" />
-                        </label>
-                        <label className="flex items-center bg-white px-2.5 py-1 rounded-lg border border-gray-200 cursor-pointer">
-                            <span className="text-xs text-gray-400 mr-1.5 whitespace-nowrap">Bis</span>
-                            <input type="date" value={filterDateTo} onChange={(e) => setFilterDateTo(e.target.value)} className="bg-transparent text-xs outline-none text-gray-600 cursor-pointer" />
-                        </label>
+                        {/* Taxonomy cascade — shown when segment is set and courses have areas */}
+                        {searchType && availableAreas.length > 0 && (() => {
+                            const canonKey = CANONICAL_SEGMENT[searchType] || searchType;
+                            const areaLabel = canonKey === 'beruflich' ? 'Fachbereich' : canonKey === 'kinder_jugend' ? 'Angebotsbereich' : 'Themenwelt';
+                            const areaTestId = canonKey === 'beruflich' ? 'select-fachbereich' : canonKey === 'kinder_jugend' ? 'select-angebotsbereich' : 'select-themenwelt';
+                            const specPlaceholder = canonKey === 'beruflich' ? 'Zuerst Fachbereich wählen' : canonKey === 'kinder_jugend' ? 'Zuerst Angebotsbereich wählen' : 'Zuerst Themenwelt wählen';
+                            const showSpecialty = !searchArea || availableSpecialties.length > 0;
+                            const showFocus = !!searchArea && availableSpecialties.length > 0 && (!searchSpecialty || availableFocuses.length > 0);
+                            return (
+                                <React.Fragment>
+                                    {/* Level 2: Area */}
+                                    <select data-testid={areaTestId} value={searchArea}
+                                        onChange={(e) => { setSearchArea(e.target.value); setSearchSpecialty(''); setSearchFocus(''); }}
+                                        className={`px-3 py-1.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-white border-gray-200 ${!searchArea ? 'text-gray-400' : 'text-gray-900'}`}>
+                                        <option value="" className="text-gray-400">— {areaLabel} —</option>
+                                        {availableAreas.map(slug => (<option key={slug} value={slug} className="text-gray-900">{getLabel(slug, 'area')}</option>))}
+                                    </select>
+                                    {/* Level 3: Specialty — disabled until area chosen */}
+                                    {showSpecialty && (
+                                        <select data-testid="select-specialty" value={searchSpecialty} disabled={!searchArea}
+                                            onChange={(e) => { setSearchSpecialty(e.target.value); setSearchFocus(''); }}
+                                            className={!searchArea
+                                                ? 'px-3 py-1.5 border rounded-lg text-sm bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed opacity-60'
+                                                : `px-3 py-1.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-white border-gray-200 ${!searchSpecialty ? 'text-gray-400' : 'text-gray-900'}`}>
+                                            <option value="" className="text-gray-400">
+                                                {!searchArea ? specPlaceholder : `— ${t.lbl_specialty || 'Fachgebiet'} —`}
+                                            </option>
+                                            {searchArea && availableSpecialties.map(spec => (<option key={spec} value={spec} className="text-gray-900">{spec}</option>))}
+                                        </select>
+                                    )}
+                                    {/* Level 4: Focus — disabled until specialty chosen */}
+                                    {showFocus && (
+                                        <select data-testid="select-focus" value={searchFocus || ''} disabled={!searchSpecialty}
+                                            onChange={(e) => setSearchFocus(e.target.value)}
+                                            className={!searchSpecialty
+                                                ? 'px-3 py-1.5 border rounded-lg text-sm bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed opacity-60'
+                                                : `px-3 py-1.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-white border-gray-200 ${!searchFocus ? 'text-gray-400' : 'text-gray-900'}`}>
+                                            <option value="" className="text-gray-400">
+                                                {!searchSpecialty ? 'Zuerst Spezialgebiet wählen' : `— ${t.lbl_focus || 'Fokus'} —`}
+                                            </option>
+                                            {searchSpecialty && availableFocuses.map(f => (<option key={f} value={f} className="text-gray-900">{f}</option>))}
+                                        </select>
+                                    )}
+                                </React.Fragment>
+                            );
+                        })()}
                         {/* "Weitere Filter" toggle button */}
                         <button
                             data-testid="btn-weitere-filter"
@@ -788,57 +799,43 @@ const SearchPageView = ({
                         </button>
                     </div>
 
-                    {/* SECONDARY FILTERS: Fachbereich/Themenwelt/Angebotsbereich, Fachgebiet, Fokus, Kurssprache, Preis, Niveau, Verifiziert, Direktbuchung */}
+                    {/* SECONDARY FILTERS: Kursformat, Kursart, Säulen, Datum, Kurssprache, Preis, Niveau, Verifiziert, Direktbuchung */}
                     {showMoreFilters && (
                         <div className="flex gap-3 flex-wrap pb-1 items-center border-t pt-2 border-gray-100 bg-gray-50 rounded-lg px-3 py-2 -mx-1">
-                            {/* Level 2-4 cascade: Fachbereich/Themenwelt/Angebotsbereich → Spezialgebiet → Fokus */}
-                            {availableAreas.length > 0 && (() => {
-                                const canonKey = CANONICAL_SEGMENT[searchType] || searchType;
-                                const areaLabel = canonKey === 'beruflich' ? 'Fachbereich' : canonKey === 'kinder_jugend' ? 'Angebotsbereich' : 'Themenwelt';
-                                const areaTestId = canonKey === 'beruflich' ? 'select-fachbereich' : canonKey === 'kinder_jugend' ? 'select-angebotsbereich' : 'select-themenwelt';
-                                const specPlaceholder = canonKey === 'beruflich' ? 'Zuerst Fachbereich wählen' : canonKey === 'kinder_jugend' ? 'Zuerst Angebotsbereich wählen' : 'Zuerst Themenwelt wählen';
-                                // Specialty: show always (disabled if no area); hide if area set but has no specialties
-                                const showSpecialty = !searchArea || availableSpecialties.length > 0;
-                                // Focus: show when area set + specialties exist; disabled if no specialty yet
-                                const showFocus = !!searchArea && availableSpecialties.length > 0 && (!searchSpecialty || availableFocuses.length > 0);
-                                return (
-                                    <React.Fragment>
-                                        {/* Level 2: Area */}
-                                        <select data-testid={areaTestId} value={searchArea}
-                                            onChange={(e) => { setSearchArea(e.target.value); setSearchSpecialty(''); setSearchFocus(''); }}
-                                            className={`px-3 py-1.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-white border-gray-200 ${!searchArea ? 'text-gray-400' : 'text-gray-900'}`}>
-                                            <option value="" className="text-gray-400">— {areaLabel} —</option>
-                                            {availableAreas.map(slug => (<option key={slug} value={slug} className="text-gray-900">{getLabel(slug, 'area')}</option>))}
-                                        </select>
-                                        {/* Level 3: Specialty — disabled cascade when no area chosen */}
-                                        {showSpecialty && (
-                                            <select data-testid="select-specialty" value={searchSpecialty} disabled={!searchArea}
-                                                onChange={(e) => { setSearchSpecialty(e.target.value); setSearchFocus(''); }}
-                                                className={!searchArea
-                                                    ? 'px-3 py-1.5 border rounded-lg text-sm bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed opacity-60'
-                                                    : `px-3 py-1.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-white border-gray-200 ${!searchSpecialty ? 'text-gray-400' : 'text-gray-900'}`}>
-                                                <option value="" className="text-gray-400">
-                                                    {!searchArea ? specPlaceholder : `— ${t.lbl_specialty || 'Fachgebiet'} —`}
-                                                </option>
-                                                {searchArea && availableSpecialties.map(spec => (<option key={spec} value={spec} className="text-gray-900">{spec}</option>))}
-                                            </select>
-                                        )}
-                                        {/* Level 4: Focus — disabled cascade when no specialty chosen */}
-                                        {showFocus && (
-                                            <select data-testid="select-focus" value={searchFocus || ''} disabled={!searchSpecialty}
-                                                onChange={(e) => setSearchFocus(e.target.value)}
-                                                className={!searchSpecialty
-                                                    ? 'px-3 py-1.5 border rounded-lg text-sm bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed opacity-60'
-                                                    : `px-3 py-1.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-white border-gray-200 ${!searchFocus ? 'text-gray-400' : 'text-gray-900'}`}>
-                                                <option value="" className="text-gray-400">
-                                                    {!searchSpecialty ? 'Zuerst Spezialgebiet wählen' : `— ${t.lbl_focus || 'Fokus'} —`}
-                                                </option>
-                                                {searchSpecialty && availableFocuses.map(f => (<option key={f} value={f} className="text-gray-900">{f}</option>))}
-                                            </select>
-                                        )}
-                                    </React.Fragment>
-                                );
-                            })()}
+                            <DeliveryTypeFilter selectedDeliveryTypes={selectedDeliveryTypes} setSelectedDeliveryTypes={setSelectedDeliveryTypes} deliveryMenuOpen={deliveryMenuOpen} setDeliveryMenuOpen={setDeliveryMenuOpen} deliveryMenuRef={deliveryMenuRef} t={t} />
+                            {/* Kursart — Privat & Hobby */}
+                            {(searchType === 'privat' || searchType === 'privat_hobby') && (
+                                <KursartFilter
+                                    kursarten={PRIVAT_KURSARTEN}
+                                    icons={PRIVAT_KURSART_ICONS}
+                                    selectedKursart={selectedKursart}
+                                    setSelectedKursart={setSelectedKursart}
+                                    colorScheme="orange"
+                                />
+                            )}
+                            {/* Kursart — Kinder & Jugend */}
+                            {(searchType === 'kinder' || searchType === 'kinder_jugend') && (
+                                <KursartFilter
+                                    kursarten={KINDER_KURSARTEN}
+                                    icons={KINDER_KURSART_ICONS}
+                                    selectedKursart={selectedKursart}
+                                    setSelectedKursart={setSelectedKursart}
+                                    colorScheme="green"
+                                />
+                            )}
+                            {/* Säulen — Beruflich */}
+                            {(searchType === 'beruflich' || searchType === 'professionell') && (
+                                <SaeulenFilter selectedSaule={selectedSaule} setSelectedSaule={setSelectedSaule} />
+                            )}
+                            {/* Datum */}
+                            <label className="flex items-center bg-white px-2.5 py-1 rounded-lg border border-gray-200 cursor-pointer">
+                                <span className="text-xs text-gray-400 mr-1.5 whitespace-nowrap">Von</span>
+                                <input type="date" value={filterDateFrom} onChange={(e) => setFilterDateFrom(e.target.value)} className="bg-transparent text-xs outline-none text-gray-600 cursor-pointer" />
+                            </label>
+                            <label className="flex items-center bg-white px-2.5 py-1 rounded-lg border border-gray-200 cursor-pointer">
+                                <span className="text-xs text-gray-400 mr-1.5 whitespace-nowrap">Bis</span>
+                                <input type="date" value={filterDateTo} onChange={(e) => setFilterDateTo(e.target.value)} className="bg-transparent text-xs outline-none text-gray-600 cursor-pointer" />
+                            </label>
                             <LanguageDropdown selectedLanguages={selectedLanguages} setSelectedLanguages={setSelectedLanguages} langMenuOpen={langMenuOpen} setLangMenuOpen={setLangMenuOpen} langMenuRef={langMenuRef} t={t} />
                             <div className={`flex items-center space-x-1.5 bg-white px-2.5 py-1 rounded-lg border ${priceError ? 'border-red-400' : 'border-gray-200'}`}>
                                 <span className="text-xs text-gray-500">{t.lbl_max_price}</span>
