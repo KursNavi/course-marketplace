@@ -125,6 +125,24 @@ test.describe('Search & Filters (app-e2e)', () => {
     await expect(page).toHaveURL(/price=150/);
   });
 
+  test('"Weitere Filter" stays closed when only q param is active (q is primary, not secondary)', async ({ page }) => {
+    await page.goto('/search?type=privat_hobby&q=Yoga');
+
+    const resultsCounter = page.getByTestId('results-counter');
+    await expect(resultsCounter).toBeVisible({ timeout: 15_000 });
+    await expect(resultsCounter).not.toContainText('Lade', { timeout: 10_000 });
+
+    // Price input lives inside the secondary (Weitere Filter) panel.
+    // If it is NOT in the DOM, the panel is closed.
+    const priceInput = page.locator('input[type="number"][placeholder="Beliebig"]');
+    await expect(priceInput).not.toBeAttached();
+
+    // No badge count — q is not a secondary filter
+    const weitereBtn = page.getByTestId('btn-weitere-filter');
+    await expect(weitereBtn).toBeVisible({ timeout: 5_000 });
+    await expect(weitereBtn).not.toContainText('(');
+  });
+
   test('filter reset clears all active filters', async ({ page }) => {
     // Navigate to search and type a non-matching term
     await page.goto('/search');

@@ -370,6 +370,14 @@ const SearchPageView = ({
         })
     )].sort((a, b) => a.localeCompare(b, 'de'));
 
+    // FIX 4: Auto-reset focus when no focus options exist for the current specialty
+    // (e.g. user switches specialty to one without focus options, or area changes)
+    React.useEffect(() => {
+        if (searchFocus && availableFocuses.length === 0) {
+            setSearchFocus('');
+        }
+    }, [searchFocus, availableFocuses.length, setSearchFocus]);
+
     // Deep-link: when spec or focus is in URL but area is missing, auto-derive area from courses.
     // Placed here (after baseCourses/dbSearchType) so the deps array evaluates correctly.
     React.useEffect(() => {
@@ -735,7 +743,7 @@ const SearchPageView = ({
                             <LocationDropdown selectedLocations={selectedLocations} setSelectedLocations={setSelectedLocations} locMenuOpen={locMenuOpen} setLocMenuOpen={setLocMenuOpen} locMenuRef={locMenuRef} t={t} />
                         </div>
                     </div>
-                    <p className="text-xs text-gray-500 -mt-1 ml-3">
+                    <p className="hidden sm:block text-xs text-gray-500 -mt-1 ml-3">
                         Tipp: Du kannst mehrere Begriffe kombinieren, z.B. <em>Yoga Zürich</em> oder <em>Excel online</em>.
                     </p>
 
@@ -758,12 +766,12 @@ const SearchPageView = ({
                                         <option value="" className="text-gray-400">— {areaLabel} —</option>
                                         {availableAreas.map(slug => (<option key={slug} value={slug} className="text-gray-900">{getLabel(slug, 'area')}</option>))}
                                     </select>
-                                    {/* Level 3: Specialty — disabled until area chosen */}
+                                    {/* Level 3: Specialty — disabled until area chosen; hidden on mobile until area is set */}
                                     {showSpecialty && (
                                         <select data-testid="select-specialty" value={searchSpecialty} disabled={!searchArea}
                                             onChange={(e) => { setSearchSpecialty(e.target.value); setSearchFocus(''); }}
                                             className={!searchArea
-                                                ? 'px-3 py-1.5 border rounded-lg text-sm bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed opacity-60'
+                                                ? 'hidden sm:block px-3 py-1.5 border rounded-lg text-sm bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed opacity-60'
                                                 : `px-3 py-1.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-white border-gray-200 ${!searchSpecialty ? 'text-gray-400' : 'text-gray-900'}`}>
                                             <option value="" className="text-gray-400">
                                                 {!searchArea ? specPlaceholder : `— ${t.lbl_specialty || 'Fachgebiet'} —`}
@@ -771,12 +779,12 @@ const SearchPageView = ({
                                             {searchArea && availableSpecialties.map(spec => (<option key={spec} value={spec} className="text-gray-900">{spec}</option>))}
                                         </select>
                                     )}
-                                    {/* Level 4: Focus — disabled until specialty chosen */}
+                                    {/* Level 4: Focus — disabled until specialty chosen; hidden on mobile until specialty is set */}
                                     {showFocus && (
                                         <select data-testid="select-focus" value={searchFocus || ''} disabled={!searchSpecialty}
                                             onChange={(e) => setSearchFocus(e.target.value)}
                                             className={!searchSpecialty
-                                                ? 'px-3 py-1.5 border rounded-lg text-sm bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed opacity-60'
+                                                ? 'hidden sm:block px-3 py-1.5 border rounded-lg text-sm bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed opacity-60'
                                                 : `px-3 py-1.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-white border-gray-200 ${!searchFocus ? 'text-gray-400' : 'text-gray-900'}`}>
                                             <option value="" className="text-gray-400">
                                                 {!searchSpecialty ? 'Zuerst Spezialgebiet wählen' : `— ${t.lbl_focus || 'Fokus'} —`}

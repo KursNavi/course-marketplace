@@ -972,6 +972,86 @@ describe('Primary taxonomy visible without Weitere Filter; operational filters i
   });
 });
 
+// ===================== 16. PROGRESSIVE CASCADE: MOBILE HIDDEN CLASSES + FOCUS-WITHOUT-OPTIONS =====================
+describe('Progressive cascade: mobile-hidden disabled placeholders and focus without options', () => {
+  function makeTaxC16(id, type, area, specialty = null, focus = null) {
+    return {
+      id, title: `Kurs ${id}`, status: 'published', image_url: null, canton: 'Zürich',
+      instructor_name: 'Trainer', booking_type: 'platform', price: 100,
+      delivery_types: ['presence'],
+      all_categories: [{ category_type: type, category_area: area, category_specialty_label: specialty, category_focus_label: focus }],
+      created_at: new Date().toISOString(),
+    };
+  }
+
+  it('specialty select has "hidden sm:block" class when no area chosen (mobile progressive)', () => {
+    const c = makeTaxC16('1', 'professionell', 'it_digital', 'Webentwicklung');
+    render(<SearchPageView {...makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+      searchType: 'beruflich', searchArea: '',
+    })} />);
+    const sel = document.querySelector('[data-testid="select-specialty"]');
+    expect(sel).toBeInTheDocument(); // rendered (CSS hides it on mobile)
+    expect(sel.className).toContain('hidden');
+    expect(sel.className).toContain('sm:block');
+  });
+
+  it('specialty select has NO hidden class when area is chosen (visible on all viewports)', () => {
+    const c = makeTaxC16('1', 'professionell', 'it_digital', 'Webentwicklung');
+    render(<SearchPageView {...makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+      searchType: 'beruflich', searchArea: 'it_digital',
+    })} />);
+    const sel = document.querySelector('[data-testid="select-specialty"]');
+    expect(sel).toBeInTheDocument();
+    expect(sel.className).not.toContain('hidden sm:block');
+  });
+
+  it('focus select has "hidden sm:block" class when area set but no specialty chosen', () => {
+    const c = makeTaxC16('1', 'professionell', 'it_digital', 'Webentwicklung', 'Frontend');
+    render(<SearchPageView {...makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+      searchType: 'beruflich', searchArea: 'it_digital', searchSpecialty: '',
+    })} />);
+    const sel = document.querySelector('[data-testid="select-focus"]');
+    expect(sel).toBeInTheDocument();
+    expect(sel.className).toContain('hidden');
+    expect(sel.className).toContain('sm:block');
+  });
+
+  it('focus select has NO hidden class when specialty is chosen (visible on all viewports)', () => {
+    const c = makeTaxC16('1', 'professionell', 'it_digital', 'Webentwicklung', 'Frontend');
+    render(<SearchPageView {...makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+      searchType: 'beruflich', searchArea: 'it_digital', searchSpecialty: 'Webentwicklung',
+    })} />);
+    const sel = document.querySelector('[data-testid="select-focus"]');
+    expect(sel).toBeInTheDocument();
+    expect(sel.className).not.toContain('hidden sm:block');
+  });
+
+  it('focus select is NOT rendered when specialty is set but no focus options exist (FIX 4)', () => {
+    // Course has specialty but NO focus options
+    const c = makeTaxC16('1', 'kinder', 'sport_bewegung', 'Fussball', null);
+    render(<SearchPageView {...makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+      searchType: 'kinder_jugend', searchArea: 'sport_bewegung', searchSpecialty: 'Fussball',
+    })} />);
+    // showFocus = false when availableFocuses.length === 0 → not rendered
+    expect(document.querySelector('[data-testid="select-focus"]')).not.toBeInTheDocument();
+  });
+
+  it('Weitere Filter stays closed when only searchQuery is active (q is not a secondary filter)', () => {
+    const c = makeTaxC16('1', 'privat', 'yoga_pilates');
+    render(<SearchPageView {...makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+      searchType: 'privat_hobby', searchQuery: 'Yoga',
+    })} />);
+    // Date inputs live inside secondary panel — if not in DOM, Weitere Filter is closed
+    expect(document.querySelectorAll('input[type="date"]').length).toBe(0);
+  });
+});
+
 // ===================== 14. SEGMENT CONTEXT — SWITCH BUTTONS =====================
 describe('Segment switch from banner', () => {
   it('clicking switch-segment button calls setSearchType and setAutoType(false)', () => {
