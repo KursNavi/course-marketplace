@@ -601,7 +601,7 @@ describe('Segment context banner', () => {
     expect(screen.getByTestId('switch-segment-kinder_jugend')).toBeInTheDocument();
   });
 
-  it('does NOT render the Bereich/Themenwelt area dropdown (removed in segment-context phase)', () => {
+  it('does NOT render select-bereich (area now uses segment-specific testids in Weitere Filter)', () => {
     const c = makeCourse('1');
     render(<SearchPageView {...makeProps({ courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c], searchType: 'beruflich' })} />);
     expect(document.querySelector('[data-testid="select-bereich"]')).not.toBeInTheDocument();
@@ -655,7 +655,83 @@ describe('Alle zurücksetzen button in chip zone', () => {
   });
 });
 
-// ===================== 12. SEGMENT CONTEXT — SWITCH BUTTONS =====================
+// ===================== 12. LEVEL 2 TAXONOMY IN WEITERE FILTER =====================
+describe('Level 2 taxonomy (Fachbereich/Themenwelt/Angebotsbereich) in Weitere Filter', () => {
+  function makeCourseTyped(id, type, area) {
+    return {
+      id, title: `Kurs ${id}`, status: 'published', image_url: null, canton: 'Zürich',
+      instructor_name: 'Trainer', booking_type: 'platform', price: 100,
+      delivery_types: ['presence'],
+      all_categories: [{ category_type: type, category_area: area }],
+      created_at: new Date().toISOString(),
+    };
+  }
+
+  it('shows select-fachbereich (not select-bereich) for beruflich type when area active', () => {
+    const c = makeCourseTyped('1', 'professionell', 'it_digital');
+    render(<SearchPageView {...makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+      searchType: 'beruflich', searchArea: 'it_digital',
+    })} />);
+    expect(document.querySelector('[data-testid="select-fachbereich"]')).toBeInTheDocument();
+    expect(document.querySelector('[data-testid="select-bereich"]')).not.toBeInTheDocument();
+    expect(document.querySelector('[data-testid="select-themenwelt"]')).not.toBeInTheDocument();
+    expect(document.querySelector('[data-testid="select-angebotsbereich"]')).not.toBeInTheDocument();
+  });
+
+  it('shows select-themenwelt for privat_hobby type when area active', () => {
+    const c = makeCourseTyped('2', 'privat', 'yoga_pilates');
+    render(<SearchPageView {...makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+      searchType: 'privat_hobby', searchArea: 'yoga_pilates',
+    })} />);
+    expect(document.querySelector('[data-testid="select-themenwelt"]')).toBeInTheDocument();
+    expect(document.querySelector('[data-testid="select-bereich"]')).not.toBeInTheDocument();
+    expect(document.querySelector('[data-testid="select-fachbereich"]')).not.toBeInTheDocument();
+    expect(document.querySelector('[data-testid="select-angebotsbereich"]')).not.toBeInTheDocument();
+  });
+
+  it('shows select-angebotsbereich for kinder_jugend type when area active', () => {
+    const c = makeCourseTyped('3', 'kinder', 'sport_bewegung');
+    render(<SearchPageView {...makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+      searchType: 'kinder_jugend', searchArea: 'sport_bewegung',
+    })} />);
+    expect(document.querySelector('[data-testid="select-angebotsbereich"]')).toBeInTheDocument();
+    expect(document.querySelector('[data-testid="select-bereich"]')).not.toBeInTheDocument();
+    expect(document.querySelector('[data-testid="select-fachbereich"]')).not.toBeInTheDocument();
+  });
+
+  it('counts area in secondaryFilterCount — badge shows (1) when only area is active', () => {
+    const c = makeCourseTyped('1', 'professionell', 'it_digital');
+    render(<SearchPageView {...makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+      searchType: 'beruflich', searchArea: 'it_digital',
+    })} />);
+    expect(screen.getByTestId('btn-weitere-filter')).toHaveTextContent('(1)');
+  });
+
+  it('counts area + specialty = (2) in badge when both active', () => {
+    const c = makeCourseTyped('1', 'professionell', 'it_digital');
+    render(<SearchPageView {...makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+      searchType: 'beruflich', searchArea: 'it_digital', searchSpecialty: 'Webentwicklung',
+    })} />);
+    expect(screen.getByTestId('btn-weitere-filter')).toHaveTextContent('(2)');
+  });
+
+  it('area select not shown when no courses have areas for the segment', () => {
+    // No courses → filteredCoursesPreCategory is empty → availableAreas = []
+    render(<SearchPageView {...makeProps({
+      courses: [], filteredCourses: [], filteredCoursesPreCategory: [],
+      searchType: 'beruflich', searchArea: '',
+      filterPriceMax: '100', // open Weitere Filter without area
+    })} />);
+    expect(document.querySelector('[data-testid="select-fachbereich"]')).not.toBeInTheDocument();
+  });
+});
+
+// ===================== 13. SEGMENT CONTEXT — SWITCH BUTTONS =====================
 describe('Segment switch from banner', () => {
   it('clicking switch-segment button calls setSearchType and setAutoType(false)', () => {
     // autoType is now a prop — no URL mock needed

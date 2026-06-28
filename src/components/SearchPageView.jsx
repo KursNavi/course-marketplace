@@ -86,7 +86,7 @@ const SearchPageView = ({
     const [showMoreFilters, setShowMoreFilters] = React.useState(() => {
         if (typeof window === 'undefined') return false;
         const p = new URLSearchParams(window.location.search);
-        return !!(p.get('lang') || p.get('price') || (p.get('level') && p.get('level') !== 'All') || p.get('pro') || p.get('booking') || p.get('spec') || p.get('focus'));
+        return !!(p.get('lang') || p.get('price') || (p.get('level') && p.get('level') !== 'All') || p.get('pro') || p.get('booking') || p.get('spec') || p.get('focus') || p.get('area'));
     });
 
     // autoType: Homepage sent user here with an auto-detected segment — show a switch hint.
@@ -98,10 +98,10 @@ const SearchPageView = ({
     // The lazy init above handles direct page loads; this effect handles subsequent prop changes
     // (e.g. user navigates from /search to /search?price=200&pro=1 within the SPA).
     React.useEffect(() => {
-        if (filterPriceMax || filterPro || filterDirectBooking || selectedLanguages.length > 0 || (filterLevel && filterLevel !== 'All') || searchSpecialty || searchFocus) {
+        if (filterPriceMax || filterPro || filterDirectBooking || selectedLanguages.length > 0 || (filterLevel && filterLevel !== 'All') || searchSpecialty || searchFocus || searchArea) {
             setShowMoreFilters(true);
         }
-    }, [filterPriceMax, filterPro, filterDirectBooking, selectedLanguages, filterLevel, searchSpecialty, searchFocus]);
+    }, [filterPriceMax, filterPro, filterDirectBooking, selectedLanguages, filterLevel, searchSpecialty, searchFocus, searchArea]);
 
 
     // Load taxonomy from DB
@@ -441,8 +441,9 @@ const SearchPageView = ({
         setSearchQuery("");
     }, [setSearchQuery]);
 
-    // Count active secondary filters (Fachgebiet, Fokus, Preis, Niveau, Kurssprache, Verifiziert, Direktbuchung)
+    // Count active secondary filters (Fachbereich/Themenwelt/Angebotsbereich, Fachgebiet, Fokus, Preis, Niveau, Kurssprache, Verifiziert, Direktbuchung)
     const secondaryFilterCount = [
+        !!searchArea,
         !!searchSpecialty,
         !!searchFocus,
         filterPriceMax && filterPriceMax !== '',
@@ -760,10 +761,24 @@ const SearchPageView = ({
                         </button>
                     </div>
 
-                    {/* SECONDARY FILTERS: Fachgebiet, Fokus, Kurssprache, Preis, Niveau, Verifiziert, Direktbuchung */}
+                    {/* SECONDARY FILTERS: Fachbereich/Themenwelt/Angebotsbereich, Fachgebiet, Fokus, Kurssprache, Preis, Niveau, Verifiziert, Direktbuchung */}
                     {showMoreFilters && (
                         <div className="flex gap-3 flex-wrap pb-1 items-center border-t pt-2 border-gray-100 bg-gray-50 rounded-lg px-3 py-2 -mx-1">
-                            {/* Fachliche Filter: Fachgebiet + Fokus (ohne Bereich-Dropdown) */}
+                            {/* Level 2 taxonomy: segment-specific label */}
+                            {availableAreas.length > 0 && (() => {
+                                const canonKey = CANONICAL_SEGMENT[searchType] || searchType;
+                                const areaLabel = canonKey === 'beruflich' ? 'Fachbereich' : canonKey === 'kinder_jugend' ? 'Angebotsbereich' : 'Themenwelt';
+                                const areaTestId = canonKey === 'beruflich' ? 'select-fachbereich' : canonKey === 'kinder_jugend' ? 'select-angebotsbereich' : 'select-themenwelt';
+                                return (
+                                    <select data-testid={areaTestId} value={searchArea}
+                                        onChange={(e) => { setSearchArea(e.target.value); setSearchSpecialty(''); setSearchFocus(''); }}
+                                        className={`px-3 py-1.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-white border-gray-200 ${!searchArea ? 'text-gray-400' : 'text-gray-900'}`}>
+                                        <option value="" className="text-gray-400">— {areaLabel} —</option>
+                                        {availableAreas.map(slug => (<option key={slug} value={slug} className="text-gray-900">{getLabel(slug, 'area')}</option>))}
+                                    </select>
+                                );
+                            })()}
+                            {/* Fachliche Filter: Fachgebiet + Fokus */}
                             {availableSpecialties.length > 0 && (
                                 <select data-testid="select-specialty" value={searchSpecialty}
                                     onChange={(e) => { setSearchSpecialty(e.target.value); setSearchFocus(""); }}
