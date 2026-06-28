@@ -731,7 +731,159 @@ describe('Level 2 taxonomy (Fachbereich/Themenwelt/Angebotsbereich) in Weitere F
   });
 });
 
-// ===================== 13. SEGMENT CONTEXT — SWITCH BUTTONS =====================
+// ===================== 13. CASCADE LOGIC IN WEITERE FILTER =====================
+describe('Cascade logic: Fachbereich/Themenwelt/Angebotsbereich → Spezialgebiet → Fokus', () => {
+  // Full taxonomy course helper
+  function makeTaxCourse(id, type, area, specialty, focus) {
+    return {
+      id, title: `Kurs ${id}`, status: 'published', image_url: null, canton: 'Zürich',
+      instructor_name: 'Trainer', booking_type: 'platform', price: 100,
+      delivery_types: ['presence'],
+      all_categories: [{
+        category_type: type,
+        category_area: area,
+        category_specialty_label: specialty || null,
+        category_focus_label: focus || null,
+      }],
+      created_at: new Date().toISOString(),
+    };
+  }
+
+  it('select-specialty is disabled and shows "Zuerst Fachbereich wählen" when no area (beruflich)', () => {
+    const c = makeTaxCourse('1', 'professionell', 'it_digital', 'Webentwicklung', null);
+    render(<SearchPageView {...makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+      searchType: 'beruflich', searchArea: '',
+      filterPriceMax: '100', // ensures Weitere Filter opens
+    })} />);
+    const sel = document.querySelector('[data-testid="select-specialty"]');
+    expect(sel).toBeInTheDocument();
+    expect(sel).toBeDisabled();
+    expect(sel.options[0].text).toBe('Zuerst Fachbereich wählen');
+  });
+
+  it('select-specialty is disabled and shows "Zuerst Themenwelt wählen" for privat_hobby', () => {
+    const c = makeTaxCourse('2', 'privat', 'yoga_pilates', 'Yoga', null);
+    render(<SearchPageView {...makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+      searchType: 'privat_hobby', searchArea: '',
+      filterPriceMax: '100',
+    })} />);
+    const sel = document.querySelector('[data-testid="select-specialty"]');
+    expect(sel).toBeInTheDocument();
+    expect(sel).toBeDisabled();
+    expect(sel.options[0].text).toBe('Zuerst Themenwelt wählen');
+  });
+
+  it('select-specialty is disabled and shows "Zuerst Angebotsbereich wählen" for kinder_jugend', () => {
+    const c = makeTaxCourse('3', 'kinder', 'sport_bewegung', 'Fussball', null);
+    render(<SearchPageView {...makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+      searchType: 'kinder_jugend', searchArea: '',
+      filterPriceMax: '100',
+    })} />);
+    const sel = document.querySelector('[data-testid="select-specialty"]');
+    expect(sel).toBeInTheDocument();
+    expect(sel).toBeDisabled();
+    expect(sel.options[0].text).toBe('Zuerst Angebotsbereich wählen');
+  });
+
+  it('select-specialty is enabled and shows options after area is selected', () => {
+    const c = makeTaxCourse('1', 'professionell', 'it_digital', 'Webentwicklung', null);
+    render(<SearchPageView {...makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+      searchType: 'beruflich', searchArea: 'it_digital',
+    })} />);
+    const sel = document.querySelector('[data-testid="select-specialty"]');
+    expect(sel).not.toBeDisabled();
+    expect(sel.querySelectorAll('option').length).toBeGreaterThan(1); // default + at least 1 option
+    expect(sel).toHaveTextContent('Webentwicklung');
+  });
+
+  it('select-focus is disabled with "Zuerst Spezialgebiet wählen" when area set but no specialty', () => {
+    const c = makeTaxCourse('1', 'professionell', 'it_digital', 'Webentwicklung', 'Frontend');
+    render(<SearchPageView {...makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+      searchType: 'beruflich', searchArea: 'it_digital', searchSpecialty: '',
+    })} />);
+    const sel = document.querySelector('[data-testid="select-focus"]');
+    expect(sel).toBeInTheDocument();
+    expect(sel).toBeDisabled();
+    expect(sel.options[0].text).toBe('Zuerst Spezialgebiet wählen');
+  });
+
+  it('select-focus is enabled and shows options after specialty is selected', () => {
+    const c = makeTaxCourse('1', 'professionell', 'it_digital', 'Webentwicklung', 'Frontend');
+    render(<SearchPageView {...makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+      searchType: 'beruflich', searchArea: 'it_digital', searchSpecialty: 'Webentwicklung',
+    })} />);
+    const sel = document.querySelector('[data-testid="select-focus"]');
+    expect(sel).not.toBeDisabled();
+    expect(sel).toHaveTextContent('Frontend');
+  });
+
+  it('changing area calls setSearchSpecialty("") and setSearchFocus("")', () => {
+    const setArea = vi.fn();
+    const setSpec = vi.fn();
+    const setFocus = vi.fn();
+    const c = makeTaxCourse('1', 'professionell', 'it_digital', 'Webentwicklung', 'Frontend');
+    render(<SearchPageView {...makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+      searchType: 'beruflich', searchArea: 'it_digital',
+      searchSpecialty: 'Webentwicklung', searchFocus: 'Frontend',
+      setSearchArea: setArea, setSearchSpecialty: setSpec, setSearchFocus: setFocus,
+    })} />);
+    fireEvent.change(document.querySelector('[data-testid="select-fachbereich"]'), { target: { value: '' } });
+    expect(setArea).toHaveBeenCalledWith('');
+    expect(setSpec).toHaveBeenCalledWith('');
+    expect(setFocus).toHaveBeenCalledWith('');
+  });
+
+  it('changing specialty calls setSearchFocus("")', () => {
+    const setSpec = vi.fn();
+    const setFocus = vi.fn();
+    const c = makeTaxCourse('1', 'professionell', 'it_digital', 'Webentwicklung', 'Frontend');
+    render(<SearchPageView {...makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+      searchType: 'beruflich', searchArea: 'it_digital',
+      searchSpecialty: 'Webentwicklung', searchFocus: 'Frontend',
+      setSearchSpecialty: setSpec, setSearchFocus: setFocus,
+    })} />);
+    fireEvent.change(document.querySelector('[data-testid="select-specialty"]'), { target: { value: '' } });
+    expect(setSpec).toHaveBeenCalledWith('');
+    expect(setFocus).toHaveBeenCalledWith('');
+  });
+
+  it('deep link: auto-derives area when spec maps to exactly one area', () => {
+    const setArea = vi.fn();
+    const c = makeTaxCourse('1', 'professionell', 'it_digital', 'Webentwicklung', null);
+    render(<SearchPageView {...makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+      searchType: 'beruflich', searchArea: '',
+      searchSpecialty: 'Webentwicklung',
+      setSearchArea: setArea,
+    })} />);
+    expect(setArea).toHaveBeenCalledWith('it_digital');
+  });
+
+  it('deep link: clears spec when it maps to multiple areas (ambiguous)', () => {
+    const setSpec = vi.fn();
+    const setFocus = vi.fn();
+    const c1 = makeTaxCourse('1', 'professionell', 'it_digital', 'Marketing', null);
+    const c2 = makeTaxCourse('2', 'professionell', 'wirtschaft', 'Marketing', null);
+    render(<SearchPageView {...makeProps({
+      courses: [c1, c2], filteredCourses: [c1, c2], filteredCoursesPreCategory: [c1, c2],
+      searchType: 'beruflich', searchArea: '',
+      searchSpecialty: 'Marketing',
+      setSearchSpecialty: setSpec, setSearchFocus: setFocus,
+    })} />);
+    expect(setSpec).toHaveBeenCalledWith('');
+    expect(setFocus).toHaveBeenCalledWith('');
+  });
+});
+
+// ===================== 14. SEGMENT CONTEXT — SWITCH BUTTONS =====================
 describe('Segment switch from banner', () => {
   it('clicking switch-segment button calls setSearchType and setAutoType(false)', () => {
     // autoType is now a prop — no URL mock needed
