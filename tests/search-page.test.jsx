@@ -192,7 +192,7 @@ describe('Empty state differentiation', () => {
 
 // ===================== 3. FILTER RESET =====================
 describe('Filter reset', () => {
-  it('calls all setter functions to default when "Filter zurücksetzen" is clicked', () => {
+  it('resets real filters but preserves searchType (segment context)', () => {
     const setters = {
       setSearchType: vi.fn(),
       setSearchArea: vi.fn(),
@@ -214,6 +214,7 @@ describe('Filter reset', () => {
 
     const props = makeProps({
       ...setters,
+      searchType: 'beruflich', // active segment — should be PRESERVED after reset
       courses: [makeCourse('1')],
       filteredCourses: [],
     });
@@ -222,7 +223,10 @@ describe('Filter reset', () => {
     const btn = screen.getByTestId('btn-reset-filters');
     fireEvent.click(btn);
 
-    expect(setters.setSearchType).toHaveBeenCalledWith('');
+    // searchType MUST NOT be cleared — it is segment context, not a filter
+    expect(setters.setSearchType).not.toHaveBeenCalled();
+
+    // All real filters must be reset
     expect(setters.setSearchArea).toHaveBeenCalledWith('');
     expect(setters.setSearchQuery).toHaveBeenCalledWith('');
     expect(setters.setSelectedLocations).toHaveBeenCalledWith([]);
@@ -349,28 +353,27 @@ describe('Filter chips', () => {
     expect(screen.queryByTestId('filter-chips')).not.toBeInTheDocument();
   });
 
-  it('shows category type chip and clears cascade on click', () => {
-    const setType = vi.fn();
-    const setArea = vi.fn();
-    const setSpec = vi.fn();
-    const setFocus = vi.fn();
+  it('does NOT show the segment type as a filter chip (type is context, not filter)', () => {
     const c = makeCourse('1');
     const props = makeProps({
       courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
       searchType: 'beruflich',
-      setSearchType: setType, setSearchArea: setArea,
-      setSearchSpecialty: setSpec, setSearchFocus: setFocus,
     });
     render(<SearchPageView {...props} />);
-    const chips = screen.getByTestId('filter-chips');
-    expect(chips).toHaveTextContent('Beruflich');
-    // Click the category chip
-    const catChip = Array.from(chips.querySelectorAll('span')).find(el => el.textContent.includes('Beruflich'));
-    fireEvent.click(catChip);
-    expect(setType).toHaveBeenCalledWith('');
-    expect(setArea).toHaveBeenCalledWith('');
-    expect(setSpec).toHaveBeenCalledWith('');
-    expect(setFocus).toHaveBeenCalledWith('');
+    // No filter chips should appear from searchType alone
+    expect(screen.queryByTestId('filter-chips')).not.toBeInTheDocument();
+  });
+
+  it('shows segment context banner (not chip) when searchType is set', () => {
+    const c = makeCourse('1');
+    const props = makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+      searchType: 'beruflich',
+    });
+    render(<SearchPageView {...props} />);
+    const banner = screen.getByTestId('segment-context-banner');
+    expect(banner).toBeInTheDocument();
+    expect(screen.getByTestId('segment-context-title')).toHaveTextContent('Beruflich');
   });
 });
 
@@ -538,5 +541,91 @@ describe('Verifiziert-Badge auf Kurskarten', () => {
     const chips = screen.getByTestId('filter-chips');
     expect(chips).toHaveTextContent('Verifiziert');
     expect(chips).not.toHaveTextContent('Featured');
+  });
+});
+
+// ===================== 9. SEGMENT CONTEXT BANNER =====================
+describe('Segment context banner', () => {
+  it('shows "Beruflich" title for type=beruflich', () => {
+    const c = makeCourse('1');
+    render(<SearchPageView {...makeProps({ courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c], searchType: 'beruflich' })} />);
+    expect(screen.getByTestId('segment-context-title')).toHaveTextContent('Beruflich');
+  });
+
+  it('shows "Privat & Hobby" title for type=privat_hobby', () => {
+    const c = makeCourse('1');
+    render(<SearchPageView {...makeProps({ courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c], searchType: 'privat_hobby' })} />);
+    expect(screen.getByTestId('segment-context-title')).toHaveTextContent('Privat & Hobby');
+  });
+
+  it('shows "Kinder & Jugend" title for type=kinder_jugend', () => {
+    const c = makeCourse('1');
+    render(<SearchPageView {...makeProps({ courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c], searchType: 'kinder_jugend' })} />);
+    expect(screen.getByTestId('segment-context-title')).toHaveTextContent('Kinder & Jugend');
+  });
+
+  it('does NOT render banner when no searchType', () => {
+    const c = makeCourse('1');
+    render(<SearchPageView {...makeProps({ courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c], searchType: '' })} />);
+    expect(screen.queryByTestId('segment-context-banner')).not.toBeInTheDocument();
+  });
+
+  it('does NOT show segment type as filter chip when type is set', () => {
+    const c = makeCourse('1');
+    render(<SearchPageView {...makeProps({ courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c], searchType: 'privat_hobby' })} />);
+    // No chip container should appear if only type is active (no real filters)
+    expect(screen.queryByTestId('filter-chips')).not.toBeInTheDocument();
+  });
+
+  it('shows landing page link in banner', () => {
+    const c = makeCourse('1');
+    render(<SearchPageView {...makeProps({ courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c], searchType: 'beruflich' })} />);
+    const link = screen.getByTestId('segment-context-landing-link');
+    expect(link).toBeInTheDocument();
+    expect(link).toHaveAttribute('href', '/professional');
+  });
+
+  it('does NOT show auto-type hint when isAutoType is false (no autoType URL param)', () => {
+    const c = makeCourse('1');
+    render(<SearchPageView {...makeProps({ courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c], searchType: 'privat_hobby' })} />);
+    expect(screen.queryByTestId('autotype-hint-label')).not.toBeInTheDocument();
+  });
+});
+
+// ===================== 10. SEGMENT CONTEXT — SWITCH BUTTONS =====================
+describe('Segment switch from banner', () => {
+  it('clicking switch-segment button calls setSearchType with new segment', () => {
+    // Simulate arriving from homepage with autoType=1 in URL
+    Object.defineProperty(window, 'location', {
+      value: { ...window.location, search: '?type=privat_hobby&autoType=1' },
+      writable: true,
+    });
+    const setType = vi.fn();
+    const setArea = vi.fn();
+    const setSpec = vi.fn();
+    const setFocus = vi.fn();
+    const c = makeCourse('1');
+    render(<SearchPageView {...makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+      searchType: 'privat_hobby',
+      setSearchType: setType, setSearchArea: setArea,
+      setSearchSpecialty: setSpec, setSearchFocus: setFocus,
+    })} />);
+
+    // Should show "Auch in:" hint with switch buttons
+    const hintLabel = screen.getByTestId('autotype-hint-label');
+    expect(hintLabel).toBeInTheDocument();
+
+    // Click beruflich switch button
+    const switchBtn = screen.getByTestId('switch-segment-beruflich');
+    fireEvent.click(switchBtn);
+    expect(setType).toHaveBeenCalledWith('beruflich');
+    expect(setArea).toHaveBeenCalledWith('');
+
+    // Reset location
+    Object.defineProperty(window, 'location', {
+      value: { ...window.location, search: '' },
+      writable: true,
+    });
   });
 });

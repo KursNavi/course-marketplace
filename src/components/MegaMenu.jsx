@@ -101,10 +101,16 @@ export const MegaMenu = ({
   // Translations
   const t = {
     toOffers: {
-      de: 'Zu den Kursen',
-      en: 'View Courses',
-      fr: 'Voir les cours',
-      it: 'Vedi corsi'
+      de: 'Kurse suchen',
+      en: 'Search Courses',
+      fr: 'Chercher des cours',
+      it: 'Cerca corsi'
+    },
+    overview: {
+      de: 'Übersicht',
+      en: 'Overview',
+      fr: 'Vue d\'ensemble',
+      it: 'Panoramica'
     },
     ratgeber: {
       de: 'Ratgeber',
@@ -127,9 +133,10 @@ export const MegaMenu = ({
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      {/* Trigger Button */}
+      {/* Trigger Button — click goes directly to segment search */}
       <button
-        onClick={goToLanding}
+        onClick={goToSearch}
+        data-testid={`nav-segment-${categoryKey}`}
         className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 font-sans ${
           isActive
             ? `${config.bgLight} ${config.text} border-b-2 ${config.border}`
@@ -147,7 +154,7 @@ export const MegaMenu = ({
           className="absolute left-0 top-full mt-1 w-72 bg-white rounded-xl shadow-2xl border border-gray-100 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200"
           style={{ minWidth: '280px' }}
         >
-          {/* "Zu den Kursen" - Primary Action */}
+          {/* "Kurse suchen" - Primary Action */}
           <a
             href={`/search?type=${categoryKey}`}
             onClick={(e) => {
@@ -169,6 +176,25 @@ export const MegaMenu = ({
               </span>
             </div>
             <ChevronRight className={`w-4 h-4 ${config.text} opacity-0 group-hover:opacity-100 transition-opacity`} />
+          </a>
+
+          {/* "Übersicht" - Landing page link */}
+          <a
+            href={SEGMENT_TO_LANDING[categoryKey]}
+            onClick={(e) => {
+              if (!shouldHandleClientNavigation(e)) return;
+              e.preventDefault();
+              goToLanding();
+            }}
+            className="w-full text-left px-4 py-2.5 flex items-center gap-3 hover:bg-gray-50 transition-colors group"
+          >
+            <div className="p-1.5 rounded-lg bg-gray-100 group-hover:bg-gray-200 transition-colors">
+              <BookOpen className="w-4 h-4 text-gray-500" />
+            </div>
+            <span className="text-gray-600 text-sm font-medium group-hover:text-gray-900 transition-colors flex-1">
+              {t.overview[lang] || t.overview.de}
+            </span>
+            <ChevronRight className="w-3 h-3 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity" />
           </a>
 
           {/* Divider */}
@@ -309,10 +335,16 @@ export const MobileMenuCategory = ({
 
   const t = {
     toOffers: {
-      de: 'Zu den Kursen',
-      en: 'View Courses',
-      fr: 'Voir les cours',
-      it: 'Vedi corsi'
+      de: 'Kurse suchen',
+      en: 'Search Courses',
+      fr: 'Chercher des cours',
+      it: 'Cerca corsi'
+    },
+    overview: {
+      de: 'Übersicht',
+      en: 'Overview',
+      fr: 'Vue d\'ensemble',
+      it: 'Panoramica'
     },
     ratgeber: {
       de: 'Ratgeber',
@@ -330,10 +362,11 @@ export const MobileMenuCategory = ({
 
   return (
     <div className="border-b border-gray-100">
-      {/* Main Category Button */}
+      {/* Main Category Button — tap goes directly to search */}
       <div className="flex items-center">
         <button
-          onClick={goToLanding}
+          onClick={goToSearch}
+          data-testid={`mobile-nav-segment-${categoryKey}`}
           className={`flex-1 flex items-center text-left px-3 py-3 text-base font-medium transition-all font-sans ${
             isActive
               ? `${config.bgLight} ${config.text}`
@@ -354,13 +387,21 @@ export const MobileMenuCategory = ({
       {/* Expanded Content */}
       {isExpanded && categoryData && (
         <div className="bg-gray-50 py-2 animate-in slide-in-from-top-2 duration-200">
-          {/* To Offers */}
+          {/* Kurse suchen */}
           <button
             onClick={goToSearch}
             className={`w-full text-left px-6 py-2 text-sm font-bold ${config.text} flex items-center gap-2`}
           >
             <Icon className="w-4 h-4" />
             {t.toOffers[lang] || t.toOffers.de}
+          </button>
+          {/* Übersicht (landing page) */}
+          <button
+            onClick={goToLanding}
+            className="w-full text-left px-6 py-2 text-sm text-gray-600 hover:text-gray-900 flex items-center gap-2"
+          >
+            <BookOpen className="w-4 h-4 text-gray-400" />
+            {t.overview[lang] || t.overview.de}
           </button>
 
           {/* Ratgeber Header */}

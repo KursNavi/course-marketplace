@@ -29,9 +29,27 @@ const URL_TO_DB_TYPE = {
 };
 
 // ---------------------------------------------------------------------------
-// Segment editorial section helpers
+// Segment context metadata (for banner above filters)
 // ---------------------------------------------------------------------------
-
+const SEGMENT_META = {
+    beruflich:     { title: 'Beruflich',       subtitle: 'Finde Weiterbildungen, Zertifikate und Ausbildungen für deine Karriere.', landingUrl: '/professional', landingLabel: 'Übersicht Beruflich' },
+    professionell: { title: 'Beruflich',       subtitle: 'Finde Weiterbildungen, Zertifikate und Ausbildungen für deine Karriere.', landingUrl: '/professional', landingLabel: 'Übersicht Beruflich' },
+    privat_hobby:  { title: 'Privat & Hobby',  subtitle: 'Entdecke Kurse – vom Schnupperabend bis zum Wochenkurs.',                landingUrl: '/private',       landingLabel: 'Übersicht Privat & Hobby' },
+    privat:        { title: 'Privat & Hobby',  subtitle: 'Entdecke Kurse – vom Schnupperabend bis zum Wochenkurs.',                landingUrl: '/private',       landingLabel: 'Übersicht Privat & Hobby' },
+    kinder_jugend: { title: 'Kinder & Jugend', subtitle: 'Betreute Kurse und Camps, passend zum Alter deines Kindes.',            landingUrl: '/children',      landingLabel: 'Übersicht Kinder & Jugend' },
+    kinder:        { title: 'Kinder & Jugend', subtitle: 'Betreute Kurse und Camps, passend zum Alter deines Kindes.',            landingUrl: '/children',      landingLabel: 'Übersicht Kinder & Jugend' },
+};
+// Canonical URL key for each type slug
+const CANONICAL_SEGMENT = {
+    beruflich: 'beruflich', professionell: 'beruflich',
+    privat_hobby: 'privat_hobby', privat: 'privat_hobby',
+    kinder_jugend: 'kinder_jugend', kinder: 'kinder_jugend',
+};
+const OTHER_SEGMENTS = [
+    { key: 'beruflich',    label: 'Beruflich' },
+    { key: 'privat_hobby', label: 'Privat & Hobby' },
+    { key: 'kinder_jugend', label: 'Kinder & Jugend' },
+];
 
 // ---------------------------------------------------------------------------
 
@@ -68,6 +86,12 @@ const SearchPageView = ({
         if (typeof window === 'undefined') return false;
         const p = new URLSearchParams(window.location.search);
         return !!(p.get('lang') || p.get('price') || (p.get('level') && p.get('level') !== 'All') || p.get('pro') || p.get('booking'));
+    });
+
+    // autoType: Homepage sent user here with an auto-detected segment — show a switch hint
+    const [isAutoType, setIsAutoType] = React.useState(() => {
+        if (typeof window === 'undefined') return false;
+        return new URLSearchParams(window.location.search).get('autoType') === '1';
     });
 
     // Auto-open "Weitere Filter" when secondary filters become active via in-app navigation.
@@ -403,13 +427,15 @@ const SearchPageView = ({
     };
 
     const resetFilters = useCallback(() => {
-        setSearchType(""); setSearchArea(""); setSearchSpecialty(""); setSearchFocus("");
+        // searchType is NOT reset — it is segment context, not a filter
+        setSearchArea(""); setSearchSpecialty(""); setSearchFocus("");
         setSelectedLocations([]); setSearchQuery(""); setFilterDateFrom(""); setFilterDateTo(""); setFilterPriceMax(""); setFilterLevel("All"); setFilterPro(false); setFilterDirectBooking(false);
         if (setSelectedSaule) setSelectedSaule("");
+        if (setSelectedKursart) setSelectedKursart("");
         if (setSelectedLanguages) setSelectedLanguages([]);
         if (setSelectedDeliveryTypes) setSelectedDeliveryTypes([]);
         if (setSelectedCatPath) setSelectedCatPath([]);
-    }, [setSearchType, setSearchArea, setSearchSpecialty, setSearchFocus, setSelectedLocations, setSearchQuery, setFilterDateFrom, setFilterDateTo, setFilterPriceMax, setFilterLevel, setFilterPro, setFilterDirectBooking, setSelectedSaule, setSelectedLanguages, setSelectedDeliveryTypes, setSelectedCatPath]);
+    }, [setSearchArea, setSearchSpecialty, setSearchFocus, setSelectedLocations, setSearchQuery, setFilterDateFrom, setFilterDateTo, setFilterPriceMax, setFilterLevel, setFilterPro, setFilterDirectBooking, setSelectedSaule, setSelectedKursart, setSelectedLanguages, setSelectedDeliveryTypes, setSelectedCatPath]);
 
     const clearSearchText = useCallback(() => {
         setSearchQuery("");
@@ -523,8 +549,82 @@ const SearchPageView = ({
         focus: searchFocus,
     }), [searchArea, selectedLocations, selectedDeliveryTypes, searchSpecialty, searchFocus]);
 
+    // Dynamic search placeholder per segment
+    const searchPlaceholder =
+        (searchType === 'beruflich' || searchType === 'professionell') ? 'Beruf, Fachgebiet oder Abschluss suchen …' :
+        (searchType === 'privat_hobby' || searchType === 'privat')     ? 'Hobby, Thema oder Kurs suchen …' :
+        (searchType === 'kinder_jugend' || searchType === 'kinder')    ? 'Kurs, Camp oder Aktivität suchen …' :
+        (t.search_refine || 'Suchbegriff eingeben …');
+
     return (
         <div className="min-h-screen bg-beige">
+            {/* SEGMENT CONTEXT BANNER — compact strip above filters showing segment title/subtitle */}
+            {searchType && (() => {
+                const meta = SEGMENT_META[searchType];
+                const canonKey = CANONICAL_SEGMENT[searchType] || searchType;
+                const cfg = SEGMENT_CONFIG[canonKey];
+                if (!meta || !cfg) return null;
+                const otherSegments = OTHER_SEGMENTS.filter(s => s.key !== canonKey);
+                return (
+                    <div data-testid="segment-context-banner" className={`border-b ${cfg.borderLight || 'border-gray-200'} ${cfg.bgLight || 'bg-gray-50'}`}>
+                        <div className="max-w-7xl mx-auto px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-4">
+                            {/* Icon + Title + Subtitle */}
+                            <div className="flex items-center gap-2 flex-1 min-w-0">
+                                {cfg.icon && <cfg.icon className={`w-5 h-5 shrink-0 ${cfg.text}`} />}
+                                <div className="min-w-0">
+                                    <span className={`font-bold text-sm ${cfg.textDark}`} data-testid="segment-context-title">{meta.title}</span>
+                                    <span className="text-xs text-gray-500 ml-2 truncate hidden sm:inline" data-testid="segment-context-subtitle">{meta.subtitle}</span>
+                                </div>
+                            </div>
+                            {/* Mobile subtitle */}
+                            <p className="text-xs text-gray-500 sm:hidden pl-7" data-testid="segment-context-subtitle-mobile">{meta.subtitle}</p>
+                            {/* Links row */}
+                            <div className="flex items-center gap-2 flex-wrap text-xs pl-7 sm:pl-0">
+                                <a
+                                    href={meta.landingUrl}
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        window.scrollTo(0, 0);
+                                        window.history.pushState({}, '', meta.landingUrl);
+                                        window.dispatchEvent(new Event('locationchange'));
+                                    }}
+                                    className={`${cfg.text} hover:underline font-medium`}
+                                    data-testid="segment-context-landing-link"
+                                >
+                                    {meta.landingLabel}
+                                </a>
+                                {/* Auto-type hint: shown when homepage auto-detected the segment */}
+                                {isAutoType && (
+                                    <>
+                                        <span className="text-gray-300" aria-hidden="true">|</span>
+                                        <span className="text-gray-500" data-testid="autotype-hint-label">Auch in:</span>
+                                        {otherSegments.map(s => {
+                                            const oCfg = SEGMENT_CONFIG[s.key];
+                                            return (
+                                                <button
+                                                    key={s.key}
+                                                    data-testid={`switch-segment-${s.key}`}
+                                                    onClick={() => {
+                                                        setSearchType(s.key);
+                                                        setSearchArea('');
+                                                        setSearchSpecialty('');
+                                                        setSearchFocus('');
+                                                        setIsAutoType(false);
+                                                    }}
+                                                    className={`${oCfg?.text || 'text-gray-600'} hover:underline font-medium`}
+                                                >
+                                                    {s.label}
+                                                </button>
+                                            );
+                                        })}
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                );
+            })()}
+
             {/* COMPACT SEGMENT HEADER — shown only when a sub-area (or deeper filter) is active */}
             {activeSegmentConfig && searchArea && (
                 <div className="relative overflow-hidden">
@@ -580,7 +680,7 @@ const SearchPageView = ({
                     <div className="flex flex-col md:flex-row gap-2 items-stretch">
                         <div className="relative flex-grow w-full md:w-auto">
                             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                            <input type="text" placeholder={t.search_refine} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full h-[36px] pl-9 pr-4 bg-beige border border-gray-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-colors" />
+                            <input type="text" placeholder={searchPlaceholder} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full h-[36px] pl-9 pr-4 bg-beige border border-gray-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-colors" />
                         </div>
                         <div className="flex items-center gap-2">
                             <LocationDropdown selectedLocations={selectedLocations} setSelectedLocations={setSelectedLocations} locMenuOpen={locMenuOpen} setLocMenuOpen={setLocMenuOpen} locMenuRef={locMenuRef} t={t} />
@@ -591,28 +691,7 @@ const SearchPageView = ({
                         Tipp: Du kannst mehrere Begriffe kombinieren, z.B. <em>Yoga Zürich</em> oder <em>Excel online</em>.
                     </p>
 
-                    {/* SEGMENT PICKER - shown when no segment is selected */}
-                    {!searchType && (
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="text-xs text-gray-400 shrink-0">Bereich:</span>
-                            {[
-                                { key: 'beruflich', dbKey: 'professionell' },
-                                { key: 'privat_hobby', dbKey: 'privat' },
-                                { key: 'kinder_jugend', dbKey: 'kinder' }
-                            ].filter(({ dbKey }) => availableTypes.includes(dbKey)).map(({ key, dbKey }) => {
-                                const cfg = SEGMENT_CONFIG[key] || SEGMENT_CONFIG[dbKey];
-                                const Icon = cfg?.icon || Briefcase;
-                                return (
-                                    <button key={key} onClick={() => { setSearchType(key); setSearchArea(""); setSearchSpecialty(""); setSearchFocus(""); }} className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border text-xs font-medium transition-all hover:shadow-sm bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100`}>
-                                        <Icon className={`w-3.5 h-3.5 ${cfg?.text || 'text-gray-500'}`} />
-                                        {cfg?.label?.de || key}
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    )}
-
-                    {/* TAXONOMY FILTERS (Level 2-4) - Level 1 is selected via Navbar or segment picker */}
+                    {/* TAXONOMY FILTERS (Level 2-4) - Level 1 selected via navigation or segment context banner */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                         <select data-testid="select-bereich" value={searchArea} onChange={(e) => { setSearchArea(e.target.value); setSearchSpecialty(""); setSearchFocus(""); }} className={`w-full px-3 py-1.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 ${searchType ? 'bg-white border-gray-200' : 'bg-gray-50 border-gray-200'} ${!searchArea ? 'text-gray-400' : 'text-gray-900'}`} disabled={!searchType}>
                             <option value="" className="text-gray-400">— {t.lbl_area || 'Themenwelt'} —</option>
@@ -719,11 +798,12 @@ const SearchPageView = ({
                     )}
                 </div>
                  {/* --- ACTIVE FILTER CHIPS --- */}
+                 {/* searchType is NOT shown as a chip (it is segment context, not a filter) */}
                  {(selectedLanguages.length > 0 || selectedLocations.length > 0 ||
                    selectedDeliveryTypes.length > 0 || (filterPriceMax && filterPriceMax !== '') ||
                    (filterLevel && filterLevel !== 'All') || filterDateFrom || filterDateTo ||
                    filterPro || filterDirectBooking || selectedSaule ||
-                   searchType || searchArea || searchSpecialty || searchFocus) && (
+                   searchArea || searchSpecialty || searchFocus) && (
                     <div className="max-w-7xl mx-auto px-4 pt-2 flex gap-2 flex-wrap" data-testid="filter-chips">
                         {selectedLanguages.map((lang, i) => (
                             <span key={`lang-${i}`} onClick={() => setSelectedLanguages(selectedLanguages.filter(l => l !== lang))} className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-purple-200 flex items-center">
@@ -773,11 +853,6 @@ const SearchPageView = ({
                         {selectedSaule && (
                             <span onClick={() => setSelectedSaule('')} className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-blue-200 flex items-center">
                                 {BERUF_SAEULEN[selectedSaule]?.shortDe || selectedSaule} <X className="w-3 h-3 ml-1 opacity-50" />
-                            </span>
-                        )}
-                        {searchType && (
-                            <span onClick={() => { setSearchType(''); setSearchArea(''); setSearchSpecialty(''); setSearchFocus(''); }} className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-orange-200 flex items-center">
-                                {TYPE_DISPLAY_LABELS[searchType] || CATEGORY_TYPES[searchType]?.de || searchType} <X className="w-3 h-3 ml-1 opacity-50" />
                             </span>
                         )}
                         {searchArea && (
