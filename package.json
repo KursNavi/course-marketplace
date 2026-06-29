@@ -20,7 +20,8 @@
     "retest:security": "node scripts/security-retest.mjs",
     "dev:finalize-yoga": "node scripts/finalize-yoga-cleanup-dev.mjs",
     "cleanup:check": "node scripts/cleanup-images.js --dry-run",
-    "cleanup:execute": "node scripts/cleanup-images.js --execute"
+    "cleanup:execute": "node scripts/cleanup-images.js --execute",
+    "import:validate": "node scripts/import-pipeline/validate-import-json.mjs examples/import/import-run.example.json"
   },
   "dependencies": {
     "@sentry/react": "^10.43.0",

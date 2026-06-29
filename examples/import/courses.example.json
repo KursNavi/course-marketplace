@@ -1,0 +1,44 @@
+{
+  "schema_version": "1.0.0",
+  "courses": [
+    {
+      "external_id": "alpenatelier-zeichnen-grundlagen-zuerich",
+      "title": {
+        "value": "Zeichnen Grundlagen in Zürich",
+        "source_url": "https://example.ch/alpenatelier/kurse/zeichnen-grundlagen",
+        "evidence_text": "Zeichnen Grundlagen — Kurs in Zürich"
+      },
+      "description": {
+        "value": "Ein Einführungskurs für Perspektive, Licht und Schatten sowie Skizzenübungen.",
+        "source_url": "https://example.ch/alpenatelier/kurse/zeichnen-grundlagen",
+        "evidence_text": "Einführung in Perspektive, Licht und Schatten sowie Skizzenübungen.",
+        "needs_review": true
+      },
+      "category_hint": {
+        "value": "Kreativität und Gestaltung",
+        "source_url": "https://example.ch/alpenatelier/kurse",
+        "evidence_text": "Kreativkurse: Zeichnen und Malen",
+        "needs_review": true
+      },
+      "status": "draft",
+      "booking_type": "lead",
+      "country": "CH",
+      "location": {
+        "value": "Zürich, Schweiz",
+        "source_url": "https://example.ch/alpenatelier/kontakt",
+        "evidence_text": "Kursort Zürich"
+      },
+      "price": null,
+      "dates": [],
+      "image_candidates": [
+        {
+          "url": "https://example.ch/assets/zeichnen-kurs.jpg",
+          "source_url": "https://example.ch/alpenatelier/kurse/zeichnen-grundlagen",
+          "evidence_text": "Kursbild-Kandidat; Rechte noch nicht geprüft.",
+          "rights_status": "unknown",
+          "needs_review": true
+        }
+      ]
+    }
+  ]
+}

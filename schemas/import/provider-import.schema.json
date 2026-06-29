@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kursnavi.local/schemas/import/provider-import.schema.json",
+  "title": "KursNavi Provider Import Draft",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "provider", "safety"],
+  "$defs": {
+    "evidenceString": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value", "source_url", "evidence_text"],
+      "properties": {
+        "value": { "type": "string", "minLength": 1 },
+        "source_url": { "type": "string", "format": "uri" },
+        "evidence_text": { "type": "string", "minLength": 1 },
+        "needs_review": { "type": "boolean" }
+      }
+    },
+    "optionalEvidenceString": {
+      "anyOf": [
+        { "$ref": "#/$defs/evidenceString" },
+        { "type": "null" }
+      ]
+    },
+    "imageCandidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["url", "source_url", "rights_status", "needs_review"],
+      "properties": {
+        "url": { "type": "string", "format": "uri" },
+        "source_url": { "type": "string", "format": "uri" },
+        "evidence_text": { "type": "string" },
+        "rights_status": { "const": "unknown" },
+        "needs_review": { "const": true }
+      }
+    }
+  },
+  "properties": {
+    "schema_version": { "const": "1.0.0" },
+    "provider": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "country", "status", "profile_published_at", "source_homepage_url"],
+      "properties": {
+        "name": { "$ref": "#/$defs/evidenceString" },
+        "description": { "$ref": "#/$defs/optionalEvidenceString" },
+        "country": { "const": "CH" },
+        "city": { "$ref": "#/$defs/optionalEvidenceString" },
+        "address": { "$ref": "#/$defs/optionalEvidenceString" },
+        "source_homepage_url": { "type": "string", "format": "uri" },
+        "contact_email": { "$ref": "#/$defs/optionalEvidenceString" },
+        "phone": { "$ref": "#/$defs/optionalEvidenceString" },
+        "status": { "const": "draft" },
+        "profile_published_at": { "type": "null" },
+        "image_candidates": { "type": "array", "items": { "$ref": "#/$defs/imageCandidate" }, "default": [] }
+      }
+    },
+    "safety": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["no_crawling", "no_ai_generation", "no_database_access", "no_secrets"],
+      "properties": {
+        "no_crawling": { "const": true },
+        "no_ai_generation": { "const": true },
+        "no_database_access": { "const": true },
+        "no_secrets": { "const": true }
+      }
+    }
+  }
+}
