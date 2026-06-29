@@ -1,0 +1,107 @@
+{
+  "schema_version": "1.0.0",
+  "run": {
+    "run_id": "provider-import-pr1-example-2026-06-29",
+    "created_at": "2026-06-29T00:00:00.000Z",
+    "created_by": "local-import-schema-fixture",
+    "purpose": "Lokaler Import-Draft zur Schema- und Validierungsprüfung; kein Import in Produktivsysteme.",
+    "status": "draft",
+    "notes": "Alle Inhalte sind lokale Beispiele. Preise und Termine bleiben ohne Evidence leer."
+  },
+  "provider_import": {
+    "schema_version": "1.0.0",
+    "provider": {
+      "name": {
+        "value": "Alpenatelier Zürich",
+        "source_url": "https://example.ch/alpenatelier",
+        "evidence_text": "Alpenatelier Zürich bietet kreative Kurse für Erwachsene und Jugendliche an."
+      },
+      "description": {
+        "value": "Kreativschule in Zürich mit Kursen in Zeichnen, Malen und Gestaltung.",
+        "source_url": "https://example.ch/alpenatelier/kurse",
+        "evidence_text": "Kurse in Zeichnen, Malen und Gestaltung in Zürich.",
+        "needs_review": true
+      },
+      "country": "CH",
+      "city": {
+        "value": "Zürich",
+        "source_url": "https://example.ch/alpenatelier/kontakt",
+        "evidence_text": "Standort: Zürich"
+      },
+      "address": null,
+      "source_homepage_url": "https://example.ch/alpenatelier",
+      "contact_email": null,
+      "phone": null,
+      "status": "draft",
+      "profile_published_at": null,
+      "image_candidates": [
+        {
+          "url": "https://example.ch/assets/alpenatelier-studio.jpg",
+          "source_url": "https://example.ch/alpenatelier/galerie",
+          "evidence_text": "Studioansicht auf der Galerie-Seite; Nutzungsrechte nicht geprüft.",
+          "rights_status": "unknown",
+          "needs_review": true
+        }
+      ]
+    },
+    "safety": {
+      "no_crawling": true,
+      "no_ai_generation": true,
+      "no_database_access": true,
+      "no_secrets": true
+    }
+  },
+  "course_import": {
+    "schema_version": "1.0.0",
+    "courses": [
+      {
+        "external_id": "alpenatelier-zeichnen-grundlagen-zuerich",
+        "title": {
+          "value": "Zeichnen Grundlagen in Zürich",
+          "source_url": "https://example.ch/alpenatelier/kurse/zeichnen-grundlagen",
+          "evidence_text": "Zeichnen Grundlagen — Kurs in Zürich"
+        },
+        "description": {
+          "value": "Ein Einführungskurs für Perspektive, Licht und Schatten sowie Skizzenübungen.",
+          "source_url": "https://example.ch/alpenatelier/kurse/zeichnen-grundlagen",
+          "evidence_text": "Einführung in Perspektive, Licht und Schatten sowie Skizzenübungen.",
+          "needs_review": true
+        },
+        "category_hint": {
+          "value": "Kreativität und Gestaltung",
+          "source_url": "https://example.ch/alpenatelier/kurse",
+          "evidence_text": "Kreativkurse: Zeichnen und Malen",
+          "needs_review": true
+        },
+        "status": "draft",
+        "booking_type": "lead",
+        "country": "CH",
+        "location": {
+          "value": "Zürich, Schweiz",
+          "source_url": "https://example.ch/alpenatelier/kontakt",
+          "evidence_text": "Kursort Zürich"
+        },
+        "price": null,
+        "dates": [],
+        "image_candidates": [
+          {
+            "url": "https://example.ch/assets/zeichnen-kurs.jpg",
+            "source_url": "https://example.ch/alpenatelier/kurse/zeichnen-grundlagen",
+            "evidence_text": "Kursbild-Kandidat; Rechte noch nicht geprüft.",
+            "rights_status": "unknown",
+            "needs_review": true
+          }
+        ]
+      }
+    ]
+  },
+  "safety": {
+    "no_crawling": true,
+    "no_ai_generation": true,
+    "no_openai_api_call": true,
+    "no_supabase_access": true,
+    "no_live_database": true,
+    "no_secrets": true,
+    "no_productive_flow_changes": true
+  }
+}
