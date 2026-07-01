@@ -845,7 +845,7 @@ export const TRANSLATIONS = {
     about_cta_primary: "Kurse entdecken",
     about_cta_secondary: "Als Anbieter starten",
 
-    profile_settings: "Profileinstellungen", lbl_city: "Meine Stadt / Ort", lbl_bio: "Über mich (Bio)", lbl_language: "Bevorzugte Sprache",
+    profile_settings: "Profileinstellungen", lbl_city: "Meine Stadt / Ort", lbl_bio: "Über uns", lbl_language: "Bevorzugte Sprache",
     profile_lang_note: "Wir verwenden dies für E-Mails und Webseiteninhalte.", btn_save: "Speichern",
     dash_overview: "Kursangebot", dash_profile: "Mein Profil", dash_settings: "Profil", dash_new_course: "Neuer Kurs",
     lbl_account_security: "Konto & Sicherheit", lbl_new_password: "Neues Passwort", lbl_confirm_password: "Passwort bestätigen",

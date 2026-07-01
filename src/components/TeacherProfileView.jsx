@@ -148,7 +148,7 @@ const TeacherProfileView = ({ teacher, courses, setView, setSelectedCourse, t })
                     {/* Bio */}
                     {teacher.bio_text && (
                         <section>
-                            <h2 className="text-xl font-bold mb-4 border-b pb-2">{t.lbl_bio || "Über mich"}</h2>
+                            <h2 className="text-xl font-bold mb-4 border-b pb-2">{t.lbl_bio || "Über uns"}</h2>
                             <div className="text-gray-600 leading-relaxed space-y-4 custom-rich-text">
                                 {teacher.bio_text.split('\n').map((line, index) => {
                                     const escaped = line
