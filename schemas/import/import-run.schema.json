@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kursnavi.local/schemas/import/import-run.schema.json",
+  "title": "KursNavi Provider Import Run",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "run", "provider_import", "course_import", "safety"],
+  "properties": {
+    "schema_version": { "const": "1.0.0" },
+    "run": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["run_id", "created_at", "created_by", "purpose", "status"],
+      "properties": {
+        "run_id": { "type": "string", "minLength": 1 },
+        "created_at": { "type": "string", "format": "date-time" },
+        "created_by": { "type": "string", "minLength": 1 },
+        "purpose": { "type": "string", "minLength": 1 },
+        "status": { "const": "draft" },
+        "notes": { "type": "string" }
+      }
+    },
+    "provider_import": { "$ref": "provider-import.schema.json" },
+    "course_import": { "$ref": "course-import.schema.json" },
+    "safety": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["no_crawling", "no_ai_generation", "no_openai_api_call", "no_supabase_access", "no_live_database", "no_secrets", "no_productive_flow_changes"],
+      "properties": {
+        "no_crawling": { "const": true },
+        "no_ai_generation": { "const": true },
+        "no_openai_api_call": { "const": true },
+        "no_supabase_access": { "const": true },
+        "no_live_database": { "const": true },
+        "no_secrets": { "const": true },
+        "no_productive_flow_changes": { "const": true }
+      }
+    }
+  }
+}

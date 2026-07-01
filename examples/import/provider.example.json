@@ -1,0 +1,43 @@
+{
+  "schema_version": "1.0.0",
+  "provider": {
+    "name": {
+      "value": "Alpenatelier Zürich",
+      "source_url": "https://example.ch/alpenatelier",
+      "evidence_text": "Alpenatelier Zürich bietet kreative Kurse für Erwachsene und Jugendliche an."
+    },
+    "description": {
+      "value": "Kreativschule in Zürich mit Kursen in Zeichnen, Malen und Gestaltung.",
+      "source_url": "https://example.ch/alpenatelier/kurse",
+      "evidence_text": "Kurse in Zeichnen, Malen und Gestaltung in Zürich.",
+      "needs_review": true
+    },
+    "country": "CH",
+    "city": {
+      "value": "Zürich",
+      "source_url": "https://example.ch/alpenatelier/kontakt",
+      "evidence_text": "Standort: Zürich"
+    },
+    "address": null,
+    "source_homepage_url": "https://example.ch/alpenatelier",
+    "contact_email": null,
+    "phone": null,
+    "status": "draft",
+    "profile_published_at": null,
+    "image_candidates": [
+      {
+        "url": "https://example.ch/assets/alpenatelier-studio.jpg",
+        "source_url": "https://example.ch/alpenatelier/galerie",
+        "evidence_text": "Studioansicht auf der Galerie-Seite; Nutzungsrechte nicht geprüft.",
+        "rights_status": "unknown",
+        "needs_review": true
+      }
+    ]
+  },
+  "safety": {
+    "no_crawling": true,
+    "no_ai_generation": true,
+    "no_database_access": true,
+    "no_secrets": true
+  }
+}
