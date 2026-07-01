@@ -13,6 +13,33 @@ export const BRAND = {
 export const SWISS_CANTONS = ["Online", "Aargau", "Appenzell AI", "Appenzell AR", "Basel-Landschaft", "Basel-Stadt", "Bern", "Fribourg", "Genève", "Glarus", "Graubünden", "Jura", "Liechtenstein", "Luzern", "Neuchâtel", "Nidwalden", "Obwalden", "Schaffhausen", "Schwyz", "Solothurn", "St. Gallen", "Thurgau", "Ticino", "Uri", "Valais", "Vaud", "Zug", "Zürich", "Ausland"];
 export const SWISS_CITIES = ["Basel", "Bern", "Biel/Bienne", "Genève", "Lausanne", "Lugano", "Luzern", "St. Gallen", "Winterthur", "Zürich"];
 
+/** Maps Swiss canton full names to their official 2-letter abbreviations. */
+export const CANTON_ABBR = {
+  "Aargau": "AG", "Appenzell AI": "AI", "Appenzell AR": "AR",
+  "Basel-Landschaft": "BL", "Basel-Stadt": "BS", "Bern": "BE",
+  "Fribourg": "FR", "Genève": "GE", "Glarus": "GL", "Graubünden": "GR",
+  "Jura": "JU", "Liechtenstein": "FL", "Luzern": "LU", "Neuchâtel": "NE",
+  "Nidwalden": "NW", "Obwalden": "OW", "Schaffhausen": "SH", "Schwyz": "SZ",
+  "Solothurn": "SO", "St. Gallen": "SG", "Thurgau": "TG", "Ticino": "TI",
+  "Uri": "UR", "Valais": "VS", "Vaud": "VD", "Zug": "ZG", "Zürich": "ZH",
+};
+
+/**
+ * Formats an address with the canton abbreviation in parentheses.
+ * Examples:
+ *   { street: "Hauptstr. 1", city: "Kölliken", canton: "Aargau" } → "Hauptstr. 1, Kölliken (AG)"
+ *   { city: "Bern", canton: "Bern" }                              → "Bern (BE)"
+ *   { canton: "Aargau" }                                          → "AG"
+ *   { canton: "Online" }                                          → "Online"
+ */
+export function formatLocationWithCanton({ street, city, canton } = {}) {
+  const abbr = canton ? CANTON_ABBR[canton] : undefined;
+  const parts = [street, city].filter(Boolean);
+  if (parts.length === 0) return abbr || canton || '';
+  const base = parts.join(', ');
+  return abbr ? `${base} (${abbr})` : (canton ? `${base}, ${canton}` : base);
+}
+
 // --- DELIVERY TYPES ---
 export const DELIVERY_TYPES = {
   presence: { de: "Präsenz (vor Ort)", en: "In-Person", fr: "En présentiel", it: "In presenza" },
@@ -736,7 +763,7 @@ export const TRANSLATIONS = {
   },
   de: {
     nav_explore: "Entdecken", nav_about: "Über uns", nav_contact: "Kontakt", nav_login: "Anmelden", nav_logout: "Abmelden", nav_dashboard: "Dashboard",
-    nav_private: "Privat & Hobby", nav_professional: "Beruflich", nav_kids: "Kinder", nav_howitworks: "So funktioniert's",
+    nav_private: "Privat & Hobby", nav_professional: "Beruflich", nav_kids: "Kinder & Jugend", nav_howitworks: "So funktioniert's",
     nav_dashboard: "Mein Bereich", 
     nav_news: "Neuigkeiten", nav_providers: "Anbieter finden",
     nav_for_providers: "Für Anbieter",hero_title: "Finde Kurse in deiner Nähe.", hero_subtitle: "Vom Jodeln bis zum Programmieren.",
@@ -845,7 +872,7 @@ export const TRANSLATIONS = {
     about_cta_primary: "Kurse entdecken",
     about_cta_secondary: "Als Anbieter starten",
 
-    profile_settings: "Profileinstellungen", lbl_city: "Meine Stadt / Ort", lbl_bio: "Über mich (Bio)", lbl_language: "Bevorzugte Sprache",
+    profile_settings: "Profileinstellungen", lbl_city: "Meine Stadt / Ort", lbl_bio: "Über uns", lbl_language: "Bevorzugte Sprache",
     profile_lang_note: "Wir verwenden dies für E-Mails und Webseiteninhalte.", btn_save: "Speichern",
     dash_overview: "Kursangebot", dash_profile: "Mein Profil", dash_settings: "Profil", dash_new_course: "Neuer Kurs",
     lbl_account_security: "Konto & Sicherheit", lbl_new_password: "Neues Passwort", lbl_confirm_password: "Passwort bestätigen",

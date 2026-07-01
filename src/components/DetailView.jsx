@@ -3,7 +3,7 @@ import { ArrowLeft, User, MapPin, Clock, CheckCircle, Calendar, Shield, External
 import { supabase } from '../lib/supabase';
 import { formatPriceCHF, getPriceLabel } from '../lib/formatPrice';
 import { useTaxonomy } from '../hooks/useTaxonomy';
-import { SEGMENT_CONFIG } from '../lib/constants';
+import { SEGMENT_CONFIG, CANTON_ABBR, formatLocationWithCanton } from '../lib/constants';
 import { BASE_URL, buildCoursePath } from '../lib/siteConfig';
 import { getBereichByAreaSlug, getBereichUrl } from '../lib/bereichLandingConfig';
 import { DEFAULT_COURSE_IMAGE } from '../lib/imageUtils';
@@ -838,12 +838,15 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
                                 // course_locations and course.address may be stale after a mode switch.
                                 const uniqueCantons = [...new Set(presenceEvents.map(ev => ev.canton).filter(Boolean))];
                                 if (uniqueCantons.length === 1) {
-                                    // Single canton: show the city of the first event
+                                    // Single canton: show the city with canton abbreviation
                                     const city = extractCity(presenceEvents[0].location);
-                                    locationText = city || uniqueCantons[0];
+                                    const abbr = CANTON_ABBR[uniqueCantons[0]];
+                                    locationText = city
+                                        ? (abbr ? `${city} (${abbr})` : city)
+                                        : (abbr || uniqueCantons[0]);
                                 } else {
-                                    // Multiple cantons: list them (e.g. "Bern, Zürich, Aargau")
-                                    locationText = uniqueCantons.join(', ');
+                                    // Multiple cantons: list abbreviations (e.g. "BE, ZH, AG")
+                                    locationText = uniqueCantons.map(c => CANTON_ABBR[c] || c).join(', ');
                                 }
                             } else if (!Array.isArray(course.course_events) || course.course_events.length === 0) {
                                 // Locations mode: use course_locations as the authoritative source
@@ -854,14 +857,14 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
                                     : [];
                                 if (presenceLocs.length > 1) {
                                     const cantons = [...new Set(presenceLocs.map(l => l.canton).filter(Boolean))];
-                                    locationText = cantons.join(', ');
+                                    locationText = cantons.map(c => CANTON_ABBR[c] || c).join(', ');
                                 } else if (presenceLocs.length === 1) {
                                     const loc = presenceLocs[0];
-                                    locationText = [loc.street, loc.city].filter(Boolean).join(', ') || loc.canton || '';
+                                    locationText = formatLocationWithCanton({ street: loc.street, city: loc.city, canton: loc.canton });
                                 }
                             }
                             // Final fallback to courses-table fields
-                            if (!locationText) locationText = course.address || course.city || course.canton || '';
+                            if (!locationText) locationText = course.address || course.city || (course.canton ? (CANTON_ABBR[course.canton] || course.canton) : '') || '';
                             if (!locationText) return null;
                             return (
                                 <div className="flex items-center text-gray-700">
@@ -995,9 +998,14 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
                                         // shared by the teacher after contact, not needed publicly.
                                         const rawLoc = ev.location || '';
                                         const commaIdx = rawLoc.lastIndexOf(',');
-                                        const locationLabel = commaIdx !== -1
+                                        const evCity = commaIdx !== -1
                                             ? rawLoc.substring(commaIdx + 1).trim()
-                                            : (rawLoc || ev.canton || '');
+                                            : rawLoc.trim();
+                                        const evAbbr = ev.canton && ev.canton !== 'Online' && ev.canton !== 'Ausland'
+                                            ? CANTON_ABBR[ev.canton] : undefined;
+                                        const locationLabel = evCity
+                                            ? (evAbbr ? `${evCity} (${evAbbr})` : evCity)
+                                            : (evAbbr || ev.canton || '');
                                         return (
                                             <div key={i} className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5 py-2 border-b border-gray-100 last:border-0 text-sm">
                                                 <span className="font-medium text-dark">{dateLabel}</span>

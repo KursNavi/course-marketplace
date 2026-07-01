@@ -385,6 +385,10 @@ export default function KursNaviPro() {  // 1. Initial State Logic
     if (window.location.pathname !== '/search') return "";
     return new URLSearchParams(window.location.search).get('type') || "";
   });
+  const [searchAutoType, setSearchAutoType] = useState(() => {
+    if (window.location.pathname !== '/search') return false;
+    return new URLSearchParams(window.location.search).get('autoType') === '1';
+  });
   const [searchArea, setSearchArea] = useState(() => {
     if (window.location.pathname !== '/search') return "";
     return new URLSearchParams(window.location.search).get('area') || "";
@@ -1634,6 +1638,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
       // 4) Parse URL query parameters for search filters
       const query = new URLSearchParams(window.location.search);
       const typeParam = query.get('type');
+      const autoTypeParam = query.get('autoType');
       const areaParam = query.get('area');
       const specParam = query.get('spec');
       const focusParam = query.get('focus');
@@ -1658,6 +1663,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
         // Only reset if no params are provided (clean /search navigation)
         if (!hasAnyParam) {
           setSearchType("");
+          setSearchAutoType(false);
           setSearchArea("");
           setSearchSpecialty("");
           setSearchFocus("");
@@ -1676,6 +1682,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
         } else {
           // Apply URL params — restore present ones, reset missing ones
           if (typeParam) setSearchType(typeParam); else setSearchType("");
+          setSearchAutoType(autoTypeParam === '1');
           if (areaParam) setSearchArea(areaParam); else setSearchArea("");
           if (specParam) setSearchSpecialty(specParam); else setSearchSpecialty("");
           if (focusParam) setSearchFocus(focusParam); else setSearchFocus("");
@@ -2181,7 +2188,7 @@ useEffect(() => {
           </div>
           {searchTab === 'anbieter'
             ? <ProviderDirectory t={t} setView={setView} embedded={true} />
-            : <SearchPageView courses={courses} filteredCoursesPreCategory={filteredCoursesPreCategory} searchQuery={searchQuery} setSearchQuery={setSearchQuery} searchType={searchType} setSearchType={setSearchType} searchArea={searchArea} setSearchArea={setSearchArea} searchSpecialty={searchSpecialty} setSearchSpecialty={setSearchSpecialty} searchFocus={searchFocus} setSearchFocus={setSearchFocus} selectedLocations={selectedLocations} setSelectedLocations={setSelectedLocations} locMenuOpen={locMenuOpen} setLocMenuOpen={setLocMenuOpen} locMenuRef={locMenuRef} loading={loading} filteredCourses={filteredCourses} setSelectedCourse={setSelectedCourse} setView={setView} t={t} getCatLabel={getCatLabel} filterDateFrom={filterDateFrom} setFilterDateFrom={setFilterDateFrom} filterDateTo={filterDateTo} setFilterDateTo={setFilterDateTo} filterPriceMax={filterPriceMax} setFilterPriceMax={setFilterPriceMax} filterLevel={filterLevel} setFilterLevel={setFilterLevel} filterPro={filterPro} setFilterPro={setFilterPro} filterDirectBooking={filterDirectBooking} setFilterDirectBooking={setFilterDirectBooking} selectedLanguages={selectedLanguages} setSelectedLanguages={setSelectedLanguages} langMenuOpen={langMenuOpen} setLangMenuOpen={setLangMenuOpen} langMenuRef={langMenuRef} selectedDeliveryTypes={selectedDeliveryTypes} setSelectedDeliveryTypes={setSelectedDeliveryTypes} deliveryMenuOpen={deliveryMenuOpen} setDeliveryMenuOpen={setDeliveryMenuOpen} deliveryMenuRef={deliveryMenuRef} savedCourseIds={savedCourseIds} onToggleSaveCourse={toggleSaveCourse} user={user} selectedSaule={selectedSaule} setSelectedSaule={setSelectedSaule} selectedKursart={selectedKursart} setSelectedKursart={setSelectedKursart} fetchError={fetchError} onRetry={fetchCourses} setSelectedCatPath={setSelectedCatPath} />
+            : <SearchPageView courses={courses} filteredCoursesPreCategory={filteredCoursesPreCategory} searchQuery={searchQuery} setSearchQuery={setSearchQuery} searchType={searchType} setSearchType={setSearchType} autoType={searchAutoType} setAutoType={setSearchAutoType} searchArea={searchArea} setSearchArea={setSearchArea} searchSpecialty={searchSpecialty} setSearchSpecialty={setSearchSpecialty} searchFocus={searchFocus} setSearchFocus={setSearchFocus} selectedLocations={selectedLocations} setSelectedLocations={setSelectedLocations} locMenuOpen={locMenuOpen} setLocMenuOpen={setLocMenuOpen} locMenuRef={locMenuRef} loading={loading} filteredCourses={filteredCourses} setSelectedCourse={setSelectedCourse} setView={setView} t={t} getCatLabel={getCatLabel} filterDateFrom={filterDateFrom} setFilterDateFrom={setFilterDateFrom} filterDateTo={filterDateTo} setFilterDateTo={setFilterDateTo} filterPriceMax={filterPriceMax} setFilterPriceMax={setFilterPriceMax} filterLevel={filterLevel} setFilterLevel={setFilterLevel} filterPro={filterPro} setFilterPro={setFilterPro} filterDirectBooking={filterDirectBooking} setFilterDirectBooking={setFilterDirectBooking} selectedLanguages={selectedLanguages} setSelectedLanguages={setSelectedLanguages} langMenuOpen={langMenuOpen} setLangMenuOpen={setLangMenuOpen} langMenuRef={langMenuRef} selectedDeliveryTypes={selectedDeliveryTypes} setSelectedDeliveryTypes={setSelectedDeliveryTypes} deliveryMenuOpen={deliveryMenuOpen} setDeliveryMenuOpen={setDeliveryMenuOpen} deliveryMenuRef={deliveryMenuRef} savedCourseIds={savedCourseIds} onToggleSaveCourse={toggleSaveCourse} user={user} selectedSaule={selectedSaule} setSelectedSaule={setSelectedSaule} selectedKursart={selectedKursart} setSelectedKursart={setSelectedKursart} fetchError={fetchError} onRetry={fetchCourses} setSelectedCatPath={setSelectedCatPath} />
           }
         </>
       )}

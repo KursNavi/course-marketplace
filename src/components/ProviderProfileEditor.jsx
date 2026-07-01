@@ -1160,7 +1160,7 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
             <div className="border-t pt-6 mt-6">
               <h3 className="text-lg font-bold mb-4 text-gray-800 flex items-center">
                 <User className="w-5 h-5 mr-2 text-orange-500" />
-                {t?.lbl_bio || 'Über mich / uns (Bio / Anbietervorstellung)'}
+                {t?.lbl_bio || 'Über uns'}
               </h3>
               <textarea
                 name="bio_text"

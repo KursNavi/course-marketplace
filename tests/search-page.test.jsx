@@ -66,8 +66,10 @@ function makeProps(overrides = {}) {
     savedCourseIds: [], onToggleSaveCourse: noop,
     user: null,
     selectedSaule: '', setSelectedSaule: vi.fn(),
+    selectedKursart: '', setSelectedKursart: vi.fn(),
     fetchError: false, onRetry: vi.fn(),
     setSelectedCatPath: vi.fn(),
+    autoType: false, setAutoType: vi.fn(),
     ...overrides,
   };
 }
@@ -192,7 +194,7 @@ describe('Empty state differentiation', () => {
 
 // ===================== 3. FILTER RESET =====================
 describe('Filter reset', () => {
-  it('calls all setter functions to default when "Filter zurücksetzen" is clicked', () => {
+  it('resets real filters but preserves searchType (segment context)', () => {
     const setters = {
       setSearchType: vi.fn(),
       setSearchArea: vi.fn(),
@@ -214,6 +216,7 @@ describe('Filter reset', () => {
 
     const props = makeProps({
       ...setters,
+      searchType: 'beruflich', // active segment — should be PRESERVED after reset
       courses: [makeCourse('1')],
       filteredCourses: [],
     });
@@ -222,7 +225,10 @@ describe('Filter reset', () => {
     const btn = screen.getByTestId('btn-reset-filters');
     fireEvent.click(btn);
 
-    expect(setters.setSearchType).toHaveBeenCalledWith('');
+    // searchType MUST NOT be cleared — it is segment context, not a filter
+    expect(setters.setSearchType).not.toHaveBeenCalled();
+
+    // All real filters must be reset
     expect(setters.setSearchArea).toHaveBeenCalledWith('');
     expect(setters.setSearchQuery).toHaveBeenCalledWith('');
     expect(setters.setSelectedLocations).toHaveBeenCalledWith([]);
@@ -349,28 +355,27 @@ describe('Filter chips', () => {
     expect(screen.queryByTestId('filter-chips')).not.toBeInTheDocument();
   });
 
-  it('shows category type chip and clears cascade on click', () => {
-    const setType = vi.fn();
-    const setArea = vi.fn();
-    const setSpec = vi.fn();
-    const setFocus = vi.fn();
+  it('does NOT show the segment type as a filter chip (type is context, not filter)', () => {
     const c = makeCourse('1');
     const props = makeProps({
       courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
       searchType: 'beruflich',
-      setSearchType: setType, setSearchArea: setArea,
-      setSearchSpecialty: setSpec, setSearchFocus: setFocus,
     });
     render(<SearchPageView {...props} />);
-    const chips = screen.getByTestId('filter-chips');
-    expect(chips).toHaveTextContent('Beruflich');
-    // Click the category chip
-    const catChip = Array.from(chips.querySelectorAll('span')).find(el => el.textContent.includes('Beruflich'));
-    fireEvent.click(catChip);
-    expect(setType).toHaveBeenCalledWith('');
-    expect(setArea).toHaveBeenCalledWith('');
-    expect(setSpec).toHaveBeenCalledWith('');
-    expect(setFocus).toHaveBeenCalledWith('');
+    // No filter chips should appear from searchType alone
+    expect(screen.queryByTestId('filter-chips')).not.toBeInTheDocument();
+  });
+
+  it('shows segment context banner (not chip) when searchType is set', () => {
+    const c = makeCourse('1');
+    const props = makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+      searchType: 'beruflich',
+    });
+    render(<SearchPageView {...props} />);
+    const banner = screen.getByTestId('segment-context-banner');
+    expect(banner).toBeInTheDocument();
+    expect(screen.getByTestId('segment-context-title')).toHaveTextContent('Beruflich');
   });
 });
 
@@ -538,5 +543,545 @@ describe('Verifiziert-Badge auf Kurskarten', () => {
     const chips = screen.getByTestId('filter-chips');
     expect(chips).toHaveTextContent('Verifiziert');
     expect(chips).not.toHaveTextContent('Featured');
+  });
+});
+
+// ===================== 9. SEGMENT CONTEXT BANNER =====================
+describe('Segment context banner', () => {
+  it('shows "Beruflich" title for type=beruflich', () => {
+    const c = makeCourse('1');
+    render(<SearchPageView {...makeProps({ courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c], searchType: 'beruflich' })} />);
+    expect(screen.getByTestId('segment-context-title')).toHaveTextContent('Beruflich');
+  });
+
+  it('shows "Privat & Hobby" title for type=privat_hobby', () => {
+    const c = makeCourse('1');
+    render(<SearchPageView {...makeProps({ courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c], searchType: 'privat_hobby' })} />);
+    expect(screen.getByTestId('segment-context-title')).toHaveTextContent('Privat & Hobby');
+  });
+
+  it('shows "Kinder & Jugend" title for type=kinder_jugend', () => {
+    const c = makeCourse('1');
+    render(<SearchPageView {...makeProps({ courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c], searchType: 'kinder_jugend' })} />);
+    expect(screen.getByTestId('segment-context-title')).toHaveTextContent('Kinder & Jugend');
+  });
+
+  it('does NOT render banner when no searchType', () => {
+    const c = makeCourse('1');
+    render(<SearchPageView {...makeProps({ courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c], searchType: '' })} />);
+    expect(screen.queryByTestId('segment-context-banner')).not.toBeInTheDocument();
+  });
+
+  it('does NOT show segment type as filter chip when type is set', () => {
+    const c = makeCourse('1');
+    render(<SearchPageView {...makeProps({ courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c], searchType: 'privat_hobby' })} />);
+    // No chip container should appear if only type is active (no real filters)
+    expect(screen.queryByTestId('filter-chips')).not.toBeInTheDocument();
+  });
+
+  it('shows landing page link in banner', () => {
+    const c = makeCourse('1');
+    render(<SearchPageView {...makeProps({ courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c], searchType: 'beruflich' })} />);
+    const link = screen.getByTestId('segment-context-landing-link');
+    expect(link).toBeInTheDocument();
+    expect(link).toHaveAttribute('href', '/professional');
+  });
+
+  it('does NOT show auto-type hint when autoType prop is false (default)', () => {
+    const c = makeCourse('1');
+    render(<SearchPageView {...makeProps({ courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c], searchType: 'privat_hobby', autoType: false })} />);
+    expect(screen.queryByTestId('autotype-hint-label')).not.toBeInTheDocument();
+  });
+
+  it('shows auto-type hint when autoType prop is true', () => {
+    const c = makeCourse('1');
+    render(<SearchPageView {...makeProps({ courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c], searchType: 'privat_hobby', autoType: true })} />);
+    expect(screen.getByTestId('autotype-hint-label')).toBeInTheDocument();
+    // Switch buttons for other segments should appear
+    expect(screen.getByTestId('switch-segment-beruflich')).toBeInTheDocument();
+    expect(screen.getByTestId('switch-segment-kinder_jugend')).toBeInTheDocument();
+  });
+
+  it('does NOT render select-bereich (area now uses segment-specific testids in Weitere Filter)', () => {
+    const c = makeCourse('1');
+    render(<SearchPageView {...makeProps({ courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c], searchType: 'beruflich' })} />);
+    expect(document.querySelector('[data-testid="select-bereich"]')).not.toBeInTheDocument();
+  });
+});
+
+// ===================== 10. AUTO-HINT BAR =====================
+describe('Auto-hint bar (separate from segment banner)', () => {
+  it('renders autotype-hint-bar when autoType=true and searchType is set', () => {
+    const c = makeCourse('1');
+    render(<SearchPageView {...makeProps({ courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c], searchType: 'privat_hobby', autoType: true })} />);
+    expect(screen.getByTestId('autotype-hint-bar')).toBeInTheDocument();
+  });
+
+  it('does NOT render autotype-hint-bar when autoType=false', () => {
+    const c = makeCourse('1');
+    render(<SearchPageView {...makeProps({ courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c], searchType: 'privat_hobby', autoType: false })} />);
+    expect(screen.queryByTestId('autotype-hint-bar')).not.toBeInTheDocument();
+  });
+
+  it('does NOT render autotype-hint-bar when no searchType (even if autoType=true)', () => {
+    const c = makeCourse('1');
+    render(<SearchPageView {...makeProps({ courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c], searchType: '', autoType: true })} />);
+    expect(screen.queryByTestId('autotype-hint-bar')).not.toBeInTheDocument();
+  });
+});
+
+// ===================== 11. RESET BUTTON IN CHIP ZONE =====================
+describe('Alle zurücksetzen button in chip zone', () => {
+  it('shows btn-reset-all-chips when a location filter is active', () => {
+    const c = makeCourse('1');
+    render(<SearchPageView {...makeProps({ courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c], selectedLocations: ['Zürich'] })} />);
+    expect(screen.getByTestId('btn-reset-all-chips')).toBeInTheDocument();
+  });
+
+  it('shows btn-reset-all-chips and searchQuery chip when only searchQuery is active', () => {
+    const c = makeCourse('1');
+    render(<SearchPageView {...makeProps({ courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c], searchQuery: 'Yoga' })} />);
+    const chips = screen.getByTestId('filter-chips');
+    expect(chips).toBeInTheDocument();
+    expect(screen.getByTestId('btn-reset-all-chips')).toBeInTheDocument();
+    // The searchQuery chip should display the query text
+    expect(chips).toHaveTextContent('Yoga');
+  });
+
+  it('does NOT show chip container when no filters and no searchQuery', () => {
+    const c = makeCourse('1');
+    render(<SearchPageView {...makeProps({ courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c], searchQuery: '' })} />);
+    // Still no chips if no real filter and no query
+    expect(screen.queryByTestId('filter-chips')).not.toBeInTheDocument();
+  });
+});
+
+// ===================== 12. LEVEL 2 TAXONOMY IN WEITERE FILTER =====================
+describe('Level 2 taxonomy (Fachbereich/Themenwelt/Angebotsbereich) in Weitere Filter', () => {
+  function makeCourseTyped(id, type, area) {
+    return {
+      id, title: `Kurs ${id}`, status: 'published', image_url: null, canton: 'Zürich',
+      instructor_name: 'Trainer', booking_type: 'platform', price: 100,
+      delivery_types: ['presence'],
+      all_categories: [{ category_type: type, category_area: area }],
+      created_at: new Date().toISOString(),
+    };
+  }
+
+  it('shows select-fachbereich (not select-bereich) for beruflich type when area active', () => {
+    const c = makeCourseTyped('1', 'professionell', 'it_digital');
+    render(<SearchPageView {...makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+      searchType: 'beruflich', searchArea: 'it_digital',
+    })} />);
+    expect(document.querySelector('[data-testid="select-fachbereich"]')).toBeInTheDocument();
+    expect(document.querySelector('[data-testid="select-bereich"]')).not.toBeInTheDocument();
+    expect(document.querySelector('[data-testid="select-themenwelt"]')).not.toBeInTheDocument();
+    expect(document.querySelector('[data-testid="select-angebotsbereich"]')).not.toBeInTheDocument();
+  });
+
+  it('shows select-themenwelt for privat_hobby type when area active', () => {
+    const c = makeCourseTyped('2', 'privat', 'yoga_pilates');
+    render(<SearchPageView {...makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+      searchType: 'privat_hobby', searchArea: 'yoga_pilates',
+    })} />);
+    expect(document.querySelector('[data-testid="select-themenwelt"]')).toBeInTheDocument();
+    expect(document.querySelector('[data-testid="select-bereich"]')).not.toBeInTheDocument();
+    expect(document.querySelector('[data-testid="select-fachbereich"]')).not.toBeInTheDocument();
+    expect(document.querySelector('[data-testid="select-angebotsbereich"]')).not.toBeInTheDocument();
+  });
+
+  it('shows select-angebotsbereich for kinder_jugend type when area active', () => {
+    const c = makeCourseTyped('3', 'kinder', 'sport_bewegung');
+    render(<SearchPageView {...makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+      searchType: 'kinder_jugend', searchArea: 'sport_bewegung',
+    })} />);
+    expect(document.querySelector('[data-testid="select-angebotsbereich"]')).toBeInTheDocument();
+    expect(document.querySelector('[data-testid="select-bereich"]')).not.toBeInTheDocument();
+    expect(document.querySelector('[data-testid="select-fachbereich"]')).not.toBeInTheDocument();
+  });
+
+  it('does NOT count area in secondaryFilterCount — area is now a primary filter', () => {
+    const c = makeCourseTyped('1', 'professionell', 'it_digital');
+    render(<SearchPageView {...makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+      searchType: 'beruflich', searchArea: 'it_digital',
+    })} />);
+    // Area moved to primary row — badge must NOT count it
+    const btn = screen.getByTestId('btn-weitere-filter');
+    expect(btn).not.toHaveTextContent('(1)');
+    expect(btn).not.toHaveTextContent('(2)');
+  });
+
+  it('does NOT count specialty in secondaryFilterCount — specialty is a primary filter', () => {
+    const c = makeCourseTyped('1', 'professionell', 'it_digital');
+    render(<SearchPageView {...makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+      searchType: 'beruflich', searchArea: 'it_digital', searchSpecialty: 'Webentwicklung',
+    })} />);
+    // Neither area nor specialty are secondary — badge count stays 0
+    const btn = screen.getByTestId('btn-weitere-filter');
+    expect(btn).not.toHaveTextContent('(1)');
+    expect(btn).not.toHaveTextContent('(2)');
+  });
+
+  it('area select not shown when no courses have areas for the segment', () => {
+    // No courses → filteredCoursesPreCategory is empty → availableAreas = []
+    render(<SearchPageView {...makeProps({
+      courses: [], filteredCourses: [], filteredCoursesPreCategory: [],
+      searchType: 'beruflich', searchArea: '',
+      filterPriceMax: '100', // open Weitere Filter without area
+    })} />);
+    expect(document.querySelector('[data-testid="select-fachbereich"]')).not.toBeInTheDocument();
+  });
+});
+
+// ===================== 13. CASCADE LOGIC IN WEITERE FILTER =====================
+describe('Cascade logic: Fachbereich/Themenwelt/Angebotsbereich → Spezialgebiet → Fokus', () => {
+  // Full taxonomy course helper
+  function makeTaxCourse(id, type, area, specialty, focus) {
+    return {
+      id, title: `Kurs ${id}`, status: 'published', image_url: null, canton: 'Zürich',
+      instructor_name: 'Trainer', booking_type: 'platform', price: 100,
+      delivery_types: ['presence'],
+      all_categories: [{
+        category_type: type,
+        category_area: area,
+        category_specialty_label: specialty || null,
+        category_focus_label: focus || null,
+      }],
+      created_at: new Date().toISOString(),
+    };
+  }
+
+  it('select-specialty is disabled and shows "Zuerst Fachbereich wählen" when no area (beruflich)', () => {
+    const c = makeTaxCourse('1', 'professionell', 'it_digital', 'Webentwicklung', null);
+    render(<SearchPageView {...makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+      searchType: 'beruflich', searchArea: '',
+      // Note: no filterPriceMax needed — taxonomy cascade is in the primary filter bar
+    })} />);
+    const sel = document.querySelector('[data-testid="select-specialty"]');
+    expect(sel).toBeInTheDocument();
+    expect(sel).toBeDisabled();
+    expect(sel.options[0].text).toBe('Zuerst Fachbereich wählen');
+  });
+
+  it('select-specialty is disabled and shows "Zuerst Themenwelt wählen" for privat_hobby', () => {
+    const c = makeTaxCourse('2', 'privat', 'yoga_pilates', 'Yoga', null);
+    render(<SearchPageView {...makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+      searchType: 'privat_hobby', searchArea: '',
+    })} />);
+    const sel = document.querySelector('[data-testid="select-specialty"]');
+    expect(sel).toBeInTheDocument();
+    expect(sel).toBeDisabled();
+    expect(sel.options[0].text).toBe('Zuerst Themenwelt wählen');
+  });
+
+  it('select-specialty is disabled and shows "Zuerst Angebotsbereich wählen" for kinder_jugend', () => {
+    const c = makeTaxCourse('3', 'kinder', 'sport_bewegung', 'Fussball', null);
+    render(<SearchPageView {...makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+      searchType: 'kinder_jugend', searchArea: '',
+    })} />);
+    const sel = document.querySelector('[data-testid="select-specialty"]');
+    expect(sel).toBeInTheDocument();
+    expect(sel).toBeDisabled();
+    expect(sel.options[0].text).toBe('Zuerst Angebotsbereich wählen');
+  });
+
+  it('select-specialty is enabled and shows options after area is selected', () => {
+    const c = makeTaxCourse('1', 'professionell', 'it_digital', 'Webentwicklung', null);
+    render(<SearchPageView {...makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+      searchType: 'beruflich', searchArea: 'it_digital',
+    })} />);
+    const sel = document.querySelector('[data-testid="select-specialty"]');
+    expect(sel).not.toBeDisabled();
+    expect(sel.querySelectorAll('option').length).toBeGreaterThan(1); // default + at least 1 option
+    expect(sel).toHaveTextContent('Webentwicklung');
+  });
+
+  it('select-focus is disabled with "Zuerst Spezialgebiet wählen" when area set but no specialty', () => {
+    const c = makeTaxCourse('1', 'professionell', 'it_digital', 'Webentwicklung', 'Frontend');
+    render(<SearchPageView {...makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+      searchType: 'beruflich', searchArea: 'it_digital', searchSpecialty: '',
+    })} />);
+    const sel = document.querySelector('[data-testid="select-focus"]');
+    expect(sel).toBeInTheDocument();
+    expect(sel).toBeDisabled();
+    expect(sel.options[0].text).toBe('Zuerst Spezialgebiet wählen');
+  });
+
+  it('select-focus is enabled and shows options after specialty is selected', () => {
+    const c = makeTaxCourse('1', 'professionell', 'it_digital', 'Webentwicklung', 'Frontend');
+    render(<SearchPageView {...makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+      searchType: 'beruflich', searchArea: 'it_digital', searchSpecialty: 'Webentwicklung',
+    })} />);
+    const sel = document.querySelector('[data-testid="select-focus"]');
+    expect(sel).not.toBeDisabled();
+    expect(sel).toHaveTextContent('Frontend');
+  });
+
+  it('changing area calls setSearchSpecialty("") and setSearchFocus("")', () => {
+    const setArea = vi.fn();
+    const setSpec = vi.fn();
+    const setFocus = vi.fn();
+    const c = makeTaxCourse('1', 'professionell', 'it_digital', 'Webentwicklung', 'Frontend');
+    render(<SearchPageView {...makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+      searchType: 'beruflich', searchArea: 'it_digital',
+      searchSpecialty: 'Webentwicklung', searchFocus: 'Frontend',
+      setSearchArea: setArea, setSearchSpecialty: setSpec, setSearchFocus: setFocus,
+    })} />);
+    fireEvent.change(document.querySelector('[data-testid="select-fachbereich"]'), { target: { value: '' } });
+    expect(setArea).toHaveBeenCalledWith('');
+    expect(setSpec).toHaveBeenCalledWith('');
+    expect(setFocus).toHaveBeenCalledWith('');
+  });
+
+  it('changing specialty calls setSearchFocus("")', () => {
+    const setSpec = vi.fn();
+    const setFocus = vi.fn();
+    const c = makeTaxCourse('1', 'professionell', 'it_digital', 'Webentwicklung', 'Frontend');
+    render(<SearchPageView {...makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+      searchType: 'beruflich', searchArea: 'it_digital',
+      searchSpecialty: 'Webentwicklung', searchFocus: 'Frontend',
+      setSearchSpecialty: setSpec, setSearchFocus: setFocus,
+    })} />);
+    fireEvent.change(document.querySelector('[data-testid="select-specialty"]'), { target: { value: '' } });
+    expect(setSpec).toHaveBeenCalledWith('');
+    expect(setFocus).toHaveBeenCalledWith('');
+  });
+
+  it('deep link: auto-derives area when spec maps to exactly one area', () => {
+    const setArea = vi.fn();
+    const c = makeTaxCourse('1', 'professionell', 'it_digital', 'Webentwicklung', null);
+    render(<SearchPageView {...makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+      searchType: 'beruflich', searchArea: '',
+      searchSpecialty: 'Webentwicklung',
+      setSearchArea: setArea,
+    })} />);
+    expect(setArea).toHaveBeenCalledWith('it_digital');
+  });
+
+  it('deep link: clears spec when it maps to multiple areas (ambiguous)', () => {
+    const setSpec = vi.fn();
+    const setFocus = vi.fn();
+    const c1 = makeTaxCourse('1', 'professionell', 'it_digital', 'Marketing', null);
+    const c2 = makeTaxCourse('2', 'professionell', 'wirtschaft', 'Marketing', null);
+    render(<SearchPageView {...makeProps({
+      courses: [c1, c2], filteredCourses: [c1, c2], filteredCoursesPreCategory: [c1, c2],
+      searchType: 'beruflich', searchArea: '',
+      searchSpecialty: 'Marketing',
+      setSearchSpecialty: setSpec, setSearchFocus: setFocus,
+    })} />);
+    expect(setSpec).toHaveBeenCalledWith('');
+    expect(setFocus).toHaveBeenCalledWith('');
+  });
+});
+
+// ===================== 15. PRIMARY TAXONOMY + SECONDARY OPERATIONAL FILTERS =====================
+describe('Primary taxonomy visible without Weitere Filter; operational filters in Weitere Filter', () => {
+  function makeTaxC(id, type, area) {
+    return {
+      id, title: `Kurs ${id}`, status: 'published', image_url: null, canton: 'Zürich',
+      instructor_name: 'Trainer', booking_type: 'platform', price: 100,
+      delivery_types: ['presence'],
+      all_categories: [{ category_type: type, category_area: area }],
+      created_at: new Date().toISOString(),
+    };
+  }
+
+  it('select-fachbereich is in DOM without opening Weitere Filter (primary filter)', () => {
+    const c = makeTaxC('1', 'professionell', 'it_digital');
+    render(<SearchPageView {...makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+      searchType: 'beruflich',
+    })} />);
+    expect(document.querySelector('[data-testid="select-fachbereich"]')).toBeInTheDocument();
+  });
+
+  it('select-specialty is in DOM without opening Weitere Filter (primary filter)', () => {
+    // Specialty select renders when there are specialties available for the chosen area
+    const c = {
+      id: '1', title: 'Kurs 1', status: 'published', image_url: null, canton: 'Zürich',
+      instructor_name: 'Trainer', booking_type: 'platform', price: 100,
+      delivery_types: ['presence'],
+      all_categories: [{ category_type: 'professionell', category_area: 'it_digital', category_specialty_label: 'Webentwicklung', category_focus_label: null }],
+      created_at: new Date().toISOString(),
+    };
+    render(<SearchPageView {...makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+      searchType: 'beruflich', searchArea: 'it_digital',
+    })} />);
+    expect(document.querySelector('[data-testid="select-specialty"]')).toBeInTheDocument();
+  });
+
+  it('date inputs are NOT in DOM before opening Weitere Filter', () => {
+    const c = makeTaxC('1', 'professionell', 'it_digital');
+    render(<SearchPageView {...makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+    })} />);
+    expect(document.querySelectorAll('input[type="date"]').length).toBe(0);
+  });
+
+  it('date inputs appear after opening Weitere Filter', () => {
+    const c = makeTaxC('1', 'professionell', 'it_digital');
+    render(<SearchPageView {...makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+    })} />);
+    fireEvent.click(screen.getByTestId('btn-weitere-filter'));
+    expect(document.querySelectorAll('input[type="date"]').length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('badge counts selectedDeliveryTypes as secondary — NOT area', () => {
+    const c = makeTaxC('1', 'professionell', 'it_digital');
+    render(<SearchPageView {...makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+      searchType: 'beruflich', searchArea: 'it_digital',
+      selectedDeliveryTypes: ['presence'],
+    })} />);
+    // delivery is secondary (1), area is primary (not counted)
+    expect(screen.getByTestId('btn-weitere-filter')).toHaveTextContent('(1)');
+  });
+
+  it('badge counts filterDateFrom as one secondary filter', () => {
+    const c = makeTaxC('1', 'professionell', 'it_digital');
+    render(<SearchPageView {...makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+      filterDateFrom: '2026-07-01',
+    })} />);
+    expect(screen.getByTestId('btn-weitere-filter')).toHaveTextContent('(1)');
+  });
+
+  it('badge counts selectedKursart as one secondary filter (privat_hobby)', () => {
+    const c = makeTaxC('1', 'privat', 'yoga_pilates');
+    render(<SearchPageView {...makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+      searchType: 'privat_hobby', selectedKursart: 'Tageskurs',
+    })} />);
+    expect(screen.getByTestId('btn-weitere-filter')).toHaveTextContent('(1)');
+  });
+});
+
+// ===================== 16. PROGRESSIVE MOBILE CASCADE: COMPACT CHIPS =====================
+describe('Progressive mobile cascade: compact chips replace disabled selects', () => {
+  function makeTaxC16(id, type, area, specialty = null, focus = null) {
+    return {
+      id, title: `Kurs ${id}`, status: 'published', image_url: null, canton: 'Zürich',
+      instructor_name: 'Trainer', booking_type: 'platform', price: 100,
+      delivery_types: ['presence'],
+      all_categories: [{ category_type: type, category_area: area, category_specialty_label: specialty, category_focus_label: focus }],
+      created_at: new Date().toISOString(),
+    };
+  }
+
+  it('mobile area select shown when no area chosen (select-fachbereich-m)', () => {
+    const c = makeTaxC16('1', 'professionell', 'it_digital', 'Webentwicklung');
+    render(<SearchPageView {...makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+      searchType: 'beruflich', searchArea: '',
+    })} />);
+    expect(document.querySelector('[data-testid="select-fachbereich-m"]')).toBeInTheDocument();
+    expect(document.querySelector('[data-testid="mobile-area-chip"]')).not.toBeInTheDocument();
+  });
+
+  it('mobile area chip replaces area select when area is chosen', () => {
+    const c = makeTaxC16('1', 'professionell', 'it_digital', 'Webentwicklung');
+    render(<SearchPageView {...makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+      searchType: 'beruflich', searchArea: 'it_digital',
+    })} />);
+    expect(document.querySelector('[data-testid="mobile-area-chip"]')).toBeInTheDocument();
+    expect(document.querySelector('[data-testid="select-fachbereich-m"]')).not.toBeInTheDocument();
+  });
+
+  it('mobile specialty select appears after area is chosen (when specialties exist)', () => {
+    const c = makeTaxC16('1', 'professionell', 'it_digital', 'Webentwicklung');
+    render(<SearchPageView {...makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+      searchType: 'beruflich', searchArea: 'it_digital', searchSpecialty: '',
+    })} />);
+    expect(document.querySelector('[data-testid="select-specialty-m"]')).toBeInTheDocument();
+    expect(document.querySelector('[data-testid="mobile-specialty-chip"]')).not.toBeInTheDocument();
+  });
+
+  it('mobile specialty chip replaces specialty select when specialty is chosen', () => {
+    const c = makeTaxC16('1', 'professionell', 'it_digital', 'Webentwicklung', 'Frontend');
+    render(<SearchPageView {...makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+      searchType: 'beruflich', searchArea: 'it_digital', searchSpecialty: 'Webentwicklung',
+    })} />);
+    expect(document.querySelector('[data-testid="mobile-specialty-chip"]')).toBeInTheDocument();
+    expect(document.querySelector('[data-testid="select-specialty-m"]')).not.toBeInTheDocument();
+  });
+
+  it('mobile focus select appears when specialty chosen and focus options exist', () => {
+    const c = makeTaxC16('1', 'professionell', 'it_digital', 'Webentwicklung', 'Frontend');
+    render(<SearchPageView {...makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+      searchType: 'beruflich', searchArea: 'it_digital', searchSpecialty: 'Webentwicklung',
+    })} />);
+    expect(document.querySelector('[data-testid="select-focus-m"]')).toBeInTheDocument();
+    expect(document.querySelector('[data-testid="mobile-focus-chip"]')).not.toBeInTheDocument();
+  });
+
+  it('no mobile focus select when specialty is set but no focus options exist (FIX 4)', () => {
+    const c = makeTaxC16('1', 'kinder', 'sport_bewegung', 'Fussball', null);
+    render(<SearchPageView {...makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+      searchType: 'kinder_jugend', searchArea: 'sport_bewegung', searchSpecialty: 'Fussball',
+    })} />);
+    expect(document.querySelector('[data-testid="select-focus-m"]')).not.toBeInTheDocument();
+    expect(document.querySelector('[data-testid="mobile-focus-chip"]')).not.toBeInTheDocument();
+    expect(document.querySelector('[data-testid="select-focus"]')).not.toBeInTheDocument();
+  });
+
+  it('Weitere Filter stays closed when only searchQuery is active (q is not a secondary filter)', () => {
+    const c = makeTaxC16('1', 'privat', 'yoga_pilates');
+    render(<SearchPageView {...makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+      searchType: 'privat_hobby', searchQuery: 'Yoga',
+    })} />);
+    // Date inputs live inside secondary panel — if not in DOM, Weitere Filter is closed
+    expect(document.querySelectorAll('input[type="date"]').length).toBe(0);
+  });
+});
+
+// ===================== 14. SEGMENT CONTEXT — SWITCH BUTTONS =====================
+describe('Segment switch from banner', () => {
+  it('clicking switch-segment button calls setSearchType and setAutoType(false)', () => {
+    // autoType is now a prop — no URL mock needed
+    const setType = vi.fn();
+    const setArea = vi.fn();
+    const setSpec = vi.fn();
+    const setFocus = vi.fn();
+    const setAutoTypeFn = vi.fn();
+    const c = makeCourse('1');
+    render(<SearchPageView {...makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+      searchType: 'privat_hobby',
+      autoType: true,
+      setSearchType: setType, setSearchArea: setArea,
+      setSearchSpecialty: setSpec, setSearchFocus: setFocus,
+      setAutoType: setAutoTypeFn,
+    })} />);
+
+    // Should show "Auch in:" hint with switch buttons
+    expect(screen.getByTestId('autotype-hint-label')).toBeInTheDocument();
+
+    // Click beruflich switch button
+    fireEvent.click(screen.getByTestId('switch-segment-beruflich'));
+    expect(setType).toHaveBeenCalledWith('beruflich');
+    expect(setArea).toHaveBeenCalledWith('');
+    expect(setAutoTypeFn).toHaveBeenCalledWith(false);
   });
 });
