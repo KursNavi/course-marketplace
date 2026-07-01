@@ -1,5 +1,6 @@
 import React from 'react';
 import { MapPin, CheckCircle, BookOpen } from 'lucide-react';
+import { formatLocationWithCanton } from '../lib/constants';
 
 /**
  * ProviderCard Component
@@ -61,7 +62,7 @@ export default function ProviderCard({ provider, onClick, segmentConfig }) {
               {(location?.city || location?.canton) && (
                 <span className="flex items-center text-sm text-gray-500">
                   <MapPin className="w-3.5 h-3.5 mr-1" />
-                  {location.city || location.canton}
+                  {formatLocationWithCanton(location)}
                 </span>
               )}
             </div>
