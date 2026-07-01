@@ -505,7 +505,7 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t, isImp
                         {/* NEW FIELDS: Biography & Certificates */}
 
                 <div className="border-t pt-6 mt-6">
-                    <h3 className="text-lg font-bold mb-4 text-dark flex items-center"><User className="w-5 h-5 mr-2 text-primary" /> {t?.lbl_bio || "Über mich / uns (Bio / Anbietervorstellung)"}</h3>
+                    <h3 className="text-lg font-bold mb-4 text-dark flex items-center"><User className="w-5 h-5 mr-2 text-primary" /> {t?.lbl_bio || "Über uns"}</h3>
                     <div className="space-y-6">
                         <div>
                             <textarea
