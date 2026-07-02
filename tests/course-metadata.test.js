@@ -74,6 +74,26 @@ describe('course metadata helpers', () => {
     expect(getNormalizedDeliveryTypes(course)).toEqual(['online_live']);
   });
 
+  it('ignores stale legacy delivery_type column when delivery_types array is present', () => {
+    // Bug: DB has both delivery_types=['self_study'] (new, correct) and delivery_type='presence'
+    // (old column with stale default). The function must not combine both.
+    const course = {
+      delivery_types: ['self_study'],
+      delivery_type: 'presence',  // stale DB default — must be ignored
+      address: 'Online'
+    };
+
+    expect(getNormalizedDeliveryTypes(course)).toEqual(['self_study']);
+  });
+
+  it('falls back to legacy delivery_type when delivery_types array is absent', () => {
+    const course = {
+      delivery_type: 'online_live'
+    };
+
+    expect(getNormalizedDeliveryTypes(course)).toEqual(['online_live']);
+  });
+
   it('uses the most specific synthetic category for legacy detail paths and labels', () => {
     const course = {
       id: '363',

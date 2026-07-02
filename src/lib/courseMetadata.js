@@ -185,12 +185,11 @@ export function getCourseCategoryText(course) {
 
 export function getNormalizedDeliveryTypes(course) {
   const locationTokens = collectLocationTokens(course);
-  const explicit = [
-    ...(Array.isArray(course?.delivery_types) ? course.delivery_types : []),
-    course?.delivery_type
-  ]
-    .map(normalizeDeliveryTypeKey)
-    .filter(Boolean);
+  // Use delivery_types (array) if present; fall back to legacy delivery_type (string) only when absent.
+  // This prevents the stale DB default 'presence' in the old column from poisoning the result.
+  const hasNewField = Array.isArray(course?.delivery_types) && course.delivery_types.length > 0;
+  const rawExplicit = hasNewField ? course.delivery_types : [course?.delivery_type];
+  const explicit = rawExplicit.map(normalizeDeliveryTypeKey).filter(Boolean);
 
   if (explicit.length > 0) {
     const uniqueExplicit = [...new Set(explicit)];
