@@ -1633,6 +1633,19 @@ if (bookingType === 'platform' || locationMode === 'events') {
                     }
                 }
             }
+        } else if (!isAdminImpersonating && activeCourseId && bookingType !== 'platform' && locationMode === 'locations') {
+            // Lead/flex switched to "Feste Standorte": delete any lingering events so the course
+            // reloads in locations mode next time (mode is inferred from whether events exist in DB).
+            const { error: deleteStaleEventsError } = await supabase
+                .from('course_events')
+                .delete()
+                .eq('course_id', activeCourseId);
+            if (deleteStaleEventsError) {
+                console.error(deleteStaleEventsError);
+                showNotification("Fehler beim Bereinigen der Termine: " + deleteStaleEventsError.message);
+                setIsSubmitting(false);
+                return;
+            }
         }
 
         // 7b. Save course_locations (all booking types)
