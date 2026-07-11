@@ -93,8 +93,10 @@ describe('ProviderProfilePage', () => {
 
     render(<ProviderProfilePage t={{}} setView={vi.fn()} setSelectedCourse={vi.fn()} />);
 
-    await waitFor(() => expect(screen.getByText('Anbieter nicht gefunden')).toBeInTheDocument());
-    expect(document.querySelector('meta[name="robots"]')?.content).toBe('noindex,nofollow');
+    await waitFor(() => {
+      expect(screen.getByText('Anbieter nicht gefunden')).toBeInTheDocument();
+      expect(document.querySelector('meta[name="robots"]')?.content).toBe('noindex,nofollow');
+    });
   });
 
   it('opens the course detail when a listed course is clicked', async () => {

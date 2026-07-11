@@ -378,6 +378,31 @@ const CategorySuggestionModal = ({ isOpen, onClose, taxonomy, types, showNotific
     );
 };
 
+// === Zeichenlimits für die Kurseingabe ===
+const COURSE_FIELD_LIMITS = {
+    title: 60,
+    description: 1500,
+    keywords: 200,
+    priceInfo: 60,
+    freeReason: 150,
+    sessionLength: 80,
+    objectives: 1000,
+    prerequisites: 250,
+    scheduleDescription: 80,
+};
+
+// Kleiner Zeichenzähler, der unter Felder angezeigt wird
+const CharCount = ({ value, max }) => {
+    const len = (value || '').length;
+    const over = len > max;
+    const warn = !over && len > max * 0.85;
+    return (
+        <span className={`text-xs ${over ? 'text-red-500 font-semibold' : warn ? 'text-amber-500' : 'text-gray-400'}`}>
+            {len}/{max}
+        </span>
+    );
+};
+
 const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotification, setEditingCourse, isAdminImpersonating = false }) => {
     // Stripe Connect: Auszahlung eingerichtet?
     const payoutReady = user?.stripe_connect_onboarding_complete === true;
@@ -1288,6 +1313,18 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
         if (!keywordsVal.trim()) { window.alert("Bitte gib Suchbegriffe ein. Diese helfen, dass dein Kurs gefunden wird."); return; }
         if (!catType || !catArea || !catSpec) { window.alert("Bitte wählen Sie eine vollständige Kategorie aus."); return; }
 
+        // 1a. Feldlängen prüfen (auch bei bestehenden Kursen beim nächsten Speichern)
+        if (titleVal.length > COURSE_FIELD_LIMITS.title) { window.alert(`Der Titel darf maximal ${COURSE_FIELD_LIMITS.title} Zeichen lang sein (aktuell: ${titleVal.length} Zeichen). Bitte kürze den Titel.`); return; }
+        if (descriptionVal.length > COURSE_FIELD_LIMITS.description) { window.alert(`Die Beschreibung darf maximal ${COURSE_FIELD_LIMITS.description} Zeichen lang sein (aktuell: ${descriptionVal.length} Zeichen).`); return; }
+        if (keywordsVal.length > COURSE_FIELD_LIMITS.keywords) { window.alert(`Die Suchbegriffe dürfen maximal ${COURSE_FIELD_LIMITS.keywords} Zeichen lang sein (aktuell: ${keywordsVal.length} Zeichen).`); return; }
+        if (priceInfo.length > COURSE_FIELD_LIMITS.priceInfo) { window.alert(`Die Preis-Beschreibung darf maximal ${COURSE_FIELD_LIMITS.priceInfo} Zeichen lang sein (aktuell: ${priceInfo.length} Zeichen).`); return; }
+        if (freeReason.length > COURSE_FIELD_LIMITS.freeReason) { window.alert(`Die Begründung für den kostenlosen Kurs darf maximal ${COURSE_FIELD_LIMITS.freeReason} Zeichen lang sein (aktuell: ${freeReason.length} Zeichen).`); return; }
+        if (sessionLength.length > COURSE_FIELD_LIMITS.sessionLength) { window.alert(`«Dauer & Umfang» darf maximal ${COURSE_FIELD_LIMITS.sessionLength} Zeichen lang sein (aktuell: ${sessionLength.length} Zeichen).`); return; }
+        if (objectives.length > COURSE_FIELD_LIMITS.objectives) { window.alert(`Die Lernziele dürfen maximal ${COURSE_FIELD_LIMITS.objectives} Zeichen lang sein (aktuell: ${objectives.length} Zeichen).`); return; }
+        if (prerequisites.length > COURSE_FIELD_LIMITS.prerequisites) { window.alert(`Die Voraussetzungen dürfen maximal ${COURSE_FIELD_LIMITS.prerequisites} Zeichen lang sein (aktuell: ${prerequisites.length} Zeichen).`); return; }
+        const tooLongEvent = events.find(ev => (ev.schedule_description || '').length > COURSE_FIELD_LIMITS.scheduleDescription);
+        if (tooLongEvent) { window.alert(`«Zeit / Details» eines Termins darf maximal ${COURSE_FIELD_LIMITS.scheduleDescription} Zeichen lang sein.`); return; }
+
         // 1b. Payout Validation — Direkt-/Flex-Buchung nur mit Stripe Connect
         if (!payoutReady && bookingType !== 'lead') {
             window.alert("Direktbuchungen und flexible Buchungen sind erst möglich, wenn Sie Ihre Auszahlung eingerichtet haben. Bitte wählen Sie «Anfrage (Lead)» oder richten Sie zuerst Ihre Auszahlung ein.");
@@ -1794,16 +1831,25 @@ if (bookingType === 'platform' || locationMode === 'events') {
                 </div>
                 <div className="space-y-6">
                     <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_title} <span className="text-red-500">*</span></label>
-                        <input required type="text" name="title" value={title} onChange={(e) => { setTitle(e.target.value); markDirty(); }} className="w-full px-4 py-3 text-lg border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+                        <div className="flex justify-between items-baseline mb-1">
+                            <label className="text-sm font-bold text-gray-700">{t.lbl_title} <span className="text-red-500">*</span></label>
+                            <CharCount value={title} max={COURSE_FIELD_LIMITS.title} />
+                        </div>
+                        <input required type="text" name="title" value={title} maxLength={COURSE_FIELD_LIMITS.title} onChange={(e) => { setTitle(e.target.value); markDirty(); }} className="w-full px-4 py-3 text-lg border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
                     </div>
                     <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-1">{t.lbl_description} <span className="text-red-500">*</span></label>
-                        <textarea required name="description" value={description} onChange={(e) => { setDescription(e.target.value); markDirty(); }} rows="6" placeholder="Beschreibe deinen Kurs..." className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary outline-none resize-y block"></textarea>
+                        <div className="flex justify-between items-baseline mb-1">
+                            <label className="text-sm font-bold text-gray-700">{t.lbl_description} <span className="text-red-500">*</span></label>
+                            <CharCount value={description} max={COURSE_FIELD_LIMITS.description} />
+                        </div>
+                        <textarea required name="description" value={description} maxLength={COURSE_FIELD_LIMITS.description} onChange={(e) => { setDescription(e.target.value); markDirty(); }} rows="6" placeholder="Beschreibe deinen Kurs..." className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary outline-none resize-y block"></textarea>
                     </div>
                     <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-1">Suchbegriffe für die Suche <span className="text-red-500">*</span></label>
-                        <input type="text" name="keywords" value={keywords} onChange={(e) => { setKeywords(e.target.value); markDirty(); }} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" placeholder="z.B. Klavier, Musik, Anfänger, Kinder, Zürich" />
+                        <div className="flex justify-between items-baseline mb-1">
+                            <label className="text-sm font-bold text-gray-700">Suchbegriffe für die Suche <span className="text-red-500">*</span></label>
+                            <CharCount value={keywords} max={COURSE_FIELD_LIMITS.keywords} />
+                        </div>
+                        <input type="text" name="keywords" value={keywords} maxLength={COURSE_FIELD_LIMITS.keywords} onChange={(e) => { setKeywords(e.target.value); markDirty(); }} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" placeholder="z.B. Klavier, Musik, Anfänger, Kinder, Zürich" />
                         <p className="text-xs text-gray-500 mt-1">Diese Begriffe helfen, dass dein Kurs über die Suche gefunden wird. Trenne mehrere Begriffe mit Komma.</p>
                     </div>
                     {/* Kursbild */}
@@ -2081,8 +2127,11 @@ if (bookingType === 'platform' || locationMode === 'events') {
                             )}
                         </div>
                         <div>
-                            <label className="block text-sm font-bold text-gray-700 mb-1">Preis-Beschreibung <span className="text-gray-400 font-normal">(optional)</span></label>
-                            <input type="text" value={priceInfo} onChange={(e) => { setPriceInfo(e.target.value); markDirty(); }} placeholder="z.B. CHF 150 pro Person, ab CHF 80, auf Anfrage" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+                            <div className="flex justify-between items-baseline mb-1">
+                                <label className="text-sm font-bold text-gray-700">Preis-Beschreibung <span className="text-gray-400 font-normal">(optional)</span></label>
+                                <CharCount value={priceInfo} max={COURSE_FIELD_LIMITS.priceInfo} />
+                            </div>
+                            <input type="text" value={priceInfo} maxLength={COURSE_FIELD_LIMITS.priceInfo} onChange={(e) => { setPriceInfo(e.target.value); markDirty(); }} placeholder="z.B. CHF 150 pro Person, ab CHF 80, auf Anfrage" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
                             <p className="text-xs text-gray-500 mt-1">Ergänzt oder ersetzt den numerischen Preis auf der Kursseite.</p>
                         </div>
                         {(bookingType === 'platform' || bookingType === 'platform_flex') && (
@@ -2094,8 +2143,11 @@ if (bookingType === 'platform' || locationMode === 'events') {
                         )}
                         {(bookingType === 'platform' || bookingType === 'platform_flex') && price !== '' && Number(price) === 0 && (
                             <div className="md:col-span-2">
-                                <label className="block text-sm font-bold text-gray-700 mb-1">Warum ist dieser Kurs kostenlos? *</label>
-                                <textarea name="freeReason" value={freeReason} onChange={(e) => { setFreeReason(e.target.value); markDirty(); }} placeholder="z.B. Schnupperkurs, Probetraining, ehrenamtliches Angebot…" rows={2} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none resize-none" />
+                                <div className="flex justify-between items-baseline mb-1">
+                                    <label className="text-sm font-bold text-gray-700">Warum ist dieser Kurs kostenlos? *</label>
+                                    <CharCount value={freeReason} max={COURSE_FIELD_LIMITS.freeReason} />
+                                </div>
+                                <textarea name="freeReason" value={freeReason} maxLength={COURSE_FIELD_LIMITS.freeReason} onChange={(e) => { setFreeReason(e.target.value); markDirty(); }} placeholder="z.B. Schnupperkurs, Probetraining, ehrenamtliches Angebot…" rows={2} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none resize-none" />
                             </div>
                         )}
                     </div>
@@ -2253,8 +2305,11 @@ if (bookingType === 'platform' || locationMode === 'events') {
                                                     <input type="date" value={ev.end_date || ''} min={ev.start_date || undefined} onChange={e => updateEvent(i, 'end_date', e.target.value)} className="w-full px-3 py-2 border rounded bg-white focus:ring-2 focus:ring-primary outline-none" />
                                                 </div>
                                                 <div className="md:col-span-2">
-                                                    <label className="text-xs font-bold text-gray-500 uppercase">Zeit / Details (Optional)</label>
-                                                    <input type="text" value={ev.schedule_description} onChange={e => updateEvent(i, 'schedule_description', e.target.value)} placeholder="z.B. Sa & So, 09:00 – 17:00" className="w-full px-3 py-2 border rounded bg-white focus:ring-2 focus:ring-primary outline-none" />
+                                                    <div className="flex justify-between items-baseline">
+                                                        <label className="text-xs font-bold text-gray-500 uppercase">Zeit / Details (Optional)</label>
+                                                        <CharCount value={ev.schedule_description} max={COURSE_FIELD_LIMITS.scheduleDescription} />
+                                                    </div>
+                                                    <input type="text" value={ev.schedule_description} maxLength={COURSE_FIELD_LIMITS.scheduleDescription} onChange={e => updateEvent(i, 'schedule_description', e.target.value)} placeholder="z.B. Sa & So, 09:00 – 17:00" className="w-full px-3 py-2 border rounded bg-white focus:ring-2 focus:ring-primary outline-none" />
                                                 </div>
                                             </div>
                                             {/* Toggle für abweichenden Ort */}
@@ -2341,8 +2396,11 @@ if (bookingType === 'platform' || locationMode === 'events') {
                                                 <input type="date" disabled={isLockedEvent} required value={ev.start_date} onChange={e => updateEvent(originalIndex, 'start_date', e.target.value)} className="w-full px-3 py-2 border rounded bg-white focus:ring-2 focus:ring-primary outline-none disabled:bg-gray-100 disabled:text-gray-500" />
                                             </div>
                                             <div className="md:col-span-2">
-                                                <label className="text-xs font-bold text-gray-500 uppercase">Zeit / Details (Optional)</label>
-                                                <input type="text" disabled={isLockedEvent} value={ev.schedule_description} onChange={e => updateEvent(originalIndex, 'schedule_description', e.target.value)} placeholder="z.B. Sa & So, 09:00 - 17:00" className="w-full px-3 py-2 border rounded bg-white focus:ring-2 focus:ring-primary outline-none disabled:bg-gray-100 disabled:text-gray-500" />
+                                                <div className="flex justify-between items-baseline">
+                                                    <label className="text-xs font-bold text-gray-500 uppercase">Zeit / Details (Optional)</label>
+                                                    <CharCount value={ev.schedule_description} max={COURSE_FIELD_LIMITS.scheduleDescription} />
+                                                </div>
+                                                <input type="text" disabled={isLockedEvent} value={ev.schedule_description} maxLength={COURSE_FIELD_LIMITS.scheduleDescription} onChange={e => updateEvent(originalIndex, 'schedule_description', e.target.value)} placeholder="z.B. Sa & So, 09:00 - 17:00" className="w-full px-3 py-2 border rounded bg-white focus:ring-2 focus:ring-primary outline-none disabled:bg-gray-100 disabled:text-gray-500" />
                                             </div>
                                         </div>
                                         {/* Toggle für Ort */}
@@ -2448,8 +2506,11 @@ if (bookingType === 'platform' || locationMode === 'events') {
                 {showOptionalDetails && (
                     <div className="space-y-4">
                         <div>
-                            <label className="block text-sm font-bold text-gray-700 mb-1">Dauer &amp; Umfang</label>
-                            <input type="text" name="sessionLength" value={sessionLength} onChange={(e) => { setSessionLength(e.target.value); markDirty(); }} placeholder="z.B. 10 Lektionen à 1 Stunde, 1 Wochenende oder 4 Abende à 2 Stunden" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+                            <div className="flex justify-between items-baseline mb-1">
+                                <label className="text-sm font-bold text-gray-700">Dauer &amp; Umfang</label>
+                                <CharCount value={sessionLength} max={COURSE_FIELD_LIMITS.sessionLength} />
+                            </div>
+                            <input type="text" name="sessionLength" value={sessionLength} maxLength={COURSE_FIELD_LIMITS.sessionLength} onChange={(e) => { setSessionLength(e.target.value); markDirty(); }} placeholder="z.B. 10 Lektionen à 1 Stunde, 1 Wochenende oder 4 Abende à 2 Stunden" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
                         </div>
                         <div>
                             <label className="block text-sm font-bold text-gray-700 mb-1">Niveau</label>
@@ -2481,11 +2542,15 @@ if (bookingType === 'platform' || locationMode === 'events') {
                             </div>
                         </div>
                         <div>
-                            <label className="block text-sm font-bold text-gray-700 mb-1">Lernziele</label>
+                            <div className="flex justify-between items-baseline mb-1">
+                                <label className="text-sm font-bold text-gray-700">Lernziele</label>
+                                <CharCount value={objectives} max={COURSE_FIELD_LIMITS.objectives} />
+                            </div>
                             <p className="text-xs text-gray-500 mb-2">Was lernen Teilnehmende in diesem Kurs? Ein Lernziel pro Zeile.</p>
                             <textarea
                                 name="objectives"
                                 value={objectives}
+                                maxLength={COURSE_FIELD_LIMITS.objectives}
                                 onChange={(e) => { setObjectives(e.target.value); markDirty(); }}
                                 rows={3}
                                 placeholder={"z.B. Du kannst nach dem Kurs sicher auf dem Snowboard fahren\nDu kennst die grundlegenden Techniken"}
@@ -2493,10 +2558,14 @@ if (bookingType === 'platform' || locationMode === 'events') {
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-bold text-gray-700 mb-1">Voraussetzungen</label>
+                            <div className="flex justify-between items-baseline mb-1">
+                                <label className="text-sm font-bold text-gray-700">Voraussetzungen</label>
+                                <CharCount value={prerequisites} max={COURSE_FIELD_LIMITS.prerequisites} />
+                            </div>
                             <textarea
                                 name="prerequisites"
                                 value={prerequisites}
+                                maxLength={COURSE_FIELD_LIMITS.prerequisites}
                                 onChange={(e) => { setPrerequisites(e.target.value); markDirty(); }}
                                 rows={2}
                                 placeholder="z.B. Grundkenntnisse in Excel, keine Vorkenntnisse nötig"
