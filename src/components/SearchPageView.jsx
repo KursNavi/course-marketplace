@@ -1185,7 +1185,7 @@ const SearchPageView = ({
                                 </div>
 
                                 {/* Preis */}
-                                <span className="font-heading font-bold text-primary text-xs leading-tight text-right whitespace-nowrap shrink-0">
+                                <span className="font-heading font-bold text-primary text-xs leading-tight text-right max-w-[55%] break-words">
                                     {getPriceLabel(course)}
                                 </span>
                             </div>
