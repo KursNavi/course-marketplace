@@ -1570,3 +1570,156 @@ for (const bereich of Object.values(BEREICH_LANDING_CONFIG)) {
 ---
 
 *Alle Aussagen in diesem Dokument basieren auf verifiziertem Code. Offene Punkte sind als solche gekennzeichnet. SQL-Entwürfe sind vorläufig und wurden nicht ausgeführt.*
+
+---
+
+## Corrections before implementation
+
+**Ergänzt vor Phase-3-Implementierung — 2026-07-14**
+
+Diese Entscheidungen korrigieren oder präzisieren die obige Architektur verbindlich vor der Implementierung.
+
+---
+
+### A. Rollback
+
+Rollback erfolgt ausschliesslich über den späteren Feature-Flag beziehungsweise Legacy-Fallback in `BereichLandingPage.jsx` und `SzenarioArtikelView.jsx`.
+
+**Keine** Rollback-Strategie durch Löschen importierter Datensätze aus `theme_worlds` oder Sub-Tabellen.
+
+Importierte Datensätze bleiben bei einer Rückschaltung auf den Config-Fallback vollständig erhalten.
+
+Das in Abschnitt 22.2 beschriebene «Rollback Schritt 2 (DB): `DELETE FROM theme_worlds`» ist damit ungültig. Stattdessen: Feature-Flag deaktivieren, Datensätze bleiben im System.
+
+---
+
+### B. Prerender-Fehlerverhalten
+
+Während der Übergangsphase (Config-Fallback vorhanden):
+- DB-Fehler im Prerender-Script führen zum Config-Fallback (Abschnitt 20.1 bleibt gültig)
+- `console.warn`, kein Build-Abbruch
+
+Nach Entfernung des Config-Fallbacks (Phase 9):
+- Ein Produktionsbuild **muss** fehlschlagen, wenn publizierte Themenwelten nicht zuverlässig aus der DB gelesen werden können
+- Kein erfolgreicher Build mit stiller leerer Themenweltliste nach Fallback-Entfernung
+- Dieses strengere Fehlerverhalten ist in `prerender-static.mjs` zu implementieren, bevor der Fallback entfernt wird
+
+Abschnitt 20.1 («kein Build-Abbruch») gilt nur für die Übergangsphase. Nach Fallback-Entfernung muss der Build bei Supabase-Ausfall explizit fehlschlagen.
+
+---
+
+### C. Sitemap-Fehlerverhalten
+
+Sitemap-Fehler werden **nicht** still ignoriert.
+
+Verbindliche Anforderungen für die spätere Sitemap-Implementierung (nicht Phase 3):
+- Serverlogs müssen Fehler sichtbar protokollieren (bestehend: `console.warn` genügt für Supabase-Fehler)
+- Sentry oder bestehendes Error-Monitoring einbinden, sobald im Projekt vorhanden
+- Sichere Basis-Sitemap als Fallback: Sitemap ohne Theme-World-URLs bleibt gültig und wird ausgeliefert — kein 500-Fehler wegen fehlender Theme-World-Daten
+- Keine doppelten URLs: Config-basierte `bereichUrls` werden nach vollständiger DB-Migration entfernt; während Übergangsphase Deduplizierung per `Set` wenn nötig
+
+Phase 3 behebt ausschliesslich den `blog`→`articles` Bug. Keine weiteren Sitemap-Änderungen.
+
+---
+
+### D. RLS
+
+Alle sieben neuen Tabellen erhalten in der Migration explizit:
+
+1. `ALTER TABLE ... ENABLE ROW LEVEL SECURITY`
+2. Öffentliche SELECT-Policy ausschliesslich für publizierte Datensätze (`status = 'published'`)
+3. **Keine** INSERT-, UPDATE- oder DELETE-Policy für `anon`
+4. **Keine** allgemeinen Schreib-Policies für normale authentifizierte Nutzer
+5. Service-Role-Zugriff ausschliesslich über serverseitige API-Endpunkte — nie direkt aus dem Browser
+
+Sub-Tabellen (FAQs, Editorial, Specialties, Regions, Trust Items) sind öffentlich lesbar, wenn die zugehörige Themenwelt `status = 'published'` hat.
+
+Szenario-Artikel sind öffentlich lesbar, wenn: eigener `status = 'published'` **und** zugehörige Themenwelt `status = 'published'`.
+
+---
+
+### E. Admin-Authentifizierung
+
+Jeder schreibende API-Endpunkt prüft in dieser Reihenfolge:
+
+1. `Authorization: Bearer <token>` auslesen
+2. Token via `supabaseAdmin.auth.getUser(token)` verifizieren
+3. `profiles.role = 'admin'` prüfen
+4. Erst danach Service-Role-Operationen ausführen
+
+Der bestehende Admin-Helper in `api/admin.js` (Zeilen 61–79) wird als Referenz verwendet. Eine gemeinsame Hilfsfunktion in `api/_lib/theme-world-auth.js` wird für alle neuen Endpunkte extrahiert.
+
+---
+
+### F. Speicherung über mehrere Tabellen
+
+Admin-Oberfläche (Phase 4) wird tabweise speichern. Für Phase 3 gilt:
+
+- Jeder API-Endpunkt ist atomar für seinen Bereich (Sub-Entitäten per vollständigem Listenersatz)
+- Keine atomare Gesamt-Transaktion über alle sieben Tabellen gleichzeitig
+- Publikation erfolgt nach serverseitiger Gesamtvalidierung über einen dedizierten `publish`-Endpunkt
+- Kein «Alles speichern» über mehrere unabhängige Requests mit gemeinsamem Erfolgssignal
+
+---
+
+### G. Deploy Hook
+
+**Implementierung in Phase 3:** ausschliesslich die sichere Hilfsfunktion `api/_lib/deploy-hook.js` und zugehörige Tests.
+
+Verbindliche Eigenschaften:
+- URL aus `VERCEL_DEPLOY_HOOK_URL` (Environment Variable) — nie hardcoded
+- URL **niemals** an den Browser senden
+- URL **niemals** in Logs ausgeben
+- Nur via `POST` aufrufen
+- 5-Sekunden-Timeout
+- Klare Rückgabewerte: `not_configured`, `requested`, `failed`
+- «requested» bedeutet: HTTP-Request akzeptiert — **kein** Nachweis für fertigen Deploy-Build
+
+**Phase 3 löst keinen echten Deploy Hook aus.**
+
+Der Aufruf in den Publish-Endpunkten ist hinter `THEME_WORLD_DEPLOY_ENABLED=true` gesperrt (Default: nicht gesetzt = kein Aufruf). Tests verwenden gemocktes `fetch`.
+
+Fehlende `VERCEL_DEPLOY_HOOK_URL` in Entwicklung und Test ist erlaubt (gibt `not_configured` zurück). Produktion ohne konfigurierte URL erzeugt eine sichtbare Warnung im Log.
+
+---
+
+### H. Statusmodell (Korrektur zu Abschnitt 6)
+
+Die Entwürfe in Abschnitt 6 verwenden `is_published BOOLEAN` und `is_active BOOLEAN`. Diese werden durch ein sauberes Statusmodell ersetzt:
+
+**theme_worlds und theme_world_scenarios:**
+```
+status TEXT NOT NULL DEFAULT 'draft'
+  CHECK (status IN ('draft', 'published', 'archived'))
+published_at TIMESTAMPTZ  — gesetzt beim ersten Publish, nie zurückgesetzt
+```
+
+**Deploy-Status (getrennt vom redaktionellen Status):**
+```
+deploy_status TEXT NOT NULL DEFAULT 'not_requested'
+  CHECK (deploy_status IN ('not_requested', 'requested', 'failed'))
+deploy_requested_at TIMESTAMPTZ
+```
+
+**Sub-Tabellen** (FAQs, Editorial, Specialties, Regions, Trust Items) behalten `is_active BOOLEAN DEFAULT true` — sie haben keinen eigenständigen Publikations-Lifecycle.
+
+---
+
+### I. Segment-Normalisierung (Korrektur zu Abschnitt 6.1)
+
+`type_key` wird **nicht** in der Datenbank gespeichert. Es ist ein derivierter Wert und kann im API-Layer aus `url_segment` berechnet werden (`privat-hobby` → `privat_hobby`).
+
+Die DB speichert:
+- `db_segment TEXT` — kanonischer Datenbankwert: `professionell`, `privat`, `kinder`
+- `url_segment TEXT` — URL-Segment: `beruflich`, `privat-hobby`, `kinder-jugend`
+
+Ein CHECK-Constraint stellt Konsistenz sicher:
+```sql
+CONSTRAINT theme_worlds_segment_consistency CHECK (
+  (db_segment = 'professionell' AND url_segment = 'beruflich') OR
+  (db_segment = 'privat'        AND url_segment = 'privat-hobby') OR
+  (db_segment = 'kinder'        AND url_segment = 'kinder-jugend')
+)
+```
+
+Inkonsistente Werte sind dadurch auf DB-Ebene ausgeschlossen.
