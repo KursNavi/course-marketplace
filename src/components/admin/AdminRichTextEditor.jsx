@@ -84,12 +84,35 @@ function Sep() {
 // Link-Panel
 // ---------------------------------------------------------------------------
 
+/**
+ * Prüft ob ein URL-String ein unsicheres Protokoll enthält.
+ * Blockiert javascript:, data: und vbscript: URLs (XSS-Prävention).
+ * Server-seitiges Sanitizing bleibt zusätzlich verbindlich.
+ *
+ * @param {string} rawUrl
+ * @returns {boolean}
+ */
+function isUnsafeHref(rawUrl) {
+  const lower = rawUrl.trim().toLowerCase().replace(/\s+/g, '');
+  return (
+    lower.startsWith('javascript:') ||
+    lower.startsWith('data:') ||
+    lower.startsWith('vbscript:')
+  );
+}
+
 function LinkPanel({ mode, onClose, onInsert }) {
   const [text, setText] = useState('');
   const [url, setUrl] = useState('');
+  const [urlError, setUrlError] = useState('');
 
   const handleInsert = () => {
     if (!url.trim()) return;
+    if (isUnsafeHref(url)) {
+      setUrlError('Ungültige URL: javascript:, data: und vbscript: sind nicht erlaubt.');
+      return;
+    }
+    setUrlError('');
     const href = mode === 'internal'
       ? (url.startsWith('/') ? url : `/${url}`)
       : url;
@@ -124,11 +147,17 @@ function LinkPanel({ mode, onClose, onInsert }) {
       <input
         type={isInternal ? 'text' : 'url'}
         placeholder={placeholder}
-        className="p-1.5 text-sm border rounded flex-grow font-mono"
+        className={`p-1.5 text-sm border rounded flex-grow font-mono ${urlError ? 'border-red-400' : ''}`}
         value={url}
-        onChange={(e) => setUrl(e.target.value)}
+        onChange={(e) => { setUrl(e.target.value); if (urlError) setUrlError(''); }}
         onKeyDown={handleKeyDown}
+        aria-describedby={urlError ? 'link-url-error' : undefined}
       />
+      {urlError && (
+        <span id="link-url-error" className="w-full text-xs text-red-600 -mt-1" role="alert">
+          {urlError}
+        </span>
+      )}
       <button
         type="button"
         onClick={handleInsert}

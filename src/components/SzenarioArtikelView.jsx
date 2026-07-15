@@ -106,8 +106,14 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
             }
           }
         }
-      } catch (_) {
-        // Unerwarteter Fehler → Legacy bleibt aktiv
+      } catch (err) {
+        // Unerwarteter Fehler → Legacy bleibt aktiv (kein setState nötig)
+        if (import.meta.env.DEV) {
+          console.warn(
+            '[SzenarioArtikelView] Pilot-Ladevorgang fehlgeschlagen, Legacy-Fallback aktiv:',
+            err?.message,
+          );
+        }
       }
     })();
 

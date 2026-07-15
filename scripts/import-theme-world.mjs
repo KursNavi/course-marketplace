@@ -312,50 +312,71 @@ function assertIsLocalSupabase(url) {
 }
 
 // ---------------------------------------------------------------------------
-// Lokaler Import
+// Lokaler Import — Atomarer Modus via PostgreSQL-RPC
 // ---------------------------------------------------------------------------
 
-async function applyLocal(data) {
-  // .env.local lesen für lokale Variablen
-  let supabaseUrl = process.env.SUPABASE_LOCAL_URL || process.env.VITE_SUPABASE_URL;
-  let supabaseKey =
-    process.env.SUPABASE_LOCAL_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+/**
+ * Führt den Import atomar über die PostgreSQL-Funktion import_theme_world_atomic aus.
+ * Benötigt: Migration 20260715_import_theme_world_atomic.sql muss angewendet sein.
+ *
+ * Atomarität: Die PostgreSQL-Funktion läuft in einer impliziten Transaktion.
+ * Bei Fehler werden alle Änderungen vollständig zurückgerollt.
+ *
+ * Status-Schutz: Bereits publizierte Einträge behalten ihren Status.
+ *
+ * @param {object} supabase - Supabase-Client (Service-Role)
+ * @param {object} data     - Importdaten
+ * @returns {Promise<{themeWorldId: string, result: object}>}
+ * @throws bei RPC-Fehler oder wenn Funktion nicht gefunden
+ */
+async function applyAtomic(supabase, data) {
+  console.log('\n[Atomar] Rufe import_theme_world_atomic() auf...');
+  console.log('  Alle 7 Tabellen werden in einer PostgreSQL-Transaktion geschrieben.');
+  console.log('  Bei Fehler: vollständiger Rollback ohne Datenrest in der DB.');
 
-  // Fallback auf .env.local
-  if (!supabaseUrl || !supabaseKey) {
-    try {
-      const envPath = resolve(PROJECT_ROOT, '.env.local');
-      if (existsSync(envPath)) {
-        const envContent = readFileSync(envPath, 'utf-8');
-        for (const line of envContent.split('\n')) {
-          const [k, ...vs] = line.split('=');
-          const v = vs.join('=').trim().replace(/^["']|["']$/g, '');
-          if (k?.trim() === 'VITE_SUPABASE_URL' && !supabaseUrl) supabaseUrl = v;
-          if (
-            (k?.trim() === 'SUPABASE_SERVICE_ROLE_KEY' ||
-              k?.trim() === 'SUPABASE_LOCAL_SERVICE_KEY') &&
-            !supabaseKey
-          ) {
-            supabaseKey = v;
-          }
-        }
-      }
-    } catch (_) {
-      // .env.local nicht vorhanden — ignorieren
+  const { data: result, error } = await supabase.rpc('import_theme_world_atomic', {
+    p_data: data,
+  });
+
+  if (error) {
+    // Spezialfall: Funktion existiert noch nicht (Migration nicht angewendet)
+    if (
+      error.code === 'PGRST202' ||
+      error.message?.includes('Could not find the function') ||
+      error.message?.includes('does not exist')
+    ) {
+      throw Object.assign(new Error('RPC_FUNCTION_NOT_FOUND'), { isRpcMissing: true });
     }
+    throw new Error(`import_theme_world_atomic fehlgeschlagen: ${error.message}`);
   }
 
-  assertIsLocalSupabase(supabaseUrl);
-
-  if (!supabaseKey) {
-    throw new Error(
-      'SUPABASE_SERVICE_ROLE_KEY (oder SUPABASE_LOCAL_SERVICE_KEY) ist nicht gesetzt.\n' +
-        'Für den lokalen Import wird der Service-Role-Key der lokalen Supabase benötigt.'
-    );
+  if (!result?.success) {
+    throw new Error(`import_theme_world_atomic: Unerwartete Antwort: ${JSON.stringify(result)}`);
   }
 
-  console.log(`\nVerbinde mit lokaler Supabase: ${supabaseUrl}`);
-  const supabase = createClient(supabaseUrl, supabaseKey);
+  return { themeWorldId: result.theme_world_id, result };
+}
+
+/**
+ * Sequenzieller Fallback-Import (NICHT atomar).
+ *
+ * ⚠  WARNUNG: Diese Abfolge ist NICHT transaktional. Falls ein Schritt fehlschlägt,
+ *    können bereits geschriebene Daten in der Datenbank verbleiben.
+ *    Nur als Fallback verwenden wenn die RPC-Funktion fehlt.
+ *
+ * ⚠  STATUS-HINWEIS: Bei bestehendem Eintrag (Upsert) wird der status-Wert aus der
+ *    Importdatei geschrieben. Bereits publizierte Einträge können unbeabsichtigt
+ *    auf 'draft' zurückgesetzt werden. Verwende --apply nur mit frischer lokaler DB
+ *    oder nach Sicherheitsabklärung.
+ *
+ * @param {object} supabase - Supabase-Client
+ * @param {object} data     - Importdaten
+ */
+async function applySequential(supabase, data) {
+  console.warn('\n⚠  WARNUNG: Verwende sequenziellen Fallback-Import (NICHT atomar).');
+  console.warn('   Ursache: import_theme_world_atomic() nicht gefunden.');
+  console.warn('   Lösung:  Migration 20260715_import_theme_world_atomic.sql anwenden.');
+  console.warn('   Risiko:  Teilimport bei Fehler möglich. Nur auf frischer lokaler DB sicher.');
 
   const tw = data.theme_world;
   const scenarios = data.scenarios || [];
@@ -421,7 +442,7 @@ async function applyLocal(data) {
     console.log(`  ✓ [${i + 1}/${scenarios.length}] ${s.slug}`);
   }
 
-  // --- FAQs (atomischer Replace) ---
+  // --- FAQs ---
   console.log('\n[3/8] Replace theme_world_faqs...');
   await supabase.from('theme_world_faqs').delete().eq('theme_world_id', themeWorldId);
   if (data.faqs?.length) {
@@ -514,16 +535,88 @@ async function applyLocal(data) {
   }
   console.log(`  ✓ ${data.trust_items?.length || 0} Trust Items`);
 
-  console.log('\n[8/8] Import abgeschlossen.');
-  console.log(`\n✓ Sport & Fitness Themenwelt erfolgreich in lokale Supabase importiert.`);
+  console.log('\n[8/8] Sequenzieller Import abgeschlossen (⚠ nicht atomar).');
+  return { themeWorldId };
+}
+
+async function applyLocal(data) {
+  // .env.local lesen für lokale Variablen
+  let supabaseUrl = process.env.SUPABASE_LOCAL_URL || process.env.VITE_SUPABASE_URL;
+  let supabaseKey =
+    process.env.SUPABASE_LOCAL_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  // Fallback auf .env.local
+  if (!supabaseUrl || !supabaseKey) {
+    try {
+      const envPath = resolve(PROJECT_ROOT, '.env.local');
+      if (existsSync(envPath)) {
+        const envContent = readFileSync(envPath, 'utf-8');
+        for (const line of envContent.split('\n')) {
+          const [k, ...vs] = line.split('=');
+          const v = vs.join('=').trim().replace(/^["']|["']$/g, '');
+          if (k?.trim() === 'VITE_SUPABASE_URL' && !supabaseUrl) supabaseUrl = v;
+          if (
+            (k?.trim() === 'SUPABASE_SERVICE_ROLE_KEY' ||
+              k?.trim() === 'SUPABASE_LOCAL_SERVICE_KEY') &&
+            !supabaseKey
+          ) {
+            supabaseKey = v;
+          }
+        }
+      }
+    } catch (_) {
+      // .env.local nicht vorhanden — ignorieren
+    }
+  }
+
+  assertIsLocalSupabase(supabaseUrl);
+
+  if (!supabaseKey) {
+    throw new Error(
+      'SUPABASE_SERVICE_ROLE_KEY (oder SUPABASE_LOCAL_SERVICE_KEY) ist nicht gesetzt.\n' +
+        'Für den lokalen Import wird der Service-Role-Key der lokalen Supabase benötigt.'
+    );
+  }
+
+  console.log(`\nZiel: ${supabaseUrl} (lokal bestätigt)`);
+  const supabase = createClient(supabaseUrl, supabaseKey);
+
+  // Bevorzugter Pfad: Atomarer Import via PostgreSQL-RPC
+  try {
+    const { themeWorldId, result } = await applyAtomic(supabase, data);
+    console.log('\n✓ Atomarer Import erfolgreich abgeschlossen.');
+    console.log(`  Themenwelt-ID:        ${themeWorldId}`);
+    console.log(`  Szenarien:            ${result.scenarios_processed}`);
+    console.log(`  FAQs:                 ${result.faqs_replaced}`);
+    console.log(`  Editorial Sections:   ${result.editorial_sections_replaced}`);
+    console.log(`  Specialties:          ${result.specialties_replaced}`);
+    console.log(`  Regionen:             ${result.regions_replaced}`);
+    console.log(`  Trust Items:          ${result.trust_items_replaced}`);
+    console.log(`\n  Status: DRAFT — muss manuell auf "published" gesetzt werden.`);
+    console.log(
+      `  Feature-Flag: VITE_THEME_WORLD_PILOT_KEYS=${data.theme_world.key}`
+    );
+    return;
+  } catch (rpcErr) {
+    if (!rpcErr.isRpcMissing) {
+      // Echter Fehler in der RPC-Funktion — nicht auf sequenziell ausweichen
+      throw rpcErr;
+    }
+    // Funktion fehlt → Fallback mit klarer Warnung
+    console.warn('\n⚠  import_theme_world_atomic() nicht gefunden.');
+    console.warn('   Bitte Migration anwenden: supabase/migrations/20260715_import_theme_world_atomic.sql');
+    console.warn('   Fahre mit nicht-atomarem sequenziellem Import fort...\n');
+  }
+
+  // Fallback: Sequenzieller Import (nicht atomar)
+  const { themeWorldId } = await applySequential(supabase, data);
+  console.log(`\n✓ Fallback-Import abgeschlossen (⚠ nicht atomar).`);
   console.log(`  Themenwelt-ID: ${themeWorldId}`);
   console.log(`  Status: DRAFT (muss manuell auf "published" gesetzt werden)`);
   console.log(
-    `\nHinweis: In Phase 5 ist die Themenwelt im Status "draft" und nur lokal sichtbar.`
+    `\nHinweis: Wende die Migration 20260715_import_theme_world_atomic.sql an`
   );
-  console.log(
-    `  Das Feature-Flag VITE_THEME_WORLD_PILOT_KEYS=sport_fitness_beruf muss aktiviert werden.`
-  );
+  console.log(`  und führe den Import erneut aus für echte Atomarität.`);
 }
 
 // ---------------------------------------------------------------------------
