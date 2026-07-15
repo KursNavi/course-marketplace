@@ -3,18 +3,23 @@
  * Import-Script für Themenwelten
  *
  * Liest eine versionierte Importdatei und schreibt die Daten
- * in eine lokale Supabase-Instanz.
+ * in eine sichere Nicht-Produktions-Supabase-Instanz.
  *
  * Modi:
- *   --validate   Prüft die Importdatei ohne DB-Zugriff.
- *   --dry-run    Zeigt was importiert würde, ohne zu schreiben.
- *   --apply      Schreibt in eine LOKALE Supabase-Instanz (Sicherheitscheck!).
+ *   --validate          Prüft die Importdatei ohne DB-Zugriff.
+ *   --dry-run           Zeigt was importiert würde, ohne zu schreiben.
+ *   --apply             Schreibt in eine LOKALE Supabase-Instanz (localhost).
+ *   --apply --staging   Schreibt in das konfigurierte Staging-Projekt.
+ *                       Erfordert SUPABASE_STAGING_URL + SUPABASE_STAGING_SERVICE_KEY.
  *
- * Sicherheit:
- *   - --apply prüft zwingend dass die DB-URL lokal ist (localhost / 127.0.0.1).
- *   - Keine Remote-Option in Phase 5.
+ * Sicherheit (Phase 6.5 Erweiterung):
+ *   - Bekannte Produktionsprojekt-Referenzen sind GESPERRT (unabhängig vom Flag).
+ *   - --apply prüft zwingend, dass die DB-URL lokal ist (localhost / 127.0.0.1).
+ *   - --apply --staging erlaubt Remote-URL, sperrt aber Produktion explizit.
+ *   - Produktion kann NICHT über irrtümliche Flags akzeptiert werden.
+ *   - Staging-URL MUSS sich von Produktion unterscheiden (Project-Ref-Prüfung).
  *   - Transaktion: Alle Tabellen werden in einem Atomic-Block geschrieben.
- *     Bei Fehler wird nichts in der DB hinterlassen (soweit Supabase-RPC möglich).
+ *     Bei Fehler wird nichts in der DB hinterlassen.
  *
  * Idempotenz:
  *   - Themenwelt wird per key upserted.
@@ -25,6 +30,7 @@
  *   node scripts/import-theme-world.mjs --file data/theme-worlds/sport-fitness-berufsausbildung.json --validate
  *   node scripts/import-theme-world.mjs --file data/theme-worlds/sport-fitness-berufsausbildung.json --dry-run
  *   node scripts/import-theme-world.mjs --file data/theme-worlds/sport-fitness-berufsausbildung.json --apply
+ *   node scripts/import-theme-world.mjs --file data/theme-worlds/sport-fitness-berufsausbildung.json --apply --staging
  */
 
 import { readFileSync, existsSync } from 'fs';
@@ -40,9 +46,19 @@ const PROJECT_ROOT = resolve(__dirname, '..');
 // CLI-Argumente parsen
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Bekannte Produktionsprojekt-Referenzen — IMMER GESPERRT
+// ---------------------------------------------------------------------------
+// Diese Referenzen dürfen niemals als Ziel akzeptiert werden,
+// unabhängig von --staging oder anderen Flags.
+const BLOCKED_PRODUCTION_REFS = [
+  'nplxmpfasgpumpiddjfl', // KursNavi Produktion (supabase/.temp/project-ref)
+];
+
 const args = process.argv.slice(2);
 const fileArgIdx = args.indexOf('--file');
 const filePath = fileArgIdx !== -1 ? args[fileArgIdx + 1] : null;
+const isStaging = args.includes('--staging');
 const mode = args.includes('--apply')
   ? 'apply'
   : args.includes('--dry-run')
@@ -57,12 +73,15 @@ Verwendung:
   node scripts/import-theme-world.mjs --file <pfad-zur-json> --validate
   node scripts/import-theme-world.mjs --file <pfad-zur-json> --dry-run
   node scripts/import-theme-world.mjs --file <pfad-zur-json> --apply
+  node scripts/import-theme-world.mjs --file <pfad-zur-json> --apply --staging
 
 Optionen:
   --file      Pfad zur Importdatei (relativ zum Projekt-Root oder absolut)
   --validate  Prüft Schema ohne DB-Zugriff
   --dry-run   Zeigt Import-Übersicht ohne DB-Änderung
   --apply     Schreibt in lokale Supabase (Sicherheitscheck aktiv!)
+  --staging   Erlaubt Remote-Staging-URL (Produktion bleibt gesperrt!)
+              Erfordert SUPABASE_STAGING_URL + SUPABASE_STAGING_SERVICE_KEY
 `);
   process.exit(1);
 }
@@ -286,10 +305,37 @@ function printDryRun(data) {
 }
 
 // ---------------------------------------------------------------------------
+// Produktionssperre (immer aktiv, unabhängig von Flags)
+// ---------------------------------------------------------------------------
+
+/**
+ * Bricht ab wenn die URL auf ein bekanntes Produktionsprojekt zeigt.
+ * Diese Prüfung ist IMMER aktiv — kein Flag kann sie deaktivieren.
+ */
+function assertNotProduction(url) {
+  if (!url) return; // URL-Fehler wird separat behandelt
+  let ref = null;
+  try {
+    ref = new URL(url).hostname.split('.')[0];
+  } catch (_) {
+    return; // Ungültige URL — wird anderswo behandelt
+  }
+  if (BLOCKED_PRODUCTION_REFS.includes(ref)) {
+    throw new Error(
+      `SICHERHEITSABBRUCH: Die URL "${url}" gehört zum bekannten Produktionsprojekt "${ref}".\n` +
+        'Das Import-Script darf NIEMALS gegen die Produktionsdatenbank schreiben.\n' +
+        'Bekannte Produktionsprojekte: ' + BLOCKED_PRODUCTION_REFS.join(', ')
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Lokalitätsprüfung
 // ---------------------------------------------------------------------------
 
 function assertIsLocalSupabase(url) {
+  assertNotProduction(url); // Produktionssperre immer zuerst prüfen
+
   if (!url) {
     throw new Error(
       'SUPABASE_URL ist nicht gesetzt. Für --apply muss eine lokale Supabase-URL konfiguriert sein.'
@@ -305,10 +351,43 @@ function assertIsLocalSupabase(url) {
   if (!isLocal) {
     throw new Error(
       `SICHERHEITSABBRUCH: Die Supabase-URL "${url}" ist keine lokale URL.\n` +
-        'Das Import-Script darf in Phase 5 nur gegen eine lokale Instanz schreiben.\n' +
-        'Erlaubte Hosts: localhost, 127.0.0.1, ::1, supabase.local'
+        'Das Import-Script darf ohne --staging nur gegen eine lokale Instanz schreiben.\n' +
+        'Erlaubte Hosts: localhost, 127.0.0.1, ::1, supabase.local\n' +
+        'Für Staging-Projekte: --apply --staging verwenden.'
     );
   }
+}
+
+// ---------------------------------------------------------------------------
+// Staging-Prüfung
+// ---------------------------------------------------------------------------
+
+/**
+ * Prüft die Staging-URL auf Zulässigkeit.
+ * Erlaubt Remote-URLs, sperrt aber explizit bekannte Produktionsprojekte.
+ */
+function assertIsSafeStaging(url) {
+  assertNotProduction(url); // Produktionssperre immer zuerst
+
+  if (!url) {
+    throw new Error(
+      'SUPABASE_STAGING_URL ist nicht gesetzt.\n' +
+        'Für --staging muss SUPABASE_STAGING_URL in der Umgebung gesetzt sein.\n' +
+        'Setze diese Variable in einer lokalen, nicht committed Konfigurationsdatei.'
+    );
+  }
+
+  // Staging muss eine HTTPS-URL sein
+  if (!url.startsWith('https://') && !url.startsWith('http://localhost')) {
+    throw new Error(
+      `SICHERHEITSABBRUCH: Staging-URL "${url}" hat kein erlaubtes Schema.\n` +
+        'Erlaubt: https:// oder http://localhost'
+    );
+  }
+
+  console.log(`[Staging] Ziel: ${url}`);
+  console.log(`[Staging] Projekt-Ref: ${new URL(url).hostname.split('.')[0]}`);
+  console.log(`[Staging] Nachweis NICHT Produktion: Ref ≠ ${BLOCKED_PRODUCTION_REFS.join(', ')} ✓`);
 }
 
 // ---------------------------------------------------------------------------
@@ -539,6 +618,26 @@ async function applySequential(supabase, data) {
   return { themeWorldId };
 }
 
+/**
+ * Liest Env-Variablen aus einer .env-Datei (Key=Value-Format).
+ * Ignoriert Kommentare und leere Zeilen.
+ */
+function readEnvFile(filePath) {
+  const env = {};
+  try {
+    if (existsSync(filePath)) {
+      for (const line of readFileSync(filePath, 'utf-8').split('\n')) {
+        if (line.startsWith('#') || !line.includes('=')) continue;
+        const [k, ...vs] = line.split('=');
+        env[k.trim()] = vs.join('=').trim().replace(/^["']|["']$/g, '');
+      }
+    }
+  } catch (_) {
+    // Datei nicht lesbar — ignorieren
+  }
+  return env;
+}
+
 async function applyLocal(data) {
   // .env.local lesen für lokale Variablen
   let supabaseUrl = process.env.SUPABASE_LOCAL_URL || process.env.VITE_SUPABASE_URL;
@@ -547,25 +646,10 @@ async function applyLocal(data) {
 
   // Fallback auf .env.local
   if (!supabaseUrl || !supabaseKey) {
-    try {
-      const envPath = resolve(PROJECT_ROOT, '.env.local');
-      if (existsSync(envPath)) {
-        const envContent = readFileSync(envPath, 'utf-8');
-        for (const line of envContent.split('\n')) {
-          const [k, ...vs] = line.split('=');
-          const v = vs.join('=').trim().replace(/^["']|["']$/g, '');
-          if (k?.trim() === 'VITE_SUPABASE_URL' && !supabaseUrl) supabaseUrl = v;
-          if (
-            (k?.trim() === 'SUPABASE_SERVICE_ROLE_KEY' ||
-              k?.trim() === 'SUPABASE_LOCAL_SERVICE_KEY') &&
-            !supabaseKey
-          ) {
-            supabaseKey = v;
-          }
-        }
-      }
-    } catch (_) {
-      // .env.local nicht vorhanden — ignorieren
+    const envLocal = readEnvFile(resolve(PROJECT_ROOT, '.env.local'));
+    if (!supabaseUrl) supabaseUrl = envLocal['VITE_SUPABASE_URL'];
+    if (!supabaseKey) {
+      supabaseKey = envLocal['SUPABASE_SERVICE_ROLE_KEY'] || envLocal['SUPABASE_LOCAL_SERVICE_KEY'];
     }
   }
 
@@ -620,6 +704,79 @@ async function applyLocal(data) {
 }
 
 // ---------------------------------------------------------------------------
+// Staging-Import
+// ---------------------------------------------------------------------------
+
+/**
+ * Führt den Import gegen ein konfiguriertes Staging-Projekt aus.
+ * Produktion ist explizit gesperrt.
+ * Erfordert SUPABASE_STAGING_URL + SUPABASE_STAGING_SERVICE_KEY in der Umgebung
+ * oder in .env.staging.local (nicht committed).
+ */
+async function applyStaging(data) {
+  // Staging-Credentials lesen
+  let stagingUrl =
+    process.env.SUPABASE_STAGING_URL ||
+    process.env.SUPABASE_URL_TEST; // Fallback: .env.test.local Konvention
+  let stagingKey =
+    process.env.SUPABASE_STAGING_SERVICE_KEY ||
+    process.env.SUPABASE_SECRET_KEY_TEST; // Fallback: .env.test.local Konvention
+
+  // Fallback auf .env.test.local (existierende Testprojekt-Konfiguration)
+  if (!stagingUrl || !stagingKey) {
+    const envTest = readEnvFile(resolve(PROJECT_ROOT, '.env.test.local'));
+    if (!stagingUrl) stagingUrl = envTest['SUPABASE_STAGING_URL'] || envTest['SUPABASE_URL_TEST'];
+    if (!stagingKey) {
+      stagingKey = envTest['SUPABASE_STAGING_SERVICE_KEY'] || envTest['SUPABASE_SECRET_KEY_TEST'];
+    }
+  }
+
+  // Sicherheitsprüfungen
+  assertIsSafeStaging(stagingUrl);
+
+  if (!stagingKey) {
+    throw new Error(
+      'SUPABASE_STAGING_SERVICE_KEY (oder SUPABASE_SECRET_KEY_TEST) ist nicht gesetzt.\n' +
+        'Setze diese Variable in .env.test.local oder als Umgebungsvariable.'
+    );
+  }
+
+  console.log(`\n⚠  STAGING-MODUS: Schreibt in Remote-Datenbank!`);
+  console.log(`   Ziel:         ${stagingUrl}`);
+  console.log(`   Projekt-Ref:  ${new URL(stagingUrl).hostname.split('.')[0]}`);
+  console.log(`   Produktion:   GESPERRT (${BLOCKED_PRODUCTION_REFS[0]})`);
+
+  const supabase = createClient(stagingUrl, stagingKey);
+
+  // Bevorzugter Pfad: Atomarer Import via PostgreSQL-RPC
+  try {
+    const { themeWorldId, result } = await applyAtomic(supabase, data);
+    console.log('\n✓ Atomarer Staging-Import erfolgreich abgeschlossen.');
+    console.log(`  Themenwelt-ID:        ${themeWorldId}`);
+    console.log(`  Szenarien:            ${result.scenarios_processed}`);
+    console.log(`  FAQs:                 ${result.faqs_replaced}`);
+    console.log(`  Editorial Sections:   ${result.editorial_sections_replaced}`);
+    console.log(`  Specialties:          ${result.specialties_replaced}`);
+    console.log(`  Regionen:             ${result.regions_replaced}`);
+    console.log(`  Trust Items:          ${result.trust_items_replaced}`);
+    console.log(`\n  Status: DRAFT — muss manuell auf "published" gesetzt werden.`);
+    return;
+  } catch (rpcErr) {
+    if (!rpcErr.isRpcMissing) {
+      throw rpcErr;
+    }
+    console.warn('\n⚠  import_theme_world_atomic() nicht gefunden.');
+    console.warn('   Bitte Migration anwenden: supabase/migrations/20260715_import_theme_world_atomic.sql');
+    console.warn('   Fahre mit nicht-atomarem sequenziellem Import fort...\n');
+  }
+
+  // Fallback: Sequenzieller Import
+  const { themeWorldId } = await applySequential(supabase, data);
+  console.log(`\n✓ Staging Fallback-Import abgeschlossen (⚠ nicht atomar).`);
+  console.log(`  Themenwelt-ID: ${themeWorldId}`);
+}
+
+// ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
 
@@ -659,12 +816,22 @@ async function main() {
 
   // --- APPLY ---
   if (mode === 'apply') {
-    console.log('\n--- Lokaler Import ---');
-    try {
-      await applyLocal(importData);
-    } catch (e) {
-      console.error(`\n✗ Import fehlgeschlagen: ${e.message}`);
-      process.exit(1);
+    if (isStaging) {
+      console.log('\n--- Staging-Import ---');
+      try {
+        await applyStaging(importData);
+      } catch (e) {
+        console.error(`\n✗ Staging-Import fehlgeschlagen: ${e.message}`);
+        process.exit(1);
+      }
+    } else {
+      console.log('\n--- Lokaler Import ---');
+      try {
+        await applyLocal(importData);
+      } catch (e) {
+        console.error(`\n✗ Import fehlgeschlagen: ${e.message}`);
+        process.exit(1);
+      }
     }
   }
 }

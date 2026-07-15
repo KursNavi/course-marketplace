@@ -1,6 +1,7 @@
 -- ============================================================
 -- Migration: Atomische Import-Funktion für Themenwelten
 -- Erstellt: 2026-07-15
+-- Korrigiert: 2026-07-16 (Phase 6.5 Sicherheitskorrekturen)
 -- Branch: feature/dynamic-theme-worlds
 -- Phase 6: Import-Atomarität
 -- ============================================================
@@ -9,20 +10,32 @@
 -- durchführt. Bei jedem Fehler werden ALLE Änderungen zurück-
 -- gerollt — es bleibt kein halbfertiger Import in der DB.
 --
--- SICHERHEIT:
+-- SICHERHEIT (Phase 6.5 Korrekturen):
+--   SET search_path = '': Verhindert search_path-Injection.
+--   Alle Tabellen sind vollständig mit public. qualifiziert.
 --   SECURITY DEFINER: Läuft mit Rechten des Funktionsbesitzers.
---   Zugriffsrechte: Nur Service-Role darf diese Funktion aufrufen
---   (anon und authenticated werden explizit ausgeschlossen).
+--   Zugriffsrechte: REVOKE ALL FROM PUBLIC, dann gezielter
+--   GRANT TO service_role (explizit, nicht implizit).
+--   anon und authenticated bleiben explizit ausgeschlossen.
 --
 -- ATOMARITÄT:
 --   PostgreSQL-Funktionen laufen in einer impliziten Transaktion.
 --   Jede RAISE EXCEPTION rollt alle Änderungen automatisch zurück.
+--
+-- ARRAY-VALIDIERUNG (Phase 6.5 Korrektur):
+--   Alle fünf Listen (faqs, editorial_sections, specialties,
+--   regions, trust_items) MÜSSEN im p_data-Objekt vorhanden sein.
+--   Fehlende Schlüssel (vs. explizit leere Arrays []) werden als
+--   Fehler behandelt und lösen einen vollständigen Rollback aus.
+--   Explizit leere Arrays [] sind erlaubt (löschen alle Einträge).
 --
 -- IDEMPOTENZ:
 --   Themenwelt und Szenarien: ON CONFLICT … DO UPDATE.
 --   Listen (FAQs, Editorial, Specialties, Regionen, Trust): DELETE + INSERT.
 --   Status-Schutz: status/published_at werden bei bestehenden Einträgen
 --   NICHT überschrieben — Admins setzen den Status manuell via Admin-UI.
+--   Inhaltliche Felder (title_de, content_html etc.) werden beim
+--   Re-Import absichtlich aktualisiert — das ist der Zweck des Imports.
 --
 -- EINSCHRÄNKUNGEN:
 --   Entfernte Szenarien (nicht in p_data) werden NICHT gelöscht.
@@ -33,7 +46,7 @@ CREATE OR REPLACE FUNCTION public.import_theme_world_atomic(p_data JSONB)
 RETURNS JSONB
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = ''
 AS $$
 DECLARE
   v_tw        JSONB;
@@ -56,6 +69,45 @@ BEGIN
 
   IF p_data->'scenarios' IS NULL OR jsonb_array_length(p_data->'scenarios') = 0 THEN
     RAISE EXCEPTION 'import_theme_world_atomic: scenarios-Array fehlt oder ist leer';
+  END IF;
+
+  -- Alle Listen-Schlüssel müssen explizit vorhanden sein.
+  -- Fehlende Schlüssel vs. explizit leere Arrays sind unterschiedliche Fälle:
+  --   Fehlender Schlüssel → Fehler (verhindert unbeabsichtigtes Löschen)
+  --   Leeres Array []     → erlaubt (löscht alle Einträge)
+  IF NOT (p_data ? 'faqs') THEN
+    RAISE EXCEPTION 'import_theme_world_atomic: "faqs" fehlt in p_data — explizit leeres Array [] verwenden falls keine FAQs vorhanden';
+  END IF;
+  IF jsonb_typeof(p_data->'faqs') != 'array' THEN
+    RAISE EXCEPTION 'import_theme_world_atomic: "faqs" muss ein JSON-Array sein, erhalten: %', jsonb_typeof(p_data->'faqs');
+  END IF;
+
+  IF NOT (p_data ? 'editorial_sections') THEN
+    RAISE EXCEPTION 'import_theme_world_atomic: "editorial_sections" fehlt in p_data';
+  END IF;
+  IF jsonb_typeof(p_data->'editorial_sections') != 'array' THEN
+    RAISE EXCEPTION 'import_theme_world_atomic: "editorial_sections" muss ein JSON-Array sein';
+  END IF;
+
+  IF NOT (p_data ? 'specialties') THEN
+    RAISE EXCEPTION 'import_theme_world_atomic: "specialties" fehlt in p_data';
+  END IF;
+  IF jsonb_typeof(p_data->'specialties') != 'array' THEN
+    RAISE EXCEPTION 'import_theme_world_atomic: "specialties" muss ein JSON-Array sein';
+  END IF;
+
+  IF NOT (p_data ? 'regions') THEN
+    RAISE EXCEPTION 'import_theme_world_atomic: "regions" fehlt in p_data';
+  END IF;
+  IF jsonb_typeof(p_data->'regions') != 'array' THEN
+    RAISE EXCEPTION 'import_theme_world_atomic: "regions" muss ein JSON-Array sein';
+  END IF;
+
+  IF NOT (p_data ? 'trust_items') THEN
+    RAISE EXCEPTION 'import_theme_world_atomic: "trust_items" fehlt in p_data';
+  END IF;
+  IF jsonb_typeof(p_data->'trust_items') != 'array' THEN
+    RAISE EXCEPTION 'import_theme_world_atomic: "trust_items" muss ein JSON-Array sein';
   END IF;
 
   -- --------------------------------------------------------
@@ -174,14 +226,13 @@ BEGIN
 
   -- --------------------------------------------------------
   -- 3. FAQs atomisch ersetzen (delete-all, dann insert)
+  --    Voraussetzung: 'faqs'-Schlüssel wurde oben validiert.
   -- --------------------------------------------------------
   DELETE FROM public.theme_world_faqs
   WHERE theme_world_id = v_tw_id;
 
   v_idx := 0;
-  FOR v_item IN SELECT value FROM jsonb_array_elements(
-    COALESCE(p_data->'faqs', '[]'::JSONB)
-  )
+  FOR v_item IN SELECT value FROM jsonb_array_elements(p_data->'faqs')
   LOOP
     v_idx := v_idx + 1;
     INSERT INTO public.theme_world_faqs (
@@ -197,14 +248,13 @@ BEGIN
 
   -- --------------------------------------------------------
   -- 4. Editorial Sections atomisch ersetzen
+  --    Voraussetzung: 'editorial_sections'-Schlüssel wurde oben validiert.
   -- --------------------------------------------------------
   DELETE FROM public.theme_world_editorial_sections
   WHERE theme_world_id = v_tw_id;
 
   v_idx := 0;
-  FOR v_item IN SELECT value FROM jsonb_array_elements(
-    COALESCE(p_data->'editorial_sections', '[]'::JSONB)
-  )
+  FOR v_item IN SELECT value FROM jsonb_array_elements(p_data->'editorial_sections')
   LOOP
     v_idx := v_idx + 1;
     INSERT INTO public.theme_world_editorial_sections (
@@ -232,14 +282,13 @@ BEGIN
 
   -- --------------------------------------------------------
   -- 5. Specialties atomisch ersetzen
+  --    Voraussetzung: 'specialties'-Schlüssel wurde oben validiert.
   -- --------------------------------------------------------
   DELETE FROM public.theme_world_specialties
   WHERE theme_world_id = v_tw_id;
 
   v_idx := 0;
-  FOR v_item IN SELECT value FROM jsonb_array_elements(
-    COALESCE(p_data->'specialties', '[]'::JSONB)
-  )
+  FOR v_item IN SELECT value FROM jsonb_array_elements(p_data->'specialties')
   LOOP
     v_idx := v_idx + 1;
     INSERT INTO public.theme_world_specialties (
@@ -257,14 +306,13 @@ BEGIN
 
   -- --------------------------------------------------------
   -- 6. Regionen atomisch ersetzen
+  --    Voraussetzung: 'regions'-Schlüssel wurde oben validiert.
   -- --------------------------------------------------------
   DELETE FROM public.theme_world_regions
   WHERE theme_world_id = v_tw_id;
 
   v_idx := 0;
-  FOR v_item IN SELECT value FROM jsonb_array_elements(
-    COALESCE(p_data->'regions', '[]'::JSONB)
-  )
+  FOR v_item IN SELECT value FROM jsonb_array_elements(p_data->'regions')
   LOOP
     v_idx := v_idx + 1;
     INSERT INTO public.theme_world_regions (
@@ -283,14 +331,13 @@ BEGIN
 
   -- --------------------------------------------------------
   -- 7. Trust Items atomisch ersetzen
+  --    Voraussetzung: 'trust_items'-Schlüssel wurde oben validiert.
   -- --------------------------------------------------------
   DELETE FROM public.theme_world_trust_items
   WHERE theme_world_id = v_tw_id;
 
   v_idx := 0;
-  FOR v_item IN SELECT value FROM jsonb_array_elements(
-    COALESCE(p_data->'trust_items', '[]'::JSONB)
-  )
+  FOR v_item IN SELECT value FROM jsonb_array_elements(p_data->'trust_items')
   LOOP
     v_idx := v_idx + 1;
     INSERT INTO public.theme_world_trust_items (
@@ -335,14 +382,23 @@ $$;
 COMMENT ON FUNCTION public.import_theme_world_atomic(JSONB) IS
   'Importiert eine Themenwelt vollständig atomar in einer impliziten PostgreSQL-Transaktion. '
   'Bei jedem Fehler werden alle Änderungen zurückgerollt. '
-  'Wird ausschliesslich vom lokalen Import-Script (scripts/import-theme-world.mjs) mit Service-Role-Key aufgerufen. '
-  'Status-Felder bestehender Einträge werden beim Re-Import nicht überschrieben.';
+  'Wird ausschliesslich vom Import-Script (scripts/import-theme-world.mjs) mit Service-Role-Key aufgerufen. '
+  'Status-Felder (status, published_at) bestehender Einträge werden beim Re-Import NICHT überschrieben. '
+  'Inhaltliche Felder (title_de, content_html etc.) werden beim Re-Import aktualisiert — das ist Systemzweck. '
+  'Phase 6.5: search_path='' + GRANT TO service_role + Array-Pflichtvalidierung.';
 
 -- --------------------------------------------------------
--- Zugriffsrechte: Kein öffentlicher Aufruf erlaubt
+-- Zugriffsrechte: Strikt kontrolliert
 -- --------------------------------------------------------
--- Service-Role hat in Supabase implizit alle Rechte (SECURITY DEFINER-Kontext).
--- Wir entziehen explizit die Rechte für anon und authenticated.
+-- REVOKE ALL FROM PUBLIC: Entfernt EXECUTE-Berechtigung von allen Rollen inkl. service_role.
+-- GRANT TO service_role:  Erteilt EXECUTE ausschliesslich der Service-Role.
+-- anon und authenticated: Bleiben ohne EXECUTE-Berechtigung.
+--
+-- Hinweis zur SECURITY DEFINER-Semantik:
+--   SECURITY DEFINER bestimmt, MIT WESSEN RECHTEN die Funktion läuft (owner = postgres).
+--   Sie bestimmt NICHT, WER die Funktion aufrufen darf.
+--   Deshalb ist der explizite GRANT unbedingt erforderlich.
 REVOKE ALL ON FUNCTION public.import_theme_world_atomic(JSONB) FROM PUBLIC;
 REVOKE EXECUTE ON FUNCTION public.import_theme_world_atomic(JSONB) FROM anon;
 REVOKE EXECUTE ON FUNCTION public.import_theme_world_atomic(JSONB) FROM authenticated;
+GRANT EXECUTE ON FUNCTION public.import_theme_world_atomic(JSONB) TO service_role;
