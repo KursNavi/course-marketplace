@@ -1,0 +1,27 @@
+{
+  "version": "1.0.0",
+  "generated_at": "2026-07-15T00:00:00Z",
+  "theme_world": "sport_fitness_beruf",
+  "images": [
+    {
+      "id": "hero-sport-fitness",
+      "current_source": "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&q=80&w=2000",
+      "current_usage": "hero_image on BereichLandingPage and SzenarioArtikelView",
+      "target_usage": "theme_worlds.hero_image_url",
+      "alt_text_de": "Fitness-Trainer beim Training in einem modernen Schweizer Fitnesscenter",
+      "format": "jpg (via Unsplash CDN)",
+      "is_local": false,
+      "is_external": true,
+      "migration_to_storage_needed": true,
+      "rights_note": "Unsplash free license (unsplash.com/photos/1534438327276). Attribution not required but recommended.",
+      "fallback_behavior": "Component renders without image if URL fails",
+      "phase5_action": "Use existing Unsplash URL in DB record; Storage migration planned for Phase 6"
+    }
+  ],
+  "notes": {
+    "no_local_images": "Sport & Fitness uses only one external Unsplash image for the hero. No images in public/ directory.",
+    "no_scenario_images": "Individual scenario articles (berufseinstieg, quereinstieg, etc.) have no dedicated images in the current legacy config.",
+    "storage_migration_plan": "Phase 6: Download Unsplash image, compress, upload to Supabase Storage under theme-worlds/ bucket, update DB record hero_image_url to storage URL",
+    "og_image": "No dedicated OG image - component falls back to /og-default.png"
+  }
+}

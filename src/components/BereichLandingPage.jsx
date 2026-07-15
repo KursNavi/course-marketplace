@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Search, ArrowRight, ChevronDown, ChevronRight, BookOpen, Award, HelpCircle } from 'lucide-react';
-import { getBereichBySlug, getBereichUrl } from '../lib/bereichLandingConfig';
+import { getBereichBySlug, getBereichUrl, BEREICH_LANDING_CONFIG } from '../lib/bereichLandingConfig';
 import { SEGMENT_LANDING_CONFIG } from '../lib/segmentLandingConfig';
 import { SEGMENT_CONFIG } from '../lib/constants';
 import { useTaxonomy } from '../hooks/useTaxonomy';
@@ -8,12 +8,56 @@ import { BASE_URL } from '../lib/siteConfig';
 import { buildFaqPageJsonLd } from '../lib/seoUtils';
 import { shouldHandleClientNavigation } from '../lib/navigation';
 import RegionalDiscoverySection from './RegionalDiscoverySection';
+import { loadThemeWorldWithFallback, isThemeWorldPilotActive } from '../lib/themeWorldFeatureFlag';
+import { fetchThemeWorldPage } from '../lib/themeWorldService';
+import { adaptToLegacyBereichConfig } from '../lib/themeWorldAdapter';
 
 export default function BereichLandingPage({ segment, slug, courses, lang = 'de', t }) {
-  const config = getBereichBySlug(segment, slug);
+  // Legacy-Config (immer geladen als Basiswert + Fallback)
+  const legacyConfig = getBereichBySlug(segment, slug);
+
+  // Dynamic config state — wird gesetzt wenn Pilot-Flag aktiv + DB-Antwort erfolgreich
+  const [dynamicConfig, setDynamicConfig] = useState(null);
+  const [dynamicNotFound, setDynamicNotFound] = useState(false);
+
+  // Effektiver Config: DB wenn geladen, sonst Legacy
+  const config = dynamicConfig || legacyConfig;
+
   const { areas: dbAreas } = useTaxonomy();
   const [searchQuery, setSearchQuery] = useState('');
   const [openFaq, setOpenFaq] = useState(null);
+
+  // Bestimme den theme-world-key aus der Legacy-Config oder URL
+  const bereichKey = legacyConfig
+    ? (Object.entries(BEREICH_LANDING_CONFIG).find(([, v]) => v.slug === slug)?.[0] || null)
+    : null;
+
+  // Pilot-Integration: DB-Daten laden wenn Feature-Flag aktiv
+  useEffect(() => {
+    if (!bereichKey) return;
+    if (!isThemeWorldPilotActive(bereichKey)) return;
+
+    let cancelled = false;
+
+    loadThemeWorldWithFallback({
+      themeWorldKey: bereichKey,
+      dbLoader: async () => {
+        const data = await fetchThemeWorldPage(segment, slug);
+        return adaptToLegacyBereichConfig(data);
+      },
+      legacyLoader: () => legacyConfig,
+    }).then(({ data, notFound }) => {
+      if (cancelled) return;
+      if (notFound) {
+        setDynamicNotFound(true);
+      } else if (data) {
+        setDynamicConfig(data);
+      }
+    });
+
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bereichKey, segment, slug]);
 
   // Segment theme
   const theme = SEGMENT_CONFIG[segment] || SEGMENT_CONFIG.beruflich;
@@ -114,8 +158,8 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
     };
   }, [config, segment, slug, lang]);
 
-  // 404 guard
-  if (!config) {
+  // 404 guard — auch für DB-Not-found
+  if (!config || dynamicNotFound) {
     return (
       <div className="min-h-screen bg-beige flex items-center justify-center">
         <div className="text-center">

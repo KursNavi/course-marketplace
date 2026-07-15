@@ -356,3 +356,189 @@ function adaptTrustItem(item) {
     sortOrder: item.sort_order,
   };
 }
+
+// ---------------------------------------------------------------------------
+// Bridge-Adapter: Raw-DB-Daten → Legacy-Komponentenformat
+// ---------------------------------------------------------------------------
+
+/**
+ * Konvertiert rohe DB-Daten (aus fetchThemeWorldPage) direkt in das Format,
+ * das BereichLandingPage.jsx erwartet (Multilingual-Objekte, spezifische Keys).
+ *
+ * Dies ist der bevorzugte Adapter für die Pilot-Integration in Phase 5.
+ *
+ * @param {object} params
+ * @param {object} params.themeWorld - Rohdaten aus theme_worlds
+ * @param {Array}  params.scenarios - Aus fetchPublishedScenarios
+ * @param {Array}  params.faqs - Aus fetchFaqs
+ * @param {Array}  params.editorialSections - Aus fetchEditorialSections
+ * @param {Array}  params.specialties - Aus fetchSpecialties
+ * @param {Array}  params.regions - Aus fetchRegions
+ * @param {Array}  params.trustItems - Aus fetchTrustItems
+ * @returns {object} Konfigurationsobjekt im Legacy-BereichLandingPage-Format
+ */
+export function adaptToLegacyBereichConfig({
+  themeWorld,
+  scenarios = [],
+  faqs = [],
+  editorialSections = [],
+  specialties = [],
+  regions = [],
+  trustItems = [],
+}) {
+  if (!themeWorld) return null;
+
+  const urlSegment = themeWorld.url_segment || dbSegmentToUrlSegment(themeWorld.db_segment);
+  const typeKey = urlSegmentToTypeKey(urlSegment);
+  const searchConfig = themeWorld.search_config || {};
+  const st = themeWorld.section_titles || {};
+
+  return {
+    // Identität
+    key: themeWorld.key,
+    slug: themeWorld.slug,
+    segment: urlSegment,
+    typeKey,
+    areaSlug: searchConfig.area_slug || themeWorld.area_slug || themeWorld.key,
+
+    // Titel / Subtitel als Multilingual-Objekte (Legacy-Format: { de: '...' })
+    title: { de: themeWorld.title_de || '' },
+    subtitle: { de: themeWorld.subtitle_de || '' },
+
+    // Hero-Bild
+    heroImage: themeWorld.hero_image_url || null,
+
+    // SEO
+    metaTitle: themeWorld.meta_title || null,
+    metaDescription: themeWorld.meta_description || null,
+
+    // Szenario-Karten im Legacy-Format
+    scenarios: scenarios.map((s, i) => ({
+      slug: s.slug,
+      icon: s.icon || null,
+      label: { de: s.label_de || '' },
+      text: { de: s.teaser_de || '' },
+      ctaLabel: { de: s.cta_label_de || 'Kurse entdecken' },
+      searchParams: _extractSearchParams(s.cta_config, searchConfig),
+      sortOrder: s.sort_order || i + 1,
+    })),
+
+    // Specialties: Array → gekeyertes Objekt { label: { de, icon } }
+    specialtyDescriptions: Object.fromEntries(
+      (specialties || []).map((s) => [
+        s.specialty_label,
+        { de: s.description_de || '', icon: s.icon || '' },
+      ]),
+    ),
+
+    // Regional Discovery
+    regionalDiscovery: (regions && regions.length > 0)
+      ? {
+          title: { de: '' },
+          subtitle: { de: '' },
+          regions: regions.map((r) => ({
+            label: r.label_de,
+            anchorText: r.anchor_text_de || r.label_de,
+            params: {
+              ...(r.loc_param ? { loc: r.loc_param } : {}),
+              ...(r.delivery_param ? { delivery: r.delivery_param } : {}),
+            },
+          })),
+        }
+      : null,
+
+    // Vordefinierte Suchen
+    predefinedSearches: (themeWorld.predefined_searches || []).map((s) => ({
+      label: { de: s.label_de || '' },
+      params: {
+        ...(s.spec ? { spec: s.spec } : {}),
+        ...(s.focus ? { focus: s.focus } : {}),
+      },
+      extraParams: {
+        ...(s.loc ? { loc: s.loc } : {}),
+        ...(s.delivery ? { delivery: s.delivery } : {}),
+      },
+    })),
+
+    // Editorial Sections
+    editorialSections: (editorialSections || []).map((s) => ({
+      heading: { de: s.heading_de || '' },
+      intro: s.intro_de ? { de: s.intro_de } : null,
+      items: s.items_de ? { de: s.items_de } : null,
+      isOrdered: s.is_ordered || false,
+      closing: s.closing_de ? { de: s.closing_de } : null,
+    })),
+
+    // FAQs
+    faqs: (faqs || []).map((f) => ({
+      q: { de: f.question_de || '' },
+      a: { de: f.answer_de || '' },
+    })),
+
+    // Abschnittsüberschriften
+    sectionTitles: {
+      scenarioTitle: st.scenarios_heading ? { de: st.scenarios_heading } : { de: 'Wo stehst du?' },
+      scenarioSubtitle: st.scenarios_subheading ? { de: st.scenarios_subheading } : { de: 'Finde den passenden Einstieg' },
+      specialtiesTitle: st.specialties_heading ? { de: st.specialties_heading } : { de: 'Ausbildungsbereiche' },
+      specialtiesSubtitle: st.specialties_subheading ? { de: st.specialties_subheading } : { de: 'Alle Schwerpunkte auf einen Blick' },
+      searchesSubtitle: st.searches_subheading ? { de: st.searches_subheading } : null,
+      faqTitle: st.faqs_heading ? { de: st.faqs_heading } : { de: 'Häufige Fragen' },
+      trustTitle: st.trust_heading ? { de: st.trust_heading } : { de: 'Qualität & Anerkennung' },
+      ctaTitle: st.cta_heading ? { de: st.cta_heading } : null,
+      ctaButton: st.cta_button ? { de: st.cta_button } : { de: 'Alle Kurse anzeigen' },
+    },
+
+    // CTA-Links
+    ctaLinks: (themeWorld.cta_links || []).map((l) => ({
+      label: { de: l.label_de || '' },
+      params: {
+        ...(l.loc ? { loc: l.loc } : {}),
+        ...(l.delivery ? { delivery: l.delivery } : {}),
+      },
+    })),
+
+    // Trust Logos
+    trustLogos: (trustItems || []).map((t) => ({
+      name: t.name,
+      description: { de: t.description_de || '' },
+    })),
+  };
+}
+
+/**
+ * Konvertiert einen vollständigen Szenario-DB-Datensatz in das Format,
+ * das SzenarioArtikelView.jsx als scenario-Objekt erwartet.
+ *
+ * @param {object} scenario - Vollständiger Datensatz aus theme_world_scenarios
+ * @param {object} themeWorldSearchConfig - search_config der Eltern-Themenwelt
+ * @returns {object} Szenario im Legacy-Format
+ */
+export function adaptToLegacySzenarioConfig(scenario, themeWorldSearchConfig = {}) {
+  if (!scenario) return null;
+  return {
+    slug: scenario.slug,
+    icon: scenario.icon || null,
+    label: { de: scenario.label_de || '' },
+    text: { de: scenario.teaser_de || '' },
+    ctaLabel: { de: scenario.cta_label_de || 'Kurse entdecken' },
+    searchParams: _extractSearchParams(scenario.cta_config, themeWorldSearchConfig),
+    // Content für den Artikel (wird separat in der Komponente als articleContent behandelt)
+    contentHtml: scenario.content_html || '',
+    metaTitle: scenario.meta_title || null,
+    metaDescription: scenario.meta_description || null,
+  };
+}
+
+/**
+ * Extrahiert searchParams aus cta_config für die Legacy-Komponentenform.
+ * @private
+ */
+function _extractSearchParams(ctaConfig, searchConfig = {}) {
+  const c = ctaConfig || {};
+  return {
+    ...(c.spec ? { spec: c.spec } : {}),
+    ...(c.focus ? { focus: c.focus } : {}),
+    ...(c.loc ? { loc: c.loc } : {}),
+    ...(c.delivery ? { delivery: c.delivery } : {}),
+  };
+}
