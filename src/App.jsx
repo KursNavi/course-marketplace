@@ -107,6 +107,10 @@ const SuccessView = lazyWithRetry(() => import('./components/SuccessView'));
 const BlogList = lazyWithRetry(() => import('./components/BlogList'));
 const BlogDetail = lazyWithRetry(() => import('./components/BlogDetail'));
 const AdminBlogManager = lazyWithRetry(() => import('./components/AdminBlogManager'));
+const AdminThemeWorldList = lazyWithRetry(() => import('./components/admin/AdminThemeWorldList'));
+const AdminThemeWorldForm = lazyWithRetry(() => import('./components/admin/AdminThemeWorldForm'));
+const AdminScenarioList = lazyWithRetry(() => import('./components/admin/AdminScenarioList'));
+const AdminScenarioForm = lazyWithRetry(() => import('./components/admin/AdminScenarioForm'));
 const CategoryLocationPage = lazyWithRetry(() => import('./components/CategoryLocationPage'));
 const ProviderDirectory = lazyWithRetry(() => import('./components/ProviderDirectory'));
 const ProviderProfilePage = lazyWithRetry(() => import('./components/ProviderProfilePage'));
@@ -308,6 +312,9 @@ export default function KursNaviPro() {  // 1. Initial State Logic
   const articlesRef = useRef([]);
   useEffect(() => { articlesRef.current = articles; }, [articles]);
   const [selectedArticle, setSelectedArticle] = useState(null);
+  // Theme-World Admin State
+  const [selectedThemeWorldId, setSelectedThemeWorldId] = useState(null);
+  const [selectedScenarioId, setSelectedScenarioId] = useState(null);
    const [loading, setLoading] = useState(true);
    const [fetchError, setFetchError] = useState(false);
   
@@ -2262,6 +2269,39 @@ useEffect(() => {
 
       {view === 'admin' && <AdminPanel t={t} courses={courses} showNotification={showNotification} fetchCourses={fetchCourses} setView={setView} user={user} onImpersonate={setImpersonatedUser} handleEditCourse={handleEditCourse} />}
       {view === 'admin-blog' && <AdminBlogManager showNotification={showNotification} setView={setView} courses={courses} />}
+      {view === 'admin-theme-worlds' && (
+        <AdminThemeWorldList
+          showNotification={showNotification}
+          setView={setView}
+          setSelectedThemeWorldId={setSelectedThemeWorldId}
+        />
+      )}
+      {view === 'admin-theme-world-form' && (
+        <AdminThemeWorldForm
+          showNotification={showNotification}
+          setView={setView}
+          themeWorldId={selectedThemeWorldId}
+          setSelectedThemeWorldId={setSelectedThemeWorldId}
+          setSelectedScenarioId={setSelectedScenarioId}
+        />
+      )}
+      {view === 'admin-scenario-list' && (
+        <AdminScenarioList
+          showNotification={showNotification}
+          setView={setView}
+          themeWorldId={selectedThemeWorldId}
+          setSelectedScenarioId={setSelectedScenarioId}
+        />
+      )}
+      {view === 'admin-scenario-form' && (
+        <AdminScenarioForm
+          showNotification={showNotification}
+          setView={setView}
+          themeWorldId={selectedThemeWorldId}
+          scenarioId={selectedScenarioId}
+          setSelectedScenarioId={setSelectedScenarioId}
+        />
+      )}
       {view === 'blog' && <BlogList articles={articles} setView={setView} setSelectedArticle={setSelectedArticle} />}
       {view === 'blog-detail' && <BlogDetail article={selectedArticle} setView={setView} courses={publishedCourses} />}
       {/* provider-directory view removed — /anbieter always redirects to /search?tab=anbieter */}

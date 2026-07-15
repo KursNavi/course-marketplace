@@ -506,6 +506,8 @@ comment on policy "theme_world_scenarios_public_read" on public.theme_world_scen
 
 -- ------------------------------------------------------------
 -- 7.3 theme_world_faqs RLS
+-- PHASE-4-KORREKTUR: is_active = true ergänzt. Inaktive FAQs dürfen auch bei
+-- publizierter Themenwelt nicht öffentlich sichtbar sein.
 -- ------------------------------------------------------------
 
 alter table public.theme_world_faqs enable row level security;
@@ -515,13 +517,18 @@ create policy "theme_world_faqs_public_read"
   for select
   to anon, authenticated
   using (
-    theme_world_id in (
+    is_active = true
+    and theme_world_id in (
       select id from public.theme_worlds where status = 'published'
     )
   );
 
+comment on policy "theme_world_faqs_public_read" on public.theme_world_faqs is
+  'FAQs sind nur öffentlich sichtbar wenn: is_active=true UND theme_worlds.status=published.';
+
 -- ------------------------------------------------------------
 -- 7.4 theme_world_editorial_sections RLS
+-- PHASE-4-KORREKTUR: is_active = true ergänzt.
 -- ------------------------------------------------------------
 
 alter table public.theme_world_editorial_sections enable row level security;
@@ -531,13 +538,18 @@ create policy "theme_world_editorial_sections_public_read"
   for select
   to anon, authenticated
   using (
-    theme_world_id in (
+    is_active = true
+    and theme_world_id in (
       select id from public.theme_worlds where status = 'published'
     )
   );
 
+comment on policy "theme_world_editorial_sections_public_read" on public.theme_world_editorial_sections is
+  'Editorial Sections sind nur öffentlich sichtbar wenn: is_active=true UND theme_worlds.status=published.';
+
 -- ------------------------------------------------------------
 -- 7.5 theme_world_specialties RLS
+-- PHASE-4-KORREKTUR: is_active = true ergänzt.
 -- ------------------------------------------------------------
 
 alter table public.theme_world_specialties enable row level security;
@@ -547,13 +559,18 @@ create policy "theme_world_specialties_public_read"
   for select
   to anon, authenticated
   using (
-    theme_world_id in (
+    is_active = true
+    and theme_world_id in (
       select id from public.theme_worlds where status = 'published'
     )
   );
 
+comment on policy "theme_world_specialties_public_read" on public.theme_world_specialties is
+  'Specialties sind nur öffentlich sichtbar wenn: is_active=true UND theme_worlds.status=published.';
+
 -- ------------------------------------------------------------
 -- 7.6 theme_world_regions RLS
+-- PHASE-4-KORREKTUR: is_active = true ergänzt.
 -- ------------------------------------------------------------
 
 alter table public.theme_world_regions enable row level security;
@@ -563,13 +580,18 @@ create policy "theme_world_regions_public_read"
   for select
   to anon, authenticated
   using (
-    theme_world_id in (
+    is_active = true
+    and theme_world_id in (
       select id from public.theme_worlds where status = 'published'
     )
   );
 
+comment on policy "theme_world_regions_public_read" on public.theme_world_regions is
+  'Regionen sind nur öffentlich sichtbar wenn: is_active=true UND theme_worlds.status=published.';
+
 -- ------------------------------------------------------------
 -- 7.7 theme_world_trust_items RLS
+-- PHASE-4-KORREKTUR: is_active = true ergänzt.
 -- ------------------------------------------------------------
 
 alter table public.theme_world_trust_items enable row level security;
@@ -579,10 +601,14 @@ create policy "theme_world_trust_items_public_read"
   for select
   to anon, authenticated
   using (
-    theme_world_id in (
+    is_active = true
+    and theme_world_id in (
       select id from public.theme_worlds where status = 'published'
     )
   );
+
+comment on policy "theme_world_trust_items_public_read" on public.theme_world_trust_items is
+  'Trust Items sind nur öffentlich sichtbar wenn: is_active=true UND theme_worlds.status=published.';
 
 -- ============================================================
 -- ABSCHLUSS

@@ -13,14 +13,21 @@ describe('sanitizeHtml', () => {
     expect(sanitizeHtml(input)).toBe(input);
   });
 
-  it('lässt Links mit https-URLs unberührt', () => {
-    const input = '<a href="https://example.com">Link</a>';
-    expect(sanitizeHtml(input)).toBe(input);
+  it('erhält externe Links mit https-URLs und fügt target/rel hinzu', () => {
+    // Phase 4: Externe Links erhalten automatisch target="_blank" rel="noopener noreferrer"
+    const result = sanitizeHtml('<a href="https://example.com">Link</a>');
+    expect(result).toContain('href="https://example.com"');
+    expect(result).toContain('target="_blank"');
+    expect(result).toContain('rel="noopener noreferrer"');
   });
 
-  it('lässt Bilder mit https-src unberührt', () => {
-    const input = '<img src="https://example.com/bild.jpg" alt="Bild">';
-    expect(sanitizeHtml(input)).toBe(input);
+  it('lässt Bilder mit https-src inhaltlich unberührt', () => {
+    // Phase 4: sanitize-html wandelt void-Elemente in self-closing um (<img ... />)
+    const result = sanitizeHtml('<img src="https://example.com/bild.jpg" alt="Bild">');
+    expect(result).toContain('src="https://example.com/bild.jpg"');
+    expect(result).toContain('alt="Bild"');
+    expect(result).not.toContain('script');
+    expect(result).not.toContain('onclick');
   });
 
   it('lässt class- und id-Attribute unberührt', () => {
@@ -46,11 +53,11 @@ describe('sanitizeHtml', () => {
   });
 
   // Event-Handler
-  it('entfernt onclick-Attribut', () => {
-    const input = '<button onclick="alert(1)">Klick</button>';
-    const result = sanitizeHtml(input);
+  it('entfernt onclick-Attribut (und nicht-erlaubte Tags)', () => {
+    // Phase 4: <button> ist nicht in der Allowlist — nur Textinhalt bleibt erhalten
+    const result = sanitizeHtml('<button onclick="alert(1)">Klick</button>');
     expect(result).not.toContain('onclick');
-    expect(result).toContain('<button');
+    expect(result).not.toContain('<button');
   });
 
   it('entfernt onload-Attribut', () => {
@@ -150,9 +157,17 @@ describe('containsDangerousHtml', () => {
     expect(containsDangerousHtml('<iframe src="x"></iframe>')).toBe(true);
   });
 
-  it('gibt false für sicheren Content', () => {
+  it('gibt false für sicheren Content ohne Transformation', () => {
     expect(containsDangerousHtml('<p>Normaler <strong>Text</strong></p>')).toBe(false);
-    expect(containsDangerousHtml('<a href="https://example.com">Link</a>')).toBe(false);
+    // Phase 4: Externe Links erhalten target/rel → Sanitizer transformiert sie → true
+    // (Interne Links mit / bleiben unverändert → false)
+    expect(containsDangerousHtml('<a href="/intern">Link</a>')).toBe(false);
+  });
+
+  it('gibt true für externe Links ohne target/rel (werden transformiert)', () => {
+    // containsDangerousHtml = (input !== sanitizeHtml(input))
+    // Externe Links ohne target/rel werden vom Sanitizer ergänzt → true
+    expect(containsDangerousHtml('<a href="https://example.com">Link</a>')).toBe(true);
   });
 
   it('gibt false für null', () => {
