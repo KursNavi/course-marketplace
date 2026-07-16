@@ -104,6 +104,16 @@ describe('Import-Script: Produktionssperre (assertNotProduction)', () => {
   it('wirft nicht bei ungültigem URL-Format', () => {
     expect(() => assertNotProduction('nicht-eine-url')).not.toThrow();
   });
+
+  it('blockiert Produktions-URL mit zusätzlichem Pfad (/extra/path)', () => {
+    expect(() => assertNotProduction('https://nplxmpfasgpumpiddjfl.supabase.co/extra/path'))
+      .toThrow('nplxmpfasgpumpiddjfl');
+  });
+
+  it('blockiert Produktions-URL mit Trailing Slash', () => {
+    expect(() => assertNotProduction('https://nplxmpfasgpumpiddjfl.supabase.co/'))
+      .toThrow('nplxmpfasgpumpiddjfl');
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -167,6 +177,30 @@ describe('Import-Script: Staging-Prüfung (assertIsSafeStaging)', () => {
 
   it('wirft bei fehlender URL', () => {
     expect(() => assertIsSafeStaging(undefined)).toThrow('nicht gesetzt');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 3b. Env-Var-Fallback-Bypass
+// ---------------------------------------------------------------------------
+
+describe('Import-Script: Env-Var-Fallback kann Produktionssperre nicht umgehen', () => {
+  it('assertIsLocalSupabase blockiert, wenn Env-Var auf Produktion zeigt (SUPABASE_LOCAL_URL / VITE_SUPABASE_URL)', () => {
+    // Unabhängig davon, welche Env-Var den Wert liefert, wird assertIsLocalSupabase
+    // auf dem gelesenen URL-Wert aufgerufen — Produktionssperre greift immer zuerst.
+    const prodUrl = 'https://nplxmpfasgpumpiddjfl.supabase.co';
+    expect(() => assertIsLocalSupabase(prodUrl)).toThrow('SICHERHEITSABBRUCH');
+  });
+
+  it('assertIsSafeStaging blockiert, wenn Env-Var auf Produktion zeigt (SUPABASE_STAGING_URL / SUPABASE_URL_TEST)', () => {
+    const prodUrl = 'https://nplxmpfasgpumpiddjfl.supabase.co';
+    expect(() => assertIsSafeStaging(prodUrl)).toThrow('SICHERHEITSABBRUCH');
+  });
+
+  it('assertIsLocalSupabase blockiert, wenn .env.local-Fallback auf Produktion zeigt', () => {
+    // Gilt für alle .env-Fallback-Pfade (readEnvFile → assertIsLocalSupabase)
+    const prodUrl = 'https://nplxmpfasgpumpiddjfl.supabase.co';
+    expect(() => assertIsLocalSupabase(prodUrl)).toThrow('SICHERHEITSABBRUCH');
   });
 });
 
