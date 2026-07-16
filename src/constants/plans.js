@@ -31,8 +31,8 @@ export const PLANS = [
       { text: "Kein Kursservice inklusive", dim: true },
       { text: "Keine Verifizierungsprüfung inklusive", dim: true },
       { text: "1 Themenbereich pro Kurs", description: "Jeder Kurs erscheint in einem Themenbereich. Mit einem Upgrade können Sie bis zu 3 oder 5 wählen." },
-      { text: "Kursservice optional: CHF 30 pro neuem Kurs / CHF 15 pro einfacher Aktualisierung", separator: true, description: "Einfache Aktualisierung umfasst z.B. Datum, Preis, Ort, Durchführungsform, Link oder kurze Textanpassung. Zwei einfache Aktualisierungen zählen als ein Kurs Kursservice." },
       { text: "15% Gebühr bei Online-Buchung", description: "Gilt nur bei aktivierter Online-Buchung – Anfragen sind immer kostenlos." },
+      { text: "Kursservice optional: CHF 30 pro neuem Kurs / CHF 15 pro einfacher Aktualisierung", separator: true, description: "Einfache Aktualisierung umfasst z.B. Datum, Preis, Ort, Durchführungsform, Link oder kurze Textanpassung. Zwei einfache Aktualisierungen zählen als ein Kurs Kursservice." },
     ],
   },
   {
