@@ -722,7 +722,14 @@ async function applyStaging(data) {
     process.env.SUPABASE_STAGING_SERVICE_KEY ||
     process.env.SUPABASE_SECRET_KEY_TEST; // Fallback: .env.test.local Konvention
 
-  // Fallback auf .env.test.local (existierende Testprojekt-Konfiguration)
+  // Fallback auf .env.staging.local (primäre Staging-Konfiguration)
+  if (!stagingUrl || !stagingKey) {
+    const envStaging = readEnvFile(resolve(PROJECT_ROOT, '.env.staging.local'));
+    if (!stagingUrl) stagingUrl = envStaging['SUPABASE_STAGING_URL'];
+    if (!stagingKey) stagingKey = envStaging['SUPABASE_STAGING_SERVICE_KEY'];
+  }
+
+  // Weiterer Fallback auf .env.test.local (Legacy-Testprojekt-Konfiguration)
   if (!stagingUrl || !stagingKey) {
     const envTest = readEnvFile(resolve(PROJECT_ROOT, '.env.test.local'));
     if (!stagingUrl) stagingUrl = envTest['SUPABASE_STAGING_URL'] || envTest['SUPABASE_URL_TEST'];
