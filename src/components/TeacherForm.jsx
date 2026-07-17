@@ -381,13 +381,13 @@ const CategorySuggestionModal = ({ isOpen, onClose, taxonomy, types, showNotific
 // === Zeichenlimits für die Kurseingabe ===
 const COURSE_FIELD_LIMITS = {
     title: 60,
-    description: 1500,
-    keywords: 200,
+    description: 2000,
+    keywords: 250,
     priceInfo: 60,
     freeReason: 150,
     sessionLength: 80,
     objectives: 1000,
-    prerequisites: 250,
+    prerequisites: 400,
     scheduleDescription: 80,
 };
 
