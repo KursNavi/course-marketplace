@@ -1156,7 +1156,7 @@ const SearchPageView = ({
                         </div>
 
                         <div className="p-5">
-                            <h3 className="font-bold text-lg text-dark leading-tight line-clamp-3 h-[72px] mb-2 font-heading">
+                            <h3 className="font-bold text-lg text-dark leading-tight line-clamp-3 mb-2 font-heading">
                                 {course.title}
                             </h3>
 
