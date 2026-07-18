@@ -434,8 +434,8 @@ export function adaptToLegacyBereichConfig({
     // Regional Discovery
     regionalDiscovery: (regions && regions.length > 0)
       ? {
-          title: { de: '' },
-          subtitle: { de: '' },
+          title: st.regions_heading ? { de: st.regions_heading } : { de: '' },
+          subtitle: st.regions_subheading ? { de: st.regions_subheading } : { de: '' },
           regions: regions.map((r) => ({
             label: r.label_de,
             anchorText: r.anchor_text_de || r.label_de,
