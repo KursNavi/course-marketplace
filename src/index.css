@@ -104,6 +104,15 @@
   @apply border-b-0;
 }
 
+/* Scrollable table wrapper — prevents horizontal page overflow on narrow viewports */
+.prose-ratgeber .table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.prose-ratgeber .table-wrapper table {
+  @apply my-0;
+}
+
 .prose-ratgeber blockquote {
   @apply border-l-4 border-primary pl-6 py-2 my-6 bg-orange-50 rounded-r-lg italic text-gray-700;
 }

@@ -3,7 +3,7 @@ import { ChevronRight, Clock, ArrowRight, BookOpen } from 'lucide-react';
 import { BEREICH_LANDING_CONFIG, getBereichBySlug, getBereichUrl, findSzenario } from '../lib/bereichLandingConfig';
 import { SZENARIO_CONTENT } from '../lib/szenarioContent';
 import { SEGMENT_CONFIG } from '../lib/constants';
-import { enhanceImages, estimateReadingTime, buildArticleJsonLd, buildBreadcrumbJsonLd } from '../lib/seoUtils';
+import { enhanceImages, wrapTables, estimateReadingTime, buildArticleJsonLd, buildBreadcrumbJsonLd } from '../lib/seoUtils';
 import { BASE_URL } from '../lib/siteConfig';
 import { shouldHandleClientNavigation } from '../lib/navigation';
 import { loadThemeWorldWithFallback, isThemeWorldPilotActive } from '../lib/themeWorldFeatureFlag';
@@ -35,7 +35,9 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
   const bereichConfig = dynamicBereichConfig || legacyBereichConfig;
   const scenario = dynamicScenario || legacyScenario;
 
-  const theme = SEGMENT_CONFIG[segment] || SEGMENT_CONFIG.beruflich;
+  // Normalize URL segment (privat-hobby → privat_hobby) for SEGMENT_CONFIG lookup
+  const segmentKey = segment?.replace(/-/g, '_') || segment;
+  const theme = SEGMENT_CONFIG[segmentKey] || SEGMENT_CONFIG.beruflich;
 
   // Legacy content lookup
   const bereichKey = legacyBereichConfig
@@ -181,7 +183,7 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
     });
 
     // Article JSON-LD
-    const segmentLabel = SEGMENT_CONFIG[segment]?.label?.[lang] || SEGMENT_CONFIG[segment]?.label?.de || segment;
+    const segmentLabel = SEGMENT_CONFIG[segmentKey]?.label?.[lang] || SEGMENT_CONFIG[segmentKey]?.label?.de || segment;
     const bereichTitle = bereichConfig.title[lang] || bereichConfig.title.de;
     const articleData = buildArticleJsonLd({
       title: scenario.label[lang] || scenario.label.de,
@@ -342,7 +344,7 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
             <div
               ref={articleRef}
               className="prose-ratgeber"
-              dangerouslySetInnerHTML={{ __html: enhanceImages(articleContent) }}
+              dangerouslySetInnerHTML={{ __html: wrapTables(enhanceImages(articleContent)) }}
             />
           ) : (
             <div className="text-center py-12">

@@ -59,8 +59,9 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bereichKey, segment, slug]);
 
-  // Segment theme
-  const theme = SEGMENT_CONFIG[segment] || SEGMENT_CONFIG.beruflich;
+  // Segment theme — normalize URL segment (privat-hobby → privat_hobby)
+  const segmentKey = segment?.replace(/-/g, '_') || segment;
+  const theme = SEGMENT_CONFIG[segmentKey] || SEGMENT_CONFIG.beruflich;
 
   const goToContact = () => {
     window.scrollTo(0, 0);

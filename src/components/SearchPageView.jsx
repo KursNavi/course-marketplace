@@ -119,10 +119,13 @@ const SearchPageView = ({
             });
         }
         if (area?.label_de) return area.label_de;
-        // Final fallback: hardcoded taxonomy constants (always available, no DB needed)
+        // Fallback: hardcoded taxonomy constants (always available, no DB needed)
         for (const typeData of Object.values(NEW_TAXONOMY)) {
             if (typeData[areaSlug]?.label?.de) return typeData[areaSlug].label.de;
         }
+        // Fallback: legacy bereich config (covers theme world area slugs like 'yoga_achtsamkeit')
+        const bereichEntry = getBereichByAreaSlug(areaSlug);
+        if (bereichEntry?.title?.de) return bereichEntry.title.de.split(' - ')[0];
         return areaSlug;
     };
 
