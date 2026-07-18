@@ -119,7 +119,7 @@ describe('Sitemap Blog-Fix: articles statt blog', () => {
 
     // Muss console.error oder console.warn enthalten für den blogError-Fall
     // (nicht mehr nur console.warn ohne Nachricht)
-    expect(sitemapSource).toMatch(/console\.(error|warn)\s*\(\s*['"\[].*[Bb]log/);
+    expect(sitemapSource).toMatch(/console\.(error|warn)\s*\(\s*['"[].*[Bb]log/);
   });
 
   it('Sitemap generiert Blog-Post-URLs mit korrektem Pfad', async () => {
