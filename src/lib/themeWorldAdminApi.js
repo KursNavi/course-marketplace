@@ -255,6 +255,10 @@ export async function unpublishThemeWorld(id) {
 /**
  * Lädt alle Sub-Entitäten einer Themenwelt (FAQs, Editorial Sections, etc.).
  *
+ * Die API gibt kein verschachteltes `data`-Objekt zurück — die Arrays liegen direkt
+ * auf der Root-Ebene und verwenden snake_case-Keys. Diese Funktion normalisiert
+ * beide Aspekte, sodass die Komponente camelCase-Keys erwartet.
+ *
  * @param {string} themeWorldId - UUID der Themenwelt
  * @returns {Promise<{faqs, editorialSections, specialties, regions, trustItems}>}
  */
@@ -262,7 +266,14 @@ export async function getAllSubEntities(themeWorldId) {
   const result = await apiCall(
     `/api/admin-theme-world-sub?action=get-all&themeWorldId=${encodeURIComponent(themeWorldId)}`,
   );
-  return result.data || {};
+  // API returns arrays at root level (no 'data' wrapper), with snake_case keys.
+  return {
+    faqs: result.faqs || [],
+    editorialSections: result.editorial_sections || [],
+    specialties: result.specialties || [],
+    regions: result.regions || [],
+    trustItems: result.trust_items || [],
+  };
 }
 
 /**
@@ -577,5 +588,9 @@ export function getErrorMessage(error, defaultMessage = 'Ein Fehler ist aufgetre
     return 'Serverfehler. Bitte versuche es später erneut.';
   }
 
+  // For any error with details (e.g. validation errors), append them
+  if (error.details?.length) {
+    return `${error.message || defaultMessage}: ${error.details.join('; ')}`;
+  }
   return error.message || defaultMessage;
 }

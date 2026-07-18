@@ -23,6 +23,7 @@ import {
 
 import {
   validateThemeWorldBase,
+  validateThemeWorldUpdate,
   validatePublishThemeWorld,
   isValidSlug,
 } from './_lib/theme-world-validate.js';
@@ -148,7 +149,10 @@ export default async function handler(req, res) {
       }
 
       const body = parseBody(req);
-      const validation = validateThemeWorldBase(body);
+      // Partial validator: only validates fields present in the payload.
+      // This allows each admin tab (Bilder, Suche, etc.) to save its own fields
+      // without providing all Grundlagen-Pflichtfelder.
+      const validation = validateThemeWorldUpdate(body);
 
       if (!validation.valid) {
         return res.status(400).json({ error: 'Validierungsfehler.', details: validation.errors });

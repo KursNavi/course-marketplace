@@ -138,11 +138,23 @@ export default async function handler(req, res) {
         supabaseAdmin.from('theme_world_trust_items').select('*').eq('theme_world_id', themeWorldId).order('sort_order'),
       ]);
 
-      if (faqs.error) console.error('[admin-sub] faqs error:', faqs.error.message);
-      if (editorial.error) console.error('[admin-sub] editorial error:', editorial.error.message);
-      if (specialties.error) console.error('[admin-sub] specialties error:', specialties.error.message);
-      if (regions.error) console.error('[admin-sub] regions error:', regions.error.message);
-      if (trust.error) console.error('[admin-sub] trust error:', trust.error.message);
+      // Any sub-query failure must NOT silently return [] — propagate as 500
+      // so the client can show a load error instead of displaying phantom empty lists.
+      const subErrors = [
+        faqs.error && `faqs: ${faqs.error.message}`,
+        editorial.error && `editorial_sections: ${editorial.error.message}`,
+        specialties.error && `specialties: ${specialties.error.message}`,
+        regions.error && `regions: ${regions.error.message}`,
+        trust.error && `trust_items: ${trust.error.message}`,
+      ].filter(Boolean);
+
+      if (subErrors.length > 0) {
+        console.error('[admin-sub] get-all sub-query errors:', subErrors.join('; '));
+        return res.status(500).json({
+          error: 'Unterdaten konnten nicht vollständig geladen werden.',
+          details: subErrors,
+        });
+      }
 
       return res.status(200).json({
         faqs: faqs.data || [],

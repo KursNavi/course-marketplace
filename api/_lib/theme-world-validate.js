@@ -351,6 +351,81 @@ export function validateThemeWorldBase(data) {
 }
 
 /**
+ * Partial-Validator für UPDATE-Requests (Patch-Semantik).
+ *
+ * Pflichtfelder (key, title_de, area_slug, db_segment, url_segment, slug) werden
+ * NUR geprüft, wenn sie im Payload vorhanden sind. Tabs können dadurch ihren
+ * jeweiligen Feldbereich separat speichern, ohne alle Grundfelder mitsenden zu müssen.
+ *
+ * Optionale Felder und JSONB-Blöcke werden wie in validateThemeWorldBase geprüft,
+ * aber ebenfalls nur wenn sie im Payload vorhanden sind.
+ */
+export function validateThemeWorldUpdate(data) {
+  const errors = [];
+
+  if (!data || typeof data !== 'object') {
+    return { valid: false, errors: ['Kein gültiger Request-Body.'] };
+  }
+
+  // Pflichtfelder — nur validieren wenn im Payload enthalten
+  if ('key' in data) requireText(errors, data, 'key', 100);
+  if ('title_de' in data) requireText(errors, data, 'title_de', 200);
+  if ('area_slug' in data) requireText(errors, data, 'area_slug', 100);
+
+  // Segment-Werte — nur validieren wenn vorhanden
+  if ('db_segment' in data && !VALID_DB_SEGMENTS.includes(data.db_segment)) {
+    collect(errors, 'db_segment', `Ungültiger Wert. Erlaubt: ${VALID_DB_SEGMENTS.join(', ')}.`);
+  }
+  if ('url_segment' in data && !VALID_URL_SEGMENTS.includes(data.url_segment)) {
+    collect(errors, 'url_segment', `Ungültiger Wert. Erlaubt: ${VALID_URL_SEGMENTS.join(', ')}.`);
+  }
+
+  // Segment-Konsistenz — nur wenn BEIDE Felder im Payload sind
+  const SEGMENT_MAP = { professionell: 'beruflich', privat: 'privat-hobby', kinder: 'kinder-jugend' };
+  if (data.db_segment && data.url_segment && SEGMENT_MAP[data.db_segment] !== data.url_segment) {
+    collect(errors, 'db_segment/url_segment', `Inkonsistentes Segment-Paar: ${data.db_segment} erwartet ${SEGMENT_MAP[data.db_segment]}, nicht ${data.url_segment}.`);
+  }
+
+  // Slug — nur validieren wenn vorhanden
+  if ('slug' in data && !isValidSlug(data.slug)) {
+    collect(errors, 'slug', 'Ungültiges Slug-Format. Nur a-z, 0-9, Bindestriche erlaubt (kein Führungs-/Abschluss-Bindestrich).');
+  }
+
+  // Optionale Text-Felder
+  optionalText(errors, data, 'subtitle_de', 400);
+  optionalText(errors, data, 'intro_de', 5000);
+  optionalText(errors, data, 'meta_title', 70);
+  optionalText(errors, data, 'meta_description', 160);
+  optionalText(errors, data, 'hero_image_alt_de', 200);
+
+  // Bild-URLs
+  if (data.hero_image_url && !isValidImageUrl(data.hero_image_url)) {
+    collect(errors, 'hero_image_url', 'Muss eine gültige https://-URL sein.');
+  }
+  if (data.og_image_url && !isValidImageUrl(data.og_image_url)) {
+    collect(errors, 'og_image_url', 'Muss eine gültige https://-URL sein.');
+  }
+
+  // Hero Alt-Text ist Pflicht wenn hero_image_url in diesem Payload neu gesetzt wird
+  if ('hero_image_url' in data && data.hero_image_url && (!data.hero_image_alt_de || !data.hero_image_alt_de.trim())) {
+    collect(errors, 'hero_image_alt_de', 'Pflicht wenn hero_image_url gesetzt ist.');
+  }
+
+  // JSONB-Felder — nur validieren wenn vorhanden
+  if ('search_config' in data) errors.push(...validateSearchConfig(data.search_config));
+  if ('section_titles' in data) errors.push(...validateSectionTitles(data.section_titles));
+  if ('predefined_searches' in data) errors.push(...validatePredefinedSearches(data.predefined_searches));
+  if ('cta_links' in data) errors.push(...validateCtaLinks(data.cta_links));
+
+  // Sort-Order
+  if (data.sort_order !== undefined && (!Number.isInteger(data.sort_order) || data.sort_order < 0)) {
+    collect(errors, 'sort_order', 'Muss eine nicht-negative ganze Zahl sein.');
+  }
+
+  return { valid: errors.length === 0, errors };
+}
+
+/**
  * Validiert die Felder eines Szenario-Artikels (CREATE/UPDATE).
  */
 export function validateScenario(data) {

@@ -80,7 +80,13 @@ function useSaveState() {
     setErrorMsg(msg);
   }, []);
 
-  return { state, isDirty, errorMsg, markDirty, startSaving, markSaved, markError };
+  const resetDirty = useCallback(() => {
+    setState('idle');
+    setIsDirty(false);
+    setErrorMsg(null);
+  }, []);
+
+  return { state, isDirty, errorMsg, markDirty, startSaving, markSaved, markError, resetDirty };
 }
 
 // ---------------------------------------------------------------------------
@@ -191,12 +197,23 @@ export default function AdminThemeWorldForm({
         default_focus: sc.default_focus || '',
       });
 
-      // Sub-Entitäten
+      // Sub-Entitäten (keys already normalized to camelCase by getAllSubEntities)
       setSpecialties(subs.specialties || []);
       setRegionen(subs.regions || []);
       setEditorial(subs.editorialSections || []);
       setFaqs(subs.faqs || []);
       setTrustItems(subs.trustItems || []);
+
+      // Reset all dirty states after successful load — prevents phantom
+      // "Ungespeicherte Änderungen" from stale state or previous sessions.
+      grundlagenSave.resetDirty();
+      bilderSave.resetDirty();
+      sucheSave.resetDirty();
+      specialtiesSave.resetDirty();
+      regionenSave.resetDirty();
+      editorialSave.resetDirty();
+      faqSave.resetDirty();
+      trustSave.resetDirty();
 
     } catch (err) {
       setLoadError(getErrorMessage(err, 'Daten konnten nicht geladen werden.'));
@@ -257,6 +274,7 @@ export default function AdminThemeWorldForm({
   const saveBilder = async () => {
     const id = savedTwId || themeWorldId;
     if (!id) return showNotification('Bitte zuerst Grundlagen speichern.');
+    if (loadError) return showNotification('Laden fehlgeschlagen — Speichern nicht möglich.');
     bilderSave.startSaving();
     try {
       await updateThemeWorld(id, {
@@ -278,6 +296,7 @@ export default function AdminThemeWorldForm({
   const saveSuche = async () => {
     const id = savedTwId || themeWorldId;
     if (!id) return showNotification('Bitte zuerst Grundlagen speichern.');
+    if (loadError) return showNotification('Laden fehlgeschlagen — Speichern nicht möglich.');
     sucheSave.startSaving();
     try {
       await updateThemeWorld(id, {
@@ -301,6 +320,8 @@ export default function AdminThemeWorldForm({
   const saveSub = async (action, data, saveState, label) => {
     const id = savedTwId || themeWorldId;
     if (!id) return showNotification('Bitte zuerst Grundlagen speichern.');
+    // Data-loss protection: never save if initial load failed (data not fully loaded).
+    if (loadError) return showNotification('Laden fehlgeschlagen — Speichern nicht möglich.');
     saveState.startSaving();
     try {
       await action(id, data);
