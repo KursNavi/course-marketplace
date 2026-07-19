@@ -31,6 +31,11 @@ export default function AdminScenarioList({
   const [actionRunning, setActionRunning] = useState(false);
 
   const fetchData = useCallback(async () => {
+    if (!themeWorldId) {
+      setError('Keine Themenwelt-ID angegeben. Bitte gehe zurück zur Themenwelt-Liste.');
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
@@ -215,7 +220,7 @@ export default function AdminScenarioList({
           </div>
         )}
 
-        {themeWorld?.status !== 'published' && !loading && (
+        {!loading && !error && themeWorld && themeWorld.status !== 'published' && (
           <div className="mt-4 bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-700">
             Die Themenwelt ist nicht publiziert. Szenarioartikel können erst publiziert werden, wenn die Themenwelt publiziert ist.
           </div>

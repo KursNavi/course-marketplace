@@ -286,7 +286,7 @@ export async function getAllSubEntities(themeWorldId) {
 export async function replaceFaqs(themeWorldId, faqs) {
   const result = await apiCall(
     `/api/admin-theme-world-sub?action=replace-faqs&themeWorldId=${encodeURIComponent(themeWorldId)}`,
-    { method: 'POST', body: { faqs } },
+    { method: 'POST', body: { items: faqs } },
   );
   return result.data;
 }
@@ -301,7 +301,7 @@ export async function replaceFaqs(themeWorldId, faqs) {
 export async function replaceEditorialSections(themeWorldId, sections) {
   const result = await apiCall(
     `/api/admin-theme-world-sub?action=replace-editorial&themeWorldId=${encodeURIComponent(themeWorldId)}`,
-    { method: 'POST', body: { sections } },
+    { method: 'POST', body: { items: sections } },
   );
   return result.data;
 }
@@ -316,7 +316,7 @@ export async function replaceEditorialSections(themeWorldId, sections) {
 export async function replaceSpecialties(themeWorldId, specialties) {
   const result = await apiCall(
     `/api/admin-theme-world-sub?action=replace-specialties&themeWorldId=${encodeURIComponent(themeWorldId)}`,
-    { method: 'POST', body: { specialties } },
+    { method: 'POST', body: { items: specialties } },
   );
   return result.data;
 }
@@ -331,7 +331,7 @@ export async function replaceSpecialties(themeWorldId, specialties) {
 export async function replaceRegions(themeWorldId, regions) {
   const result = await apiCall(
     `/api/admin-theme-world-sub?action=replace-regions&themeWorldId=${encodeURIComponent(themeWorldId)}`,
-    { method: 'POST', body: { regions } },
+    { method: 'POST', body: { items: regions } },
   );
   return result.data;
 }
@@ -346,7 +346,7 @@ export async function replaceRegions(themeWorldId, regions) {
 export async function replaceTrustItems(themeWorldId, trustItems) {
   const result = await apiCall(
     `/api/admin-theme-world-sub?action=replace-trust&themeWorldId=${encodeURIComponent(themeWorldId)}`,
-    { method: 'POST', body: { trustItems } },
+    { method: 'POST', body: { items: trustItems } },
   );
   return result.data;
 }
@@ -450,7 +450,7 @@ export async function publishScenario(id) {
 export async function reorderScenarios(themeWorldId, order) {
   const result = await apiCall(
     `/api/admin-theme-world-scenarios?action=reorder&themeWorldId=${encodeURIComponent(themeWorldId)}`,
-    { method: 'POST', body: { order } },
+    { method: 'POST', body: { items: order } },
   );
   return result.data;
 }
