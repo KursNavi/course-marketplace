@@ -1,21 +1,28 @@
 /**
- * Phase 7.8 — Scenario Admin Server Fix Tests
+ * Phase 7.8 — Scenario Admin Server Fix Tests (updated: Phase 7.8.1)
  *
  * Root cause: admin-theme-world-scenarios.js imports sanitize-html (CJS)
- * which requires htmlparser2 v12 (ESM-only). This causes ERR_REQUIRE_ESM
- * on Node.js < 22, resulting in FUNCTION_INVOCATION_FAILED on Vercel Preview.
+ * which requires htmlparser2. htmlparser2 v12+ is ESM-only, causing
+ * ERR_REQUIRE_ESM → FUNCTION_INVOCATION_FAILED on Vercel (Node.js 20.x).
  *
- * Fix: add engines.node >= 22 to package.json so Vercel uses Node.js 22.x
- * where require(esm) is supported natively.
+ * Phase 7.8 attempted fix: engines.node ">=22" (wrong format — Vercel needs "22.x")
+ * Phase 7.8.1 fix (this commit):
+ *   1. engines.node: "22.x"  — correct Vercel format
+ *   2. overrides.htmlparser2: "9.x"  — pin to last CJS version (runtime-independent)
+ *
+ * Why both?
+ *   - engines.node "22.x" upgrades Vercel's Node.js runtime (belt)
+ *   - htmlparser2 override removes the ESM-only dep entirely (suspenders)
  *
  * Covers:
- *   1. package.json engines.node >= 22
- *   2. sanitize-html can be imported in ESM context (Node >= 22 confirms this)
- *   3. htmlparser2 is ESM-only (no CJS exports)
- *   4. admin-theme-world-scenarios.js module imports without error
- *   5. listScenarios API client sends correct URL and reads result.data
- *   6. getThemeWorld API client reads result.data (no wrapper mismatch)
- *   7. Regression: body.items fix from Phase 7.7 still in place
+ *   1. package.json engines.node is "22.x" (correct Vercel format)
+ *   2. package.json overrides.htmlparser2 is "9.x" (CJS pin)
+ *   3. htmlparser2 used by sanitize-html is v9.x (CJS — no type:module)
+ *   4. sanitize-html can be imported and sanitizes correctly
+ *   5. admin-theme-world-scenarios.js module loads without error
+ *   6. listScenarios API client sends correct URL and reads result.data
+ *   7. getThemeWorld API client reads result.data (no wrapper mismatch)
+ *   8. Regression: body.items fix from Phase 7.7 still in place
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
@@ -31,71 +38,88 @@ vi.mock('../src/lib/supabase', () => ({
 }));
 
 // ---------------------------------------------------------------------------
-// 1. package.json engines.node >= 22
+// 1. package.json engines.node is "22.x" (correct Vercel format)
 // ---------------------------------------------------------------------------
 
-describe('Phase 7.8: package.json engines.node', () => {
-  it('has engines.node field set to >=22', () => {
+describe('Phase 7.8.1: package.json engines.node', () => {
+  it('has engines.node set to "22.x" (Vercel-recognized format)', () => {
     const pkg = JSON.parse(readFileSync(resolve('package.json'), 'utf8'));
     expect(pkg).toHaveProperty('engines');
     expect(pkg.engines).toHaveProperty('node');
-    // Must require Node.js >= 22 to support require(esm) for sanitize-html → htmlparser2
+    // Vercel recognizes "22.x" and "^22.0.0" — NOT ">=22" (wrong format)
     const nodeReq = pkg.engines.node;
-    // Accept: ">=22", "22.x", "^22", "22" — any that implies 22+
     const match = nodeReq.match(/\d+/);
     const major = match ? parseInt(match[0], 10) : NaN;
     expect(major).toBeGreaterThanOrEqual(22);
+    // Specifically must be "22.x" — the format Vercel's docs show
+    expect(nodeReq).toBe('22.x');
   });
 });
 
 // ---------------------------------------------------------------------------
-// 2. htmlparser2 is ESM-only (no CJS exports) — confirms root cause
+// 2. package.json overrides.htmlparser2 is "9.x"
 // ---------------------------------------------------------------------------
 
-describe('Phase 7.8: htmlparser2 v12 is ESM-only', () => {
-  it('htmlparser2 dist/index.js uses ESM syntax (import/export)', () => {
-    const indexPath = resolve('node_modules/htmlparser2/dist/index.js');
-    const content = readFileSync(indexPath, 'utf8');
-    expect(content).toMatch(/^import\s+/m);
-    expect(content).toMatch(/^export\s+/m);
+describe('Phase 7.8.1: package.json npm overrides', () => {
+  it('has overrides.htmlparser2 pinned to 9.x (last CJS version)', () => {
+    const pkg = JSON.parse(readFileSync(resolve('package.json'), 'utf8'));
+    expect(pkg).toHaveProperty('overrides');
+    expect(pkg.overrides).toHaveProperty('htmlparser2');
+    // Must pin to v9.x (CJS) — v10+ switched to ESM-only
+    const override = pkg.overrides.htmlparser2;
+    const match = override.match(/\d+/);
+    const major = match ? parseInt(match[0], 10) : NaN;
+    expect(major).toBe(9);
   });
 
-  it('htmlparser2 dist/index.js has no CJS module.exports or require()', () => {
-    const indexPath = resolve('node_modules/htmlparser2/dist/index.js');
-    const content = readFileSync(indexPath, 'utf8');
-    expect(content).not.toContain('module.exports');
-    expect(content).not.toContain('require(');
+  it('has htmlparser2 installed as v9.x via override', () => {
+    // When overridden, npm installs it nested under sanitize-html
+    const pkgPath = resolve('node_modules/sanitize-html/node_modules/htmlparser2/package.json');
+    const pkg = JSON.parse(readFileSync(pkgPath, 'utf8'));
+    const major = parseInt(pkg.version.split('.')[0], 10);
+    expect(major).toBe(9);
   });
 
-  it('htmlparser2 package.json type is module', () => {
-    const pkg = JSON.parse(readFileSync(resolve('node_modules/htmlparser2/package.json'), 'utf8'));
-    expect(pkg.type).toBe('module');
+  it('htmlparser2 v9 is CommonJS (no type:module field)', () => {
+    const pkgPath = resolve('node_modules/sanitize-html/node_modules/htmlparser2/package.json');
+    const pkg = JSON.parse(readFileSync(pkgPath, 'utf8'));
+    // CJS packages have no "type" field (or "type":"commonjs")
+    expect(pkg.type).toBeUndefined();
   });
 
-  it('sanitize-html index.js uses require() for htmlparser2 (CJS package)', () => {
+  it('htmlparser2 v9 has CJS module.exports (not ESM export syntax)', () => {
+    const pkgPath = resolve('node_modules/sanitize-html/node_modules/htmlparser2/package.json');
+    const pkg = JSON.parse(readFileSync(pkgPath, 'utf8'));
+    const mainPath = resolve(`node_modules/sanitize-html/node_modules/htmlparser2/${pkg.main || 'lib/index.js'}`);
+    const content = readFileSync(mainPath, 'utf8');
+    // CJS: has module.exports or exports.something
+    expect(content).toMatch(/module\.exports|exports\./);
+    // NOT ESM
+    expect(content).not.toMatch(/^export /m);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 3. sanitize-html works with CJS htmlparser2 (no require(esm) needed)
+// ---------------------------------------------------------------------------
+
+describe('Phase 7.8.1: sanitize-html with CJS htmlparser2', () => {
+  it('sanitize-html uses require("htmlparser2") (CJS chain)', () => {
     const content = readFileSync(resolve('node_modules/sanitize-html/index.js'), 'utf8');
     expect(content).toContain("require('htmlparser2')");
   });
-});
 
-// ---------------------------------------------------------------------------
-// 3. sanitize-html ESM import works (Node.js >= 22 enables require(esm))
-// ---------------------------------------------------------------------------
-
-describe('Phase 7.8: sanitize-html ESM default import', () => {
-  it('can be imported as ESM default in the current Node.js runtime', async () => {
-    // This test only passes on Node.js >= 22 where require(esm) is supported.
-    // If this test fails, engines.node must be raised.
+  it('can be imported as ESM default and works on any Node.js (CJS chain is clean)', async () => {
     const { default: sanitize } = await import('sanitize-html');
     expect(typeof sanitize).toBe('function');
   });
 
-  it('sanitizes HTML correctly after ESM import', async () => {
+  it('sanitizes HTML correctly (no ESM interop required)', async () => {
     const { default: sanitize } = await import('sanitize-html');
-    const result = sanitize('<p>Safe <script>evil()</script></p>', {
-      allowedTags: ['p'],
+    const result = sanitize('<p>Safe <script>evil()</script> <b>world</b></p>', {
+      allowedTags: ['p', 'b'],
     });
-    expect(result).toBe('<p>Safe </p>');
+    expect(result).toBe('<p>Safe  <b>world</b></p>');
     expect(result).not.toContain('evil');
     expect(result).not.toContain('script');
   });
@@ -105,9 +129,8 @@ describe('Phase 7.8: sanitize-html ESM default import', () => {
 // 4. admin-theme-world-scenarios.js module loads without error
 // ---------------------------------------------------------------------------
 
-describe('Phase 7.8: admin-theme-world-scenarios.js module health', () => {
+describe('Phase 7.8.1: admin-theme-world-scenarios.js module health', () => {
   it('exports a default handler function', async () => {
-    // Provide env vars so requireAdmin module-level code doesn't fail
     process.env.SUPABASE_URL = 'https://omoapbvfligjfznzivyu.supabase.co';
     process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-key-for-import-check';
 
@@ -152,7 +175,7 @@ function mockFetchResponse(status, body) {
   });
 }
 
-describe('Phase 7.8: listScenarios API client', () => {
+describe('Phase 7.8.1: listScenarios API client', () => {
   it('calls the correct endpoint URL', async () => {
     fetchSpy.mockReturnValue(mockFetchResponse(200, { data: [] }));
     await listScenarios(FAKE_TW_ID);
@@ -209,7 +232,7 @@ describe('Phase 7.8: listScenarios API client', () => {
 // 6. getThemeWorld reads result.data (not result directly)
 // ---------------------------------------------------------------------------
 
-describe('Phase 7.8: getThemeWorld API client', () => {
+describe('Phase 7.8.1: getThemeWorld API client', () => {
   it('reads result.data from the response', async () => {
     const tw = { id: FAKE_TW_ID, title_de: 'Yoga & Achtsamkeit', status: 'published' };
     fetchSpy.mockReturnValue(mockFetchResponse(200, { data: tw }));
@@ -241,7 +264,7 @@ import {
   reorderScenarios,
 } from '../src/lib/themeWorldAdminApi.js';
 
-describe('Phase 7.8 Regression: body.items fix (from Phase 7.7) still in place', () => {
+describe('Phase 7.8.1 Regression: body.items fix (from Phase 7.7) still in place', () => {
   const CHECK_ITEMS = [{ id: 'x', sort_order: 1 }];
 
   it('replaceFaqs sends body.items', async () => {

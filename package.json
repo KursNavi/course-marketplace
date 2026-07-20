@@ -4,7 +4,10 @@
   "version": "0.0.0",
   "type": "module",
   "engines": {
-    "node": ">=22"
+    "node": "22.x"
+  },
+  "overrides": {
+    "htmlparser2": "9.x"
   },
   "scripts": {
     "dev": "vite",
