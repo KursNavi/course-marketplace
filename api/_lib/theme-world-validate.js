@@ -13,6 +13,10 @@
 
 export const VALID_DB_SEGMENTS = ['professionell', 'privat', 'kinder'];
 export const VALID_URL_SEGMENTS = ['beruflich', 'privat-hobby', 'kinder-jugend'];
+
+// Verbindliches Zeichenlimit für meta_title (stimmt mit AdminSeoFields.jsx überein).
+// Google kürzt Titel ab ca. 60 Zeichen. UI zeigt dieses Limit als Zeichenzähler.
+export const META_TITLE_MAX = 60;
 export const VALID_STATUSES = ['draft', 'published', 'archived'];
 export const VALID_DELIVERY_TYPES = ['online_live', 'self_study', 'in_person'];
 export const VALID_TRUST_ITEM_TYPES = ['label', 'editorial', 'info'];
@@ -319,7 +323,7 @@ export function validateThemeWorldBase(data) {
   // Optionale Text-Felder
   optionalText(errors, data, 'subtitle_de', 400);
   optionalText(errors, data, 'intro_de', 5000);
-  optionalText(errors, data, 'meta_title', 70);
+  optionalText(errors, data, 'meta_title', META_TITLE_MAX);
   optionalText(errors, data, 'meta_description', 160);
   optionalText(errors, data, 'hero_image_alt_de', 200);
 
@@ -394,7 +398,7 @@ export function validateThemeWorldUpdate(data) {
   // Optionale Text-Felder
   optionalText(errors, data, 'subtitle_de', 400);
   optionalText(errors, data, 'intro_de', 5000);
-  optionalText(errors, data, 'meta_title', 70);
+  optionalText(errors, data, 'meta_title', META_TITLE_MAX);
   optionalText(errors, data, 'meta_description', 160);
   optionalText(errors, data, 'hero_image_alt_de', 200);
 
@@ -443,7 +447,7 @@ export function validateScenario(data) {
 
   optionalText(errors, data, 'teaser_de', 300);
   optionalText(errors, data, 'cta_label_de', 100);
-  optionalText(errors, data, 'meta_title', 70);
+  optionalText(errors, data, 'meta_title', META_TITLE_MAX);
   optionalText(errors, data, 'meta_description', 160);
   optionalText(errors, data, 'card_image_alt', 200);
 

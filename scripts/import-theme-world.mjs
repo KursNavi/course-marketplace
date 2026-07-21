@@ -146,6 +146,12 @@ function validateSchema(data) {
       errors.push(`theme_world.slug "${tw.slug}" enthält ungültige Zeichen (nur Kleinbuchstaben, Zahlen, Bindestriche)`);
     }
 
+    // meta_title Länge (muss mit API-Validator und UI übereinstimmen)
+    const META_TITLE_MAX = 60;
+    if (tw.meta_title && tw.meta_title.length > META_TITLE_MAX) {
+      errors.push(`theme_world.meta_title ist zu lang (${tw.meta_title.length} Zeichen, max ${META_TITLE_MAX})`);
+    }
+
     // Hero-Bild Alt-Text
     if (tw.hero_image_url && !tw.hero_image_alt_de) {
       warnings.push('theme_world hat hero_image_url aber kein hero_image_alt_de');
