@@ -6,7 +6,7 @@ import { SEGMENT_CONFIG } from '../lib/constants';
 import { enhanceImages, wrapTables, estimateReadingTime, buildArticleJsonLd, buildBreadcrumbJsonLd } from '../lib/seoUtils';
 import { BASE_URL } from '../lib/siteConfig';
 import { shouldHandleClientNavigation } from '../lib/navigation';
-import { loadThemeWorldWithFallback, isThemeWorldPilotActive } from '../lib/themeWorldFeatureFlag';
+import { loadThemeWorldWithFallback, isThemeWorldPilotActive, isThemeWorldDbEnabled } from '../lib/themeWorldFeatureFlag';
 import { fetchThemeWorld, fetchPublishedScenario } from '../lib/themeWorldService';
 import { adaptToLegacyBereichConfig, adaptToLegacySzenarioConfig } from '../lib/themeWorldAdapter';
 
@@ -30,6 +30,8 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
   const [dynamicScenario, setDynamicScenario] = useState(null);
   const [dynamicArticleContent, setDynamicArticleContent] = useState(null);
   const [dynamicNotFound, setDynamicNotFound] = useState(false);
+  // DB-only mode: kein Legacy-Eintrag vorhanden, aber DB global aktiv → Ladeindikator bis Antwort
+  const [dbOnlyLoading, setDbOnlyLoading] = useState(() => !legacyBereichConfig && isThemeWorldDbEnabled());
 
   // Effective values: DB wenn geladen, sonst Legacy
   const bereichConfig = dynamicBereichConfig || legacyBereichConfig;
@@ -54,10 +56,51 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
 
   // Pilot-Integration: DB-Daten laden wenn Feature-Flag aktiv
   useEffect(() => {
+    let cancelled = false;
+
+    // DB-only-Modus: Themenwelt existiert nur in der DB, kein Legacy-Eintrag
+    // → direkt laden ohne Pilot-Key-Prüfung (keine Legacy-Einschränkung nötig)
+    if (!legacyBereichConfig && isThemeWorldDbEnabled()) {
+      (async () => {
+        try {
+          const tw = await fetchThemeWorld(segment, slug);
+          if (cancelled) return;
+
+          const sc = tw.search_config || {};
+          setDynamicBereichConfig({
+            slug: tw.slug,
+            segment: tw.url_segment,
+            typeKey: tw.url_segment?.replace(/-/g, '_') || 'beruflich',
+            areaSlug: sc.area_slug || tw.area_slug || tw.key,
+            title: { de: tw.title_de || '' },
+            scenarios: [],
+          });
+
+          try {
+            const scenarioData = await fetchPublishedScenario(tw.id, szenarioSlug);
+            if (!cancelled && scenarioData) {
+              setDynamicScenario(adaptToLegacySzenarioConfig(scenarioData, sc));
+              setDynamicArticleContent(scenarioData.content_html || '');
+            }
+          } catch (sErr) {
+            if (!cancelled) {
+              setDynamicNotFound(true);
+            }
+          }
+        } catch (err) {
+          if (!cancelled) {
+            setDynamicNotFound(true);
+          }
+        } finally {
+          if (!cancelled) setDbOnlyLoading(false);
+        }
+      })();
+      return () => { cancelled = true; };
+    }
+
+    // Pilot-Modus: Legacy-Eintrag vorhanden, Pilot-Flag steuert DB-Upgrade
     if (!bereichKey) return;
     if (!isThemeWorldPilotActive(bereichKey)) return;
-
-    let cancelled = false;
 
     (async () => {
       try {
@@ -236,6 +279,15 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
     });
     return () => btns.forEach(b => b.remove());
   }, [articleContent, scenario, lang, goToSearch]);
+
+  // DB-only Ladeindikator — verhindert vorzeitigen 404 während DB-Abfrage läuft
+  if (dbOnlyLoading) {
+    return (
+      <div className="min-h-screen bg-beige flex items-center justify-center">
+        <div className="text-center text-muted">Wird geladen…</div>
+      </div>
+    );
+  }
 
   // 404 — auch für DB-Not-found
   if (!bereichConfig || !scenario || dynamicNotFound) {

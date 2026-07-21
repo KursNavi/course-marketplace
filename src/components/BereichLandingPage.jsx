@@ -8,7 +8,7 @@ import { BASE_URL } from '../lib/siteConfig';
 import { buildFaqPageJsonLd } from '../lib/seoUtils';
 import { shouldHandleClientNavigation } from '../lib/navigation';
 import RegionalDiscoverySection from './RegionalDiscoverySection';
-import { loadThemeWorldWithFallback, isThemeWorldPilotActive } from '../lib/themeWorldFeatureFlag';
+import { loadThemeWorldWithFallback, isThemeWorldPilotActive, isThemeWorldDbEnabled } from '../lib/themeWorldFeatureFlag';
 import { fetchThemeWorldPage } from '../lib/themeWorldService';
 import { adaptToLegacyBereichConfig } from '../lib/themeWorldAdapter';
 
@@ -19,6 +19,8 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
   // Dynamic config state — wird gesetzt wenn Pilot-Flag aktiv + DB-Antwort erfolgreich
   const [dynamicConfig, setDynamicConfig] = useState(null);
   const [dynamicNotFound, setDynamicNotFound] = useState(false);
+  // DB-only mode: kein Legacy-Eintrag vorhanden, aber DB global aktiv → Ladeindikator bis Antwort
+  const [dbOnlyLoading, setDbOnlyLoading] = useState(() => !legacyConfig && isThemeWorldDbEnabled());
 
   // Effektiver Config: DB wenn geladen, sonst Legacy
   const config = dynamicConfig || legacyConfig;
@@ -34,6 +36,27 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
 
   // Pilot-Integration: DB-Daten laden wenn Feature-Flag aktiv
   useEffect(() => {
+    // DB-only-Modus: Themenwelt existiert nur in der DB, kein Legacy-Eintrag
+    // → direkt laden ohne Pilot-Key-Prüfung (keine Legacy-Einschränkung nötig)
+    if (!legacyConfig && isThemeWorldDbEnabled()) {
+      let cancelled = false;
+      fetchThemeWorldPage(segment, slug)
+        .then(data => {
+          if (!cancelled) {
+            setDynamicConfig(adaptToLegacyBereichConfig(data));
+            setDbOnlyLoading(false);
+          }
+        })
+        .catch(() => {
+          if (!cancelled) {
+            setDynamicNotFound(true);
+            setDbOnlyLoading(false);
+          }
+        });
+      return () => { cancelled = true; };
+    }
+
+    // Pilot-Modus: Legacy-Eintrag vorhanden, Pilot-Flag steuert DB-Upgrade
     if (!bereichKey) return;
     if (!isThemeWorldPilotActive(bereichKey)) return;
 
@@ -158,6 +181,15 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
       if (faqScript && faqScript.parentNode) faqScript.remove();
     };
   }, [config, segment, slug, lang]);
+
+  // DB-only Ladeindikator — verhindert vorzeitigen 404 während DB-Abfrage läuft
+  if (dbOnlyLoading) {
+    return (
+      <div className="min-h-screen bg-beige flex items-center justify-center">
+        <div className="text-center text-muted">Wird geladen…</div>
+      </div>
+    );
+  }
 
   // 404 guard — auch für DB-Not-found
   if (!config || dynamicNotFound) {
