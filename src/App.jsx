@@ -2278,6 +2278,7 @@ useEffect(() => {
       )}
       {view === 'admin-theme-world-form' && (
         <AdminThemeWorldForm
+          key={selectedThemeWorldId ?? 'new'}
           showNotification={showNotification}
           setView={setView}
           themeWorldId={selectedThemeWorldId}

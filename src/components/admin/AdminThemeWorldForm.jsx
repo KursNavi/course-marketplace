@@ -251,13 +251,24 @@ export default function AdminThemeWorldForm({
       };
 
       if (isNew && !savedTwId) {
+        // Safety: create mode must not have a themeWorldId prop
+        if (themeWorldId) {
+          throw new Error('Interner Fehler: Create-Modus hat unerwartete themeWorldId. Bitte Seite neu laden.');
+        }
         const created = await createThemeWorld(payload);
         setSavedTwId(created.id);
-        setSelectedThemeWorldId(created.id);
-        setTw({ ...payload, id: created.id, status: 'draft' });
+        // Note: setSelectedThemeWorldId is intentionally NOT called here.
+        // Updating App-state here would change the key prop on this component,
+        // causing an unmount/remount mid-session and losing unsaved tab data.
+        // The ID is propagated via savedTwId for all within-session operations.
+        // When navigating to the scenario list the explicit setter is used there.
+        setTw({ ...payload, id: created.id, status: 'draft', published_at: null });
         showNotification('Themenwelt erstellt.');
       } else {
         const id = savedTwId || themeWorldId;
+        if (!id) {
+          throw new Error('Interner Fehler: Kein ID für Update-Speicherung. Bitte Seite neu laden.');
+        }
         await updateThemeWorld(id, payload);
         setTw((prev) => ({ ...prev, ...payload }));
         showNotification('Grundlagen gespeichert.');
@@ -265,7 +276,10 @@ export default function AdminThemeWorldForm({
 
       grundlagenSave.markSaved();
     } catch (err) {
-      const msg = getErrorMessage(err, 'Speichern fehlgeschlagen.');
+      const isConflict = err instanceof ApiError && err.isConflict;
+      const msg = isConflict
+        ? (err.message || 'Konflikt: Key oder Pfad wird bereits von einer anderen Themenwelt verwendet.')
+        : getErrorMessage(err, 'Speichern fehlgeschlagen.');
       grundlagenSave.markError(msg);
       showNotification(`Fehler: ${msg}`);
     }
