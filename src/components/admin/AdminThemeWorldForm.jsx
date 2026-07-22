@@ -250,7 +250,7 @@ export default function AdminThemeWorldForm({
         subtitle_de: grundlagen.subtitle_de || null,
         intro_de: grundlagen.intro_de || null,
         url_segment: grundlagen.url_segment,
-        db_segment: URL_TO_DB[grundlagen.url_segment] || 'professionell',
+        db_segment: URL_TO_DB[grundlagen.url_segment] || null,
         slug: grundlagen.slug,
         area_slug: suche.area_slug || grundlagen.key,
       };
@@ -384,7 +384,7 @@ export default function AdminThemeWorldForm({
     );
   }
 
-  const dbSegment = URL_TO_DB[grundlagen.url_segment] || 'professionell';
+  const dbSegment = URL_TO_DB[grundlagen.url_segment] || null;
   const publicPath = grundlagen.url_segment && grundlagen.slug
     ? `/bereich/${grundlagen.url_segment}/${grundlagen.slug}`
     : '—';
@@ -500,7 +500,7 @@ export default function AdminThemeWorldForm({
                   ))}
                 </select>
                 <p className="text-xs text-gray-400 mt-1">
-                  DB-Segment: <code className="text-xs bg-gray-100 px-1 rounded">{dbSegment}</code>
+                  DB-Segment: <code className="text-xs bg-gray-100 px-1 rounded">{dbSegment || '—'}</code>
                 </p>
               </FormField>
 
