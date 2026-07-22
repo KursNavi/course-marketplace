@@ -330,6 +330,9 @@ const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView, user,
                     <button onClick={() => setView('admin-blog')} className="px-6 py-2 rounded-full font-bold transition flex items-center gap-2 bg-orange-100 text-orange-800 border border-orange-200 shadow-sm hover:bg-orange-200">
                         <FileText className="w-4 h-4" /> Blog Manager
                     </button>
+                    <button onClick={() => setView('admin-theme-worlds')} className="px-6 py-2 rounded-full font-bold transition flex items-center gap-2 bg-teal-100 text-teal-800 border border-teal-200 shadow-sm hover:bg-teal-200">
+                        <FolderTree className="w-4 h-4" /> Themenwelten
+                    </button>
                 </div>
 
                                 {/* Categories Tab - separate rendering */}

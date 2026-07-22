@@ -1,32 +1,170 @@
-import React, { useCallback, useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ChevronRight, Clock, ArrowRight, BookOpen } from 'lucide-react';
 import { BEREICH_LANDING_CONFIG, getBereichBySlug, getBereichUrl, findSzenario } from '../lib/bereichLandingConfig';
 import { SZENARIO_CONTENT } from '../lib/szenarioContent';
 import { SEGMENT_CONFIG } from '../lib/constants';
-import { enhanceImages, estimateReadingTime, buildArticleJsonLd, buildBreadcrumbJsonLd } from '../lib/seoUtils';
+import { enhanceImages, wrapTables, estimateReadingTime, buildArticleJsonLd, buildBreadcrumbJsonLd } from '../lib/seoUtils';
 import { BASE_URL } from '../lib/siteConfig';
 import { shouldHandleClientNavigation } from '../lib/navigation';
+import { loadThemeWorldWithFallback, isThemeWorldPilotActive, isThemeWorldDbEnabled } from '../lib/themeWorldFeatureFlag';
+import { fetchThemeWorld, fetchPublishedScenario } from '../lib/themeWorldService';
+import { adaptToLegacyBereichConfig, adaptToLegacySzenarioConfig } from '../lib/themeWorldAdapter';
 
 /**
  * SzenarioArtikelView
  *
  * Renders a single scenario article page.
  * URL pattern: /bereich/{segment}/{bereich-slug}/{szenario-slug}
+ *
+ * Phase 5: Pilot-Integration hinter Feature-Flag.
+ * Wenn VITE_THEME_WORLD_DB_ENABLED=true und der Key in VITE_THEME_WORLD_PILOT_KEYS,
+ * werden Daten aus der DB geladen; sonst unverändert Legacy-Betrieb.
  */
 export default function SzenarioArtikelView({ segment, slug, szenarioSlug, courses, lang = 'de', t }) {
-  const bereichConfig = getBereichBySlug(segment, slug);
-  const scenario = bereichConfig ? findSzenario(bereichConfig, szenarioSlug) : null;
-  const theme = SEGMENT_CONFIG[segment] || SEGMENT_CONFIG.beruflich;
+  // Legacy-Config (immer geladen als Basiswert + Fallback)
+  const legacyBereichConfig = getBereichBySlug(segment, slug);
+  const legacyScenario = legacyBereichConfig ? findSzenario(legacyBereichConfig, szenarioSlug) : null;
 
-  // Find the bereich config key (e.g. 'sport_fitness_beruf') for content lookup
-  const bereichKey = bereichConfig
+  // Dynamic state
+  const [dynamicBereichConfig, setDynamicBereichConfig] = useState(null);
+  const [dynamicScenario, setDynamicScenario] = useState(null);
+  const [dynamicArticleContent, setDynamicArticleContent] = useState(null);
+  const [dynamicNotFound, setDynamicNotFound] = useState(false);
+  // DB-only mode: kein Legacy-Eintrag vorhanden, aber DB global aktiv → Ladeindikator bis Antwort
+  const [dbOnlyLoading, setDbOnlyLoading] = useState(() => !legacyBereichConfig && isThemeWorldDbEnabled());
+
+  // Effective values: DB wenn geladen, sonst Legacy
+  const bereichConfig = dynamicBereichConfig || legacyBereichConfig;
+  const scenario = dynamicScenario || legacyScenario;
+
+  // Normalize URL segment (privat-hobby → privat_hobby) for SEGMENT_CONFIG lookup
+  const segmentKey = segment?.replace(/-/g, '_') || segment;
+  const theme = SEGMENT_CONFIG[segmentKey] || SEGMENT_CONFIG.beruflich;
+
+  // Legacy content lookup
+  const bereichKey = legacyBereichConfig
     ? Object.entries(BEREICH_LANDING_CONFIG).find(([, v]) => v.slug === slug)?.[0]
     : null;
-
   const contentKey = bereichKey && szenarioSlug ? `${bereichKey}/${szenarioSlug}` : null;
-  const articleContent = contentKey ? SZENARIO_CONTENT[contentKey] || null : null;
+  const legacyArticleContent = contentKey ? SZENARIO_CONTENT[contentKey] || null : null;
+
+  // Effective article content
+  const articleContent = dynamicArticleContent !== null ? dynamicArticleContent : legacyArticleContent;
+
   const readingTime = estimateReadingTime(articleContent);
   const articleRef = useRef(null);
+
+  // Pilot-Integration: DB-Daten laden wenn Feature-Flag aktiv
+  useEffect(() => {
+    let cancelled = false;
+
+    // DB-only-Modus: Themenwelt existiert nur in der DB, kein Legacy-Eintrag
+    // → direkt laden ohne Pilot-Key-Prüfung (keine Legacy-Einschränkung nötig)
+    if (!legacyBereichConfig && isThemeWorldDbEnabled()) {
+      (async () => {
+        try {
+          const tw = await fetchThemeWorld(segment, slug);
+          if (cancelled) return;
+
+          const sc = tw.search_config || {};
+          setDynamicBereichConfig({
+            slug: tw.slug,
+            segment: tw.url_segment,
+            typeKey: tw.url_segment?.replace(/-/g, '_') || 'beruflich',
+            areaSlug: sc.area_slug || tw.area_slug || tw.key,
+            title: { de: tw.title_de || '' },
+            scenarios: [],
+          });
+
+          try {
+            const scenarioData = await fetchPublishedScenario(tw.id, szenarioSlug);
+            if (!cancelled && scenarioData) {
+              setDynamicScenario(adaptToLegacySzenarioConfig(scenarioData, sc));
+              setDynamicArticleContent(scenarioData.content_html || '');
+            }
+          } catch (sErr) {
+            if (!cancelled) {
+              setDynamicNotFound(true);
+            }
+          }
+        } catch (err) {
+          if (!cancelled) {
+            setDynamicNotFound(true);
+          }
+        } finally {
+          if (!cancelled) setDbOnlyLoading(false);
+        }
+      })();
+      return () => { cancelled = true; };
+    }
+
+    // Pilot-Modus: Legacy-Eintrag vorhanden, Pilot-Flag steuert DB-Upgrade
+    if (!bereichKey) return;
+    if (!isThemeWorldPilotActive(bereichKey)) return;
+
+    (async () => {
+      try {
+        // Themenwelt-Hauptdaten laden (für Kontext + bereichConfig)
+        const twResult = await loadThemeWorldWithFallback({
+          themeWorldKey: bereichKey,
+          dbLoader: async () => {
+            const tw = await fetchThemeWorld(segment, slug);
+            return tw;
+          },
+          legacyLoader: () => legacyBereichConfig,
+        });
+
+        if (cancelled) return;
+
+        if (twResult.notFound) {
+          setDynamicNotFound(true);
+          return;
+        }
+
+        if (twResult.source === 'db' && twResult.data) {
+          // Minimalform für bereichConfig — nur die Felder die SzenarioArtikelView braucht
+          const tw = twResult.data;
+          const sc = tw.search_config || {};
+          setDynamicBereichConfig({
+            slug: tw.slug,
+            segment: tw.url_segment,
+            typeKey: tw.url_segment?.replace(/-/g, '_') || 'beruflich',
+            areaSlug: sc.area_slug || tw.area_slug || tw.key,
+            title: { de: tw.title_de || '' },
+            scenarios: [], // Vollständige Szenario-Liste nicht nötig für Artikelansicht
+          });
+
+          // Szenario-Artikel laden
+          try {
+            const scenarioData = await fetchPublishedScenario(tw.id, szenarioSlug);
+            if (!cancelled && scenarioData) {
+              setDynamicScenario(adaptToLegacySzenarioConfig(scenarioData, sc));
+              setDynamicArticleContent(scenarioData.content_html || '');
+            }
+          } catch (sErr) {
+            if (!cancelled) {
+              // Szenario nicht gefunden oder DB-Fehler → Legacy-Fallback
+              if (sErr.name === 'ThemeWorldNotFoundError') {
+                setDynamicNotFound(true);
+              }
+              // Bei DB-Fehler: Legacy-Szenario bleibt aktiv (dynamicScenario bleibt null)
+            }
+          }
+        }
+      } catch (err) {
+        // Unerwarteter Fehler → Legacy bleibt aktiv (kein setState nötig)
+        if (import.meta.env.DEV) {
+          console.warn(
+            '[SzenarioArtikelView] Pilot-Ladevorgang fehlgeschlagen, Legacy-Fallback aktiv:',
+            err?.message,
+          );
+        }
+      }
+    })();
+
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bereichKey, segment, slug, szenarioSlug]);
 
   const goToSearch = useCallback((extraParams = {}) => {
     if (!bereichConfig) return;
@@ -88,7 +226,7 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
     });
 
     // Article JSON-LD
-    const segmentLabel = SEGMENT_CONFIG[segment]?.label?.[lang] || SEGMENT_CONFIG[segment]?.label?.de || segment;
+    const segmentLabel = SEGMENT_CONFIG[segmentKey]?.label?.[lang] || SEGMENT_CONFIG[segmentKey]?.label?.de || segment;
     const bereichTitle = bereichConfig.title[lang] || bereichConfig.title.de;
     const articleData = buildArticleJsonLd({
       title: scenario.label[lang] || scenario.label.de,
@@ -142,8 +280,17 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
     return () => btns.forEach(b => b.remove());
   }, [articleContent, scenario, lang, goToSearch]);
 
-  // 404
-  if (!bereichConfig || !scenario) {
+  // DB-only Ladeindikator — verhindert vorzeitigen 404 während DB-Abfrage läuft
+  if (dbOnlyLoading) {
+    return (
+      <div className="min-h-screen bg-beige flex items-center justify-center">
+        <div className="text-center text-muted">Wird geladen…</div>
+      </div>
+    );
+  }
+
+  // 404 — auch für DB-Not-found
+  if (!bereichConfig || !scenario || dynamicNotFound) {
     return (
       <div className="min-h-screen bg-beige flex items-center justify-center">
         <div className="text-center">
@@ -179,7 +326,9 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
 
   const segmentLabel = theme.label?.[lang] || theme.label?.de || segment;
   const bereichTitle = (bereichConfig.title[lang] || bereichConfig.title.de).split('—')[0].trim();
-  const otherScenarios = (bereichConfig.scenarios || []).filter(s => s.slug !== szenarioSlug);
+  // Für "Andere Szenarien"-Navigation: Legacy-Config nutzen (immer vollständig)
+  const scenariosForNav = legacyBereichConfig?.scenarios || bereichConfig.scenarios || [];
+  const otherScenarios = scenariosForNav.filter(s => s.slug !== szenarioSlug);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -247,7 +396,7 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
             <div
               ref={articleRef}
               className="prose-ratgeber"
-              dangerouslySetInnerHTML={{ __html: enhanceImages(articleContent) }}
+              dangerouslySetInnerHTML={{ __html: wrapTables(enhanceImages(articleContent)) }}
             />
           ) : (
             <div className="text-center py-12">

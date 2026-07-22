@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Search, ArrowRight, ChevronDown, ChevronRight, BookOpen, Award, HelpCircle } from 'lucide-react';
-import { getBereichBySlug, getBereichUrl } from '../lib/bereichLandingConfig';
+import { getBereichBySlug, getBereichUrl, BEREICH_LANDING_CONFIG } from '../lib/bereichLandingConfig';
 import { SEGMENT_LANDING_CONFIG } from '../lib/segmentLandingConfig';
 import { SEGMENT_CONFIG } from '../lib/constants';
 import { useTaxonomy } from '../hooks/useTaxonomy';
@@ -8,15 +8,83 @@ import { BASE_URL } from '../lib/siteConfig';
 import { buildFaqPageJsonLd } from '../lib/seoUtils';
 import { shouldHandleClientNavigation } from '../lib/navigation';
 import RegionalDiscoverySection from './RegionalDiscoverySection';
+import { loadThemeWorldWithFallback, isThemeWorldPilotActive, isThemeWorldDbEnabled } from '../lib/themeWorldFeatureFlag';
+import { fetchThemeWorldPage } from '../lib/themeWorldService';
+import { adaptToLegacyBereichConfig } from '../lib/themeWorldAdapter';
 
 export default function BereichLandingPage({ segment, slug, courses, lang = 'de', t }) {
-  const config = getBereichBySlug(segment, slug);
+  // Legacy-Config (immer geladen als Basiswert + Fallback)
+  const legacyConfig = getBereichBySlug(segment, slug);
+
+  // Dynamic config state — wird gesetzt wenn Pilot-Flag aktiv + DB-Antwort erfolgreich
+  const [dynamicConfig, setDynamicConfig] = useState(null);
+  const [dynamicNotFound, setDynamicNotFound] = useState(false);
+  // DB-only mode: kein Legacy-Eintrag vorhanden, aber DB global aktiv → Ladeindikator bis Antwort
+  const [dbOnlyLoading, setDbOnlyLoading] = useState(() => !legacyConfig && isThemeWorldDbEnabled());
+
+  // Effektiver Config: DB wenn geladen, sonst Legacy
+  const config = dynamicConfig || legacyConfig;
+
   const { areas: dbAreas } = useTaxonomy();
   const [searchQuery, setSearchQuery] = useState('');
   const [openFaq, setOpenFaq] = useState(null);
 
-  // Segment theme
-  const theme = SEGMENT_CONFIG[segment] || SEGMENT_CONFIG.beruflich;
+  // Bestimme den theme-world-key aus der Legacy-Config oder URL
+  const bereichKey = legacyConfig
+    ? (Object.entries(BEREICH_LANDING_CONFIG).find(([, v]) => v.slug === slug)?.[0] || null)
+    : null;
+
+  // Pilot-Integration: DB-Daten laden wenn Feature-Flag aktiv
+  useEffect(() => {
+    // DB-only-Modus: Themenwelt existiert nur in der DB, kein Legacy-Eintrag
+    // → direkt laden ohne Pilot-Key-Prüfung (keine Legacy-Einschränkung nötig)
+    if (!legacyConfig && isThemeWorldDbEnabled()) {
+      let cancelled = false;
+      fetchThemeWorldPage(segment, slug)
+        .then(data => {
+          if (!cancelled) {
+            setDynamicConfig(adaptToLegacyBereichConfig(data));
+            setDbOnlyLoading(false);
+          }
+        })
+        .catch(() => {
+          if (!cancelled) {
+            setDynamicNotFound(true);
+            setDbOnlyLoading(false);
+          }
+        });
+      return () => { cancelled = true; };
+    }
+
+    // Pilot-Modus: Legacy-Eintrag vorhanden, Pilot-Flag steuert DB-Upgrade
+    if (!bereichKey) return;
+    if (!isThemeWorldPilotActive(bereichKey)) return;
+
+    let cancelled = false;
+
+    loadThemeWorldWithFallback({
+      themeWorldKey: bereichKey,
+      dbLoader: async () => {
+        const data = await fetchThemeWorldPage(segment, slug);
+        return adaptToLegacyBereichConfig(data);
+      },
+      legacyLoader: () => legacyConfig,
+    }).then(({ data, notFound }) => {
+      if (cancelled) return;
+      if (notFound) {
+        setDynamicNotFound(true);
+      } else if (data) {
+        setDynamicConfig(data);
+      }
+    });
+
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bereichKey, segment, slug]);
+
+  // Segment theme — normalize URL segment (privat-hobby → privat_hobby)
+  const segmentKey = segment?.replace(/-/g, '_') || segment;
+  const theme = SEGMENT_CONFIG[segmentKey] || SEGMENT_CONFIG.beruflich;
 
   const goToContact = () => {
     window.scrollTo(0, 0);
@@ -51,11 +119,12 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
     canonicalTag.href = canonicalUrl;
 
     // OG Tags
+    const ogImageUrl = config.ogImageUrl || `${BASE_URL}/og-default.png`;
     const ogTags = {
       'og:title': pageTitle,
       'og:description': metaDesc,
       'og:url': canonicalUrl,
-      'og:image': `${BASE_URL}/og-default.png`,
+      'og:image': ogImageUrl,
       'og:type': 'website',
       'og:locale': 'de_CH',
       'og:site_name': 'KursNavi'
@@ -71,6 +140,22 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
       }
       tag.content = content;
     });
+
+    // og:image:alt — nur setzen wenn Alt-Text vorhanden
+    const ogAltText = config.ogImageAlt || config.heroImageAlt || '';
+    const ogAltProperty = 'og:image:alt';
+    let ogAltTag = document.querySelector(`meta[property="${ogAltProperty}"]`);
+    if (ogAltText) {
+      if (!ogAltTag) {
+        ogAltTag = document.createElement('meta');
+        ogAltTag.setAttribute('property', ogAltProperty);
+        document.head.appendChild(ogAltTag);
+        createdOgTags.push(ogAltTag);
+      }
+      ogAltTag.content = ogAltText;
+    } else if (ogAltTag) {
+      ogAltTag.remove();
+    }
 
     // BreadcrumbList Schema
     const segmentLabel = theme.label?.[lang] || theme.label?.de || segment;
@@ -114,8 +199,17 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
     };
   }, [config, segment, slug, lang]);
 
-  // 404 guard
-  if (!config) {
+  // DB-only Ladeindikator — verhindert vorzeitigen 404 während DB-Abfrage läuft
+  if (dbOnlyLoading) {
+    return (
+      <div className="min-h-screen bg-beige flex items-center justify-center">
+        <div className="text-center text-muted">Wird geladen…</div>
+      </div>
+    );
+  }
+
+  // 404 guard — auch für DB-Not-found
+  if (!config || dynamicNotFound) {
     return (
       <div className="min-h-screen bg-beige flex items-center justify-center">
         <div className="text-center">
