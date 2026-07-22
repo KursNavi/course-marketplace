@@ -22,7 +22,7 @@ const SEGMENT_LABELS = {
   'kinder-jugend': 'Kinder & Jugend',
 };
 
-export default function AdminThemeWorldList({ showNotification, setView, setSelectedThemeWorldId }) {
+export default function AdminThemeWorldList({ showNotification, setView, setSelectedThemeWorldId, onNewCreate }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -49,6 +49,7 @@ export default function AdminThemeWorldList({ showNotification, setView, setSele
   useEffect(() => { fetchData(); }, [fetchData]);
 
   const handleNew = () => {
+    onNewCreate?.();
     setSelectedThemeWorldId(null);
     setView('admin-theme-world-form');
   };

@@ -112,7 +112,7 @@ export default function AdminThemeWorldForm({
   // Grundlagen
   const grundlagenSave = useSaveState();
   const [grundlagen, setGrundlagen] = useState({
-    key: '', title_de: '', subtitle_de: '', intro_de: '', url_segment: 'beruflich', slug: '',
+    key: '', title_de: '', subtitle_de: '', intro_de: '', url_segment: '', slug: '',
   });
   const [autoSlug, setAutoSlug] = useState(true);
 
@@ -174,7 +174,7 @@ export default function AdminThemeWorldForm({
         title_de: data.title_de || '',
         subtitle_de: data.subtitle_de || '',
         intro_de: data.intro_de || '',
-        url_segment: data.url_segment || 'beruflich',
+        url_segment: data.url_segment || '',
         slug: data.slug || '',
       });
       setAutoSlug(false);
@@ -237,6 +237,11 @@ export default function AdminThemeWorldForm({
   // ---------------------------------------------------------------------------
 
   const saveGrundlagen = async () => {
+    if (!grundlagen.url_segment) {
+      grundlagenSave.markError('Bitte wähle ein Segment aus.');
+      showNotification('Fehler: Bitte wähle ein Segment aus.');
+      return;
+    }
     grundlagenSave.startSaving();
     try {
       const payload = {
@@ -393,12 +398,13 @@ export default function AdminThemeWorldForm({
             <button
               onClick={() => setView('admin-theme-worlds')}
               className="p-1.5 rounded-full hover:bg-gray-100 text-gray-600"
+              title="Zurück zur Übersicht"
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
             <div>
               <h1 className="text-xl font-bold text-gray-900 font-heading">
-                {isNew ? 'Neue Themenwelt' : (tw?.title_de || 'Themenwelt bearbeiten')}
+                {(!savedTwId && !themeWorldId) ? 'Neue Themenwelt' : (tw?.title_de || 'Themenwelt bearbeiten')}
               </h1>
               {tw && (
                 <div className="flex items-center gap-2 mt-0.5">
@@ -452,11 +458,11 @@ export default function AdminThemeWorldForm({
             </TabHeader>
 
             <div className="space-y-5">
-              <FormField label="Interner Key" hint="Eindeutig, nur a-z, 0-9, _. Beispiel: sport_fitness_beruf" required>
+              <FormField label="Interner Key" hint="Eindeutig, nur a-z, 0-9, _. Beispiel: mein_thema_key" required>
                 <input
                   type="text"
                   className="FormInput font-mono"
-                  placeholder="sport_fitness_beruf"
+                  placeholder="z.B. mein_thema_key"
                   value={grundlagen.key}
                   onChange={(e) => { setGrundlagen((p) => ({ ...p, key: e.target.value })); grundlagenSave.markDirty(); }}
                 />
@@ -466,7 +472,7 @@ export default function AdminThemeWorldForm({
                 <input
                   type="text"
                   className="FormInput"
-                  placeholder="Sport & Fitness Berufsausbildung"
+                  placeholder="Titel der Themenwelt"
                   value={grundlagen.title_de}
                   onChange={(e) => { setGrundlagen((p) => ({ ...p, title_de: e.target.value })); grundlagenSave.markDirty(); }}
                 />
@@ -476,7 +482,7 @@ export default function AdminThemeWorldForm({
                 <input
                   type="text"
                   className="FormInput"
-                  placeholder="Dein Weg in die Fitness-Branche"
+                  placeholder="Kurzer Untertitel"
                   value={grundlagen.subtitle_de}
                   onChange={(e) => { setGrundlagen((p) => ({ ...p, subtitle_de: e.target.value })); grundlagenSave.markDirty(); }}
                 />
@@ -488,6 +494,7 @@ export default function AdminThemeWorldForm({
                   value={grundlagen.url_segment}
                   onChange={(e) => { setGrundlagen((p) => ({ ...p, url_segment: e.target.value })); grundlagenSave.markDirty(); }}
                 >
+                  <option value="">— Segment auswählen —</option>
                   {SEGMENTS.map((s) => (
                     <option key={s.value} value={s.value}>{s.label}</option>
                   ))}
@@ -506,7 +513,7 @@ export default function AdminThemeWorldForm({
                   <input
                     type="text"
                     className="FormInput font-mono"
-                    placeholder="sport-fitness-berufsausbildung"
+                    placeholder="mein-thema-slug"
                     value={grundlagen.slug}
                     onChange={(e) => {
                       setAutoSlug(false);
@@ -535,7 +542,7 @@ export default function AdminThemeWorldForm({
               <FormField label="Einleitungstext" hint="Erscheint als Lead-Text auf der Landingpage">
                 <textarea
                   className="FormInput resize-none h-28"
-                  placeholder="Starte deine Karriere in der Fitness-Branche…"
+                  placeholder="Kurze Einleitung zur Themenwelt…"
                   value={grundlagen.intro_de}
                   onChange={(e) => { setGrundlagen((p) => ({ ...p, intro_de: e.target.value })); grundlagenSave.markDirty(); }}
                 />
@@ -617,11 +624,11 @@ export default function AdminThemeWorldForm({
             </p>
 
             <div className="space-y-5">
-              <FormField label="Bereichs-Slug (area_slug)" hint="Exakter Slug aus taxonomy_level2. Beispiel: sport_fitness_beruf" required>
+              <FormField label="Bereichs-Slug (area_slug)" hint="Exakter Slug aus taxonomy_level2. Beispiel: sport_fitness" required>
                 <input
                   type="text"
                   className="FormInput font-mono"
-                  placeholder="sport_fitness_beruf"
+                  placeholder="z.B. sport_fitness"
                   value={suche.area_slug}
                   onChange={(e) => { setSuche((p) => ({ ...p, area_slug: e.target.value })); sucheSave.markDirty(); }}
                 />

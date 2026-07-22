@@ -274,19 +274,19 @@ describe('Phase 8.1: AdminThemeWorldForm — Create-State-Isolation', () => {
 
     it('zeigt leere Grundlagen-Felder im Create-Modus', () => {
       render(<AdminThemeWorldForm {...createModeProps()} />);
-      const keyInput = screen.getByPlaceholderText(/sport_fitness_beruf/i);
+      const keyInput = screen.getAllByRole('textbox')[0];
       expect(keyInput.value).toBe('');
     });
 
     it('zeigt leeres Titelfeld im Create-Modus', () => {
       render(<AdminThemeWorldForm {...createModeProps()} />);
-      const titleInput = screen.getByPlaceholderText(/Sport & Fitness/i);
+      const titleInput = screen.getAllByRole('textbox')[1];
       expect(titleInput.value).toBe('');
     });
 
     it('zeigt leeres Slug-Feld im Create-Modus', () => {
       render(<AdminThemeWorldForm {...createModeProps()} />);
-      const slugInput = screen.getByPlaceholderText(/sport-fitness-beruf/i);
+      const slugInput = screen.getAllByRole('textbox')[3];
       expect(slugInput.value).toBe('');
     });
   });
@@ -304,7 +304,7 @@ describe('Phase 8.1: AdminThemeWorldForm — Create-State-Isolation', () => {
 
       // Schritt 2: Create-Modus (wie nach handleNew + key='new')
       render(<AdminThemeWorldForm key="new" {...createModeProps()} />);
-      const keyInput = screen.getByPlaceholderText(/sport_fitness_beruf/i);
+      const keyInput = screen.getAllByRole('textbox')[0];
       expect(keyInput.value).toBe('');
       expect(keyInput.value).not.toBe('sport_fitness_beruf');
     });
@@ -315,7 +315,7 @@ describe('Phase 8.1: AdminThemeWorldForm — Create-State-Isolation', () => {
       unmount();
 
       render(<AdminThemeWorldForm key="new" {...createModeProps()} />);
-      const titleInput = screen.getByPlaceholderText(/Sport & Fitness/i);
+      const titleInput = screen.getAllByRole('textbox')[1];
       expect(titleInput.value).toBe('');
     });
 
@@ -343,7 +343,7 @@ describe('Phase 8.1: AdminThemeWorldForm — Create-State-Isolation', () => {
       unmount();
 
       render(<AdminThemeWorldForm key="new" {...createModeProps()} />);
-      const keyInput = screen.getByPlaceholderText(/sport_fitness_beruf/i);
+      const keyInput = screen.getAllByRole('textbox')[0];
       expect(keyInput.value).toBe('');
     });
 
@@ -353,7 +353,7 @@ describe('Phase 8.1: AdminThemeWorldForm — Create-State-Isolation', () => {
       unmount();
 
       render(<AdminThemeWorldForm key="new" {...createModeProps()} />);
-      const titleInput = screen.getByPlaceholderText(/Sport & Fitness/i);
+      const titleInput = screen.getAllByRole('textbox')[1];
       expect(titleInput.value).toBe('');
     });
   });
@@ -399,11 +399,13 @@ describe('Phase 8.1: AdminThemeWorldForm — Create-State-Isolation', () => {
 
       render(<AdminThemeWorldForm {...createModeProps()} />);
 
-      // Key und Titel ausfüllen
-      const keyInput = screen.getByPlaceholderText(/sport_fitness_beruf/i);
-      const titleInput = screen.getByPlaceholderText(/Sport & Fitness/i);
+      // Key, Titel und Segment ausfüllen
+      const textboxes = screen.getAllByRole('textbox');
+      const keyInput = textboxes[0];
+      const titleInput = textboxes[1];
       fireEvent.change(keyInput, { target: { value: 'test_kreativ_gestalten' } });
       fireEvent.change(titleInput, { target: { value: 'Kreativ & Gestalten' } });
+      fireEvent.change(screen.getByRole('combobox'), { target: { value: 'beruflich' } });
 
       // Speichern klicken
       const saveBtn = screen.getAllByRole('button', { name: /Speichern/i })[0];
@@ -420,10 +422,12 @@ describe('Phase 8.1: AdminThemeWorldForm — Create-State-Isolation', () => {
 
       render(<AdminThemeWorldForm {...createModeProps()} />);
 
-      const keyInput = screen.getByPlaceholderText(/sport_fitness_beruf/i);
-      const titleInput = screen.getByPlaceholderText(/Sport & Fitness/i);
+      const textboxes = screen.getAllByRole('textbox');
+      const keyInput = textboxes[0];
+      const titleInput = textboxes[1];
       fireEvent.change(keyInput, { target: { value: 'test_kreativ_gestalten' } });
       fireEvent.change(titleInput, { target: { value: 'Kreativ & Gestalten' } });
+      fireEvent.change(screen.getByRole('combobox'), { target: { value: 'beruflich' } });
 
       const saveBtn = screen.getAllByRole('button', { name: /Speichern/i })[0];
       await act(async () => { fireEvent.click(saveBtn); });
@@ -443,10 +447,12 @@ describe('Phase 8.1: AdminThemeWorldForm — Create-State-Isolation', () => {
 
       render(<AdminThemeWorldForm {...props} />);
 
-      const keyInput = screen.getByPlaceholderText(/sport_fitness_beruf/i);
-      const titleInput = screen.getByPlaceholderText(/Sport & Fitness/i);
+      const textboxes = screen.getAllByRole('textbox');
+      const keyInput = textboxes[0];
+      const titleInput = textboxes[1];
       fireEvent.change(keyInput, { target: { value: 'test_neu' } });
       fireEvent.change(titleInput, { target: { value: 'Test Neu' } });
+      fireEvent.change(screen.getByRole('combobox'), { target: { value: 'beruflich' } });
 
       const saveBtn = screen.getAllByRole('button', { name: /Speichern/i })[0];
       await act(async () => { fireEvent.click(saveBtn); });
@@ -493,10 +499,12 @@ describe('Phase 8.1: AdminThemeWorldForm — Create-State-Isolation', () => {
       const props = createModeProps();
       render(<AdminThemeWorldForm {...props} />);
 
-      const keyInput = screen.getByPlaceholderText(/sport_fitness_beruf/i);
-      const titleInput = screen.getByPlaceholderText(/Sport & Fitness/i);
+      const textboxes = screen.getAllByRole('textbox');
+      const keyInput = textboxes[0];
+      const titleInput = textboxes[1];
       fireEvent.change(keyInput, { target: { value: 'sport_fitness_beruf' } });
       fireEvent.change(titleInput, { target: { value: 'Konflikt-Test' } });
+      fireEvent.change(screen.getByRole('combobox'), { target: { value: 'beruflich' } });
 
       const saveBtn = screen.getAllByRole('button', { name: /Speichern/i })[0];
       await act(async () => { fireEvent.click(saveBtn); });
@@ -604,14 +612,14 @@ describe('Phase 8.1: AdminThemeWorldForm — Create-State-Isolation', () => {
       const { unmount } = render(
         <AdminThemeWorldForm key="new" {...createModeProps()} />
       );
-      const keyInput = screen.getByPlaceholderText(/sport_fitness_beruf/i);
+      const keyInput = screen.getAllByRole('textbox')[0];
       fireEvent.change(keyInput, { target: { value: 'test_ungespeichert' } });
       expect(keyInput.value).toBe('test_ungespeichert');
       unmount(); // Abbrechen
 
       // Zweiter Create-Mount: muss leer sein
       render(<AdminThemeWorldForm key="new-2" {...createModeProps()} />);
-      const keyInput2 = screen.getByPlaceholderText(/sport_fitness_beruf/i);
+      const keyInput2 = screen.getAllByRole('textbox')[0];
       expect(keyInput2.value).toBe('');
     });
   });

@@ -315,6 +315,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
   // Theme-World Admin State
   const [selectedThemeWorldId, setSelectedThemeWorldId] = useState(null);
   const [selectedScenarioId, setSelectedScenarioId] = useState(null);
+  const [themeWorldCreateNonce, setThemeWorldCreateNonce] = useState(0);
    const [loading, setLoading] = useState(true);
    const [fetchError, setFetchError] = useState(false);
   
@@ -2274,11 +2275,12 @@ useEffect(() => {
           showNotification={showNotification}
           setView={setView}
           setSelectedThemeWorldId={setSelectedThemeWorldId}
+          onNewCreate={() => setThemeWorldCreateNonce((n) => n + 1)}
         />
       )}
       {view === 'admin-theme-world-form' && (
         <AdminThemeWorldForm
-          key={selectedThemeWorldId ?? 'new'}
+          key={selectedThemeWorldId ?? `new-${themeWorldCreateNonce}`}
           showNotification={showNotification}
           setView={setView}
           themeWorldId={selectedThemeWorldId}
