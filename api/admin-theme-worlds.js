@@ -36,7 +36,7 @@ const ALLOWED_WRITE_FIELDS = [
   'title_de', 'title_en', 'title_fr', 'title_it',
   'subtitle_de', 'subtitle_en', 'subtitle_fr', 'subtitle_it',
   'intro_de',
-  'hero_image_url', 'hero_image_alt_de', 'og_image_url',
+  'hero_image_url', 'hero_image_alt_de', 'og_image_url', 'og_image_alt_de',
   'meta_title', 'meta_description',
   'search_config', 'section_titles', 'predefined_searches', 'cta_links',
   'sort_order',

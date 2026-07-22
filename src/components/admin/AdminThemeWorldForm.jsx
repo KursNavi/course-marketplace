@@ -119,7 +119,7 @@ export default function AdminThemeWorldForm({
   // Bilder & SEO
   const bilderSave = useSaveState();
   const [bilder, setBilder] = useState({
-    hero_image_url: '', hero_image_alt_de: '', og_image_url: '',
+    hero_image_url: '', hero_image_alt_de: '', og_image_url: '', og_image_alt_de: '',
     meta_title: '', meta_description: '',
   });
 
@@ -184,6 +184,7 @@ export default function AdminThemeWorldForm({
         hero_image_url: data.hero_image_url || '',
         hero_image_alt_de: data.hero_image_alt_de || '',
         og_image_url: data.og_image_url || '',
+        og_image_alt_de: data.og_image_alt_de || '',
         meta_title: data.meta_title || '',
         meta_description: data.meta_description || '',
       });
@@ -300,6 +301,7 @@ export default function AdminThemeWorldForm({
         hero_image_url: bilder.hero_image_url || null,
         hero_image_alt_de: bilder.hero_image_alt_de || null,
         og_image_url: bilder.og_image_url || null,
+        og_image_alt_de: bilder.og_image_alt_de || null,
         meta_title: bilder.meta_title || null,
         meta_description: bilder.meta_description || null,
       });
@@ -582,7 +584,7 @@ export default function AdminThemeWorldForm({
 
               <AdminImageField
                 currentUrl={bilder.og_image_url}
-                altText=""
+                altText={bilder.og_image_alt_de}
                 folder="theme-worlds"
                 label="Open-Graph-Bild (Social Media)"
                 altRequired={false}
@@ -590,7 +592,10 @@ export default function AdminThemeWorldForm({
                   setBilder((p) => ({ ...p, og_image_url: publicUrl }));
                   bilderSave.markDirty();
                 }}
-                onAltTextChange={() => {}}
+                onAltTextChange={(alt) => {
+                  setBilder((p) => ({ ...p, og_image_alt_de: alt }));
+                  bilderSave.markDirty();
+                }}
               />
 
               <AdminSeoFields

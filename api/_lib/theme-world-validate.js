@@ -326,6 +326,7 @@ export function validateThemeWorldBase(data) {
   optionalText(errors, data, 'meta_title', META_TITLE_MAX);
   optionalText(errors, data, 'meta_description', 160);
   optionalText(errors, data, 'hero_image_alt_de', 200);
+  optionalText(errors, data, 'og_image_alt_de', 200);
 
   // Bild-URLs
   if (data.hero_image_url && !isValidImageUrl(data.hero_image_url)) {
@@ -401,6 +402,7 @@ export function validateThemeWorldUpdate(data) {
   optionalText(errors, data, 'meta_title', META_TITLE_MAX);
   optionalText(errors, data, 'meta_description', 160);
   optionalText(errors, data, 'hero_image_alt_de', 200);
+  optionalText(errors, data, 'og_image_alt_de', 200);
 
   // Bild-URLs
   if (data.hero_image_url && !isValidImageUrl(data.hero_image_url)) {

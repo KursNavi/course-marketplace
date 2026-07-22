@@ -119,11 +119,12 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
     canonicalTag.href = canonicalUrl;
 
     // OG Tags
+    const ogImageUrl = config.ogImageUrl || `${BASE_URL}/og-default.png`;
     const ogTags = {
       'og:title': pageTitle,
       'og:description': metaDesc,
       'og:url': canonicalUrl,
-      'og:image': `${BASE_URL}/og-default.png`,
+      'og:image': ogImageUrl,
       'og:type': 'website',
       'og:locale': 'de_CH',
       'og:site_name': 'KursNavi'
@@ -139,6 +140,22 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
       }
       tag.content = content;
     });
+
+    // og:image:alt — nur setzen wenn Alt-Text vorhanden
+    const ogAltText = config.ogImageAlt || config.heroImageAlt || '';
+    const ogAltProperty = 'og:image:alt';
+    let ogAltTag = document.querySelector(`meta[property="${ogAltProperty}"]`);
+    if (ogAltText) {
+      if (!ogAltTag) {
+        ogAltTag = document.createElement('meta');
+        ogAltTag.setAttribute('property', ogAltProperty);
+        document.head.appendChild(ogAltTag);
+        createdOgTags.push(ogAltTag);
+      }
+      ogAltTag.content = ogAltText;
+    } else if (ogAltTag) {
+      ogAltTag.remove();
+    }
 
     // BreadcrumbList Schema
     const segmentLabel = theme.label?.[lang] || theme.label?.de || segment;

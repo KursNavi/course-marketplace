@@ -138,6 +138,7 @@ export function adaptThemeWorldToConfig({
     heroImageUrl: themeWorld.hero_image_url || null,
     heroImageAlt: themeWorld.hero_image_alt_de || '',
     ogImageUrl: themeWorld.og_image_url || null,
+    ogImageAlt: themeWorld.og_image_alt_de || '',
 
     // SEO
     metaTitle: themeWorld.meta_title || null,
@@ -407,6 +408,11 @@ export function adaptToLegacyBereichConfig({
 
     // Hero-Bild
     heroImage: themeWorld.hero_image_url || null,
+    heroImageAlt: themeWorld.hero_image_alt_de || '',
+
+    // OG-Bild
+    ogImageUrl: themeWorld.og_image_url || null,
+    ogImageAlt: themeWorld.og_image_alt_de || '',
 
     // SEO
     metaTitle: themeWorld.meta_title || null,
