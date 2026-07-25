@@ -1488,7 +1488,7 @@ if (bookingType === 'platform' || locationMode === 'events') {
         const newCourse = {
             title: titleVal,
             instructor_name: user?.name || initialData?.instructor_name || '',
-            price: Number(price) || 0,
+            price: price !== '' ? Number(price) : null,
             languages: courseLanguages, // Array of languages
             rating: initialData?.rating || 0,
             category: `${catType} | ${catArea}`,
