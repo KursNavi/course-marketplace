@@ -17,6 +17,7 @@ import {
   replaceSpecialties, replaceRegions, replaceTrustItems,
   getErrorMessage, ApiError,
 } from '../../lib/themeWorldAdminApi';
+import { SEGMENT_FALLBACK_HERO_IMAGES } from '../../lib/themeWorldAdapter';
 
 // ---------------------------------------------------------------------------
 // Konstanten
@@ -122,6 +123,9 @@ export default function AdminThemeWorldForm({
     hero_image_url: '', hero_image_alt_de: '', og_image_url: '', og_image_alt_de: '',
     meta_title: '', meta_description: '',
   });
+  // Upload-Status je Bildfeld — Speichern wird blockiert solange ein Upload läuft
+  const [heroUploading, setHeroUploading] = useState(false);
+  const [ogUploading, setOgUploading] = useState(false);
 
   // Suche
   const sucheSave = useSaveState();
@@ -295,12 +299,21 @@ export default function AdminThemeWorldForm({
     const id = savedTwId || themeWorldId;
     if (!id) return showNotification('Bitte zuerst Grundlagen speichern.');
     if (loadError) return showNotification('Laden fehlgeschlagen — Speichern nicht möglich.');
+    if (heroUploading || ogUploading) {
+      return showNotification('Bild-Upload noch aktiv — bitte warte kurz und versuche erneut.');
+    }
+    // Sicherheitsprüfung: blob: oder data: URLs niemals in DB speichern
+    const sanitizeUrl = (url) => {
+      if (!url) return null;
+      if (url.startsWith('blob:') || url.startsWith('data:')) return null;
+      return url;
+    };
     bilderSave.startSaving();
     try {
       await updateThemeWorld(id, {
-        hero_image_url: bilder.hero_image_url || null,
+        hero_image_url: sanitizeUrl(bilder.hero_image_url),
         hero_image_alt_de: bilder.hero_image_alt_de || null,
-        og_image_url: bilder.og_image_url || null,
+        og_image_url: sanitizeUrl(bilder.og_image_url),
         og_image_alt_de: bilder.og_image_alt_de || null,
         meta_title: bilder.meta_title || null,
         meta_description: bilder.meta_description || null,
@@ -580,7 +593,22 @@ export default function AdminThemeWorldForm({
                   setBilder((p) => ({ ...p, hero_image_alt_de: alt }));
                   bilderSave.markDirty();
                 }}
+                onUploadStateChange={setHeroUploading}
               />
+              {/* Hinweis: Kein eigenes Bild → Fallback wird auf der Seite angezeigt */}
+              {!bilder.hero_image_url && grundlagen.url_segment && (
+                <div className="flex items-start gap-3 bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
+                  <img
+                    src={SEGMENT_FALLBACK_HERO_IMAGES[grundlagen.url_segment]}
+                    alt="Standardbild"
+                    className="w-16 h-10 object-cover rounded shrink-0"
+                  />
+                  <p>
+                    Kein Bild hochgeladen — auf der Landingpage wird dieses <strong>Standardbild für das Segment</strong> angezeigt.
+                    Du kannst jederzeit ein eigenes Bild hochladen.
+                  </p>
+                </div>
+              )}
 
               <AdminImageField
                 currentUrl={bilder.og_image_url}
@@ -596,6 +624,7 @@ export default function AdminThemeWorldForm({
                   setBilder((p) => ({ ...p, og_image_alt_de: alt }));
                   bilderSave.markDirty();
                 }}
+                onUploadStateChange={setOgUploading}
               />
 
               <AdminSeoFields

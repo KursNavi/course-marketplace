@@ -39,6 +39,16 @@ const URL_TO_DB_SEGMENT = {
   'kinder-jugend': 'kinder',
 };
 
+/**
+ * Fallback-Hero-Bilder je Segment — werden verwendet wenn keine hero_image_url in DB gesetzt ist.
+ * Dieselben Bilder wie in LandingView.jsx.
+ */
+export const SEGMENT_FALLBACK_HERO_IMAGES = {
+  beruflich: 'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&q=80&w=2000',
+  'privat-hobby': 'https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?auto=format&fit=crop&q=80&w=2000',
+  'kinder-jugend': 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&q=80&w=2000',
+};
+
 // ---------------------------------------------------------------------------
 // Hilfsfunktionen
 // ---------------------------------------------------------------------------
@@ -134,8 +144,8 @@ export function adaptThemeWorldToConfig({
     subtitle: themeWorld.subtitle_de,
     intro: themeWorld.intro_de,
 
-    // Bilder
-    heroImageUrl: themeWorld.hero_image_url || null,
+    // Bilder (Fallback auf Segment-Bild wenn kein Custom-Bild hochgeladen)
+    heroImageUrl: themeWorld.hero_image_url || SEGMENT_FALLBACK_HERO_IMAGES[urlSegment] || null,
     heroImageAlt: themeWorld.hero_image_alt_de || '',
     ogImageUrl: themeWorld.og_image_url || null,
     ogImageAlt: themeWorld.og_image_alt_de || '',
@@ -406,8 +416,8 @@ export function adaptToLegacyBereichConfig({
     title: { de: themeWorld.title_de || '' },
     subtitle: { de: themeWorld.subtitle_de || '' },
 
-    // Hero-Bild
-    heroImage: themeWorld.hero_image_url || null,
+    // Hero-Bild (Fallback auf Segment-Bild wenn kein Custom-Bild hochgeladen)
+    heroImage: themeWorld.hero_image_url || SEGMENT_FALLBACK_HERO_IMAGES[urlSegment] || null,
     heroImageAlt: themeWorld.hero_image_alt_de || '',
 
     // OG-Bild
