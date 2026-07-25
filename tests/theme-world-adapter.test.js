@@ -12,6 +12,7 @@ import {
   urlSegmentToTypeKey,
   dbSegmentToUrlSegment,
   urlSegmentToDbSegment,
+  SEGMENT_FALLBACK_HERO_IMAGES,
 } from '../src/lib/themeWorldAdapter.js';
 
 // ---------------------------------------------------------------------------
@@ -337,8 +338,8 @@ describe('Adapter: Yoga & Achtsamkeit Fixture', () => {
     expect(result.metaDescription).toBe('Finde Yoga-Kurse in deiner Nähe.');
   });
 
-  it('kein Hero-Bild → heroImageUrl ist null', () => {
-    expect(result.heroImageUrl).toBeNull();
+  it('kein Hero-Bild → heroImageUrl gibt Segment-Fallback zurück (privat-hobby)', () => {
+    expect(result.heroImageUrl).toBe(SEGMENT_FALLBACK_HERO_IMAGES['privat-hobby']);
   });
 });
 
