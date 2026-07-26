@@ -929,11 +929,9 @@ export default function AdminThemeWorldForm({
                     <textarea className="FormInput h-16 resize-none" value={item.intro_de || ''} onChange={(e) => update({ intro_de: e.target.value })} />
                   </FormField>
                   <FormField label="Aufzählungspunkte (einer pro Zeile)">
-                    <textarea
-                      className="FormInput h-24 resize-none font-mono text-sm"
-                      value={(item.items_de || []).join('\n')}
-                      onChange={(e) => update({ items_de: e.target.value.split('\n').filter(Boolean) })}
-                      placeholder="Punkt 1&#10;Punkt 2&#10;Punkt 3"
+                    <ItemsDeTextarea
+                      value={item.items_de}
+                      onChange={(normalized) => update({ items_de: normalized })}
                     />
                   </FormField>
                   <div className="flex items-center gap-2">
@@ -1157,6 +1155,39 @@ function ActiveToggle({ value, onChange }) {
       <input type="checkbox" checked={!!value} onChange={(e) => onChange(e.target.checked)} className="w-4 h-4 rounded" />
       <span className="text-sm text-gray-700">Aktiv</span>
     </label>
+  );
+}
+
+/**
+ * Textarea für Aufzählungspunkte (items_de).
+ *
+ * Behält den Rohtext während der Eingabe — Enter wird nicht sofort entfernt.
+ * Erst beim Verlassen des Feldes (blur) wird der Text normalisiert:
+ * leere Zeilen werden entfernt, Zeilen getrimmt, das Ergebnis als Array
+ * an den Parent übergeben.
+ */
+function ItemsDeTextarea({ value, onChange }) {
+  const [raw, setRaw] = React.useState(() => (value || []).join('\n'));
+  const isFocused = React.useRef(false);
+
+  React.useEffect(() => {
+    if (!isFocused.current) {
+      setRaw((value || []).join('\n'));
+    }
+  }, [value]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  return (
+    <textarea
+      className="FormInput h-24 resize-none font-mono text-sm"
+      value={raw}
+      onChange={(e) => setRaw(e.target.value)}
+      onFocus={() => { isFocused.current = true; }}
+      onBlur={() => {
+        isFocused.current = false;
+        onChange(raw.split('\n').map((line) => line.trim()).filter(Boolean));
+      }}
+      placeholder={"Punkt 1\nPunkt 2\nPunkt 3"}
+    />
   );
 }
 
