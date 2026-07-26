@@ -132,6 +132,7 @@ export default function AdminThemeWorldForm({
   const [suche, setSuche] = useState({
     area_slug: '', type_key: '', default_spec: '', default_focus: '',
   });
+  const [predefinedSearches, setPredefinedSearches] = useState([]);
 
   // Kursbereiche (Specialties)
   const specialtiesSave = useSaveState();
@@ -201,6 +202,7 @@ export default function AdminThemeWorldForm({
         default_spec: sc.default_spec || '',
         default_focus: sc.default_focus || '',
       });
+      setPredefinedSearches(data.predefined_searches || []);
 
       // Sub-Entitäten (keys already normalized to camelCase by getAllSubEntities)
       setSpecialties(subs.specialties || []);
@@ -331,8 +333,33 @@ export default function AdminThemeWorldForm({
     const id = savedTwId || themeWorldId;
     if (!id) return showNotification('Bitte zuerst Grundlagen speichern.');
     if (loadError) return showNotification('Laden fehlgeschlagen — Speichern nicht möglich.');
+
+    // Client-side validation: predefined_searches
+    if (predefinedSearches.length > 20) {
+      sucheSave.markError('Maximal 20 vordefinierte Suchen erlaubt.');
+      showNotification('Fehler: Maximal 20 vordefinierte Suchen erlaubt.');
+      return;
+    }
+    for (let i = 0; i < predefinedSearches.length; i++) {
+      const s = predefinedSearches[i];
+      if (!s.label_de || !s.label_de.trim()) {
+        sucheSave.markError(`Eintrag #${i + 1}: Bezeichnung ist Pflichtfeld.`);
+        showNotification(`Fehler: Eintrag #${i + 1} — Bezeichnung ist Pflichtfeld.`);
+        return;
+      }
+    }
+
     sucheSave.startSaving();
     try {
+      // Normalize: strip empty optional fields from predefined_searches
+      const normalizedSearches = predefinedSearches.map((s) => ({
+        label_de: (s.label_de || '').trim(),
+        ...(s.spec && s.spec.trim() ? { spec: s.spec.trim() } : {}),
+        ...(s.focus && s.focus.trim() ? { focus: s.focus.trim() } : {}),
+        ...(s.loc && s.loc.trim() ? { loc: s.loc.trim() } : {}),
+        ...(s.delivery ? { delivery: s.delivery } : {}),
+      }));
+
       await updateThemeWorld(id, {
         area_slug: suche.area_slug,
         search_config: {
@@ -341,6 +368,7 @@ export default function AdminThemeWorldForm({
           ...(suche.default_spec && { default_spec: suche.default_spec }),
           ...(suche.default_focus && { default_focus: suche.default_focus }),
         },
+        predefined_searches: normalizedSearches,
       });
       sucheSave.markSaved();
       showNotification('Suchkonfiguration gespeichert.');
@@ -687,6 +715,88 @@ export default function AdminThemeWorldForm({
                   onChange={(e) => { setSuche((p) => ({ ...p, default_focus: e.target.value })); sucheSave.markDirty(); }}
                 />
               </FormField>
+            </div>
+
+            {/* Vordefinierte Suchen */}
+            <div className="pt-6 border-t border-gray-100">
+              <div className="mb-3">
+                <h3 className="text-sm font-semibold text-gray-700">Vordefinierte Suchen</h3>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  Schnelleinstieg-Links auf der Landingpage (max. 20 Einträge).
+                  Bezeichnung ist Pflichtfeld, alle anderen Felder optional.
+                </p>
+              </div>
+              <RepeatableList
+                items={predefinedSearches}
+                maxItems={20}
+                onChange={(items) => { setPredefinedSearches(items); sucheSave.markDirty(); }}
+                emptyLabel="Noch keine vordefinierten Suchen"
+                addLabel="Vordefinierte Suche hinzufügen"
+                newItem={() => ({ label_de: '', spec: '', focus: '', loc: '', delivery: '' })}
+                renderItem={(item, i, update, remove) => (
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-xs font-semibold text-gray-600">
+                        Bezeichnung <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        className="FormInput mt-1"
+                        value={item.label_de || ''}
+                        onChange={(e) => update({ label_de: e.target.value })}
+                        placeholder="z.B. Fitnesstrainer Basiskurs"
+                        maxLength={80}
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-xs font-semibold text-gray-600">Spezialgebiet (spec)</label>
+                        <input
+                          className="FormInput mt-1"
+                          value={item.spec || ''}
+                          onChange={(e) => update({ spec: e.target.value })}
+                          placeholder="Fitness-Trainer-Ausbildung"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-semibold text-gray-600">Fokus (focus)</label>
+                        <input
+                          className="FormInput mt-1"
+                          value={item.focus || ''}
+                          onChange={(e) => update({ focus: e.target.value })}
+                          placeholder="Basis-Ausbildung"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-semibold text-gray-600">Ort (loc)</label>
+                        <input
+                          className="FormInput mt-1"
+                          value={item.loc || ''}
+                          onChange={(e) => update({ loc: e.target.value })}
+                          placeholder="Zürich"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-semibold text-gray-600">Kursformat (delivery)</label>
+                        <select
+                          className="FormInput mt-1"
+                          value={item.delivery || ''}
+                          onChange={(e) => update({ delivery: e.target.value })}
+                        >
+                          <option value="">Alle Formate</option>
+                          <option value="online_live">Online Live</option>
+                          <option value="self_study">Selbststudium</option>
+                          <option value="in_person">Vor Ort</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="flex justify-end">
+                      <button type="button" onClick={remove} className="text-xs text-red-500 hover:underline">
+                        Entfernen
+                      </button>
+                    </div>
+                  </div>
+                )}
+              />
             </div>
 
             <TabFooter saveState={sucheSave} onSave={saveSuche} />
@@ -1050,8 +1160,9 @@ function ActiveToggle({ value, onChange }) {
   );
 }
 
-function RepeatableList({ items, onChange, emptyLabel, addLabel, newItem, renderItem }) {
-  const add = () => onChange([...items, newItem()]);
+function RepeatableList({ items, onChange, emptyLabel, addLabel, newItem, renderItem, maxItems }) {
+  const atMax = maxItems != null && items.length >= maxItems;
+  const add = () => { if (!atMax) onChange([...items, newItem()]); };
 
   const update = (i, patch) => {
     const next = [...items];
@@ -1075,9 +1186,10 @@ function RepeatableList({ items, onChange, emptyLabel, addLabel, newItem, render
       <button
         type="button"
         onClick={add}
-        className="w-full border-2 border-dashed border-gray-300 rounded-lg py-3 text-sm text-gray-500 hover:border-teal-400 hover:text-teal-600 transition font-medium"
+        disabled={atMax}
+        className="w-full border-2 border-dashed border-gray-300 rounded-lg py-3 text-sm text-gray-500 hover:border-teal-400 hover:text-teal-600 transition font-medium disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-gray-300 disabled:hover:text-gray-500"
       >
-        + {addLabel}
+        {atMax ? `Maximum erreicht (${maxItems})` : `+ ${addLabel}`}
       </button>
     </div>
   );

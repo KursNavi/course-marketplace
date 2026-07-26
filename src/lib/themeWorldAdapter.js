@@ -497,6 +497,7 @@ export function adaptToLegacyBereichConfig({
       scenarioSubtitle: st.scenarios_subheading ? { de: st.scenarios_subheading } : { de: 'Finde den passenden Einstieg' },
       specialtiesTitle: st.specialties_heading ? { de: st.specialties_heading } : { de: 'Ausbildungsbereiche' },
       specialtiesSubtitle: st.specialties_subheading ? { de: st.specialties_subheading } : { de: 'Alle Schwerpunkte auf einen Blick' },
+      searchesTitle: st.searches_heading ? { de: st.searches_heading } : null,
       searchesSubtitle: st.searches_subheading ? { de: st.searches_subheading } : null,
       faqTitle: st.faqs_heading ? { de: st.faqs_heading } : { de: 'Häufige Fragen' },
       trustTitle: st.trust_heading ? { de: st.trust_heading } : { de: 'Qualität & Anerkennung' },
