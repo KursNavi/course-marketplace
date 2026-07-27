@@ -25,6 +25,7 @@ import {
   Bold, Italic, List, ListOrdered, Link as LinkIcon,
   Unlink, Globe, Undo, Undo2, Redo2, X,
 } from 'lucide-react';
+import { insertPlainTextAtCaret } from './richTextPasteUtils';
 
 // ---------------------------------------------------------------------------
 // Konstanten
@@ -318,18 +319,11 @@ export default function AdminRichTextEditor({
     setTimeout(updateFormatState, 0);
   };
 
-  // Clipboard: nur Text einfügen um Fremd-HTML zu vermeiden
+  // Clipboard: ausschliesslich text/plain — safe DOM-Einfügung, kein insertHTML
   const handlePaste = (e) => {
     e.preventDefault();
-    const text = e.clipboardData?.getData('text/plain') || '';
-    // Zeilenumbrüche als <br> einfügen, dann bereinigen
-    const html = text
-      .split(/\r?\n/)
-      .map((l) => l.trim())
-      .filter((l) => l.length > 0)
-      .map((l) => `<p>${l}</p>`)
-      .join('');
-    exec('insertHTML', html || text);
+    const text = e.clipboardData?.getData('text/plain') ?? '';
+    insertPlainTextAtCaret(text);
     notifyChange();
   };
 
