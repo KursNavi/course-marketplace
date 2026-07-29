@@ -51,7 +51,7 @@ export default function AdminScenarioForm({
   const [form, setForm] = useState({
     label_de: '', icon: '', teaser_de: '', slug: '',
     content_html: '',
-    card_image_url: '', card_image_alt: '', og_image_url: '',
+    card_image_url: '', card_image_alt: '', og_image_url: '', og_image_alt: '',
     meta_title: '', meta_description: '',
     cta_label_de: '',
     cta_spec: '', cta_focus: '', cta_loc: '', cta_delivery: '',
@@ -81,6 +81,7 @@ export default function AdminScenarioForm({
         card_image_url: data.card_image_url || '',
         card_image_alt: data.card_image_alt || '',
         og_image_url: data.og_image_url || '',
+        og_image_alt: data.og_image_alt || '',
         meta_title: data.meta_title || '',
         meta_description: data.meta_description || '',
         cta_label_de: data.cta_label_de || '',
@@ -120,6 +121,7 @@ export default function AdminScenarioForm({
         card_image_url: form.card_image_url || null,
         card_image_alt: form.card_image_alt || null,
         og_image_url: form.og_image_url || null,
+        og_image_alt: form.og_image_alt || null,
         meta_title: form.meta_title || null,
         meta_description: form.meta_description || null,
         cta_label_de: form.cta_label_de || null,
@@ -302,12 +304,12 @@ export default function AdminScenarioForm({
             />
             <AdminImageField
               currentUrl={form.og_image_url}
-              altText=""
+              altText={form.og_image_alt}
               folder="theme-world-scenarios"
               label="Open-Graph-Bild (Social Media)"
               altRequired={false}
               onImageUploaded={({ publicUrl }) => update({ og_image_url: publicUrl })}
-              onAltTextChange={() => {}}
+              onAltTextChange={(alt) => update({ og_image_alt: alt })}
             />
           </div>
         </Section>

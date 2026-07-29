@@ -452,6 +452,7 @@ export function validateScenario(data) {
   optionalText(errors, data, 'meta_title', META_TITLE_MAX);
   optionalText(errors, data, 'meta_description', 160);
   optionalText(errors, data, 'card_image_alt', 200);
+  optionalText(errors, data, 'og_image_alt', 200);
 
   // Bild-URLs
   if (data.card_image_url && !isValidImageUrl(data.card_image_url)) {

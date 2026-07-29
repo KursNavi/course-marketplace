@@ -35,7 +35,7 @@ const ALLOWED_WRITE_FIELDS = [
   'label_de', 'label_en', 'label_fr', 'label_it',
   'teaser_de', 'teaser_en',
   'content_html',
-  'card_image_url', 'card_image_alt', 'og_image_url',
+  'card_image_url', 'card_image_alt', 'og_image_url', 'og_image_alt',
   'meta_title', 'meta_description',
   'cta_label_de', 'cta_config',
   'sort_order', 'last_reviewed_at',
