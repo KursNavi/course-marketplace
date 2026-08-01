@@ -14,6 +14,8 @@
  *   Config key (typeKey): 'beruflich' | 'privat_hobby' | 'kinder_jugend'
  */
 
+import { normalizeDeliveryTypeKey } from './courseMetadata';
+
 // ---------------------------------------------------------------------------
 // Konstanten
 // ---------------------------------------------------------------------------
@@ -457,7 +459,7 @@ export function adaptToLegacyBereichConfig({
             anchorText: r.anchor_text_de || r.label_de,
             params: {
               ...(r.loc_param ? { loc: r.loc_param } : {}),
-              ...(r.delivery_param ? { delivery: r.delivery_param } : {}),
+              ...(r.delivery_param ? { delivery: normalizeDeliveryTypeKey(r.delivery_param) || r.delivery_param } : {}),
             },
           })),
         }
@@ -472,7 +474,7 @@ export function adaptToLegacyBereichConfig({
       },
       extraParams: {
         ...(s.loc ? { loc: s.loc } : {}),
-        ...(s.delivery ? { delivery: s.delivery } : {}),
+        ...(s.delivery ? { delivery: normalizeDeliveryTypeKey(s.delivery) || s.delivery } : {}),
       },
     })),
 
@@ -510,7 +512,7 @@ export function adaptToLegacyBereichConfig({
       label: { de: l.label_de || '' },
       params: {
         ...(l.loc ? { loc: l.loc } : {}),
-        ...(l.delivery ? { delivery: l.delivery } : {}),
+        ...(l.delivery ? { delivery: normalizeDeliveryTypeKey(l.delivery) || l.delivery } : {}),
       },
     })),
 
@@ -556,6 +558,6 @@ function _extractSearchParams(ctaConfig, searchConfig = {}) {
     ...(c.spec ? { spec: c.spec } : {}),
     ...(c.focus ? { focus: c.focus } : {}),
     ...(c.loc ? { loc: c.loc } : {}),
-    ...(c.delivery ? { delivery: c.delivery } : {}),
+    ...(c.delivery ? { delivery: normalizeDeliveryTypeKey(c.delivery) || c.delivery } : {}),
   };
 }

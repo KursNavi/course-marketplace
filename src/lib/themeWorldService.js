@@ -149,6 +149,39 @@ export async function fetchPublishedScenario(themeWorldId, scenarioSlug) {
 }
 
 /**
+ * Lädt die Anzeigelabel aller publizierten Themenwelten als Map (area_slug → label).
+ *
+ * Verwendete Fallback-Reihenfolge pro Eintrag:
+ *   1. search_config.area_label_de (explizit gesetztes lesbares Label)
+ *   2. title_de der Themenwelt als letzter Fallback
+ *
+ * Diese Funktion wird in SearchPageView einmalig beim Mount aufgerufen
+ * und dient als Fallback-Stufe 4+5 in der öffentlichen Labelauflösung.
+ *
+ * @returns {Promise<Map<string, string>>} Map: area_slug → Anzeigelabel
+ */
+export async function fetchPublishedThemeWorldAreaLabels() {
+  const { data, error } = await supabase
+    .from('theme_worlds')
+    .select('area_slug, title_de, search_config')
+    .eq('status', 'published');
+
+  if (error) {
+    console.error('[themeWorldService] fetchPublishedThemeWorldAreaLabels error:', error.message);
+    return new Map();
+  }
+
+  const map = new Map();
+  for (const row of data || []) {
+    if (!row.area_slug) continue;
+    const sc = row.search_config || {};
+    const label = (sc.area_label_de || '').trim() || (row.title_de || '').trim();
+    if (label) map.set(row.area_slug, label);
+  }
+  return map;
+}
+
+/**
  * Lädt aktive FAQs einer Themenwelt (RLS: nur wenn TW published).
  *
  * @param {string} themeWorldId - UUID der Themenwelt

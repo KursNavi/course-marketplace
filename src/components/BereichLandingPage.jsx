@@ -11,6 +11,7 @@ import RegionalDiscoverySection from './RegionalDiscoverySection';
 import { loadThemeWorldWithFallback, isThemeWorldPilotActive, isThemeWorldDbEnabled } from '../lib/themeWorldFeatureFlag';
 import { fetchThemeWorldPage } from '../lib/themeWorldService';
 import { adaptToLegacyBereichConfig } from '../lib/themeWorldAdapter';
+import { normalizeDeliveryTypeKey } from '../lib/courseMetadata';
 
 export default function BereichLandingPage({ segment, slug, courses, lang = 'de', t }) {
   // Legacy-Config (immer geladen als Basiswert + Fallback)
@@ -300,7 +301,14 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
     params.set('type', config.typeKey);
     params.set('area', config.areaSlug);
     Object.entries(extraParams).forEach(([k, v]) => {
-      if (v) params.set(k, v);
+      if (!v) return;
+      // Kanonisiere Delivery-Werte beim URL-Aufbau
+      if (k === 'delivery') {
+        const canonical = normalizeDeliveryTypeKey(v);
+        if (canonical) params.set(k, canonical);
+      } else {
+        params.set(k, v);
+      }
     });
     return '/search?' + params.toString();
   };

@@ -9,6 +9,7 @@ import { shouldHandleClientNavigation } from '../lib/navigation';
 import { loadThemeWorldWithFallback, isThemeWorldPilotActive, isThemeWorldDbEnabled } from '../lib/themeWorldFeatureFlag';
 import { fetchThemeWorld, fetchPublishedScenario } from '../lib/themeWorldService';
 import { adaptToLegacyBereichConfig, adaptToLegacySzenarioConfig } from '../lib/themeWorldAdapter';
+import { normalizeDeliveryTypeKey } from '../lib/courseMetadata';
 
 /**
  * SzenarioArtikelView
@@ -172,7 +173,14 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
     params.set('type', bereichConfig.typeKey);
     params.set('area', bereichConfig.areaSlug);
     Object.entries(extraParams).forEach(([k, v]) => {
-      if (v) params.set(k, v);
+      if (!v) return;
+      // Kanonisiere Delivery-Werte beim URL-Aufbau
+      if (k === 'delivery') {
+        const canonical = normalizeDeliveryTypeKey(v);
+        if (canonical) params.set(k, canonical);
+      } else {
+        params.set(k, v);
+      }
     });
     window.scrollTo(0, 0);
     window.history.pushState({ view: 'search' }, '', '/search?' + params.toString());

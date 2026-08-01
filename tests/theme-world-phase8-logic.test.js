@@ -254,7 +254,8 @@ describe('Phase 8: Adapter — variable Anzahlen für rein dynamische Themenwelt
     expect(zürich.label).toBe('Zürich');
     expect(zürich.params.loc).toBe('zürich');
     const online = result.regionalDiscovery.regions[2];
-    expect(online.params.delivery).toBe('online');
+    // Phase 8.11: 'online' wird zu 'online_live' kanonisiert
+    expect(online.params.delivery).toBe('online_live');
     expect(online.params.loc).toBeUndefined();
   });
 });

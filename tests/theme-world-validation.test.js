@@ -197,7 +197,7 @@ describe('validatePredefinedSearches', () => {
 
   it('akzeptiert gültige Suchliste', () => {
     expect(validatePredefinedSearches([
-      { label_de: 'Fitness Trainer Zürich', loc: 'Zürich', delivery: 'in_person' },
+      { label_de: 'Fitness Trainer Zürich', loc: 'Zürich', delivery: 'presence' },
       { label_de: 'Online Yoga' },
     ])).toEqual([]);
   });
@@ -232,7 +232,7 @@ describe('validateCtaLinks', () => {
   it('akzeptiert gültige cta_links', () => {
     expect(validateCtaLinks([
       { label_de: 'Alle Kurse' },
-      { label_de: 'Zürich', loc: 'Zürich', delivery: 'in_person' },
+      { label_de: 'Zürich', loc: 'Zürich', delivery: 'presence' },
     ])).toEqual([]);
   });
 

@@ -980,10 +980,11 @@ describe('Phase 8.6 — adaptToLegacyBereichConfig: predefined_searches', () => 
     const result = adaptToLegacyBereichConfig({ themeWorld: tw });
 
     expect(result.predefinedSearches).toHaveLength(1);
+    // delivery wird kanonisiert: in_person → presence (Phase 8.11)
     expect(result.predefinedSearches[0]).toMatchObject({
       label: { de: 'Zeichnen Grundkurs' },
       params: { spec: 'Zeichnen', focus: 'Anfänger' },
-      extraParams: { loc: 'Bern', delivery: 'in_person' },
+      extraParams: { loc: 'Bern', delivery: 'presence' },
     });
   });
 
@@ -1108,7 +1109,7 @@ describe('Phase 8.6 — validatePredefinedSearches', () => {
   // ------------------------------------------------------------------
   it('gültiger Eintrag → keine Fehler', () => {
     const errors = validatePredefinedSearches([
-      { label_de: 'Fitnesstrainer Basiskurs', spec: 'Fitness', focus: 'Basis', loc: 'Zürich', delivery: 'in_person' },
+      { label_de: 'Fitnesstrainer Basiskurs', spec: 'Fitness', focus: 'Basis', loc: 'Zürich', delivery: 'presence' },
     ]);
     expect(errors).toEqual([]);
   });
@@ -1147,7 +1148,8 @@ describe('Phase 8.6 — validatePredefinedSearches', () => {
 
   // ------------------------------------------------------------------
   it('gültige delivery-Werte → kein Fehler', () => {
-    const valid = ['online_live', 'self_study', 'in_person'];
+    // Phase 8.11: kanonische Werte; in_person wurde durch presence ersetzt
+    const valid = ['online_live', 'self_study', 'presence'];
     valid.forEach((d) => {
       const errors = validatePredefinedSearches([{ label_de: 'Test', delivery: d }]);
       expect(errors).toEqual([]);

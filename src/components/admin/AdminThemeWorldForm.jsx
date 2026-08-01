@@ -130,7 +130,7 @@ export default function AdminThemeWorldForm({
   // Suche
   const sucheSave = useSaveState();
   const [suche, setSuche] = useState({
-    area_slug: '', type_key: '', default_spec: '', default_focus: '',
+    area_slug: '', type_key: '', default_spec: '', default_focus: '', area_label_de: '',
   });
   const [predefinedSearches, setPredefinedSearches] = useState([]);
 
@@ -201,6 +201,7 @@ export default function AdminThemeWorldForm({
         type_key: sc.type_key || '',
         default_spec: sc.default_spec || '',
         default_focus: sc.default_focus || '',
+        area_label_de: sc.area_label_de || '',
       });
       setPredefinedSearches(data.predefined_searches || []);
 
@@ -367,6 +368,7 @@ export default function AdminThemeWorldForm({
           ...(suche.type_key && { type_key: suche.type_key }),
           ...(suche.default_spec && { default_spec: suche.default_spec }),
           ...(suche.default_focus && { default_focus: suche.default_focus }),
+          ...(suche.area_label_de && suche.area_label_de.trim() ? { area_label_de: suche.area_label_de.trim() } : {}),
         },
         predefined_searches: normalizedSearches,
       });
@@ -696,6 +698,20 @@ export default function AdminThemeWorldForm({
                 />
               </FormField>
 
+              <FormField
+                label="Anzeigename in der Suche"
+                hint='Lesbare Bezeichnung für Breadcrumb, Seitentitel und Suchfilter, z. B. „Kreativ & Gestalten". Leer lassen um den Titel der Themenwelt zu verwenden.'
+              >
+                <input
+                  type="text"
+                  className="FormInput"
+                  placeholder='z. B. Kreativ & Gestalten'
+                  maxLength={80}
+                  value={suche.area_label_de}
+                  onChange={(e) => { setSuche((p) => ({ ...p, area_label_de: e.target.value })); sucheSave.markDirty(); }}
+                />
+              </FormField>
+
               <FormField label="Standard-Spezialgebiet" hint="Optionaler default_spec für Suche">
                 <input
                   type="text"
@@ -785,7 +801,7 @@ export default function AdminThemeWorldForm({
                           <option value="">Alle Formate</option>
                           <option value="online_live">Online Live</option>
                           <option value="self_study">Selbststudium</option>
-                          <option value="in_person">Vor Ort</option>
+                          <option value="presence">Präsenz (vor Ort)</option>
                         </select>
                       </div>
                     </div>

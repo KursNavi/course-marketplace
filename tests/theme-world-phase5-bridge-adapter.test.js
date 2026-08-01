@@ -261,9 +261,10 @@ describe('adaptToLegacyBereichConfig — Regionen', () => {
     expect(r.params.loc).toBe('Zürich');
   });
 
-  it('Online-Region hat delivery-Param', () => {
+  it('Online-Region hat delivery-Param (kanonisiert)', () => {
+    // Phase 8.11: 'online' wird zu 'online_live' kanonisiert
     const r = adapted.regionalDiscovery.regions[1];
-    expect(r.params.delivery).toBe('online');
+    expect(r.params.delivery).toBe('online_live');
   });
 
   it('regionalDiscovery ist null wenn keine Regionen', () => {

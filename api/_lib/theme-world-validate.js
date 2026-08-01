@@ -18,11 +18,11 @@ export const VALID_URL_SEGMENTS = ['beruflich', 'privat-hobby', 'kinder-jugend']
 // Google kürzt Titel ab ca. 60 Zeichen. UI zeigt dieses Limit als Zeichenzähler.
 export const META_TITLE_MAX = 60;
 export const VALID_STATUSES = ['draft', 'published', 'archived'];
-export const VALID_DELIVERY_TYPES = ['online_live', 'self_study', 'in_person'];
+export const VALID_DELIVERY_TYPES = ['online_live', 'self_study', 'presence'];
 export const VALID_TRUST_ITEM_TYPES = ['label', 'editorial', 'info'];
 
 // Erlaubte Keys in search_config JSONB
-const SEARCH_CONFIG_ALLOWED_KEYS = new Set(['area_slug', 'type_key', 'default_spec', 'default_focus']);
+const SEARCH_CONFIG_ALLOWED_KEYS = new Set(['area_slug', 'type_key', 'default_spec', 'default_focus', 'area_label_de']);
 
 // Erlaubte Abschnitts-Keys in section_titles JSONB
 const SECTION_TITLES_ALLOWED_KEYS = new Set([
@@ -70,6 +70,49 @@ export function isValidImageUrl(url) {
 
 function collect(errors, field, message) {
   errors.push(`${field}: ${message}`);
+}
+
+/**
+ * Erkennt vollständig maskiertes HTML (escaped HTML statt echter Markup-Struktur).
+ *
+ * Gibt true zurück wenn:
+ *   - der Text typische strukturelle Tags in escaped Form enthält (&lt;p, &lt;h2, …)
+ *   - dabei keine echte HTML-Struktur (öffnende <-Tags) vorhanden ist
+ *   - die Escaped-Tags häufig genug sind, um ein vollständig maskiertes Dokument zu signalisieren
+ *
+ * Gibt false zurück bei normalen Texten wie "2 < 3" (kein strukturiertes escaped HTML).
+ *
+ * @param {string} html - Zu prüfender Inhalt
+ * @returns {boolean}
+ */
+export function detectEscapedHtmlDocument(html) {
+  if (!html || typeof html !== 'string') return false;
+
+  // Match &lt;<tagname> followed by whitespace, >, /, or & (e.g. &lt;p&gt; → after 'p' comes '&')
+  const ESCAPED_TAG_PATTERNS = [
+    /&lt;p(?:[\s>/]|&)/gi,
+    /&lt;h[23456](?:[\s>/]|&)/gi,
+    /&lt;ul(?:[\s>/]|&)/gi,
+    /&lt;ol(?:[\s>/]|&)/gi,
+    /&lt;li(?:[\s>/]|&)/gi,
+    /&lt;strong(?:[\s>/]|&)/gi,
+    /&lt;em(?:[\s>/]|&)/gi,
+  ];
+
+  const escapedCount = ESCAPED_TAG_PATTERNS.reduce((count, rx) => {
+    const matches = html.match(rx);
+    return count + (matches ? matches.length : 0);
+  }, 0);
+
+  // Threshold: mindestens 3 escaped strukturelle Tags
+  if (escapedCount < 3) return false;
+
+  // Prüfen ob echte HTML-Struktur vorhanden ist
+  const REAL_HTML_PATTERN = /<(?:p|h[23456]|ul|ol|li|strong|em)[\s>/]/i;
+  const hasRealHtml = REAL_HTML_PATTERN.test(html);
+
+  // Escaped Dokument erkannt, wenn viele escaped Tags und kein echtes HTML
+  return !hasRealHtml;
 }
 
 function requireText(errors, obj, field, maxLength) {
@@ -123,6 +166,15 @@ export function validateSearchConfig(config) {
   if (config.type_key !== undefined) {
     if (!['beruflich', 'privat_hobby', 'kinder_jugend'].includes(config.type_key)) {
       errors.push('search_config.type_key: Ungültiger Wert. Erlaubt: beruflich, privat_hobby, kinder_jugend.');
+    }
+  }
+
+  if (config.area_label_de !== undefined) {
+    const lbl = config.area_label_de;
+    if (typeof lbl !== 'string') {
+      errors.push('search_config.area_label_de: Muss ein String sein.');
+    } else if (lbl.trim().length > 80) {
+      errors.push('search_config.area_label_de: Zu lang (max 80 Zeichen).');
     }
   }
 
@@ -470,6 +522,11 @@ export function validateScenario(data) {
   // sort_order
   if (data.sort_order !== undefined && (!Number.isInteger(data.sort_order) || data.sort_order < 0)) {
     collect(errors, 'sort_order', 'Muss eine nicht-negative ganze Zahl sein.');
+  }
+
+  // Escaped-HTML-Schutz
+  if (data.content_html && detectEscapedHtmlDocument(data.content_html)) {
+    collect(errors, 'content_html', 'Der Artikelinhalt enthält maskiertes HTML statt formatierter Inhalte. Bitte den Editorinhalt prüfen.');
   }
 
   // JSONB
