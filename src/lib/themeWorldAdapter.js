@@ -436,6 +436,8 @@ export function adaptToLegacyBereichConfig({
       icon: s.icon || null,
       label: { de: s.label_de || '' },
       text: { de: s.teaser_de || '' },
+      cardImageUrl: s.card_image_url || null,
+      cardImageAlt: s.card_image_alt || '',
       ctaLabel: { de: s.cta_label_de || 'Kurse entdecken' },
       searchParams: _extractSearchParams(s.cta_config, searchConfig),
       sortOrder: s.sort_order || i + 1,
@@ -543,6 +545,8 @@ export function adaptToLegacySzenarioConfig(scenario, themeWorldSearchConfig = {
     searchParams: _extractSearchParams(scenario.cta_config, themeWorldSearchConfig),
     // Content für den Artikel (wird separat in der Komponente als articleContent behandelt)
     contentHtml: scenario.content_html || '',
+    ogImageUrl: scenario.og_image_url || null,
+    ogImageAlt: scenario.og_image_alt || '',
     metaTitle: scenario.meta_title || null,
     metaDescription: scenario.meta_description || null,
   };

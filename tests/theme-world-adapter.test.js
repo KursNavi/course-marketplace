@@ -8,6 +8,8 @@ import {
   adaptThemeWorldToConfig,
   adaptScenarioCard,
   adaptScenarioArticle,
+  adaptToLegacyBereichConfig,
+  adaptToLegacySzenarioConfig,
   normalizeUrlSegment,
   urlSegmentToTypeKey,
   dbSegmentToUrlSegment,
@@ -154,6 +156,33 @@ const SPORT_TRUST = [
     sort_order: 1,
   },
 ];
+
+describe('Szenario-Medien im Legacy-Adapter', () => {
+  it('gibt Kartenbild und Alt-Text an die Landingpage weiter', () => {
+    const config = adaptToLegacyBereichConfig({
+      themeWorld: SPORT_FITNESS_TW,
+      scenarios: [SPORT_SCENARIOS[0]],
+    });
+
+    expect(config.scenarios[0]).toMatchObject({
+      cardImageUrl: 'https://example.com/card1.jpg',
+      cardImageAlt: SPORT_SCENARIOS[0].card_image_alt,
+    });
+  });
+
+  it('gibt OG-Bild und OG-Alt-Text an die Detailansicht weiter', () => {
+    const scenario = adaptToLegacySzenarioConfig({
+      ...SPORT_SCENARIOS[0],
+      og_image_url: 'https://example.com/scenario-og.jpg',
+      og_image_alt: 'Trainer beim Krafttraining',
+    });
+
+    expect(scenario).toMatchObject({
+      ogImageUrl: 'https://example.com/scenario-og.jpg',
+      ogImageAlt: 'Trainer beim Krafttraining',
+    });
+  });
+});
 
 // ---------------------------------------------------------------------------
 // Segmentnormalisierung

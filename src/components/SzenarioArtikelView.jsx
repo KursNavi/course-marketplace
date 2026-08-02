@@ -216,7 +216,7 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
       'og:title': pageTitle,
       'og:description': metaDesc,
       'og:url': canonicalUrl,
-      'og:image': `${BASE_URL}/og-default.png`,
+      'og:image': scenario.ogImageUrl || `${BASE_URL}/og-default.png`,
       'og:type': 'article',
       'og:locale': 'de_CH',
       'og:site_name': 'KursNavi'
@@ -232,6 +232,21 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
       }
       tag.content = content;
     });
+
+    // og:image:alt nur ausgeben, wenn ein redaktioneller Alt-Text vorhanden ist.
+    const ogAltProperty = 'og:image:alt';
+    let ogAltTag = document.querySelector(`meta[property="${ogAltProperty}"]`);
+    if (scenario.ogImageAlt) {
+      if (!ogAltTag) {
+        ogAltTag = document.createElement('meta');
+        ogAltTag.setAttribute('property', ogAltProperty);
+        document.head.appendChild(ogAltTag);
+        createdOgTags.push(ogAltTag);
+      }
+      ogAltTag.content = scenario.ogImageAlt;
+    } else if (ogAltTag) {
+      ogAltTag.remove();
+    }
 
     // Article JSON-LD
     const segmentLabel = SEGMENT_CONFIG[segmentKey]?.label?.[lang] || SEGMENT_CONFIG[segmentKey]?.label?.de || segment;

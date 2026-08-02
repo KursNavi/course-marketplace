@@ -431,10 +431,28 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
                 }}
                 className="relative p-6 rounded-2xl bg-white border border-gray-100 hover:border-gray-200 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group block"
               >
-                {/* Icon */}
-                <div className={`w-14 h-14 ${theme.bgLight} rounded-2xl flex items-center justify-center mb-4 group-hover:scale-105 transition-transform duration-300`}>
-                  <span className="text-3xl">{scenario.icon}</span>
-                </div>
+                {/* Kartenbild, falls vorhanden; sonst bestehender Icon-Fallback */}
+                {scenario.cardImageUrl ? (
+                  <div className="w-14 h-14 mb-4">
+                    <img
+                      data-testid={`scenario-card-image-${scenario.slug || i}`}
+                      src={scenario.cardImageUrl}
+                      alt={scenario.cardImageAlt || scenario.label[lang] || scenario.label.de || scenario.text[lang] || scenario.text.de || ''}
+                      className="w-full h-full rounded-2xl object-cover group-hover:scale-105 transition-transform duration-300"
+                      onError={(event) => {
+                        event.currentTarget.hidden = true;
+                        event.currentTarget.nextElementSibling?.removeAttribute('hidden');
+                      }}
+                    />
+                    <div hidden className={`w-full h-full ${theme.bgLight} rounded-2xl flex items-center justify-center`} aria-hidden="true">
+                      <span className="text-3xl">{scenario.icon}</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className={`w-14 h-14 ${theme.bgLight} rounded-2xl flex items-center justify-center mb-4 group-hover:scale-105 transition-transform duration-300`}>
+                    <span className="text-3xl">{scenario.icon}</span>
+                  </div>
+                )}
 
                 {/* Title */}
                 <h3 className={`font-bold text-base ${theme.text} mb-2 leading-snug`}>
@@ -742,5 +760,4 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
     </div>
   );
 }
-
 
