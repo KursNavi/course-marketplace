@@ -16,6 +16,7 @@ import {
   updateScenario,
   getErrorMessage,
 } from '../../lib/themeWorldAdminApi';
+import { normalizeDeliveryTypeKey } from '../../lib/courseMetadata';
 
 function slugify(text) {
   return (text || '')
@@ -88,7 +89,7 @@ export default function AdminScenarioForm({
         cta_spec: ctaCfg.spec || '',
         cta_focus: ctaCfg.focus || '',
         cta_loc: ctaCfg.loc || '',
-        cta_delivery: ctaCfg.delivery || '',
+        cta_delivery: normalizeDeliveryTypeKey(ctaCfg.delivery) || '',
         sort_order: data.sort_order || 0,
         status: data.status || 'draft',
       });
@@ -129,7 +130,9 @@ export default function AdminScenarioForm({
           ...(form.cta_spec && { spec: form.cta_spec }),
           ...(form.cta_focus && { focus: form.cta_focus }),
           ...(form.cta_loc && { loc: form.cta_loc }),
-          ...(form.cta_delivery && { delivery: form.cta_delivery }),
+          ...(normalizeDeliveryTypeKey(form.cta_delivery) && {
+            delivery: normalizeDeliveryTypeKey(form.cta_delivery),
+          }),
         },
         sort_order: form.sort_order,
       };
@@ -351,7 +354,7 @@ export default function AdminScenarioForm({
                 <option value="">Keine Einschränkung</option>
                 <option value="online_live">Online Live</option>
                 <option value="self_study">Selbststudium</option>
-                <option value="in_person">Vor Ort</option>
+                <option value="presence">Vor Ort</option>
               </select>
             </div>
           </div>
