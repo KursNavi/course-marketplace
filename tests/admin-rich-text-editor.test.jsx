@@ -13,6 +13,8 @@ import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import AdminRichTextEditor from '../src/components/admin/AdminRichTextEditor';
+import { normalizeInlineFormatting } from '../src/components/admin/richTextFormatting';
+import { sanitizeHtml } from '../api/_lib/theme-world-sanitize.js';
 
 // document.execCommand existiert in jsdom nicht — mocken
 beforeEach(() => {
@@ -174,6 +176,39 @@ describe('AdminRichTextEditor: onChange API', () => {
     Object.defineProperty(editor, 'innerHTML', { value: '<p>Test</p>', configurable: true });
     fireEvent.input(editor);
     expect(onChange).toHaveBeenCalled();
+  });
+
+  it('normalisiert browsererzeugtes Bold- und Italic-CSS vor dem Speichern', () => {
+    const onChange = vi.fn();
+    render(<AdminRichTextEditor value="" onChange={onChange} id="test-editor" />);
+    const editor = screen.getByTestId('test-editor');
+    editor.innerHTML = '<p><span style="font-weight: 700; font-style: italic">Wichtig</span></p>';
+    fireEvent.input(editor);
+
+    expect(onChange).toHaveBeenLastCalledWith('<p><strong><em>Wichtig</em></strong></p>');
+  });
+
+  it('erhält verschachtelte und kombinierte Formatierung als erlaubte semantische Tags', () => {
+    const normalized = normalizeInlineFormatting(
+      '<p><span style="font-weight:bold">Fett <span style="font-style:italic">und kursiv</span></span></p>',
+    );
+
+    expect(normalized).toBe('<p><strong>Fett <em>und kursiv</em></strong></p>');
+    expect(sanitizeHtml(normalized)).toBe(normalized);
+    expect(sanitizeHtml('<p><span style="font-weight:bold">Wichtig</span></p>'))
+      .toBe('<p><span>Wichtig</span></p>');
+  });
+
+  it('erzwingt semantische Ausgabe für neue Fett- und Kursivaktionen', () => {
+    render(<AdminRichTextEditor value="" onChange={vi.fn()} />);
+
+    fireEvent.mouseDown(screen.getByTitle(/Fett/i), { button: 0 });
+    fireEvent.mouseDown(screen.getByTitle(/Kursiv/i), { button: 0 });
+
+    expect(document.execCommand).toHaveBeenNthCalledWith(1, 'styleWithCSS', false, false);
+    expect(document.execCommand).toHaveBeenNthCalledWith(2, 'bold', false, null);
+    expect(document.execCommand).toHaveBeenNthCalledWith(3, 'styleWithCSS', false, false);
+    expect(document.execCommand).toHaveBeenNthCalledWith(4, 'italic', false, null);
   });
 });
 

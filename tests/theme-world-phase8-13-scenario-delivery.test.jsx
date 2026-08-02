@@ -23,7 +23,15 @@ vi.mock('../src/components/admin/AdminStatusBadge', () => ({ default: () => null
 vi.mock('../src/components/admin/AdminSaveState', () => ({ default: () => null }));
 vi.mock('../src/components/admin/AdminSeoFields', () => ({ default: () => null }));
 vi.mock('../src/components/admin/AdminImageField', () => ({ default: () => null }));
-vi.mock('../src/components/admin/AdminRichTextEditor', () => ({ default: () => null }));
+vi.mock('../src/components/admin/AdminRichTextEditor', () => ({
+  default: ({ value, onChange }) => (
+    <textarea
+      data-testid="rich-text-editor"
+      value={value || ''}
+      onChange={(event) => onChange(event.target.value)}
+    />
+  ),
+}));
 
 import AdminScenarioForm from '../src/components/admin/AdminScenarioForm.jsx';
 
@@ -90,5 +98,25 @@ describe('Phase 8.13: Szenario-Lieferart', () => {
     await waitFor(() => expect(mockUpdateScenario).toHaveBeenCalledTimes(1));
     const [, payload] = mockUpdateScenario.mock.calls[0];
     expect(payload.cta_config.delivery).toBe('presence');
+  });
+
+  it('sends normalized semantic rich text in the scenario save payload', async () => {
+    mockCreateScenario.mockResolvedValue({ id: SCENARIO_ID, status: 'draft' });
+    renderForm();
+
+    await act(async () => {
+      fireEvent.change(screen.getByPlaceholderText('Berufseinstieg als Fitness-Trainer'), {
+        target: { value: 'Formatierter Artikel' },
+      });
+      fireEvent.change(screen.getByTestId('rich-text-editor'), {
+        target: { value: '<p><strong><em>Wichtig</em></strong></p>' },
+      });
+      fireEvent.click(screen.getAllByText('Speichern')[0]);
+    });
+
+    await waitFor(() => expect(mockCreateScenario).toHaveBeenCalledTimes(1));
+    const [, payload] = mockCreateScenario.mock.calls[0];
+    expect(payload.content_html).toBe('<p><strong><em>Wichtig</em></strong></p>');
+    expect(payload.content_html).not.toContain('style=');
   });
 });

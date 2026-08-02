@@ -26,6 +26,7 @@ import {
   Unlink, Globe, Undo, Undo2, Redo2, X,
 } from 'lucide-react';
 import { insertPlainTextAtCaret } from './richTextPasteUtils';
+import { normalizeInlineFormatting } from './richTextFormatting';
 
 // ---------------------------------------------------------------------------
 // Konstanten
@@ -241,7 +242,7 @@ export default function AdminRichTextEditor({
     const el = editorRef.current;
     if (!el) return;
     isInternalChange.current = true;
-    onChange(el.innerHTML);
+    onChange(normalizeInlineFormatting(el.innerHTML));
   }, [onChange]);
 
   // Formatierungszustand der aktuellen Selektion prüfen
@@ -267,8 +268,8 @@ export default function AdminRichTextEditor({
   }, []);
 
   // Toolbar-Aktionen
-  const applyBold = () => { exec('bold'); notifyChange(); };
-  const applyItalic = () => { exec('italic'); notifyChange(); };
+  const applyBold = () => { exec('styleWithCSS', false); exec('bold'); notifyChange(); };
+  const applyItalic = () => { exec('styleWithCSS', false); exec('italic'); notifyChange(); };
   const applyList = (type) => {
     exec(type === 'ul' ? 'insertUnorderedList' : 'insertOrderedList');
     notifyChange();
