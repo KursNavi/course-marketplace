@@ -612,6 +612,15 @@ const SearchPageView = ({
         focus: searchFocus,
     }), [searchArea, selectedLocations, selectedDeliveryTypes, searchSpecialty, searchFocus]);
 
+    // A published dynamic theme world may define its own readable area label.
+    // Use it only for the unfiltered area landing search: the static Sport/Yoga
+    // header rules and all more specific filter combinations keep precedence.
+    const dynamicThemeWorldTitle = useMemo(() => {
+        const hasSpecialFilter = searchSpecialty || searchFocus || selectedLocations.length > 0 || selectedDeliveryTypes.length > 0;
+        if (dynamicHeader || !searchArea || hasSpecialFilter || !themeWorldLabels) return '';
+        return themeWorldLabels.get(searchArea) || '';
+    }, [dynamicHeader, searchArea, searchSpecialty, searchFocus, selectedLocations, selectedDeliveryTypes, themeWorldLabels]);
+
     // Dynamic search placeholder per segment
     const searchPlaceholder =
         (searchType === 'beruflich' || searchType === 'professionell') ? 'Beruf, Fachgebiet oder Abschluss suchen …' :
@@ -741,7 +750,7 @@ const SearchPageView = ({
                                 </div>
                                 <div>
                                     <h1 className={`text-2xl md:text-3xl font-bold font-heading ${activeSegmentConfig.textDark}`}>
-                                        {dynamicHeader?.title || activeSegmentConfig.heroTitle?.de || getLabel(searchType, 'type')}
+                                        {dynamicHeader?.title || dynamicThemeWorldTitle || activeSegmentConfig.heroTitle?.de || getLabel(searchType, 'type')}
                                     </h1>
                                     <p className="text-gray-600 mt-1">
                                         {dynamicHeader?.subtitle || activeSegmentConfig.heroSubtitle?.de || ''}
