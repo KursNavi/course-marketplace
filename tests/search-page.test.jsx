@@ -623,7 +623,7 @@ describe('Segment context banner', () => {
 
 // ===================== 9b. DYNAMIC THEME WORLD SEARCH HEADER =====================
 describe('Dynamic theme world search header', () => {
-  it('uses the published readable area label as H1 for an otherwise unfiltered dynamic area', async () => {
+  it('uses the published readable area label as H1 for a dynamic area with location, delivery, specialty and focus filters', async () => {
     mockFetchPublishedThemeWorldAreaLabels.mockResolvedValue(new Map([
       ['kreativ_gestalten', 'Kreativ & Gestalten'],
     ]));
@@ -631,6 +631,10 @@ describe('Dynamic theme world search header', () => {
     render(<SearchPageView {...makeProps({
       searchType: 'privat_hobby',
       searchArea: 'kreativ_gestalten',
+      selectedLocations: ['Zürich'],
+      selectedDeliveryTypes: ['presence'],
+      searchSpecialty: 'Malen',
+      searchFocus: 'Aquarell',
     })} />);
 
     await waitFor(() => {
@@ -639,7 +643,7 @@ describe('Dynamic theme world search header', () => {
     expect(screen.queryByRole('heading', { level: 1, name: 'Entdecke neue Leidenschaften' })).not.toBeInTheDocument();
   });
 
-  it('keeps the static Sport header ahead of a published theme world label', () => {
+  it('keeps the specific static Sport header ahead of a published theme world label', () => {
     mockFetchPublishedThemeWorldAreaLabels.mockResolvedValue(new Map([
       ['sport_fitness_beruf', 'Sport & Fitness'],
     ]));
@@ -647,9 +651,13 @@ describe('Dynamic theme world search header', () => {
     render(<SearchPageView {...makeProps({
       searchType: 'beruflich',
       searchArea: 'sport_fitness_beruf',
+      selectedLocations: ['Zürich'],
+      selectedDeliveryTypes: ['presence'],
+      searchSpecialty: 'Fitness-Trainer-Ausbildung',
+      searchFocus: 'Basis-Ausbildung',
     })} />);
 
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Sport- und Fitness-Kurse und Ausbildungen in der Schweiz');
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Fitness-Trainer-Basis-Ausbildungen in Zürich');
   });
 });
 

@@ -613,13 +613,13 @@ const SearchPageView = ({
     }), [searchArea, selectedLocations, selectedDeliveryTypes, searchSpecialty, searchFocus]);
 
     // A published dynamic theme world may define its own readable area label.
-    // Use it only for the unfiltered area landing search: the static Sport/Yoga
-    // header rules and all more specific filter combinations keep precedence.
+    // It is the fallback whenever no static header rule applies, including
+    // location, delivery, specialty and focus filters. Static Sport/Yoga rules
+    // continue to take precedence via dynamicHeader.
     const dynamicThemeWorldTitle = useMemo(() => {
-        const hasSpecialFilter = searchSpecialty || searchFocus || selectedLocations.length > 0 || selectedDeliveryTypes.length > 0;
-        if (dynamicHeader || !searchArea || hasSpecialFilter || !themeWorldLabels) return '';
+        if (dynamicHeader || !searchArea || !themeWorldLabels) return '';
         return themeWorldLabels.get(searchArea) || '';
-    }, [dynamicHeader, searchArea, searchSpecialty, searchFocus, selectedLocations, selectedDeliveryTypes, themeWorldLabels]);
+    }, [dynamicHeader, searchArea, themeWorldLabels]);
 
     // Dynamic search placeholder per segment
     const searchPlaceholder =
