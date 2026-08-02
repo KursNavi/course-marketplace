@@ -76,8 +76,14 @@
   @apply text-gray-600 leading-relaxed;
 }
 
-.prose-ratgeber strong {
+.prose-ratgeber strong,
+.prose-ratgeber b {
   @apply text-gray-800 font-semibold;
+}
+
+.prose-ratgeber em,
+.prose-ratgeber i {
+  @apply italic;
 }
 
 .prose-ratgeber table {
