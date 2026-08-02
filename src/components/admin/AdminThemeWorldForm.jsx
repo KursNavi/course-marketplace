@@ -235,9 +235,12 @@ export default function AdminThemeWorldForm({
   // ---------------------------------------------------------------------------
 
   useEffect(() => {
-    if (autoSlug && grundlagen.title_de) {
-      setGrundlagen((prev) => ({ ...prev, slug: slugify(prev.title_de) }));
-    }
+    if (!autoSlug || !grundlagen.title_de) return;
+
+    const nextSlug = slugify(grundlagen.title_de);
+    setGrundlagen((previous) => (
+      previous.slug === nextSlug ? previous : { ...previous, slug: nextSlug }
+    ));
   }, [grundlagen.title_de, autoSlug]);
 
   // ---------------------------------------------------------------------------
@@ -570,7 +573,10 @@ export default function AdminThemeWorldForm({
                     type="button"
                     onClick={() => {
                       setAutoSlug(true);
-                      setGrundlagen((p) => ({ ...p, slug: slugify(p.title_de) }));
+                      setGrundlagen((previous) => {
+                        const nextSlug = slugify(previous.title_de);
+                        return previous.slug === nextSlug ? previous : { ...previous, slug: nextSlug };
+                      });
                     }}
                     className="px-3 py-2 text-xs font-medium bg-gray-100 hover:bg-gray-200 rounded-lg whitespace-nowrap"
                   >

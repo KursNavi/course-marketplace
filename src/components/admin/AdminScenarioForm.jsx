@@ -103,9 +103,12 @@ export default function AdminScenarioForm({
 
   // Auto-Slug aus Titel
   useEffect(() => {
-    if (autoSlug && form.label_de) {
-      setForm((p) => ({ ...p, slug: slugify(p.label_de) }));
-    }
+    if (!autoSlug || !form.label_de) return;
+
+    const nextSlug = slugify(form.label_de);
+    setForm((previous) => (
+      previous.slug === nextSlug ? previous : { ...previous, slug: nextSlug }
+    ));
   }, [form.label_de, autoSlug]);
 
   const update = (patch) => { setForm((p) => ({ ...p, ...patch })); saveState.markDirty(); };
@@ -258,7 +261,13 @@ export default function AdminScenarioForm({
                   disabled={form.status === 'published'}
                 />
                 {form.status !== 'published' && (
-                  <button type="button" onClick={() => { setAutoSlug(true); setForm((p) => ({ ...p, slug: slugify(p.label_de) })); }}
+                  <button type="button" onClick={() => {
+                    setAutoSlug(true);
+                    setForm((previous) => {
+                      const nextSlug = slugify(previous.label_de);
+                      return previous.slug === nextSlug ? previous : { ...previous, slug: nextSlug };
+                    });
+                  }}
                     className="px-3 py-2 text-xs font-medium bg-gray-100 hover:bg-gray-200 rounded-lg whitespace-nowrap">
                     Aus Titel
                   </button>

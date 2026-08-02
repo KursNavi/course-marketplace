@@ -119,4 +119,22 @@ describe('Phase 8.13: Szenario-Lieferart', () => {
     expect(payload.content_html).toBe('<p><strong><em>Wichtig</em></strong></p>');
     expect(payload.content_html).not.toContain('style=');
   });
+
+  it('keeps the generated slug stable when the title has not changed', async () => {
+    renderForm();
+    const title = screen.getByPlaceholderText('Berufseinstieg als Fitness-Trainer');
+    const slug = screen.getByPlaceholderText('berufseinstieg');
+
+    await act(async () => {
+      fireEvent.change(title, { target: { value: 'Einstieg in den Beruf' } });
+    });
+    await waitFor(() => expect(slug.value).toBe('einstieg-in-den-beruf'));
+
+    await act(async () => {
+      fireEvent.click(screen.getByText('Aus Titel'));
+      fireEvent.click(screen.getByText('Aus Titel'));
+    });
+
+    expect(slug.value).toBe('einstieg-in-den-beruf');
+  });
 });
