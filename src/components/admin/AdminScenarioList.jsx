@@ -11,6 +11,7 @@ import {
   listScenarios,
   archiveScenario,
   publishScenario,
+  unpublishScenario,
   reorderScenarios,
   getThemeWorld,
   getErrorMessage,
@@ -78,6 +79,9 @@ export default function AdminScenarioList({
       } else if (actionItem.action === 'publish') {
         await publishScenario(actionItem.id);
         showNotification(`"${actionItem.label}" publiziert.`);
+      } else if (actionItem.action === 'unpublish') {
+        await unpublishScenario(actionItem.id);
+        showNotification(`"${actionItem.label}" zurückgezogen und wieder als Entwurf gespeichert.`);
       }
       await fetchData();
     } catch (err) {
@@ -203,6 +207,14 @@ export default function AdminScenarioList({
                             className="text-green-600 hover:bg-green-50"
                           />
                         )}
+                        {scenario.status === 'published' && (
+                          <ActionBtn
+                            onClick={() => requestAction(scenario, 'unpublish')}
+                            icon={<EyeOff size={15} />}
+                            title="Zurückziehen"
+                            className="text-amber-600 hover:bg-amber-50"
+                          />
+                        )}
                         {scenario.status !== 'archived' && (
                           <ActionBtn
                             onClick={() => requestAction(scenario, 'archive')}
@@ -232,7 +244,9 @@ export default function AdminScenarioList({
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
             <h3 className="text-lg font-bold text-gray-800 mb-2">
-              {actionItem.action === 'archive' ? 'Artikel archivieren' : 'Artikel publizieren'}
+              {actionItem.action === 'archive' && 'Artikel archivieren'}
+              {actionItem.action === 'publish' && 'Artikel publizieren'}
+              {actionItem.action === 'unpublish' && 'Artikel zurückziehen'}
             </h3>
             <p className="text-sm text-gray-600 mb-2">
               Artikel: <strong>"{actionItem.label}"</strong>
@@ -243,6 +257,12 @@ export default function AdminScenarioList({
                 Die Eltern-Themenwelt muss publiziert sein.
               </p>
             )}
+            {actionItem.action === 'unpublish' && (
+              <p className="text-sm text-gray-500">
+                Der Artikel wird öffentlich ausgeblendet und wieder als Entwurf gespeichert.
+                Er kann anschliessend bearbeitet und erneut publiziert werden.
+              </p>
+            )}
             <div className="flex justify-end gap-3 mt-6">
               <button onClick={() => setActionItem(null)} disabled={actionRunning}
                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-50">
@@ -250,10 +270,14 @@ export default function AdminScenarioList({
               </button>
               <button onClick={confirmAction} disabled={actionRunning}
                 className={`px-4 py-2 text-sm font-bold rounded-lg text-white disabled:opacity-50 flex items-center gap-2 ${
-                  actionItem.action === 'archive' ? 'bg-gray-600 hover:bg-gray-700' : 'bg-green-600 hover:bg-green-700'
+                  actionItem.action === 'archive' ? 'bg-gray-600 hover:bg-gray-700'
+                  : actionItem.action === 'unpublish' ? 'bg-amber-600 hover:bg-amber-700'
+                  : 'bg-green-600 hover:bg-green-700'
                 }`}>
                 {actionRunning && <Loader className="w-4 h-4 animate-spin" />}
-                {actionItem.action === 'archive' ? 'Archivieren' : 'Publizieren'}
+                {actionItem.action === 'archive' && 'Archivieren'}
+                {actionItem.action === 'publish' && 'Publizieren'}
+                {actionItem.action === 'unpublish' && 'Zurückziehen'}
               </button>
             </div>
           </div>

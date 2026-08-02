@@ -10,6 +10,7 @@
  *   POST ?action=create&themeWorldId=...   — Neues Szenario erstellen
  *   POST ?action=update&id=...             — Szenario aktualisieren
  *   POST ?action=archive&id=...            — Archivieren
+ *   POST ?action=unpublish&id=...          — Zurückziehen (published → draft)
  *   POST ?action=publish&id=...            — Validieren und publizieren
  *   POST ?action=reorder&themeWorldId=...  — Reihenfolge aktualisieren
  */
@@ -322,6 +323,52 @@ export default async function handler(req, res) {
     }
 
     // ============================================================
+    // POST unpublish — Publiziertes Szenario zurückziehen (→ draft)
+    // ============================================================
+    if (action === 'unpublish') {
+      if (!requireMethod('POST', req, res)) return;
+
+      const id = req.query.id;
+      if (!isValidUUID(id)) {
+        return res.status(400).json({ error: 'Ungültige oder fehlende ID.' });
+      }
+
+      // Szenario laden
+      const { data: scenario, error: scenarioError } = await supabaseAdmin
+        .from('theme_world_scenarios')
+        .select('id, status')
+        .eq('id', id)
+        .single();
+
+      if (scenarioError || !scenario) {
+        return res.status(404).json({ error: 'Szenario nicht gefunden.' });
+      }
+
+      if (scenario.status !== 'published') {
+        return res.status(409).json({
+          error: 'Nur publizierte Szenarioartikel können zurückgezogen werden.',
+        });
+      }
+
+      const { data, error } = await supabaseAdmin
+        .from('theme_world_scenarios')
+        .update({ status: 'draft', published_at: null })
+        .eq('id', id)
+        .select('id, status, published_at, updated_at')
+        .single();
+
+      if (error) {
+        console.error('[admin-scenarios] unpublish error:', error.message);
+        return res.status(500).json({ error: 'Zurückziehen fehlgeschlagen.' });
+      }
+
+      return res.status(200).json({
+        data,
+        message: 'Artikel wurde zurückgezogen und ist wieder als Entwurf gespeichert.',
+      });
+    }
+
+    // ============================================================
     // POST reorder — Reihenfolge (sort_order) aktualisieren
     // ============================================================
     if (action === 'reorder') {
@@ -380,7 +427,7 @@ export default async function handler(req, res) {
     // Unbekannte Action
     // ============================================================
     return res.status(400).json({
-      error: 'Unbekannte Action. Erlaubt: list, get, create, update, archive, publish, reorder.',
+      error: 'Unbekannte Action. Erlaubt: list, get, create, update, archive, unpublish, publish, reorder.',
     });
 
   } catch (err) {

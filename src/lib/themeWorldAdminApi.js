@@ -441,6 +441,21 @@ export async function publishScenario(id) {
 }
 
 /**
+ * Zieht einen publizierten Szenario-Artikel zurück (→ draft).
+ * published_at wird auf null gesetzt.
+ *
+ * @param {string} id - UUID des Szenarios
+ * @returns {Promise<{id: string, status: string, published_at: null, updated_at: string}>}
+ */
+export async function unpublishScenario(id) {
+  const result = await apiCall(
+    `/api/admin-theme-world-scenarios?action=unpublish&id=${encodeURIComponent(id)}`,
+    { method: 'POST' },
+  );
+  return result.data;
+}
+
+/**
  * Sortiert die Szenario-Artikel einer Themenwelt neu.
  *
  * @param {string} themeWorldId - UUID der Themenwelt
