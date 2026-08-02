@@ -1006,11 +1006,11 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
                                         const locationLabel = evCity
                                             ? (evAbbr ? `${evCity} (${evAbbr})` : evCity)
                                             : (evAbbr || ev.canton || '');
-                                        const secondLine = [ev.schedule_description, locationLabel].filter(Boolean).join(' · ');
                                         return (
-                                            <div key={i} className="py-2 border-b border-gray-100 last:border-0 text-sm">
+                                            <div key={i} className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5 py-2 border-b border-gray-100 last:border-0 text-sm">
                                                 <span className="font-medium text-dark">{dateLabel}</span>
-                                                {secondLine && <div className="text-gray-500 mt-0.5">{secondLine}</div>}
+                                                {ev.schedule_description && <><span className="text-gray-300">·</span><span className="text-gray-500">{ev.schedule_description}</span></>}
+                                                {locationLabel && <><span className="text-gray-300">·</span><span className="text-gray-500">{locationLabel}</span></>}
                                             </div>
                                         );
                                     })}
