@@ -380,14 +380,14 @@ const CategorySuggestionModal = ({ isOpen, onClose, taxonomy, types, showNotific
 
 // === Zeichenlimits für die Kurseingabe ===
 const COURSE_FIELD_LIMITS = {
-    title: 60,
-    description: 1500,
-    keywords: 200,
+    title: 100,
+    description: 2000,
+    keywords: 250,
     priceInfo: 60,
     freeReason: 150,
     sessionLength: 80,
     objectives: 1000,
-    prerequisites: 250,
+    prerequisites: 400,
     scheduleDescription: 80,
 };
 
@@ -1488,7 +1488,7 @@ if (bookingType === 'platform' || locationMode === 'events') {
         const newCourse = {
             title: titleVal,
             instructor_name: user?.name || initialData?.instructor_name || '',
-            price: Number(price) || 0,
+            price: price !== '' ? Number(price) : null,
             languages: courseLanguages, // Array of languages
             rating: initialData?.rating || 0,
             category: `${catType} | ${catArea}`,
@@ -1836,6 +1836,7 @@ if (bookingType === 'platform' || locationMode === 'events') {
                             <CharCount value={title} max={COURSE_FIELD_LIMITS.title} />
                         </div>
                         <input required type="text" name="title" value={title} maxLength={COURSE_FIELD_LIMITS.title} onChange={(e) => { setTitle(e.target.value); markDirty(); }} className="w-full px-4 py-3 text-lg border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+                        <p className="text-xs text-gray-400 mt-1">Tipp: Bis zu 70 Zeichen werden in der Suche vollständig angezeigt (max. {COURSE_FIELD_LIMITS.title} Zeichen erlaubt).</p>
                     </div>
                     <div>
                         <div className="flex justify-between items-baseline mb-1">
