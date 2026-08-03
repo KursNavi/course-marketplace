@@ -597,6 +597,81 @@ describe('admin-theme-worlds Archivierung', () => {
 });
 
 // ============================================================
+// Tests: Themenwelt zurückziehen
+// ============================================================
+
+describe('admin-theme-worlds Unpublish', () => {
+  beforeEach(() => {
+    process.env.SUPABASE_URL = 'https://test.supabase.co';
+    process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-service-role-key';
+  });
+
+  it('setzt Status, published_at und Deploy-Status atomar zurück und gibt die aktualisierten Daten zurück', async () => {
+    const handler = (await import('../api/admin-theme-worlds.js')).default;
+    const themeWorldId = '00000000-0000-4000-8000-000000000001';
+    let updatePayload;
+    let selectedFields;
+
+    mockSupabase = {
+      auth: { getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'admin-id' } }, error: null }) },
+      from: vi.fn().mockImplementation((table) => {
+        const chain = {
+          select: vi.fn().mockImplementation((fields) => {
+            selectedFields = fields;
+            return chain;
+          }),
+          eq: vi.fn().mockReturnThis(),
+          update: vi.fn().mockImplementation((payload) => {
+            updatePayload = payload;
+            return chain;
+          }),
+          single: vi.fn().mockResolvedValue(
+            table === 'profiles'
+              ? { data: { role: 'admin' }, error: null }
+              : {
+                  data: {
+                    id: themeWorldId,
+                    status: 'draft',
+                    published_at: null,
+                    deploy_status: 'not_requested',
+                    updated_at: '2026-08-03T10:00:00Z',
+                  },
+                  error: null,
+                }
+          ),
+        };
+        return chain;
+      }),
+    };
+
+    const req = makeAdminReq({
+      method: 'POST',
+      query: { action: 'unpublish', id: themeWorldId },
+    });
+    const res = makeMockRes();
+
+    await handler(req, res);
+
+    expect(updatePayload).toEqual({
+      status: 'draft',
+      published_at: null,
+      deploy_status: 'not_requested',
+    });
+    expect(selectedFields).toBe('id, status, published_at, deploy_status, updated_at');
+    expect(res._status).toBe(200);
+    expect(res._body).toEqual({
+      data: {
+        id: themeWorldId,
+        status: 'draft',
+        published_at: null,
+        deploy_status: 'not_requested',
+        updated_at: '2026-08-03T10:00:00Z',
+      },
+    });
+  });
+});
+
+// ============================================================
 // Tests: Unbekannte Action
 // ============================================================
 

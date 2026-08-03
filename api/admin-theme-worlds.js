@@ -11,7 +11,7 @@
  *   POST ?action=update&id=...  — Grunddaten aktualisieren
  *   POST ?action=archive&id=... — Status auf 'archived' setzen
  *   POST ?action=publish&id=... — Validieren und publizieren
- *   POST ?action=unpublish&id=. — Status auf 'draft' zurücksetzen
+ *   POST ?action=unpublish&id=. — Status auf 'draft' und published_at auf null zurücksetzen
  */
 
 import {
@@ -312,7 +312,7 @@ export default async function handler(req, res) {
     }
 
     // ============================================================
-    // POST unpublish — Status auf 'draft' zurücksetzen
+    // POST unpublish — Status auf 'draft' zurücksetzen und Publikationszeit entfernen
     // ============================================================
     if (action === 'unpublish') {
       if (!requireMethod('POST', req, res)) return;
@@ -324,9 +324,13 @@ export default async function handler(req, res) {
 
       const { data, error } = await supabaseAdmin
         .from('theme_worlds')
-        .update({ status: 'draft', deploy_status: 'not_requested' })
+        .update({
+          status: 'draft',
+          published_at: null,
+          deploy_status: 'not_requested',
+        })
         .eq('id', id)
-        .select('id, status, updated_at')
+        .select('id, status, published_at, deploy_status, updated_at')
         .single();
 
       if (error) {

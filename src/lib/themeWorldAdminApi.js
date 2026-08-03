@@ -236,9 +236,10 @@ export async function publishThemeWorld(id) {
 
 /**
  * Setzt eine publizierte Themenwelt auf Entwurf zurück.
+ * published_at wird dabei auf null gesetzt und der Deploy-Status zurückgesetzt.
  *
  * @param {string} id - UUID der Themenwelt
- * @returns {Promise<{id: string, status: string}>}
+ * @returns {Promise<{id: string, status: string, published_at: null, deploy_status: string, updated_at: string}>}
  */
 export async function unpublishThemeWorld(id) {
   const result = await apiCall(
