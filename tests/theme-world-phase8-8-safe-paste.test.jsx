@@ -48,11 +48,19 @@ beforeEach(() => {
 // Test-Hilfsfunktionen
 // ---------------------------------------------------------------------------
 
-function createMockRange() {
+/**
+ * Range-Mock. Wird ein `host` übergeben, fügt `insertNode` den Knoten
+ * tatsächlich in das DOM ein — wie eine echte Range. Für die Assertions wird
+ * vorher eine Kopie abgelegt, da das Einfügen ein DocumentFragment leert.
+ */
+function createMockRange(host = null) {
   const capturedNodes = [];
   return {
     deleteContents: vi.fn(),
-    insertNode: vi.fn((node) => { capturedNodes.push(node); }),
+    insertNode: vi.fn((node) => {
+      capturedNodes.push(node.cloneNode(true));
+      if (host) host.appendChild(node);
+    }),
     collapse: vi.fn(),
     cloneRange: vi.fn().mockReturnValue({ collapse: vi.fn() }),
     _capturedNodes: capturedNodes,
@@ -81,7 +89,7 @@ function setupPasteTest(plainText, htmlText = '') {
   render(<AdminRichTextEditor value="" onChange={onChange} id="test-paste-editor" />);
   const editor = screen.getByTestId('test-paste-editor');
 
-  const range = createMockRange();
+  const range = createMockRange(editor);
   mockSelectionWithRange(range);
 
   fireEvent.paste(editor, {

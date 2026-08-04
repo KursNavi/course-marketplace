@@ -16,6 +16,18 @@
  *   - Aufzählung (UL), Nummerierte Liste (OL)
  *   - Externer Link, Interner Link, Link entfernen
  *   - Undo / Redo (Browserunterstützung)
+ *   - Baustein einfügen (Info-Box, Tipp-Box, Hinweis, Checkliste, Tabelle, Kurs-Box)
+ *   - Baustein-Typ anzeigen (aktueller Abschnitt) inkl. Fokus-Hervorhebung
+ *   - Baustein-Aktionen: In Text umwandeln / Löschen
+ *   - Tabellen-Aktionen: Zeilen/Spalten hinzufügen und löschen, Kopfzeile,
+ *     „Tabelle in Text umwandeln" (verlustfrei, ersetzt das generische Entkleiden)
+ *
+ * value/onChange-Vertrag:
+ *   - onChange wird ausschliesslich gemeldet, wenn sich editor.innerHTML
+ *     tatsächlich geändert hat — wirkungslose Aktionen bleiben folgenlos.
+ *   - Ein externer value-Wechsel wird immer übernommen und löst nie onChange
+ *     aus. Ein vom Elternformular zurückgespiegelter Wert überschreibt den
+ *     Editor nicht.
  *
  * Blog-Editor (AdminBlogManager) bleibt unverändert.
  */
@@ -23,25 +35,50 @@
 import React, { useRef, useEffect, useCallback, useState } from 'react';
 import {
   Bold, Italic, List, ListOrdered, Link as LinkIcon,
-  Unlink, Globe, Undo, Undo2, Redo2, X,
+  Unlink, Globe, Undo2, Redo2, X, Plus, Table,
+  Trash2, Scissors, ChevronDown,
 } from 'lucide-react';
 import { insertPlainTextAtCaret } from './richTextPasteUtils';
 import { normalizeInlineFormatting } from './richTextFormatting';
+import {
+  BLOCK_LABELS,
+  BLOCK_MESSAGES,
+  getBlockType,
+  resolveSelectionContext,
+  insertBlock,
+  unwrapBlock,
+  deleteBlock,
+  tableInsertRowAbove,
+  tableInsertRowBelow,
+  tableDeleteRow,
+  tableInsertColLeft,
+  tableInsertColRight,
+  tableDeleteCol,
+  tableToggleHeader,
+  tableToText,
+} from './richTextBlockUtils';
 
 // ---------------------------------------------------------------------------
 // Konstanten
 // ---------------------------------------------------------------------------
 
 const HEADING_LEVELS = ['H2', 'H3', 'H4'];
-const VALID_HEADING_TAGS = new Set(['h2', 'h3', 'h4']);
+
+/** Reihenfolge der Bausteine im Einfüge-Menü */
+const INSERT_BLOCK_TYPES = [
+  'info-box',
+  'tip-box',
+  'warning-box',
+  'checklist',
+  'table',
+  'cta-box',
+];
 
 // ---------------------------------------------------------------------------
 // Hilfsfunktion: execCommand-Wrapper
 // ---------------------------------------------------------------------------
 
 function exec(command, value = null) {
-  // document.execCommand ist deprecated, bleibt aber in allen Browsern
-  // der einzig verlässliche Weg für WYSIWYG ohne externe Library.
   document.execCommand(command, false, value);
 }
 
@@ -49,18 +86,18 @@ function exec(command, value = null) {
 // Toolbar-Button
 // ---------------------------------------------------------------------------
 
-function ToolBtn({ onClick, title, active, disabled, children }) {
+function ToolBtn({ onClick, title, active, disabled, children, testId }) {
   return (
     <button
       type="button"
       onMouseDown={(e) => {
-        // mousedown statt click: verhindert Fokusverlust aus contentEditable
         e.preventDefault();
         if (!disabled) onClick();
       }}
       title={title}
       disabled={disabled}
       aria-pressed={active}
+      data-testid={testId}
       className={[
         'px-2 py-1 text-xs rounded flex items-center gap-1 min-h-[28px] transition-colors',
         active
@@ -86,14 +123,6 @@ function Sep() {
 // Link-Panel
 // ---------------------------------------------------------------------------
 
-/**
- * Prüft ob ein URL-String ein unsicheres Protokoll enthält.
- * Blockiert javascript:, data: und vbscript: URLs (XSS-Prävention).
- * Server-seitiges Sanitizing bleibt zusätzlich verbindlich.
- *
- * @param {string} rawUrl
- * @returns {boolean}
- */
 function isUnsafeHref(rawUrl) {
   const lower = rawUrl.trim().toLowerCase().replace(/\s+/g, '');
   return (
@@ -101,6 +130,53 @@ function isUnsafeHref(rawUrl) {
     lower.startsWith('data:') ||
     lower.startsWith('vbscript:')
   );
+}
+
+/**
+ * Erzeugt ein a-Element ausschliesslich über DOM-APIs.
+ *
+ * Linktext wird über textContent gesetzt und href über setAttribute — beides
+ * behandelt Benutzereingaben als Daten, nie als Markup. Zeichen wie < > & " '
+ * können dadurch weder ein zusätzliches Element noch ein Event-Attribut
+ * erzeugen. Es wird bewusst kein HTML-String zusammengesetzt.
+ *
+ * @param {{ text: string, href: string }} params
+ * @returns {HTMLAnchorElement}
+ */
+function createLinkElement({ text, href }) {
+  const anchor = document.createElement('a');
+  anchor.setAttribute('href', href);
+  // Interne Links (beginnen mit /) bleiben im selben Tab und ohne rel
+  if (!href.startsWith('/')) {
+    anchor.setAttribute('target', '_blank');
+    anchor.setAttribute('rel', 'noopener noreferrer');
+  }
+  anchor.textContent = text;
+  return anchor;
+}
+
+/**
+ * Fügt einen Link an der aktuellen Cursorposition ein — über Range/DOM
+ * statt über execCommand('insertHTML') mit einem zusammengebauten String.
+ *
+ * @param {{ text: string, href: string }} params
+ * @returns {HTMLAnchorElement|null} das eingefügte Element oder null
+ */
+function insertLinkAtCaret({ text, href }) {
+  const sel = window.getSelection();
+  if (!sel || sel.rangeCount === 0) return null;
+
+  const range = sel.getRangeAt(0);
+  range.deleteContents();
+
+  const anchor = createLinkElement({ text, href });
+  range.insertNode(anchor);
+
+  // Caret hinter den Link setzen
+  range.collapse(false);
+  sel.removeAllRanges();
+  sel.addRange(range);
+  return anchor;
 }
 
 function LinkPanel({ mode, onClose, onInsert }) {
@@ -129,9 +205,7 @@ function LinkPanel({ mode, onClose, onInsert }) {
   };
 
   const isInternal = mode === 'internal';
-  const colorClass = isInternal
-    ? 'bg-blue-50 border-blue-100'
-    : 'bg-teal-50 border-teal-100';
+  const colorClass = isInternal ? 'bg-blue-50 border-blue-100' : 'bg-teal-50 border-teal-100';
   const btnClass = isInternal ? 'bg-blue-600' : 'bg-teal-600';
   const placeholder = isInternal ? '/search?q=yoga' : 'https://...';
 
@@ -175,6 +249,202 @@ function LinkPanel({ mode, onClose, onInsert }) {
 }
 
 // ---------------------------------------------------------------------------
+// Abschnitts-Anzeige (aktueller Baustein-Typ)
+// ---------------------------------------------------------------------------
+
+/** Farb-Klassen je Baustein-Typ für die Statuszeile */
+const BLOCK_BADGE_STYLES = {
+  'info-box':    'bg-blue-100 text-blue-800 border border-blue-200',
+  'tip-box':     'bg-emerald-100 text-emerald-800 border border-emerald-200',
+  'warning-box': 'bg-amber-100 text-amber-800 border border-amber-200',
+  'checklist':   'bg-gray-100 text-gray-800 border border-gray-300',
+  'cta-box':     'bg-orange-100 text-orange-800 border border-orange-200',
+  'table':       'bg-purple-100 text-purple-800 border border-purple-200',
+};
+
+function SectionBadge({ blockType, multiple }) {
+  const neutral = 'bg-gray-50 text-gray-500 border border-gray-200';
+  const label = multiple
+    ? 'Mehrere Abschnitte'
+    : (blockType ? BLOCK_LABELS[blockType] : 'Normaler Text');
+  const style = !multiple && blockType ? BLOCK_BADGE_STYLES[blockType] : neutral;
+  return (
+    <span
+      data-testid="section-badge"
+      className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${style}`}
+    >
+      Aktueller Abschnitt: {label}
+    </span>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Baustein-Aktions-Leiste
+// ---------------------------------------------------------------------------
+
+function BlockActions({ blockType, onAction }) {
+  if (!blockType) return null;
+  const isTable = blockType === 'table';
+
+  return (
+    <div
+      data-testid="block-actions"
+      className="border-b border-gray-100 bg-gray-50 px-2 py-1 flex flex-wrap gap-1 items-center text-xs"
+    >
+      <span className="text-gray-500 mr-1">Baustein:</span>
+
+      {isTable && (
+        <>
+          <ToolBtn
+            onClick={() => onAction('row-above')}
+            title="Zeile oberhalb einfügen"
+            testId="btn-row-above"
+          >
+            ↑ Zeile
+          </ToolBtn>
+          <ToolBtn
+            onClick={() => onAction('row-below')}
+            title="Zeile unterhalb einfügen"
+            testId="btn-row-below"
+          >
+            ↓ Zeile
+          </ToolBtn>
+          <ToolBtn
+            onClick={() => onAction('col-left')}
+            title="Spalte links einfügen"
+            testId="btn-col-left"
+          >
+            ← Spalte
+          </ToolBtn>
+          <ToolBtn
+            onClick={() => onAction('col-right')}
+            title="Spalte rechts einfügen"
+            testId="btn-col-right"
+          >
+            → Spalte
+          </ToolBtn>
+          <ToolBtn
+            onClick={() => onAction('del-row')}
+            title="Aktuelle Zeile löschen"
+            testId="btn-del-row"
+          >
+            Zeile löschen
+          </ToolBtn>
+          <ToolBtn
+            onClick={() => onAction('del-col')}
+            title="Aktuelle Spalte löschen"
+            testId="btn-del-col"
+          >
+            Spalte löschen
+          </ToolBtn>
+          <ToolBtn
+            onClick={() => onAction('toggle-header')}
+            title="Kopfzeile ein-/ausschalten"
+            testId="btn-toggle-header"
+          >
+            Kopfzeile
+          </ToolBtn>
+          <Sep />
+          {/* Tabellen werden ausschliesslich über tableToText umgewandelt —
+              ein generisches Entkleiden würde tr/td ohne table zurücklassen. */}
+          <ToolBtn
+            onClick={() => onAction('table-to-text')}
+            title="Tabelle in normalen Text umwandeln (Zellinhalte bleiben erhalten)"
+            testId="btn-table-to-text"
+          >
+            <Scissors size={11} />
+            Tabelle in Text umwandeln
+          </ToolBtn>
+        </>
+      )}
+
+      {!isTable && (
+        <ToolBtn
+          onClick={() => onAction('unwrap')}
+          title="In normalen Text umwandeln (Hülle entfernen, Inhalt bleibt)"
+          testId="btn-unwrap"
+        >
+          <Scissors size={11} />
+          In Text umwandeln
+        </ToolBtn>
+      )}
+      <ToolBtn
+        onClick={() => onAction('delete')}
+        title="Baustein vollständig löschen"
+        testId="btn-delete-block"
+      >
+        <Trash2 size={11} />
+        Baustein löschen
+      </ToolBtn>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Einfüge-Menü
+// ---------------------------------------------------------------------------
+
+function InsertMenu({ onInsert, disabled }) {
+  const [open, setOpen] = useState(false);
+
+  const handleInsert = (type) => {
+    setOpen(false);
+    onInsert(type);
+  };
+
+  return (
+    <div className="relative" data-testid="insert-menu-container">
+      <ToolBtn
+        onClick={() => setOpen((v) => !v)}
+        title="Baustein einfügen"
+        active={open}
+        disabled={disabled}
+        testId="btn-insert-block"
+      >
+        <Plus size={12} />
+        <span>Baustein</span>
+        <ChevronDown size={10} />
+      </ToolBtn>
+
+      {open && (
+        <div
+          data-testid="insert-menu"
+          className="absolute left-0 top-full mt-1 z-50 bg-white border border-gray-200 rounded-lg shadow-lg min-w-[200px] py-1"
+          onMouseDown={(e) => e.preventDefault()}
+        >
+          {INSERT_BLOCK_TYPES.map((type) => (
+            <button
+              key={type}
+              type="button"
+              data-testid={`insert-${type}`}
+              onClick={() => handleInsert(type)}
+              className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 flex items-center gap-2"
+            >
+              <BlockIcon type={type} />
+              {BLOCK_LABELS[type]}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Kleines Farb-Icon je Baustein-Typ im Menü */
+function BlockIcon({ type }) {
+  const colors = {
+    'info-box':    'bg-blue-400',
+    'tip-box':     'bg-emerald-400',
+    'warning-box': 'bg-amber-400',
+    'checklist':   'bg-gray-400',
+    'cta-box':     'bg-orange-400',
+    'table':       'bg-purple-400',
+  };
+  if (type === 'table') return <Table size={12} className="text-purple-500" />;
+  return <span className={`inline-block w-2.5 h-2.5 rounded-sm flex-shrink-0 ${colors[type] || 'bg-gray-300'}`} />;
+}
+
+// ---------------------------------------------------------------------------
 // Hauptkomponente
 // ---------------------------------------------------------------------------
 
@@ -194,8 +464,20 @@ export default function AdminRichTextEditor({
   minRows = 20,
 }) {
   const editorRef = useRef(null);
-  const isInternalChange = useRef(false);
+  const editorShellRef = useRef(null);
   const savedSelection = useRef(null);
+
+  // Kontrollierte value-Synchronisierung ohne „interner Änderungs"-Flag.
+  //
+  // syncedHtml   — das HTML, das der Editor zuletzt nachweislich anzeigte
+  //                (Vergleichsbasis für „hat sich wirklich etwas geändert?")
+  // emittedValue — der zuletzt an das Elternformular gemeldete Wert
+  //                (erkennt das Zurückspiegeln des eigenen Werts)
+  //
+  // Beide sind reine Wertspeicher: sie können nie „hängen bleiben" und dadurch
+  // einen echten externen value-Wechsel verschlucken.
+  const syncedHtml = useRef(null);
+  const emittedValue = useRef(null);
 
   // Formatierungszustände für Toolbar
   const [fmt, setFmt] = useState({
@@ -204,18 +486,53 @@ export default function AdminRichTextEditor({
   });
   const [linkMode, setLinkMode] = useState(null); // null | 'external' | 'internal'
 
-  // HTML in Editor laden wenn value sich von außen ändert
+  // Baustein-Zustand — nur der sichtbare Abschnittstyp, niemals ein DOM-Element.
+  // Der Container wird bei jeder Aktion frisch aus Selektion + editorRef ermittelt.
+  const [blockState, setBlockState] = useState({
+    inEditor: false, multiple: false, blockType: null,
+  });
+  const [insertError, setInsertError] = useState('');
+  // Fokus-Rahmen des aktuellen Bausteins — liegt ausserhalb des contentEditable
+  const [focusRect, setFocusRect] = useState(null);
+
+  const resetBlockState = useCallback(() => {
+    setBlockState({ inEditor: false, multiple: false, blockType: null });
+    setFocusRect(null);
+  }, []);
+
+  // HTML in den Editor laden, wenn value sich von aussen ändert.
+  //
+  // Entschieden wird ausschliesslich über einen Wertvergleich zwischen
+  // angezeigtem HTML, zuletzt gemeldetem Wert und neuem value:
+  //
+  //   value === angezeigtes HTML   → nichts zu tun
+  //   value === zuletzt gemeldet   → Echo des Elternformulars, nichts zu tun
+  //   sonst                        → echter externer Wechsel, Inhalt übernehmen
+  //
+  // Kein onChange und keine automatische Normalisierung beim blossen Laden.
   useEffect(() => {
     const el = editorRef.current;
-    if (!el || isInternalChange.current) {
-      isInternalChange.current = false;
+    if (!el) return;
+
+    const next = value || '';
+    if (next === el.innerHTML) {
+      syncedHtml.current = el.innerHTML;
       return;
     }
-    // Nur updaten wenn wirklich unterschiedlich (verhindert Cursor-Reset)
-    if (el.innerHTML !== (value || '')) {
-      el.innerHTML = value || '';
-    }
-  }, [value]);
+    // Das Elternformular spiegelt exakt unsere letzte Meldung zurück: der
+    // Editor zeigt diesen Stand bereits. Ein Überschreiben würde nur den
+    // Cursor zerstören und könnte eine Schleife auslösen.
+    if (next === emittedValue.current) return;
+
+    el.innerHTML = next;
+    // Nach dem Schreiben zurücklesen — der Browser normalisiert das Markup
+    syncedHtml.current = el.innerHTML;
+    emittedValue.current = null;
+    // Alle bisherigen Container- und Selektionsbezüge sind jetzt verwaist
+    savedSelection.current = null;
+    resetBlockState();
+    setInsertError('');
+  }, [value, resetBlockState]);
 
   // Selektion speichern bevor Panel fokussiert wird
   const saveSelection = useCallback(() => {
@@ -237,15 +554,105 @@ export default function AdminRichTextEditor({
     }
   }, []);
 
-  // onChange an übergeordnete Komponente melden
+  // onChange an übergeordnete Komponente melden.
+  //
+  // Gemeldet wird nur, wenn sich editor.innerHTML gegenüber dem zuletzt
+  // synchronisierten Stand tatsächlich unterscheidet. Der Rückgabewert von
+  // document.execCommand genügt dafür nicht — er sagt browserabhängig nichts
+  // Verlässliches darüber aus, ob das DOM verändert wurde. Eine wirkungslose
+  // Aktion hinterlässt dadurch weder ein onChange noch internen Zustand.
   const notifyChange = useCallback(() => {
     const el = editorRef.current;
     if (!el) return;
-    isInternalChange.current = true;
-    onChange(normalizeInlineFormatting(el.innerHTML));
+    const html = el.innerHTML;
+    if (html === syncedHtml.current) return;
+
+    syncedHtml.current = html;
+    const normalized = normalizeInlineFormatting(html);
+    emittedValue.current = normalized;
+    onChange(normalized);
   }, [onChange]);
 
-  // Formatierungszustand der aktuellen Selektion prüfen
+  // Fokus-Rahmen am aktuell erkannten Baustein ausrichten.
+  // Der Rahmen ist ein Overlay ausserhalb des contentEditable und wird deshalb
+  // nie Bestandteil von editor.innerHTML.
+  const updateFocusRect = useCallback((container) => {
+    const shell = editorShellRef.current;
+    if (!container || !shell || typeof container.getBoundingClientRect !== 'function') {
+      setFocusRect((prev) => (prev === null ? prev : null));
+      return;
+    }
+    const box = container.getBoundingClientRect();
+    const host = shell.getBoundingClientRect();
+    const next = {
+      top: box.top - host.top,
+      left: box.left - host.left,
+      width: box.width,
+      height: box.height,
+    };
+    setFocusRect((prev) => (
+      prev && prev.top === next.top && prev.left === next.left
+        && prev.width === next.width && prev.height === next.height
+        ? prev
+        : next
+    ));
+  }, []);
+
+  // Baustein-Zustand aus der aktuellen Selektion neu bestimmen
+  const syncBlockState = useCallback(() => {
+    const el = editorRef.current;
+    if (!el) return;
+    const ctx = resolveSelectionContext(el);
+    setBlockState((prev) => (
+      prev.inEditor === ctx.inEditor && prev.multiple === ctx.multiple
+        && prev.blockType === ctx.blockType
+        ? prev
+        : { inEditor: ctx.inEditor, multiple: ctx.multiple, blockType: ctx.blockType }
+    ));
+    updateFocusRect(ctx.container);
+  }, [updateFocusRect]);
+
+  // Selektionswechsel zuverlässig beobachten (auch ohne Editor-Event)
+  useEffect(() => {
+    const handler = () => syncBlockState();
+    document.addEventListener('selectionchange', handler);
+    return () => document.removeEventListener('selectionchange', handler);
+  }, [syncBlockState]);
+
+  // Ist aktuell überhaupt ein Fokus-Rahmen sichtbar?
+  const hasFocusOverlay = focusRect !== null
+    && !!blockState.blockType
+    && !blockState.multiple;
+
+  // Fokus-Rahmen nachführen, wenn sich nicht die Selektion, sondern das Layout
+  // ändert: Fenstergrösse, Scrollen im Editor, Grössenänderung des Editors.
+  //
+  // Die Listener bestehen nur, solange auch ein Rahmen sichtbar ist — es
+  // bleiben keine dauerhaften globalen Listener zurück. syncBlockState liest
+  // die Selektion frisch aus und setzt focusRect nur bei geänderten Werten,
+  // deshalb entstehen weder Schleifen noch überflüssige State-Updates.
+  useEffect(() => {
+    if (!hasFocusOverlay) return undefined;
+    const el = editorRef.current;
+    const handler = () => syncBlockState();
+
+    window.addEventListener('resize', handler);
+    if (el) el.addEventListener('scroll', handler);
+
+    let observer = null;
+    if (el && typeof ResizeObserver === 'function') {
+      observer = new ResizeObserver(handler);
+      observer.observe(el);
+    }
+
+    return () => {
+      window.removeEventListener('resize', handler);
+      if (el) el.removeEventListener('scroll', handler);
+      if (observer) observer.disconnect();
+    };
+  }, [hasFocusOverlay, syncBlockState]);
+
+  // Formatierungszustand und Baustein-Typ der aktuellen Selektion prüfen
   const updateFormatState = useCallback(() => {
     try {
       const bold = document.queryCommandState('bold');
@@ -262,10 +669,10 @@ export default function AdminRichTextEditor({
         ol: document.queryCommandState('insertOrderedList'),
         link: isLink,
       });
-    } catch (_) {
-      // queryCommandState kann in manchen Situationen werfen
-    }
-  }, []);
+    } catch (_) { /* queryCommandState kann werfen */ }
+
+    syncBlockState();
+  }, [syncBlockState]);
 
   // Toolbar-Aktionen
   const applyBold = () => { exec('styleWithCSS', false); exec('bold'); notifyChange(); };
@@ -292,15 +699,10 @@ export default function AdminRichTextEditor({
     const hasSelection = sel && !sel.isCollapsed;
 
     if (hasSelection) {
-      // Text ist bereits selektiert — nur href setzen
+      // Markierter Text wird vom Browser selbst in ein a-Element gehüllt
       exec('createLink', href);
     } else {
-      // Kein selektierter Text — Link-HTML einfügen
-      const isInternal = href.startsWith('/');
-      const attrs = isInternal
-        ? `href="${href}"`
-        : `href="${href}" target="_blank" rel="noopener noreferrer"`;
-      exec('insertHTML', `<a ${attrs}>${text}</a>`);
+      insertLinkAtCaret({ text, href });
     }
     notifyChange();
   };
@@ -310,23 +712,119 @@ export default function AdminRichTextEditor({
     setLinkMode((prev) => (prev === mode ? null : mode));
   };
 
+  // Baustein einfügen
+  const handleInsertBlock = useCallback((type) => {
+    const el = editorRef.current;
+    if (!el) return;
+    el.focus();
+    const result = insertBlock(type, el);
+    if (!result.success) {
+      setInsertError(result.message || 'Baustein konnte nicht eingefügt werden.');
+      return;
+    }
+    setInsertError('');
+    updateFormatState();
+    notifyChange();
+  }, [notifyChange, updateFormatState]);
+
+  // Tabelle in Text umwandeln — mit Sicherheitsabfrage
+  const runTableToText = useCallback((container, el) => {
+    if (getBlockType(container) !== 'table') {
+      return { success: false, message: BLOCK_MESSAGES.noTable };
+    }
+    if (!window.confirm('Tabelle in normalen Text umwandeln? Die Zellinhalte bleiben erhalten.')) {
+      return { success: false, message: BLOCK_MESSAGES.cancelled };
+    }
+    return tableToText(container, el);
+  }, []);
+
+  /**
+   * Baustein-Aktionen.
+   *
+   * Der Container wird immer frisch aus Selektion und editorRef ermittelt —
+   * es wird nie eine gespeicherte DOM-Referenz verwendet. onChange läuft
+   * ausschliesslich bei tatsächlich erfolgter Änderung.
+   */
+  const handleBlockAction = useCallback((action) => {
+    const el = editorRef.current;
+    if (!el) return;
+
+    const ctx = resolveSelectionContext(el);
+    if (!ctx.inEditor || ctx.multiple || !ctx.container) {
+      setInsertError(ctx.multiple ? BLOCK_MESSAGES.multiSection : BLOCK_MESSAGES.staleBlock);
+      syncBlockState();
+      return;
+    }
+
+    const container = ctx.container;
+    const blockType = getBlockType(container);
+    const isTable = blockType === 'table';
+    let result;
+
+    switch (action) {
+      case 'unwrap':
+        // Sicherheitsnetz: für Tabellen niemals generisch entkleiden
+        result = isTable ? runTableToText(container, el) : unwrapBlock(container, el);
+        break;
+      case 'table-to-text':
+        result = runTableToText(container, el);
+        break;
+      case 'delete': {
+        const label = blockType ? BLOCK_LABELS[blockType] : 'diesen Baustein';
+        if (!window.confirm(`„${label}" vollständig löschen? Alle Inhalte gehen verloren.`)) {
+          result = { success: false, message: BLOCK_MESSAGES.cancelled };
+          break;
+        }
+        result = deleteBlock(container, el);
+        break;
+      }
+      case 'row-above':     result = tableInsertRowAbove(el); break;
+      case 'row-below':     result = tableInsertRowBelow(el); break;
+      case 'del-row':       result = tableDeleteRow(el); break;
+      case 'col-left':      result = tableInsertColLeft(el); break;
+      case 'col-right':     result = tableInsertColRight(el); break;
+      case 'del-col':       result = tableDeleteCol(el); break;
+      case 'toggle-header':
+        result = isTable
+          ? tableToggleHeader(container)
+          : { success: false, message: BLOCK_MESSAGES.noTable };
+        break;
+      default:
+        result = { success: false, message: 'Unbekannte Aktion.' };
+    }
+
+    if (result && result.success) {
+      setInsertError('');
+      notifyChange();
+    } else {
+      setInsertError((result && result.message) || 'Aktion nicht möglich.');
+    }
+    syncBlockState();
+  }, [notifyChange, runTableToText, syncBlockState]);
+
   // Tastaturkürzel
   const handleKeyDown = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      // Standard: Browser-Verhalten (neuer <p> oder <li>)
-      // Kein eigenes Handling nötig
+    if (e.key === 'Escape') {
+      setInsertError('');
     }
-    // Ctrl+Z / Ctrl+Y werden vom Browser nativ behandelt
     setTimeout(updateFormatState, 0);
   };
 
-  // Clipboard: ausschliesslich text/plain — safe DOM-Einfügung, kein insertHTML
+  // Clipboard: ausschliesslich text/plain
   const handlePaste = (e) => {
     e.preventDefault();
     const text = e.clipboardData?.getData('text/plain') ?? '';
     insertPlainTextAtCaret(text);
     notifyChange();
   };
+
+  // Die Baustein-Gestaltung stammt aus der öffentlichen Klasse `prose-ratgeber`
+  // (src/index.css) — hier stehen ausschliesslich editor-spezifische Hilfen:
+  // sichtbare Zellgrenzen während der Tabellenbearbeitung.
+  const editorBlockStyles = `
+    [&_th]:border [&_th]:border-gray-300
+    [&_td]:border [&_td]:border-gray-200
+  `;
 
   return (
     <div className="border border-gray-200 rounded-lg overflow-hidden shadow-sm">
@@ -404,6 +902,16 @@ export default function AdminRichTextEditor({
         <ToolBtn onClick={removeLink} title="Link entfernen" disabled={!fmt.link}>
           <Unlink size={12} />
         </ToolBtn>
+
+        <Sep />
+
+        {/* Baustein einfügen */}
+        <InsertMenu onInsert={handleInsertBlock} disabled={false} />
+
+        {/* Abschnitts-Anzeige */}
+        <div className="ml-auto">
+          <SectionBadge blockType={blockState.blockType} multiple={blockState.multiple} />
+        </div>
       </div>
 
       {/* Link-Panel */}
@@ -415,32 +923,81 @@ export default function AdminRichTextEditor({
         />
       )}
 
+      {/* Baustein-Aktions-Leiste — nur bei eindeutiger Selektion im Editor */}
+      {blockState.inEditor && !blockState.multiple && blockState.blockType && (
+        <BlockActions
+          blockType={blockState.blockType}
+          onAction={handleBlockAction}
+        />
+      )}
+
+      {/* Einfüge-Fehlermeldung */}
+      {insertError && (
+        <div
+          data-testid="insert-error"
+          role="alert"
+          className="border-b border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 flex items-center justify-between"
+        >
+          <span>{insertError}</span>
+          <button
+            type="button"
+            onClick={() => setInsertError('')}
+            className="text-amber-600 hover:text-amber-800 ml-2"
+            aria-label="Meldung schliessen"
+          >
+            <X size={12} />
+          </button>
+        </div>
+      )}
+
       {/* WYSIWYG-Editierbereich */}
-      <div
-        id={id}
-        ref={editorRef}
-        contentEditable
-        suppressContentEditableWarning
-        data-testid={id}
-        data-placeholder={placeholder}
-        onInput={notifyChange}
-        onKeyDown={handleKeyDown}
-        onKeyUp={updateFormatState}
-        onMouseUp={updateFormatState}
-        onFocus={updateFormatState}
-        onPaste={handlePaste}
-        className={[
-          'w-full p-4 text-sm leading-relaxed outline-none',
-          'prose prose-sm max-w-none',
-          'focus:ring-2 focus:ring-inset focus:ring-teal-500',
-          '[&[data-placeholder]:empty:before]:content-[attr(data-placeholder)]',
-          '[&[data-placeholder]:empty:before]:text-gray-400',
-          '[&[data-placeholder]:empty:before]:pointer-events-none',
-        ].join(' ')}
-        style={{ minHeight: `${minRows * 1.6}rem` }}
-        aria-label="Artikelinhalt bearbeiten"
-        aria-multiline="true"
-      />
+      <div className="relative" ref={editorShellRef}>
+        <div
+          id={id}
+          ref={editorRef}
+          contentEditable
+          suppressContentEditableWarning
+          data-testid={id}
+          data-placeholder={placeholder}
+          onInput={notifyChange}
+          onKeyDown={handleKeyDown}
+          onKeyUp={updateFormatState}
+          onMouseUp={updateFormatState}
+          onFocus={updateFormatState}
+          onPaste={handlePaste}
+          className={[
+            'w-full p-4 text-sm leading-relaxed outline-none',
+            'prose prose-sm max-w-none',
+            // Öffentliche Baustein-Gestaltung im Editor wiederverwenden
+            'prose-ratgeber',
+            'focus:ring-2 focus:ring-inset focus:ring-teal-500',
+            '[&[data-placeholder]:empty:before]:content-[attr(data-placeholder)]',
+            '[&[data-placeholder]:empty:before]:text-gray-400',
+            '[&[data-placeholder]:empty:before]:pointer-events-none',
+            editorBlockStyles,
+          ].join(' ')}
+          style={{ minHeight: `${minRows * 1.6}rem` }}
+          aria-label="Artikelinhalt bearbeiten"
+          aria-multiline="true"
+        />
+
+        {/* Fokus-Hervorhebung des aktuellen Bausteins.
+            Liegt ausserhalb des contentEditable, ist nicht klickbar und
+            gelangt daher nie in editor.innerHTML. */}
+        {hasFocusOverlay && (
+          <div
+            data-testid="block-focus-overlay"
+            aria-hidden="true"
+            className="pointer-events-none absolute rounded-lg ring-2 ring-teal-400/70"
+            style={{
+              top: `${focusRect.top - 2}px`,
+              left: `${focusRect.left - 2}px`,
+              width: `${focusRect.width + 4}px`,
+              height: `${focusRect.height + 4}px`,
+            }}
+          />
+        )}
+      </div>
 
       {/* Fusszeile */}
       <div className="bg-gray-50 border-t border-gray-200 px-3 py-1.5 flex items-center justify-between">
