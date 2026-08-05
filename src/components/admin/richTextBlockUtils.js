@@ -100,6 +100,51 @@ const DISSOLVED_BLOCK_TAGS = new Set([
  */
 const STANDALONE_BLOCK_TAGS = new Set(['PRE', 'FIGURE', 'HR']);
 
+/**
+ * Editierbare Textblöcke, in denen der Chromium-Grenzfall beginnen kann.
+ * Bewusst eng gehalten: nur Blöcke, deren Inhalt reiner Fliesstext ist.
+ */
+const EDITABLE_BLOCK_TAGS = new Set(['P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'LI']);
+
+/**
+ * Blöcke, in deren Anfang die Auswahl überschiessen darf.
+ * Zusätzlich zu den editierbaren Textblöcken auch Listen: ein Dreifachklick auf
+ * die Überschrift einer Checkliste endet bei Offset 0 des folgenden ul.
+ */
+const BOUNDARY_END_TAGS = new Set([...EDITABLE_BLOCK_TAGS, 'UL', 'OL']);
+
+/**
+ * beforeinput-Typen, die Text einsetzen bzw. eine Auswahl durch Text ersetzen.
+ * Löschaktionen und unbekannte Typen sind bewusst nicht enthalten.
+ */
+const TEXT_INSERTING_INPUT_TYPES = new Set([
+  'insertText',
+  'insertReplacementText',
+  'insertCompositionText',
+]);
+
+/**
+ * Sichtbare Elemente ohne eigenen Text — sie dürfen nie stillschweigend aus
+ * einer Auswahl herausfallen.
+ */
+const VISIBLE_VOID_SELECTOR = 'img, hr, br, figure, table, video, audio, iframe, svg, canvas, embed, object';
+
+/**
+ * Zeichen ohne sichtbare Wirkung. `\s` wäre hier falsch: es enthält das
+ * geschützte Leerzeichen (U+00A0), das im Editor sichtbarer Inhalt ist.
+ */
+const INVISIBLE_ONLY = /^[\t\n\r\f\v \u200b\ufeff]*$/;
+
+/**
+ * Enthält der Wert sichtbaren Inhalt? Geschützte Leerzeichen zählen als sichtbar.
+ *
+ * @param {string|null|undefined} value
+ * @returns {boolean}
+ */
+function hasVisibleText(value) {
+  return !INVISIBLE_ONLY.test(String(value ?? ''));
+}
+
 // ---------------------------------------------------------------------------
 // Baustein-Erkennung
 // ---------------------------------------------------------------------------
@@ -204,6 +249,329 @@ export function resolveSelectionContext(editorEl) {
 }
 
 // ---------------------------------------------------------------------------
+// Schutz vor unbeabsichtigter blockübergreifender Auswahl
+// ---------------------------------------------------------------------------
+
+/**
+ * Gründe für das Ergebnis von `clampBoundarySelection` — ausschliesslich zur
+ * Nachvollziehbarkeit in Tests und beim Debuggen. Die Benutzeroberfläche zeigt
+ * sie nicht an: die Korrektur ist für die Redaktion unsichtbar.
+ */
+export const CLAMP_REASONS = {
+  noEditor:      'no-editor',
+  unsupported:   'unsupported-input-type',
+  noSelection:   'no-selection',
+  multiRange:    'multiple-ranges',
+  collapsed:     'collapsed-caret',
+  noBoundary:    'no-boundary-overreach',
+  clamped:       'clamped',
+};
+
+/**
+ * Setzt der beforeinput-Typ Text ein bzw. ersetzt er die Auswahl durch Text?
+ * Löschaktionen, Formatierungen und unbekannte Typen sind ausgenommen.
+ *
+ * @param {string|null|undefined} inputType
+ * @returns {boolean}
+ */
+export function isTextInsertingInputType(inputType) {
+  return TEXT_INSERTING_INPUT_TYPES.has(String(inputType ?? ''));
+}
+
+/**
+ * Nächster umschliessender editierbarer Textblock innerhalb des Editors.
+ *
+ * @param {Node|null} node
+ * @param {Element} editorEl
+ * @returns {Element|null}
+ */
+function findEditableBlock(node, editorEl) {
+  if (!node || !editorEl) return null;
+  let el = node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement;
+  while (el && el !== editorEl) {
+    if (EDITABLE_BLOCK_TAGS.has(el.tagName)) return el;
+    el = el.parentElement;
+  }
+  return null;
+}
+
+/**
+ * Liegt das Element innerhalb einer Tabelle des Editors?
+ *
+ * @param {Element|null} el
+ * @param {Element} editorEl
+ * @returns {boolean}
+ */
+function isInsideTable(el, editorEl) {
+  let cur = el;
+  while (cur && cur !== editorEl) {
+    if (cur.tagName === 'TABLE') return true;
+    cur = cur.parentElement;
+  }
+  return false;
+}
+
+/**
+ * Unmittelbar folgender Geschwisterblock.
+ *
+ * Reiner Leerraum zwischen den Blöcken wird übersprungen. Steht dagegen
+ * sichtbarer Text dazwischen, ist es kein reiner Blockübergang mehr — dann
+ * liefert die Funktion null und der Schutz greift bewusst nicht.
+ *
+ * @param {Element|null} el
+ * @returns {Element|null}
+ */
+function nextBlockSibling(el) {
+  let node = el ? el.nextSibling : null;
+  while (node) {
+    if (node.nodeType === Node.ELEMENT_NODE) return node;
+    if (node.nodeType === Node.TEXT_NODE && hasVisibleText(node.data)) return null;
+    node = node.nextSibling;
+  }
+  return null;
+}
+
+/**
+ * Wählt der Bereich sichtbaren Inhalt aus — Text oder sichtbare leere Elemente?
+ *
+ * @param {Range} range
+ * @returns {boolean}
+ */
+function rangeSelectsVisibleContent(range) {
+  if (hasVisibleText(range.toString())) return true;
+  let fragment;
+  try {
+    fragment = range.cloneContents();
+  } catch (_) {
+    // Im Zweifel als sichtbar behandeln — der Schutz greift dann nicht
+    return true;
+  }
+  if (!fragment || typeof fragment.querySelector !== 'function') return false;
+  return !!fragment.querySelector(VISIBLE_VOID_SELECTOR);
+}
+
+/**
+ * Tiefste Endposition innerhalb eines Blocks — dort, wo der Browser den Text
+ * bei einer auf den Block begrenzten Auswahl tatsächlich einsetzt.
+ *
+ * @param {Element} el
+ * @returns {{ node: Node, offset: number }}
+ */
+function deepestEndPoint(el) {
+  let node = el;
+  while (node.lastChild) node = node.lastChild;
+  if (node.nodeType === Node.TEXT_NODE) {
+    return { node, offset: (node.data || '').length };
+  }
+  if (node === el) {
+    return { node: el, offset: el.childNodes.length };
+  }
+  const parent = node.parentNode;
+  return { node: parent, offset: parent.childNodes.length };
+}
+
+/**
+ * Erkennt den Chromium-Grenzfall einer unbeabsichtigt blockübergreifenden
+ * Auswahl und liefert die korrigierte Endposition.
+ *
+ * Hintergrund: Ein Doppel- oder Dreifachklick auf eine Baustein-Überschrift
+ * erzeugt in Chromium eine Auswahl, deren Ende bei Offset 0 im nachfolgenden
+ * Block liegt. Sichtbar ausgewählt ist nur die Überschrift. Ersetzt der Browser
+ * diese Auswahl durch Text, zieht er den Folgeblock in die Überschrift hinein —
+ * aus `<h3>Information</h3><p>Inhalt.</p>` wird `<h3>QA InfoInhalt.</h3>`.
+ *
+ * Erkannt wird ausschliesslich dieser Fall. Alle Bedingungen müssen gelten:
+ *   - genau ein Bereich, nicht zusammengefallen, vollständig im Editor
+ *   - Beginn in einem editierbaren Textblock (p, h1–h6, li)
+ *   - Startblock nicht in einer Tabelle
+ *   - Ende ausserhalb des Startblocks, aber im unmittelbar folgenden
+ *     Geschwisterblock bzw. exakt an dessen vorderer Blockgrenze
+ *   - jenseits des Startblocks ist kein sichtbarer Inhalt ausgewählt
+ *   - beide Blöcke liegen im selben Spezialbaustein (bzw. beide ausserhalb)
+ *
+ * Eine bewusst über mehrere Blöcke gezogene Auswahl enthält sichtbaren Inhalt
+ * des Folgeblocks und wird deshalb nie verkürzt.
+ *
+ * Richtung spielt keine Rolle: `Range` liefert Start und Ende immer in
+ * Dokumentreihenfolge.
+ *
+ * @param {Element|null} editorEl
+ * @param {Range|null} range
+ * @returns {{ node: Node, offset: number }|null} korrigiertes Ende oder null
+ */
+export function findBoundaryOverreach(editorEl, range) {
+  if (!editorEl || !range || range.collapsed) return null;
+
+  const { startContainer, endContainer, endOffset } = range;
+  if (!startContainer || !endContainer) return null;
+  if (!editorEl.contains(startContainer) || !editorEl.contains(endContainer)) return null;
+
+  const startBlock = findEditableBlock(startContainer, editorEl);
+  if (!startBlock) return null;
+  if (isInsideTable(startBlock, editorEl)) return null;
+
+  // Ende noch im Startblock: gewöhnliche Auswahl innerhalb eines Blocks
+  if (startBlock.contains(endContainer)) return null;
+
+  const nextBlock = nextBlockSibling(startBlock);
+  if (!nextBlock || !BOUNDARY_END_TAGS.has(nextBlock.tagName)) return null;
+  if (isInsideTable(nextBlock, editorEl)) return null;
+
+  // Beide Blöcke müssen im selben Baustein-Kontext liegen. Als Geschwister ist
+  // das immer erfüllt — die Prüfung bleibt als ausdrückliches Sicherheitsnetz.
+  if (findBlockContainer(startBlock, editorEl) !== findBlockContainer(nextBlock, editorEl)) {
+    return null;
+  }
+
+  if (!nextBlock.contains(endContainer)) {
+    // Reine Blockgrenze: das Ende sitzt im gemeinsamen Elternknoten zwischen
+    // Startblock und Folgeblock.
+    const parent = nextBlock.parentNode;
+    if (endContainer !== parent) return null;
+    const children = Array.prototype.slice.call(parent.childNodes);
+    const startIdx = children.indexOf(startBlock);
+    const nextIdx = children.indexOf(nextBlock);
+    if (startIdx < 0 || nextIdx < 0) return null;
+    if (endOffset <= startIdx || endOffset > nextIdx) return null;
+  }
+
+  // Alles jenseits des Startblocks muss unsichtbar sein
+  const probe = editorEl.ownerDocument.createRange();
+  try {
+    probe.setStartAfter(startBlock);
+    probe.setEnd(endContainer, endOffset);
+  } catch (_) {
+    return null;
+  }
+  if (!probe.collapsed && rangeSelectsVisibleContent(probe)) return null;
+
+  return deepestEndPoint(startBlock);
+}
+
+/**
+ * Liegt der Anker der Selektion am Ende des Bereichs (rückwärts gezogen)?
+ *
+ * @param {Selection} sel
+ * @param {Range} range
+ * @returns {boolean}
+ */
+function isBackwardSelection(sel, range) {
+  if (!sel || !sel.anchorNode) return false;
+  return sel.anchorNode === range.endContainer && sel.anchorOffset === range.endOffset;
+}
+
+/**
+ * Begrenzt eine unbeabsichtigt blockübergreifende Auswahl auf das Ende ihres
+ * Startblocks — vor der nativen DOM-Veränderung durch den Browser.
+ *
+ * Aufzurufen aus `beforeinput`. Der Aufrufer verhindert das Ereignis
+ * ausdrücklich **nicht**: nach der Korrektur läuft die normale Browsereingabe
+ * weiter und ersetzt genau den sichtbar ausgewählten Text. Es wird nichts
+ * gespeichert, keine Klasse und kein data-Attribut gesetzt und kein innerHTML
+ * geschrieben.
+ *
+ * Greift ausschliesslich bei textsetzenden Eingabetypen und ausschliesslich im
+ * von `findBoundaryOverreach` erkannten Grenzfall. Die Richtung der Auswahl
+ * bleibt erhalten.
+ *
+ * @param {Element|null} editorEl
+ * @param {Selection|null} [selection] — Standard: window.getSelection()
+ * @param {string|null} [inputType]    — inputType des beforeinput-Ereignisses
+ * @returns {{ clamped: boolean, reason: string }}
+ */
+export function clampBoundarySelection(editorEl, selection, inputType) {
+  if (!editorEl) return { clamped: false, reason: CLAMP_REASONS.noEditor };
+  if (!isTextInsertingInputType(inputType)) {
+    return { clamped: false, reason: CLAMP_REASONS.unsupported };
+  }
+
+  const sel = selection
+    || (typeof window !== 'undefined' && window.getSelection ? window.getSelection() : null);
+  if (!sel || !sel.rangeCount) return { clamped: false, reason: CLAMP_REASONS.noSelection };
+  if (sel.rangeCount > 1) return { clamped: false, reason: CLAMP_REASONS.multiRange };
+
+  let range;
+  try {
+    range = sel.getRangeAt(0);
+  } catch (_) {
+    return { clamped: false, reason: CLAMP_REASONS.noSelection };
+  }
+  if (!range) return { clamped: false, reason: CLAMP_REASONS.noSelection };
+  if (range.collapsed) return { clamped: false, reason: CLAMP_REASONS.collapsed };
+
+  const target = findBoundaryOverreach(editorEl, range);
+  if (!target) return { clamped: false, reason: CLAMP_REASONS.noBoundary };
+
+  const backwards = isBackwardSelection(sel, range);
+  const anchorNode = range.startContainer;
+  const anchorOffset = range.startOffset;
+
+  // Der Bereich aus getRangeAt(0) ist in Chromium der aktive Selektionsbereich —
+  // die Begrenzung wirkt dort unmittelbar.
+  try {
+    range.setEnd(target.node, target.offset);
+  } catch (_) {
+    return { clamped: false, reason: CLAMP_REASONS.noBoundary };
+  }
+
+  // Zusätzlich ausdrücklich neu setzen: das hält die Richtung der Auswahl und
+  // wirkt auch in Browsern, deren getRangeAt eine Kopie liefert.
+  if (typeof sel.setBaseAndExtent === 'function') {
+    if (backwards) {
+      sel.setBaseAndExtent(target.node, target.offset, anchorNode, anchorOffset);
+    } else {
+      sel.setBaseAndExtent(anchorNode, anchorOffset, target.node, target.offset);
+    }
+  } else if (typeof sel.removeAllRanges === 'function' && typeof sel.addRange === 'function') {
+    sel.removeAllRanges();
+    sel.addRange(range);
+  }
+
+  return { clamped: true, reason: CLAMP_REASONS.clamped };
+}
+
+// ---------------------------------------------------------------------------
+// Direkte Textknoten unterhalb des Editor-Roots
+// ---------------------------------------------------------------------------
+
+/**
+ * Verpackt direkte, sichtbare Textknoten unterhalb des contentEditable-Roots in
+ * normale Absätze.
+ *
+ * Bewusst **keine** allgemeine Normalisierung: die Funktion wird ausschliesslich
+ * während der Benutzeraktion „Baustein einfügen" aufgerufen. Blosses Laden eines
+ * Artikels und ein externer value-Wechsel lassen die Struktur unverändert.
+ *
+ * Der Textknoten selbst wird in den neuen Absatz **verschoben**, nicht kopiert:
+ * Textinhalt und Reihenfolge bleiben dadurch zeichengenau erhalten, und eine
+ * Selektion bzw. ein Caret innerhalb des Knotens wandert mit. Auch Grenzpunkte
+ * direkt im Root bleiben gültig — der Absatz nimmt exakt die Position ein, an
+ * der zuvor der Textknoten stand.
+ *
+ * Reine Leerraum-Knoten bleiben unberührt: sie zu verpacken erzeugte sichtbare
+ * leere Absätze, sie zu entfernen wäre eine Änderung ohne Anlass.
+ *
+ * @param {Element|null} editorEl
+ * @returns {{ changed: boolean, wrapped: number }}
+ */
+export function wrapTopLevelTextNodes(editorEl) {
+  if (!editorEl) return { changed: false, wrapped: 0 };
+
+  let wrapped = 0;
+  Array.prototype.slice.call(editorEl.childNodes).forEach((node) => {
+    if (node.nodeType !== Node.TEXT_NODE) return;
+    if (!hasVisibleText(node.data)) return;
+
+    const paragraph = editorEl.ownerDocument.createElement('p');
+    editorEl.insertBefore(paragraph, node);
+    paragraph.appendChild(node);
+    wrapped += 1;
+  });
+
+  return { changed: wrapped > 0, wrapped };
+}
+
+// ---------------------------------------------------------------------------
 // Baustein einfügen
 // ---------------------------------------------------------------------------
 
@@ -271,6 +639,10 @@ function createTableElement(cols = 3, rows = 2) {
  * Der Baustein wird nach dem aktuellen Block-Container des Carets eingefügt,
  * oder am Ende des Editors wenn kein Block-Kontext vorhanden ist.
  *
+ * Direkte Textknoten unterhalb des Roots werden vorher über
+ * `wrapTopLevelTextNodes` in Absätze verpackt — ausschliesslich hier, bei der
+ * tatsächlichen Benutzeraktion, nie beim blossen Laden eines Artikels.
+ *
  * @param {BlockType} type
  * @param {Element} editorEl
  * @returns {BlockResult}
@@ -286,6 +658,12 @@ export function insertBlock(type, editorEl) {
   if (ctx.container) {
     return { success: false, message: BLOCK_MESSAGES.nested };
   }
+
+  // Reiner Artikeltext kann als direkter Textknoten im Root liegen. Erst jetzt —
+  // während der tatsächlichen Benutzeraktion — wird er in einen Absatz verpackt.
+  // Der Knoten wird dabei verschoben, deshalb bleibt ctx.anchorNode gültig und
+  // die Einfügeposition unten findet den neu entstandenen Absatz.
+  wrapTopLevelTextNodes(editorEl);
 
   // Einfügeposition: nach dem aktuellen Top-Level-Block
   let insertAfter = null;

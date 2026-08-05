@@ -21,6 +21,11 @@
  *   - Baustein-Aktionen: In Text umwandeln / Löschen
  *   - Tabellen-Aktionen: Zeilen/Spalten hinzufügen und löschen, Kopfzeile,
  *     „Tabelle in Text umwandeln" (verlustfrei, ersetzt das generische Entkleiden)
+ *   - Schutz vor der Chromium-Auswahl über die Blockgrenze hinaus (beforeinput)
+ *
+ * Baustein-Menü:
+ *   Schliesst über erneuten Button-Klick, Eintragswahl, Escape und Aussenklick.
+ *   Escape und Aussenklick verändern den Artikel nicht und melden kein onChange.
  *
  * value/onChange-Vertrag:
  *   - onChange wird ausschliesslich gemeldet, wenn sich editor.innerHTML
@@ -43,6 +48,7 @@ import { normalizeInlineFormatting } from './richTextFormatting';
 import {
   BLOCK_LABELS,
   BLOCK_MESSAGES,
+  clampBoundarySelection,
   getBlockType,
   resolveSelectionContext,
   insertBlock,
@@ -86,7 +92,14 @@ function exec(command, value = null) {
 // Toolbar-Button
 // ---------------------------------------------------------------------------
 
-function ToolBtn({ onClick, title, active, disabled, children, testId }) {
+function ToolBtn({
+  onClick, title, active, disabled, children, testId,
+  ariaExpanded, ariaHasPopup, ariaControls,
+}) {
+  // Ein Button mit Aufklappmenü meldet seinen Zustand über aria-expanded —
+  // aria-pressed daneben wäre eine zweite, widersprüchliche Zustandsaussage.
+  const isMenuButton = ariaExpanded !== undefined;
+
   return (
     <button
       type="button"
@@ -96,7 +109,10 @@ function ToolBtn({ onClick, title, active, disabled, children, testId }) {
       }}
       title={title}
       disabled={disabled}
-      aria-pressed={active}
+      aria-pressed={isMenuButton ? undefined : active}
+      aria-expanded={ariaExpanded}
+      aria-haspopup={ariaHasPopup}
+      aria-controls={ariaControls}
       data-testid={testId}
       className={[
         'px-2 py-1 text-xs rounded flex items-center gap-1 min-h-[28px] transition-colors',
@@ -384,22 +400,70 @@ function BlockActions({ blockType, onAction }) {
 // Einfüge-Menü
 // ---------------------------------------------------------------------------
 
+/**
+ * Aufklappmenü „Baustein einfügen".
+ *
+ * Das geöffnete Menü schliesst sich über vier Wege:
+ *   1. erneuter Klick auf den Toolbar-Button
+ *   2. Auswahl eines Menüeintrags (erst nachdem dieser verarbeitet wurde)
+ *   3. Escape
+ *   4. Zeiger-/Mausklick ausserhalb des Menücontainers
+ *
+ * Die globalen Listener bestehen ausschliesslich, solange das Menü offen ist,
+ * und werden beim Schliessen wie beim Unmount vollständig entfernt.
+ *
+ * Weder Escape noch ein Aussenklick verändern den Artikel: es wird nur der
+ * lokale Öffnungszustand gesetzt. Die Editor-Selektion bleibt unangetastet —
+ * das Menü verhindert lediglich den Fokusverlust über mousedown.
+ */
 function InsertMenu({ onInsert, disabled }) {
   const [open, setOpen] = useState(false);
+  const containerRef = useRef(null);
+  const menuId = 'insert-block-menu';
 
   const handleInsert = (type) => {
     setOpen(false);
     onInsert(type);
   };
 
+  useEffect(() => {
+    if (!open) return undefined;
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+
+    // Ein Klick innerhalb des Containers — auch auf den Toolbar-Button selbst —
+    // darf hier nichts schliessen: den Button behandelt sein eigener onClick,
+    // ein Menüeintrag muss zuerst verarbeitet werden.
+    const handleOutsidePointer = (e) => {
+      const el = containerRef.current;
+      if (el && e.target instanceof Node && el.contains(e.target)) return;
+      setOpen(false);
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('pointerdown', handleOutsidePointer, true);
+    document.addEventListener('mousedown', handleOutsidePointer, true);
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('pointerdown', handleOutsidePointer, true);
+      document.removeEventListener('mousedown', handleOutsidePointer, true);
+    };
+  }, [open]);
+
   return (
-    <div className="relative" data-testid="insert-menu-container">
+    <div className="relative" data-testid="insert-menu-container" ref={containerRef}>
       <ToolBtn
         onClick={() => setOpen((v) => !v)}
         title="Baustein einfügen"
         active={open}
         disabled={disabled}
         testId="btn-insert-block"
+        ariaExpanded={open}
+        ariaHasPopup="menu"
+        ariaControls={open ? menuId : undefined}
       >
         <Plus size={12} />
         <span>Baustein</span>
@@ -408,7 +472,10 @@ function InsertMenu({ onInsert, disabled }) {
 
       {open && (
         <div
+          id={menuId}
           data-testid="insert-menu"
+          role="menu"
+          aria-label="Baustein einfügen"
           className="absolute left-0 top-full mt-1 z-50 bg-white border border-gray-200 rounded-lg shadow-lg min-w-[200px] py-1"
           onMouseDown={(e) => e.preventDefault()}
         >
@@ -416,6 +483,7 @@ function InsertMenu({ onInsert, disabled }) {
             <button
               key={type}
               type="button"
+              role="menuitem"
               data-testid={`insert-${type}`}
               onClick={() => handleInsert(type)}
               className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 flex items-center gap-2"
@@ -533,6 +601,31 @@ export default function AdminRichTextEditor({
     resetBlockState();
     setInsertError('');
   }, [value, resetBlockState]);
+
+  // Schutz vor der Chromium-Auswahl über die Blockgrenze hinaus.
+  //
+  // Der Listener hängt am nativen beforeinput-Ereignis und läuft damit
+  // garantiert vor der DOM-Veränderung durch den Browser. Reacts synthetisches
+  // onBeforeInput ist dafür ungeeignet: es stammt aus keypress/textInput und
+  // führt kein inputType mit.
+  //
+  // Das Ereignis wird ausdrücklich nicht verhindert — nach der Korrektur setzt
+  // der Browser den Text normal ein. Es wird nichts gemeldet: die anschliessende
+  // echte Eingabe löst onInput und damit notifyChange aus.
+  useEffect(() => {
+    const el = editorRef.current;
+    if (!el) return undefined;
+
+    const handleBeforeInput = (event) => {
+      const sel = typeof window !== 'undefined' && window.getSelection
+        ? window.getSelection()
+        : null;
+      clampBoundarySelection(el, sel, event.inputType);
+    };
+
+    el.addEventListener('beforeinput', handleBeforeInput);
+    return () => el.removeEventListener('beforeinput', handleBeforeInput);
+  }, []);
 
   // Selektion speichern bevor Panel fokussiert wird
   const saveSelection = useCallback(() => {
