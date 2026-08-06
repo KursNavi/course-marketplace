@@ -960,7 +960,13 @@ export function tableHasMergedCells(table) {
 }
 
 /**
- * Sicherheitsabfrage — standardmässig window.confirm, in Tests injizierbar.
+ * Sicherheitsabfrage für die isolierte Verwendung der Hilfsfunktionen.
+ *
+ * Der Aufrufer injiziert die Bestätigung über `options.confirm`. Die React-
+ * Komponente tut das ausnahmslos — sie fragt über ihre eigene, nicht
+ * blockierende Bestätigungsoberfläche und ruft die Funktion danach mit
+ * `confirm: () => true` auf. Der window.confirm-Rückfall besteht nur noch für
+ * die isolierte Wiederverwendung und für Utility-Tests.
  *
  * @param {{confirm?: function}} options
  * @param {string} message
@@ -1046,6 +1052,61 @@ function resolveEditableTableContext(editorEl) {
   return ctx;
 }
 
+/**
+ * Öffentlicher Zugang zum bearbeitbaren Tabellenkontext der aktuellen Selektion.
+ *
+ * Die Editor-Komponente erfasst damit beim ersten Aktionsklick Tabelle, Zeile
+ * und Zelle. Sie hält diese Knoten fest und führt die Aktion später über
+ * `tableDeleteRowAt` / `tableDeleteColAt` genau auf diesem Ziel aus — die dann
+ * aktuelle Browser-Selection spielt keine Rolle mehr.
+ *
+ * @param {Element} editorEl
+ * @returns {{ ok: boolean, message?: string, table?: HTMLTableElement,
+ *             row?: HTMLTableRowElement, cell?: HTMLTableCellElement }}
+ */
+export function resolveTableSelection(editorEl) {
+  return resolveEditableTableContext(editorEl);
+}
+
+/**
+ * Baut denselben Kontext aus einer konkreten Zelle auf — ohne jeden Bezug zur
+ * Selektion. Grundlage für Aktionen, die erst nach einer Rückfrage ausgeführt
+ * werden: zwischen Erfassung und Ausführung kann sich die Selektion beliebig
+ * verändert haben, das gespeicherte Ziel darf davon nicht abhängen.
+ *
+ * Geprüft wird, dass die Zelle noch im Dokument hängt, weiterhin im Editor
+ * liegt, noch in einer Zeile steht und ihre Tabelle unverändert bearbeitbar ist.
+ *
+ * @param {HTMLTableCellElement|null} cell
+ * @param {Element} editorEl
+ * @returns {{ ok: boolean, message?: string, table?: HTMLTableElement,
+ *             row?: HTMLTableRowElement, cell?: HTMLTableCellElement }}
+ */
+function resolveCellContext(cell, editorEl) {
+  if (!editorEl) return { ok: false, message: BLOCK_MESSAGES.noEditor };
+  if (!cell || (cell.tagName !== 'TD' && cell.tagName !== 'TH')) {
+    return { ok: false, message: BLOCK_MESSAGES.notInCell };
+  }
+  if (!cell.isConnected || !editorEl.contains(cell)) {
+    return { ok: false, message: BLOCK_MESSAGES.staleBlock };
+  }
+
+  const row = cell.parentElement && cell.parentElement.tagName === 'TR'
+    ? cell.parentElement
+    : null;
+  if (!row) return { ok: false, message: BLOCK_MESSAGES.staleBlock };
+
+  const table = cell.closest('table');
+  if (!table || !editorEl.contains(table)) {
+    return { ok: false, message: BLOCK_MESSAGES.staleBlock };
+  }
+  if (tableHasMergedCells(table)) {
+    return { ok: false, message: BLOCK_MESSAGES.mergedCells };
+  }
+
+  return { ok: true, table, row, cell };
+}
+
 // ---------------------------------------------------------------------------
 // Tabellen: Zeilen
 // ---------------------------------------------------------------------------
@@ -1103,21 +1164,18 @@ export function tableInsertRowBelow(editorEl) {
 }
 
 /**
- * Löscht die aktuelle Zeile.
+ * Löscht die Zeile eines aufgelösten Tabellenkontexts.
  *
- * Schutzregeln:
- *   - Kopfzeilen (thead) werden nicht gelöscht.
- *   - Die letzte Datenzeile bleibt erhalten.
- *   - Gefüllte Zeilen erfordern eine Sicherheitsabfrage.
+ * Die Sicherheitsabfrage steht bewusst am Ende aller Schutzprüfungen und vor
+ * jeder DOM-Veränderung: wird sie verneint, bleibt das Dokument nachweislich
+ * unberührt. Genau darauf stützt sich die Editor-Komponente, wenn sie mit einer
+ * ablehnenden Bestätigung vorab ermittelt, ob überhaupt gefragt werden muss.
  *
- * @param {Element} editorEl
- * @param {{confirm?: function}} [options]
+ * @param {{table: HTMLTableElement, row: HTMLTableRowElement, cell: HTMLTableCellElement}} ctx
+ * @param {{confirm?: function}} options
  * @returns {BlockResult}
  */
-export function tableDeleteRow(editorEl, options = {}) {
-  const ctx = resolveEditableTableContext(editorEl);
-  if (!ctx.ok) return { success: false, message: ctx.message };
-
+function deleteRowIn(ctx, options) {
   if (isHeaderRow(ctx.row)) {
     return { success: false, message: BLOCK_MESSAGES.headerRow };
   }
@@ -1139,6 +1197,42 @@ export function tableDeleteRow(editorEl, options = {}) {
     parent.remove();
   }
   return { success: true };
+}
+
+/**
+ * Löscht die aktuelle Zeile — Ziel aus der Selektion.
+ *
+ * Schutzregeln:
+ *   - Kopfzeilen (thead) werden nicht gelöscht.
+ *   - Die letzte Datenzeile bleibt erhalten.
+ *   - Gefüllte Zeilen erfordern eine Sicherheitsabfrage.
+ *
+ * @param {Element} editorEl
+ * @param {{confirm?: function}} [options]
+ * @returns {BlockResult}
+ */
+export function tableDeleteRow(editorEl, options = {}) {
+  const ctx = resolveEditableTableContext(editorEl);
+  if (!ctx.ok) return { success: false, message: ctx.message };
+  return deleteRowIn(ctx, options);
+}
+
+/**
+ * Löscht die Zeile einer ausdrücklich übergebenen Zelle.
+ *
+ * Dieselben Schutzregeln wie `tableDeleteRow`, aber ohne jeden Rückgriff auf
+ * `window.getSelection()`. Damit bleibt eine Aktion, die zwischen Klick und
+ * Bestätigung wartet, exakt auf ihrem ursprünglichen Ziel.
+ *
+ * @param {HTMLTableCellElement|null} cell
+ * @param {Element} editorEl
+ * @param {{confirm?: function}} [options]
+ * @returns {BlockResult}
+ */
+export function tableDeleteRowAt(cell, editorEl, options = {}) {
+  const ctx = resolveCellContext(cell, editorEl);
+  if (!ctx.ok) return { success: false, message: ctx.message };
+  return deleteRowIn(ctx, options);
 }
 
 // ---------------------------------------------------------------------------
@@ -1191,21 +1285,15 @@ export function tableInsertColRight(editorEl) {
 }
 
 /**
- * Löscht die aktuelle Spalte.
+ * Löscht die Spalte eines aufgelösten Tabellenkontexts.
  *
- * Schutzregeln:
- *   - Die letzte Spalte bleibt erhalten.
- *   - Enthält eine betroffene Zelle Inhalt (inkl. Kopfzelle), erfolgt eine
- *     Sicherheitsabfrage.
+ * Wie bei `deleteRowIn` steht die Sicherheitsabfrage vor jeder DOM-Änderung.
  *
- * @param {Element} editorEl
- * @param {{confirm?: function}} [options]
+ * @param {{table: HTMLTableElement, row: HTMLTableRowElement, cell: HTMLTableCellElement}} ctx
+ * @param {{confirm?: function}} options
  * @returns {BlockResult}
  */
-export function tableDeleteCol(editorEl, options = {}) {
-  const ctx = resolveEditableTableContext(editorEl);
-  if (!ctx.ok) return { success: false, message: ctx.message };
-
+function deleteColIn(ctx, options) {
   const rows = getAllRows(ctx.table);
   const maxCols = getMaxCols(rows);
   if (maxCols <= 1) return { success: false, message: BLOCK_MESSAGES.lastCol };
@@ -1224,6 +1312,41 @@ export function tableDeleteCol(editorEl, options = {}) {
     if (cell) cell.remove();
   });
   return { success: true };
+}
+
+/**
+ * Löscht die aktuelle Spalte — Ziel aus der Selektion.
+ *
+ * Schutzregeln:
+ *   - Die letzte Spalte bleibt erhalten.
+ *   - Enthält eine betroffene Zelle Inhalt (inkl. Kopfzelle), erfolgt eine
+ *     Sicherheitsabfrage.
+ *
+ * @param {Element} editorEl
+ * @param {{confirm?: function}} [options]
+ * @returns {BlockResult}
+ */
+export function tableDeleteCol(editorEl, options = {}) {
+  const ctx = resolveEditableTableContext(editorEl);
+  if (!ctx.ok) return { success: false, message: ctx.message };
+  return deleteColIn(ctx, options);
+}
+
+/**
+ * Löscht die Spalte einer ausdrücklich übergebenen Zelle.
+ *
+ * Dieselben Schutzregeln wie `tableDeleteCol`, aber ohne jeden Rückgriff auf
+ * `window.getSelection()`.
+ *
+ * @param {HTMLTableCellElement|null} cell
+ * @param {Element} editorEl
+ * @param {{confirm?: function}} [options]
+ * @returns {BlockResult}
+ */
+export function tableDeleteColAt(cell, editorEl, options = {}) {
+  const ctx = resolveCellContext(cell, editorEl);
+  if (!ctx.ok) return { success: false, message: ctx.message };
+  return deleteColIn(ctx, options);
 }
 
 // ---------------------------------------------------------------------------

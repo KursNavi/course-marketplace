@@ -18,16 +18,16 @@
  *  10  Tabelle mit leeren Zellen
  *  11  Tabelle mit Links
  *  12  Tabelle mit strong-/em-Inhalten
- *  13  Zeile mit Inhalt: confirm false verhindert Löschung und onChange
- *  14  Zeile mit Inhalt: confirm true löscht und löst genau einmal onChange aus
- *  15  Spalte mit Inhalt: confirm false verhindert Löschung und onChange
- *  16  Spalte mit Inhalt: confirm true löscht und löst genau einmal onChange aus
+ *  13  Zeile mit Inhalt: Abbrechen verhindert Löschung und onChange
+ *  14  Zeile mit Inhalt: Bestätigen löscht und löst genau einmal onChange aus
+ *  15  Spalte mit Inhalt: Abbrechen verhindert Löschung und onChange
+ *  16  Spalte mit Inhalt: Bestätigen löscht und löst genau einmal onChange aus
  *  17  Leere Zeile / Spalte wird ohne Bestätigung gelöscht
  *  18  thead-Zeile kann nicht über „Zeile löschen" gelöscht werden
  *  19  „Kopfzeile ausschalten" erhält alle Inhalte und entfernt leeres thead
  *  20  BlockActions werden gerendert und bedient
- *  21  „Baustein löschen": confirm false erhält Baustein, kein onChange
- *  22  „Baustein löschen": confirm true löscht, genau ein onChange
+ *  21  „Baustein löschen": Abbrechen erhält Baustein, kein onChange
+ *  22  „Baustein löschen": Bestätigen löscht, genau ein onChange
  *  23  Mehrere gleiche Bausteine: exakt zwei nach zwei gültigen Einfügungen
  *  24  Verschachtelungsversuch: keine Einfügung, sichtbare Fehlermeldung
  *  25  Editierbereich trägt prose-ratgeber
@@ -80,9 +80,11 @@ import {
   tableInsertRowAbove,
   tableInsertRowBelow,
   tableDeleteRow,
+  tableDeleteRowAt,
   tableInsertColLeft,
   tableInsertColRight,
   tableDeleteCol,
+  tableDeleteColAt,
   tableHasMergedCells,
   BLOCK_LABELS,
   BLOCK_MESSAGES,
@@ -178,6 +180,26 @@ function focusBlock(editor, node, focusNode) {
 /** Klick auf einen Toolbar-/Aktions-Button (ToolBtn reagiert auf mouseDown) */
 function clickBtn(testId) {
   fireEvent.mouseDown(screen.getByTestId(testId), { button: 0 });
+}
+
+/**
+ * Bestätigt die Rückfrage in der Editoroberfläche.
+ *
+ * Destruktive Aktionen öffnen keinen nativen Dialog mehr, sondern eine
+ * Bestätigungsfläche im Editor. Erst deren Schalter führt die Aktion aus.
+ */
+function acceptConfirm() {
+  fireEvent.click(screen.getByTestId('block-confirm-accept'));
+}
+
+/** Bricht die Rückfrage in der Editoroberfläche ab */
+function cancelConfirm() {
+  fireEvent.click(screen.getByTestId('block-confirm-cancel'));
+}
+
+/** Ist gerade eine Rückfrage sichtbar? */
+function confirmVisible() {
+  return screen.queryByTestId('block-confirm') !== null;
 }
 
 function openInsertMenu() {
@@ -317,6 +339,8 @@ describe('1/2/20 – Tabellen-Aktionsleiste ist korrekt verdrahtet', () => {
     focusBlock(editor, editor.querySelector('td'));
 
     clickBtn('btn-table-to-text');
+    expect(tableToText).not.toHaveBeenCalled();
+    acceptConfirm();
 
     expect(tableToText).toHaveBeenCalledTimes(1);
     expect(unwrapBlock).not.toHaveBeenCalled();
@@ -376,6 +400,7 @@ describe('3 – Tabelle → Text → Serialisierung → erneutes Parsen', () => 
     focusBlock(editor, editor.querySelector('td'));
 
     clickBtn('btn-table-to-text');
+    acceptConfirm();
 
     const serialized = editor.innerHTML;
     const reparsed = document.createElement('div');
@@ -590,52 +615,65 @@ describe('13–18 – Zeilen und Spalten sicher löschen', () => {
     return { editor, onChange };
   }
 
-  it('13 – gefüllte Zeile: confirm false verhindert Löschung und onChange', () => {
-    window.confirm = vi.fn().mockReturnValue(false);
+  it('13 – gefüllte Zeile: Abbrechen verhindert Löschung und onChange', () => {
     const { editor, onChange } = renderTable();
     focusBlock(editor, editor.querySelectorAll('tbody tr')[1].querySelector('td'));
 
     clickBtn('btn-del-row');
 
-    expect(window.confirm).toHaveBeenCalledWith(BLOCK_MESSAGES.confirmRow);
+    expect(window.confirm).not.toHaveBeenCalled();
+    expect(screen.getByTestId('block-confirm-message').textContent)
+      .toBe(BLOCK_MESSAGES.confirmRow);
+    // Der blosse Klick verändert noch nichts
+    expect(editor.querySelectorAll('tbody tr')).toHaveLength(2);
+
+    cancelConfirm();
+
+    expect(confirmVisible()).toBe(false);
     expect(editor.querySelectorAll('tbody tr')).toHaveLength(2);
     expect(editor.textContent).toContain('Diplom');
     expect(onChange).not.toHaveBeenCalled();
-    expect(screen.getByTestId('insert-error').textContent).toContain('abgebrochen');
+    expect(screen.queryByTestId('insert-error')).toBeNull();
   });
 
-  it('14 – gefüllte Zeile: confirm true löscht und meldet genau einmal', () => {
-    window.confirm = vi.fn().mockReturnValue(true);
+  it('14 – gefüllte Zeile: Bestätigen löscht und meldet genau einmal', () => {
     const { editor, onChange } = renderTable();
     focusBlock(editor, editor.querySelectorAll('tbody tr')[1].querySelector('td'));
 
     clickBtn('btn-del-row');
+    expect(editor.querySelectorAll('tbody tr')).toHaveLength(2);
+    acceptConfirm();
 
-    expect(window.confirm).toHaveBeenCalledTimes(1);
+    expect(window.confirm).not.toHaveBeenCalled();
+    expect(confirmVisible()).toBe(false);
     expect(editor.querySelectorAll('tbody tr')).toHaveLength(1);
     expect(editor.textContent).not.toContain('Diplom');
     expect(onChange).toHaveBeenCalledTimes(1);
   });
 
-  it('15 – gefüllte Spalte: confirm false verhindert Löschung und onChange', () => {
-    window.confirm = vi.fn().mockReturnValue(false);
+  it('15 – gefüllte Spalte: Abbrechen verhindert Löschung und onChange', () => {
     const { editor, onChange } = renderTable();
     focusBlock(editor, editor.querySelector('tbody tr').cells[1]);
 
     clickBtn('btn-del-col');
 
-    expect(window.confirm).toHaveBeenCalledWith(BLOCK_MESSAGES.confirmCol);
+    expect(window.confirm).not.toHaveBeenCalled();
+    expect(screen.getByTestId('block-confirm-message').textContent)
+      .toBe(BLOCK_MESSAGES.confirmCol);
+
+    cancelConfirm();
+
     expect(editor.querySelector('tbody tr').cells).toHaveLength(2);
     expect(editor.textContent).toContain('CHF 4600');
     expect(onChange).not.toHaveBeenCalled();
   });
 
-  it('16 – gefüllte Spalte: confirm true löscht und meldet genau einmal', () => {
-    window.confirm = vi.fn().mockReturnValue(true);
+  it('16 – gefüllte Spalte: Bestätigen löscht und meldet genau einmal', () => {
     const { editor, onChange } = renderTable();
     focusBlock(editor, editor.querySelector('tbody tr').cells[1]);
 
     clickBtn('btn-del-col');
+    acceptConfirm();
 
     expect(editor.querySelector('tbody tr').cells).toHaveLength(1);
     expect(editor.querySelectorAll('thead th')).toHaveLength(1);
@@ -802,8 +840,7 @@ describe('19 – Kopfzeile ein-/ausschalten', () => {
 // ===========================================================================
 
 describe('21–24 – Baustein-Aktionen in der Oberfläche', () => {
-  it('21 – „Baustein löschen": confirm false erhält den Baustein', () => {
-    window.confirm = vi.fn().mockReturnValue(false);
+  it('21 – „Baustein löschen": Abbrechen erhält den Baustein', () => {
     const { editor, onChange } = renderEditor(
       '<div class="warning-box"><h3>Titel</h3><p>Inhalt</p></div>'
     );
@@ -811,21 +848,27 @@ describe('21–24 – Baustein-Aktionen in der Oberfläche', () => {
 
     clickBtn('btn-delete-block');
 
-    expect(window.confirm).toHaveBeenCalledTimes(1);
+    expect(window.confirm).not.toHaveBeenCalled();
+    expect(screen.getByTestId('block-confirm-message').textContent)
+      .toContain('Hinweis / Warnung');
+
+    cancelConfirm();
+
     expect(deleteBlock).not.toHaveBeenCalled();
     expect(editor.querySelectorAll('.warning-box')).toHaveLength(1);
     expect(editor.textContent).toContain('Inhalt');
     expect(onChange).not.toHaveBeenCalled();
   });
 
-  it('22 – „Baustein löschen": confirm true löscht und meldet genau einmal', () => {
-    window.confirm = vi.fn().mockReturnValue(true);
+  it('22 – „Baustein löschen": Bestätigen löscht und meldet genau einmal', () => {
     const { editor, onChange } = renderEditor(
       '<div class="warning-box"><h3>Titel</h3><p>Inhalt</p></div><p id="rest">Rest</p>'
     );
     focusBlock(editor, editor.querySelector('.warning-box p'));
 
     clickBtn('btn-delete-block');
+    expect(deleteBlock).not.toHaveBeenCalled();
+    acceptConfirm();
 
     expect(deleteBlock).toHaveBeenCalledTimes(1);
     expect(editor.querySelectorAll('.warning-box')).toHaveLength(0);
@@ -1010,11 +1053,11 @@ describe('27–30 – Selektions- und Zustandssicherheit', () => {
   });
 
   it('28c – abgebrochene Tabellenumwandlung verändert nichts', () => {
-    window.confirm = vi.fn().mockReturnValue(false);
     const { editor, onChange } = renderEditor(TABLE_HTML);
     focusBlock(editor, editor.querySelector('td'));
 
     clickBtn('btn-table-to-text');
+    cancelConfirm();
 
     expect(editor.querySelector('table')).toBeTruthy();
     expect(editor.querySelectorAll('td')).toHaveLength(4);
@@ -1498,6 +1541,7 @@ describe('34 – Tabellen mit verbundenen Zellen', () => {
     focusBlock(editor, editor.querySelector('tbody td'));
 
     clickBtn('btn-table-to-text');
+    acceptConfirm();
 
     expectNoTableRemnants(editor);
     expect(editor.textContent).toContain('Übersicht Lohn');
@@ -1636,6 +1680,7 @@ describe('35 – Tabelle → Text erzeugt gültiges HTML', () => {
     focusBlock(editor, editor.querySelector('tbody td'));
 
     clickBtn('btn-table-to-text');
+    acceptConfirm();
 
     expect(onChange).toHaveBeenCalledTimes(1);
     expectNoTableRemnants(editor);
@@ -1979,7 +2024,6 @@ describe('38 – No-Op-Aktionen lösen kein onChange aus', () => {
   });
 
   it('abgebrochene Baustein-Löschung hinterlässt keinen internen Zustand', () => {
-    window.confirm = vi.fn().mockReturnValue(false);
     const onChange = vi.fn();
     const { rerender } = render(
       <AdminRichTextEditor
@@ -1992,6 +2036,7 @@ describe('38 – No-Op-Aktionen lösen kein onChange aus', () => {
     focusBlock(editor, editor.querySelector('.info-box p'));
 
     clickBtn('btn-delete-block');
+    cancelConfirm();
     expect(onChange).not.toHaveBeenCalled();
 
     rerender(
@@ -2216,6 +2261,144 @@ describe('Tabellenstruktur bearbeiten', () => {
     expect(rows[1].cells).toHaveLength(2);
     expect(rows[0].cells[0].textContent).toBe('a1');
     expect(rows[0].cells[1].textContent).toBe('a3');
+  });
+
+  // -------------------------------------------------------------------------
+  // Invariante: eine verneinte Sicherheitsabfrage verändert das DOM nicht
+  //
+  // Die Editor-Komponente ermittelt mit einem Probelauf — `confirm: () => false`
+  // — ob überhaupt gefragt werden muss. Dieser Probelauf läuft beim ersten Klick
+  // auf „Zeile/Spalte löschen" und darf deshalb nachweislich nichts verändern:
+  // weder Zellen ergänzen oder entfernen noch Markup normalisieren. Steht vor
+  // der Abfrage jemals eine DOM-Mutation, ist der erste Klick wieder eine stille
+  // Änderung — genau der Fehler, den die Rückfrage vermeiden soll.
+  // -------------------------------------------------------------------------
+  describe('Probelauf: verneinte Bestätigung lässt das DOM unberührt', () => {
+    /** Alle Attribute eines Elements als stabil sortierter Vergleichswert */
+    function attrSnapshot(root) {
+      return Array.from(root.querySelectorAll('*')).map((el) => (
+        `${el.tagName}[${Array.from(el.attributes)
+          .map((a) => `${a.name}=${a.value}`)
+          .sort()
+          .join(',')}]`
+      ));
+    }
+
+    /** Zellzahl je Zeile — deckt Ergänzen und Entfernen einzeln auf */
+    function cellCounts(table) {
+      return Array.from(table.querySelectorAll('tr')).map((tr) => tr.children.length);
+    }
+
+    const FILLED_TABLE =
+      '<table class="daten"><thead><tr><th scope="col">Qualifikation</th>' +
+      '<th scope="col">Monatslohn</th></tr></thead>' +
+      '<tbody>' +
+      '<tr><td>Eidg. Fachausweis</td><td class="num">CHF 4600</td></tr>' +
+      '<tr><td>Diplom</td><td class="num">CHF 5200</td></tr>' +
+      '</tbody></table>';
+
+    it('tableDeleteRowAt bricht ab und verändert die Tabelle byteweise nicht', () => {
+      const editorEl = makeEditorDiv(FILLED_TABLE);
+      const table = editorEl.querySelector('table');
+      const cell = editorEl.querySelectorAll('tbody tr')[1].cells[0];
+
+      const htmlBefore = table.outerHTML;
+      const attrsBefore = attrSnapshot(table);
+      const countsBefore = cellCounts(table);
+      const rowsBefore = table.querySelectorAll('tr').length;
+
+      const result = tableDeleteRowAt(cell, editorEl, { confirm: () => false });
+
+      expect(result.success).toBe(false);
+      expect(result.message).toBe(BLOCK_MESSAGES.cancelled);
+      expect(table.outerHTML).toBe(htmlBefore);
+      expect(attrSnapshot(table)).toEqual(attrsBefore);
+      expect(cellCounts(table)).toEqual(countsBefore);
+      expect(table.querySelectorAll('tr')).toHaveLength(rowsBefore);
+      expect(cell.isConnected).toBe(true);
+    });
+
+    it('tableDeleteColAt bricht ab und verändert die Tabelle byteweise nicht', () => {
+      const editorEl = makeEditorDiv(FILLED_TABLE);
+      const table = editorEl.querySelector('table');
+      const cell = editorEl.querySelector('tbody tr').cells[1];
+
+      const htmlBefore = table.outerHTML;
+      const attrsBefore = attrSnapshot(table);
+      const countsBefore = cellCounts(table);
+
+      const result = tableDeleteColAt(cell, editorEl, { confirm: () => false });
+
+      expect(result.success).toBe(false);
+      expect(result.message).toBe(BLOCK_MESSAGES.cancelled);
+      expect(table.outerHTML).toBe(htmlBefore);
+      expect(attrSnapshot(table)).toEqual(attrsBefore);
+      expect(cellCounts(table)).toEqual(countsBefore);
+      expect(cell.isConnected).toBe(true);
+    });
+
+    it('auch bei unregelmässigen Zeilen wird nichts aufgefüllt', () => {
+      // padRow ist der einzige Mutator in deleteColIn — er darf erst nach der
+      // Bestätigung laufen, sonst wächst die kurze Zeile schon beim Probelauf.
+      const editorEl = makeEditorDiv(
+        '<table><tbody>' +
+        '<tr><td>a1</td><td>a2</td><td>a3</td></tr>' +
+        '<tr><td>b1</td></tr>' +
+        '</tbody></table>'
+      );
+      const table = editorEl.querySelector('table');
+      const cell = table.querySelectorAll('tr')[0].cells[1];
+
+      const htmlBefore = table.outerHTML;
+
+      expect(tableDeleteColAt(cell, editorEl, { confirm: () => false }).success).toBe(false);
+
+      expect(table.outerHTML).toBe(htmlBefore);
+      expect(cellCounts(table)).toEqual([3, 1]);
+    });
+
+    it('die Bestätigung wird genau einmal und mit der erwarteten Meldung erfragt', () => {
+      const editorEl = makeEditorDiv(FILLED_TABLE);
+      const rowConfirm = vi.fn().mockReturnValue(false);
+      const colConfirm = vi.fn().mockReturnValue(false);
+
+      tableDeleteRowAt(
+        editorEl.querySelectorAll('tbody tr')[1].cells[0], editorEl, { confirm: rowConfirm },
+      );
+      tableDeleteColAt(
+        editorEl.querySelector('tbody tr').cells[1], editorEl, { confirm: colConfirm },
+      );
+
+      expect(rowConfirm).toHaveBeenCalledTimes(1);
+      expect(rowConfirm).toHaveBeenCalledWith(BLOCK_MESSAGES.confirmRow);
+      expect(colConfirm).toHaveBeenCalledTimes(1);
+      expect(colConfirm).toHaveBeenCalledWith(BLOCK_MESSAGES.confirmCol);
+      // Der injizierte Rückruf verdrängt den window.confirm-Rückfall vollständig
+      expect(window.confirm).not.toHaveBeenCalled();
+    });
+
+    it('leere Zeilen und Spalten fragen gar nicht erst nach', () => {
+      const editorEl = makeEditorDiv(
+        '<table><thead><tr><th>K</th><th></th></tr></thead>' +
+        '<tbody><tr><td>Wert</td><td></td></tr><tr><td></td><td></td></tr></tbody></table>'
+      );
+      const table = editorEl.querySelector('table');
+      const emptyRow = table.querySelectorAll('tbody tr')[1];
+      const confirmFn = vi.fn().mockReturnValue(false);
+
+      // Leere Zeile: wird sofort gelöscht, ohne Rückfrage
+      expect(tableDeleteRowAt(emptyRow.cells[0], editorEl, { confirm: confirmFn }).success)
+        .toBe(true);
+      expect(confirmFn).not.toHaveBeenCalled();
+      expect(table.querySelectorAll('tbody tr')).toHaveLength(1);
+
+      // Leere Spalte: ebenso
+      expect(tableDeleteColAt(
+        table.querySelector('tbody tr').cells[1], editorEl, { confirm: confirmFn },
+      ).success).toBe(true);
+      expect(confirmFn).not.toHaveBeenCalled();
+      expect(table.querySelectorAll('thead th')).toHaveLength(1);
+    });
   });
 
   it('Tabellenaktionen ohne Selektion in einer Tabelle bleiben wirkungslos', () => {

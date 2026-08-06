@@ -27,6 +27,23 @@
  *   Schliesst über erneuten Button-Klick, Eintragswahl, Escape und Aussenklick.
  *   Escape und Aussenklick verändern den Artikel nicht und melden kein onChange.
  *
+ * Sicherheitsabfragen:
+ *   Destruktive Aktionen (gefüllte Zeile/Spalte löschen, Baustein löschen,
+ *   Tabelle in Text umwandeln) fragen ausschliesslich über eine eigene
+ *   Bestätigungsfläche in der Editoroberfläche nach — nie über window.confirm.
+ *   Ein nativer Dialog hält den Renderer-Hauptthread an; ein Browser-Agent ohne
+ *   Dialogbehandlung bleibt dann im Eingabe-Dispatch stehen und die Seite wirkt
+ *   eingefroren. Der Eingabe-Handler kehrt hier stattdessen sofort zurück.
+ *
+ *   Beim ersten Klick wird nichts verändert: Aktion und Ziel werden in einem Ref
+ *   festgehalten (nicht im State — DOM-Knoten gehören nicht in den React-State).
+ *   Erst die Bestätigung führt die Aktion genau einmal aus, und zwar auf dem
+ *   erfassten Ziel statt auf der inzwischen möglicherweise verschobenen
+ *   Selektion. Vor der Ausführung wird geprüft, ob das Ziel noch gültig ist.
+ *
+ *   Die Bestätigungsfläche liegt ausserhalb des contentEditable und gelangt
+ *   deshalb nie in editor.innerHTML.
+ *
  * value/onChange-Vertrag:
  *   - onChange wird ausschliesslich gemeldet, wenn sich editor.innerHTML
  *     tatsächlich geändert hat — wirkungslose Aktionen bleiben folgenlos.
@@ -37,7 +54,7 @@
  * Blog-Editor (AdminBlogManager) bleibt unverändert.
  */
 
-import React, { useRef, useEffect, useCallback, useState } from 'react';
+import React, { useRef, useEffect, useCallback, useId, useState } from 'react';
 import {
   Bold, Italic, List, ListOrdered, Link as LinkIcon,
   Unlink, Globe, Undo2, Redo2, X, Plus, Table,
@@ -51,15 +68,16 @@ import {
   clampBoundarySelection,
   getBlockType,
   resolveSelectionContext,
+  resolveTableSelection,
   insertBlock,
   unwrapBlock,
   deleteBlock,
   tableInsertRowAbove,
   tableInsertRowBelow,
-  tableDeleteRow,
+  tableDeleteRowAt,
   tableInsertColLeft,
   tableInsertColRight,
-  tableDeleteCol,
+  tableDeleteColAt,
   tableToggleHeader,
   tableToText,
 } from './richTextBlockUtils';
@@ -397,6 +415,102 @@ function BlockActions({ blockType, onAction }) {
 }
 
 // ---------------------------------------------------------------------------
+// Bestätigungsfläche für destruktive Aktionen
+// ---------------------------------------------------------------------------
+
+/**
+ * Nicht blockierende Bestätigung innerhalb der Editoroberfläche.
+ *
+ * Ersetzt window.confirm vollständig. Der auslösende Eingabe-Handler kehrt
+ * sofort zurück; die Entscheidung fällt erst über einen der beiden Schalter
+ * oder über Escape.
+ *
+ * Bewusst kein aria-modal und kein Fokus-Käfig: der Editor bleibt währenddessen
+ * bedienbar. Die Aktion hängt nicht an der Selektion, sondern am erfassten
+ * Ziel — ein Klick in einen anderen Baustein kann deshalb nichts verfälschen.
+ *
+ * Die Schalter reagieren auf click (nicht auf mouseDown wie die Werkzeugleiste):
+ * sie sollen den Fokus erhalten dürfen, danach führt der Aufrufer ihn
+ * ausdrücklich in den Editor zurück.
+ *
+ * Die IDs für aria-labelledby/aria-describedby stammen aus useId() und sind
+ * damit je Instanz eindeutig: stehen zwei Editoren auf derselben Seite und ist
+ * in beiden eine Rückfrage offen, zeigt jede Beschriftung nachweislich auf den
+ * eigenen Text. Feste IDs würden hier doppelt vergeben und die zweite Rückfrage
+ * mit dem Titel der ersten beschriften.
+ *
+ * @param {object} props
+ * @param {string} props.title
+ * @param {string} props.message
+ * @param {string} props.confirmLabel
+ * @param {function} props.onConfirm
+ * @param {function} props.onCancel
+ */
+function ConfirmPanel({ title, message, confirmLabel, onConfirm, onCancel }) {
+  const cancelRef = useRef(null);
+  const uid = useId();
+  const titleId = `${uid}-block-confirm-title`;
+  const messageId = `${uid}-block-confirm-message`;
+
+  // Startfokus auf „Abbrechen": bei einer destruktiven Rückfrage ist der
+  // ungefährliche Ausgang die richtige Vorgabe.
+  useEffect(() => {
+    const btn = cancelRef.current;
+    if (btn && typeof btn.focus === 'function') btn.focus();
+  }, []);
+
+  // Escape bricht ab, unabhängig davon, wo der Fokus gerade steht. Der Listener
+  // besteht nur, solange die Rückfrage offen ist.
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key !== 'Escape') return;
+      e.preventDefault();
+      onCancel();
+    };
+    document.addEventListener('keydown', handleKeyDown, true);
+    return () => document.removeEventListener('keydown', handleKeyDown, true);
+  }, [onCancel]);
+
+  return (
+    <div
+      data-testid="block-confirm"
+      role="alertdialog"
+      aria-labelledby={titleId}
+      aria-describedby={messageId}
+      className="border-b border-red-200 bg-red-50 px-3 py-2 flex flex-wrap gap-2 items-center justify-between"
+    >
+      <div className="text-xs text-red-900">
+        <p id={titleId} data-testid="block-confirm-title" className="font-bold">
+          {title}
+        </p>
+        <p id={messageId} data-testid="block-confirm-message">
+          {message}
+        </p>
+      </div>
+      <div className="flex gap-2 items-center">
+        <button
+          type="button"
+          ref={cancelRef}
+          data-testid="block-confirm-cancel"
+          onClick={onCancel}
+          className="px-3 py-1.5 text-xs rounded bg-white text-gray-700 border border-gray-300 hover:bg-gray-100"
+        >
+          Abbrechen
+        </button>
+        <button
+          type="button"
+          data-testid="block-confirm-accept"
+          onClick={onConfirm}
+          className="px-3 py-1.5 text-xs font-bold rounded bg-red-600 text-white hover:bg-red-700"
+        >
+          {confirmLabel}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Einfüge-Menü
 // ---------------------------------------------------------------------------
 
@@ -563,9 +677,24 @@ export default function AdminRichTextEditor({
   // Fokus-Rahmen des aktuellen Bausteins — liegt ausserhalb des contentEditable
   const [focusRect, setFocusRect] = useState(null);
 
+  // Offene Sicherheitsabfrage.
+  //
+  // confirmUi   — ausschliesslich die sichtbaren Texte (State, weil gerendert)
+  // pendingRef  — der erfasste Aktionskontext inkl. DOM-Knoten (Ref, weil
+  //               DOM-Referenzen nicht in den React-State gehören und die
+  //               Ausführung sie synchron und ohne Renderzyklus braucht)
+  const [confirmUi, setConfirmUi] = useState(null);
+  const pendingRef = useRef(null);
+
   const resetBlockState = useCallback(() => {
     setBlockState({ inEditor: false, multiple: false, blockType: null });
     setFocusRect(null);
+  }, []);
+
+  /** Offene Rückfrage schliessen und den erfassten Zielkontext verwerfen */
+  const clearConfirm = useCallback(() => {
+    pendingRef.current = null;
+    setConfirmUi((prev) => (prev === null ? prev : null));
   }, []);
 
   // HTML in den Editor laden, wenn value sich von aussen ändert.
@@ -598,9 +727,12 @@ export default function AdminRichTextEditor({
     emittedValue.current = null;
     // Alle bisherigen Container- und Selektionsbezüge sind jetzt verwaist
     savedSelection.current = null;
+    // Dazu gehört auch eine noch offene Rückfrage: ihr Ziel stammt aus dem
+    // vorherigen Artikel und existiert nicht mehr.
+    clearConfirm();
     resetBlockState();
     setInsertError('');
-  }, [value, resetBlockState]);
+  }, [value, resetBlockState, clearConfirm]);
 
   // Schutz vor der Chromium-Auswahl über die Blockgrenze hinaus.
   //
@@ -820,27 +952,128 @@ export default function AdminRichTextEditor({
     notifyChange();
   }, [notifyChange, updateFormatState]);
 
-  // Tabelle in Text umwandeln — mit Sicherheitsabfrage
-  const runTableToText = useCallback((container, el) => {
-    if (getBlockType(container) !== 'table') {
-      return { success: false, message: BLOCK_MESSAGES.noTable };
+  // Ergebnis einer ausgeführten Baustein-Aktion verarbeiten.
+  // onChange läuft ausschliesslich bei tatsächlich erfolgter Änderung.
+  const finishAction = useCallback((result) => {
+    if (result && result.success) {
+      setInsertError('');
+      notifyChange();
+    } else {
+      setInsertError((result && result.message) || 'Aktion nicht möglich.');
     }
-    if (!window.confirm('Tabelle in normalen Text umwandeln? Die Zellinhalte bleiben erhalten.')) {
-      return { success: false, message: BLOCK_MESSAGES.cancelled };
-    }
-    return tableToText(container, el);
+    syncBlockState();
+  }, [notifyChange, syncBlockState]);
+
+  // Fokus nach einer Rückfrage kontrolliert in den Editor zurückführen
+  const returnFocusToEditor = useCallback(() => {
+    const el = editorRef.current;
+    if (el && typeof el.focus === 'function') el.focus({ preventScroll: true });
   }, []);
+
+  /**
+   * Rückfrage öffnen: Ziel festhalten, Oberfläche anzeigen, sofort zurückkehren.
+   *
+   * Es wird nichts gelöscht, nichts umgewandelt und kein onChange gemeldet.
+   *
+   * @param {{action: string, container: Element, cell: Element|null, blockType: string}} pending
+   * @param {{title: string, message: string, confirmLabel: string}} ui
+   */
+  const requestConfirm = useCallback((pending, ui) => {
+    pendingRef.current = pending;
+    setConfirmUi(ui);
+    setInsertError('');
+  }, []);
+
+  /**
+   * Ist das erfasste Ziel noch dasselbe und noch verwendbar?
+   *
+   * Zwischen Klick und Bestätigung kann beliebig viel geschehen sein: der
+   * Baustein kann entfernt, ersetzt oder durch einen externen Wechsel abgelöst
+   * worden sein. Erst wenn alle Prüfungen zutreffen, wird ausgeführt.
+   *
+   * @param {{container: Element, cell: Element|null, blockType: string}} pending
+   * @param {Element} el
+   * @returns {boolean}
+   */
+  const isPendingTargetValid = useCallback((pending, el) => {
+    const { container, cell, blockType } = pending;
+    if (!container || !container.isConnected || !el.contains(container)) return false;
+    // Gleicher Knoten, aber inzwischen andere Struktur → nicht mehr dasselbe Ziel
+    if (getBlockType(container) !== blockType) return false;
+    if (cell) {
+      if (!cell.isConnected || !el.contains(cell)) return false;
+      if (cell.closest('table') !== container) return false;
+    }
+    return true;
+  }, []);
+
+  // Rückfrage abbrechen: DOM unverändert, kein onChange, Zielkontext verworfen.
+  const handleConfirmCancel = useCallback(() => {
+    clearConfirm();
+    returnFocusToEditor();
+    syncBlockState();
+  }, [clearConfirm, returnFocusToEditor, syncBlockState]);
+
+  // Rückfrage bestätigen: Aktion genau einmal auf dem erfassten Ziel ausführen.
+  const handleConfirmAccept = useCallback(() => {
+    const el = editorRef.current;
+    const pending = pendingRef.current;
+
+    // Zuerst verbrauchen: ein zweiter Klick — auch als Doppelklick vor dem
+    // nächsten Render — findet keinen Kontext mehr und läuft ins Leere.
+    pendingRef.current = null;
+    setConfirmUi(null);
+
+    if (!el || !pending) {
+      returnFocusToEditor();
+      return;
+    }
+
+    if (!isPendingTargetValid(pending, el)) {
+      setInsertError(BLOCK_MESSAGES.staleBlock);
+      returnFocusToEditor();
+      syncBlockState();
+      return;
+    }
+
+    let result;
+    switch (pending.action) {
+      case 'delete':
+        result = deleteBlock(pending.container, el);
+        break;
+      case 'table-to-text':
+        result = tableToText(pending.container, el);
+        break;
+      // Die Aktion läuft auf der erfassten Zelle, nicht auf der Selektion.
+      // Die Bestätigung ist an dieser Stelle bereits erteilt — die
+      // Hilfsfunktion darf deshalb nie erneut nachfragen.
+      case 'del-row':
+        result = tableDeleteRowAt(pending.cell, el, { confirm: () => true });
+        break;
+      case 'del-col':
+        result = tableDeleteColAt(pending.cell, el, { confirm: () => true });
+        break;
+      default:
+        result = { success: false, message: 'Unbekannte Aktion.' };
+    }
+
+    finishAction(result);
+    returnFocusToEditor();
+  }, [finishAction, isPendingTargetValid, returnFocusToEditor, syncBlockState]);
 
   /**
    * Baustein-Aktionen.
    *
-   * Der Container wird immer frisch aus Selektion und editorRef ermittelt —
-   * es wird nie eine gespeicherte DOM-Referenz verwendet. onChange läuft
-   * ausschliesslich bei tatsächlich erfolgter Änderung.
+   * Ungefährliche Aktionen laufen unmittelbar; der Container wird dafür frisch
+   * aus Selektion und editorRef ermittelt. Destruktive Aktionen führen hier
+   * nichts aus: sie erfassen ihr Ziel und öffnen die Rückfrage.
    */
   const handleBlockAction = useCallback((action) => {
     const el = editorRef.current;
     if (!el) return;
+
+    // Eine noch offene Rückfrage gehört zu einem anderen Klick — sie verfällt.
+    clearConfirm();
 
     const ctx = resolveSelectionContext(el);
     if (!ctx.inEditor || ctx.multiple || !ctx.container) {
@@ -852,31 +1085,87 @@ export default function AdminRichTextEditor({
     const container = ctx.container;
     const blockType = getBlockType(container);
     const isTable = blockType === 'table';
-    let result;
 
-    switch (action) {
-      case 'unwrap':
-        // Sicherheitsnetz: für Tabellen niemals generisch entkleiden
-        result = isTable ? runTableToText(container, el) : unwrapBlock(container, el);
-        break;
-      case 'table-to-text':
-        result = runTableToText(container, el);
-        break;
-      case 'delete': {
-        const label = blockType ? BLOCK_LABELS[blockType] : 'diesen Baustein';
-        if (!window.confirm(`„${label}" vollständig löschen? Alle Inhalte gehen verloren.`)) {
-          result = { success: false, message: BLOCK_MESSAGES.cancelled };
-          break;
-        }
-        result = deleteBlock(container, el);
-        break;
+    // --- Aktionen mit Rückfrage ------------------------------------------
+    if (action === 'delete') {
+      const label = blockType ? BLOCK_LABELS[blockType] : 'diesen Baustein';
+      requestConfirm(
+        { action: 'delete', container, cell: null, blockType },
+        {
+          title: 'Baustein löschen',
+          message: `„${label}" vollständig löschen? Alle Inhalte gehen verloren.`,
+          confirmLabel: 'Baustein löschen',
+        },
+      );
+      return;
+    }
+
+    // Sicherheitsnetz: für Tabellen niemals generisch entkleiden
+    if (action === 'table-to-text' || (action === 'unwrap' && isTable)) {
+      if (!isTable) {
+        setInsertError(BLOCK_MESSAGES.noTable);
+        syncBlockState();
+        return;
       }
+      requestConfirm(
+        { action: 'table-to-text', container, cell: null, blockType: 'table' },
+        {
+          title: 'Tabelle in Text umwandeln',
+          message: 'Tabelle in normalen Text umwandeln? Die Zellinhalte bleiben erhalten.',
+          confirmLabel: 'Umwandeln',
+        },
+      );
+      return;
+    }
+
+    if (action === 'del-row' || action === 'del-col') {
+      const target = resolveTableSelection(el);
+      if (!target.ok) {
+        setInsertError(target.message);
+        syncBlockState();
+        return;
+      }
+
+      // Ob überhaupt gefragt werden muss, entscheidet allein die Hilfsfunktion.
+      // Eine ablehnende Bestätigung lässt sie ohne jede DOM-Änderung abbrechen —
+      // leere Zeilen und Spalten löscht sie dagegen sofort, unverändert zum
+      // bisherigen Verhalten.
+      let needsConfirm = false;
+      const probe = { confirm: () => { needsConfirm = true; return false; } };
+      const result = action === 'del-row'
+        ? tableDeleteRowAt(target.cell, el, probe)
+        : tableDeleteColAt(target.cell, el, probe);
+
+      if (needsConfirm) {
+        requestConfirm(
+          { action, container: target.table, cell: target.cell, blockType: 'table' },
+          action === 'del-row'
+            ? {
+              title: 'Zeile löschen',
+              message: BLOCK_MESSAGES.confirmRow,
+              confirmLabel: 'Zeile löschen',
+            }
+            : {
+              title: 'Spalte löschen',
+              message: BLOCK_MESSAGES.confirmCol,
+              confirmLabel: 'Spalte löschen',
+            },
+        );
+        return;
+      }
+
+      finishAction(result);
+      return;
+    }
+
+    // --- Aktionen ohne Rückfrage -----------------------------------------
+    let result;
+    switch (action) {
+      case 'unwrap':        result = unwrapBlock(container, el); break;
       case 'row-above':     result = tableInsertRowAbove(el); break;
       case 'row-below':     result = tableInsertRowBelow(el); break;
-      case 'del-row':       result = tableDeleteRow(el); break;
       case 'col-left':      result = tableInsertColLeft(el); break;
       case 'col-right':     result = tableInsertColRight(el); break;
-      case 'del-col':       result = tableDeleteCol(el); break;
       case 'toggle-header':
         result = isTable
           ? tableToggleHeader(container)
@@ -886,14 +1175,8 @@ export default function AdminRichTextEditor({
         result = { success: false, message: 'Unbekannte Aktion.' };
     }
 
-    if (result && result.success) {
-      setInsertError('');
-      notifyChange();
-    } else {
-      setInsertError((result && result.message) || 'Aktion nicht möglich.');
-    }
-    syncBlockState();
-  }, [notifyChange, runTableToText, syncBlockState]);
+    finishAction(result);
+  }, [clearConfirm, finishAction, requestConfirm, syncBlockState]);
 
   // Tastaturkürzel
   const handleKeyDown = (e) => {
@@ -1021,6 +1304,18 @@ export default function AdminRichTextEditor({
         <BlockActions
           blockType={blockState.blockType}
           onAction={handleBlockAction}
+        />
+      )}
+
+      {/* Sicherheitsabfrage — ausserhalb des contentEditable, damit weder die
+          Texte noch die Schalter je in editor.innerHTML landen können. */}
+      {confirmUi && (
+        <ConfirmPanel
+          title={confirmUi.title}
+          message={confirmUi.message}
+          confirmLabel={confirmUi.confirmLabel}
+          onConfirm={handleConfirmAccept}
+          onCancel={handleConfirmCancel}
         />
       )}
 
