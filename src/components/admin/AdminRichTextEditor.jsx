@@ -54,7 +54,7 @@
  * Blog-Editor (AdminBlogManager) bleibt unverändert.
  */
 
-import React, { useRef, useEffect, useCallback, useId, useState } from 'react';
+import React, { useRef, useEffect, useLayoutEffect, useCallback, useId, useState } from 'react';
 import {
   Bold, Italic, List, ListOrdered, Link as LinkIcon,
   Unlink, Globe, Undo2, Redo2, X, Plus, Table,
@@ -87,6 +87,9 @@ import {
 // ---------------------------------------------------------------------------
 
 const HEADING_LEVELS = ['H2', 'H3', 'H4'];
+
+/** Sicherheitsabstand des Einfüge-Menüs zum Viewportrand (px) */
+const MENU_EDGE_MARGIN = 8;
 
 /** Reihenfolge der Bausteine im Einfüge-Menü */
 const INSERT_BLOCK_TYPES = [
@@ -532,13 +535,60 @@ function ConfirmPanel({ title, message, confirmLabel, onConfirm, onCancel }) {
  */
 function InsertMenu({ onInsert, disabled }) {
   const [open, setOpen] = useState(false);
+  // Horizontale Korrektur (px) gegenüber der Standardposition `left: 0`.
+  // Der Trigger steht in einer flex-wrap-Toolbar — seine Position gegenüber
+  // dem Viewport ist je nach Breite (390/768/1280) nicht vorhersagbar genug
+  // für eine rein statische CSS-Ausrichtung. Deshalb wird beim Öffnen und bei
+  // jedem Grössenwechsel gemessen und nötigenfalls in den sichtbaren Bereich
+  // gerückt (siehe measureAndClamp).
+  const [menuOffsetX, setMenuOffsetX] = useState(0);
   const containerRef = useRef(null);
+  const menuRef = useRef(null);
   const menuId = 'insert-block-menu';
 
   const handleInsert = (type) => {
     setOpen(false);
     onInsert(type);
   };
+
+  /**
+   * Misst das offene Menü und korrigiert seinen horizontalen Versatz so, dass
+   * es mit MENU_EDGE_MARGIN Abstand im Viewport bleibt.
+   *
+   * Der Versatz wird additiv fortgeschrieben (prev + delta), weil das gemessene
+   * Rechteck den bereits angewandten Versatz enthält. Nur so liefert ein
+   * zweiter Aufruf — etwa nach einem Resize — wieder ein richtiges Ergebnis
+   * statt den alten Wert zu ersetzen.
+   *
+   * Bei delta === 0 wird kein State gesetzt; damit kann auch ein häufig
+   * feuerndes resize-Ereignis keine Renderschleife auslösen.
+   *
+   * Randfall: unterhalb von etwa 2 × Rand + Menübreite (~216 px) sind beide
+   * Ränder mathematisch nicht gleichzeitig erfüllbar. Dann gewinnt der linke
+   * Rand, weil die Einträge von links gelesen werden.
+   */
+  const measureAndClamp = useCallback(() => {
+    const menu = menuRef.current;
+    if (!menu) return;
+
+    const rect = menu.getBoundingClientRect();
+    let delta = 0;
+    if (rect.right > window.innerWidth - MENU_EDGE_MARGIN) {
+      delta -= rect.right - (window.innerWidth - MENU_EDGE_MARGIN);
+    }
+    if (rect.left + delta < MENU_EDGE_MARGIN) {
+      delta += MENU_EDGE_MARGIN - (rect.left + delta);
+    }
+    if (delta === 0) return;
+    setMenuOffsetX((prev) => prev + delta);
+  }, []);
+
+  // Vor dem ersten Paint messen und in den Viewport klemmen — verhindert
+  // Aufblitzen an falscher Position.
+  useLayoutEffect(() => {
+    if (!open) return;
+    measureAndClamp();
+  }, [open, measureAndClamp]);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -556,15 +606,27 @@ function InsertMenu({ onInsert, disabled }) {
       setOpen(false);
     };
 
+    // Ein Grössenwechsel bei offenem Menü verschiebt den Trigger (die Toolbar
+    // bricht anders um) — derselbe Rechenweg klemmt danach erneut.
+    const handleResize = () => measureAndClamp();
+
     document.addEventListener('keydown', handleKeyDown);
     document.addEventListener('pointerdown', handleOutsidePointer, true);
     document.addEventListener('mousedown', handleOutsidePointer, true);
+    window.addEventListener('resize', handleResize);
 
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
       document.removeEventListener('pointerdown', handleOutsidePointer, true);
       document.removeEventListener('mousedown', handleOutsidePointer, true);
+      window.removeEventListener('resize', handleResize);
     };
+  }, [open, measureAndClamp]);
+
+  // Beim Schliessen zurücksetzen, damit ein Neuöffnen nie kurzzeitig die
+  // Korrektur einer vorherigen (ggf. anderen) Trigger-Position zeigt.
+  useEffect(() => {
+    if (!open) setMenuOffsetX(0);
   }, [open]);
 
   return (
@@ -588,9 +650,11 @@ function InsertMenu({ onInsert, disabled }) {
         <div
           id={menuId}
           data-testid="insert-menu"
+          ref={menuRef}
           role="menu"
           aria-label="Baustein einfügen"
-          className="absolute left-0 top-full mt-1 z-50 bg-white border border-gray-200 rounded-lg shadow-lg min-w-[200px] py-1"
+          className="absolute top-full mt-1 z-50 bg-white border border-gray-200 rounded-lg shadow-lg min-w-[200px] py-1"
+          style={{ left: `${menuOffsetX}px` }}
           onMouseDown={(e) => e.preventDefault()}
         >
           {INSERT_BLOCK_TYPES.map((type) => (
@@ -1203,11 +1267,15 @@ export default function AdminRichTextEditor({
   `;
 
   return (
-    <div className="border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+    // Kein overflow-hidden hier: die Sticky-Aktionsleiste braucht den
+    // Dokument-Scroll als Bezug, ein overflow-hidden-Vorfahre würde jeden
+    // sticky-Nachfahren stattdessen auf diese (nicht scrollende) Box
+    // beschränken. Toolbar und Fusszeile runden ihre Ecken deshalb selbst.
+    <div className="border border-gray-200 rounded-lg shadow-sm">
 
       {/* Toolbar */}
       <div
-        className="bg-gray-50 border-b border-gray-200 p-2 flex flex-wrap gap-1 items-center"
+        className="bg-gray-50 border-b border-gray-200 rounded-t-lg p-2 flex flex-wrap gap-1 items-center"
         role="toolbar"
         aria-label="Text-Formatierung"
       >
@@ -1299,24 +1367,33 @@ export default function AdminRichTextEditor({
         />
       )}
 
-      {/* Baustein-Aktions-Leiste — nur bei eindeutiger Selektion im Editor */}
-      {blockState.inEditor && !blockState.multiple && blockState.blockType && (
-        <BlockActions
-          blockType={blockState.blockType}
-          onAction={handleBlockAction}
-        />
-      )}
+      {/* Baustein-Aktionen + Sicherheitsabfrage.
+          Unterhalb des Desktop-Breakpoints (lg) sticky knapp unter der
+          Hauptnavigation (h-20 = top-20, z-index unter deren z-50): bei
+          langen Artikeln bleibt die Leiste beim Scrollen zum aktiven,
+          weit unten liegenden Baustein erreichbar. Auf Desktop bleibt das
+          bisherige statische Verhalten unverändert. */}
+      {((blockState.inEditor && !blockState.multiple && blockState.blockType) || confirmUi) && (
+        <div className="sticky top-20 z-40 lg:static lg:top-auto lg:z-auto">
+          {blockState.inEditor && !blockState.multiple && blockState.blockType && (
+            <BlockActions
+              blockType={blockState.blockType}
+              onAction={handleBlockAction}
+            />
+          )}
 
-      {/* Sicherheitsabfrage — ausserhalb des contentEditable, damit weder die
-          Texte noch die Schalter je in editor.innerHTML landen können. */}
-      {confirmUi && (
-        <ConfirmPanel
-          title={confirmUi.title}
-          message={confirmUi.message}
-          confirmLabel={confirmUi.confirmLabel}
-          onConfirm={handleConfirmAccept}
-          onCancel={handleConfirmCancel}
-        />
+          {/* Sicherheitsabfrage — ausserhalb des contentEditable, damit weder
+              die Texte noch die Schalter je in editor.innerHTML landen können. */}
+          {confirmUi && (
+            <ConfirmPanel
+              title={confirmUi.title}
+              message={confirmUi.message}
+              confirmLabel={confirmUi.confirmLabel}
+              onConfirm={handleConfirmAccept}
+              onCancel={handleConfirmCancel}
+            />
+          )}
+        </div>
       )}
 
       {/* Einfüge-Fehlermeldung */}
@@ -1338,8 +1415,14 @@ export default function AdminRichTextEditor({
         </div>
       )}
 
-      {/* WYSIWYG-Editierbereich */}
-      <div className="relative" ref={editorShellRef}>
+      {/* WYSIWYG-Editierbereich.
+          `overflow-hidden` begrenzt hier ausschliesslich den Fokus-Rahmen:
+          bei einer Tabelle, die breiter als der Editor ist, ist auch das
+          Overlay breiter als der Editor und würde die Seite sonst selbst
+          horizontal verbreitern. Die Sticky-Aktionsleiste ist ein
+          Geschwisterelement dieser Hülle, kein Nachfahre — sie bleibt davon
+          unberührt. */}
+      <div className="relative overflow-hidden" ref={editorShellRef}>
         <div
           id={id}
           ref={editorRef}
@@ -1355,6 +1438,15 @@ export default function AdminRichTextEditor({
           onPaste={handlePaste}
           className={[
             'w-full p-4 text-sm leading-relaxed outline-none',
+            // Editor-Tabellen sind direkte table-Elemente ohne .table-wrapper
+            // (anders als im öffentlichen Renderer). Eine über die
+            // Tabellenaktionen verbreiterte Tabelle würde sonst die ganze
+            // Admin-Seite horizontal scrollbar machen. Der Overflow bleibt
+            // deshalb hier lokal — der Scrollcontainer ist zugleich das
+            // Element, auf dem der Fokus-Rahmen bereits einen scroll-Listener
+            // hat, sodass das Overlay seine x-Position ohne Zusatzlogik
+            // nachführt.
+            'overflow-x-auto',
             'prose prose-sm max-w-none',
             // Öffentliche Baustein-Gestaltung im Editor wiederverwenden
             'prose-ratgeber',
@@ -1388,7 +1480,7 @@ export default function AdminRichTextEditor({
       </div>
 
       {/* Fusszeile */}
-      <div className="bg-gray-50 border-t border-gray-200 px-3 py-1.5 flex items-center justify-between">
+      <div className="bg-gray-50 border-t border-gray-200 rounded-b-lg px-3 py-1.5 flex items-center justify-between">
         <p className="text-xs text-gray-400">
           WYSIWYG-Editor · HTML wird serverseitig sanitiert beim Speichern
         </p>
