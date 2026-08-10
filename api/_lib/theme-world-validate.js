@@ -19,6 +19,15 @@ export const VALID_URL_SEGMENTS = ['beruflich', 'privat-hobby', 'kinder-jugend']
 export const META_TITLE_MAX = 60;
 export const VALID_STATUSES = ['draft', 'published', 'archived'];
 export const VALID_DELIVERY_TYPES = ['online_live', 'self_study', 'presence'];
+
+// Regionslinks speichern den DB-Wert, nicht den Such-URL-Wert.
+// theme_world_regions.delivery_param unterliegt der Constraint
+// regions_delivery_param_check (20260714_create_theme_worlds.sql:404),
+// die 'in_person' erlaubt — nicht 'presence'.
+// Der Adapter kanonisiert beim Aufbau des Suchlinks via
+// normalizeDeliveryTypeKey: in_person → presence (themeWorldAdapter.js:464).
+export const VALID_REGION_DELIVERY_PARAMS = ['online_live', 'self_study', 'in_person'];
+
 export const VALID_TRUST_ITEM_TYPES = ['label', 'editorial', 'info'];
 
 // Erlaubte Keys in search_config JSONB
@@ -586,21 +595,25 @@ export function validateSpecialty(data) {
 
 /**
  * Validiert einen Regionslink.
+ *
+ * loc_param und delivery_param sind BEIDE optional und dürfen gleichzeitig
+ * null/leer sein. Ein solcher Eintrag repräsentiert einen Link ohne
+ * Standort- und Lieferungsfilter (z.B. "Ganze Schweiz"), der auf alle
+ * passenden Kurse der Themenwelt zeigt.
+ *
+ * Das entspricht dem DB-Vertrag: die ursprüngliche Constraint
+ * regions_params_check wurde in
+ * supabase/migrations/20260718_relax_regions_params_constraint.sql
+ * ersatzlos entfernt. Bestehende Sport-/Yoga-Daten nutzen diesen Zustand.
+ *
+ * Ein TATSÄCHLICH GESETZTER, ungültiger delivery_param bleibt ein Fehler.
  */
 export function validateRegion(data) {
   const errors = [];
   requireText(errors, data, 'label_de', 100);
 
-  // Mindestens loc_param oder delivery_param muss gesetzt sein
-  const hasLoc = data.loc_param && typeof data.loc_param === 'string' && data.loc_param.trim();
-  const hasDelivery = data.delivery_param && VALID_DELIVERY_TYPES.includes(data.delivery_param);
-
-  if (!hasLoc && !hasDelivery) {
-    collect(errors, 'loc_param/delivery_param', 'Mindestens loc_param oder delivery_param muss gesetzt sein.');
-  }
-
-  if (data.delivery_param && !VALID_DELIVERY_TYPES.includes(data.delivery_param)) {
-    collect(errors, 'delivery_param', `Ungültiger Wert. Erlaubt: ${VALID_DELIVERY_TYPES.join(', ')}.`);
+  if (data.delivery_param && !VALID_REGION_DELIVERY_PARAMS.includes(data.delivery_param)) {
+    collect(errors, 'delivery_param', `Ungültiger Wert. Erlaubt: ${VALID_REGION_DELIVERY_PARAMS.join(', ')}.`);
   }
 
   return { valid: errors.length === 0, errors };

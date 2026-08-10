@@ -59,41 +59,60 @@ function validateList(items, validateFn, labelPrefix) {
 }
 
 /**
- * Atomarer Listenersatz: Löscht alle vorhandenen Einträge und fügt neue ein.
- * Beide Operationen laufen sequenziell (kein echtes Transaktions-API in Supabase JS).
+ * Erlaubte Entitätstypen für den Listenersatz.
+ * Muss exakt der Whitelist in der RPC replace_theme_world_subentities entsprechen.
  */
-async function replaceList(supabaseAdmin, table, themeWorldId, items) {
-  // 1. Bestehende Einträge löschen
-  const { error: deleteError } = await supabaseAdmin
-    .from(table)
-    .delete()
-    .eq('theme_world_id', themeWorldId);
+const REPLACE_ENTITY_TYPES = new Set([
+  'faqs',
+  'editorial_sections',
+  'specialties',
+  'regions',
+  'trust_items',
+]);
 
-  if (deleteError) {
-    return { error: `Löschen fehlgeschlagen: ${deleteError.message}` };
-  }
-
-  // 2. Neue Einträge einfügen (falls vorhanden)
-  if (items.length === 0) {
-    return { data: [] };
+/**
+ * Transaktionaler Listenersatz über die PostgreSQL-RPC
+ * replace_theme_world_subentities.
+ *
+ * DELETE und INSERT laufen dort in EINEM Datenbankaufruf und damit in
+ * derselben Transaktion. Schlägt ein Insert fehl (Unique-/Check-Constraint,
+ * NOT NULL, …), rollt PostgreSQL die gesamte Operation inklusive des DELETE
+ * zurück — die vorherige Liste bleibt vollständig erhalten.
+ *
+ * Bewusst KEINE Wiederherstellungslogik in JavaScript: die Atomarität
+ * stammt ausschliesslich aus der Datenbanktransaktion.
+ *
+ * Ein leeres Array löscht die Liste beabsichtigt.
+ *
+ * @param {import('@supabase/supabase-js').SupabaseClient} supabaseAdmin
+ * @param {string} entityType - faqs | editorial_sections | specialties | regions | trust_items
+ * @param {string} themeWorldId
+ * @param {object[]} items - bereits validierte und sanitisierte Einträge
+ * @returns {Promise<{ count: number } | { error: string }>}
+ */
+async function replaceList(supabaseAdmin, entityType, themeWorldId, items) {
+  // Defense-in-depth: der Typ stammt aus statischem Code, nie aus Clientdaten.
+  // Die RPC prüft ihn zusätzlich serverseitig.
+  if (!REPLACE_ENTITY_TYPES.has(entityType)) {
+    return { error: `Unbekannter Entity-Typ: ${entityType}` };
   }
 
   const payload = items.map((item, idx) => ({
     ...item,
-    theme_world_id: themeWorldId,
     sort_order: typeof item.sort_order === 'number' ? item.sort_order : idx,
   }));
 
-  const { data, error: insertError } = await supabaseAdmin
-    .from(table)
-    .insert(payload)
-    .select('id, sort_order');
+  const { data, error } = await supabaseAdmin.rpc('replace_theme_world_subentities', {
+    p_theme_world_id: themeWorldId,
+    p_entity_type: entityType,
+    p_items: payload,
+  });
 
-  if (insertError) {
-    return { error: `Einfügen fehlgeschlagen: ${insertError.message}` };
+  if (error) {
+    return { error: `Listenersatz fehlgeschlagen: ${error.message}` };
   }
 
-  return { data: data || [] };
+  return { count: typeof data?.count === 'number' ? data.count : payload.length };
 }
 
 export default async function handler(req, res) {
@@ -193,14 +212,14 @@ export default async function handler(req, res) {
         is_active: item.is_active !== false,
       }));
 
-      const result = await replaceList(supabaseAdmin, 'theme_world_faqs', themeWorldId, sanitizedItems);
+      const result = await replaceList(supabaseAdmin, 'faqs', themeWorldId, sanitizedItems);
 
       if (result.error) {
         console.error('[admin-sub] replace-faqs error:', result.error);
         return res.status(500).json({ error: result.error });
       }
 
-      return res.status(200).json({ ok: true, count: result.data.length });
+      return res.status(200).json({ ok: true, count: result.count });
     }
 
     // ============================================================
@@ -231,14 +250,14 @@ export default async function handler(req, res) {
         is_active: item.is_active !== false,
       }));
 
-      const result = await replaceList(supabaseAdmin, 'theme_world_editorial_sections', themeWorldId, sanitizedItems);
+      const result = await replaceList(supabaseAdmin, 'editorial_sections', themeWorldId, sanitizedItems);
 
       if (result.error) {
         console.error('[admin-sub] replace-editorial error:', result.error);
         return res.status(500).json({ error: result.error });
       }
 
-      return res.status(200).json({ ok: true, count: result.data.length });
+      return res.status(200).json({ ok: true, count: result.count });
     }
 
     // ============================================================
@@ -263,14 +282,14 @@ export default async function handler(req, res) {
         is_active: item.is_active !== false,
       }));
 
-      const result = await replaceList(supabaseAdmin, 'theme_world_specialties', themeWorldId, sanitizedItems);
+      const result = await replaceList(supabaseAdmin, 'specialties', themeWorldId, sanitizedItems);
 
       if (result.error) {
         console.error('[admin-sub] replace-specialties error:', result.error);
         return res.status(500).json({ error: result.error });
       }
 
-      return res.status(200).json({ ok: true, count: result.data.length });
+      return res.status(200).json({ ok: true, count: result.count });
     }
 
     // ============================================================
@@ -296,14 +315,14 @@ export default async function handler(req, res) {
         is_active: item.is_active !== false,
       }));
 
-      const result = await replaceList(supabaseAdmin, 'theme_world_regions', themeWorldId, sanitizedItems);
+      const result = await replaceList(supabaseAdmin, 'regions', themeWorldId, sanitizedItems);
 
       if (result.error) {
         console.error('[admin-sub] replace-regions error:', result.error);
         return res.status(500).json({ error: result.error });
       }
 
-      return res.status(200).json({ ok: true, count: result.data.length });
+      return res.status(200).json({ ok: true, count: result.count });
     }
 
     // ============================================================
@@ -332,14 +351,14 @@ export default async function handler(req, res) {
         is_active: item.is_active !== false,
       }));
 
-      const result = await replaceList(supabaseAdmin, 'theme_world_trust_items', themeWorldId, sanitizedItems);
+      const result = await replaceList(supabaseAdmin, 'trust_items', themeWorldId, sanitizedItems);
 
       if (result.error) {
         console.error('[admin-sub] replace-trust error:', result.error);
         return res.status(500).json({ error: result.error });
       }
 
-      return res.status(200).json({ ok: true, count: result.data.length });
+      return res.status(200).json({ ok: true, count: result.count });
     }
 
     // ============================================================

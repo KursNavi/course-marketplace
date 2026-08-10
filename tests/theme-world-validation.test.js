@@ -25,6 +25,8 @@ import {
   validatePublishScenario,
   VALID_DB_SEGMENTS,
   VALID_URL_SEGMENTS,
+  VALID_DELIVERY_TYPES,
+  VALID_REGION_DELIVERY_PARAMS,
 } from '../api/_lib/theme-world-validate.js';
 
 // ============================================================
@@ -377,24 +379,141 @@ describe('validateFaq', () => {
 // ============================================================
 
 describe('validateRegion', () => {
+  // Fall 1: nur loc_param
   it('akzeptiert Region mit loc_param', () => {
     expect(validateRegion({ label_de: 'Zürich', loc_param: 'Zürich' }).valid).toBe(true);
   });
 
+  // Fall 2: nur delivery_param
   it('akzeptiert Region mit delivery_param', () => {
     expect(validateRegion({ label_de: 'Online', delivery_param: 'online_live' }).valid).toBe(true);
   });
 
-  it('lehnt Region ohne loc_param und delivery_param ab', () => {
-    const result = validateRegion({ label_de: 'Ohne Parameter' });
-    expect(result.valid).toBe(false);
-    expect(result.errors.some(e => e.includes('loc_param/delivery_param'))).toBe(true);
+  // Fall 3: beide gesetzt
+  it('akzeptiert Region mit loc_param UND delivery_param', () => {
+    const result = validateRegion({
+      label_de: 'Zürich online',
+      loc_param: 'Zürich',
+      delivery_param: 'online_live',
+    });
+    expect(result.valid).toBe(true);
   });
 
+  // ------------------------------------------------------------------
+  // Release-Blocker 2: Regionen-Validierung widersprach dem DB-Modell.
+  //
+  // Die Constraint regions_params_check wurde in
+  // supabase/migrations/20260718_relax_regions_params_constraint.sql
+  // ersatzlos entfernt: loc_param = NULL UND delivery_param = NULL ist
+  // ein gültiger Zustand ("Ganze Schweiz" — Link ohne Standort-/
+  // Lieferungsfilter). Bestehende Sport-/Yoga-Daten nutzen ihn.
+  //
+  // validateRegion darf diesen Fall deshalb NICHT mehr ablehnen.
+  // ------------------------------------------------------------------
+  describe('Fall 4: beide Parameter leer ("Ganze Schweiz")', () => {
+    it('akzeptiert "Ganze Schweiz" mit loc_param=null und delivery_param=null', () => {
+      const result = validateRegion({
+        label_de: 'Ganze Schweiz',
+        loc_param: null,
+        delivery_param: null,
+      });
+      expect(result.valid).toBe(true);
+      expect(result.errors).toEqual([]);
+    });
+
+    it('akzeptiert Region ganz ohne loc_param/delivery_param-Schlüssel', () => {
+      const result = validateRegion({ label_de: 'Ganze Schweiz' });
+      expect(result.valid).toBe(true);
+      expect(result.errors).toEqual([]);
+    });
+
+    it('akzeptiert leere Strings für beide Parameter (API normalisiert sie zu null)', () => {
+      const result = validateRegion({
+        label_de: 'Ganze Schweiz',
+        loc_param: '',
+        delivery_param: '',
+      });
+      expect(result.valid).toBe(true);
+      expect(result.errors).toEqual([]);
+    });
+
+    it('meldet keinen loc_param/delivery_param-Fehler mehr', () => {
+      const result = validateRegion({ label_de: 'Ohne Parameter' });
+      expect(result.errors.some(e => e.includes('loc_param/delivery_param'))).toBe(false);
+    });
+  });
+
+  // ------------------------------------------------------------------
+  // Release-Blocker 3: delivery_param wurde gegen das Such-Vokabular
+  // geprüft statt gegen das DB-Vokabular.
+  //
+  // Der Vertrag ist zweistufig:
+  //   - theme_world_regions.delivery_param speichert den DB-Wert.
+  //     Constraint regions_delivery_param_check
+  //     (20260714_create_theme_worlds.sql:404) erlaubt 'in_person'.
+  //   - Der Such-/URL-Layer nutzt 'presence' (VALID_DELIVERY_TYPES).
+  //   - themeWorldAdapter.js:464 kanonisiert in_person → presence.
+  //
+  // validateRegion muss deshalb gegen VALID_REGION_DELIVERY_PARAMS
+  // prüfen, nicht gegen VALID_DELIVERY_TYPES.
+  // ------------------------------------------------------------------
+  describe('Fall 5: delivery_param folgt dem DB-Vokabular', () => {
+    it('akzeptiert delivery_param "in_person" (DB-Wert für Vor Ort)', () => {
+      const result = validateRegion({ label_de: 'Vor Ort', delivery_param: 'in_person' });
+      expect(result.valid).toBe(true);
+      expect(result.errors).toEqual([]);
+    });
+
+    it('akzeptiert "in_person" zusammen mit loc_param', () => {
+      const result = validateRegion({
+        label_de: 'Zürich vor Ort',
+        loc_param: 'Zürich',
+        delivery_param: 'in_person',
+      });
+      expect(result.valid).toBe(true);
+    });
+
+    it('lehnt delivery_param "presence" ab (Such-Wert, verletzt DB-Constraint)', () => {
+      const result = validateRegion({ label_de: 'Vor Ort', delivery_param: 'presence' });
+      expect(result.valid).toBe(false);
+      expect(result.errors.some(e => e.includes('delivery_param'))).toBe(true);
+    });
+
+    it('akzeptiert weiterhin online_live und self_study', () => {
+      expect(validateRegion({ label_de: 'Online', delivery_param: 'online_live' }).valid).toBe(true);
+      expect(validateRegion({ label_de: 'Selbststudium', delivery_param: 'self_study' }).valid).toBe(true);
+    });
+  });
+
+  // ------------------------------------------------------------------
+  // Weiterhin ungültig
+  // ------------------------------------------------------------------
   it('lehnt ungültigen delivery_param ab', () => {
     const result = validateRegion({ label_de: 'Test', delivery_param: 'at_home' });
     expect(result.valid).toBe(false);
     expect(result.errors.some(e => e.includes('delivery_param'))).toBe(true);
+  });
+
+  it('lehnt ungültigen delivery_param auch ohne loc_param ab', () => {
+    const result = validateRegion({
+      label_de: 'Ganze Schweiz',
+      loc_param: null,
+      delivery_param: 'irgendwas',
+    });
+    expect(result.valid).toBe(false);
+    expect(result.errors.some(e => e.includes('delivery_param'))).toBe(true);
+  });
+
+  it('lehnt fehlendes label_de ab', () => {
+    const result = validateRegion({ loc_param: 'Bern' });
+    expect(result.valid).toBe(false);
+    expect(result.errors.some(e => e.includes('label_de'))).toBe(true);
+  });
+
+  it('lehnt leeres label_de auch bei sonst gültiger Region ab', () => {
+    const result = validateRegion({ label_de: '   ', loc_param: null, delivery_param: null });
+    expect(result.valid).toBe(false);
+    expect(result.errors.some(e => e.includes('label_de'))).toBe(true);
   });
 });
 
@@ -553,5 +672,103 @@ describe('validatePublishScenario', () => {
     const result = validatePublishScenario(scenario, validPublishedThemeWorld());
     expect(result.valid).toBe(false);
     expect(result.errors.some(e => e.includes('teaser_de'))).toBe(true);
+  });
+});
+
+// ============================================================
+// Delivery-Vertrag: zwei Vokabulare, klar getrennt
+// ============================================================
+//
+// Such-/URL-Layer  → 'presence'    (VALID_DELIVERY_TYPES)
+// Regions-DB-Layer → 'in_person'   (VALID_REGION_DELIVERY_PARAMS)
+// Brücke           → themeWorldAdapter.js:464 normalisiert in_person → presence
+//
+// Diese Trennung ist beabsichtigt und wird hier festgeschrieben, damit die
+// beiden Listen nicht versehentlich wieder zusammengeführt werden.
+
+describe('Delivery-Vertrag — Trennung der Vokabulare', () => {
+  it('Such-Vokabular enthält presence, nicht in_person', () => {
+    expect(VALID_DELIVERY_TYPES).toContain('presence');
+    expect(VALID_DELIVERY_TYPES).not.toContain('in_person');
+  });
+
+  it('Regions-Vokabular enthält in_person, nicht presence', () => {
+    expect(VALID_REGION_DELIVERY_PARAMS).toContain('in_person');
+    expect(VALID_REGION_DELIVERY_PARAMS).not.toContain('presence');
+  });
+
+  it('beide Vokabulare teilen online_live und self_study', () => {
+    for (const shared of ['online_live', 'self_study']) {
+      expect(VALID_DELIVERY_TYPES).toContain(shared);
+      expect(VALID_REGION_DELIVERY_PARAMS).toContain(shared);
+    }
+  });
+
+  it('Regions-Vokabular deckt sich mit regions_delivery_param_check', () => {
+    // 20260714_create_theme_worlds.sql:404
+    expect([...VALID_REGION_DELIVERY_PARAMS].sort()).toEqual(
+      ['in_person', 'online_live', 'self_study'],
+    );
+  });
+});
+
+describe('Delivery-Vertrag — Such-/CTA-Layer bleibt unverändert', () => {
+  it('predefined_searches akzeptiert presence', () => {
+    expect(validatePredefinedSearches([{ label_de: 'Vor Ort', delivery: 'presence' }])).toHaveLength(0);
+  });
+
+  it('predefined_searches lehnt in_person ab (Alias, nicht kanonisch)', () => {
+    const errors = validatePredefinedSearches([{ label_de: 'Vor Ort', delivery: 'in_person' }]);
+    expect(errors.some(e => e.includes('delivery'))).toBe(true);
+  });
+
+  it('cta_links akzeptiert presence', () => {
+    expect(validateCtaLinks([{ label_de: 'Jetzt buchen', delivery: 'presence' }])).toHaveLength(0);
+  });
+
+  it('cta_links lehnt in_person ab', () => {
+    const errors = validateCtaLinks([{ label_de: 'Jetzt buchen', delivery: 'in_person' }]);
+    expect(errors.some(e => e.includes('delivery'))).toBe(true);
+  });
+
+  it('cta_config (Szenario-CTA) akzeptiert presence', () => {
+    expect(validateCtaConfig({ delivery: 'presence' })).toHaveLength(0);
+  });
+
+  it('cta_config lehnt in_person ab', () => {
+    const errors = validateCtaConfig({ delivery: 'in_person' });
+    expect(errors.some(e => e.includes('delivery'))).toBe(true);
+  });
+
+  it('beide Layer lehnen einen beliebigen Fantasiewert ab', () => {
+    expect(validateRegion({ label_de: 'X', delivery_param: 'at_home' }).valid).toBe(false);
+    expect(validatePredefinedSearches([{ label_de: 'X', delivery: 'at_home' }]).length).toBeGreaterThan(0);
+    expect(validateCtaLinks([{ label_de: 'X', delivery: 'at_home' }]).length).toBeGreaterThan(0);
+    expect(validateCtaConfig({ delivery: 'at_home' }).length).toBeGreaterThan(0);
+  });
+});
+
+// ============================================================
+// replace-regions: gemischter Regionssatz
+// ============================================================
+
+describe('replace-regions — gemischter Regionssatz passiert die Validierung', () => {
+  const items = [
+    { label_de: 'Ganze Schweiz', loc_param: null, delivery_param: null },
+    { label_de: 'Zürich', loc_param: 'Zürich', delivery_param: null },
+    { label_de: 'Online', loc_param: null, delivery_param: 'online_live' },
+    { label_de: 'Vor Ort', loc_param: null, delivery_param: 'in_person' },
+  ];
+
+  it('alle vier Regionstypen sind einzeln gültig', () => {
+    for (const item of items) {
+      const result = validateRegion(item);
+      expect(result.valid, `${item.label_de}: ${result.errors.join('; ')}`).toBe(true);
+    }
+  });
+
+  it('der komplette Satz ist fehlerfrei', () => {
+    const allErrors = items.flatMap(item => validateRegion(item).errors);
+    expect(allErrors).toEqual([]);
   });
 });
