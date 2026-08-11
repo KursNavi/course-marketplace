@@ -33,14 +33,41 @@ export const VALID_TRUST_ITEM_TYPES = ['label', 'editorial', 'info'];
 // Erlaubte Keys in search_config JSONB
 const SEARCH_CONFIG_ALLOWED_KEYS = new Set(['area_slug', 'type_key', 'default_spec', 'default_focus', 'area_label_de']);
 
-// Erlaubte Abschnitts-Keys in section_titles JSONB
+// Erlaubte Abschnitts-Keys in section_titles JSONB.
+//
+// KANONISCHER DB-VERTRAG: snake_case-Keys mit FLACHEN STRING-Werten.
+//   { "trust_heading": "Worauf du achten solltest", "cta_button": "Alle Kurse anzeigen" }
+//
+// Dieser Vertrag ist verbindlich, weil ihn alle tatsächlichen Datenpfade nutzen:
+//   - Importdaten:   data/theme-worlds/*.json (theme_world.section_titles)
+//   - Import-RPC:    20260715_import_theme_world_atomic.sql schreibt das JSONB unverändert
+//   - Leseseite:     themeWorldAdapter.js liest st.trust_heading / st.cta_heading / …
+//
+// Der Adapter mappt diese DB-Keys erst für den Renderer auf camelCase-Multilang-
+// Objekte (trustTitle: { de }). Diese camelCase-Form ist ADAPTER-AUSGABE, kein
+// DB-Format — sie darf hier nicht validiert werden.
+//
+// Kein camelCase-Fallback: die frühere camelCase-Liste war ein toter Vertragsrest.
+// Sie wurde nie von einem Schreibpfad erreicht (der Admin sendete section_titles
+// bisher überhaupt nicht, der Import umgeht den JS-Validator via SQL-RPC), sodass
+// keine Bestandsdaten im alten Format existieren, die Kompatibilität erfordern.
+// Aus demselben Grund fehlt 'editorial_heading': kein Importdatensatz führt den
+// Key, kein Schreibpfad erzeugt ihn, und redaktionelle Abschnitte rendern ihre
+// eigene heading_de (BereichLandingPage.jsx:641). Ein Key ohne Datenpfad wäre
+// ein Vertrag ohne Verwendung.
 const SECTION_TITLES_ALLOWED_KEYS = new Set([
-  'scenarioTitle', 'scenarioSubtitle', 'specialtiesTitle', 'specialtiesSubtitle',
-  'searchesTitle', 'searchesSubtitle', 'faqTitle', 'trustTitle', 'ctaTitle', 'ctaButton',
+  'scenarios_heading', 'scenarios_subheading',
+  'specialties_heading', 'specialties_subheading',
+  'searches_heading', 'searches_subheading',
+  'regions_heading', 'regions_subheading',
+  'faqs_heading',
+  'trust_heading',
+  'cta_heading', 'cta_button',
 ]);
 
-// Erlaubte Sprachen in multilang-Objekten
-const MULTILANG_KEYS = new Set(['de', 'en', 'fr', 'it']);
+// Zeichenlimit für einen einzelnen Abschnittstitel.
+// Längster Bestandswert (yoga regions_subheading) liegt bei ~108 Zeichen.
+export const SECTION_TITLE_MAX = 200;
 
 // ============================================================
 // Hilfsfunktionen
@@ -191,8 +218,15 @@ export function validateSearchConfig(config) {
 }
 
 /**
- * Validiert section_titles JSONB.
- * Nur bekannte Abschnitts-Keys erlaubt; Werte müssen multilang-Objekte sein.
+ * Validiert section_titles JSONB gegen den kanonischen DB-Vertrag.
+ *
+ * Erlaubt: flaches Objekt mit bekannten snake_case-Keys und String-Werten.
+ * Siehe SECTION_TITLES_ALLOWED_KEYS für die Begründung des Vertrags.
+ *
+ * null als Einzelwert wird als "nicht gesetzt" akzeptiert: JSONB kann diesen
+ * Zustand halten und der Adapter behandelt ihn identisch zu einem fehlenden Key
+ * (st.trust_heading || null). Das hält den Merge-Pfad im Admin verlustfrei —
+ * ein bestehender null-Wert kann unverändert zurückgeschrieben werden.
  */
 export function validateSectionTitles(titles) {
   const errors = [];
@@ -208,18 +242,13 @@ export function validateSectionTitles(titles) {
       errors.push(`section_titles.${key}: Unbekannter Key nicht erlaubt.`);
       continue;
     }
-    if (typeof val !== 'object' || Array.isArray(val) || val === null) {
-      errors.push(`section_titles.${key}: Muss ein {de?, en?, fr?, it?}-Objekt sein.`);
+    if (val === null) continue; // "nicht gesetzt" — erlaubt
+    if (typeof val !== 'string') {
+      errors.push(`section_titles.${key}: Muss ein String sein.`);
       continue;
     }
-    for (const [lang, text] of Object.entries(val)) {
-      if (!MULTILANG_KEYS.has(lang)) {
-        errors.push(`section_titles.${key}.${lang}: Unbekannte Sprache. Erlaubt: de, en, fr, it.`);
-      } else if (typeof text !== 'string') {
-        errors.push(`section_titles.${key}.${lang}: Muss ein String sein.`);
-      } else if (text.length > 200) {
-        errors.push(`section_titles.${key}.${lang}: Zu lang (max 200 Zeichen).`);
-      }
+    if (val.length > SECTION_TITLE_MAX) {
+      errors.push(`section_titles.${key}: Zu lang (max ${SECTION_TITLE_MAX} Zeichen).`);
     }
   }
 
@@ -274,6 +303,12 @@ export function validatePredefinedSearches(searches) {
 
 /**
  * Validiert cta_links JSONB-Array.
+ *
+ * Der Vertrag ist identisch mit dem, den AdminThemeWorldForm clientseitig prüft:
+ *   { label_de: string (getrimmt nicht leer, max 60), loc?: string, delivery?: enum }
+ *
+ * Diese Funktion validiert nur — sie trimmt und mutiert nicht. Die Normalisierung
+ * (trimmen, leere optionale Felder entfernen) passiert im Admin vor dem Speichern.
  */
 export function validateCtaLinks(links) {
   const errors = [];
@@ -303,10 +338,20 @@ export function validateCtaLinks(links) {
       }
     }
 
-    if (!item.label_de || typeof item.label_de !== 'string') {
-      errors.push(`cta_links[${i}].label_de: Pflichtfeld fehlt.`);
+    // label_de: Pflicht. Ein reiner Whitespace-Wert ist fachlich leer und wurde
+    // clientseitig bereits abgelehnt — der Server muss denselben Vertrag halten.
+    if (typeof item.label_de !== 'string' || !item.label_de.trim()) {
+      errors.push(`cta_links[${i}].label_de: Pflichtfeld fehlt oder leer.`);
     } else if (item.label_de.length > 60) {
       errors.push(`cta_links[${i}].label_de: Zu lang (max 60 Zeichen).`);
+    }
+
+    // loc: optional, aber wenn vorhanden ein String. Reine Typsicherheit —
+    // bewusst keine Orts-Taxonomie (Kantons-/Städteliste) an dieser Stelle.
+    // Der Admin entfernt leere optionale Felder vor dem Speichern, ein
+    // ausgeschriebenes null/123/{} kommt aus keinem gültigen Schreibpfad.
+    if (item.loc !== undefined && typeof item.loc !== 'string') {
+      errors.push(`cta_links[${i}].loc: Muss ein String sein.`);
     }
 
     if (item.delivery !== undefined && !VALID_DELIVERY_TYPES.includes(item.delivery)) {

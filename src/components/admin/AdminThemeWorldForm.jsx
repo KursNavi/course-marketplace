@@ -154,6 +154,21 @@ export default function AdminThemeWorldForm({
   const trustSave = useSaveState();
   const [trustItems, setTrustItems] = useState([]);
 
+  // Seitentexte & Abschluss / CTA
+  //
+  // Eigener Speicherbereich, getrennt von den Trust Items: Trust Items liegen in
+  // der Subentity-Tabelle theme_world_trust_items (replaceTrustItems = delete +
+  // insert), section_titles und cta_links sind Spalten auf theme_worlds. Ein
+  // gemeinsamer Klick würde bei Teilfehler einen inkonsistenten Zustand hinterlassen.
+  const seitentexteSave = useSaveState();
+  const [seitentexte, setSeitentexte] = useState({
+    trust_heading: '', cta_heading: '', cta_button: '',
+  });
+  const [ctaLinks, setCtaLinks] = useState([]);
+  // Vollständiges section_titles der geladenen Zeile. Basis für den Merge beim
+  // Speichern, damit nicht exponierte Keys (z.B. searches_heading) erhalten bleiben.
+  const [sectionTitlesBase, setSectionTitlesBase] = useState({});
+
   // ---------------------------------------------------------------------------
   // Daten laden
   // ---------------------------------------------------------------------------
@@ -205,6 +220,24 @@ export default function AdminThemeWorldForm({
       });
       setPredefinedSearches(data.predefined_searches || []);
 
+      // Seitentexte & CTA — kanonische snake_case-Keys aus section_titles.
+      // Das vollständige Objekt wird als Merge-Basis behalten; exponiert werden
+      // nur trust_heading, cta_heading und cta_button.
+      const st = data.section_titles || {};
+      setSectionTitlesBase(st);
+      setSeitentexte({
+        trust_heading: st.trust_heading || '',
+        cta_heading: st.cta_heading || '',
+        cta_button: st.cta_button || '',
+      });
+      setCtaLinks(
+        (data.cta_links || []).map((l) => ({
+          label_de: l.label_de || '',
+          loc: l.loc || '',
+          delivery: l.delivery || '',
+        })),
+      );
+
       // Sub-Entitäten (keys already normalized to camelCase by getAllSubEntities)
       setSpecialties(subs.specialties || []);
       setRegionen(subs.regions || []);
@@ -222,6 +255,7 @@ export default function AdminThemeWorldForm({
       editorialSave.resetDirty();
       faqSave.resetDirty();
       trustSave.resetDirty();
+      seitentexteSave.resetDirty();
 
     } catch (err) {
       setLoadError(getErrorMessage(err, 'Daten konnten nicht geladen werden.'));
@@ -380,6 +414,74 @@ export default function AdminThemeWorldForm({
     } catch (err) {
       const msg = getErrorMessage(err);
       sucheSave.markError(msg);
+      showNotification(`Fehler: ${msg}`);
+    }
+  };
+
+  // Exponierte section_titles-Keys. Alle übrigen Keys bleiben beim Speichern
+  // unangetastet (siehe Merge unten).
+  const SEITENTEXTE_KEYS = ['trust_heading', 'cta_heading', 'cta_button'];
+
+  const saveSeitentexte = async () => {
+    const id = savedTwId || themeWorldId;
+    if (!id) return showNotification('Bitte zuerst Grundlagen speichern.');
+    // Data-loss protection: ohne erfolgreichen Load ist sectionTitlesBase unvollständig,
+    // ein Merge würde fremde Keys löschen.
+    if (loadError) return showNotification('Laden fehlgeschlagen — Speichern nicht möglich.');
+
+    // Client-side validation: cta_links (spiegelt validateCtaLinks)
+    if (ctaLinks.length > 5) {
+      seitentexteSave.markError('Maximal 5 CTA-Links erlaubt.');
+      showNotification('Fehler: Maximal 5 CTA-Links erlaubt.');
+      return;
+    }
+    for (let i = 0; i < ctaLinks.length; i++) {
+      if (!ctaLinks[i].label_de || !ctaLinks[i].label_de.trim()) {
+        seitentexteSave.markError(`CTA-Link #${i + 1}: Bezeichnung ist Pflichtfeld.`);
+        showNotification(`Fehler: CTA-Link #${i + 1} — Bezeichnung ist Pflichtfeld.`);
+        return;
+      }
+    }
+
+    seitentexteSave.startSaving();
+    try {
+      // Merge statt Ersetzen: das vollständige geladene section_titles ist die Basis,
+      // nur die drei exponierten Keys werden gezielt überschrieben. Nicht im Admin
+      // sichtbare Keys (scenarios_heading, searches_heading, regions_* …) bleiben exakt
+      // erhalten. Ein geleertes Feld entfernt seinen Key, statt "" zu speichern.
+      const nextSectionTitles = { ...sectionTitlesBase };
+      for (const key of SEITENTEXTE_KEYS) {
+        const trimmed = (seitentexte[key] || '').trim();
+        if (trimmed) {
+          nextSectionTitles[key] = trimmed;
+        } else {
+          delete nextSectionTitles[key];
+        }
+      }
+
+      // Normalisierung: label_de getrimmt, leere optionale Felder entfernt.
+      // Kein sort_order — das JSONB-Schema erlaubt nur {label_de, loc?, delivery?};
+      // die Reihenfolge ergibt sich aus der Array-Position.
+      const normalizedCtaLinks = ctaLinks.map((l) => ({
+        label_de: (l.label_de || '').trim(),
+        ...(l.loc && l.loc.trim() ? { loc: l.loc.trim() } : {}),
+        ...(l.delivery ? { delivery: l.delivery } : {}),
+      }));
+
+      await updateThemeWorld(id, {
+        section_titles: nextSectionTitles,
+        cta_links: normalizedCtaLinks,
+      });
+
+      // Merge-Basis nachziehen, damit ein direkt folgender Save nicht auf einem
+      // veralteten Stand aufsetzt.
+      setSectionTitlesBase(nextSectionTitles);
+      setTw((prev) => (prev ? { ...prev, section_titles: nextSectionTitles, cta_links: normalizedCtaLinks } : prev));
+      seitentexteSave.markSaved();
+      showNotification('Seitentexte & CTA gespeichert.');
+    } catch (err) {
+      const msg = getErrorMessage(err);
+      seitentexteSave.markError(msg);
       showNotification(`Fehler: ${msg}`);
     }
   };
@@ -1084,6 +1186,140 @@ export default function AdminThemeWorldForm({
               )}
             />
             <TabFooter saveState={trustSave} onSave={() => saveSub(replaceTrustItems, trustItems, trustSave, 'Trust-Hinweise')} />
+
+            {/*
+              Zweiter, getrennter Speicherbereich im selben Tab.
+              Speichert ausschliesslich Spalten auf theme_worlds (section_titles,
+              cta_links) über EINEN updateThemeWorld()-Request — ein einzelnes
+              Row-Update, unabhängig vom Trust-Items-Save oberhalb.
+            */}
+            <div className="pt-8 mt-4 border-t-2 border-gray-200 space-y-6">
+              <TabHeader title="Seitentexte & Abschluss / CTA" saveState={seitentexteSave}>
+                <button onClick={saveSeitentexte} disabled={seitentexteSave.state === 'saving'} className="SaveBtn">
+                  {seitentexteSave.state === 'saving' ? <Loader className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                  Speichern
+                </button>
+              </TabHeader>
+
+              <FormField
+                label="Abschnittsüberschrift"
+                hint="Überschrift über den Trust- und Hinweis-Karten auf der öffentlichen Themenwelt."
+              >
+                <input
+                  type="text"
+                  className="FormInput"
+                  placeholder="z.B. Worauf du bei der Kurswahl achten solltest"
+                  maxLength={200}
+                  value={seitentexte.trust_heading}
+                  onChange={(e) => { setSeitentexte((p) => ({ ...p, trust_heading: e.target.value })); seitentexteSave.markDirty(); }}
+                />
+              </FormField>
+
+              {/* Abschluss / CTA */}
+              <div className="pt-6 border-t border-gray-100 space-y-5">
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-700">Abschluss / CTA</h3>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    Der Abschlussbereich am Seitenende der öffentlichen Themenwelt.
+                  </p>
+                </div>
+
+                <FormField label="Abschlussüberschrift" hint="Überschrift im Abschlussbereich am Seitenende.">
+                  <input
+                    type="text"
+                    className="FormInput"
+                    placeholder="z.B. Bereit für deine Praxis?"
+                    maxLength={200}
+                    value={seitentexte.cta_heading}
+                    onChange={(e) => { setSeitentexte((p) => ({ ...p, cta_heading: e.target.value })); seitentexteSave.markDirty(); }}
+                  />
+                </FormField>
+
+                <FormField
+                  label="Hauptbutton"
+                  hint="Text des Hauptbuttons. Er verlinkt automatisch auf alle Kurse dieser Themenwelt — keine URL-Konfiguration nötig."
+                >
+                  <input
+                    type="text"
+                    className="FormInput"
+                    placeholder="z.B. Alle Yoga-Kurse anzeigen"
+                    maxLength={200}
+                    value={seitentexte.cta_button}
+                    onChange={(e) => { setSeitentexte((p) => ({ ...p, cta_button: e.target.value })); seitentexteSave.markDirty(); }}
+                  />
+                </FormField>
+
+                <p className="text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded-lg p-3">
+                  Die angezeigte Kurszahl wird automatisch aus den veröffentlichten Kursen berechnet.
+                </p>
+
+                {/* Zusätzliche CTA-Links */}
+                <div className="pt-5 border-t border-gray-100">
+                  <div className="mb-3">
+                    <h4 className="text-sm font-semibold text-gray-700">Zusätzliche CTA-Links</h4>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      Weiterführende Links unter dem Hauptbutton (max. 5 Einträge).
+                      Bezeichnung ist Pflichtfeld, Ort und Kursformat sind optional.
+                    </p>
+                  </div>
+                  <RepeatableList
+                    items={ctaLinks}
+                    maxItems={5}
+                    onChange={(items) => { setCtaLinks(items); seitentexteSave.markDirty(); }}
+                    emptyLabel="Noch keine zusätzlichen CTA-Links"
+                    addLabel="CTA-Link hinzufügen"
+                    newItem={() => ({ label_de: '', loc: '', delivery: '' })}
+                    renderItem={(item, i, update, remove) => (
+                      <div className="space-y-3">
+                        <div>
+                          <label className="text-xs font-semibold text-gray-600">
+                            Bezeichnung <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            className="FormInput mt-1"
+                            value={item.label_de || ''}
+                            onChange={(e) => update({ label_de: e.target.value })}
+                            placeholder="z.B. Kurse in Zürich"
+                            maxLength={60}
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="text-xs font-semibold text-gray-600">Ort (loc)</label>
+                            <input
+                              className="FormInput mt-1"
+                              value={item.loc || ''}
+                              onChange={(e) => update({ loc: e.target.value })}
+                              placeholder="Zürich"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-xs font-semibold text-gray-600">Kursformat (delivery)</label>
+                            <select
+                              className="FormInput mt-1"
+                              value={item.delivery || ''}
+                              onChange={(e) => update({ delivery: e.target.value })}
+                            >
+                              <option value="">Alle Formate</option>
+                              <option value="online_live">Online Live</option>
+                              <option value="self_study">Selbststudium</option>
+                              <option value="presence">Präsenz (vor Ort)</option>
+                            </select>
+                          </div>
+                        </div>
+                        <div className="flex justify-end">
+                          <button type="button" onClick={remove} className="text-xs text-red-500 hover:underline">
+                            Entfernen
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  />
+                </div>
+              </div>
+
+              <TabFooter saveState={seitentexteSave} onSave={saveSeitentexte} />
+            </div>
           </TabPanel>
         )}
 

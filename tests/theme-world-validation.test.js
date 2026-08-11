@@ -160,31 +160,65 @@ describe('validateSearchConfig', () => {
 // validateSectionTitles
 // ============================================================
 
+// Kanonischer DB-Vertrag: flache snake_case-Keys mit String-Werten.
+// Die frühere camelCase-Multilang-Erwartung (faqTitle: { de }) war ein toter
+// Vertragsrest und beschrieb die Adapter-AUSGABE, nicht das DB-Format.
 describe('validateSectionTitles', () => {
   it('akzeptiert null', () => {
     expect(validateSectionTitles(null)).toEqual([]);
   });
 
-  it('akzeptiert gültige section_titles', () => {
+  it('akzeptiert gültige section_titles (snake_case, String-Werte)', () => {
     expect(validateSectionTitles({
-      faqTitle: { de: 'Häufige Fragen', en: 'FAQ' },
-      ctaButton: { de: 'Jetzt suchen' },
+      faqs_heading: 'Häufige Fragen',
+      cta_button: 'Jetzt suchen',
     })).toEqual([]);
   });
 
+  it('akzeptiert null als Einzelwert (nicht gesetzt)', () => {
+    expect(validateSectionTitles({ trust_heading: null })).toEqual([]);
+  });
+
   it('lehnt unbekannte Keys ab', () => {
-    const errors = validateSectionTitles({ unknownSection: { de: 'Test' } });
+    const errors = validateSectionTitles({ unknownSection: 'Test' });
     expect(errors.some(e => e.includes('unknownSection'))).toBe(true);
   });
 
-  it('lehnt unbekannte Sprachen ab', () => {
-    const errors = validateSectionTitles({ faqTitle: { de: 'OK', xx: 'Ungültig' } });
-    expect(errors.some(e => e.includes('.xx'))).toBe(true);
+  it('lehnt das alte camelCase-Format ab (kein paralleler Vertrag)', () => {
+    const errors = validateSectionTitles({ faqTitle: { de: 'Häufige Fragen' } });
+    expect(errors.some(e => e.includes('faqTitle'))).toBe(true);
+  });
+
+  it('lehnt Nicht-String-Werte ab', () => {
+    const errors = validateSectionTitles({ faqs_heading: { de: 'Häufige Fragen' } });
+    expect(errors.some(e => e.includes('Muss ein String sein'))).toBe(true);
   });
 
   it('lehnt zu langen Text ab', () => {
-    const errors = validateSectionTitles({ faqTitle: { de: 'x'.repeat(201) } });
+    const errors = validateSectionTitles({ faqs_heading: 'x'.repeat(201) });
     expect(errors.some(e => e.includes('Zu lang'))).toBe(true);
+  });
+
+  // editorial_heading hat keinen Datenpfad: nicht in den Importdaten, von keinem
+  // Schreibpfad erzeugt, vom Renderer nicht gelesen. Er bleibt daher unbekannt.
+  it('lehnt editorial_heading ab (kein Key ohne Datenpfad in der Allowlist)', () => {
+    const errors = validateSectionTitles({ editorial_heading: 'Redaktionelles' });
+    expect(errors.some(e => e.includes('editorial_heading'))).toBe(true);
+    expect(errors.some(e => e.includes('Unbekannter Key'))).toBe(true);
+  });
+
+  it('erlaubt weiterhin alle real genutzten Abschnitts-Keys', () => {
+    const REAL_KEYS = [
+      'scenarios_heading', 'scenarios_subheading',
+      'specialties_heading', 'specialties_subheading',
+      'searches_heading', 'searches_subheading',
+      'regions_heading', 'regions_subheading',
+      'faqs_heading', 'trust_heading',
+      'cta_heading', 'cta_button',
+    ];
+    for (const key of REAL_KEYS) {
+      expect(validateSectionTitles({ [key]: 'Testwert' })).toEqual([]);
+    }
   });
 });
 
@@ -247,6 +281,72 @@ describe('validateCtaLinks', () => {
   it('lehnt unbekannte Keys ab', () => {
     const errors = validateCtaLinks([{ label_de: 'Test', url: 'https://example.com' }]);
     expect(errors.some(e => e.includes('url'))).toBe(true);
+  });
+
+  // label_de: identischer Vertrag wie im Admin — getrimmt nicht leer, max 60.
+  describe('label_de', () => {
+    it('akzeptiert ein reguläres Label', () => {
+      expect(validateCtaLinks([{ label_de: 'Kurse in Zürich' }])).toEqual([]);
+    });
+
+    it.each([
+      ['leerer String', ''],
+      ['ein Leerzeichen', ' '],
+      ['mehrere Leerzeichen', '     '],
+      ['Tab und Zeilenumbruch', '\t\n '],
+    ])('lehnt %s ab', (_name, label_de) => {
+      const errors = validateCtaLinks([{ label_de }]);
+      expect(errors).toHaveLength(1);
+      expect(errors[0]).toBe('cta_links[0].label_de: Pflichtfeld fehlt oder leer.');
+    });
+
+    it('lehnt fehlendes label_de ab', () => {
+      const errors = validateCtaLinks([{ loc: 'Zürich' }]);
+      expect(errors.some(e => e.includes('label_de'))).toBe(true);
+    });
+
+    it('lehnt Nicht-Strings ab', () => {
+      for (const label_de of [42, {}, [], true, null]) {
+        expect(validateCtaLinks([{ label_de }]).some(e => e.includes('label_de'))).toBe(true);
+      }
+    });
+
+    it('akzeptiert exakt 60 Zeichen und lehnt 61 ab', () => {
+      expect(validateCtaLinks([{ label_de: 'x'.repeat(60) }])).toEqual([]);
+      expect(validateCtaLinks([{ label_de: 'x'.repeat(61) }]).some(e => e.includes('Zu lang'))).toBe(true);
+    });
+
+    it('trimmt oder mutiert die Eingabe nicht', () => {
+      const item = { label_de: '  Kurse in Zürich  ' };
+      validateCtaLinks([item]);
+      expect(item.label_de).toBe('  Kurse in Zürich  ');
+    });
+  });
+
+  // loc: optional, aber typsicher. Bewusst keine Orts-Taxonomie.
+  describe('loc', () => {
+    it('akzeptiert ein fehlendes loc', () => {
+      expect(validateCtaLinks([{ label_de: 'Alle Kurse' }])).toEqual([]);
+    });
+
+    it.each(['Zürich', 'Basel-Stadt'])('akzeptiert den String %s', (loc) => {
+      expect(validateCtaLinks([{ label_de: 'Alle Kurse', loc }])).toEqual([]);
+    });
+
+    it.each([
+      ['Zahl', 123],
+      ['Objekt', {}],
+      ['Array', []],
+      ['Boolean', true],
+      ['null', null],
+    ])('lehnt %s ab', (_name, loc) => {
+      const errors = validateCtaLinks([{ label_de: 'Alle Kurse', loc }]);
+      expect(errors).toEqual(['cta_links[0].loc: Muss ein String sein.']);
+    });
+
+    it('validiert keine Orts-Taxonomie (beliebiger String bleibt gültig)', () => {
+      expect(validateCtaLinks([{ label_de: 'Alle Kurse', loc: 'Irgendwo' }])).toEqual([]);
+    });
   });
 });
 
