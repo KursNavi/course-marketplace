@@ -91,15 +91,12 @@ export const BEREICH_LANDING_CONFIG = {
 
     predefinedSearches: [
       { label: { de: 'Fitnesstrainer Basiskurs' }, params: { spec: 'Fitness-Trainer-Ausbildung', focus: 'Basis-Ausbildung' } },
-      { label: { de: 'Personal Trainer Lehrgang' }, params: { spec: 'Personal-Trainer-Ausbildung' } },
-      { label: { de: 'Group-Fitness Kursformate' }, params: { spec: 'Group-Fitness / Kursleitung' } },
       { label: { de: 'Fitness Trainer Ausbildung Zürich' }, params: { spec: 'Fitness-Trainer-Ausbildung' }, extraParams: { loc: 'Zürich' } },
       { label: { de: 'Personal Trainer Ausbildung Bern' }, params: { spec: 'Personal-Trainer-Ausbildung' }, extraParams: { loc: 'Bern' } },
       { label: { de: 'Group Fitness Ausbildung Basel' }, params: { spec: 'Group-Fitness / Kursleitung' }, extraParams: { loc: 'Basel-Stadt' } },
       { label: { de: 'Sporternährung Kurs Zürich' }, params: { spec: 'Ernährung & Coaching' }, extraParams: { loc: 'Zürich' } },
       { label: { de: 'Yoga Ausbildung Luzern' }, params: { spec: 'Mind-Body (Yoga & Pilates)' }, extraParams: { loc: 'Luzern' } },
-      { label: { de: 'Diplom & eidg. Prüfung' }, params: { spec: 'Zertifikate & Prüfungsvorbereitung' } },
-      { label: { de: 'Online Fitness Ausbildung Schweiz' }, params: {}, extraParams: { delivery: 'online_live,self_study' } },
+      { label: { de: 'Online Fitness Ausbildung Schweiz' }, params: {}, extraParams: { delivery: 'online_live' } },
     ],
 
     editorialSections: [
@@ -209,6 +206,7 @@ export const BEREICH_LANDING_CONFIG = {
       scenarioSubtitle: { de: 'Finde den passenden Einstieg - egal ob Anfänger oder Profi' },
       specialtiesTitle: { de: 'Ausbildungsbereiche' },
       specialtiesSubtitle: { de: 'Alle Schwerpunkte auf einen Blick' },
+      searchesTitle: { de: 'Beliebte Suchen' },
       searchesSubtitle: { de: 'Schnelleinstieg zu den gefragtesten Ausbildungen' },
       trustTitle: { de: 'Qualitätssiegel in der Schweizer Fitnessbranche' },
       ctaTitle: { de: 'Bereit für den nächsten Schritt?' },
@@ -313,7 +311,6 @@ export const BEREICH_LANDING_CONFIG = {
       { label: { de: 'Meditationskurs Basel' }, params: { spec: 'Meditation & Achtsamkeit' }, extraParams: { loc: 'Basel-Stadt' } },
       { label: { de: 'Achtsamkeitskurs Luzern' }, params: { spec: 'Meditation & Achtsamkeit' }, extraParams: { loc: 'Luzern' } },
       { label: { de: 'Yin Yoga Zürich' }, params: { spec: 'Yoga', focus: 'Yin & Restorative' }, extraParams: { loc: 'Zürich' } },
-      { label: { de: 'Pranayama & Breathwork' }, params: { spec: 'Atemarbeit' } },
       { label: { de: 'Online-live Yoga Schweiz' }, params: { spec: 'Yoga' }, extraParams: { delivery: 'online_live' } },
     ],
 

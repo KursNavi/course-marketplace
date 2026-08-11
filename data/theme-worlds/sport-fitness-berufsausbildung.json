@@ -30,6 +30,7 @@
       "scenarios_subheading": "Finde den passenden Einstieg - egal ob Anfänger oder Profi",
       "specialties_heading": "Ausbildungsbereiche",
       "specialties_subheading": "Alle Schwerpunkte auf einen Blick",
+      "searches_heading": "Beliebte Suchen",
       "searches_subheading": "Schnelleinstieg zu den gefragtesten Ausbildungen",
       "trust_heading": "Qualitätssiegel in der Schweizer Fitnessbranche",
       "cta_heading": "Bereit für den nächsten Schritt?",
@@ -46,22 +47,6 @@
       },
       {
         "sort_order": 2,
-        "label_de": "Personal Trainer Lehrgang",
-        "spec": "Personal-Trainer-Ausbildung",
-        "focus": null,
-        "loc": null,
-        "delivery": null
-      },
-      {
-        "sort_order": 3,
-        "label_de": "Group-Fitness Kursformate",
-        "spec": "Group-Fitness / Kursleitung",
-        "focus": null,
-        "loc": null,
-        "delivery": null
-      },
-      {
-        "sort_order": 4,
         "label_de": "Fitness Trainer Ausbildung Zürich",
         "spec": "Fitness-Trainer-Ausbildung",
         "focus": null,
@@ -69,7 +54,7 @@
         "delivery": null
       },
       {
-        "sort_order": 5,
+        "sort_order": 3,
         "label_de": "Personal Trainer Ausbildung Bern",
         "spec": "Personal-Trainer-Ausbildung",
         "focus": null,
@@ -77,7 +62,7 @@
         "delivery": null
       },
       {
-        "sort_order": 6,
+        "sort_order": 4,
         "label_de": "Group Fitness Ausbildung Basel",
         "spec": "Group-Fitness / Kursleitung",
         "focus": null,
@@ -85,7 +70,7 @@
         "delivery": null
       },
       {
-        "sort_order": 7,
+        "sort_order": 5,
         "label_de": "Sporternährung Kurs Zürich",
         "spec": "Ernährung & Coaching",
         "focus": null,
@@ -93,7 +78,7 @@
         "delivery": null
       },
       {
-        "sort_order": 8,
+        "sort_order": 6,
         "label_de": "Yoga Ausbildung Luzern",
         "spec": "Mind-Body (Yoga & Pilates)",
         "focus": null,
@@ -101,20 +86,12 @@
         "delivery": null
       },
       {
-        "sort_order": 9,
-        "label_de": "Diplom & eidg. Prüfung",
-        "spec": "Zertifikate & Prüfungsvorbereitung",
-        "focus": null,
-        "loc": null,
-        "delivery": null
-      },
-      {
-        "sort_order": 10,
+        "sort_order": 7,
         "label_de": "Online Fitness Ausbildung Schweiz",
         "spec": null,
         "focus": null,
         "loc": null,
-        "delivery": "online_live,self_study"
+        "delivery": "online_live"
       }
     ],
     "cta_links": [

@@ -30,6 +30,7 @@
       "scenarios_subheading": "Finde den passenden Einstieg für Entspannung, Schlaf, Fokus oder körperliche Praxis",
       "specialties_heading": "Kursbereiche",
       "specialties_subheading": "Alle Schwerpunkte auf einen Blick",
+      "searches_heading": "Beliebte Suchen",
       "searches_subheading": "Schnelleinstieg zu gefragten Yoga- und Achtsamkeitsformaten",
       "faqs_heading": "Häufige Fragen",
       "trust_heading": "Worauf du bei der Kurswahl achten solltest",
@@ -105,14 +106,6 @@
       },
       {
         "sort_order": 9,
-        "label_de": "Pranayama & Breathwork",
-        "spec": "Atemarbeit",
-        "focus": null,
-        "loc": null,
-        "delivery": null
-      },
-      {
-        "sort_order": 10,
         "label_de": "Online-live Yoga Schweiz",
         "spec": "Yoga",
         "focus": null,
