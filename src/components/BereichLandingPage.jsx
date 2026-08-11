@@ -379,7 +379,7 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
           <form onSubmit={handleSearchSubmit} className="max-w-2xl">
             <div className="flex flex-col gap-2 sm:relative sm:block">
               <div className="relative min-w-0">
-                <Search className="absolute left-4 text-gray-400 w-5 h-5 z-10" />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5 z-10" />
                 <input
                   type="text"
                   value={searchQuery}
