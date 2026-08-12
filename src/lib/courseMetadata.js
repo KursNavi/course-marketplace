@@ -7,7 +7,7 @@ const LEGACY_CATEGORY_TYPE_MAP = {
   kinder_jugend: 'kinder'
 };
 
-function normalizeDeliveryTypeKey(value) {
+export function normalizeDeliveryTypeKey(value) {
   if (!value) return null;
   const normalized = String(value).trim().toLowerCase();
   if (!normalized) return null;

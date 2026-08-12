@@ -116,6 +116,17 @@ export function buildFaqPageJsonLd(faqs, lang = 'de') {
 }
 
 /**
+ * Wrap <table> elements in a scrollable container to prevent mobile overflow.
+ * Applies the "table-wrapper" class which uses overflow-x: auto.
+ */
+export function wrapTables(html) {
+  if (!html) return html;
+  return html
+    .replace(/<table\b/gi, '<div class="table-wrapper"><table')
+    .replace(/<\/table>/gi, '</table></div>');
+}
+
+/**
  * Inject lazy loading and async decoding into HTML img tags
  */
 export function enhanceImages(html) {

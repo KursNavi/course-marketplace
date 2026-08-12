@@ -3,6 +3,12 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "engines": {
+    "node": "22.x"
+  },
+  "overrides": {
+    "htmlparser2": "9.x"
+  },
   "scripts": {
     "dev": "vite",
     "dev:playwright": "node scripts/start-playwright-dev.mjs",
@@ -34,6 +40,7 @@
     "react-dom": "^19.2.0",
     "react-helmet-async": "^2.0.5",
     "resend": "^6.5.2",
+    "sanitize-html": "^2.17.6",
     "stripe": "^20.0.0"
   },
   "devDependencies": {

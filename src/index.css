@@ -76,8 +76,14 @@
   @apply text-gray-600 leading-relaxed;
 }
 
-.prose-ratgeber strong {
+.prose-ratgeber strong,
+.prose-ratgeber b {
   @apply text-gray-800 font-semibold;
+}
+
+.prose-ratgeber em,
+.prose-ratgeber i {
+  @apply italic;
 }
 
 .prose-ratgeber table {
@@ -102,6 +108,15 @@
 
 .prose-ratgeber tbody tr:last-child td {
   @apply border-b-0;
+}
+
+/* Scrollable table wrapper — prevents horizontal page overflow on narrow viewports */
+.prose-ratgeber .table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.prose-ratgeber .table-wrapper table {
+  @apply my-0;
 }
 
 .prose-ratgeber blockquote {

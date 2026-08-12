@@ -11,6 +11,7 @@ import { BASE_URL, buildCoursePath } from '../lib/siteConfig';
 import { getBereichByAreaSlug, getBereichUrl } from '../lib/bereichLandingConfig';
 import { SEARCH_STRINGS } from '../lib/searchStrings';
 import { getNormalizedDeliveryTypes } from '../lib/courseMetadata';
+import { fetchPublishedThemeWorldAreaLabels } from '../lib/themeWorldService';
 import { trackSearch } from '../lib/analytics';
 import { getSearchHeader } from '../lib/searchHeaderConfig';
 
@@ -106,10 +107,23 @@ const SearchPageView = ({
     // Load taxonomy from DB
     const { areas: dbAreas } = useTaxonomy();
 
+    // Published dynamic theme world labels: area_slug → readable label (loaded once on mount)
+    const [themeWorldLabels, setThemeWorldLabels] = React.useState(null);
+    React.useEffect(() => {
+        fetchPublishedThemeWorldAreaLabels().then(setThemeWorldLabels).catch(() => {});
+    }, []);
+
     // Helper to get area label from DB taxonomy
+    // Fallback-Reihenfolge (Phase 8.11):
+    //   1. DB-Taxonomie (taxonomy_level2)
+    //   2. Statische Taxonomie-Konstanten (NEW_TAXONOMY)
+    //   3. Legacy-Bereichskonfiguration (bereichLandingConfig)
+    //   4. Publizierte dynamische Themenwelt: search_config.area_label_de
+    //   5. title_de der Themenwelt als letzter dynamischer Fallback
+    //   6. Technischer area_slug als Notfall-Fallback
     const getAreaLabelFromDB = (areaSlug) => {
         if (!areaSlug) return '';
-        // Try exact match on slug (DB mode) or string id (fallback mode has no slug field)
+        // 1. Try exact match on slug (DB mode) or string id (fallback mode has no slug field)
         let area = dbAreas.find(a => a.slug === areaSlug || String(a.id) === areaSlug);
         // Try safe partial match (guard against undefined slug in fallback mode)
         if (!area) {
@@ -119,10 +133,19 @@ const SearchPageView = ({
             });
         }
         if (area?.label_de) return area.label_de;
-        // Final fallback: hardcoded taxonomy constants (always available, no DB needed)
+        // 2. Fallback: hardcoded taxonomy constants (always available, no DB needed)
         for (const typeData of Object.values(NEW_TAXONOMY)) {
             if (typeData[areaSlug]?.label?.de) return typeData[areaSlug].label.de;
         }
+        // 3. Fallback: legacy bereich config (covers static theme world area slugs)
+        const bereichEntry = getBereichByAreaSlug(areaSlug);
+        if (bereichEntry?.title?.de) return bereichEntry.title.de.split(' - ')[0];
+        // 4+5. Fallback: published dynamic theme world label (area_label_de or title_de)
+        if (themeWorldLabels) {
+            const twLabel = themeWorldLabels.get(areaSlug);
+            if (twLabel) return twLabel;
+        }
+        // 6. Last resort: technical area slug
         return areaSlug;
     };
 
@@ -589,6 +612,15 @@ const SearchPageView = ({
         focus: searchFocus,
     }), [searchArea, selectedLocations, selectedDeliveryTypes, searchSpecialty, searchFocus]);
 
+    // A published dynamic theme world may define its own readable area label.
+    // It is the fallback whenever no static header rule applies, including
+    // location, delivery, specialty and focus filters. Static Sport/Yoga rules
+    // continue to take precedence via dynamicHeader.
+    const dynamicThemeWorldTitle = useMemo(() => {
+        if (dynamicHeader || !searchArea || !themeWorldLabels) return '';
+        return themeWorldLabels.get(searchArea) || '';
+    }, [dynamicHeader, searchArea, themeWorldLabels]);
+
     // Dynamic search placeholder per segment
     const searchPlaceholder =
         (searchType === 'beruflich' || searchType === 'professionell') ? 'Beruf, Fachgebiet oder Abschluss suchen …' :
@@ -718,7 +750,7 @@ const SearchPageView = ({
                                 </div>
                                 <div>
                                     <h1 className={`text-2xl md:text-3xl font-bold font-heading ${activeSegmentConfig.textDark}`}>
-                                        {dynamicHeader?.title || activeSegmentConfig.heroTitle?.de || getLabel(searchType, 'type')}
+                                        {dynamicHeader?.title || dynamicThemeWorldTitle || activeSegmentConfig.heroTitle?.de || getLabel(searchType, 'type')}
                                     </h1>
                                     <p className="text-gray-600 mt-1">
                                         {dynamicHeader?.subtitle || activeSegmentConfig.heroSubtitle?.de || ''}

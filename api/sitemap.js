@@ -43,13 +43,20 @@ export default async function handler(req, res) {
     if (error) throw error;
 
     // 3. Fetch all published blog posts
+    // FIX (2026-07-14): Tabelle heisst 'articles', nicht 'blog'.
+    // Die Abfrage auf 'blog' schlug seit jeher still fehl und hinterliess
+    // Blog-Post-URLs vollständig aus der Sitemap. Quelle: phase-2-architecture.md.
     const { data: blogPosts, error: blogError } = await supabase
-      .from('blog')
+      .from('articles')
       .select('id, slug, title, created_at')
       .eq('is_published', true)
       .order('created_at', { ascending: false });
 
-    if (blogError) console.warn('Blog fetch error:', blogError);
+    if (blogError) {
+      // Sichtbares Log — nicht still ignorieren (Correction C in phase-2-architecture.md)
+      console.error('[sitemap] Blog-Artikel konnten nicht geladen werden:', blogError.message);
+      // Sitemap wird ohne Blog-URLs ausgeliefert — kein 500-Fehler wegen fehlender Blog-Daten
+    }
 
     const baseUrl = (process.env.VITE_SITE_URL || 'https://kursnavi.ch').replace(/\/$/, '');
 

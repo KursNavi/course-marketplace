@@ -8,7 +8,7 @@
  *   6. Price filter validation
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import React from 'react';
 
 // --- Mocks for external modules ---
@@ -34,7 +34,19 @@ vi.mock('../src/lib/imageUtils', () => ({
   DEFAULT_COURSE_IMAGE: '/placeholder.jpg',
 }));
 
+const { mockFetchPublishedThemeWorldAreaLabels } = vi.hoisted(() => ({
+  mockFetchPublishedThemeWorldAreaLabels: vi.fn(),
+}));
+
+vi.mock('../src/lib/themeWorldService', () => ({
+  fetchPublishedThemeWorldAreaLabels: mockFetchPublishedThemeWorldAreaLabels,
+}));
+
 import SearchPageView from '../src/components/SearchPageView';
+
+beforeEach(() => {
+  mockFetchPublishedThemeWorldAreaLabels.mockResolvedValue(new Map());
+});
 
 // --- Helper: build default props (all required by SearchPageView) ---
 function makeProps(overrides = {}) {
@@ -606,6 +618,46 @@ describe('Segment context banner', () => {
     const c = makeCourse('1');
     render(<SearchPageView {...makeProps({ courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c], searchType: 'beruflich' })} />);
     expect(document.querySelector('[data-testid="select-bereich"]')).not.toBeInTheDocument();
+  });
+});
+
+// ===================== 9b. DYNAMIC THEME WORLD SEARCH HEADER =====================
+describe('Dynamic theme world search header', () => {
+  it('uses the published readable area label as H1 for a dynamic area with location, delivery, specialty and focus filters', async () => {
+    mockFetchPublishedThemeWorldAreaLabels.mockResolvedValue(new Map([
+      ['kreativ_gestalten', 'Kreativ & Gestalten'],
+    ]));
+
+    render(<SearchPageView {...makeProps({
+      searchType: 'privat_hobby',
+      searchArea: 'kreativ_gestalten',
+      selectedLocations: ['Zürich'],
+      selectedDeliveryTypes: ['presence'],
+      searchSpecialty: 'Malen',
+      searchFocus: 'Aquarell',
+    })} />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { level: 1, name: 'Kreativ & Gestalten' })).toBeInTheDocument();
+    });
+    expect(screen.queryByRole('heading', { level: 1, name: 'Entdecke neue Leidenschaften' })).not.toBeInTheDocument();
+  });
+
+  it('keeps the specific static Sport header ahead of a published theme world label', () => {
+    mockFetchPublishedThemeWorldAreaLabels.mockResolvedValue(new Map([
+      ['sport_fitness_beruf', 'Sport & Fitness'],
+    ]));
+
+    render(<SearchPageView {...makeProps({
+      searchType: 'beruflich',
+      searchArea: 'sport_fitness_beruf',
+      selectedLocations: ['Zürich'],
+      selectedDeliveryTypes: ['presence'],
+      searchSpecialty: 'Fitness-Trainer-Ausbildung',
+      searchFocus: 'Basis-Ausbildung',
+    })} />);
+
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Fitness-Trainer-Basis-Ausbildungen in Zürich');
   });
 });
 
