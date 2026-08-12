@@ -4,7 +4,7 @@
  * Pro Tab: Speicherstatus, ungespeicherte-Änderungen-Warnung.
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { ArrowLeft, Save, Loader, AlertCircle, ChevronRight } from 'lucide-react';
 import AdminStatusBadge from './AdminStatusBadge';
 import AdminSaveState from './AdminSaveState';
@@ -18,6 +18,8 @@ import {
   getErrorMessage, ApiError,
 } from '../../lib/themeWorldAdminApi';
 import { SEGMENT_FALLBACK_HERO_IMAGES } from '../../lib/themeWorldAdapter';
+import { useTaxonomy } from '../../hooks/useTaxonomy';
+import { SWISS_CANTONS } from '../../lib/constants';
 
 // ---------------------------------------------------------------------------
 // Konstanten
@@ -44,6 +46,53 @@ const SEGMENTS = [
 const URL_TO_DB = { beruflich: 'professionell', 'privat-hobby': 'privat', 'kinder-jugend': 'kinder' };
 const DB_TO_URL = { professionell: 'beruflich', privat: 'privat-hobby', kinder: 'kinder-jugend' };
 
+/**
+ * Gemeinsame Gestaltung aller `.FormInput`-Felder dieses Formulars.
+ *
+ * Wird als Klassenliste auf einen Container gesetzt und wirkt über
+ * Descendant-Varianten auf jedes `.FormInput` darin. Bewusst kein globales CSS
+ * und keine `.FormInput`-Regel ausserhalb dieses Formulars: die Klasse existiert
+ * nur hier, andere Admin-Bereiche bleiben unberührt.
+ *
+ * Angewendet wird der Scope an genau zwei Stellen — `FormField` (Einzelfelder)
+ * und die Karten von `RepeatableList`. Vorher galt er nur in `FormField`, weshalb
+ * die Felder in den Listenkarten ohne Rand, Hintergrund und Innenabstand
+ * gerendert wurden.
+ */
+const FORM_INPUT_SCOPE = [
+  '[&_.FormInput]:block',
+  '[&_.FormInput]:w-full',
+  '[&_.FormInput]:px-3',
+  '[&_.FormInput]:py-2',
+  '[&_.FormInput]:border',
+  '[&_.FormInput]:border-gray-300',
+  '[&_.FormInput]:bg-white',
+  '[&_.FormInput]:text-gray-900',
+  '[&_.FormInput]:rounded-lg',
+  '[&_.FormInput]:text-sm',
+  '[&_.FormInput]:leading-normal',
+  '[&_.FormInput]:shadow-sm',
+  '[&_.FormInput]:outline-none',
+  '[&_.FormInput]:transition',
+  '[&_.FormInput]:placeholder:text-gray-400',
+  // Pseudo-Klassen gehören in die Arbitrary-Variant hinein: `[&_.FormInput]:focus:*`
+  // erzeugt `.scope:focus .FormInput` — der Fokus läge auf dem Container-DIV, das
+  // nie fokussiert oder disabled ist. `[&_.FormInput:focus]:*` trifft das Feld selbst.
+  '[&_.FormInput:focus]:ring-2',
+  '[&_.FormInput:focus]:ring-teal-500',
+  '[&_.FormInput:focus]:border-teal-500',
+  '[&_.FormInput:disabled]:bg-gray-100',
+  '[&_.FormInput:disabled]:text-gray-500',
+  '[&_.FormInput:disabled]:border-gray-200',
+  '[&_.FormInput:disabled]:cursor-not-allowed',
+  // Select: Platz für den nativen Pfeil, damit lange Optionstexte nicht darunter laufen.
+  '[&_select.FormInput]:pr-9',
+  '[&_textarea.FormInput]:leading-relaxed',
+].join(' ');
+
+/** Optionen für alle Standortfelder — dieselbe Liste wie die öffentliche Suche. */
+const LOCATION_OPTIONS = SWISS_CANTONS;
+
 // ---------------------------------------------------------------------------
 // Hilfsfunktionen
 // ---------------------------------------------------------------------------
@@ -54,6 +103,99 @@ function slugify(text) {
     .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '');
+}
+
+/** Anzeigelabel einer Taxonomie-Zeile. */
+function rowLabel(row) {
+  return (row?.label_de || row?.name || '').trim();
+}
+
+/** Eindeutige, alphabetisch sortierte Labels aus einer Taxonomie-Liste. */
+function toLabelOptions(rows) {
+  const labels = new Set();
+  for (const row of rows || []) {
+    const label = rowLabel(row);
+    if (label) labels.add(label);
+  }
+  return Array.from(labels).sort((a, b) => a.localeCompare(b, 'de'));
+}
+
+/** level2-Zuordnung einer Specialty — je nach Quelle level2_id oder area_id. */
+function specialtyAreaId(specialty) {
+  return specialty?.level2_id ?? specialty?.area_id ?? null;
+}
+
+/** level3-Zuordnung eines Fokus — je nach Quelle level3_id oder specialty_id. */
+function focusSpecialtyId(focus) {
+  return focus?.level3_id ?? focus?.specialty_id ?? null;
+}
+
+/**
+ * Ableitung der Taxonomie-Optionen für die Selects dieses Formulars.
+ *
+ * Alle Werte stammen aus useTaxonomy() — es wird keine eigene Optionsliste
+ * gepflegt. Die Funktion ist bewusst tolerant: fehlt die Taxonomie oder lässt
+ * sich der area_slug nicht eindeutig auflösen, liefert sie leere bzw.
+ * unbeschränkte Listen statt zu werfen.
+ */
+function buildTaxonomyOptions({ areas, specialties, focuses, areaSlug }) {
+  const allAreas = Array.isArray(areas) ? areas : [];
+  const allSpecialties = Array.isArray(specialties) ? specialties : [];
+  const allFocuses = Array.isArray(focuses) ? focuses : [];
+
+  // Eindeutige Area: exakt ein Treffer auf den Slug. Mehrdeutig oder unbekannt
+  // ⇒ keine Einschränkung, statt eine falsche Area zu raten.
+  const slug = (areaSlug || '').trim();
+  const slugHits = slug ? allAreas.filter((a) => a?.slug === slug) : [];
+  const area = slugHits.length === 1 ? slugHits[0] : null;
+
+  const scopedSpecialties = area
+    ? allSpecialties.filter((s) => specialtyAreaId(s) === area.id)
+    : allSpecialties;
+
+  // Fällt die Area-Einschränkung auf null Einträge zurück (z.B. Taxonomie noch
+  // nicht geladen), bleiben alle Spezialgebiete wählbar — Bestandsdaten sollen
+  // nie in ein leeres Select laufen.
+  const specialtySource = scopedSpecialties.length > 0 ? scopedSpecialties : allSpecialties;
+  const specialtyOptions = toLabelOptions(specialtySource);
+
+  /**
+   * Suchraum der Fokus-Auflösung. Bewusst NICHT `specialtySource`: dessen
+   * Rückfall auf die Gesamtliste darf hier nicht greifen. Ist die Area eindeutig,
+   * gilt ausschliesslich sie — sonst könnten Fokusgebiete einer fremden Area als
+   * reguläre Optionen erscheinen.
+   */
+  const focusScope = area ? scopedSpecialties : allSpecialties;
+
+  /**
+   * Fokusgebiete eines Spezialgebiets — nur bei eindeutiger Zuordnung.
+   *
+   * Das Label wird im `focusScope` gesucht; angeboten werden ausschliesslich
+   * level4-Einträge, deren level3_id/specialty_id auf genau diese eine Specialty
+   * zeigt. Jeder andere Fall liefert bewusst eine leere Liste:
+   *
+   *  - 0 Treffer  (z.B. gespeicherte Specialty einer fremden Area) — kein
+   *    Rückfall auf die Gesamtliste;
+   *  - >1 Treffer (gleichnamige Specialties in mehreren Areas) — die Fokusgebiete
+   *    werden nie vereinigt.
+   *
+   * Ein gespeicherter Fokus geht dadurch nicht verloren: CanonicalSelect zeigt
+   * ihn weiterhin als markierten Bestandswert an.
+   */
+  const focusesForSpecialty = (specialtyLabel) => {
+    const label = (specialtyLabel || '').trim();
+    if (!label) return [];
+
+    const matches = focusScope.filter((s) => rowLabel(s) === label);
+    if (matches.length !== 1) return [];
+
+    const specialtyId = matches[0].id;
+    return toLabelOptions(
+      allFocuses.filter((f) => focusSpecialtyId(f) === specialtyId),
+    );
+  };
+
+  return { area, isAreaResolved: !!area, specialtyOptions, focusesForSpecialty };
 }
 
 function useSaveState() {
@@ -133,6 +275,23 @@ export default function AdminThemeWorldForm({
     area_slug: '', type_key: '', default_spec: '', default_focus: '', area_label_de: '',
   });
   const [predefinedSearches, setPredefinedSearches] = useState([]);
+
+  // Taxonomie für die Filter-Selects (Spezialgebiet / Fokus).
+  // Dieselbe Quelle wie die öffentliche Suche — keine zweite Optionsliste.
+  const taxonomy = useTaxonomy();
+  const { specialtyOptions, focusesForSpecialty, isAreaResolved } = useMemo(
+    () => buildTaxonomyOptions({
+      areas: taxonomy.areas,
+      specialties: taxonomy.specialties,
+      focuses: taxonomy.focuses,
+      areaSlug: suche.area_slug,
+    }),
+    [taxonomy.areas, taxonomy.specialties, taxonomy.focuses, suche.area_slug],
+  );
+
+  const specialtyHint = isAreaResolved
+    ? 'Optionaler default_spec für Suche. Auswahl auf den Bereichs-Slug begrenzt.'
+    : 'Optionaler default_spec für Suche. Bereichs-Slug nicht eindeutig zugeordnet — es werden alle Spezialgebiete angeboten.';
 
   // Kursbereiche (Specialties)
   const specialtiesSave = useSaveState();
@@ -820,23 +979,24 @@ export default function AdminThemeWorldForm({
                 />
               </FormField>
 
-              <FormField label="Standard-Spezialgebiet" hint="Optionaler default_spec für Suche">
-                <input
-                  type="text"
-                  className="FormInput"
-                  placeholder="Fitness Trainer"
+              <FormField label="Standard-Spezialgebiet" hint={specialtyHint}>
+                <CanonicalSelect
                   value={suche.default_spec}
-                  onChange={(e) => { setSuche((p) => ({ ...p, default_spec: e.target.value })); sucheSave.markDirty(); }}
+                  options={specialtyOptions}
+                  emptyLabel="Kein Spezialgebiet"
+                  onChange={(v) => { setSuche((p) => ({ ...p, default_spec: v })); sucheSave.markDirty(); }}
                 />
               </FormField>
 
-              <FormField label="Standard-Fokus" hint="Optionaler default_focus für Suche">
-                <input
-                  type="text"
-                  className="FormInput"
-                  placeholder="Kraft & Ausdauer"
+              <FormField
+                label="Standard-Fokus"
+                hint="Optionaler default_focus für Suche. Auswahl abhängig vom Standard-Spezialgebiet."
+              >
+                <CanonicalSelect
                   value={suche.default_focus}
-                  onChange={(e) => { setSuche((p) => ({ ...p, default_focus: e.target.value })); sucheSave.markDirty(); }}
+                  options={focusesForSpecialty(suche.default_spec)}
+                  emptyLabel="Kein Fokus"
+                  onChange={(v) => { setSuche((p) => ({ ...p, default_focus: v })); sucheSave.markDirty(); }}
                 />
               </FormField>
             </div>
@@ -871,32 +1031,38 @@ export default function AdminThemeWorldForm({
                         maxLength={80}
                       />
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       <div>
                         <label className="text-xs font-semibold text-gray-600">Spezialgebiet (spec)</label>
-                        <input
-                          className="FormInput mt-1"
-                          value={item.spec || ''}
-                          onChange={(e) => update({ spec: e.target.value })}
-                          placeholder="Fitness-Trainer-Ausbildung"
+                        <CanonicalSelect
+                          className="mt-1"
+                          value={item.spec}
+                          options={specialtyOptions}
+                          emptyLabel="Kein Spezialgebiet"
+                          onChange={(v) => update({ spec: v })}
                         />
                       </div>
                       <div>
                         <label className="text-xs font-semibold text-gray-600">Fokus (focus)</label>
-                        <input
-                          className="FormInput mt-1"
-                          value={item.focus || ''}
-                          onChange={(e) => update({ focus: e.target.value })}
-                          placeholder="Basis-Ausbildung"
+                        {/*
+                          Abhängig vom gewählten Spezialgebiet. Ein bestehender,
+                          nicht mehr passender Fokus wird bewusst NICHT gelöscht —
+                          er bleibt als markierte Option ausgewählt.
+                        */}
+                        <CanonicalSelect
+                          className="mt-1"
+                          value={item.focus}
+                          options={focusesForSpecialty(item.spec)}
+                          emptyLabel="Kein Fokus"
+                          onChange={(v) => update({ focus: v })}
                         />
                       </div>
                       <div>
                         <label className="text-xs font-semibold text-gray-600">Ort (loc)</label>
-                        <input
-                          className="FormInput mt-1"
-                          value={item.loc || ''}
-                          onChange={(e) => update({ loc: e.target.value })}
-                          placeholder="Zürich"
+                        <LocationSelect
+                          className="mt-1"
+                          value={item.loc}
+                          onChange={(v) => update({ loc: v })}
                         />
                       </div>
                       <div>
@@ -946,25 +1112,31 @@ export default function AdminThemeWorldForm({
               addLabel="Kursbereich hinzufügen"
               newItem={() => ({ specialty_label: '', description_de: '', icon: '', sort_order: specialties.length, is_active: true })}
               renderItem={(item, i, update, remove) => (
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="col-span-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="md:col-span-2">
                     <label className="text-xs font-semibold text-gray-600">Kursbereich-Label (exakt wie in Taxonomie)</label>
-                    <input className="FormInput mt-1" value={item.specialty_label || ''} onChange={(e) => update({ specialty_label: e.target.value })} placeholder="Fitness Trainer" />
+                    <CanonicalSelect
+                      className="mt-1"
+                      value={item.specialty_label}
+                      options={specialtyOptions}
+                      emptyLabel="Kein Spezialgebiet"
+                      onChange={(v) => update({ specialty_label: v })}
+                    />
                   </div>
                   <div>
                     <label className="text-xs font-semibold text-gray-600">Emoji-Icon</label>
-                    <input className="FormInput mt-1 w-24" value={item.icon || ''} onChange={(e) => update({ icon: e.target.value })} placeholder="🏋️" />
+                    <input className="FormInput mt-1" value={item.icon || ''} onChange={(e) => update({ icon: e.target.value })} placeholder="🏋️" />
                   </div>
                   <div>
                     <label className="text-xs font-semibold text-gray-600">Sortierung</label>
-                    <input type="number" className="FormInput mt-1 w-24" value={item.sort_order ?? i} onChange={(e) => update({ sort_order: parseInt(e.target.value, 10) })} />
+                    <input type="number" className="FormInput mt-1" value={item.sort_order ?? i} onChange={(e) => update({ sort_order: parseInt(e.target.value, 10) })} />
                   </div>
-                  <div className="col-span-2">
+                  <div className="md:col-span-2">
                     <label className="text-xs font-semibold text-gray-600">Kurzbeschreibung (optional)</label>
-                    <textarea className="FormInput mt-1 h-16 resize-none" value={item.description_de || ''} onChange={(e) => update({ description_de: e.target.value })} />
+                    <textarea className="FormInput mt-1 min-h-[7rem] h-28 resize-y" value={item.description_de || ''} onChange={(e) => update({ description_de: e.target.value })} />
                   </div>
                   <ActiveToggle value={item.is_active} onChange={(v) => update({ is_active: v })} />
-                  <button type="button" onClick={remove} className="text-xs text-red-500 hover:underline text-right col-start-2">Entfernen</button>
+                  <button type="button" onClick={remove} className="text-xs text-red-500 hover:underline text-right md:col-start-2">Entfernen</button>
                 </div>
               )}
             />
@@ -992,14 +1164,19 @@ export default function AdminThemeWorldForm({
               addLabel="Region hinzufügen"
               newItem={() => ({ label_de: '', loc_param: '', delivery_param: '', sort_order: regionen.length, is_active: true })}
               renderItem={(item, i, update, remove) => (
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="col-span-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="md:col-span-2">
+                    {/* Redaktionelles Anzeige-Label — bewusst weiterhin Freitext. */}
                     <label className="text-xs font-semibold text-gray-600">Anzeige-Label</label>
                     <input className="FormInput mt-1" value={item.label_de || ''} onChange={(e) => update({ label_de: e.target.value })} placeholder="Zürich" />
                   </div>
                   <div>
                     <label className="text-xs font-semibold text-gray-600">Standort-Parameter (loc)</label>
-                    <input className="FormInput mt-1" value={item.loc_param || ''} onChange={(e) => update({ loc_param: e.target.value })} placeholder="Zürich" />
+                    <LocationSelect
+                      className="mt-1"
+                      value={item.loc_param}
+                      onChange={(v) => update({ loc_param: v })}
+                    />
                   </div>
                   <div>
                     <label className="text-xs font-semibold text-gray-600">Lieferart-Parameter</label>
@@ -1012,12 +1189,12 @@ export default function AdminThemeWorldForm({
                   </div>
                   <div>
                     <label className="text-xs font-semibold text-gray-600">Sortierung</label>
-                    <input type="number" className="FormInput mt-1 w-24" value={item.sort_order ?? i} onChange={(e) => update({ sort_order: parseInt(e.target.value, 10) })} />
+                    <input type="number" className="FormInput mt-1" value={item.sort_order ?? i} onChange={(e) => update({ sort_order: parseInt(e.target.value, 10) })} />
                   </div>
                   <div className="flex items-end">
                     <ActiveToggle value={item.is_active} onChange={(v) => update({ is_active: v })} />
                   </div>
-                  <button type="button" onClick={remove} className="text-xs text-red-500 hover:underline col-span-2 text-right">Entfernen</button>
+                  <button type="button" onClick={remove} className="text-xs text-red-500 hover:underline md:col-span-2 text-right">Entfernen</button>
                 </div>
               )}
             />
@@ -1139,7 +1316,7 @@ export default function AdminThemeWorldForm({
               newItem={() => ({ item_type: 'editorial', name: '', description_de: '', sort_order: trustItems.length, is_active: true })}
               renderItem={(item, i, update, remove) => (
                 <div className="space-y-3">
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <FormField label="Typ">
                       <select className="FormInput" value={item.item_type || 'editorial'} onChange={(e) => update({ item_type: e.target.value })}>
                         <option value="label">Qualitätslabel (mit Logo)</option>
@@ -1153,7 +1330,7 @@ export default function AdminThemeWorldForm({
                       )}
                     </FormField>
                     <FormField label="Sortierung">
-                      <input type="number" className="FormInput w-24" value={item.sort_order ?? i} onChange={(e) => update({ sort_order: parseInt(e.target.value, 10) })} />
+                      <input type="number" className="FormInput" value={item.sort_order ?? i} onChange={(e) => update({ sort_order: parseInt(e.target.value, 10) })} />
                     </FormField>
                   </div>
                   <FormField label="Titel" required>
@@ -1283,14 +1460,15 @@ export default function AdminThemeWorldForm({
                             maxLength={60}
                           />
                         </div>
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                           <div>
+                            {/* Erzeugt denselben öffentlichen loc-Suchparameter
+                                wie die vordefinierten Suchen und die Regionen. */}
                             <label className="text-xs font-semibold text-gray-600">Ort (loc)</label>
-                            <input
-                              className="FormInput mt-1"
-                              value={item.loc || ''}
-                              onChange={(e) => update({ loc: e.target.value })}
-                              placeholder="Zürich"
+                            <LocationSelect
+                              className="mt-1"
+                              value={item.loc}
+                              onChange={(v) => update({ loc: v })}
                             />
                           </div>
                           <div>
@@ -1399,11 +1577,65 @@ function FormField({ label, hint, required, children }) {
         {label}
         {required && <span className="text-red-500 ml-1">*</span>}
       </label>
-      <div className="[&_.FormInput]:w-full [&_.FormInput]:p-2.5 [&_.FormInput]:border [&_.FormInput]:rounded-lg [&_.FormInput]:text-sm [&_.FormInput]:focus:ring-2 [&_.FormInput]:focus:ring-teal-500 [&_.FormInput]:outline-none">
+      <div className={FORM_INPUT_SCOPE}>
         {children}
       </div>
       {hint && <p className="text-xs text-gray-400 mt-1">{hint}</p>}
     </div>
+  );
+}
+
+/**
+ * Select für einen kanonischen Filterwert (Spezialgebiet, Fokus, Ort).
+ *
+ * Bestandsschutz: ist der gespeicherte Wert nicht (mehr) in `options`, wird er
+ * als zusätzliche, markierte Option angeboten und bleibt ausgewählt. Er
+ * verschwindet erst, wenn der Admin bewusst eine andere Option wählt. Der
+ * State-Wert bleibt exakt der String aus der DB — der Save-Vertrag ('' bzw.
+ * bestehende Normalisierung) ändert sich nicht.
+ */
+function CanonicalSelect({
+  value,
+  onChange,
+  options,
+  emptyLabel,
+  unknownNote = 'nicht in aktueller Taxonomie',
+  className = '',
+  disabled = false,
+}) {
+  const current = value || '';
+  const list = options || [];
+  const isUnknown = current !== '' && !list.includes(current);
+
+  return (
+    <select
+      className={`FormInput ${className}`.trim()}
+      value={current}
+      disabled={disabled}
+      onChange={(e) => onChange(e.target.value)}
+    >
+      <option value="">{emptyLabel}</option>
+      {isUnknown && (
+        <option value={current}>{`${current} (${unknownNote})`}</option>
+      )}
+      {list.map((opt) => (
+        <option key={opt} value={opt}>{opt}</option>
+      ))}
+    </select>
+  );
+}
+
+/** Standort-Select — kanonische Ortsliste der öffentlichen Suche. */
+function LocationSelect({ value, onChange, className = '' }) {
+  return (
+    <CanonicalSelect
+      value={value}
+      onChange={onChange}
+      options={LOCATION_OPTIONS}
+      emptyLabel="Kein Ort"
+      unknownNote="nicht in aktueller Ortsliste"
+      className={className}
+    />
   );
 }
 
@@ -1467,7 +1699,12 @@ function RepeatableList({ items, onChange, emptyLabel, addLabel, newItem, render
         <p className="text-sm text-gray-400 italic">{emptyLabel}</p>
       )}
       {items.map((item, i) => (
-        <div key={i} className="border border-gray-200 rounded-lg p-4 bg-gray-50 relative">
+        <div
+          key={i}
+          // FORM_INPUT_SCOPE auch hier: die Felder in den Karten liegen ausserhalb
+          // von FormField und blieben sonst ohne Rand, Hintergrund und Padding.
+          className={`border border-gray-200 rounded-lg p-4 bg-gray-50 relative ${FORM_INPUT_SCOPE}`}
+        >
           <div className="absolute top-2 right-2 text-xs text-gray-400 font-mono">#{i + 1}</div>
           {renderItem(item, i, (patch) => update(i, patch), () => remove(i))}
         </div>

@@ -418,15 +418,26 @@ describe('Phase 8.6 — Admin-Editor: predefined_searches', () => {
 
     await renderAndNavigateToSucheTab('sport-uuid-1234');
 
-    // spec editieren
-    const specInputs = screen.getAllByPlaceholderText(/Fitness-Trainer-Ausbildung/i);
-    fireEvent.change(specInputs[0], { target: { value: 'Yoga-Ausbildung' } });
-    expect(screen.getByDisplayValue('Yoga-Ausbildung')).toBeTruthy();
+    // spec/focus/loc sind seit dem Filter-UX-Fix Selects auf kanonische Werte
+    // (Taxonomie bzw. Ortsliste) — kein Freitext mehr.
+    const selectByLabel = (labelText) => {
+      const label = Array.from(document.querySelectorAll('label')).find(
+        (el) => el.textContent.trim() === labelText,
+      );
+      return label.parentElement.querySelector('select');
+    };
 
-    // loc editieren
-    const locInputs = screen.getAllByPlaceholderText('Zürich');
-    fireEvent.change(locInputs[0], { target: { value: 'Bern' } });
-    expect(screen.getByDisplayValue('Bern')).toBeTruthy();
+    // loc editieren — 'Bern' stammt aus der kanonischen Ortsliste
+    fireEvent.change(selectByLabel('Ort (loc)'), { target: { value: 'Bern' } });
+    expect(selectByLabel('Ort (loc)').value).toBe('Bern');
+
+    // delivery editieren
+    fireEvent.change(selectByLabel('Kursformat (delivery)'), { target: { value: 'online_live' } });
+    expect(selectByLabel('Kursformat (delivery)').value).toBe('online_live');
+
+    // spec/focus bieten die Leer-Auswahl an und bleiben leer, solange nichts gewählt ist
+    expect(selectByLabel('Spezialgebiet (spec)').value).toBe('');
+    expect(selectByLabel('Fokus (focus)').value).toBe('');
   });
 
   // ------------------------------------------------------------------

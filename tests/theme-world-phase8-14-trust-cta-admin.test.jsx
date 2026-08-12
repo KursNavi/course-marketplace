@@ -203,6 +203,18 @@ function fieldByLabel(labelText, container = document.body) {
   return input;
 }
 
+/**
+ * Ort-Selects der CTA-Links. Das Feld ist seit dem Filter-UX-Fix ein Select auf
+ * der kanonischen Ortsliste (kein Freitext mehr), daher kein Placeholder-Query.
+ * Im Trust-Tab tragen ausschliesslich die CTA-Links das Label "Ort (loc)".
+ */
+function ctaLocSelects() {
+  return Array.from(document.querySelectorAll('label'))
+    .filter((el) => el.textContent.trim() === 'Ort (loc)')
+    .map((el) => el.parentElement.querySelector('select'))
+    .filter(Boolean);
+}
+
 /** Speicher-Button des Bereichs "Seitentexte & Abschluss / CTA" (Header-Button). */
 function seitentexteSaveButton() {
   const heading = screen.getByText('Seitentexte & Abschluss / CTA');
@@ -242,7 +254,7 @@ function ctaSnapshot() {
     cta_heading: fieldByLabel('Abschlussüberschrift').value,
     cta_button: fieldByLabel('Hauptbutton').value,
     labels: screen.queryAllByPlaceholderText('z.B. Kurse in Zürich').map((el) => el.value),
-    locs: screen.queryAllByPlaceholderText('Zürich').map((el) => el.value),
+    locs: ctaLocSelects().map((el) => el.value),
   };
 }
 
@@ -282,7 +294,7 @@ describe('Admin lädt bestehende Trust-/CTA-Texte', () => {
       'Kurse in Zürich', 'Kurse in Basel', 'Online-live entdecken',
     ]);
 
-    const locs = screen.getAllByPlaceholderText('Zürich');
+    const locs = ctaLocSelects();
     expect(locs.map((el) => el.value)).toEqual(['Zürich', 'Basel-Stadt', '']);
 
     // delivery-Selects des CTA-Bereichs: nur online_live beim dritten Eintrag
@@ -501,7 +513,7 @@ describe('cta_links Roundtrip', () => {
       fireEvent.change(screen.getByPlaceholderText('z.B. Kurse in Zürich'), { target: { value: 'Kurse in Bern' } });
     });
     await act(async () => {
-      fireEvent.change(screen.getByPlaceholderText('Zürich'), { target: { value: 'Bern' } });
+      fireEvent.change(ctaLocSelects()[0], { target: { value: 'Bern' } });
     });
     await saveSeitentexte();
 
@@ -878,7 +890,7 @@ describe('Create → CTA-Save', () => {
       fireEvent.change(screen.getByPlaceholderText('z.B. Kurse in Zürich'), { target: { value: 'Kurse in Bern' } });
     });
     await act(async () => {
-      fireEvent.change(screen.getByPlaceholderText('Zürich'), { target: { value: 'Bern' } });
+      fireEvent.change(ctaLocSelects()[0], { target: { value: 'Bern' } });
     });
     await saveSeitentexte();
 
