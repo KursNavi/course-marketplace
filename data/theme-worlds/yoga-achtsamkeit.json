@@ -41,95 +41,63 @@
     },
     "predefined_searches": [
       {
-        "sort_order": 1,
         "label_de": "Yoga für Anfänger (Hatha)",
         "spec": "Yoga",
-        "focus": "Hatha & Grundlagen",
-        "loc": null,
-        "delivery": null
+        "focus": "Hatha & Grundlagen"
       },
       {
-        "sort_order": 2,
         "label_de": "Vinyasa & Flow",
         "spec": "Yoga",
-        "focus": "Vinyasa & Flow",
-        "loc": null,
-        "delivery": null
+        "focus": "Vinyasa & Flow"
       },
       {
-        "sort_order": 3,
         "label_de": "Yin & Restorative",
         "spec": "Yoga",
-        "focus": "Yin & Restorative",
-        "loc": null,
-        "delivery": null
+        "focus": "Yin & Restorative"
       },
       {
-        "sort_order": 4,
         "label_de": "Yogakurs Zürich",
         "spec": "Yoga",
-        "focus": null,
-        "loc": "Zürich",
-        "delivery": null
+        "loc": "Zürich"
       },
       {
-        "sort_order": 5,
         "label_de": "Yoga Kurs Bern",
         "spec": "Yoga",
-        "focus": null,
-        "loc": "Bern",
-        "delivery": null
+        "loc": "Bern"
       },
       {
-        "sort_order": 6,
         "label_de": "Meditationskurs Basel",
         "spec": "Meditation & Achtsamkeit",
-        "focus": null,
-        "loc": "Basel-Stadt",
-        "delivery": null
+        "loc": "Basel-Stadt"
       },
       {
-        "sort_order": 7,
         "label_de": "Achtsamkeitskurs Luzern",
         "spec": "Meditation & Achtsamkeit",
-        "focus": null,
-        "loc": "Luzern",
-        "delivery": null
+        "loc": "Luzern"
       },
       {
-        "sort_order": 8,
         "label_de": "Yin Yoga Zürich",
         "spec": "Yoga",
         "focus": "Yin & Restorative",
-        "loc": "Zürich",
-        "delivery": null
+        "loc": "Zürich"
       },
       {
-        "sort_order": 9,
         "label_de": "Online-live Yoga Schweiz",
         "spec": "Yoga",
-        "focus": null,
-        "loc": null,
         "delivery": "online_live"
       }
     ],
     "cta_links": [
       {
-        "sort_order": 1,
         "label_de": "Kurse in Zürich",
-        "loc": "Zürich",
-        "delivery": null
+        "loc": "Zürich"
       },
       {
-        "sort_order": 2,
         "label_de": "Kurse in Basel",
-        "loc": "Basel-Stadt",
-        "delivery": null
+        "loc": "Basel-Stadt"
       },
       {
-        "sort_order": 3,
         "label_de": "Online-live entdecken",
-        "loc": null,
         "delivery": "online_live"
       }
     ]
