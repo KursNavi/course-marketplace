@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { BEREICH_LANDING_CONFIG } from '../src/lib/bereichLandingConfig.js';
 import { SIMPLE_TOPIC_CONTENT } from '../src/lib/segmentLandingConfig.js';
+import { fetchThemeWorldSitemapEntries, escapeXml } from './_lib/sitemap-theme-worlds.js';
 
 // Inlined to avoid importing React-dependent modules (constants.js imports lucide-react)
 function slugify(input) {
@@ -202,25 +203,61 @@ export default async function handler(req, res) {
       }
     }
 
-    // 9. Generate Bereich Landing + Szenario URLs (derived from config — auto-updates as config grows)
-    let bereichUrls = '';
+    // 9. Generate Bereich Landing + Szenario URLs
+    //    Zwei Quellen:
+    //      A) Legacy: BEREICH_LANDING_CONFIG (statische Konfiguration)
+    //      B) DB: publizierte theme_worlds + publizierte theme_world_scenarios
+    //    Die Pfad-Menge wird dedupliziert — eine URL, die in beiden Quellen
+    //    existiert (z.B. Yoga während der Migrationsphase), erscheint genau einmal.
+    //    Legacy wird zuerst eingefügt und gewinnt bei Kollisionen.
+    const bereichEntries = new Map(); // path -> { path, lastmod, changefreq, priority }
+
+    const addBereichEntry = (path, meta) => {
+      const existing = bereichEntries.get(path);
+      if (existing) {
+        // Duplikat: kein zweiter <url>-Eintrag. Nur ein fehlendes lastmod wird ergänzt.
+        if (!existing.lastmod && meta.lastmod) existing.lastmod = meta.lastmod;
+        return;
+      }
+      bereichEntries.set(path, { path, lastmod: null, ...meta });
+    };
+
+    // A) Legacy-Konfiguration (auto-updates as config grows)
     for (const bereich of Object.values(BEREICH_LANDING_CONFIG)) {
       const bereichPath = `/bereich/${bereich.segment}/${bereich.slug}`;
-      bereichUrls += `
-      <url>
-          <loc>${baseUrl}${bereichPath}</loc>
-          <changefreq>weekly</changefreq>
-          <priority>0.8</priority>
-      </url>`;
+      addBereichEntry(bereichPath, { changefreq: 'weekly', priority: '0.8' });
       for (const szenario of (bereich.scenarios || [])) {
-        bereichUrls += `
-      <url>
-          <loc>${baseUrl}${bereichPath}/${szenario.slug}</loc>
-          <changefreq>monthly</changefreq>
-          <priority>0.7</priority>
-      </url>`;
+        addBereichEntry(`${bereichPath}/${szenario.slug}`, { changefreq: 'monthly', priority: '0.7' });
       }
     }
+
+    // B) Datenbank-Themenwelten (publiziert). Ein Fehler hier darf die restliche
+    //    Sitemap nicht zerstören — fetchThemeWorldSitemapEntries wirft nie.
+    const { entries: themeWorldEntries, error: themeWorldError } =
+      await fetchThemeWorldSitemapEntries(supabase);
+
+    if (themeWorldError) {
+      console.error(
+        '[sitemap] Themenwelten aus der Datenbank unvollständig geladen — Sitemap wird ohne die fehlenden Themenwelten-URLs ausgeliefert:',
+        themeWorldError.message || themeWorldError
+      );
+    }
+
+    for (const entry of themeWorldEntries) {
+      addBereichEntry(entry.path, {
+        lastmod: entry.lastmod,
+        changefreq: entry.kind === 'scenario' ? 'monthly' : 'weekly',
+        priority: entry.kind === 'scenario' ? '0.7' : '0.8',
+      });
+    }
+
+    const bereichUrls = Array.from(bereichEntries.values()).map((entry) => `
+      <url>
+          <loc>${escapeXml(`${baseUrl}${entry.path}`)}</loc>${entry.lastmod ? `
+          <lastmod>${entry.lastmod}</lastmod>` : ''}
+          <changefreq>${entry.changefreq}</changefreq>
+          <priority>${entry.priority}</priority>
+      </url>`).join('');
 
     // 10. Generate Thema URLs (Simple Topic Landing Pages — auto-updates as config grows)
     let themaUrls = '';
