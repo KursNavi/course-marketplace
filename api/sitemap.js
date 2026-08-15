@@ -2,6 +2,11 @@ import { createClient } from '@supabase/supabase-js';
 import { BEREICH_LANDING_CONFIG } from '../src/lib/bereichLandingConfig.js';
 import { SIMPLE_TOPIC_CONTENT } from '../src/lib/segmentLandingConfig.js';
 import { fetchThemeWorldSitemapEntries, escapeXml } from './_lib/sitemap-theme-worlds.js';
+import {
+  buildActiveThemeWorldTopicKeys,
+  topicKeyFromBereichPath,
+} from '../src/lib/themeWorldTakeover.js';
+import { isThemeWorldDbEnabledServer } from './_lib/theme-world-takeover.js';
 
 // Inlined to avoid importing React-dependent modules (constants.js imports lucide-react)
 function slugify(input) {
@@ -260,11 +265,33 @@ export default async function handler(req, res) {
       </url>`).join('');
 
     // 10. Generate Thema URLs (Simple Topic Landing Pages — auto-updates as config grows)
+    //     Themen, die inzwischen von einer öffentlich aktiven Themenwelt
+    //     übernommen wurden, erscheinen NICHT: /thema/{key} leitet dann
+    //     dauerhaft auf /bereich/{key} weiter (api/thema-redirect.js) und darf
+    //     keine eigene indexierbare URL mehr in der Sitemap haben.
+    //     Wird eine Themenwelt wieder deaktiviert, taucht /thema/{key}
+    //     automatisch wieder auf — der Fallback-Content bleibt erhalten.
+    //     Bei einem DB-Fehler enthält themeWorldEntries keine DB-Themenwelten;
+    //     dann bleiben die betroffenen /thema/-URLs bestehen (sicherer Fallback).
+    const activeTopicKeys = buildActiveThemeWorldTopicKeys({
+      dbEnabled: isThemeWorldDbEnabledServer(),
+      publishedDbWorlds: themeWorldEntries
+        .filter((entry) => entry.kind === 'theme-world')
+        .map((entry) => {
+          const key = topicKeyFromBereichPath(entry.path);
+          if (!key) return null;
+          const [url_segment, slug] = key.split('/');
+          return { url_segment, slug, status: 'published' };
+        })
+        .filter(Boolean),
+    });
+
     let themaUrls = '';
     for (const key of Object.keys(SIMPLE_TOPIC_CONTENT)) {
+      if (activeTopicKeys.has(key)) continue;
       themaUrls += `
       <url>
-          <loc>${baseUrl}/thema/${key}</loc>
+          <loc>${escapeXml(`${baseUrl}/thema/${key}`)}</loc>
           <changefreq>weekly</changefreq>
           <priority>0.7</priority>
       </url>`;

@@ -7,9 +7,17 @@
  * - Kinder & Jugend (/children)
  *
  * Each segment has:
- * - kursarten: Course-type tiles (3 per segment)
- * - themen: Topic tiles (4 per segment) — can link to existing Themenwelt or simple topic pages
+ * - kursarten: Course-type tiles (3 per segment) — always simple /thema/ pages
+ * - themen: Topic tiles (4 per segment) — presentation only (slug, label, icon, desc, image)
  * - simpleTopics: Content config for topics without a full Themenwelt
+ *
+ * WICHTIG — Themen-Kacheln haben bewusst KEIN href/isThemenwelt mehr:
+ * Ob ein Thema auf /bereich/{segment}/{slug} (Themenwelt) oder auf
+ * /thema/{segment}/{slug} (einfache Fallback-Seite) zeigt, entscheidet
+ * ausschliesslich src/lib/themeWorldTakeover.js anhand der Frage, ob für dieses
+ * Thema eine öffentlich aktive Themenwelt existiert. Dieselbe Regel steuert den
+ * /thema/-Redirect und die Sitemap. Diese Datei ist NICHT die Source of Truth
+ * dafür, ob eine Themenwelt existiert.
  */
 
 // ------------------------------------------------------------
@@ -63,8 +71,6 @@ export const SEGMENT_LANDING_CONFIG = {
         label: 'Sport & Fitness (Berufsausbildung)',
         icon: '🏋️',
         desc: 'Trainerausbildungen, Diplome & Spezialisierungen',
-        isThemenwelt: true,
-        href: '/bereich/beruflich/sport-fitness-berufsausbildung',
         image: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&q=80&w=800',
       },
       {
@@ -72,8 +78,6 @@ export const SEGMENT_LANDING_CONFIG = {
         label: 'Wirtschaft & Management',
         icon: '🏢',
         desc: 'Leadership, Projektmanagement & Unternehmensführung',
-        isThemenwelt: false,
-        href: '/thema/beruflich/wirtschaft-management',
         image: 'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&q=80&w=800',
       },
       {
@@ -81,8 +85,6 @@ export const SEGMENT_LANDING_CONFIG = {
         label: 'IT & Digitales',
         icon: '💻',
         desc: 'Programmierung, Daten & digitale Transformation',
-        isThemenwelt: false,
-        href: '/thema/beruflich/it-digital',
         image: 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&q=80&w=800',
       },
       {
@@ -90,8 +92,6 @@ export const SEGMENT_LANDING_CONFIG = {
         label: 'Finanzen & Recht',
         icon: '💰',
         desc: 'Buchhaltung, Controlling, Steuern & Finanzplanung',
-        isThemenwelt: false,
-        href: '/thema/beruflich/finanzen-recht',
         image: 'https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&q=80&w=800',
       },
       {
@@ -99,8 +99,6 @@ export const SEGMENT_LANDING_CONFIG = {
         label: 'Soft Skills',
         icon: '💬',
         desc: 'Kommunikation, Rhetorik & Persönlichkeitsentwicklung',
-        isThemenwelt: false,
-        href: '/thema/beruflich/soft-skills',
         image: 'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&q=80&w=800',
       },
       {
@@ -108,8 +106,6 @@ export const SEGMENT_LANDING_CONFIG = {
         label: 'Gesundheit & Resilienz',
         icon: '🌿',
         desc: 'Gesundheitsförderung, Prävention & medizinische Grundlagen',
-        isThemenwelt: false,
-        href: '/thema/beruflich/gesundheit-resilienz',
         image: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&q=80&w=800',
       },
       {
@@ -117,8 +113,6 @@ export const SEGMENT_LANDING_CONFIG = {
         label: 'Berufssprachen',
         icon: '🌐',
         desc: 'Business-Englisch, Französisch & Fachsprachen',
-        isThemenwelt: false,
-        href: '/thema/beruflich/berufssprachen',
         image: 'https://images.unsplash.com/photo-1455390582262-044cdead277a?auto=format&fit=crop&q=80&w=800',
       },
       {
@@ -126,8 +120,6 @@ export const SEGMENT_LANDING_CONFIG = {
         label: 'Bildung & Soziales',
         icon: '📋',
         desc: 'Eidg. Prüfungsvorbereitung, Ausbilder & Soziales',
-        isThemenwelt: false,
-        href: '/thema/beruflich/bildung-soziales',
         image: 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&q=80&w=800',
       },
     ],
@@ -175,8 +167,6 @@ export const SEGMENT_LANDING_CONFIG = {
         label: 'Yoga & Achtsamkeit',
         icon: '🧘',
         desc: 'Entspannung, Meditation & innere Balance',
-        isThemenwelt: true,
-        href: '/bereich/privat-hobby/yoga-achtsamkeit',
         image: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&q=80&w=800',
       },
       {
@@ -184,8 +174,6 @@ export const SEGMENT_LANDING_CONFIG = {
         label: 'Gesundheit & Resilienz',
         icon: '🌿',
         desc: 'Wohlbefinden, Prävention & mentale Stärke',
-        isThemenwelt: false,
-        href: '/thema/privat-hobby/gesundheit-resilienz',
         image: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&q=80&w=800',
       },
       {
@@ -193,8 +181,6 @@ export const SEGMENT_LANDING_CONFIG = {
         label: 'Musik',
         icon: '🎵',
         desc: 'Gitarre, Klavier, Gesang & mehr',
-        isThemenwelt: false,
-        href: '/thema/privat-hobby/musik',
         image: 'https://images.unsplash.com/photo-1511379938547-c1f69419868d?auto=format&fit=crop&q=80&w=800',
       },
       {
@@ -202,8 +188,6 @@ export const SEGMENT_LANDING_CONFIG = {
         label: 'Sprachen',
         icon: '🗣️',
         desc: 'Englisch, Französisch, Italienisch & weitere Sprachen',
-        isThemenwelt: false,
-        href: '/thema/privat-hobby/sprachen',
         image: 'https://images.unsplash.com/photo-1455390582262-044cdead277a?auto=format&fit=crop&q=80&w=800',
       },
       {
@@ -211,8 +195,6 @@ export const SEGMENT_LANDING_CONFIG = {
         label: 'Tiere & Natur',
         icon: '🐾',
         desc: 'Hundeschule, Tierpflege & Naturerlebnisse',
-        isThemenwelt: false,
-        href: '/thema/privat-hobby/tiere-natur',
         image: 'https://images.unsplash.com/photo-1415369629372-26f2fe60c467?auto=format&fit=crop&q=80&w=800',
       },
     ],
@@ -268,8 +250,6 @@ export const SEGMENT_LANDING_CONFIG = {
         label: 'Events & Ferien',
         icon: '☀️',
         desc: 'Feriencamps, Lager & besondere Erlebnisse',
-        isThemenwelt: false,
-        href: '/thema/kinder-jugend/events-ferien',
         image: 'https://images.unsplash.com/photo-1471922694854-ff1b63b20054?auto=format&fit=crop&q=80&w=800',
       },
       {
@@ -277,8 +257,6 @@ export const SEGMENT_LANDING_CONFIG = {
         label: 'Musik',
         icon: '🎵',
         desc: 'Instrumente lernen, Gesang & musikalische Früherziehung',
-        isThemenwelt: false,
-        href: '/thema/kinder-jugend/musik',
         image: 'https://images.unsplash.com/photo-1511379938547-c1f69419868d?auto=format&fit=crop&q=80&w=800',
       },
       {
@@ -286,8 +264,6 @@ export const SEGMENT_LANDING_CONFIG = {
         label: 'Schule & Bildung',
         icon: '📚',
         desc: 'Nachhilfe, Lerncoaching & Prüfungsvorbereitung',
-        isThemenwelt: false,
-        href: '/thema/kinder-jugend/schule-bildung',
         image: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&q=80&w=800',
       },
       {
@@ -295,8 +271,6 @@ export const SEGMENT_LANDING_CONFIG = {
         label: 'Sport',
         icon: '⚽',
         desc: 'Fussball, Turnen, Kampfsport, Schwimmen & mehr',
-        isThemenwelt: false,
-        href: '/thema/kinder-jugend/sport',
         image: 'https://images.unsplash.com/photo-1551698618-1dfe5d97d256?auto=format&fit=crop&q=80&w=800',
       },
       {
@@ -304,8 +278,6 @@ export const SEGMENT_LANDING_CONFIG = {
         label: 'Technik & Medien',
         icon: '🤖',
         desc: 'Programmieren, Robotik & Medienkompetenz',
-        isThemenwelt: false,
-        href: '/thema/kinder-jugend/technik-medien',
         image: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&q=80&w=800',
       },
     ],
