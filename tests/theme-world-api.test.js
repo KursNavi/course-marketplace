@@ -667,6 +667,8 @@ describe('admin-theme-worlds Unpublish', () => {
         deploy_status: 'not_requested',
         updated_at: '2026-08-03T10:00:00Z',
       },
+      // Deploy-Hook ist nicht aktiviert — Antwort meldet dies analog zu publish.
+      deploy: { status: 'not_configured' },
     });
   });
 });
