@@ -238,8 +238,15 @@ export default async function handler(req, res) {
 
     // B) Datenbank-Themenwelten (publiziert). Ein Fehler hier darf die restliche
     //    Sitemap nicht zerstören — fetchThemeWorldSitemapEntries wirft nie.
-    const { entries: themeWorldEntries, error: themeWorldError } =
-      await fetchThemeWorldSitemapEntries(supabase);
+    //    Ohne VITE_THEME_WORLD_DB_ENABLED='true' liefert eine reine
+    //    DB-Themenwelt öffentlich nichts aus (BereichLandingPage rendert
+    //    «Bereich nicht gefunden») und wird auch nicht prerendert — dann darf
+    //    sie auch nicht als indexierbare URL in der Sitemap stehen. Gleiche
+    //    Semantik wie Takeover und Prerender.
+    const themeWorldDbEnabled = isThemeWorldDbEnabledServer();
+    const { entries: themeWorldEntries, error: themeWorldError } = themeWorldDbEnabled
+      ? await fetchThemeWorldSitemapEntries(supabase)
+      : { entries: [], error: null };
 
     if (themeWorldError) {
       console.error(
@@ -274,7 +281,7 @@ export default async function handler(req, res) {
     //     Bei einem DB-Fehler enthält themeWorldEntries keine DB-Themenwelten;
     //     dann bleiben die betroffenen /thema/-URLs bestehen (sicherer Fallback).
     const activeTopicKeys = buildActiveThemeWorldTopicKeys({
-      dbEnabled: isThemeWorldDbEnabledServer(),
+      dbEnabled: themeWorldDbEnabled,
       publishedDbWorlds: themeWorldEntries
         .filter((entry) => entry.kind === 'theme-world')
         .map((entry) => {

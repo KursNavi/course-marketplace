@@ -97,10 +97,14 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
   useEffect(() => {
     if (!config) return;
 
-    const pageTitle = `${config.title[lang] || config.title.de} | KursNavi`;
+    // Redaktionelle SEO-Felder (meta_title/meta_description) sind die erste
+    // Quelle — identisch zum Server-Prerender (api/_lib/theme-world-prerender.js).
+    // Legacy-Konfigurationen haben diese Felder nicht: dort greifen wie bisher
+    // der sichtbare Titel und der Subtitle.
+    const pageTitle = config.metaTitle || `${config.title[lang] || config.title.de} | KursNavi`;
     document.title = pageTitle;
 
-    const metaDesc = config.subtitle[lang] || config.subtitle.de;
+    const metaDesc = config.metaDescription || config.subtitle[lang] || config.subtitle.de;
     let metaTag = document.querySelector('meta[name="description"]');
     if (!metaTag) {
       metaTag = document.createElement('meta');

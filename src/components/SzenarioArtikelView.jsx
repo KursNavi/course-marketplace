@@ -190,10 +190,15 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
   useEffect(() => {
     if (!scenario || !bereichConfig) return;
 
-    const pageTitle = `${scenario.label[lang] || scenario.label.de} — ${bereichConfig.title[lang] || bereichConfig.title.de} | KursNavi`;
+    // Redaktionelle SEO-Felder (meta_title/meta_description) sind die erste
+    // Quelle — identisch zum Server-Prerender (api/_lib/theme-world-prerender.js).
+    // Legacy-Szenarien haben diese Felder nicht: dort greifen wie bisher Label
+    // und Teaser.
+    const pageTitle = scenario.metaTitle
+      || `${scenario.label[lang] || scenario.label.de} — ${bereichConfig.title[lang] || bereichConfig.title.de} | KursNavi`;
     document.title = pageTitle;
 
-    const metaDesc = scenario.text[lang] || scenario.text.de;
+    const metaDesc = scenario.metaDescription || scenario.text[lang] || scenario.text.de;
     let metaTag = document.querySelector('meta[name="description"]');
     if (!metaTag) {
       metaTag = document.createElement('meta');
