@@ -394,7 +394,26 @@ Der Aufruf in Publish-Endpunkten ist hinter `THEME_WORLD_DEPLOY_ENABLED=true` ge
 3. `validatePublishScenario(scenario, parentTW)`
 4. Parent muss `status = 'published'` haben
 5. Status setzen, `published_at` setzen
-6. Kein Deploy-Hook für Szenarien (nur TW-Publish löst Deploy aus)
+6. Kein Deploy-Hook für Szenarien (nur Themenwelt-Statuswechsel lösen Deploy aus)
+
+### Deploy-Lifecycle (Themenwelt)
+
+Jede Änderung der öffentlichen Existenz einer Themenwelt fordert denselben
+Deploy-Hook an, weil /thema/-Prerendering, /thema/ → /bereich/-Redirects und
+die statische HTML-Ausgabe erst beim Build synchronisiert werden:
+
+| Aktion | Statuswechsel | Deploy angefordert |
+|---|---|---|
+| `publish` | draft → published | ja |
+| `unpublish` | published → draft | ja |
+| `archive` | published → archived | ja |
+| `archive` | draft/archived → archived | nein (war nicht öffentlich) |
+
+Gemeinsame Hilfsfunktion: `requestDeployForVisibilityChange()` in
+`api/admin-theme-worlds.js`. Ein fehlgeschlagener Hook rollt die fachliche
+Statusänderung **nicht** zurück — es wird nur `deploy_status='failed'`
+gespeichert. `not_configured` ist ein reiner Antwortwert und wird nie in die
+Spalte `deploy_status` geschrieben (CHECK-Constraint).
 
 ---
 

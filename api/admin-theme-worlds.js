@@ -12,6 +12,13 @@
  *   POST ?action=archive&id=... — Status auf 'archived' setzen
  *   POST ?action=publish&id=... — Validieren und publizieren
  *   POST ?action=unpublish&id=. — Status auf 'draft' und published_at auf null zurücksetzen
+ *
+ * Deploy-Lifecycle:
+ *   Jede Änderung, die die öffentliche Existenz einer Themenwelt verändert
+ *   (publish, unpublish, archive einer publizierten Themenwelt), fordert über
+ *   requestDeployForVisibilityChange() einen neuen Vercel-Build an. Der Build
+ *   synchronisiert /thema/-Prerendering, /thema/ → /bereich/-Redirects und die
+ *   statische HTML-Ausgabe (siehe src/lib/themeWorldTakeover.js).
  */
 
 import {
@@ -48,6 +55,64 @@ function filterWriteFields(data) {
     if (field in data) filtered[field] = data[field];
   }
   return filtered;
+}
+
+// Die Spalte deploy_status kennt laut CHECK-Constraint nur diese drei Werte.
+// 'not_configured' ist ein reiner API-Antwortwert und darf nie geschrieben werden.
+const DB_DEPLOY_STATUS = {
+  NOT_REQUESTED: 'not_requested',
+  REQUESTED: 'requested',
+  FAILED: 'failed',
+};
+
+function toDbDeployStatus(hookStatus) {
+  if (hookStatus === DEPLOY_STATUS.REQUESTED) return DB_DEPLOY_STATUS.REQUESTED;
+  if (hookStatus === DEPLOY_STATUS.FAILED) return DB_DEPLOY_STATUS.FAILED;
+  return DB_DEPLOY_STATUS.NOT_REQUESTED;
+}
+
+/**
+ * Fordert nach einer Änderung der öffentlichen Sichtbarkeit einen neuen Build an
+ * und schreibt das Ergebnis nach deploy_status / deploy_requested_at.
+ *
+ * Wird von publish, unpublish und archive (nur wenn vorher publiziert) verwendet.
+ *
+ * Wichtig: Ein fehlgeschlagener Hook macht die fachliche Statusänderung NICHT
+ * rückgängig — die Themenwelt bleibt im neuen Status, lediglich deploy_status
+ * wird auf 'failed' gesetzt.
+ *
+ * @param {object} supabaseAdmin - Service-Role-Client
+ * @param {string} id            - UUID der Themenwelt
+ * @param {string} action        - Aktionsname für Logausgaben (nie Secrets)
+ * @returns {Promise<{deploy: {status: string}, deployStatus: string|null}>}
+ *   deploy       — Ergebnis für die API-Antwort ('not_configured' | 'requested' | 'failed')
+ *   deployStatus — persistierter DB-Wert, oder null wenn nichts geschrieben wurde
+ */
+async function requestDeployForVisibilityChange(supabaseAdmin, id, action) {
+  // Deploy-Hooks sind hinter THEME_WORLD_DEPLOY_ENABLED=true gesperrt.
+  if (!isDeployEnabled()) {
+    return { deploy: { status: DEPLOY_STATUS.NOT_CONFIGURED }, deployStatus: null };
+  }
+
+  const deploy = await triggerDeployHook();
+  const deployStatus = toDbDeployStatus(deploy.status);
+
+  const deployUpdatePayload = { deploy_status: deployStatus };
+  if (deployStatus === DB_DEPLOY_STATUS.REQUESTED) {
+    deployUpdatePayload.deploy_requested_at = new Date().toISOString();
+  }
+
+  const { error } = await supabaseAdmin
+    .from('theme_worlds')
+    .update(deployUpdatePayload)
+    .eq('id', id);
+
+  if (error) {
+    // Nur Protokollnotiz — der fachliche Status bleibt bestehen.
+    console.error(`[admin-theme-worlds] ${action}: deploy_status konnte nicht gespeichert werden:`, error.message);
+  }
+
+  return { deploy, deployStatus };
 }
 
 export default async function handler(req, res) {
@@ -216,6 +281,20 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'Ungültige oder fehlende ID.' });
       }
 
+      // Vorherigen Status laden: nur das Archivieren einer publizierten
+      // Themenwelt verändert die öffentliche Ausgabe und braucht einen Build.
+      const { data: existing, error: fetchError } = await supabaseAdmin
+        .from('theme_worlds')
+        .select('id, status')
+        .eq('id', id)
+        .single();
+
+      if (fetchError || !existing) {
+        return res.status(404).json({ error: 'Themenwelt nicht gefunden.' });
+      }
+
+      const wasPublished = existing.status === 'published';
+
       const { data, error } = await supabaseAdmin
         .from('theme_worlds')
         .update({ status: 'archived' })
@@ -230,7 +309,16 @@ export default async function handler(req, res) {
         return res.status(404).json({ error: 'Themenwelt nicht gefunden.' });
       }
 
-      return res.status(200).json({ data });
+      // Entwürfe und bereits archivierte Themenwelten waren nicht öffentlich —
+      // kein Build nötig, Antwort bleibt unverändert.
+      if (!wasPublished) {
+        return res.status(200).json({ data });
+      }
+
+      const { deploy, deployStatus } = await requestDeployForVisibilityChange(supabaseAdmin, id, 'archive');
+      if (deployStatus) data.deploy_status = deployStatus;
+
+      return res.status(200).json({ data, deploy });
     }
 
     // ============================================================
@@ -287,27 +375,12 @@ export default async function handler(req, res) {
       }
 
       // Deploy Hook (nur wenn explizit aktiviert — in Phase 3 NICHT aktiv)
-      let deployResult = { status: DEPLOY_STATUS.NOT_CONFIGURED };
-      if (isDeployEnabled()) {
-        deployResult = await triggerDeployHook();
-
-        // Deploy-Status in DB speichern
-        const deployUpdatePayload = {
-          deploy_status: deployResult.status,
-        };
-        if (deployResult.status === DEPLOY_STATUS.REQUESTED) {
-          deployUpdatePayload.deploy_requested_at = new Date().toISOString();
-        }
-
-        await supabaseAdmin
-          .from('theme_worlds')
-          .update(deployUpdatePayload)
-          .eq('id', id);
-      }
+      const { deploy, deployStatus } = await requestDeployForVisibilityChange(supabaseAdmin, id, 'publish');
+      if (deployStatus) updated.deploy_status = deployStatus;
 
       return res.status(200).json({
         data: updated,
-        deploy: deployResult,
+        deploy,
       });
     }
 
@@ -322,13 +395,20 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'Ungültige oder fehlende ID.' });
       }
 
+      const updatePayload = {
+        status: 'draft',
+        published_at: null,
+      };
+      // deploy_status nur hier zurücksetzen, wenn kein Hook folgt. Sonst schreibt
+      // requestDeployForVisibilityChange() gleich den echten Hook-Status — ein
+      // vorheriges 'not_requested' wäre nur ein kurzlebiger Zwischenwert.
+      if (!isDeployEnabled()) {
+        updatePayload.deploy_status = DB_DEPLOY_STATUS.NOT_REQUESTED;
+      }
+
       const { data, error } = await supabaseAdmin
         .from('theme_worlds')
-        .update({
-          status: 'draft',
-          published_at: null,
-          deploy_status: 'not_requested',
-        })
+        .update(updatePayload)
         .eq('id', id)
         .select('id, status, published_at, deploy_status, updated_at')
         .single();
@@ -340,7 +420,12 @@ export default async function handler(req, res) {
         return res.status(404).json({ error: 'Themenwelt nicht gefunden.' });
       }
 
-      return res.status(200).json({ data });
+      // Das Zurückziehen entfernt die Themenwelt aus der öffentlichen Ausgabe —
+      // der /thema/-Fallback kommt erst mit dem nächsten Build zurück.
+      const { deploy, deployStatus } = await requestDeployForVisibilityChange(supabaseAdmin, id, 'unpublish');
+      if (deployStatus) data.deploy_status = deployStatus;
+
+      return res.status(200).json({ data, deploy });
     }
 
     // ============================================================
