@@ -18,6 +18,11 @@
       ]
     }
   ],
+  "functions": {
+    "api/thema-redirect.js": {
+      "includeFiles": "dist/index.html"
+    }
+  },
   "rewrites": [
     {
       "source": "/sitemap.xml",
@@ -26,6 +31,10 @@
     {
       "source": "/api/(.*)",
       "destination": "/api/$1"
+    },
+    {
+      "source": "/thema/:segment/:slug",
+      "destination": "/api/thema-redirect?segment=:segment&slug=:slug"
     },
     {
       "source": "/(.*)",

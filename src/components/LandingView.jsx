@@ -3,6 +3,8 @@ import { ArrowRight, Sparkles } from 'lucide-react';
 import { SEGMENT_LANDING_CONFIG } from '../lib/segmentLandingConfig';
 import { SEGMENT_CONFIG } from '../lib/constants';
 import { buildCanonical, getRobotsPolicy, DEFAULT_OG_IMAGE } from '../lib/seoUtils';
+import { useThemeWorldTakeover } from '../hooks/useThemeWorldTakeover';
+import { normalizeUrlSegment, resolveTopicTarget } from '../lib/themeWorldTakeover';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -84,15 +86,22 @@ function SegmentHero({ title, subtitle, bgImage, onExploreAll }) {
   );
 }
 
-function TileGrid({ tiles, setView }) {
+/**
+ * Themenkacheln. Ziel (/bereich/ oder /thema/) wird NICHT aus der statischen
+ * Config gelesen, sondern aus der zentralen Übernahme-Regel aufgelöst:
+ * Sobald eine öffentlich aktive Themenwelt für Segment+Slug existiert, zeigt
+ * die Kachel auf die Themenwelt — sonst auf die einfache /thema/-Landingpage.
+ */
+function TileGrid({ tiles, setView, urlSegment, activeTopicKeys }) {
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
       {tiles.map((tile) => {
-        const targetView = tile.isThemenwelt ? 'bereich-landing' : 'thema-landing';
+        const { href, isThemenwelt } = resolveTopicTarget(urlSegment, tile.slug, activeTopicKeys);
+        const targetView = isThemenwelt ? 'bereich-landing' : 'thema-landing';
         return (
           <button
             key={tile.slug}
-            onClick={() => navigateTo(tile.href, setView, targetView)}
+            onClick={() => navigateTo(href, setView, targetView)}
             className="group relative overflow-hidden rounded-2xl cursor-pointer text-left shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             style={{ aspectRatio: '4/3' }}
             aria-label={tile.label}
@@ -105,7 +114,7 @@ function TileGrid({ tiles, setView }) {
               onError={(e) => { e.target.style.display = 'none'; }}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-            {tile.isThemenwelt && (
+            {isThemenwelt && (
               <span className="absolute top-3 right-3 inline-flex items-center gap-1 bg-white/90 text-primary text-xs font-bold px-2.5 py-1 rounded-full shadow">
                 <Sparkles className="w-3 h-3" /> Themenwelt
               </span>
@@ -125,7 +134,7 @@ function TileGrid({ tiles, setView }) {
   );
 }
 
-function TopicsAndTypesSection({ kursarten, themen, setView, segCfg }) {
+function TopicsAndTypesSection({ kursarten, themen, setView, segCfg, urlSegment, activeTopicKeys }) {
   const accentText = segCfg?.text || 'text-blue-600';
   const accentBorder = segCfg?.borderLight || 'border-blue-200';
 
@@ -138,7 +147,12 @@ function TopicsAndTypesSection({ kursarten, themen, setView, segCfg }) {
         <p className="text-gray-500 mb-8 max-w-xl text-sm">
           Tauche tiefer in ein Thema ein – mit kuratierten Übersichten und Ratgebern.
         </p>
-        <TileGrid tiles={themen} setView={setView} />
+        <TileGrid
+          tiles={themen}
+          setView={setView}
+          urlSegment={urlSegment}
+          activeTopicKeys={activeTopicKeys}
+        />
       </section>
 
       {/* Kursarten — danach */}
@@ -212,6 +226,10 @@ const LandingView = ({
   const segCfg = SEGMENT_CONFIG[segmentKey];
   const landingCfg = SEGMENT_LANDING_CONFIG[segmentKey];
   const searchTypeKey = VARIANT_TO_SEARCH_TYPE[variant] || 'privat_hobby';
+  // 'privat_hobby' → 'privat-hobby' (Config-Key → URL-Segment)
+  const urlSegment = normalizeUrlSegment(segmentKey);
+  // Eine Abfrage pro Seitenaufruf — nicht pro Kachel.
+  const activeTopicKeys = useThemeWorldTakeover();
 
   // SEO Meta Tags — sync on every variant change (e.g. SPA navigation)
   useEffect(() => {
@@ -300,6 +318,8 @@ const LandingView = ({
         themen={landingCfg.themen}
         setView={setView}
         segCfg={segCfg}
+        urlSegment={urlSegment}
+        activeTopicKeys={activeTopicKeys}
       />
 
       <AllCoursesSection

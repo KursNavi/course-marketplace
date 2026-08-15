@@ -21,6 +21,8 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { BEREICH_LANDING_CONFIG } from '../src/lib/bereichLandingConfig.js';
 import { SIMPLE_TOPIC_CONTENT } from '../src/lib/segmentLandingConfig.js';
+import { injectHeadMeta } from '../api/_lib/html-head.js';
+import { loadActiveThemeWorldTopicKeys } from '../api/_lib/theme-world-takeover.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const distDir = join(__dirname, '..', 'dist');
@@ -38,46 +40,56 @@ try {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function esc(str) {
-  return String(str || '')
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+function generateHtml(path, title, description) {
+  return injectHeadMeta(template, {
+    canonical: `${BASE_URL}${path}`,
+    title,
+    description,
+    ogImage: `${BASE_URL}/og-default.png`,
+  });
 }
 
-function generateHtml(path, title, description) {
-  const canonical = `${BASE_URL}${path}`;
-  let html = template;
+/**
+ * Ermittelt beim Build, welche /thema/-Themen von einer öffentlich aktiven
+ * Themenwelt übernommen sind.
+ *
+ * Legacy-Themenwelten (BEREICH_LANDING_CONFIG) sind statisch bekannt und immer
+ * enthalten. DB-Themenwelten werden nur abgefragt, wenn das Themenwelten-System
+ * aktiviert UND Supabase konfiguriert ist. Jeder Fehler führt zum sicheren
+ * Fallback «keine DB-Übernahme» — dann werden alle /thema/-Seiten wie bisher
+ * prerendert.
+ *
+ * @returns {Promise<Set<string>>} Menge von «{segment}/{slug}»
+ */
+async function loadTakeoverTopicKeys() {
+  const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+  const key =
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    process.env.VITE_SUPABASE_ANON_KEY ||
+    process.env.SUPABASE_ANON_KEY ||
+    process.env.VITE_SUPABASE_KEY;
 
-  html = html.replace(/<title>[^<]*<\/title>/, `<title>${esc(title)}</title>`);
-  html = html.replace(
-    /(<meta name="description" content=")[^"]*(")/,
-    `$1${esc(description)}$2`
-  );
-  // Insert canonical right after <meta name="robots"> so it appears near the top of <head>
-  html = html.replace(
-    /(<meta name="robots"[^>]*>)/,
-    `$1\n    <link rel="canonical" href="${canonical}" />`
-  );
-  html = html.replace(
-    /(<meta property="og:title" content=")[^"]*(")/,
-    `$1${esc(title)}$2`
-  );
-  html = html.replace(
-    /(<meta property="og:description" content=")[^"]*(")/,
-    `$1${esc(description)}$2`
-  );
-  html = html.replace(
-    /(<meta property="og:url" content=")[^"]*(")/,
-    `$1${canonical}$2`
-  );
-  html = html.replace(
-    /(<meta property="og:image" content=")[^"]*(")/,
-    `$1${BASE_URL}/og-default.png$2`
-  );
+  if (process.env.VITE_THEME_WORLD_DB_ENABLED !== 'true' || !url || !key) {
+    // Ohne aktiviertes DB-System oder ohne Zugangsdaten: nur Legacy-Themenwelten.
+    const { topicKeys } = await loadActiveThemeWorldTopicKeys(null, {
+      env: { VITE_THEME_WORLD_DB_ENABLED: 'false' },
+    });
+    return topicKeys;
+  }
 
-  return html;
+  try {
+    const { createClient } = await import('@supabase/supabase-js');
+    const { topicKeys } = await loadActiveThemeWorldTopicKeys(createClient(url, key));
+    return topicKeys;
+  } catch (e) {
+    console.warn(
+      `  ! Themenwelten-Abfrage beim Build fehlgeschlagen (${e?.message || e}) — alle /thema/-Seiten werden prerendert.`
+    );
+    const { topicKeys } = await loadActiveThemeWorldTopicKeys(null, {
+      env: { VITE_THEME_WORLD_DB_ENABLED: 'false' },
+    });
+    return topicKeys;
+  }
 }
 
 let count = 0;
@@ -358,8 +370,26 @@ for (const bereich of Object.values(BEREICH_LANDING_CONFIG)) {
   }
 }
 
-// Thema landing pages (simple topic pages — auto-updates as config grows)
+// ─── Thema landing pages ──────────────────────────────────────────────────────
+// Themen, die von einer öffentlich aktiven Themenwelt übernommen wurden, bekommen
+// bewusst KEINE statische Datei. Vercel prüft das Dateisystem vor den Rewrites —
+// ohne Datei greift der Rewrite auf /api/thema-redirect, der dauerhaft (308) auf
+// /bereich/{segment}/{slug} weiterleitet. Alle übrigen /thema/-Seiten bleiben
+// unverändert statisch und kosten keinen Funktionsaufruf.
+//
+// Wird eine Themenwelt wieder deaktiviert, entsteht die statische Datei beim
+// nächsten Build automatisch wieder — der Fallback-Content in
+// SIMPLE_TOPIC_CONTENT muss nie gelöscht werden.
+
+const takenOverTopics = await loadTakeoverTopicKeys();
+
+let skipped = 0;
 for (const [key, config] of Object.entries(SIMPLE_TOPIC_CONTENT)) {
+  if (takenOverTopics.has(key)) {
+    skipped++;
+    console.log(`  → ${'/thema/' + key} übersprungen (Themenwelt /bereich/${key} aktiv)`);
+    continue;
+  }
   writeRoute(
     `/thema/${key}`,
     `${config.title} | KursNavi`,
@@ -367,4 +397,4 @@ for (const [key, config] of Object.entries(SIMPLE_TOPIC_CONTENT)) {
   );
 }
 
-console.log(`\n✓ ${count} static HTML files generated.\n`);
+console.log(`\n✓ ${count} static HTML files generated${skipped ? ` (${skipped} /thema/-Seiten von Themenwelten übernommen)` : ''}.\n`);
