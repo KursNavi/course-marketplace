@@ -12,6 +12,47 @@ import { readFileSync } from 'node:fs';
 
 const vercelConfig = JSON.parse(readFileSync('./vercel.json', 'utf8'));
 
+const courseRewrite = vercelConfig.rewrites.find((rule) =>
+  rule.destination.startsWith('/api/course-redirect')
+);
+
+/** Benannte Captures einer vercel.json-Source, in Reihenfolge. */
+function captureNames(source) {
+  return [...source.matchAll(/:(\w+)/g)].map(([, name]) => name);
+}
+
+/**
+ * Bildet nach, was die Function nach dem Rewrite tatsächlich in `req.query`
+ * sieht: Vercel hängt **jeden** benannten Source-Capture an die
+ * Destination-Query an — zusätzlich zur Query des Besuchers.
+ *
+ * Genau dieses Auto-Append hat den Leak erzeugt (`?topic=12&location=…`), als
+ * die Captures noch `:topic`/`:location`/`:course` hiessen. Der Test leitet die
+ * Namen deshalb aus vercel.json ab statt sie zu wiederholen.
+ *
+ * @returns {object|null} `req.query` oder null, wenn die Regel nicht greift
+ */
+function simulateVercelRewrite(rule, requestUrl) {
+  const [pathname, rawQuery = ''] = requestUrl.split('?');
+
+  const pattern = rule.source.replace(
+    /:(\w+)(\(([^)]*)\))?/g,
+    (_match, _name, _group, custom) => `(${custom || '[^/]+'})`
+  );
+  const matched = new RegExp(`^${pattern}$`).exec(pathname);
+  if (!matched) return null;
+
+  const query = {};
+  const append = (key, value) => {
+    query[key] = key in query ? [].concat(query[key], value) : value;
+  };
+
+  for (const [key, value] of new URLSearchParams(rawQuery)) append(key, value);
+  captureNames(rule.source).forEach((name, index) => append(name, matched[index + 1]));
+
+  return query;
+}
+
 // ============================================================
 // www → non-www
 // ============================================================
@@ -69,19 +110,33 @@ describe('www → non-www Redirect (vercel.json)', () => {
 // ============================================================
 
 describe('Rewrite für Kurs-URLs mit numerischem Themensegment', () => {
-  const courseRewrite = vercelConfig.rewrites.find((rule) =>
-    rule.destination.startsWith('/api/course-redirect')
-  );
-
   it('existiert und trifft nur rein numerische Themensegmente', () => {
     expect(courseRewrite).toBeDefined();
-    expect(courseRewrite.source).toBe('/courses/:topic(\\d+)/:location/:course');
+    expect(courseRewrite.source).toBe('/courses/:__topic(\\d+)/:__loc/:__cseg');
   });
 
-  it('übergibt alle drei Segmente an die Funktion', () => {
-    expect(courseRewrite.destination).toContain('__topic=:topic');
-    expect(courseRewrite.destination).toContain('__loc=:location');
-    expect(courseRewrite.destination).toContain('__cseg=:course');
+  it('übergibt alle drei Segmente über die Source-Captures an die Funktion', () => {
+    // Vercel hängt die Captures selbst an die Query an — eine explizite Query
+    // in der Destination würde die Parameter nur zusätzlich unter einem
+    // zweiten Namen erzeugen (genau das war der Query-Leak).
+    expect(captureNames(courseRewrite.source)).toEqual(['__topic', '__loc', '__cseg']);
+    expect(courseRewrite.destination).toBe('/api/course-redirect');
+    expect(courseRewrite.destination).not.toContain('?');
+  });
+
+  it('benennt die Captures exakt wie INJECTED_PARAMS der Funktion', () => {
+    // Diese Kopplung ist der eigentliche Fix: Weicht sie auf, landen die
+    // Rewrite-internen Parameter wieder im 308-Location-Header.
+    const source = readFileSync('./api/course-redirect.js', 'utf8');
+    const declaration = source.match(/const INJECTED_PARAMS = \[([^\]]*)\]/);
+    expect(declaration).not.toBeNull();
+
+    const injected = declaration[1]
+      .split(',')
+      .map((entry) => entry.trim().replace(/^['"]|['"]$/g, ''))
+      .filter(Boolean);
+
+    expect([...injected].sort()).toEqual([...captureNames(courseRewrite.source)].sort());
   });
 
   it('steht vor dem SPA-Catch-all', () => {
@@ -103,6 +158,23 @@ describe('Rewrite für Kurs-URLs mit numerischem Themensegment', () => {
     expect(sources).toContain('/thema/:segment/:slug');
     expect(sources).toContain('/api/(.*)');
     expect(sources).toContain('/(.*)');
+
+    // /thema behält seine eigene Parameterübergabe (andere Function, eigener Vertrag).
+    const themaRewrite = vercelConfig.rewrites.find((rule) => rule.source === '/thema/:segment/:slug');
+    expect(themaRewrite.destination).toBe('/api/thema-redirect?segment=:segment&slug=:slug');
+
+    // Die 404-Rewrites aus PR #104 bleiben unberührt.
+    expect(
+      vercelConfig.rewrites
+        .filter((rule) => rule.destination === '/api/resource-not-found')
+        .map((rule) => rule.source)
+    ).toEqual([
+      '/bereich/:segment/:slug',
+      '/bereich/:segment/:slug/:rest*',
+      '/ratgeber/:category',
+      '/ratgeber/:category/:cluster',
+      '/ratgeber/:category/:cluster/:rest*',
+    ]);
   });
 });
 
@@ -306,6 +378,99 @@ describe('api/course-redirect Handler', () => {
     expect(parsed.courseId).toBe('779');
     expect(parsed.originalPath).toBe('/courses/12/zuerich/779-titel-slug');
     expect(parsed.search).toBe('page=2');
+  });
+
+  // ============================================================
+  // Ende zu Ende: vercel.json-Rewrite + Handler
+  // ============================================================
+
+  describe('Rewrite-interne Parameter erreichen den Location-Header nie', () => {
+    const LEGACY_URL =
+      '/courses/12/zuerich/779-18k-gold-wax-ring-carving-workshop-fuer-zwei-personen';
+
+    /** Namen, die ausschliesslich intern sind — in keiner Variante erlaubt. */
+    const FORBIDDEN = ['topic=', 'location=', 'course=', '__topic', '__loc', '__cseg'];
+
+    /** Schickt eine echte Besucher-URL durch Rewrite-Simulation und Handler. */
+    async function follow(requestUrl) {
+      const query = simulateVercelRewrite(courseRewrite, requestUrl);
+      expect(query).not.toBeNull();
+
+      await loadHandler(mockSupabase());
+      const res = makeRes();
+      await handler({ query }, res);
+
+      expect(res._status).toBe(308);
+      for (const marker of FORBIDDEN) {
+        expect(res._headers.Location).not.toContain(marker);
+      }
+      return res._headers.Location;
+    }
+
+    it('1. ohne Besucherquery bleibt das Ziel query-frei', async () => {
+      expect(await follow(LEGACY_URL)).toBe(CANONICAL_779);
+    });
+
+    it('2. utm_source bleibt exakt erhalten', async () => {
+      expect(await follow(`${LEGACY_URL}?utm_source=audit`)).toBe(
+        `${CANONICAL_779}?utm_source=audit`
+      );
+    });
+
+    it('3. mehrere echte Besucherparameter bleiben vollständig erhalten', async () => {
+      expect(await follow(`${LEGACY_URL}?utm_source=audit&utm_medium=test`)).toBe(
+        `${CANONICAL_779}?utm_source=audit&utm_medium=test`
+      );
+    });
+
+    it('4. vom Besucher eingeschleuste interne Parameter werden verworfen', async () => {
+      expect(await follow(`${LEGACY_URL}?__topic=evil&utm_source=audit`)).toBe(
+        `${CANONICAL_779}?utm_source=audit`
+      );
+      expect(await follow(`${LEGACY_URL}?__loc=evil&__cseg=1-evil&utm_source=audit`)).toBe(
+        `${CANONICAL_779}?utm_source=audit`
+      );
+    });
+
+    it('5. der Auto-Append liefert der Function genau die internen Namen', () => {
+      expect(simulateVercelRewrite(courseRewrite, LEGACY_URL)).toEqual({
+        __topic: '12',
+        __loc: 'zuerich',
+        __cseg: '779-18k-gold-wax-ring-carving-workshop-fuer-zwei-personen',
+      });
+    });
+
+    it('6. Regressionsnachweis: die frühere Regel erzeugte den Leak', async () => {
+      // Alte Regel — Captures :topic/:location/:course plus explizite
+      // Destination-Query. Vercel lieferte der Function dadurch beide
+      // Namensfamilien; INJECTED_PARAMS kannte nur die zweite.
+      const autoAppended = simulateVercelRewrite(
+        { source: '/courses/:topic(\\d+)/:location/:course' },
+        LEGACY_URL
+      );
+      const legacyQuery = {
+        ...autoAppended,
+        __topic: autoAppended.topic,
+        __loc: autoAppended.location,
+        __cseg: autoAppended.course,
+      };
+
+      await loadHandler(mockSupabase());
+      const res = makeRes();
+      await handler({ query: legacyQuery }, res);
+
+      expect(res._status).toBe(308);
+      expect(res._headers.Location).toBe(
+        `${CANONICAL_779}?topic=12&location=zuerich&course=${autoAppended.course}`
+      );
+    });
+
+    it('7. die kanonische semantische Kurs-URL trifft die Regel nicht', () => {
+      expect(simulateVercelRewrite(courseRewrite, CANONICAL_779)).toBeNull();
+      expect(
+        simulateVercelRewrite(courseRewrite, `${CANONICAL_779}?utm_source=audit`)
+      ).toBeNull();
+    });
   });
 
   // ============================================================

@@ -30,7 +30,15 @@ import { attachPrimaryCategories, fetchCourseCategoryRows } from './_lib/course-
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-/** Von der Rewrite-Regel injizierte Parameter — nie Teil der echten Query. */
+/**
+ * Von der Rewrite-Regel injizierte Parameter — nie Teil der echten Query.
+ *
+ * Diese Namen müssen exakt den benannten Captures der Rewrite-Source in
+ * vercel.json entsprechen: Vercel hängt jeden Source-Capture automatisch an die
+ * Destination-Query an. Heisst ein Capture anders als der hier gelistete Name,
+ * hält ihn diese Funktion für Besucherquery und schreibt ihn in den
+ * 308-Location-Header.
+ */
 const INJECTED_PARAMS = ['__topic', '__loc', '__cseg'];
 
 /** Cache für die SPA-Shell — pro Lambda-Instanz nur einmal von der Platte lesen. */
