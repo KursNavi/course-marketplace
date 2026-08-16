@@ -25,9 +25,11 @@ export function escapeHtmlAttr(str) {
  * @param {string} meta.title
  * @param {string} meta.description
  * @param {string} [meta.ogImage] - absolute URL
+ * @param {string} [meta.ogImageAlt] - Alt-Text zum OG-Bild; nur bei sinnvollem
+ *        Wert wird <meta property="og:image:alt"> erzeugt.
  * @returns {string}
  */
-export function injectHeadMeta(template, { canonical, title, description, ogImage }) {
+export function injectHeadMeta(template, { canonical, title, description, ogImage, ogImageAlt }) {
   let html = String(template);
 
   html = html.replace(/<title>[^<]*<\/title>/, `<title>${escapeHtmlAttr(title)}</title>`);
@@ -55,6 +57,24 @@ export function injectHeadMeta(template, { canonical, title, description, ogImag
   html = html.replace(/(<meta property="og:url" content=")[^"]*(")/, `$1${canonical}$2`);
   if (ogImage) {
     html = html.replace(/(<meta property="og:image" content=")[^"]*(")/, `$1${ogImage}$2`);
+  }
+
+  // og:image:alt nur ausgeben, wenn ein redaktioneller Alt-Text vorhanden ist —
+  // identisch zur Laufzeitlogik in BereichLandingPage/SzenarioArtikelView.
+  const altText = typeof ogImageAlt === 'string' ? ogImageAlt.trim() : '';
+  if (altText) {
+    const altTag = `<meta property="og:image:alt" content="${escapeHtmlAttr(altText)}" />`;
+    if (/<meta property="og:image:alt"/.test(html)) {
+      html = html.replace(
+        /(<meta property="og:image:alt" content=")[^"]*(")/,
+        `$1${escapeHtmlAttr(altText)}$2`
+      );
+    } else if (/<meta property="og:image" content="/.test(html)) {
+      html = html.replace(
+        /(<meta property="og:image" content="[^"]*"\s*\/?>)/,
+        `$1\n    ${altTag}`
+      );
+    }
   }
 
   return html;

@@ -14,18 +14,30 @@
  *
  * Dynamic routes (courses, blog posts, providers) are NOT prerendered here —
  * they still fall through to dist/index.html (the SPA).
+ *
+ * Themenwelten aus der Datenbank (theme_worlds / theme_world_scenarios) werden
+ * ebenfalls prerendert, sobald VITE_THEME_WORLD_DB_ENABLED='true' ist — siehe
+ * api/_lib/theme-world-prerender.js.
  */
 
 import { readFileSync, writeFileSync, mkdirSync } from 'fs';
-import { join, dirname } from 'path';
+import { join, dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
 import { BEREICH_LANDING_CONFIG } from '../src/lib/bereichLandingConfig.js';
 import { SIMPLE_TOPIC_CONTENT } from '../src/lib/segmentLandingConfig.js';
 import { injectHeadMeta } from '../api/_lib/html-head.js';
-import { loadActiveThemeWorldTopicKeys } from '../api/_lib/theme-world-takeover.js';
+import { isThemeWorldDbEnabledServer } from '../api/_lib/theme-world-takeover.js';
+import {
+  loadThemeWorldPrerenderRoutes,
+  ThemeWorldPrerenderError,
+} from '../api/_lib/theme-world-prerender.js';
+import { buildActiveThemeWorldTopicKeys } from '../src/lib/themeWorldTakeover.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const distDir = join(__dirname, '..', 'dist');
+// PRERENDER_DIST_DIR überschreibt das Zielverzeichnis (nur für Tests genutzt).
+const distDir = process.env.PRERENDER_DIST_DIR
+  ? resolve(process.env.PRERENDER_DIST_DIR)
+  : join(__dirname, '..', 'dist');
 const BASE_URL = (process.env.VITE_SITE_URL || 'https://kursnavi.ch').replace(/\/$/, '');
 
 // ─── Template ────────────────────────────────────────────────────────────────
@@ -40,67 +52,71 @@ try {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function generateHtml(path, title, description) {
+function generateHtml(path, title, description, { ogImage, ogImageAlt } = {}) {
   return injectHeadMeta(template, {
     canonical: `${BASE_URL}${path}`,
     title,
     description,
-    ogImage: `${BASE_URL}/og-default.png`,
+    ogImage: ogImage || `${BASE_URL}/og-default.png`,
+    ogImageAlt,
   });
 }
 
 /**
- * Ermittelt beim Build, welche /thema/-Themen von einer öffentlich aktiven
- * Themenwelt übernommen sind.
+ * Lädt beim Build die publizierten DB-Themenwelten inklusive SEO-Feldern.
  *
- * Legacy-Themenwelten (BEREICH_LANDING_CONFIG) sind statisch bekannt und immer
- * enthalten. DB-Themenwelten werden nur abgefragt, wenn das Themenwelten-System
- * aktiviert UND Supabase konfiguriert ist. Jeder Fehler führt zum sicheren
- * Fallback «keine DB-Übernahme» — dann werden alle /thema/-Seiten wie bisher
- * prerendert.
+ * Ist das Themenwelten-DB-System deaktiviert, wird gar nicht abgefragt und der
+ * Build verhält sich exakt wie bisher (nur Legacy-Themenwelten).
  *
- * @returns {Promise<Set<string>>} Menge von «{segment}/{slug}»
+ * Ist es aktiviert, MUSS die Abfrage gelingen: eine still übersprungene Abfrage
+ * würde einen Deploy ohne die statischen DB-Seiten erzeugen und damit den
+ * bisher funktionierenden Production-Stand verschlechtern. Deshalb wird hier
+ * bewusst geworfen — der Build scheitert, der alte Deploy bleibt online.
+ *
+ * @returns {Promise<{enabled: boolean, routes: Array, worlds: Array}>}
  */
-async function loadTakeoverTopicKeys() {
-  const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-  const key =
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    process.env.VITE_SUPABASE_ANON_KEY ||
-    process.env.SUPABASE_ANON_KEY ||
-    process.env.VITE_SUPABASE_KEY;
-
-  if (process.env.VITE_THEME_WORLD_DB_ENABLED !== 'true' || !url || !key) {
-    // Ohne aktiviertes DB-System oder ohne Zugangsdaten: nur Legacy-Themenwelten.
-    const { topicKeys } = await loadActiveThemeWorldTopicKeys(null, {
-      env: { VITE_THEME_WORLD_DB_ENABLED: 'false' },
-    });
-    return topicKeys;
+async function loadDbThemeWorlds() {
+  if (!isThemeWorldDbEnabledServer()) {
+    return { enabled: false, routes: [], worlds: [] };
   }
 
-  try {
-    const { createClient } = await import('@supabase/supabase-js');
-    const { topicKeys } = await loadActiveThemeWorldTopicKeys(createClient(url, key));
-    return topicKeys;
-  } catch (e) {
-    console.warn(
-      `  ! Themenwelten-Abfrage beim Build fehlgeschlagen (${e?.message || e}) — alle /thema/-Seiten werden prerendert.`
+  // Genau das öffentliche Paar, das auch der Browser nutzt (src/lib/supabase.js).
+  // Bewusst KEINE Fallback-Kette: URL und Key müssen aus derselben
+  // Konfigurationsfamilie stammen, sonst entsteht ein «Invalid API key».
+  // Service-Role-Rechte sind nicht nötig — RLS gibt anonym genau die
+  // publizierten Inhalte frei, die auch ein normaler Besucher sieht.
+  const url = process.env.VITE_SUPABASE_URL;
+  const key = process.env.VITE_SUPABASE_KEY;
+
+  if (!url || !key) {
+    const missing = [
+      url ? null : 'VITE_SUPABASE_URL',
+      key ? null : 'VITE_SUPABASE_KEY',
+    ].filter(Boolean).join(' und ');
+    throw new ThemeWorldPrerenderError(
+      `VITE_THEME_WORLD_DB_ENABLED=true, aber im Build fehlt: ${missing}. ` +
+        'Der Build wird abgebrochen, damit kein Deploy ohne die statischen Themenwelt-Seiten entsteht.'
     );
-    const { topicKeys } = await loadActiveThemeWorldTopicKeys(null, {
-      env: { VITE_THEME_WORLD_DB_ENABLED: 'false' },
-    });
-    return topicKeys;
   }
+
+  const { createClient } = await import('@supabase/supabase-js');
+  return loadThemeWorldPrerenderRoutes({
+    supabase: createClient(url, key),
+    baseUrl: BASE_URL,
+  });
 }
 
 let count = 0;
+const writtenPaths = new Set();
 
-function writeRoute(path, title, description) {
-  const html = generateHtml(path, title, description);
+function writeRoute(path, title, description, options) {
+  const html = generateHtml(path, title, description, options);
   // e.g. /ratgeber/beruflich/finanzierung → dist/ratgeber/beruflich/finanzierung/index.html
   const segments = path.replace(/^\//, '').split('/').filter(Boolean);
   const outDir = join(distDir, ...segments);
   mkdirSync(outDir, { recursive: true });
   writeFileSync(join(outDir, 'index.html'), html, 'utf-8');
+  writtenPaths.add(path);
   count++;
   console.log(`  ✓ ${path}`);
 }
@@ -356,14 +372,63 @@ for (const cat of RATGEBER_CATEGORIES) {
   }
 }
 
-// Bereich landing pages + szenario articles (from config)
+// ─── Bereich landing pages + szenario articles ───────────────────────────────
+// Zwei Quellen:
+//   A) DB-Themenwelten (nur wenn VITE_THEME_WORLD_DB_ENABLED='true')
+//   B) Legacy-Konfiguration BEREICH_LANDING_CONFIG (flagunabhängig)
+//
+// Kollisionsregel — identisch zur Laufzeit (themeWorldFeatureFlag.js):
+//   - URL existiert nur in der DB          → DB-Daten (bisher fehlte die Datei)
+//   - URL existiert in der Legacy-Config   → DB-Daten nur, wenn der Key in
+//     VITE_THEME_WORLD_PILOT_KEYS steht (dann liefert auch die hydratisierte
+//     Seite DB-Inhalte aus). Sonst gewinnt die Legacy-Config wie bisher.
+
+const legacyBereichPaths = new Set();
 for (const bereich of Object.values(BEREICH_LANDING_CONFIG)) {
   const bereichPath = `/bereich/${bereich.segment}/${bereich.slug}`;
-  writeRoute(bereichPath, `${bereich.title.de} | KursNavi`, bereich.subtitle.de);
+  legacyBereichPaths.add(bereichPath);
+  for (const szenario of (bereich.scenarios || [])) {
+    legacyBereichPaths.add(`${bereichPath}/${szenario.slug}`);
+  }
+}
+
+const pilotKeys = new Set(
+  (process.env.VITE_THEME_WORLD_PILOT_KEYS || '')
+    .split(',')
+    .map((k) => k.trim().toLowerCase())
+    .filter(Boolean)
+);
+
+const dbThemeWorlds = await loadDbThemeWorlds();
+
+if (dbThemeWorlds.enabled) {
+  let dbCount = 0;
+  for (const route of dbThemeWorlds.routes) {
+    const legacyWins =
+      legacyBereichPaths.has(route.path) &&
+      !pilotKeys.has(String(route.themeWorldKey || '').toLowerCase());
+    if (legacyWins) continue;
+
+    writeRoute(route.path, route.title, route.description, {
+      ogImage: route.ogImage,
+      ogImageAlt: route.ogImageAlt,
+    });
+    dbCount++;
+  }
+  console.log(`  → ${dbCount} Themenwelt-Seite(n) aus der Datenbank prerendert.`);
+}
+
+for (const bereich of Object.values(BEREICH_LANDING_CONFIG)) {
+  const bereichPath = `/bereich/${bereich.segment}/${bereich.slug}`;
+  if (!writtenPaths.has(bereichPath)) {
+    writeRoute(bereichPath, `${bereich.title.de} | KursNavi`, bereich.subtitle.de);
+  }
 
   for (const szenario of (bereich.scenarios || [])) {
+    const szenarioPath = `${bereichPath}/${szenario.slug}`;
+    if (writtenPaths.has(szenarioPath)) continue;
     writeRoute(
-      `${bereichPath}/${szenario.slug}`,
+      szenarioPath,
       `${szenario.label.de} – ${bereich.title.de} | KursNavi`,
       szenario.text.de
     );
@@ -381,7 +446,12 @@ for (const bereich of Object.values(BEREICH_LANDING_CONFIG)) {
 // nächsten Build automatisch wieder — der Fallback-Content in
 // SIMPLE_TOPIC_CONTENT muss nie gelöscht werden.
 
-const takenOverTopics = await loadTakeoverTopicKeys();
+// Dieselbe Datengrundlage wie oben — keine zweite Abfrage. Ohne aktiviertes
+// DB-System bleibt es bei den Legacy-Themenwelten.
+const takenOverTopics = buildActiveThemeWorldTopicKeys({
+  dbEnabled: dbThemeWorlds.enabled,
+  publishedDbWorlds: dbThemeWorlds.worlds,
+});
 
 let skipped = 0;
 for (const [key, config] of Object.entries(SIMPLE_TOPIC_CONTENT)) {

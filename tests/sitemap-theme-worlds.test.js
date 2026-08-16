@@ -205,11 +205,16 @@ describe('Sitemap: dynamische Themenwelten aus der Datenbank', () => {
     process.env.SUPABASE_URL = 'https://test.supabase.co';
     process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-service-key';
     process.env.VITE_SITE_URL = BASE;
+    // Das DB-Themenwelten-System ist in Production aktiv; ohne dieses Flag
+    // liefern DB-Themenwelten öffentlich nichts aus und gehören deshalb nicht
+    // in die Sitemap (siehe eigener Testblock unten).
+    process.env.VITE_THEME_WORLD_DB_ENABLED = 'true';
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
     mockState.supabase = null;
+    delete process.env.VITE_THEME_WORLD_DB_ENABLED;
   });
 
   it('1. publizierte DB-Themenwelt erscheint in der Sitemap', async () => {
@@ -290,11 +295,16 @@ describe('Sitemap: Legacy-Bereiche und Deduplizierung', () => {
     process.env.SUPABASE_URL = 'https://test.supabase.co';
     process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-service-key';
     process.env.VITE_SITE_URL = BASE;
+    // Das DB-Themenwelten-System ist in Production aktiv; ohne dieses Flag
+    // liefern DB-Themenwelten öffentlich nichts aus und gehören deshalb nicht
+    // in die Sitemap (siehe eigener Testblock unten).
+    process.env.VITE_THEME_WORLD_DB_ENABLED = 'true';
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
     mockState.supabase = null;
+    delete process.env.VITE_THEME_WORLD_DB_ENABLED;
   });
 
   it('6. Legacy-Bereichsseiten bleiben erhalten', async () => {
@@ -367,11 +377,16 @@ describe('Sitemap: Robustheit bei Themenwelten-DB-Fehlern', () => {
     process.env.SUPABASE_URL = 'https://test.supabase.co';
     process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-service-key';
     process.env.VITE_SITE_URL = BASE;
+    // Das DB-Themenwelten-System ist in Production aktiv; ohne dieses Flag
+    // liefern DB-Themenwelten öffentlich nichts aus und gehören deshalb nicht
+    // in die Sitemap (siehe eigener Testblock unten).
+    process.env.VITE_THEME_WORLD_DB_ENABLED = 'true';
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
     mockState.supabase = null;
+    delete process.env.VITE_THEME_WORLD_DB_ENABLED;
   });
 
   it('9. Fehler beim Laden der Themenwelten zerstört nicht die gesamte Sitemap', async () => {
@@ -415,11 +430,16 @@ describe('Sitemap: bestehende Bereiche bleiben unverändert', () => {
     process.env.SUPABASE_URL = 'https://test.supabase.co';
     process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-service-key';
     process.env.VITE_SITE_URL = BASE;
+    // Das DB-Themenwelten-System ist in Production aktiv; ohne dieses Flag
+    // liefern DB-Themenwelten öffentlich nichts aus und gehören deshalb nicht
+    // in die Sitemap (siehe eigener Testblock unten).
+    process.env.VITE_THEME_WORLD_DB_ENABLED = 'true';
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
     mockState.supabase = null;
+    delete process.env.VITE_THEME_WORLD_DB_ENABLED;
   });
 
   it('10. Kurse, Blog, Anbieter, Ratgeber, /thema und statische Seiten sind vorhanden', async () => {
@@ -435,5 +455,59 @@ describe('Sitemap: bestehende Bereiche bleiben unverändert', () => {
     expect(xml).toContain(`${BASE}/ratgeber</loc>`);
     expect(xml).toContain(`${BASE}/ratgeber/beruflich/finanzierung/vollkostenrechnung-weiterbildung`);
     expect(xml).toContain(`${BASE}/thema/`);
+  });
+});
+
+// ============================================================
+// Feature-Flag-Konsistenz: VITE_THEME_WORLD_DB_ENABLED
+// ============================================================
+
+describe('Sitemap: Feature-Flag VITE_THEME_WORLD_DB_ENABLED', () => {
+  beforeEach(() => {
+    vi.resetModules();
+    process.env.SUPABASE_URL = 'https://test.supabase.co';
+    process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-service-key';
+    process.env.VITE_SITE_URL = BASE;
+    delete process.env.VITE_THEME_WORLD_DB_ENABLED;
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    mockState.supabase = null;
+    delete process.env.VITE_THEME_WORLD_DB_ENABLED;
+  });
+
+  it('ohne Flag erscheint eine reine DB-Themenwelt NICHT als /bereich-URL', async () => {
+    process.env.VITE_THEME_WORLD_DB_ENABLED = 'false';
+    const { res, xml } = await runSitemap(defaultTables());
+
+    expect(res._status).toBe(200);
+    expect(countLoc(xml, `${BASE}/bereich/privat-hobby/neue-db-themenwelt`)).toBe(0);
+    expect(xml).not.toContain('publiziertes-szenario');
+  });
+
+  it('ohne Flag wird die Themenwelten-Tabelle gar nicht abgefragt', async () => {
+    process.env.VITE_THEME_WORLD_DB_ENABLED = 'false';
+    const { calls } = await runSitemap(defaultTables());
+
+    expect(calls.some((c) => c.table === 'theme_worlds')).toBe(false);
+    expect(calls.some((c) => c.table === 'theme_world_scenarios')).toBe(false);
+  });
+
+  it('ohne Flag bleiben Legacy-Bereichsseiten und /thema-Seiten vollständig erhalten', async () => {
+    process.env.VITE_THEME_WORLD_DB_ENABLED = 'false';
+    const { xml } = await runSitemap(defaultTables());
+
+    for (const bereich of Object.values(BEREICH_LANDING_CONFIG)) {
+      expect(countLoc(xml, `${BASE}/bereich/${bereich.segment}/${bereich.slug}`)).toBe(1);
+    }
+    expect(xml).toContain(`${BASE}/thema/`);
+  });
+
+  it('mit Flag erscheint dieselbe DB-Themenwelt wieder', async () => {
+    process.env.VITE_THEME_WORLD_DB_ENABLED = 'true';
+    const { xml } = await runSitemap(defaultTables());
+
+    expect(countLoc(xml, `${BASE}/bereich/privat-hobby/neue-db-themenwelt`)).toBe(1);
   });
 });
