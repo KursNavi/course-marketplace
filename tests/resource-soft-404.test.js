@@ -83,7 +83,7 @@ describe('vercel.json — 404-Fallback der Ressourcenfamilien', () => {
 
   it('lässt die bestehenden Spezial-Rewrites unverändert und vorne', () => {
     expect(rewriteSources).toContain('/sitemap.xml');
-    expect(rewriteSources).toContain('/courses/:topic(\\d+)/:location/:course');
+    expect(rewriteSources).toContain('/courses/:__topic(\\d+)/:__loc/:__cseg');
     expect(rewriteSources).toContain('/api/(.*)');
     expect(rewriteSources).toContain('/thema/:segment/:slug');
 
@@ -92,7 +92,7 @@ describe('vercel.json — 404-Fallback der Ressourcenfamilien', () => {
     );
     for (const source of [
       '/sitemap.xml',
-      '/courses/:topic(\\d+)/:location/:course',
+      '/courses/:__topic(\\d+)/:__loc/:__cseg',
       '/api/(.*)',
       '/thema/:segment/:slug',
     ]) {

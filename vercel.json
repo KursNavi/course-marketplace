@@ -38,8 +38,8 @@
       "destination": "/api/sitemap"
     },
     {
-      "source": "/courses/:topic(\\d+)/:location/:course",
-      "destination": "/api/course-redirect?__topic=:topic&__loc=:location&__cseg=:course"
+      "source": "/courses/:__topic(\\d+)/:__loc/:__cseg",
+      "destination": "/api/course-redirect"
     },
     {
       "source": "/api/(.*)",
