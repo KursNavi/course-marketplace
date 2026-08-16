@@ -27,7 +27,10 @@ import { BEREICH_LANDING_CONFIG } from '../src/lib/bereichLandingConfig.js';
 import { SIMPLE_TOPIC_CONTENT } from '../src/lib/segmentLandingConfig.js';
 import { injectHeadMeta } from '../api/_lib/html-head.js';
 import { isThemeWorldDbEnabledServer } from '../api/_lib/theme-world-takeover.js';
-import { loadThemeWorldPrerenderRoutes } from '../api/_lib/theme-world-prerender.js';
+import {
+  loadThemeWorldPrerenderRoutes,
+  ThemeWorldPrerenderError,
+} from '../api/_lib/theme-world-prerender.js';
 import { buildActiveThemeWorldTopicKeys } from '../src/lib/themeWorldTakeover.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -77,19 +80,21 @@ async function loadDbThemeWorlds() {
     return { enabled: false, routes: [], worlds: [] };
   }
 
-  const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-  // Öffentlicher/Anon-Zugang genügt: RLS gibt anonym genau die publizierten
-  // Inhalte frei, die auch ein normaler Besucher sieht.
-  const key =
-    process.env.VITE_SUPABASE_ANON_KEY ||
-    process.env.SUPABASE_ANON_KEY ||
-    process.env.VITE_SUPABASE_KEY ||
-    process.env.SUPABASE_SERVICE_ROLE_KEY;
+  // Genau das öffentliche Paar, das auch der Browser nutzt (src/lib/supabase.js).
+  // Bewusst KEINE Fallback-Kette: URL und Key müssen aus derselben
+  // Konfigurationsfamilie stammen, sonst entsteht ein «Invalid API key».
+  // Service-Role-Rechte sind nicht nötig — RLS gibt anonym genau die
+  // publizierten Inhalte frei, die auch ein normaler Besucher sieht.
+  const url = process.env.VITE_SUPABASE_URL;
+  const key = process.env.VITE_SUPABASE_KEY;
 
   if (!url || !key) {
-    throw new Error(
-      'VITE_THEME_WORLD_DB_ENABLED=true, aber keine Supabase-Zugangsdaten für den Build gesetzt ' +
-        '(erwartet VITE_SUPABASE_URL/SUPABASE_URL + VITE_SUPABASE_ANON_KEY). ' +
+    const missing = [
+      url ? null : 'VITE_SUPABASE_URL',
+      key ? null : 'VITE_SUPABASE_KEY',
+    ].filter(Boolean).join(' und ');
+    throw new ThemeWorldPrerenderError(
+      `VITE_THEME_WORLD_DB_ENABLED=true, aber im Build fehlt: ${missing}. ` +
         'Der Build wird abgebrochen, damit kein Deploy ohne die statischen Themenwelt-Seiten entsteht.'
     );
   }

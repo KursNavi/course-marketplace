@@ -253,8 +253,10 @@ async function runPrerender({ tables = defaultTables(), env = {} } = {}) {
   setEnv({
     PRERENDER_DIST_DIR: distDir,
     VITE_SITE_URL: BASE,
-    SUPABASE_URL: 'https://test.supabase.co',
-    VITE_SUPABASE_ANON_KEY: 'test-anon-key',
+    // Dasselbe öffentliche Paar wie im Browser (src/lib/supabase.js).
+    // Platzhalterwerte — kein Test benötigt echte Zugangsdaten.
+    VITE_SUPABASE_URL: 'https://test.supabase.co',
+    VITE_SUPABASE_KEY: 'test-public-key',
     ...env,
   });
 
@@ -612,17 +614,99 @@ describe('Fail-safe: Supabase-Fehler bei aktivem DB-Prerender', () => {
     ).rejects.toThrow(/Szenario-Artikel konnten nicht geladen werden/);
   });
 
-  it('fehlende Supabase-Zugangsdaten brechen den Build ab statt Seiten zu verlieren', async () => {
+});
+
+// ============================================================
+// Credential-Auswahl: ausschliesslich das öffentliche Paar
+// ============================================================
+
+describe('Prerender nutzt nur VITE_SUPABASE_URL + VITE_SUPABASE_KEY', () => {
+  it('1. das öffentliche Paar genügt für den DB-Prerender', async () => {
+    const { calls } = await runPrerender({
+      env: {
+        VITE_THEME_WORLD_DB_ENABLED: 'true',
+        VITE_SUPABASE_URL: 'https://test.supabase.co',
+        VITE_SUPABASE_KEY: 'test-public-key',
+      },
+    });
+
+    expect(calls.some((c) => c.table === 'theme_worlds')).toBe(true);
+    expect(pageExists(DB_ONLY_PATH)).toBe(true);
+  });
+
+  it('2. fehlende VITE_SUPABASE_URL löst den Fail-safe aus', async () => {
     await expect(
       runPrerender({
         env: {
           VITE_THEME_WORLD_DB_ENABLED: 'true',
-          // bewusst weder URL noch Key
-          SUPABASE_URL: undefined,
-          VITE_SUPABASE_ANON_KEY: undefined,
+          VITE_SUPABASE_URL: undefined,
+          VITE_SUPABASE_KEY: 'test-public-key',
         },
       })
-    ).rejects.toThrow(/keine Supabase-Zugangsdaten/);
+    ).rejects.toThrow(/im Build fehlt: VITE_SUPABASE_URL\./);
+  });
+
+  it('3. fehlender VITE_SUPABASE_KEY löst den Fail-safe aus', async () => {
+    await expect(
+      runPrerender({
+        env: {
+          VITE_THEME_WORLD_DB_ENABLED: 'true',
+          VITE_SUPABASE_URL: 'https://test.supabase.co',
+          VITE_SUPABASE_KEY: undefined,
+        },
+      })
+    ).rejects.toThrow(/im Build fehlt: VITE_SUPABASE_KEY\./);
+  });
+
+  it('der Fail-safe wirft einen ThemeWorldPrerenderError und nennt keine Werte', async () => {
+    const error = await runPrerender({
+      env: {
+        VITE_THEME_WORLD_DB_ENABLED: 'true',
+        VITE_SUPABASE_URL: undefined,
+        VITE_SUPABASE_KEY: undefined,
+      },
+    }).catch((e) => e);
+
+    // Identitätsvergleich statt instanceof: das Skript importiert das Modul
+    // nach vi.resetModules() frisch, die Klassenreferenz ist deshalb eine andere.
+    expect(error.name).toBe('ThemeWorldPrerenderError');
+    expect(error.message).toContain('VITE_SUPABASE_URL und VITE_SUPABASE_KEY');
+    // Nur Variablennamen, keine Werte
+    expect(error.message).not.toContain('test-public-key');
+    expect(error.message).not.toContain('supabase.co');
+  });
+
+  it('4. ein vorhandener SUPABASE_SERVICE_ROLE_KEY ersetzt das öffentliche Paar NICHT', async () => {
+    const error = await runPrerender({
+      env: {
+        VITE_THEME_WORLD_DB_ENABLED: 'true',
+        VITE_SUPABASE_URL: undefined,
+        VITE_SUPABASE_KEY: undefined,
+        // Server-seitige Variablen sind auf Vercel vorhanden, dürfen den
+        // öffentlichen Read aber weder ersetzen noch mit ihm gemischt werden.
+        SUPABASE_URL: 'https://server.supabase.co',
+        SUPABASE_SERVICE_ROLE_KEY: 'service-role-should-not-be-used',
+      },
+    }).catch((e) => e);
+
+    expect(error.name).toBe('ThemeWorldPrerenderError');
+    expect(error.message).not.toContain('service-role-should-not-be-used');
+  });
+
+  it('4b. der Prerender greift auch bei gesetzten Server-Variablen nur auf das öffentliche Paar zu', async () => {
+    const { calls } = await runPrerender({
+      env: {
+        VITE_THEME_WORLD_DB_ENABLED: 'true',
+        VITE_SUPABASE_URL: 'https://test.supabase.co',
+        VITE_SUPABASE_KEY: 'test-public-key',
+        SUPABASE_URL: 'https://server.supabase.co',
+        SUPABASE_SERVICE_ROLE_KEY: 'service-role-should-not-be-used',
+      },
+    });
+
+    expect(calls.some((c) => c.table === 'theme_worlds')).toBe(true);
+    const { createClient } = await import('@supabase/supabase-js');
+    expect(createClient).toHaveBeenCalledWith('https://test.supabase.co', 'test-public-key');
   });
 });
 
