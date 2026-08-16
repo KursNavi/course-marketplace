@@ -641,22 +641,9 @@ export const SIMPLE_TOPIC_CONTENT = {
     areaAliases: ['kochen_backen', 'kochen_genuss'],
     hintText: 'Kochkurs-Empfehlungen und Rezept-Tipps folgen in Kürze.',
   },
-  'privat-hobby/kunst-kreativitaet': {
-    title: 'Kunst & Kreativität',
-    subtitle: 'Malen, Zeichnen, Gestalten – kreativ sein macht glücklich',
-    intro:
-      'Kreativkurse sind weit mehr als Hobby – sie fördern Konzentration, Selbstausdruck und innere Ruhe. In der Schweiz findest du ein breites Angebot an Kursen für alle Kreativbereiche.',
-    points: [
-      { icon: '🖌️', title: 'Malen & Zeichnen', text: 'Aquarell, Acryl, Bleistift – lerne Techniken und finde deinen eigenen Stil.' },
-      { icon: '🏺', title: 'Töpfern & Keramik', text: 'Mit den Händen arbeiten und etwas erschaffen, das bleibt – sehr beliebt und therapeutisch.' },
-      { icon: '📷', title: 'Fotografie', text: 'Kameraführung, Bildkomposition, Lightroom-Nachbearbeitung – für alle Stufen.' },
-      { icon: '✂️', title: 'Nähen, Stricken & mehr', text: 'Textile Kreativität verbindet Handwerk, Ästhetik und Entspannung.' },
-    ],
-    showCourseList: true,
-    typeAliases: ['privat_hobby', 'privat', '2'],
-    areaAliases: ['kunst', 'kunst_kreativitaet'],
-    hintText: 'Ausführliche Kreativ-Ratgeber und Kursempfehlungen folgen in Kürze.',
-  },
+  // Kunst & Kreativität: siehe 'privat-hobby/kunst-kreativ'. Der historische
+  // Slug 'kunst-kreativitaet' ist kein eigener Inhalt mehr, sondern ein Alias
+  // (TOPIC_SLUG_ALIASES) mit permanentem Redirect.
 
   // ---- PRIVAT & HOBBY THEMEN (new slugs matching dropdown exactly) ----
   'privat-hobby/kunst-kreativ': {
@@ -671,8 +658,10 @@ export const SIMPLE_TOPIC_CONTENT = {
       { icon: '✂️', title: 'Nähen, Stricken & mehr', text: 'Textile Kreativität verbindet Handwerk, Ästhetik und Entspannung.' },
     ],
     showCourseList: true,
-    typeAliases: ['privat_hobby', 'privat'],
-    areaAliases: ['kunst', 'kunst_kreativ'],
+    // Aliase des zusammengeführten Slugs 'kunst-kreativitaet' sind hier
+    // enthalten, damit kein Kurs durch die Zusammenführung aus der Liste fällt.
+    typeAliases: ['privat_hobby', 'privat', '2'],
+    areaAliases: ['kunst', 'kunst_kreativ', 'kunst_kreativitaet'],
     hintText: 'Ausführliche Kreativ-Ratgeber und Kursempfehlungen folgen in Kürze.',
   },
   'privat-hobby/heim-natur': {
@@ -1180,6 +1169,44 @@ export const SIMPLE_TOPIC_CONTENT = {
     hintText: 'Weitere Empfehlungen für Sprach- und Lernkurse für Kinder folgen in Kürze.',
   },
 };
+
+// ------------------------------------------------------------
+// HISTORISCHE THEMEN-SLUGS (Alias → kanonischer Slug)
+//
+// Ein Thema darf genau EINEN indexierbaren Inhalt haben. Wo früher zwei
+// /thema/-Seiten mit identischem Inhalt existierten, bleibt der kanonische
+// Slug als einziger Eintrag in SIMPLE_TOPIC_CONTENT stehen; der historische
+// Slug steht nur noch hier und wird von api/thema-redirect.js dauerhaft (308)
+// auf den kanonischen Slug weitergeleitet.
+//
+// Folge (automatisch, ohne Sonderfälle):
+//   - Alias hat keinen Eintrag in SIMPLE_TOPIC_CONTENT
+//     → keine Sitemap-URL (api/sitemap.js iteriert über SIMPLE_TOPIC_CONTENT)
+//     → keine prerenderte Datei (scripts/prerender-static.mjs ebenso)
+//     → der Rewrite auf /api/thema-redirect greift und leitet weiter
+//
+// Ziele müssen selbst kanonisch sein (kein Alias auf einen Alias) — das
+// verhindert Redirect-Ketten. resolveTopicAlias() löst deshalb genau einen
+// Schritt auf.
+//
+// 'privat-hobby/kunst-kreativitaet' → 'privat-hobby/kunst-kreativ':
+//   kanonisch ist der Slug, der die Taxonomie spiegelt (constants.js:
+//   privat_hobby.kunst_kreativ) und in den Kurs-URLs bereits benutzt wird
+//   (/courses/kunst-kreativ/…).
+// ------------------------------------------------------------
+
+export const TOPIC_SLUG_ALIASES = {
+  'privat-hobby/kunst-kreativitaet': 'privat-hobby/kunst-kreativ',
+};
+
+/**
+ * Löst einen historischen Themen-Key auf den kanonischen Key auf.
+ * Kanonische Keys (und unbekannte Keys) werden unverändert zurückgegeben.
+ *
+ * @param {string} key - «{segment}/{slug}»
+ * @returns {string} kanonischer Key
+ */
+export const resolveTopicAlias = (key) => TOPIC_SLUG_ALIASES[key] || key;
 
 /**
  * Resolve segment key from URL segment string
