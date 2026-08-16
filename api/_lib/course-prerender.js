@@ -94,6 +94,27 @@ export function isCoursePrerenderEnabled(env = process.env) {
 }
 
 /**
+ * Läuft dieser Build auf Vercel?
+ *
+ * Vercel setzt in jeder Build- und Laufzeitumgebung automatisch `VERCEL=1` und
+ * `VERCEL_ENV` (production | preview | development). Beides ist bereits
+ * vorhanden — es braucht also KEINE zusätzliche Projektkonfiguration, damit ein
+ * echter Deploy strenger behandelt wird als ein lokaler Build.
+ *
+ * Der Unterschied ist entscheidend: lokal und in CI gibt es schlicht keine
+ * Datenbank, dort ist ein übersprungener Prerender folgenlos. Auf Vercel würde
+ * derselbe Sprung hunderte Kurs- und Anbieter-URLs still wieder als generische
+ * SPA-Shell veröffentlichen — genau die SEO-Regression, die dieser Fail-safe
+ * verhindern soll.
+ *
+ * @param {object} [env=process.env]
+ * @returns {boolean}
+ */
+export function isVercelBuild(env = process.env) {
+  return env?.VERCEL === '1' || Boolean(env?.VERCEL_ENV);
+}
+
+/**
  * Liest das öffentliche Supabase-Paar aus der Umgebung.
  *
  * Bewusst KEINE Fallback-Kette: URL und Key müssen aus derselben

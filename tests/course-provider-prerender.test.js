@@ -378,6 +378,9 @@ const ENV_KEYS = [
   'VITE_THEME_WORLD_PILOT_KEYS',
   'VITE_COURSE_PRERENDER_ENABLED',
   'VITE_COURSE_PRERENDER_REQUIRED',
+  // Von Vercel automatisch gesetzt — entscheidet über die Strenge des Fail-safe.
+  'VERCEL',
+  'VERCEL_ENV',
   'SUPABASE_URL',
   'VITE_SUPABASE_URL',
   'SUPABASE_SERVICE_ROLE_KEY',
@@ -926,7 +929,7 @@ describe('Fail-safe: Credentials', () => {
     ).rejects.toThrow(/es fehlt: VITE_SUPABASE_KEY/);
   });
 
-  it('2b. fehlendes Paar bei erzwungenem Prerender ist ein Build-Fehler', async () => {
+  it('2b. ausserhalb Vercel erzwingt VITE_COURSE_PRERENDER_REQUIRED=true den Abbruch', async () => {
     const error = await runPrerender({
       env: {
         VITE_SUPABASE_URL: undefined,
@@ -940,7 +943,7 @@ describe('Fail-safe: Credentials', () => {
     expect(error.message).not.toContain('test-public-key');
   });
 
-  it('2c. fehlendes Paar ohne Zwang überspringt laut, statt still zu deployen', async () => {
+  it('2c. lokal/CI ohne Vercel: fehlendes Paar überspringt laut, statt still zu deployen', async () => {
     await runPrerender({
       env: { VITE_SUPABASE_URL: undefined, VITE_SUPABASE_KEY: undefined },
     });
@@ -974,6 +977,90 @@ describe('Fail-safe: Credentials', () => {
 
     const { createClient } = await import('@supabase/supabase-js');
     expect(createClient).toHaveBeenCalledWith('https://test.supabase.co', 'test-public-key');
+  });
+});
+
+// ============================================================
+// Fail-safe: echter Vercel-Build ist strenger als lokal/CI
+// ============================================================
+
+describe('Fail-safe: Vercel-Build', () => {
+  // Vercel setzt VERCEL und VERCEL_ENV in jedem Build automatisch — es ist also
+  // keine zusätzliche Projektkonfiguration nötig, damit ein echter Deploy
+  // strenger behandelt wird als ein lokaler Build.
+  const VERCEL_ENVS = [
+    { label: 'VERCEL=1', env: { VERCEL: '1' } },
+    { label: 'VERCEL_ENV=preview', env: { VERCEL_ENV: 'preview' } },
+    { label: 'VERCEL_ENV=production', env: { VERCEL_ENV: 'production' } },
+  ];
+
+  for (const { label, env } of VERCEL_ENVS) {
+    it(`2. ${label}: fehlendes Credential-Paar bricht den Build ab`, async () => {
+      const error = await runPrerender({
+        env: { ...env, VITE_SUPABASE_URL: undefined, VITE_SUPABASE_KEY: undefined },
+      }).catch((e) => e);
+
+      expect(error.name).toBe('CoursePrerenderError');
+      expect(error.message).toContain('Vercel-Build erkannt');
+      // Kein zusätzliches Flag nötig — Production ist ohne Zutun fail-safe.
+      expect(pageExists(COURSE_PATH)).toBe(false);
+    });
+  }
+
+  it('3. Vercel mit nur VITE_SUPABASE_URL bricht ab', async () => {
+    const error = await runPrerender({
+      env: { VERCEL: '1', VITE_SUPABASE_KEY: undefined },
+    }).catch((e) => e);
+
+    expect(error.name).toBe('CoursePrerenderError');
+    expect(error.message).toContain('es fehlt: VITE_SUPABASE_KEY');
+  });
+
+  it('4. Vercel mit nur VITE_SUPABASE_KEY bricht ab', async () => {
+    const error = await runPrerender({
+      env: { VERCEL: '1', VITE_SUPABASE_URL: undefined },
+    }).catch((e) => e);
+
+    expect(error.name).toBe('CoursePrerenderError');
+    expect(error.message).toContain('es fehlt: VITE_SUPABASE_URL');
+  });
+
+  it('5. Vercel mit vollständigem öffentlichem Paar prerendert normal', async () => {
+    await runPrerender({ env: { VERCEL: '1', VERCEL_ENV: 'preview' } });
+
+    expect(pageExists(COURSE_PATH)).toBe(true);
+    expect(pageExists(PROVIDER_PATH)).toBe(true);
+  });
+
+  it('6. Vercel mit VITE_COURSE_PRERENDER_ENABLED=false überspringt bewusst, ohne Fehler', async () => {
+    const { calls } = await runPrerender({
+      env: {
+        VERCEL: '1',
+        VERCEL_ENV: 'production',
+        VITE_COURSE_PRERENDER_ENABLED: 'false',
+        VITE_SUPABASE_URL: undefined,
+        VITE_SUPABASE_KEY: undefined,
+      },
+    });
+
+    expect(pageExists(COURSE_PATH)).toBe(false);
+    expect(pageExists('/about')).toBe(true);
+    expect(calls).toHaveLength(0);
+  });
+
+  it('nennt in keiner Fail-safe-Meldung Zugangsdaten', async () => {
+    const error = await runPrerender({
+      env: {
+        VERCEL: '1',
+        VITE_SUPABASE_URL: undefined,
+        VITE_SUPABASE_KEY: undefined,
+        SUPABASE_URL: 'https://server.supabase.co',
+        SUPABASE_SERVICE_ROLE_KEY: 'service-role-should-not-be-used',
+      },
+    }).catch((e) => e);
+
+    expect(error.message).not.toContain('service-role-should-not-be-used');
+    expect(error.message).not.toContain('server.supabase.co');
   });
 });
 

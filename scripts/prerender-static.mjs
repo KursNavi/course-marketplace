@@ -37,6 +37,7 @@ import {
 import {
   CoursePrerenderError,
   isCoursePrerenderEnabled,
+  isVercelBuild,
   loadCourseAndProviderPrerenderRoutes,
   readPublicSupabaseCredentials,
 } from '../api/_lib/course-prerender.js';
@@ -150,17 +151,25 @@ async function loadDbThemeWorlds() {
  *
  *   VITE_COURSE_PRERENDER_ENABLED='false'
  *     → bewusst abgeschaltet. Keine DB-Abfrage, laute Meldung im Build-Log.
- *
- *   Beide öffentlichen Variablen fehlen
- *     → übersprungen mit lauter Warnung. Ohne dieses Paar startet die SPA
- *       selbst nicht (src/lib/supabase.js) — dieser Fall tritt praktisch nur
- *       lokal und in CI auf, wo es keine DB-Inhalte zu prerendern gibt. Wer die
- *       Garantie erzwingen will, setzt VITE_COURSE_PRERENDER_REQUIRED='true';
- *       dann bricht der Build stattdessen ab.
+ *       Gilt auch auf Vercel: eine explizite Abschaltung ist eine Entscheidung,
+ *       kein Konfigurationsunfall.
  *
  *   Genau EINE der beiden Variablen fehlt
- *     → Build-Abbruch. Eine halbe Konfiguration ist immer ein Fehler und würde
- *       hunderte Seiten still ohne SEO-Daten deployen.
+ *     → Build-Abbruch, überall. Eine halbe Konfiguration ist immer ein Fehler
+ *       und würde hunderte Seiten still ohne SEO-Daten deployen.
+ *
+ *   Beide öffentlichen Variablen fehlen — auf VERCEL
+ *     → Build-Abbruch. Vercel setzt VERCEL/VERCEL_ENV automatisch, es braucht
+ *       also keine zusätzliche Projektkonfiguration. Ein Deploy, der alle
+ *       Kurs-/Anbieter-URLs wieder als generische SPA-Shell veröffentlicht,
+ *       wäre eine stille SEO-Regression gegenüber dem Stand, der bereits
+ *       online ist.
+ *
+ *   Beide öffentlichen Variablen fehlen — LOKAL oder in CI
+ *     → übersprungen mit lauter Warnung, damit `npm run build` und die
+ *       GitHub-CI ohne Datenbank weiterhin funktionieren. Dort gibt es keine
+ *       DB-Inhalte zu verlieren. VITE_COURSE_PRERENDER_REQUIRED='true' bleibt
+ *       als manuelles Override für andere Build-Umgebungen erhalten.
  *
  *   Systemischer DB-Fehler (Kurse, Kategorien, Termine, Profile)
  *     → Build-Abbruch. Ein scheinbar erfolgreicher Deploy mit generischer
@@ -188,6 +197,7 @@ async function loadCourseAndProviderRoutes() {
   const { url, key, missing } = readPublicSupabaseCredentials();
 
   if (missing.length === 1) {
+    // Nur Variablennamen, nie Werte.
     throw new CoursePrerenderError(
       `Die öffentliche Supabase-Konfiguration ist unvollständig — es fehlt: ${missing[0]}. ` +
         'URL und Key müssen aus derselben Konfigurationsfamilie stammen. Der Build wird ' +
@@ -196,6 +206,14 @@ async function loadCourseAndProviderRoutes() {
   }
 
   if (missing.length === 2) {
+    if (isVercelBuild()) {
+      throw new CoursePrerenderError(
+        'Vercel-Build erkannt, aber im Build fehlen VITE_SUPABASE_URL und VITE_SUPABASE_KEY. ' +
+          'Der Build wird abgebrochen, damit kein Deploy entsteht, der alle Kurs- und ' +
+          'Anbieter-URLs wieder als generische SPA-Shell ausliefert. ' +
+          'Bewusst abschalten lässt sich der Prerender mit VITE_COURSE_PRERENDER_ENABLED=false.'
+      );
+    }
     if (process.env.VITE_COURSE_PRERENDER_REQUIRED === 'true') {
       throw new CoursePrerenderError(
         'VITE_COURSE_PRERENDER_REQUIRED=true, aber im Build fehlen VITE_SUPABASE_URL und ' +
@@ -205,9 +223,8 @@ async function loadCourseAndProviderRoutes() {
     }
     console.warn(
       '  ! VITE_SUPABASE_URL und VITE_SUPABASE_KEY fehlen — Kurs- und Anbieterseiten werden ' +
-        'NICHT prerendert. Das ist nur für lokale Builds ohne Datenbank gedacht; in einem ' +
-        'Deploy muss das öffentliche Paar gesetzt sein (setze VITE_COURSE_PRERENDER_REQUIRED=true, ' +
-        'um daraus einen Build-Fehler zu machen).'
+        'NICHT prerendert. Das ist nur für lokale Builds und CI ohne Datenbank gedacht; ein ' +
+        'Vercel-Build bricht in dieser Lage ab.'
     );
     return empty;
   }
