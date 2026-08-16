@@ -13,6 +13,25 @@
  *   POST ?action=unpublish&id=...          — Zurückziehen (published → draft)
  *   POST ?action=publish&id=...            — Validieren und publizieren
  *   POST ?action=reorder&themeWorldId=...  — Reihenfolge aktualisieren
+ *
+ * Deploy-Lifecycle:
+ *   Jede Änderung, die die öffentliche EXISTENZ eines Szenarios verändert
+ *   (publish aus einem nicht öffentlichen Status, unpublish, archive eines
+ *   publizierten Szenarios), fordert über requestDeployForVisibilityChange()
+ *   einen neuen Vercel-Build an — exakt derselbe Lifecycle wie bei der
+ *   Themenwelt, siehe api/_lib/theme-world-deploy-lifecycle.js.
+ *
+ *   Das ist zwingend, weil /bereich/{segment}/{slug}/{szenario} statisch
+ *   prerendert wird und api/resource-not-found.js die Existenz der statischen
+ *   Datei als Wahrheit nimmt: ohne Build bliebe ein frisch publiziertes
+ *   Szenario auf 404, und ein zurückgezogenes Szenario lieferte weiterhin sein
+ *   altes indexierbares HTML mit 200.
+ *
+ *   deploy_status / deploy_requested_at existieren nur auf `theme_worlds` —
+ *   der Status wird deshalb auf der Parent-Themenwelt gespeichert.
+ *
+ *   create (immer draft), update und reorder ändern die öffentliche Existenz
+ *   nicht und lösen bewusst keinen Build aus.
  */
 
 import {
@@ -21,6 +40,8 @@ import {
   parseBody,
   isValidUUID,
 } from './_lib/theme-world-auth.js';
+
+import { requestDeployForVisibilityChange } from './_lib/theme-world-deploy-lifecycle.js';
 
 import {
   validateScenario,
@@ -237,6 +258,20 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'Ungültige oder fehlende ID.' });
       }
 
+      // Vorherigen Status laden: nur das Archivieren eines publizierten
+      // Szenarios verändert die öffentliche Ausgabe und braucht einen Build.
+      const { data: existing, error: fetchError } = await supabaseAdmin
+        .from('theme_world_scenarios')
+        .select('id, status, theme_world_id')
+        .eq('id', id)
+        .single();
+
+      if (fetchError || !existing) {
+        return res.status(404).json({ error: 'Szenario nicht gefunden.' });
+      }
+
+      const wasPublished = existing.status === 'published';
+
       const { data, error } = await supabaseAdmin
         .from('theme_world_scenarios')
         .update({ status: 'archived' })
@@ -251,7 +286,20 @@ export default async function handler(req, res) {
         return res.status(404).json({ error: 'Szenario nicht gefunden.' });
       }
 
-      return res.status(200).json({ data });
+      // Entwürfe und bereits archivierte Szenarien waren nicht öffentlich —
+      // kein Build nötig, Antwort bleibt unverändert.
+      if (!wasPublished) {
+        return res.status(200).json({ data });
+      }
+
+      const { deploy } = await requestDeployForVisibilityChange(
+        supabaseAdmin,
+        existing.theme_world_id,
+        'archive',
+        'admin-scenarios'
+      );
+
+      return res.status(200).json({ data, deploy });
     }
 
     // ============================================================
@@ -302,6 +350,11 @@ export default async function handler(req, res) {
         });
       }
 
+      // Nur ein echter Übergang nach «öffentlich» braucht einen Build. Ein
+      // erneutes Publish eines bereits publizierten Szenarios verändert die
+      // öffentliche Existenz nicht — die statische Datei existiert bereits.
+      const becamePublic = scenario.status !== 'published';
+
       const updatePayload = { status: 'published' };
       if (!scenario.published_at) {
         updatePayload.published_at = new Date().toISOString();
@@ -319,7 +372,19 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: 'Publikation fehlgeschlagen.' });
       }
 
-      return res.status(200).json({ data });
+      if (!becamePublic) {
+        return res.status(200).json({ data });
+      }
+
+      // Ein fehlgeschlagener Hook rollt das Publish NICHT zurück.
+      const { deploy } = await requestDeployForVisibilityChange(
+        supabaseAdmin,
+        scenario.theme_world_id,
+        'publish',
+        'admin-scenarios'
+      );
+
+      return res.status(200).json({ data, deploy });
     }
 
     // ============================================================
@@ -336,7 +401,7 @@ export default async function handler(req, res) {
       // Szenario laden
       const { data: scenario, error: scenarioError } = await supabaseAdmin
         .from('theme_world_scenarios')
-        .select('id, status')
+        .select('id, status, theme_world_id')
         .eq('id', id)
         .single();
 
@@ -362,8 +427,19 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: 'Zurückziehen fehlgeschlagen.' });
       }
 
+      // Das Zurückziehen entfernt die Seite aus der öffentlichen Ausgabe. Erst
+      // der Build löscht die statische Datei; ein fehlgeschlagener Hook rollt
+      // den Statuswechsel NICHT zurück.
+      const { deploy } = await requestDeployForVisibilityChange(
+        supabaseAdmin,
+        scenario.theme_world_id,
+        'unpublish',
+        'admin-scenarios'
+      );
+
       return res.status(200).json({
         data,
+        deploy,
         message: 'Artikel wurde zurückgezogen und ist wieder als Entwurf gespeichert.',
       });
     }

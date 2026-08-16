@@ -50,6 +50,26 @@
       "destination": "/api/thema-redirect?segment=:segment&slug=:slug"
     },
     {
+      "source": "/bereich/:segment/:slug",
+      "destination": "/api/resource-not-found"
+    },
+    {
+      "source": "/bereich/:segment/:slug/:rest*",
+      "destination": "/api/resource-not-found"
+    },
+    {
+      "source": "/ratgeber/:category",
+      "destination": "/api/resource-not-found"
+    },
+    {
+      "source": "/ratgeber/:category/:cluster",
+      "destination": "/api/resource-not-found"
+    },
+    {
+      "source": "/ratgeber/:category/:cluster/:rest*",
+      "destination": "/api/resource-not-found"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

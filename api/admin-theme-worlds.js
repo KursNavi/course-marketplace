@@ -19,6 +19,9 @@
  *   requestDeployForVisibilityChange() einen neuen Vercel-Build an. Der Build
  *   synchronisiert /thema/-Prerendering, /thema/ → /bereich/-Redirects und die
  *   statische HTML-Ausgabe (siehe src/lib/themeWorldTakeover.js).
+ *
+ *   Die Logik liegt in api/_lib/theme-world-deploy-lifecycle.js, damit
+ *   api/admin-theme-world-scenarios.js exakt denselben Lifecycle nutzt.
  */
 
 import {
@@ -35,7 +38,11 @@ import {
   isValidSlug,
 } from './_lib/theme-world-validate.js';
 
-import { triggerDeployHook, isDeployEnabled, DEPLOY_STATUS } from './_lib/deploy-hook.js';
+import {
+  requestDeployForVisibilityChange,
+  isDeployEnabled,
+  DB_DEPLOY_STATUS,
+} from './_lib/theme-world-deploy-lifecycle.js';
 
 // Felder, die bei CREATE/UPDATE erlaubt sind (Whitelist)
 const ALLOWED_WRITE_FIELDS = [
@@ -55,64 +62,6 @@ function filterWriteFields(data) {
     if (field in data) filtered[field] = data[field];
   }
   return filtered;
-}
-
-// Die Spalte deploy_status kennt laut CHECK-Constraint nur diese drei Werte.
-// 'not_configured' ist ein reiner API-Antwortwert und darf nie geschrieben werden.
-const DB_DEPLOY_STATUS = {
-  NOT_REQUESTED: 'not_requested',
-  REQUESTED: 'requested',
-  FAILED: 'failed',
-};
-
-function toDbDeployStatus(hookStatus) {
-  if (hookStatus === DEPLOY_STATUS.REQUESTED) return DB_DEPLOY_STATUS.REQUESTED;
-  if (hookStatus === DEPLOY_STATUS.FAILED) return DB_DEPLOY_STATUS.FAILED;
-  return DB_DEPLOY_STATUS.NOT_REQUESTED;
-}
-
-/**
- * Fordert nach einer Änderung der öffentlichen Sichtbarkeit einen neuen Build an
- * und schreibt das Ergebnis nach deploy_status / deploy_requested_at.
- *
- * Wird von publish, unpublish und archive (nur wenn vorher publiziert) verwendet.
- *
- * Wichtig: Ein fehlgeschlagener Hook macht die fachliche Statusänderung NICHT
- * rückgängig — die Themenwelt bleibt im neuen Status, lediglich deploy_status
- * wird auf 'failed' gesetzt.
- *
- * @param {object} supabaseAdmin - Service-Role-Client
- * @param {string} id            - UUID der Themenwelt
- * @param {string} action        - Aktionsname für Logausgaben (nie Secrets)
- * @returns {Promise<{deploy: {status: string}, deployStatus: string|null}>}
- *   deploy       — Ergebnis für die API-Antwort ('not_configured' | 'requested' | 'failed')
- *   deployStatus — persistierter DB-Wert, oder null wenn nichts geschrieben wurde
- */
-async function requestDeployForVisibilityChange(supabaseAdmin, id, action) {
-  // Deploy-Hooks sind hinter THEME_WORLD_DEPLOY_ENABLED=true gesperrt.
-  if (!isDeployEnabled()) {
-    return { deploy: { status: DEPLOY_STATUS.NOT_CONFIGURED }, deployStatus: null };
-  }
-
-  const deploy = await triggerDeployHook();
-  const deployStatus = toDbDeployStatus(deploy.status);
-
-  const deployUpdatePayload = { deploy_status: deployStatus };
-  if (deployStatus === DB_DEPLOY_STATUS.REQUESTED) {
-    deployUpdatePayload.deploy_requested_at = new Date().toISOString();
-  }
-
-  const { error } = await supabaseAdmin
-    .from('theme_worlds')
-    .update(deployUpdatePayload)
-    .eq('id', id);
-
-  if (error) {
-    // Nur Protokollnotiz — der fachliche Status bleibt bestehen.
-    console.error(`[admin-theme-worlds] ${action}: deploy_status konnte nicht gespeichert werden:`, error.message);
-  }
-
-  return { deploy, deployStatus };
 }
 
 export default async function handler(req, res) {
