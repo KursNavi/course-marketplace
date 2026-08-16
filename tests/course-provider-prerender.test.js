@@ -82,8 +82,15 @@ function makeSupabaseMock(tables) {
       return chain;
     });
     chain.then = (onFulfilled, onRejected) => {
-      if (config.error) {
-        return Promise.resolve({ data: null, error: config.error }).then(onFulfilled, onRejected);
+      // errorIfSelects simuliert eine Spalte, die es in dieser Datenbank nicht
+      // gibt — der Fehler hängt dann von der angeforderten Spaltenliste ab.
+      const columnError =
+        config.errorIfSelects && String(call.columns || '').includes(config.errorIfSelects.column)
+          ? config.errorIfSelects.error
+          : null;
+      const error = config.error || columnError;
+      if (error) {
+        return Promise.resolve({ data: null, error }).then(onFulfilled, onRejected);
       }
       let rows = config.data ?? [];
       let range = null;
@@ -103,6 +110,17 @@ function makeSupabaseMock(tables) {
         }
       }
       if (range) rows = rows.slice(range.from, range.to + 1);
+      // Spaltenprojektion wie PostgREST: nicht selektierte Felder fehlen in der
+      // Antwort. Nur so zeigt ein Fallback auf weniger Spalten echte Wirkung.
+      const columns = String(call.columns || '')
+        .split(',')
+        .map((c) => c.trim())
+        .filter(Boolean);
+      if (columns.length > 0 && !columns.includes('*')) {
+        rows = rows.map((row) =>
+          Object.fromEntries(columns.filter((c) => c in row).map((c) => [c, row[c]]))
+        );
+      }
       return Promise.resolve({ data: rows, error: null }).then(onFulfilled, onRejected);
     };
     return chain;
@@ -554,6 +572,18 @@ describe('Course-Prerender: Public-Filter und kanonischer Pfad', () => {
     );
   });
 
+  it('fragt keine Spalten ab, die es in courses nicht gibt', async () => {
+    const { calls } = await runPrerender();
+
+    // `city` gab es nie auf courses (hiess location_city und wurde mit
+    // course_locations entfernt). Eine solche Spalte lässt die gesamte Abfrage
+    // scheitern und damit den Build abbrechen.
+    const courseCall = calls.find((c) => c.table === 'courses');
+    expect(courseCall.columns).not.toMatch(/\bcity\b/);
+    expect(courseCall.columns).toContain('canton');
+    expect(courseCall.columns).toContain('address');
+  });
+
   it('lädt Kategorien und Termine gebündelt statt einmal pro Kurs', async () => {
     const { calls } = await runPrerender();
 
@@ -741,6 +771,40 @@ describe('Anbieter-Prerender', () => {
       column: 'package_tier',
       values: ['pro', 'premium', 'enterprise'],
     });
+  });
+
+  it('fehlende optionale Profilspalte kostet Details, aber keine Seite', async () => {
+    // Migrationsstand ohne social_*/phone/street: api/provider.js hält dafür
+    // seit jeher eine Fallback-Abfrage vor — der Prerender ebenso.
+    const tables = defaultTables({
+      profiles: {
+        data: ALL_PROVIDERS,
+        error: null,
+        errorIfSelects: {
+          column: 'social_linkedin',
+          error: { code: '42703', message: 'column profiles.social_linkedin does not exist' },
+        },
+      },
+    });
+
+    await runPrerender({ tables });
+
+    expect(pageExists(PROVIDER_PATH)).toBe(true);
+    const organization = readJsonLd(PROVIDER_PATH).find((s) => Array.isArray(s['@type']));
+    expect(organization.name).toBe(PROVIDER_PUBLIC.full_name);
+    expect(organization.telephone).toBeUndefined();
+    expect(organization.sameAs).toEqual([PROVIDER_PUBLIC.website_url]);
+    expect(console.warn).toHaveBeenCalledWith(
+      expect.stringContaining('Optionale Profilspalten nicht verfügbar')
+    );
+  });
+
+  it('ein anderer Profilfehler bleibt systemisch und bricht den Build ab', async () => {
+    const tables = defaultTables({
+      profiles: { data: null, error: { code: '08006', message: 'connection failure' } },
+    });
+
+    await expect(runPrerender({ tables })).rejects.toThrow(/Anbieterprofile/);
   });
 
   it('4. erstes HTML enthält Title, Description, Canonical, index,follow und OG', async () => {

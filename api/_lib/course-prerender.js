@@ -175,7 +175,13 @@ export async function fetchPublicCourses(supabase, { logger = console } = {}) {
     supabase
       .from('courses')
       .select(
-        'id, title, description, canton, city, address, image_url, price, booking_type, ' +
+        // Nur die Felder für kanonische URL, SEO-Texte und strukturierte Daten.
+        // `city` steht bewusst NICHT hier: die Spalte existiert nicht (sie hiess
+        // einmal location_city und wurde mit course_locations entfernt).
+        // courseSeo.js liest course.city trotzdem als Zwischenstufe der
+        // Ortskette — exakt wie DetailView.jsx, wo der Wert ebenfalls
+        // undefined ist.
+        'id, title, description, canton, address, image_url, price, booking_type, ' +
           'session_length, session_count, instructor_name, user_id, status, start_date, ' +
           'category_type, category_area, category_specialty, category_focus, created_at'
       )
@@ -243,12 +249,33 @@ async function fetchCourseEvents(supabase, courseIds) {
   return byCourseId;
 }
 
+/** Pflichtspalten eines Anbieterprofils — ohne sie ist keine SEO-Seite möglich. */
+const PROVIDER_CORE_COLUMNS =
+  'id, full_name, slug, bio_text, logo_url, website_url, city, canton, ' +
+  'package_tier, profile_published_at';
+
+/**
+ * Zusätzliche Spalten, die das JSON-LD anreichern, aber je nach Migrationsstand
+ * fehlen können. api/provider.js hält für genau diese Spalten seit jeher eine
+ * Fallback-Abfrage vor.
+ */
+const PROVIDER_OPTIONAL_COLUMNS =
+  'phone, street, social_linkedin, social_instagram, social_facebook, social_youtube';
+
+/** PostgREST-Code für «Spalte existiert nicht». */
+const UNDEFINED_COLUMN = '42703';
+
 /**
  * Lädt alle öffentlich indexierbaren Anbieterprofile.
  *
  * Die Gates entsprechen exakt api/sitemap.js. Die «mindestens ein öffentlicher
  * Kurs»-Bedingung wird aus der bereits geladenen Kursmenge abgeleitet — keine
  * zusätzliche Abfrage.
+ *
+ * Fehlt eine der optionalen Spalten (Migrationsstand), wird EINMAL mit dem
+ * Kernspaltensatz nachgeladen und laut gewarnt: das JSON-LD verliert dann
+ * Telefonnummer, Strasse und sameAs-Links, aber es gehen keine 21 SEO-Seiten
+ * verloren. Jeder andere Fehler bleibt systemisch und bricht den Build ab.
  *
  * @param {object} supabase
  * @param {object} options
@@ -265,19 +292,27 @@ export async function fetchPublicProviders(
     throw new CoursePrerenderError('Kein Supabase-Client für den Anbieter-Prerender verfügbar.');
   }
 
-  const rows = await fetchAllPages('Öffentliche Anbieterprofile', (from, to) =>
+  const queryProfiles = (columns) => (from, to) =>
     supabase
       .from('profiles')
-      .select(
-        'id, full_name, slug, bio_text, logo_url, website_url, phone, street, city, canton, ' +
-          'social_linkedin, social_instagram, social_facebook, social_youtube, ' +
-          'package_tier, profile_published_at'
-      )
+      .select(columns)
       .not('profile_published_at', 'is', null)
       .not('slug', 'is', null)
       .in('package_tier', PUBLIC_PROFILE_TIERS)
-      .range(from, to)
-  );
+      .range(from, to);
+
+  const fullColumns = `${PROVIDER_CORE_COLUMNS}, ${PROVIDER_OPTIONAL_COLUMNS}`;
+  let rows;
+  try {
+    rows = await fetchAllPages('Öffentliche Anbieterprofile', queryProfiles(fullColumns));
+  } catch (e) {
+    if (e?.cause?.code !== UNDEFINED_COLUMN) throw e;
+    logger?.warn?.(
+      `[prerender] Optionale Profilspalten nicht verfügbar (${e.cause.message}) — ` +
+        'Anbieterseiten entstehen ohne Telefon, Strasse und sameAs-Links.'
+    );
+    rows = await fetchAllPages('Öffentliche Anbieterprofile', queryProfiles(PROVIDER_CORE_COLUMNS));
+  }
 
   const owners = publicCourseOwnerIds || new Set();
   const eligible = (rows || []).filter((row) => {
