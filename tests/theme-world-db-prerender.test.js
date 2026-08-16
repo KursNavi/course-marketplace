@@ -232,6 +232,10 @@ const ENV_KEYS = [
   'SUPABASE_ANON_KEY',
   'SUPABASE_SERVICE_ROLE_KEY',
   'VITE_SUPABASE_KEY',
+  'VITE_COURSE_PRERENDER_ENABLED',
+  'VITE_COURSE_PRERENDER_REQUIRED',
+  'VERCEL',
+  'VERCEL_ENV',
 ];
 let savedEnv = {};
 
@@ -257,6 +261,11 @@ async function runPrerender({ tables = defaultTables(), env = {} } = {}) {
     // Platzhalterwerte — kein Test benötigt echte Zugangsdaten.
     VITE_SUPABASE_URL: 'https://test.supabase.co',
     VITE_SUPABASE_KEY: 'test-public-key',
+    // Diese Datei prüft ausschliesslich den Themenwelten-Prerender. Der
+    // Kurs-/Anbieter-Prerender ist standardmässig aktiv und würde hier eigene
+    // Supabase-Abfragen auslösen; er hat seine eigene Testdatei
+    // (course-provider-prerender.test.js).
+    VITE_COURSE_PRERENDER_ENABLED: 'false',
     ...env,
   });
 

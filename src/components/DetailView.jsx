@@ -5,10 +5,10 @@ import { formatPriceCHF, getPriceLabel } from '../lib/formatPrice';
 import { useTaxonomy } from '../hooks/useTaxonomy';
 import { SEGMENT_CONFIG, CANTON_ABBR, formatLocationWithCanton } from '../lib/constants';
 import { CANONICAL_BASE_URL, buildCoursePath } from '../lib/siteConfig';
-import { buildCanonicalCourseUrl, getCanonicalCourseTopicSlug, slugify } from '../lib/courseUrl';
+import { buildCourseJsonLdList, buildCourseSeo } from '../lib/courseSeo';
 import { getBereichByAreaSlug, getBereichUrl } from '../lib/bereichLandingConfig';
 import { DEFAULT_COURSE_IMAGE } from '../lib/imageUtils';
-import { getCourseCategoryText, getPrimaryCategory, getPrimaryCategoryLabel, isSyntheticCategory } from '../lib/courseMetadata';
+import { getCourseCategoryText, isSyntheticCategory } from '../lib/courseMetadata';
 import { trackCourseView, trackPurchase, trackContactLead } from '../lib/analytics';
 import { getRobotsPolicy } from '../lib/seoUtils';
 import { getRelatedCourses } from '../lib/courseRecommendations';
@@ -160,19 +160,23 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
 
         const createdTags = [];
 
-        const locationLabel = course.canton || 'Schweiz';
-        document.title = `${course.title} in ${locationLabel} | KursNavi`;
+        // Titel, Description, Open Graph und JSON-LD kommen aus src/lib/courseSeo.js
+        // — genau denselben reinen Funktionen, die der Build-Prerender nutzt
+        // (scripts/prerender-static.mjs). Dadurch kann das erste HTML nicht von
+        // den hydratisierten Werten abweichen. Canonical/og:url stammen aus dem
+        // gemeinsamen Builder in courseUrl.js auf Basis der kanonischen Domain,
+        // nicht aus window.location.origin.
+        const seo = buildCourseSeo(course, CANONICAL_BASE_URL);
+        const { canonicalUrl, description: metaDescription } = seo;
 
-        // Canonical/og:url/JSON-LD nutzen denselben Builder wie Sitemap, interne
-        // Links und die App-Normalisierung — kein zweiter Slug-Algorithmus mehr.
-        // Basis ist die kanonische Domain, nicht window.location.origin.
-        const topicSlug = getCanonicalCourseTopicSlug(course);
-        const locSlug = slugify(course.canton) || 'schweiz';
-        const canonicalUrl = buildCanonicalCourseUrl(course, CANONICAL_BASE_URL);
+        document.title = seo.title;
 
-        // --- FIX 1: Dynamic Meta Description (max 160 chars) ---
-        const rawDesc = `${course.title} in ${locationLabel} – ${(course.description || '').replace(/\s+/g, ' ').trim()}`;
-        const metaDescription = rawDesc.length > 160 ? rawDesc.substring(0, 157) + '...' : rawDesc;
+        // Vom Build injizierte JSON-LD-Blöcke entfernen — sie werden gleich durch
+        // die (identisch berechneten) Laufzeit-Blöcke ersetzt statt dupliziert.
+        document
+            .querySelectorAll('script[type="application/ld+json"][data-prerender-jsonld]')
+            .forEach(tag => tag.remove());
+
         let metaDescTag = document.querySelector('meta[name="description"]');
         if (!metaDescTag) {
             metaDescTag = document.createElement('meta');
@@ -207,17 +211,17 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
 
         // --- FIX 3: Open Graph Tags (Social Sharing) ---
         const ogTags = {
-            'og:title': `${course.title} in ${locationLabel}`,
-            'og:description': metaDescription,
-            'og:url': canonicalUrl,
-            'og:image': course.image_url || `${CANONICAL_BASE_URL}/og-default.png`,
-            'og:type': 'website',
+            'og:title': seo.ogTitle,
+            'og:description': seo.ogDescription,
+            'og:url': seo.ogUrl,
+            'og:image': seo.ogImage,
+            'og:type': seo.ogType,
             'og:locale': 'de_CH',
             'og:site_name': 'KursNavi',
             'twitter:card': 'summary_large_image',
-            'twitter:title': `${course.title} in ${locationLabel}`,
-            'twitter:description': metaDescription,
-            'twitter:image': course.image_url || `${CANONICAL_BASE_URL}/og-default.png`
+            'twitter:title': seo.ogTitle,
+            'twitter:description': seo.ogDescription,
+            'twitter:image': seo.ogImage
         };
 
         Object.entries(ogTags).forEach(([property, content]) => {
@@ -235,192 +239,24 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
             tag.content = content;
         });
 
-        // --- FIX 4: SEO-Smart Price Logic ---
-        const priceVal = Number(course.price);
-        const isPlatform = course.booking_type === 'platform';
-        const hasValidPrice = !isNaN(priceVal) && (priceVal > 0 || isPlatform);
-
-        // --- FIX 5: Dynamic Availability Status ---
-        let availability = "https://schema.org/InStock"; // Default
-
-        // Check course_events for sold-out status
-        let rawEvents = [];
-        if (course.course_events && course.course_events.length > 0) {
-            rawEvents = course.course_events;
-        } else if (course.start_date) {
-            rawEvents = [{
-                start_date: course.start_date,
-                max_participants: 0,
-                bookings: []
-            }];
-        }
-
-        // Calculate if ALL events are full (exclude cancelled events)
-        const activeRawEvents = rawEvents.filter(ev => !ev.cancelled_at);
-        const allEventsFull = activeRawEvents.length > 0 && activeRawEvents.every(ev => {
-            const max = ev.max_participants || 0;
-            if (max === 0) return false; // Unlimited
-            const bookedCount = Array.isArray(ev.bookings)
-                ? (ev.bookings[0]?.count || ev.bookings.length)
-                : (ev.bookings?.count || 0);
-            return bookedCount >= max;
+        // --- Strukturierte Daten ---
+        // Course (immer), EducationEvent (nur bei laufendem/zukünftigem Termin
+        // mit konkretem startDate) und BreadcrumbList bleiben bewusst DREI
+        // getrennte Schemas — der frühere Course/EducationEvent-Hybrid wurde
+        // behoben und darf nicht wieder zusammengeführt werden. Die Berechnung
+        // liegt in src/lib/courseSeo.js, damit sie im Build-Prerender identisch
+        // läuft.
+        const schemaScripts = buildCourseJsonLdList(course, CANONICAL_BASE_URL).map(schema => {
+            const tag = document.createElement('script');
+            tag.type = 'application/ld+json';
+            tag.text = JSON.stringify(schema);
+            document.head.appendChild(tag);
+            return tag;
         });
-
-        if (allEventsFull) {
-            availability = "https://schema.org/SoldOut";
-        }
-
-        // --- Course Schema (always emitted, no EducationEvent fields) ---
-        const primaryCat = getPrimaryCategory(course);
-        const areaLabel = getPrimaryCategoryLabel(course) || null;
-
-        const courseSchema = {
-            "@context": "https://schema.org",
-            "@type": "Course",
-            "name": course.title,
-            "description": course.description,
-            "provider": {
-                "@type": "Organization",
-                "name": course.instructor_name,
-                "sameAs": `${CANONICAL_BASE_URL}/teacher/${course.user_id}`
-            },
-            "offers": {
-                "@type": "Offer",
-                "priceCurrency": "CHF",
-                "availability": availability,
-                "url": canonicalUrl
-            }
-        };
-
-        if (hasValidPrice) {
-            courseSchema.offers.price = priceVal;
-        }
-
-        if (course.session_length) {
-            courseSchema.timeRequired = course.session_count
-                ? `${course.session_count}x ${course.session_length}`
-                : course.session_length;
-        }
-
-        if (areaLabel) {
-            courseSchema.educationalLevel = areaLabel;
-        }
-
-        const script = document.createElement('script');
-        script.type = 'application/ld+json';
-        script.text = JSON.stringify(courseSchema);
-        document.head.appendChild(script);
-
-        // --- EducationEvent Schema (only when a non-cancelled future/running event with a valid startDate exists) ---
-        // An event is "current" if it hasn't ended: end_date >= now, or (no end_date and start_date >= now).
-        // Never emit EducationEvent without a concrete startDate to avoid Google Search Console errors.
-        let eventScript = null;
-        const activeSchemaEvents = rawEvents.filter(ev => !ev.cancelled_at && ev.start_date);
-        const now = new Date();
-        const nextSchemaEvent = activeSchemaEvents.find(ev => {
-            if (ev.end_date) {
-                const end = new Date(ev.end_date);
-                return !isNaN(end.getTime()) && end >= now;
-            }
-            const start = new Date(ev.start_date);
-            return !isNaN(start.getTime()) && start >= now;
-        });
-
-        if (nextSchemaEvent) {
-            const educationEventSchema = {
-                "@context": "https://schema.org",
-                "@type": "EducationEvent",
-                "name": course.title,
-                "description": course.description,
-                "startDate": nextSchemaEvent.start_date,
-                "organizer": {
-                    "@type": "Organization",
-                    "name": course.instructor_name,
-                    "sameAs": `${CANONICAL_BASE_URL}/teacher/${course.user_id}`
-                },
-                "location": {
-                    "@type": "Place",
-                    "name": course.address || course.city || locationLabel,
-                    "address": {
-                        "@type": "PostalAddress",
-                        "addressRegion": locationLabel,
-                        "addressCountry": "CH"
-                    }
-                },
-                "offers": {
-                    "@type": "Offer",
-                    "priceCurrency": "CHF",
-                    "availability": availability,
-                    "url": canonicalUrl
-                }
-            };
-
-            if (nextSchemaEvent.end_date) {
-                educationEventSchema.endDate = nextSchemaEvent.end_date;
-            }
-
-            if (hasValidPrice) {
-                educationEventSchema.offers.price = priceVal;
-            }
-
-            // eventSchedule for recurring courses with multiple upcoming events
-            const futureSchemaEvents = activeSchemaEvents.filter(ev => {
-                const start = new Date(ev.start_date);
-                return !isNaN(start.getTime()) && start >= now;
-            });
-            if (futureSchemaEvents.length > 1) {
-                educationEventSchema.eventSchedule = futureSchemaEvents.map(ev => {
-                    const entry = {
-                        "@type": "Schedule",
-                        "startDate": ev.start_date,
-                        "scheduleTimezone": "Europe/Zurich"
-                    };
-                    if (ev.end_date) entry.endDate = ev.end_date;
-                    return entry;
-                });
-            }
-
-            eventScript = document.createElement('script');
-            eventScript.type = 'application/ld+json';
-            eventScript.text = JSON.stringify(educationEventSchema);
-            document.head.appendChild(eventScript);
-        }
-
-        // --- BreadcrumbList Schema ---
-        const breadcrumbData = {
-            "@context": "https://schema.org",
-            "@type": "BreadcrumbList",
-            "itemListElement": [
-                {
-                    "@type": "ListItem",
-                    "position": 1,
-                    "name": "Home",
-                    "item": CANONICAL_BASE_URL
-                },
-                {
-                    "@type": "ListItem",
-                    "position": 2,
-                    "name": areaLabel || 'Kurse',
-                    "item": `${CANONICAL_BASE_URL}/courses/${topicSlug}/${locSlug}/`
-                },
-                {
-                    "@type": "ListItem",
-                    "position": 3,
-                    "name": course.title
-                }
-            ]
-        };
-
-        const breadcrumbScript = document.createElement('script');
-        breadcrumbScript.type = 'application/ld+json';
-        breadcrumbScript.text = JSON.stringify(breadcrumbData);
-        document.head.appendChild(breadcrumbScript);
 
         return () => {
             createdTags.forEach(tag => { if (tag.parentNode) tag.parentNode.removeChild(tag); });
-            if (script.parentNode) script.parentNode.removeChild(script);
-            if (eventScript?.parentNode) eventScript.parentNode.removeChild(eventScript);
-            if (breadcrumbScript.parentNode) breadcrumbScript.parentNode.removeChild(breadcrumbScript);
+            schemaScripts.forEach(tag => { if (tag.parentNode) tag.parentNode.removeChild(tag); });
         }
     }, [course]);
     

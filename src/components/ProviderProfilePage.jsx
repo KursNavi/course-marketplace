@@ -3,10 +3,11 @@ import {
   MapPin, CheckCircle, Mail, ArrowLeft, BookOpen,
   Globe, Phone, Loader, Star, ChevronRight, Award, Search, SortAsc
 } from 'lucide-react';
-import { BASE_URL, buildCoursePath } from '../lib/siteConfig';
+import { CANONICAL_BASE_URL, buildCoursePath } from '../lib/siteConfig';
 import { formatPriceCHF, getPriceLabel } from '../lib/formatPrice';
 import { getCourseCategoryText } from '../lib/courseMetadata';
-import { getRobotsPolicy, buildCanonical } from '../lib/seoUtils';
+import { getRobotsPolicy } from '../lib/seoUtils';
+import { buildProviderJsonLdList, buildProviderSeo } from '../lib/providerSeo';
 import { formatLocationWithCanton } from '../lib/constants';
 
 const SORT_OPTIONS = [
@@ -125,14 +126,21 @@ export default function ProviderProfilePage({ t, setView, setSelectedCourse }) {
   useEffect(() => {
     if (!provider) return;
 
-    // Title
-    document.title = `${provider.name} | KursNavi`;
+    // Titel, Description, Open Graph und JSON-LD kommen aus src/lib/providerSeo.js
+    // — denselben reinen Funktionen, die der Build-Prerender nutzt
+    // (scripts/prerender-static.mjs). Server-HTML und Hydration können dadurch
+    // nicht auseinanderlaufen. Basis ist die kanonische Domain aus der zentralen
+    // Env-Konfiguration, nicht window.location.origin.
+    const seo = buildProviderSeo(provider, CANONICAL_BASE_URL);
+    const metaDescription = seo.description;
 
-    // Description: trim cleanly, fallback for empty profiles
-    const rawDesc = provider.description || '';
-    const metaDescription = rawDesc.length > 155
-      ? rawDesc.substring(0, 152) + '...'
-      : rawDesc || `${provider.name} – Kursanbieter auf KursNavi.`;
+    document.title = seo.title;
+
+    // Vom Build injizierte JSON-LD-Blöcke entfernen — sie werden gleich durch
+    // die identisch berechneten Laufzeit-Blöcke ersetzt statt dupliziert.
+    document
+      .querySelectorAll('script[type="application/ld+json"][data-prerender-jsonld]')
+      .forEach(tag => tag.remove());
 
     // Meta description tag
     let metaDescTag = document.querySelector('meta[name="description"]');
@@ -145,7 +153,7 @@ export default function ProviderProfilePage({ t, setView, setSelectedCourse }) {
     metaDescTag.content = metaDescription;
 
     // Canonical URL
-    const canonicalUrl = buildCanonical(`/anbieter/${provider.slug}`);
+    const canonicalUrl = seo.canonicalUrl;
     let canonicalTag = document.querySelector('link[rel="canonical"]');
     const createdCanonical = !canonicalTag;
     if (!canonicalTag) {
@@ -167,11 +175,11 @@ export default function ProviderProfilePage({ t, setView, setSelectedCourse }) {
 
     // OG Tags
     const ogTags = {
-      'og:title': `${provider.name} | KursNavi`,
-      'og:description': metaDescription,
-      'og:url': canonicalUrl,
-      'og:image': provider.logoUrl || `${BASE_URL}/og-default.png`,
-      'og:type': 'website',
+      'og:title': seo.ogTitle,
+      'og:description': seo.ogDescription,
+      'og:url': seo.ogUrl,
+      'og:image': seo.ogImage,
+      'og:type': seo.ogType,
       'og:locale': 'de_CH',
       'og:site_name': 'KursNavi'
     };
@@ -188,27 +196,10 @@ export default function ProviderProfilePage({ t, setView, setSelectedCourse }) {
       tag.content = content;
     });
 
-    // EducationalOrganization + LocalBusiness Schema
-    const schemaData = {
-      "@context": "https://schema.org",
-      "@type": ["EducationalOrganization", "LocalBusiness"],
-      "name": provider.name,
-      "url": canonicalUrl,
-      "description": provider.description,
-      "address": {
-        "@type": "PostalAddress",
-        ...(provider.location?.street ? { "streetAddress": provider.location.street } : {}),
-        "addressLocality": provider.location?.city,
-        "addressRegion": provider.location?.canton,
-        "addressCountry": "CH"
-      }
-    };
-    if (provider.logoUrl) schemaData.logo = provider.logoUrl;
-    if (provider.phone) schemaData.telephone = provider.phone;
-    if (provider.email) schemaData.email = provider.email;
-
-    const sameAs = [provider.websiteUrl, provider.socialLinkedin, provider.socialInstagram, provider.socialFacebook, provider.socialYoutube].filter(Boolean);
-    if (sameAs.length > 0) schemaData.sameAs = sameAs;
+    // Strukturierte Daten: EducationalOrganization + LocalBusiness sowie
+    // BreadcrumbList — berechnet in src/lib/providerSeo.js, damit der
+    // Build-Prerender exakt dieselben Werte in das erste HTML schreibt.
+    const [schemaData, breadcrumbData] = buildProviderJsonLdList(provider, CANONICAL_BASE_URL);
 
     let schemaScript = document.querySelector('script[data-schema="provider"]');
     if (!schemaScript) {
@@ -219,16 +210,6 @@ export default function ProviderProfilePage({ t, setView, setSelectedCourse }) {
     }
     schemaScript.textContent = JSON.stringify(schemaData);
 
-    // BreadcrumbList JSON-LD
-    const breadcrumbData = {
-      "@context": "https://schema.org",
-      "@type": "BreadcrumbList",
-      "itemListElement": [
-        { "@type": "ListItem", "position": 1, "name": "Home", "item": BASE_URL },
-        { "@type": "ListItem", "position": 2, "name": "Anbieter", "item": `${BASE_URL}/anbieter` },
-        { "@type": "ListItem", "position": 3, "name": provider.name, "item": canonicalUrl }
-      ]
-    };
     const breadcrumbScript = document.createElement('script');
     breadcrumbScript.type = 'application/ld+json';
     breadcrumbScript.setAttribute('data-schema', 'provider-breadcrumb');
