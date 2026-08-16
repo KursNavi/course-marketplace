@@ -16,6 +16,26 @@ export function escapeHtmlAttr(str) {
     .replace(/>/g, '&gt;');
 }
 
+/** Marker-Attribut aller vom Build erzeugten JSON-LD-Blöcke. */
+export const PRERENDERED_JSONLD_ATTR = 'data-prerender-jsonld';
+
+/** Findet zuvor injizierte JSON-LD-Blöcke (verhindert Duplikate). */
+const PRERENDERED_JSONLD_BLOCK = new RegExp(
+  `\\s*<script type="application/ld\\+json" ${PRERENDERED_JSONLD_ATTR}="[^"]*">[\\s\\S]*?<\\/script>`,
+  'g'
+);
+
+/**
+ * Serialisiert ein JSON-LD-Objekt für die Einbettung in <script>.
+ *
+ * `<` wird zu < escaped — nur so kann ein Datenwert die Script-Umgebung
+ * nicht per "</script>" verlassen. Der Wert bleibt gültiges JSON und damit
+ * für Suchmaschinen identisch zum Laufzeit-JSON aus React.
+ */
+function serializeJsonLd(value) {
+  return JSON.stringify(value).replace(/</g, '\\u003c');
+}
+
 /**
  * Ersetzt title/description/canonical/OG-Tags in einer index.html-Vorlage.
  *
@@ -24,13 +44,35 @@ export function escapeHtmlAttr(str) {
  * @param {string} meta.canonical - absolute URL
  * @param {string} meta.title
  * @param {string} meta.description
+ * @param {string} [meta.ogTitle] - abweichender og:title (Standard: title)
+ * @param {string} [meta.ogDescription] - abweichende og:description (Standard: description)
+ * @param {string} [meta.ogType] - z.B. 'website'; ohne Wert bleibt die Vorlage unverändert
  * @param {string} [meta.ogImage] - absolute URL
  * @param {string} [meta.ogImageAlt] - Alt-Text zum OG-Bild; nur bei sinnvollem
  *        Wert wird <meta property="og:image:alt"> erzeugt.
+ * @param {object[]} [meta.jsonLd] - strukturierte Daten; werden als
+ *        <script type="application/ld+json" data-prerender-jsonld> vor </head>
+ *        eingefügt. Bereits vorhandene Blöcke mit diesem Marker werden zuvor
+ *        entfernt, damit eine erneute Injektion nichts dupliziert.
  * @returns {string}
  */
-export function injectHeadMeta(template, { canonical, title, description, ogImage, ogImageAlt }) {
+export function injectHeadMeta(template, {
+  canonical,
+  title,
+  description,
+  ogTitle,
+  ogDescription,
+  ogType,
+  ogImage,
+  ogImageAlt,
+  jsonLd,
+}) {
   let html = String(template);
+  // Kurs- und Anbieterseiten nutzen einen anderen og:title als den <title>
+  // (die Marke steckt dort bereits in og:site_name). Ohne expliziten Wert
+  // bleibt das bisherige Verhalten: og:title/og:description = title/description.
+  const socialTitle = ogTitle === undefined ? title : ogTitle;
+  const socialDescription = ogDescription === undefined ? description : ogDescription;
 
   html = html.replace(/<title>[^<]*<\/title>/, `<title>${escapeHtmlAttr(title)}</title>`);
   html = html.replace(
@@ -46,13 +88,19 @@ export function injectHeadMeta(template, { canonical, title, description, ogImag
       `$1\n    <link rel="canonical" href="${canonical}" />`
     );
   }
+  if (ogType) {
+    html = html.replace(
+      /(<meta property="og:type" content=")[^"]*(")/,
+      `$1${escapeHtmlAttr(ogType)}$2`
+    );
+  }
   html = html.replace(
     /(<meta property="og:title" content=")[^"]*(")/,
-    `$1${escapeHtmlAttr(title)}$2`
+    `$1${escapeHtmlAttr(socialTitle)}$2`
   );
   html = html.replace(
     /(<meta property="og:description" content=")[^"]*(")/,
-    `$1${escapeHtmlAttr(description)}$2`
+    `$1${escapeHtmlAttr(socialDescription)}$2`
   );
   html = html.replace(/(<meta property="og:url" content=")[^"]*(")/, `$1${canonical}$2`);
   if (ogImage) {
@@ -75,6 +123,20 @@ export function injectHeadMeta(template, { canonical, title, description, ogImag
         `$1\n    ${altTag}`
       );
     }
+  }
+
+  // Strukturierte Daten. Der Marker erlaubt der hydratisierenden React-Seite,
+  // genau diese Blöcke zu entfernen statt sie zu duplizieren.
+  html = html.replace(PRERENDERED_JSONLD_BLOCK, '');
+  const schemas = (jsonLd || []).filter(Boolean);
+  if (schemas.length > 0) {
+    const blocks = schemas
+      .map(
+        (schema, index) =>
+          `    <script type="application/ld+json" ${PRERENDERED_JSONLD_ATTR}="${index}">${serializeJsonLd(schema)}</script>`
+      )
+      .join('\n');
+    html = html.replace(/([ \t]*)<\/head>/, `${blocks}\n$1</head>`);
   }
 
   return html;

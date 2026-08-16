@@ -12,12 +12,15 @@
  * Vercel serves static files before applying the catch-all SPA rewrite, so
  * Google gets correct metadata on first fetch without needing JS rendering.
  *
- * Dynamic routes (courses, blog posts, providers) are NOT prerendered here —
- * they still fall through to dist/index.html (the SPA).
+ * Blog-Posts sind weiterhin NICHT prerendert — sie fallen auf dist/index.html
+ * (die SPA) zurück.
  *
  * Themenwelten aus der Datenbank (theme_worlds / theme_world_scenarios) werden
  * ebenfalls prerendert, sobald VITE_THEME_WORLD_DB_ENABLED='true' ist — siehe
  * api/_lib/theme-world-prerender.js.
+ *
+ * Öffentliche Kursdetailseiten (/courses/…) und Anbieterprofile (/anbieter/…)
+ * werden aus der Datenbank prerendert — siehe api/_lib/course-prerender.js.
  */
 
 import { readFileSync, writeFileSync, mkdirSync } from 'fs';
@@ -31,6 +34,12 @@ import {
   loadThemeWorldPrerenderRoutes,
   ThemeWorldPrerenderError,
 } from '../api/_lib/theme-world-prerender.js';
+import {
+  CoursePrerenderError,
+  isCoursePrerenderEnabled,
+  loadCourseAndProviderPrerenderRoutes,
+  readPublicSupabaseCredentials,
+} from '../api/_lib/course-prerender.js';
 import { buildActiveThemeWorldTopicKeys } from '../src/lib/themeWorldTakeover.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -52,14 +61,43 @@ try {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function generateHtml(path, title, description, { ogImage, ogImageAlt } = {}) {
+function generateHtml(path, title, description, {
+  ogTitle,
+  ogDescription,
+  ogType,
+  ogImage,
+  ogImageAlt,
+  jsonLd,
+} = {}) {
   return injectHeadMeta(template, {
     canonical: `${BASE_URL}${path}`,
     title,
     description,
+    ogTitle,
+    ogDescription,
+    ogType,
     ogImage: ogImage || `${BASE_URL}/og-default.png`,
     ogImageAlt,
+    jsonLd,
   });
+}
+
+/**
+ * Ein einziger Supabase-Client für alle DB-gestützten Prerender-Quellen.
+ *
+ * Ausschliesslich das öffentliche Paar, das auch der Browser nutzt
+ * (src/lib/supabase.js). Bewusst KEINE Fallback-Kette: URL und Key müssen aus
+ * derselben Konfigurationsfamilie stammen, sonst entsteht ein «Invalid API
+ * key». Service-Role-Rechte sind nicht nötig und wären schädlich — der
+ * Prerender soll exakt die Inhalte sehen, die RLS auch einem anonymen Besucher
+ * freigibt.
+ */
+let supabaseClient;
+async function getPublicSupabaseClient(url, key) {
+  if (supabaseClient) return supabaseClient;
+  const { createClient } = await import('@supabase/supabase-js');
+  supabaseClient = createClient(url, key);
+  return supabaseClient;
 }
 
 /**
@@ -99,9 +137,83 @@ async function loadDbThemeWorlds() {
     );
   }
 
-  const { createClient } = await import('@supabase/supabase-js');
   return loadThemeWorldPrerenderRoutes({
-    supabase: createClient(url, key),
+    supabase: await getPublicSupabaseClient(url, key),
+    baseUrl: BASE_URL,
+  });
+}
+
+/**
+ * Lädt beim Build die öffentlichen Kurse und Anbieterprofile.
+ *
+ * FAIL-SAFE-REGELN (bewusst dokumentiert, siehe api/_lib/course-prerender.js):
+ *
+ *   VITE_COURSE_PRERENDER_ENABLED='false'
+ *     → bewusst abgeschaltet. Keine DB-Abfrage, laute Meldung im Build-Log.
+ *
+ *   Beide öffentlichen Variablen fehlen
+ *     → übersprungen mit lauter Warnung. Ohne dieses Paar startet die SPA
+ *       selbst nicht (src/lib/supabase.js) — dieser Fall tritt praktisch nur
+ *       lokal und in CI auf, wo es keine DB-Inhalte zu prerendern gibt. Wer die
+ *       Garantie erzwingen will, setzt VITE_COURSE_PRERENDER_REQUIRED='true';
+ *       dann bricht der Build stattdessen ab.
+ *
+ *   Genau EINE der beiden Variablen fehlt
+ *     → Build-Abbruch. Eine halbe Konfiguration ist immer ein Fehler und würde
+ *       hunderte Seiten still ohne SEO-Daten deployen.
+ *
+ *   Systemischer DB-Fehler (Kurse, Kategorien, Termine, Profile)
+ *     → Build-Abbruch. Ein scheinbar erfolgreicher Deploy mit generischer
+ *       SPA-Shell für alle Kurs-/Anbieter-URLs wäre schlechter als der bisher
+ *       online stehende Stand.
+ *
+ *   Ein einzelner ungültiger Datensatz (keine ID, kein Titel/Name, kein
+ *   gültiger Slug, unerwartetes Pfadformat)
+ *     → Warnung, Datensatz wird übersprungen. Es entsteht dann garantiert keine
+ *       falsche URL und keine SEO-Seite mit erfundenen Werten.
+ *
+ * @returns {Promise<{enabled: boolean, courseRoutes: Array, providerRoutes: Array}>}
+ */
+async function loadCourseAndProviderRoutes() {
+  const empty = { enabled: false, courseRoutes: [], providerRoutes: [] };
+
+  if (!isCoursePrerenderEnabled()) {
+    console.warn(
+      '  ! VITE_COURSE_PRERENDER_ENABLED=false — Kurs- und Anbieterseiten werden NICHT ' +
+        'prerendert. Ihr erstes HTML bleibt die generische SPA-Shell.'
+    );
+    return empty;
+  }
+
+  const { url, key, missing } = readPublicSupabaseCredentials();
+
+  if (missing.length === 1) {
+    throw new CoursePrerenderError(
+      `Die öffentliche Supabase-Konfiguration ist unvollständig — es fehlt: ${missing[0]}. ` +
+        'URL und Key müssen aus derselben Konfigurationsfamilie stammen. Der Build wird ' +
+        'abgebrochen, damit keine Kurs-/Anbieterseiten ohne SEO-Daten deployen.'
+    );
+  }
+
+  if (missing.length === 2) {
+    if (process.env.VITE_COURSE_PRERENDER_REQUIRED === 'true') {
+      throw new CoursePrerenderError(
+        'VITE_COURSE_PRERENDER_REQUIRED=true, aber im Build fehlen VITE_SUPABASE_URL und ' +
+          'VITE_SUPABASE_KEY. Der Build wird abgebrochen, damit kein Deploy ohne die ' +
+          'statischen Kurs- und Anbieterseiten entsteht.'
+      );
+    }
+    console.warn(
+      '  ! VITE_SUPABASE_URL und VITE_SUPABASE_KEY fehlen — Kurs- und Anbieterseiten werden ' +
+        'NICHT prerendert. Das ist nur für lokale Builds ohne Datenbank gedacht; in einem ' +
+        'Deploy muss das öffentliche Paar gesetzt sein (setze VITE_COURSE_PRERENDER_REQUIRED=true, ' +
+        'um daraus einen Build-Fehler zu machen).'
+    );
+    return empty;
+  }
+
+  return loadCourseAndProviderPrerenderRoutes({
+    supabase: await getPublicSupabaseClient(url, key),
     baseUrl: BASE_URL,
   });
 }
@@ -464,6 +576,33 @@ for (const [key, config] of Object.entries(SIMPLE_TOPIC_CONTENT)) {
     `/thema/${key}`,
     `${config.title} | KursNavi`,
     config.subtitle
+  );
+}
+
+// ─── Öffentliche Kursdetailseiten und Anbieterprofile ─────────────────────────
+// Bis hierher entstand für /courses/… und /anbieter/… keine Datei — Vercel
+// lieferte über den Catch-all-Rewrite die generische SPA-Shell aus. Die Pfade
+// kommen ausschliesslich aus buildCanonicalCoursePath() bzw. dem Anbieter-Slug;
+// SEO-Werte und JSON-LD aus denselben reinen Funktionen, die auch DetailView
+// und ProviderProfilePage nach der Hydration verwenden.
+
+const courseAndProviders = await loadCourseAndProviderRoutes();
+
+if (courseAndProviders.enabled) {
+  const before = count;
+  for (const route of [...courseAndProviders.courseRoutes, ...courseAndProviders.providerRoutes]) {
+    writeRoute(route.path, route.title, route.description, {
+      ogTitle: route.ogTitle,
+      ogDescription: route.ogDescription,
+      ogType: route.ogType,
+      ogImage: route.ogImage,
+      jsonLd: route.jsonLd,
+    });
+  }
+  console.log(
+    `  → ${courseAndProviders.courseRoutes.length} Kursseite(n) und ` +
+      `${courseAndProviders.providerRoutes.length} Anbieterprofil(e) prerendert ` +
+      `(${count - before} Dateien).`
   );
 }
 

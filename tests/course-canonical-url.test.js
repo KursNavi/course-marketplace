@@ -222,7 +222,9 @@ describe('Eine einzige URL-Wahrheit', () => {
 
   it('DetailView hält keinen eigenen Slug-Algorithmus mehr vor', () => {
     const source = readFileSync('./src/components/DetailView.jsx', 'utf8');
-    expect(source).toContain('buildCanonicalCourseUrl');
+    // Canonical/og:url/JSON-LD kommen aus dem gemeinsamen SEO-Modul, das
+    // seinerseits ausschliesslich courseUrl.js für die URL nutzt.
+    expect(source).toContain("from '../lib/courseSeo'");
     // Der alte, umlaut-unsichere Titel-Slug ist entfernt
     expect(source).not.toContain("(course.title || 'detail').toLowerCase()");
     expect(source).not.toContain("(course.canton || 'schweiz').toLowerCase()");
@@ -334,9 +336,27 @@ describe('Domain-Wahrheit', () => {
 
   it('DetailView kanonisiert gegen CANONICAL_BASE_URL, nicht gegen BASE_URL', () => {
     const source = readFileSync('./src/components/DetailView.jsx', 'utf8');
-    expect(source).toContain('buildCanonicalCourseUrl(course, CANONICAL_BASE_URL)');
+    // Die Berechnung liegt seit dem Course-Prerender in src/lib/courseSeo.js —
+    // dieselbe Funktion nutzt der Build. DetailView reicht ausschliesslich die
+    // zentrale Canonical-Basis hinein.
+    expect(source).toContain('buildCourseSeo(course, CANONICAL_BASE_URL)');
+    expect(source).toContain('buildCourseJsonLdList(course, CANONICAL_BASE_URL)');
     // BASE_URL (window.location.origin) darf für SEO-Auszeichnungen nicht mehr
     // verwendet werden.
     expect(source).not.toMatch(/\bBASE_URL\b(?!\s*[,}])/);
+  });
+
+  it('courseSeo kanonisiert über den gemeinsamen Builder und nie über window', () => {
+    const source = readFileSync('./src/lib/courseSeo.js', 'utf8');
+    expect(source).toContain("from './courseUrl.js'");
+    expect(source).toContain('buildCanonicalCourseUrl(course, base)');
+    // Kein Rückgriff auf den aufrufenden Host und kein zweiter Slug-Algorithmus.
+    // Kommentarzeilen ausblenden — dort wird window.location bewusst erwähnt.
+    const code = source
+      .split('\n')
+      .filter((line) => !/^\s*(\*|\/\/|\/\*)/.test(line))
+      .join('\n');
+    expect(code).not.toContain('window');
+    expect(code).not.toMatch(/function\s+slugify\s*\(/);
   });
 });

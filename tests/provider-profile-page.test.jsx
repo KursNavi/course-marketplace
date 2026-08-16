@@ -4,6 +4,9 @@ import React from 'react';
 
 vi.mock('../src/lib/siteConfig', () => ({
   BASE_URL: 'https://kursnavi.ch',
+  // Canonical/og:url/JSON-LD nutzen bewusst die zentrale Env-Basis, nicht
+  // window.location.origin (siehe src/lib/providerSeo.js).
+  CANONICAL_BASE_URL: 'https://kursnavi.ch',
   buildCoursePath: (course) => `/courses/${course?.id}`,
 }));
 
