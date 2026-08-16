@@ -23,13 +23,19 @@
  * 308 (statt 301) ist bewusst gewählt: Es ist Vercels eigene Semantik für
  * `"permanent": true` in vercel.json und wird von Suchmaschinen wie 301
  * behandelt, ohne die HTTP-Methode zu verändern.
+ *
+ * Zweite, kleinere Aufgabe derselben Funktion: historische Themen-Slugs
+ * (TOPIC_SLUG_ALIASES in src/lib/segmentLandingConfig.js) dauerhaft auf ihren
+ * kanonischen Slug führen. Ein Alias hat keinen eigenen Inhalt, steht deshalb
+ * weder in der Sitemap noch im Prerender und landet aus demselben Grund immer
+ * hier.
  */
 
 import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createClient } from '@supabase/supabase-js';
-import { SIMPLE_TOPIC_CONTENT } from '../src/lib/segmentLandingConfig.js';
+import { SIMPLE_TOPIC_CONTENT, resolveTopicAlias } from '../src/lib/segmentLandingConfig.js';
 import {
   bereichPath,
   themaPath,
@@ -130,6 +136,21 @@ export default async function handler(req, res) {
   }
 
   const activeTopicKeys = await resolveActiveTopicKeys();
+
+  // 0. Historischer Slug (TOPIC_SLUG_ALIASES) → dauerhafter Redirect auf den
+  //    kanonischen Slug. Das Ziel wird sofort mitaufgelöst: Ist das kanonische
+  //    Thema seinerseits von einer Themenwelt übernommen, zeigt der Redirect
+  //    direkt auf /bereich/… — nie Alias → /thema/ → /bereich/ (keine Kette).
+  const canonicalKey = resolveTopicAlias(key);
+  if (canonicalKey !== key) {
+    const [canonicalSegment, canonicalSlug] = canonicalKey.split('/');
+    const target = activeTopicKeys.has(canonicalKey)
+      ? bereichPath(canonicalSegment, canonicalSlug)
+      : themaPath(canonicalSegment, canonicalSlug);
+    res.setHeader('Location', target);
+    res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=300, stale-while-revalidate=600');
+    return res.status(308).send(`Redirecting to ${target}`);
+  }
 
   // 1. Übernommen → dauerhafter Redirect auf die Themenwelt.
   if (activeTopicKeys.has(key)) {
