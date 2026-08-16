@@ -19,6 +19,7 @@ import {
   buildCanonicalCoursePath,
   buildCanonicalCourseUrl,
   extractCourseIdFromPath,
+  hasStableCanonicalTopic,
 } from '../src/lib/courseUrl.js';
 import { buildCoursePath } from '../src/lib/siteConfig.js';
 
@@ -103,6 +104,38 @@ describe('Canonical Course URL: numerisches Themensegment', () => {
       expect(topic, `Kurs ${course.id}`).not.toMatch(/^\d+$/);
       expect(topic, `Kurs ${course.id}`).not.toBe('');
     }
+  });
+});
+
+// ============================================================
+// Stabilitaet ohne View-Daten (Grundlage fuer "nicht raten")
+// ============================================================
+
+describe('hasStableCanonicalTopic', () => {
+  it('ist wahr, sobald der Kurs selbst ein semantisches Thema liefert', () => {
+    expect(hasStableCanonicalTopic(COURSE_779)).toBe(true);        // via all_categories
+    expect(hasStableCanonicalTopic(COURSE_LEGACY_SLUG)).toBe(true); // via category_area
+  });
+
+  it('ist falsch, wenn das Thema nur aus Ersatzfeldern geraten werden koennte', () => {
+    // Ohne all_categories bleibt nur category_area="12" — die Rueckfallebene
+    // wuerde "privat" liefern, aber mit View-Daten waere es "kunst".
+    const withoutViewData = { ...COURSE_779, all_categories: undefined };
+    expect(hasStableCanonicalTopic(withoutViewData)).toBe(false);
+    expect(hasStableCanonicalTopic(COURSE_NUMERIC_ONLY)).toBe(false);
+  });
+
+  it('ist falsch ohne Kurs', () => {
+    expect(hasStableCanonicalTopic(null)).toBe(false);
+    expect(hasStableCanonicalTopic(undefined)).toBe(false);
+  });
+
+  it('belegt genau das Risiko, das die Sitemap vermeiden muss', () => {
+    const withoutViewData = { ...COURSE_779, all_categories: undefined };
+    // Geratene und echte kanonische URL unterscheiden sich — deshalb wird
+    // dieser Kurs bei Kategorie-Ausfall lieber ausgelassen.
+    expect(buildCanonicalCoursePath(withoutViewData))
+      .not.toBe(buildCanonicalCoursePath(COURSE_779));
   });
 });
 

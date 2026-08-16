@@ -109,6 +109,24 @@ const CATEGORY_ROW_779 = {
   level4_label_de: null,
 };
 
+/** Dieselbe Kategorie-Form, die api/_lib/course-categories.js aus der View baut. */
+const EXPECTED_CATEGORY_779 = {
+  course_id: 779,
+  category_type: 'privat',
+  category_type_label: 'Privat & Hobby',
+  category_area: 'kunst',
+  category_area_label: 'Kunst & Kreativ',
+  category_specialty: 'schmuck',
+  category_specialty_label: 'Schmuck',
+  category_focus: null,
+  category_focus_label: null,
+  type_id: 1,
+  area_id: 12,
+  specialty_id: 130,
+  focus_id: null,
+  is_primary: true,
+};
+
 function courseLocs(xml) {
   return [...xml.matchAll(/<loc>([^<]*\/courses\/[^<]*)<\/loc>/g)].map((match) => match[1]);
 }
@@ -184,19 +202,6 @@ describe('Sitemap: kanonische Kurs-URLs', () => {
     ]);
   });
 
-  it('fällt bei fehlgeschlagener Kategorie-Abfrage auf ein semantisches Segment zurück', async () => {
-    const res = await renderSitemap({
-      courses: { data: [COURSE_NUMERIC], error: null },
-      v_course_full_categories: { data: null, error: { message: 'boom' } },
-    });
-
-    // Kein 500 und kein numerisches Segment — schlimmstenfalls ein gröberes Thema.
-    expect(res._status).toBe(200);
-    const [loc] = courseLocs(res._sent);
-    expect(loc).toBeDefined();
-    expect(loc).not.toMatch(/\/courses\/\d+\//);
-  });
-
   it('fragt die Kategorien über v_course_full_categories ab', async () => {
     mockState.supabase = makeSupabaseMock({
       courses: { data: [COURSE_NUMERIC], error: null },
@@ -208,5 +213,95 @@ describe('Sitemap: kanonische Kurs-URLs', () => {
 
     const queriedTables = mockState.supabase.from.mock.calls.map(([table]) => table);
     expect(queriedTables).toContain('v_course_full_categories');
+  });
+});
+
+// ============================================================
+// Keine geratenen URLs bei Kategorie-Ausfall
+// ============================================================
+
+describe('Sitemap: raet keine kanonische Kurs-URL', () => {
+  beforeEach(() => {
+    process.env.SUPABASE_URL = 'https://test.supabase.co';
+    process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-key';
+    process.env.VITE_SITE_URL = BASE;
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('1. numerischer Kurs + Kategorie geladen → korrekte semantische URL', async () => {
+    const res = await renderSitemap({
+      courses: { data: [COURSE_NUMERIC], error: null },
+      v_course_full_categories: { data: [CATEGORY_ROW_779], error: null },
+    });
+
+    expect(courseLocs(res._sent)).toEqual([
+      `${BASE}/courses/kunst/zuerich/779-18k-gold-wax-ring-carving-workshop-fuer-zwei-personen`,
+    ]);
+  });
+
+  it('2. numerischer Kurs + Kategorieabfrage fehlgeschlagen → Kurs fehlt in der Sitemap', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const res = await renderSitemap({
+      courses: { data: [COURSE_NUMERIC], error: null },
+      v_course_full_categories: { data: null, error: { message: 'view down' } },
+    });
+
+    // Lieber gar keine URL als eine geratene, die sich spaeter aendert.
+    expect(courseLocs(res._sent)).toEqual([]);
+    expect(res._sent).not.toContain('/courses/privat/');
+    expect(res._sent).not.toContain('/courses/kurs/');
+
+    const logged = warn.mock.calls.map((args) => args.join(' ')).join('\n');
+    expect(logged).toContain('779');
+    expect(logged).not.toContain('test-key');
+  });
+
+  it('3. semantischer Legacy-Kurs + Kategorieabfrage fehlgeschlagen → URL bleibt', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const res = await renderSitemap({
+      courses: { data: [COURSE_SLUG], error: null },
+      v_course_full_categories: { data: null, error: { message: 'view down' } },
+    });
+
+    // Dieser Kurs braucht die View gar nicht — seine URL ist stabil.
+    expect(courseLocs(res._sent)).toEqual([
+      `${BASE}/courses/sprachen-privat/bern/363-spanisch-konversationskurs`,
+    ]);
+  });
+
+  it('4. Sitemap-Pfad ist identisch mit buildCanonicalCoursePath des vollen Kursobjekts', async () => {
+    const res = await renderSitemap({
+      courses: { data: [COURSE_NUMERIC, COURSE_SLUG], error: null },
+      v_course_full_categories: { data: [CATEGORY_ROW_779], error: null },
+    });
+
+    const { buildCanonicalCoursePath } = await import('../src/lib/courseUrl.js');
+    const fullCourse779 = { ...COURSE_NUMERIC, all_categories: [EXPECTED_CATEGORY_779] };
+
+    expect(courseLocs(res._sent)).toEqual([
+      `${BASE}${buildCanonicalCoursePath(fullCourse779)}`,
+      `${BASE}${buildCanonicalCoursePath(COURSE_SLUG)}`,
+    ]);
+  });
+
+  it('ein einzelner Kategoriefehler bricht die restliche Sitemap nicht', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const res = await renderSitemap({
+      courses: { data: [COURSE_NUMERIC, COURSE_SLUG], error: null },
+      v_course_full_categories: { data: null, error: { message: 'view down' } },
+    });
+
+    expect(res._status).toBe(200);
+    // Der stabile Kurs bleibt, der ungeklaerte faellt weg …
+    expect(courseLocs(res._sent)).toEqual([
+      `${BASE}/courses/sprachen-privat/bern/363-spanisch-konversationskurs`,
+    ]);
+    // … und alle uebrigen Sitemap-Bereiche sind unveraendert vorhanden.
+    expect(res._sent).toContain(`${BASE}/search`);
+    expect(res._sent).toContain(`${BASE}/ratgeber`);
+    expect(res._sent).toContain('</urlset>');
   });
 });

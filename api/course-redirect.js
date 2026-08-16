@@ -25,7 +25,7 @@ import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createClient } from '@supabase/supabase-js';
-import { buildCanonicalCoursePath } from '../src/lib/courseUrl.js';
+import { buildCanonicalCoursePath, hasStableCanonicalTopic } from '../src/lib/courseUrl.js';
 import { attachPrimaryCategories, fetchCourseCategoryRows } from './_lib/course-categories.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -89,14 +89,22 @@ export function parseCourseRedirectRequest(req) {
 
 /** Lädt genau einen veröffentlichten Kurs inklusive semantischer Kategorien. */
 async function loadCourse(courseId) {
-  const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-  const supabaseKey =
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    process.env.VITE_SUPABASE_ANON_KEY ||
-    process.env.SUPABASE_ANON_KEY;
+  // Genau das öffentliche Paar, das auch der Browser nutzt (src/lib/supabase.js)
+  // und das der Themenwelt-Prerender verwendet. Bewusst KEINE Fallback-Kette:
+  // URL und Key müssen aus derselben Konfigurationsfamilie stammen, sonst
+  // entsteht ein «Invalid API key». Service-Role-Rechte sind nicht nötig — der
+  // Redirect soll exakt die öffentlichen Kursdaten sehen, die RLS auch einem
+  // normalen Besucher freigibt.
+  const supabaseUrl = process.env.VITE_SUPABASE_URL;
+  const supabaseKey = process.env.VITE_SUPABASE_KEY;
 
   if (!supabaseUrl || !supabaseKey) {
-    console.warn('[course-redirect] Supabase nicht konfiguriert — keine Kanonisierung möglich.');
+    const missing = [
+      supabaseUrl ? null : 'VITE_SUPABASE_URL',
+      supabaseKey ? null : 'VITE_SUPABASE_KEY',
+    ].filter(Boolean).join(' und ');
+    // Nur die Namen der fehlenden Variablen, nie deren Werte.
+    console.warn(`[course-redirect] Öffentliche Supabase-Konfiguration fehlt: ${missing}.`);
     return null;
   }
 
@@ -117,8 +125,19 @@ async function loadCourse(courseId) {
   const course = (data || [])[0];
   if (!course) return null;
 
-  const categories = await fetchCourseCategoryRows(supabase, [course.id]);
-  return attachPrimaryCategories([course], categories)[0];
+  const { byCourseId, unresolvedIds } = await fetchCourseCategoryRows(supabase, [course.id]);
+  const resolved = attachPrimaryCategories([course], byCourseId)[0];
+
+  // Ein 308 ist dauerhaft — auf ein geratenes Themensegment darf er nie
+  // zeigen. Sind die Kategorien gerade nicht abfragbar und ergeben die
+  // eigenen Felder des Kurses kein semantisches Thema, lieber nicht
+  // weiterleiten (der Client normalisiert die URL weiterhin selbst).
+  if (unresolvedIds.has(course.id) && !hasStableCanonicalTopic(resolved)) {
+    console.warn(`[course-redirect] Kurs ${course.id}: Kategorie nicht auflösbar — kein Redirect.`);
+    return null;
+  }
+
+  return resolved;
 }
 
 function sendSpaShell(res) {

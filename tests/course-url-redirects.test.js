@@ -150,13 +150,21 @@ describe('api/course-redirect Handler', () => {
     };
   }
 
-  function mockSupabase({ course = COURSE_ROW, categories = [CATEGORY_ROW], courseError = null } = {}) {
+  function mockSupabase({
+    course = COURSE_ROW,
+    categories = [CATEGORY_ROW],
+    courseError = null,
+    categoryError = null,
+  } = {}) {
     return {
       from: (table) => {
         if (table === 'v_course_full_categories') {
           const chain = {
             select: () => chain,
-            in: () => Promise.resolve({ data: categories, error: null }),
+            in: () => Promise.resolve({
+              data: categoryError ? null : categories,
+              error: categoryError,
+            }),
           };
           return chain;
         }
@@ -171,9 +179,15 @@ describe('api/course-redirect Handler', () => {
     };
   }
 
+  /** Nur das öffentliche Paar — so ist die Preview/Production-Konfiguration gesetzt. */
+  function setPublicEnv() {
+    vi.stubEnv('VITE_SUPABASE_URL', 'https://public.supabase.co');
+    vi.stubEnv('VITE_SUPABASE_KEY', 'public-anon-key');
+  }
+
   beforeEach(async () => {
-    process.env.SUPABASE_URL = 'https://test.supabase.co';
-    process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-key';
+    vi.unstubAllEnvs();
+    setPublicEnv();
     vi.resetModules();
   });
 
@@ -182,15 +196,25 @@ describe('api/course-redirect Handler', () => {
     vi.unstubAllEnvs();
   });
 
+  /** Merkt sich, womit createClient aufgerufen wurde. */
+  let createClientSpy;
+
   async function loadHandler(supabaseMock) {
+    createClientSpy = vi.fn(() => supabaseMock);
     vi.doMock('@supabase/supabase-js', () => ({
-      createClient: () => supabaseMock,
+      createClient: createClientSpy,
     }));
     const mod = await import('../api/course-redirect.js');
     handler = mod.default;
     parseCourseRedirectRequest = mod.parseCourseRedirectRequest;
     return mod;
   }
+
+  const NUMERIC_REQ = {
+    query: { __topic: '12', __loc: 'zuerich', __cseg: '779-18k-gold-wax-ring-carving-workshop-fuer-zwei-personen' },
+  };
+  const CANONICAL_779 =
+    '/courses/kunst/zuerich/779-18k-gold-wax-ring-carving-workshop-fuer-zwei-personen';
 
   it('leitet eine numerische Kurs-URL permanent auf die kanonische URL', async () => {
     await loadHandler(mockSupabase());
@@ -248,6 +272,32 @@ describe('api/course-redirect Handler', () => {
     expect(res._headers.Location).toBeUndefined();
   });
 
+  it('leitet nicht weiter, wenn die Kategorie nicht auflösbar ist (kein geratenes 308)', async () => {
+    await loadHandler(mockSupabase({ categoryError: { message: 'view down' } }));
+    const res = makeRes();
+    await handler(NUMERIC_REQ, res);
+
+    // Kurs 779 hat nur category_area="12" — ohne View-Daten wäre das Thema geraten.
+    expect(res._headers.Location).toBeUndefined();
+    expect([200, 404]).toContain(res._status);
+  });
+
+  it('leitet trotz Kategoriefehler weiter, wenn der Kurs selbst ein semantisches Thema hat', async () => {
+    const legacyCourse = {
+      id: 363,
+      title: 'Spanisch Konversationskurs',
+      canton: 'Bern',
+      category_type: 'privat',
+      category_area: 'sprachen_privat',
+    };
+    await loadHandler(mockSupabase({ course: legacyCourse, categoryError: { message: 'view down' } }));
+    const res = makeRes();
+    await handler({ query: { __topic: '12', __loc: 'falsch', __cseg: '363-x' } }, res);
+
+    expect(res._status).toBe(308);
+    expect(res._headers.Location).toBe('/courses/sprachen-privat/bern/363-spanisch-konversationskurs');
+  });
+
   it('parst die injizierten Parameter und trennt sie von der echten Query', async () => {
     await loadHandler(mockSupabase());
     const parsed = parseCourseRedirectRequest({
@@ -256,5 +306,96 @@ describe('api/course-redirect Handler', () => {
     expect(parsed.courseId).toBe('779');
     expect(parsed.originalPath).toBe('/courses/12/zuerich/779-titel-slug');
     expect(parsed.search).toBe('page=2');
+  });
+
+  // ============================================================
+  // Supabase-Konfiguration: ausschliesslich das öffentliche Paar
+  // ============================================================
+
+  describe('nutzt nur VITE_SUPABASE_URL + VITE_SUPABASE_KEY', () => {
+    it('1. das öffentliche Paar allein genügt', async () => {
+      vi.unstubAllEnvs();
+      vi.stubEnv('VITE_SUPABASE_URL', 'https://public.supabase.co');
+      vi.stubEnv('VITE_SUPABASE_KEY', 'public-anon-key');
+      await loadHandler(mockSupabase());
+
+      const res = makeRes();
+      await handler(NUMERIC_REQ, res);
+
+      expect(res._status).toBe(308);
+      expect(res._headers.Location).toBe(CANONICAL_779);
+    });
+
+    it('2. SUPABASE_SERVICE_ROLE_KEY wird nicht verwendet', async () => {
+      vi.unstubAllEnvs();
+      vi.stubEnv('VITE_SUPABASE_URL', 'https://public.supabase.co');
+      vi.stubEnv('VITE_SUPABASE_KEY', 'public-anon-key');
+      vi.stubEnv('SUPABASE_SERVICE_ROLE_KEY', 'service-role-secret');
+      await loadHandler(mockSupabase());
+
+      await handler(NUMERIC_REQ, makeRes());
+
+      expect(createClientSpy).toHaveBeenCalledTimes(1);
+      const [, usedKey] = createClientSpy.mock.calls[0];
+      expect(usedKey).toBe('public-anon-key');
+      expect(usedKey).not.toBe('service-role-secret');
+
+      // Auch im Quelltext darf die Service Role nicht mehr auftauchen.
+      const source = readFileSync('./api/course-redirect.js', 'utf8');
+      expect(source).not.toContain('SUPABASE_SERVICE_ROLE_KEY');
+    });
+
+    it('3. SUPABASE_URL wird nicht mit einem VITE-Key kombiniert', async () => {
+      vi.unstubAllEnvs();
+      vi.stubEnv('SUPABASE_URL', 'https://server-only.supabase.co');
+      vi.stubEnv('VITE_SUPABASE_KEY', 'public-anon-key');
+      await loadHandler(mockSupabase());
+
+      const res = makeRes();
+      await handler(NUMERIC_REQ, res);
+
+      // Ohne VITE_SUPABASE_URL kein Client — gemischte Paare gäbe es sonst.
+      expect(createClientSpy).not.toHaveBeenCalled();
+      expect(res._headers.Location).toBeUndefined();
+
+      const source = readFileSync('./api/course-redirect.js', 'utf8');
+      expect(source).not.toMatch(/process\.env\.SUPABASE_URL/);
+      expect(source).not.toMatch(/process\.env\.SUPABASE_ANON_KEY/);
+      expect(source).not.toMatch(/process\.env\.VITE_SUPABASE_ANON_KEY/);
+    });
+
+    it('4. fehlendes öffentliches Paar fällt sauber auf die SPA-Shell zurück', async () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      vi.unstubAllEnvs();
+      await loadHandler(mockSupabase());
+
+      const res = makeRes();
+      await handler(NUMERIC_REQ, res);
+
+      expect(createClientSpy).not.toHaveBeenCalled();
+      expect(res._headers.Location).toBeUndefined();
+      expect([200, 404]).toContain(res._status); // kein 500
+      // Warnung nennt nur die Variablennamen, nie Werte.
+      const logged = warn.mock.calls.map((args) => args.join(' ')).join('\n');
+      expect(logged).toContain('VITE_SUPABASE_URL');
+      expect(logged).toContain('VITE_SUPABASE_KEY');
+      expect(logged).not.toContain('public-anon-key');
+      expect(logged).not.toContain('service-role');
+    });
+
+    it('5. createClient wird exakt mit dem öffentlichen Paar aufgerufen', async () => {
+      vi.unstubAllEnvs();
+      vi.stubEnv('VITE_SUPABASE_URL', 'https://public.supabase.co');
+      vi.stubEnv('VITE_SUPABASE_KEY', 'public-anon-key');
+      vi.stubEnv('SUPABASE_URL', 'https://server-only.supabase.co');
+      vi.stubEnv('SUPABASE_SERVICE_ROLE_KEY', 'service-role-secret');
+      vi.stubEnv('SUPABASE_ANON_KEY', 'other-anon-key');
+      await loadHandler(mockSupabase());
+
+      await handler(NUMERIC_REQ, makeRes());
+
+      expect(createClientSpy).toHaveBeenCalledTimes(1);
+      expect(createClientSpy).toHaveBeenCalledWith('https://public.supabase.co', 'public-anon-key');
+    });
   });
 });

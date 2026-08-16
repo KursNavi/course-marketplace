@@ -96,6 +96,26 @@ export function getCanonicalCourseTopicSlug(course) {
 }
 
 /**
+ * Liefert der Kurs schon aus seinen eigenen Feldern ein eindeutig semantisches
+ * Themensegment — also ohne die Rückfallebene in getCanonicalCourseTopicSlug()?
+ *
+ * Nur dann ist die kanonische URL stabil, wenn keine Kategoriedaten aus
+ * v_course_full_categories vorliegen. Ist das Ergebnis dagegen rein numerisch,
+ * würde das Themensegment aus Ersatzfeldern geraten — und könnte sich ändern,
+ * sobald die Kategorien wieder auflösbar sind. Aufrufer, die eine dauerhafte
+ * URL veröffentlichen (Sitemap) oder festschreiben (308-Redirect), müssen
+ * solche Kurse in diesem Durchlauf auslassen statt zu raten.
+ *
+ * @param {object} course
+ * @returns {boolean}
+ */
+export function hasStableCanonicalTopic(course) {
+  if (!course) return false;
+  const preferred = slugify(getPrimaryCategorySlug(course));
+  return Boolean(preferred) && !NUMERIC_ONLY.test(preferred);
+}
+
+/**
  * Kanonischer, relativer Kurs-Pfad.
  * Struktur: /courses/{theme-slug}/{location-slug}/{id}-{title-slug}
  *

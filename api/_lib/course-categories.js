@@ -35,17 +35,23 @@ function mapCategoryRow(row) {
 
 /**
  * Lädt die Kategoriezeilen zu den angegebenen Kurs-IDs.
- * Fehler sind nicht fatal: Es wird eine leere Map zurückgegeben, die Aufrufer
- * fallen dann auf die Kategoriefelder der courses-Tabelle zurück.
+ *
+ * Ein Abfragefehler bricht nicht ab, wird aber NICHT verschluckt: die IDs des
+ * betroffenen Blocks landen in `unresolvedIds`. Nur so können Aufrufer
+ * unterscheiden zwischen
+ *   - «dieser Kurs hat keine Kategoriezeilen» (Abfrage war erfolgreich) und
+ *   - «wir wissen es nicht» (Abfrage schlug fehl).
+ * Im zweiten Fall darf keine kanonische URL geraten werden.
  *
  * @param {object} supabase - Supabase-Client
  * @param {Array<string|number>} courseIds
- * @returns {Promise<Map<string|number, object[]>>} course_id → Kategorien
+ * @returns {Promise<{byCourseId: Map<string|number, object[]>, unresolvedIds: Set<string|number>}>}
  */
 export async function fetchCourseCategoryRows(supabase, courseIds) {
   const byCourseId = new Map();
+  const unresolvedIds = new Set();
   const ids = (courseIds || []).filter((id) => id !== null && id !== undefined);
-  if (ids.length === 0) return byCourseId;
+  if (ids.length === 0) return { byCourseId, unresolvedIds };
 
   for (let offset = 0; offset < ids.length; offset += ID_CHUNK_SIZE) {
     const chunk = ids.slice(offset, offset + ID_CHUNK_SIZE);
@@ -55,7 +61,8 @@ export async function fetchCourseCategoryRows(supabase, courseIds) {
       .in('course_id', chunk);
 
     if (error) {
-      console.warn('[course-categories] Kategorien konnten nicht geladen werden:', error.message);
+      console.warn(`[course-categories] Kategorien für ${chunk.length} Kurse nicht ladbar: ${error.message}`);
+      for (const id of chunk) unresolvedIds.add(id);
       continue;
     }
 
@@ -66,7 +73,7 @@ export async function fetchCourseCategoryRows(supabase, courseIds) {
     }
   }
 
-  return byCourseId;
+  return { byCourseId, unresolvedIds };
 }
 
 /**

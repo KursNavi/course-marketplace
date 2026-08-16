@@ -10,7 +10,7 @@ import { isThemeWorldDbEnabledServer } from './_lib/theme-world-takeover.js';
 // Gemeinsame Quelle der Wahrheit für Kurs-URLs — identisch mit internen Links,
 // Canonical, og:url, JSON-LD und der App-Normalisierung. courseUrl.js ist
 // bewusst abhängigkeitsfrei und darf deshalb hier importiert werden.
-import { buildCanonicalCoursePath } from '../src/lib/courseUrl.js';
+import { buildCanonicalCoursePath, hasStableCanonicalTopic } from '../src/lib/courseUrl.js';
 import { attachPrimaryCategories, fetchCourseCategoryRows } from './_lib/course-categories.js';
 
 export default async function handler(req, res) {
@@ -38,11 +38,24 @@ export default async function handler(req, res) {
     // 2b. Semantische Kategorien nachladen — courses.category_area enthält bei
     // neueren Kursen nur die numerische Taxonomie-ID. Ohne diesen Schritt
     // erzeugte die Sitemap /courses/12/... statt /courses/kunst/...
-    const courseCategories = await fetchCourseCategoryRows(
+    const { byCourseId, unresolvedIds } = await fetchCourseCategoryRows(
       supabase,
       (courses || []).map((course) => course.id)
     );
-    const coursesWithCategories = attachPrimaryCategories(courses, courseCategories);
+    const coursesWithCategories = attachPrimaryCategories(courses, byCourseId);
+
+    // 2c. Kurse auslassen, deren kanonische Kategorie wir gerade NICHT kennen.
+    // Eine geratene URL wäre schlimmer als eine fehlende: sobald die Kategorien
+    // wieder auflösbar sind, entstünde eine zweite indexierte Variante. Kurse,
+    // deren eigene Felder bereits ein semantisches Thema ergeben, sind davon
+    // nicht betroffen und bleiben in der Sitemap.
+    const publishableCourses = coursesWithCategories.filter((course) => {
+      if (!unresolvedIds.has(course.id) || hasStableCanonicalTopic(course)) return true;
+      console.warn(
+        `[sitemap] Kurs ${course.id} ausgelassen: Kategorie nicht auflösbar, kanonische URL wäre geraten.`
+      );
+      return false;
+    });
 
     // 3. Fetch all published blog posts
     // FIX (2026-07-14): Tabelle heisst 'articles', nicht 'blog'.
@@ -115,7 +128,7 @@ export default async function handler(req, res) {
     }).join('');
 
     // 6. Generate Course URLs (Dynamic)
-    const courseUrls = coursesWithCategories.map((course) => {
+    const courseUrls = publishableCourses.map((course) => {
       const path = buildCanonicalCoursePath(course);
 
       return `
