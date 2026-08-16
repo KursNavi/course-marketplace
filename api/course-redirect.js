@@ -19,6 +19,10 @@
  * Fällt die Auflösung aus (Kurs unbekannt, DB nicht erreichbar), wird die
  * SPA-Shell mit HTTP 200 ausgeliefert — also exakt das bisherige Verhalten.
  * Ein Ausfall der Datenbank darf keine Kurs-URL in einen Fehler verwandeln.
+ *
+ * Der Handler gibt niemals Datenbankinhalte aus: die Antwort ist entweder ein
+ * 308 mit Location-Header oder die unveränderte SPA-Shell. Credentials werden
+ * ausschliesslich zum Aufbau des Supabase-Clients verwendet und nie geloggt.
  */
 
 import { readFileSync } from 'node:fs';
@@ -27,6 +31,7 @@ import { fileURLToPath } from 'node:url';
 import { createClient } from '@supabase/supabase-js';
 import { buildCanonicalCoursePath, hasStableCanonicalTopic } from '../src/lib/courseUrl.js';
 import { attachPrimaryCategories, fetchCourseCategoryRows } from './_lib/course-categories.js';
+import { getSanitizedEnv } from './_lib/env.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -87,29 +92,60 @@ export function parseCourseRedirectRequest(req) {
   };
 }
 
+/**
+ * Wählt ein Supabase-Credential-Paar — immer beide Werte aus DERSELBEN Familie.
+ *
+ * Diese Datei ist reiner Serverless-Code; sie wird nie gebündelt und nie an den
+ * Browser ausgeliefert. Deshalb gilt hier dieselbe Konvention wie in den
+ * übrigen api/*-Routen (api/sitemap.js, api/admin.js, api/book-with-credit.js
+ * u.a.): serverseitiges Paar zuerst. SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY
+ * sind server-only Variablen und damit in Serverless-Funktionen verlässlich
+ * gesetzt, während VITE_*-Variablen primär Build-Variablen des Client-Bundles
+ * sind.
+ *
+ * Gemischte Paare (z.B. SUPABASE_URL + VITE_SUPABASE_KEY) sind ausgeschlossen:
+ * genau daran scheiterte der Themenwelt-Prerender in PR #100 mit
+ * «Invalid API key».
+ *
+ * @returns {{url: string, key: string, source: 'server'|'public'}|null}
+ */
+export function resolveSupabaseCredentials() {
+  const serverUrl = getSanitizedEnv('SUPABASE_URL');
+  const serverKey = getSanitizedEnv('SUPABASE_SERVICE_ROLE_KEY');
+  if (serverUrl && serverKey) {
+    return { url: serverUrl, key: serverKey, source: 'server' };
+  }
+
+  const publicUrl = getSanitizedEnv('VITE_SUPABASE_URL');
+  const publicKey = getSanitizedEnv('VITE_SUPABASE_KEY');
+  if (publicUrl && publicKey) {
+    return { url: publicUrl, key: publicKey, source: 'public' };
+  }
+
+  return null;
+}
+
 /** Lädt genau einen veröffentlichten Kurs inklusive semantischer Kategorien. */
 async function loadCourse(courseId) {
-  // Genau das öffentliche Paar, das auch der Browser nutzt (src/lib/supabase.js)
-  // und das der Themenwelt-Prerender verwendet. Bewusst KEINE Fallback-Kette:
-  // URL und Key müssen aus derselben Konfigurationsfamilie stammen, sonst
-  // entsteht ein «Invalid API key». Service-Role-Rechte sind nicht nötig — der
-  // Redirect soll exakt die öffentlichen Kursdaten sehen, die RLS auch einem
-  // normalen Besucher freigibt.
-  const supabaseUrl = process.env.VITE_SUPABASE_URL;
-  const supabaseKey = process.env.VITE_SUPABASE_KEY;
+  const credentials = resolveSupabaseCredentials();
 
-  if (!supabaseUrl || !supabaseKey) {
-    const missing = [
-      supabaseUrl ? null : 'VITE_SUPABASE_URL',
-      supabaseKey ? null : 'VITE_SUPABASE_KEY',
-    ].filter(Boolean).join(' und ');
-    // Nur die Namen der fehlenden Variablen, nie deren Werte.
-    console.warn(`[course-redirect] Öffentliche Supabase-Konfiguration fehlt: ${missing}.`);
+  if (!credentials) {
+    // Nur Variablennamen, nie Werte.
+    console.warn(
+      '[course-redirect] Kein vollständiges Supabase-Paar konfiguriert ' +
+        '(SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY oder VITE_SUPABASE_URL + VITE_SUPABASE_KEY).'
+    );
     return null;
   }
 
-  const supabase = createClient(supabaseUrl, supabaseKey);
+  const supabase = createClient(credentials.url, credentials.key);
 
+  // Die Statusbedingung ist die EINZIGE Sichtbarkeitsgrenze, sobald mit dem
+  // serverseitigen Paar gearbeitet wird (Service Role umgeht RLS). Sie muss
+  // deshalb hier stehen und darf nie entfallen: ein Entwurf darf niemals eine
+  // öffentliche Canonical-URL per 308 bestätigt bekommen.
+  // Ausserdem bewusst eng gehalten: genau eine ID, nur die Felder, die
+  // buildCanonicalCoursePath() braucht.
   const { data, error } = await supabase
     .from('courses')
     .select('id, title, category_type, category_area, category_specialty, category_focus, canton')
