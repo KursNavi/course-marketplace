@@ -795,7 +795,7 @@ describe('Anbieter-Prerender', () => {
     expect(organization.telephone).toBeUndefined();
     expect(organization.sameAs).toEqual([PROVIDER_PUBLIC.website_url]);
     expect(console.warn).toHaveBeenCalledWith(
-      expect.stringContaining('Optionale Profilspalten nicht verfügbar')
+      expect.stringContaining('Optionale Spalten für Öffentliche Anbieterprofile nicht verfügbar')
     );
   });
 
@@ -877,6 +877,32 @@ describe('Fail-safe: systemische Fehler brechen den Build ab', () => {
     const tables = defaultTables({ course_events: { data: null, error: { message: 'timeout' } } });
 
     await expect(runPrerender({ tables })).rejects.toThrow(/Kurstermine konnte[n]? nicht geladen werden/);
+  });
+
+  it('ein für anonym nicht lesbares end_date kostet keine Kursseite', async () => {
+    // Anonyme Leser sehen course_events.end_date in dieser Datenbank nicht;
+    // PostgREST meldet das als 42703. Die hydratisierte Seite sieht die Spalte
+    // ebenfalls nicht — Prerender und Hydration bleiben identisch.
+    const tables = defaultTables({
+      course_events: {
+        data: COURSE_EVENT_ROWS,
+        error: null,
+        errorIfSelects: {
+          column: 'end_date',
+          error: { code: '42703', message: 'column course_events.end_date does not exist' },
+        },
+      },
+    });
+
+    await runPrerender({ tables });
+
+    expect(pageExists(COURSE_PATH)).toBe(true);
+    const event = readJsonLd(COURSE_PATH).find((s) => s['@type'] === 'EducationEvent');
+    expect(event.startDate).toBe(FUTURE_DATE);
+    expect(event.endDate).toBeUndefined();
+    expect(console.warn).toHaveBeenCalledWith(
+      expect.stringContaining('Optionale Spalten für Kurstermine nicht verfügbar')
+    );
   });
 
   it('der Fehler ist ein CoursePrerenderError und nennt keine Zugangsdaten', async () => {

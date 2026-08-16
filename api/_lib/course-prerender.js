@@ -147,6 +147,42 @@ async function fetchAllPages(label, run) {
   }
 }
 
+/** PostgREST-Code für «Spalte existiert nicht». */
+const UNDEFINED_COLUMN = '42703';
+
+/**
+ * Wie fetchAllPages(), aber tolerant gegenüber optionalen Spalten.
+ *
+ * Manche Spalten sind für den anonymen Lesezugriff nicht verfügbar — sei es,
+ * weil die Migration in dieser Umgebung noch nicht gelaufen ist, sei es wegen
+ * spaltenweiser Rechte. PostgREST meldet beides als 42703. Solche Spalten
+ * reichern die strukturierten Daten nur an; ihr Fehlen darf nicht hunderte
+ * SEO-Seiten kosten. Deshalb: EINMAL mit dem Kernspaltensatz nachladen und laut
+ * warnen. Jeder andere Fehler bleibt systemisch und bricht den Build ab.
+ *
+ * Die Parität zur hydratisierten Seite bleibt dabei erhalten: ein anonymer
+ * Besucher sieht dieselben Spalten nicht.
+ *
+ * @param {string} label
+ * @param {string} coreColumns
+ * @param {string} optionalColumns
+ * @param {(columns: string) => (from: number, to: number) => Promise<object>} queryFactory
+ * @param {object} [logger=console]
+ * @returns {Promise<any[]>}
+ */
+async function fetchAllPagesTolerant(label, coreColumns, optionalColumns, queryFactory, logger = console) {
+  try {
+    return await fetchAllPages(label, queryFactory(`${coreColumns}, ${optionalColumns}`));
+  } catch (e) {
+    if (e?.cause?.code !== UNDEFINED_COLUMN) throw e;
+    logger?.warn?.(
+      `[prerender] Optionale Spalten für ${label} nicht verfügbar (${e.cause.message}) — ` +
+        'die betroffenen Seiten entstehen ohne diese Zusatzangaben.'
+    );
+    return fetchAllPages(label, queryFactory(coreColumns));
+  }
+}
+
 /**
  * Lädt alle öffentlich sichtbaren Kurse inklusive semantischer Kategorien und
  * Termine.
@@ -212,7 +248,7 @@ export async function fetchPublicCourses(supabase, { logger = console } = {}) {
     );
   }
 
-  const eventsByCourseId = await fetchCourseEvents(supabase, courseIds);
+  const eventsByCourseId = await fetchCourseEvents(supabase, courseIds, logger);
 
   logger?.log?.(
     `  → ${publicCourses.length} öffentliche Kurse geladen (${eventsByCourseId.size} mit Terminen).`
@@ -224,19 +260,30 @@ export async function fetchPublicCourses(supabase, { logger = console } = {}) {
   }));
 }
 
+/** Termin-Spalten, ohne die EducationEvent/Verfügbarkeit nicht bestimmbar sind. */
+const EVENT_CORE_COLUMNS = 'course_id, start_date, max_participants, cancelled_at';
+
+/** `end_date` ist für den anonymen Lesezugriff nicht überall verfügbar. */
+const EVENT_OPTIONAL_COLUMNS = 'end_date';
+
 /** Lädt die Termine der angegebenen Kurse, gruppiert nach Kurs-ID. */
-async function fetchCourseEvents(supabase, courseIds) {
+async function fetchCourseEvents(supabase, courseIds, logger = console) {
   const byCourseId = new Map();
 
   for (let offset = 0; offset < courseIds.length; offset += ID_CHUNK_SIZE) {
     const chunk = courseIds.slice(offset, offset + ID_CHUNK_SIZE);
-    const rows = await fetchAllPages('Kurstermine', (from, to) =>
-      supabase
-        .from('course_events')
-        .select('course_id, start_date, end_date, max_participants, cancelled_at')
-        .in('course_id', chunk)
-        .order('start_date', { ascending: true })
-        .range(from, to)
+    const rows = await fetchAllPagesTolerant(
+      'Kurstermine',
+      EVENT_CORE_COLUMNS,
+      EVENT_OPTIONAL_COLUMNS,
+      (columns) => (from, to) =>
+        supabase
+          .from('course_events')
+          .select(columns)
+          .in('course_id', chunk)
+          .order('start_date', { ascending: true })
+          .range(from, to),
+      logger
     );
 
     for (const row of rows) {
@@ -262,9 +309,6 @@ const PROVIDER_CORE_COLUMNS =
 const PROVIDER_OPTIONAL_COLUMNS =
   'phone, street, social_linkedin, social_instagram, social_facebook, social_youtube';
 
-/** PostgREST-Code für «Spalte existiert nicht». */
-const UNDEFINED_COLUMN = '42703';
-
 /**
  * Lädt alle öffentlich indexierbaren Anbieterprofile.
  *
@@ -272,8 +316,8 @@ const UNDEFINED_COLUMN = '42703';
  * Kurs»-Bedingung wird aus der bereits geladenen Kursmenge abgeleitet — keine
  * zusätzliche Abfrage.
  *
- * Fehlt eine der optionalen Spalten (Migrationsstand), wird EINMAL mit dem
- * Kernspaltensatz nachgeladen und laut gewarnt: das JSON-LD verliert dann
+ * Fehlt eine der optionalen Spalten, wird EINMAL mit dem Kernspaltensatz
+ * nachgeladen (siehe fetchAllPagesTolerant): das JSON-LD verliert dann
  * Telefonnummer, Strasse und sameAs-Links, aber es gehen keine 21 SEO-Seiten
  * verloren. Jeder andere Fehler bleibt systemisch und bricht den Build ab.
  *
@@ -292,27 +336,20 @@ export async function fetchPublicProviders(
     throw new CoursePrerenderError('Kein Supabase-Client für den Anbieter-Prerender verfügbar.');
   }
 
-  const queryProfiles = (columns) => (from, to) =>
-    supabase
-      .from('profiles')
-      .select(columns)
-      .not('profile_published_at', 'is', null)
-      .not('slug', 'is', null)
-      .in('package_tier', PUBLIC_PROFILE_TIERS)
-      .range(from, to);
-
-  const fullColumns = `${PROVIDER_CORE_COLUMNS}, ${PROVIDER_OPTIONAL_COLUMNS}`;
-  let rows;
-  try {
-    rows = await fetchAllPages('Öffentliche Anbieterprofile', queryProfiles(fullColumns));
-  } catch (e) {
-    if (e?.cause?.code !== UNDEFINED_COLUMN) throw e;
-    logger?.warn?.(
-      `[prerender] Optionale Profilspalten nicht verfügbar (${e.cause.message}) — ` +
-        'Anbieterseiten entstehen ohne Telefon, Strasse und sameAs-Links.'
-    );
-    rows = await fetchAllPages('Öffentliche Anbieterprofile', queryProfiles(PROVIDER_CORE_COLUMNS));
-  }
+  const rows = await fetchAllPagesTolerant(
+    'Öffentliche Anbieterprofile',
+    PROVIDER_CORE_COLUMNS,
+    PROVIDER_OPTIONAL_COLUMNS,
+    (columns) => (from, to) =>
+      supabase
+        .from('profiles')
+        .select(columns)
+        .not('profile_published_at', 'is', null)
+        .not('slug', 'is', null)
+        .in('package_tier', PUBLIC_PROFILE_TIERS)
+        .range(from, to),
+    logger
+  );
 
   const owners = publicCourseOwnerIds || new Set();
   const eligible = (rows || []).filter((row) => {
