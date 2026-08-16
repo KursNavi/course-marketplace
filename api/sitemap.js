@@ -7,24 +7,11 @@ import {
   topicKeyFromBereichPath,
 } from '../src/lib/themeWorldTakeover.js';
 import { isThemeWorldDbEnabledServer } from './_lib/theme-world-takeover.js';
-
-// Inlined to avoid importing React-dependent modules (constants.js imports lucide-react)
-function slugify(input) {
-  return (input || '')
-    .toString().trim().toLowerCase()
-    .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
-    .replace(/&/g, ' und ')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-}
-
-function buildCoursePath(course) {
-  if (!course) return '/search';
-  const topic = slugify(course.category_area || 'kurs');
-  const loc = slugify(course.canton || 'schweiz');
-  const title = slugify(course.title || 'detail');
-  return `/courses/${topic}/${loc}/${course.id}-${title}`;
-}
+// Gemeinsame Quelle der Wahrheit für Kurs-URLs — identisch mit internen Links,
+// Canonical, og:url, JSON-LD und der App-Normalisierung. courseUrl.js ist
+// bewusst abhängigkeitsfrei und darf deshalb hier importiert werden.
+import { buildCanonicalCoursePath, hasStableCanonicalTopic } from '../src/lib/courseUrl.js';
+import { attachPrimaryCategories, fetchCourseCategoryRows } from './_lib/course-categories.js';
 
 export default async function handler(req, res) {
   // 1. Supabase Init (Robust Environment Check)
@@ -42,11 +29,33 @@ export default async function handler(req, res) {
     // FIX: Removed 'updated_at' because it does not exist in the DB schema
     const { data: courses, error } = await supabase
       .from('courses')
-      .select('id, title, category_area, canton, created_at')
+      .select('id, title, category_type, category_area, category_specialty, category_focus, canton, created_at')
       .or('status.eq.published,status.is.null') // Include published + legacy courses without status
       .order('created_at', { ascending: false });
 
     if (error) throw error;
+
+    // 2b. Semantische Kategorien nachladen — courses.category_area enthält bei
+    // neueren Kursen nur die numerische Taxonomie-ID. Ohne diesen Schritt
+    // erzeugte die Sitemap /courses/12/... statt /courses/kunst/...
+    const { byCourseId, unresolvedIds } = await fetchCourseCategoryRows(
+      supabase,
+      (courses || []).map((course) => course.id)
+    );
+    const coursesWithCategories = attachPrimaryCategories(courses, byCourseId);
+
+    // 2c. Kurse auslassen, deren kanonische Kategorie wir gerade NICHT kennen.
+    // Eine geratene URL wäre schlimmer als eine fehlende: sobald die Kategorien
+    // wieder auflösbar sind, entstünde eine zweite indexierte Variante. Kurse,
+    // deren eigene Felder bereits ein semantisches Thema ergeben, sind davon
+    // nicht betroffen und bleiben in der Sitemap.
+    const publishableCourses = coursesWithCategories.filter((course) => {
+      if (!unresolvedIds.has(course.id) || hasStableCanonicalTopic(course)) return true;
+      console.warn(
+        `[sitemap] Kurs ${course.id} ausgelassen: Kategorie nicht auflösbar, kanonische URL wäre geraten.`
+      );
+      return false;
+    });
 
     // 3. Fetch all published blog posts
     // FIX (2026-07-14): Tabelle heisst 'articles', nicht 'blog'.
@@ -119,8 +128,8 @@ export default async function handler(req, res) {
     }).join('');
 
     // 6. Generate Course URLs (Dynamic)
-    const courseUrls = (courses || []).map((course) => {
-      const path = buildCoursePath(course);
+    const courseUrls = publishableCourses.map((course) => {
+      const path = buildCanonicalCoursePath(course);
 
       return `
       <url>

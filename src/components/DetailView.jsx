@@ -4,10 +4,11 @@ import { supabase } from '../lib/supabase';
 import { formatPriceCHF, getPriceLabel } from '../lib/formatPrice';
 import { useTaxonomy } from '../hooks/useTaxonomy';
 import { SEGMENT_CONFIG, CANTON_ABBR, formatLocationWithCanton } from '../lib/constants';
-import { BASE_URL, buildCoursePath } from '../lib/siteConfig';
+import { CANONICAL_BASE_URL, buildCoursePath } from '../lib/siteConfig';
+import { buildCanonicalCourseUrl, getCanonicalCourseTopicSlug, slugify } from '../lib/courseUrl';
 import { getBereichByAreaSlug, getBereichUrl } from '../lib/bereichLandingConfig';
 import { DEFAULT_COURSE_IMAGE } from '../lib/imageUtils';
-import { getCourseCategoryText, getPrimaryCategory, getPrimaryCategoryLabel, getPrimaryCategorySlug, isSyntheticCategory } from '../lib/courseMetadata';
+import { getCourseCategoryText, getPrimaryCategory, getPrimaryCategoryLabel, isSyntheticCategory } from '../lib/courseMetadata';
 import { trackCourseView, trackPurchase, trackContactLead } from '../lib/analytics';
 import { getRobotsPolicy } from '../lib/seoUtils';
 import { getRelatedCourses } from '../lib/courseRecommendations';
@@ -162,10 +163,12 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
         const locationLabel = course.canton || 'Schweiz';
         document.title = `${course.title} in ${locationLabel} | KursNavi`;
 
-        const topicSlug = getPrimaryCategorySlug(course).toLowerCase().replace(/_/g, '-');
-        const locSlug = (course.canton || 'schweiz').toLowerCase();
-        const titleSlug = (course.title || 'detail').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-        const canonicalUrl = `${BASE_URL}/courses/${topicSlug}/${locSlug}/${course.id}-${titleSlug}`;
+        // Canonical/og:url/JSON-LD nutzen denselben Builder wie Sitemap, interne
+        // Links und die App-Normalisierung — kein zweiter Slug-Algorithmus mehr.
+        // Basis ist die kanonische Domain, nicht window.location.origin.
+        const topicSlug = getCanonicalCourseTopicSlug(course);
+        const locSlug = slugify(course.canton) || 'schweiz';
+        const canonicalUrl = buildCanonicalCourseUrl(course, CANONICAL_BASE_URL);
 
         // --- FIX 1: Dynamic Meta Description (max 160 chars) ---
         const rawDesc = `${course.title} in ${locationLabel} – ${(course.description || '').replace(/\s+/g, ' ').trim()}`;
@@ -207,14 +210,14 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
             'og:title': `${course.title} in ${locationLabel}`,
             'og:description': metaDescription,
             'og:url': canonicalUrl,
-            'og:image': course.image_url || `${BASE_URL}/og-default.png`,
+            'og:image': course.image_url || `${CANONICAL_BASE_URL}/og-default.png`,
             'og:type': 'website',
             'og:locale': 'de_CH',
             'og:site_name': 'KursNavi',
             'twitter:card': 'summary_large_image',
             'twitter:title': `${course.title} in ${locationLabel}`,
             'twitter:description': metaDescription,
-            'twitter:image': course.image_url || `${BASE_URL}/og-default.png`
+            'twitter:image': course.image_url || `${CANONICAL_BASE_URL}/og-default.png`
         };
 
         Object.entries(ogTags).forEach(([property, content]) => {
@@ -279,7 +282,7 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
             "provider": {
                 "@type": "Organization",
                 "name": course.instructor_name,
-                "sameAs": `${BASE_URL}/teacher/${course.user_id}`
+                "sameAs": `${CANONICAL_BASE_URL}/teacher/${course.user_id}`
             },
             "offers": {
                 "@type": "Offer",
@@ -333,7 +336,7 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
                 "organizer": {
                     "@type": "Organization",
                     "name": course.instructor_name,
-                    "sameAs": `${BASE_URL}/teacher/${course.user_id}`
+                    "sameAs": `${CANONICAL_BASE_URL}/teacher/${course.user_id}`
                 },
                 "location": {
                     "@type": "Place",
@@ -392,13 +395,13 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
                     "@type": "ListItem",
                     "position": 1,
                     "name": "Home",
-                    "item": BASE_URL
+                    "item": CANONICAL_BASE_URL
                 },
                 {
                     "@type": "ListItem",
                     "position": 2,
                     "name": areaLabel || 'Kurse',
-                    "item": `${BASE_URL}/courses/${topicSlug}/${locSlug}/`
+                    "item": `${CANONICAL_BASE_URL}/courses/${topicSlug}/${locSlug}/`
                 },
                 {
                     "@type": "ListItem",

@@ -2,6 +2,12 @@
   "trailingSlash": false,
   "redirects": [
     {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "www.kursnavi.ch" }],
+      "destination": "https://kursnavi.ch/:path*",
+      "permanent": true
+    },
+    {
       "source": "/bereich/privat_hobby/:path*",
       "destination": "/bereich/privat-hobby/:path*",
       "permanent": true
@@ -21,12 +27,19 @@
   "functions": {
     "api/thema-redirect.js": {
       "includeFiles": "dist/index.html"
+    },
+    "api/course-redirect.js": {
+      "includeFiles": "dist/index.html"
     }
   },
   "rewrites": [
     {
       "source": "/sitemap.xml",
       "destination": "/api/sitemap"
+    },
+    {
+      "source": "/courses/:topic(\\d+)/:location/:course",
+      "destination": "/api/course-redirect?__topic=:topic&__loc=:location&__cseg=:course"
     },
     {
       "source": "/api/(.*)",
