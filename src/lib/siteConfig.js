@@ -1,4 +1,4 @@
-import { getPrimaryCategorySlug } from './courseMetadata';
+import { buildCanonicalCoursePath, slugify } from './courseUrl';
 
 /**
  * Site Configuration
@@ -23,6 +23,20 @@ export const SITE_URL = getBaseUrl();
 export const BASE_URL = SITE_URL.replace(/\/$/, '');
 
 /**
+ * Basis-URL für kanonische Auszeichnungen (canonical, og:url, JSON-LD).
+ *
+ * Bewusst UNABHÄNGIG von window.location.origin: sonst kanonisiert ein Aufruf
+ * über www.kursnavi.ch auf www und der Host bleibt dupliziert. Quelle ist
+ * ausschliesslich die zentrale Env-Konfiguration — genau wie in
+ * seoUtils.buildCanonical(), api/sitemap.js und scripts/prerender-static.mjs.
+ * Ein Preview-Deployment mit eigener VITE_SITE_URL kanonisiert dadurch weiter
+ * auf sich selbst und nicht versehentlich auf Production.
+ */
+export const CANONICAL_BASE_URL = (import.meta.env?.VITE_SITE_URL || 'https://kursnavi.ch').replace(/\/$/, '');
+
+export { slugify };
+
+/**
  * Build absolute URL from relative path
  * @param {string} path - Relative path (e.g., '/courses/...')
  * @returns {string} Absolute URL
@@ -34,36 +48,17 @@ export function buildAbsoluteUrl(path) {
 }
 
 /**
- * Slugify string for URL-safe usage
- * Handles German umlauts and special characters
- * @param {string} input - String to slugify
- * @returns {string} URL-safe slug
- */
-export function slugify(input) {
-  return (input || '')
-    .toString()
-    .trim()
-    .toLowerCase()
-    .replace(/ä/g, 'ae')
-    .replace(/ö/g, 'oe')
-    .replace(/ü/g, 'ue')
-    .replace(/ß/g, 'ss')
-    .replace(/&/g, ' und ')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-}
-
-/**
- * Build SEO-friendly course path
- * @param {object} course - Course object with id, category_area, canton, title
+ * Build SEO-friendly course path.
+ *
+ * Dünner Alias auf den gemeinsamen Builder in ./courseUrl.js — dort liegt die
+ * einzige Quelle der Wahrheit für Kurs-URLs (Sitemap, interne Links, Canonical,
+ * og:url, JSON-LD, App-Normalisierung, serverseitiger Redirect).
+ *
+ * @param {object} course - Course object with id, categories, canton, title
  * @returns {string} Course path (relative)
  */
 export function buildCoursePath(course) {
-  if (!course) return '/search';
-  const topic = slugify(getPrimaryCategorySlug(course));
-  const loc = slugify(course.canton || 'schweiz');
-  const title = slugify(course.title || 'detail');
-  return `/courses/${topic}/${loc}/${course.id}-${title}`;
+  return buildCanonicalCoursePath(course);
 }
 
 /**
