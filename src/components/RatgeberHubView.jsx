@@ -1,24 +1,132 @@
-import React from 'react';
-import { Helmet } from 'react-helmet-async';
+import React, { useEffect, useMemo } from 'react';
 import { ChevronRight, BookOpen } from 'lucide-react';
 import { RATGEBER_STRUCTURE, findCategoryBySlug } from '../lib/ratgeberStructure';
 import { SEGMENT_CONFIG } from '../lib/constants';
-import { getRobotsPolicy, buildCanonical, DEFAULT_OG_IMAGE } from '../lib/seoUtils';
+import { getRobotsPolicy } from '../lib/seoUtils';
+import { CANONICAL_BASE_URL } from '../lib/siteConfig';
+import { getRatgeberCategorySeo, getRatgeberRootSeo } from '../lib/ratgeberSeo';
 import { shouldHandleClientNavigation } from '../lib/navigation';
+
+/**
+ * Schreibt den Head genau einer Hub-Seite — und zwar durch Aktualisieren der
+ * bereits vorhandenen Tags.
+ *
+ * Warum kein react-helmet-async mehr: dessen Client-Update greift
+ * ausschliesslich auf Tags mit dem Ownership-Marker `data-rh`
+ * (node_modules/react-helmet-async/lib/index.js, `updateTags`). Die vom Build
+ * geschriebenen Tags tragen diesen Marker nicht, also legte Helmet nach der
+ * Hydration einen ZWEITEN Satz Title/Description/Canonical/Robots/OG an — mit
+ * teils abweichenden Werten. Den Prerender-Output stattdessen mit `data-rh` zu
+ * markieren wäre schlimmer: Helmet entfernt beim Unmount jeden markierten Tag,
+ * und beim clientseitigen Wechsel auf eine Cluster- oder Artikelseite (die
+ * ihren Head selbst per DOM setzen) verschwänden Canonical und Description
+ * ersatzlos.
+ *
+ * Dieses Upsert-Verfahren ist dasselbe, das RatgeberClusterView,
+ * RatgeberArtikelView, DetailView und ProviderProfilePage bereits nutzen: ein
+ * vorhandener Tag wird beschrieben, nie dupliziert. Entfernt wird beim Unmount
+ * nur, was diese Seite selbst angelegt hat.
+ */
+function useRatgeberHubHead(seo) {
+  const robots = getRobotsPolicy();
+
+  useEffect(() => {
+    const createdTags = [];
+
+    const upsert = (selector, createTag, attribute, value) => {
+      let tag = document.head.querySelector(selector);
+      if (!tag) {
+        tag = createTag();
+        document.head.appendChild(tag);
+        createdTags.push(tag);
+      }
+      tag.setAttribute(attribute, value);
+    };
+
+    document.title = seo.title;
+
+    upsert(
+      'meta[name="description"]',
+      () => {
+        const tag = document.createElement('meta');
+        tag.setAttribute('name', 'description');
+        return tag;
+      },
+      'content',
+      seo.description
+    );
+
+    // Robots ist umgebungs- und nicht seitenabhängig (Preview: noindex) —
+    // identisch zu DetailView/ProviderProfilePage/LandingView.
+    upsert(
+      'meta[name="robots"]',
+      () => {
+        const tag = document.createElement('meta');
+        tag.setAttribute('name', 'robots');
+        return tag;
+      },
+      'content',
+      robots
+    );
+
+    upsert(
+      'link[rel="canonical"]',
+      () => {
+        const tag = document.createElement('link');
+        tag.setAttribute('rel', 'canonical');
+        return tag;
+      },
+      'href',
+      seo.canonical
+    );
+
+    const ogTags = {
+      'og:title': seo.ogTitle,
+      'og:description': seo.ogDescription,
+      'og:url': seo.ogUrl,
+      'og:image': seo.ogImage,
+      'og:type': seo.ogType,
+    };
+    for (const [property, content] of Object.entries(ogTags)) {
+      upsert(
+        `meta[property="${property}"]`,
+        () => {
+          const tag = document.createElement('meta');
+          tag.setAttribute('property', property);
+          return tag;
+        },
+        'content',
+        content
+      );
+    }
+
+    return () => {
+      for (const tag of createdTags) tag.remove();
+    };
+  }, [seo, robots]);
+}
 
 const RatgeberHubView = ({ lang = 'de' }) => {
   const path = window.location.pathname;
   const parts = path.split('/').filter(Boolean);
   const categorySlug = parts.length >= 2 ? parts[1] : null;
-  const isRoot = !categorySlug;
   const category = categorySlug ? findCategoryBySlug(categorySlug) : null;
-  if (categorySlug && !category) return <RootHub lang={lang} />;
-  return isRoot ? <RootHub lang={lang} /> : <CategoryHub category={category} categorySlug={categorySlug} lang={lang} />;
+
+  // Unbekannte Kategorie fällt weiterhin auf den Root-Hub zurück — echte
+  // Server-URLs beantwortet Vercel bereits vor dem SPA mit 404 (vercel.json).
+  const seo = useMemo(
+    () =>
+      (category && getRatgeberCategorySeo(category.slug, CANONICAL_BASE_URL)) ||
+      getRatgeberRootSeo(CANONICAL_BASE_URL),
+    [category]
+  );
+  useRatgeberHubHead(seo);
+
+  if (!category) return <RootHub lang={lang} />;
+  return <CategoryHub category={category} categorySlug={categorySlug} lang={lang} />;
 };
 
 function RootHub({ lang }) {
-  const robots = getRobotsPolicy();
-  const canonical = buildCanonical('/ratgeber');
   const categories = Object.values(RATGEBER_STRUCTURE);
   const goToContact = () => {
     window.scrollTo(0, 0);
@@ -27,17 +135,6 @@ function RootHub({ lang }) {
   };
   return (
     <div className="min-h-screen bg-gray-50">
-      <Helmet>
-        <title>Ratgeber | KursNavi</title>
-        <meta name="description" content="Der KursNavi Ratgeber: Praxiswissen zu Weiterbildung, Hobbys und Kinderkursen in der Schweiz." />
-        <link rel="canonical" href={canonical} />
-        <meta name="robots" content={robots} />
-        <meta property="og:title" content="Ratgeber | KursNavi" />
-        <meta property="og:description" content="Praxiswissen zu Weiterbildung, Hobbys und Kinderkursen in der Schweiz." />
-        <meta property="og:url" content={canonical} />
-        <meta property="og:image" content={buildCanonical(DEFAULT_OG_IMAGE)} />
-        <meta property="og:type" content="website" />
-      </Helmet>
       <div className="bg-gradient-to-br from-gray-700 to-gray-900 py-16">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <nav className="flex items-center gap-2 text-sm text-white/60 mb-4">
@@ -135,10 +232,6 @@ function CategoryHub({ category, categorySlug, lang }) {
   const CatIcon = category.icon;
   const clusters = Object.values(category.clusters);
   const catLabel = category.label[lang] || category.label.de;
-  const pageTitle = `Ratgeber ${catLabel} | KursNavi`;
-  const pageDesc = `Ratgeber-Artikel rund um ${catLabel}: ${clusters.map(c => c.label[lang] || c.label.de).join(', ')}.`;
-  const robots = getRobotsPolicy();
-  const canonical = buildCanonical(`/ratgeber/${categorySlug}`);
   const nav = (view, p) => { window.scrollTo(0,0); window.history.pushState({view},'',p); window.dispatchEvent(new PopStateEvent('popstate')); };
   const goToContact = () => {
     window.scrollTo(0, 0);
@@ -148,17 +241,6 @@ function CategoryHub({ category, categorySlug, lang }) {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Helmet>
-        <title>{pageTitle}</title>
-        <meta name="description" content={pageDesc} />
-        <link rel="canonical" href={canonical} />
-        <meta name="robots" content={robots} />
-        <meta property="og:title" content={pageTitle} />
-        <meta property="og:description" content={pageDesc} />
-        <meta property="og:url" content={canonical} />
-        <meta property="og:image" content={buildCanonical(DEFAULT_OG_IMAGE)} />
-        <meta property="og:type" content="website" />
-      </Helmet>
       <div className={`bg-gradient-to-br ${config.gradient} py-16`}>
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <nav className="flex items-center gap-2 text-sm text-white/60 mb-6">
