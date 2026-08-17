@@ -42,6 +42,11 @@ import {
   readPublicSupabaseCredentials,
 } from '../api/_lib/course-prerender.js';
 import { buildActiveThemeWorldTopicKeys } from '../src/lib/themeWorldTakeover.js';
+import {
+  RATGEBER_SEO_CATEGORY_SLUGS,
+  getRatgeberCategorySeo,
+  getRatgeberRootSeo,
+} from '../src/lib/ratgeberSeo.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 // PRERENDER_DIST_DIR überschreibt das Zielverzeichnis (nur für Tests genutzt).
@@ -331,14 +336,14 @@ const STATIC_PAGES = [
 ];
 
 // ─── Ratgeber data ───────────────────────────────────────────────────────────
-// Hardcoded here (mirrors api/sitemap.js + ratgeberStructure.js) to avoid
-// importing lucide-react in a Node.js context.
-
-const RATGEBER_CATEGORIES = [
-  { slug: 'beruflich', label: 'Beruflich' },
-  { slug: 'privat-hobby', label: 'Privat & Hobby' },
-  { slug: 'kinder', label: 'Kinder' },
-];
+// Cluster und Artikel sind hier hardcodiert (spiegeln api/sitemap.js +
+// ratgeberStructure.js), um lucide-react nicht in einen Node.js-Kontext zu
+// ziehen.
+//
+// Hub-Metadaten (/ratgeber und die drei Kategorieseiten) stehen bewusst NICHT
+// hier, sondern in src/lib/ratgeberSeo.js — derselben Quelle, aus der auch
+// RatgeberHubView nach der Hydration liest. Zwei getrennt gepflegte Sätze
+// waren genau die Ursache der widersprüchlichen Head-Tags.
 
 const RATGEBER_CLUSTERS = {
   beruflich: [
@@ -469,31 +474,39 @@ for (const { path, title, description } of STATIC_PAGES) {
   writeRoute(path, title, description);
 }
 
+/**
+ * Schreibt eine Ratgeber-Hub-Seite aus der gemeinsamen SEO-Quelle.
+ *
+ * Alle Felder stammen aus src/lib/ratgeberSeo.js, damit das erste HTML exakt
+ * das enthält, was RatgeberHubView nach der Hydration in dieselben Tags
+ * schreibt.
+ */
+function writeRatgeberHubRoute(seo) {
+  writeRoute(seo.path, seo.title, seo.description, {
+    ogTitle: seo.ogTitle,
+    ogDescription: seo.ogDescription,
+    ogType: seo.ogType,
+    ogImage: seo.ogImage,
+  });
+}
+
 // Ratgeber hub
-writeRoute(
-  '/ratgeber',
-  'KursNavi Ratgeber – Praxiswissen zu Weiterbildung, Hobbys und Kinderkursen',
-  'Der KursNavi Ratgeber: Praxiswissen zu Weiterbildung, Hobbys und Kinderkursen in der Schweiz.'
-);
+writeRatgeberHubRoute(getRatgeberRootSeo(BASE_URL));
 
 // Ratgeber categories → clusters → articles
-for (const cat of RATGEBER_CATEGORIES) {
-  writeRoute(
-    `/ratgeber/${cat.slug}`,
-    `${cat.label} – Ratgeber | KursNavi`,
-    `Ratgeber-Artikel rund um ${cat.label}: Weiterbildung, Karriere und mehr in der Schweiz.`
-  );
+for (const categorySlug of RATGEBER_SEO_CATEGORY_SLUGS) {
+  writeRatgeberHubRoute(getRatgeberCategorySeo(categorySlug, BASE_URL));
 
-  for (const cluster of (RATGEBER_CLUSTERS[cat.slug] || [])) {
+  for (const cluster of (RATGEBER_CLUSTERS[categorySlug] || [])) {
     writeRoute(
-      `/ratgeber/${cat.slug}/${cluster.slug}`,
+      `/ratgeber/${categorySlug}/${cluster.slug}`,
       `${cluster.label} – Ratgeber | KursNavi`,
       cluster.description
     );
 
-    for (const article of (RATGEBER_ARTICLES[`${cat.slug}/${cluster.slug}`] || [])) {
+    for (const article of (RATGEBER_ARTICLES[`${categorySlug}/${cluster.slug}`] || [])) {
       writeRoute(
-        `/ratgeber/${cat.slug}/${cluster.slug}/${article.slug}`,
+        `/ratgeber/${categorySlug}/${cluster.slug}/${article.slug}`,
         `${article.title} | KursNavi Ratgeber`,
         article.teaser
       );
