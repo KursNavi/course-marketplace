@@ -74,6 +74,12 @@ const RatgeberArtikelView = ({ lang = 'de' }) => {
     });
 
     // Article JSON-LD
+    // Ohne datePublished/dateModified: die Ratgeber-Datenquellen
+    // (ratgeberStructure.js / ratgeberContent.js) führen kein Publikations- oder
+    // Änderungsdatum pro Artikel. Der sichtbare Hinweis «Zuletzt redaktionell
+    // geprüft: März 2026» ist ein fest im JSX stehender Fliesstext, kein
+    // gepflegtes Tagesdatum — daraus liesse sich nur ein geratener Wert bilden.
+    // buildArticleJsonLd lässt die Felder deshalb weg.
     const articleSchema = buildArticleJsonLd({
       title: articleData.title[lang] || articleData.title.de,
       description: metaDesc,

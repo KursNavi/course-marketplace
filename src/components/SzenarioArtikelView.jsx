@@ -256,11 +256,22 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
     // Article JSON-LD
     const segmentLabel = SEGMENT_CONFIG[segmentKey]?.label?.[lang] || SEGMENT_CONFIG[segmentKey]?.label?.de || segment;
     const bereichTitle = bereichConfig.title[lang] || bereichConfig.title.de;
+    // Datumsfelder ausschliesslich aus echten DB-Werten — identisch zum
+    // Prerender (api/_lib/theme-world-prerender.js). Legacy-Szenarien haben
+    // diese Felder nicht; dann entfällt datePublished/dateModified komplett,
+    // statt das heutige Datum zu erfinden.
     const articleData = buildArticleJsonLd({
       title: scenario.label[lang] || scenario.label.de,
       description: metaDesc,
-      url: canonicalUrl
+      url: canonicalUrl,
+      datePublished: scenario.publishedAt,
+      dateModified: scenario.lastReviewedAt
     });
+    // Vom Build injizierte JSON-LD-Blöcke entfernen — sie werden gleich durch
+    // die identisch berechneten Laufzeit-Blöcke ersetzt statt dupliziert.
+    document
+      .querySelectorAll('script[type="application/ld+json"][data-prerender-jsonld]')
+      .forEach((tag) => tag.remove());
     const articleScript = document.createElement('script');
     articleScript.type = 'application/ld+json';
     articleScript.setAttribute('data-schema', 'szenario-article');

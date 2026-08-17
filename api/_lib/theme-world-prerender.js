@@ -30,6 +30,7 @@
 
 import { isSafePathSegment } from './sitemap-theme-worlds.js';
 import { isThemeWorldDbEnabledServer } from './theme-world-takeover.js';
+import { buildArticleJsonLd } from '../../src/lib/seoUtils.js';
 
 /** Standard-OG-Bild (relativ zur Site-Basis-URL). */
 export const DEFAULT_OG_IMAGE_PATH = '/og-default.png';
@@ -99,7 +100,7 @@ export async function fetchThemeWorldPrerenderRecords(supabase) {
     const { data, error } = await supabase
       .from('theme_world_scenarios')
       .select(
-        'theme_world_id, slug, status, label_de, teaser_de, meta_title, meta_description, og_image_url, og_image_alt'
+        'theme_world_id, slug, status, label_de, teaser_de, meta_title, meta_description, og_image_url, og_image_alt, published_at, last_reviewed_at'
       )
       .eq('status', 'published')
       .in('theme_world_id', worlds.map((world) => world.id));
@@ -189,15 +190,34 @@ export function buildThemeWorldPrerenderRoutes({
     const label = text(scenario.label_de);
     const title =
       text(scenario.meta_title) || `${label} — ${parent.title} | KursNavi`;
+    const path = `${parent.path}/${scenario.slug}`;
+    const description = text(scenario.meta_description) || text(scenario.teaser_de);
+
+    // Article-JSON-LD aus derselben reinen Funktion, die SzenarioArtikelView
+    // nach der Hydration verwendet. Damit können Server-HTML und React nicht
+    // auseinanderlaufen — insbesondere nicht bei den Datumsfeldern:
+    //   datePublished ← published_at     (beim ersten Publish gesetzt)
+    //   dateModified  ← last_reviewed_at (redaktionelle Inhaltsprüfung)
+    // Fehlt einer der Werte, lässt buildArticleJsonLd das Feld weg. updated_at
+    // ist bewusst keine Quelle: der Trigger hebt es auch bei reinen Status-
+    // oder Sortierungsänderungen an.
+    const articleJsonLd = buildArticleJsonLd({
+      title: label,
+      description,
+      url: `${baseUrl}${path}`,
+      datePublished: scenario.published_at,
+      dateModified: scenario.last_reviewed_at,
+    });
 
     routes.push({
-      path: `${parent.path}/${scenario.slug}`,
+      path,
       title,
-      description: text(scenario.meta_description) || text(scenario.teaser_de),
+      description,
       ogImage: text(scenario.og_image_url) || defaultOgImage,
       ogImageAlt: text(scenario.og_image_alt),
       kind: 'scenario',
       themeWorldKey: parent.themeWorldKey,
+      jsonLd: [articleJsonLd],
     });
   }
 

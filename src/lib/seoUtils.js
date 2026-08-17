@@ -52,8 +52,73 @@ export function estimateReadingTime(html) {
   return Math.max(2, Math.min(12, minutes));
 }
 
+const ISO_DATE_PART = /^(\d{4})-(\d{2})-(\d{2})$/;
+
+/**
+ * Normalisiert einen Datumswert für schema.org auf 'YYYY-MM-DD'.
+ *
+ * Reine, deterministische Funktion — sie kennt die Systemzeit nicht und darf
+ * niemals ein Datum erfinden. Ohne verlässlichen Eingabewert ist das Ergebnis
+ * `null`; der Aufrufer lässt das Feld dann weg.
+ *
+ * Akzeptiert:
+ *   - ISO-Datum         '2026-03-14'
+ *   - DB-Timestamps     '2026-08-14T16:08:00.61638+00', '2026-08-14 16:08:00+00'
+ *   - Date-Objekte      (nur gültige)
+ *
+ * Bewusst NICHT akzeptiert: alles, was `new Date(String)` nur heuristisch
+ * parsen könnte ('März 2026', '14.08.2026', '2026-08'). Solche Werte sind je
+ * nach Engine und Zeitzone unterschiedlich — und ein geratenes Datum ist im
+ * Article-Schema schlimmer als gar keins.
+ *
+ * @param {string|Date|null|undefined} value
+ * @returns {string|null} 'YYYY-MM-DD' oder null
+ */
+export function normalizeSchemaDate(value) {
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? null : value.toISOString().slice(0, 10);
+  }
+  if (typeof value !== 'string') return null;
+
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  // Der Datumsanteil eines DB-Timestamps ist bereits die kalendarische Wahrheit
+  // des gespeicherten Werts. Er wird abgeschnitten statt umgerechnet, damit aus
+  // demselben Rohwert immer dasselbe Schema-Datum entsteht — unabhängig davon,
+  // in welcher Zeitzone Build oder Browser laufen.
+  const datePart = trimmed.slice(0, 10);
+  const match = ISO_DATE_PART.exec(datePart);
+  if (!match) return null;
+
+  // Nach dem Datum darf nur eine Zeitangabe folgen ('T…' oder ' …').
+  const rest = trimmed.slice(10);
+  if (rest && !/^[T ]/.test(rest)) return null;
+
+  // Kalendarische Plausibilität (fängt '2026-02-31' und '2026-13-01' ab).
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const probe = new Date(Date.UTC(year, month - 1, day));
+  if (
+    probe.getUTCFullYear() !== year ||
+    probe.getUTCMonth() + 1 !== month ||
+    probe.getUTCDate() !== day
+  ) {
+    return null;
+  }
+
+  return datePart;
+}
+
 /**
  * Build Article JSON-LD structured data
+ *
+ * datePublished/dateModified werden NUR ausgegeben, wenn eine echte Datenquelle
+ * einen verwertbaren Wert liefert. Früher stand hier ein `new Date()`-Fallback:
+ * jede Seite ohne Datumsquelle behauptete damit, heute veröffentlicht und heute
+ * geändert worden zu sein — ein täglich wechselnder, sachlich falscher Wert.
+ * Ein fehlendes Feld ist korrekt; ein erfundenes Feld ist es nie.
  */
 export function buildArticleJsonLd({ title, description, url, image, datePublished, dateModified }) {
   const article = {
@@ -69,11 +134,16 @@ export function buildArticleJsonLd({ title, description, url, image, datePublish
       url: 'https://kursnavi.ch',
       logo: { '@type': 'ImageObject', url: 'https://kursnavi.ch/favicon.png' }
     },
-    inLanguage: 'de-CH',
-    datePublished: datePublished || new Date().toISOString().split('T')[0],
-    dateModified: dateModified || new Date().toISOString().split('T')[0]
+    inLanguage: 'de-CH'
   };
   if (image) article.image = image;
+
+  const published = normalizeSchemaDate(datePublished);
+  if (published) article.datePublished = published;
+
+  const modified = normalizeSchemaDate(dateModified);
+  if (modified) article.dateModified = modified;
+
   return article;
 }
 

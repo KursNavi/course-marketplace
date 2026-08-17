@@ -541,6 +541,7 @@ if (dbThemeWorlds.enabled) {
     writeRoute(route.path, route.title, route.description, {
       ogImage: route.ogImage,
       ogImageAlt: route.ogImageAlt,
+      jsonLd: route.jsonLd,
     });
     dbCount++;
   }

@@ -549,6 +549,16 @@ export function adaptToLegacySzenarioConfig(scenario, themeWorldSearchConfig = {
     ogImageAlt: scenario.og_image_alt || '',
     metaTitle: scenario.meta_title || null,
     metaDescription: scenario.meta_description || null,
+
+    // Datumsquellen für das Article-Schema (siehe SzenarioArtikelView).
+    //   published_at     — beim ersten Publish gesetzt, nie zurückgesetzt.
+    //   last_reviewed_at — redaktionelles Datum der letzten inhaltlichen Prüfung.
+    // updated_at wird BEWUSST nicht durchgereicht: der Trigger set_updated_at()
+    // hebt es bei jedem UPDATE an, also auch bei reinen Status- oder
+    // Sortierungsänderungen. Als dateModified wäre es eine Behauptung über eine
+    // inhaltliche Änderung, die nie stattgefunden hat.
+    publishedAt: scenario.published_at || null,
+    lastReviewedAt: scenario.last_reviewed_at || null,
   };
 }
 
