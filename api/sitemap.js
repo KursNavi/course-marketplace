@@ -128,13 +128,26 @@ export default async function handler(req, res) {
     }).join('');
 
     // 6. Generate Course URLs (Dynamic)
+    //    KEIN <lastmod>: courses besitzt derzeit keine verlässliche Quelle für
+    //    die letzte wesentliche Änderung der öffentlichen Kursseite.
+    //      - created_at ist das Anlagedatum. Kurse sind danach jederzeit über
+    //        TeacherForm editierbar (Titel, Beschreibung, Preis, Termine) —
+    //        created_at bleibt dabei unverändert und wäre als lastmod gelogen.
+    //      - Ein technisches courses.updated_at wird nicht gepflegt: es gibt
+    //        keinen BEFORE-UPDATE-Trigger auf courses (set_updated_at() existiert
+    //        nur für theme_worlds/theme_world_scenarios, siehe
+    //        supabase/migrations/20260714_create_theme_worlds.sql), und keine
+    //        Schreibstelle setzt das Feld. Selbst wenn es gepflegt würde, würden
+    //        reine Status-/Account-Änderungen (App.jsx: status-Toggle,
+    //        AdminPanel.jsx: is_pro für alle Kurse eines Anbieters) es ohne jede
+    //        inhaltliche Änderung der öffentlichen Seite bewegen.
+    //    Ein fehlendes lastmod ist erlaubt und ehrlicher als ein erfundenes.
     const courseUrls = publishableCourses.map((course) => {
       const path = buildCanonicalCoursePath(course);
 
       return `
       <url>
           <loc>${baseUrl}${path}</loc>
-          <lastmod>${new Date(course.created_at).toISOString()}</lastmod>
           <changefreq>daily</changefreq>
           <priority>0.7</priority>
       </url>`;
@@ -153,11 +166,20 @@ export default async function handler(req, res) {
     }).join('');
 
     // 7. Generate Provider URLs (Dynamic)
+    //    KEIN <lastmod>: profile_published_at ist ein Publikations-Schalter, kein
+    //    Änderungsdatum. Es wird ausschliesslich in api/provider.js
+    //    (action 'toggle-publish') gesetzt bzw. auf null zurückgesetzt — jedes
+    //    erneute Veröffentlichen schreibt "jetzt", ohne dass sich am Inhalt etwas
+    //    geändert haben muss. Umgekehrt ändern Profilbearbeitungen (bio_text,
+    //    Logo, Standorte über ProviderProfileEditor) den Wert nie.
+    //    Ein profiles.updated_at wird ebenfalls nicht gepflegt (kein Trigger,
+    //    keine Schreibstelle) und würde ausserdem durch reine Account-Vorgänge
+    //    wie preferred_language oder Admin-Tier-Wechsel bewegt.
+    //    Deshalb bleibt <lastmod> hier vollständig weg.
     const providerUrls = (eligibleProviders || []).map((provider) => {
       return `
       <url>
           <loc>${baseUrl}/anbieter/${provider.slug}</loc>
-          <lastmod>${new Date(provider.profile_published_at).toISOString()}</lastmod>
           <changefreq>weekly</changefreq>
           <priority>0.6</priority>
       </url>`;
