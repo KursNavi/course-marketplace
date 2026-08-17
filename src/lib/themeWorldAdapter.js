@@ -15,6 +15,7 @@
  */
 
 import { normalizeDeliveryTypeKey } from './courseMetadata';
+import { toDisplaySources } from './scenarioSources';
 
 // ---------------------------------------------------------------------------
 // Konstanten
@@ -283,6 +284,9 @@ export function adaptScenarioArticle(scenario, themeWorld) {
       areaSlug: twSearchConfig.area_slug || themeWorld?.area_slug || null,
       typeKey: urlSegmentToTypeKey(urlSegment),
     },
+
+    // Quellenangaben im Anzeigeformat [{title, publisher, url}]
+    sources: toDisplaySources(scenario.sources),
 
     // Metadaten
     sortOrder: scenario.sort_order,
@@ -559,6 +563,14 @@ export function adaptToLegacySzenarioConfig(scenario, themeWorldSearchConfig = {
     // inhaltliche Änderung, die nie stattgefunden hat.
     publishedAt: scenario.published_at || null,
     lastReviewedAt: scenario.last_reviewed_at || null,
+
+    // Quellenangaben im Anzeigeformat [{title, publisher, url}].
+    // Dieselbe Funktion normalisiert auch Legacy-Szenarien in
+    // SzenarioArtikelView — DB und Legacy landen dadurch im identischen Format
+    // und teilen sich einen einzigen Renderpfad. Fehlt die Spalte (etwa bevor
+    // die Migration angewendet wurde), ergibt das ein leeres Array und der
+    // Quellenblock entfällt, statt dass die Seite bricht.
+    sources: toDisplaySources(scenario.sources),
   };
 }
 
