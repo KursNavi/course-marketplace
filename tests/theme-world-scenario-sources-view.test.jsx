@@ -288,6 +288,37 @@ describe('DB-Szenario: Quellenblock', () => {
     }
   });
 
+  it('5. setzt KEIN nofollow — redaktionelle Belege bleiben crawlbar', async () => {
+    // Quellen sind weder Werbung noch User-Generated-Content noch ungeprüfte
+    // Fremdlinks, sondern redaktionell ausgewählte Belege. Sie sollen deshalb
+    // normale externe Links sein; nur die Fenster-Sicherheit wird gesetzt.
+    await renderDbScenario(scenarioRow({ sources: [SOURCE_A, SOURCE_B, SOURCE_C] }));
+
+    for (const link of within(sourcesSection()).getAllByRole('link')) {
+      expect(link.getAttribute('rel')).not.toContain('nofollow');
+      expect(link.getAttribute('rel')).toBe('noopener noreferrer');
+    }
+  });
+
+  it('5. lässt auch bei Legacy-Quellen kein nofollow entstehen', () => {
+    renderLegacyScenario({ sources: [SOURCE_A, SOURCE_B] });
+
+    for (const link of within(sourcesSection()).getAllByRole('link')) {
+      expect(link.getAttribute('rel')).not.toContain('nofollow');
+      expect(link.getAttribute('rel')).toContain('noopener');
+      expect(link.getAttribute('rel')).toContain('noreferrer');
+    }
+  });
+
+  it('5. lässt URL und sichtbaren Linktext unverändert', async () => {
+    await renderDbScenario(scenarioRow({ sources: [SOURCE_A, SOURCE_B] }));
+
+    const links = within(sourcesSection()).getAllByRole('link');
+    expect(links.map((a) => a.getAttribute('href'))).toEqual([SOURCE_A.url, SOURCE_B.url]);
+    expect(links[0].textContent).toContain(SOURCE_A.title);
+    expect(links[1].textContent).toContain(SOURCE_B.title);
+  });
+
   it('5. kündigt das neue Tab für Screenreader an', async () => {
     await renderDbScenario(scenarioRow({ sources: [SOURCE_A] }));
 

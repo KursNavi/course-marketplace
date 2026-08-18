@@ -605,7 +605,12 @@ function SourcesSection({ sources }) {
               target="_blank"
               // noopener schliesst den window.opener-Zugriff der Zielseite aus,
               // noreferrer verhindert zusätzlich die Referrer-Weitergabe.
-              rel="noopener noreferrer nofollow"
+              //
+              // Bewusst OHNE nofollow: das ist kein Werbe-, User-Generated- oder
+              // ungeprüfter Fremdlink, sondern eine von der Redaktion
+              // ausgewählte Quelle, die den Artikel fachlich stützt. Solche
+              // Belege sollen normale crawlbare externe Links sein.
+              rel="noopener noreferrer"
               className="text-primary font-medium underline underline-offset-2 hover:opacity-80 break-words"
             >
               {source.title}
