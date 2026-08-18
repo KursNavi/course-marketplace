@@ -10,6 +10,8 @@ import { loadThemeWorldWithFallback, isThemeWorldPilotActive, isThemeWorldDbEnab
 import { fetchThemeWorld, fetchPublishedScenario } from '../lib/themeWorldService';
 import { adaptToLegacyBereichConfig, adaptToLegacySzenarioConfig } from '../lib/themeWorldAdapter';
 import { normalizeDeliveryTypeKey } from '../lib/courseMetadata';
+import { toDisplaySources } from '../lib/scenarioSources';
+import { buildEditorialReviewNotice } from '../lib/editorialReviewDate';
 
 /**
  * SzenarioArtikelView
@@ -363,6 +365,25 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
     window.dispatchEvent(new Event('locationchange'));
   };
 
+  // Quellenangaben — EIN Pfad für DB und Legacy.
+  //
+  // DB-Szenarien haben ihre Quellen bereits im Adapter normalisiert; Legacy-
+  // Szenarien tragen sie (falls überhaupt) roh im Config-Objekt. Beide laufen
+  // hier durch dieselbe Funktion, damit der Renderblock unten keine Ahnung
+  // davon haben muss, woher der Artikel stammt. Doppeltes Normalisieren ist
+  // gefahrlos — die Funktion ist idempotent.
+  //
+  // Deploy-Lifecycle: `sources` sind reiner Client-Content. Sie werden bei
+  // jedem Seitenaufruf frisch aus der DB geladen (fetchPublishedScenario), sind
+  // also unmittelbar nach dem Speichern im Admin öffentlich sichtbar. Der
+  // statische Prerender enthält sie nicht und kann durch eine Quellenänderung
+  // deshalb auch nicht veralten.
+  const displaySources = toDisplaySources(scenario.sources);
+
+  // Redaktioneller Prüfhinweis: nur aus echtem last_reviewed_at, nie aus
+  // Build-, System- oder Git-Zeit. Ohne Wert entfällt der Prüfsatz komplett.
+  const editorialNotice = buildEditorialReviewNotice(scenario.lastReviewedAt);
+
   const segmentLabel = theme.label?.[lang] || theme.label?.de || segment;
   const bereichTitle = (bereichConfig.title[lang] || bereichConfig.title.de).split('—')[0].trim();
   // Für "Andere Szenarien"-Navigation: Legacy-Config nutzen (immer vollständig)
@@ -455,8 +476,11 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
           )}
         </div>
 
+        {/* Quellen & weiterführende Informationen — nur bei echten Quellen */}
+        <SourcesSection sources={displaySources} />
+
         <div className="text-center text-sm text-gray-500 mt-4 mb-2">
-          <p>Zuletzt redaktionell geprüft: März 2026. Die Inhalte dienen der Orientierung; maßgeblich sind im Zweifel die Angaben der jeweiligen Anbieter und offiziellen Stellen.</p>
+          <p>{editorialNotice}</p>
           <p className="mt-2">
             Wenn dir in dieser Themenwelt ein Fehler oder eine veraltete Information auffällt, gib uns gern kurz Bescheid.{' '}
             <a
@@ -537,5 +561,64 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
         </div>
       )}
     </div>
+  );
+}
+
+/**
+ * «Quellen & weiterführende Informationen»
+ *
+ * Ohne gültige Quelle wird NICHTS gerendert — keine leere Überschrift, kein
+ * leerer Rahmen. Die Prüfung passiert hier und nicht beim Aufrufer, damit es
+ * nur eine Stelle gibt, die über die Sichtbarkeit des Blocks entscheidet.
+ *
+ * Gestaltung bewusst ruhig: eine nummerierte Liste in derselben Kartenoptik wie
+ * der Artikel, kein zusätzlicher CTA, keine Signalfarben. Quellen sind ein
+ * Vertrauensbeleg, kein Handlungsaufruf.
+ *
+ * @param {object} props
+ * @param {Array<{title: string, publisher: string, url: string}>} props.sources
+ *        Bereits normalisiert (toDisplaySources) — hier findet keine
+ *        Validierung mehr statt.
+ */
+function SourcesSection({ sources }) {
+  if (!sources || sources.length === 0) return null;
+
+  return (
+    <section
+      aria-labelledby="szenario-quellen-heading"
+      className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8 mt-6"
+    >
+      <h2
+        id="szenario-quellen-heading"
+        className="text-base font-bold text-gray-800 mb-4"
+      >
+        Quellen &amp; weiterführende Informationen
+      </h2>
+      <ol className="space-y-4 list-decimal list-outside pl-5 marker:text-gray-400 marker:text-sm">
+        {sources.map((source, index) => (
+          <li key={`${source.url}-${index}`} className="text-sm leading-relaxed pl-1">
+            {/* Herausgeber zuerst und optisch zurückgenommen: er ordnet die
+                Quelle ein, der anklickbare Titel bleibt das Hauptelement. */}
+            <span className="block text-gray-500 break-words">{source.publisher}</span>
+            <a
+              href={source.url}
+              target="_blank"
+              // noopener schliesst den window.opener-Zugriff der Zielseite aus,
+              // noreferrer verhindert zusätzlich die Referrer-Weitergabe.
+              //
+              // Bewusst OHNE nofollow: das ist kein Werbe-, User-Generated- oder
+              // ungeprüfter Fremdlink, sondern eine von der Redaktion
+              // ausgewählte Quelle, die den Artikel fachlich stützt. Solche
+              // Belege sollen normale crawlbare externe Links sein.
+              rel="noopener noreferrer"
+              className="text-primary font-medium underline underline-offset-2 hover:opacity-80 break-words"
+            >
+              {source.title}
+              <span className="sr-only"> (öffnet in neuem Tab)</span>
+            </a>
+          </li>
+        ))}
+      </ol>
+    </section>
   );
 }

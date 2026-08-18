@@ -32,6 +32,15 @@
  *
  *   create (immer draft), update und reorder ändern die öffentliche Existenz
  *   nicht und lösen bewusst keinen Build aus.
+ *
+ * Quellenangaben (`sources`):
+ *   `get` liefert sie über select('*') mit, `create`/`update` schreiben sie —
+ *   aber ausschliesslich in normalisierter Form (prepareWritePayload).
+ *   `list` lädt sie bewusst NICHT: die Listenansicht zeigt keine Quellen, und
+ *   ein jsonb-Feld pro Zeile mitzuschleppen wäre reine Übertragungslast.
+ *   Eine Änderung an `sources` ist reiner Client-Content und wird beim nächsten
+ *   Seitenaufruf sofort sichtbar — kein Deploy nötig (siehe Kommentar in
+ *   src/components/SzenarioArtikelView.jsx).
  */
 
 import {
@@ -51,6 +60,8 @@ import {
 
 import { sanitizeHtml } from './_lib/theme-world-sanitize.js';
 
+import { validateScenarioSources } from '../src/lib/scenarioSources.js';
+
 // Felder, die bei CREATE/UPDATE erlaubt sind (Whitelist)
 const ALLOWED_WRITE_FIELDS = [
   'slug', 'icon',
@@ -60,6 +71,7 @@ const ALLOWED_WRITE_FIELDS = [
   'card_image_url', 'card_image_alt', 'og_image_url', 'og_image_alt',
   'meta_title', 'meta_description',
   'cta_label_de', 'cta_config',
+  'sources',
   'sort_order', 'last_reviewed_at',
 ];
 
@@ -69,6 +81,39 @@ function filterWriteFields(data) {
     if (field in data) filtered[field] = data[field];
   }
   return filtered;
+}
+
+/**
+ * Bringt einen validierten Payload in die Form, die in die DB darf.
+ *
+ * Zwei Dinge passieren hier — und nur hier, damit create und update sich nicht
+ * auseinanderentwickeln können:
+ *   1. content_html wird sanitiert.
+ *   2. sources wird durch das NORMALISIERTE Array ersetzt. Das Rohobjekt aus
+ *      dem Request landet nie in der Datenbank: validateScenarioSources() baut
+ *      jeden Eintrag aus genau title/publisher/url neu auf, trimmt und wirft
+ *      unbekannte Felder weg. validateScenario() hat vorher bereits sicher-
+ *      gestellt, dass hier nichts Ungültiges mehr ankommt.
+ *   3. last_reviewed_at: ein leerer String ist im HTML-Formular «kein Datum»,
+ *      in einer date-Spalte aber ein Typfehler → zu null normalisieren.
+ *
+ * @param {object} payload - Rückgabe von filterWriteFields()
+ * @returns {object} derselbe Payload, schreibfertig
+ */
+function prepareWritePayload(payload) {
+  if (payload.content_html) {
+    payload.content_html = sanitizeHtml(payload.content_html);
+  }
+
+  if ('sources' in payload) {
+    payload.sources = validateScenarioSources(payload.sources).sources;
+  }
+
+  if ('last_reviewed_at' in payload && !payload.last_reviewed_at) {
+    payload.last_reviewed_at = null;
+  }
+
+  return payload;
 }
 
 export default async function handler(req, res) {
@@ -159,14 +204,9 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'Validierungsfehler.', details: validation.errors });
       }
 
-      const payload = filterWriteFields(body);
+      const payload = prepareWritePayload(filterWriteFields(body));
       payload.theme_world_id = themeWorldId;
       payload.status = 'draft';
-
-      // HTML-Sanitisierung vor Speicherung
-      if (payload.content_html) {
-        payload.content_html = sanitizeHtml(payload.content_html);
-      }
 
       const { data, error } = await supabaseAdmin
         .from('theme_world_scenarios')
@@ -221,13 +261,8 @@ export default async function handler(req, res) {
         });
       }
 
-      const payload = filterWriteFields(body);
+      const payload = prepareWritePayload(filterWriteFields(body));
       delete payload.status; // Status nur via publish/archive
-
-      // HTML-Sanitisierung
-      if (payload.content_html) {
-        payload.content_html = sanitizeHtml(payload.content_html);
-      }
 
       const { data, error } = await supabaseAdmin
         .from('theme_world_scenarios')
@@ -342,6 +377,13 @@ export default async function handler(req, res) {
       }
 
       // Publish-Gate-Validierung
+      //
+      // requireSources bleibt in diesem Schritt bewusst AUS (Default false):
+      // Sport und Yoga sind publiziert und haben noch keine Quellenangaben —
+      // eine sofortige Pflicht würde jedes Re-Publish dieser Artikel mit 422
+      // abweisen. Die Prüfung selbst ist in validatePublishScenario fertig
+      // implementiert und wird durch { requireSources: true } aktiviert, sobald
+      // der Bestand nachgepflegt ist.
       const publishValidation = validatePublishScenario(scenario, parentThemeWorld);
       if (!publishValidation.valid) {
         return res.status(422).json({

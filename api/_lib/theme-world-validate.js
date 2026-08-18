@@ -7,6 +7,12 @@
  * Keine externen Bibliotheken — konsistent mit dem bestehenden Projekt-Pattern.
  */
 
+// Quellenangaben teilen sich ein Regelwerk mit dem Frontend (Anzeige) — deshalb
+// liegt die Logik in src/lib, genau wie seoUtils.js, das der Prerender mitnutzt.
+import { validateScenarioSources } from '../../src/lib/scenarioSources.js';
+
+export { MAX_SOURCES_PER_SCENARIO } from '../../src/lib/scenarioSources.js';
+
 // ============================================================
 // Konstanten
 // ============================================================
@@ -578,6 +584,14 @@ export function validateScenario(data) {
     collect(errors, 'sort_order', 'Muss eine nicht-negative ganze Zahl sein.');
   }
 
+  // last_reviewed_at: reines Kalenderdatum (DB-Spalte ist `date`).
+  // Nur prüfen wenn im Payload — ein fehlendes Feld lässt die Spalte unberührt.
+  if ('last_reviewed_at' in data && data.last_reviewed_at !== null && data.last_reviewed_at !== '') {
+    if (!isValidReviewDate(data.last_reviewed_at)) {
+      collect(errors, 'last_reviewed_at', 'Muss ein gültiges Datum im Format JJJJ-MM-TT sein.');
+    }
+  }
+
   // Escaped-HTML-Schutz
   if (data.content_html && detectEscapedHtmlDocument(data.content_html)) {
     collect(errors, 'content_html', 'Der Artikelinhalt enthält maskiertes HTML statt formatierter Inhalte. Bitte den Editorinhalt prüfen.');
@@ -586,7 +600,40 @@ export function validateScenario(data) {
   // JSONB
   errors.push(...validateCtaConfig(data.cta_config));
 
+  // Quellenangaben — nur prüfen wenn im Payload enthalten. Fehlt `sources`,
+  // bleibt die bestehende Spalte unverändert (Patch-Semantik wie bei den
+  // übrigen Feldern, die filterWriteFields() nicht in den Payload aufnimmt).
+  if ('sources' in data) {
+    errors.push(...validateScenarioSources(data.sources).errors);
+  }
+
   return { valid: errors.length === 0, errors };
+}
+
+/**
+ * Prüft ein redaktionelles Prüfdatum: reines Kalenderdatum JJJJ-MM-TT.
+ *
+ * Kein Timestamp und kein Freitext — der Wert landet in einer `date`-Spalte und
+ * wird öffentlich als Vertrauensangabe ausgegeben (siehe
+ * src/lib/editorialReviewDate.js).
+ *
+ * @param {unknown} value
+ * @returns {boolean}
+ */
+export function isValidReviewDate(value) {
+  if (typeof value !== 'string') return false;
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.trim());
+  if (!match) return false;
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const probe = new Date(Date.UTC(year, month - 1, day));
+  return (
+    probe.getUTCFullYear() === year
+    && probe.getUTCMonth() === month - 1
+    && probe.getUTCDate() === day
+  );
 }
 
 /**
@@ -780,11 +827,21 @@ export function validatePublishThemeWorld(themeWorld, opts = {}) {
 /**
  * Prüft ob ein Szenario-Artikel publiziert werden darf.
  *
+ * Quellenangaben (opts.requireSources):
+ *   Die Prüfung existiert bereits vollständig, ist aber standardmässig AUS.
+ *   Grund: Sport und Yoga sind live und haben noch keine Quellen — eine harte
+ *   Pflicht würde jedes Re-Publish dieser Artikel blockieren. Sobald der
+ *   Bestand nachgepflegt ist, genügt es, den Aufruf in
+ *   api/admin-theme-world-scenarios.js auf { requireSources: true } zu setzen;
+ *   es ist keine weitere Codeänderung nötig.
+ *
  * @param {object} scenario - Vollständiger Datensatz aus der DB
  * @param {object} parentThemeWorld - Zugehörige Themenwelt aus der DB
+ * @param {object} [opts]
+ * @param {boolean} [opts.requireSources=false] - mindestens eine Quelle verlangen
  * @returns {{ valid: boolean, errors: string[] }}
  */
-export function validatePublishScenario(scenario, parentThemeWorld) {
+export function validatePublishScenario(scenario, parentThemeWorld, opts = {}) {
   const errors = [];
 
   if (!scenario) {
@@ -816,6 +873,23 @@ export function validatePublishScenario(scenario, parentThemeWorld) {
   // Alt-Text bei Karten-Bild
   if (scenario.card_image_url && !scenario.card_image_alt?.trim()) {
     errors.push('card_image_alt: Pflicht wenn card_image_url gesetzt ist.');
+  }
+
+  // Quellenangaben
+  const sources = scenario.sources;
+  const hasSources = Array.isArray(sources) && sources.length > 0;
+
+  if (opts.requireSources === true && !hasSources) {
+    errors.push(
+      'sources: Mindestens eine Quellenangabe ist für die Publikation erforderlich.',
+    );
+  }
+
+  // Vorhandene Quellen müssen strukturell gültig sein — unabhängig davon, ob
+  // sie Pflicht sind. Ein leeres Array (der Normalfall im Bestand) erzeugt hier
+  // niemals einen Fehler.
+  if (hasSources) {
+    errors.push(...validateScenarioSources(sources).errors);
   }
 
   return { valid: errors.length === 0, errors };

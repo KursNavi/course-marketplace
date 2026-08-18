@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Save, Loader, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Save, Loader, AlertCircle, Plus, Trash2 } from 'lucide-react';
 import AdminStatusBadge from './AdminStatusBadge';
 import AdminSaveState from './AdminSaveState';
 import AdminSeoFields from './AdminSeoFields';
@@ -17,6 +17,49 @@ import {
   getErrorMessage,
 } from '../../lib/themeWorldAdminApi';
 import { normalizeDeliveryTypeKey } from '../../lib/courseMetadata';
+import { MAX_SOURCES_PER_SCENARIO } from '../../lib/scenarioSources';
+
+/** Leerer Quelleneintrag für «Quelle hinzufügen». */
+function emptySource() {
+  return { publisher: '', title: '', url: '' };
+}
+
+/**
+ * Bringt die geladenen Quellen in die Formularform.
+ *
+ * Bewusst tolerant: ein Altbestand mit unerwartetem Inhalt soll das Formular
+ * nicht blockieren, sondern sichtbar und korrigierbar sein. Die verbindliche
+ * Prüfung passiert serverseitig (validateScenarioSources).
+ */
+function sourcesToFormRows(raw) {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter((entry) => entry && typeof entry === 'object' && !Array.isArray(entry))
+    .map((entry) => ({
+      publisher: typeof entry.publisher === 'string' ? entry.publisher : '',
+      title: typeof entry.title === 'string' ? entry.title : '',
+      url: typeof entry.url === 'string' ? entry.url : '',
+    }));
+}
+
+/**
+ * Baut das sources-Array für den Speicher-Payload.
+ *
+ * Vollständig leere Zeilen fallen weg: eine versehentlich hinzugefügte und nie
+ * ausgefüllte Quelle soll das Speichern nicht mit einem Validierungsfehler
+ * blockieren. Teilweise ausgefüllte Zeilen bleiben drin — dort ist der
+ * Server-Fehler die richtige Rückmeldung, weil die Redaktion etwas begonnen und
+ * nicht zu Ende geführt hat.
+ */
+function formRowsToSources(rows) {
+  return (rows || [])
+    .map((row) => ({
+      title: (row.title || '').trim(),
+      publisher: (row.publisher || '').trim(),
+      url: (row.url || '').trim(),
+    }))
+    .filter((row) => row.title || row.publisher || row.url);
+}
 
 function slugify(text) {
   return (text || '')
@@ -56,6 +99,8 @@ export default function AdminScenarioForm({
     meta_title: '', meta_description: '',
     cta_label_de: '',
     cta_spec: '', cta_focus: '', cta_loc: '', cta_delivery: '',
+    sources: [],
+    last_reviewed_at: '',
     sort_order: 0,
     status: 'draft',
   });
@@ -90,6 +135,10 @@ export default function AdminScenarioForm({
         cta_focus: ctaCfg.focus || '',
         cta_loc: ctaCfg.loc || '',
         cta_delivery: normalizeDeliveryTypeKey(ctaCfg.delivery) || '',
+        sources: sourcesToFormRows(data.sources),
+        // date-Input erwartet exakt JJJJ-MM-TT. Die DB-Spalte ist `date` und
+        // liefert genau dieses Format; ein Timestamp würde abgeschnitten.
+        last_reviewed_at: (data.last_reviewed_at || '').slice(0, 10),
         sort_order: data.sort_order || 0,
         status: data.status || 'draft',
       });
@@ -112,6 +161,29 @@ export default function AdminScenarioForm({
   }, [form.label_de, autoSlug]);
 
   const update = (patch) => { setForm((p) => ({ ...p, ...patch })); saveState.markDirty(); };
+
+  // --- Quellen ------------------------------------------------------------
+  const addSource = () => {
+    setForm((p) => (
+      p.sources.length >= MAX_SOURCES_PER_SCENARIO
+        ? p
+        : { ...p, sources: [...p.sources, emptySource()] }
+    ));
+    saveState.markDirty();
+  };
+
+  const updateSource = (index, patch) => {
+    setForm((p) => ({
+      ...p,
+      sources: p.sources.map((s, i) => (i === index ? { ...s, ...patch } : s)),
+    }));
+    saveState.markDirty();
+  };
+
+  const removeSource = (index) => {
+    setForm((p) => ({ ...p, sources: p.sources.filter((_, i) => i !== index) }));
+    saveState.markDirty();
+  };
 
   const handleSave = async () => {
     saveState.startSaving();
@@ -137,6 +209,9 @@ export default function AdminScenarioForm({
             delivery: normalizeDeliveryTypeKey(form.cta_delivery),
           }),
         },
+        // Reihenfolge im Payload = Reihenfolge im Formular = Anzeigereihenfolge.
+        sources: formRowsToSources(form.sources),
+        last_reviewed_at: form.last_reviewed_at || null,
         sort_order: form.sort_order,
       };
 
@@ -300,6 +375,114 @@ export default function AdminScenarioForm({
             minRows={25}
             id="scenario-editor"
           />
+        </Section>
+
+        {/* Quellen */}
+        <Section title="Quellen">
+          <p className="text-sm text-gray-500 mb-4">
+            Erscheinen öffentlich unter dem Artikel als «Quellen &amp; weiterführende
+            Informationen». Ohne Eintrag wird der Bereich gar nicht angezeigt.
+            Die Reihenfolge hier ist die Reihenfolge auf der Website.
+          </p>
+
+          {form.sources.length === 0 && (
+            <p className="text-sm text-gray-400 mb-4">Noch keine Quellen erfasst.</p>
+          )}
+
+          <div className="space-y-4">
+            {form.sources.map((source, index) => (
+              <div
+                key={index}
+                className="border border-gray-200 rounded-lg p-4 bg-gray-50"
+                data-testid={`source-row-${index}`}
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-xs font-semibold text-gray-500">
+                    Quelle {index + 1}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => removeSource(index)}
+                    aria-label={`Quelle ${index + 1} entfernen`}
+                    className="flex items-center gap-1 text-xs text-red-600 hover:text-red-700 hover:underline"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    Entfernen
+                  </button>
+                </div>
+                <div className="space-y-3">
+                  <div>
+                    <label className="FLabel">Herausgeber <span className="text-red-500">*</span></label>
+                    <input
+                      className="FInput"
+                      data-testid={`source-publisher-${index}`}
+                      value={source.publisher}
+                      onChange={(e) => updateSource(index, { publisher: e.target.value })}
+                      placeholder="Staatssekretariat für Bildung, Forschung und Innovation SBFI"
+                    />
+                  </div>
+                  <div>
+                    <label className="FLabel">Titel <span className="text-red-500">*</span></label>
+                    <input
+                      className="FInput"
+                      data-testid={`source-title-${index}`}
+                      value={source.title}
+                      onChange={(e) => updateSource(index, { title: e.target.value })}
+                      placeholder="Subjektfinanzierung für vorbereitende Kurse"
+                    />
+                  </div>
+                  <div>
+                    <label className="FLabel">URL <span className="text-red-500">*</span></label>
+                    <input
+                      className="FInput font-mono text-xs"
+                      data-testid={`source-url-${index}`}
+                      value={source.url}
+                      onChange={(e) => updateSource(index, { url: e.target.value })}
+                      placeholder="https://www.sbfi.admin.ch/…"
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-4 flex items-center gap-3">
+            <button
+              type="button"
+              onClick={addSource}
+              disabled={form.sources.length >= MAX_SOURCES_PER_SCENARIO}
+              className="flex items-center gap-2 px-3 py-2 text-sm font-medium bg-gray-100 hover:bg-gray-200 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Plus className="w-4 h-4" />
+              Quelle hinzufügen
+            </button>
+            <span className="text-xs text-gray-400">
+              {form.sources.length} von {MAX_SOURCES_PER_SCENARIO}
+            </span>
+          </div>
+        </Section>
+
+        {/* Redaktionelle Prüfung */}
+        <Section title="Redaktionelle Prüfung">
+          <p className="text-sm text-gray-500 mb-4">
+            Datum der letzten inhaltlichen Prüfung. Wird öffentlich als
+            «Zuletzt redaktionell geprüft: Monat Jahr» angezeigt. Ohne Datum
+            steht kein Prüfhinweis unter dem Artikel — bitte nur setzen, wenn
+            der Inhalt tatsächlich geprüft wurde.
+          </p>
+          <div>
+            <label className="FLabel" htmlFor="scenario-last-reviewed-at">
+              Zuletzt redaktionell geprüft
+            </label>
+            <input
+              id="scenario-last-reviewed-at"
+              type="date"
+              className="FInput w-48"
+              data-testid="last-reviewed-at"
+              value={form.last_reviewed_at}
+              onChange={(e) => update({ last_reviewed_at: e.target.value })}
+            />
+          </div>
         </Section>
 
         {/* Bilder */}
