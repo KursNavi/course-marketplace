@@ -276,7 +276,8 @@ export default async function handler(req, res) {
         validEvents = [],
         categories = [],
         locations = [],
-        bookingType = ''
+        bookingType = '',
+        locationMode = ''
       } = parseBody(req);
 
       if (!userId || !isValidUUID(userId)) {
@@ -326,7 +327,33 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: 'Kurs konnte nicht gespeichert werden' });
       }
 
-      const sanitizedEvents = Array.isArray(validEvents) ? validEvents : [];
+      const sanitizedEvents = (Array.isArray(validEvents) ? validEvents : [])
+        .filter(ev => ev && typeof ev === 'object' && ev.start_date);
+
+      // A course that is explicitly in "Feste Standorte" mode has no events by
+      // design — that is the only case in which clearing the table is intended.
+      const clearsEventsOnPurpose = bookingType !== '' && bookingType !== 'platform' && locationMode === 'locations';
+
+      // Guard against data loss: an empty (or fully invalid) event list from a
+      // client that is *not* in locations mode must never replace saved Termine.
+      // Previously any such payload deleted every row in course_events.
+      if (sanitizedEvents.length === 0 && !clearsEventsOnPurpose) {
+        const { count: savedEventCount, error: savedEventCountError } = await supabaseAdmin
+          .from('course_events')
+          .select('id', { count: 'exact', head: true })
+          .eq('course_id', activeCourseId);
+
+        if (savedEventCountError) {
+          return res.status(500).json({ error: savedEventCountError.message });
+        }
+
+        if ((savedEventCount || 0) > 0) {
+          return res.status(400).json({
+            error: 'Der Kurs hat gespeicherte Termine, es wurde aber kein gültiger Termin übermittelt. Es wurde nichts gelöscht — bitte lade den Kurseditor neu und speichere erneut.'
+          });
+        }
+      }
+
       const eventKeys = sanitizedEvents.map((ev) => (
         `${ev?.start_date || ''}|${ev?.location || ''}|${ev?.canton || ''}`
       ));
@@ -367,7 +394,9 @@ export default async function handler(req, res) {
           start_date: ev.start_date,
           end_date: ev.end_date || null,
           location: ev.location,
-          canton: ev.canton || null,
+          // Mirror the direct-save path in TeacherForm so an impersonated save
+          // does not leave a stale canton on online/ausland events.
+          canton: ev.type === 'online' ? null : ev.type === 'ausland' ? 'Ausland' : (ev.canton || null),
           schedule_description: ev.schedule_description,
           max_participants: parseInt(ev.max_participants, 10) || 0
         };
@@ -419,8 +448,10 @@ export default async function handler(req, res) {
         }
       }
 
-      // Save course_locations for lead/flex courses (service role bypasses RLS)
-      if (bookingType !== 'platform' && Array.isArray(locations)) {
+      // Save course_locations for lead/flex courses (service role bypasses RLS).
+      // Requires an explicit bookingType: without it a payload that simply omits
+      // the field would delete every saved Standort and insert nothing back.
+      if (bookingType !== '' && bookingType !== 'platform' && Array.isArray(locations)) {
         const { error: deleteLocError } = await supabaseAdmin
           .from('course_locations')
           .delete()
