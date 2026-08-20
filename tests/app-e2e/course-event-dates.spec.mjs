@@ -5,17 +5,16 @@
  * state kept a stale snapshot, so `validEvents` was built from empty/old dates and
  * the Termine were gone after saving and reloading the course.
  *
- * This spec drives a real browser against the Supabase test project:
- *   1. open a course in the editor
- *   2. put it into "Konkrete Termine" mode and enter several Startdaten
+ * The spec works on its OWN course so no seeded Anbieter- or Kursdaten are
+ * touched, and it only ever uses "Als Entwurf speichern" / "Änderungen
+ * speichern" — never "Jetzt veröffentlichen". The course stays a draft.
+ *
+ *   1. create a lead course and switch it to "Konkrete Termine"
+ *   2. enter several Startdaten
  *   3. verify the hint "Mindestens ein Termin mit Datum" disappears
  *   4. save
- *   5. do a FULL page reload (page.goto — not a client-side navigation)
+ *   5. FULL page reload (page.goto, not a client-side navigation)
  *   6. verify every Termin is still there
- *
- * It never publishes a course: the editor is only ever saved via the
- * "Als Entwurf speichern"/"Änderungen speichern" button, never via
- * "Jetzt veröffentlichen", and the course status is left untouched.
  */
 
 import { test, expect } from '@playwright/test';
@@ -26,20 +25,13 @@ const DATES = ['2027-03-08', '2027-03-15', '2027-03-22'];
 
 /** All Startdatum inputs of the currently rendered Termin rows. */
 function startDateInputs(page) {
-  return page.locator('div', { has: page.locator('> label:text-is("Startdatum")') }).locator('input[type="date"]');
+  return page
+    .locator('div', { has: page.locator('> label:text-is("Startdatum")') })
+    .locator('input[type="date"]');
 }
 
-async function openFirstCourseEditor(page) {
-  const editBtn = page.getByRole('button', { name: 'Bearbeiten' }).first();
-  if (!await editBtn.isVisible({ timeout: 5_000 }).catch(() => false)) {
-    test.skip(true, 'No courses available for this teacher to edit');
-  }
-  await editBtn.click();
-
-  const titleInput = page.locator('input[name="title"]');
-  await expect(titleInput).toBeVisible({ timeout: 10_000 });
-  await expect(titleInput).not.toHaveValue('', { timeout: 10_000 });
-  return titleInput.inputValue();
+async function openCourseList(page) {
+  await expect(page.locator('h2').filter({ hasText: 'Meine Kurse' })).toBeVisible({ timeout: 10_000 });
 }
 
 test.describe('Course Termine (app-e2e)', () => {
@@ -54,48 +46,61 @@ test.describe('Course Termine (app-e2e)', () => {
     });
 
     await loginAsTeacherAndOpenTab(page, 'kursangebot');
-    await expect(page.locator('h2').filter({ hasText: 'Meine Kurse' })).toBeVisible({ timeout: 5_000 });
+    await openCourseList(page);
 
-    const courseTitle = await openFirstCourseEditor(page);
+    // ── Create a lead course of our own (same flow as course-creation.spec) ──
+    await page.locator('button').filter({ hasText: /Neuer Kurs/i }).click();
 
-    // Make sure the course is in "Konkrete Termine" mode (lead/flex courses default
-    // to "Feste Standorte"; platform courses are already in events mode).
-    const termineModeBtn = page.getByRole('button', { name: /Konkrete Termine/ });
-    if (await termineModeBtn.isVisible({ timeout: 3_000 }).catch(() => false)) {
-      await termineModeBtn.click();
-    }
+    const titleInput = page.locator('input[name="title"]');
+    await titleInput.waitFor({ timeout: 10_000 });
+
+    const courseTitle = `E2E-Termine-${Date.now()}`;
+    await titleInput.fill(courseTitle);
+    await page.locator('textarea[name="description"]').fill('Regressionstest für Termine im Kurseditor.');
+    await page.locator('input[name="keywords"]').fill('Test, E2E, Termine');
+
+    const catType = page.locator('select[name="category_type_0"]');
+    await catType.selectOption({ index: 1 });
+    const catArea = page.locator('select[name="category_area_0"]');
+    await expect(catArea.locator('option')).not.toHaveCount(1, { timeout: 5_000 });
+    await catArea.selectOption({ index: 1 });
+    const catSpecialty = page.locator('select[name="category_specialty_0"]');
+    await expect(catSpecialty.locator('option')).not.toHaveCount(1, { timeout: 5_000 });
+    await catSpecialty.selectOption({ index: 1 });
+
+    // Anfrage (lead) — no Stripe payout needed, and Termine stay optional per booking rules.
+    await page.locator('input[name="bookingType"][value="lead"]').click();
+
+    // ── Switch to "Konkrete Termine" ────────────────────────────────────────
+    await page.getByRole('button', { name: /Konkrete Termine/ }).click();
 
     const starts = startDateInputs(page);
     await expect(starts.first()).toBeVisible({ timeout: 10_000 });
 
-    // Clear every existing Startdatum so the "missing fields" hint is guaranteed to show.
-    let rowCount = await starts.count();
-    for (let i = 0; i < rowCount; i++) {
-      await starts.nth(i).fill('');
-    }
+    // A fresh Termin row has no date, so the hint must be showing.
     await expect(page.getByText('Mindestens ein Termin mit Datum')).toBeVisible({ timeout: 5_000 });
 
     // Grow to three Termin rows.
     const addBtn = page.getByRole('button', { name: /Termin hinzufügen/ });
-    while (rowCount < DATES.length) {
+    while (await starts.count() < DATES.length) {
       await addBtn.click();
-      rowCount = await starts.count();
     }
+    await expect(starts).toHaveCount(DATES.length);
 
     // Enter all Startdaten one after another.
     for (let i = 0; i < DATES.length; i++) {
       await starts.nth(i).fill(DATES[i]);
     }
 
-    // Every field kept its own value — nothing was overwritten by a stale state snapshot.
+    // Every field kept its own value — nothing was overwritten by a stale snapshot.
     for (let i = 0; i < DATES.length; i++) {
       await expect(starts.nth(i)).toHaveValue(DATES[i]);
     }
 
-    // The hint must be gone now.
+    // The hint must be gone now that dated Termine exist.
     await expect(page.getByText('Mindestens ein Termin mit Datum')).toHaveCount(0);
 
-    // Save as draft/update — never "Jetzt veröffentlichen".
+    // ── Save as draft — never "Jetzt veröffentlichen" ───────────────────────
     await page.evaluate(() => { const f = document.querySelector('form'); if (f) f.noValidate = true; });
     await page.getByTestId('save-course').click();
 
@@ -103,17 +108,33 @@ test.describe('Course Termine (app-e2e)', () => {
       test.skip(true, `Form validation blocked the save: ${alerts[0]}`);
     }
 
-    // Back on the dashboard list.
-    await expect(page.getByText(courseTitle, { exact: true }).first()).toBeVisible({ timeout: 20_000 });
+    const formStillOpen = await page.locator('h1').filter({ hasText: 'Kurs erstellen' })
+      .isVisible({ timeout: 15_000 }).catch(() => false);
+    if (formStillOpen) {
+      test.skip(true, 'Kurs-Erstellung fehlgeschlagen — Test-DB-Schema prüfen (siehe course-creation.spec.mjs)');
+    }
 
-    // --- FULL page reload -------------------------------------------------
+    await expect(page.getByText(courseTitle).first()).toBeVisible({ timeout: 20_000 });
+
+    // ── FULL page reload ────────────────────────────────────────────────────
     await page.goto('/dashboard');
     await waitForDashboardReady(page);
-    await page.getByRole('button', { name: 'Kursangebot' }).first().click();
-    await expect(page.locator('h2').filter({ hasText: 'Meine Kurse' })).toBeVisible({ timeout: 10_000 });
 
-    await openFirstCourseEditor(page);
+    const listVisible = await page.locator('h2').filter({ hasText: 'Meine Kurse' })
+      .isVisible({ timeout: 5_000 }).catch(() => false);
+    if (!listVisible) {
+      await page.locator('button').filter({ hasText: 'Kursangebot' }).first().click();
+    }
+    await openCourseList(page);
 
+    // Re-open exactly our course.
+    const row = page.locator('tr', { hasText: courseTitle });
+    await expect(row).toHaveCount(1, { timeout: 15_000 });
+    await row.getByRole('button', { name: 'Bearbeiten' }).click();
+
+    await expect(page.locator('input[name="title"]')).toHaveValue(courseTitle, { timeout: 15_000 });
+
+    // All three Termine are still there.
     const startsAfterReload = startDateInputs(page);
     await expect(startsAfterReload).toHaveCount(DATES.length, { timeout: 15_000 });
 
