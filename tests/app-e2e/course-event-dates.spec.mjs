@@ -104,12 +104,17 @@ test.describe('Course Termine (app-e2e)', () => {
     await page.evaluate(() => { const f = document.querySelector('form'); if (f) f.noValidate = true; });
     await page.getByTestId('save-course').click();
 
+    // Give the Supabase round-trip a moment, then check for validation dialogs.
+    // NOTE: isVisible() must run WITHOUT a timeout here — with one it returns true
+    // the instant the still-open form is seen and the test would skip itself.
+    await page.waitForTimeout(3_000);
+
     if (alerts.length > 0) {
       test.skip(true, `Form validation blocked the save: ${alerts[0]}`);
     }
 
     const formStillOpen = await page.locator('h1').filter({ hasText: 'Kurs erstellen' })
-      .isVisible({ timeout: 15_000 }).catch(() => false);
+      .isVisible().catch(() => false);
     if (formStillOpen) {
       test.skip(true, 'Kurs-Erstellung fehlgeschlagen — Test-DB-Schema prüfen (siehe course-creation.spec.mjs)');
     }
