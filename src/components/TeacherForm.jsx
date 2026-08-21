@@ -1087,20 +1087,33 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
         // so pre-fill from profile. For lead/flex events the profile street must
         // NOT be pre-filled: the event location is a town/venue, not the office address.
         const prefillStreet = bookingType === 'platform' ? (loc?.street || '') : '';
-        setEvents([...events, { id: null, bookingCount: 0, type: 'presence', start_date: '', end_date: '', street: prefillStreet, city: loc?.city || '', max_participants: 0, canton: loc?.canton || '', schedule_description: '', location_abroad: '', showLoc: !!(loc?.canton) }]);
+        setEvents(previousEvents => [...previousEvents, { id: null, bookingCount: 0, type: 'presence', start_date: '', end_date: '', street: prefillStreet, city: loc?.city || '', max_participants: 0, canton: loc?.canton || '', schedule_description: '', location_abroad: '', showLoc: !!(loc?.canton) }]);
         markDirty();
     };
     const removeEvent = (index) => {
-        const target = events[index];
-        if ((target?.bookingCount || 0) > 0) return;
-        setEvents(events.filter((_, i) => i !== index));
+        setEvents(previousEvents => {
+            if ((previousEvents[index]?.bookingCount || 0) > 0) return previousEvents;
+            return previousEvents.filter((_, i) => i !== index);
+        });
         markDirty();
     };
+    // Shared handler for every event field, including the native date inputs.
+    // It must use a functional update: input[type="date"] can emit several change
+    // events within one React batch, and a handler that read `events` from its
+    // render closure would write a stale snapshot back — the picked date stayed
+    // visible in the input but never reached `events`, so `validEvents` dropped it
+    // on save. The nested event object is copied instead of mutated in place, so
+    // no earlier state snapshot (draft autosave, derived lists) is altered.
     const updateEvent = (index, field, value) => {
-        if ((events[index]?.bookingCount || 0) > 0) return;
-        const newEvents = [...events];
-        newEvents[index][field] = value;
-        setEvents(newEvents);
+        setEvents(previousEvents => {
+            const target = previousEvents[index];
+            if (!target) return previousEvents;
+            if ((target.bookingCount || 0) > 0) return previousEvents;
+            if (target[field] === value) return previousEvents;
+            const nextEvents = [...previousEvents];
+            nextEvents[index] = { ...target, [field]: value };
+            return nextEvents;
+        });
         markDirty();
     };
 
@@ -1226,7 +1239,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
     const archivedBookedEvents = events.filter(ev => (ev.bookingCount || 0) > 0 && isEventPast(ev.start_date));
     const visibleEvents = events.filter(ev => !((ev.bookingCount || 0) > 0 && isEventPast(ev.start_date)));
 
-    const saveCourseViaAdmin = async ({ coursePayload, courseId, validEvents, categories }) => {
+    const saveCourseViaAdmin = async ({ coursePayload, courseId, validEvents, categories, locations, bookingType, locationMode }) => {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session?.access_token) {
             throw new Error('Nicht eingeloggt');
@@ -1244,7 +1257,12 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
                 courseId,
                 course: coursePayload,
                 validEvents,
-                categories
+                categories,
+                // These were previously dropped here, so /api/admin fell back to
+                // bookingType '' and locations [] and wiped the saved standorte.
+                locations,
+                bookingType,
+                locationMode
             })
         });
 
@@ -1558,7 +1576,8 @@ if (bookingType === 'platform' || locationMode === 'events') {
                     validEvents,
                     categories: consolidatedCategories,
                     locations,
-                    bookingType
+                    bookingType,
+                    locationMode
                 });
                 activeCourseId = result.courseId;
                 showNotification(activeCourseId && initialData?.id ? "Kurs aktualisiert!" : t.success_msg);
