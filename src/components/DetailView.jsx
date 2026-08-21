@@ -1143,7 +1143,7 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
 
                     <h3 id="save-prompt-title" className="text-xl font-bold mb-2 font-heading">Kurs merken?</h3>
                     <p className="text-sm text-gray-600">
-                        Möchtest du <span className="font-bold">„{course.title}“</span> in deine Merkliste aufnehmen?
+                        Möchtest du <span className="font-bold">«{course.title}»</span> in deine Merkliste aufnehmen?
                     </p>
 
                     <div className="mt-6 flex flex-col sm:flex-row gap-3">

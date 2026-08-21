@@ -968,7 +968,7 @@ const SearchPageView = ({
                         {/* Search query chip */}
                         {searchQuery && (
                             <span onClick={() => setSearchQuery('')} className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-gray-200 flex items-center">
-                                <Search className="w-3 h-3 mr-1" />„{searchQuery}" <X className="w-3 h-3 ml-1 opacity-50" />
+                                <Search className="w-3 h-3 mr-1" />«{searchQuery}» <X className="w-3 h-3 ml-1 opacity-50" />
                             </span>
                         )}
                         {selectedLanguages.map((lang, i) => (

@@ -1306,7 +1306,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
                   price,
                   payout: retainedRevenue * 0.85,
                   isPaidOut: booking.is_paid,
-                  date: new Date(booking.created_at).toLocaleDateString(),
+                  date: new Date(booking.created_at).toLocaleDateString('de-CH'),
                   bookingType: booking.booking_type,
                   deliveredAt: booking.delivered_at,
                   paidAt: booking.paid_at,
