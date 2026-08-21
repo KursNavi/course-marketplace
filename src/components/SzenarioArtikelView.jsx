@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ChevronRight, Clock, ArrowRight, BookOpen } from 'lucide-react';
+import { ChevronRight, Clock, ArrowRight, BookOpen, Info } from 'lucide-react';
 import { BEREICH_LANDING_CONFIG, getBereichBySlug, getBereichUrl, findSzenario } from '../lib/bereichLandingConfig';
 import { SZENARIO_CONTENT } from '../lib/szenarioContent';
 import { SEGMENT_CONFIG } from '../lib/constants';
@@ -13,6 +13,7 @@ import { adaptToLegacyBereichConfig, adaptToLegacySzenarioConfig } from '../lib/
 import { normalizeDeliveryTypeKey } from '../lib/courseMetadata';
 import { toDisplaySources } from '../lib/scenarioSources';
 import { buildEditorialReviewNotice } from '../lib/editorialReviewDate';
+import { buildTimeSensitiveNotice, containsTimeSensitiveFacts } from '../lib/timeSensitiveFacts';
 
 /**
  * SzenarioArtikelView
@@ -496,6 +497,15 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
           )}
         </div>
 
+        {/* Gültigkeitshinweis — nur bei Artikeln mit zeitabhängigen Angaben.
+            Steht bewusst direkt über den Quellen, damit Hinweis und offizielle
+            Stellen zusammen gelesen werden. */}
+        <TimeSensitiveNotice
+          articleContent={articleContent}
+          lastReviewedAt={scenario.lastReviewedAt}
+          hasSources={displaySources.length > 0}
+        />
+
         {/* Quellen & weiterführende Informationen — nur bei echten Quellen */}
         <SourcesSection sources={displaySources} />
 
@@ -600,6 +610,40 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
  *        Bereits normalisiert (toDisplaySources) — hier findet keine
  *        Validierung mehr statt.
  */
+/**
+ * Gültigkeitshinweis für zeitabhängige Angaben.
+ *
+ * Erscheint nur, wenn der Artikel tatsächlich Beträge, Beitragssätze oder
+ * rechtliche Voraussetzungen führt — sonst wäre es blosses Rauschen. Der
+ * Hinweis nennt ausschliesslich, was in den Daten steht: das redaktionelle
+ * Prüfdatum des Artikels. Fehlt es, wird kein Stand behauptet.
+ *
+ * Bewusst zurückhaltend gestaltet: eine Einordnung, kein Warnhinweis.
+ */
+function TimeSensitiveNotice({ articleContent, lastReviewedAt, hasSources }) {
+  if (!containsTimeSensitiveFacts(articleContent)) return null;
+
+  const { intro, stand, verweis } = buildTimeSensitiveNotice({ lastReviewedAt, hasSources });
+
+  return (
+    <aside
+      aria-labelledby="szenario-gueltigkeit-heading"
+      className="bg-amber-50 border border-amber-200 rounded-2xl p-5 md:p-6 mt-6"
+    >
+      <h2
+        id="szenario-gueltigkeit-heading"
+        className="text-sm font-bold text-amber-900 mb-2 flex items-center gap-2"
+      >
+        <Info className="w-4 h-4 shrink-0" aria-hidden="true" />
+        Zeitabhängige Angaben
+      </h2>
+      <p className="text-sm text-amber-900/90 leading-relaxed">
+        {intro}{stand ? ` ${stand}` : ''} {verweis}
+      </p>
+    </aside>
+  );
+}
+
 function SourcesSection({ sources }) {
   if (!sources || sources.length === 0) return null;
 
