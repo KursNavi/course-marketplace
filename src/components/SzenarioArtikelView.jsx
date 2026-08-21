@@ -38,6 +38,7 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
   // DB-only mode: kein Legacy-Eintrag vorhanden, aber DB global aktiv → Ladeindikator bis Antwort
   const [dbOnlyLoading, setDbOnlyLoading] = useState(() => !legacyBereichConfig && isThemeWorldDbEnabled());
 
+
   // Effective values: DB wenn geladen, sonst Legacy
   const bereichConfig = dynamicBereichConfig || legacyBereichConfig;
   const scenario = dynamicScenario || legacyScenario;
@@ -53,8 +54,27 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
   const contentKey = bereichKey && szenarioSlug ? `${bereichKey}/${szenarioSlug}` : null;
   const legacyArticleContent = contentKey ? SZENARIO_CONTENT[contentKey] || null : null;
 
+  // Pilot-Modus: Legacy-Eintrag UND DB-Fassung vorhanden.
+  //
+  // Ohne diesen Zustand rendert der Artikel sofort die im JS-Bundle
+  // mitgelieferte Legacy-Fassung und tauscht sie erst aus, wenn die DB-Antwort
+  // da ist. Auf Produktion gemessen: rund 0,8 Sekunden lang war die ältere
+  // Fassung mit anderer Gliederung und ohne Quellenblock sichtbar, danach die
+  // aktuelle. Genau dieser Wechsel wurde als «veraltete Version» gemeldet — er
+  // hat nichts mit CDN- oder Cache-Verhalten zu tun.
+  //
+  // Solange die DB-Fassung unterwegs ist, wird deshalb keine Fassung angezeigt.
+  // Schlägt der Ladevorgang fehl oder gibt es kein DB-Szenario, bleibt der
+  // Legacy-Inhalt als Rückfallebene erhalten.
+  const pilotWillLoad = Boolean(bereichKey) && isThemeWorldPilotActive(bereichKey);
+  const [pilotLoading, setPilotLoading] = useState(() => pilotWillLoad);
+
   // Effective article content
   const articleContent = dynamicArticleContent !== null ? dynamicArticleContent : legacyArticleContent;
+
+  // Nur solange eine DB-Fassung tatsächlich erwartet wird und noch nicht da
+  // ist. Danach entscheidet wieder articleContent — inklusive Legacy-Rückfall.
+  const articleIsLoading = pilotLoading && dynamicArticleContent === null;
 
   const readingTime = estimateReadingTime(articleContent);
   const articleRef = useRef(null);
@@ -164,6 +184,11 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
             err?.message,
           );
         }
+      } finally {
+        // Immer freigeben — auch bei Fehler oder fehlendem DB-Szenario. Sonst
+        // bliebe die Seite im Ladezustand hängen, statt auf Legacy
+        // zurückzufallen.
+        if (!cancelled) setPilotLoading(false);
       }
     })();
 
@@ -473,7 +498,23 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
       {/* Article Content */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 md:p-12">
-          {articleContent ? (
+          {articleIsLoading ? (
+            /* Die DB-Fassung ist unterwegs. Bis sie da ist, wird bewusst keine
+               Fassung gezeigt — sonst erschiene kurz die ältere Legacy-Version
+               mit anderer Gliederung und ohne Quellen. */
+            <div className="py-12" role="status" aria-live="polite" aria-busy="true">
+              <span className="sr-only">Artikel wird geladen…</span>
+              <div className="animate-pulse space-y-4" aria-hidden="true">
+                <div className="h-6 w-2/3 bg-gray-200 rounded" />
+                <div className="h-4 w-full bg-gray-100 rounded" />
+                <div className="h-4 w-11/12 bg-gray-100 rounded" />
+                <div className="h-4 w-4/5 bg-gray-100 rounded" />
+                <div className="h-6 w-1/2 bg-gray-200 rounded mt-8" />
+                <div className="h-4 w-full bg-gray-100 rounded" />
+                <div className="h-4 w-10/12 bg-gray-100 rounded" />
+              </div>
+            </div>
+          ) : articleContent ? (
             <div
               ref={setArticleNode}
               className="prose-ratgeber"
