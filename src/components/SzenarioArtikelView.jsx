@@ -325,15 +325,21 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
   // Breite Tabellen im Artikelinhalt als Scrollbereich kenntlich und mit der
   // Tastatur bedienbar machen.
   //
-  // dbOnlyLoading, scenario und dynamicNotFound gehören zwingend in die
-  // Abhängigkeiten: Solange einer der frühen Returns unten greift, ist
-  // articleRef.current noch null. Bei Legacy-Artikeln ändert sich
-  // articleContent danach nicht mehr — ohne diese Werte liefe der Effekt also
-  // genau einmal ins Leere und die Tabelle bliebe unmarkiert.
-  useEffect(
-    () => enhanceTableScrollContainers(articleRef.current),
-    [articleContent, scenario, dbOnlyLoading, dynamicNotFound],
-  );
+  // Bewusst als Callback-Ref statt als Effekt mit Abhängigkeitsliste: Diese
+  // Komponente hat mehrere frühe Returns und lädt Inhalte nach. Ein Effekt lief
+  // dadurch genau einmal, solange articleRef.current noch null war, und danach
+  // nie wieder — die Tabelle blieb unmarkiert. Die Callback-Ref feuert dagegen
+  // exakt dann, wenn der Knoten eingehängt wird; spätere Inhaltswechsel fängt
+  // der MutationObserver in enhanceTableScrollContainers ab.
+  const tableCleanupRef = useRef(null);
+  const setArticleNode = useCallback((node) => {
+    articleRef.current = node;
+    if (tableCleanupRef.current) {
+      tableCleanupRef.current();
+      tableCleanupRef.current = null;
+    }
+    if (node) tableCleanupRef.current = enhanceTableScrollContainers(node);
+  }, []);
 
   // DB-only Ladeindikator — verhindert vorzeitigen 404 während DB-Abfrage läuft
   if (dbOnlyLoading) {
@@ -468,7 +474,7 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 md:p-12">
           {articleContent ? (
             <div
-              ref={articleRef}
+              ref={setArticleNode}
               className="prose-ratgeber"
               dangerouslySetInnerHTML={{ __html: wrapTables(enhanceImages(articleContent)) }}
             />

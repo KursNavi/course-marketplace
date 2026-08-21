@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import { ArrowLeft, ChevronRight, BookOpen, Clock, Share2 } from 'lucide-react';
 import { findArticle, RATGEBER_STRUCTURE } from '../lib/ratgeberStructure';
 import { SEGMENT_CONFIG } from '../lib/constants';
@@ -26,7 +26,21 @@ const RatgeberArtikelView = ({ lang = 'de' }) => {
   // Find article data
   const articleData = findArticle(categorySlug, clusterSlug, articleSlug);
 
+  // Callback-Ref statt Effekt mit Abhaengigkeitsliste: Der Artikelinhalt wird
+  // ueber dangerouslySetInnerHTML gesetzt, und die Komponente hat einen frueh
+  // greifenden Return. Die Callback-Ref feuert exakt beim Einhaengen des
+  // Knotens; spaetere Inhaltswechsel faengt der MutationObserver in
+  // enhanceTableScrollContainers ab.
   const articleRef = useRef(null);
+  const tableCleanupRef = useRef(null);
+  const setArticleNode = useCallback((node) => {
+    articleRef.current = node;
+    if (tableCleanupRef.current) {
+      tableCleanupRef.current();
+      tableCleanupRef.current = null;
+    }
+    if (node) tableCleanupRef.current = enhanceTableScrollContainers(node);
+  }, []);
 
   // SEO — must be called before any conditional returns (React rules of hooks)
   useEffect(() => {
@@ -115,11 +129,6 @@ const RatgeberArtikelView = ({ lang = 'de' }) => {
       if (breadcrumbScript.parentNode) breadcrumbScript.remove();
     };
   }, [articleData, categorySlug, clusterSlug, articleSlug, lang]);
-
-  // Breite Tabellen im Artikelinhalt als Scrollbereich kenntlich und mit der
-  // Tastatur bedienbar machen. Muss vor dem frühen Return unten stehen
-  // (React-Regeln für Hooks).
-  useEffect(() => enhanceTableScrollContainers(articleRef.current), [articleData]);
 
   if (!articleData) {
     return (
@@ -295,7 +304,7 @@ const RatgeberArtikelView = ({ lang = 'de' }) => {
           {hasContent ? (
             // Render actual content (HTML from ratgeberContent.js)
             <div
-              ref={articleRef}
+              ref={setArticleNode}
               className="prose-ratgeber"
               dangerouslySetInnerHTML={{ __html: wrapTables(enhanceImages(articleContent)) }}
             />

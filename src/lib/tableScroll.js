@@ -54,8 +54,27 @@ function applyState(wrapper) {
   }
 }
 
+/** Entfernt alle von uns gesetzten Attribute wieder. */
+function clearState(wrapper) {
+  wrapper.removeAttribute('data-scrollable');
+  wrapper.removeAttribute('tabindex');
+  wrapper.removeAttribute('role');
+  if (wrapper.getAttribute('aria-label') === TABLE_SCROLL_LABEL) {
+    wrapper.removeAttribute('aria-label');
+  }
+}
+
 /**
  * Prüft alle Tabellen-Container unterhalb von `root` und hält sie aktuell.
+ *
+ * Bewusst nicht an einen React-Effekt mit Abhängigkeitsliste gebunden:
+ * Der Artikelinhalt wird über dangerouslySetInnerHTML gesetzt und kann später
+ * durch Datenbankinhalte ersetzt werden, ohne dass sich der Container-Knoten
+ * ändert. Eine Abhängigkeitsliste trifft dabei zwangsläufig irgendwann daneben
+ * — deshalb beobachtet die Funktion den Container selbst:
+ *
+ *   MutationObserver → neuer oder ersetzter Inhalt wird neu erfasst
+ *   ResizeObserver   → Drehen, Zoomen, nachgeladene Schriften
  *
  * @param {HTMLElement|null} root - Container des Artikelinhalts
  * @returns {() => void} Aufräumfunktion; entfernt Beobachter und Attribute
@@ -63,36 +82,44 @@ function applyState(wrapper) {
 export function enhanceTableScrollContainers(root) {
   if (!root || typeof root.querySelectorAll !== 'function') return () => {};
 
-  const wrappers = Array.from(root.querySelectorAll('.table-wrapper'));
-  if (wrappers.length === 0) return () => {};
+  let observed = [];
+  let resizeObserver = null;
 
-  const update = () => wrappers.forEach(applyState);
-  update();
+  const update = () => {
+    const wrappers = Array.from(root.querySelectorAll('.table-wrapper'));
 
-  // Die Breite ändert sich beim Drehen des Geräts, beim Zoomen und sobald
-  // Schriften nachgeladen sind. Ohne erneute Prüfung bliebe ein Container
-  // fälschlich als scrollbar markiert — oder eben nicht markiert.
-  let observer = null;
+    // Container, die es nicht mehr gibt, aus der Beobachtung nehmen.
+    if (resizeObserver) {
+      observed.forEach((w) => { if (!wrappers.includes(w)) resizeObserver.unobserve(w); });
+      wrappers.forEach((w) => { if (!observed.includes(w)) resizeObserver.observe(w); });
+    }
+    observed = wrappers;
+
+    wrappers.forEach(applyState);
+  };
+
   if (typeof ResizeObserver !== 'undefined') {
-    observer = new ResizeObserver(update);
-    wrappers.forEach((w) => observer.observe(w));
+    resizeObserver = new ResizeObserver(update);
   } else if (typeof window !== 'undefined') {
     window.addEventListener('resize', update);
   }
 
+  let mutationObserver = null;
+  if (typeof MutationObserver !== 'undefined') {
+    mutationObserver = new MutationObserver(update);
+    mutationObserver.observe(root, { childList: true, subtree: true });
+  }
+
+  update();
+
   return () => {
-    if (observer) {
-      observer.disconnect();
+    if (resizeObserver) {
+      resizeObserver.disconnect();
     } else if (typeof window !== 'undefined') {
       window.removeEventListener('resize', update);
     }
-    wrappers.forEach((wrapper) => {
-      wrapper.removeAttribute('data-scrollable');
-      wrapper.removeAttribute('tabindex');
-      wrapper.removeAttribute('role');
-      if (wrapper.getAttribute('aria-label') === TABLE_SCROLL_LABEL) {
-        wrapper.removeAttribute('aria-label');
-      }
-    });
+    if (mutationObserver) mutationObserver.disconnect();
+    observed.forEach(clearState);
+    observed = [];
   };
 }
