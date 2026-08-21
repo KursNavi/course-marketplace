@@ -307,7 +307,11 @@ export const Home = ({
 
       
       {/* 1. HERO SECTION */}
-      <div className="relative h-[720px] md:h-[600px] w-full flex items-center justify-center">
+      {/* min-h statt h auf Mobile: die Hero-Hoehe war fix, auf sehr schmalen Geraeten
+          (<= 320 px) ragte die Suchbox schon knapp heraus. Als Mindesthoehe sieht die
+          Sektion unveraendert aus, waechst aber mit, statt den Inhalt abzuschneiden.
+          Ab md gilt weiterhin exakt die feste Hoehe von 600 px. */}
+      <div className="relative min-h-[720px] md:min-h-0 md:h-[600px] w-full flex items-center justify-center">
         {/* Background */}
         <img
           src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop"
@@ -334,14 +338,26 @@ export const Home = ({
             
             {/* Row 1: Search Bar */}
             <form onSubmit={handleSearch} className="relative flex flex-col mb-4">
+                {/* Auf Mobile traegt dieses Label den Suchhinweis: neben dem "Suchen"-Button
+                    bleiben im Feld nur rund 130 px, der Platzhalter braucht rund 200 px und
+                    wurde deshalb bisher per placeholder-transparent unsichtbar gemacht — das
+                    Feld wirkte leer. Ab md zeigt ihn der Platzhalter wieder im Feld selbst,
+                    das Label bleibt dort als Screenreader-Beschriftung erhalten. */}
+                <label
+                    htmlFor="home-search-input"
+                    className="block md:sr-only text-left text-sm font-medium text-white mb-1.5"
+                >
+                    {t.search_placeholder}
+                </label>
                 <div className="relative flex items-center">
-                    <Search className="absolute left-4 text-gray-400 w-5 h-5 z-10" />
+                    <Search className="absolute left-4 text-gray-400 w-5 h-5 z-10" aria-hidden="true" />
                     <input
+                    id="home-search-input"
                     type="text"
                     placeholder={t.search_placeholder}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-12 pr-32 py-4 rounded-xl text-dark font-sans shadow-sm focus:outline-none focus:ring-2 focus:ring-primary text-lg placeholder-transparent md:placeholder-gray-500 bg-white"
+                    className="w-full pl-12 pr-32 py-4 rounded-xl text-dark font-sans shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-transparent text-lg placeholder-transparent md:placeholder-gray-500 bg-white"
                     />
                     <button type="submit" className="absolute right-2 bg-primary hover:bg-orange-600 text-white px-6 py-2 rounded-lg font-bold transition-colors duration-300">
                     {t.btn_search}
