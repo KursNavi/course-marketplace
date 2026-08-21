@@ -14,11 +14,13 @@ export const Home = ({
   catMenuOpen, setCatMenuOpen, catMenuRef,
   selectedLocations, setSelectedLocations, locMenuOpen, setLocMenuOpen, locMenuRef,
   filterPro, setFilterPro, filterDirectBooking, setFilterDirectBooking,
-  selectedDeliveryTypes, setSelectedDeliveryTypes, deliveryMenuOpen, setDeliveryMenuOpen, deliveryMenuRef
+  selectedDeliveryTypes, setSelectedDeliveryTypes, deliveryMenuOpen, setDeliveryMenuOpen, deliveryMenuRef,
+  isLoading = false
 }) => {
 
   // Load taxonomy from DB (with fallback to constants.js)
   const { taxonomy, types, areas, getTypeLabel: dbGetTypeLabel, getAreaLabel: dbGetAreaLabel } = useTaxonomy();
+
 
   // State für das Mega-Menü
   const [activeType, setActiveType] = useState('beruflich'); // Spalte 1 Auswahl
@@ -292,7 +294,34 @@ export const Home = ({
   }, [activeType, courses]);
 
   return (
-    <div className="flex flex-col w-full font-sans">
+    <div className="relative flex flex-col w-full font-sans">
+      {isLoading && (
+        <div className="absolute inset-0 z-40 flex flex-col items-center justify-start overflow-hidden">
+          <div className="w-full h-[420px] md:h-[600px] relative">
+            <div className="absolute inset-0 bg-gray-200/80 dark:bg-gray-700/60 animate-pulse"></div>
+            <div className="relative z-20 text-center px-4 max-w-4xl mx-auto w-full pt-10">
+              <div className="h-12 bg-gray-300 rounded mb-4 mx-auto w-3/4"></div>
+              <div className="h-4 bg-gray-300 rounded mb-6 mx-auto w-2/3"></div>
+
+              <div className="max-w-3xl mx-auto bg-white/10 p-6 rounded-3xl border border-white/10 shadow-sm">
+                <div className="h-12 bg-gray-200 rounded mb-3"></div>
+                <div className="h-10 bg-gray-200 rounded"></div>
+              </div>
+            </div>
+          </div>
+
+          <div className="py-12 bg-beige w-full">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="h-60 rounded-2xl bg-gray-200 animate-pulse" />
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       
       {/* 1. HERO SECTION */}
       <div className="relative h-[720px] md:h-[600px] w-full flex items-center justify-center">
