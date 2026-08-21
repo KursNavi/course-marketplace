@@ -6,6 +6,7 @@ import { getRobotsPolicy } from '../lib/seoUtils';
 import { CANONICAL_BASE_URL } from '../lib/siteConfig';
 import { getRatgeberCategorySeo, getRatgeberRootSeo } from '../lib/ratgeberSeo';
 import { shouldHandleClientNavigation } from '../lib/navigation';
+import { buildEditorialReviewNotice } from '../lib/editorialReviewDate';
 
 /**
  * Schreibt den Head genau einer Hub-Seite — und zwar durch Aktualisieren der
@@ -205,7 +206,7 @@ function RootHub({ lang }) {
           })}
         </div>
         <div className="text-center text-sm text-gray-500 mt-8">
-          <p>Zuletzt redaktionell geprüft: März 2026. Die Inhalte dienen der Orientierung; maßgeblich sind im Zweifel die Angaben der jeweiligen Anbieter und offiziellen Stellen.</p>
+          <p>{buildEditorialReviewNotice(null)}</p>
           <p className="mt-2">
             Ist dir in einem Ratgeber ein Fehler oder eine veraltete Information aufgefallen? Gib uns gern kurz Bescheid.{' '}
             <a
@@ -300,7 +301,7 @@ function CategoryHub({ category, categorySlug, lang }) {
           );
         })}
         <div className="text-center text-sm text-gray-500">
-          <p>Zuletzt redaktionell geprüft: März 2026. Die Inhalte dienen der Orientierung; maßgeblich sind im Zweifel die Angaben der jeweiligen Anbieter und offiziellen Stellen.</p>
+          <p>{buildEditorialReviewNotice(null)}</p>
           <p className="mt-2">
             Ist dir in einem Ratgeber ein Fehler oder eine veraltete Information aufgefallen? Gib uns gern kurz Bescheid.{' '}
             <a

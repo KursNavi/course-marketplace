@@ -78,6 +78,43 @@ export function formatEditorialReviewMonth(value) {
 }
 
 /**
+ * Wählt aus mehreren Prüfdaten das jüngste aus.
+ *
+ * Anwendungsfall: Eine Themenwelt-Landingpage hat selbst kein Prüfdatum —
+ * theme_worlds führt keine Spalte last_reviewed_at, nur die Artikel
+ * (theme_world_scenarios) tun das. Statt auf der Landingpage ein Datum zu
+ * erfinden, wird das aktuellste Prüfdatum ihrer publizierten Artikel gezeigt.
+ * Damit stammt auch die Landingpage-Angabe aus einer echten Datenquelle.
+ *
+ * Verglichen wird der reine Datumsanteil als Zeichenkette. Bei ISO-Datumsangaben
+ * (JJJJ-MM-TT) ist die lexikografische Ordnung identisch zur chronologischen,
+ * also braucht es keine Zeitzonen-Umrechnung. Ungültige und fehlende Werte
+ * fallen heraus; bleibt nichts übrig, ist das Ergebnis null.
+ *
+ * @param {unknown} values - Liste möglicher Prüfdaten
+ * @returns {string|null} jüngstes gültiges Datum als 'JJJJ-MM-TT', sonst null
+ */
+export function pickLatestReviewDate(values) {
+  if (!Array.isArray(values)) return null;
+
+  let latest = null;
+  for (const value of values) {
+    // formatEditorialReviewMonth() ist hier reiner Gültigkeitstest: Es liefert
+    // nur für ein echtes Kalenderdatum einen Wert. So gilt für Einzel- und
+    // Sammelangabe dieselbe Prüfregel.
+    if (!formatEditorialReviewMonth(value)) continue;
+
+    const datePart = value instanceof Date
+      ? value.toISOString().slice(0, 10)
+      : String(value).trim().slice(0, 10);
+
+    if (latest === null || datePart > latest) latest = datePart;
+  }
+
+  return latest;
+}
+
+/**
  * Baut den vollständigen redaktionellen Hinweistext.
  *
  * Der allgemeine Orientierungssatz steht immer. Der Prüfsatz kommt nur dazu,

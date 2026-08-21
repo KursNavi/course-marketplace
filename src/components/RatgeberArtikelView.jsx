@@ -6,6 +6,7 @@ import { RATGEBER_CONTENT } from '../lib/ratgeberContent';
 import { enhanceImages, buildArticleJsonLd, buildBreadcrumbJsonLd } from '../lib/seoUtils';
 import { BASE_URL } from '../lib/siteConfig';
 import { shouldHandleClientNavigation } from '../lib/navigation';
+import { buildEditorialReviewNotice } from '../lib/editorialReviewDate';
 
 /**
  * RatgeberArtikelView
@@ -76,10 +77,10 @@ const RatgeberArtikelView = ({ lang = 'de' }) => {
     // Article JSON-LD
     // Ohne datePublished/dateModified: die Ratgeber-Datenquellen
     // (ratgeberStructure.js / ratgeberContent.js) führen kein Publikations- oder
-    // Änderungsdatum pro Artikel. Der sichtbare Hinweis «Zuletzt redaktionell
-    // geprüft: März 2026» ist ein fest im JSX stehender Fliesstext, kein
-    // gepflegtes Tagesdatum — daraus liesse sich nur ein geratener Wert bilden.
-    // buildArticleJsonLd lässt die Felder deshalb weg.
+    // Änderungsdatum pro Artikel. Aus demselben Grund zeigt der sichtbare
+    // Hinweis unten kein Prüfdatum: buildEditorialReviewNotice(null) gibt nur
+    // den Orientierungssatz aus. Sichtbarer Text und Schema behaupten damit
+    // beide nichts, was nicht in den Daten steht.
     const articleSchema = buildArticleJsonLd({
       title: articleData.title[lang] || articleData.title.de,
       description: metaDesc,
@@ -352,7 +353,7 @@ const RatgeberArtikelView = ({ lang = 'de' }) => {
         </div>
 
         <div className="mt-6 text-center text-sm text-gray-500">
-          <p>Zuletzt redaktionell geprüft: März 2026. Die Inhalte dienen der Orientierung; maßgeblich sind im Zweifel die Angaben der jeweiligen Anbieter und offiziellen Stellen.</p>
+          <p>{buildEditorialReviewNotice(null)}</p>
           <p className="mt-2">
             Wenn dir in diesem Beitrag ein Fehler oder eine veraltete Information auffällt, gib uns gern kurz Bescheid.{' '}
             <a
