@@ -117,7 +117,14 @@ test.describe('Course Termine (app-e2e)', () => {
     const formStillOpen = await page.locator('h1').filter({ hasText: 'Kurs erstellen' })
       .isVisible().catch(() => false);
     if (formStillOpen) {
-      test.skip(true, 'Kurs-Erstellung fehlgeschlagen — Test-DB-Schema prüfen (siehe course-creation.spec.mjs)');
+      // Surface the in-app notification so the CI log says WHY the save failed.
+      const notice = await page.evaluate(() => {
+        const hit = [...document.querySelectorAll('div,p,span')]
+          .map(n => n.textContent?.trim() || '')
+          .find(text => text && text.length < 300 && /Fehler|fehlgeschlagen|Termin/i.test(text));
+        return hit || '(keine Meldung gefunden)';
+      });
+      throw new Error(`Kurs-Erstellung fehlgeschlagen. App-Meldung: ${notice}`);
     }
 
     await expect(page.getByText(courseTitle).first()).toBeVisible({ timeout: 20_000 });
