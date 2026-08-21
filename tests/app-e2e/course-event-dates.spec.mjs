@@ -109,9 +109,10 @@ test.describe('Course Termine (app-e2e)', () => {
     // the instant the still-open form is seen and the test would skip itself.
     await page.waitForTimeout(3_000);
 
-    if (alerts.length > 0) {
-      test.skip(true, `Form validation blocked the save: ${alerts[0]}`);
-    }
+    // A validation dialog here means the Termine did not make it into the state —
+    // exactly the regression under test. Fail loudly with the message instead of
+    // skipping, otherwise the test silently stops guarding anything.
+    expect(alerts, `unexpected validation dialog(s): ${alerts.join(' | ')}`).toEqual([]);
 
     const formStillOpen = await page.locator('h1').filter({ hasText: 'Kurs erstellen' })
       .isVisible().catch(() => false);
