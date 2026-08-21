@@ -1,12 +1,13 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { ArrowLeft, ChevronRight, BookOpen, Clock, Share2 } from 'lucide-react';
 import { findArticle, RATGEBER_STRUCTURE } from '../lib/ratgeberStructure';
 import { SEGMENT_CONFIG } from '../lib/constants';
 import { RATGEBER_CONTENT } from '../lib/ratgeberContent';
-import { enhanceImages, buildArticleJsonLd, buildBreadcrumbJsonLd } from '../lib/seoUtils';
+import { enhanceImages, wrapTables, buildArticleJsonLd, buildBreadcrumbJsonLd } from '../lib/seoUtils';
 import { BASE_URL } from '../lib/siteConfig';
 import { shouldHandleClientNavigation } from '../lib/navigation';
 import { buildEditorialReviewNotice } from '../lib/editorialReviewDate';
+import { enhanceTableScrollContainers } from '../lib/tableScroll';
 
 /**
  * RatgeberArtikelView
@@ -24,6 +25,8 @@ const RatgeberArtikelView = ({ lang = 'de' }) => {
 
   // Find article data
   const articleData = findArticle(categorySlug, clusterSlug, articleSlug);
+
+  const articleRef = useRef(null);
 
   // SEO — must be called before any conditional returns (React rules of hooks)
   useEffect(() => {
@@ -112,6 +115,11 @@ const RatgeberArtikelView = ({ lang = 'de' }) => {
       if (breadcrumbScript.parentNode) breadcrumbScript.remove();
     };
   }, [articleData, categorySlug, clusterSlug, articleSlug, lang]);
+
+  // Breite Tabellen im Artikelinhalt als Scrollbereich kenntlich und mit der
+  // Tastatur bedienbar machen. Muss vor dem frühen Return unten stehen
+  // (React-Regeln für Hooks).
+  useEffect(() => enhanceTableScrollContainers(articleRef.current), [articleData]);
 
   if (!articleData) {
     return (
@@ -287,8 +295,9 @@ const RatgeberArtikelView = ({ lang = 'de' }) => {
           {hasContent ? (
             // Render actual content (HTML from ratgeberContent.js)
             <div
+              ref={articleRef}
               className="prose-ratgeber"
-              dangerouslySetInnerHTML={{ __html: enhanceImages(articleContent) }}
+              dangerouslySetInnerHTML={{ __html: wrapTables(enhanceImages(articleContent)) }}
             />
           ) : (
             // Placeholder for articles without content

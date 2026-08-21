@@ -4,6 +4,7 @@ import { BEREICH_LANDING_CONFIG, getBereichBySlug, getBereichUrl, findSzenario }
 import { SZENARIO_CONTENT } from '../lib/szenarioContent';
 import { SEGMENT_CONFIG } from '../lib/constants';
 import { enhanceImages, wrapTables, estimateReadingTime, buildArticleJsonLd, buildBreadcrumbJsonLd } from '../lib/seoUtils';
+import { enhanceTableScrollContainers } from '../lib/tableScroll';
 import { BASE_URL } from '../lib/siteConfig';
 import { shouldHandleClientNavigation } from '../lib/navigation';
 import { loadThemeWorldWithFallback, isThemeWorldPilotActive, isThemeWorldDbEnabled } from '../lib/themeWorldFeatureFlag';
@@ -320,6 +321,10 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
     });
     return () => btns.forEach(b => b.remove());
   }, [articleContent, scenario, lang, goToSearch]);
+
+  // Breite Tabellen im Artikelinhalt als Scrollbereich kenntlich und mit der
+  // Tastatur bedienbar machen.
+  useEffect(() => enhanceTableScrollContainers(articleRef.current), [articleContent]);
 
   // DB-only Ladeindikator — verhindert vorzeitigen 404 während DB-Abfrage läuft
   if (dbOnlyLoading) {
