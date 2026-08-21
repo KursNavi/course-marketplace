@@ -324,7 +324,16 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
 
   // Breite Tabellen im Artikelinhalt als Scrollbereich kenntlich und mit der
   // Tastatur bedienbar machen.
-  useEffect(() => enhanceTableScrollContainers(articleRef.current), [articleContent]);
+  //
+  // dbOnlyLoading, scenario und dynamicNotFound gehören zwingend in die
+  // Abhängigkeiten: Solange einer der frühen Returns unten greift, ist
+  // articleRef.current noch null. Bei Legacy-Artikeln ändert sich
+  // articleContent danach nicht mehr — ohne diese Werte liefe der Effekt also
+  // genau einmal ins Leere und die Tabelle bliebe unmarkiert.
+  useEffect(
+    () => enhanceTableScrollContainers(articleRef.current),
+    [articleContent, scenario, dbOnlyLoading, dynamicNotFound],
+  );
 
   // DB-only Ladeindikator — verhindert vorzeitigen 404 während DB-Abfrage läuft
   if (dbOnlyLoading) {
