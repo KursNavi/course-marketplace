@@ -1,13 +1,13 @@
 /**
- * Phase 8.8 Tests: Sicheres Plain-Text-Einfügen im AdminRichTextEditor
+ * Phase 8.8 Tests: Sicheres Clipboard-Einfügen im AdminRichTextEditor
  *
- * Prüft den neuen DOM-basierten Paste-Pfad (insertPlainTextAtCaret).
- * Der globale execCommand-Mock bleibt aktiv — er beeinflusst die Paste-Logik
- * NICHT, da der neue Pfad kein insertHTML/execCommand mehr verwendet.
+ * Prüft den DOM-basierten Paste-Pfad (HTML mit sicherem Fallback auf Plain Text).
+ * Der globale execCommand-Mock bleibt aktiv — der Paste-Pfad verwendet kein
+ * insertHTML/execCommand.
  *
  * Getestete Szenarien:
  *   1. Literale Bold-Tags → kein <b>-Element
- *   2. text/plain bevorzugt gegenüber text/html
+ *   2. Strukturierter HTML-Inhalt bleibt erhalten
  *   3. <script>-Text → kein script-Element
  *   4. <img onerror>-Text → kein img-Element
  *   5. javascript:-Link als Text → kein a-Element
@@ -24,7 +24,7 @@ import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import AdminRichTextEditor from '../src/components/admin/AdminRichTextEditor';
-import { insertPlainTextAtCaret } from '../src/components/admin/richTextPasteUtils';
+import { insertHtmlAtCaret, insertPlainTextAtCaret, sanitizePastedHtml } from '../src/components/admin/richTextPasteUtils';
 
 // ---------------------------------------------------------------------------
 // Mock-Setup
@@ -126,15 +126,13 @@ describe('Phase 8.8 – Safe Paste: HTML-Elemente werden nicht erzeugt', () => {
     expect(fragment.textContent).toContain('Paste-Test');
   });
 
-  it('2. text/plain wird bevorzugt — text/html ignoriert', () => {
-    const plain = 'Dieser Text ist normal';
-    const html = '<b>Dieser Text ist fett</b>';
-    const { fragment } = setupPasteTest(plain, html);
+  it('2. Strukturierter HTML-Inhalt wird übernommen, wenn vorhanden', () => {
+    const html = '<h2>Überschrift</h2><ul><li><strong>Fett</strong></li></ul>';
+    const { fragment } = setupPasteTest('', html);
 
     expect(fragment).not.toBeNull();
-    expect(fragment.querySelector('b')).toBeNull();
-    expect(fragment.querySelector('strong')).toBeNull();
-    expect(fragment.textContent).toBe('Dieser Text ist normal');
+    expect(fragment.querySelector('h2')?.textContent).toBe('Überschrift');
+    expect(fragment.querySelector('ul li strong')?.textContent).toBe('Fett');
   });
 
   it('3. <script>-Text: kein script-Element, kein Code ausgeführt', () => {
@@ -163,6 +161,33 @@ describe('Phase 8.8 – Safe Paste: HTML-Elemente werden nicht erzeugt', () => {
     expect(fragment).not.toBeNull();
     expect(fragment.querySelector('a')).toBeNull();
     expect(fragment.textContent).toContain('<a href=');
+  });
+
+  it('5b. Unsichere HTML-Struktur wird entfernt, sichere CTA-Klasse bleibt', () => {
+    const html = '<div class="cta-box" onclick="alert(1)"><h3>Weiter</h3><a href="javascript:alert(1)">Link</a><script>alert(1)</script></div>';
+    const { fragment } = setupPasteTest('', html);
+
+    expect(fragment.querySelector('.cta-box')).not.toBeNull();
+    expect(fragment.querySelector('h3')?.textContent).toBe('Weiter');
+    expect(fragment.querySelector('script')).toBeNull();
+    expect(fragment.querySelector('a')).toBeNull();
+    expect(fragment.querySelector('[onclick]')).toBeNull();
+  });
+
+  it('5c. Sichere Links bleiben aktiv, externe Links erhalten Schutz-Rel', () => {
+    const { fragment } = setupPasteTest('', '<p><a href="https://example.org" target="_blank">Quelle</a></p>');
+
+    const link = fragment.querySelector('a');
+    expect(link?.getAttribute('href')).toBe('https://example.org');
+    expect(link?.getAttribute('target')).toBe('_blank');
+    expect(link?.getAttribute('rel')).toBe('noopener noreferrer');
+  });
+
+  it('5d. Browser-Styles für Fett und Kursiv werden semantisch übernommen', () => {
+    const { fragment } = setupPasteTest('', '<p><span style="font-weight: 700; font-style: italic">Format</span></p>');
+
+    expect(fragment.querySelector('strong em')?.textContent).toBe('Format');
+    expect(fragment.querySelector('[style]')).toBeNull();
   });
 
 });
@@ -273,7 +298,7 @@ describe('Phase 8.8 – Safe Paste: Auswahl und Cursor', () => {
   });
 
   it('execCommand insertHTML wird beim Paste NICHT aufgerufen', () => {
-    setupPasteTest('Paste-Test <b>bold</b>');
+    setupPasteTest('', '<p>Paste-Test <strong>bold</strong></p>');
 
     // Der neue Pfad umgeht execCommand vollständig
     const insertHTMLCalls = document.execCommand.mock.calls.filter(
@@ -350,4 +375,26 @@ describe('Phase 8.8 – insertPlainTextAtCaret: direkter Export', () => {
     expect(range.deleteContents).toHaveBeenCalled();
   });
 
+});
+
+describe('Phase 8.8 – HTML-Paste: direkter Export', () => {
+  it('sanitizePastedHtml liefert ein bereinigtes DocumentFragment', () => {
+    const fragment = sanitizePastedHtml('<h2>Titel</h2><script>alert(1)</script><a href="//evil.example">Unsicher</a>');
+
+    expect(fragment.querySelector('h2')?.textContent).toBe('Titel');
+    expect(fragment.querySelector('script')).toBeNull();
+    expect(fragment.querySelector('a')).toBeNull();
+  });
+
+  it('insertHtmlAtCaret ersetzt die Auswahl und setzt den Cursor zurück', () => {
+    const host = document.createElement('div');
+    const range = createMockRange(host);
+    const sel = mockSelectionWithRange(range);
+
+    expect(insertHtmlAtCaret('<p>HTML-Inhalt</p>')).toBe(true);
+    expect(range.deleteContents).toHaveBeenCalledOnce();
+    expect(range.collapse).toHaveBeenCalledWith(false);
+    expect(sel.addRange).toHaveBeenCalledWith(range);
+    expect(host.innerHTML).toContain('<p>HTML-Inhalt</p>');
+  });
 });

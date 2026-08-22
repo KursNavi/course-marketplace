@@ -1,9 +1,11 @@
 /**
- * Hilfsfunktionen für sicheres Plain-Text-Einfügen im AdminRichTextEditor.
+ * Hilfsfunktionen für sicheres Einfügen im AdminRichTextEditor.
  *
  * Separat aus AdminRichTextEditor.jsx ausgelagert um den
  * react-refresh/only-export-components ESLint-Regel zu erfüllen.
  */
+
+import { normalizeInlineFormatting } from './richTextFormatting';
 
 /**
  * Fügt reinen Text sicher über Selection/Range in das aktive contentEditable ein.
@@ -43,4 +45,178 @@ export function insertPlainTextAtCaret(text) {
   range.collapse(false);
   sel.removeAllRanges();
   sel.addRange(range);
+}
+
+// Diese Liste ist absichtlich kleiner als der vollständige HTML-Sanitizer der
+// API. Beim Einfügen aus Word, Google Docs oder einer Webseite sollen nur
+// redaktionell sinnvolle Strukturen in den Editor gelangen.
+const PASTED_HTML_TAGS = new Set([
+  'P', 'DIV', 'SECTION', 'ARTICLE', 'H2', 'H3', 'H4',
+  'UL', 'OL', 'LI', 'TABLE', 'THEAD', 'TBODY', 'TFOOT', 'TR', 'TH', 'TD',
+  'STRONG', 'B', 'EM', 'I', 'U', 'S', 'MARK', 'CODE', 'ABBR',
+  'BLOCKQUOTE', 'PRE', 'FIGURE', 'FIGCAPTION', 'A', 'HR', 'BR', 'SPAN', 'IMG',
+]);
+
+const PASTED_HTML_CLASSES = new Set([
+  'lead', 'info-box', 'tip-box', 'warning-box', 'checklist', 'cta-box',
+]);
+
+const GLOBAL_ATTRIBUTES = new Set(['class', 'id', 'title']);
+const LINK_ATTRIBUTES = new Set(['href', 'target', 'rel']);
+const IMAGE_ATTRIBUTES = new Set(['src', 'alt', 'title', 'width', 'height', 'loading']);
+const CELL_ATTRIBUTES = new Set(['colspan', 'rowspan']);
+const ORDERED_LIST_ATTRIBUTES = new Set(['start', 'type']);
+const DROP_CONTENT_TAGS = new Set(['SCRIPT', 'STYLE', 'NOSCRIPT', 'IFRAME', 'OBJECT', 'EMBED', 'SVG', 'MATH']);
+
+function isSafePastedHref(value) {
+  const href = String(value || '').trim();
+  if (!href) return false;
+  if (href.startsWith('//')) return false;
+  if (href.startsWith('/') || href.startsWith('#')) return true;
+  try {
+    const parsed = new URL(href, window.location.href);
+    return ['http:', 'https:', 'mailto:'].includes(parsed.protocol);
+  } catch (_) {
+    return false;
+  }
+}
+
+function isSafePastedImageSrc(value) {
+  const src = String(value || '').trim();
+  if (!src) return false;
+  try {
+    const parsed = new URL(src, window.location.href);
+    return parsed.protocol === 'https:';
+  } catch (_) {
+    return false;
+  }
+}
+
+function copyPastedChildren(source, target) {
+  Array.from(source.childNodes).forEach((child) => {
+    appendSanitizedPastedNode(child, target);
+  });
+}
+
+function appendSanitizedPastedNode(node, target) {
+  if (node.nodeType === Node.TEXT_NODE) {
+    target.appendChild(document.createTextNode(node.nodeValue || ''));
+    return;
+  }
+  if (node.nodeType !== Node.ELEMENT_NODE) return;
+
+  const source = /** @type {HTMLElement} */ (node);
+  const tag = source.tagName.toUpperCase();
+  if (DROP_CONTENT_TAGS.has(tag)) return;
+
+  // Unbekannte Formatierungs-Tags werden entkleidet, nicht als HTML-Struktur
+  // übernommen. Der Text bleibt damit erhalten, ohne neue Markup-Flächen zu
+  // öffnen.
+  if (!PASTED_HTML_TAGS.has(tag)) {
+    copyPastedChildren(source, target);
+    return;
+  }
+
+  if (tag === 'IMG' && !isSafePastedImageSrc(source.getAttribute('src'))) return;
+
+  if (tag === 'A' && !isSafePastedHref(source.getAttribute('href'))) {
+    copyPastedChildren(source, target);
+    return;
+  }
+
+  const clean = document.createElement(tag.toLowerCase());
+  Array.from(source.attributes).forEach((attribute) => {
+    const name = attribute.name.toLowerCase();
+    const value = attribute.value;
+    if (name.startsWith('on') || name === 'style' || name.startsWith('data-')) return;
+
+    if (GLOBAL_ATTRIBUTES.has(name)) {
+      if (name === 'class') {
+        const classes = value.split(/\s+/).filter((className) => PASTED_HTML_CLASSES.has(className));
+        if (classes.length > 0) clean.setAttribute('class', classes.join(' '));
+      } else if (name === 'id' && /^[A-Za-z][A-Za-z0-9_:-]*$/.test(value)) {
+        clean.setAttribute(name, value);
+      } else if (name === 'title') {
+        clean.setAttribute(name, value);
+      }
+      return;
+    }
+
+    if (tag === 'A' && LINK_ATTRIBUTES.has(name)) {
+      if (name === 'href' && isSafePastedHref(value)) clean.setAttribute(name, value);
+      if (name === 'target' && value === '_blank') clean.setAttribute(name, value);
+      if (name === 'rel') clean.setAttribute(name, 'noopener noreferrer');
+      return;
+    }
+
+    if (tag === 'IMG' && IMAGE_ATTRIBUTES.has(name)) {
+      if (name === 'src' && isSafePastedImageSrc(value)) clean.setAttribute(name, value);
+      if (name !== 'src') clean.setAttribute(name, value);
+      return;
+    }
+
+    if ((tag === 'TD' || tag === 'TH') && CELL_ATTRIBUTES.has(name)) {
+      if (/^\d+$/.test(value)) clean.setAttribute(name, value);
+      return;
+    }
+
+    if (tag === 'OL' && ORDERED_LIST_ATTRIBUTES.has(name)) {
+      if (name === 'start' && /^-?\d+$/.test(value)) clean.setAttribute(name, value);
+      if (name === 'type' && /^[1AaIi]$/.test(value)) clean.setAttribute(name, value);
+    }
+  });
+
+  // Der API-Sanitizer behandelt externe Links ebenfalls als neue Fenster und
+  // versieht sie mit dem üblichen Schutz-Rel. Schon beim Einfügen soll die
+  // Vorschau deshalb dasselbe Verhalten zeigen.
+  if (tag === 'A') {
+    const href = clean.getAttribute('href') || '';
+    if (href && !href.startsWith('/') && !href.startsWith('#')) {
+      clean.setAttribute('target', '_blank');
+      clean.setAttribute('rel', 'noopener noreferrer');
+    }
+  }
+
+  copyPastedChildren(source, clean);
+  target.appendChild(clean);
+}
+
+/**
+ * Bereitet HTML aus der Zwischenablage als vertrauenswürdiges DocumentFragment
+ * vor. Das Fragment bleibt bis zum Einfügen vom sichtbaren Editor getrennt.
+ *
+ * @param {string} html — HTML aus clipboardData.getData('text/html')
+ * @returns {DocumentFragment}
+ */
+export function sanitizePastedHtml(html) {
+  const fragment = document.createDocumentFragment();
+  if (!String(html || '').trim()) return fragment;
+
+  const template = document.createElement('template');
+  // Browser-Editoren verwenden für Fett/Kursiv teilweise span[style]. Die
+  // bestehende Normalisierung überführt genau diese Fälle zuerst in strong/em;
+  // alle übrigen Style-Attribute werden darunter weiterhin verworfen.
+  template.innerHTML = normalizeInlineFormatting(String(html));
+  copyPastedChildren(template.content, fragment);
+  return fragment;
+}
+
+/**
+ * Fügt bereinigtes HTML an der aktuellen Selection ein.
+ * @returns {boolean} true, wenn sichtbare Struktur eingefügt wurde
+ */
+export function insertHtmlAtCaret(html) {
+  const sel = window.getSelection();
+  if (!sel || sel.rangeCount === 0) return false;
+
+  const fragment = sanitizePastedHtml(html);
+  if (fragment.childNodes.length === 0) return false;
+
+  const range = sel.getRangeAt(0);
+  range.deleteContents();
+  range.insertNode(fragment);
+  range.collapse(false);
+  sel.removeAllRanges();
+  sel.addRange(range);
+  return true;
 }
