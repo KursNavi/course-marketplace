@@ -83,6 +83,12 @@ async function pruefeDarstellung(page, url) {
   const zustaende = [];
   for (let i = 0; i < ABTASTUNGEN; i += 1) {
     const zustand = await page.evaluate(() => {
+      // Diese Funktion wird von Playwright in die Seite hinein ausgeführt, also
+      // im Browser — nicht in Node. `document` stammt deshalb aus dem globalen
+      // Objekt der Seite. Das explizit zu holen hält die Herkunft sichtbar und
+      // kommt ohne abgeschaltete Lint-Regel aus.
+      const { document } = globalThis;
+
       const el = document.querySelector('.prose-ratgeber');
       const laden = document.querySelector('[role="status"][aria-busy="true"]');
       if (laden) return { art: 'laden' };
