@@ -16,6 +16,7 @@
 
 import { normalizeDeliveryTypeKey } from './courseMetadata';
 import { toDisplaySources } from './scenarioSources';
+import { pickLatestReviewDate } from './editorialReviewDate';
 
 // ---------------------------------------------------------------------------
 // Konstanten
@@ -434,6 +435,13 @@ export function adaptToLegacyBereichConfig({
     metaTitle: themeWorld.meta_title || null,
     metaDescription: themeWorld.meta_description || null,
 
+    // Redaktionelles Prüfdatum der Landingpage.
+    // theme_worlds hat keine eigene Spalte last_reviewed_at — die Landingpage
+    // übernimmt deshalb das jüngste Prüfdatum ihrer publizierten Artikel, statt
+    // ein eigenes Datum zu behaupten. Ohne geprüfte Artikel bleibt es null und
+    // buildEditorialReviewNotice() lässt den Prüfsatz weg.
+    lastReviewedAt: pickLatestReviewDate(scenarios.map((s) => s.last_reviewed_at)),
+
     // Szenario-Karten im Legacy-Format
     scenarios: scenarios.map((s, i) => ({
       slug: s.slug,
@@ -445,6 +453,7 @@ export function adaptToLegacyBereichConfig({
       ctaLabel: { de: s.cta_label_de || 'Kurse entdecken' },
       searchParams: _extractSearchParams(s.cta_config, searchConfig),
       sortOrder: s.sort_order || i + 1,
+      lastReviewedAt: s.last_reviewed_at || null,
     })),
 
     // Specialties: Array → gekeyertes Objekt { label: { de, icon } }

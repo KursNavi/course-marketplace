@@ -14,6 +14,7 @@ import { getNormalizedDeliveryTypes } from '../lib/courseMetadata';
 import { fetchPublishedThemeWorldAreaLabels } from '../lib/themeWorldService';
 import { trackSearch } from '../lib/analytics';
 import { getSearchHeader } from '../lib/searchHeaderConfig';
+import { sortCoursesByRelevance, stableSeed } from '../lib/searchRelevance';
 
 import { DEFAULT_COURSE_IMAGE } from '../lib/imageUtils';
 const fallbackImage = DEFAULT_COURSE_IMAGE;
@@ -564,37 +565,22 @@ const SearchPageView = ({
     // mit diesem Seed verwendet — dadurch lint-sicher (keine Seiteneffekte).
     const [sortSeed] = React.useState(() => Math.random());
     const sortedCourses = useMemo(() => {
-        const hasDate = (c) => {
-            if (c.start_date) return true;
-            if (Array.isArray(c.course_events) && c.course_events.some(ev => ev.start_date)) return true;
-            return false;
-        };
+        const trimmedQuery = (searchQuery || '').trim();
 
-        // Pre-compute one random score per course (seeded PRNG, deterministic within a session)
-        // Ranking-Logik (v5.0): Nur is_prio gibt Sichtbarkeits-Bonus (1.2x).
-        // is_pro (Verifizierung) ist ein Vertrauenssignal, kein Ranking-Faktor.
-        // plan_factor wird nicht mehr genutzt: höhere Pakete erlauben mehr hervorgehobene
-        // Kurse, aber jeder hervorgehobene Kurs bekommt denselben Bonus.
-        const scoreMap = new Map();
-        filteredCourses.forEach((c, i) => {
-            const planF = c.is_prio ? 1.2 : 1.0;
-            const bookF = c.booking_factor || 1.0;
-            // Seeded pseudo-random: varies per page load (sortSeed) and per course (i)
-            const hash = Math.sin(sortSeed * 10000 + i + 1) * 10000;
-            const randomJitter = (hash - Math.floor(hash)) * 0.15;
-            scoreMap.set(c.id, planF * bookF + randomJitter);
-        });
+        // Bei aktiver Sucheingabe ersetzt ein aus der Eingabe abgeleiteter Seed den
+        // Zufalls-Seed. Die Streuung gleichrangiger Kurse bleibt erhalten, dieselbe
+        // Suche liefert aber reproduzierbar dieselbe Reihenfolge. Ohne Eingabe
+        // (reines Stöbern) bleibt die bisherige Rotation pro Seitenaufruf bestehen.
+        const effectiveSeed = trimmedQuery ? stableSeed(trimmedQuery) : sortSeed;
 
-        return [...filteredCourses].sort((a, b) => {
-            if (filterDateFrom || filterDateTo) {
-                const aHasDate = hasDate(a);
-                const bHasDate = hasDate(b);
-                if (aHasDate && !bHasDate) return -1;
-                if (!aHasDate && bHasDate) return 1;
-            }
-            return scoreMap.get(b.id) - scoreMap.get(a.id);
+        // Sortiert ausschliesslich um — filtert nichts. filteredCourses und damit
+        // die angezeigte Trefferanzahl bleiben unberührt.
+        return sortCoursesByRelevance(filteredCourses, {
+            query: trimmedQuery,
+            seed: effectiveSeed,
+            preferDated: Boolean(filterDateFrom || filterDateTo),
         });
-    }, [filteredCourses, filterDateFrom, filterDateTo, sortSeed]);
+    }, [filteredCourses, filterDateFrom, filterDateTo, sortSeed, searchQuery]);
 
     // Get segment config for banner
     const getActiveSegmentConfig = () => {
@@ -968,7 +954,7 @@ const SearchPageView = ({
                         {/* Search query chip */}
                         {searchQuery && (
                             <span onClick={() => setSearchQuery('')} className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-gray-200 flex items-center">
-                                <Search className="w-3 h-3 mr-1" />„{searchQuery}" <X className="w-3 h-3 ml-1 opacity-50" />
+                                <Search className="w-3 h-3 mr-1" />«{searchQuery}» <X className="w-3 h-3 ml-1 opacity-50" />
                             </span>
                         )}
                         {selectedLanguages.map((lang, i) => (

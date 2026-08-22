@@ -564,18 +564,22 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
             </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2 space-y-8">
-                <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-                        <h1 className="text-3xl font-bold font-heading text-dark">{course.title}</h1>
-                        {course.is_pro && (
-                            <span className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-xs font-bold flex items-center self-start md:self-auto border border-blue-100">
-                                <CheckCircle className="w-3 h-3 mr-1" /> {t.lbl_professional_filter || 'Verifiziert'}
-                            </span>
-                        )}
-                    </div>
+        {/* Mobile-Reihenfolge (order-*): Titel, dann Bild/Preis/Buchung, dann Beschreibung.
+            Ab lg setzen col-start/row-start das gewohnte Desktop-Layout wieder her. */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 lg:grid-rows-[auto_1fr] gap-8">
+            {/* Kurstitel als eigenes Grid-Element: auf Mobile steht er dadurch vor Bild und
+                Preisbox, auf Desktop bleibt er an gewohnter Stelle oben in der linken Spalte. */}
+            <div className="order-1 lg:order-none lg:col-span-2 lg:col-start-1 lg:row-start-1 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <h1 className="text-3xl font-bold font-heading text-dark break-words hyphens-auto">{course.title}</h1>
+                {course.is_pro && (
+                    <span className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-xs font-bold flex items-center self-start md:self-auto shrink-0 border border-blue-100">
+                        <CheckCircle className="w-3 h-3 mr-1" /> {t.lbl_professional_filter || 'Verifiziert'}
+                    </span>
+                )}
+            </div>
 
+            <div className="order-3 lg:order-none lg:col-span-2 lg:col-start-1 lg:row-start-2 space-y-8">
+                <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
                     <div className="prose max-w-none text-gray-600 custom-rich-text">
                         <h3 className="text-xl font-bold text-dark mb-4">{t.lbl_description}</h3>
                         {renderDescription(course.description)}
@@ -602,7 +606,7 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
                 </div>
             </div>
 
-            <div className="lg:col-span-1 space-y-6 order-first lg:order-none">
+            <div className="order-2 lg:order-none lg:col-span-1 lg:col-start-3 lg:row-start-1 lg:row-span-2 space-y-6">
                 <div className="w-full aspect-video bg-gray-100 rounded-2xl overflow-hidden shadow-lg relative group">
                     <img
                         src={course.image_url || fallbackImage}
@@ -1139,7 +1143,7 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
 
                     <h3 id="save-prompt-title" className="text-xl font-bold mb-2 font-heading">Kurs merken?</h3>
                     <p className="text-sm text-gray-600">
-                        Möchtest du <span className="font-bold">„{course.title}“</span> in deine Merkliste aufnehmen?
+                        Möchtest du <span className="font-bold">«{course.title}»</span> in deine Merkliste aufnehmen?
                     </p>
 
                     <div className="mt-6 flex flex-col sm:flex-row gap-3">

@@ -12,6 +12,7 @@ import { loadThemeWorldWithFallback, isThemeWorldPilotActive, isThemeWorldDbEnab
 import { fetchThemeWorldPage } from '../lib/themeWorldService';
 import { adaptToLegacyBereichConfig } from '../lib/themeWorldAdapter';
 import { normalizeDeliveryTypeKey } from '../lib/courseMetadata';
+import { buildEditorialReviewNotice } from '../lib/editorialReviewDate';
 
 export default function BereichLandingPage({ segment, slug, courses, lang = 'de', t }) {
   // Legacy-Config (immer geladen als Basiswert + Fallback)
@@ -480,7 +481,7 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
             ))}
           </div>
           <div className="text-center text-sm text-gray-500 mt-6">
-            <p>Zuletzt redaktionell geprüft: März 2026. Die Inhalte dienen der Orientierung; maßgeblich sind im Zweifel die Angaben der jeweiligen Anbieter und offiziellen Stellen.</p>
+            <p>{buildEditorialReviewNotice(config.lastReviewedAt)}</p>
             <p className="mt-2">
               Ist dir in einer Themenwelt ein Fehler oder eine veraltete Information aufgefallen? Gib uns gern kurz Bescheid.{' '}
               <a

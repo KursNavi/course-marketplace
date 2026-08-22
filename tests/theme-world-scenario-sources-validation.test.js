@@ -40,6 +40,7 @@ import {
 import {
   buildEditorialReviewNotice,
   formatEditorialReviewMonth,
+  pickLatestReviewDate,
 } from '../src/lib/editorialReviewDate.js';
 
 // ---------------------------------------------------------------------------
@@ -515,6 +516,50 @@ describe('Redaktionelles Prüfdatum — Formatierung', () => {
       expect(notice).toContain('massgeblich');
       expect(notice).not.toContain('maßgeblich');
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+
+describe('Redaktionelles Prüfdatum — jüngstes Datum einer Themenwelt', () => {
+  it('wählt aus mehreren Prüfdaten das jüngste', () => {
+    expect(pickLatestReviewDate(['2026-03-14', '2026-08-15', '2025-12-31']))
+      .toBe('2026-08-15');
+  });
+
+  it('vergleicht über Monats- und Jahresgrenzen korrekt', () => {
+    expect(pickLatestReviewDate(['2026-09-01', '2026-10-01'])).toBe('2026-10-01');
+    expect(pickLatestReviewDate(['2025-12-31', '2026-01-01'])).toBe('2026-01-01');
+  });
+
+  it('ignoriert fehlende und unechte Werte, statt sie zu raten', () => {
+    expect(pickLatestReviewDate([null, '2026-08-15', undefined, '', 'März 2026']))
+      .toBe('2026-08-15');
+    expect(pickLatestReviewDate(['2026-02-31', '2026-13-01'])).toBeNull();
+  });
+
+  it('gibt null zurück, wenn kein einziges echtes Datum vorliegt', () => {
+    for (const value of [[], [null, null], null, undefined, 'x', {}]) {
+      expect(pickLatestReviewDate(value), String(value)).toBeNull();
+    }
+  });
+
+  it('schneidet Timestamps ab, statt in den Folgetag zu rutschen', () => {
+    expect(pickLatestReviewDate(['2026-08-31T23:30:00Z'])).toBe('2026-08-31');
+  });
+
+  it('leitet nie ein Datum aus der Systemzeit ab', () => {
+    expect(pickLatestReviewDate([])).toBeNull();
+    expect(buildEditorialReviewNotice(pickLatestReviewDate([]))).not.toMatch(/geprüft/);
+  });
+
+  it('Landingpage und jüngster Artikel ergeben denselben Hinweistext', () => {
+    // Genau der gemeldete Widerspruch: Landing zeigte März, Artikel August.
+    const artikelDaten = ['2026-08-15', '2026-08-02', '2026-03-14'];
+    const landing = buildEditorialReviewNotice(pickLatestReviewDate(artikelDaten));
+    expect(landing).toBe(buildEditorialReviewNotice('2026-08-15'));
+    expect(landing).toMatch(/August 2026/);
+    expect(landing).not.toMatch(/März 2026/);
   });
 });
 

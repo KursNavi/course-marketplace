@@ -320,6 +320,39 @@ describe('themeWorldAdapter — delivery canonicalization', () => {
     const config = adaptToLegacyBereichConfig({ themeWorld: baseTW, regions });
     expect(config.regionalDiscovery.regions[0].params.delivery).toBe('presence');
   });
+
+  // --- Redaktionelles Prüfdatum der Landingpage -------------------------
+  // theme_worlds führt keine Spalte last_reviewed_at. Die Landingpage muss ihr
+  // Prüfdatum deshalb aus den Artikeln beziehen, statt eines zu behaupten.
+
+  it('übernimmt das jüngste Prüfdatum der Artikel als Landingpage-Datum', () => {
+    const scenarios = [
+      { slug: 'a', label_de: 'A', last_reviewed_at: '2026-03-14' },
+      { slug: 'b', label_de: 'B', last_reviewed_at: '2026-08-15' },
+      { slug: 'c', label_de: 'C', last_reviewed_at: '2026-08-02' },
+    ];
+    const config = adaptToLegacyBereichConfig({ themeWorld: baseTW, scenarios });
+    expect(config.lastReviewedAt).toBe('2026-08-15');
+  });
+
+  it('behauptet ohne geprüfte Artikel kein Prüfdatum', () => {
+    const ohneDatum = adaptToLegacyBereichConfig({
+      themeWorld: baseTW,
+      scenarios: [{ slug: 'a', label_de: 'A', last_reviewed_at: null }],
+    });
+    expect(ohneDatum.lastReviewedAt).toBeNull();
+
+    const ohneArtikel = adaptToLegacyBereichConfig({ themeWorld: baseTW });
+    expect(ohneArtikel.lastReviewedAt).toBeNull();
+  });
+
+  it('reicht das Prüfdatum auch pro Szenario-Karte durch', () => {
+    const config = adaptToLegacyBereichConfig({
+      themeWorld: baseTW,
+      scenarios: [{ slug: 'a', label_de: 'A', last_reviewed_at: '2026-08-15' }],
+    });
+    expect(config.scenarios[0].lastReviewedAt).toBe('2026-08-15');
+  });
 });
 
 // ============================================================

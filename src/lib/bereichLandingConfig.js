@@ -451,7 +451,7 @@ export const BEREICH_LANDING_CONFIG = {
     ],
 
     trustLogos: [
-      { name: 'Level-Angaben prüfen', description: { de: 'Achte auf klare Einstufungen wie „Einsteiger", „All Levels" oder „Mittelstufe". Ein guter Einstieg bietet ausreichend Erklärung statt nur Tempo, Varianten für unterschiedliche Körper und die Möglichkeit, ohne Druck auszuprobieren. Das Level ist das erste, wichtigste Qualitätssignal.' } },
+      { name: 'Level-Angaben prüfen', description: { de: 'Achte auf klare Einstufungen wie «Einsteiger», «All Levels» oder «Mittelstufe». Ein guter Einstieg bietet ausreichend Erklärung statt nur Tempo, Varianten für unterschiedliche Körper und die Möglichkeit, ohne Druck auszuprobieren. Das Level ist das erste, wichtigste Qualitätssignal.' } },
       { name: 'Kursinfos vor der Buchung lesen', description: { de: 'Gute Angebote zeigen klar, was im Kurs tatsächlich gemacht wird, wie intensiv das Format ist und für wen es passt – und für wen eher nicht. Bei sensibleren Formaten wie Breathwork, Reiki oder Bodywork sollte ausserdem beschrieben sein, ob Berührung vorkommt und wie Einverständnis geregelt ist. Fehlen diese Infos, lohnt eine Nachfrage.' } },
       { name: 'Auf individuelle Anpassung achten', description: { de: 'Gute Lehrpersonen bieten Varianten an und gehen auf persönliche Grenzen ein. Bei intensiveren Formaten ist es ein Warnsignal, wenn Kontraindikationen nicht erwähnt werden, Grenzen nicht respektiert werden oder mit absoluten Heilsversprechen gearbeitet wird.' } },
     ]

@@ -179,7 +179,7 @@ export default function BlogDetail({ article, setView, courses }) {
                 </button>
                 <h1 className="text-3xl md:text-5xl font-heading font-bold mb-6 leading-tight">{article.title}</h1>
                 <div className="flex items-center justify-center space-x-6 text-stone-300 text-sm">
-                    <span className="flex items-center"><Calendar className="w-4 h-4 mr-2" /> {new Date(article.created_at).toLocaleDateString()}</span>
+                    <span className="flex items-center"><Calendar className="w-4 h-4 mr-2" /> {new Date(article.created_at).toLocaleDateString('de-CH')}</span>
                     <span className="flex items-center"><User className="w-4 h-4 mr-2" /> Redaktion</span>
                 </div>
             </div>

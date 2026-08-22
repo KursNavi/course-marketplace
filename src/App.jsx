@@ -1306,7 +1306,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
                   price,
                   payout: retainedRevenue * 0.85,
                   isPaidOut: booking.is_paid,
-                  date: new Date(booking.created_at).toLocaleDateString(),
+                  date: new Date(booking.created_at).toLocaleDateString('de-CH'),
                   bookingType: booking.booking_type,
                   deliveredAt: booking.delivered_at,
                   paidAt: booking.paid_at,
@@ -2151,17 +2151,16 @@ useEffect(() => {
       }>
 
       {/* GLOBAL LOADING STATE - Prevents White Screen on course-dependent views.
-          Only shown on 'home' and 'detail' which gate their content with !loading.
-          Static pages (AGB, Impressum, Landing, Blog, etc.) render immediately
-          and must NOT show this spinner. */}
-      {loading && (view === 'home' || view === 'detail') && (
+          Show spinner only for 'detail' view. For 'home' we render the Home component immediately and let it
+          display a local skeleton so the layout (nav/footer) remains visible without a blank main area. */}
+      {loading && view === 'detail' && (
           <div className="flex items-center justify-center min-h-[60vh]">
               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
           </div>
       )}
 
-      {!loading && view === 'home' && (
-                     <Home lang={lang} t={t} courses={publishedCourses} setView={setView} setSearchType={setSearchType} setSearchArea={setSearchArea} setSearchSpecialty={setSearchSpecialty} setSearchFocus={setSearchFocus} setSelectedCatPath={setSelectedCatPath} searchQuery={searchQuery} setSearchQuery={setSearchQuery} catMenuOpen={catMenuOpen} setCatMenuOpen={setCatMenuOpen} catMenuRef={catMenuRef} selectedLocations={selectedLocations} setSelectedLocations={setSelectedLocations} locMenuOpen={locMenuOpen} setLocMenuOpen={setLocMenuOpen} locMenuRef={locMenuRef} getCatLabel={getCatLabel} filterPro={filterPro} setFilterPro={setFilterPro} filterDirectBooking={filterDirectBooking} setFilterDirectBooking={setFilterDirectBooking} selectedDeliveryTypes={selectedDeliveryTypes} setSelectedDeliveryTypes={setSelectedDeliveryTypes} deliveryMenuOpen={deliveryMenuOpen} setDeliveryMenuOpen={setDeliveryMenuOpen} deliveryMenuRef={deliveryMenuRef} />
+      {view === 'home' && (
+                    <Home lang={lang} t={t} courses={publishedCourses} setView={setView} setSearchType={setSearchType} setSearchArea={setSearchArea} setSearchSpecialty={setSearchSpecialty} setSearchFocus={setSearchFocus} setSelectedCatPath={setSelectedCatPath} searchQuery={searchQuery} setSearchQuery={setSearchQuery} catMenuOpen={catMenuOpen} setCatMenuOpen={setCatMenuOpen} catMenuRef={catMenuRef} selectedLocations={selectedLocations} setSelectedLocations={setSelectedLocations} locMenuOpen={locMenuOpen} setLocMenuOpen={setLocMenuOpen} locMenuRef={locMenuRef} getCatLabel={getCatLabel} filterPro={filterPro} setFilterPro={setFilterPro} filterDirectBooking={filterDirectBooking} setFilterDirectBooking={setFilterDirectBooking} selectedDeliveryTypes={selectedDeliveryTypes} setSelectedDeliveryTypes={setSelectedDeliveryTypes} deliveryMenuOpen={deliveryMenuOpen} setDeliveryMenuOpen={setDeliveryMenuOpen} deliveryMenuRef={deliveryMenuRef} isLoading={loading} />
             )}
             
          {view === 'landing-private' && ( <LandingView title={t.landing_priv_title} subtitle={t.landing_priv_sub} variant="private" searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearchSubmit={handleSearchSubmit} setView={setView} setSearchType={setSearchType} t={t} /> )}
