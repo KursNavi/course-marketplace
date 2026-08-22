@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Save, Loader, AlertCircle, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, ArrowUp, ArrowDown, Save, Loader, AlertCircle, Plus, Trash2 } from 'lucide-react';
 import AdminStatusBadge from './AdminStatusBadge';
 import AdminSaveState from './AdminSaveState';
 import AdminSeoFields from './AdminSeoFields';
@@ -182,6 +182,27 @@ export default function AdminScenarioForm({
 
   const removeSource = (index) => {
     setForm((p) => ({ ...p, sources: p.sources.filter((_, i) => i !== index) }));
+    saveState.markDirty();
+  };
+
+  /**
+   * Verschiebt eine Quelle um eine Position.
+   *
+   * Die Array-Reihenfolge ist die einzige Ordnungsangabe — es gibt keine
+   * sort_order im Quellenformat. Ein Tausch benachbarter Einträge ist deshalb
+   * die vollständige Umsortierlogik.
+   *
+   * @param {number} index - aktuelle Position
+   * @param {number} direction - -1 = nach oben, +1 = nach unten
+   */
+  const moveSource = (index, direction) => {
+    const target = index + direction;
+    setForm((p) => {
+      if (target < 0 || target >= p.sources.length) return p;
+      const sources = [...p.sources];
+      [sources[index], sources[target]] = [sources[target], sources[index]];
+      return { ...p, sources };
+    });
     saveState.markDirty();
   };
 
@@ -400,15 +421,40 @@ export default function AdminScenarioForm({
                   <span className="text-xs font-semibold text-gray-500">
                     Quelle {index + 1}
                   </span>
-                  <button
-                    type="button"
-                    onClick={() => removeSource(index)}
-                    aria-label={`Quelle ${index + 1} entfernen`}
-                    className="flex items-center gap-1 text-xs text-red-600 hover:text-red-700 hover:underline"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                    Entfernen
-                  </button>
+                  <div className="flex items-center gap-3">
+                    {/* Reihenfolge = Anzeigereihenfolge auf der Artikelseite. */}
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => moveSource(index, -1)}
+                        disabled={index === 0}
+                        aria-label={`Quelle ${index + 1} nach oben`}
+                        data-testid={`source-up-${index}`}
+                        className="p-1 rounded text-gray-500 hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                      >
+                        <ArrowUp className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => moveSource(index, 1)}
+                        disabled={index === form.sources.length - 1}
+                        aria-label={`Quelle ${index + 1} nach unten`}
+                        data-testid={`source-down-${index}`}
+                        className="p-1 rounded text-gray-500 hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                      >
+                        <ArrowDown className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeSource(index)}
+                      aria-label={`Quelle ${index + 1} entfernen`}
+                      className="flex items-center gap-1 text-xs text-red-600 hover:text-red-700 hover:underline"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      Entfernen
+                    </button>
+                  </div>
                 </div>
                 <div className="space-y-3">
                   <div>

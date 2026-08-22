@@ -310,9 +310,17 @@ function adaptPredefinedSearch(search) {
   };
 }
 
+/**
+ * Ein CTA-Link ist fachlich eine hervorgehobene vordefinierte Suche und trägt
+ * deshalb dieselben vier Suchparameter. spec und focus waren früher nicht
+ * abgebildet — ein Link mit Fachrichtung landete dadurch auf einer ungefilterten
+ * Ergebnisliste, obwohl der Wert gespeichert war.
+ */
 function adaptCtaLink(link) {
   return {
     label: link.label_de,
+    spec: link.spec || null,
+    focus: link.focus || null,
     loc: link.loc || null,
     delivery: link.delivery || null,
   };
@@ -514,9 +522,14 @@ export function adaptToLegacyBereichConfig({
     },
 
     // CTA-Links
+    // Dieselben vier Suchparameter wie predefined_searches — sonst ginge die
+    // gespeicherte Fachrichtung (spec/focus) beim Aufbau der öffentlichen
+    // CTA-URL verloren.
     ctaLinks: (themeWorld.cta_links || []).map((l) => ({
       label: { de: l.label_de || '' },
       params: {
+        ...(l.spec ? { spec: l.spec } : {}),
+        ...(l.focus ? { focus: l.focus } : {}),
         ...(l.loc ? { loc: l.loc } : {}),
         ...(l.delivery ? { delivery: normalizeDeliveryTypeKey(l.delivery) || l.delivery } : {}),
       },

@@ -679,14 +679,17 @@ describe('Servervalidator cta_links — kanonische delivery-Werte', () => {
     expect(validateCtaLinks([{ label_de: 'Kurse in Zürich' }])).toEqual([]);
   });
 
-  it('loc muss ein String sein, wenn vorhanden', () => {
+  it('loc muss ein String oder null sein, wenn vorhanden', () => {
     expect(validateCtaLinks([{ label_de: 'Kurse in Zürich', loc: 'Zürich' }])).toEqual([]);
     expect(validateCtaLinks([{ label_de: 'Kurse in Basel', loc: 'Basel-Stadt' }])).toEqual([]);
     expect(validateCtaLinks([{ label_de: 'Alle Kurse' }])).toEqual([]);
+    // null bedeutet «nicht gesetzt» — so schreiben Importpakete die
+    // optionalen Suchparameter aus.
+    expect(validateCtaLinks([{ label_de: 'Alle Kurse', loc: null }])).toEqual([]);
 
-    for (const loc of [123, {}, [], true, null]) {
+    for (const loc of [123, {}, [], true]) {
       expect(validateCtaLinks([{ label_de: 'Alle Kurse', loc }]))
-        .toContain('cta_links[0].loc: Muss ein String sein.');
+        .toContain('cta_links[0].loc: Muss ein String oder null sein.');
     }
   });
 });

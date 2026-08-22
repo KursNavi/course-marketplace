@@ -307,11 +307,42 @@ export function validatePredefinedSearches(searches) {
   return errors;
 }
 
+/** Maximale Anzahl CTA-Links pro Themenwelt. */
+export const MAX_CTA_LINKS = 5;
+
+/**
+ * Erlaubte Keys eines cta_links-Eintrags.
+ *
+ * label_de ist Pflicht, alles andere optional:
+ *   spec / focus / loc  Suchparameter des Ziel-Links (Fachrichtung, Schwerpunkt,
+ *                       Ort). Sie entsprechen exakt den Parametern, die
+ *                       predefined_searches führt — ein CTA-Link ist fachlich
+ *                       nichts anderes als eine hervorgehobene vordefinierte
+ *                       Suche, und der Adapter baut aus beiden dieselbe URL.
+ *   delivery            Durchführungsform (VALID_DELIVERY_TYPES).
+ *   sort_order          Redaktionelle Position. Die Array-Reihenfolge bleibt die
+ *                       Wahrheit für die Anzeige; sort_order ist der stabile,
+ *                       im Importpaket mitgelieferte Ordnungswert und wird
+ *                       deshalb nicht verworfen.
+ *   status              Redaktioneller Zustand des einzelnen Links aus dem
+ *                       Importpaket. Er steuert keine Sichtbarkeit — die hängt
+ *                       am Status der Themenwelt — wird aber verlustfrei
+ *                       durchgereicht, damit ein Import→Admin→Speichern-Zyklus
+ *                       das Paket nicht stillschweigend beschneidet.
+ */
+const CTA_LINK_ALLOWED_KEYS = new Set([
+  'label_de', 'spec', 'focus', 'loc', 'delivery', 'sort_order', 'status',
+]);
+
 /**
  * Validiert cta_links JSONB-Array.
  *
- * Der Vertrag ist identisch mit dem, den AdminThemeWorldForm clientseitig prüft:
- *   { label_de: string (getrimmt nicht leer, max 60), loc?: string, delivery?: enum }
+ * Der Vertrag ist identisch mit dem, den AdminThemeWorldForm clientseitig prüft.
+ *
+ * null als Wert eines optionalen Felds ist ausdrücklich erlaubt und bedeutet
+ * «nicht gesetzt» — genauso wie ein fehlender Key. Importpakete schreiben diese
+ * Felder explizit als null aus; würde der Validator das ablehnen, könnte ein
+ * importierter Link im Admin nie wieder gespeichert werden.
  *
  * Diese Funktion validiert nur — sie trimmt und mutiert nicht. Die Normalisierung
  * (trimmen, leere optionale Felder entfernen) passiert im Admin vor dem Speichern.
@@ -325,11 +356,9 @@ export function validateCtaLinks(links) {
     return errors;
   }
 
-  if (links.length > 5) {
-    errors.push('cta_links: Maximal 5 Einträge erlaubt.');
+  if (links.length > MAX_CTA_LINKS) {
+    errors.push(`cta_links: Maximal ${MAX_CTA_LINKS} Einträge erlaubt.`);
   }
-
-  const ALLOWED_KEYS = new Set(['label_de', 'loc', 'delivery']);
 
   for (let i = 0; i < links.length; i++) {
     const item = links[i];
@@ -339,7 +368,7 @@ export function validateCtaLinks(links) {
     }
 
     for (const key of Object.keys(item)) {
-      if (!ALLOWED_KEYS.has(key)) {
+      if (!CTA_LINK_ALLOWED_KEYS.has(key)) {
         errors.push(`cta_links[${i}].${key}: Unbekannter Key nicht erlaubt.`);
       }
     }
@@ -352,16 +381,30 @@ export function validateCtaLinks(links) {
       errors.push(`cta_links[${i}].label_de: Zu lang (max 60 Zeichen).`);
     }
 
-    // loc: optional, aber wenn vorhanden ein String. Reine Typsicherheit —
-    // bewusst keine Orts-Taxonomie (Kantons-/Städteliste) an dieser Stelle.
-    // Der Admin entfernt leere optionale Felder vor dem Speichern, ein
-    // ausgeschriebenes null/123/{} kommt aus keinem gültigen Schreibpfad.
-    if (item.loc !== undefined && typeof item.loc !== 'string') {
-      errors.push(`cta_links[${i}].loc: Muss ein String sein.`);
+    // spec / focus / loc: optional, wenn gesetzt ein String. Reine Typsicherheit —
+    // bewusst keine Fach- oder Orts-Taxonomie an dieser Stelle, identisch zu
+    // predefined_searches.
+    for (const key of ['spec', 'focus', 'loc']) {
+      const value = item[key];
+      if (value === undefined || value === null) continue;
+      if (typeof value !== 'string') {
+        errors.push(`cta_links[${i}].${key}: Muss ein String oder null sein.`);
+      }
     }
 
-    if (item.delivery !== undefined && !VALID_DELIVERY_TYPES.includes(item.delivery)) {
+    if (item.delivery !== undefined && item.delivery !== null
+        && !VALID_DELIVERY_TYPES.includes(item.delivery)) {
       errors.push(`cta_links[${i}].delivery: Ungültiger Wert. Erlaubt: ${VALID_DELIVERY_TYPES.join(', ')}.`);
+    }
+
+    if (item.sort_order !== undefined && item.sort_order !== null
+        && (!Number.isInteger(item.sort_order) || item.sort_order < 0)) {
+      errors.push(`cta_links[${i}].sort_order: Muss eine ganze Zahl >= 0 sein.`);
+    }
+
+    if (item.status !== undefined && item.status !== null
+        && !VALID_STATUSES.includes(item.status)) {
+      errors.push(`cta_links[${i}].status: Ungültiger Wert. Erlaubt: ${VALID_STATUSES.join(', ')}.`);
     }
   }
 

@@ -323,14 +323,15 @@ describe('validateCtaLinks', () => {
     });
   });
 
-  // loc: optional, aber typsicher. Bewusst keine Orts-Taxonomie.
-  describe('loc', () => {
-    it('akzeptiert ein fehlendes loc', () => {
+  // spec / focus / loc: optional, aber typsicher. Bewusst keine Fach- oder
+  // Orts-Taxonomie — identisch zu predefined_searches.
+  describe.each(['spec', 'focus', 'loc'])('%s', (field) => {
+    it('akzeptiert ein fehlendes Feld', () => {
       expect(validateCtaLinks([{ label_de: 'Alle Kurse' }])).toEqual([]);
     });
 
-    it.each(['Zürich', 'Basel-Stadt'])('akzeptiert den String %s', (loc) => {
-      expect(validateCtaLinks([{ label_de: 'Alle Kurse', loc }])).toEqual([]);
+    it.each(['Zürich', 'Basel-Stadt'])('akzeptiert den String %s', (value) => {
+      expect(validateCtaLinks([{ label_de: 'Alle Kurse', [field]: value }])).toEqual([]);
     });
 
     it.each([
@@ -338,15 +339,75 @@ describe('validateCtaLinks', () => {
       ['Objekt', {}],
       ['Array', []],
       ['Boolean', true],
-      ['null', null],
-    ])('lehnt %s ab', (_name, loc) => {
-      const errors = validateCtaLinks([{ label_de: 'Alle Kurse', loc }]);
-      expect(errors).toEqual(['cta_links[0].loc: Muss ein String sein.']);
+    ])('lehnt %s ab', (_name, value) => {
+      const errors = validateCtaLinks([{ label_de: 'Alle Kurse', [field]: value }]);
+      expect(errors).toEqual([`cta_links[0].${field}: Muss ein String oder null sein.`]);
     });
 
-    it('validiert keine Orts-Taxonomie (beliebiger String bleibt gültig)', () => {
-      expect(validateCtaLinks([{ label_de: 'Alle Kurse', loc: 'Irgendwo' }])).toEqual([]);
+    // null bedeutet «nicht gesetzt», genau wie ein fehlender Key. Importpakete
+    // schreiben die optionalen Suchparameter explizit als null aus; würde der
+    // Validator das ablehnen, liesse sich ein importierter CTA-Link im Admin
+    // nie wieder speichern.
+    it('akzeptiert null als «nicht gesetzt»', () => {
+      expect(validateCtaLinks([{ label_de: 'Alle Kurse', [field]: null }])).toEqual([]);
     });
+
+    it('validiert keine Taxonomie (beliebiger String bleibt gültig)', () => {
+      expect(validateCtaLinks([{ label_de: 'Alle Kurse', [field]: 'Irgendwas' }])).toEqual([]);
+    });
+  });
+
+  // sort_order und status stammen aus dem Importpaket. Sie sind im Admin nicht
+  // bearbeitbar, müssen den Speicherpfad aber unbeschadet passieren.
+  describe('sort_order', () => {
+    it('akzeptiert eine ganze Zahl >= 0 sowie null und ein fehlendes Feld', () => {
+      expect(validateCtaLinks([{ label_de: 'A', sort_order: 0 }])).toEqual([]);
+      expect(validateCtaLinks([{ label_de: 'A', sort_order: 3 }])).toEqual([]);
+      expect(validateCtaLinks([{ label_de: 'A', sort_order: null }])).toEqual([]);
+      expect(validateCtaLinks([{ label_de: 'A' }])).toEqual([]);
+    });
+
+    it.each([
+      ['negative Zahl', -1],
+      ['Kommazahl', 1.5],
+      ['String', '1'],
+    ])('lehnt %s ab', (_name, sort_order) => {
+      const errors = validateCtaLinks([{ label_de: 'A', sort_order }]);
+      expect(errors).toEqual(['cta_links[0].sort_order: Muss eine ganze Zahl >= 0 sein.']);
+    });
+  });
+
+  describe('status', () => {
+    it.each(['draft', 'published', 'archived'])('akzeptiert %s', (status) => {
+      expect(validateCtaLinks([{ label_de: 'A', status }])).toEqual([]);
+    });
+
+    it('akzeptiert null und ein fehlendes Feld', () => {
+      expect(validateCtaLinks([{ label_de: 'A', status: null }])).toEqual([]);
+      expect(validateCtaLinks([{ label_de: 'A' }])).toEqual([]);
+    });
+
+    it('lehnt einen unbekannten Status ab', () => {
+      const errors = validateCtaLinks([{ label_de: 'A', status: 'live' }]);
+      expect(errors.some((e) => e.includes('status'))).toBe(true);
+    });
+  });
+
+  // Der Vertrag muss genau das Format des eingefrorenen Kreativkurse-Pakets
+  // tragen — sonst blockiert der Import→Admin→Speichern-Zyklus.
+  it('akzeptiert das vollständige Importformat mit allen sieben Keys', () => {
+    const errors = validateCtaLinks([
+      {
+        sort_order: 1,
+        label_de: 'Alle Kreativkurse vor Ort anzeigen',
+        spec: null,
+        focus: null,
+        loc: null,
+        delivery: 'presence',
+        status: 'draft',
+      },
+    ]);
+    expect(errors).toEqual([]);
   });
 });
 
