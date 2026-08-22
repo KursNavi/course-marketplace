@@ -21,6 +21,7 @@
  */
 
 import { supabase } from './supabase';
+import { toDisplaySources } from './scenarioSources';
 
 // ---------------------------------------------------------------------------
 // Fehlerklassen
@@ -124,6 +125,23 @@ export async function fetchPublishedScenarios(themeWorldId) {
 /**
  * Lädt einen einzelnen publizierten Szenario-Artikel anhand seines Slugs.
  *
+ * Quellenangaben (`sources`):
+ *   Die Spalte gehört zum Vertrag dieses Lesepfads — der Artikel zeigt sie
+ *   öffentlich unter «Quellen & weiterführende Informationen» an. Sie kommt über
+ *   select('*') mit; die Zeilenauswahl bleibt bewusst vollständig, weil die
+ *   Artikelseite den ganzen Datensatz rendert.
+ *
+ *   Der Rückgabewert normalisiert `sources` über toDisplaySources(). Damit
+ *   verlässt kein ungeprüfter JSONB-Inhalt diesen Service: Einträge ohne Titel,
+ *   ohne Herausgeber oder mit einer nicht-http(s)-URL werden verworfen, statt
+ *   als Link auf einer öffentlichen Seite zu landen. Die Reihenfolge der
+ *   verbleibenden Einträge bleibt exakt erhalten — sie ist die redaktionell
+ *   gesetzte Anzeigereihenfolge.
+ *
+ *   Fehlt die Spalte (Umgebung ohne Migration 20260817_add_scenario_sources),
+ *   ergibt das ein leeres Array und der Quellenblock entfällt, statt dass die
+ *   Seite bricht.
+ *
  * @param {string} themeWorldId - UUID der Themenwelt
  * @param {string} scenarioSlug - URL-Slug des Szenarios
  * @returns {Promise<object>} Vollständiger Szenario-Datensatz
@@ -148,7 +166,7 @@ export async function fetchPublishedScenario(themeWorldId, scenarioSlug) {
   }
 
   if (!data) throw new ThemeWorldNotFoundError();
-  return data;
+  return { ...data, sources: toDisplaySources(data.sources) };
 }
 
 /**

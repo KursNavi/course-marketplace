@@ -47,6 +47,174 @@ const URL_TO_DB = { beruflich: 'professionell', 'privat-hobby': 'privat', 'kinde
 const DB_TO_URL = { professionell: 'beruflich', privat: 'privat-hobby', kinder: 'kinder-jugend' };
 
 /**
+ * Obergrenze für zusätzliche CTA-Links. Spiegelt MAX_CTA_LINKS in
+ * api/_lib/theme-world-validate.js — der Server bleibt die verbindliche Instanz,
+ * diese Konstante verhindert nur, dass die Redaktion in einen Serverfehler läuft.
+ */
+const MAX_CTA_LINKS = 5;
+
+/**
+ * Die im Tab «Seitentexte & Abschluss / CTA» bearbeitbaren section_titles-Keys,
+ * in Anzeigereihenfolge und nach Abschnitt gruppiert.
+ *
+ * Bis hierher waren nur trust_heading, cta_heading und cta_button exponiert. Die
+ * übrigen Überschriften kamen ausschliesslich über den Import in die Datenbank
+ * und liessen sich danach nirgends mehr korrigieren — für eine redaktionell
+ * gepflegte Themenwelt ein Sackgassenzustand.
+ *
+ * Nicht exponiert bleibt searches_heading: der Key ist im Validator erlaubt, wird
+ * aber von keiner Themenwelt geführt. Er überlebt trotzdem jeden Speichervorgang,
+ * weil der Merge auf dem vollständigen geladenen Objekt aufsetzt.
+ */
+const SEITENTEXTE_GROUPS = [
+  {
+    title: 'Szenarioartikel',
+    hint: 'Überschriften über den Szenariokarten der öffentlichen Themenwelt.',
+    fields: [
+      { key: 'scenarios_heading', label: 'Überschrift', placeholder: 'z.B. Welche Richtung passt zu dir?' },
+      { key: 'scenarios_subheading', label: 'Unterzeile', placeholder: 'z.B. Finde den passenden Einstieg.' },
+    ],
+  },
+  {
+    title: 'Kursbereiche',
+    hint: 'Überschriften über den Kursbereichen (Specialties).',
+    fields: [
+      { key: 'specialties_heading', label: 'Überschrift', placeholder: 'z.B. Kursbereiche' },
+      { key: 'specialties_subheading', label: 'Unterzeile', placeholder: 'z.B. Alle Schwerpunkte auf einen Blick.' },
+    ],
+  },
+  {
+    title: 'Vordefinierte Suchen',
+    hint: 'Unterzeile über den vordefinierten Suchen.',
+    fields: [
+      { key: 'searches_subheading', label: 'Unterzeile', placeholder: 'z.B. Kurse nach Technik und Region.' },
+    ],
+  },
+  {
+    title: 'Regionen',
+    hint: 'Überschriften über den Regionenlinks.',
+    fields: [
+      { key: 'regions_heading', label: 'Überschrift', placeholder: 'z.B. Kurse in deiner Region' },
+      { key: 'regions_subheading', label: 'Unterzeile', placeholder: 'z.B. Aktuelle Präsenzangebote nach Region.' },
+    ],
+  },
+  {
+    title: 'Häufige Fragen',
+    hint: 'Überschrift über dem FAQ-Abschnitt.',
+    fields: [
+      { key: 'faqs_heading', label: 'Überschrift', placeholder: 'z.B. Häufige Fragen zu Kreativkursen' },
+    ],
+  },
+];
+
+/** Flache Liste aller exponierten Keys — inklusive der drei CTA-/Trust-Felder. */
+const SEITENTEXTE_KEYS = [
+  ...SEITENTEXTE_GROUPS.flatMap((group) => group.fields.map((field) => field.key)),
+  'trust_heading',
+  'cta_heading',
+  'cta_button',
+];
+
+function emptySeitentexte() {
+  return Object.fromEntries(SEITENTEXTE_KEYS.map((key) => [key, '']));
+}
+
+/**
+ * Bringt section_titles in die Formularform.
+ *
+ * Ein fehlender Key und ein ausdrückliches null erscheinen beide als leeres
+ * Eingabefeld — sichtbar gibt es keinen Unterschied. Damit das Speichern die
+ * beiden Zustände trotzdem nicht vermischt, merkt sich `buildSectionTitles` den
+ * Ausgangswert und schreibt ihn unverändert zurück, solange die Redaktion das
+ * Feld nicht angefasst hat.
+ */
+function sectionTitlesToForm(sectionTitles) {
+  const source = sectionTitles || {};
+  return Object.fromEntries(
+    SEITENTEXTE_KEYS.map((key) => [key, typeof source[key] === 'string' ? source[key] : '']),
+  );
+}
+
+/**
+ * Baut das zu speichernde section_titles-Objekt.
+ *
+ * Regeln, in dieser Reihenfolge:
+ *   1. Basis ist das vollständige geladene Objekt — nicht exponierte Keys
+ *      bleiben unangetastet.
+ *   2. Ein unverändertes Feld wird exakt so zurückgeschrieben, wie es geladen
+ *      wurde. Ein null bleibt null, ein fehlender Key bleibt fehlend, ein
+ *      gespeicherter Leerstring bleibt Leerstring. Kein Zustand wird
+ *      stillschweigend in einen anderen überführt.
+ *   3. Ein geändertes Feld mit Inhalt wird getrimmt gespeichert.
+ *   4. Ein von der Redaktion aktiv geleertes Feld entfernt seinen Key — das ist
+ *      die ausdrückliche Ansage «diese Überschrift soll weg», und der Adapter
+ *      greift dann auf seinen Vorgabetext zurück.
+ *
+ * @param {object} base - vollständiges section_titles der geladenen Zeile
+ * @param {object} form - aktuelle Formularwerte (nur exponierte Keys)
+ * @param {object} loadedForm - Formularwerte direkt nach dem Laden
+ */
+function buildSectionTitles(base, form, loadedForm) {
+  const next = { ...(base || {}) };
+
+  for (const key of SEITENTEXTE_KEYS) {
+    const current = form[key] || '';
+    const original = loadedForm[key] || '';
+
+    if (current === original) continue; // unverändert → Ausgangszustand behalten
+
+    const trimmed = current.trim();
+    if (trimmed) next[key] = trimmed;
+    else delete next[key];
+  }
+
+  return next;
+}
+
+/**
+ * Bringt cta_links in die Formularform.
+ *
+ * spec und focus waren bisher nicht abgebildet: ein importierter Link verlor
+ * seine Fachrichtung beim ersten Speichern im Admin. sort_order und status sind
+ * nicht bearbeitbar, werden aber mitgeführt, damit der Speicherpfad das
+ * Importpaket nicht beschneidet.
+ */
+function ctaLinksToForm(raw) {
+  return (Array.isArray(raw) ? raw : [])
+    .filter((link) => link && typeof link === 'object' && !Array.isArray(link))
+    .map((link) => ({
+      label_de: link.label_de || '',
+      spec: link.spec || '',
+      focus: link.focus || '',
+      loc: link.loc || '',
+      delivery: link.delivery || '',
+      // null-fähig mitgeführt, nicht bearbeitbar:
+      hadSortOrder: Number.isInteger(link.sort_order),
+      status: typeof link.status === 'string' ? link.status : null,
+    }));
+}
+
+/**
+ * Baut das zu speichernde cta_links-Array.
+ *
+ * Die Array-Position ist die Anzeigereihenfolge. Ein Eintrag, der beim Laden
+ * eine sort_order führte, bekommt sie positionsgerecht neu vergeben — so bleibt
+ * der Wert wahr, auch wenn die Redaktion Einträge entfernt hat. Einträge ohne
+ * sort_order bekommen keine dazuerfunden.
+ */
+function formToCtaLinks(rows) {
+  return (rows || []).map((row, index) => ({
+    label_de: (row.label_de || '').trim(),
+    ...(row.spec && row.spec.trim() ? { spec: row.spec.trim() } : {}),
+    ...(row.focus && row.focus.trim() ? { focus: row.focus.trim() } : {}),
+    ...(row.loc && row.loc.trim() ? { loc: row.loc.trim() } : {}),
+    ...(row.delivery ? { delivery: row.delivery } : {}),
+    ...(row.hadSortOrder ? { sort_order: index + 1 } : {}),
+    ...(row.status ? { status: row.status } : {}),
+  }));
+}
+
+/**
  * Gemeinsame Gestaltung aller `.FormInput`-Felder dieses Formulars.
  *
  * Wird als Klassenliste auf einen Container gesetzt und wirkt über
@@ -320,9 +488,10 @@ export default function AdminThemeWorldForm({
   // insert), section_titles und cta_links sind Spalten auf theme_worlds. Ein
   // gemeinsamer Klick würde bei Teilfehler einen inkonsistenten Zustand hinterlassen.
   const seitentexteSave = useSaveState();
-  const [seitentexte, setSeitentexte] = useState({
-    trust_heading: '', cta_heading: '', cta_button: '',
-  });
+  const [seitentexte, setSeitentexte] = useState(() => emptySeitentexte());
+  // Formularwerte direkt nach dem Laden. Referenz für «unverändert» beim
+  // Speichern, damit null/fehlend/Leerstring nicht vermischt werden.
+  const [seitentexteLoaded, setSeitentexteLoaded] = useState(() => emptySeitentexte());
   const [ctaLinks, setCtaLinks] = useState([]);
   // Vollständiges section_titles der geladenen Zeile. Basis für den Merge beim
   // Speichern, damit nicht exponierte Keys (z.B. searches_heading) erhalten bleiben.
@@ -380,22 +549,15 @@ export default function AdminThemeWorldForm({
       setPredefinedSearches(data.predefined_searches || []);
 
       // Seitentexte & CTA — kanonische snake_case-Keys aus section_titles.
-      // Das vollständige Objekt wird als Merge-Basis behalten; exponiert werden
-      // nur trust_heading, cta_heading und cta_button.
+      // Das vollständige Objekt bleibt Merge-Basis, damit nicht exponierte Keys
+      // erhalten bleiben; zusätzlich wird der Ladezustand der exponierten Felder
+      // festgehalten (siehe buildSectionTitles).
       const st = data.section_titles || {};
+      const loadedSeitentexte = sectionTitlesToForm(st);
       setSectionTitlesBase(st);
-      setSeitentexte({
-        trust_heading: st.trust_heading || '',
-        cta_heading: st.cta_heading || '',
-        cta_button: st.cta_button || '',
-      });
-      setCtaLinks(
-        (data.cta_links || []).map((l) => ({
-          label_de: l.label_de || '',
-          loc: l.loc || '',
-          delivery: l.delivery || '',
-        })),
-      );
+      setSeitentexte(loadedSeitentexte);
+      setSeitentexteLoaded(loadedSeitentexte);
+      setCtaLinks(ctaLinksToForm(data.cta_links));
 
       // Sub-Entitäten (keys already normalized to camelCase by getAllSubEntities)
       setSpecialties(subs.specialties || []);
@@ -577,10 +739,6 @@ export default function AdminThemeWorldForm({
     }
   };
 
-  // Exponierte section_titles-Keys. Alle übrigen Keys bleiben beim Speichern
-  // unangetastet (siehe Merge unten).
-  const SEITENTEXTE_KEYS = ['trust_heading', 'cta_heading', 'cta_button'];
-
   const saveSeitentexte = async () => {
     const id = savedTwId || themeWorldId;
     if (!id) return showNotification('Bitte zuerst Grundlagen speichern.');
@@ -589,9 +747,9 @@ export default function AdminThemeWorldForm({
     if (loadError) return showNotification('Laden fehlgeschlagen — Speichern nicht möglich.');
 
     // Client-side validation: cta_links (spiegelt validateCtaLinks)
-    if (ctaLinks.length > 5) {
-      seitentexteSave.markError('Maximal 5 CTA-Links erlaubt.');
-      showNotification('Fehler: Maximal 5 CTA-Links erlaubt.');
+    if (ctaLinks.length > MAX_CTA_LINKS) {
+      seitentexteSave.markError(`Maximal ${MAX_CTA_LINKS} CTA-Links erlaubt.`);
+      showNotification(`Fehler: Maximal ${MAX_CTA_LINKS} CTA-Links erlaubt.`);
       return;
     }
     for (let i = 0; i < ctaLinks.length; i++) {
@@ -604,37 +762,27 @@ export default function AdminThemeWorldForm({
 
     seitentexteSave.startSaving();
     try {
-      // Merge statt Ersetzen: das vollständige geladene section_titles ist die Basis,
-      // nur die drei exponierten Keys werden gezielt überschrieben. Nicht im Admin
-      // sichtbare Keys (scenarios_heading, searches_heading, regions_* …) bleiben exakt
-      // erhalten. Ein geleertes Feld entfernt seinen Key, statt "" zu speichern.
-      const nextSectionTitles = { ...sectionTitlesBase };
-      for (const key of SEITENTEXTE_KEYS) {
-        const trimmed = (seitentexte[key] || '').trim();
-        if (trimmed) {
-          nextSectionTitles[key] = trimmed;
-        } else {
-          delete nextSectionTitles[key];
-        }
-      }
+      // Merge statt Ersetzen: das vollständige geladene section_titles ist die
+      // Basis, nur tatsächlich geänderte Felder werden angefasst. Nicht
+      // exponierte Keys (searches_heading) bleiben exakt erhalten, und ein
+      // unverändertes null bleibt null statt zu verschwinden.
+      const nextSectionTitles = buildSectionTitles(sectionTitlesBase, seitentexte, seitentexteLoaded);
 
-      // Normalisierung: label_de getrimmt, leere optionale Felder entfernt.
-      // Kein sort_order — das JSONB-Schema erlaubt nur {label_de, loc?, delivery?};
-      // die Reihenfolge ergibt sich aus der Array-Position.
-      const normalizedCtaLinks = ctaLinks.map((l) => ({
-        label_de: (l.label_de || '').trim(),
-        ...(l.loc && l.loc.trim() ? { loc: l.loc.trim() } : {}),
-        ...(l.delivery ? { delivery: l.delivery } : {}),
-      }));
+      // Normalisierung: label_de getrimmt, leere optionale Felder entfernt,
+      // sort_order positionsgerecht, status unverändert durchgereicht.
+      const normalizedCtaLinks = formToCtaLinks(ctaLinks);
 
       await updateThemeWorld(id, {
         section_titles: nextSectionTitles,
         cta_links: normalizedCtaLinks,
       });
 
-      // Merge-Basis nachziehen, damit ein direkt folgender Save nicht auf einem
-      // veralteten Stand aufsetzt.
+      // Merge-Basis und Ladereferenz nachziehen, damit ein direkt folgender Save
+      // nicht auf einem veralteten Stand aufsetzt und unveränderte Felder
+      // weiterhin als unverändert gelten.
       setSectionTitlesBase(nextSectionTitles);
+      setSeitentexteLoaded(sectionTitlesToForm(nextSectionTitles));
+      setCtaLinks(ctaLinksToForm(normalizedCtaLinks));
       setTw((prev) => (prev ? { ...prev, section_titles: nextSectionTitles, cta_links: normalizedCtaLinks } : prev));
       seitentexteSave.markSaved();
       showNotification('Seitentexte & CTA gespeichert.');
@@ -1378,19 +1526,62 @@ export default function AdminThemeWorldForm({
                 </button>
               </TabHeader>
 
-              <FormField
-                label="Abschnittsüberschrift"
-                hint="Überschrift über den Trust- und Hinweis-Karten auf der öffentlichen Themenwelt."
-              >
-                <input
-                  type="text"
-                  className="FormInput"
-                  placeholder="z.B. Worauf du bei der Kurswahl achten solltest"
-                  maxLength={200}
-                  value={seitentexte.trust_heading}
-                  onChange={(e) => { setSeitentexte((p) => ({ ...p, trust_heading: e.target.value })); seitentexteSave.markDirty(); }}
-                />
-              </FormField>
+              <p className="text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded-lg p-3">
+                Alle Felder sind optional. Bleibt ein Feld leer, verwendet die
+                öffentliche Seite ihren eingebauten Vorgabetext.
+              </p>
+
+              {/*
+                Überschriften der übrigen Seitenabschnitte. Sie liegen im selben
+                section_titles-Objekt wie die Trust- und CTA-Titel und werden
+                deshalb im selben Speichervorgang geschrieben.
+              */}
+              {SEITENTEXTE_GROUPS.map((group) => (
+                <div key={group.title} className="pt-5 border-t border-gray-100 space-y-4 first:pt-0 first:border-t-0">
+                  <div>
+                    <h4 className="text-sm font-semibold text-gray-700">{group.title}</h4>
+                    <p className="text-xs text-gray-400 mt-0.5">{group.hint}</p>
+                  </div>
+                  {group.fields.map((field) => (
+                    <FormField key={field.key} label={field.label}>
+                      <input
+                        type="text"
+                        className="FormInput"
+                        placeholder={field.placeholder}
+                        maxLength={200}
+                        value={seitentexte[field.key]}
+                        onChange={(e) => {
+                          const { value } = e.target;
+                          setSeitentexte((p) => ({ ...p, [field.key]: value }));
+                          seitentexteSave.markDirty();
+                        }}
+                      />
+                    </FormField>
+                  ))}
+                </div>
+              ))}
+
+              <div className="pt-5 border-t border-gray-100 space-y-4">
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-700">Trust-Hinweise</h4>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    Überschrift über den Trust- und Hinweis-Karten.
+                  </p>
+                </div>
+                <FormField
+                  label="Abschnittsüberschrift"
+                  hint="Überschrift über den Trust- und Hinweis-Karten auf der öffentlichen Themenwelt."
+                >
+                  <input
+                    type="text"
+                    className="FormInput"
+                    placeholder="z.B. Worauf du bei der Kurswahl achten solltest"
+                    maxLength={200}
+                    value={seitentexte.trust_heading}
+                    onChange={(e) => { setSeitentexte((p) => ({ ...p, trust_heading: e.target.value })); seitentexteSave.markDirty(); }}
+                  />
+                </FormField>
+              </div>
 
               {/* Abschluss / CTA */}
               <div className="pt-6 border-t border-gray-100 space-y-5">
@@ -1435,17 +1626,21 @@ export default function AdminThemeWorldForm({
                   <div className="mb-3">
                     <h4 className="text-sm font-semibold text-gray-700">Zusätzliche CTA-Links</h4>
                     <p className="text-xs text-gray-400 mt-0.5">
-                      Weiterführende Links unter dem Hauptbutton (max. 5 Einträge).
-                      Bezeichnung ist Pflichtfeld, Ort und Kursformat sind optional.
+                      Weiterführende Links unter dem Hauptbutton (max. {MAX_CTA_LINKS} Einträge).
+                      Bezeichnung ist Pflichtfeld, die vier Suchparameter sind optional.
+                      Die Reihenfolge der Karten ist die Reihenfolge auf der Seite.
                     </p>
                   </div>
                   <RepeatableList
                     items={ctaLinks}
-                    maxItems={5}
+                    maxItems={MAX_CTA_LINKS}
                     onChange={(items) => { setCtaLinks(items); seitentexteSave.markDirty(); }}
                     emptyLabel="Noch keine zusätzlichen CTA-Links"
                     addLabel="CTA-Link hinzufügen"
-                    newItem={() => ({ label_de: '', loc: '', delivery: '' })}
+                    newItem={() => ({
+                      label_de: '', spec: '', focus: '', loc: '', delivery: '',
+                      hadSortOrder: false, status: null,
+                    })}
                     renderItem={(item, i, update, remove) => (
                       <div className="space-y-3">
                         <div>
@@ -1460,7 +1655,29 @@ export default function AdminThemeWorldForm({
                             maxLength={60}
                           />
                         </div>
+                        {/* Dieselben vier Suchparameter wie bei den vordefinierten
+                            Suchen — ein CTA-Link ist eine hervorgehobene Suche. */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div>
+                            <label className="text-xs font-semibold text-gray-600">Spezialgebiet (spec)</label>
+                            <CanonicalSelect
+                              className="mt-1"
+                              value={item.spec}
+                              options={specialtyOptions}
+                              emptyLabel="Kein Spezialgebiet"
+                              onChange={(v) => update({ spec: v })}
+                            />
+                          </div>
+                          <div>
+                            <label className="text-xs font-semibold text-gray-600">Fokus (focus)</label>
+                            <CanonicalSelect
+                              className="mt-1"
+                              value={item.focus}
+                              options={focusesForSpecialty(item.spec)}
+                              emptyLabel="Kein Fokus"
+                              onChange={(v) => update({ focus: v })}
+                            />
+                          </div>
                           <div>
                             {/* Erzeugt denselben öffentlichen loc-Suchparameter
                                 wie die vordefinierten Suchen und die Regionen. */}

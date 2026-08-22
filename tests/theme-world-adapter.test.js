@@ -466,3 +466,69 @@ describe('Adapter: Null-Eingabe', () => {
     expect(result.specialties).toHaveLength(0);
   });
 });
+
+// ---------------------------------------------------------------------------
+// CTA-Links: alle vier Suchparameter
+// ---------------------------------------------------------------------------
+
+/**
+ * Ein CTA-Link ist fachlich eine hervorgehobene vordefinierte Suche. spec und
+ * focus waren im Adapter nicht abgebildet: der Wert war gespeichert, die
+ * öffentliche URL landete aber auf einer ungefilterten Ergebnisliste.
+ */
+describe('Adapter: cta_links tragen spec, focus, loc und delivery', () => {
+  const TW_MIT_CTA = {
+    ...SPORT_FITNESS_TW,
+    cta_links: [
+      { sort_order: 1, label_de: 'Alle Kurse vor Ort', spec: null, focus: null, loc: null, delivery: 'presence', status: 'draft' },
+      { sort_order: 2, label_de: 'Töpfern in Zürich', spec: 'Keramik', focus: 'Drehscheibe', loc: 'Zürich', delivery: 'presence' },
+    ],
+  };
+
+  it('reicht spec und focus in das moderne Format durch', () => {
+    const result = adaptThemeWorldToConfig({ themeWorld: TW_MIT_CTA });
+
+    expect(result.ctaLinks[1]).toMatchObject({
+      label: 'Töpfern in Zürich',
+      spec: 'Keramik',
+      focus: 'Drehscheibe',
+      loc: 'Zürich',
+      delivery: 'presence',
+    });
+  });
+
+  it('gibt nicht gesetzte Parameter als null zurück', () => {
+    const result = adaptThemeWorldToConfig({ themeWorld: TW_MIT_CTA });
+
+    expect(result.ctaLinks[0].spec).toBeNull();
+    expect(result.ctaLinks[0].focus).toBeNull();
+    expect(result.ctaLinks[0].loc).toBeNull();
+    expect(result.ctaLinks[0].delivery).toBe('presence');
+  });
+
+  it('baut die öffentlichen Suchparameter des Legacy-Formats aus allen vier Feldern', () => {
+    const result = adaptToLegacyBereichConfig({ themeWorld: TW_MIT_CTA });
+
+    expect(result.ctaLinks[1].params).toEqual({
+      spec: 'Keramik',
+      focus: 'Drehscheibe',
+      loc: 'Zürich',
+      delivery: 'presence',
+    });
+  });
+
+  it('lässt nicht gesetzte Parameter aus den Legacy-Suchparametern weg', () => {
+    const result = adaptToLegacyBereichConfig({ themeWorld: TW_MIT_CTA });
+
+    expect(result.ctaLinks[0].params).toEqual({ delivery: 'presence' });
+  });
+
+  it('behält die Reihenfolge der Links bei', () => {
+    const result = adaptToLegacyBereichConfig({ themeWorld: TW_MIT_CTA });
+
+    expect(result.ctaLinks.map((l) => l.label.de)).toEqual([
+      'Alle Kurse vor Ort',
+      'Töpfern in Zürich',
+    ]);
+  });
+});

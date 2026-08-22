@@ -38,6 +38,12 @@ import { createClient } from '@supabase/supabase-js';
 import { fileURLToPath } from 'url';
 import { dirname, resolve } from 'path';
 
+// Ein Regelwerk für alle Schreibpfade: dieselbe Funktion prüft und normalisiert
+// die Quellenangaben auch in der Admin-API (api/admin-theme-world-scenarios.js).
+// Ein über den Importer eingespieltes Szenario erfüllt damit exakt denselben
+// Feldvertrag wie eines, das die Redaktion im Admin erfasst hat.
+import { validateScenarioSources } from '../src/lib/scenarioSources.js';
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const PROJECT_ROOT = resolve(__dirname, '..');
@@ -173,6 +179,16 @@ function validateSchema(data) {
       if (!s.meta_description) warnings.push(`${prefix}: "meta_description" fehlt`);
       if (s.slug && slugsSeen.has(s.slug)) errors.push(`${prefix}: Doppelter slug "${s.slug}"`);
       if (s.slug) slugsSeen.add(s.slug);
+
+      // Quellenangaben gegen denselben Vertrag prüfen, den die Admin-API
+      // durchsetzt. Ein fehlendes sources-Feld ist zulässig (kein Quellenblock);
+      // ein vorhandenes muss vollständig gültig sein, sonst würde der Import
+      // Einträge schreiben, die im Admin nie wieder speicherbar wären.
+      if ('sources' in s) {
+        const result = validateScenarioSources(s.sources);
+        for (const error of result.errors) errors.push(`${prefix}: ${error}`);
+        for (const warning of result.warnings) warnings.push(`${prefix}: ${warning}`);
+      }
     }
   }
 
@@ -280,6 +296,7 @@ function printDryRun(data) {
     console.log(`       HTML:    ${htmlLen} Zeichen`);
     console.log(`       Bild:    ${s.card_image_url ? '✓' : '– kein Bild'}`);
     console.log(`       SEO:     ${s.meta_title ? '✓' : '–'}`);
+    console.log(`       Quellen: ${(s.sources || []).length}`);
   }
 
   console.log(`\nFAQs:                 ${faqs.length}`);
@@ -518,6 +535,10 @@ async function applySequential(supabase, data) {
       meta_description: s.meta_description || null,
       cta_label_de: s.cta_label_de || null,
       cta_config: s.cta_config || null,
+      // Immer den normalisierten Wert schreiben, nie das Rohobjekt aus der
+      // Importdatei — identisch zum Vorgehen der Admin-API. validateSchema()
+      // hat vorher sichergestellt, dass hier nichts Ungültiges mehr ankommt.
+      sources: validateScenarioSources(s.sources).sources,
       status: s.status || 'draft',
     };
     const { error: sErr } = await supabase
