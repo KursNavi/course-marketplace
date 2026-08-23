@@ -45,7 +45,10 @@ function isChunkLoadError(error) {
     name.includes('chunkloaderror') ||
     message.includes('failed to fetch dynamically imported module') ||
     message.includes('importing a module script failed') ||
-    message.includes('loading chunk')
+    message.includes('loading chunk') ||
+    // Safari/Firefox when a stale chunk URL resolves to the SPA index.html:
+    // "'text/html' is not a valid JavaScript MIME type."
+    message.includes('not a valid javascript mime type')
   );
 }
 
