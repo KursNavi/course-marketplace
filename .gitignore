@@ -1,8 +1,14 @@
 node_modules
+
+# Umgebungsdateien: grundsätzlich ALLE ignorieren.
+# Vorher standen hier einzelne Namen (.env, .env.local, .env*.local,
+# .env.vercel). Jede lokal angelegte Variante, die nicht zufällig auf eines
+# dieser Muster passte, war für git sichtbar und nur einen `git add .` von
+# einem Commit entfernt. Deshalb jetzt umgekehrt: alles ausschliessen und
+# ausschliesslich die Vorlage .env.example zulassen.
 .env
-.env.local
-.env*.local
-.env.vercel
+.env.*
+!.env.example
 .tmp-*.json
 .DS_Store
 dist
