@@ -430,6 +430,26 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
   // Build-, System- oder Git-Zeit. Ohne Wert entfällt der Prüfsatz komplett.
   const editorialNotice = buildEditorialReviewNotice(scenario.lastReviewedAt);
 
+  // Sichtbares Artikel-Titelbild.
+  //
+  // Es kommt aus den bereits vorhandenen Bildfeldern, keine neue Spalte:
+  //   card_image_url — das redaktionelle Artikelbild (erste Wahl)
+  //   og_image_url   — die Social-Vorschau, nur als Zweitquelle
+  // Fehlen beide (etwa in der Yoga-Themenwelt), wird schlicht nichts gerendert —
+  // kein Platzhalter, kein leerer Rahmen.
+  const articleImageUrl = scenario.cardImageUrl || scenario.ogImageUrl || null;
+  const articleImageAlt =
+    scenario.cardImageAlt
+    || scenario.ogImageAlt
+    || scenario.label[lang]
+    || scenario.label.de
+    || '';
+  // Doppelt zeigen wäre schlimmer als gar nicht zeigen: bringt der Artikeltext
+  // dasselbe Bild bereits mit, bleibt der Kopfbereich leer.
+  const showArticleImage = Boolean(
+    articleImageUrl && !(articleContent && articleContent.includes(articleImageUrl)),
+  );
+
   const segmentLabel = theme.label?.[lang] || theme.label?.de || segment;
   const bereichTitle = (bereichConfig.title[lang] || bereichConfig.title.de).split('—')[0].trim();
   // Für "Andere Szenarien"-Navigation: Legacy-Config nutzen (immer vollständig)
@@ -497,6 +517,23 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
 
       {/* Article Content */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        {/* Titelbild direkt unter dem farbigen Header — gleiche Breite wie der
+            Artikel, 16:9 und beschnitten statt verzerrt. Schlägt das Laden fehl,
+            verschwindet der ganze Rahmen statt ein kaputtes Bild zu zeigen. */}
+        {showArticleImage && (
+          <figure data-testid="szenario-artikelbild" className="mb-8">
+            <img
+              src={articleImageUrl}
+              alt={articleImageAlt}
+              decoding="async"
+              className="w-full aspect-video object-cover rounded-2xl shadow-sm border border-gray-100"
+              onError={(event) => {
+                const figure = event.currentTarget.parentElement;
+                if (figure) figure.hidden = true;
+              }}
+            />
+          </figure>
+        )}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 md:p-12">
           {articleIsLoading ? (
             /* Die DB-Fassung ist unterwegs. Bis sie da ist, wird bewusst keine
