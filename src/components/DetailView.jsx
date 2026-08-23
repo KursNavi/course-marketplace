@@ -3,7 +3,7 @@ import { ArrowLeft, User, MapPin, Clock, CheckCircle, Calendar, Shield, External
 import { supabase } from '../lib/supabase';
 import { formatPriceCHF, getPriceLabel } from '../lib/formatPrice';
 import { useTaxonomy } from '../hooks/useTaxonomy';
-import { SEGMENT_CONFIG, CANTON_ABBR, formatLocationWithCanton } from '../lib/constants';
+import { SEGMENT_CONFIG, formatPublicLocation, formatPublicLocations } from '../lib/constants';
 import { BASE_URL, buildCoursePath } from '../lib/siteConfig';
 import { getBereichByAreaSlug, getBereichUrl } from '../lib/bereichLandingConfig';
 import { DEFAULT_COURSE_IMAGE } from '../lib/imageUtils';
@@ -818,53 +818,33 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
                             <span className="font-medium group-hover:underline">{course.instructor_name}</span>
                         </button>
                         {(() => {
-                            // Helper: extract the city portion from a location string.
-                            // Stored location can be "City" or "Street, City" — always take the last segment.
-                            const extractCity = (loc) => {
-                                if (!loc) return '';
-                                const idx = loc.lastIndexOf(',');
-                                return idx !== -1 ? loc.substring(idx + 1).trim() : loc.trim();
-                            };
-
                             const presenceEvents = Array.isArray(course.course_events)
                                 ? course.course_events.filter(ev =>
                                     ev.start_date && ev.canton &&
                                     ev.canton !== 'Online' && ev.canton !== 'Ausland')
                                 : [];
+                            const presenceLocs = Array.isArray(course.course_locations)
+                                ? course.course_locations
+                                    .filter(l => l.location_type === 'presence')
+                                    .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+                                : [];
 
                             let locationText;
                             if (presenceEvents.length > 0) {
-                                // Events mode: derive location from course_events (authoritative).
-                                // course_locations and course.address may be stale after a mode switch.
-                                const uniqueCantons = [...new Set(presenceEvents.map(ev => ev.canton).filter(Boolean))];
-                                if (uniqueCantons.length === 1) {
-                                    // Single canton: show the city with canton abbreviation
-                                    const city = extractCity(presenceEvents[0].location);
-                                    const abbr = CANTON_ABBR[uniqueCantons[0]];
-                                    locationText = city
-                                        ? (abbr ? `${city} (${abbr})` : city)
-                                        : (abbr || uniqueCantons[0]);
-                                } else {
-                                    // Multiple cantons: list abbreviations (e.g. "BE, ZH, AG")
-                                    locationText = uniqueCantons.map(c => CANTON_ABBR[c] || c).join(', ');
-                                }
+                                // Events are authoritative when concrete dates exist.
+                                locationText = formatPublicLocations(presenceEvents);
                             } else if (!Array.isArray(course.course_events) || course.course_events.length === 0) {
-                                // Locations mode: use course_locations as the authoritative source
-                                const presenceLocs = Array.isArray(course.course_locations)
-                                    ? course.course_locations
-                                        .filter(l => l.location_type === 'presence')
-                                        .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
-                                    : [];
-                                if (presenceLocs.length > 1) {
-                                    const cantons = [...new Set(presenceLocs.map(l => l.canton).filter(Boolean))];
-                                    locationText = cantons.map(c => CANTON_ABBR[c] || c).join(', ');
-                                } else if (presenceLocs.length === 1) {
-                                    const loc = presenceLocs[0];
-                                    locationText = formatLocationWithCanton({ street: loc.street, city: loc.city, canton: loc.canton });
-                                }
+                                // Fixed locations use the same public city-only format.
+                                locationText = formatPublicLocations(presenceLocs);
                             }
                             // Final fallback to courses-table fields
-                            if (!locationText) locationText = course.address || course.city || (course.canton ? (CANTON_ABBR[course.canton] || course.canton) : '') || '';
+                            if (!locationText) {
+                                locationText = formatPublicLocation({
+                                    city: course.city,
+                                    canton: course.canton,
+                                    location: course.address
+                                });
+                            }
                             if (!locationText) return null;
                             return (
                                 <div className="flex items-center text-gray-700">
@@ -993,19 +973,7 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
                                         const dateLabel = startStr
                                             ? (endStr && endStr !== startStr ? `${startStr} – ${endStr}` : startStr)
                                             : 'Termin nach Absprache';
-                                        // Show only the city portion — ev.location may contain a
-                                        // "Street, City" string; for lead courses the exact address is
-                                        // shared by the teacher after contact, not needed publicly.
-                                        const rawLoc = ev.location || '';
-                                        const commaIdx = rawLoc.lastIndexOf(',');
-                                        const evCity = commaIdx !== -1
-                                            ? rawLoc.substring(commaIdx + 1).trim()
-                                            : rawLoc.trim();
-                                        const evAbbr = ev.canton && ev.canton !== 'Online' && ev.canton !== 'Ausland'
-                                            ? CANTON_ABBR[ev.canton] : undefined;
-                                        const locationLabel = evCity
-                                            ? (evAbbr ? `${evCity} (${evAbbr})` : evCity)
-                                            : (evAbbr || ev.canton || '');
+                                        const locationLabel = formatPublicLocation(ev);
                                         const secondLine = [ev.schedule_description, locationLabel].filter(Boolean).join(' · ');
                                         return (
                                             <div key={i} className="py-2 border-b border-gray-100 last:border-0 text-sm">
