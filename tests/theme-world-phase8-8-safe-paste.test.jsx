@@ -1,5 +1,18 @@
 /**
+ * @vitest-environment-options { "url": "https://admin.kursnavi.test/themenwelten" }
+ */
+
+/**
  * Phase 8.8 Tests: Sicheres Clipboard-Einfügen im AdminRichTextEditor
+ *
+ * HTTPS-Herkunft (siehe Docblock oben): Der Admin läuft in Betrieb über HTTPS.
+ * jsdom nutzt standardmässig http://localhost:3000 — unter diesem Protokoll
+ * lassen sich die Prüfungen für eingefügte Bildquellen nicht aussagekräftig
+ * testen. Eine protokollrelative Adresse wie //example.com/bild.jpg löste sich
+ * dort zu http auf und wurde schon deshalb abgelehnt; der eigentliche Fehler
+ * (unter HTTPS wird daraus eine scheinbar sichere https-Adresse) wäre
+ * unentdeckt geblieben. Mit der https-Herkunft prüfen die Tests den Zustand,
+ * der in Betrieb tatsächlich gilt.
  *
  * Prüft den DOM-basierten Paste-Pfad (HTML mit sicherem Fallback auf Plain Text).
  * Der globale execCommand-Mock bleibt aktiv — der Paste-Pfad verwendet kein
@@ -396,5 +409,98 @@ describe('Phase 8.8 – HTML-Paste: direkter Export', () => {
     expect(range.collapse).toHaveBeenCalledWith(false);
     expect(sel.addRange).toHaveBeenCalledWith(range);
     expect(host.innerHTML).toContain('<p>HTML-Inhalt</p>');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Bildquellen beim HTML-Paste
+// ---------------------------------------------------------------------------
+
+/**
+ * Nur eine ausgeschriebene https://-Adresse darf als Bildquelle übernommen
+ * werden.
+ *
+ * Hintergrund des Regressionsschutzes: Die Prüfung löste die Adresse zuvor
+ * gegen window.location.href auf. Eine protokollrelative Angabe wie
+ * //fremder-host/bild.jpg wurde dadurch unter HTTPS zu einer https-Adresse und
+ * galt als sicher — obwohl der Host beliebig ist. Relative Angaben lösten aus
+ * demselben Grund gegen die eigene Herkunft auf und kamen ebenfalls durch.
+ *
+ * Ein Bild mit unzulässiger Quelle wird komplett verworfen: es darf auch nicht
+ * mit leerem src im Editor-DOM auftauchen.
+ */
+describe('Safe Paste: Bildquellen', () => {
+  it('übernimmt eine sichere absolute https-Bild-URL', () => {
+    const fragment = sanitizePastedHtml('<p><img src="https://example.org/bild.jpg" alt="Beispiel"></p>');
+    const img = fragment.querySelector('img');
+
+    expect(img).not.toBeNull();
+    expect(img.getAttribute('src')).toBe('https://example.org/bild.jpg');
+    expect(img.getAttribute('alt')).toBe('Beispiel');
+  });
+
+  it('entfernt eine protokollrelative Bild-URL', () => {
+    const fragment = sanitizePastedHtml('<p><img src="//example.com/bild.jpg" alt="Fremd"></p>');
+
+    expect(fragment.querySelector('img')).toBeNull();
+  });
+
+  it('entfernt eine relative Bild-URL', () => {
+    const fragment = sanitizePastedHtml('<p><img src="/bild.jpg" alt="Relativ"></p>');
+
+    expect(fragment.querySelector('img')).toBeNull();
+  });
+
+  it('entfernt ein data:-Bild', () => {
+    const dataUri = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
+    const fragment = sanitizePastedHtml(`<p><img src="${dataUri}" alt="Inline"></p>`);
+
+    expect(fragment.querySelector('img')).toBeNull();
+  });
+
+  it.each([
+    ['http', 'http://example.org/bild.jpg'],
+    ['blob', 'blob:https://example.org/9b7e0f1c'],
+    // eslint-disable-next-line no-script-url
+    ['javascript', 'javascript:alert(1)'],
+    ['file', 'file:///C:/bild.jpg'],
+    ['schemalos-relativ', 'bild.jpg'],
+    ['leer', ''],
+  ])('entfernt ein Bild mit %s-Quelle', (_name, src) => {
+    const fragment = sanitizePastedHtml(`<p><img src="${src}" alt="Test"></p>`);
+
+    expect(fragment.querySelector('img')).toBeNull();
+  });
+
+  it('behält den umgebenden Text, wenn nur das Bild unsicher ist', () => {
+    const fragment = sanitizePastedHtml(
+      '<p>Davor <img src="//example.com/bild.jpg" alt="Fremd"> danach</p>',
+    );
+
+    expect(fragment.querySelector('img')).toBeNull();
+    expect(fragment.textContent).toContain('Davor');
+    expect(fragment.textContent).toContain('danach');
+  });
+
+  it('lässt kein Bild mit leerem src im eingefügten DOM zurück', () => {
+    const host = document.createElement('div');
+    const range = createMockRange(host);
+    mockSelectionWithRange(range);
+
+    insertHtmlAtCaret('<p><img src="//example.com/bild.jpg" alt="Fremd"></p>');
+
+    expect(host.querySelector('img')).toBeNull();
+    expect(host.innerHTML).not.toContain('example.com');
+  });
+
+  it('trennt sicheres und unsicheres Bild im selben Einfügevorgang', () => {
+    const fragment = sanitizePastedHtml(
+      '<p><img src="https://example.org/gut.jpg" alt="Gut">'
+      + '<img src="//example.com/schlecht.jpg" alt="Schlecht"></p>',
+    );
+    const images = fragment.querySelectorAll('img');
+
+    expect(images).toHaveLength(1);
+    expect(images[0].getAttribute('src')).toBe('https://example.org/gut.jpg');
   });
 });

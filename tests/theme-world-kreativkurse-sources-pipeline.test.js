@@ -54,11 +54,26 @@ const SOURCE_SVEB = {
 // 1. Admin-API-Roundtrip: create → get → update → get
 // ===========================================================================
 
-beforeAll(() => {
+/**
+ * Handler des Admin-Endpunkts. Wird einmal in beforeAll geladen, nicht in
+ * jedem Testfall.
+ *
+ * Der Import zieht sanitize-html nach und kostet beim ersten Mal je nach
+ * Maschinenlast mehrere Sekunden. Lag er im ersten Testfall, wurde diese Zeit
+ * gegen dessen 5-Sekunden-Budget gerechnet — der Test lief allein zuverlässig
+ * durch und riss die Grenze erst unter der Parallellast des vollständigen
+ * Laufs. In beforeAll gehört die Ladezeit zum Setup und nicht mehr zu einem
+ * einzelnen Fall.
+ */
+let handler;
+
+beforeAll(async () => {
   process.env.SUPABASE_URL = 'https://omoapbvfligjfznzivyu.supabase.co';
   process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-service-key-placeholder';
   process.env.VITE_SUPABASE_URL = 'https://omoapbvfligjfznzivyu.supabase.co';
-});
+
+  ({ default: handler } = await import('../api/admin-theme-world-scenarios.js'));
+}, 30_000);
 
 const TW_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const SC_ID = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
@@ -120,7 +135,6 @@ function createFakeDb(initialScenario) {
 }
 
 async function invoke(method, action, query, body) {
-  const { default: handler } = await import('../api/admin-theme-world-scenarios.js');
   const req = {
     method,
     query: { action, ...query },

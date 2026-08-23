@@ -75,6 +75,17 @@ const SECTION_TITLES_ALLOWED_KEYS = new Set([
 // Längster Bestandswert (yoga regions_subheading) liegt bei ~108 Zeichen.
 export const SECTION_TITLE_MAX = 200;
 
+// Zeichenlimit für theme_world_regions.anchor_text_de — den SEO-Linktext eines
+// Regionenlinks. Die DB-Spalte ist `text` und damit unbegrenzt; die Grenze ist
+// eine fachliche, keine technische.
+//
+// Der Wert ist die ausformulierte Variante von label_de (max 100) und darf
+// deshalb länger sein. Längster Bestandswert ist 54 Zeichen ("Online-live Yoga-
+// und Achtsamkeitskurse in der Schweiz"), das vorbereitete Kreativkurse-Paket
+// bleibt unter 30. 200 lässt reichlich Luft und hält zugleich fest, dass hier
+// ein Linktext steht und kein Fliesstext.
+export const ANCHOR_TEXT_MAX = 200;
+
 // ============================================================
 // Hilfsfunktionen
 // ============================================================
@@ -746,6 +757,13 @@ export function validateSpecialty(data) {
 export function validateRegion(data) {
   const errors = [];
   requireText(errors, data, 'label_de', 100);
+
+  // anchor_text_de bleibt optional: fehlt der Wert oder ist er null bzw. leer,
+  // fällt die Anzeige auf label_de zurück (themeWorldAdapter.js, Import-RPC und
+  // api/admin-theme-world-sub.js tun das übereinstimmend). Genau deshalb darf
+  // hier kein Pflichtfeld daraus werden — geprüft wird nur, dass ein gesetzter
+  // Wert ein String in vertretbarer Länge ist.
+  optionalText(errors, data, 'anchor_text_de', ANCHOR_TEXT_MAX);
 
   if (data.delivery_param && !VALID_REGION_DELIVERY_PARAMS.includes(data.delivery_param)) {
     collect(errors, 'delivery_param', `Ungültiger Wert. Erlaubt: ${VALID_REGION_DELIVERY_PARAMS.join(', ')}.`);

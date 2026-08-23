@@ -81,15 +81,49 @@ function isSafePastedHref(value) {
   }
 }
 
+/**
+ * Entscheidet, ob eine eingefügte Bildquelle übernommen werden darf.
+ *
+ * Erlaubt ist ausschliesslich eine vollständig ausgeschriebene https://-Adresse.
+ * Alles andere wird verworfen — das Bild fliegt dann samt Element aus dem
+ * eingefügten Inhalt, statt mit leerem src im Editor zu landen.
+ *
+ * Warum die Auflösung gegen window.location.href weggefallen ist:
+ *   Eine protokollrelative Adresse (//fremder-host/bild.jpg) übernimmt das
+ *   Protokoll der aktuellen Seite. Unter HTTPS machte new URL() daraus
+ *   https://fremder-host/bild.jpg, die Protokollprüfung sagte «https» — und ein
+ *   beliebiger fremder Host wurde durchgewunken. Aus demselben Grund galten
+ *   relative Angaben (/bild.jpg) als sicher: sie lösten gegen die eigene
+ *   Herkunft auf. Beides ist keine geprüfte Bildquelle, sondern ein Artefakt der
+ *   Auflösung.
+ *
+ * Deshalb wird hier ohne Basis geparst. Relative und protokollrelative Formen
+ * scheitern dadurch schon am Parser; die //-Form wird zusätzlich vorher
+ * abgefangen, damit die Absicht im Code steht und ein später ergänztes
+ * Basisargument die Lücke nicht stillschweigend wieder öffnet.
+ *
+ * Abgelehnt werden damit unter anderem: //host/bild.jpg, /bild.jpg, bild.jpg,
+ * http://…, data:…, blob:…, javascript:… und file:…
+ *
+ * @param {unknown} value - Rohwert des src-Attributs aus dem eingefügten HTML
+ * @returns {boolean}
+ */
 function isSafePastedImageSrc(value) {
   const src = String(value || '').trim();
   if (!src) return false;
+
+  // Protokollrelativ — niemals auflösen, immer ablehnen.
+  if (src.startsWith('//')) return false;
+
+  let parsed;
   try {
-    const parsed = new URL(src, window.location.href);
-    return parsed.protocol === 'https:';
+    // Ohne Basis: nur absolute Adressen mit eigenem Schema kommen durch.
+    parsed = new URL(src);
   } catch (_) {
     return false;
   }
+
+  return parsed.protocol === 'https:';
 }
 
 function copyPastedChildren(source, target) {
