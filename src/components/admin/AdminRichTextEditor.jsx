@@ -60,7 +60,7 @@ import {
   Unlink, Globe, Undo2, Redo2, X, Plus, Table,
   Trash2, Scissors, ChevronDown,
 } from 'lucide-react';
-import { insertPlainTextAtCaret } from './richTextPasteUtils';
+import { insertHtmlAtCaret, insertPlainTextAtCaret } from './richTextPasteUtils';
 import { normalizeInlineFormatting } from './richTextFormatting';
 import {
   BLOCK_LABELS,
@@ -1250,12 +1250,19 @@ export default function AdminRichTextEditor({
     setTimeout(updateFormatState, 0);
   };
 
-  // Clipboard: ausschliesslich text/plain
+  // Clipboard: strukturiertes HTML übernehmen, wenn vorhanden; sonst sicher
+  // als reinen Text einfügen. Das HTML wird vor dem Einfügen in ein detached
+  // Fragment bereinigt und nie direkt in den sichtbaren Editor geschrieben.
   const handlePaste = (e) => {
     e.preventDefault();
-    const text = e.clipboardData?.getData('text/plain') ?? '';
-    insertPlainTextAtCaret(text);
+    const html = e.clipboardData?.getData('text/html') ?? '';
+    const insertedHtml = html ? insertHtmlAtCaret(html) : false;
+    if (!insertedHtml) {
+      const text = e.clipboardData?.getData('text/plain') ?? '';
+      insertPlainTextAtCaret(text);
+    }
     notifyChange();
+    updateFormatState();
   };
 
   // Die Baustein-Gestaltung stammt aus der öffentlichen Klasse `prose-ratgeber`

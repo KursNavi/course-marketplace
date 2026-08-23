@@ -194,6 +194,13 @@ async function renderTrustTab(data = buildThemeWorld()) {
   await openTab('Trust & Hinweise');
 }
 
+async function renderRegionsTab(data = buildThemeWorld(), regions = []) {
+  mockGetThemeWorld.mockResolvedValue(data);
+  mockGetAllSubEntities.mockResolvedValue({ ...buildEmptySubs(), regions });
+  render(<AdminThemeWorldForm {...defaultProps} themeWorldId={data.id} />);
+  await openTab('Regionen');
+}
+
 /**
  * Findet das Eingabefeld eines section_titles-Keys.
  *
@@ -268,6 +275,23 @@ beforeEach(() => {
 // ============================================================
 // 1. section_titles — alle elf Keys bearbeitbar
 // ============================================================
+
+describe('Regionen: anchor_text_de ist im Admin sichtbar', () => {
+  it('zeigt den gespeicherten öffentlichen Linktext', async () => {
+    await renderRegionsTab(buildThemeWorld(), [{
+      id: 'region-1',
+      label_de: 'Zürich',
+      anchor_text_de: 'Kreativkurse in Zürich',
+      loc_param: 'Zürich',
+      delivery_param: null,
+      sort_order: 1,
+      is_active: true,
+    }]);
+
+    expect(screen.getByDisplayValue('Kreativkurse in Zürich')).toBeInTheDocument();
+    expect(screen.getByText('Linktext für öffentliche Regionenseite')).toBeInTheDocument();
+  });
+});
 
 describe('section_titles: alle geforderten Überschriften sind bearbeitbar', () => {
   it.each(REQUIRED_KEYS)('zeigt den gespeicherten Wert von %s', async (key) => {

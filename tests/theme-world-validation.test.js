@@ -647,6 +647,81 @@ describe('validateRegion', () => {
   });
 
   // ------------------------------------------------------------------
+  // Fall 6: anchor_text_de — SEO-Linktext des Regionenlinks.
+  //
+  // Der Admin zeigt und speichert das Feld seit jeher, geprüft wurde es
+  // serverseitig aber nicht. Ein Nicht-String oder ein ungebremst langer
+  // Wert erreichte damit die Datenbank, obwohl die Spalte den Linktext
+  // öffentlich ausgibt.
+  //
+  // Optional bleibt es: fehlt der Wert oder ist er leer/null, fällt die
+  // Anzeige auf label_de zurück (themeWorldAdapter.js:343 und der
+  // Import-RPC via COALESCE). Diese Fallback-Logik darf die Validierung
+  // nicht aushebeln, indem sie das Feld zur Pflicht macht.
+  // ------------------------------------------------------------------
+  describe('Fall 6: anchor_text_de', () => {
+    it('akzeptiert einen gültigen Linktext', () => {
+      const result = validateRegion({
+        label_de: 'Zürich',
+        anchor_text_de: 'Kreativkurse in Zürich',
+        loc_param: 'Zürich',
+      });
+      expect(result.valid).toBe(true);
+      expect(result.errors).toEqual([]);
+    });
+
+    it('akzeptiert die Bestandswerte der Sport- und Yoga-Themenwelten', () => {
+      for (const anchor of [
+        'Online-live Yoga- und Achtsamkeitskurse in der Schweiz',
+        'Alle Sport- und Fitness-Ausbildungen in der Schweiz',
+      ]) {
+        const result = validateRegion({ label_de: 'Bestand', anchor_text_de: anchor });
+        expect(result.valid).toBe(true);
+      }
+    });
+
+    it.each([
+      ['null', null],
+      ['leerer String', ''],
+      ['undefined', undefined],
+    ])('akzeptiert %s — die Anzeige fällt dann auf label_de zurück', (_name, anchor_text_de) => {
+      const result = validateRegion({ label_de: 'Ganze Schweiz', anchor_text_de });
+      expect(result.valid).toBe(true);
+      expect(result.errors).toEqual([]);
+    });
+
+    it('akzeptiert eine Region ganz ohne anchor_text_de-Schlüssel', () => {
+      const result = validateRegion({ label_de: 'Ganze Schweiz' });
+      expect(result.valid).toBe(true);
+      expect(result.errors).toEqual([]);
+    });
+
+    it.each([
+      ['Zahl', 42],
+      ['Objekt', {}],
+      ['Array', []],
+      ['Boolean', true],
+    ])('lehnt %s ab', (_name, anchor_text_de) => {
+      const result = validateRegion({ label_de: 'Zürich', anchor_text_de });
+      expect(result.valid).toBe(false);
+      expect(result.errors).toContain('anchor_text_de: Muss ein String sein.');
+    });
+
+    it('akzeptiert exakt 200 Zeichen und lehnt 201 ab', () => {
+      expect(validateRegion({ label_de: 'Zürich', anchor_text_de: 'x'.repeat(200) }).valid).toBe(true);
+
+      const tooLong = validateRegion({ label_de: 'Zürich', anchor_text_de: 'x'.repeat(201) });
+      expect(tooLong.valid).toBe(false);
+      expect(tooLong.errors).toContain('anchor_text_de: Zu lang (max 200 Zeichen).');
+    });
+
+    it('lässt label_de unberührt — ein Fehler am Linktext betrifft nur ihn', () => {
+      const result = validateRegion({ label_de: 'Zürich', anchor_text_de: 42 });
+      expect(result.errors.some((e) => e.startsWith('label_de'))).toBe(false);
+    });
+  });
+
+  // ------------------------------------------------------------------
   // Weiterhin ungültig
   // ------------------------------------------------------------------
   it('lehnt ungültigen delivery_param ab', () => {

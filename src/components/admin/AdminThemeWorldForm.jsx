@@ -1310,13 +1310,18 @@ export default function AdminThemeWorldForm({
               onChange={(items) => { setRegionen(items); regionenSave.markDirty(); }}
               emptyLabel="Noch keine Regionen"
               addLabel="Region hinzufügen"
-              newItem={() => ({ label_de: '', loc_param: '', delivery_param: '', sort_order: regionen.length, is_active: true })}
+              newItem={() => ({ label_de: '', anchor_text_de: '', loc_param: '', delivery_param: '', sort_order: regionen.length, is_active: true })}
               renderItem={(item, i, update, remove) => (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div className="md:col-span-2">
                     {/* Redaktionelles Anzeige-Label — bewusst weiterhin Freitext. */}
                     <label className="text-xs font-semibold text-gray-600">Anzeige-Label</label>
                     <input className="FormInput mt-1" value={item.label_de || ''} onChange={(e) => update({ label_de: e.target.value })} placeholder="Zürich" />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="text-xs font-semibold text-gray-600">Linktext für öffentliche Regionenseite</label>
+                    <input className="FormInput mt-1" value={item.anchor_text_de || ''} onChange={(e) => update({ anchor_text_de: e.target.value })} placeholder="Kreativkurse in Zürich" />
+                    <p className="text-xs text-gray-500 mt-1">Dieser Text wird für den sichtbaren Regions-Link verwendet. Leer lassen nutzt das Anzeige-Label.</p>
                   </div>
                   <div>
                     <label className="text-xs font-semibold text-gray-600">Standort-Parameter (loc)</label>
