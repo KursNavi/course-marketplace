@@ -182,6 +182,22 @@ describe('Szenario-Medien im Legacy-Adapter', () => {
       ogImageAlt: 'Trainer beim Krafttraining',
     });
   });
+
+  it('gibt das Kartenbild auch an die Detailansicht weiter — Quelle des Artikelbildes', () => {
+    const scenario = adaptToLegacySzenarioConfig(SPORT_SCENARIOS[0]);
+
+    expect(scenario).toMatchObject({
+      cardImageUrl: 'https://example.com/card1.jpg',
+      cardImageAlt: SPORT_SCENARIOS[0].card_image_alt,
+    });
+  });
+
+  it('setzt cardImageUrl der Detailansicht auf null, wenn kein Bild gepflegt ist', () => {
+    const scenario = adaptToLegacySzenarioConfig({ ...SPORT_SCENARIOS[0], card_image_url: null, card_image_alt: null });
+
+    expect(scenario.cardImageUrl).toBeNull();
+    expect(scenario.cardImageAlt).toBe('');
+  });
 });
 
 // ---------------------------------------------------------------------------
