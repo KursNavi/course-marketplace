@@ -7,7 +7,7 @@ import { CATEGORY_LABELS, TRANSLATIONS, CATEGORY_TYPES } from './lib/constants';
 import { supabase } from './lib/supabase';
 import { isImageUsedByOtherCourses, deleteImageFromStorage } from './lib/imageUtils';
 import { BASE_URL, slugify as siteSlugify, buildCoursePath as siteBuildCoursePath } from './lib/siteConfig';
-import { buildSyntheticCategories, getNormalizedDeliveryTypes, getPrimaryCategorySlug, normalizeCategoryType } from './lib/courseMetadata';
+import { buildSyntheticCategories, getNormalizedDeliveryTypes, getPrimaryCategorySlug, normalizeCategoryType, normalizeDeliveryTypeKey } from './lib/courseMetadata';
 import { refreshCoursesAfterMutation } from './lib/courseRefresh';
 import { trackPageView } from './lib/analytics';
 import { useTaxonomy } from './hooks/useTaxonomy';
@@ -110,6 +110,10 @@ const SuccessView = lazyWithRetry(() => import('./components/SuccessView'));
 const BlogList = lazyWithRetry(() => import('./components/BlogList'));
 const BlogDetail = lazyWithRetry(() => import('./components/BlogDetail'));
 const AdminBlogManager = lazyWithRetry(() => import('./components/AdminBlogManager'));
+const AdminThemeWorldList = lazyWithRetry(() => import('./components/admin/AdminThemeWorldList'));
+const AdminThemeWorldForm = lazyWithRetry(() => import('./components/admin/AdminThemeWorldForm'));
+const AdminScenarioList = lazyWithRetry(() => import('./components/admin/AdminScenarioList'));
+const AdminScenarioForm = lazyWithRetry(() => import('./components/admin/AdminScenarioForm'));
 const CategoryLocationPage = lazyWithRetry(() => import('./components/CategoryLocationPage'));
 const ProviderDirectory = lazyWithRetry(() => import('./components/ProviderDirectory'));
 const ProviderProfilePage = lazyWithRetry(() => import('./components/ProviderProfilePage'));
@@ -183,6 +187,19 @@ class ErrorBoundary extends React.Component {
   }
 }
 
+
+/**
+ * Parst und kanonisiert einen Delivery-URL-Parameter.
+ * Entfernt leere Werte, unbekannte Werte und Duplikate.
+ * Aliase werden normalisiert: in_person → presence, onsite → presence, online → online_live
+ *
+ * @param {string|null} param - Rohwert aus URLSearchParams.get('delivery')
+ * @returns {string[]} Kanonisierte, deduplizierte Delivery-Werte
+ */
+function parseDeliveryParam(param) {
+  if (!param) return [];
+  return [...new Set(param.split(',').map(normalizeDeliveryTypeKey).filter(Boolean))];
+}
 
 // --- MAIN APP COMPONENT ---
 export default function KursNaviPro() {  // 1. Initial State Logic
@@ -311,6 +328,10 @@ export default function KursNaviPro() {  // 1. Initial State Logic
   const articlesRef = useRef([]);
   useEffect(() => { articlesRef.current = articles; }, [articles]);
   const [selectedArticle, setSelectedArticle] = useState(null);
+  // Theme-World Admin State
+  const [selectedThemeWorldId, setSelectedThemeWorldId] = useState(null);
+  const [selectedScenarioId, setSelectedScenarioId] = useState(null);
+  const [themeWorldCreateNonce, setThemeWorldCreateNonce] = useState(0);
    const [loading, setLoading] = useState(true);
    const [fetchError, setFetchError] = useState(false);
   
@@ -377,8 +398,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
   const langMenuRef = useRef(null);
   const [selectedDeliveryTypes, setSelectedDeliveryTypes] = useState(() => {
     if (window.location.pathname !== '/search') return [];
-    const p = new URLSearchParams(window.location.search).get('delivery');
-    return p ? p.split(',') : [];
+    return parseDeliveryParam(new URLSearchParams(window.location.search).get('delivery'));
   });
   const [deliveryMenuOpen, setDeliveryMenuOpen] = useState(false);
   const deliveryMenuRef = useRef(null);
@@ -1289,7 +1309,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
                   price,
                   payout: retainedRevenue * 0.85,
                   isPaidOut: booking.is_paid,
-                  date: new Date(booking.created_at).toLocaleDateString(),
+                  date: new Date(booking.created_at).toLocaleDateString('de-CH'),
                   bookingType: booking.booking_type,
                   deliveredAt: booking.delivered_at,
                   paidAt: booking.paid_at,
@@ -1693,7 +1713,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
           if (locParam) setSelectedLocations(locParam.split(',')); else setSelectedLocations([]);
           if (levelParam) setFilterLevel(levelParam); else setFilterLevel("All");
           if (langParam) setSelectedLanguages(langParam.split(',')); else setSelectedLanguages([]);
-          if (deliveryParam) setSelectedDeliveryTypes(deliveryParam.split(',')); else setSelectedDeliveryTypes([]);
+          setSelectedDeliveryTypes(parseDeliveryParam(deliveryParam));
           if (fromParam) setFilterDateFrom(fromParam); else setFilterDateFrom("");
           if (toParam) setFilterDateTo(toParam); else setFilterDateTo("");
           if (priceParam) setFilterPriceMax(priceParam); else setFilterPriceMax("");
@@ -1982,7 +2002,7 @@ useEffect(() => {
     if (focusParam) setSearchFocus(focusParam);
     if (levelParam) setFilterLevel(levelParam);
     if (langParam) setSelectedLanguages(langParam.split(','));
-    if (deliveryParam) setSelectedDeliveryTypes(deliveryParam.split(','));
+    if (deliveryParam) setSelectedDeliveryTypes(parseDeliveryParam(deliveryParam));
     if (fromParam) setFilterDateFrom(fromParam);
     if (toParam) setFilterDateTo(toParam);
     if (priceParam) setFilterPriceMax(priceParam);
@@ -2134,17 +2154,16 @@ useEffect(() => {
       }>
 
       {/* GLOBAL LOADING STATE - Prevents White Screen on course-dependent views.
-          Only shown on 'home' and 'detail' which gate their content with !loading.
-          Static pages (AGB, Impressum, Landing, Blog, etc.) render immediately
-          and must NOT show this spinner. */}
-      {loading && (view === 'home' || view === 'detail') && (
+          Show spinner only for 'detail' view. For 'home' we render the Home component immediately and let it
+          display a local skeleton so the layout (nav/footer) remains visible without a blank main area. */}
+      {loading && view === 'detail' && (
           <div className="flex items-center justify-center min-h-[60vh]">
               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
           </div>
       )}
 
-      {!loading && view === 'home' && (
-                     <Home lang={lang} t={t} courses={publishedCourses} setView={setView} setSearchType={setSearchType} setSearchArea={setSearchArea} setSearchSpecialty={setSearchSpecialty} setSearchFocus={setSearchFocus} setSelectedCatPath={setSelectedCatPath} searchQuery={searchQuery} setSearchQuery={setSearchQuery} catMenuOpen={catMenuOpen} setCatMenuOpen={setCatMenuOpen} catMenuRef={catMenuRef} selectedLocations={selectedLocations} setSelectedLocations={setSelectedLocations} locMenuOpen={locMenuOpen} setLocMenuOpen={setLocMenuOpen} locMenuRef={locMenuRef} getCatLabel={getCatLabel} filterPro={filterPro} setFilterPro={setFilterPro} filterDirectBooking={filterDirectBooking} setFilterDirectBooking={setFilterDirectBooking} selectedDeliveryTypes={selectedDeliveryTypes} setSelectedDeliveryTypes={setSelectedDeliveryTypes} deliveryMenuOpen={deliveryMenuOpen} setDeliveryMenuOpen={setDeliveryMenuOpen} deliveryMenuRef={deliveryMenuRef} />
+      {view === 'home' && (
+                    <Home lang={lang} t={t} courses={publishedCourses} setView={setView} setSearchType={setSearchType} setSearchArea={setSearchArea} setSearchSpecialty={setSearchSpecialty} setSearchFocus={setSearchFocus} setSelectedCatPath={setSelectedCatPath} searchQuery={searchQuery} setSearchQuery={setSearchQuery} catMenuOpen={catMenuOpen} setCatMenuOpen={setCatMenuOpen} catMenuRef={catMenuRef} selectedLocations={selectedLocations} setSelectedLocations={setSelectedLocations} locMenuOpen={locMenuOpen} setLocMenuOpen={setLocMenuOpen} locMenuRef={locMenuRef} getCatLabel={getCatLabel} filterPro={filterPro} setFilterPro={setFilterPro} filterDirectBooking={filterDirectBooking} setFilterDirectBooking={setFilterDirectBooking} selectedDeliveryTypes={selectedDeliveryTypes} setSelectedDeliveryTypes={setSelectedDeliveryTypes} deliveryMenuOpen={deliveryMenuOpen} setDeliveryMenuOpen={setDeliveryMenuOpen} deliveryMenuRef={deliveryMenuRef} isLoading={loading} />
             )}
             
          {view === 'landing-private' && ( <LandingView title={t.landing_priv_title} subtitle={t.landing_priv_sub} variant="private" searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearchSubmit={handleSearchSubmit} setView={setView} setSearchType={setSearchType} t={t} /> )}
@@ -2265,6 +2284,41 @@ useEffect(() => {
 
       {view === 'admin' && <AdminPanel t={t} courses={courses} showNotification={showNotification} fetchCourses={fetchCourses} setView={setView} user={user} onImpersonate={setImpersonatedUser} handleEditCourse={handleEditCourse} />}
       {view === 'admin-blog' && <AdminBlogManager showNotification={showNotification} setView={setView} courses={courses} />}
+      {view === 'admin-theme-worlds' && (
+        <AdminThemeWorldList
+          showNotification={showNotification}
+          setView={setView}
+          setSelectedThemeWorldId={setSelectedThemeWorldId}
+          onNewCreate={() => setThemeWorldCreateNonce((n) => n + 1)}
+        />
+      )}
+      {view === 'admin-theme-world-form' && (
+        <AdminThemeWorldForm
+          key={selectedThemeWorldId ?? `new-${themeWorldCreateNonce}`}
+          showNotification={showNotification}
+          setView={setView}
+          themeWorldId={selectedThemeWorldId}
+          setSelectedThemeWorldId={setSelectedThemeWorldId}
+          setSelectedScenarioId={setSelectedScenarioId}
+        />
+      )}
+      {view === 'admin-scenario-list' && (
+        <AdminScenarioList
+          showNotification={showNotification}
+          setView={setView}
+          themeWorldId={selectedThemeWorldId}
+          setSelectedScenarioId={setSelectedScenarioId}
+        />
+      )}
+      {view === 'admin-scenario-form' && (
+        <AdminScenarioForm
+          showNotification={showNotification}
+          setView={setView}
+          themeWorldId={selectedThemeWorldId}
+          scenarioId={selectedScenarioId}
+          setSelectedScenarioId={setSelectedScenarioId}
+        />
+      )}
       {view === 'blog' && <BlogList articles={articles} setView={setView} setSelectedArticle={setSelectedArticle} />}
       {view === 'blog-detail' && <BlogDetail article={selectedArticle} setView={setView} courses={publishedCourses} />}
       {/* provider-directory view removed — /anbieter always redirects to /search?tab=anbieter */}

@@ -26,6 +26,7 @@ vi.mock('../src/lib/formatPrice', () => ({
 
 vi.mock('../src/lib/siteConfig', () => ({
   BASE_URL: 'https://kursnavi.ch',
+  CANONICAL_BASE_URL: 'https://kursnavi.ch',
   buildCoursePath: (course) => `/courses/${course?.id}`
 }));
 

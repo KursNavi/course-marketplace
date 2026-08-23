@@ -4,10 +4,11 @@ import { supabase } from '../lib/supabase';
 import { formatPriceCHF, getPriceLabel } from '../lib/formatPrice';
 import { useTaxonomy } from '../hooks/useTaxonomy';
 import { SEGMENT_CONFIG, formatPublicLocation, formatPublicLocations } from '../lib/constants';
-import { BASE_URL, buildCoursePath } from '../lib/siteConfig';
+import { CANONICAL_BASE_URL, buildCoursePath } from '../lib/siteConfig';
+import { buildCourseJsonLdList, buildCourseSeo } from '../lib/courseSeo';
 import { getBereichByAreaSlug, getBereichUrl } from '../lib/bereichLandingConfig';
 import { DEFAULT_COURSE_IMAGE } from '../lib/imageUtils';
-import { getCourseCategoryText, getPrimaryCategory, getPrimaryCategoryLabel, getPrimaryCategorySlug, isSyntheticCategory } from '../lib/courseMetadata';
+import { getCourseCategoryText, isSyntheticCategory } from '../lib/courseMetadata';
 import { trackCourseView, trackPurchase, trackContactLead } from '../lib/analytics';
 import { getRobotsPolicy } from '../lib/seoUtils';
 import { getRelatedCourses } from '../lib/courseRecommendations';
@@ -159,17 +160,23 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
 
         const createdTags = [];
 
-        const locationLabel = course.canton || 'Schweiz';
-        document.title = `${course.title} in ${locationLabel} | KursNavi`;
+        // Titel, Description, Open Graph und JSON-LD kommen aus src/lib/courseSeo.js
+        // — genau denselben reinen Funktionen, die der Build-Prerender nutzt
+        // (scripts/prerender-static.mjs). Dadurch kann das erste HTML nicht von
+        // den hydratisierten Werten abweichen. Canonical/og:url stammen aus dem
+        // gemeinsamen Builder in courseUrl.js auf Basis der kanonischen Domain,
+        // nicht aus window.location.origin.
+        const seo = buildCourseSeo(course, CANONICAL_BASE_URL);
+        const { canonicalUrl, description: metaDescription } = seo;
 
-        const topicSlug = getPrimaryCategorySlug(course).toLowerCase().replace(/_/g, '-');
-        const locSlug = (course.canton || 'schweiz').toLowerCase();
-        const titleSlug = (course.title || 'detail').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-        const canonicalUrl = `${BASE_URL}/courses/${topicSlug}/${locSlug}/${course.id}-${titleSlug}`;
+        document.title = seo.title;
 
-        // --- FIX 1: Dynamic Meta Description (max 160 chars) ---
-        const rawDesc = `${course.title} in ${locationLabel} – ${(course.description || '').replace(/\s+/g, ' ').trim()}`;
-        const metaDescription = rawDesc.length > 160 ? rawDesc.substring(0, 157) + '...' : rawDesc;
+        // Vom Build injizierte JSON-LD-Blöcke entfernen — sie werden gleich durch
+        // die (identisch berechneten) Laufzeit-Blöcke ersetzt statt dupliziert.
+        document
+            .querySelectorAll('script[type="application/ld+json"][data-prerender-jsonld]')
+            .forEach(tag => tag.remove());
+
         let metaDescTag = document.querySelector('meta[name="description"]');
         if (!metaDescTag) {
             metaDescTag = document.createElement('meta');
@@ -204,17 +211,17 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
 
         // --- FIX 3: Open Graph Tags (Social Sharing) ---
         const ogTags = {
-            'og:title': `${course.title} in ${locationLabel}`,
-            'og:description': metaDescription,
-            'og:url': canonicalUrl,
-            'og:image': course.image_url || `${BASE_URL}/og-default.png`,
-            'og:type': 'website',
+            'og:title': seo.ogTitle,
+            'og:description': seo.ogDescription,
+            'og:url': seo.ogUrl,
+            'og:image': seo.ogImage,
+            'og:type': seo.ogType,
             'og:locale': 'de_CH',
             'og:site_name': 'KursNavi',
             'twitter:card': 'summary_large_image',
-            'twitter:title': `${course.title} in ${locationLabel}`,
-            'twitter:description': metaDescription,
-            'twitter:image': course.image_url || `${BASE_URL}/og-default.png`
+            'twitter:title': seo.ogTitle,
+            'twitter:description': seo.ogDescription,
+            'twitter:image': seo.ogImage
         };
 
         Object.entries(ogTags).forEach(([property, content]) => {
@@ -232,192 +239,24 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
             tag.content = content;
         });
 
-        // --- FIX 4: SEO-Smart Price Logic ---
-        const priceVal = Number(course.price);
-        const isPlatform = course.booking_type === 'platform';
-        const hasValidPrice = !isNaN(priceVal) && (priceVal > 0 || isPlatform);
-
-        // --- FIX 5: Dynamic Availability Status ---
-        let availability = "https://schema.org/InStock"; // Default
-
-        // Check course_events for sold-out status
-        let rawEvents = [];
-        if (course.course_events && course.course_events.length > 0) {
-            rawEvents = course.course_events;
-        } else if (course.start_date) {
-            rawEvents = [{
-                start_date: course.start_date,
-                max_participants: 0,
-                bookings: []
-            }];
-        }
-
-        // Calculate if ALL events are full (exclude cancelled events)
-        const activeRawEvents = rawEvents.filter(ev => !ev.cancelled_at);
-        const allEventsFull = activeRawEvents.length > 0 && activeRawEvents.every(ev => {
-            const max = ev.max_participants || 0;
-            if (max === 0) return false; // Unlimited
-            const bookedCount = Array.isArray(ev.bookings)
-                ? (ev.bookings[0]?.count || ev.bookings.length)
-                : (ev.bookings?.count || 0);
-            return bookedCount >= max;
+        // --- Strukturierte Daten ---
+        // Course (immer), EducationEvent (nur bei laufendem/zukünftigem Termin
+        // mit konkretem startDate) und BreadcrumbList bleiben bewusst DREI
+        // getrennte Schemas — der frühere Course/EducationEvent-Hybrid wurde
+        // behoben und darf nicht wieder zusammengeführt werden. Die Berechnung
+        // liegt in src/lib/courseSeo.js, damit sie im Build-Prerender identisch
+        // läuft.
+        const schemaScripts = buildCourseJsonLdList(course, CANONICAL_BASE_URL).map(schema => {
+            const tag = document.createElement('script');
+            tag.type = 'application/ld+json';
+            tag.text = JSON.stringify(schema);
+            document.head.appendChild(tag);
+            return tag;
         });
-
-        if (allEventsFull) {
-            availability = "https://schema.org/SoldOut";
-        }
-
-        // --- Course Schema (always emitted, no EducationEvent fields) ---
-        const primaryCat = getPrimaryCategory(course);
-        const areaLabel = getPrimaryCategoryLabel(course) || null;
-
-        const courseSchema = {
-            "@context": "https://schema.org",
-            "@type": "Course",
-            "name": course.title,
-            "description": course.description,
-            "provider": {
-                "@type": "Organization",
-                "name": course.instructor_name,
-                "sameAs": `${BASE_URL}/teacher/${course.user_id}`
-            },
-            "offers": {
-                "@type": "Offer",
-                "priceCurrency": "CHF",
-                "availability": availability,
-                "url": canonicalUrl
-            }
-        };
-
-        if (hasValidPrice) {
-            courseSchema.offers.price = priceVal;
-        }
-
-        if (course.session_length) {
-            courseSchema.timeRequired = course.session_count
-                ? `${course.session_count}x ${course.session_length}`
-                : course.session_length;
-        }
-
-        if (areaLabel) {
-            courseSchema.educationalLevel = areaLabel;
-        }
-
-        const script = document.createElement('script');
-        script.type = 'application/ld+json';
-        script.text = JSON.stringify(courseSchema);
-        document.head.appendChild(script);
-
-        // --- EducationEvent Schema (only when a non-cancelled future/running event with a valid startDate exists) ---
-        // An event is "current" if it hasn't ended: end_date >= now, or (no end_date and start_date >= now).
-        // Never emit EducationEvent without a concrete startDate to avoid Google Search Console errors.
-        let eventScript = null;
-        const activeSchemaEvents = rawEvents.filter(ev => !ev.cancelled_at && ev.start_date);
-        const now = new Date();
-        const nextSchemaEvent = activeSchemaEvents.find(ev => {
-            if (ev.end_date) {
-                const end = new Date(ev.end_date);
-                return !isNaN(end.getTime()) && end >= now;
-            }
-            const start = new Date(ev.start_date);
-            return !isNaN(start.getTime()) && start >= now;
-        });
-
-        if (nextSchemaEvent) {
-            const educationEventSchema = {
-                "@context": "https://schema.org",
-                "@type": "EducationEvent",
-                "name": course.title,
-                "description": course.description,
-                "startDate": nextSchemaEvent.start_date,
-                "organizer": {
-                    "@type": "Organization",
-                    "name": course.instructor_name,
-                    "sameAs": `${BASE_URL}/teacher/${course.user_id}`
-                },
-                "location": {
-                    "@type": "Place",
-                    "name": course.address || course.city || locationLabel,
-                    "address": {
-                        "@type": "PostalAddress",
-                        "addressRegion": locationLabel,
-                        "addressCountry": "CH"
-                    }
-                },
-                "offers": {
-                    "@type": "Offer",
-                    "priceCurrency": "CHF",
-                    "availability": availability,
-                    "url": canonicalUrl
-                }
-            };
-
-            if (nextSchemaEvent.end_date) {
-                educationEventSchema.endDate = nextSchemaEvent.end_date;
-            }
-
-            if (hasValidPrice) {
-                educationEventSchema.offers.price = priceVal;
-            }
-
-            // eventSchedule for recurring courses with multiple upcoming events
-            const futureSchemaEvents = activeSchemaEvents.filter(ev => {
-                const start = new Date(ev.start_date);
-                return !isNaN(start.getTime()) && start >= now;
-            });
-            if (futureSchemaEvents.length > 1) {
-                educationEventSchema.eventSchedule = futureSchemaEvents.map(ev => {
-                    const entry = {
-                        "@type": "Schedule",
-                        "startDate": ev.start_date,
-                        "scheduleTimezone": "Europe/Zurich"
-                    };
-                    if (ev.end_date) entry.endDate = ev.end_date;
-                    return entry;
-                });
-            }
-
-            eventScript = document.createElement('script');
-            eventScript.type = 'application/ld+json';
-            eventScript.text = JSON.stringify(educationEventSchema);
-            document.head.appendChild(eventScript);
-        }
-
-        // --- BreadcrumbList Schema ---
-        const breadcrumbData = {
-            "@context": "https://schema.org",
-            "@type": "BreadcrumbList",
-            "itemListElement": [
-                {
-                    "@type": "ListItem",
-                    "position": 1,
-                    "name": "Home",
-                    "item": BASE_URL
-                },
-                {
-                    "@type": "ListItem",
-                    "position": 2,
-                    "name": areaLabel || 'Kurse',
-                    "item": `${BASE_URL}/courses/${topicSlug}/${locSlug}/`
-                },
-                {
-                    "@type": "ListItem",
-                    "position": 3,
-                    "name": course.title
-                }
-            ]
-        };
-
-        const breadcrumbScript = document.createElement('script');
-        breadcrumbScript.type = 'application/ld+json';
-        breadcrumbScript.text = JSON.stringify(breadcrumbData);
-        document.head.appendChild(breadcrumbScript);
 
         return () => {
             createdTags.forEach(tag => { if (tag.parentNode) tag.parentNode.removeChild(tag); });
-            if (script.parentNode) script.parentNode.removeChild(script);
-            if (eventScript?.parentNode) eventScript.parentNode.removeChild(eventScript);
-            if (breadcrumbScript.parentNode) breadcrumbScript.parentNode.removeChild(breadcrumbScript);
+            schemaScripts.forEach(tag => { if (tag.parentNode) tag.parentNode.removeChild(tag); });
         }
     }, [course]);
     
@@ -725,18 +564,22 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
             </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2 space-y-8">
-                <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-                        <h1 className="text-3xl font-bold font-heading text-dark">{course.title}</h1>
-                        {course.is_pro && (
-                            <span className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-xs font-bold flex items-center self-start md:self-auto border border-blue-100">
-                                <CheckCircle className="w-3 h-3 mr-1" /> {t.lbl_professional_filter || 'Verifiziert'}
-                            </span>
-                        )}
-                    </div>
+        {/* Mobile-Reihenfolge (order-*): Titel, dann Bild/Preis/Buchung, dann Beschreibung.
+            Ab lg setzen col-start/row-start das gewohnte Desktop-Layout wieder her. */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 lg:grid-rows-[auto_1fr] gap-8">
+            {/* Kurstitel als eigenes Grid-Element: auf Mobile steht er dadurch vor Bild und
+                Preisbox, auf Desktop bleibt er an gewohnter Stelle oben in der linken Spalte. */}
+            <div className="order-1 lg:order-none lg:col-span-2 lg:col-start-1 lg:row-start-1 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <h1 className="text-3xl font-bold font-heading text-dark break-words hyphens-auto">{course.title}</h1>
+                {course.is_pro && (
+                    <span className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-xs font-bold flex items-center self-start md:self-auto shrink-0 border border-blue-100">
+                        <CheckCircle className="w-3 h-3 mr-1" /> {t.lbl_professional_filter || 'Verifiziert'}
+                    </span>
+                )}
+            </div>
 
+            <div className="order-3 lg:order-none lg:col-span-2 lg:col-start-1 lg:row-start-2 space-y-8">
+                <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
                     <div className="prose max-w-none text-gray-600 custom-rich-text">
                         <h3 className="text-xl font-bold text-dark mb-4">{t.lbl_description}</h3>
                         {renderDescription(course.description)}
@@ -763,7 +606,7 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
                 </div>
             </div>
 
-            <div className="lg:col-span-1 space-y-6 order-first lg:order-none">
+            <div className="order-2 lg:order-none lg:col-span-1 lg:col-start-3 lg:row-start-1 lg:row-span-2 space-y-6">
                 <div className="w-full aspect-video bg-gray-100 rounded-2xl overflow-hidden shadow-lg relative group">
                     <img
                         src={course.image_url || fallbackImage}
@@ -1268,7 +1111,7 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
 
                     <h3 id="save-prompt-title" className="text-xl font-bold mb-2 font-heading">Kurs merken?</h3>
                     <p className="text-sm text-gray-600">
-                        Möchtest du <span className="font-bold">„{course.title}“</span> in deine Merkliste aufnehmen?
+                        Möchtest du <span className="font-bold">«{course.title}»</span> in deine Merkliste aufnehmen?
                     </p>
 
                     <div className="mt-6 flex flex-col sm:flex-row gap-3">

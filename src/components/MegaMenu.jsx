@@ -1,7 +1,9 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { ChevronRight, BookOpen, Compass } from 'lucide-react';
 import { RATGEBER_STRUCTURE } from '../lib/ratgeberStructure';
-import { getBereicheForSegment, getBereichUrl } from '../lib/bereichLandingConfig';
+import { getBereichUrl } from '../lib/bereichLandingConfig';
+import { buildSegmentMenuBereiche } from '../lib/themeWorldMenu';
+import { usePublishedThemeWorlds } from '../hooks/useThemeWorldTakeover';
 import { shouldHandleClientNavigation } from '../lib/navigation';
 
 /**
@@ -87,8 +89,13 @@ export const MegaMenu = ({
     window.dispatchEvent(new Event('locationchange'));
   };
 
-  // Get available Bereichs-Landingpages for this segment
-  const bereiche = getBereicheForSegment(categoryKey);
+  // Bereichs-Landingpages dieses Segments: statische Themenwelten plus die im
+  // Admin publizierten aus der Datenbank (leer bei Ladefehler → statisch).
+  const publishedThemeWorlds = usePublishedThemeWorlds();
+  const bereiche = useMemo(
+    () => buildSegmentMenuBereiche(categoryKey, publishedThemeWorlds),
+    [categoryKey, publishedThemeWorlds],
+  );
 
   // Navigate to Bereich landing page
   const goToBereich = (bereichConfig) => {
@@ -295,7 +302,14 @@ export const MobileMenuCategory = ({
                       categoryKey;
 
   const categoryData = RATGEBER_STRUCTURE[ratgeberKey];
-  const bereiche = getBereicheForSegment(categoryKey);
+
+  // Identische Quelle wie im Desktop-Menü — Desktop und Mobil zeigen dieselben
+  // Themenwelten (statisch + publizierte DB-Themenwelten).
+  const publishedThemeWorlds = usePublishedThemeWorlds();
+  const bereiche = useMemo(
+    () => buildSegmentMenuBereiche(categoryKey, publishedThemeWorlds),
+    [categoryKey, publishedThemeWorlds],
+  );
 
   const SEGMENT_TO_LANDING = {
     beruflich: '/professional',

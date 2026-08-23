@@ -11,8 +11,10 @@ import { BASE_URL, buildCoursePath } from '../lib/siteConfig';
 import { getBereichByAreaSlug, getBereichUrl } from '../lib/bereichLandingConfig';
 import { SEARCH_STRINGS } from '../lib/searchStrings';
 import { getNormalizedDeliveryTypes } from '../lib/courseMetadata';
+import { fetchPublishedThemeWorldAreaLabels } from '../lib/themeWorldService';
 import { trackSearch } from '../lib/analytics';
 import { getSearchHeader } from '../lib/searchHeaderConfig';
+import { sortCoursesByRelevance, stableSeed } from '../lib/searchRelevance';
 
 import { DEFAULT_COURSE_IMAGE } from '../lib/imageUtils';
 const fallbackImage = DEFAULT_COURSE_IMAGE;
@@ -106,10 +108,23 @@ const SearchPageView = ({
     // Load taxonomy from DB
     const { areas: dbAreas } = useTaxonomy();
 
+    // Published dynamic theme world labels: area_slug → readable label (loaded once on mount)
+    const [themeWorldLabels, setThemeWorldLabels] = React.useState(null);
+    React.useEffect(() => {
+        fetchPublishedThemeWorldAreaLabels().then(setThemeWorldLabels).catch(() => {});
+    }, []);
+
     // Helper to get area label from DB taxonomy
+    // Fallback-Reihenfolge (Phase 8.11):
+    //   1. DB-Taxonomie (taxonomy_level2)
+    //   2. Statische Taxonomie-Konstanten (NEW_TAXONOMY)
+    //   3. Legacy-Bereichskonfiguration (bereichLandingConfig)
+    //   4. Publizierte dynamische Themenwelt: search_config.area_label_de
+    //   5. title_de der Themenwelt als letzter dynamischer Fallback
+    //   6. Technischer area_slug als Notfall-Fallback
     const getAreaLabelFromDB = (areaSlug) => {
         if (!areaSlug) return '';
-        // Try exact match on slug (DB mode) or string id (fallback mode has no slug field)
+        // 1. Try exact match on slug (DB mode) or string id (fallback mode has no slug field)
         let area = dbAreas.find(a => a.slug === areaSlug || String(a.id) === areaSlug);
         // Try safe partial match (guard against undefined slug in fallback mode)
         if (!area) {
@@ -119,10 +134,19 @@ const SearchPageView = ({
             });
         }
         if (area?.label_de) return area.label_de;
-        // Final fallback: hardcoded taxonomy constants (always available, no DB needed)
+        // 2. Fallback: hardcoded taxonomy constants (always available, no DB needed)
         for (const typeData of Object.values(NEW_TAXONOMY)) {
             if (typeData[areaSlug]?.label?.de) return typeData[areaSlug].label.de;
         }
+        // 3. Fallback: legacy bereich config (covers static theme world area slugs)
+        const bereichEntry = getBereichByAreaSlug(areaSlug);
+        if (bereichEntry?.title?.de) return bereichEntry.title.de.split(' - ')[0];
+        // 4+5. Fallback: published dynamic theme world label (area_label_de or title_de)
+        if (themeWorldLabels) {
+            const twLabel = themeWorldLabels.get(areaSlug);
+            if (twLabel) return twLabel;
+        }
+        // 6. Last resort: technical area slug
         return areaSlug;
     };
 
@@ -541,37 +565,22 @@ const SearchPageView = ({
     // mit diesem Seed verwendet — dadurch lint-sicher (keine Seiteneffekte).
     const [sortSeed] = React.useState(() => Math.random());
     const sortedCourses = useMemo(() => {
-        const hasDate = (c) => {
-            if (c.start_date) return true;
-            if (Array.isArray(c.course_events) && c.course_events.some(ev => ev.start_date)) return true;
-            return false;
-        };
+        const trimmedQuery = (searchQuery || '').trim();
 
-        // Pre-compute one random score per course (seeded PRNG, deterministic within a session)
-        // Ranking-Logik (v5.0): Nur is_prio gibt Sichtbarkeits-Bonus (1.2x).
-        // is_pro (Verifizierung) ist ein Vertrauenssignal, kein Ranking-Faktor.
-        // plan_factor wird nicht mehr genutzt: höhere Pakete erlauben mehr hervorgehobene
-        // Kurse, aber jeder hervorgehobene Kurs bekommt denselben Bonus.
-        const scoreMap = new Map();
-        filteredCourses.forEach((c, i) => {
-            const planF = c.is_prio ? 1.2 : 1.0;
-            const bookF = c.booking_factor || 1.0;
-            // Seeded pseudo-random: varies per page load (sortSeed) and per course (i)
-            const hash = Math.sin(sortSeed * 10000 + i + 1) * 10000;
-            const randomJitter = (hash - Math.floor(hash)) * 0.15;
-            scoreMap.set(c.id, planF * bookF + randomJitter);
-        });
+        // Bei aktiver Sucheingabe ersetzt ein aus der Eingabe abgeleiteter Seed den
+        // Zufalls-Seed. Die Streuung gleichrangiger Kurse bleibt erhalten, dieselbe
+        // Suche liefert aber reproduzierbar dieselbe Reihenfolge. Ohne Eingabe
+        // (reines Stöbern) bleibt die bisherige Rotation pro Seitenaufruf bestehen.
+        const effectiveSeed = trimmedQuery ? stableSeed(trimmedQuery) : sortSeed;
 
-        return [...filteredCourses].sort((a, b) => {
-            if (filterDateFrom || filterDateTo) {
-                const aHasDate = hasDate(a);
-                const bHasDate = hasDate(b);
-                if (aHasDate && !bHasDate) return -1;
-                if (!aHasDate && bHasDate) return 1;
-            }
-            return scoreMap.get(b.id) - scoreMap.get(a.id);
+        // Sortiert ausschliesslich um — filtert nichts. filteredCourses und damit
+        // die angezeigte Trefferanzahl bleiben unberührt.
+        return sortCoursesByRelevance(filteredCourses, {
+            query: trimmedQuery,
+            seed: effectiveSeed,
+            preferDated: Boolean(filterDateFrom || filterDateTo),
         });
-    }, [filteredCourses, filterDateFrom, filterDateTo, sortSeed]);
+    }, [filteredCourses, filterDateFrom, filterDateTo, sortSeed, searchQuery]);
 
     // Get segment config for banner
     const getActiveSegmentConfig = () => {
@@ -588,6 +597,15 @@ const SearchPageView = ({
         specialty: searchSpecialty,
         focus: searchFocus,
     }), [searchArea, selectedLocations, selectedDeliveryTypes, searchSpecialty, searchFocus]);
+
+    // A published dynamic theme world may define its own readable area label.
+    // It is the fallback whenever no static header rule applies, including
+    // location, delivery, specialty and focus filters. Static Sport/Yoga rules
+    // continue to take precedence via dynamicHeader.
+    const dynamicThemeWorldTitle = useMemo(() => {
+        if (dynamicHeader || !searchArea || !themeWorldLabels) return '';
+        return themeWorldLabels.get(searchArea) || '';
+    }, [dynamicHeader, searchArea, themeWorldLabels]);
 
     // Dynamic search placeholder per segment
     const searchPlaceholder =
@@ -718,7 +736,7 @@ const SearchPageView = ({
                                 </div>
                                 <div>
                                     <h1 className={`text-2xl md:text-3xl font-bold font-heading ${activeSegmentConfig.textDark}`}>
-                                        {dynamicHeader?.title || activeSegmentConfig.heroTitle?.de || getLabel(searchType, 'type')}
+                                        {dynamicHeader?.title || dynamicThemeWorldTitle || activeSegmentConfig.heroTitle?.de || getLabel(searchType, 'type')}
                                     </h1>
                                     <p className="text-gray-600 mt-1">
                                         {dynamicHeader?.subtitle || activeSegmentConfig.heroSubtitle?.de || ''}
@@ -936,7 +954,7 @@ const SearchPageView = ({
                         {/* Search query chip */}
                         {searchQuery && (
                             <span onClick={() => setSearchQuery('')} className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-gray-200 flex items-center">
-                                <Search className="w-3 h-3 mr-1" />„{searchQuery}" <X className="w-3 h-3 ml-1 opacity-50" />
+                                <Search className="w-3 h-3 mr-1" />«{searchQuery}» <X className="w-3 h-3 ml-1 opacity-50" />
                             </span>
                         )}
                         {selectedLanguages.map((lang, i) => (

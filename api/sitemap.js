@@ -1,24 +1,17 @@
 import { createClient } from '@supabase/supabase-js';
 import { BEREICH_LANDING_CONFIG } from '../src/lib/bereichLandingConfig.js';
 import { SIMPLE_TOPIC_CONTENT } from '../src/lib/segmentLandingConfig.js';
-
-// Inlined to avoid importing React-dependent modules (constants.js imports lucide-react)
-function slugify(input) {
-  return (input || '')
-    .toString().trim().toLowerCase()
-    .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
-    .replace(/&/g, ' und ')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-}
-
-function buildCoursePath(course) {
-  if (!course) return '/search';
-  const topic = slugify(course.category_area || 'kurs');
-  const loc = slugify(course.canton || 'schweiz');
-  const title = slugify(course.title || 'detail');
-  return `/courses/${topic}/${loc}/${course.id}-${title}`;
-}
+import { fetchThemeWorldSitemapEntries, escapeXml } from './_lib/sitemap-theme-worlds.js';
+import {
+  buildActiveThemeWorldTopicKeys,
+  topicKeyFromBereichPath,
+} from '../src/lib/themeWorldTakeover.js';
+import { isThemeWorldDbEnabledServer } from './_lib/theme-world-takeover.js';
+// Gemeinsame Quelle der Wahrheit für Kurs-URLs — identisch mit internen Links,
+// Canonical, og:url, JSON-LD und der App-Normalisierung. courseUrl.js ist
+// bewusst abhängigkeitsfrei und darf deshalb hier importiert werden.
+import { buildCanonicalCoursePath, hasStableCanonicalTopic } from '../src/lib/courseUrl.js';
+import { attachPrimaryCategories, fetchCourseCategoryRows } from './_lib/course-categories.js';
 
 export default async function handler(req, res) {
   // 1. Supabase Init (Robust Environment Check)
@@ -36,20 +29,49 @@ export default async function handler(req, res) {
     // FIX: Removed 'updated_at' because it does not exist in the DB schema
     const { data: courses, error } = await supabase
       .from('courses')
-      .select('id, title, category_area, canton, created_at')
+      .select('id, title, category_type, category_area, category_specialty, category_focus, canton, created_at')
       .or('status.eq.published,status.is.null') // Include published + legacy courses without status
       .order('created_at', { ascending: false });
 
     if (error) throw error;
 
+    // 2b. Semantische Kategorien nachladen — courses.category_area enthält bei
+    // neueren Kursen nur die numerische Taxonomie-ID. Ohne diesen Schritt
+    // erzeugte die Sitemap /courses/12/... statt /courses/kunst/...
+    const { byCourseId, unresolvedIds } = await fetchCourseCategoryRows(
+      supabase,
+      (courses || []).map((course) => course.id)
+    );
+    const coursesWithCategories = attachPrimaryCategories(courses, byCourseId);
+
+    // 2c. Kurse auslassen, deren kanonische Kategorie wir gerade NICHT kennen.
+    // Eine geratene URL wäre schlimmer als eine fehlende: sobald die Kategorien
+    // wieder auflösbar sind, entstünde eine zweite indexierte Variante. Kurse,
+    // deren eigene Felder bereits ein semantisches Thema ergeben, sind davon
+    // nicht betroffen und bleiben in der Sitemap.
+    const publishableCourses = coursesWithCategories.filter((course) => {
+      if (!unresolvedIds.has(course.id) || hasStableCanonicalTopic(course)) return true;
+      console.warn(
+        `[sitemap] Kurs ${course.id} ausgelassen: Kategorie nicht auflösbar, kanonische URL wäre geraten.`
+      );
+      return false;
+    });
+
     // 3. Fetch all published blog posts
+    // FIX (2026-07-14): Tabelle heisst 'articles', nicht 'blog'.
+    // Die Abfrage auf 'blog' schlug seit jeher still fehl und hinterliess
+    // Blog-Post-URLs vollständig aus der Sitemap. Quelle: phase-2-architecture.md.
     const { data: blogPosts, error: blogError } = await supabase
-      .from('blog')
+      .from('articles')
       .select('id, slug, title, created_at')
       .eq('is_published', true)
       .order('created_at', { ascending: false });
 
-    if (blogError) console.warn('Blog fetch error:', blogError);
+    if (blogError) {
+      // Sichtbares Log — nicht still ignorieren (Correction C in phase-2-architecture.md)
+      console.error('[sitemap] Blog-Artikel konnten nicht geladen werden:', blogError.message);
+      // Sitemap wird ohne Blog-URLs ausgeliefert — kein 500-Fehler wegen fehlender Blog-Daten
+    }
 
     const baseUrl = (process.env.VITE_SITE_URL || 'https://kursnavi.ch').replace(/\/$/, '');
 
@@ -106,13 +128,26 @@ export default async function handler(req, res) {
     }).join('');
 
     // 6. Generate Course URLs (Dynamic)
-    const courseUrls = (courses || []).map((course) => {
-      const path = buildCoursePath(course);
+    //    KEIN <lastmod>: courses besitzt derzeit keine verlässliche Quelle für
+    //    die letzte wesentliche Änderung der öffentlichen Kursseite.
+    //      - created_at ist das Anlagedatum. Kurse sind danach jederzeit über
+    //        TeacherForm editierbar (Titel, Beschreibung, Preis, Termine) —
+    //        created_at bleibt dabei unverändert und wäre als lastmod gelogen.
+    //      - Ein technisches courses.updated_at wird nicht gepflegt: es gibt
+    //        keinen BEFORE-UPDATE-Trigger auf courses (set_updated_at() existiert
+    //        nur für theme_worlds/theme_world_scenarios, siehe
+    //        supabase/migrations/20260714_create_theme_worlds.sql), und keine
+    //        Schreibstelle setzt das Feld. Selbst wenn es gepflegt würde, würden
+    //        reine Status-/Account-Änderungen (App.jsx: status-Toggle,
+    //        AdminPanel.jsx: is_pro für alle Kurse eines Anbieters) es ohne jede
+    //        inhaltliche Änderung der öffentlichen Seite bewegen.
+    //    Ein fehlendes lastmod ist erlaubt und ehrlicher als ein erfundenes.
+    const courseUrls = publishableCourses.map((course) => {
+      const path = buildCanonicalCoursePath(course);
 
       return `
       <url>
           <loc>${baseUrl}${path}</loc>
-          <lastmod>${new Date(course.created_at).toISOString()}</lastmod>
           <changefreq>daily</changefreq>
           <priority>0.7</priority>
       </url>`;
@@ -131,11 +166,20 @@ export default async function handler(req, res) {
     }).join('');
 
     // 7. Generate Provider URLs (Dynamic)
+    //    KEIN <lastmod>: profile_published_at ist ein Publikations-Schalter, kein
+    //    Änderungsdatum. Es wird ausschliesslich in api/provider.js
+    //    (action 'toggle-publish') gesetzt bzw. auf null zurückgesetzt — jedes
+    //    erneute Veröffentlichen schreibt "jetzt", ohne dass sich am Inhalt etwas
+    //    geändert haben muss. Umgekehrt ändern Profilbearbeitungen (bio_text,
+    //    Logo, Standorte über ProviderProfileEditor) den Wert nie.
+    //    Ein profiles.updated_at wird ebenfalls nicht gepflegt (kein Trigger,
+    //    keine Schreibstelle) und würde ausserdem durch reine Account-Vorgänge
+    //    wie preferred_language oder Admin-Tier-Wechsel bewegt.
+    //    Deshalb bleibt <lastmod> hier vollständig weg.
     const providerUrls = (eligibleProviders || []).map((provider) => {
       return `
       <url>
           <loc>${baseUrl}/anbieter/${provider.slug}</loc>
-          <lastmod>${new Date(provider.profile_published_at).toISOString()}</lastmod>
           <changefreq>weekly</changefreq>
           <priority>0.6</priority>
       </url>`;
@@ -195,32 +239,97 @@ export default async function handler(req, res) {
       }
     }
 
-    // 9. Generate Bereich Landing + Szenario URLs (derived from config — auto-updates as config grows)
-    let bereichUrls = '';
+    // 9. Generate Bereich Landing + Szenario URLs
+    //    Zwei Quellen:
+    //      A) Legacy: BEREICH_LANDING_CONFIG (statische Konfiguration)
+    //      B) DB: publizierte theme_worlds + publizierte theme_world_scenarios
+    //    Die Pfad-Menge wird dedupliziert — eine URL, die in beiden Quellen
+    //    existiert (z.B. Yoga während der Migrationsphase), erscheint genau einmal.
+    //    Legacy wird zuerst eingefügt und gewinnt bei Kollisionen.
+    const bereichEntries = new Map(); // path -> { path, lastmod, changefreq, priority }
+
+    const addBereichEntry = (path, meta) => {
+      const existing = bereichEntries.get(path);
+      if (existing) {
+        // Duplikat: kein zweiter <url>-Eintrag. Nur ein fehlendes lastmod wird ergänzt.
+        if (!existing.lastmod && meta.lastmod) existing.lastmod = meta.lastmod;
+        return;
+      }
+      bereichEntries.set(path, { path, lastmod: null, ...meta });
+    };
+
+    // A) Legacy-Konfiguration (auto-updates as config grows)
     for (const bereich of Object.values(BEREICH_LANDING_CONFIG)) {
       const bereichPath = `/bereich/${bereich.segment}/${bereich.slug}`;
-      bereichUrls += `
-      <url>
-          <loc>${baseUrl}${bereichPath}</loc>
-          <changefreq>weekly</changefreq>
-          <priority>0.8</priority>
-      </url>`;
+      addBereichEntry(bereichPath, { changefreq: 'weekly', priority: '0.8' });
       for (const szenario of (bereich.scenarios || [])) {
-        bereichUrls += `
-      <url>
-          <loc>${baseUrl}${bereichPath}/${szenario.slug}</loc>
-          <changefreq>monthly</changefreq>
-          <priority>0.7</priority>
-      </url>`;
+        addBereichEntry(`${bereichPath}/${szenario.slug}`, { changefreq: 'monthly', priority: '0.7' });
       }
     }
 
+    // B) Datenbank-Themenwelten (publiziert). Ein Fehler hier darf die restliche
+    //    Sitemap nicht zerstören — fetchThemeWorldSitemapEntries wirft nie.
+    //    Ohne VITE_THEME_WORLD_DB_ENABLED='true' liefert eine reine
+    //    DB-Themenwelt öffentlich nichts aus (BereichLandingPage rendert
+    //    «Bereich nicht gefunden») und wird auch nicht prerendert — dann darf
+    //    sie auch nicht als indexierbare URL in der Sitemap stehen. Gleiche
+    //    Semantik wie Takeover und Prerender.
+    const themeWorldDbEnabled = isThemeWorldDbEnabledServer();
+    const { entries: themeWorldEntries, error: themeWorldError } = themeWorldDbEnabled
+      ? await fetchThemeWorldSitemapEntries(supabase)
+      : { entries: [], error: null };
+
+    if (themeWorldError) {
+      console.error(
+        '[sitemap] Themenwelten aus der Datenbank unvollständig geladen — Sitemap wird ohne die fehlenden Themenwelten-URLs ausgeliefert:',
+        themeWorldError.message || themeWorldError
+      );
+    }
+
+    for (const entry of themeWorldEntries) {
+      addBereichEntry(entry.path, {
+        lastmod: entry.lastmod,
+        changefreq: entry.kind === 'scenario' ? 'monthly' : 'weekly',
+        priority: entry.kind === 'scenario' ? '0.7' : '0.8',
+      });
+    }
+
+    const bereichUrls = Array.from(bereichEntries.values()).map((entry) => `
+      <url>
+          <loc>${escapeXml(`${baseUrl}${entry.path}`)}</loc>${entry.lastmod ? `
+          <lastmod>${entry.lastmod}</lastmod>` : ''}
+          <changefreq>${entry.changefreq}</changefreq>
+          <priority>${entry.priority}</priority>
+      </url>`).join('');
+
     // 10. Generate Thema URLs (Simple Topic Landing Pages — auto-updates as config grows)
+    //     Themen, die inzwischen von einer öffentlich aktiven Themenwelt
+    //     übernommen wurden, erscheinen NICHT: /thema/{key} leitet dann
+    //     dauerhaft auf /bereich/{key} weiter (api/thema-redirect.js) und darf
+    //     keine eigene indexierbare URL mehr in der Sitemap haben.
+    //     Wird eine Themenwelt wieder deaktiviert, taucht /thema/{key}
+    //     automatisch wieder auf — der Fallback-Content bleibt erhalten.
+    //     Bei einem DB-Fehler enthält themeWorldEntries keine DB-Themenwelten;
+    //     dann bleiben die betroffenen /thema/-URLs bestehen (sicherer Fallback).
+    const activeTopicKeys = buildActiveThemeWorldTopicKeys({
+      dbEnabled: themeWorldDbEnabled,
+      publishedDbWorlds: themeWorldEntries
+        .filter((entry) => entry.kind === 'theme-world')
+        .map((entry) => {
+          const key = topicKeyFromBereichPath(entry.path);
+          if (!key) return null;
+          const [url_segment, slug] = key.split('/');
+          return { url_segment, slug, status: 'published' };
+        })
+        .filter(Boolean),
+    });
+
     let themaUrls = '';
     for (const key of Object.keys(SIMPLE_TOPIC_CONTENT)) {
+      if (activeTopicKeys.has(key)) continue;
       themaUrls += `
       <url>
-          <loc>${baseUrl}/thema/${key}</loc>
+          <loc>${escapeXml(`${baseUrl}/thema/${key}`)}</loc>
           <changefreq>weekly</changefreq>
           <priority>0.7</priority>
       </url>`;

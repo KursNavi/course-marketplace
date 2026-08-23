@@ -682,7 +682,7 @@ export const SZENARIO_CONTENT = {
 </ol>
 
 <h2>Stilwahl und Format gehören zusammen</h2>
-<p>Auch ein passender Stil kann im falschen Format scheitern. Frage deshalb nicht nur „Welcher Stil passt zu mir?", sondern auch:</p>
+<p>Auch ein passender Stil kann im falschen Format scheitern. Frage deshalb nicht nur «Welcher Stil passt zu mir?», sondern auch:</p>
 <ul>
 <li>Brauche ich vor Ort mehr Orientierung?</li>
 <li>Ist ein Online-live-Kurs für meinen Alltag realistischer?</li>

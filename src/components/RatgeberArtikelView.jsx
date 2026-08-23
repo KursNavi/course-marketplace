@@ -1,11 +1,13 @@
-import React, { useEffect } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import { ArrowLeft, ChevronRight, BookOpen, Clock, Share2 } from 'lucide-react';
 import { findArticle, RATGEBER_STRUCTURE } from '../lib/ratgeberStructure';
 import { SEGMENT_CONFIG } from '../lib/constants';
 import { RATGEBER_CONTENT } from '../lib/ratgeberContent';
-import { enhanceImages, buildArticleJsonLd, buildBreadcrumbJsonLd } from '../lib/seoUtils';
+import { enhanceImages, wrapTables, buildArticleJsonLd, buildBreadcrumbJsonLd } from '../lib/seoUtils';
 import { BASE_URL } from '../lib/siteConfig';
 import { shouldHandleClientNavigation } from '../lib/navigation';
+import { buildEditorialReviewNotice } from '../lib/editorialReviewDate';
+import { enhanceTableScrollContainers } from '../lib/tableScroll';
 
 /**
  * RatgeberArtikelView
@@ -23,6 +25,22 @@ const RatgeberArtikelView = ({ lang = 'de' }) => {
 
   // Find article data
   const articleData = findArticle(categorySlug, clusterSlug, articleSlug);
+
+  // Callback-Ref statt Effekt mit Abhaengigkeitsliste: Der Artikelinhalt wird
+  // ueber dangerouslySetInnerHTML gesetzt, und die Komponente hat einen frueh
+  // greifenden Return. Die Callback-Ref feuert exakt beim Einhaengen des
+  // Knotens; spaetere Inhaltswechsel faengt der MutationObserver in
+  // enhanceTableScrollContainers ab.
+  const articleRef = useRef(null);
+  const tableCleanupRef = useRef(null);
+  const setArticleNode = useCallback((node) => {
+    articleRef.current = node;
+    if (tableCleanupRef.current) {
+      tableCleanupRef.current();
+      tableCleanupRef.current = null;
+    }
+    if (node) tableCleanupRef.current = enhanceTableScrollContainers(node);
+  }, []);
 
   // SEO — must be called before any conditional returns (React rules of hooks)
   useEffect(() => {
@@ -74,6 +92,12 @@ const RatgeberArtikelView = ({ lang = 'de' }) => {
     });
 
     // Article JSON-LD
+    // Ohne datePublished/dateModified: die Ratgeber-Datenquellen
+    // (ratgeberStructure.js / ratgeberContent.js) führen kein Publikations- oder
+    // Änderungsdatum pro Artikel. Aus demselben Grund zeigt der sichtbare
+    // Hinweis unten kein Prüfdatum: buildEditorialReviewNotice(null) gibt nur
+    // den Orientierungssatz aus. Sichtbarer Text und Schema behaupten damit
+    // beide nichts, was nicht in den Daten steht.
     const articleSchema = buildArticleJsonLd({
       title: articleData.title[lang] || articleData.title.de,
       description: metaDesc,
@@ -280,8 +304,9 @@ const RatgeberArtikelView = ({ lang = 'de' }) => {
           {hasContent ? (
             // Render actual content (HTML from ratgeberContent.js)
             <div
+              ref={setArticleNode}
               className="prose-ratgeber"
-              dangerouslySetInnerHTML={{ __html: enhanceImages(articleContent) }}
+              dangerouslySetInnerHTML={{ __html: wrapTables(enhanceImages(articleContent)) }}
             />
           ) : (
             // Placeholder for articles without content
@@ -346,7 +371,7 @@ const RatgeberArtikelView = ({ lang = 'de' }) => {
         </div>
 
         <div className="mt-6 text-center text-sm text-gray-500">
-          <p>Zuletzt redaktionell geprüft: März 2026. Die Inhalte dienen der Orientierung; maßgeblich sind im Zweifel die Angaben der jeweiligen Anbieter und offiziellen Stellen.</p>
+          <p>{buildEditorialReviewNotice(null)}</p>
           <p className="mt-2">
             Wenn dir in diesem Beitrag ein Fehler oder eine veraltete Information auffällt, gib uns gern kurz Bescheid.{' '}
             <a

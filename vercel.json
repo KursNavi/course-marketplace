@@ -2,6 +2,12 @@
   "trailingSlash": false,
   "redirects": [
     {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "www.kursnavi.ch" }],
+      "destination": "https://kursnavi.ch/:path*",
+      "permanent": true
+    },
+    {
       "source": "/bereich/privat_hobby/:path*",
       "destination": "/bereich/privat-hobby/:path*",
       "permanent": true
@@ -18,14 +24,50 @@
       ]
     }
   ],
+  "functions": {
+    "api/thema-redirect.js": {
+      "includeFiles": "dist/index.html"
+    },
+    "api/course-redirect.js": {
+      "includeFiles": "dist/index.html"
+    }
+  },
   "rewrites": [
     {
       "source": "/sitemap.xml",
       "destination": "/api/sitemap"
     },
     {
+      "source": "/courses/:__topic(\\d+)/:__loc/:__cseg",
+      "destination": "/api/course-redirect"
+    },
+    {
       "source": "/api/(.*)",
       "destination": "/api/$1"
+    },
+    {
+      "source": "/thema/:segment/:slug",
+      "destination": "/api/thema-redirect?segment=:segment&slug=:slug"
+    },
+    {
+      "source": "/bereich/:segment/:slug",
+      "destination": "/api/resource-not-found"
+    },
+    {
+      "source": "/bereich/:segment/:slug/:rest*",
+      "destination": "/api/resource-not-found"
+    },
+    {
+      "source": "/ratgeber/:category",
+      "destination": "/api/resource-not-found"
+    },
+    {
+      "source": "/ratgeber/:category/:cluster",
+      "destination": "/api/resource-not-found"
+    },
+    {
+      "source": "/ratgeber/:category/:cluster/:rest*",
+      "destination": "/api/resource-not-found"
     },
     {
       "source": "/(.*)",

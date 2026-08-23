@@ -76,8 +76,14 @@
   @apply text-gray-600 leading-relaxed;
 }
 
-.prose-ratgeber strong {
+.prose-ratgeber strong,
+.prose-ratgeber b {
   @apply text-gray-800 font-semibold;
+}
+
+.prose-ratgeber em,
+.prose-ratgeber i {
+  @apply italic;
 }
 
 .prose-ratgeber table {
@@ -102,6 +108,55 @@
 
 .prose-ratgeber tbody tr:last-child td {
   @apply border-b-0;
+}
+
+/* Scrollable table wrapper — prevents horizontal page overflow on narrow viewports */
+.prose-ratgeber .table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  /* Verhindert, dass ein breites Wort die Tabelle über den Container hinaus
+     zieht — der Container scrollt, die Seite nicht. */
+  max-width: 100%;
+}
+.prose-ratgeber .table-wrapper table {
+  @apply my-0;
+}
+
+/* Nur wirklich scrollbare Container werden sichtbar abgesetzt. Das Attribut
+   setzt enhanceTableScrollContainers() ausschliesslich dann, wenn der Inhalt
+   breiter ist als der sichtbare Bereich — auf Desktop passen die Tabellen,
+   dort greift keine einzige dieser Regeln und die Darstellung bleibt gleich. */
+.prose-ratgeber .table-wrapper[data-scrollable] {
+  @apply my-6 rounded-xl border border-gray-200;
+  /* Platz für die dauerhaft sichtbare Scrollleiste. */
+  padding-bottom: 2px;
+  scrollbar-width: thin;
+  scrollbar-color: theme('colors.gray.400') transparent;
+}
+
+/* Die Tabelle bringt ihre eigenen runden Ecken und ihren Schatten mit. Im
+   abgesetzten Container ergäbe das einen doppelten Rahmen. */
+.prose-ratgeber .table-wrapper[data-scrollable] table {
+  @apply rounded-none shadow-none;
+}
+
+/* WebKit/Blink blenden Overlay-Scrollleisten aus, bis gescrollt wird. Wird die
+   Leiste explizit gestaltet, bleibt sie sichtbar — genau der gewünschte
+   Hinweis, dass hier seitlich mehr steht. */
+.prose-ratgeber .table-wrapper[data-scrollable]::-webkit-scrollbar {
+  height: 8px;
+}
+.prose-ratgeber .table-wrapper[data-scrollable]::-webkit-scrollbar-track {
+  @apply bg-gray-100 rounded-b-xl;
+}
+.prose-ratgeber .table-wrapper[data-scrollable]::-webkit-scrollbar-thumb {
+  @apply bg-gray-400 rounded-full;
+}
+
+/* Tastaturfokus muss sichtbar sein — der Container ist durch tabindex="0"
+   erreichbar und mit den Pfeiltasten scrollbar. */
+.prose-ratgeber .table-wrapper[data-scrollable]:focus-visible {
+  @apply outline-none ring-2 ring-primary ring-offset-2;
 }
 
 .prose-ratgeber blockquote {

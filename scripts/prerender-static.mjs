@@ -12,18 +12,47 @@
  * Vercel serves static files before applying the catch-all SPA rewrite, so
  * Google gets correct metadata on first fetch without needing JS rendering.
  *
- * Dynamic routes (courses, blog posts, providers) are NOT prerendered here —
- * they still fall through to dist/index.html (the SPA).
+ * Blog-Posts sind weiterhin NICHT prerendert — sie fallen auf dist/index.html
+ * (die SPA) zurück.
+ *
+ * Themenwelten aus der Datenbank (theme_worlds / theme_world_scenarios) werden
+ * ebenfalls prerendert, sobald VITE_THEME_WORLD_DB_ENABLED='true' ist — siehe
+ * api/_lib/theme-world-prerender.js.
+ *
+ * Öffentliche Kursdetailseiten (/courses/…) und Anbieterprofile (/anbieter/…)
+ * werden aus der Datenbank prerendert — siehe api/_lib/course-prerender.js.
  */
 
 import { readFileSync, writeFileSync, mkdirSync } from 'fs';
-import { join, dirname } from 'path';
+import { join, dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
 import { BEREICH_LANDING_CONFIG } from '../src/lib/bereichLandingConfig.js';
 import { SIMPLE_TOPIC_CONTENT } from '../src/lib/segmentLandingConfig.js';
+import { injectHeadMeta } from '../api/_lib/html-head.js';
+import { isThemeWorldDbEnabledServer } from '../api/_lib/theme-world-takeover.js';
+import {
+  loadThemeWorldPrerenderRoutes,
+  ThemeWorldPrerenderError,
+} from '../api/_lib/theme-world-prerender.js';
+import {
+  CoursePrerenderError,
+  isCoursePrerenderEnabled,
+  isVercelBuild,
+  loadCourseAndProviderPrerenderRoutes,
+  readPublicSupabaseCredentials,
+} from '../api/_lib/course-prerender.js';
+import { buildActiveThemeWorldTopicKeys } from '../src/lib/themeWorldTakeover.js';
+import {
+  RATGEBER_SEO_CATEGORY_SLUGS,
+  getRatgeberCategorySeo,
+  getRatgeberRootSeo,
+} from '../src/lib/ratgeberSeo.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const distDir = join(__dirname, '..', 'dist');
+// PRERENDER_DIST_DIR überschreibt das Zielverzeichnis (nur für Tests genutzt).
+const distDir = process.env.PRERENDER_DIST_DIR
+  ? resolve(process.env.PRERENDER_DIST_DIR)
+  : join(__dirname, '..', 'dist');
 const BASE_URL = (process.env.VITE_SITE_URL || 'https://kursnavi.ch').replace(/\/$/, '');
 
 // ─── Template ────────────────────────────────────────────────────────────────
@@ -38,57 +67,190 @@ try {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function esc(str) {
-  return String(str || '')
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+function generateHtml(path, title, description, {
+  ogTitle,
+  ogDescription,
+  ogType,
+  ogImage,
+  ogImageAlt,
+  jsonLd,
+} = {}) {
+  return injectHeadMeta(template, {
+    canonical: `${BASE_URL}${path}`,
+    title,
+    description,
+    ogTitle,
+    ogDescription,
+    ogType,
+    ogImage: ogImage || `${BASE_URL}/og-default.png`,
+    ogImageAlt,
+    jsonLd,
+  });
 }
 
-function generateHtml(path, title, description) {
-  const canonical = `${BASE_URL}${path}`;
-  let html = template;
+/**
+ * Ein einziger Supabase-Client für alle DB-gestützten Prerender-Quellen.
+ *
+ * Ausschliesslich das öffentliche Paar, das auch der Browser nutzt
+ * (src/lib/supabase.js). Bewusst KEINE Fallback-Kette: URL und Key müssen aus
+ * derselben Konfigurationsfamilie stammen, sonst entsteht ein «Invalid API
+ * key». Service-Role-Rechte sind nicht nötig und wären schädlich — der
+ * Prerender soll exakt die Inhalte sehen, die RLS auch einem anonymen Besucher
+ * freigibt.
+ */
+let supabaseClient;
+async function getPublicSupabaseClient(url, key) {
+  if (supabaseClient) return supabaseClient;
+  const { createClient } = await import('@supabase/supabase-js');
+  supabaseClient = createClient(url, key);
+  return supabaseClient;
+}
 
-  html = html.replace(/<title>[^<]*<\/title>/, `<title>${esc(title)}</title>`);
-  html = html.replace(
-    /(<meta name="description" content=")[^"]*(")/,
-    `$1${esc(description)}$2`
-  );
-  // Insert canonical right after <meta name="robots"> so it appears near the top of <head>
-  html = html.replace(
-    /(<meta name="robots"[^>]*>)/,
-    `$1\n    <link rel="canonical" href="${canonical}" />`
-  );
-  html = html.replace(
-    /(<meta property="og:title" content=")[^"]*(")/,
-    `$1${esc(title)}$2`
-  );
-  html = html.replace(
-    /(<meta property="og:description" content=")[^"]*(")/,
-    `$1${esc(description)}$2`
-  );
-  html = html.replace(
-    /(<meta property="og:url" content=")[^"]*(")/,
-    `$1${canonical}$2`
-  );
-  html = html.replace(
-    /(<meta property="og:image" content=")[^"]*(")/,
-    `$1${BASE_URL}/og-default.png$2`
-  );
+/**
+ * Lädt beim Build die publizierten DB-Themenwelten inklusive SEO-Feldern.
+ *
+ * Ist das Themenwelten-DB-System deaktiviert, wird gar nicht abgefragt und der
+ * Build verhält sich exakt wie bisher (nur Legacy-Themenwelten).
+ *
+ * Ist es aktiviert, MUSS die Abfrage gelingen: eine still übersprungene Abfrage
+ * würde einen Deploy ohne die statischen DB-Seiten erzeugen und damit den
+ * bisher funktionierenden Production-Stand verschlechtern. Deshalb wird hier
+ * bewusst geworfen — der Build scheitert, der alte Deploy bleibt online.
+ *
+ * @returns {Promise<{enabled: boolean, routes: Array, worlds: Array}>}
+ */
+async function loadDbThemeWorlds() {
+  if (!isThemeWorldDbEnabledServer()) {
+    return { enabled: false, routes: [], worlds: [] };
+  }
 
-  return html;
+  // Genau das öffentliche Paar, das auch der Browser nutzt (src/lib/supabase.js).
+  // Bewusst KEINE Fallback-Kette: URL und Key müssen aus derselben
+  // Konfigurationsfamilie stammen, sonst entsteht ein «Invalid API key».
+  // Service-Role-Rechte sind nicht nötig — RLS gibt anonym genau die
+  // publizierten Inhalte frei, die auch ein normaler Besucher sieht.
+  const url = process.env.VITE_SUPABASE_URL;
+  const key = process.env.VITE_SUPABASE_KEY;
+
+  if (!url || !key) {
+    const missing = [
+      url ? null : 'VITE_SUPABASE_URL',
+      key ? null : 'VITE_SUPABASE_KEY',
+    ].filter(Boolean).join(' und ');
+    throw new ThemeWorldPrerenderError(
+      `VITE_THEME_WORLD_DB_ENABLED=true, aber im Build fehlt: ${missing}. ` +
+        'Der Build wird abgebrochen, damit kein Deploy ohne die statischen Themenwelt-Seiten entsteht.'
+    );
+  }
+
+  return loadThemeWorldPrerenderRoutes({
+    supabase: await getPublicSupabaseClient(url, key),
+    baseUrl: BASE_URL,
+  });
+}
+
+/**
+ * Lädt beim Build die öffentlichen Kurse und Anbieterprofile.
+ *
+ * FAIL-SAFE-REGELN (bewusst dokumentiert, siehe api/_lib/course-prerender.js):
+ *
+ *   VITE_COURSE_PRERENDER_ENABLED='false'
+ *     → bewusst abgeschaltet. Keine DB-Abfrage, laute Meldung im Build-Log.
+ *       Gilt auch auf Vercel: eine explizite Abschaltung ist eine Entscheidung,
+ *       kein Konfigurationsunfall.
+ *
+ *   Genau EINE der beiden Variablen fehlt
+ *     → Build-Abbruch, überall. Eine halbe Konfiguration ist immer ein Fehler
+ *       und würde hunderte Seiten still ohne SEO-Daten deployen.
+ *
+ *   Beide öffentlichen Variablen fehlen — auf VERCEL
+ *     → Build-Abbruch. Vercel setzt VERCEL/VERCEL_ENV automatisch, es braucht
+ *       also keine zusätzliche Projektkonfiguration. Ein Deploy, der alle
+ *       Kurs-/Anbieter-URLs wieder als generische SPA-Shell veröffentlicht,
+ *       wäre eine stille SEO-Regression gegenüber dem Stand, der bereits
+ *       online ist.
+ *
+ *   Beide öffentlichen Variablen fehlen — LOKAL oder in CI
+ *     → übersprungen mit lauter Warnung, damit `npm run build` und die
+ *       GitHub-CI ohne Datenbank weiterhin funktionieren. Dort gibt es keine
+ *       DB-Inhalte zu verlieren. VITE_COURSE_PRERENDER_REQUIRED='true' bleibt
+ *       als manuelles Override für andere Build-Umgebungen erhalten.
+ *
+ *   Systemischer DB-Fehler (Kurse, Kategorien, Termine, Profile)
+ *     → Build-Abbruch. Ein scheinbar erfolgreicher Deploy mit generischer
+ *       SPA-Shell für alle Kurs-/Anbieter-URLs wäre schlechter als der bisher
+ *       online stehende Stand.
+ *
+ *   Ein einzelner ungültiger Datensatz (keine ID, kein Titel/Name, kein
+ *   gültiger Slug, unerwartetes Pfadformat)
+ *     → Warnung, Datensatz wird übersprungen. Es entsteht dann garantiert keine
+ *       falsche URL und keine SEO-Seite mit erfundenen Werten.
+ *
+ * @returns {Promise<{enabled: boolean, courseRoutes: Array, providerRoutes: Array}>}
+ */
+async function loadCourseAndProviderRoutes() {
+  const empty = { enabled: false, courseRoutes: [], providerRoutes: [] };
+
+  if (!isCoursePrerenderEnabled()) {
+    console.warn(
+      '  ! VITE_COURSE_PRERENDER_ENABLED=false — Kurs- und Anbieterseiten werden NICHT ' +
+        'prerendert. Ihr erstes HTML bleibt die generische SPA-Shell.'
+    );
+    return empty;
+  }
+
+  const { url, key, missing } = readPublicSupabaseCredentials();
+
+  if (missing.length === 1) {
+    // Nur Variablennamen, nie Werte.
+    throw new CoursePrerenderError(
+      `Die öffentliche Supabase-Konfiguration ist unvollständig — es fehlt: ${missing[0]}. ` +
+        'URL und Key müssen aus derselben Konfigurationsfamilie stammen. Der Build wird ' +
+        'abgebrochen, damit keine Kurs-/Anbieterseiten ohne SEO-Daten deployen.'
+    );
+  }
+
+  if (missing.length === 2) {
+    if (isVercelBuild()) {
+      throw new CoursePrerenderError(
+        'Vercel-Build erkannt, aber im Build fehlen VITE_SUPABASE_URL und VITE_SUPABASE_KEY. ' +
+          'Der Build wird abgebrochen, damit kein Deploy entsteht, der alle Kurs- und ' +
+          'Anbieter-URLs wieder als generische SPA-Shell ausliefert. ' +
+          'Bewusst abschalten lässt sich der Prerender mit VITE_COURSE_PRERENDER_ENABLED=false.'
+      );
+    }
+    if (process.env.VITE_COURSE_PRERENDER_REQUIRED === 'true') {
+      throw new CoursePrerenderError(
+        'VITE_COURSE_PRERENDER_REQUIRED=true, aber im Build fehlen VITE_SUPABASE_URL und ' +
+          'VITE_SUPABASE_KEY. Der Build wird abgebrochen, damit kein Deploy ohne die ' +
+          'statischen Kurs- und Anbieterseiten entsteht.'
+      );
+    }
+    console.warn(
+      '  ! VITE_SUPABASE_URL und VITE_SUPABASE_KEY fehlen — Kurs- und Anbieterseiten werden ' +
+        'NICHT prerendert. Das ist nur für lokale Builds und CI ohne Datenbank gedacht; ein ' +
+        'Vercel-Build bricht in dieser Lage ab.'
+    );
+    return empty;
+  }
+
+  return loadCourseAndProviderPrerenderRoutes({
+    supabase: await getPublicSupabaseClient(url, key),
+    baseUrl: BASE_URL,
+  });
 }
 
 let count = 0;
+const writtenPaths = new Set();
 
-function writeRoute(path, title, description) {
-  const html = generateHtml(path, title, description);
+function writeRoute(path, title, description, options) {
+  const html = generateHtml(path, title, description, options);
   // e.g. /ratgeber/beruflich/finanzierung → dist/ratgeber/beruflich/finanzierung/index.html
   const segments = path.replace(/^\//, '').split('/').filter(Boolean);
   const outDir = join(distDir, ...segments);
   mkdirSync(outDir, { recursive: true });
   writeFileSync(join(outDir, 'index.html'), html, 'utf-8');
+  writtenPaths.add(path);
   count++;
   console.log(`  ✓ ${path}`);
 }
@@ -174,14 +336,14 @@ const STATIC_PAGES = [
 ];
 
 // ─── Ratgeber data ───────────────────────────────────────────────────────────
-// Hardcoded here (mirrors api/sitemap.js + ratgeberStructure.js) to avoid
-// importing lucide-react in a Node.js context.
-
-const RATGEBER_CATEGORIES = [
-  { slug: 'beruflich', label: 'Beruflich' },
-  { slug: 'privat-hobby', label: 'Privat & Hobby' },
-  { slug: 'kinder', label: 'Kinder' },
-];
+// Cluster und Artikel sind hier hardcodiert (spiegeln api/sitemap.js +
+// ratgeberStructure.js), um lucide-react nicht in einen Node.js-Kontext zu
+// ziehen.
+//
+// Hub-Metadaten (/ratgeber und die drei Kategorieseiten) stehen bewusst NICHT
+// hier, sondern in src/lib/ratgeberSeo.js — derselben Quelle, aus der auch
+// RatgeberHubView nach der Hydration liest. Zwei getrennt gepflegte Sätze
+// waren genau die Ursache der widersprüchlichen Head-Tags.
 
 const RATGEBER_CLUSTERS = {
   beruflich: [
@@ -312,31 +474,39 @@ for (const { path, title, description } of STATIC_PAGES) {
   writeRoute(path, title, description);
 }
 
+/**
+ * Schreibt eine Ratgeber-Hub-Seite aus der gemeinsamen SEO-Quelle.
+ *
+ * Alle Felder stammen aus src/lib/ratgeberSeo.js, damit das erste HTML exakt
+ * das enthält, was RatgeberHubView nach der Hydration in dieselben Tags
+ * schreibt.
+ */
+function writeRatgeberHubRoute(seo) {
+  writeRoute(seo.path, seo.title, seo.description, {
+    ogTitle: seo.ogTitle,
+    ogDescription: seo.ogDescription,
+    ogType: seo.ogType,
+    ogImage: seo.ogImage,
+  });
+}
+
 // Ratgeber hub
-writeRoute(
-  '/ratgeber',
-  'KursNavi Ratgeber – Praxiswissen zu Weiterbildung, Hobbys und Kinderkursen',
-  'Der KursNavi Ratgeber: Praxiswissen zu Weiterbildung, Hobbys und Kinderkursen in der Schweiz.'
-);
+writeRatgeberHubRoute(getRatgeberRootSeo(BASE_URL));
 
 // Ratgeber categories → clusters → articles
-for (const cat of RATGEBER_CATEGORIES) {
-  writeRoute(
-    `/ratgeber/${cat.slug}`,
-    `${cat.label} – Ratgeber | KursNavi`,
-    `Ratgeber-Artikel rund um ${cat.label}: Weiterbildung, Karriere und mehr in der Schweiz.`
-  );
+for (const categorySlug of RATGEBER_SEO_CATEGORY_SLUGS) {
+  writeRatgeberHubRoute(getRatgeberCategorySeo(categorySlug, BASE_URL));
 
-  for (const cluster of (RATGEBER_CLUSTERS[cat.slug] || [])) {
+  for (const cluster of (RATGEBER_CLUSTERS[categorySlug] || [])) {
     writeRoute(
-      `/ratgeber/${cat.slug}/${cluster.slug}`,
+      `/ratgeber/${categorySlug}/${cluster.slug}`,
       `${cluster.label} – Ratgeber | KursNavi`,
       cluster.description
     );
 
-    for (const article of (RATGEBER_ARTICLES[`${cat.slug}/${cluster.slug}`] || [])) {
+    for (const article of (RATGEBER_ARTICLES[`${categorySlug}/${cluster.slug}`] || [])) {
       writeRoute(
-        `/ratgeber/${cat.slug}/${cluster.slug}/${article.slug}`,
+        `/ratgeber/${categorySlug}/${cluster.slug}/${article.slug}`,
         `${article.title} | KursNavi Ratgeber`,
         article.teaser
       );
@@ -344,22 +514,95 @@ for (const cat of RATGEBER_CATEGORIES) {
   }
 }
 
-// Bereich landing pages + szenario articles (from config)
+// ─── Bereich landing pages + szenario articles ───────────────────────────────
+// Zwei Quellen:
+//   A) DB-Themenwelten (nur wenn VITE_THEME_WORLD_DB_ENABLED='true')
+//   B) Legacy-Konfiguration BEREICH_LANDING_CONFIG (flagunabhängig)
+//
+// Kollisionsregel — identisch zur Laufzeit (themeWorldFeatureFlag.js):
+//   - URL existiert nur in der DB          → DB-Daten (bisher fehlte die Datei)
+//   - URL existiert in der Legacy-Config   → DB-Daten nur, wenn der Key in
+//     VITE_THEME_WORLD_PILOT_KEYS steht (dann liefert auch die hydratisierte
+//     Seite DB-Inhalte aus). Sonst gewinnt die Legacy-Config wie bisher.
+
+const legacyBereichPaths = new Set();
 for (const bereich of Object.values(BEREICH_LANDING_CONFIG)) {
   const bereichPath = `/bereich/${bereich.segment}/${bereich.slug}`;
-  writeRoute(bereichPath, `${bereich.title.de} | KursNavi`, bereich.subtitle.de);
+  legacyBereichPaths.add(bereichPath);
+  for (const szenario of (bereich.scenarios || [])) {
+    legacyBereichPaths.add(`${bereichPath}/${szenario.slug}`);
+  }
+}
+
+const pilotKeys = new Set(
+  (process.env.VITE_THEME_WORLD_PILOT_KEYS || '')
+    .split(',')
+    .map((k) => k.trim().toLowerCase())
+    .filter(Boolean)
+);
+
+const dbThemeWorlds = await loadDbThemeWorlds();
+
+if (dbThemeWorlds.enabled) {
+  let dbCount = 0;
+  for (const route of dbThemeWorlds.routes) {
+    const legacyWins =
+      legacyBereichPaths.has(route.path) &&
+      !pilotKeys.has(String(route.themeWorldKey || '').toLowerCase());
+    if (legacyWins) continue;
+
+    writeRoute(route.path, route.title, route.description, {
+      ogImage: route.ogImage,
+      ogImageAlt: route.ogImageAlt,
+      jsonLd: route.jsonLd,
+    });
+    dbCount++;
+  }
+  console.log(`  → ${dbCount} Themenwelt-Seite(n) aus der Datenbank prerendert.`);
+}
+
+for (const bereich of Object.values(BEREICH_LANDING_CONFIG)) {
+  const bereichPath = `/bereich/${bereich.segment}/${bereich.slug}`;
+  if (!writtenPaths.has(bereichPath)) {
+    writeRoute(bereichPath, `${bereich.title.de} | KursNavi`, bereich.subtitle.de);
+  }
 
   for (const szenario of (bereich.scenarios || [])) {
+    const szenarioPath = `${bereichPath}/${szenario.slug}`;
+    if (writtenPaths.has(szenarioPath)) continue;
     writeRoute(
-      `${bereichPath}/${szenario.slug}`,
+      szenarioPath,
       `${szenario.label.de} – ${bereich.title.de} | KursNavi`,
       szenario.text.de
     );
   }
 }
 
-// Thema landing pages (simple topic pages — auto-updates as config grows)
+// ─── Thema landing pages ──────────────────────────────────────────────────────
+// Themen, die von einer öffentlich aktiven Themenwelt übernommen wurden, bekommen
+// bewusst KEINE statische Datei. Vercel prüft das Dateisystem vor den Rewrites —
+// ohne Datei greift der Rewrite auf /api/thema-redirect, der dauerhaft (308) auf
+// /bereich/{segment}/{slug} weiterleitet. Alle übrigen /thema/-Seiten bleiben
+// unverändert statisch und kosten keinen Funktionsaufruf.
+//
+// Wird eine Themenwelt wieder deaktiviert, entsteht die statische Datei beim
+// nächsten Build automatisch wieder — der Fallback-Content in
+// SIMPLE_TOPIC_CONTENT muss nie gelöscht werden.
+
+// Dieselbe Datengrundlage wie oben — keine zweite Abfrage. Ohne aktiviertes
+// DB-System bleibt es bei den Legacy-Themenwelten.
+const takenOverTopics = buildActiveThemeWorldTopicKeys({
+  dbEnabled: dbThemeWorlds.enabled,
+  publishedDbWorlds: dbThemeWorlds.worlds,
+});
+
+let skipped = 0;
 for (const [key, config] of Object.entries(SIMPLE_TOPIC_CONTENT)) {
+  if (takenOverTopics.has(key)) {
+    skipped++;
+    console.log(`  → ${'/thema/' + key} übersprungen (Themenwelt /bereich/${key} aktiv)`);
+    continue;
+  }
   writeRoute(
     `/thema/${key}`,
     `${config.title} | KursNavi`,
@@ -367,4 +610,31 @@ for (const [key, config] of Object.entries(SIMPLE_TOPIC_CONTENT)) {
   );
 }
 
-console.log(`\n✓ ${count} static HTML files generated.\n`);
+// ─── Öffentliche Kursdetailseiten und Anbieterprofile ─────────────────────────
+// Bis hierher entstand für /courses/… und /anbieter/… keine Datei — Vercel
+// lieferte über den Catch-all-Rewrite die generische SPA-Shell aus. Die Pfade
+// kommen ausschliesslich aus buildCanonicalCoursePath() bzw. dem Anbieter-Slug;
+// SEO-Werte und JSON-LD aus denselben reinen Funktionen, die auch DetailView
+// und ProviderProfilePage nach der Hydration verwenden.
+
+const courseAndProviders = await loadCourseAndProviderRoutes();
+
+if (courseAndProviders.enabled) {
+  const before = count;
+  for (const route of [...courseAndProviders.courseRoutes, ...courseAndProviders.providerRoutes]) {
+    writeRoute(route.path, route.title, route.description, {
+      ogTitle: route.ogTitle,
+      ogDescription: route.ogDescription,
+      ogType: route.ogType,
+      ogImage: route.ogImage,
+      jsonLd: route.jsonLd,
+    });
+  }
+  console.log(
+    `  → ${courseAndProviders.courseRoutes.length} Kursseite(n) und ` +
+      `${courseAndProviders.providerRoutes.length} Anbieterprofil(e) prerendert ` +
+      `(${count - before} Dateien).`
+  );
+}
+
+console.log(`\n✓ ${count} static HTML files generated${skipped ? ` (${skipped} /thema/-Seiten von Themenwelten übernommen)` : ''}.\n`);

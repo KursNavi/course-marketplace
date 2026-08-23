@@ -150,7 +150,7 @@ const AuthView = ({ setView, setUser, showNotification, lang }) => {
                                 <input id="auth-name" required type="text" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" value={fullName} onChange={e => setFullName(e.target.value)} />
                                 {fullName.length > 25 && (
                                     <p className="text-xs text-amber-600 mt-1">
-                                        Wir empfehlen max. 25 Zeichen ({fullName.length}/25) – bei längeren Namen wird der Anzeigename auf der Plattform je nach Darstellung mit „..." abgekürzt.
+                                        Wir empfehlen max. 25 Zeichen ({fullName.length}/25) – bei längeren Namen wird der Anzeigename auf der Plattform je nach Darstellung mit «...» abgekürzt.
                                     </p>
                                 )}
                             </div>

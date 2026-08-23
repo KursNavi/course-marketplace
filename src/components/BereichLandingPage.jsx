@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Search, ArrowRight, ChevronDown, ChevronRight, BookOpen, Award, HelpCircle } from 'lucide-react';
-import { getBereichBySlug, getBereichUrl } from '../lib/bereichLandingConfig';
+import { getBereichBySlug, getBereichUrl, BEREICH_LANDING_CONFIG } from '../lib/bereichLandingConfig';
 import { SEGMENT_LANDING_CONFIG } from '../lib/segmentLandingConfig';
 import { SEGMENT_CONFIG } from '../lib/constants';
 import { useTaxonomy } from '../hooks/useTaxonomy';
@@ -8,15 +8,85 @@ import { BASE_URL } from '../lib/siteConfig';
 import { buildFaqPageJsonLd } from '../lib/seoUtils';
 import { shouldHandleClientNavigation } from '../lib/navigation';
 import RegionalDiscoverySection from './RegionalDiscoverySection';
+import { loadThemeWorldWithFallback, isThemeWorldPilotActive, isThemeWorldDbEnabled } from '../lib/themeWorldFeatureFlag';
+import { fetchThemeWorldPage } from '../lib/themeWorldService';
+import { adaptToLegacyBereichConfig } from '../lib/themeWorldAdapter';
+import { normalizeDeliveryTypeKey } from '../lib/courseMetadata';
+import { buildEditorialReviewNotice } from '../lib/editorialReviewDate';
 
 export default function BereichLandingPage({ segment, slug, courses, lang = 'de', t }) {
-  const config = getBereichBySlug(segment, slug);
+  // Legacy-Config (immer geladen als Basiswert + Fallback)
+  const legacyConfig = getBereichBySlug(segment, slug);
+
+  // Dynamic config state — wird gesetzt wenn Pilot-Flag aktiv + DB-Antwort erfolgreich
+  const [dynamicConfig, setDynamicConfig] = useState(null);
+  const [dynamicNotFound, setDynamicNotFound] = useState(false);
+  // DB-only mode: kein Legacy-Eintrag vorhanden, aber DB global aktiv → Ladeindikator bis Antwort
+  const [dbOnlyLoading, setDbOnlyLoading] = useState(() => !legacyConfig && isThemeWorldDbEnabled());
+
+  // Effektiver Config: DB wenn geladen, sonst Legacy
+  const config = dynamicConfig || legacyConfig;
+
   const { areas: dbAreas } = useTaxonomy();
   const [searchQuery, setSearchQuery] = useState('');
   const [openFaq, setOpenFaq] = useState(null);
 
-  // Segment theme
-  const theme = SEGMENT_CONFIG[segment] || SEGMENT_CONFIG.beruflich;
+  // Bestimme den theme-world-key aus der Legacy-Config oder URL
+  const bereichKey = legacyConfig
+    ? (Object.entries(BEREICH_LANDING_CONFIG).find(([, v]) => v.slug === slug)?.[0] || null)
+    : null;
+
+  // Pilot-Integration: DB-Daten laden wenn Feature-Flag aktiv
+  useEffect(() => {
+    // DB-only-Modus: Themenwelt existiert nur in der DB, kein Legacy-Eintrag
+    // → direkt laden ohne Pilot-Key-Prüfung (keine Legacy-Einschränkung nötig)
+    if (!legacyConfig && isThemeWorldDbEnabled()) {
+      let cancelled = false;
+      fetchThemeWorldPage(segment, slug)
+        .then(data => {
+          if (!cancelled) {
+            setDynamicConfig(adaptToLegacyBereichConfig(data));
+            setDbOnlyLoading(false);
+          }
+        })
+        .catch(() => {
+          if (!cancelled) {
+            setDynamicNotFound(true);
+            setDbOnlyLoading(false);
+          }
+        });
+      return () => { cancelled = true; };
+    }
+
+    // Pilot-Modus: Legacy-Eintrag vorhanden, Pilot-Flag steuert DB-Upgrade
+    if (!bereichKey) return;
+    if (!isThemeWorldPilotActive(bereichKey)) return;
+
+    let cancelled = false;
+
+    loadThemeWorldWithFallback({
+      themeWorldKey: bereichKey,
+      dbLoader: async () => {
+        const data = await fetchThemeWorldPage(segment, slug);
+        return adaptToLegacyBereichConfig(data);
+      },
+      legacyLoader: () => legacyConfig,
+    }).then(({ data, notFound }) => {
+      if (cancelled) return;
+      if (notFound) {
+        setDynamicNotFound(true);
+      } else if (data) {
+        setDynamicConfig(data);
+      }
+    });
+
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bereichKey, segment, slug]);
+
+  // Segment theme — normalize URL segment (privat-hobby → privat_hobby)
+  const segmentKey = segment?.replace(/-/g, '_') || segment;
+  const theme = SEGMENT_CONFIG[segmentKey] || SEGMENT_CONFIG.beruflich;
 
   const goToContact = () => {
     window.scrollTo(0, 0);
@@ -28,10 +98,14 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
   useEffect(() => {
     if (!config) return;
 
-    const pageTitle = `${config.title[lang] || config.title.de} | KursNavi`;
+    // Redaktionelle SEO-Felder (meta_title/meta_description) sind die erste
+    // Quelle — identisch zum Server-Prerender (api/_lib/theme-world-prerender.js).
+    // Legacy-Konfigurationen haben diese Felder nicht: dort greifen wie bisher
+    // der sichtbare Titel und der Subtitle.
+    const pageTitle = config.metaTitle || `${config.title[lang] || config.title.de} | KursNavi`;
     document.title = pageTitle;
 
-    const metaDesc = config.subtitle[lang] || config.subtitle.de;
+    const metaDesc = config.metaDescription || config.subtitle[lang] || config.subtitle.de;
     let metaTag = document.querySelector('meta[name="description"]');
     if (!metaTag) {
       metaTag = document.createElement('meta');
@@ -51,11 +125,12 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
     canonicalTag.href = canonicalUrl;
 
     // OG Tags
+    const ogImageUrl = config.ogImageUrl || `${BASE_URL}/og-default.png`;
     const ogTags = {
       'og:title': pageTitle,
       'og:description': metaDesc,
       'og:url': canonicalUrl,
-      'og:image': `${BASE_URL}/og-default.png`,
+      'og:image': ogImageUrl,
       'og:type': 'website',
       'og:locale': 'de_CH',
       'og:site_name': 'KursNavi'
@@ -71,6 +146,22 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
       }
       tag.content = content;
     });
+
+    // og:image:alt — nur setzen wenn Alt-Text vorhanden
+    const ogAltText = config.ogImageAlt || config.heroImageAlt || '';
+    const ogAltProperty = 'og:image:alt';
+    let ogAltTag = document.querySelector(`meta[property="${ogAltProperty}"]`);
+    if (ogAltText) {
+      if (!ogAltTag) {
+        ogAltTag = document.createElement('meta');
+        ogAltTag.setAttribute('property', ogAltProperty);
+        document.head.appendChild(ogAltTag);
+        createdOgTags.push(ogAltTag);
+      }
+      ogAltTag.content = ogAltText;
+    } else if (ogAltTag) {
+      ogAltTag.remove();
+    }
 
     // BreadcrumbList Schema
     const segmentLabel = theme.label?.[lang] || theme.label?.de || segment;
@@ -114,8 +205,17 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
     };
   }, [config, segment, slug, lang]);
 
-  // 404 guard
-  if (!config) {
+  // DB-only Ladeindikator — verhindert vorzeitigen 404 während DB-Abfrage läuft
+  if (dbOnlyLoading) {
+    return (
+      <div className="min-h-screen bg-beige flex items-center justify-center">
+        <div className="text-center text-muted">Wird geladen…</div>
+      </div>
+    );
+  }
+
+  // 404 guard — auch für DB-Not-found
+  if (!config || dynamicNotFound) {
     return (
       <div className="min-h-screen bg-beige flex items-center justify-center">
         <div className="text-center">
@@ -206,7 +306,14 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
     params.set('type', config.typeKey);
     params.set('area', config.areaSlug);
     Object.entries(extraParams).forEach(([k, v]) => {
-      if (v) params.set(k, v);
+      if (!v) return;
+      // Kanonisiere Delivery-Werte beim URL-Aufbau
+      if (k === 'delivery') {
+        const canonical = normalizeDeliveryTypeKey(v);
+        if (canonical) params.set(k, canonical);
+      } else {
+        params.set(k, v);
+      }
     });
     return '/search?' + params.toString();
   };
@@ -228,7 +335,7 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
 
         <div className="relative z-10 max-w-5xl mx-auto">
           {/* Breadcrumbs */}
-          <nav className="flex items-center gap-2 text-sm text-white/90 mb-8" aria-label="Breadcrumb">
+          <nav className="flex flex-wrap items-center gap-2 text-sm text-white/90 mb-8" aria-label="Breadcrumb">
             <a href="/" onClick={(e) => { e.preventDefault(); window.history.pushState({}, '', '/'); window.scrollTo(0,0); }} className="hover:text-white transition-colors">Home</a>
             <ChevronRight className="w-3 h-3" />
             <a
@@ -239,7 +346,7 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
               {segmentLabel}
             </a>
             <ChevronRight className="w-3 h-3" />
-            <span className="text-white/90">{config.title[lang] || config.title.de}</span>
+            <span className="min-w-0 break-words text-white/90">{config.title[lang] || config.title.de}</span>
           </nav>
 
           {/* Title */}
@@ -252,7 +359,7 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
 
           {/* Scenario Tags */}
           {config.scenarios && (
-            <div className="flex flex-wrap gap-2 mb-10">
+            <div className="flex min-w-0 flex-wrap gap-2 mb-10">
               {config.scenarios.map((scenario, i) => (
                 <a
                   key={scenario.slug || i}
@@ -263,30 +370,32 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
                     window.scrollTo(0, 0);
                     window.history.pushState({ view: 'bereich-szenario' }, '', `/bereich/${segment}/${slug}/${scenario.slug}`);
                   }}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full text-sm text-white/90 hover:bg-white/25 hover:border-white/40 transition-colors"
+                  className="inline-flex min-w-0 max-w-full items-center gap-1.5 px-3 py-1.5 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full text-sm text-white/90 hover:bg-white/25 hover:border-white/40 transition-colors"
                   title={scenario.text[lang] || scenario.text.de}
                 >
-                  <span>{scenario.icon}</span>
-                  <span>{scenario.label[lang] || scenario.label.de}</span>
+                  <span className="shrink-0">{scenario.icon}</span>
+                  <span className="min-w-0 break-words">{scenario.label[lang] || scenario.label.de}</span>
                 </a>
               ))}
             </div>
           )}
 
           {/* Search Bar */}
-          <form onSubmit={handleSearchSubmit} className="max-w-2xl relative">
-            <div className="relative flex items-center">
-              <Search className="absolute left-4 text-gray-400 w-5 h-5 z-10" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={t?.search_placeholder || 'Kurs suchen...'}
-                className="w-full pl-12 pr-32 py-4 rounded-xl text-dark font-sans shadow-lg focus:outline-none focus:ring-2 focus:ring-primary text-lg bg-white"
-              />
+          <form onSubmit={handleSearchSubmit} className="max-w-2xl">
+            <div className="flex flex-col gap-2 sm:relative sm:block">
+              <div className="relative min-w-0">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5 z-10" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder={t?.search_placeholder || 'Kurs suchen...'}
+                  className="w-full min-w-0 pl-12 pr-4 py-4 rounded-xl text-dark font-sans shadow-lg focus:outline-none focus:ring-2 focus:ring-primary text-lg bg-white sm:pr-32"
+                />
+              </div>
               <button
                 type="submit"
-                className="absolute right-2 bg-primary hover:bg-orange-600 text-white px-6 py-2 rounded-lg font-bold transition-colors"
+                className="w-full shrink-0 bg-primary hover:bg-orange-600 text-white px-6 py-2 rounded-lg font-bold transition-colors sm:absolute sm:right-2 sm:top-2 sm:w-auto"
               >
                 {t?.btn_search || 'Suchen'}
               </button>
@@ -327,20 +436,38 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
                   window.scrollTo(0, 0);
                   window.history.pushState({ view: 'bereich-szenario' }, '', `/bereich/${segment}/${slug}/${scenario.slug}`);
                 }}
-                className="relative p-6 rounded-2xl bg-white border border-gray-100 hover:border-gray-200 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group block"
+                className="relative min-w-0 overflow-hidden p-6 rounded-2xl bg-white border border-gray-100 hover:border-gray-200 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group block"
               >
-                {/* Icon */}
-                <div className={`w-14 h-14 ${theme.bgLight} rounded-2xl flex items-center justify-center mb-4 group-hover:scale-105 transition-transform duration-300`}>
-                  <span className="text-3xl">{scenario.icon}</span>
-                </div>
+                {/* Kartenbild, falls vorhanden; sonst bestehender Icon-Fallback */}
+                {scenario.cardImageUrl ? (
+                  <div className="w-14 h-14 mb-4">
+                    <img
+                      data-testid={`scenario-card-image-${scenario.slug || i}`}
+                      src={scenario.cardImageUrl}
+                      alt={scenario.cardImageAlt || scenario.label[lang] || scenario.label.de || scenario.text[lang] || scenario.text.de || ''}
+                      className="w-full h-full rounded-2xl object-cover group-hover:scale-105 transition-transform duration-300"
+                      onError={(event) => {
+                        event.currentTarget.hidden = true;
+                        event.currentTarget.nextElementSibling?.removeAttribute('hidden');
+                      }}
+                    />
+                    <div hidden className={`w-full h-full ${theme.bgLight} rounded-2xl flex items-center justify-center`} aria-hidden="true">
+                      <span className="text-3xl">{scenario.icon}</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className={`w-14 h-14 ${theme.bgLight} rounded-2xl flex items-center justify-center mb-4 group-hover:scale-105 transition-transform duration-300`}>
+                    <span className="text-3xl">{scenario.icon}</span>
+                  </div>
+                )}
 
                 {/* Title */}
-                <h3 className={`font-bold text-base ${theme.text} mb-2 leading-snug`}>
+                <h3 className={`min-w-0 break-words font-bold text-base ${theme.text} mb-2 leading-snug`}>
                   {scenario.label[lang] || scenario.label.de}
                 </h3>
 
                 {/* Description */}
-                <p className="text-sm text-gray-500 leading-relaxed line-clamp-3 mb-4">
+                <p className="min-w-0 break-words text-sm text-gray-500 leading-relaxed line-clamp-3 mb-4">
                   {scenario.text[lang] || scenario.text.de}
                 </p>
 
@@ -354,7 +481,7 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
             ))}
           </div>
           <div className="text-center text-sm text-gray-500 mt-6">
-            <p>Zuletzt redaktionell geprüft: März 2026. Die Inhalte dienen der Orientierung; maßgeblich sind im Zweifel die Angaben der jeweiligen Anbieter und offiziellen Stellen.</p>
+            <p>{buildEditorialReviewNotice(config.lastReviewedAt)}</p>
             <p className="mt-2">
               Ist dir in einer Themenwelt ein Fehler oder eine veraltete Information aufgefallen? Gib uns gern kurz Bescheid.{' '}
               <a
@@ -404,6 +531,44 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
           </div>
         );
       })()}
+
+      {/* SCHNELLEINSTIEG — Vordefinierte Suchen */}
+      {config.predefinedSearches && config.predefinedSearches.filter((s) => s.label?.de).length > 0 && (
+        <div className="max-w-5xl mx-auto px-4 py-12">
+          <h2 className="text-xl font-heading font-bold text-dark mb-1 text-center">
+            {sectionTitles.searchesTitle?.[lang] || sectionTitles.searchesTitle?.de || 'Schnelleinstieg'}
+          </h2>
+          {sectionTitles.searchesSubtitle && (
+            <p className="text-gray-500 text-center mb-8">
+              {sectionTitles.searchesSubtitle[lang] || sectionTitles.searchesSubtitle.de}
+            </p>
+          )}
+          {!sectionTitles.searchesSubtitle && <div className="mb-8" />}
+          <div className="flex flex-wrap gap-3 justify-center">
+            {config.predefinedSearches
+              .filter((s) => s.label?.de)
+              .map((search, i) => {
+                const allParams = { ...search.params, ...(search.extraParams || {}) };
+                const url = buildSearchUrl(allParams);
+                return (
+                  <a
+                    key={i}
+                    href={url}
+                    onClick={(e) => {
+                      if (!shouldHandleClientNavigation(e)) return;
+                      e.preventDefault();
+                      handlePredefinedSearch(search);
+                    }}
+                    className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full border-2 ${theme.borderLight} ${theme.text} bg-white hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 font-medium text-sm`}
+                  >
+                    {search.label[lang] || search.label.de}
+                    <ArrowRight className="w-4 h-4" />
+                  </a>
+                );
+              })}
+          </div>
+        </div>
+      )}
 
       {/* AUSBILDUNGSBEREICHE — Directory-Liste */}
       <div className="bg-white py-16">
@@ -602,5 +767,3 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
     </div>
   );
 }
-
-

@@ -1,32 +1,200 @@
-import React, { useCallback, useEffect, useRef } from 'react';
-import { ChevronRight, Clock, ArrowRight, BookOpen } from 'lucide-react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { ChevronRight, Clock, ArrowRight, BookOpen, Info } from 'lucide-react';
 import { BEREICH_LANDING_CONFIG, getBereichBySlug, getBereichUrl, findSzenario } from '../lib/bereichLandingConfig';
 import { SZENARIO_CONTENT } from '../lib/szenarioContent';
 import { SEGMENT_CONFIG } from '../lib/constants';
-import { enhanceImages, estimateReadingTime, buildArticleJsonLd, buildBreadcrumbJsonLd } from '../lib/seoUtils';
+import { enhanceImages, wrapTables, estimateReadingTime, buildArticleJsonLd, buildBreadcrumbJsonLd } from '../lib/seoUtils';
+import { enhanceTableScrollContainers } from '../lib/tableScroll';
 import { BASE_URL } from '../lib/siteConfig';
 import { shouldHandleClientNavigation } from '../lib/navigation';
+import { loadThemeWorldWithFallback, isThemeWorldPilotActive, isThemeWorldDbEnabled } from '../lib/themeWorldFeatureFlag';
+import { fetchThemeWorld, fetchPublishedScenario } from '../lib/themeWorldService';
+import { adaptToLegacyBereichConfig, adaptToLegacySzenarioConfig } from '../lib/themeWorldAdapter';
+import { normalizeDeliveryTypeKey } from '../lib/courseMetadata';
+import { toDisplaySources } from '../lib/scenarioSources';
+import { buildEditorialReviewNotice } from '../lib/editorialReviewDate';
+import { buildTimeSensitiveNotice, containsTimeSensitiveFacts } from '../lib/timeSensitiveFacts';
 
 /**
  * SzenarioArtikelView
  *
  * Renders a single scenario article page.
  * URL pattern: /bereich/{segment}/{bereich-slug}/{szenario-slug}
+ *
+ * Phase 5: Pilot-Integration hinter Feature-Flag.
+ * Wenn VITE_THEME_WORLD_DB_ENABLED=true und der Key in VITE_THEME_WORLD_PILOT_KEYS,
+ * werden Daten aus der DB geladen; sonst unverändert Legacy-Betrieb.
  */
 export default function SzenarioArtikelView({ segment, slug, szenarioSlug, courses, lang = 'de', t }) {
-  const bereichConfig = getBereichBySlug(segment, slug);
-  const scenario = bereichConfig ? findSzenario(bereichConfig, szenarioSlug) : null;
-  const theme = SEGMENT_CONFIG[segment] || SEGMENT_CONFIG.beruflich;
+  // Legacy-Config (immer geladen als Basiswert + Fallback)
+  const legacyBereichConfig = getBereichBySlug(segment, slug);
+  const legacyScenario = legacyBereichConfig ? findSzenario(legacyBereichConfig, szenarioSlug) : null;
 
-  // Find the bereich config key (e.g. 'sport_fitness_beruf') for content lookup
-  const bereichKey = bereichConfig
+  // Dynamic state
+  const [dynamicBereichConfig, setDynamicBereichConfig] = useState(null);
+  const [dynamicScenario, setDynamicScenario] = useState(null);
+  const [dynamicArticleContent, setDynamicArticleContent] = useState(null);
+  const [dynamicNotFound, setDynamicNotFound] = useState(false);
+  // DB-only mode: kein Legacy-Eintrag vorhanden, aber DB global aktiv → Ladeindikator bis Antwort
+  const [dbOnlyLoading, setDbOnlyLoading] = useState(() => !legacyBereichConfig && isThemeWorldDbEnabled());
+
+
+  // Effective values: DB wenn geladen, sonst Legacy
+  const bereichConfig = dynamicBereichConfig || legacyBereichConfig;
+  const scenario = dynamicScenario || legacyScenario;
+
+  // Normalize URL segment (privat-hobby → privat_hobby) for SEGMENT_CONFIG lookup
+  const segmentKey = segment?.replace(/-/g, '_') || segment;
+  const theme = SEGMENT_CONFIG[segmentKey] || SEGMENT_CONFIG.beruflich;
+
+  // Legacy content lookup
+  const bereichKey = legacyBereichConfig
     ? Object.entries(BEREICH_LANDING_CONFIG).find(([, v]) => v.slug === slug)?.[0]
     : null;
-
   const contentKey = bereichKey && szenarioSlug ? `${bereichKey}/${szenarioSlug}` : null;
-  const articleContent = contentKey ? SZENARIO_CONTENT[contentKey] || null : null;
+  const legacyArticleContent = contentKey ? SZENARIO_CONTENT[contentKey] || null : null;
+
+  // Pilot-Modus: Legacy-Eintrag UND DB-Fassung vorhanden.
+  //
+  // Ohne diesen Zustand rendert der Artikel sofort die im JS-Bundle
+  // mitgelieferte Legacy-Fassung und tauscht sie erst aus, wenn die DB-Antwort
+  // da ist. Auf Produktion gemessen: rund 0,8 Sekunden lang war die ältere
+  // Fassung mit anderer Gliederung und ohne Quellenblock sichtbar, danach die
+  // aktuelle. Genau dieser Wechsel wurde als «veraltete Version» gemeldet — er
+  // hat nichts mit CDN- oder Cache-Verhalten zu tun.
+  //
+  // Solange die DB-Fassung unterwegs ist, wird deshalb keine Fassung angezeigt.
+  // Schlägt der Ladevorgang fehl oder gibt es kein DB-Szenario, bleibt der
+  // Legacy-Inhalt als Rückfallebene erhalten.
+  const pilotWillLoad = Boolean(bereichKey) && isThemeWorldPilotActive(bereichKey);
+  const [pilotLoading, setPilotLoading] = useState(() => pilotWillLoad);
+
+  // Effective article content
+  const articleContent = dynamicArticleContent !== null ? dynamicArticleContent : legacyArticleContent;
+
+  // Nur solange eine DB-Fassung tatsächlich erwartet wird und noch nicht da
+  // ist. Danach entscheidet wieder articleContent — inklusive Legacy-Rückfall.
+  const articleIsLoading = pilotLoading && dynamicArticleContent === null;
+
   const readingTime = estimateReadingTime(articleContent);
   const articleRef = useRef(null);
+
+  // Pilot-Integration: DB-Daten laden wenn Feature-Flag aktiv
+  useEffect(() => {
+    let cancelled = false;
+
+    // DB-only-Modus: Themenwelt existiert nur in der DB, kein Legacy-Eintrag
+    // → direkt laden ohne Pilot-Key-Prüfung (keine Legacy-Einschränkung nötig)
+    if (!legacyBereichConfig && isThemeWorldDbEnabled()) {
+      (async () => {
+        try {
+          const tw = await fetchThemeWorld(segment, slug);
+          if (cancelled) return;
+
+          const sc = tw.search_config || {};
+          setDynamicBereichConfig({
+            slug: tw.slug,
+            segment: tw.url_segment,
+            typeKey: tw.url_segment?.replace(/-/g, '_') || 'beruflich',
+            areaSlug: sc.area_slug || tw.area_slug || tw.key,
+            title: { de: tw.title_de || '' },
+            scenarios: [],
+          });
+
+          try {
+            const scenarioData = await fetchPublishedScenario(tw.id, szenarioSlug);
+            if (!cancelled && scenarioData) {
+              setDynamicScenario(adaptToLegacySzenarioConfig(scenarioData, sc));
+              setDynamicArticleContent(scenarioData.content_html || '');
+            }
+          } catch (sErr) {
+            if (!cancelled) {
+              setDynamicNotFound(true);
+            }
+          }
+        } catch (err) {
+          if (!cancelled) {
+            setDynamicNotFound(true);
+          }
+        } finally {
+          if (!cancelled) setDbOnlyLoading(false);
+        }
+      })();
+      return () => { cancelled = true; };
+    }
+
+    // Pilot-Modus: Legacy-Eintrag vorhanden, Pilot-Flag steuert DB-Upgrade
+    if (!bereichKey) return;
+    if (!isThemeWorldPilotActive(bereichKey)) return;
+
+    (async () => {
+      try {
+        // Themenwelt-Hauptdaten laden (für Kontext + bereichConfig)
+        const twResult = await loadThemeWorldWithFallback({
+          themeWorldKey: bereichKey,
+          dbLoader: async () => {
+            const tw = await fetchThemeWorld(segment, slug);
+            return tw;
+          },
+          legacyLoader: () => legacyBereichConfig,
+        });
+
+        if (cancelled) return;
+
+        if (twResult.notFound) {
+          setDynamicNotFound(true);
+          return;
+        }
+
+        if (twResult.source === 'db' && twResult.data) {
+          // Minimalform für bereichConfig — nur die Felder die SzenarioArtikelView braucht
+          const tw = twResult.data;
+          const sc = tw.search_config || {};
+          setDynamicBereichConfig({
+            slug: tw.slug,
+            segment: tw.url_segment,
+            typeKey: tw.url_segment?.replace(/-/g, '_') || 'beruflich',
+            areaSlug: sc.area_slug || tw.area_slug || tw.key,
+            title: { de: tw.title_de || '' },
+            scenarios: [], // Vollständige Szenario-Liste nicht nötig für Artikelansicht
+          });
+
+          // Szenario-Artikel laden
+          try {
+            const scenarioData = await fetchPublishedScenario(tw.id, szenarioSlug);
+            if (!cancelled && scenarioData) {
+              setDynamicScenario(adaptToLegacySzenarioConfig(scenarioData, sc));
+              setDynamicArticleContent(scenarioData.content_html || '');
+            }
+          } catch (sErr) {
+            if (!cancelled) {
+              // Szenario nicht gefunden oder DB-Fehler → Legacy-Fallback
+              if (sErr.name === 'ThemeWorldNotFoundError') {
+                setDynamicNotFound(true);
+              }
+              // Bei DB-Fehler: Legacy-Szenario bleibt aktiv (dynamicScenario bleibt null)
+            }
+          }
+        }
+      } catch (err) {
+        // Unerwarteter Fehler → Legacy bleibt aktiv (kein setState nötig)
+        if (import.meta.env.DEV) {
+          console.warn(
+            '[SzenarioArtikelView] Pilot-Ladevorgang fehlgeschlagen, Legacy-Fallback aktiv:',
+            err?.message,
+          );
+        }
+      } finally {
+        // Immer freigeben — auch bei Fehler oder fehlendem DB-Szenario. Sonst
+        // bliebe die Seite im Ladezustand hängen, statt auf Legacy
+        // zurückzufallen.
+        if (!cancelled) setPilotLoading(false);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bereichKey, segment, slug, szenarioSlug]);
 
   const goToSearch = useCallback((extraParams = {}) => {
     if (!bereichConfig) return;
@@ -34,7 +202,14 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
     params.set('type', bereichConfig.typeKey);
     params.set('area', bereichConfig.areaSlug);
     Object.entries(extraParams).forEach(([k, v]) => {
-      if (v) params.set(k, v);
+      if (!v) return;
+      // Kanonisiere Delivery-Werte beim URL-Aufbau
+      if (k === 'delivery') {
+        const canonical = normalizeDeliveryTypeKey(v);
+        if (canonical) params.set(k, canonical);
+      } else {
+        params.set(k, v);
+      }
     });
     window.scrollTo(0, 0);
     window.history.pushState({ view: 'search' }, '', '/search?' + params.toString());
@@ -44,10 +219,15 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
   useEffect(() => {
     if (!scenario || !bereichConfig) return;
 
-    const pageTitle = `${scenario.label[lang] || scenario.label.de} — ${bereichConfig.title[lang] || bereichConfig.title.de} | KursNavi`;
+    // Redaktionelle SEO-Felder (meta_title/meta_description) sind die erste
+    // Quelle — identisch zum Server-Prerender (api/_lib/theme-world-prerender.js).
+    // Legacy-Szenarien haben diese Felder nicht: dort greifen wie bisher Label
+    // und Teaser.
+    const pageTitle = scenario.metaTitle
+      || `${scenario.label[lang] || scenario.label.de} — ${bereichConfig.title[lang] || bereichConfig.title.de} | KursNavi`;
     document.title = pageTitle;
 
-    const metaDesc = scenario.text[lang] || scenario.text.de;
+    const metaDesc = scenario.metaDescription || scenario.text[lang] || scenario.text.de;
     let metaTag = document.querySelector('meta[name="description"]');
     if (!metaTag) {
       metaTag = document.createElement('meta');
@@ -70,7 +250,7 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
       'og:title': pageTitle,
       'og:description': metaDesc,
       'og:url': canonicalUrl,
-      'og:image': `${BASE_URL}/og-default.png`,
+      'og:image': scenario.ogImageUrl || `${BASE_URL}/og-default.png`,
       'og:type': 'article',
       'og:locale': 'de_CH',
       'og:site_name': 'KursNavi'
@@ -87,14 +267,40 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
       tag.content = content;
     });
 
+    // og:image:alt nur ausgeben, wenn ein redaktioneller Alt-Text vorhanden ist.
+    const ogAltProperty = 'og:image:alt';
+    let ogAltTag = document.querySelector(`meta[property="${ogAltProperty}"]`);
+    if (scenario.ogImageAlt) {
+      if (!ogAltTag) {
+        ogAltTag = document.createElement('meta');
+        ogAltTag.setAttribute('property', ogAltProperty);
+        document.head.appendChild(ogAltTag);
+        createdOgTags.push(ogAltTag);
+      }
+      ogAltTag.content = scenario.ogImageAlt;
+    } else if (ogAltTag) {
+      ogAltTag.remove();
+    }
+
     // Article JSON-LD
-    const segmentLabel = SEGMENT_CONFIG[segment]?.label?.[lang] || SEGMENT_CONFIG[segment]?.label?.de || segment;
+    const segmentLabel = SEGMENT_CONFIG[segmentKey]?.label?.[lang] || SEGMENT_CONFIG[segmentKey]?.label?.de || segment;
     const bereichTitle = bereichConfig.title[lang] || bereichConfig.title.de;
+    // Datumsfelder ausschliesslich aus echten DB-Werten — identisch zum
+    // Prerender (api/_lib/theme-world-prerender.js). Legacy-Szenarien haben
+    // diese Felder nicht; dann entfällt datePublished/dateModified komplett,
+    // statt das heutige Datum zu erfinden.
     const articleData = buildArticleJsonLd({
       title: scenario.label[lang] || scenario.label.de,
       description: metaDesc,
-      url: canonicalUrl
+      url: canonicalUrl,
+      datePublished: scenario.publishedAt,
+      dateModified: scenario.lastReviewedAt
     });
+    // Vom Build injizierte JSON-LD-Blöcke entfernen — sie werden gleich durch
+    // die identisch berechneten Laufzeit-Blöcke ersetzt statt dupliziert.
+    document
+      .querySelectorAll('script[type="application/ld+json"][data-prerender-jsonld]')
+      .forEach((tag) => tag.remove());
     const articleScript = document.createElement('script');
     articleScript.type = 'application/ld+json';
     articleScript.setAttribute('data-schema', 'szenario-article');
@@ -142,8 +348,36 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
     return () => btns.forEach(b => b.remove());
   }, [articleContent, scenario, lang, goToSearch]);
 
-  // 404
-  if (!bereichConfig || !scenario) {
+  // Breite Tabellen im Artikelinhalt als Scrollbereich kenntlich und mit der
+  // Tastatur bedienbar machen.
+  //
+  // Bewusst als Callback-Ref statt als Effekt mit Abhängigkeitsliste: Diese
+  // Komponente hat mehrere frühe Returns und lädt Inhalte nach. Ein Effekt lief
+  // dadurch genau einmal, solange articleRef.current noch null war, und danach
+  // nie wieder — die Tabelle blieb unmarkiert. Die Callback-Ref feuert dagegen
+  // exakt dann, wenn der Knoten eingehängt wird; spätere Inhaltswechsel fängt
+  // der MutationObserver in enhanceTableScrollContainers ab.
+  const tableCleanupRef = useRef(null);
+  const setArticleNode = useCallback((node) => {
+    articleRef.current = node;
+    if (tableCleanupRef.current) {
+      tableCleanupRef.current();
+      tableCleanupRef.current = null;
+    }
+    if (node) tableCleanupRef.current = enhanceTableScrollContainers(node);
+  }, []);
+
+  // DB-only Ladeindikator — verhindert vorzeitigen 404 während DB-Abfrage läuft
+  if (dbOnlyLoading) {
+    return (
+      <div className="min-h-screen bg-beige flex items-center justify-center">
+        <div className="text-center text-muted">Wird geladen…</div>
+      </div>
+    );
+  }
+
+  // 404 — auch für DB-Not-found
+  if (!bereichConfig || !scenario || dynamicNotFound) {
     return (
       <div className="min-h-screen bg-beige flex items-center justify-center">
         <div className="text-center">
@@ -177,9 +411,30 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
     window.dispatchEvent(new Event('locationchange'));
   };
 
+  // Quellenangaben — EIN Pfad für DB und Legacy.
+  //
+  // DB-Szenarien haben ihre Quellen bereits im Adapter normalisiert; Legacy-
+  // Szenarien tragen sie (falls überhaupt) roh im Config-Objekt. Beide laufen
+  // hier durch dieselbe Funktion, damit der Renderblock unten keine Ahnung
+  // davon haben muss, woher der Artikel stammt. Doppeltes Normalisieren ist
+  // gefahrlos — die Funktion ist idempotent.
+  //
+  // Deploy-Lifecycle: `sources` sind reiner Client-Content. Sie werden bei
+  // jedem Seitenaufruf frisch aus der DB geladen (fetchPublishedScenario), sind
+  // also unmittelbar nach dem Speichern im Admin öffentlich sichtbar. Der
+  // statische Prerender enthält sie nicht und kann durch eine Quellenänderung
+  // deshalb auch nicht veralten.
+  const displaySources = toDisplaySources(scenario.sources);
+
+  // Redaktioneller Prüfhinweis: nur aus echtem last_reviewed_at, nie aus
+  // Build-, System- oder Git-Zeit. Ohne Wert entfällt der Prüfsatz komplett.
+  const editorialNotice = buildEditorialReviewNotice(scenario.lastReviewedAt);
+
   const segmentLabel = theme.label?.[lang] || theme.label?.de || segment;
   const bereichTitle = (bereichConfig.title[lang] || bereichConfig.title.de).split('—')[0].trim();
-  const otherScenarios = (bereichConfig.scenarios || []).filter(s => s.slug !== szenarioSlug);
+  // Für "Andere Szenarien"-Navigation: Legacy-Config nutzen (immer vollständig)
+  const scenariosForNav = legacyBereichConfig?.scenarios || bereichConfig.scenarios || [];
+  const otherScenarios = scenariosForNav.filter(s => s.slug !== szenarioSlug);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -243,11 +498,27 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
       {/* Article Content */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 md:p-12">
-          {articleContent ? (
+          {articleIsLoading ? (
+            /* Die DB-Fassung ist unterwegs. Bis sie da ist, wird bewusst keine
+               Fassung gezeigt — sonst erschiene kurz die ältere Legacy-Version
+               mit anderer Gliederung und ohne Quellen. */
+            <div className="py-12" role="status" aria-live="polite" aria-busy="true">
+              <span className="sr-only">Artikel wird geladen…</span>
+              <div className="animate-pulse space-y-4" aria-hidden="true">
+                <div className="h-6 w-2/3 bg-gray-200 rounded" />
+                <div className="h-4 w-full bg-gray-100 rounded" />
+                <div className="h-4 w-11/12 bg-gray-100 rounded" />
+                <div className="h-4 w-4/5 bg-gray-100 rounded" />
+                <div className="h-6 w-1/2 bg-gray-200 rounded mt-8" />
+                <div className="h-4 w-full bg-gray-100 rounded" />
+                <div className="h-4 w-10/12 bg-gray-100 rounded" />
+              </div>
+            </div>
+          ) : articleContent ? (
             <div
-              ref={articleRef}
+              ref={setArticleNode}
               className="prose-ratgeber"
-              dangerouslySetInnerHTML={{ __html: enhanceImages(articleContent) }}
+              dangerouslySetInnerHTML={{ __html: wrapTables(enhanceImages(articleContent)) }}
             />
           ) : (
             <div className="text-center py-12">
@@ -267,8 +538,20 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
           )}
         </div>
 
+        {/* Gültigkeitshinweis — nur bei Artikeln mit zeitabhängigen Angaben.
+            Steht bewusst direkt über den Quellen, damit Hinweis und offizielle
+            Stellen zusammen gelesen werden. */}
+        <TimeSensitiveNotice
+          articleContent={articleContent}
+          lastReviewedAt={scenario.lastReviewedAt}
+          hasSources={displaySources.length > 0}
+        />
+
+        {/* Quellen & weiterführende Informationen — nur bei echten Quellen */}
+        <SourcesSection sources={displaySources} />
+
         <div className="text-center text-sm text-gray-500 mt-4 mb-2">
-          <p>Zuletzt redaktionell geprüft: März 2026. Die Inhalte dienen der Orientierung; maßgeblich sind im Zweifel die Angaben der jeweiligen Anbieter und offiziellen Stellen.</p>
+          <p>{editorialNotice}</p>
           <p className="mt-2">
             Wenn dir in dieser Themenwelt ein Fehler oder eine veraltete Information auffällt, gib uns gern kurz Bescheid.{' '}
             <a
@@ -349,5 +632,98 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
         </div>
       )}
     </div>
+  );
+}
+
+/**
+ * «Quellen & weiterführende Informationen»
+ *
+ * Ohne gültige Quelle wird NICHTS gerendert — keine leere Überschrift, kein
+ * leerer Rahmen. Die Prüfung passiert hier und nicht beim Aufrufer, damit es
+ * nur eine Stelle gibt, die über die Sichtbarkeit des Blocks entscheidet.
+ *
+ * Gestaltung bewusst ruhig: eine nummerierte Liste in derselben Kartenoptik wie
+ * der Artikel, kein zusätzlicher CTA, keine Signalfarben. Quellen sind ein
+ * Vertrauensbeleg, kein Handlungsaufruf.
+ *
+ * @param {object} props
+ * @param {Array<{title: string, publisher: string, url: string}>} props.sources
+ *        Bereits normalisiert (toDisplaySources) — hier findet keine
+ *        Validierung mehr statt.
+ */
+/**
+ * Gültigkeitshinweis für zeitabhängige Angaben.
+ *
+ * Erscheint nur, wenn der Artikel tatsächlich Beträge, Beitragssätze oder
+ * rechtliche Voraussetzungen führt — sonst wäre es blosses Rauschen. Der
+ * Hinweis nennt ausschliesslich, was in den Daten steht: das redaktionelle
+ * Prüfdatum des Artikels. Fehlt es, wird kein Stand behauptet.
+ *
+ * Bewusst zurückhaltend gestaltet: eine Einordnung, kein Warnhinweis.
+ */
+function TimeSensitiveNotice({ articleContent, lastReviewedAt, hasSources }) {
+  if (!containsTimeSensitiveFacts(articleContent)) return null;
+
+  const { intro, stand, verweis } = buildTimeSensitiveNotice({ lastReviewedAt, hasSources });
+
+  return (
+    <aside
+      aria-labelledby="szenario-gueltigkeit-heading"
+      className="bg-amber-50 border border-amber-200 rounded-2xl p-5 md:p-6 mt-6"
+    >
+      <h2
+        id="szenario-gueltigkeit-heading"
+        className="text-sm font-bold text-amber-900 mb-2 flex items-center gap-2"
+      >
+        <Info className="w-4 h-4 shrink-0" aria-hidden="true" />
+        Zeitabhängige Angaben
+      </h2>
+      <p className="text-sm text-amber-900/90 leading-relaxed">
+        {intro}{stand ? ` ${stand}` : ''} {verweis}
+      </p>
+    </aside>
+  );
+}
+
+function SourcesSection({ sources }) {
+  if (!sources || sources.length === 0) return null;
+
+  return (
+    <section
+      aria-labelledby="szenario-quellen-heading"
+      className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8 mt-6"
+    >
+      <h2
+        id="szenario-quellen-heading"
+        className="text-base font-bold text-gray-800 mb-4"
+      >
+        Quellen &amp; weiterführende Informationen
+      </h2>
+      <ol className="space-y-4 list-decimal list-outside pl-5 marker:text-gray-400 marker:text-sm">
+        {sources.map((source, index) => (
+          <li key={`${source.url}-${index}`} className="text-sm leading-relaxed pl-1">
+            {/* Herausgeber zuerst und optisch zurückgenommen: er ordnet die
+                Quelle ein, der anklickbare Titel bleibt das Hauptelement. */}
+            <span className="block text-gray-500 break-words">{source.publisher}</span>
+            <a
+              href={source.url}
+              target="_blank"
+              // noopener schliesst den window.opener-Zugriff der Zielseite aus,
+              // noreferrer verhindert zusätzlich die Referrer-Weitergabe.
+              //
+              // Bewusst OHNE nofollow: das ist kein Werbe-, User-Generated- oder
+              // ungeprüfter Fremdlink, sondern eine von der Redaktion
+              // ausgewählte Quelle, die den Artikel fachlich stützt. Solche
+              // Belege sollen normale crawlbare externe Links sein.
+              rel="noopener noreferrer"
+              className="text-primary font-medium underline underline-offset-2 hover:opacity-80 break-words"
+            >
+              {source.title}
+              <span className="sr-only"> (öffnet in neuem Tab)</span>
+            </a>
+          </li>
+        ))}
+      </ol>
+    </section>
   );
 }

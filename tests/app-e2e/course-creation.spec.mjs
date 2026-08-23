@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { loginAsTeacherAndOpenTab } from './helpers/auth.mjs';
 import { mockApiRoutes } from './helpers/api-mocks.mjs';
+import { waitForCourseSaveToSettle } from './helpers/course-form.mjs';
 
 test.describe('Course Creation (hybrid app-e2e)', () => {
 
@@ -62,10 +63,10 @@ test.describe('Course Creation (hybrid app-e2e)', () => {
 
     // ── Verify success ──────────────────────────────────────
 
-    // Give the save a moment to process (Supabase round-trip).
-    // If "Kurs erstellen" form is still open after 3 s, the save failed —
-    // most likely cause: missing price_info column (migration not applied to test DB).
-    await page.waitForTimeout(3_000);
+    // Wait for the save to actually finish instead of guessing a duration. With a
+    // fixed 3 s wait a merely slow CI round-trip looked like a failed save, and
+    // this test skipped itself — silently guarding nothing.
+    await waitForCourseSaveToSettle(page);
     const formStillOpen = await page.locator('h1').filter({ hasText: 'Kurs erstellen' })
       .isVisible().catch(() => false);
     if (formStillOpen) {

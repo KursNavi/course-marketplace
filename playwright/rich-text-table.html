@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Playwright Rich-Text Table Harness</title>
+    <style>
+      /* Nur Darstellung: leere Zellen bleiben anklickbar. Keine Logikänderung. */
+      #admin-rich-text-editor td,
+      #admin-rich-text-editor th {
+        min-width: 70px;
+        height: 26px;
+        padding: 2px 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="./rich-text-table.jsx"></script>
+  </body>
+</html>
