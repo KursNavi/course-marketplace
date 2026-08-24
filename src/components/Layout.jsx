@@ -3,6 +3,7 @@ import { Menu, X, Globe, LogOut, LayoutDashboard, ChevronDown, Mail, ArrowRight,
 import { SEGMENT_CONFIG } from '../lib/constants';
 import { MegaMenu, MobileMenuCategory } from './MegaMenu';
 import { trackNewsletter } from '../lib/analytics';
+import { subscribeToNewsletter, suppressNewsletterPopupForever } from '../lib/newsletter';
 
 // BRANDING: The "Compass & Book" Logo [Source: 9]
 // Recreated as SVG: A 4-point star (compass) floating above an abstract open book.
@@ -361,78 +362,20 @@ export const Footer = ({ t, setView }) => {
     window.history.pushState({ view: viewName }, '', url);
   };
 
-    const isAlreadySubscribed = (statusCode, payload) => {
-    // Backend-Flag (unser neuer, sicherster Weg)
-    if (payload?.already === true) return true;
-
-    // Klassische Fälle
-    if (statusCode === 409) return true;
-
-    const code = (payload?.code || payload?.error?.code || '').toString().toLowerCase();
-
-    const raw = (
-      payload?.message ||
-      payload?.error ||
-      payload?.detail ||
-      payload?.hint ||
-      payload?.error?.message ||
-      ''
-    )
-      .toString()
-      .toLowerCase();
-
-    // Deutsch + Englisch, aber ohne "subscribed" als generischen Treffer
-    return (
-      code === '23505' ||
-      code === 'duplicate_parameter' ||
-      (raw.includes('bereits') && raw.includes('angemeldet')) ||
-      raw.includes('already exist') ||
-      raw.includes('member exists') ||
-      raw.includes('already subscribed') ||
-      raw.includes('duplicate')
-    );
-  };
-
-    const handleSubscribe = async (e) => {
+  const handleSubscribe = async (e) => {
     e.preventDefault();
     if (!email) return;
 
     setStatus('loading');
+    const result = await subscribeToNewsletter(email);
 
-    try {
-      const res = await fetch('/api/subscribe', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email })
-      });
-
-      // Wir lesen die Antwort vorsichtig, falls es kein JSON ist (z.B. 404 HTML Seite)
-      const text = await res.text();
-      let data = {};
-      try {
-        data = JSON.parse(text);
-      } catch (parseError) {
-        console.warn("Server-Antwort war kein JSON:", text.substring(0, 50) + "...");
-      }
-
-      const already = isAlreadySubscribed(res.status, data);
-
-      if (res.ok) {
-        setStatus(already ? 'already' : 'success');
-        if (!already) trackNewsletter();
-        setEmail('');
-      } else if (already) {
-        setStatus('already');
-        setEmail('');
-        console.warn("Bereits angemeldet:", res.status, data);
-      } else {
-        console.error("Newsletter Server-Fehler:", res.status, data);
-        setStatus('error');
-      }
-    } catch (err) {
-      console.error("Newsletter Netzwerk-Fehler:", err);
-      setStatus('error');
+    if (result.status === 'success' || result.status === 'already') {
+      // Wer sich hier anmeldet, soll das Startseiten-Popup nicht mehr sehen.
+      suppressNewsletterPopupForever();
+      if (result.status === 'success') trackNewsletter();
+      setEmail('');
     }
+    setStatus(result.status);
   };
 
   return (
