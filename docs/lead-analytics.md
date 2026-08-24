@@ -144,7 +144,9 @@ Freitexte über Anfragende erzeugen.
 
 ### Ablauf
 
-`/api/cron-lead-scoring` (monatlich, `0 3 1 * *`):
+`/api/cron-lead-scoring` ist als geschützter Ausführungspunkt vorbereitet,
+aber derzeit **nicht automatisch terminiert**. Die spätere Codex-Automatisierung
+kann ihn gezielt auslösen, sobald Anbieter und rechtliche Freigabe feststehen.
 
 1. Leads mit `quality_status IN ('pending','failed')` und
    `quality_attempts < 3` laden, deren Anfragetext noch existiert

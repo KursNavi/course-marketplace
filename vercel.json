@@ -78,10 +78,6 @@
     {
       "path": "/api/cron",
       "schedule": "0 12 * * *"
-    },
-    {
-      "path": "/api/cron-lead-scoring",
-      "schedule": "0 3 1 * *"
     }
   ]
 }
