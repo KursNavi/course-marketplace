@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Lock, Loader, Shield, CheckCircle, Eye, ExternalLink, FileText, FolderTree, Search, ChevronLeft, ChevronRight, UserCheck } from 'lucide-react';
+import { Lock, Loader, Shield, CheckCircle, Eye, ExternalLink, FileText, FolderTree, Search, ChevronLeft, ChevronRight, UserCheck, BarChart3 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { PLANS } from '../lib/plans';
 import { formatPriceCHF } from '../lib/formatPrice';
 import AdminCategoryManager from './AdminCategoryManager';
+import AdminLeadAnalytics from './admin/AdminLeadAnalytics';
 
 const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView, user, onImpersonate, handleEditCourse }) => {
     const isAuthenticated = user?.role === 'admin';
@@ -99,10 +100,13 @@ const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView, user,
     }, [currentPage, pageSize, debouncedSearch, activeTab, sortBy, sortDir]);
 
     useEffect(() => {
-        if (isAuthenticated) {
+        // Die Lead-Analyse lädt ihre Daten selbst über die eigene Admin-API.
+        // Ohne diese Bedingung würde beim Öffnen des Tabs zusätzlich die
+        // komplette Profilliste geladen, die dort gar nicht angezeigt wird.
+        if (isAuthenticated && activeTab !== 'lead-analytics') {
             fetchProfiles();
         }
-    }, [isAuthenticated, fetchProfiles]);
+    }, [isAuthenticated, fetchProfiles, activeTab]);
 
     const handleImpersonate = (profile, fromTab) => {
         if (onImpersonate) {
@@ -327,6 +331,9 @@ const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView, user,
                     <button onClick={() => setActiveTab('categories')} className={`px-6 py-2 rounded-full font-bold transition flex items-center gap-2 ${activeTab === 'categories' ? 'bg-orange-500 text-white' : 'bg-white text-gray-600 shadow-sm'}`}>
                         <FolderTree className="w-4 h-4" /> Kategorien
                     </button>
+                    <button onClick={() => setActiveTab('lead-analytics')} className={`px-6 py-2 rounded-full font-bold transition flex items-center gap-2 ${activeTab === 'lead-analytics' ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 shadow-sm'}`}>
+                        <BarChart3 className="w-4 h-4" /> Lead-Analyse
+                    </button>
                     <button onClick={() => setView('admin-blog')} className="px-6 py-2 rounded-full font-bold transition flex items-center gap-2 bg-orange-100 text-orange-800 border border-orange-200 shadow-sm hover:bg-orange-200">
                         <FileText className="w-4 h-4" /> Blog Manager
                     </button>
@@ -340,6 +347,12 @@ const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView, user,
                     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                         <AdminCategoryManager showNotification={showNotification} />
                     </div>
+                )}
+
+                {/* Lead-Analyse: eigener Bereich, damit die Anbieter-Verwaltung
+                    nicht mit Kennzahlen überladen wird. */}
+                {activeTab === 'lead-analytics' && (
+                    <AdminLeadAnalytics showNotification={showNotification} />
                 )}
 
                 {/* Search & Page Size Controls (for teachers and students tabs) */}
@@ -372,7 +385,7 @@ const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView, user,
                 )}
 
                 {/* Other Tabs - Table View */}
-                {activeTab !== 'categories' && (<>
+                {activeTab !== 'categories' && activeTab !== 'lead-analytics' && (<>
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                     {loading ? (
                         <div className="p-12 text-center"><Loader className="animate-spin mx-auto w-8 h-8 text-blue-600" /></div>
