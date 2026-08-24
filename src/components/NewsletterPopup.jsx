@@ -12,7 +12,7 @@ import {
 /**
  * Newsletter-Popup auf der Startseite.
  *
- * Erscheint einmalig 60 Sekunden nach dem Öffnen der Startseite. Der Besucher
+ * Erscheint einmalig 30 Sekunden nach dem Öffnen der Startseite. Der Besucher
  * kann sich direkt anmelden, schliessen (Ruhezeit) oder "Nicht mehr anzeigen"
  * wählen — Letzteres wirkt auch bei späteren Besuchen (localStorage).
  *

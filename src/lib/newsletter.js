@@ -15,8 +15,8 @@ const NEVER = 'never';
 /** Nach einem einfachen Schliessen ruht das Popup so lange. */
 export const SNOOZE_DAYS = 30;
 
-/** Wartezeit auf der Startseite, bevor das Popup erscheint (60 Sekunden). */
-export const POPUP_DELAY_MS = 60_000;
+/** Wartezeit auf der Startseite, bevor das Popup erscheint (30 Sekunden). */
+export const POPUP_DELAY_MS = 30_000;
 
 function readStorage() {
   try {

@@ -2372,7 +2372,7 @@ useEffect(() => {
 
       <Footer t={t} setView={setView} />
 
-      {/* Newsletter-Popup: nur auf der Startseite, erscheint nach 60 Sekunden. */}
+      {/* Newsletter-Popup: nur auf der Startseite, erscheint nach 30 Sekunden. */}
       {view === 'home' && <NewsletterPopup />}
       </div>
     </ErrorBoundary>

@@ -5,6 +5,7 @@ import React from 'react';
 import { NewsletterPopup } from '../src/components/NewsletterPopup';
 import {
   NEWSLETTER_POPUP_STORAGE_KEY,
+  POPUP_DELAY_MS,
   SNOOZE_DAYS,
   shouldShowNewsletterPopup,
   snoozeNewsletterPopup,
@@ -13,7 +14,9 @@ import {
   subscribeToNewsletter,
 } from '../src/lib/newsletter';
 
-const DELAY = 60_000;
+// Bewusst als feste Zahl, nicht aus der Quelle übernommen: so fällt ein
+// versehentlich geänderter Wert im Test auf, statt stillschweigend mitzuwandern.
+const DELAY = 30_000;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 function mockFetchResponse({ ok = true, status = 200, body = { success: true } } = {}) {
@@ -24,7 +27,7 @@ function mockFetchResponse({ ok = true, status = 200, body = { success: true } }
   });
 }
 
-/** Timer bis kurz nach der 60-Sekunden-Marke vorspulen. */
+/** Timer bis kurz nach der 30-Sekunden-Marke vorspulen. */
 async function advancePastDelay() {
   await act(async () => {
     vi.advanceTimersByTime(DELAY + 10);
@@ -46,6 +49,10 @@ function submitForm() {
 describe('Newsletter-Popup — Sichtbarkeit über Besuche hinweg', () => {
   beforeEach(() => {
     window.localStorage.clear();
+  });
+
+  it('wartet 30 Sekunden — die vereinbarte Wartezeit', () => {
+    expect(POPUP_DELAY_MS).toBe(DELAY);
   });
 
   it('zeigt das Popup bei einem frischen Besucher', () => {
@@ -141,7 +148,7 @@ describe('Newsletter-Popup — Komponente', () => {
     vi.restoreAllMocks();
   });
 
-  it('erscheint nicht sofort, sondern erst nach 60 Sekunden', async () => {
+  it('erscheint nicht sofort, sondern erst nach 30 Sekunden', async () => {
     render(<NewsletterPopup />);
     expect(screen.queryByRole('dialog')).toBeNull();
 
