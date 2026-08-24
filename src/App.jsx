@@ -66,6 +66,7 @@ function triggerChunkReload() {
 // Eagerly loaded components (always needed)
 import { Navbar, Footer } from './components/Layout';
 import { Home } from './components/Home';
+import { NewsletterPopup } from './components/NewsletterPopup';
 
 // Lazy-loaded page components (code-splitting)
 // After a deploy, old chunk hashes no longer exist. The server returns index.html
@@ -2370,6 +2371,9 @@ useEffect(() => {
       </main>
 
       <Footer t={t} setView={setView} />
+
+      {/* Newsletter-Popup: nur auf der Startseite, erscheint nach 30 Sekunden. */}
+      {view === 'home' && <NewsletterPopup />}
       </div>
     </ErrorBoundary>
   );
