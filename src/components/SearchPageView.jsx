@@ -553,8 +553,13 @@ const SearchPageView = ({
         }
     }, [filteredCourses, loading]);
 
-    // --- RANKING LOGIC (v5.0) ---
-    // Formula: Score = Prio(1.2|1.0) * Booking + SeededRandom(0..0.15)
+    // --- RANKING LOGIC (v5.1) ---
+    // Formula: Score = (Prio(1.2|1.0) * Booking + SeededRandom(0..0.15)) * BasicLeadFaktor
+    // BasicLeadFaktor stuft Basic-Anbieter ab, die in ihrer aktuellen
+    // Basic-Phase bereits genügend qualifizierte Leads erhalten haben
+    // (1.00 / 0.90 / 0.80 / 0.70, siehe src/lib/basicLeadPenalty.js).
+    // Er wirkt erst NACH der Relevanzstufe und kann daher keinen fachlich oder
+    // regional unpassenden Kurs nach vorne holen.
     // Hervorgehobene Kurse (is_prio=true) immer vor Standard-Kursen.
     // Alle hervorgehobenen Kurse bekommen denselben Bonus (1.2x), unabhängig vom Paket.
     // Verifizierung (is_pro) ist nur ein Badge – kein Ranking-Faktor.

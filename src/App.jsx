@@ -896,7 +896,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
       if (userIds.length > 0) {
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
-          .select('id, bio_text, certificates, additional_locations, city, canton, verification_status, slug, package_tier, profile_published_at')
+          .select('id, bio_text, certificates, additional_locations, city, canton, verification_status, slug, package_tier, profile_published_at, basic_lead_ranking_factor')
           .in('id', userIds);
 
         if (!profileError && profileData) {
@@ -968,6 +968,10 @@ export default function KursNaviPro() {  // 1. Initial State Logic
           instructor_verified: prof?.verification_status === 'verified',
           instructor_slug: prof?.slug || null,
           instructor_has_public_profile: ['pro', 'premium', 'enterprise'].includes(instructorTier) && !!prof?.slug && !!prof?.profile_published_at,
+          // Ranking-Abschlag für Basic-Anbieter mit vielen qualifizierten Leads.
+          // Kommt aus derselben Profil-Abfrage wie die übrigen Anbieterdaten —
+          // die Kurslisten stellen dafür keine zusätzliche Abfrage.
+          basic_lead_ranking_factor: prof?.basic_lead_ranking_factor ?? 1,
           all_categories: courseCategories.length > 0 ? courseCategories : buildSyntheticCategories(normalized), // Add real or synthesized categories
           category_paths: categoryPaths, // Add category_paths for TeacherForm
         };

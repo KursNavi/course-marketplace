@@ -14,9 +14,11 @@
  * 8. Gleicher Kanton bei Präsenzkursen
  * 9. Zukünftige Termine bevorzugen
  * 10. is_prio nur als leichter Bonus bei bereits passenden Kursen
+ * 11. Basic-Lead-Penalty als abschliessender Multiplikator
  */
 
 import { getPrimaryCategory, getNormalizedDeliveryTypes, normalizeCategoryType } from './courseMetadata';
+import { applyBasicLeadFactor } from './basicLeadPenalty';
 
 // Segmente, die niemals zusammen empfohlen werden sollen
 const SEGMENT_HARD_EXCLUSIONS = {
@@ -150,6 +152,14 @@ export function getRecommendationScore(candidate, currentCourse) {
 
     // is_prio: leichter Bonus (kein primärer Filter)
     if (candidate.is_prio) score += 3;
+
+    // Basic-Lead-Penalty zum Schluss, auf den fertigen Score.
+    //
+    // Nur bei positivem Score multiplizieren: Dieser Score ist additiv und kann
+    // negativ werden (Kurs ohne zukünftigen Termin). Ein Faktor < 1 würde einen
+    // negativen Score zur Null hin verschieben und den abgestuften Anbieter
+    // damit ausgerechnet belohnen.
+    if (score > 0) return applyBasicLeadFactor(score, candidate);
 
     return score;
 }

@@ -36,6 +36,8 @@
  *   Fähigkeit vortäuscht, die die Suche nicht hat.
  */
 
+import { applyBasicLeadFactor } from './basicLeadPenalty';
+
 /** Relevanzstufen. Bewusst grosse Abstände, damit Zwischenstufen nachrüstbar bleiben. */
 export const RELEVANCE = {
   TITLE_EXACT: 100,      // Titel ist exakt die Eingabe
@@ -226,7 +228,10 @@ export function sortCoursesByRelevance(courses, options = {}) {
     const jitter = (hash - Math.floor(hash)) * 0.15;
 
     relevance.set(course?.id, getRelevanceScore(course, query));
-    visibility.set(course?.id, planFactor * bookingFactor + jitter);
+    // Basic-Lead-Penalty wirkt als Multiplikator auf den fertigen
+    // Sichtbarkeits-Score. Prio- und Buchungsfaktor bleiben unverändert; der
+    // Abschlag verschiebt nur die Reihenfolge innerhalb derselben Relevanzstufe.
+    visibility.set(course?.id, applyBasicLeadFactor(planFactor * bookingFactor + jitter, course));
   });
 
   return [...courses].sort((a, b) => {
