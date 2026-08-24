@@ -46,6 +46,37 @@ test.describe('Newsletter-Popup auf der Startseite', () => {
       .toBe('1');
   });
 
+  /**
+   * Regression (live entdeckt): Erschien das Popup, während der Cookie-Hinweis
+   * noch stand, lag es dahinter — auf dem Handy zu 100 % verdeckt und damit
+   * unbedienbar. Cookiebot selbst rendert nur auf kursnavi.ch, deshalb wird der
+   * Dialog hier mit derselben ID nachgestellt.
+   */
+  test('wartet, solange der Cookie-Hinweis über der Seite liegt', async ({ page }) => {
+    await page.addInitScript(() => {
+      window.addEventListener('DOMContentLoaded', () => {
+        const el = document.createElement('div');
+        el.id = 'CybotCookiebotDialog';
+        el.style.cssText = 'position:fixed;left:0;right:0;bottom:0;height:400px;background:#fff;z-index:2147483645';
+        el.textContent = 'Diese Webseite verwendet Cookies';
+        document.body.appendChild(el);
+      });
+    });
+
+    await page.goto('/');
+    await expect(page.locator('#CybotCookiebotDialog')).toBeVisible();
+
+    // Wartezeit ist um — das Popup darf sich noch nicht dahinter verstecken.
+    await fastForwardPastDelay(page);
+    await page.waitForTimeout(300);
+    await expect(page.locator(DIALOG)).toHaveCount(0);
+
+    // Besucher beantwortet den Cookie-Hinweis.
+    await page.evaluate(() => document.getElementById('CybotCookiebotDialog').remove());
+    await page.clock.runFor(1_000);
+    await expect(page.locator(DIALOG)).toBeVisible();
+  });
+
   test('erscheint nicht auf anderen Seiten', async ({ page }) => {
     await page.goto('/kontakt');
     await fastForwardPastDelay(page);

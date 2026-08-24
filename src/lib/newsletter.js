@@ -18,6 +18,9 @@ export const SNOOZE_DAYS = 30;
 /** Wartezeit auf der Startseite, bevor das Popup erscheint (30 Sekunden). */
 export const POPUP_DELAY_MS = 30_000;
 
+/** Taktung, in der nach Ablauf der Wartezeit auf den Cookie-Hinweis geschaut wird. */
+export const CONSENT_RECHECK_MS = 500;
+
 function readStorage() {
   try {
     return window.localStorage.getItem(NEWSLETTER_POPUP_STORAGE_KEY);
@@ -48,6 +51,36 @@ export function shouldShowNewsletterPopup(now = Date.now()) {
   const snoozedUntil = Number(stored);
   if (!Number.isFinite(snoozedUntil)) return true; // kaputter Wert → wie "nie gesehen"
   return now >= snoozedUntil;
+}
+
+/**
+ * Liegt der Cookie-Hinweis gerade sichtbar über der Seite?
+ *
+ * Cookiebot legt sich als eigener Dialog über alles. Erscheint das
+ * Newsletter-Popup gleichzeitig, liegt es dahinter — auf dem Handy sogar
+ * vollständig. Deshalb wartet das Popup, solange dieser Dialog steht.
+ *
+ * Bewusst wird NUR der sichtbare Dialog geprüft, nicht `Cookiebot.hasResponse`:
+ * Das Cookiebot-Skript lädt auf jeder Domain und meldet dort `hasResponse:
+ * false`, zeigt sein Banner aber nur auf freigeschalteten Domains. Auf
+ * Vorschau-Adressen und lokal würde `hasResponse` das Popup also dauerhaft
+ * blockieren, obwohl gar nichts zu sehen ist. Verdeckt wird nur, was auch
+ * wirklich da ist.
+ */
+export function isConsentBannerOpen() {
+  try {
+    const dialog = document.getElementById('CybotCookiebotDialog');
+    if (!dialog) return false;
+
+    // Kein offsetParent-Test: der Dialog ist position:fixed, dort ist er immer null.
+    const style = window.getComputedStyle(dialog);
+    if (style.display === 'none' || style.visibility === 'hidden') return false;
+
+    return dialog.getBoundingClientRect().height > 0;
+  } catch {
+    // Im Zweifel nicht blockieren — lieber das Popup zeigen als nie.
+    return false;
+  }
 }
 
 /** Popup dauerhaft nicht mehr zeigen. */
