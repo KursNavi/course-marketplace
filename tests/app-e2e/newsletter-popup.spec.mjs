@@ -38,6 +38,12 @@ test.describe('Newsletter-Popup auf der Startseite', () => {
     await page.clock.runFor(11_000);
     await expect(page.locator(DIALOG)).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Verpasse keinen spannenden Kurs' })).toBeVisible();
+
+    // Playwright wertet auch opacity:0 als "visible" — deshalb die Einblendung
+    // explizit prüfen, damit ein hängengebliebenes Fade-in auffällt.
+    await expect
+      .poll(() => page.locator(DIALOG).evaluate((el) => getComputedStyle(el.parentElement).opacity))
+      .toBe('1');
   });
 
   test('erscheint nicht auf anderen Seiten', async ({ page }) => {
