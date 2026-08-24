@@ -7,6 +7,7 @@ import {
   NEWSLETTER_POPUP_STORAGE_KEY,
   POPUP_DELAY_MS,
   SNOOZE_DAYS,
+  isConsentBannerOpen,
   shouldShowNewsletterPopup,
   snoozeNewsletterPopup,
   suppressNewsletterPopupForever,
@@ -32,6 +33,18 @@ async function advancePastDelay() {
   await act(async () => {
     vi.advanceTimersByTime(DELAY + 10);
   });
+}
+
+/**
+ * Cookiebot nachbauen: ein sichtbarer Dialog mit der echten ID.
+ * jsdom rechnet kein Layout, deshalb wird die Höhe direkt gemeldet.
+ */
+function mountCookieBanner() {
+  const el = document.createElement('div');
+  el.id = 'CybotCookiebotDialog';
+  el.getBoundingClientRect = () => ({ height: 400, width: 800, top: 0, left: 0, bottom: 400, right: 800 });
+  document.body.appendChild(el);
+  return () => el.remove();
 }
 
 function typeEmail(value) {
@@ -79,6 +92,45 @@ describe('Newsletter-Popup — Sichtbarkeit über Besuche hinweg', () => {
   it('behandelt einen kaputten Storage-Wert wie "noch nie gesehen"', () => {
     window.localStorage.setItem(NEWSLETTER_POPUP_STORAGE_KEY, 'kaputt');
     expect(shouldShowNewsletterPopup()).toBe(true);
+  });
+});
+
+describe('Newsletter-Popup — Rücksicht auf den Cookie-Hinweis', () => {
+  afterEach(() => {
+    document.getElementById('CybotCookiebotDialog')?.remove();
+    delete window.Cookiebot;
+  });
+
+  it('meldet "kein Banner", wenn Cookiebot gar nicht geladen ist (Vorschau, lokal)', () => {
+    expect(isConsentBannerOpen()).toBe(false);
+  });
+
+  it('erkennt den sichtbaren Cookiebot-Dialog', () => {
+    mountCookieBanner();
+    expect(isConsentBannerOpen()).toBe(true);
+  });
+
+  it('ignoriert einen ausgeblendeten Cookiebot-Dialog', () => {
+    const el = document.createElement('div');
+    el.id = 'CybotCookiebotDialog';
+    el.style.display = 'none';
+    document.body.appendChild(el);
+    expect(isConsentBannerOpen()).toBe(false);
+  });
+
+  // Regression: Cookiebot lädt auf JEDER Domain und meldet dort
+  // hasResponse:false, zeigt sein Banner aber nur auf freigeschalteten Domains.
+  // Wer sich auf hasResponse verlässt, blockiert das Popup auf Vorschau-Adressen
+  // und lokal dauerhaft — obwohl gar nichts zu sehen ist.
+  it('blockiert nicht, wenn Cookiebot geladen ist, aber kein Banner zeigt', () => {
+    window.Cookiebot = { hasResponse: false };
+    expect(isConsentBannerOpen()).toBe(false);
+  });
+
+  it('blockiert, sobald ein sichtbares Banner da ist — unabhängig von hasResponse', () => {
+    window.Cookiebot = { hasResponse: true };
+    mountCookieBanner();
+    expect(isConsentBannerOpen()).toBe(true);
   });
 });
 
@@ -159,6 +211,43 @@ describe('Newsletter-Popup — Komponente', () => {
 
     await advancePastDelay();
     expect(screen.getByRole('dialog')).toBeInTheDocument();
+  });
+
+  it('wartet, solange der Cookie-Hinweis offen ist, und öffnet danach', async () => {
+    const removeBanner = mountCookieBanner();
+    render(<NewsletterPopup />);
+
+    // Wartezeit ist um — aber der Cookie-Hinweis liegt noch über der Seite.
+    await advancePastDelay();
+    expect(screen.queryByRole('dialog')).toBeNull();
+
+    // Auch deutlich später bleibt es zu, solange das Banner steht.
+    await act(async () => {
+      vi.advanceTimersByTime(10_000);
+    });
+    expect(screen.queryByRole('dialog')).toBeNull();
+
+    // Besucher beantwortet den Cookie-Hinweis.
+    removeBanner();
+    await act(async () => {
+      vi.advanceTimersByTime(1000);
+    });
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+  });
+
+  it('lässt das Warten auf den Cookie-Hinweis beim Verlassen der Seite fallen', async () => {
+    mountCookieBanner();
+    const { unmount } = render(<NewsletterPopup />);
+
+    await advancePastDelay();
+    unmount();
+
+    // Banner verschwindet erst nach dem Verlassen — es darf nichts mehr aufgehen.
+    document.getElementById('CybotCookiebotDialog').remove();
+    await act(async () => {
+      vi.advanceTimersByTime(10_000);
+    });
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 
   it('erscheint gar nicht, wenn der Besucher "Nicht mehr anzeigen" gewählt hat', async () => {

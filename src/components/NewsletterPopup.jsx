@@ -2,7 +2,9 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Mail, X, Check, Loader2, ArrowRight } from 'lucide-react';
 import { trackNewsletter } from '../lib/analytics';
 import {
+  CONSENT_RECHECK_MS,
   POPUP_DELAY_MS,
+  isConsentBannerOpen,
   shouldShowNewsletterPopup,
   snoozeNewsletterPopup,
   subscribeToNewsletter,
@@ -16,6 +18,9 @@ import {
  * kann sich direkt anmelden, schliessen (Ruhezeit) oder "Nicht mehr anzeigen"
  * wählen — Letzteres wirkt auch bei späteren Besuchen (localStorage).
  *
+ * Ist nach Ablauf der Wartezeit noch der Cookie-Hinweis offen, wartet das Popup,
+ * bis der Besucher diesen beantwortet hat — sonst läge es dahinter.
+ *
  * Die Komponente wird nur gemountet, solange view === 'home' ist; der Timer
  * läuft also nicht weiter, wenn der Besucher die Startseite verlässt.
  */
@@ -27,17 +32,35 @@ export function NewsletterPopup({ delayMs = POPUP_DELAY_MS }) {
   const inputRef = useRef(null);
   const previouslyFocusedRef = useRef(null);
 
-  // 1. Timer: nach delayMs öffnen, sofern nicht unterdrückt.
+  // 1. Timer: nach delayMs öffnen, sofern nicht unterdrückt und der Weg frei ist.
   useEffect(() => {
     if (!shouldShowNewsletterPopup()) return undefined;
 
+    let interval;
+
+    const openWhenAllowed = () => {
+      // Nochmals prüfen: der Besucher könnte sich in der Zwischenzeit über das
+      // Footer-Formular oder in einem anderen Tab angemeldet haben.
+      if (!shouldShowNewsletterPopup()) {
+        clearInterval(interval);
+        return;
+      }
+      // Cookie-Hinweis liegt über allem — warten, bis er beantwortet ist.
+      if (isConsentBannerOpen()) return;
+
+      clearInterval(interval);
+      setOpen(true);
+    };
+
     const timer = setTimeout(() => {
-      // Direkt vor dem Öffnen nochmals prüfen: der Besucher könnte sich in der
-      // Zwischenzeit über das Footer-Formular in einem anderen Tab angemeldet haben.
-      if (shouldShowNewsletterPopup()) setOpen(true);
+      interval = setInterval(openWhenAllowed, CONSENT_RECHECK_MS);
+      openWhenAllowed();
     }, delayMs);
 
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      clearInterval(interval);
+    };
   }, [delayMs]);
 
   // 2. Beim Öffnen: Fokus setzen, Hintergrund-Scroll sperren, Einblenden starten.
