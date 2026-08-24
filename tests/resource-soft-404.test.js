@@ -105,7 +105,13 @@ describe('vercel.json — 404-Fallback der Ressourcenfamilien', () => {
       '/:path*',
       '/bereich/privat_hobby/:path*',
     ]);
-    expect(vercelConfig.crons).toEqual([{ path: '/api/cron', schedule: '0 12 * * *' }]);
+    expect(vercelConfig.crons).toEqual([
+      { path: '/api/cron', schedule: '0 12 * * *' },
+      // Monatliche KI-Leadbewertung — bewusst getrennt vom täglichen Lauf,
+      // damit eine lange oder fehlschlagende Bewertung Auszahlungen,
+      // Erinnerungen und Paketabläufe nicht gefährdet.
+      { path: '/api/cron-lead-scoring', schedule: '0 3 1 * *' },
+    ]);
     expect(vercelConfig.trailingSlash).toBe(false);
   });
 
