@@ -571,6 +571,12 @@ export function adaptToLegacySzenarioConfig(scenario, themeWorldSearchConfig = {
     searchParams: _extractSearchParams(scenario.cta_config, themeWorldSearchConfig),
     // Content für den Artikel (wird separat in der Komponente als articleContent behandelt)
     contentHtml: scenario.content_html || '',
+    // card_image_url ist das redaktionelle Artikelbild. Bisher wurde es nur auf
+    // der Szenario-Karte durchgereicht; die Artikelseite hatte deshalb gar kein
+    // sichtbares Bild zur Verfügung. og_image_url bleibt daneben unverändert die
+    // reine Social-Vorschau.
+    cardImageUrl: scenario.card_image_url || null,
+    cardImageAlt: scenario.card_image_alt || '',
     ogImageUrl: scenario.og_image_url || null,
     ogImageAlt: scenario.og_image_alt || '',
     metaTitle: scenario.meta_title || null,
