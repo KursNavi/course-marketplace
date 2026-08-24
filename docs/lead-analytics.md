@@ -14,7 +14,7 @@ Verwandte Dokumente:
 
 Eine Kursanfrage (`booking_type = 'lead'`) erzeugt ab dieser Phase drei Dinge:
 
-1. eine E-Mail an den Anbieter (unverändert),
+1. eine E-Mail an den Anbieter mit getrenntem Versand-/Zustellstatus,
 2. einen **dauerhaften** Lead-Datensatz in `leads` (Statistik),
 3. einen **verschlüsselten, auf 60 Tage befristeten** Anfragetext in
    `lead_message_payloads`.
@@ -38,6 +38,7 @@ api/send-lead.js
    │  4. INSERT leads   ← OBLIGATORISCH, Abbruch bei Fehler
    │  5. INSERT lead_message_payloads (verschlüsselt, expires_at = +60 Tage)
    │  6. E-Mail versenden → leads.status = 'sent' | 'failed'
+   │     email_delivery_status = 'accepted' | 'failed'
    ▼
 Antwort an den Browser → trackContactLead()
 ```
@@ -57,6 +58,35 @@ Anfrage selbst. Schlägt das Speichern fehl (z.B. fehlender
 `quality_error_code = 'payload_write_failed'` markiert und die E-Mail geht
 trotzdem raus. Der Retention-Lauf setzt den Lead später auf
 `expired_unscored`.
+
+---
+
+### E-Mail-Status
+
+`leads` bleibt die Quelle für die Leadstatistik. `leads.status = 'sent'` bedeutet
+nur, dass Resend die Anfrage ohne API-Fehler angenommen hat; daraus folgt noch
+keine Zustellung ins Postfach. Der Admin-Bereich zeigt deshalb zusätzlich
+`email_delivery_status`:
+
+| Status | Bedeutung |
+|---|---|
+| `unknown` | historischer Lead ohne nachverfolgbaren Versandstatus |
+| `pending` | Lead angelegt, Versand noch nicht abgeschlossen |
+| `accepted` | Resend hat die E-Mail angenommen |
+| `delivered` | Resend meldet Zustellung an den Empfänger-Mailserver |
+| `delivery_delayed` | vorübergehende Zustellverzögerung |
+| `bounced` / `failed` / `suppressed` | Zustellung oder Versand fehlgeschlagen |
+| `complained` | Empfänger hat die Nachricht als Spam gemeldet |
+
+Die Resend-Webhooks werden über `/api/resend-webhook` signaturgeprüft. Resend
+liefert dafür Ereignisse wie `email.delivered`, `email.bounced` und
+`email.delivery_delayed`; die Signatur muss aus dem unveränderten Request-Body
+geprüft werden. Dafür braucht Vercel zusätzlich `RESEND_WEBHOOK_SECRET`. Der
+Webhook wird in Resend auf
+`https://kursnavi.ch/api/resend-webhook` mit diesen Ereignissen registriert:
+
+`email.sent`, `email.delivered`, `email.delivery_delayed`, `email.bounced`,
+`email.complained`, `email.failed`, `email.suppressed`.
 
 ---
 
@@ -360,6 +390,7 @@ Reihenfolge beachten — sie bauen aufeinander auf:
 3. `20260824_provider_package_history.sql`
 4. `20260824_basic_lead_ranking_factor.sql`
 5. `20260824_admin_lead_analytics_rpc.sql`
+6. `20260824_lead_email_delivery_status.sql`
 
 ---
 
@@ -369,6 +400,7 @@ Reihenfolge beachten — sie bauen aufeinander auf:
 |---|---|---|
 | `LEAD_MESSAGE_ENCRYPTION_KEY` | für Bewertung | AES-256-GCM-Schlüssel, base64(32 Byte) |
 | `CRON_SECRET` | für Scoring-Cron | schützt `/api/cron-lead-scoring` |
+| `RESEND_WEBHOOK_SECRET` | für E-Mail-Zustellung | signaturprüft `/api/resend-webhook` |
 | `LEAD_SCORING_PROVIDER` | **offen** | Adaptername |
 | `LEAD_SCORING_MODEL` | **offen** | Modellbezeichnung |
 | `LEAD_SCORING_API_KEY` | **offen** | Schlüssel des Anbieters |

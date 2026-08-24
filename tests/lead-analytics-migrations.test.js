@@ -31,6 +31,7 @@ const FILES = {
   history: '20260824_provider_package_history.sql',
   factor: '20260824_basic_lead_ranking_factor.sql',
   rpc: '20260824_admin_lead_analytics_rpc.sql',
+  delivery: '20260824_lead_email_delivery_status.sql',
 };
 
 const sql = Object.fromEntries(
@@ -232,5 +233,27 @@ describe('Admin-Auswertungen: minimale Rechte', () => {
 
   it('lässt nur bekannte Sortierschlüssel zu', () => {
     expect(flat(sql.rpc)).toContain("v_sort := 'leads_total'");
+  });
+});
+
+describe('E-Mail-Zustellung: Annahme und Zustellung getrennt', () => {
+  it('hält historische Zustellstatus bewusst auf unknown', () => {
+    expect(flat(sql.delivery)).toContain("DEFAULT 'unknown'");
+    expect(flat(sql.delivery)).toContain("'accepted'");
+    expect(flat(sql.delivery)).toContain("'delivered'");
+    expect(flat(sql.delivery)).toContain("'bounced'");
+  });
+
+  it('speichert nur die Resend-ID und keine Nachrichtendaten', () => {
+    expect(flat(sql.delivery)).toContain('email_provider_message_id TEXT');
+    expect(flat(sql.delivery)).toContain('idx_leads_email_provider_message_id');
+    expect(flat(sql.delivery)).not.toContain('ciphertext');
+  });
+
+  it('liefert den Zustellstatus in der geschützten Leadliste aus', () => {
+    expect(flat(sql.delivery)).toContain('email_delivery_status TEXT');
+    expect(flat(sql.delivery)).toContain('email_delivery_updated_at TIMESTAMPTZ');
+    expect(flat(sql.delivery)).toContain('email_delivery_error_code TEXT');
+    expect(flat(sql.delivery)).toContain('l.email_delivery_status');
   });
 });

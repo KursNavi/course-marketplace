@@ -144,7 +144,10 @@ const AdminLeadAnalytics = ({ showNotification }) => {
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
       <h2 className="text-xl font-bold mb-1">Lead-Analyse</h2>
       <p className="text-sm text-gray-500 mb-5">
-        Leadaufkommen und Leadqualität je Anbieter. Die Qualität stammt aus der monatlichen KI-Bewertung.
+        Leadaufkommen und Leadqualität je Anbieter. Die Bewertung ist aktuell deaktiviert und wird später über Codex ausgeführt.
+      </p>
+      <p className="text-xs text-gray-500 mb-5">
+        Die Leadzahlen zeigen registrierte Anfragen. Der E-Mail-Zustellstatus ist davon getrennt und in der Detailansicht sichtbar.
       </p>
 
       {/* Filterleiste */}
@@ -248,7 +251,7 @@ const AdminLeadAnalytics = ({ showNotification }) => {
                 <th className="py-2 px-3 font-semibold text-right">Ø Score (365 T.)</th>
                 <th className="py-2 px-3 font-semibold text-right">Qual. Basic-Leads</th>
                 <th className="py-2 px-3 font-semibold text-right">Faktor</th>
-                <th className="py-2 px-3 font-semibold">Letzter Lead</th>
+                <th className="py-2 px-3 font-semibold">Letzter Lead (registriert)</th>
               </tr>
             </thead>
             <tbody>
@@ -609,7 +612,7 @@ const ProviderDetail = ({ providerId, onBack, showNotification }) => {
                 <tr className="text-left text-gray-500 border-b border-gray-200">
                   <th className="py-2 pr-4 font-semibold">Datum</th>
                   <th className="py-2 px-4 font-semibold">Kurs</th>
-                  <th className="py-2 px-4 font-semibold">Versand</th>
+                  <th className="py-2 px-4 font-semibold">E-Mail</th>
                   <th className="py-2 px-4 font-semibold">Paket damals</th>
                   <th className="py-2 px-4 font-semibold text-right">Score</th>
                   <th className="py-2 px-4 font-semibold">Bewertung</th>
@@ -622,7 +625,7 @@ const ProviderDetail = ({ providerId, onBack, showNotification }) => {
                     <tr className="border-b border-gray-100">
                       <td className="py-1.5 pr-4 whitespace-nowrap">{formatDate(lead.created_at)}</td>
                       <td className="py-1.5 px-4">{lead.course_title || <em className="text-gray-400">Kurs gelöscht</em>}</td>
-                      <td className="py-1.5 px-4">{lead.status}</td>
+                      <td className="py-1.5 px-4"><EmailDeliveryStatus lead={lead} /></td>
                       <td className="py-1.5 px-4">{lead.provider_tier_at_lead ? (TIER_LABELS[lead.provider_tier_at_lead] || lead.provider_tier_at_lead) : <span className="text-gray-400">unbekannt</span>}</td>
                       <td className="py-1.5 px-4 text-right">{lead.quality_score ?? '–'}</td>
                       <td className="py-1.5 px-4">
@@ -705,6 +708,22 @@ function QualityStatus({ lead }) {
       {entry.text}
     </span>
   );
+}
+
+function EmailDeliveryStatus({ lead }) {
+  const labels = {
+    pending: { text: 'wird verarbeitet', className: 'text-gray-500', title: 'Der Versand wurde noch nicht abgeschlossen.' },
+    accepted: { text: 'angenommen', className: 'text-blue-700', title: 'Der Versanddienst hat die Nachricht angenommen. Das ist noch keine Zustellbestätigung.' },
+    delivered: { text: 'zugestellt', className: 'text-green-700', title: 'Resend meldet die Zustellung an den Mailserver des Empfängers.' },
+    delivery_delayed: { text: 'verzögert', className: 'text-amber-700', title: 'Resend meldet eine vorübergehende Zustellverzögerung.' },
+    bounced: { text: 'abgewiesen', className: 'text-red-700', title: 'Der Empfänger-Mailserver hat die Nachricht dauerhaft abgewiesen.' },
+    complained: { text: 'Spam-Meldung', className: 'text-red-700', title: 'Die Nachricht wurde als Spam gemeldet.' },
+    failed: { text: 'fehlgeschlagen', className: 'text-red-700', title: 'Der Versanddienst hat die Nachricht nicht angenommen.' },
+    suppressed: { text: 'unterdrückt', className: 'text-red-700', title: 'Resend hat den Versand wegen einer Suppression-Liste nicht ausgeführt.' },
+    unknown: { text: 'nicht nachverfolgbar', className: 'text-gray-400', title: 'Für diesen älteren Lead liegt kein Zustellstatus vor.' },
+  };
+  const entry = labels[lead.email_delivery_status] || labels.unknown;
+  return <span className={entry.className} title={entry.title}>{entry.text}</span>;
 }
 
 export default AdminLeadAnalytics;

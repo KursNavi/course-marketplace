@@ -34,6 +34,7 @@ vi.mock('../api/_lib/email-config.js', () => ({
   sendEmailOrThrow: async (_resend, _tag, payload) => {
     if (mockEmailShouldFail) throw new Error('Resend down');
     mockSentEmails.push(payload);
+    return { data: { id: 'resend-email-1' }, error: null };
   },
 }));
 
@@ -152,7 +153,15 @@ describe('Erfolgreicher Lead', () => {
     expect(res._status).toBe(200);
     expect(insertedLeads).toHaveLength(1);
     expect(mockSentEmails).toHaveLength(1);
-    expect(leadUpdates).toContainEqual({ id: 'lead-1', values: { status: 'sent' } });
+    expect(leadUpdates).toContainEqual({
+      id: 'lead-1',
+      values: expect.objectContaining({
+        status: 'sent',
+        email_delivery_status: 'accepted',
+        email_provider_message_id: 'resend-email-1',
+      }),
+    });
+    expect(insertedLeads[0].email_delivery_status).toBe('pending');
   });
 
   it('speichert das Paket des Anbieters als Snapshot am Lead', async () => {
@@ -241,7 +250,14 @@ describe('E-Mail-Fehler', () => {
     const res = await callHandler();
 
     expect(res._status).toBe(500);
-    expect(leadUpdates).toContainEqual({ id: 'lead-1', values: { status: 'failed' } });
+    expect(leadUpdates).toContainEqual({
+      id: 'lead-1',
+      values: expect.objectContaining({
+        status: 'failed',
+        email_delivery_status: 'failed',
+        email_delivery_error_code: 'send_failed',
+      }),
+    });
   });
 });
 

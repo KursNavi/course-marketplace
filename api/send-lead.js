@@ -3,6 +3,7 @@ import { Resend } from 'resend';
 import { createHash } from 'crypto';
 import { getEmailConfig, resolveUserEmail, sendEmailOrThrow } from './_lib/email-config.js';
 import { encryptLeadMessage, normalizeLeadMessage } from './_lib/lead-message-crypto.js';
+import { providerMessageIdFromSendResult } from './_lib/lead-email-delivery.js';
 
 /** Aufbewahrungsfrist des Anfragetextes. Der Lead-Datensatz selbst bleibt. */
 const MESSAGE_RETENTION_DAYS = 60;
@@ -159,6 +160,7 @@ export default async function handler(req, res) {
         provider_id: course.user_id,
         requester_email_hash: emailHash,
         status: 'pending',
+        email_delivery_status: 'pending',
         // Snapshot: In welcher Paketphase ist diese Anfrage eingegangen? Später
         // ist das nicht mehr rekonstruierbar, und die Basic-Ranking-Penalty
         // hängt daran.
@@ -224,7 +226,7 @@ export default async function handler(req, res) {
     `;
 
     try {
-      await sendEmailOrThrow(resend, 'lead-to-provider', {
+      const sendResult = await sendEmailOrThrow(resend, 'lead-to-provider', {
         from: emailConfig.from,
         to: teacherEmail,
         replyTo: email,
@@ -233,13 +235,25 @@ export default async function handler(req, res) {
         html: generateEmailHtml('Neue Kursanfrage', bodyHtml, 'Zum Dashboard')
       });
 
-      // Audit-Trail: Status → sent
-      await supabase.from('leads').update({ status: 'sent' }).eq('id', lead.id);
+      // "accepted" bedeutet: Resend hat die Nachricht angenommen. Eine echte
+      // Zustellung wird später über den Resend-Webhook auf "delivered" gesetzt.
+      await supabase.from('leads').update({
+        status: 'sent',
+        email_delivery_status: 'accepted',
+        email_provider_message_id: providerMessageIdFromSendResult(sendResult),
+        email_delivery_updated_at: new Date().toISOString(),
+        email_delivery_error_code: null,
+      }).eq('id', lead.id);
 
       return res.status(200).json({ success: true });
     } catch (emailErr) {
-      // Audit-Trail: Status → failed
-      await supabase.from('leads').update({ status: 'failed' }).eq('id', lead.id);
+      // Audit-Trail: der Versanddienst hat die Nachricht nicht angenommen.
+      await supabase.from('leads').update({
+        status: 'failed',
+        email_delivery_status: 'failed',
+        email_delivery_updated_at: new Date().toISOString(),
+        email_delivery_error_code: 'send_failed',
+      }).eq('id', lead.id);
       throw emailErr;
     }
   } catch (err) {
