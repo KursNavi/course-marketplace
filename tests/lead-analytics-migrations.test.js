@@ -32,6 +32,7 @@ const FILES = {
   factor: '20260824_basic_lead_ranking_factor.sql',
   rpc: '20260824_admin_lead_analytics_rpc.sql',
   delivery: '20260824_lead_email_delivery_status.sql',
+  deliverySemantics: '20260825191625_lead_analytics_delivery_semantics.sql',
 };
 
 const sql = Object.fromEntries(
@@ -255,5 +256,17 @@ describe('E-Mail-Zustellung: Annahme und Zustellung getrennt', () => {
     expect(flat(sql.delivery)).toContain('email_delivery_updated_at TIMESTAMPTZ');
     expect(flat(sql.delivery)).toContain('email_delivery_error_code TEXT');
     expect(flat(sql.delivery)).toContain('l.email_delivery_status');
+  });
+
+  it('zählt terminal nicht zustellbare Leads weder in Kennzahlen noch Penalty', () => {
+    const text = flat(sql.deliverySemantics);
+    expect(text).toContain("l.status = 'sent'");
+    expect(text).toContain("coalesce(l.email_delivery_status, 'unknown') NOT IN ('bounced', 'complained', 'failed', 'suppressed')");
+    expect(text).toContain("SET status = 'failed'");
+    expect(text).toContain("email_delivery_status IN ('bounced', 'complained', 'failed', 'suppressed')");
+  });
+
+  it('aktualisiert den Ranking-Faktor nach dem Backfill', () => {
+    expect(flat(sql.deliverySemantics)).toContain('SELECT recompute_basic_lead_ranking_factors()');
   });
 });

@@ -98,9 +98,11 @@ export default async function handler(req, res) {
   }
 
   const eventTimestamp = event?.created_at || new Date().toISOString();
+  const terminalDeliveryFailure = ['bounced', 'complained', 'failed', 'suppressed'].includes(deliveryStatus);
   const { error: updateError } = await supabase
     .from('leads')
     .update({
+      ...(terminalDeliveryFailure ? { status: 'failed' } : {}),
       email_delivery_status: deliveryStatus,
       email_delivery_updated_at: eventTimestamp,
       email_delivery_error_code: deliveryErrorCodeFromEvent(event.type),

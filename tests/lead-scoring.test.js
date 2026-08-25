@@ -18,6 +18,8 @@ import {
   ScorerNotConfiguredError,
   SCORE_VERSION,
   MAX_SCORING_ATTEMPTS,
+  DEFAULT_SCORING_CONCURRENCY,
+  MAX_SCORING_CONCURRENCY,
   QUALIFIED_SCORE_THRESHOLD,
   RUBRIC,
 } from '../api/_lib/lead-scoring.js';
@@ -416,6 +418,35 @@ describe('scoreLeadBatch', () => {
     expect(MAX_SCORING_ATTEMPTS).toBe(3);
   });
 
+  it('bewertet mehrere Leads begrenzt parallel', async () => {
+    const supabase = makeSupabase({
+      leads: [lead('a'), lead('b'), lead('c')],
+      courses: [{ id: 1, title: 'Yoga' }],
+    });
+    let active = 0;
+    let peakActive = 0;
+    const scorer = {
+      score: async () => {
+        active += 1;
+        peakActive = Math.max(peakActive, active);
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        active -= 1;
+        return { ok: true, score: 7 };
+      },
+    };
+
+    const result = await scoreLeadBatch({
+      supabase,
+      scorer,
+      decrypt: decryptPassthrough,
+      concurrency: 2,
+      logError,
+    });
+
+    expect(result).toMatchObject({ processed: 3, scored: 3, failed: 0 });
+    expect(peakActive).toBe(2);
+  });
+
   it('liefert bei leerem Arbeitsvorrat ein neutrales Ergebnis', async () => {
     const supabase = makeSupabase({ leads: [], courses: [] });
     const result = await scoreLeadBatch({ supabase, scorer: { score: vi.fn() }, decrypt: decryptPassthrough, logError });
@@ -426,5 +457,10 @@ describe('scoreLeadBatch', () => {
 describe('Konstanten', () => {
   it('setzt die Qualifikationsschwelle auf 5', () => {
     expect(QUALIFIED_SCORE_THRESHOLD).toBe(5);
+  });
+
+  it('begrenzt die Parallelität auf eine sichere Obergrenze', () => {
+    expect(DEFAULT_SCORING_CONCURRENCY).toBe(5);
+    expect(MAX_SCORING_CONCURRENCY).toBe(10);
   });
 });

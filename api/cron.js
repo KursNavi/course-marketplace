@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
 import { getEmailConfig, resolveUserEmail, sendEmailOrThrow } from './_lib/email-config.js';
+import { requireCronSecret } from './_lib/cron-auth.js';
 
 // --- EMAIL HELPERS ---
 const EMAIL_TRANSLATIONS = {
@@ -54,6 +55,11 @@ const generateEmailHtml = (title, bodyHtml, ctaText) => `
 `;
 
 export default async function handler(req, res) {
+  if (req.method !== 'GET' && req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  if (!requireCronSecret(req, res, 'cron')) return;
 
   // --- SECURE KEYS ---
   const SUPABASE_URL = process.env.SUPABASE_URL;

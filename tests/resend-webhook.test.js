@@ -95,6 +95,24 @@ describe('Resend-Webhook', () => {
     }]);
   });
 
+  it('nimmt einen unzustellbaren Lead aus den relevanten Lead-Zahlen', async () => {
+    mockVerify = vi.fn(() => ({
+      type: 'email.bounced',
+      created_at: '2026-08-24T12:02:00Z',
+      data: { email_id: 'resend-1' },
+    }));
+
+    const res = await callHandler();
+
+    expect(res._status).toBe(200);
+    expect(leadUpdates).toEqual([{
+      status: 'failed',
+      email_delivery_status: 'bounced',
+      email_delivery_updated_at: '2026-08-24T12:02:00Z',
+      email_delivery_error_code: 'email.bounced',
+    }]);
+  });
+
   it('setzt einen späteren Status nicht durch ein verspätetes Ereignis zurück', async () => {
     mockVerify = vi.fn(() => ({
       type: 'email.delivery_delayed',

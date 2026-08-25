@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
-import { decryptLeadMessage, safeCompareSecret } from './_lib/lead-message-crypto.js';
+import { decryptLeadMessage } from './_lib/lead-message-crypto.js';
+import { requireCronSecret } from './_lib/cron-auth.js';
 import {
   createScorer,
   scoreLeadBatch,
@@ -16,28 +17,17 @@ import {
  *   - Ein Ausfall oder eine lange Laufzeit der Bewertung darf Auszahlungen,
  *     Erinnerungen und Paketabläufe nicht gefährden.
  *
- * Schutz: Bearer-Token gegen CRON_SECRET. Anders als der bestehende
- * /api/cron-Endpunkt läuft dieser Endpunkt bewusst NICHT ungeschützt — er
- * entschlüsselt personenbezogene Anfragetexte und verursacht Kosten beim
- * KI-Anbieter. Ohne gesetztes CRON_SECRET antwortet er mit 503 statt sich
- * offen zu stellen.
+ * Schutz: Bearer-Token gegen CRON_SECRET. Wie der tägliche /api/cron-Endpunkt
+ * läuft auch dieser Endpunkt nicht offen — er entschlüsselt personenbezogene
+ * Anfragetexte und verursacht Kosten beim KI-Anbieter. Ohne gesetztes
+ * CRON_SECRET antwortet er mit 503 statt sich offen zu stellen.
  */
 export default async function handler(req, res) {
   if (req.method !== 'POST' && req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const cronSecret = String(process.env.CRON_SECRET || '').trim();
-  if (!cronSecret) {
-    console.error('cron-lead-scoring: CRON_SECRET is not configured — refusing to run');
-    return res.status(503).json({ error: 'CRON_SECRET is not configured' });
-  }
-
-  const authHeader = req.headers.authorization || '';
-  const presented = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
-  if (!safeCompareSecret(presented, cronSecret)) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
+  if (!requireCronSecret(req, res, 'cron-lead-scoring')) return;
 
   const supabaseUrl = process.env.SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;

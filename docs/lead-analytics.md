@@ -78,6 +78,12 @@ keine Zustellung ins Postfach. Der Admin-Bereich zeigt deshalb zusätzlich
 | `bounced` / `failed` / `suppressed` | Zustellung oder Versand fehlgeschlagen |
 | `complained` | Empfänger hat die Nachricht als Spam gemeldet |
 
+Für die Anbieterstatistik und die Ranking-Penalty sind `bounced`, `failed`,
+`suppressed` und `complained` **keine relevanten Leads**. Ein entsprechendes
+Webhook-Ereignis setzt den Lead auf `status = 'failed'`; die Auswertungen
+schliessen diese vier terminalen Zustände zusätzlich explizit aus. So bleiben
+historische Datensätze und spätere Statuskorrekturen konsistent.
+
 Die Resend-Webhooks werden über `/api/resend-webhook` signaturgeprüft. Resend
 liefert dafür Ereignisse wie `email.delivered`, `email.bounced` und
 `email.delivery_delayed`; die Signatur muss aus dem unveränderten Request-Body
@@ -181,7 +187,8 @@ die rechtliche Freigabe vorliegen, bleibt der Lauf sicher deaktiviert.
 1. Leads mit `quality_status IN ('pending','failed')` und
    `quality_attempts < 3` laden, deren Anfragetext noch existiert
 2. Kurskontext für alle Leads in **einer** Abfrage nachladen
-3. pro Lead: entschlüsseln → Modell fragen → Antwort validieren
+3. pro Lead: entschlüsseln → Modell fragen → Antwort validieren; höchstens fünf
+   Bewertungen laufen gleichzeitig
 4. Erfolg: `quality_score`, `quality_status='scored'`, `quality_scored_at`,
    `quality_score_version`
 5. Fehler: `quality_status='failed'`, `quality_attempts+1`,
@@ -205,6 +212,7 @@ Der Anfragetext ist **nicht vertrauenswürdig**. Drei Schichten:
 |---|---|---|
 | Textlänge | 5 000 Zeichen | `MAX_MESSAGE_LENGTH` |
 | Batchgrösse | 50 (max. 500) | `DEFAULT_BATCH_SIZE` / `MAX_BATCH_SIZE` |
+| Parallele Bewertungen | 5 (max. 10) | `DEFAULT_SCORING_CONCURRENCY` / `MAX_SCORING_CONCURRENCY` |
 | Versuche pro Lead | 3 | `MAX_SCORING_ATTEMPTS` |
 | Zeit pro Bewertung | 20 s | `SCORER_TIMEOUT_MS` |
 | Manuelle Wiederholung | 25 Leads | `RESCORE_MAX_IDS` |
@@ -289,6 +297,7 @@ Pro, Premium und Enterprise haben **immer** 1.00.
 Ein Lead zählt nur, wenn **alle** Bedingungen erfüllt sind:
 
 - `status = 'sent'`
+- kein terminaler Zustellfehler (`bounced`, `failed`, `suppressed`, `complained`)
 - `quality_score >= 5`
 - `provider_tier_at_lead = 'basic'`
 - `created_at >= Beginn der AKTUELLEN Basic-Phase`
@@ -391,6 +400,7 @@ Reihenfolge beachten — sie bauen aufeinander auf:
 4. `20260824_basic_lead_ranking_factor.sql`
 5. `20260824_admin_lead_analytics_rpc.sql`
 6. `20260824_lead_email_delivery_status.sql`
+7. `20260825191625_lead_analytics_delivery_semantics.sql`
 
 ---
 
@@ -399,7 +409,7 @@ Reihenfolge beachten — sie bauen aufeinander auf:
 | Variable | Pflicht | Zweck |
 |---|---|---|
 | `LEAD_MESSAGE_ENCRYPTION_KEY` | für Bewertung | AES-256-GCM-Schlüssel, base64(32 Byte) |
-| `CRON_SECRET` | für Scoring-Cron | schützt `/api/cron-lead-scoring` |
+| `CRON_SECRET` | für beide Cron-Jobs | schützt `/api/cron` und `/api/cron-lead-scoring` |
 | `RESEND_WEBHOOK_SECRET` | für E-Mail-Zustellung | signaturprüft `/api/resend-webhook` |
 | `LEAD_SCORING_PROVIDER` | **offen** | Adaptername |
 | `LEAD_SCORING_MODEL` | **offen** | Modellbezeichnung |

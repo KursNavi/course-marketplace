@@ -21,6 +21,10 @@ export const SCORE_VERSION = 'lead-quality-v1';
 export const DEFAULT_BATCH_SIZE = 50;
 export const MAX_BATCH_SIZE = 500;
 
+/** Begrenzte Parallelität hält den Monatslauf innerhalb des Funktionszeitlimits. */
+export const DEFAULT_SCORING_CONCURRENCY = 5;
+export const MAX_SCORING_CONCURRENCY = 10;
+
 /** Ab so vielen Fehlversuchen gilt ein Lead als endgültig fehlgeschlagen. */
 export const MAX_SCORING_ATTEMPTS = 3;
 
@@ -354,14 +358,27 @@ export function createFakeAdapter(responder) {
  * @param {object} deps.scorer          Ergebnis von createScorer()
  * @param {(payload: string) => string} deps.decrypt  Entschlüsselungsfunktion
  * @param {number} [deps.limit]         Batchgrösse
+ * @param {number} [deps.concurrency]   Gleichzeitige Einzelbewertungen
  * @param {string[]} [deps.leadIds]     Nur diese Leads bewerten (manuelle
  *                                      Wiederholung aus dem Admin-Panel).
  *                                      Umgeht dabei das Versuchslimit.
  * @param {(msg: string, err?: unknown) => void} [deps.logError]
  * @returns {Promise<{processed: number, scored: number, failed: number, skipped: number}>}
  */
-export async function scoreLeadBatch({ supabase, scorer, decrypt, limit = DEFAULT_BATCH_SIZE, leadIds = null, logError = console.error }) {
+export async function scoreLeadBatch({
+  supabase,
+  scorer,
+  decrypt,
+  limit = DEFAULT_BATCH_SIZE,
+  concurrency = DEFAULT_SCORING_CONCURRENCY,
+  leadIds = null,
+  logError = console.error,
+}) {
   const batchSize = Math.min(Math.max(Number(limit) || DEFAULT_BATCH_SIZE, 1), MAX_BATCH_SIZE);
+  const workerCount = Math.min(
+    Math.max(Number(concurrency) || DEFAULT_SCORING_CONCURRENCY, 1),
+    MAX_SCORING_CONCURRENCY,
+  );
   const manual = Array.isArray(leadIds) && leadIds.length > 0;
 
   const result = { processed: 0, scored: 0, failed: 0, skipped: 0 };
@@ -410,7 +427,7 @@ export async function scoreLeadBatch({ supabase, scorer, decrypt, limit = DEFAUL
     courseMap = new Map((courses || []).map((c) => [c.id, c]));
   }
 
-  for (const lead of pending) {
+  async function processLead(lead) {
     result.processed += 1;
     const attempts = (lead.quality_attempts || 0) + 1;
 
@@ -453,14 +470,14 @@ export async function scoreLeadBatch({ supabase, scorer, decrypt, limit = DEFAUL
       } else {
         result.scored += 1;
       }
-      continue;
+      return;
     }
 
     // Fehlgeschlagen: Der Lead bleibt unbeschädigt, nur Zähler und Fehlercode
     // werden fortgeschrieben. Bis MAX_SCORING_ATTEMPTS erreicht ist, nimmt ihn
     // der nächste Lauf automatisch wieder mit; danach nur noch manuell über das
     // Admin-Panel.
-    await supabase
+    const { error: updateError } = await supabase
       .from('leads')
       .update({
         quality_status: 'failed',
@@ -469,8 +486,26 @@ export async function scoreLeadBatch({ supabase, scorer, decrypt, limit = DEFAUL
       })
       .eq('id', lead.id);
 
+    if (updateError) {
+      logError(`lead-scoring: could not persist failure for lead ${lead.id}:`, updateError.message);
+    }
+
     result.failed += 1;
   }
+
+  // Fünf parallele Anfragen bedeuten bei 50 Leads höchstens zehn Runden statt
+  // fünfzig. Das ist schnell genug für den monatlichen Cron, ohne das Modell
+  // oder die Datenbank mit unkontrollierter Parallelität zu belasten.
+  let nextLeadIndex = 0;
+  async function worker() {
+    while (nextLeadIndex < pending.length) {
+      const lead = pending[nextLeadIndex];
+      nextLeadIndex += 1;
+      await processLead(lead);
+    }
+  }
+
+  await Promise.all(Array.from({ length: Math.min(workerCount, pending.length) }, () => worker()));
 
   return result;
 }

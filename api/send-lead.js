@@ -225,6 +225,7 @@ export default async function handler(req, res) {
       <p style="color:#6B7280; font-size:14px;">Du kannst direkt auf diese E-Mail antworten, um mit der interessierten Person in Kontakt zu treten.</p>
     `;
 
+    let emailAccepted = false;
     try {
       const sendResult = await sendEmailOrThrow(resend, 'lead-to-provider', {
         from: emailConfig.from,
@@ -234,26 +235,50 @@ export default async function handler(req, res) {
         subject: `Neue Kursanfrage: ${course.title}`,
         html: generateEmailHtml('Neue Kursanfrage', bodyHtml, 'Zum Dashboard')
       });
+      emailAccepted = true;
 
       // "accepted" bedeutet: Resend hat die Nachricht angenommen. Eine echte
       // Zustellung wird später über den Resend-Webhook auf "delivered" gesetzt.
-      await supabase.from('leads').update({
-        status: 'sent',
-        email_delivery_status: 'accepted',
-        email_provider_message_id: providerMessageIdFromSendResult(sendResult),
-        email_delivery_updated_at: new Date().toISOString(),
-        email_delivery_error_code: null,
-      }).eq('id', lead.id);
+      const sentUpdate = {
+          status: 'sent',
+          email_delivery_status: 'accepted',
+          email_provider_message_id: providerMessageIdFromSendResult(sendResult),
+          email_delivery_updated_at: new Date().toISOString(),
+          email_delivery_error_code: null,
+      };
+      let sentUpdateError = null;
+      // A transient database error must not turn a successfully sent email into
+      // a false `failed` lead. Retry once and surface a persistent failure for
+      // investigation instead of silently corrupting delivery metrics.
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        const { error: updateError } = await supabase
+          .from('leads')
+          .update(sentUpdate)
+          .eq('id', lead.id);
+        if (!updateError) {
+          sentUpdateError = null;
+          break;
+        }
+        sentUpdateError = updateError;
+      }
+      if (sentUpdateError) {
+        console.error('send-lead: Versand erfolgreich, Leadstatus konnte nicht gespeichert werden:', sentUpdateError.message);
+        throw new Error('Lead status persistence failed');
+      }
 
       return res.status(200).json({ success: true });
     } catch (emailErr) {
       // Audit-Trail: der Versanddienst hat die Nachricht nicht angenommen.
-      await supabase.from('leads').update({
-        status: 'failed',
-        email_delivery_status: 'failed',
-        email_delivery_updated_at: new Date().toISOString(),
-        email_delivery_error_code: 'send_failed',
-      }).eq('id', lead.id);
+      // Once Resend accepted the message, do not overwrite the durable lead
+      // with `failed` merely because the follow-up status update failed.
+      if (!emailAccepted) {
+        await supabase.from('leads').update({
+          status: 'failed',
+          email_delivery_status: 'failed',
+          email_delivery_updated_at: new Date().toISOString(),
+          email_delivery_error_code: 'send_failed',
+        }).eq('id', lead.id);
+      }
       throw emailErr;
     }
   } catch (err) {

@@ -18,6 +18,7 @@ let leadUpdates;
 let leadInsertError;
 let payloadInsertError;
 let mockEmailShouldFail;
+let sentStatusUpdateErrors;
 
 vi.mock('@supabase/supabase-js', () => ({
   createClient: vi.fn(() => mockSupabase),
@@ -81,7 +82,11 @@ function buildSupabase({ providerTier = 'basic' } = {}) {
             };
           },
           update: (values) => ({
-            eq: async (_col, id) => { leadUpdates.push({ id, values }); return { error: null }; },
+            eq: async (_col, id) => {
+              leadUpdates.push({ id, values });
+              const error = values.status === 'sent' ? sentStatusUpdateErrors.shift() || null : null;
+              return { error };
+            },
           }),
         };
       }
@@ -128,6 +133,7 @@ beforeEach(() => {
   leadInsertError = null;
   payloadInsertError = null;
   mockEmailShouldFail = false;
+  sentStatusUpdateErrors = [];
   mockSupabase = buildSupabase();
 
   process.env.SUPABASE_URL = 'https://test.supabase.co';
@@ -258,6 +264,17 @@ describe('E-Mail-Fehler', () => {
         email_delivery_error_code: 'send_failed',
       }),
     });
+  });
+
+  it('markiert einen bereits akzeptierten Versand nicht fälschlich als fehlgeschlagen', async () => {
+    sentStatusUpdateErrors = [{ message: 'database unavailable' }, { message: 'database unavailable' }];
+
+    const res = await callHandler();
+
+    expect(res._status).toBe(500);
+    expect(mockSentEmails).toHaveLength(1);
+    expect(leadUpdates.filter((update) => update.values.status === 'sent')).toHaveLength(2);
+    expect(leadUpdates.some((update) => update.values.status === 'failed')).toBe(false);
   });
 });
 
