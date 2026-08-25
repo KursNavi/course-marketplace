@@ -1,27 +1,19 @@
-# OFFEN vor Produktivsetzung — Lead-Analyse Phase 1
+# Vor Produktivsetzung — Lead-Analyse Phase 1
 
-> **Status: OFFEN.** Dieses Dokument listet Entscheidungen, die die
-> Implementierung bewusst **nicht** getroffen hat, weil sie dem Betreiber
-> zustehen. Die Lead-Analyse ist funktionsfähig und schadensfrei deploybar,
-> **bevor** diese Punkte geklärt sind — die KI-Bewertung bleibt bis dahin
-> inaktiv. Vor dem Scharfschalten der Bewertung müssen Punkt 1 **und** Punkt 2
-> erledigt sein.
+> **Status: Technische Umsetzung erledigt; rechtliche Freigabe offen.**
+> Gemini ist als Anbieter integriert und der Scoring-Cron ist vorbereitet.
+> Die KI-Bewertung bleibt inaktiv, bis die Vercel-Konfiguration gesetzt und die
+> Datenschutzerklärung sowie die Auftragsverarbeitung rechtlich geprüft sind.
 
 ---
 
-## 1. KI-Anbieter ist nicht festgelegt
+## 1. KI-Anbieter: Gemini ausgewählt
 
 ### Befund
 
-Das Projekt hat **keinen** serverseitigen KI-Anbieter:
-
-- kein KI-SDK in `package.json` (`@anthropic-ai/sdk`, `openai`, … fehlen alle),
-- kein KI-Schlüssel in `.env.example`,
-- kein bestehender Code, der ein Sprachmodell aufruft.
-
-Es wurde deshalb **kein Anbieter ausgewählt und kein Vendor-SDK hinzugefügt**.
-Einen Anbieter stillschweigend zu setzen wäre eine Auftragsverarbeiter-
-Entscheidung mit Datenschutz- und Kostenfolgen — die trifft der Betreiber.
+Als Anbieter ist **Google Gemini API** ausgewählt. Der Adapter ruft die
+Gemini-Interactions-API direkt per HTTPS auf; es wird kein Vendor-SDK und kein
+zusätzliches Gateway benötigt. Der API-Key bleibt serverseitig.
 
 ### Was bereits fertig ist
 
@@ -32,37 +24,32 @@ Entscheidung mit Datenschutz- und Kostenfolgen — die trifft der Betreiber.
 - Batchlogik mit Fehlerbehandlung, Versuchslimit und Zeitbudget
 - monatlicher Cron-Endpunkt (`api/cron-lead-scoring.js`)
 - manuelle Wiederholung über das Admin-Panel
-- Tests mit austauschbarem Fake-Scorer — **ohne** echte Modellaufrufe
+- Gemini-Adapter mit JSON-Schema, `store: false` und erneuter lokaler
+  Antwortvalidierung
+- monatlicher Vercel-Cron am ersten Tag des Monats um 02:00 UTC
+- Tests mit austauschbarem Fake-Scorer und gemocktem Gemini-Aufruf — **ohne**
+  echte Modellaufrufe
 
-### Was noch zu tun ist
+### Noch vor dem Scharfschalten zu erledigen
 
-**a) Anbieter und Modell auswählen.** Zu klären sind mindestens:
-Verarbeitungsstandort, Auftragsverarbeitungsvertrag, Zusicherung „kein Training
-auf Kundendaten", Kosten pro Bewertung, Verfügbarkeit.
+**a) Gemini-API-Projekt prüfen.** Der Key muss aus einem Google-AI-Studio-
+Projekt mit aktivierter kostenpflichtiger API-Abrechnung stammen. Der konkrete
+Modellname bleibt konfigurierbar; für den Pilot ist `gemini-2.5-flash` ein
+geeigneter Startwert.
 
-**b) Adapter registrieren.** Eine Funktion in `api/_lib/lead-scoring.js`:
-
-```js
-registerScoringAdapter('<name>', async ({ system, user, model, apiKey, signal }) => {
-  // fetch() gegen die Anbieter-API; Rohantwort zurückgeben.
-  // Keine eigene Validierung — das macht parseScoreResult().
-});
-```
-
-Ein SDK ist nicht nötig; `fetch` genügt und vermeidet eine neue Abhängigkeit.
-
-**c) Umgebungsvariablen setzen** (Vercel, Production + Preview):
+**b) Umgebungsvariablen setzen** (mindestens Vercel Production):
 
 | Variable | Beispiel |
 |---|---|
-| `LEAD_SCORING_PROVIDER` | der unter (b) registrierte Adaptername |
-| `LEAD_SCORING_MODEL` | Modellbezeichnung des Anbieters |
-| `LEAD_SCORING_API_KEY` | API-Schlüssel des Anbieters |
+| `LEAD_SCORING_PROVIDER` | `gemini` |
+| `LEAD_SCORING_MODEL` | z.B. `gemini-2.5-flash` |
+| `LEAD_SCORING_API_KEY` | Gemini-API-Schlüssel |
 
 ### Verhalten bis dahin
 
-- `/api/cron-lead-scoring` antwortet `501 lead_scoring_not_configured`.
-  Das ist **kein Ausfall**, sondern der dokumentierte Zustand.
+- Ohne diese Variablen antwortet `/api/cron-lead-scoring` weiterhin mit
+  `501 lead_scoring_not_configured`. Das ist **kein Ausfall**, sondern der
+  sichere deaktivierte Zustand.
 - Leads werden weiterhin vollständig erfasst und sammeln sich mit
   `quality_status = 'pending'`.
 - Der Anfragetext wird verschlüsselt gespeichert und nach 60 Tagen gelöscht.
@@ -77,21 +64,13 @@ Ein SDK ist nicht nötig; `fetch` genügt und vermeidet eine neue Abhängigkeit.
 
 ## 2. Datenschutzerklärung muss ergänzt werden
 
-### Befund
+### Technische Umsetzung
 
-Die aktuelle Datenschutzerklärung (`src/lib/legalText.js`,
-`PRIVACY_VERSION = "2026-06-21"`) deckt die neue Bearbeitung **nicht** ab:
-
-- Ziffer 3 „Zwecke der Bearbeitung" nennt Weiterleitung, Dokumentation und
-  Missbrauchsprävention — **keine automatisierte Qualitätsanalyse**.
-- Ziffer 4 „Technische Infrastruktur & Drittanbieter" listet Vercel, Supabase,
-  Stripe, Resend, Sentry — **keinen KI-Dienstleister**.
-- Ziffer 8 „Speicherdauer" ist allgemein gehalten — die konkrete 60-Tage-Frist
-  für den Anfragetext ist nicht genannt.
-
-Die Erklärung wurde **bewusst nicht geändert**: Ohne feststehenden Anbieter
-liesse sich Ziffer 4 nur mit einem erfundenen Namen füllen. Ausserdem berührt
-jede Änderung `PRIVACY_VERSION` und damit den Consent-Nachweis.
+Die vier Sprachfassungen in `src/lib/legalText.js` enthalten jetzt den Zweck
+der automatisierten Qualitätsbewertung, Google Gemini als Empfänger, die
+USA/Global-Verarbeitung, `store: false` sowie die konkrete 60-Tage-Frist.
+`PRIVACY_VERSION` wurde auf `2026-08-25` erhöht. Das löst den bestehenden
+Consent-Nachweis-Mechanismus aus.
 
 ### Neu zu beschreibende Bearbeitung
 
@@ -102,12 +81,10 @@ jede Änderung `PRIVACY_VERSION` und damit den Consent-Nachweis.
 | Wie | serverseitig verschlüsselt gespeichert (AES-256-GCM), monatlich an ein Sprachmodell übermittelt |
 | Aufbewahrung | Anfragetext max. **60 Tage**; danach bleibt nur der Score (1–10) ohne Textbezug |
 | Ergebnis | **nur** eine Zahl 1–10. Keine Begründung, keine Teilbewertungen, keine Textausschnitte werden gespeichert |
-| Empfänger | *(offen — abhängig von Punkt 1)* |
-| Ort | *(offen — abhängig von Punkt 1)* |
+| Empfänger | Google LLC / Google Gemini API |
+| Ort | USA/Global; genaue Transfergarantien rechtlich prüfen |
 
-### Textentwurf — vom Betreiber zu prüfen und zu vervollständigen
-
-Platzhalter in `«…»` müssen ersetzt werden.
+### Rechtliche Prüfung durch den Betreiber
 
 **Ziffer 3, neuer Aufzählungspunkt:**
 
@@ -117,10 +94,11 @@ Platzhalter in `«…»` müssen ersetzt werden.
 
 **Ziffer 4, neuer Aufzählungspunkt:**
 
-> • Qualitätsbewertung von Anfragen: «Anbietername, Sitz». Der Text Ihrer
+> • Qualitätsbewertung von Anfragen: Google Gemini API (Google LLC, USA/Global). Der Text Ihrer
 > Anfrage wird zur automatisierten Bewertung an diesen Dienstleister
-> übermittelt. Der Dienstleister verwendet die Daten nicht zum Training eigener
-> Modelle. Verarbeitungsort: «Land/Region».
+> übermittelt. Im bezahlten Gemini-API-Tarif werden Prompts und Antworten gemäss
+> Anbieterangaben nicht zur Verbesserung von Google-Produkten verwendet.
+> Verarbeitungsort: USA/Global.
 
 **Ziffer 8, Ergänzung:**
 
@@ -131,11 +109,8 @@ Platzhalter in `«…»` müssen ersetzt werden.
 
 ### Weitere Prüfpunkte für den Betreiber
 
-- **Alle vier Sprachfassungen** anpassen (de, en, fr, it) — `legalText.js`
-  enthält jede Fassung separat.
-- **`PRIVACY_VERSION`** in `src/lib/legalVersions.js` erhöhen. Dies löst den
-  Consent-Nachweis-Mechanismus aus; die Auswirkung auf bestehende Nutzer ist
-  vorab zu prüfen.
+- **`PRIVACY_VERSION`** und den Consent-Nachweis prüfen; die neue Version ist
+  bereits auf `2026-08-25` gesetzt.
 - **Automatisierte Einzelentscheidung** (Art. 21 nDSG): Der Score beeinflusst
   die Sichtbarkeit des **Anbieters**, nicht eine Entscheidung über die
   anfragende Person. Nach hiesiger Einschätzung liegt keine automatisierte

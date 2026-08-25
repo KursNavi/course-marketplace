@@ -107,6 +107,7 @@ describe('vercel.json — 404-Fallback der Ressourcenfamilien', () => {
     ]);
     expect(vercelConfig.crons).toEqual([
       { path: '/api/cron', schedule: '0 12 * * *' },
+      { path: '/api/cron-lead-scoring', schedule: '0 2 1 * *' },
     ]);
     expect(vercelConfig.trailingSlash).toBe(false);
   });

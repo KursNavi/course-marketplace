@@ -7,13 +7,11 @@
  *   - createScorer                : Auswahl des Anbieters über Umgebungsvariablen
  *   - scoreLeadBatch              : der eigentliche Batchlauf
  *
- * WICHTIG — Anbieterstatus:
- * Im Projekt existiert bisher KEIN serverseitiger KI-Anbieter (weder ein SDK in
- * package.json noch ein API-Schlüssel in .env.example). Es wird hier auch
- * keiner erfunden und kein Vendor-SDK hinzugefügt. Stattdessen definiert dieses
- * Modul die Adapter-Schnittstelle vollständig; angeschlossen ist bislang nur
- * der Test-Scorer. Welche Konfiguration vor Produktivsetzung gesetzt werden
- * muss, steht in docs/lead-analytics.md und docs/review/lead-scoring-open-decisions.md.
+ * Anbieter:
+ * Gemini wird direkt per HTTPS angesprochen. Es ist kein Vendor-SDK nötig;
+ * dadurch bleibt die Serverfunktion klein und der API-Key bleibt vollständig
+ * serverseitig. Die Adapter-Schnittstelle bleibt bewusst austauschbar, damit
+ * später auch ein anderer Anbieter ergänzt werden kann.
  */
 
 /** Version der Bewertungslogik. Wird pro Lead mitgespeichert. */
@@ -169,16 +167,94 @@ export class ScorerNotConfiguredError extends Error {
  * die die Rohantwort des Modells zurückgibt. Die Prüfung übernimmt danach
  * parseScoreResult — ein Adapter muss und soll nicht selbst validieren.
  *
- * Hier ist absichtlich kein echter Anbieter eingetragen. Sobald der Betreiber
- * sich entschieden hat, wird genau ein Eintrag ergänzt (Aufruf per fetch, ohne
- * neues SDK) und LEAD_SCORING_PROVIDER entsprechend gesetzt.
+ * Der Gemini-Adapter wird weiter unten beim Laden des Moduls registriert.
  */
 const ADAPTERS = new Map();
 
+const GEMINI_INTERACTIONS_URL = 'https://generativelanguage.googleapis.com/v1beta/interactions';
+
+const GEMINI_SCORE_SCHEMA = {
+  type: 'object',
+  properties: {
+    score: {
+      type: 'integer',
+      minimum: 1,
+      maximum: 10,
+    },
+  },
+  required: ['score'],
+  additionalProperties: false,
+};
+
+/**
+ * Ruft Gemini ohne SDK auf.
+ *
+ * `store: false` verhindert die serverseitige Speicherung der Interaktion für
+ * spätere Abrufe. Die Antwort wird anschliessend trotzdem nochmals lokal mit
+ * parseScoreResult() validiert; das Schema des Anbieters ist nur die erste
+ * Schutzschicht.
+ */
+export async function geminiScoringAdapter({ system, user, model, apiKey, signal }) {
+  const response = await fetch(GEMINI_INTERACTIONS_URL, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'x-goog-api-key': apiKey,
+    },
+    body: JSON.stringify({
+      model,
+      system_instruction: system,
+      input: user,
+      response_format: {
+        type: 'text',
+        mime_type: 'application/json',
+        schema: GEMINI_SCORE_SCHEMA,
+      },
+      store: false,
+      generation_config: {
+        max_output_tokens: 32,
+      },
+    }),
+    signal,
+  });
+
+  if (!response.ok) {
+    // Keine Anbieterantwort loggen: Sie könnte Teile der personenbezogenen
+    // Eingabe oder sonstige sensible Metadaten enthalten.
+    throw new Error(`Gemini API request failed with status ${response.status}`);
+  }
+
+  let payload;
+  try {
+    payload = await response.json();
+  } catch {
+    throw new Error('Gemini API returned invalid JSON');
+  }
+
+  const text = extractGeminiText(payload);
+  if (!text) throw new Error('Gemini API returned no text output');
+  return text;
+}
+
+function extractGeminiText(payload) {
+  const steps = Array.isArray(payload?.steps) ? payload.steps : [];
+  for (let index = steps.length - 1; index >= 0; index -= 1) {
+    const content = Array.isArray(steps[index]?.content) ? steps[index].content : [];
+    const text = content
+      .filter((part) => part?.type === 'text' && typeof part.text === 'string')
+      .map((part) => part.text)
+      .join('')
+      .trim();
+    if (text) return text;
+  }
+  return '';
+}
+
+registerScoringAdapter('gemini', geminiScoringAdapter);
+
 /**
  * Registriert einen Adapter. Wird von Tests genutzt, um einen Fake-Scorer
- * einzuhängen, und ist der vorgesehene Einhängepunkt für den späteren echten
- * Anbieter.
+ * einzuhängen, und ist der Erweiterungspunkt für weitere Anbieter.
  */
 export function registerScoringAdapter(name, adapter) {
   if (typeof name !== 'string' || !name.trim()) {
@@ -212,7 +288,7 @@ export function createScorer(env = process.env) {
 
   if (!provider) {
     throw new ScorerNotConfiguredError(
-      'LEAD_SCORING_PROVIDER is not set. Siehe docs/review/lead-scoring-open-decisions.md — der KI-Anbieter ist noch nicht festgelegt.'
+      'LEAD_SCORING_PROVIDER is not set. Siehe docs/review/lead-scoring-gemini-setup.md.'
     );
   }
 

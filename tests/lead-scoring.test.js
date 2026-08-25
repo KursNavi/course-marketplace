@@ -12,6 +12,7 @@ import {
   scoreLeadBatch,
   createScorer,
   createFakeAdapter,
+  geminiScoringAdapter,
   registerScoringAdapter,
   unregisterScoringAdapter,
   ScorerNotConfiguredError,
@@ -161,6 +162,85 @@ describe('createScorer', () => {
     const scorer = createScorer({ LEAD_SCORING_PROVIDER: 'fake' });
     await expect(scorer.score({ course: {}, message: 'x' }))
       .resolves.toEqual({ ok: false, code: 'score_out_of_range' });
+  });
+
+  it('registriert Gemini als echten Adapter', async () => {
+    const scorer = createScorer({
+      LEAD_SCORING_PROVIDER: 'gemini',
+      LEAD_SCORING_MODEL: 'gemini-2.5-flash',
+      LEAD_SCORING_API_KEY: 'test-key',
+    });
+    expect(scorer.provider).toBe('gemini');
+    expect(scorer.model).toBe('gemini-2.5-flash');
+  });
+
+  it('sendet Gemini system_instruction, JSON-Schema und store=false', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        steps: [{ type: 'model_output', content: [{ type: 'text', text: '{"score": 8}' }] }],
+      }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    try {
+      const raw = await geminiScoringAdapter({
+        system: 'Systemanweisung',
+        user: 'Anfrage',
+        model: 'gemini-test',
+        apiKey: 'secret-test-key',
+        signal: new AbortController().signal,
+      });
+
+      expect(raw).toBe('{"score": 8}');
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      const [url, options] = fetchMock.mock.calls[0];
+      expect(url).toBe('https://generativelanguage.googleapis.com/v1beta/interactions');
+      expect(options.headers['x-goog-api-key']).toBe('secret-test-key');
+      const body = JSON.parse(options.body);
+      expect(body).toMatchObject({
+        model: 'gemini-test',
+        system_instruction: 'Systemanweisung',
+        input: 'Anfrage',
+        store: false,
+        response_format: { type: 'text', mime_type: 'application/json' },
+      });
+      expect(body.response_format.schema).toEqual(expect.objectContaining({
+        required: ['score'],
+        additionalProperties: false,
+      }));
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('gibt bei einem Gemini-HTTP-Fehler keine Anbieterantwort weiter', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 429,
+      json: async () => ({ error: { message: 'sensible provider detail' } }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    try {
+      await expect(geminiScoringAdapter({
+        system: 'System',
+        user: 'Personendaten',
+        model: 'gemini-test',
+        apiKey: 'secret-test-key',
+        signal: new AbortController().signal,
+      })).rejects.toThrow('status 429');
+      await expect(geminiScoringAdapter({
+        system: 'System',
+        user: 'Personendaten',
+        model: 'gemini-test',
+        apiKey: 'secret-test-key',
+        signal: new AbortController().signal,
+      })).rejects.not.toThrow('sensible provider detail');
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });
 

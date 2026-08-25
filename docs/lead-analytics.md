@@ -174,9 +174,9 @@ Freitexte über Anfragende erzeugen.
 
 ### Ablauf
 
-`/api/cron-lead-scoring` ist als geschützter Ausführungspunkt vorbereitet,
-aber derzeit **nicht automatisch terminiert**. Die spätere Codex-Automatisierung
-kann ihn gezielt auslösen, sobald Anbieter und rechtliche Freigabe feststehen.
+`/api/cron-lead-scoring` ist als geschützter Ausführungspunkt eingerichtet und
+läuft am ersten Tag jedes Monats um 02:00 UTC. Bis die Gemini-Konfiguration und
+die rechtliche Freigabe vorliegen, bleibt der Lauf sicher deaktiviert.
 
 1. Leads mit `quality_status IN ('pending','failed')` und
    `quality_attempts < 3` laden, deren Anfragetext noch existiert
@@ -209,16 +209,16 @@ Der Anfragetext ist **nicht vertrauenswürdig**. Drei Schichten:
 | Zeit pro Bewertung | 20 s | `SCORER_TIMEOUT_MS` |
 | Manuelle Wiederholung | 25 Leads | `RESCORE_MAX_IDS` |
 
-### KI-Anbieter — offen
+### KI-Anbieter — Gemini
 
-Im Projekt existiert **kein** serverseitiger KI-Anbieter. Es wurde bewusst
-keiner ausgewählt und kein Vendor-SDK hinzugefügt. `api/_lib/lead-scoring.js`
-definiert die Adapter-Schnittstelle vollständig; registriert ist bisher nur der
-Test-Adapter.
-
-Zu setzen sind: `LEAD_SCORING_PROVIDER`, `LEAD_SCORING_MODEL`,
-`LEAD_SCORING_API_KEY` — Details in
-`docs/review/lead-scoring-open-decisions.md`.
+Der produktive Adapter `gemini` ruft die Gemini-Interactions-API direkt per
+HTTPS auf. Die Antwort wird durch ein JSON-Schema und zusätzlich lokal auf eine
+ganze Zahl von 1–10 geprüft; es wird nur dieser Score gespeichert. Die
+Interaktion wird mit `store: false` angefordert. Zu setzen sind:
+`LEAD_SCORING_PROVIDER=gemini`, `LEAD_SCORING_MODEL` und
+`LEAD_SCORING_API_KEY`. Details und die verbleibende rechtliche Checkliste
+stehen in `docs/review/lead-scoring-open-decisions.md` sowie
+`docs/review/lead-scoring-gemini-setup.md`.
 
 Bis dahin antwortet der Endpunkt mit `501 lead_scoring_not_configured`. Leads
 sammeln sich als `pending` und werden nachbewertet, sobald die Konfiguration
