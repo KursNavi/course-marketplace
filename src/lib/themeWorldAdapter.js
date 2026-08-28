@@ -1,12 +1,12 @@
 /**
- * Datenadapter: DB-Format → Legacy-Komponentenformat
+ * Datenadapter: DB-Format â†’ Legacy-Komponentenformat
  *
- * Übersetzt Daten aus der neuen Themenwelten-Datenbank in das Format,
+ * Ãœbersetzt Daten aus der neuen Themenwelten-Datenbank in das Format,
  * das die bestehenden Komponenten BereichLandingPage und SzenarioArtikelView
- * erwarten. Dadurch müssen diese Komponenten beim Pilot-Start minimal geändert werden.
+ * erwarten. Dadurch mÃ¼ssen diese Komponenten beim Pilot-Start minimal geÃ¤ndert werden.
  *
  * In Phase 4: Nur getestet, nicht aktiv genutzt (Feature-Flag ist aus).
- * In Phase 5: Wird aktiviert wenn der Pilot-Flag für eine Themenwelt gesetzt ist.
+ * In Phase 5: Wird aktiviert wenn der Pilot-Flag fÃ¼r eine Themenwelt gesetzt ist.
  *
  * Segmentnormalisierung:
  *   DB:  db_segment = 'professionell' | 'privat' | 'kinder'
@@ -22,21 +22,21 @@ import { pickLatestReviewDate } from './editorialReviewDate';
 // Konstanten
 // ---------------------------------------------------------------------------
 
-/** Mapping DB-Segment → URL-Segment */
+/** Mapping DB-Segment â†’ URL-Segment */
 const DB_TO_URL_SEGMENT = {
   professionell: 'beruflich',
   privat: 'privat-hobby',
   kinder: 'kinder-jugend',
 };
 
-/** Mapping DB-Segment → interner Config-Key (typeKey) */
+/** Mapping DB-Segment â†’ interner Config-Key (typeKey) */
 const DB_TO_TYPE_KEY = {
   professionell: 'beruflich',
   privat: 'privat_hobby',
   kinder: 'kinder_jugend',
 };
 
-/** Mapping URL-Segment → DB-Segment */
+/** Mapping URL-Segment â†’ DB-Segment */
 const URL_TO_DB_SEGMENT = {
   beruflich: 'professionell',
   'privat-hobby': 'privat',
@@ -44,7 +44,7 @@ const URL_TO_DB_SEGMENT = {
 };
 
 /**
- * Fallback-Hero-Bilder je Segment — werden verwendet wenn keine hero_image_url in DB gesetzt ist.
+ * Fallback-Hero-Bilder je Segment â€” werden verwendet wenn keine hero_image_url in DB gesetzt ist.
  * Dieselben Bilder wie in LandingView.jsx.
  */
 export const SEGMENT_FALLBACK_HERO_IMAGES = {
@@ -58,7 +58,7 @@ export const SEGMENT_FALLBACK_HERO_IMAGES = {
 // ---------------------------------------------------------------------------
 
 /**
- * Normalisiert ein URL-Segment (Bindestriche oder Unterstriche → Bindestriche).
+ * Normalisiert ein URL-Segment (Bindestriche oder Unterstriche â†’ Bindestriche).
  *
  * @param {string} segment
  * @returns {string}
@@ -69,7 +69,7 @@ export function normalizeUrlSegment(segment) {
 }
 
 /**
- * Gibt den internen Config-Key (typeKey) für ein URL-Segment zurück.
+ * Gibt den internen Config-Key (typeKey) fÃ¼r ein URL-Segment zurÃ¼ck.
  *
  * @param {string} urlSegment - 'beruflich' | 'privat-hobby' | 'kinder-jugend'
  * @returns {string} typeKey mit Unterstrichen
@@ -80,7 +80,7 @@ export function urlSegmentToTypeKey(urlSegment) {
 }
 
 /**
- * Gibt den URL-Segment für ein DB-Segment zurück.
+ * Gibt den URL-Segment fÃ¼r ein DB-Segment zurÃ¼ck.
  *
  * @param {string} dbSegment - 'professionell' | 'privat' | 'kinder'
  * @returns {string}
@@ -90,7 +90,7 @@ export function dbSegmentToUrlSegment(dbSegment) {
 }
 
 /**
- * Gibt den DB-Segment für ein URL-Segment zurück.
+ * Gibt den DB-Segment fÃ¼r ein URL-Segment zurÃ¼ck.
  *
  * @param {string} urlSegment - 'beruflich' | 'privat-hobby' | 'kinder-jugend'
  * @returns {string}
@@ -101,11 +101,11 @@ export function urlSegmentToDbSegment(urlSegment) {
 }
 
 // ---------------------------------------------------------------------------
-// Haupt-Adapter: ThemeWorld → BereichLandingPage-Format
+// Haupt-Adapter: ThemeWorld â†’ BereichLandingPage-Format
 // ---------------------------------------------------------------------------
 
 /**
- * Adaptiert einen vollständigen Themenwelt-Datensatz (inkl. Untertabellen)
+ * Adaptiert einen vollstÃ¤ndigen Themenwelt-Datensatz (inkl. Untertabellen)
  * in das Format, das BereichLandingPage und verwandte Komponenten erwarten.
  *
  * @param {object} params
@@ -135,7 +135,7 @@ export function adaptThemeWorldToConfig({
   const sectionTitles = themeWorld.section_titles || {};
 
   return {
-    // Identität
+    // IdentitÃ¤t
     key: themeWorld.key,
     slug: themeWorld.slug,
     segment: urlSegment,
@@ -160,13 +160,14 @@ export function adaptThemeWorldToConfig({
 
     // Suche
     searchConfig: {
-      areaSlug: searchConfig.area_slug || themeWorld.area_slug,
+      areaSlug: searchConfig.area_slug ?? themeWorld.area_slug ?? null,
       typeKey: searchConfig.type_key || typeKey,
+      kursart: searchConfig.kursart || null,
       defaultSpec: searchConfig.default_spec || null,
       defaultFocus: searchConfig.default_focus || null,
     },
 
-    // Abschnittsüberschriften-Overrides
+    // AbschnittsÃ¼berschriften-Overrides
     sectionTitles: {
       scenarios: sectionTitles.scenarios_heading || null,
       specialties: sectionTitles.specialties_heading || null,
@@ -207,11 +208,11 @@ export function adaptThemeWorldToConfig({
 }
 
 // ---------------------------------------------------------------------------
-// Adapter für Szenario-Karten (Listeneintrag)
+// Adapter fÃ¼r Szenario-Karten (Listeneintrag)
 // ---------------------------------------------------------------------------
 
 /**
- * Adaptiert einen Szenario-Artikel für die Karten-Anzeige auf der Landingpage.
+ * Adaptiert einen Szenario-Artikel fÃ¼r die Karten-Anzeige auf der Landingpage.
  *
  * @param {object} scenario - Zeile aus theme_world_scenarios
  * @returns {object} Scenario-Karte im Legacy-Format
@@ -231,14 +232,14 @@ export function adaptScenarioCard(scenario) {
 }
 
 // ---------------------------------------------------------------------------
-// Adapter für Szenario-Artikel (Vollansicht)
+// Adapter fÃ¼r Szenario-Artikel (Vollansicht)
 // ---------------------------------------------------------------------------
 
 /**
- * Adaptiert einen vollständigen Szenario-Artikel für SzenarioArtikelView.
+ * Adaptiert einen vollstÃ¤ndigen Szenario-Artikel fÃ¼r SzenarioArtikelView.
  *
- * @param {object} scenario - Vollständige Zeile aus theme_world_scenarios
- * @param {object} themeWorld - Eltern-Themenwelt für Kontext
+ * @param {object} scenario - VollstÃ¤ndige Zeile aus theme_world_scenarios
+ * @param {object} themeWorld - Eltern-Themenwelt fÃ¼r Kontext
  * @returns {object} Artikel im Legacy-Format
  */
 export function adaptScenarioArticle(scenario, themeWorld) {
@@ -282,7 +283,8 @@ export function adaptScenarioArticle(scenario, themeWorld) {
       focus: ctaConfig.focus || null,
       loc: ctaConfig.loc || null,
       delivery: ctaConfig.delivery || null,
-      areaSlug: twSearchConfig.area_slug || themeWorld?.area_slug || null,
+      kursart: ctaConfig.kursart || twSearchConfig.kursart || null,
+      areaSlug: twSearchConfig.area_slug ?? themeWorld?.area_slug ?? null,
       typeKey: urlSegmentToTypeKey(urlSegment),
     },
 
@@ -298,7 +300,7 @@ export function adaptScenarioArticle(scenario, themeWorld) {
 }
 
 // ---------------------------------------------------------------------------
-// Adapter für Untertabellen
+// Adapter fÃ¼r Untertabellen
 // ---------------------------------------------------------------------------
 
 function adaptPredefinedSearch(search) {
@@ -308,13 +310,14 @@ function adaptPredefinedSearch(search) {
     focus: search.focus || null,
     loc: search.loc || null,
     delivery: search.delivery || null,
+    kursart: search.kursart || null,
   };
 }
 
 /**
- * Ein CTA-Link ist fachlich eine hervorgehobene vordefinierte Suche und trägt
- * deshalb dieselben vier Suchparameter. spec und focus waren früher nicht
- * abgebildet — ein Link mit Fachrichtung landete dadurch auf einer ungefilterten
+ * Ein CTA-Link ist fachlich eine hervorgehobene vordefinierte Suche und trÃ¤gt
+ * deshalb dieselben vier Suchparameter. spec und focus waren frÃ¼her nicht
+ * abgebildet â€” ein Link mit Fachrichtung landete dadurch auf einer ungefilterten
  * Ergebnisliste, obwohl der Wert gespeichert war.
  */
 function adaptCtaLink(link) {
@@ -324,6 +327,7 @@ function adaptCtaLink(link) {
     focus: link.focus || null,
     loc: link.loc || null,
     delivery: link.delivery || null,
+    kursart: link.kursart || null,
   };
 }
 
@@ -384,14 +388,14 @@ function adaptTrustItem(item) {
 }
 
 // ---------------------------------------------------------------------------
-// Bridge-Adapter: Raw-DB-Daten → Legacy-Komponentenformat
+// Bridge-Adapter: Raw-DB-Daten â†’ Legacy-Komponentenformat
 // ---------------------------------------------------------------------------
 
 /**
  * Konvertiert rohe DB-Daten (aus fetchThemeWorldPage) direkt in das Format,
  * das BereichLandingPage.jsx erwartet (Multilingual-Objekte, spezifische Keys).
  *
- * Dies ist der bevorzugte Adapter für die Pilot-Integration in Phase 5.
+ * Dies ist der bevorzugte Adapter fÃ¼r die Pilot-Integration in Phase 5.
  *
  * @param {object} params
  * @param {object} params.themeWorld - Rohdaten aus theme_worlds
@@ -420,12 +424,13 @@ export function adaptToLegacyBereichConfig({
   const st = themeWorld.section_titles || {};
 
   return {
-    // Identität
+    // IdentitÃ¤t
     key: themeWorld.key,
     slug: themeWorld.slug,
     segment: urlSegment,
     typeKey,
-    areaSlug: searchConfig.area_slug || themeWorld.area_slug || themeWorld.key,
+    areaSlug: searchConfig.area_slug ?? themeWorld.area_slug ?? null,
+    kursart: searchConfig.kursart || null,
 
     // Titel / Subtitel als Multilingual-Objekte (Legacy-Format: { de: '...' })
     title: { de: themeWorld.title_de || '' },
@@ -443,11 +448,11 @@ export function adaptToLegacyBereichConfig({
     metaTitle: themeWorld.meta_title || null,
     metaDescription: themeWorld.meta_description || null,
 
-    // Redaktionelles Prüfdatum der Landingpage.
-    // theme_worlds hat keine eigene Spalte last_reviewed_at — die Landingpage
-    // übernimmt deshalb das jüngste Prüfdatum ihrer publizierten Artikel, statt
-    // ein eigenes Datum zu behaupten. Ohne geprüfte Artikel bleibt es null und
-    // buildEditorialReviewNotice() lässt den Prüfsatz weg.
+    // Redaktionelles PrÃ¼fdatum der Landingpage.
+    // theme_worlds hat keine eigene Spalte last_reviewed_at â€” die Landingpage
+    // Ã¼bernimmt deshalb das jÃ¼ngste PrÃ¼fdatum ihrer publizierten Artikel, statt
+    // ein eigenes Datum zu behaupten. Ohne geprÃ¼fte Artikel bleibt es null und
+    // buildEditorialReviewNotice() lÃ¤sst den PrÃ¼fsatz weg.
     lastReviewedAt: pickLatestReviewDate(scenarios.map((s) => s.last_reviewed_at)),
 
     // Szenario-Karten im Legacy-Format
@@ -464,7 +469,7 @@ export function adaptToLegacyBereichConfig({
       lastReviewedAt: s.last_reviewed_at || null,
     })),
 
-    // Specialties: Array → gekeyertes Objekt { label: { de, icon } }
+    // Specialties: Array â†’ gekeyertes Objekt { label: { de, icon } }
     specialtyDescriptions: Object.fromEntries(
       (specialties || []).map((s) => [
         s.specialty_label,
@@ -483,6 +488,7 @@ export function adaptToLegacyBereichConfig({
             params: {
               ...(r.loc_param ? { loc: r.loc_param } : {}),
               ...(r.delivery_param ? { delivery: normalizeDeliveryTypeKey(r.delivery_param) || r.delivery_param } : {}),
+              ...(searchConfig.kursart ? { kursart: searchConfig.kursart } : {}),
             },
           })),
         }
@@ -494,6 +500,7 @@ export function adaptToLegacyBereichConfig({
       params: {
         ...(s.spec ? { spec: s.spec } : {}),
         ...(s.focus ? { focus: s.focus } : {}),
+        ...(s.kursart ? { kursart: s.kursart } : {}),
       },
       extraParams: {
         ...(s.loc ? { loc: s.loc } : {}),
@@ -516,7 +523,7 @@ export function adaptToLegacyBereichConfig({
       a: { de: f.answer_de || '' },
     })),
 
-    // Abschnittsüberschriften
+    // AbschnittsÃ¼berschriften
     sectionTitles: {
       scenarioTitle: st.scenarios_heading ? { de: st.scenarios_heading } : { de: 'Wo stehst du?' },
       scenarioSubtitle: st.scenarios_subheading ? { de: st.scenarios_subheading } : { de: 'Finde den passenden Einstieg' },
@@ -524,15 +531,15 @@ export function adaptToLegacyBereichConfig({
       specialtiesSubtitle: st.specialties_subheading ? { de: st.specialties_subheading } : { de: 'Alle Schwerpunkte auf einen Blick' },
       searchesTitle: st.searches_heading ? { de: st.searches_heading } : null,
       searchesSubtitle: st.searches_subheading ? { de: st.searches_subheading } : null,
-      faqTitle: st.faqs_heading ? { de: st.faqs_heading } : { de: 'Häufige Fragen' },
-      trustTitle: st.trust_heading ? { de: st.trust_heading } : { de: 'Qualität & Anerkennung' },
+      faqTitle: st.faqs_heading ? { de: st.faqs_heading } : { de: 'HÃ¤ufige Fragen' },
+      trustTitle: st.trust_heading ? { de: st.trust_heading } : { de: 'QualitÃ¤t & Anerkennung' },
       ctaTitle: st.cta_heading ? { de: st.cta_heading } : null,
       ctaButton: st.cta_button ? { de: st.cta_button } : { de: 'Alle Kurse anzeigen' },
     },
 
     // CTA-Links
-    // Dieselben vier Suchparameter wie predefined_searches — sonst ginge die
-    // gespeicherte Fachrichtung (spec/focus) beim Aufbau der öffentlichen
+    // Dieselben vier Suchparameter wie predefined_searches â€” sonst ginge die
+    // gespeicherte Fachrichtung (spec/focus) beim Aufbau der Ã¶ffentlichen
     // CTA-URL verloren.
     ctaLinks: (themeWorld.cta_links || []).map((l) => ({
       label: { de: l.label_de || '' },
@@ -541,6 +548,7 @@ export function adaptToLegacyBereichConfig({
         ...(l.focus ? { focus: l.focus } : {}),
         ...(l.loc ? { loc: l.loc } : {}),
         ...(l.delivery ? { delivery: normalizeDeliveryTypeKey(l.delivery) || l.delivery } : {}),
+        ...(l.kursart ? { kursart: l.kursart } : {}),
       },
     })),
 
@@ -553,10 +561,10 @@ export function adaptToLegacyBereichConfig({
 }
 
 /**
- * Konvertiert einen vollständigen Szenario-DB-Datensatz in das Format,
+ * Konvertiert einen vollstÃ¤ndigen Szenario-DB-Datensatz in das Format,
  * das SzenarioArtikelView.jsx als scenario-Objekt erwartet.
  *
- * @param {object} scenario - Vollständiger Datensatz aus theme_world_scenarios
+ * @param {object} scenario - VollstÃ¤ndiger Datensatz aus theme_world_scenarios
  * @param {object} themeWorldSearchConfig - search_config der Eltern-Themenwelt
  * @returns {object} Szenario im Legacy-Format
  */
@@ -569,11 +577,11 @@ export function adaptToLegacySzenarioConfig(scenario, themeWorldSearchConfig = {
     text: { de: scenario.teaser_de || '' },
     ctaLabel: { de: scenario.cta_label_de || 'Kurse entdecken' },
     searchParams: _extractSearchParams(scenario.cta_config, themeWorldSearchConfig),
-    // Content für den Artikel (wird separat in der Komponente als articleContent behandelt)
+    // Content fÃ¼r den Artikel (wird separat in der Komponente als articleContent behandelt)
     contentHtml: scenario.content_html || '',
     // card_image_url ist das redaktionelle Artikelbild. Bisher wurde es nur auf
     // der Szenario-Karte durchgereicht; die Artikelseite hatte deshalb gar kein
-    // sichtbares Bild zur Verfügung. og_image_url bleibt daneben unverändert die
+    // sichtbares Bild zur VerfÃ¼gung. og_image_url bleibt daneben unverÃ¤ndert die
     // reine Social-Vorschau.
     cardImageUrl: scenario.card_image_url || null,
     cardImageAlt: scenario.card_image_alt || '',
@@ -582,28 +590,28 @@ export function adaptToLegacySzenarioConfig(scenario, themeWorldSearchConfig = {
     metaTitle: scenario.meta_title || null,
     metaDescription: scenario.meta_description || null,
 
-    // Datumsquellen für das Article-Schema (siehe SzenarioArtikelView).
-    //   published_at     — beim ersten Publish gesetzt, nie zurückgesetzt.
-    //   last_reviewed_at — redaktionelles Datum der letzten inhaltlichen Prüfung.
+    // Datumsquellen fÃ¼r das Article-Schema (siehe SzenarioArtikelView).
+    //   published_at     â€” beim ersten Publish gesetzt, nie zurÃ¼ckgesetzt.
+    //   last_reviewed_at â€” redaktionelles Datum der letzten inhaltlichen PrÃ¼fung.
     // updated_at wird BEWUSST nicht durchgereicht: der Trigger set_updated_at()
     // hebt es bei jedem UPDATE an, also auch bei reinen Status- oder
-    // Sortierungsänderungen. Als dateModified wäre es eine Behauptung über eine
-    // inhaltliche Änderung, die nie stattgefunden hat.
+    // SortierungsÃ¤nderungen. Als dateModified wÃ¤re es eine Behauptung Ã¼ber eine
+    // inhaltliche Ã„nderung, die nie stattgefunden hat.
     publishedAt: scenario.published_at || null,
     lastReviewedAt: scenario.last_reviewed_at || null,
 
     // Quellenangaben im Anzeigeformat [{title, publisher, url}].
     // Dieselbe Funktion normalisiert auch Legacy-Szenarien in
-    // SzenarioArtikelView — DB und Legacy landen dadurch im identischen Format
+    // SzenarioArtikelView â€” DB und Legacy landen dadurch im identischen Format
     // und teilen sich einen einzigen Renderpfad. Fehlt die Spalte (etwa bevor
     // die Migration angewendet wurde), ergibt das ein leeres Array und der
-    // Quellenblock entfällt, statt dass die Seite bricht.
+    // Quellenblock entfÃ¤llt, statt dass die Seite bricht.
     sources: toDisplaySources(scenario.sources),
   };
 }
 
 /**
- * Extrahiert searchParams aus cta_config für die Legacy-Komponentenform.
+ * Extrahiert searchParams aus cta_config fÃ¼r die Legacy-Komponentenform.
  * @private
  */
 function _extractSearchParams(ctaConfig, searchConfig = {}) {
@@ -613,5 +621,6 @@ function _extractSearchParams(ctaConfig, searchConfig = {}) {
     ...(c.focus ? { focus: c.focus } : {}),
     ...(c.loc ? { loc: c.loc } : {}),
     ...(c.delivery ? { delivery: normalizeDeliveryTypeKey(c.delivery) || c.delivery } : {}),
+    ...(c.kursart || searchConfig.kursart ? { kursart: c.kursart || searchConfig.kursart } : {}),
   };
 }

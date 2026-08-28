@@ -13,15 +13,16 @@ import { fetchThemeWorldPage } from '../lib/themeWorldService';
 import { adaptToLegacyBereichConfig } from '../lib/themeWorldAdapter';
 import { normalizeDeliveryTypeKey } from '../lib/courseMetadata';
 import { buildEditorialReviewNotice } from '../lib/editorialReviewDate';
+import { matchesCourseTypeFilter } from '../lib/themeWorldCourseFilters';
 
 export default function BereichLandingPage({ segment, slug, courses, lang = 'de', t }) {
   // Legacy-Config (immer geladen als Basiswert + Fallback)
   const legacyConfig = getBereichBySlug(segment, slug);
 
-  // Dynamic config state — wird gesetzt wenn Pilot-Flag aktiv + DB-Antwort erfolgreich
+  // Dynamic config state â€” wird gesetzt wenn Pilot-Flag aktiv + DB-Antwort erfolgreich
   const [dynamicConfig, setDynamicConfig] = useState(null);
   const [dynamicNotFound, setDynamicNotFound] = useState(false);
-  // DB-only mode: kein Legacy-Eintrag vorhanden, aber DB global aktiv → Ladeindikator bis Antwort
+  // DB-only mode: kein Legacy-Eintrag vorhanden, aber DB global aktiv â†’ Ladeindikator bis Antwort
   const [dbOnlyLoading, setDbOnlyLoading] = useState(() => !legacyConfig && isThemeWorldDbEnabled());
 
   // Effektiver Config: DB wenn geladen, sonst Legacy
@@ -39,7 +40,7 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
   // Pilot-Integration: DB-Daten laden wenn Feature-Flag aktiv
   useEffect(() => {
     // DB-only-Modus: Themenwelt existiert nur in der DB, kein Legacy-Eintrag
-    // → direkt laden ohne Pilot-Key-Prüfung (keine Legacy-Einschränkung nötig)
+    // â†’ direkt laden ohne Pilot-Key-PrÃ¼fung (keine Legacy-EinschrÃ¤nkung nÃ¶tig)
     if (!legacyConfig && isThemeWorldDbEnabled()) {
       let cancelled = false;
       fetchThemeWorldPage(segment, slug)
@@ -84,7 +85,7 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bereichKey, segment, slug]);
 
-  // Segment theme — normalize URL segment (privat-hobby → privat_hobby)
+  // Segment theme â€” normalize URL segment (privat-hobby â†’ privat_hobby)
   const segmentKey = segment?.replace(/-/g, '_') || segment;
   const theme = SEGMENT_CONFIG[segmentKey] || SEGMENT_CONFIG.beruflich;
 
@@ -99,7 +100,7 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
     if (!config) return;
 
     // Redaktionelle SEO-Felder (meta_title/meta_description) sind die erste
-    // Quelle — identisch zum Server-Prerender (api/_lib/theme-world-prerender.js).
+    // Quelle â€” identisch zum Server-Prerender (api/_lib/theme-world-prerender.js).
     // Legacy-Konfigurationen haben diese Felder nicht: dort greifen wie bisher
     // der sichtbare Titel und der Subtitle.
     const pageTitle = config.metaTitle || `${config.title[lang] || config.title.de} | KursNavi`;
@@ -147,7 +148,7 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
       tag.content = content;
     });
 
-    // og:image:alt — nur setzen wenn Alt-Text vorhanden
+    // og:image:alt â€” nur setzen wenn Alt-Text vorhanden
     const ogAltText = config.ogImageAlt || config.heroImageAlt || '';
     const ogAltProperty = 'og:image:alt';
     let ogAltTag = document.querySelector(`meta[property="${ogAltProperty}"]`);
@@ -205,16 +206,16 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
     };
   }, [config, segment, slug, lang]);
 
-  // DB-only Ladeindikator — verhindert vorzeitigen 404 während DB-Abfrage läuft
+  // DB-only Ladeindikator â€” verhindert vorzeitigen 404 wÃ¤hrend DB-Abfrage lÃ¤uft
   if (dbOnlyLoading) {
     return (
       <div className="min-h-screen bg-beige flex items-center justify-center">
-        <div className="text-center text-muted">Wird geladen…</div>
+        <div className="text-center text-muted">Wird geladenâ€¦</div>
       </div>
     );
   }
 
-  // 404 guard — auch für DB-Not-found
+  // 404 guard â€” auch fÃ¼r DB-Not-found
   if (!config || dynamicNotFound) {
     return (
       <div className="min-h-screen bg-beige flex items-center justify-center">
@@ -239,7 +240,8 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
     courses.forEach(c => {
       if (c.status !== 'published' && c.status) return;
       (c.all_categories || []).forEach(cat => {
-        if (cat.category_type === dbType && cat.category_area === config.areaSlug) {
+        if (cat.category_type === dbType && (!config.areaSlug || cat.category_area === config.areaSlug) &&
+            matchesCourseTypeFilter(c, config.typeKey, config.kursart)) {
           const specLabel = cat.category_specialty_label || cat.category_specialty;
           if (specLabel) {
             counts[specLabel] = (counts[specLabel] || 0) + 1;
@@ -257,7 +259,8 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
     courses.forEach(c => {
       if (c.status !== 'published' && c.status) return;
       (c.all_categories || []).forEach(cat => {
-        if (cat.category_type === dbType && cat.category_area === config.areaSlug &&
+        if (cat.category_type === dbType && (!config.areaSlug || cat.category_area === config.areaSlug) &&
+            matchesCourseTypeFilter(c, config.typeKey, config.kursart) &&
             (cat.category_specialty_label === specLabel || cat.category_specialty === specLabel) &&
             cat.category_focus_label) {
           focuses.add(cat.category_focus_label);
@@ -274,7 +277,8 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
   const navigateToSearch = (extraParams = {}) => {
     const params = new URLSearchParams();
     params.set('type', config.typeKey);
-    params.set('area', config.areaSlug);
+    if (config.areaSlug) params.set('area', config.areaSlug);
+    if (config.kursart) params.set('kursart', config.kursart);
     if (searchQuery) params.set('q', searchQuery);
     Object.entries(extraParams).forEach(([k, v]) => {
       if (v) params.set(k, v);
@@ -304,7 +308,8 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
   const buildSearchUrl = (extraParams = {}) => {
     const params = new URLSearchParams();
     params.set('type', config.typeKey);
-    params.set('area', config.areaSlug);
+    if (config.areaSlug) params.set('area', config.areaSlug);
+    if (config.kursart) params.set('kursart', config.kursart);
     Object.entries(extraParams).forEach(([k, v]) => {
       if (!v) return;
       // Kanonisiere Delivery-Werte beim URL-Aufbau
@@ -423,7 +428,7 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
             {sectionTitles.scenarioTitle?.[lang] || sectionTitles.scenarioTitle?.de || 'Wo stehst du?'}
           </h2>
           <p className="text-gray-500 text-center mb-10">
-            {sectionTitles.scenarioSubtitle?.[lang] || sectionTitles.scenarioSubtitle?.de || 'Finde den passenden Einstieg - egal ob Anfänger oder Profi'}
+            {sectionTitles.scenarioSubtitle?.[lang] || sectionTitles.scenarioSubtitle?.de || 'Finde den passenden Einstieg - egal ob AnfÃ¤nger oder Profi'}
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {config.scenarios.map((scenario, i) => (
@@ -438,11 +443,11 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
                 }}
                 className="relative flex min-w-0 flex-col overflow-hidden rounded-2xl bg-white border border-gray-100 hover:border-gray-200 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group"
               >
-                {/* Titelbild — durchgehendes 16:9-Band am Kartenkopf.
-                    Das Band existiert immer und hat immer dieselbe Höhe: mit Bild
+                {/* Titelbild â€” durchgehendes 16:9-Band am Kartenkopf.
+                    Das Band existiert immer und hat immer dieselbe HÃ¶he: mit Bild
                     zeigt es das Bild, ohne Bild (oder bei Ladefehler) einen ruhigen
                     Platzhalter in der Themenfarbe. Dadurch bleiben alle Karten im
-                    Raster gleich hoch und es entsteht nie eine leere Bildfläche. */}
+                    Raster gleich hoch und es entsteht nie eine leere BildflÃ¤che. */}
                 <div
                   data-testid={`scenario-card-media-${scenario.slug || i}`}
                   className={`w-full aspect-video overflow-hidden ${theme.bgLight}`}
@@ -481,8 +486,8 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
                   )}
                 </div>
 
-                {/* Inhalt — vollständig unterhalb des Bildbandes. Das Icon steht
-                    als eigene Spalte neben dem Titel, nicht mehr darüber. */}
+                {/* Inhalt â€” vollstÃ¤ndig unterhalb des Bildbandes. Das Icon steht
+                    als eigene Spalte neben dem Titel, nicht mehr darÃ¼ber. */}
                 <div className="flex min-w-0 flex-1 flex-col p-6">
                   <div className="flex items-center gap-3 mb-2">
                     <span
@@ -536,15 +541,15 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
         </div>
       )}
 
-      {/* KURSARTEN — wie möchtest du lernen? */}
+      {/* KURSARTEN â€” wie mÃ¶chtest du lernen? */}
       {(() => {
         const kursarten = SEGMENT_LANDING_CONFIG[segment]?.kursarten || [];
         if (!kursarten.length) return null;
         return (
           <div className="max-w-5xl mx-auto px-4 py-12">
-            <h2 className="text-xl font-heading font-bold text-dark mb-1 text-center">Wie möchtest du lernen?</h2>
+            <h2 className="text-xl font-heading font-bold text-dark mb-1 text-center">Wie mÃ¶chtest du lernen?</h2>
             <p className="text-gray-500 text-center mb-8">
-              Wähle eine Kursart – die Suche öffnet sich mit diesem Thema vorausgewählt.
+              WÃ¤hle eine Kursart â€“ die Suche Ã¶ffnet sich mit diesem Thema vorausgewÃ¤hlt.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {kursarten.map((k) => (
@@ -568,7 +573,7 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
         );
       })()}
 
-      {/* SCHNELLEINSTIEG — Vordefinierte Suchen */}
+      {/* SCHNELLEINSTIEG â€” Vordefinierte Suchen */}
       {config.predefinedSearches && config.predefinedSearches.filter((s) => s.label?.de).length > 0 && (
         <div className="max-w-5xl mx-auto px-4 py-12">
           <h2 className="text-xl font-heading font-bold text-dark mb-1 text-center">
@@ -606,7 +611,7 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
         </div>
       )}
 
-      {/* AUSBILDUNGSBEREICHE — Directory-Liste */}
+      {/* AUSBILDUNGSBEREICHE â€” Directory-Liste */}
       <div className="bg-white py-16">
         <div className="max-w-5xl mx-auto px-4">
           <h2 className="text-2xl font-heading font-bold text-dark mb-2 text-center">{sectionTitles.specialtiesTitle?.[lang] || sectionTitles.specialtiesTitle?.de || 'Ausbildungsbereiche'}</h2>
@@ -717,7 +722,7 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
         <div className="max-w-3xl mx-auto px-4 py-16">
           <div className="flex items-center justify-center gap-2 mb-8">
             <HelpCircle className={`w-6 h-6 ${theme.text}`} />
-            <h2 className="text-2xl font-heading font-bold text-dark">{sectionTitles.faqTitle?.[lang] || sectionTitles.faqTitle?.de || 'Häufige Fragen'}</h2>
+            <h2 className="text-2xl font-heading font-bold text-dark">{sectionTitles.faqTitle?.[lang] || sectionTitles.faqTitle?.de || 'HÃ¤ufige Fragen'}</h2>
           </div>
           <div className="space-y-3">
             {config.faqs.map((faq, i) => (
@@ -749,7 +754,7 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
           <div className="max-w-4xl mx-auto px-4">
             <div className="flex items-center justify-center gap-2 mb-8">
               <Award className={`w-6 h-6 ${theme.text}`} />
-              <h2 className="text-2xl font-heading font-bold text-dark">{sectionTitles.trustTitle?.[lang] || sectionTitles.trustTitle?.de || 'Qualität & Anerkennung'}</h2>
+              <h2 className="text-2xl font-heading font-bold text-dark">{sectionTitles.trustTitle?.[lang] || sectionTitles.trustTitle?.de || 'QualitÃ¤t & Anerkennung'}</h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {config.trustLogos.map((logo, i) => (
@@ -769,7 +774,7 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
       {/* CTA FOOTER */}
       <div className={`py-12 ${theme.bgLight}`}>
         <div className="max-w-4xl mx-auto px-4 text-center">
-          <h2 className="text-xl font-heading font-bold text-dark mb-3">{sectionTitles.ctaTitle?.[lang] || sectionTitles.ctaTitle?.de || 'Bereit für den nächsten Schritt?'}</h2>
+          <h2 className="text-xl font-heading font-bold text-dark mb-3">{sectionTitles.ctaTitle?.[lang] || sectionTitles.ctaTitle?.de || 'Bereit fÃ¼r den nÃ¤chsten Schritt?'}</h2>
           <p className="text-gray-600 mb-6">{sectionTitles.ctaSubtitle?.[lang] || sectionTitles.ctaSubtitle?.de || `Entdecke alle ${totalCourses} Kurse in diesem Bereich.`}</p>
           <div className="flex flex-wrap justify-center gap-3">
             <button

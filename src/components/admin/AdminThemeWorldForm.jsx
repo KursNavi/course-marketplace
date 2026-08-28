@@ -1,7 +1,7 @@
 /**
- * Admin-Formular für Themenwelten (9 Tabs).
+ * Admin-Formular fÃ¼r Themenwelten (9 Tabs).
  * Jeder Tab speichert seinen Bereich separat.
- * Pro Tab: Speicherstatus, ungespeicherte-Änderungen-Warnung.
+ * Pro Tab: Speicherstatus, ungespeicherte-Ã„nderungen-Warnung.
  */
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -20,6 +20,7 @@ import {
 import { SEGMENT_FALLBACK_HERO_IMAGES } from '../../lib/themeWorldAdapter';
 import { useTaxonomy } from '../../hooks/useTaxonomy';
 import { SWISS_CANTONS } from '../../lib/constants';
+import { normalizePredefinedSearches } from '../../lib/themeWorldAdminUtils';
 
 // ---------------------------------------------------------------------------
 // Konstanten
@@ -47,67 +48,67 @@ const URL_TO_DB = { beruflich: 'professionell', 'privat-hobby': 'privat', 'kinde
 const DB_TO_URL = { professionell: 'beruflich', privat: 'privat-hobby', kinder: 'kinder-jugend' };
 
 /**
- * Obergrenze für zusätzliche CTA-Links. Spiegelt MAX_CTA_LINKS in
- * api/_lib/theme-world-validate.js — der Server bleibt die verbindliche Instanz,
- * diese Konstante verhindert nur, dass die Redaktion in einen Serverfehler läuft.
+ * Obergrenze fÃ¼r zusÃ¤tzliche CTA-Links. Spiegelt MAX_CTA_LINKS in
+ * api/_lib/theme-world-validate.js â€” der Server bleibt die verbindliche Instanz,
+ * diese Konstante verhindert nur, dass die Redaktion in einen Serverfehler lÃ¤uft.
  */
 const MAX_CTA_LINKS = 5;
 
 /**
- * Die im Tab «Seitentexte & Abschluss / CTA» bearbeitbaren section_titles-Keys,
+ * Die im Tab Â«Seitentexte & Abschluss / CTAÂ» bearbeitbaren section_titles-Keys,
  * in Anzeigereihenfolge und nach Abschnitt gruppiert.
  *
  * Bis hierher waren nur trust_heading, cta_heading und cta_button exponiert. Die
- * übrigen Überschriften kamen ausschliesslich über den Import in die Datenbank
- * und liessen sich danach nirgends mehr korrigieren — für eine redaktionell
+ * Ã¼brigen Ãœberschriften kamen ausschliesslich Ã¼ber den Import in die Datenbank
+ * und liessen sich danach nirgends mehr korrigieren â€” fÃ¼r eine redaktionell
  * gepflegte Themenwelt ein Sackgassenzustand.
  *
  * Nicht exponiert bleibt searches_heading: der Key ist im Validator erlaubt, wird
- * aber von keiner Themenwelt geführt. Er überlebt trotzdem jeden Speichervorgang,
- * weil der Merge auf dem vollständigen geladenen Objekt aufsetzt.
+ * aber von keiner Themenwelt gefÃ¼hrt. Er Ã¼berlebt trotzdem jeden Speichervorgang,
+ * weil der Merge auf dem vollstÃ¤ndigen geladenen Objekt aufsetzt.
  */
 const SEITENTEXTE_GROUPS = [
   {
     title: 'Szenarioartikel',
-    hint: 'Überschriften über den Szenariokarten der öffentlichen Themenwelt.',
+    hint: 'Ãœberschriften Ã¼ber den Szenariokarten der Ã¶ffentlichen Themenwelt.',
     fields: [
-      { key: 'scenarios_heading', label: 'Überschrift', placeholder: 'z.B. Welche Richtung passt zu dir?' },
+      { key: 'scenarios_heading', label: 'Ãœberschrift', placeholder: 'z.B. Welche Richtung passt zu dir?' },
       { key: 'scenarios_subheading', label: 'Unterzeile', placeholder: 'z.B. Finde den passenden Einstieg.' },
     ],
   },
   {
     title: 'Kursbereiche',
-    hint: 'Überschriften über den Kursbereichen (Specialties).',
+    hint: 'Ãœberschriften Ã¼ber den Kursbereichen (Specialties).',
     fields: [
-      { key: 'specialties_heading', label: 'Überschrift', placeholder: 'z.B. Kursbereiche' },
+      { key: 'specialties_heading', label: 'Ãœberschrift', placeholder: 'z.B. Kursbereiche' },
       { key: 'specialties_subheading', label: 'Unterzeile', placeholder: 'z.B. Alle Schwerpunkte auf einen Blick.' },
     ],
   },
   {
     title: 'Vordefinierte Suchen',
-    hint: 'Unterzeile über den vordefinierten Suchen.',
+    hint: 'Unterzeile Ã¼ber den vordefinierten Suchen.',
     fields: [
       { key: 'searches_subheading', label: 'Unterzeile', placeholder: 'z.B. Kurse nach Technik und Region.' },
     ],
   },
   {
     title: 'Regionen',
-    hint: 'Überschriften über den Regionenlinks.',
+    hint: 'Ãœberschriften Ã¼ber den Regionenlinks.',
     fields: [
-      { key: 'regions_heading', label: 'Überschrift', placeholder: 'z.B. Kurse in deiner Region' },
-      { key: 'regions_subheading', label: 'Unterzeile', placeholder: 'z.B. Aktuelle Präsenzangebote nach Region.' },
+      { key: 'regions_heading', label: 'Ãœberschrift', placeholder: 'z.B. Kurse in deiner Region' },
+      { key: 'regions_subheading', label: 'Unterzeile', placeholder: 'z.B. Aktuelle PrÃ¤senzangebote nach Region.' },
     ],
   },
   {
-    title: 'Häufige Fragen',
-    hint: 'Überschrift über dem FAQ-Abschnitt.',
+    title: 'HÃ¤ufige Fragen',
+    hint: 'Ãœberschrift Ã¼ber dem FAQ-Abschnitt.',
     fields: [
-      { key: 'faqs_heading', label: 'Überschrift', placeholder: 'z.B. Häufige Fragen zu Kreativkursen' },
+      { key: 'faqs_heading', label: 'Ãœberschrift', placeholder: 'z.B. HÃ¤ufige Fragen zu Kreativkursen' },
     ],
   },
 ];
 
-/** Flache Liste aller exponierten Keys — inklusive der drei CTA-/Trust-Felder. */
+/** Flache Liste aller exponierten Keys â€” inklusive der drei CTA-/Trust-Felder. */
 const SEITENTEXTE_KEYS = [
   ...SEITENTEXTE_GROUPS.flatMap((group) => group.fields.map((field) => field.key)),
   'trust_heading',
@@ -122,10 +123,10 @@ function emptySeitentexte() {
 /**
  * Bringt section_titles in die Formularform.
  *
- * Ein fehlender Key und ein ausdrückliches null erscheinen beide als leeres
- * Eingabefeld — sichtbar gibt es keinen Unterschied. Damit das Speichern die
- * beiden Zustände trotzdem nicht vermischt, merkt sich `buildSectionTitles` den
- * Ausgangswert und schreibt ihn unverändert zurück, solange die Redaktion das
+ * Ein fehlender Key und ein ausdrÃ¼ckliches null erscheinen beide als leeres
+ * Eingabefeld â€” sichtbar gibt es keinen Unterschied. Damit das Speichern die
+ * beiden ZustÃ¤nde trotzdem nicht vermischt, merkt sich `buildSectionTitles` den
+ * Ausgangswert und schreibt ihn unverÃ¤ndert zurÃ¼ck, solange die Redaktion das
  * Feld nicht angefasst hat.
  */
 function sectionTitlesToForm(sectionTitles) {
@@ -139,18 +140,18 @@ function sectionTitlesToForm(sectionTitles) {
  * Baut das zu speichernde section_titles-Objekt.
  *
  * Regeln, in dieser Reihenfolge:
- *   1. Basis ist das vollständige geladene Objekt — nicht exponierte Keys
+ *   1. Basis ist das vollstÃ¤ndige geladene Objekt â€” nicht exponierte Keys
  *      bleiben unangetastet.
- *   2. Ein unverändertes Feld wird exakt so zurückgeschrieben, wie es geladen
+ *   2. Ein unverÃ¤ndertes Feld wird exakt so zurÃ¼ckgeschrieben, wie es geladen
  *      wurde. Ein null bleibt null, ein fehlender Key bleibt fehlend, ein
  *      gespeicherter Leerstring bleibt Leerstring. Kein Zustand wird
- *      stillschweigend in einen anderen überführt.
- *   3. Ein geändertes Feld mit Inhalt wird getrimmt gespeichert.
- *   4. Ein von der Redaktion aktiv geleertes Feld entfernt seinen Key — das ist
- *      die ausdrückliche Ansage «diese Überschrift soll weg», und der Adapter
- *      greift dann auf seinen Vorgabetext zurück.
+ *      stillschweigend in einen anderen Ã¼berfÃ¼hrt.
+ *   3. Ein geÃ¤ndertes Feld mit Inhalt wird getrimmt gespeichert.
+ *   4. Ein von der Redaktion aktiv geleertes Feld entfernt seinen Key â€” das ist
+ *      die ausdrÃ¼ckliche Ansage Â«diese Ãœberschrift soll wegÂ», und der Adapter
+ *      greift dann auf seinen Vorgabetext zurÃ¼ck.
  *
- * @param {object} base - vollständiges section_titles der geladenen Zeile
+ * @param {object} base - vollstÃ¤ndiges section_titles der geladenen Zeile
  * @param {object} form - aktuelle Formularwerte (nur exponierte Keys)
  * @param {object} loadedForm - Formularwerte direkt nach dem Laden
  */
@@ -161,7 +162,7 @@ function buildSectionTitles(base, form, loadedForm) {
     const current = form[key] || '';
     const original = loadedForm[key] || '';
 
-    if (current === original) continue; // unverändert → Ausgangszustand behalten
+    if (current === original) continue; // unverÃ¤ndert â†’ Ausgangszustand behalten
 
     const trimmed = current.trim();
     if (trimmed) next[key] = trimmed;
@@ -176,7 +177,7 @@ function buildSectionTitles(base, form, loadedForm) {
  *
  * spec und focus waren bisher nicht abgebildet: ein importierter Link verlor
  * seine Fachrichtung beim ersten Speichern im Admin. sort_order und status sind
- * nicht bearbeitbar, werden aber mitgeführt, damit der Speicherpfad das
+ * nicht bearbeitbar, werden aber mitgefÃ¼hrt, damit der Speicherpfad das
  * Importpaket nicht beschneidet.
  */
 function ctaLinksToForm(raw) {
@@ -188,7 +189,8 @@ function ctaLinksToForm(raw) {
       focus: link.focus || '',
       loc: link.loc || '',
       delivery: link.delivery || '',
-      // null-fähig mitgeführt, nicht bearbeitbar:
+      kursart: link.kursart || '',
+      // null-fÃ¤hig mitgefÃ¼hrt, nicht bearbeitbar:
       hadSortOrder: Number.isInteger(link.sort_order),
       status: typeof link.status === 'string' ? link.status : null,
     }));
@@ -198,8 +200,8 @@ function ctaLinksToForm(raw) {
  * Baut das zu speichernde cta_links-Array.
  *
  * Die Array-Position ist die Anzeigereihenfolge. Ein Eintrag, der beim Laden
- * eine sort_order führte, bekommt sie positionsgerecht neu vergeben — so bleibt
- * der Wert wahr, auch wenn die Redaktion Einträge entfernt hat. Einträge ohne
+ * eine sort_order fÃ¼hrte, bekommt sie positionsgerecht neu vergeben â€” so bleibt
+ * der Wert wahr, auch wenn die Redaktion EintrÃ¤ge entfernt hat. EintrÃ¤ge ohne
  * sort_order bekommen keine dazuerfunden.
  */
 function formToCtaLinks(rows) {
@@ -209,6 +211,7 @@ function formToCtaLinks(rows) {
     ...(row.focus && row.focus.trim() ? { focus: row.focus.trim() } : {}),
     ...(row.loc && row.loc.trim() ? { loc: row.loc.trim() } : {}),
     ...(row.delivery ? { delivery: row.delivery } : {}),
+    ...(row.kursart && row.kursart.trim() ? { kursart: row.kursart.trim() } : {}),
     ...(row.hadSortOrder ? { sort_order: index + 1 } : {}),
     ...(row.status ? { status: row.status } : {}),
   }));
@@ -217,12 +220,12 @@ function formToCtaLinks(rows) {
 /**
  * Gemeinsame Gestaltung aller `.FormInput`-Felder dieses Formulars.
  *
- * Wird als Klassenliste auf einen Container gesetzt und wirkt über
+ * Wird als Klassenliste auf einen Container gesetzt und wirkt Ã¼ber
  * Descendant-Varianten auf jedes `.FormInput` darin. Bewusst kein globales CSS
  * und keine `.FormInput`-Regel ausserhalb dieses Formulars: die Klasse existiert
- * nur hier, andere Admin-Bereiche bleiben unberührt.
+ * nur hier, andere Admin-Bereiche bleiben unberÃ¼hrt.
  *
- * Angewendet wird der Scope an genau zwei Stellen — `FormField` (Einzelfelder)
+ * Angewendet wird der Scope an genau zwei Stellen â€” `FormField` (Einzelfelder)
  * und die Karten von `RepeatableList`. Vorher galt er nur in `FormField`, weshalb
  * die Felder in den Listenkarten ohne Rand, Hintergrund und Innenabstand
  * gerendert wurden.
@@ -243,8 +246,8 @@ const FORM_INPUT_SCOPE = [
   '[&_.FormInput]:outline-none',
   '[&_.FormInput]:transition',
   '[&_.FormInput]:placeholder:text-gray-400',
-  // Pseudo-Klassen gehören in die Arbitrary-Variant hinein: `[&_.FormInput]:focus:*`
-  // erzeugt `.scope:focus .FormInput` — der Fokus läge auf dem Container-DIV, das
+  // Pseudo-Klassen gehÃ¶ren in die Arbitrary-Variant hinein: `[&_.FormInput]:focus:*`
+  // erzeugt `.scope:focus .FormInput` â€” der Fokus lÃ¤ge auf dem Container-DIV, das
   // nie fokussiert oder disabled ist. `[&_.FormInput:focus]:*` trifft das Feld selbst.
   '[&_.FormInput:focus]:ring-2',
   '[&_.FormInput:focus]:ring-teal-500',
@@ -253,12 +256,12 @@ const FORM_INPUT_SCOPE = [
   '[&_.FormInput:disabled]:text-gray-500',
   '[&_.FormInput:disabled]:border-gray-200',
   '[&_.FormInput:disabled]:cursor-not-allowed',
-  // Select: Platz für den nativen Pfeil, damit lange Optionstexte nicht darunter laufen.
+  // Select: Platz fÃ¼r den nativen Pfeil, damit lange Optionstexte nicht darunter laufen.
   '[&_select.FormInput]:pr-9',
   '[&_textarea.FormInput]:leading-relaxed',
 ].join(' ');
 
-/** Optionen für alle Standortfelder — dieselbe Liste wie die öffentliche Suche. */
+/** Optionen fÃ¼r alle Standortfelder â€” dieselbe Liste wie die Ã¶ffentliche Suche. */
 const LOCATION_OPTIONS = SWISS_CANTONS;
 
 // ---------------------------------------------------------------------------
@@ -268,7 +271,7 @@ const LOCATION_OPTIONS = SWISS_CANTONS;
 function slugify(text) {
   return (text || '')
     .toLowerCase()
-    .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
+    .replace(/Ã¤/g, 'ae').replace(/Ã¶/g, 'oe').replace(/Ã¼/g, 'ue').replace(/ÃŸ/g, 'ss')
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '');
 }
@@ -288,23 +291,23 @@ function toLabelOptions(rows) {
   return Array.from(labels).sort((a, b) => a.localeCompare(b, 'de'));
 }
 
-/** level2-Zuordnung einer Specialty — je nach Quelle level2_id oder area_id. */
+/** level2-Zuordnung einer Specialty â€” je nach Quelle level2_id oder area_id. */
 function specialtyAreaId(specialty) {
   return specialty?.level2_id ?? specialty?.area_id ?? null;
 }
 
-/** level3-Zuordnung eines Fokus — je nach Quelle level3_id oder specialty_id. */
+/** level3-Zuordnung eines Fokus â€” je nach Quelle level3_id oder specialty_id. */
 function focusSpecialtyId(focus) {
   return focus?.level3_id ?? focus?.specialty_id ?? null;
 }
 
 /**
- * Ableitung der Taxonomie-Optionen für die Selects dieses Formulars.
+ * Ableitung der Taxonomie-Optionen fÃ¼r die Selects dieses Formulars.
  *
- * Alle Werte stammen aus useTaxonomy() — es wird keine eigene Optionsliste
- * gepflegt. Die Funktion ist bewusst tolerant: fehlt die Taxonomie oder lässt
- * sich der area_slug nicht eindeutig auflösen, liefert sie leere bzw.
- * unbeschränkte Listen statt zu werfen.
+ * Alle Werte stammen aus useTaxonomy() â€” es wird keine eigene Optionsliste
+ * gepflegt. Die Funktion ist bewusst tolerant: fehlt die Taxonomie oder lÃ¤sst
+ * sich der area_slug nicht eindeutig auflÃ¶sen, liefert sie leere bzw.
+ * unbeschrÃ¤nkte Listen statt zu werfen.
  */
 function buildTaxonomyOptions({ areas, specialties, focuses, areaSlug }) {
   const allAreas = Array.isArray(areas) ? areas : [];
@@ -312,7 +315,7 @@ function buildTaxonomyOptions({ areas, specialties, focuses, areaSlug }) {
   const allFocuses = Array.isArray(focuses) ? focuses : [];
 
   // Eindeutige Area: exakt ein Treffer auf den Slug. Mehrdeutig oder unbekannt
-  // ⇒ keine Einschränkung, statt eine falsche Area zu raten.
+  // â‡’ keine EinschrÃ¤nkung, statt eine falsche Area zu raten.
   const slug = (areaSlug || '').trim();
   const slugHits = slug ? allAreas.filter((a) => a?.slug === slug) : [];
   const area = slugHits.length === 1 ? slugHits[0] : null;
@@ -321,30 +324,30 @@ function buildTaxonomyOptions({ areas, specialties, focuses, areaSlug }) {
     ? allSpecialties.filter((s) => specialtyAreaId(s) === area.id)
     : allSpecialties;
 
-  // Fällt die Area-Einschränkung auf null Einträge zurück (z.B. Taxonomie noch
-  // nicht geladen), bleiben alle Spezialgebiete wählbar — Bestandsdaten sollen
+  // FÃ¤llt die Area-EinschrÃ¤nkung auf null EintrÃ¤ge zurÃ¼ck (z.B. Taxonomie noch
+  // nicht geladen), bleiben alle Spezialgebiete wÃ¤hlbar â€” Bestandsdaten sollen
   // nie in ein leeres Select laufen.
   const specialtySource = scopedSpecialties.length > 0 ? scopedSpecialties : allSpecialties;
   const specialtyOptions = toLabelOptions(specialtySource);
 
   /**
-   * Suchraum der Fokus-Auflösung. Bewusst NICHT `specialtySource`: dessen
-   * Rückfall auf die Gesamtliste darf hier nicht greifen. Ist die Area eindeutig,
-   * gilt ausschliesslich sie — sonst könnten Fokusgebiete einer fremden Area als
-   * reguläre Optionen erscheinen.
+   * Suchraum der Fokus-AuflÃ¶sung. Bewusst NICHT `specialtySource`: dessen
+   * RÃ¼ckfall auf die Gesamtliste darf hier nicht greifen. Ist die Area eindeutig,
+   * gilt ausschliesslich sie â€” sonst kÃ¶nnten Fokusgebiete einer fremden Area als
+   * regulÃ¤re Optionen erscheinen.
    */
   const focusScope = area ? scopedSpecialties : allSpecialties;
 
   /**
-   * Fokusgebiete eines Spezialgebiets — nur bei eindeutiger Zuordnung.
+   * Fokusgebiete eines Spezialgebiets â€” nur bei eindeutiger Zuordnung.
    *
    * Das Label wird im `focusScope` gesucht; angeboten werden ausschliesslich
-   * level4-Einträge, deren level3_id/specialty_id auf genau diese eine Specialty
+   * level4-EintrÃ¤ge, deren level3_id/specialty_id auf genau diese eine Specialty
    * zeigt. Jeder andere Fall liefert bewusst eine leere Liste:
    *
-   *  - 0 Treffer  (z.B. gespeicherte Specialty einer fremden Area) — kein
-   *    Rückfall auf die Gesamtliste;
-   *  - >1 Treffer (gleichnamige Specialties in mehreren Areas) — die Fokusgebiete
+   *  - 0 Treffer  (z.B. gespeicherte Specialty einer fremden Area) â€” kein
+   *    RÃ¼ckfall auf die Gesamtliste;
+   *  - >1 Treffer (gleichnamige Specialties in mehreren Areas) â€” die Fokusgebiete
    *    werden nie vereinigt.
    *
    * Ein gespeicherter Fokus geht dadurch nicht verloren: CanonicalSelect zeigt
@@ -433,19 +436,19 @@ export default function AdminThemeWorldForm({
     hero_image_url: '', hero_image_alt_de: '', og_image_url: '', og_image_alt_de: '',
     meta_title: '', meta_description: '',
   });
-  // Upload-Status je Bildfeld — Speichern wird blockiert solange ein Upload läuft
+  // Upload-Status je Bildfeld â€” Speichern wird blockiert solange ein Upload lÃ¤uft
   const [heroUploading, setHeroUploading] = useState(false);
   const [ogUploading, setOgUploading] = useState(false);
 
   // Suche
   const sucheSave = useSaveState();
   const [suche, setSuche] = useState({
-    area_slug: '', type_key: '', default_spec: '', default_focus: '', area_label_de: '',
+    area_slug: '', kursart: '', type_key: '', default_spec: '', default_focus: '', area_label_de: '',
   });
   const [predefinedSearches, setPredefinedSearches] = useState([]);
 
-  // Taxonomie für die Filter-Selects (Spezialgebiet / Fokus).
-  // Dieselbe Quelle wie die öffentliche Suche — keine zweite Optionsliste.
+  // Taxonomie fÃ¼r die Filter-Selects (Spezialgebiet / Fokus).
+  // Dieselbe Quelle wie die Ã¶ffentliche Suche â€” keine zweite Optionsliste.
   const taxonomy = useTaxonomy();
   const { specialtyOptions, focusesForSpecialty, isAreaResolved } = useMemo(
     () => buildTaxonomyOptions({
@@ -458,8 +461,8 @@ export default function AdminThemeWorldForm({
   );
 
   const specialtyHint = isAreaResolved
-    ? 'Optionaler default_spec für Suche. Auswahl auf den Bereichs-Slug begrenzt.'
-    : 'Optionaler default_spec für Suche. Bereichs-Slug nicht eindeutig zugeordnet — es werden alle Spezialgebiete angeboten.';
+    ? 'Optionaler default_spec fÃ¼r Suche. Auswahl auf den Bereichs-Slug begrenzt.'
+    : 'Optionaler default_spec fÃ¼r Suche. Bereichs-Slug nicht eindeutig zugeordnet â€” es werden alle Spezialgebiete angeboten.';
 
   // Kursbereiche (Specialties)
   const specialtiesSave = useSaveState();
@@ -486,14 +489,14 @@ export default function AdminThemeWorldForm({
   // Eigener Speicherbereich, getrennt von den Trust Items: Trust Items liegen in
   // der Subentity-Tabelle theme_world_trust_items (replaceTrustItems = delete +
   // insert), section_titles und cta_links sind Spalten auf theme_worlds. Ein
-  // gemeinsamer Klick würde bei Teilfehler einen inkonsistenten Zustand hinterlassen.
+  // gemeinsamer Klick wÃ¼rde bei Teilfehler einen inkonsistenten Zustand hinterlassen.
   const seitentexteSave = useSaveState();
   const [seitentexte, setSeitentexte] = useState(() => emptySeitentexte());
-  // Formularwerte direkt nach dem Laden. Referenz für «unverändert» beim
+  // Formularwerte direkt nach dem Laden. Referenz fÃ¼r Â«unverÃ¤ndertÂ» beim
   // Speichern, damit null/fehlend/Leerstring nicht vermischt werden.
   const [seitentexteLoaded, setSeitentexteLoaded] = useState(() => emptySeitentexte());
   const [ctaLinks, setCtaLinks] = useState([]);
-  // Vollständiges section_titles der geladenen Zeile. Basis für den Merge beim
+  // VollstÃ¤ndiges section_titles der geladenen Zeile. Basis fÃ¼r den Merge beim
   // Speichern, damit nicht exponierte Keys (z.B. searches_heading) erhalten bleiben.
   const [sectionTitlesBase, setSectionTitlesBase] = useState({});
 
@@ -516,7 +519,7 @@ export default function AdminThemeWorldForm({
       ]);
       setTw(data);
 
-      // Grundlagen füllen
+      // Grundlagen fÃ¼llen
       setGrundlagen({
         key: data.key || '',
         title_de: data.title_de || '',
@@ -541,6 +544,7 @@ export default function AdminThemeWorldForm({
       const sc = data.search_config || {};
       setSuche({
         area_slug: sc.area_slug || data.area_slug || '',
+        kursart: sc.kursart || '',
         type_key: sc.type_key || '',
         default_spec: sc.default_spec || '',
         default_focus: sc.default_focus || '',
@@ -548,9 +552,9 @@ export default function AdminThemeWorldForm({
       });
       setPredefinedSearches(data.predefined_searches || []);
 
-      // Seitentexte & CTA — kanonische snake_case-Keys aus section_titles.
-      // Das vollständige Objekt bleibt Merge-Basis, damit nicht exponierte Keys
-      // erhalten bleiben; zusätzlich wird der Ladezustand der exponierten Felder
+      // Seitentexte & CTA â€” kanonische snake_case-Keys aus section_titles.
+      // Das vollstÃ¤ndige Objekt bleibt Merge-Basis, damit nicht exponierte Keys
+      // erhalten bleiben; zusÃ¤tzlich wird der Ladezustand der exponierten Felder
       // festgehalten (siehe buildSectionTitles).
       const st = data.section_titles || {};
       const loadedSeitentexte = sectionTitlesToForm(st);
@@ -559,15 +563,15 @@ export default function AdminThemeWorldForm({
       setSeitentexteLoaded(loadedSeitentexte);
       setCtaLinks(ctaLinksToForm(data.cta_links));
 
-      // Sub-Entitäten (keys already normalized to camelCase by getAllSubEntities)
+      // Sub-EntitÃ¤ten (keys already normalized to camelCase by getAllSubEntities)
       setSpecialties(subs.specialties || []);
       setRegionen(subs.regions || []);
       setEditorial(subs.editorialSections || []);
       setFaqs(subs.faqs || []);
       setTrustItems(subs.trustItems || []);
 
-      // Reset all dirty states after successful load — prevents phantom
-      // "Ungespeicherte Änderungen" from stale state or previous sessions.
+      // Reset all dirty states after successful load â€” prevents phantom
+      // "Ungespeicherte Ã„nderungen" from stale state or previous sessions.
       grundlagenSave.resetDirty();
       bilderSave.resetDirty();
       sucheSave.resetDirty();
@@ -604,8 +608,8 @@ export default function AdminThemeWorldForm({
 
   const saveGrundlagen = async () => {
     if (!grundlagen.url_segment) {
-      grundlagenSave.markError('Bitte wähle ein Segment aus.');
-      showNotification('Fehler: Bitte wähle ein Segment aus.');
+      grundlagenSave.markError('Bitte wÃ¤hle ein Segment aus.');
+      showNotification('Fehler: Bitte wÃ¤hle ein Segment aus.');
       return;
     }
     grundlagenSave.startSaving();
@@ -618,7 +622,7 @@ export default function AdminThemeWorldForm({
         url_segment: grundlagen.url_segment,
         db_segment: URL_TO_DB[grundlagen.url_segment] || null,
         slug: grundlagen.slug,
-        area_slug: suche.area_slug || grundlagen.key,
+        area_slug: suche.area_slug || null,
       };
 
       if (isNew && !savedTwId) {
@@ -638,7 +642,7 @@ export default function AdminThemeWorldForm({
       } else {
         const id = savedTwId || themeWorldId;
         if (!id) {
-          throw new Error('Interner Fehler: Kein ID für Update-Speicherung. Bitte Seite neu laden.');
+          throw new Error('Interner Fehler: Kein ID fÃ¼r Update-Speicherung. Bitte Seite neu laden.');
         }
         await updateThemeWorld(id, payload);
         setTw((prev) => ({ ...prev, ...payload }));
@@ -659,11 +663,11 @@ export default function AdminThemeWorldForm({
   const saveBilder = async () => {
     const id = savedTwId || themeWorldId;
     if (!id) return showNotification('Bitte zuerst Grundlagen speichern.');
-    if (loadError) return showNotification('Laden fehlgeschlagen — Speichern nicht möglich.');
+    if (loadError) return showNotification('Laden fehlgeschlagen â€” Speichern nicht mÃ¶glich.');
     if (heroUploading || ogUploading) {
-      return showNotification('Bild-Upload noch aktiv — bitte warte kurz und versuche erneut.');
+      return showNotification('Bild-Upload noch aktiv â€” bitte warte kurz und versuche erneut.');
     }
-    // Sicherheitsprüfung: blob: oder data: URLs niemals in DB speichern
+    // SicherheitsprÃ¼fung: blob: oder data: URLs niemals in DB speichern
     const sanitizeUrl = (url) => {
       if (!url) return null;
       if (url.startsWith('blob:') || url.startsWith('data:')) return null;
@@ -691,7 +695,7 @@ export default function AdminThemeWorldForm({
   const saveSuche = async () => {
     const id = savedTwId || themeWorldId;
     if (!id) return showNotification('Bitte zuerst Grundlagen speichern.');
-    if (loadError) return showNotification('Laden fehlgeschlagen — Speichern nicht möglich.');
+    if (loadError) return showNotification('Laden fehlgeschlagen â€” Speichern nicht mÃ¶glich.');
 
     // Client-side validation: predefined_searches
     if (predefinedSearches.length > 20) {
@@ -703,7 +707,7 @@ export default function AdminThemeWorldForm({
       const s = predefinedSearches[i];
       if (!s.label_de || !s.label_de.trim()) {
         sucheSave.markError(`Eintrag #${i + 1}: Bezeichnung ist Pflichtfeld.`);
-        showNotification(`Fehler: Eintrag #${i + 1} — Bezeichnung ist Pflichtfeld.`);
+        showNotification(`Fehler: Eintrag #${i + 1} â€” Bezeichnung ist Pflichtfeld.`);
         return;
       }
     }
@@ -711,18 +715,13 @@ export default function AdminThemeWorldForm({
     sucheSave.startSaving();
     try {
       // Normalize: strip empty optional fields from predefined_searches
-      const normalizedSearches = predefinedSearches.map((s) => ({
-        label_de: (s.label_de || '').trim(),
-        ...(s.spec && s.spec.trim() ? { spec: s.spec.trim() } : {}),
-        ...(s.focus && s.focus.trim() ? { focus: s.focus.trim() } : {}),
-        ...(s.loc && s.loc.trim() ? { loc: s.loc.trim() } : {}),
-        ...(s.delivery ? { delivery: s.delivery } : {}),
-      }));
+      const normalizedSearches = normalizePredefinedSearches(predefinedSearches);
 
       await updateThemeWorld(id, {
-        area_slug: suche.area_slug,
+        area_slug: suche.area_slug || null,
         search_config: {
-          area_slug: suche.area_slug,
+          ...(suche.area_slug && suche.area_slug.trim() ? { area_slug: suche.area_slug.trim() } : {}),
+          ...(suche.kursart ? { kursart: suche.kursart.trim() } : {}),
           ...(suche.type_key && { type_key: suche.type_key }),
           ...(suche.default_spec && { default_spec: suche.default_spec }),
           ...(suche.default_focus && { default_focus: suche.default_focus }),
@@ -742,9 +741,9 @@ export default function AdminThemeWorldForm({
   const saveSeitentexte = async () => {
     const id = savedTwId || themeWorldId;
     if (!id) return showNotification('Bitte zuerst Grundlagen speichern.');
-    // Data-loss protection: ohne erfolgreichen Load ist sectionTitlesBase unvollständig,
-    // ein Merge würde fremde Keys löschen.
-    if (loadError) return showNotification('Laden fehlgeschlagen — Speichern nicht möglich.');
+    // Data-loss protection: ohne erfolgreichen Load ist sectionTitlesBase unvollstÃ¤ndig,
+    // ein Merge wÃ¼rde fremde Keys lÃ¶schen.
+    if (loadError) return showNotification('Laden fehlgeschlagen â€” Speichern nicht mÃ¶glich.');
 
     // Client-side validation: cta_links (spiegelt validateCtaLinks)
     if (ctaLinks.length > MAX_CTA_LINKS) {
@@ -755,21 +754,21 @@ export default function AdminThemeWorldForm({
     for (let i = 0; i < ctaLinks.length; i++) {
       if (!ctaLinks[i].label_de || !ctaLinks[i].label_de.trim()) {
         seitentexteSave.markError(`CTA-Link #${i + 1}: Bezeichnung ist Pflichtfeld.`);
-        showNotification(`Fehler: CTA-Link #${i + 1} — Bezeichnung ist Pflichtfeld.`);
+        showNotification(`Fehler: CTA-Link #${i + 1} â€” Bezeichnung ist Pflichtfeld.`);
         return;
       }
     }
 
     seitentexteSave.startSaving();
     try {
-      // Merge statt Ersetzen: das vollständige geladene section_titles ist die
-      // Basis, nur tatsächlich geänderte Felder werden angefasst. Nicht
+      // Merge statt Ersetzen: das vollstÃ¤ndige geladene section_titles ist die
+      // Basis, nur tatsÃ¤chlich geÃ¤nderte Felder werden angefasst. Nicht
       // exponierte Keys (searches_heading) bleiben exakt erhalten, und ein
-      // unverändertes null bleibt null statt zu verschwinden.
+      // unverÃ¤ndertes null bleibt null statt zu verschwinden.
       const nextSectionTitles = buildSectionTitles(sectionTitlesBase, seitentexte, seitentexteLoaded);
 
       // Normalisierung: label_de getrimmt, leere optionale Felder entfernt,
-      // sort_order positionsgerecht, status unverändert durchgereicht.
+      // sort_order positionsgerecht, status unverÃ¤ndert durchgereicht.
       const normalizedCtaLinks = formToCtaLinks(ctaLinks);
 
       await updateThemeWorld(id, {
@@ -778,8 +777,8 @@ export default function AdminThemeWorldForm({
       });
 
       // Merge-Basis und Ladereferenz nachziehen, damit ein direkt folgender Save
-      // nicht auf einem veralteten Stand aufsetzt und unveränderte Felder
-      // weiterhin als unverändert gelten.
+      // nicht auf einem veralteten Stand aufsetzt und unverÃ¤nderte Felder
+      // weiterhin als unverÃ¤ndert gelten.
       setSectionTitlesBase(nextSectionTitles);
       setSeitentexteLoaded(sectionTitlesToForm(nextSectionTitles));
       setCtaLinks(ctaLinksToForm(normalizedCtaLinks));
@@ -797,7 +796,7 @@ export default function AdminThemeWorldForm({
     const id = savedTwId || themeWorldId;
     if (!id) return showNotification('Bitte zuerst Grundlagen speichern.');
     // Data-loss protection: never save if initial load failed (data not fully loaded).
-    if (loadError) return showNotification('Laden fehlgeschlagen — Speichern nicht möglich.');
+    if (loadError) return showNotification('Laden fehlgeschlagen â€” Speichern nicht mÃ¶glich.');
     saveState.startSaving();
     try {
       await action(id, data);
@@ -832,7 +831,7 @@ export default function AdminThemeWorldForm({
               <p className="font-semibold text-red-700">Fehler beim Laden</p>
               <p className="text-sm text-red-600 mt-1">{loadError}</p>
               <button onClick={() => setView('admin-theme-worlds')} className="mt-4 text-sm text-gray-600 hover:underline">
-                Zurück zur Liste
+                ZurÃ¼ck zur Liste
               </button>
             </div>
           </div>
@@ -844,7 +843,7 @@ export default function AdminThemeWorldForm({
   const dbSegment = URL_TO_DB[grundlagen.url_segment] || null;
   const publicPath = grundlagen.url_segment && grundlagen.slug
     ? `/bereich/${grundlagen.url_segment}/${grundlagen.slug}`
-    : '—';
+    : 'â€”';
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -855,7 +854,7 @@ export default function AdminThemeWorldForm({
             <button
               onClick={() => setView('admin-theme-worlds')}
               className="p-1.5 rounded-full hover:bg-gray-100 text-gray-600"
-              title="Zurück zur Übersicht"
+              title="ZurÃ¼ck zur Ãœbersicht"
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
@@ -925,7 +924,7 @@ export default function AdminThemeWorldForm({
                 />
               </FormField>
 
-              <FormField label="Öffentlicher Titel" required>
+              <FormField label="Ã–ffentlicher Titel" required>
                 <input
                   type="text"
                   className="FormInput"
@@ -951,19 +950,19 @@ export default function AdminThemeWorldForm({
                   value={grundlagen.url_segment}
                   onChange={(e) => { setGrundlagen((p) => ({ ...p, url_segment: e.target.value })); grundlagenSave.markDirty(); }}
                 >
-                  <option value="">— Segment auswählen —</option>
+                  <option value="">â€” Segment auswÃ¤hlen â€”</option>
                   {SEGMENTS.map((s) => (
                     <option key={s.value} value={s.value}>{s.label}</option>
                   ))}
                 </select>
                 <p className="text-xs text-gray-400 mt-1">
-                  DB-Segment: <code className="text-xs bg-gray-100 px-1 rounded">{dbSegment || '—'}</code>
+                  DB-Segment: <code className="text-xs bg-gray-100 px-1 rounded">{dbSegment || 'â€”'}</code>
                 </p>
               </FormField>
 
               <FormField
                 label="Slug (URL)"
-                hint="Nur a-z, 0-9, Bindestriche. Kann nach Publikation nicht mehr geändert werden."
+                hint="Nur a-z, 0-9, Bindestriche. Kann nach Publikation nicht mehr geÃ¤ndert werden."
                 required
               >
                 <div className="flex gap-2">
@@ -994,7 +993,7 @@ export default function AdminThemeWorldForm({
                 </div>
                 {grundlagen.url_segment && grundlagen.slug && (
                   <p className="text-xs text-teal-600 mt-1">
-                    Öffentlicher Pfad: <strong>/bereich/{grundlagen.url_segment}/{grundlagen.slug}</strong>
+                    Ã–ffentlicher Pfad: <strong>/bereich/{grundlagen.url_segment}/{grundlagen.slug}</strong>
                   </p>
                 )}
               </FormField>
@@ -1002,7 +1001,7 @@ export default function AdminThemeWorldForm({
               <FormField label="Einleitungstext" hint="Erscheint als Lead-Text auf der Landingpage">
                 <textarea
                   className="FormInput resize-none h-28"
-                  placeholder="Kurze Einleitung zur Themenwelt…"
+                  placeholder="Kurze Einleitung zur Themenweltâ€¦"
                   value={grundlagen.intro_de}
                   onChange={(e) => { setGrundlagen((p) => ({ ...p, intro_de: e.target.value })); grundlagenSave.markDirty(); }}
                 />
@@ -1040,7 +1039,7 @@ export default function AdminThemeWorldForm({
                 }}
                 onUploadStateChange={setHeroUploading}
               />
-              {/* Hinweis: Kein eigenes Bild → Fallback wird auf der Seite angezeigt */}
+              {/* Hinweis: Kein eigenes Bild â†’ Fallback wird auf der Seite angezeigt */}
               {!bilder.hero_image_url && grundlagen.url_segment && (
                 <div className="flex items-start gap-3 bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
                   <img
@@ -1049,7 +1048,7 @@ export default function AdminThemeWorldForm({
                     className="w-16 h-10 object-cover rounded shrink-0"
                   />
                   <p>
-                    Kein Bild hochgeladen — auf der Landingpage wird dieses <strong>Standardbild für das Segment</strong> angezeigt.
+                    Kein Bild hochgeladen â€” auf der Landingpage wird dieses <strong>Standardbild fÃ¼r das Segment</strong> angezeigt.
                     Du kannst jederzeit ein eigenes Bild hochladen.
                   </p>
                 </div>
@@ -1099,11 +1098,11 @@ export default function AdminThemeWorldForm({
             </TabHeader>
             <p className="text-sm text-gray-500 mb-6">
               Diese Felder steuern die themenspezifische Kurssuche auf der Landingpage.
-              Keine freien URL-Strings — nur strukturierte Felder.
+              Keine freien URL-Strings â€” nur strukturierte Felder.
             </p>
 
             <div className="space-y-5">
-              <FormField label="Bereichs-Slug (area_slug)" hint="Exakter Slug aus taxonomy_level2. Beispiel: sport_fitness" required>
+              <FormField label="Bereichs-Slug (area_slug)" hint="Optionaler Slug aus taxonomy_level2. Beispiel: sport_fitness">
                 <input
                   type="text"
                   className="FormInput font-mono"
@@ -1113,9 +1112,20 @@ export default function AdminThemeWorldForm({
                 />
               </FormField>
 
+              <FormField label="Kursart (kursart)" hint="Optionaler Kursart-Filter, z. B. feriencamp">
+                <input
+                  type="text"
+                  className="FormInput font-mono"
+                  placeholder="z. B. feriencamp"
+                  maxLength={100}
+                  value={suche.kursart}
+                  onChange={(e) => { setSuche((p) => ({ ...p, kursart: e.target.value })); sucheSave.markDirty(); }}
+                />
+              </FormField>
+
               <FormField
                 label="Anzeigename in der Suche"
-                hint='Lesbare Bezeichnung für Breadcrumb, Seitentitel und Suchfilter, z. B. „Kreativ & Gestalten". Leer lassen um den Titel der Themenwelt zu verwenden.'
+                hint='Lesbare Bezeichnung fÃ¼r Breadcrumb, Seitentitel und Suchfilter, z. B. â€žKreativ & Gestalten". Leer lassen um den Titel der Themenwelt zu verwenden.'
               >
                 <input
                   type="text"
@@ -1138,7 +1148,7 @@ export default function AdminThemeWorldForm({
 
               <FormField
                 label="Standard-Fokus"
-                hint="Optionaler default_focus für Suche. Auswahl abhängig vom Standard-Spezialgebiet."
+                hint="Optionaler default_focus fÃ¼r Suche. Auswahl abhÃ¤ngig vom Standard-Spezialgebiet."
               >
                 <CanonicalSelect
                   value={suche.default_focus}
@@ -1154,7 +1164,7 @@ export default function AdminThemeWorldForm({
               <div className="mb-3">
                 <h3 className="text-sm font-semibold text-gray-700">Vordefinierte Suchen</h3>
                 <p className="text-xs text-gray-400 mt-0.5">
-                  Schnelleinstieg-Links auf der Landingpage (max. 20 Einträge).
+                  Schnelleinstieg-Links auf der Landingpage (max. 20 EintrÃ¤ge).
                   Bezeichnung ist Pflichtfeld, alle anderen Felder optional.
                 </p>
               </div>
@@ -1163,8 +1173,8 @@ export default function AdminThemeWorldForm({
                 maxItems={20}
                 onChange={(items) => { setPredefinedSearches(items); sucheSave.markDirty(); }}
                 emptyLabel="Noch keine vordefinierten Suchen"
-                addLabel="Vordefinierte Suche hinzufügen"
-                newItem={() => ({ label_de: '', spec: '', focus: '', loc: '', delivery: '' })}
+                addLabel="Vordefinierte Suche hinzufÃ¼gen"
+                newItem={() => ({ label_de: '', spec: '', focus: '', loc: '', delivery: '', kursart: '' })}
                 renderItem={(item, i, update, remove) => (
                   <div className="space-y-3">
                     <div>
@@ -1193,9 +1203,9 @@ export default function AdminThemeWorldForm({
                       <div>
                         <label className="text-xs font-semibold text-gray-600">Fokus (focus)</label>
                         {/*
-                          Abhängig vom gewählten Spezialgebiet. Ein bestehender,
-                          nicht mehr passender Fokus wird bewusst NICHT gelöscht —
-                          er bleibt als markierte Option ausgewählt.
+                          AbhÃ¤ngig vom gewÃ¤hlten Spezialgebiet. Ein bestehender,
+                          nicht mehr passender Fokus wird bewusst NICHT gelÃ¶scht â€”
+                          er bleibt als markierte Option ausgewÃ¤hlt.
                         */}
                         <CanonicalSelect
                           className="mt-1"
@@ -1223,8 +1233,18 @@ export default function AdminThemeWorldForm({
                           <option value="">Alle Formate</option>
                           <option value="online_live">Online Live</option>
                           <option value="self_study">Selbststudium</option>
-                          <option value="presence">Präsenz (vor Ort)</option>
+                          <option value="presence">PrÃ¤senz (vor Ort)</option>
                         </select>
+                      </div>
+                      <div>
+                        <label className="text-xs font-semibold text-gray-600">Kursart (kursart)</label>
+                        <input
+                          className="FormInput mt-1"
+                          value={item.kursart || ''}
+                          onChange={(e) => update({ kursart: e.target.value })}
+                          placeholder="z. B. feriencamp"
+                          maxLength={100}
+                        />
                       </div>
                     </div>
                     <div className="flex justify-end">
@@ -1257,7 +1277,7 @@ export default function AdminThemeWorldForm({
               items={specialties}
               onChange={(items) => { setSpecialties(items); specialtiesSave.markDirty(); }}
               emptyLabel="Noch keine Kursbereiche"
-              addLabel="Kursbereich hinzufügen"
+              addLabel="Kursbereich hinzufÃ¼gen"
               newItem={() => ({ specialty_label: '', description_de: '', icon: '', sort_order: specialties.length, is_active: true })}
               renderItem={(item, i, update, remove) => (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -1273,7 +1293,7 @@ export default function AdminThemeWorldForm({
                   </div>
                   <div>
                     <label className="text-xs font-semibold text-gray-600">Emoji-Icon</label>
-                    <input className="FormInput mt-1" value={item.icon || ''} onChange={(e) => update({ icon: e.target.value })} placeholder="🏋️" />
+                    <input className="FormInput mt-1" value={item.icon || ''} onChange={(e) => update({ icon: e.target.value })} placeholder="ðŸ‹ï¸" />
                   </div>
                   <div>
                     <label className="text-xs font-semibold text-gray-600">Sortierung</label>
@@ -1309,19 +1329,19 @@ export default function AdminThemeWorldForm({
               items={regionen}
               onChange={(items) => { setRegionen(items); regionenSave.markDirty(); }}
               emptyLabel="Noch keine Regionen"
-              addLabel="Region hinzufügen"
+              addLabel="Region hinzufÃ¼gen"
               newItem={() => ({ label_de: '', anchor_text_de: '', loc_param: '', delivery_param: '', sort_order: regionen.length, is_active: true })}
               renderItem={(item, i, update, remove) => (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div className="md:col-span-2">
-                    {/* Redaktionelles Anzeige-Label — bewusst weiterhin Freitext. */}
+                    {/* Redaktionelles Anzeige-Label â€” bewusst weiterhin Freitext. */}
                     <label className="text-xs font-semibold text-gray-600">Anzeige-Label</label>
-                    <input className="FormInput mt-1" value={item.label_de || ''} onChange={(e) => update({ label_de: e.target.value })} placeholder="Zürich" />
+                    <input className="FormInput mt-1" value={item.label_de || ''} onChange={(e) => update({ label_de: e.target.value })} placeholder="ZÃ¼rich" />
                   </div>
                   <div className="md:col-span-2">
-                    <label className="text-xs font-semibold text-gray-600">Linktext für öffentliche Regionenseite</label>
-                    <input className="FormInput mt-1" value={item.anchor_text_de || ''} onChange={(e) => update({ anchor_text_de: e.target.value })} placeholder="Kreativkurse in Zürich" />
-                    <p className="text-xs text-gray-500 mt-1">Dieser Text wird für den sichtbaren Regions-Link verwendet. Leer lassen nutzt das Anzeige-Label.</p>
+                    <label className="text-xs font-semibold text-gray-600">Linktext fÃ¼r Ã¶ffentliche Regionenseite</label>
+                    <input className="FormInput mt-1" value={item.anchor_text_de || ''} onChange={(e) => update({ anchor_text_de: e.target.value })} placeholder="Kreativkurse in ZÃ¼rich" />
+                    <p className="text-xs text-gray-500 mt-1">Dieser Text wird fÃ¼r den sichtbaren Regions-Link verwendet. Leer lassen nutzt das Anzeige-Label.</p>
                   </div>
                   <div>
                     <label className="text-xs font-semibold text-gray-600">Standort-Parameter (loc)</label>
@@ -1372,7 +1392,7 @@ export default function AdminThemeWorldForm({
               items={editorial}
               onChange={(items) => { setEditorial(items); editorialSave.markDirty(); }}
               emptyLabel="Noch keine Abschnitte"
-              addLabel="Abschnitt hinzufügen"
+              addLabel="Abschnitt hinzufÃ¼gen"
               newItem={() => ({ heading_de: '', intro_de: '', items_de: [], is_ordered: false, closing_de: '', sort_order: editorial.length, is_active: true })}
               renderItem={(item, i, update, remove) => (
                 <div className="space-y-3">
@@ -1382,7 +1402,7 @@ export default function AdminThemeWorldForm({
                   <FormField label="Einleitungstext">
                     <textarea className="FormInput h-16 resize-none" value={item.intro_de || ''} onChange={(e) => update({ intro_de: e.target.value })} />
                   </FormField>
-                  <FormField label="Aufzählungspunkte (einer pro Zeile)">
+                  <FormField label="AufzÃ¤hlungspunkte (einer pro Zeile)">
                     <ItemsDeTextarea
                       value={item.items_de}
                       onChange={(normalized) => update({ items_de: normalized })}
@@ -1390,7 +1410,7 @@ export default function AdminThemeWorldForm({
                   </FormField>
                   <div className="flex items-center gap-2">
                     <input type="checkbox" checked={!!item.is_ordered} onChange={(e) => update({ is_ordered: e.target.checked })} id={`ordered-${i}`} />
-                    <label htmlFor={`ordered-${i}`} className="text-sm text-gray-700">Geordnete Liste (1, 2, 3…)</label>
+                    <label htmlFor={`ordered-${i}`} className="text-sm text-gray-700">Geordnete Liste (1, 2, 3â€¦)</label>
                   </div>
                   <FormField label="Schlusstext">
                     <textarea className="FormInput h-16 resize-none" value={item.closing_de || ''} onChange={(e) => update({ closing_de: e.target.value })} />
@@ -1423,7 +1443,7 @@ export default function AdminThemeWorldForm({
               items={faqs}
               onChange={(items) => { setFaqs(items); faqSave.markDirty(); }}
               emptyLabel="Noch keine FAQs"
-              addLabel="FAQ hinzufügen"
+              addLabel="FAQ hinzufÃ¼gen"
               newItem={() => ({ question_de: '', answer_de: '', sort_order: faqs.length, is_active: true })}
               renderItem={(item, i, update, remove) => (
                 <div className="space-y-3">
@@ -1457,7 +1477,7 @@ export default function AdminThemeWorldForm({
               </button>
             </TabHeader>
             <p className="text-sm text-gray-500 mb-4">
-              Unterscheide klar zwischen echten Qualitätslabels (mit Logo), redaktionellen
+              Unterscheide klar zwischen echten QualitÃ¤tslabels (mit Logo), redaktionellen
               Hinweisen und allgemeinen Info-Karten.
             </p>
 
@@ -1465,20 +1485,20 @@ export default function AdminThemeWorldForm({
               items={trustItems}
               onChange={(items) => { setTrustItems(items); trustSave.markDirty(); }}
               emptyLabel="Noch keine Trust-Hinweise"
-              addLabel="Eintrag hinzufügen"
+              addLabel="Eintrag hinzufÃ¼gen"
               newItem={() => ({ item_type: 'editorial', name: '', description_de: '', sort_order: trustItems.length, is_active: true })}
               renderItem={(item, i, update, remove) => (
                 <div className="space-y-3">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <FormField label="Typ">
                       <select className="FormInput" value={item.item_type || 'editorial'} onChange={(e) => update({ item_type: e.target.value })}>
-                        <option value="label">Qualitätslabel (mit Logo)</option>
+                        <option value="label">QualitÃ¤tslabel (mit Logo)</option>
                         <option value="editorial">Redaktioneller Hinweis</option>
                         <option value="info">Info-Karte</option>
                       </select>
                       {item.item_type === 'editorial' && (
                         <p className="text-xs text-amber-600 mt-1">
-                          Hinweis: Redaktionelle Einträge sind keine offiziellen Zertifizierungen.
+                          Hinweis: Redaktionelle EintrÃ¤ge sind keine offiziellen Zertifizierungen.
                         </p>
                       )}
                     </FormField>
@@ -1520,8 +1540,8 @@ export default function AdminThemeWorldForm({
             {/*
               Zweiter, getrennter Speicherbereich im selben Tab.
               Speichert ausschliesslich Spalten auf theme_worlds (section_titles,
-              cta_links) über EINEN updateThemeWorld()-Request — ein einzelnes
-              Row-Update, unabhängig vom Trust-Items-Save oberhalb.
+              cta_links) Ã¼ber EINEN updateThemeWorld()-Request â€” ein einzelnes
+              Row-Update, unabhÃ¤ngig vom Trust-Items-Save oberhalb.
             */}
             <div className="pt-8 mt-4 border-t-2 border-gray-200 space-y-6">
               <TabHeader title="Seitentexte & Abschluss / CTA" saveState={seitentexteSave}>
@@ -1533,11 +1553,11 @@ export default function AdminThemeWorldForm({
 
               <p className="text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded-lg p-3">
                 Alle Felder sind optional. Bleibt ein Feld leer, verwendet die
-                öffentliche Seite ihren eingebauten Vorgabetext.
+                Ã¶ffentliche Seite ihren eingebauten Vorgabetext.
               </p>
 
               {/*
-                Überschriften der übrigen Seitenabschnitte. Sie liegen im selben
+                Ãœberschriften der Ã¼brigen Seitenabschnitte. Sie liegen im selben
                 section_titles-Objekt wie die Trust- und CTA-Titel und werden
                 deshalb im selben Speichervorgang geschrieben.
               */}
@@ -1570,12 +1590,12 @@ export default function AdminThemeWorldForm({
                 <div>
                   <h4 className="text-sm font-semibold text-gray-700">Trust-Hinweise</h4>
                   <p className="text-xs text-gray-400 mt-0.5">
-                    Überschrift über den Trust- und Hinweis-Karten.
+                    Ãœberschrift Ã¼ber den Trust- und Hinweis-Karten.
                   </p>
                 </div>
                 <FormField
-                  label="Abschnittsüberschrift"
-                  hint="Überschrift über den Trust- und Hinweis-Karten auf der öffentlichen Themenwelt."
+                  label="AbschnittsÃ¼berschrift"
+                  hint="Ãœberschrift Ã¼ber den Trust- und Hinweis-Karten auf der Ã¶ffentlichen Themenwelt."
                 >
                   <input
                     type="text"
@@ -1593,15 +1613,15 @@ export default function AdminThemeWorldForm({
                 <div>
                   <h3 className="text-sm font-semibold text-gray-700">Abschluss / CTA</h3>
                   <p className="text-xs text-gray-400 mt-0.5">
-                    Der Abschlussbereich am Seitenende der öffentlichen Themenwelt.
+                    Der Abschlussbereich am Seitenende der Ã¶ffentlichen Themenwelt.
                   </p>
                 </div>
 
-                <FormField label="Abschlussüberschrift" hint="Überschrift im Abschlussbereich am Seitenende.">
+                <FormField label="AbschlussÃ¼berschrift" hint="Ãœberschrift im Abschlussbereich am Seitenende.">
                   <input
                     type="text"
                     className="FormInput"
-                    placeholder="z.B. Bereit für deine Praxis?"
+                    placeholder="z.B. Bereit fÃ¼r deine Praxis?"
                     maxLength={200}
                     value={seitentexte.cta_heading}
                     onChange={(e) => { setSeitentexte((p) => ({ ...p, cta_heading: e.target.value })); seitentexteSave.markDirty(); }}
@@ -1610,7 +1630,7 @@ export default function AdminThemeWorldForm({
 
                 <FormField
                   label="Hauptbutton"
-                  hint="Text des Hauptbuttons. Er verlinkt automatisch auf alle Kurse dieser Themenwelt — keine URL-Konfiguration nötig."
+                  hint="Text des Hauptbuttons. Er verlinkt automatisch auf alle Kurse dieser Themenwelt â€” keine URL-Konfiguration nÃ¶tig."
                 >
                   <input
                     type="text"
@@ -1623,15 +1643,15 @@ export default function AdminThemeWorldForm({
                 </FormField>
 
                 <p className="text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded-lg p-3">
-                  Die angezeigte Kurszahl wird automatisch aus den veröffentlichten Kursen berechnet.
+                  Die angezeigte Kurszahl wird automatisch aus den verÃ¶ffentlichten Kursen berechnet.
                 </p>
 
-                {/* Zusätzliche CTA-Links */}
+                {/* ZusÃ¤tzliche CTA-Links */}
                 <div className="pt-5 border-t border-gray-100">
                   <div className="mb-3">
-                    <h4 className="text-sm font-semibold text-gray-700">Zusätzliche CTA-Links</h4>
+                    <h4 className="text-sm font-semibold text-gray-700">ZusÃ¤tzliche CTA-Links</h4>
                     <p className="text-xs text-gray-400 mt-0.5">
-                      Weiterführende Links unter dem Hauptbutton (max. {MAX_CTA_LINKS} Einträge).
+                      WeiterfÃ¼hrende Links unter dem Hauptbutton (max. {MAX_CTA_LINKS} EintrÃ¤ge).
                       Bezeichnung ist Pflichtfeld, die vier Suchparameter sind optional.
                       Die Reihenfolge der Karten ist die Reihenfolge auf der Seite.
                     </p>
@@ -1640,10 +1660,10 @@ export default function AdminThemeWorldForm({
                     items={ctaLinks}
                     maxItems={MAX_CTA_LINKS}
                     onChange={(items) => { setCtaLinks(items); seitentexteSave.markDirty(); }}
-                    emptyLabel="Noch keine zusätzlichen CTA-Links"
-                    addLabel="CTA-Link hinzufügen"
+                    emptyLabel="Noch keine zusÃ¤tzlichen CTA-Links"
+                    addLabel="CTA-Link hinzufÃ¼gen"
                     newItem={() => ({
-                      label_de: '', spec: '', focus: '', loc: '', delivery: '',
+                      label_de: '', spec: '', focus: '', loc: '', delivery: '', kursart: '',
                       hadSortOrder: false, status: null,
                     })}
                     renderItem={(item, i, update, remove) => (
@@ -1656,12 +1676,12 @@ export default function AdminThemeWorldForm({
                             className="FormInput mt-1"
                             value={item.label_de || ''}
                             onChange={(e) => update({ label_de: e.target.value })}
-                            placeholder="z.B. Kurse in Zürich"
+                            placeholder="z.B. Kurse in ZÃ¼rich"
                             maxLength={60}
                           />
                         </div>
                         {/* Dieselben vier Suchparameter wie bei den vordefinierten
-                            Suchen — ein CTA-Link ist eine hervorgehobene Suche. */}
+                            Suchen â€” ein CTA-Link ist eine hervorgehobene Suche. */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                           <div>
                             <label className="text-xs font-semibold text-gray-600">Spezialgebiet (spec)</label>
@@ -1684,7 +1704,7 @@ export default function AdminThemeWorldForm({
                             />
                           </div>
                           <div>
-                            {/* Erzeugt denselben öffentlichen loc-Suchparameter
+                            {/* Erzeugt denselben Ã¶ffentlichen loc-Suchparameter
                                 wie die vordefinierten Suchen und die Regionen. */}
                             <label className="text-xs font-semibold text-gray-600">Ort (loc)</label>
                             <LocationSelect
@@ -1703,8 +1723,18 @@ export default function AdminThemeWorldForm({
                               <option value="">Alle Formate</option>
                               <option value="online_live">Online Live</option>
                               <option value="self_study">Selbststudium</option>
-                              <option value="presence">Präsenz (vor Ort)</option>
+                              <option value="presence">PrÃ¤senz (vor Ort)</option>
                             </select>
+                          </div>
+                          <div>
+                            <label className="text-xs font-semibold text-gray-600">Kursart (kursart)</label>
+                            <input
+                              className="FormInput mt-1"
+                              value={item.kursart || ''}
+                              onChange={(e) => update({ kursart: e.target.value })}
+                              placeholder="z. B. feriencamp"
+                              maxLength={100}
+                            />
                           </div>
                         </div>
                         <div className="flex justify-end">
@@ -1739,11 +1769,11 @@ export default function AdminThemeWorldForm({
             </TabHeader>
             <p className="text-gray-500 text-sm">
               Szenarioartikel werden in einer separaten Ansicht verwaltet.
-              Dort können Artikel erstellt, bearbeitet, sortiert und publiziert werden.
+              Dort kÃ¶nnen Artikel erstellt, bearbeitet, sortiert und publiziert werden.
             </p>
             {(!savedTwId && !themeWorldId) && (
               <div className="mt-4 bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-700">
-                Bitte zuerst die Grundlagen speichern, bevor Szenarioartikel erstellt werden können.
+                Bitte zuerst die Grundlagen speichern, bevor Szenarioartikel erstellt werden kÃ¶nnen.
               </div>
             )}
           </TabPanel>
@@ -1808,13 +1838,13 @@ function FormField({ label, hint, required, children }) {
 }
 
 /**
- * Select für einen kanonischen Filterwert (Spezialgebiet, Fokus, Ort).
+ * Select fÃ¼r einen kanonischen Filterwert (Spezialgebiet, Fokus, Ort).
  *
  * Bestandsschutz: ist der gespeicherte Wert nicht (mehr) in `options`, wird er
- * als zusätzliche, markierte Option angeboten und bleibt ausgewählt. Er
- * verschwindet erst, wenn der Admin bewusst eine andere Option wählt. Der
- * State-Wert bleibt exakt der String aus der DB — der Save-Vertrag ('' bzw.
- * bestehende Normalisierung) ändert sich nicht.
+ * als zusÃ¤tzliche, markierte Option angeboten und bleibt ausgewÃ¤hlt. Er
+ * verschwindet erst, wenn der Admin bewusst eine andere Option wÃ¤hlt. Der
+ * State-Wert bleibt exakt der String aus der DB â€” der Save-Vertrag ('' bzw.
+ * bestehende Normalisierung) Ã¤ndert sich nicht.
  */
 function CanonicalSelect({
   value,
@@ -1847,7 +1877,7 @@ function CanonicalSelect({
   );
 }
 
-/** Standort-Select — kanonische Ortsliste der öffentlichen Suche. */
+/** Standort-Select â€” kanonische Ortsliste der Ã¶ffentlichen Suche. */
 function LocationSelect({ value, onChange, className = '' }) {
   return (
     <CanonicalSelect
@@ -1871,12 +1901,12 @@ function ActiveToggle({ value, onChange }) {
 }
 
 /**
- * Textarea für Aufzählungspunkte (items_de).
+ * Textarea fÃ¼r AufzÃ¤hlungspunkte (items_de).
  *
- * Behält den Rohtext während der Eingabe — Enter wird nicht sofort entfernt.
+ * BehÃ¤lt den Rohtext wÃ¤hrend der Eingabe â€” Enter wird nicht sofort entfernt.
  * Erst beim Verlassen des Feldes (blur) wird der Text normalisiert:
  * leere Zeilen werden entfernt, Zeilen getrimmt, das Ergebnis als Array
- * an den Parent übergeben.
+ * an den Parent Ã¼bergeben.
  */
 function ItemsDeTextarea({ value, onChange }) {
   const [raw, setRaw] = React.useState(() => (value || []).join('\n'));

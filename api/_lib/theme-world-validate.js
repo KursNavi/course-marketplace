@@ -1,13 +1,13 @@
 /**
- * Serverseitige Validierungsschemas für das Themenwelten-System.
+ * Serverseitige Validierungsschemas fÃ¼r das Themenwelten-System.
  *
  * Alle Validierungsfunktionen sind pure Funktionen ohne Seiteneffekte.
- * Rückgabe: { valid: boolean, errors: string[] }
+ * RÃ¼ckgabe: { valid: boolean, errors: string[] }
  *
- * Keine externen Bibliotheken — konsistent mit dem bestehenden Projekt-Pattern.
+ * Keine externen Bibliotheken â€” konsistent mit dem bestehenden Projekt-Pattern.
  */
 
-// Quellenangaben teilen sich ein Regelwerk mit dem Frontend (Anzeige) — deshalb
+// Quellenangaben teilen sich ein Regelwerk mit dem Frontend (Anzeige) â€” deshalb
 // liegt die Logik in src/lib, genau wie seoUtils.js, das der Prerender mitnutzt.
 import { validateScenarioSources } from '../../src/lib/scenarioSources.js';
 
@@ -20,8 +20,8 @@ export { MAX_SOURCES_PER_SCENARIO } from '../../src/lib/scenarioSources.js';
 export const VALID_DB_SEGMENTS = ['professionell', 'privat', 'kinder'];
 export const VALID_URL_SEGMENTS = ['beruflich', 'privat-hobby', 'kinder-jugend'];
 
-// Verbindliches Zeichenlimit für meta_title (stimmt mit AdminSeoFields.jsx überein).
-// Google kürzt Titel ab ca. 60 Zeichen. UI zeigt dieses Limit als Zeichenzähler.
+// Verbindliches Zeichenlimit fÃ¼r meta_title (stimmt mit AdminSeoFields.jsx Ã¼berein).
+// Google kÃ¼rzt Titel ab ca. 60 Zeichen. UI zeigt dieses Limit als ZeichenzÃ¤hler.
 export const META_TITLE_MAX = 60;
 export const VALID_STATUSES = ['draft', 'published', 'archived'];
 export const VALID_DELIVERY_TYPES = ['online_live', 'self_study', 'presence'];
@@ -29,37 +29,37 @@ export const VALID_DELIVERY_TYPES = ['online_live', 'self_study', 'presence'];
 // Regionslinks speichern den DB-Wert, nicht den Such-URL-Wert.
 // theme_world_regions.delivery_param unterliegt der Constraint
 // regions_delivery_param_check (20260714_create_theme_worlds.sql:404),
-// die 'in_person' erlaubt — nicht 'presence'.
+// die 'in_person' erlaubt â€” nicht 'presence'.
 // Der Adapter kanonisiert beim Aufbau des Suchlinks via
-// normalizeDeliveryTypeKey: in_person → presence (themeWorldAdapter.js:464).
+// normalizeDeliveryTypeKey: in_person â†’ presence (themeWorldAdapter.js:464).
 export const VALID_REGION_DELIVERY_PARAMS = ['online_live', 'self_study', 'in_person'];
 
 export const VALID_TRUST_ITEM_TYPES = ['label', 'editorial', 'info'];
 
 // Erlaubte Keys in search_config JSONB
-const SEARCH_CONFIG_ALLOWED_KEYS = new Set(['area_slug', 'type_key', 'default_spec', 'default_focus', 'area_label_de']);
+const SEARCH_CONFIG_ALLOWED_KEYS = new Set(['area_slug', 'type_key', 'kursart', 'default_spec', 'default_focus', 'area_label_de']);
 
 // Erlaubte Abschnitts-Keys in section_titles JSONB.
 //
 // KANONISCHER DB-VERTRAG: snake_case-Keys mit FLACHEN STRING-Werten.
 //   { "trust_heading": "Worauf du achten solltest", "cta_button": "Alle Kurse anzeigen" }
 //
-// Dieser Vertrag ist verbindlich, weil ihn alle tatsächlichen Datenpfade nutzen:
+// Dieser Vertrag ist verbindlich, weil ihn alle tatsÃ¤chlichen Datenpfade nutzen:
 //   - Importdaten:   data/theme-worlds/*.json (theme_world.section_titles)
-//   - Import-RPC:    20260715_import_theme_world_atomic.sql schreibt das JSONB unverändert
-//   - Leseseite:     themeWorldAdapter.js liest st.trust_heading / st.cta_heading / …
+//   - Import-RPC:    20260715_import_theme_world_atomic.sql schreibt das JSONB unverÃ¤ndert
+//   - Leseseite:     themeWorldAdapter.js liest st.trust_heading / st.cta_heading / â€¦
 //
-// Der Adapter mappt diese DB-Keys erst für den Renderer auf camelCase-Multilang-
+// Der Adapter mappt diese DB-Keys erst fÃ¼r den Renderer auf camelCase-Multilang-
 // Objekte (trustTitle: { de }). Diese camelCase-Form ist ADAPTER-AUSGABE, kein
-// DB-Format — sie darf hier nicht validiert werden.
+// DB-Format â€” sie darf hier nicht validiert werden.
 //
-// Kein camelCase-Fallback: die frühere camelCase-Liste war ein toter Vertragsrest.
+// Kein camelCase-Fallback: die frÃ¼here camelCase-Liste war ein toter Vertragsrest.
 // Sie wurde nie von einem Schreibpfad erreicht (der Admin sendete section_titles
-// bisher überhaupt nicht, der Import umgeht den JS-Validator via SQL-RPC), sodass
-// keine Bestandsdaten im alten Format existieren, die Kompatibilität erfordern.
-// Aus demselben Grund fehlt 'editorial_heading': kein Importdatensatz führt den
+// bisher Ã¼berhaupt nicht, der Import umgeht den JS-Validator via SQL-RPC), sodass
+// keine Bestandsdaten im alten Format existieren, die KompatibilitÃ¤t erfordern.
+// Aus demselben Grund fehlt 'editorial_heading': kein Importdatensatz fÃ¼hrt den
 // Key, kein Schreibpfad erzeugt ihn, und redaktionelle Abschnitte rendern ihre
-// eigene heading_de (BereichLandingPage.jsx:641). Ein Key ohne Datenpfad wäre
+// eigene heading_de (BereichLandingPage.jsx:641). Ein Key ohne Datenpfad wÃ¤re
 // ein Vertrag ohne Verwendung.
 const SECTION_TITLES_ALLOWED_KEYS = new Set([
   'scenarios_heading', 'scenarios_subheading',
@@ -71,18 +71,18 @@ const SECTION_TITLES_ALLOWED_KEYS = new Set([
   'cta_heading', 'cta_button',
 ]);
 
-// Zeichenlimit für einen einzelnen Abschnittstitel.
-// Längster Bestandswert (yoga regions_subheading) liegt bei ~108 Zeichen.
+// Zeichenlimit fÃ¼r einen einzelnen Abschnittstitel.
+// LÃ¤ngster Bestandswert (yoga regions_subheading) liegt bei ~108 Zeichen.
 export const SECTION_TITLE_MAX = 200;
 
-// Zeichenlimit für theme_world_regions.anchor_text_de — den SEO-Linktext eines
+// Zeichenlimit fÃ¼r theme_world_regions.anchor_text_de â€” den SEO-Linktext eines
 // Regionenlinks. Die DB-Spalte ist `text` und damit unbegrenzt; die Grenze ist
 // eine fachliche, keine technische.
 //
 // Der Wert ist die ausformulierte Variante von label_de (max 100) und darf
-// deshalb länger sein. Längster Bestandswert ist 54 Zeichen ("Online-live Yoga-
+// deshalb lÃ¤nger sein. LÃ¤ngster Bestandswert ist 54 Zeichen ("Online-live Yoga-
 // und Achtsamkeitskurse in der Schweiz"), das vorbereitete Kreativkurse-Paket
-// bleibt unter 30. 200 lässt reichlich Luft und hält zugleich fest, dass hier
+// bleibt unter 30. 200 lÃ¤sst reichlich Luft und hÃ¤lt zugleich fest, dass hier
 // ein Linktext steht und kein Fliesstext.
 export const ANCHOR_TEXT_MAX = 200;
 
@@ -92,7 +92,7 @@ export const ANCHOR_TEXT_MAX = 200;
 
 /**
  * Validiert Slug-Format: nur a-z, 0-9, Bindestriche;
- * kein Führungs-/Abschluss-Bindestrich.
+ * kein FÃ¼hrungs-/Abschluss-Bindestrich.
  */
 export function isValidSlug(slug) {
   return typeof slug === 'string' && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug);
@@ -126,22 +126,22 @@ function collect(errors, field, message) {
 }
 
 /**
- * Erkennt vollständig maskiertes HTML (escaped HTML statt echter Markup-Struktur).
+ * Erkennt vollstÃ¤ndig maskiertes HTML (escaped HTML statt echter Markup-Struktur).
  *
- * Gibt true zurück wenn:
- *   - der Text typische strukturelle Tags in escaped Form enthält (&lt;p, &lt;h2, …)
- *   - dabei keine echte HTML-Struktur (öffnende <-Tags) vorhanden ist
- *   - die Escaped-Tags häufig genug sind, um ein vollständig maskiertes Dokument zu signalisieren
+ * Gibt true zurÃ¼ck wenn:
+ *   - der Text typische strukturelle Tags in escaped Form enthÃ¤lt (&lt;p, &lt;h2, â€¦)
+ *   - dabei keine echte HTML-Struktur (Ã¶ffnende <-Tags) vorhanden ist
+ *   - die Escaped-Tags hÃ¤ufig genug sind, um ein vollstÃ¤ndig maskiertes Dokument zu signalisieren
  *
- * Gibt false zurück bei normalen Texten wie "2 < 3" (kein strukturiertes escaped HTML).
+ * Gibt false zurÃ¼ck bei normalen Texten wie "2 < 3" (kein strukturiertes escaped HTML).
  *
- * @param {string} html - Zu prüfender Inhalt
+ * @param {string} html - Zu prÃ¼fender Inhalt
  * @returns {boolean}
  */
 export function detectEscapedHtmlDocument(html) {
   if (!html || typeof html !== 'string') return false;
 
-  // Match &lt;<tagname> followed by whitespace, >, /, or & (e.g. &lt;p&gt; → after 'p' comes '&')
+  // Match &lt;<tagname> followed by whitespace, >, /, or & (e.g. &lt;p&gt; â†’ after 'p' comes '&')
   const ESCAPED_TAG_PATTERNS = [
     /&lt;p(?:[\s>/]|&)/gi,
     /&lt;h[23456](?:[\s>/]|&)/gi,
@@ -160,7 +160,7 @@ export function detectEscapedHtmlDocument(html) {
   // Threshold: mindestens 3 escaped strukturelle Tags
   if (escapedCount < 3) return false;
 
-  // Prüfen ob echte HTML-Struktur vorhanden ist
+  // PrÃ¼fen ob echte HTML-Struktur vorhanden ist
   const REAL_HTML_PATTERN = /<(?:p|h[23456]|ul|ol|li|strong|em)[\s>/]/i;
   const hasRealHtml = REAL_HTML_PATTERN.test(html);
 
@@ -194,7 +194,7 @@ function optionalText(errors, obj, field, maxLength) {
 
 /**
  * Validiert search_config JSONB.
- * Pflicht: area_slug. Optional: type_key, default_spec, default_focus.
+ * Mindestens area_slug oder kursart. Optional: type_key, default_spec, default_focus.
  */
 export function validateSearchConfig(config) {
   const errors = [];
@@ -212,13 +212,29 @@ export function validateSearchConfig(config) {
     }
   }
 
-  if (!config.area_slug || typeof config.area_slug !== 'string') {
-    errors.push('search_config.area_slug: Pflichtfeld fehlt.');
+  const hasAreaSlug = typeof config.area_slug === 'string' && config.area_slug.trim();
+  const hasKursart = typeof config.kursart === 'string' && config.kursart.trim();
+  if (!hasAreaSlug && !hasKursart) {
+    errors.push('search_config: area_slug oder kursart muss gesetzt sein.');
+  }
+
+  if (config.area_slug !== undefined && config.area_slug !== null) {
+    if (typeof config.area_slug !== 'string' || !config.area_slug.trim()) {
+      errors.push('search_config.area_slug: Muss ein nicht leerer String oder null sein.');
+    }
+  }
+
+  if (config.kursart !== undefined && config.kursart !== null) {
+    if (typeof config.kursart !== 'string' || !config.kursart.trim()) {
+      errors.push('search_config.kursart: Muss ein nicht leerer String oder null sein.');
+    } else if (config.kursart.length > 100) {
+      errors.push('search_config.kursart: Zu lang (max 100 Zeichen).');
+    }
   }
 
   if (config.type_key !== undefined) {
     if (!['beruflich', 'privat_hobby', 'kinder_jugend'].includes(config.type_key)) {
-      errors.push('search_config.type_key: Ungültiger Wert. Erlaubt: beruflich, privat_hobby, kinder_jugend.');
+      errors.push('search_config.type_key: UngÃ¼ltiger Wert. Erlaubt: beruflich, privat_hobby, kinder_jugend.');
     }
   }
 
@@ -238,12 +254,12 @@ export function validateSearchConfig(config) {
  * Validiert section_titles JSONB gegen den kanonischen DB-Vertrag.
  *
  * Erlaubt: flaches Objekt mit bekannten snake_case-Keys und String-Werten.
- * Siehe SECTION_TITLES_ALLOWED_KEYS für die Begründung des Vertrags.
+ * Siehe SECTION_TITLES_ALLOWED_KEYS fÃ¼r die BegrÃ¼ndung des Vertrags.
  *
  * null als Einzelwert wird als "nicht gesetzt" akzeptiert: JSONB kann diesen
  * Zustand halten und der Adapter behandelt ihn identisch zu einem fehlenden Key
- * (st.trust_heading || null). Das hält den Merge-Pfad im Admin verlustfrei —
- * ein bestehender null-Wert kann unverändert zurückgeschrieben werden.
+ * (st.trust_heading || null). Das hÃ¤lt den Merge-Pfad im Admin verlustfrei â€”
+ * ein bestehender null-Wert kann unverÃ¤ndert zurÃ¼ckgeschrieben werden.
  */
 export function validateSectionTitles(titles) {
   const errors = [];
@@ -259,7 +275,7 @@ export function validateSectionTitles(titles) {
       errors.push(`section_titles.${key}: Unbekannter Key nicht erlaubt.`);
       continue;
     }
-    if (val === null) continue; // "nicht gesetzt" — erlaubt
+    if (val === null) continue; // "nicht gesetzt" â€” erlaubt
     if (typeof val !== 'string') {
       errors.push(`section_titles.${key}: Muss ein String sein.`);
       continue;
@@ -285,10 +301,10 @@ export function validatePredefinedSearches(searches) {
   }
 
   if (searches.length > 20) {
-    errors.push('predefined_searches: Maximal 20 Einträge erlaubt.');
+    errors.push('predefined_searches: Maximal 20 EintrÃ¤ge erlaubt.');
   }
 
-  const ALLOWED_KEYS = new Set(['label_de', 'spec', 'focus', 'loc', 'delivery']);
+  const ALLOWED_KEYS = new Set(['label_de', 'spec', 'focus', 'loc', 'delivery', 'kursart']);
 
   for (let i = 0; i < searches.length; i++) {
     const item = searches[i];
@@ -311,7 +327,12 @@ export function validatePredefinedSearches(searches) {
     }
 
     if (item.delivery !== undefined && !VALID_DELIVERY_TYPES.includes(item.delivery)) {
-      errors.push(`predefined_searches[${i}].delivery: Ungültiger Wert. Erlaubt: ${VALID_DELIVERY_TYPES.join(', ')}.`);
+      errors.push(`predefined_searches[${i}].delivery: UngÃ¼ltiger Wert. Erlaubt: ${VALID_DELIVERY_TYPES.join(', ')}.`);
+    }
+
+    if (item.kursart !== undefined && item.kursart !== null
+        && (typeof item.kursart !== 'string' || !item.kursart.trim() || item.kursart.length > 100)) {
+      errors.push(`predefined_searches[${i}].kursart: Muss ein nicht leerer String mit maximal 100 Zeichen oder null sein.`);
     }
   }
 
@@ -327,35 +348,35 @@ export const MAX_CTA_LINKS = 5;
  * label_de ist Pflicht, alles andere optional:
  *   spec / focus / loc  Suchparameter des Ziel-Links (Fachrichtung, Schwerpunkt,
  *                       Ort). Sie entsprechen exakt den Parametern, die
- *                       predefined_searches führt — ein CTA-Link ist fachlich
+ *                       predefined_searches fÃ¼hrt â€” ein CTA-Link ist fachlich
  *                       nichts anderes als eine hervorgehobene vordefinierte
  *                       Suche, und der Adapter baut aus beiden dieselbe URL.
- *   delivery            Durchführungsform (VALID_DELIVERY_TYPES).
+ *   delivery            DurchfÃ¼hrungsform (VALID_DELIVERY_TYPES).
  *   sort_order          Redaktionelle Position. Die Array-Reihenfolge bleibt die
- *                       Wahrheit für die Anzeige; sort_order ist der stabile,
+ *                       Wahrheit fÃ¼r die Anzeige; sort_order ist der stabile,
  *                       im Importpaket mitgelieferte Ordnungswert und wird
  *                       deshalb nicht verworfen.
  *   status              Redaktioneller Zustand des einzelnen Links aus dem
- *                       Importpaket. Er steuert keine Sichtbarkeit — die hängt
- *                       am Status der Themenwelt — wird aber verlustfrei
- *                       durchgereicht, damit ein Import→Admin→Speichern-Zyklus
+ *                       Importpaket. Er steuert keine Sichtbarkeit â€” die hÃ¤ngt
+ *                       am Status der Themenwelt â€” wird aber verlustfrei
+ *                       durchgereicht, damit ein Importâ†’Adminâ†’Speichern-Zyklus
  *                       das Paket nicht stillschweigend beschneidet.
  */
 const CTA_LINK_ALLOWED_KEYS = new Set([
-  'label_de', 'spec', 'focus', 'loc', 'delivery', 'sort_order', 'status',
+  'label_de', 'spec', 'focus', 'loc', 'delivery', 'kursart', 'sort_order', 'status',
 ]);
 
 /**
  * Validiert cta_links JSONB-Array.
  *
- * Der Vertrag ist identisch mit dem, den AdminThemeWorldForm clientseitig prüft.
+ * Der Vertrag ist identisch mit dem, den AdminThemeWorldForm clientseitig prÃ¼ft.
  *
- * null als Wert eines optionalen Felds ist ausdrücklich erlaubt und bedeutet
- * «nicht gesetzt» — genauso wie ein fehlender Key. Importpakete schreiben diese
- * Felder explizit als null aus; würde der Validator das ablehnen, könnte ein
+ * null als Wert eines optionalen Felds ist ausdrÃ¼cklich erlaubt und bedeutet
+ * Â«nicht gesetztÂ» â€” genauso wie ein fehlender Key. Importpakete schreiben diese
+ * Felder explizit als null aus; wÃ¼rde der Validator das ablehnen, kÃ¶nnte ein
  * importierter Link im Admin nie wieder gespeichert werden.
  *
- * Diese Funktion validiert nur — sie trimmt und mutiert nicht. Die Normalisierung
+ * Diese Funktion validiert nur â€” sie trimmt und mutiert nicht. Die Normalisierung
  * (trimmen, leere optionale Felder entfernen) passiert im Admin vor dem Speichern.
  */
 export function validateCtaLinks(links) {
@@ -368,7 +389,7 @@ export function validateCtaLinks(links) {
   }
 
   if (links.length > MAX_CTA_LINKS) {
-    errors.push(`cta_links: Maximal ${MAX_CTA_LINKS} Einträge erlaubt.`);
+    errors.push(`cta_links: Maximal ${MAX_CTA_LINKS} EintrÃ¤ge erlaubt.`);
   }
 
   for (let i = 0; i < links.length; i++) {
@@ -385,14 +406,14 @@ export function validateCtaLinks(links) {
     }
 
     // label_de: Pflicht. Ein reiner Whitespace-Wert ist fachlich leer und wurde
-    // clientseitig bereits abgelehnt — der Server muss denselben Vertrag halten.
+    // clientseitig bereits abgelehnt â€” der Server muss denselben Vertrag halten.
     if (typeof item.label_de !== 'string' || !item.label_de.trim()) {
       errors.push(`cta_links[${i}].label_de: Pflichtfeld fehlt oder leer.`);
     } else if (item.label_de.length > 60) {
       errors.push(`cta_links[${i}].label_de: Zu lang (max 60 Zeichen).`);
     }
 
-    // spec / focus / loc: optional, wenn gesetzt ein String. Reine Typsicherheit —
+    // spec / focus / loc: optional, wenn gesetzt ein String. Reine Typsicherheit â€”
     // bewusst keine Fach- oder Orts-Taxonomie an dieser Stelle, identisch zu
     // predefined_searches.
     for (const key of ['spec', 'focus', 'loc']) {
@@ -405,7 +426,12 @@ export function validateCtaLinks(links) {
 
     if (item.delivery !== undefined && item.delivery !== null
         && !VALID_DELIVERY_TYPES.includes(item.delivery)) {
-      errors.push(`cta_links[${i}].delivery: Ungültiger Wert. Erlaubt: ${VALID_DELIVERY_TYPES.join(', ')}.`);
+      errors.push(`cta_links[${i}].delivery: UngÃ¼ltiger Wert. Erlaubt: ${VALID_DELIVERY_TYPES.join(', ')}.`);
+    }
+
+    if (item.kursart !== undefined && item.kursart !== null
+        && (typeof item.kursart !== 'string' || !item.kursart.trim() || item.kursart.length > 100)) {
+      errors.push(`cta_links[${i}].kursart: Muss ein nicht leerer String mit maximal 100 Zeichen oder null sein.`);
     }
 
     if (item.sort_order !== undefined && item.sort_order !== null
@@ -415,7 +441,7 @@ export function validateCtaLinks(links) {
 
     if (item.status !== undefined && item.status !== null
         && !VALID_STATUSES.includes(item.status)) {
-      errors.push(`cta_links[${i}].status: Ungültiger Wert. Erlaubt: ${VALID_STATUSES.join(', ')}.`);
+      errors.push(`cta_links[${i}].status: UngÃ¼ltiger Wert. Erlaubt: ${VALID_STATUSES.join(', ')}.`);
     }
   }
 
@@ -434,22 +460,27 @@ export function validateCtaConfig(config) {
     return errors;
   }
 
-  const ALLOWED_KEYS = new Set(['spec', 'focus', 'loc', 'delivery']);
+  const ALLOWED_KEYS = new Set(['spec', 'focus', 'loc', 'delivery', 'kursart']);
   for (const key of Object.keys(config)) {
     if (!ALLOWED_KEYS.has(key)) {
       errors.push(`cta_config.${key}: Unbekannter Key nicht erlaubt.`);
     }
   }
 
+  if (config.kursart !== undefined && config.kursart !== null
+      && (typeof config.kursart !== 'string' || !config.kursart.trim() || config.kursart.length > 100)) {
+    errors.push('cta_config.kursart: Muss ein nicht leerer String mit maximal 100 Zeichen oder null sein.');
+  }
+
   if (config.delivery !== undefined && !VALID_DELIVERY_TYPES.includes(config.delivery)) {
-    errors.push(`cta_config.delivery: Ungültiger Wert. Erlaubt: ${VALID_DELIVERY_TYPES.join(', ')}.`);
+    errors.push(`cta_config.delivery: UngÃ¼ltiger Wert. Erlaubt: ${VALID_DELIVERY_TYPES.join(', ')}.`);
   }
 
   return errors;
 }
 
 // ============================================================
-// Entitäts-Validierungen
+// EntitÃ¤ts-Validierungen
 // ============================================================
 
 /**
@@ -459,31 +490,35 @@ export function validateThemeWorldBase(data) {
   const errors = [];
 
   if (!data || typeof data !== 'object') {
-    return { valid: false, errors: ['Kein gültiger Request-Body.'] };
+    return { valid: false, errors: ['Kein gÃ¼ltiger Request-Body.'] };
   }
 
   // Pflichtfelder
   requireText(errors, data, 'key', 100);
   requireText(errors, data, 'title_de', 200);
-  requireText(errors, data, 'area_slug', 100);
+  if (data.area_slug === null) {
+    // Kursart-gefÃ¼hrte Drafts dÃ¼rfen den Bereich erst im Such-Tab festlegen.
+  } else {
+    requireText(errors, data, 'area_slug', 100);
+  }
 
   // Segment
   if (!VALID_DB_SEGMENTS.includes(data.db_segment)) {
-    collect(errors, 'db_segment', `Ungültiger Wert. Erlaubt: ${VALID_DB_SEGMENTS.join(', ')}.`);
+    collect(errors, 'db_segment', `UngÃ¼ltiger Wert. Erlaubt: ${VALID_DB_SEGMENTS.join(', ')}.`);
   }
   if (!VALID_URL_SEGMENTS.includes(data.url_segment)) {
-    collect(errors, 'url_segment', `Ungültiger Wert. Erlaubt: ${VALID_URL_SEGMENTS.join(', ')}.`);
+    collect(errors, 'url_segment', `UngÃ¼ltiger Wert. Erlaubt: ${VALID_URL_SEGMENTS.join(', ')}.`);
   }
 
-  // Konsistenz db_segment ↔ url_segment
+  // Konsistenz db_segment â†” url_segment
   const SEGMENT_MAP = { professionell: 'beruflich', privat: 'privat-hobby', kinder: 'kinder-jugend' };
   if (data.db_segment && data.url_segment && SEGMENT_MAP[data.db_segment] !== data.url_segment) {
-    collect(errors, 'db_segment/url_segment', `Inkonsistentes Segment-Paar: ${data.db_segment} → ${data.url_segment} erwartet, nicht ${data.url_segment}.`);
+    collect(errors, 'db_segment/url_segment', `Inkonsistentes Segment-Paar: ${data.db_segment} â†’ ${data.url_segment} erwartet, nicht ${data.url_segment}.`);
   }
 
   // Slug
   if (!isValidSlug(data.slug)) {
-    collect(errors, 'slug', 'Ungültiges Slug-Format. Nur a-z, 0-9, Bindestriche erlaubt (kein Führungs-/Abschluss-Bindestrich).');
+    collect(errors, 'slug', 'UngÃ¼ltiges Slug-Format. Nur a-z, 0-9, Bindestriche erlaubt (kein FÃ¼hrungs-/Abschluss-Bindestrich).');
   }
 
   // Optionale Text-Felder
@@ -496,10 +531,10 @@ export function validateThemeWorldBase(data) {
 
   // Bild-URLs
   if (data.hero_image_url && !isValidImageUrl(data.hero_image_url)) {
-    collect(errors, 'hero_image_url', 'Muss eine gültige https://-URL sein.');
+    collect(errors, 'hero_image_url', 'Muss eine gÃ¼ltige https://-URL sein.');
   }
   if (data.og_image_url && !isValidImageUrl(data.og_image_url)) {
-    collect(errors, 'og_image_url', 'Muss eine gültige https://-URL sein.');
+    collect(errors, 'og_image_url', 'Muss eine gÃ¼ltige https://-URL sein.');
   }
 
   // Hero Alt-Text ist Pflicht wenn Hero-Bild gesetzt
@@ -522,44 +557,44 @@ export function validateThemeWorldBase(data) {
 }
 
 /**
- * Partial-Validator für UPDATE-Requests (Patch-Semantik).
+ * Partial-Validator fÃ¼r UPDATE-Requests (Patch-Semantik).
  *
  * Pflichtfelder (key, title_de, area_slug, db_segment, url_segment, slug) werden
- * NUR geprüft, wenn sie im Payload vorhanden sind. Tabs können dadurch ihren
- * jeweiligen Feldbereich separat speichern, ohne alle Grundfelder mitsenden zu müssen.
+ * NUR geprÃ¼ft, wenn sie im Payload vorhanden sind. Tabs kÃ¶nnen dadurch ihren
+ * jeweiligen Feldbereich separat speichern, ohne alle Grundfelder mitsenden zu mÃ¼ssen.
  *
- * Optionale Felder und JSONB-Blöcke werden wie in validateThemeWorldBase geprüft,
+ * Optionale Felder und JSONB-BlÃ¶cke werden wie in validateThemeWorldBase geprÃ¼ft,
  * aber ebenfalls nur wenn sie im Payload vorhanden sind.
  */
 export function validateThemeWorldUpdate(data) {
   const errors = [];
 
   if (!data || typeof data !== 'object') {
-    return { valid: false, errors: ['Kein gültiger Request-Body.'] };
+    return { valid: false, errors: ['Kein gÃ¼ltiger Request-Body.'] };
   }
 
-  // Pflichtfelder — nur validieren wenn im Payload enthalten
+  // Pflichtfelder â€” nur validieren wenn im Payload enthalten
   if ('key' in data) requireText(errors, data, 'key', 100);
   if ('title_de' in data) requireText(errors, data, 'title_de', 200);
-  if ('area_slug' in data) requireText(errors, data, 'area_slug', 100);
+  if ('area_slug' in data && data.area_slug !== null) requireText(errors, data, 'area_slug', 100);
 
-  // Segment-Werte — nur validieren wenn vorhanden
+  // Segment-Werte â€” nur validieren wenn vorhanden
   if ('db_segment' in data && !VALID_DB_SEGMENTS.includes(data.db_segment)) {
-    collect(errors, 'db_segment', `Ungültiger Wert. Erlaubt: ${VALID_DB_SEGMENTS.join(', ')}.`);
+    collect(errors, 'db_segment', `UngÃ¼ltiger Wert. Erlaubt: ${VALID_DB_SEGMENTS.join(', ')}.`);
   }
   if ('url_segment' in data && !VALID_URL_SEGMENTS.includes(data.url_segment)) {
-    collect(errors, 'url_segment', `Ungültiger Wert. Erlaubt: ${VALID_URL_SEGMENTS.join(', ')}.`);
+    collect(errors, 'url_segment', `UngÃ¼ltiger Wert. Erlaubt: ${VALID_URL_SEGMENTS.join(', ')}.`);
   }
 
-  // Segment-Konsistenz — nur wenn BEIDE Felder im Payload sind
+  // Segment-Konsistenz â€” nur wenn BEIDE Felder im Payload sind
   const SEGMENT_MAP = { professionell: 'beruflich', privat: 'privat-hobby', kinder: 'kinder-jugend' };
   if (data.db_segment && data.url_segment && SEGMENT_MAP[data.db_segment] !== data.url_segment) {
     collect(errors, 'db_segment/url_segment', `Inkonsistentes Segment-Paar: ${data.db_segment} erwartet ${SEGMENT_MAP[data.db_segment]}, nicht ${data.url_segment}.`);
   }
 
-  // Slug — nur validieren wenn vorhanden
+  // Slug â€” nur validieren wenn vorhanden
   if ('slug' in data && !isValidSlug(data.slug)) {
-    collect(errors, 'slug', 'Ungültiges Slug-Format. Nur a-z, 0-9, Bindestriche erlaubt (kein Führungs-/Abschluss-Bindestrich).');
+    collect(errors, 'slug', 'UngÃ¼ltiges Slug-Format. Nur a-z, 0-9, Bindestriche erlaubt (kein FÃ¼hrungs-/Abschluss-Bindestrich).');
   }
 
   // Optionale Text-Felder
@@ -572,10 +607,10 @@ export function validateThemeWorldUpdate(data) {
 
   // Bild-URLs
   if (data.hero_image_url && !isValidImageUrl(data.hero_image_url)) {
-    collect(errors, 'hero_image_url', 'Muss eine gültige https://-URL sein.');
+    collect(errors, 'hero_image_url', 'Muss eine gÃ¼ltige https://-URL sein.');
   }
   if (data.og_image_url && !isValidImageUrl(data.og_image_url)) {
-    collect(errors, 'og_image_url', 'Muss eine gültige https://-URL sein.');
+    collect(errors, 'og_image_url', 'Muss eine gÃ¼ltige https://-URL sein.');
   }
 
   // Hero Alt-Text ist Pflicht wenn hero_image_url in diesem Payload neu gesetzt wird
@@ -583,7 +618,7 @@ export function validateThemeWorldUpdate(data) {
     collect(errors, 'hero_image_alt_de', 'Pflicht wenn hero_image_url gesetzt ist.');
   }
 
-  // JSONB-Felder — nur validieren wenn vorhanden
+  // JSONB-Felder â€” nur validieren wenn vorhanden
   if ('search_config' in data) errors.push(...validateSearchConfig(data.search_config));
   if ('section_titles' in data) errors.push(...validateSectionTitles(data.section_titles));
   if ('predefined_searches' in data) errors.push(...validatePredefinedSearches(data.predefined_searches));
@@ -604,13 +639,13 @@ export function validateScenario(data) {
   const errors = [];
 
   if (!data || typeof data !== 'object') {
-    return { valid: false, errors: ['Kein gültiger Request-Body.'] };
+    return { valid: false, errors: ['Kein gÃ¼ltiger Request-Body.'] };
   }
 
   requireText(errors, data, 'label_de', 200);
 
   if (!isValidSlug(data.slug)) {
-    collect(errors, 'slug', 'Ungültiges Slug-Format. Nur a-z, 0-9, Bindestriche erlaubt.');
+    collect(errors, 'slug', 'UngÃ¼ltiges Slug-Format. Nur a-z, 0-9, Bindestriche erlaubt.');
   }
 
   optionalText(errors, data, 'teaser_de', 300);
@@ -622,10 +657,10 @@ export function validateScenario(data) {
 
   // Bild-URLs
   if (data.card_image_url && !isValidImageUrl(data.card_image_url)) {
-    collect(errors, 'card_image_url', 'Muss eine gültige https://-URL sein.');
+    collect(errors, 'card_image_url', 'Muss eine gÃ¼ltige https://-URL sein.');
   }
   if (data.og_image_url && !isValidImageUrl(data.og_image_url)) {
-    collect(errors, 'og_image_url', 'Muss eine gültige https://-URL sein.');
+    collect(errors, 'og_image_url', 'Muss eine gÃ¼ltige https://-URL sein.');
   }
 
   // Alt-Text ist Pflicht wenn Karten-Bild gesetzt
@@ -639,24 +674,24 @@ export function validateScenario(data) {
   }
 
   // last_reviewed_at: reines Kalenderdatum (DB-Spalte ist `date`).
-  // Nur prüfen wenn im Payload — ein fehlendes Feld lässt die Spalte unberührt.
+  // Nur prÃ¼fen wenn im Payload â€” ein fehlendes Feld lÃ¤sst die Spalte unberÃ¼hrt.
   if ('last_reviewed_at' in data && data.last_reviewed_at !== null && data.last_reviewed_at !== '') {
     if (!isValidReviewDate(data.last_reviewed_at)) {
-      collect(errors, 'last_reviewed_at', 'Muss ein gültiges Datum im Format JJJJ-MM-TT sein.');
+      collect(errors, 'last_reviewed_at', 'Muss ein gÃ¼ltiges Datum im Format JJJJ-MM-TT sein.');
     }
   }
 
   // Escaped-HTML-Schutz
   if (data.content_html && detectEscapedHtmlDocument(data.content_html)) {
-    collect(errors, 'content_html', 'Der Artikelinhalt enthält maskiertes HTML statt formatierter Inhalte. Bitte den Editorinhalt prüfen.');
+    collect(errors, 'content_html', 'Der Artikelinhalt enthÃ¤lt maskiertes HTML statt formatierter Inhalte. Bitte den Editorinhalt prÃ¼fen.');
   }
 
   // JSONB
   errors.push(...validateCtaConfig(data.cta_config));
 
-  // Quellenangaben — nur prüfen wenn im Payload enthalten. Fehlt `sources`,
-  // bleibt die bestehende Spalte unverändert (Patch-Semantik wie bei den
-  // übrigen Feldern, die filterWriteFields() nicht in den Payload aufnimmt).
+  // Quellenangaben â€” nur prÃ¼fen wenn im Payload enthalten. Fehlt `sources`,
+  // bleibt die bestehende Spalte unverÃ¤ndert (Patch-Semantik wie bei den
+  // Ã¼brigen Feldern, die filterWriteFields() nicht in den Payload aufnimmt).
   if ('sources' in data) {
     errors.push(...validateScenarioSources(data.sources).errors);
   }
@@ -665,10 +700,10 @@ export function validateScenario(data) {
 }
 
 /**
- * Prüft ein redaktionelles Prüfdatum: reines Kalenderdatum JJJJ-MM-TT.
+ * PrÃ¼ft ein redaktionelles PrÃ¼fdatum: reines Kalenderdatum JJJJ-MM-TT.
  *
- * Kein Timestamp und kein Freitext — der Wert landet in einer `date`-Spalte und
- * wird öffentlich als Vertrauensangabe ausgegeben (siehe
+ * Kein Timestamp und kein Freitext â€” der Wert landet in einer `date`-Spalte und
+ * wird Ã¶ffentlich als Vertrauensangabe ausgegeben (siehe
  * src/lib/editorialReviewDate.js).
  *
  * @param {unknown} value
@@ -742,31 +777,31 @@ export function validateSpecialty(data) {
 /**
  * Validiert einen Regionslink.
  *
- * loc_param und delivery_param sind BEIDE optional und dürfen gleichzeitig
- * null/leer sein. Ein solcher Eintrag repräsentiert einen Link ohne
+ * loc_param und delivery_param sind BEIDE optional und dÃ¼rfen gleichzeitig
+ * null/leer sein. Ein solcher Eintrag reprÃ¤sentiert einen Link ohne
  * Standort- und Lieferungsfilter (z.B. "Ganze Schweiz"), der auf alle
  * passenden Kurse der Themenwelt zeigt.
  *
- * Das entspricht dem DB-Vertrag: die ursprüngliche Constraint
+ * Das entspricht dem DB-Vertrag: die ursprÃ¼ngliche Constraint
  * regions_params_check wurde in
  * supabase/migrations/20260718_relax_regions_params_constraint.sql
  * ersatzlos entfernt. Bestehende Sport-/Yoga-Daten nutzen diesen Zustand.
  *
- * Ein TATSÄCHLICH GESETZTER, ungültiger delivery_param bleibt ein Fehler.
+ * Ein TATSÃ„CHLICH GESETZTER, ungÃ¼ltiger delivery_param bleibt ein Fehler.
  */
 export function validateRegion(data) {
   const errors = [];
   requireText(errors, data, 'label_de', 100);
 
   // anchor_text_de bleibt optional: fehlt der Wert oder ist er null bzw. leer,
-  // fällt die Anzeige auf label_de zurück (themeWorldAdapter.js, Import-RPC und
-  // api/admin-theme-world-sub.js tun das übereinstimmend). Genau deshalb darf
-  // hier kein Pflichtfeld daraus werden — geprüft wird nur, dass ein gesetzter
-  // Wert ein String in vertretbarer Länge ist.
+  // fÃ¤llt die Anzeige auf label_de zurÃ¼ck (themeWorldAdapter.js, Import-RPC und
+  // api/admin-theme-world-sub.js tun das Ã¼bereinstimmend). Genau deshalb darf
+  // hier kein Pflichtfeld daraus werden â€” geprÃ¼ft wird nur, dass ein gesetzter
+  // Wert ein String in vertretbarer LÃ¤nge ist.
   optionalText(errors, data, 'anchor_text_de', ANCHOR_TEXT_MAX);
 
   if (data.delivery_param && !VALID_REGION_DELIVERY_PARAMS.includes(data.delivery_param)) {
-    collect(errors, 'delivery_param', `Ungültiger Wert. Erlaubt: ${VALID_REGION_DELIVERY_PARAMS.join(', ')}.`);
+    collect(errors, 'delivery_param', `UngÃ¼ltiger Wert. Erlaubt: ${VALID_REGION_DELIVERY_PARAMS.join(', ')}.`);
   }
 
   return { valid: errors.length === 0, errors };
@@ -781,11 +816,11 @@ export function validateTrustItem(data) {
   optionalText(errors, data, 'description_de', 1000);
 
   if (!VALID_TRUST_ITEM_TYPES.includes(data.item_type)) {
-    collect(errors, 'item_type', `Ungültiger Wert. Erlaubt: ${VALID_TRUST_ITEM_TYPES.join(', ')}.`);
+    collect(errors, 'item_type', `UngÃ¼ltiger Wert. Erlaubt: ${VALID_TRUST_ITEM_TYPES.join(', ')}.`);
   }
 
   if (data.logo_url && !isValidImageUrl(data.logo_url)) {
-    collect(errors, 'logo_url', 'Muss eine gültige https://-URL sein.');
+    collect(errors, 'logo_url', 'Muss eine gÃ¼ltige https://-URL sein.');
   }
 
   // logo_alt ist Pflicht wenn logo_url gesetzt
@@ -794,7 +829,7 @@ export function validateTrustItem(data) {
   }
 
   if (data.external_url && !isValidExternalUrl(data.external_url)) {
-    collect(errors, 'external_url', 'Muss eine gültige https://-URL sein.');
+    collect(errors, 'external_url', 'Muss eine gÃ¼ltige https://-URL sein.');
   }
 
   return { valid: errors.length === 0, errors };
@@ -831,10 +866,10 @@ export function validateSortReorder(items) {
 // ============================================================
 
 /**
- * Prüft ob eine Themenwelt publiziert werden darf.
- * Wird vor der Statusänderung auf 'published' ausgeführt.
+ * PrÃ¼ft ob eine Themenwelt publiziert werden darf.
+ * Wird vor der StatusÃ¤nderung auf 'published' ausgefÃ¼hrt.
  *
- * @param {object} themeWorld - Vollständiger Datensatz aus der DB
+ * @param {object} themeWorld - VollstÃ¤ndiger Datensatz aus der DB
  * @param {object} [opts]
  * @param {boolean} [opts.requireSearchConfig=true] - ob search_config Pflicht ist
  * @returns {{ valid: boolean, errors: string[] }}
@@ -847,21 +882,21 @@ export function validatePublishThemeWorld(themeWorld, opts = {}) {
     return { valid: false, errors: ['Themenwelt nicht gefunden.'] };
   }
 
-  // Pflichtfelder für Publikation
+  // Pflichtfelder fÃ¼r Publikation
   if (!themeWorld.title_de?.trim()) {
     errors.push('title_de: Pflichtfeld fehlt. Kein Publish ohne deutschen Titel.');
   }
 
   if (!isValidSlug(themeWorld.slug)) {
-    errors.push('slug: Ungültiges Format. Kanonischer Pfad muss gültig sein.');
+    errors.push('slug: UngÃ¼ltiges Format. Kanonischer Pfad muss gÃ¼ltig sein.');
   }
 
   if (!themeWorld.url_segment || !VALID_URL_SEGMENTS.includes(themeWorld.url_segment)) {
-    errors.push('url_segment: Ungültiger oder fehlender Wert.');
+    errors.push('url_segment: UngÃ¼ltiger oder fehlender Wert.');
   }
 
   if (!themeWorld.db_segment || !VALID_DB_SEGMENTS.includes(themeWorld.db_segment)) {
-    errors.push('db_segment: Ungültiger oder fehlender Wert.');
+    errors.push('db_segment: UngÃ¼ltiger oder fehlender Wert.');
   }
 
   // Mindestens Subtitle oder Intro-Text
@@ -872,8 +907,10 @@ export function validatePublishThemeWorld(themeWorld, opts = {}) {
 
   // Suchkonfiguration (wenn gefordert)
   if (requireSearchConfig) {
-    if (!themeWorld.search_config || !themeWorld.search_config.area_slug) {
-      errors.push('search_config.area_slug: Pflichtfeld fehlt. Suchkonfiguration ist für Publikation erforderlich.');
+    if (!themeWorld.search_config) {
+      errors.push('search_config: Pflichtfeld fehlt. Suchkonfiguration ist fÃ¼r Publikation erforderlich.');
+    } else {
+      errors.push(...validateSearchConfig(themeWorld.search_config));
     }
   }
 
@@ -886,18 +923,18 @@ export function validatePublishThemeWorld(themeWorld, opts = {}) {
 }
 
 /**
- * Prüft ob ein Szenario-Artikel publiziert werden darf.
+ * PrÃ¼ft ob ein Szenario-Artikel publiziert werden darf.
  *
  * Quellenangaben (opts.requireSources):
- *   Die Prüfung existiert bereits vollständig, ist aber standardmässig AUS.
- *   Grund: Sport und Yoga sind live und haben noch keine Quellen — eine harte
- *   Pflicht würde jedes Re-Publish dieser Artikel blockieren. Sobald der
- *   Bestand nachgepflegt ist, genügt es, den Aufruf in
+ *   Die PrÃ¼fung existiert bereits vollstÃ¤ndig, ist aber standardmÃ¤ssig AUS.
+ *   Grund: Sport und Yoga sind live und haben noch keine Quellen â€” eine harte
+ *   Pflicht wÃ¼rde jedes Re-Publish dieser Artikel blockieren. Sobald der
+ *   Bestand nachgepflegt ist, genÃ¼gt es, den Aufruf in
  *   api/admin-theme-world-scenarios.js auf { requireSources: true } zu setzen;
- *   es ist keine weitere Codeänderung nötig.
+ *   es ist keine weitere CodeÃ¤nderung nÃ¶tig.
  *
- * @param {object} scenario - Vollständiger Datensatz aus der DB
- * @param {object} parentThemeWorld - Zugehörige Themenwelt aus der DB
+ * @param {object} scenario - VollstÃ¤ndiger Datensatz aus der DB
+ * @param {object} parentThemeWorld - ZugehÃ¶rige Themenwelt aus der DB
  * @param {object} [opts]
  * @param {boolean} [opts.requireSources=false] - mindestens eine Quelle verlangen
  * @returns {{ valid: boolean, errors: string[] }}
@@ -911,7 +948,7 @@ export function validatePublishScenario(scenario, parentThemeWorld, opts = {}) {
 
   // Eltern-Themenwelt muss publiziert sein
   if (!parentThemeWorld || parentThemeWorld.status !== 'published') {
-    errors.push('theme_world: Die zugehörige Themenwelt muss publiziert sein, bevor ein Szenario veröffentlicht werden kann.');
+    errors.push('theme_world: Die zugehÃ¶rige Themenwelt muss publiziert sein, bevor ein Szenario verÃ¶ffentlicht werden kann.');
   }
 
   // Pflichtfelder
@@ -920,15 +957,15 @@ export function validatePublishScenario(scenario, parentThemeWorld, opts = {}) {
   }
 
   if (!isValidSlug(scenario.slug)) {
-    errors.push('slug: Ungültiges Slug-Format.');
+    errors.push('slug: UngÃ¼ltiges Slug-Format.');
   }
 
   if (!scenario.teaser_de?.trim()) {
-    errors.push('teaser_de: Pflichtfeld fehlt. Kurztext ist für Publikation erforderlich.');
+    errors.push('teaser_de: Pflichtfeld fehlt. Kurztext ist fÃ¼r Publikation erforderlich.');
   }
 
   if (!scenario.content_html?.trim()) {
-    errors.push('content_html: Pflichtfeld fehlt. Artikel-Inhalt ist für Publikation erforderlich.');
+    errors.push('content_html: Pflichtfeld fehlt. Artikel-Inhalt ist fÃ¼r Publikation erforderlich.');
   }
 
   // Alt-Text bei Karten-Bild
@@ -942,11 +979,11 @@ export function validatePublishScenario(scenario, parentThemeWorld, opts = {}) {
 
   if (opts.requireSources === true && !hasSources) {
     errors.push(
-      'sources: Mindestens eine Quellenangabe ist für die Publikation erforderlich.',
+      'sources: Mindestens eine Quellenangabe ist fÃ¼r die Publikation erforderlich.',
     );
   }
 
-  // Vorhandene Quellen müssen strukturell gültig sein — unabhängig davon, ob
+  // Vorhandene Quellen mÃ¼ssen strukturell gÃ¼ltig sein â€” unabhÃ¤ngig davon, ob
   // sie Pflicht sind. Ein leeres Array (der Normalfall im Bestand) erzeugt hier
   // niemals einen Fehler.
   if (hasSources) {
