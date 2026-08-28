@@ -1,5 +1,5 @@
 /**
- * Admin-Formular fÃ¼r Szenarioartikel.
+ * Admin-Formular für Szenarioartikel.
  * Erstellt oder bearbeitet einen einzelnen Szenarioartikel.
  */
 
@@ -19,7 +19,7 @@ import {
 import { normalizeDeliveryTypeKey } from '../../lib/courseMetadata';
 import { MAX_SOURCES_PER_SCENARIO } from '../../lib/scenarioSources';
 
-/** Leerer Quelleneintrag fÃ¼r Â«Quelle hinzufÃ¼genÂ». */
+/** Leerer Quelleneintrag für «Quelle hinzufügen». */
 function emptySource() {
   return { publisher: '', title: '', url: '' };
 }
@@ -29,7 +29,7 @@ function emptySource() {
  *
  * Bewusst tolerant: ein Altbestand mit unerwartetem Inhalt soll das Formular
  * nicht blockieren, sondern sichtbar und korrigierbar sein. Die verbindliche
- * PrÃ¼fung passiert serverseitig (validateScenarioSources).
+ * Prüfung passiert serverseitig (validateScenarioSources).
  */
 function sourcesToFormRows(raw) {
   if (!Array.isArray(raw)) return [];
@@ -43,13 +43,13 @@ function sourcesToFormRows(raw) {
 }
 
 /**
- * Baut das sources-Array fÃ¼r den Speicher-Payload.
+ * Baut das sources-Array für den Speicher-Payload.
  *
- * VollstÃ¤ndig leere Zeilen fallen weg: eine versehentlich hinzugefÃ¼gte und nie
- * ausgefÃ¼llte Quelle soll das Speichern nicht mit einem Validierungsfehler
- * blockieren. Teilweise ausgefÃ¼llte Zeilen bleiben drin â€” dort ist der
- * Server-Fehler die richtige RÃ¼ckmeldung, weil die Redaktion etwas begonnen und
- * nicht zu Ende gefÃ¼hrt hat.
+ * Vollständig leere Zeilen fallen weg: eine versehentlich hinzugefügte und nie
+ * ausgefüllte Quelle soll das Speichern nicht mit einem Validierungsfehler
+ * blockieren. Teilweise ausgefüllte Zeilen bleiben drin — dort ist der
+ * Server-Fehler die richtige Rückmeldung, weil die Redaktion etwas begonnen und
+ * nicht zu Ende geführt hat.
  */
 function formRowsToSources(rows) {
   return (rows || [])
@@ -64,7 +64,7 @@ function formRowsToSources(rows) {
 function slugify(text) {
   return (text || '')
     .toLowerCase()
-    .replace(/Ã¤/g, 'ae').replace(/Ã¶/g, 'oe').replace(/Ã¼/g, 'ue').replace(/ÃŸ/g, 'ss')
+    .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/Þ/g, 'ss')
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '');
 }
@@ -138,7 +138,7 @@ export default function AdminScenarioForm({
         cta_kursart: ctaCfg.kursart || '',
         sources: sourcesToFormRows(data.sources),
         // date-Input erwartet exakt JJJJ-MM-TT. Die DB-Spalte ist `date` und
-        // liefert genau dieses Format; ein Timestamp wÃ¼rde abgeschnitten.
+        // liefert genau dieses Format; ein Timestamp würde abgeschnitten.
         last_reviewed_at: (data.last_reviewed_at || '').slice(0, 10),
         sort_order: data.sort_order || 0,
         status: data.status || 'draft',
@@ -190,8 +190,8 @@ export default function AdminScenarioForm({
    * Verschiebt eine Quelle um eine Position.
    *
    * Die Array-Reihenfolge ist die einzige Ordnungsangabe â€” es gibt keine
-   * sort_order im Quellenformat. Ein Tausch benachbarter EintrÃ¤ge ist deshalb
-   * die vollstÃ¤ndige Umsortierlogik.
+   * sort_order im Quellenformat. Ein Tausch benachbarter Einträge ist deshalb
+   * die vollständige Umsortierlogik.
    *
    * @param {number} index - aktuelle Position
    * @param {number} direction - -1 = nach oben, +1 = nach unten
@@ -247,10 +247,10 @@ export default function AdminScenarioForm({
       } else {
         const id = savedId || scenarioId;
         if (form.status === 'published') {
-          // Slug-Schutz: Warnung wenn Slug geÃ¤ndert wird
+          // Slug-Schutz: Warnung wenn Slug geändert wird
           const existing = await getScenario(id);
           if (existing.slug !== form.slug) {
-            showNotification('Achtung: Der Slug eines publizierten Artikels kann nicht geÃ¤ndert werden.');
+            showNotification('Achtung: Der Slug eines publizierten Artikels kann nicht geändert werden.');
             payload.slug = existing.slug;
             setForm((p) => ({ ...p, slug: existing.slug }));
           }
@@ -284,7 +284,7 @@ export default function AdminScenarioForm({
               <p className="font-semibold text-red-700">Fehler beim Laden</p>
               <p className="text-sm text-red-600 mt-1">{loadError}</p>
               <button onClick={() => setView('admin-scenario-list')} className="mt-4 text-sm text-gray-600 hover:underline">
-                ZurÃ¼ck zur Liste
+                Zurück zur Liste
               </button>
             </div>
           </div>
@@ -378,7 +378,7 @@ export default function AdminScenarioForm({
 
             <div>
               <label className="FLabel">Teaser (Kurzbeschreibung)</label>
-              <textarea className="FInput h-20 resize-none" value={form.teaser_de} onChange={(e) => update({ teaser_de: e.target.value })} placeholder="Kurze Beschreibung fÃ¼r die Karten-Anzeige (max. 200 Zeichen)" maxLength={250} />
+              <textarea className="FInput h-20 resize-none" value={form.teaser_de} onChange={(e) => update({ teaser_de: e.target.value })} placeholder="Kurze Beschreibung für die Karten-Anzeige (max. 200 Zeichen)" maxLength={250} />
             </div>
 
             <div>
@@ -390,11 +390,11 @@ export default function AdminScenarioForm({
 
         {/* Artikelinhalt */}
         <Section title="Artikelinhalt">
-          <p className="text-xs text-gray-400 mb-3">HTML-Eingabe Â· wird serverseitig sanitiert</p>
+          <p className="text-xs text-gray-400 mb-3">HTML-Eingabe · wird serverseitig sanitiert</p>
           <AdminRichTextEditor
             value={form.content_html}
             onChange={(html) => update({ content_html: html })}
-            placeholder="Artikelinhalt als HTMLâ€¦"
+            placeholder="Artikelinhalt als HTML…"
             minRows={25}
             id="scenario-editor"
           />
@@ -403,8 +403,8 @@ export default function AdminScenarioForm({
         {/* Quellen */}
         <Section title="Quellen">
           <p className="text-sm text-gray-500 mb-4">
-            Erscheinen Ã¶ffentlich unter dem Artikel als Â«Quellen &amp; weiterfÃ¼hrende
-            InformationenÂ». Ohne Eintrag wird der Bereich gar nicht angezeigt.
+            Erscheinen öffentlich unter dem Artikel als «Quellen &amp; weiterführende
+            Informationen». Ohne Eintrag wird der Bereich gar nicht angezeigt.
             Die Reihenfolge hier ist die Reihenfolge auf der Website.
           </p>
 
@@ -466,7 +466,7 @@ export default function AdminScenarioForm({
                       data-testid={`source-publisher-${index}`}
                       value={source.publisher}
                       onChange={(e) => updateSource(index, { publisher: e.target.value })}
-                      placeholder="Staatssekretariat fÃ¼r Bildung, Forschung und Innovation SBFI"
+                      placeholder="Staatssekretariat für Bildung, Forschung und Innovation SBFI"
                     />
                   </div>
                   <div>
@@ -476,7 +476,7 @@ export default function AdminScenarioForm({
                       data-testid={`source-title-${index}`}
                       value={source.title}
                       onChange={(e) => updateSource(index, { title: e.target.value })}
-                      placeholder="Subjektfinanzierung fÃ¼r vorbereitende Kurse"
+                      placeholder="Subjektfinanzierung für vorbereitende Kurse"
                     />
                   </div>
                   <div>
@@ -486,7 +486,7 @@ export default function AdminScenarioForm({
                       data-testid={`source-url-${index}`}
                       value={source.url}
                       onChange={(e) => updateSource(index, { url: e.target.value })}
-                      placeholder="https://www.sbfi.admin.ch/â€¦"
+                      placeholder="https://www.sbfi.admin.ch/…"
                     />
                   </div>
                 </div>
@@ -502,7 +502,7 @@ export default function AdminScenarioForm({
               className="flex items-center gap-2 px-3 py-2 text-sm font-medium bg-gray-100 hover:bg-gray-200 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Plus className="w-4 h-4" />
-              Quelle hinzufÃ¼gen
+              Quelle hinzufügen
             </button>
             <span className="text-xs text-gray-400">
               {form.sources.length} von {MAX_SOURCES_PER_SCENARIO}
@@ -510,17 +510,17 @@ export default function AdminScenarioForm({
           </div>
         </Section>
 
-        {/* Redaktionelle PrÃ¼fung */}
-        <Section title="Redaktionelle PrÃ¼fung">
+        {/* Redaktionelle Prüfung */}
+        <Section title="Redaktionelle Prüfung">
           <p className="text-sm text-gray-500 mb-4">
-            Datum der letzten inhaltlichen PrÃ¼fung. Wird Ã¶ffentlich als
-            Â«Zuletzt redaktionell geprÃ¼ft: Monat JahrÂ» angezeigt. Ohne Datum
-            steht kein PrÃ¼fhinweis unter dem Artikel â€” bitte nur setzen, wenn
-            der Inhalt tatsÃ¤chlich geprÃ¼ft wurde.
+            Datum der letzten inhaltlichen Prüfung. Wird öffentlich als
+            «Zuletzt redaktionell geprüft: Monat Jahr» angezeigt. Ohne Datum
+            steht kein Prüfhinweis unter dem Artikel — bitte nur setzen, wenn
+            der Inhalt tatsächlich geprüft wurde.
           </p>
           <div>
             <label className="FLabel" htmlFor="scenario-last-reviewed-at">
-              Zuletzt redaktionell geprÃ¼ft
+              Zuletzt redaktionell geprüft
             </label>
             <input
               id="scenario-last-reviewed-at"
@@ -586,12 +586,12 @@ export default function AdminScenarioForm({
             </div>
             <div>
               <label className="FLabel">Standort (loc)</label>
-              <input className="FInput" value={form.cta_loc} onChange={(e) => update({ cta_loc: e.target.value })} placeholder="ZÃ¼rich" />
+              <input className="FInput" value={form.cta_loc} onChange={(e) => update({ cta_loc: e.target.value })} placeholder="Zürich" />
             </div>
             <div>
               <label className="FLabel">Lieferart (delivery)</label>
               <select className="FInput" value={form.cta_delivery} onChange={(e) => update({ cta_delivery: e.target.value })}>
-                <option value="">Keine EinschrÃ¤nkung</option>
+                <option value="">Keine Einschränkung</option>
                 <option value="online_live">Online Live</option>
                 <option value="self_study">Selbststudium</option>
                 <option value="presence">Vor Ort</option>

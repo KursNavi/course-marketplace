@@ -1,23 +1,23 @@
 #!/usr/bin/env node
 /**
- * Import-Script fÃ¼r Themenwelten
+ * Import-Script für Themenwelten
  *
  * Liest eine versionierte Importdatei und schreibt die Daten
  * in eine sichere Nicht-Produktions-Supabase-Instanz.
  *
  * Modi:
- *   --validate          PrÃ¼ft die Importdatei ohne DB-Zugriff.
- *   --dry-run           Zeigt was importiert wÃ¼rde, ohne zu schreiben.
+ *   --validate          Prüft die Importdatei ohne DB-Zugriff.
+ *   --dry-run           Zeigt was importiert würde, ohne zu schreiben.
  *   --apply             Schreibt in eine LOKALE Supabase-Instanz (localhost).
  *   --apply --staging   Schreibt in das konfigurierte Staging-Projekt.
  *                       Erfordert SUPABASE_STAGING_URL + SUPABASE_STAGING_SERVICE_KEY.
  *
  * Sicherheit (Phase 6.5 Erweiterung):
- *   - Bekannte Produktionsprojekt-Referenzen sind GESPERRT (unabhÃ¤ngig vom Flag).
- *   - --apply prÃ¼ft zwingend, dass die DB-URL lokal ist (localhost / 127.0.0.1).
+ *   - Bekannte Produktionsprojekt-Referenzen sind GESPERRT (unabhängig vom Flag).
+ *   - --apply prüft zwingend, dass die DB-URL lokal ist (localhost / 127.0.0.1).
  *   - --apply --staging erlaubt Remote-URL, sperrt aber Produktion explizit.
- *   - Produktion kann NICHT Ã¼ber irrtÃ¼mliche Flags akzeptiert werden.
- *   - Staging-URL MUSS sich von Produktion unterscheiden (Project-Ref-PrÃ¼fung).
+ *   - Produktion kann NICHT über irrtümliche Flags akzeptiert werden.
+ *   - Staging-URL MUSS sich von Produktion unterscheiden (Project-Ref-Prüfung).
  *   - Transaktion: Alle Tabellen werden in einem Atomic-Block geschrieben.
  *     Bei Fehler wird nichts in der DB hinterlassen.
  *
@@ -38,9 +38,9 @@ import { createClient } from '@supabase/supabase-js';
 import { fileURLToPath } from 'url';
 import { dirname, resolve } from 'path';
 
-// Ein Regelwerk fÃ¼r alle Schreibpfade: dieselbe Funktion prÃ¼ft und normalisiert
+// Ein Regelwerk für alle Schreibpfade: dieselbe Funktion prüft und normalisiert
 // die Quellenangaben auch in der Admin-API (api/admin-theme-world-scenarios.js).
-// Ein Ã¼ber den Importer eingespieltes Szenario erfÃ¼llt damit exakt denselben
+// Ein über den Importer eingespieltes Szenario erfüllt damit exakt denselben
 // Feldvertrag wie eines, das die Redaktion im Admin erfasst hat.
 import { validateScenarioSources } from '../src/lib/scenarioSources.js';
 
@@ -55,8 +55,8 @@ const PROJECT_ROOT = resolve(__dirname, '..');
 // ---------------------------------------------------------------------------
 // Bekannte Produktionsprojekt-Referenzen â€” IMMER GESPERRT
 // ---------------------------------------------------------------------------
-// Diese Referenzen dÃ¼rfen niemals als Ziel akzeptiert werden,
-// unabhÃ¤ngig von --staging oder anderen Flags.
+// Diese Referenzen dürfen niemals als Ziel akzeptiert werden,
+// unabhängig von --staging oder anderen Flags.
 const BLOCKED_PRODUCTION_REFS = [
   'nplxmpfasgpumpiddjfl', // KursNavi Produktion (supabase/.temp/project-ref)
 ];
@@ -83,7 +83,7 @@ Verwendung:
 
 Optionen:
   --file      Pfad zur Importdatei (relativ zum Projekt-Root oder absolut)
-  --validate  PrÃ¼ft Schema ohne DB-Zugriff
+  --validate  Prüft Schema ohne DB-Zugriff
   --dry-run   Zeigt Import-Ãœbersicht ohne DB-Ã„nderung
   --apply     Schreibt in lokale Supabase (Sicherheitscheck aktiv!)
   --staging   Erlaubt Remote-Staging-URL (Produktion bleibt gesperrt!)
@@ -121,7 +121,7 @@ function validateSchema(data) {
 
   // Version und Schema
   if (!data.schema || !data.schema.startsWith('theme-world-import/')) {
-    errors.push('Fehlendes oder ungÃ¼ltiges "schema" Feld (erwartet: theme-world-import/v1)');
+    errors.push('Fehlendes oder ungültiges "schema" Feld (erwartet: theme-world-import/v1)');
   }
   if (!data.version) {
     warnings.push('"version" Feld fehlt');
@@ -140,19 +140,19 @@ function validateSchema(data) {
     // Segment-Validierung
     const validSegments = ['beruflich', 'privat-hobby', 'kinder-jugend'];
     if (tw.url_segment && !validSegments.includes(tw.url_segment)) {
-      errors.push(`theme_world.url_segment "${tw.url_segment}" ist ungÃ¼ltig. Erlaubt: ${validSegments.join(', ')}`);
+      errors.push(`theme_world.url_segment "${tw.url_segment}" ist ungültig. Erlaubt: ${validSegments.join(', ')}`);
     }
     const validDbSegments = ['professionell', 'privat', 'kinder'];
     if (tw.db_segment && !validDbSegments.includes(tw.db_segment)) {
-      errors.push(`theme_world.db_segment "${tw.db_segment}" ist ungÃ¼ltig. Erlaubt: ${validDbSegments.join(', ')}`);
+      errors.push(`theme_world.db_segment "${tw.db_segment}" ist ungültig. Erlaubt: ${validDbSegments.join(', ')}`);
     }
 
     // Slug-Format
     if (tw.slug && !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(tw.slug)) {
-      errors.push(`theme_world.slug "${tw.slug}" enthÃ¤lt ungÃ¼ltige Zeichen (nur Kleinbuchstaben, Zahlen, Bindestriche)`);
+      errors.push(`theme_world.slug "${tw.slug}" enthält ungültige Zeichen (nur Kleinbuchstaben, Zahlen, Bindestriche)`);
     }
 
-    // meta_title LÃ¤nge (muss mit API-Validator und UI Ã¼bereinstimmen)
+    // meta_title Länge (muss mit API-Validator und UI übereinstimmen)
     const META_TITLE_MAX = 60;
     if (tw.meta_title && tw.meta_title.length > META_TITLE_MAX) {
       errors.push(`theme_world.meta_title ist zu lang (${tw.meta_title.length} Zeichen, max ${META_TITLE_MAX})`);
@@ -180,10 +180,10 @@ function validateSchema(data) {
       if (s.slug && slugsSeen.has(s.slug)) errors.push(`${prefix}: Doppelter slug "${s.slug}"`);
       if (s.slug) slugsSeen.add(s.slug);
 
-      // Quellenangaben gegen denselben Vertrag prÃ¼fen, den die Admin-API
-      // durchsetzt. Ein fehlendes sources-Feld ist zulÃ¤ssig (kein Quellenblock);
-      // ein vorhandenes muss vollstÃ¤ndig gÃ¼ltig sein, sonst wÃ¼rde der Import
-      // EintrÃ¤ge schreiben, die im Admin nie wieder speicherbar wÃ¤ren.
+      // Quellenangaben gegen denselben Vertrag prüfen, den die Admin-API
+      // durchsetzt. Ein fehlendes sources-Feld ist zulässig (kein Quellenblock);
+      // ein vorhandenes muss vollständig gültig sein, sonst würde der Import
+      // Einträge schreiben, die im Admin nie wieder speicherbar wären.
       if ('sources' in s) {
         const result = validateScenarioSources(s.sources);
         for (const error of result.errors) errors.push(`${prefix}: ${error}`);
@@ -241,7 +241,7 @@ function validateSchema(data) {
     errors.push('"trust_items" Array fehlt');
   }
 
-  // Kanonische Pfade prÃ¼fen
+  // Kanonische Pfade prüfen
   if (tw && Array.isArray(scenarios)) {
     const canonicalPaths = new Set();
     const base = `/bereich/${tw.url_segment}/${tw.slug}`;
@@ -323,17 +323,17 @@ function printDryRun(data) {
   const scenariosWithImages = scenarios.filter((s) => s.card_image_url);
   console.log(`  Szenario-Bilder: ${scenariosWithImages.length} / ${scenarios.length}`);
 
-  console.log('\nKonflikte prÃ¼fen: keine bekannten Konflikte');
-  console.log('\nâœ“ DRY-RUN abgeschlossen. Keine Daten verÃ¤ndert.');
+  console.log('\nKonflikte prüfen: keine bekannten Konflikte');
+  console.log('\n✓ DRY-RUN abgeschlossen. Keine Daten verändert.');
 }
 
 // ---------------------------------------------------------------------------
-// Produktionssperre (immer aktiv, unabhÃ¤ngig von Flags)
+// Produktionssperre (immer aktiv, unabhängig von Flags)
 // ---------------------------------------------------------------------------
 
 /**
  * Bricht ab wenn die URL auf ein bekanntes Produktionsprojekt zeigt.
- * Diese PrÃ¼fung ist IMMER aktiv â€” kein Flag kann sie deaktivieren.
+ * Diese Prüfung ist IMMER aktiv — kein Flag kann sie deaktivieren.
  */
 function assertNotProduction(url) {
   if (!url) return; // URL-Fehler wird separat behandelt
@@ -341,11 +341,11 @@ function assertNotProduction(url) {
   try {
     ref = new URL(url).hostname.split('.')[0];
   } catch (_) {
-    return; // UngÃ¼ltige URL â€” wird anderswo behandelt
+    return; // Ungültige URL — wird anderswo behandelt
   }
   if (BLOCKED_PRODUCTION_REFS.includes(ref)) {
     throw new Error(
-      `SICHERHEITSABBRUCH: Die URL "${url}" gehÃ¶rt zum bekannten Produktionsprojekt "${ref}".\n` +
+      `SICHERHEITSABBRUCH: Die URL "${url}" gehört zum bekannten Produktionsprojekt "${ref}".\n` +
         'Das Import-Script darf NIEMALS gegen die Produktionsdatenbank schreiben.\n' +
         'Bekannte Produktionsprojekte: ' + BLOCKED_PRODUCTION_REFS.join(', ')
     );
@@ -353,15 +353,15 @@ function assertNotProduction(url) {
 }
 
 // ---------------------------------------------------------------------------
-// LokalitÃ¤tsprÃ¼fung
+// Lokalitätsprüfung
 // ---------------------------------------------------------------------------
 
 function assertIsLocalSupabase(url) {
-  assertNotProduction(url); // Produktionssperre immer zuerst prÃ¼fen
+  assertNotProduction(url); // Produktionssperre immer zuerst prüfen
 
   if (!url) {
     throw new Error(
-      'SUPABASE_URL ist nicht gesetzt. FÃ¼r --apply muss eine lokale Supabase-URL konfiguriert sein.'
+      'SUPABASE_URL ist nicht gesetzt. Für --apply muss eine lokale Supabase-URL konfiguriert sein.'
     );
   }
   const lc = url.toLowerCase();
@@ -376,17 +376,17 @@ function assertIsLocalSupabase(url) {
       `SICHERHEITSABBRUCH: Die Supabase-URL "${url}" ist keine lokale URL.\n` +
         'Das Import-Script darf ohne --staging nur gegen eine lokale Instanz schreiben.\n' +
         'Erlaubte Hosts: localhost, 127.0.0.1, ::1, supabase.local\n' +
-        'FÃ¼r Staging-Projekte: --apply --staging verwenden.'
+        'Für Staging-Projekte: --apply --staging verwenden.'
     );
   }
 }
 
 // ---------------------------------------------------------------------------
-// Staging-PrÃ¼fung
+// Staging-Prüfung
 // ---------------------------------------------------------------------------
 
 /**
- * PrÃ¼ft die Staging-URL auf ZulÃ¤ssigkeit.
+ * Prüft die Staging-URL auf Zulässigkeit.
  * Erlaubt Remote-URLs, sperrt aber explizit bekannte Produktionsprojekte.
  */
 function assertIsSafeStaging(url) {
@@ -395,7 +395,7 @@ function assertIsSafeStaging(url) {
   if (!url) {
     throw new Error(
       'SUPABASE_STAGING_URL ist nicht gesetzt.\n' +
-        'FÃ¼r --staging muss SUPABASE_STAGING_URL in der Umgebung gesetzt sein.\n' +
+        'Für --staging muss SUPABASE_STAGING_URL in der Umgebung gesetzt sein.\n' +
         'Setze diese Variable in einer lokalen, nicht committed Konfigurationsdatei.'
     );
   }
@@ -418,13 +418,13 @@ function assertIsSafeStaging(url) {
 // ---------------------------------------------------------------------------
 
 /**
- * FÃ¼hrt den Import atomar Ã¼ber die PostgreSQL-Funktion import_theme_world_atomic aus.
- * BenÃ¶tigt: Migration 20260715_import_theme_world_atomic.sql muss angewendet sein.
+ * Führt den Import atomar über die PostgreSQL-Funktion import_theme_world_atomic aus.
+ * Benötigt: Migration 20260715_import_theme_world_atomic.sql muss angewendet sein.
  *
- * AtomaritÃ¤t: Die PostgreSQL-Funktion lÃ¤uft in einer impliziten Transaktion.
- * Bei Fehler werden alle Ã„nderungen vollstÃ¤ndig zurÃ¼ckgerollt.
+ * Atomarität: Die PostgreSQL-Funktion läuft in einer impliziten Transaktion.
+ * Bei Fehler werden alle Ãnderungen vollständig zurückgerollt.
  *
- * Status-Schutz: Bereits publizierte EintrÃ¤ge behalten ihren Status.
+ * Status-Schutz: Bereits publizierte Einträge behalten ihren Status.
  *
  * @param {object} supabase - Supabase-Client (Service-Role)
  * @param {object} data     - Importdaten
@@ -434,7 +434,7 @@ function assertIsSafeStaging(url) {
 async function applyAtomic(supabase, data) {
   console.log('\n[Atomar] Rufe import_theme_world_atomic() auf...');
   console.log('  Alle 7 Tabellen werden in einer PostgreSQL-Transaktion geschrieben.');
-  console.log('  Bei Fehler: vollstÃ¤ndiger Rollback ohne Datenrest in der DB.');
+  console.log('  Bei Fehler: vollständiger Rollback ohne Datenrest in der DB.');
 
   const { data: result, error } = await supabase.rpc('import_theme_world_atomic', {
     p_data: data,
@@ -462,14 +462,14 @@ async function applyAtomic(supabase, data) {
 /**
  * Sequenzieller Fallback-Import (NICHT atomar).
  *
- * âš   WARNUNG: Diese Abfolge ist NICHT transaktional. Falls ein Schritt fehlschlÃ¤gt,
- *    kÃ¶nnen bereits geschriebene Daten in der Datenbank verbleiben.
+ * ⚠  WARNUNG: Diese Abfolge ist NICHT transaktional. Falls ein Schritt fehlschlägt,
+ *    können bereits geschriebene Daten in der Datenbank verbleiben.
  *    Nur als Fallback verwenden wenn die RPC-Funktion fehlt.
  *
  * âš   STATUS-HINWEIS: Bei bestehendem Eintrag (Upsert) wird der status-Wert aus der
- *    Importdatei geschrieben. Bereits publizierte EintrÃ¤ge kÃ¶nnen unbeabsichtigt
- *    auf 'draft' zurÃ¼ckgesetzt werden. Verwende --apply nur mit frischer lokaler DB
- *    oder nach SicherheitsabklÃ¤rung.
+ *    Importdatei geschrieben. Bereits publizierte Einträge können unbeabsichtigt
+ *    auf 'draft' zurückgesetzt werden. Verwende --apply nur mit frischer lokaler DB
+ *    oder nach Sicherheitsabklärung.
  *
  * @param {object} supabase - Supabase-Client
  * @param {object} data     - Importdaten
@@ -477,8 +477,8 @@ async function applyAtomic(supabase, data) {
 async function applySequential(supabase, data) {
   console.warn('\nâš   WARNUNG: Verwende sequenziellen Fallback-Import (NICHT atomar).');
   console.warn('   Ursache: import_theme_world_atomic() nicht gefunden.');
-  console.warn('   LÃ¶sung:  Migration 20260715_import_theme_world_atomic.sql anwenden.');
-  console.warn('   Risiko:  Teilimport bei Fehler mÃ¶glich. Nur auf frischer lokaler DB sicher.');
+  console.warn('   Lösung:  Migration 20260715_import_theme_world_atomic.sql anwenden.');
+  console.warn('   Risiko:  Teilimport bei Fehler möglich. Nur auf frischer lokaler DB sicher.');
 
   const tw = data.theme_world;
   const scenarios = data.scenarios || [];
@@ -537,7 +537,7 @@ async function applySequential(supabase, data) {
       cta_config: s.cta_config || null,
       // Immer den normalisierten Wert schreiben, nie das Rohobjekt aus der
       // Importdatei â€” identisch zum Vorgehen der Admin-API. validateSchema()
-      // hat vorher sichergestellt, dass hier nichts UngÃ¼ltiges mehr ankommt.
+      // hat vorher sichergestellt, dass hier nichts Ungültiges mehr ankommt.
       sources: validateScenarioSources(s.sources).sources,
       status: s.status || 'draft',
     };
@@ -666,7 +666,7 @@ function readEnvFile(filePath) {
 }
 
 async function applyLocal(data) {
-  // .env.local lesen fÃ¼r lokale Variablen
+  // .env.local lesen für lokale Variablen
   let supabaseUrl = process.env.SUPABASE_LOCAL_URL || process.env.VITE_SUPABASE_URL;
   let supabaseKey =
     process.env.SUPABASE_LOCAL_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -685,11 +685,11 @@ async function applyLocal(data) {
   if (!supabaseKey) {
     throw new Error(
       'SUPABASE_SERVICE_ROLE_KEY (oder SUPABASE_LOCAL_SERVICE_KEY) ist nicht gesetzt.\n' +
-        'FÃ¼r den lokalen Import wird der Service-Role-Key der lokalen Supabase benÃ¶tigt.'
+        'Für den lokalen Import wird der Service-Role-Key der lokalen Supabase benötigt.'
     );
   }
 
-  console.log(`\nZiel: ${supabaseUrl} (lokal bestÃ¤tigt)`);
+  console.log(`\nZiel: ${supabaseUrl} (lokal bestätigt)`);
   const supabase = createClient(supabaseUrl, supabaseKey);
 
   // Bevorzugter Pfad: Atomarer Import via PostgreSQL-RPC
@@ -727,7 +727,7 @@ async function applyLocal(data) {
   console.log(
     `\nHinweis: Wende die Migration 20260715_import_theme_world_atomic.sql an`
   );
-  console.log(`  und fÃ¼hre den Import erneut aus fÃ¼r echte AtomaritÃ¤t.`);
+  console.log(`  und führe den Import erneut aus für echte Atomarität.`);
 }
 
 // ---------------------------------------------------------------------------
@@ -735,7 +735,7 @@ async function applyLocal(data) {
 // ---------------------------------------------------------------------------
 
 /**
- * FÃ¼hrt den Import gegen ein konfiguriertes Staging-Projekt aus.
+ * Führt den Import gegen ein konfiguriertes Staging-Projekt aus.
  * Produktion ist explizit gesperrt.
  * Erfordert SUPABASE_STAGING_URL + SUPABASE_STAGING_SERVICE_KEY in der Umgebung
  * oder in .env.staging.local (nicht committed).
@@ -749,7 +749,7 @@ async function applyStaging(data) {
     process.env.SUPABASE_STAGING_SERVICE_KEY ||
     process.env.SUPABASE_SECRET_KEY_TEST; // Fallback: .env.test.local Konvention
 
-  // Fallback auf .env.staging.local (primÃ¤re Staging-Konfiguration)
+  // Fallback auf .env.staging.local (primäre Staging-Konfiguration)
   if (!stagingUrl || !stagingKey) {
     const envStaging = readEnvFile(resolve(PROJECT_ROOT, '.env.staging.local'));
     if (!stagingUrl) stagingUrl = envStaging['SUPABASE_STAGING_URL'];
@@ -765,7 +765,7 @@ async function applyStaging(data) {
     }
   }
 
-  // SicherheitsprÃ¼fungen
+  // Sicherheitsprüfungen
   assertIsSafeStaging(stagingUrl);
 
   if (!stagingKey) {
@@ -838,7 +838,7 @@ async function main() {
   console.log(`âœ“ Schema valide (${warnings.length} Warnungen)`);
 
   if (mode === 'validate') {
-    console.log('\nâœ“ Validierung abgeschlossen. Keine Daten verÃ¤ndert.');
+    console.log('\n✓ Validierung abgeschlossen. Keine Daten verändert.');
     return;
   }
 

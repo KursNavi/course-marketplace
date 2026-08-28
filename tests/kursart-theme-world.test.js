@@ -4,19 +4,19 @@ import { matchesCourseTypeFilter } from '../src/lib/themeWorldCourseFilters.js';
 import { adaptToLegacyBereichConfig, adaptScenarioArticle } from '../src/lib/themeWorldAdapter.js';
 
 describe('Kursart-Filter in Themenwelten', () => {
-  it('behÃ¤lt kursart bei vordefinierten Suchen beim Speichern', () => {
+  it('behält kursart bei vordefinierten Suchen beim Speichern', () => {
     expect(normalizePredefinedSearches([
       { label_de: ' Feriencamps ', kursart: ' feriencamp ', spec: '' },
     ])).toEqual([{ label_de: 'Feriencamps', kursart: 'feriencamp' }]);
   });
 
-  it('verwendet das Kursart-Feld des passenden Segments fÃ¼r die Landing-ZÃ¤hlung', () => {
+  it('verwendet das Kursart-Feld des passenden Segments für die Landing-Zählung', () => {
     expect(matchesCourseTypeFilter({ kinder_kursart: 'feriencamp' }, 'kinder_jugend', 'feriencamp')).toBe(true);
     expect(matchesCourseTypeFilter({ privat_kursart: 'feriencamp' }, 'privat_hobby', 'feriencamp')).toBe(true);
     expect(matchesCourseTypeFilter({ kinder_kursart: 'feriencamp' }, 'privat_hobby', 'feriencamp')).toBe(false);
   });
 
-  it('Ã¼bernimmt einen globalen Kursart-Filter in Landing- und Szenario-CTAs', () => {
+  it('übernimmt einen globalen Kursart-Filter in Landing- und Szenario-CTAs', () => {
     const themeWorld = {
       key: 'kinder-feriencamps', title_de: 'Kinder-Feriencamps', slug: 'kinder-feriencamps',
       url_segment: 'kinder-jugend', db_segment: 'kinder', area_slug: null,

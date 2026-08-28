@@ -1,5 +1,5 @@
 /**
- * Unit-Tests fÃ¼r die Theme-World-Validierungsschemas.
+ * Unit-Tests für die Theme-World-Validierungsschemas.
  * Diese Tests laufen rein in-process ohne Netzwerk- oder DB-Zugriff.
  */
 
@@ -41,7 +41,7 @@ function validThemeWorldBase() {
     db_segment: 'professionell',
     area_slug: 'sport_fitness_beruf',
     title_de: 'Sport & Fitness Berufsausbildung',
-    subtitle_de: 'Alles Ã¼ber Berufsausbildungen im Bereich Sport und Fitness.',
+    subtitle_de: 'Alles über Berufsausbildungen im Bereich Sport und Fitness.',
     search_config: { area_slug: 'sport_fitness_beruf' },
   };
 }
@@ -73,14 +73,14 @@ function validPublishedThemeWorld() {
 // ============================================================
 
 describe('isValidSlug', () => {
-  it('akzeptiert gÃ¼ltige Slugs', () => {
+  it('akzeptiert gültige Slugs', () => {
     expect(isValidSlug('berufseinstieg')).toBe(true);
     expect(isValidSlug('sport-fitness-beruf')).toBe(true);
     expect(isValidSlug('yoga123')).toBe(true);
     expect(isValidSlug('a')).toBe(true);
   });
 
-  it('lehnt ungÃ¼ltige Slugs ab', () => {
+  it('lehnt ungültige Slugs ab', () => {
     expect(isValidSlug('')).toBe(false);
     expect(isValidSlug('-anfang')).toBe(false);
     expect(isValidSlug('ende-')).toBe(false);
@@ -122,7 +122,7 @@ describe('validateSearchConfig', () => {
     expect(validateSearchConfig(null)).toEqual([]);
   });
 
-  it('akzeptiert gÃ¼ltige search_config', () => {
+  it('akzeptiert gültige search_config', () => {
     expect(validateSearchConfig({ area_slug: 'sport_fitness_beruf' })).toEqual([]);
     expect(validateSearchConfig({
       area_slug: 'sport_fitness_beruf',
@@ -153,7 +153,7 @@ describe('validateSearchConfig', () => {
     expect(errors.some(e => e.includes('unknown_key'))).toBe(true);
   });
 
-  it('lehnt ungÃ¼ltigen type_key ab', () => {
+  it('lehnt ungültigen type_key ab', () => {
     const errors = validateSearchConfig({ area_slug: 'test', type_key: 'invalid' });
     expect(errors.some(e => e.includes('type_key'))).toBe(true);
   });
@@ -173,16 +173,16 @@ describe('validateSearchConfig', () => {
 // ============================================================
 
 // Kanonischer DB-Vertrag: flache snake_case-Keys mit String-Werten.
-// Die frÃ¼here camelCase-Multilang-Erwartung (faqTitle: { de }) war ein toter
+// Die frühere camelCase-Multilang-Erwartung (faqTitle: { de }) war ein toter
 // Vertragsrest und beschrieb die Adapter-AUSGABE, nicht das DB-Format.
 describe('validateSectionTitles', () => {
   it('akzeptiert null', () => {
     expect(validateSectionTitles(null)).toEqual([]);
   });
 
-  it('akzeptiert gÃ¼ltige section_titles (snake_case, String-Werte)', () => {
+  it('akzeptiert gültige section_titles (snake_case, String-Werte)', () => {
     expect(validateSectionTitles({
-      faqs_heading: 'HÃ¤ufige Fragen',
+      faqs_heading: 'Häufige Fragen',
       cta_button: 'Jetzt suchen',
     })).toEqual([]);
   });
@@ -197,12 +197,12 @@ describe('validateSectionTitles', () => {
   });
 
   it('lehnt das alte camelCase-Format ab (kein paralleler Vertrag)', () => {
-    const errors = validateSectionTitles({ faqTitle: { de: 'HÃ¤ufige Fragen' } });
+    const errors = validateSectionTitles({ faqTitle: { de: 'Häufige Fragen' } });
     expect(errors.some(e => e.includes('faqTitle'))).toBe(true);
   });
 
   it('lehnt Nicht-String-Werte ab', () => {
-    const errors = validateSectionTitles({ faqs_heading: { de: 'HÃ¤ufige Fragen' } });
+    const errors = validateSectionTitles({ faqs_heading: { de: 'Häufige Fragen' } });
     expect(errors.some(e => e.includes('Muss ein String sein'))).toBe(true);
   });
 
@@ -243,9 +243,9 @@ describe('validatePredefinedSearches', () => {
     expect(validatePredefinedSearches(null)).toEqual([]);
   });
 
-  it('akzeptiert gÃ¼ltige Suchliste', () => {
+  it('akzeptiert gültige Suchliste', () => {
     expect(validatePredefinedSearches([
-      { label_de: 'Fitness Trainer ZÃ¼rich', loc: 'ZÃ¼rich', delivery: 'presence' },
+      { label_de: 'Fitness Trainer Zürich', loc: 'Zürich', delivery: 'presence' },
       { label_de: 'Online Yoga' },
     ])).toEqual([]);
   });
@@ -255,16 +255,16 @@ describe('validatePredefinedSearches', () => {
   });
 
   it('lehnt fehlenden label_de ab', () => {
-    const errors = validatePredefinedSearches([{ loc: 'ZÃ¼rich' }]);
+    const errors = validatePredefinedSearches([{ loc: 'Zürich' }]);
     expect(errors.some(e => e.includes('label_de'))).toBe(true);
   });
 
-  it('lehnt ungÃ¼ltigen delivery-Wert ab', () => {
+  it('lehnt ungültigen delivery-Wert ab', () => {
     const errors = validatePredefinedSearches([{ label_de: 'Test', delivery: 'at_home' }]);
     expect(errors.some(e => e.includes('delivery'))).toBe(true);
   });
 
-  it('lehnt mehr als 20 EintrÃ¤ge ab', () => {
+  it('lehnt mehr als 20 Einträge ab', () => {
     const items = Array.from({ length: 21 }, (_, i) => ({ label_de: `Item ${i}` }));
     const errors = validatePredefinedSearches(items);
     expect(errors.some(e => e.includes('Maximal 20'))).toBe(true);
@@ -281,14 +281,14 @@ describe('validatePredefinedSearches', () => {
 // ============================================================
 
 describe('validateCtaLinks', () => {
-  it('akzeptiert gÃ¼ltige cta_links', () => {
+  it('akzeptiert gültige cta_links', () => {
     expect(validateCtaLinks([
       { label_de: 'Alle Kurse' },
-      { label_de: 'ZÃ¼rich', loc: 'ZÃ¼rich', delivery: 'presence' },
+      { label_de: 'Zürich', loc: 'Zürich', delivery: 'presence' },
     ])).toEqual([]);
   });
 
-  it('lehnt mehr als 5 EintrÃ¤ge ab', () => {
+  it('lehnt mehr als 5 Einträge ab', () => {
     const items = Array.from({ length: 6 }, (_, i) => ({ label_de: `Link ${i}` }));
     const errors = validateCtaLinks(items);
     expect(errors.some(e => e.includes('Maximal 5'))).toBe(true);
@@ -301,8 +301,8 @@ describe('validateCtaLinks', () => {
 
   // label_de: identischer Vertrag wie im Admin â€” getrimmt nicht leer, max 60.
   describe('label_de', () => {
-    it('akzeptiert ein regulÃ¤res Label', () => {
-      expect(validateCtaLinks([{ label_de: 'Kurse in ZÃ¼rich' }])).toEqual([]);
+    it('akzeptiert ein reguläres Label', () => {
+      expect(validateCtaLinks([{ label_de: 'Kurse in Zürich' }])).toEqual([]);
     });
 
     it.each([
@@ -317,7 +317,7 @@ describe('validateCtaLinks', () => {
     });
 
     it('lehnt fehlendes label_de ab', () => {
-      const errors = validateCtaLinks([{ loc: 'ZÃ¼rich' }]);
+      const errors = validateCtaLinks([{ loc: 'Zürich' }]);
       expect(errors.some(e => e.includes('label_de'))).toBe(true);
     });
 
@@ -333,9 +333,9 @@ describe('validateCtaLinks', () => {
     });
 
     it('trimmt oder mutiert die Eingabe nicht', () => {
-      const item = { label_de: '  Kurse in ZÃ¼rich  ' };
+      const item = { label_de: '  Kurse in Zürich  ' };
       validateCtaLinks([item]);
-      expect(item.label_de).toBe('  Kurse in ZÃ¼rich  ');
+      expect(item.label_de).toBe('  Kurse in Zürich  ');
     });
   });
 
@@ -346,7 +346,7 @@ describe('validateCtaLinks', () => {
       expect(validateCtaLinks([{ label_de: 'Alle Kurse' }])).toEqual([]);
     });
 
-    it.each(['ZÃ¼rich', 'Basel-Stadt'])('akzeptiert den String %s', (value) => {
+    it.each(['Zürich', 'Basel-Stadt'])('akzeptiert den String %s', (value) => {
       expect(validateCtaLinks([{ label_de: 'Alle Kurse', [field]: value }])).toEqual([]);
     });
 
@@ -360,21 +360,21 @@ describe('validateCtaLinks', () => {
       expect(errors).toEqual([`cta_links[0].${field}: Muss ein String oder null sein.`]);
     });
 
-    // null bedeutet Â«nicht gesetztÂ», genau wie ein fehlender Key. Importpakete
-    // schreiben die optionalen Suchparameter explizit als null aus; wÃ¼rde der
+    // null bedeutet «nicht gesetzt», genau wie ein fehlender Key. Importpakete
+    // schreiben die optionalen Suchparameter explizit als null aus; würde der
     // Validator das ablehnen, liesse sich ein importierter CTA-Link im Admin
     // nie wieder speichern.
-    it('akzeptiert null als Â«nicht gesetztÂ»', () => {
+    it('akzeptiert null als «nicht gesetzt»', () => {
       expect(validateCtaLinks([{ label_de: 'Alle Kurse', [field]: null }])).toEqual([]);
     });
 
-    it('validiert keine Taxonomie (beliebiger String bleibt gÃ¼ltig)', () => {
+    it('validiert keine Taxonomie (beliebiger String bleibt gültig)', () => {
       expect(validateCtaLinks([{ label_de: 'Alle Kurse', [field]: 'Irgendwas' }])).toEqual([]);
     });
   });
 
   // sort_order und status stammen aus dem Importpaket. Sie sind im Admin nicht
-  // bearbeitbar, mÃ¼ssen den Speicherpfad aber unbeschadet passieren.
+  // bearbeitbar, müssen den Speicherpfad aber unbeschadet passieren.
   describe('sort_order', () => {
     it('akzeptiert eine ganze Zahl >= 0 sowie null und ein fehlendes Feld', () => {
       expect(validateCtaLinks([{ label_de: 'A', sort_order: 0 }])).toEqual([]);
@@ -411,7 +411,7 @@ describe('validateCtaLinks', () => {
 
   // Der Vertrag muss genau das Format des eingefrorenen Kreativkurse-Pakets
   // tragen â€” sonst blockiert der Importâ†’Adminâ†’Speichern-Zyklus.
-  it('akzeptiert das vollstÃ¤ndige Importformat mit allen sieben Keys', () => {
+  it('akzeptiert das vollständige Importformat mit allen sieben Keys', () => {
     const errors = validateCtaLinks([
       {
         sort_order: 1,
@@ -432,7 +432,7 @@ describe('validateCtaLinks', () => {
 // ============================================================
 
 describe('validateThemeWorldBase', () => {
-  it('akzeptiert gÃ¼ltige Themenwelt', () => {
+  it('akzeptiert gültige Themenwelt', () => {
     const result = validateThemeWorldBase(validThemeWorldBase());
     expect(result.valid).toBe(true);
     expect(result.errors).toEqual([]);
@@ -445,14 +445,14 @@ describe('validateThemeWorldBase', () => {
     expect(result.errors.some(e => e.includes('title_de'))).toBe(true);
   });
 
-  it('lehnt ungÃ¼ltiges Segment ab', () => {
-    const data = { ...validThemeWorldBase(), db_segment: 'ungÃ¼ltig' };
+  it('lehnt ungültiges Segment ab', () => {
+    const data = { ...validThemeWorldBase(), db_segment: 'ungültig' };
     const result = validateThemeWorldBase(data);
     expect(result.valid).toBe(false);
     expect(result.errors.some(e => e.includes('db_segment'))).toBe(true);
   });
 
-  it('lehnt ungÃ¼ltigen Slug ab', () => {
+  it('lehnt ungültigen Slug ab', () => {
     const data = { ...validThemeWorldBase(), slug: 'mit leerzeichen' };
     const result = validateThemeWorldBase(data);
     expect(result.valid).toBe(false);
@@ -483,7 +483,7 @@ describe('validateThemeWorldBase', () => {
     expect(result.valid).toBe(true);
   });
 
-  it('lehnt ungÃ¼ltige og_image_url ab', () => {
+  it('lehnt ungültige og_image_url ab', () => {
     const data = { ...validThemeWorldBase(), og_image_url: 'javascript:alert(1)' };
     const result = validateThemeWorldBase(data);
     expect(result.valid).toBe(false);
@@ -501,7 +501,7 @@ describe('validateThemeWorldBase', () => {
 // ============================================================
 
 describe('validateScenario', () => {
-  it('akzeptiert gÃ¼ltiges Szenario', () => {
+  it('akzeptiert gültiges Szenario', () => {
     const result = validateScenario(validScenario());
     expect(result.valid).toBe(true);
     expect(result.errors).toEqual([]);
@@ -512,7 +512,7 @@ describe('validateScenario', () => {
     expect(validateScenario(data).valid).toBe(false);
   });
 
-  it('lehnt ungÃ¼ltigen Slug ab', () => {
+  it('lehnt ungültigen Slug ab', () => {
     const data = { ...validScenario(), slug: '-invalid-' };
     expect(validateScenario(data).valid).toBe(false);
   });
@@ -524,7 +524,7 @@ describe('validateScenario', () => {
     expect(result.errors.some(e => e.includes('card_image_alt'))).toBe(true);
   });
 
-  it('lehnt ungÃ¼ltigen cta_config delivery-Wert ab', () => {
+  it('lehnt ungültigen cta_config delivery-Wert ab', () => {
     const data = { ...validScenario(), cta_config: { delivery: 'train' } };
     const result = validateScenario(data);
     expect(result.valid).toBe(false);
@@ -537,7 +537,7 @@ describe('validateScenario', () => {
 // ============================================================
 
 describe('validateFaq', () => {
-  it('akzeptiert gÃ¼ltige FAQ', () => {
+  it('akzeptiert gültige FAQ', () => {
     const result = validateFaq({ question_de: 'Frage?', answer_de: 'Antwort.' });
     expect(result.valid).toBe(true);
   });
@@ -558,7 +558,7 @@ describe('validateFaq', () => {
 describe('validateRegion', () => {
   // Fall 1: nur loc_param
   it('akzeptiert Region mit loc_param', () => {
-    expect(validateRegion({ label_de: 'ZÃ¼rich', loc_param: 'ZÃ¼rich' }).valid).toBe(true);
+    expect(validateRegion({ label_de: 'Zürich', loc_param: 'Zürich' }).valid).toBe(true);
   });
 
   // Fall 2: nur delivery_param
@@ -569,8 +569,8 @@ describe('validateRegion', () => {
   // Fall 3: beide gesetzt
   it('akzeptiert Region mit loc_param UND delivery_param', () => {
     const result = validateRegion({
-      label_de: 'ZÃ¼rich online',
-      loc_param: 'ZÃ¼rich',
+      label_de: 'Zürich online',
+      loc_param: 'Zürich',
       delivery_param: 'online_live',
     });
     expect(result.valid).toBe(true);
@@ -582,7 +582,7 @@ describe('validateRegion', () => {
   // Die Constraint regions_params_check wurde in
   // supabase/migrations/20260718_relax_regions_params_constraint.sql
   // ersatzlos entfernt: loc_param = NULL UND delivery_param = NULL ist
-  // ein gÃ¼ltiger Zustand ("Ganze Schweiz" â€” Link ohne Standort-/
+  // ein gültiger Zustand ("Ganze Schweiz" — Link ohne Standort-/
   // Lieferungsfilter). Bestehende Sport-/Yoga-Daten nutzen ihn.
   //
   // validateRegion darf diesen Fall deshalb NICHT mehr ablehnen.
@@ -598,13 +598,13 @@ describe('validateRegion', () => {
       expect(result.errors).toEqual([]);
     });
 
-    it('akzeptiert Region ganz ohne loc_param/delivery_param-SchlÃ¼ssel', () => {
+    it('akzeptiert Region ganz ohne loc_param/delivery_param-Schlüssel', () => {
       const result = validateRegion({ label_de: 'Ganze Schweiz' });
       expect(result.valid).toBe(true);
       expect(result.errors).toEqual([]);
     });
 
-    it('akzeptiert leere Strings fÃ¼r beide Parameter (API normalisiert sie zu null)', () => {
+    it('akzeptiert leere Strings für beide Parameter (API normalisiert sie zu null)', () => {
       const result = validateRegion({
         label_de: 'Ganze Schweiz',
         loc_param: '',
@@ -622,7 +622,7 @@ describe('validateRegion', () => {
 
   // ------------------------------------------------------------------
   // Release-Blocker 3: delivery_param wurde gegen das Such-Vokabular
-  // geprÃ¼ft statt gegen das DB-Vokabular.
+  // geprüft statt gegen das DB-Vokabular.
   //
   // Der Vertrag ist zweistufig:
   //   - theme_world_regions.delivery_param speichert den DB-Wert.
@@ -632,10 +632,10 @@ describe('validateRegion', () => {
   //   - themeWorldAdapter.js:464 kanonisiert in_person â†’ presence.
   //
   // validateRegion muss deshalb gegen VALID_REGION_DELIVERY_PARAMS
-  // prÃ¼fen, nicht gegen VALID_DELIVERY_TYPES.
+  // prüfen, nicht gegen VALID_DELIVERY_TYPES.
   // ------------------------------------------------------------------
   describe('Fall 5: delivery_param folgt dem DB-Vokabular', () => {
-    it('akzeptiert delivery_param "in_person" (DB-Wert fÃ¼r Vor Ort)', () => {
+    it('akzeptiert delivery_param "in_person" (DB-Wert für Vor Ort)', () => {
       const result = validateRegion({ label_de: 'Vor Ort', delivery_param: 'in_person' });
       expect(result.valid).toBe(true);
       expect(result.errors).toEqual([]);
@@ -643,8 +643,8 @@ describe('validateRegion', () => {
 
     it('akzeptiert "in_person" zusammen mit loc_param', () => {
       const result = validateRegion({
-        label_de: 'ZÃ¼rich vor Ort',
-        loc_param: 'ZÃ¼rich',
+        label_de: 'Zürich vor Ort',
+        loc_param: 'Zürich',
         delivery_param: 'in_person',
       });
       expect(result.valid).toBe(true);
@@ -665,22 +665,22 @@ describe('validateRegion', () => {
   // ------------------------------------------------------------------
   // Fall 6: anchor_text_de â€” SEO-Linktext des Regionenlinks.
   //
-  // Der Admin zeigt und speichert das Feld seit jeher, geprÃ¼ft wurde es
+  // Der Admin zeigt und speichert das Feld seit jeher, geprüft wurde es
   // serverseitig aber nicht. Ein Nicht-String oder ein ungebremst langer
   // Wert erreichte damit die Datenbank, obwohl die Spalte den Linktext
-  // Ã¶ffentlich ausgibt.
+  // öffentlich ausgibt.
   //
-  // Optional bleibt es: fehlt der Wert oder ist er leer/null, fÃ¤llt die
-  // Anzeige auf label_de zurÃ¼ck (themeWorldAdapter.js:343 und der
+  // Optional bleibt es: fehlt der Wert oder ist er leer/null, fällt die
+  // Anzeige auf label_de zurück (themeWorldAdapter.js:343 und der
   // Import-RPC via COALESCE). Diese Fallback-Logik darf die Validierung
   // nicht aushebeln, indem sie das Feld zur Pflicht macht.
   // ------------------------------------------------------------------
   describe('Fall 6: anchor_text_de', () => {
-    it('akzeptiert einen gÃ¼ltigen Linktext', () => {
+    it('akzeptiert einen gültigen Linktext', () => {
       const result = validateRegion({
-        label_de: 'ZÃ¼rich',
-        anchor_text_de: 'Kreativkurse in ZÃ¼rich',
-        loc_param: 'ZÃ¼rich',
+        label_de: 'Zürich',
+        anchor_text_de: 'Kreativkurse in Zürich',
+        loc_param: 'Zürich',
       });
       expect(result.valid).toBe(true);
       expect(result.errors).toEqual([]);
@@ -700,13 +700,13 @@ describe('validateRegion', () => {
       ['null', null],
       ['leerer String', ''],
       ['undefined', undefined],
-    ])('akzeptiert %s â€” die Anzeige fÃ¤llt dann auf label_de zurÃ¼ck', (_name, anchor_text_de) => {
+    ])('akzeptiert %s — die Anzeige fällt dann auf label_de zurück', (_name, anchor_text_de) => {
       const result = validateRegion({ label_de: 'Ganze Schweiz', anchor_text_de });
       expect(result.valid).toBe(true);
       expect(result.errors).toEqual([]);
     });
 
-    it('akzeptiert eine Region ganz ohne anchor_text_de-SchlÃ¼ssel', () => {
+    it('akzeptiert eine Region ganz ohne anchor_text_de-Schlüssel', () => {
       const result = validateRegion({ label_de: 'Ganze Schweiz' });
       expect(result.valid).toBe(true);
       expect(result.errors).toEqual([]);
@@ -718,35 +718,35 @@ describe('validateRegion', () => {
       ['Array', []],
       ['Boolean', true],
     ])('lehnt %s ab', (_name, anchor_text_de) => {
-      const result = validateRegion({ label_de: 'ZÃ¼rich', anchor_text_de });
+      const result = validateRegion({ label_de: 'Zürich', anchor_text_de });
       expect(result.valid).toBe(false);
       expect(result.errors).toContain('anchor_text_de: Muss ein String sein.');
     });
 
     it('akzeptiert exakt 200 Zeichen und lehnt 201 ab', () => {
-      expect(validateRegion({ label_de: 'ZÃ¼rich', anchor_text_de: 'x'.repeat(200) }).valid).toBe(true);
+      expect(validateRegion({ label_de: 'Zürich', anchor_text_de: 'x'.repeat(200) }).valid).toBe(true);
 
-      const tooLong = validateRegion({ label_de: 'ZÃ¼rich', anchor_text_de: 'x'.repeat(201) });
+      const tooLong = validateRegion({ label_de: 'Zürich', anchor_text_de: 'x'.repeat(201) });
       expect(tooLong.valid).toBe(false);
       expect(tooLong.errors).toContain('anchor_text_de: Zu lang (max 200 Zeichen).');
     });
 
-    it('lÃ¤sst label_de unberÃ¼hrt â€” ein Fehler am Linktext betrifft nur ihn', () => {
-      const result = validateRegion({ label_de: 'ZÃ¼rich', anchor_text_de: 42 });
+    it('lässt label_de unberührt — ein Fehler am Linktext betrifft nur ihn', () => {
+      const result = validateRegion({ label_de: 'Zürich', anchor_text_de: 42 });
       expect(result.errors.some((e) => e.startsWith('label_de'))).toBe(false);
     });
   });
 
   // ------------------------------------------------------------------
-  // Weiterhin ungÃ¼ltig
+  // Weiterhin ungültig
   // ------------------------------------------------------------------
-  it('lehnt ungÃ¼ltigen delivery_param ab', () => {
+  it('lehnt ungültigen delivery_param ab', () => {
     const result = validateRegion({ label_de: 'Test', delivery_param: 'at_home' });
     expect(result.valid).toBe(false);
     expect(result.errors.some(e => e.includes('delivery_param'))).toBe(true);
   });
 
-  it('lehnt ungÃ¼ltigen delivery_param auch ohne loc_param ab', () => {
+  it('lehnt ungültigen delivery_param auch ohne loc_param ab', () => {
     const result = validateRegion({
       label_de: 'Ganze Schweiz',
       loc_param: null,
@@ -762,7 +762,7 @@ describe('validateRegion', () => {
     expect(result.errors.some(e => e.includes('label_de'))).toBe(true);
   });
 
-  it('lehnt leeres label_de auch bei sonst gÃ¼ltiger Region ab', () => {
+  it('lehnt leeres label_de auch bei sonst gültiger Region ab', () => {
     const result = validateRegion({ label_de: '   ', loc_param: null, delivery_param: null });
     expect(result.valid).toBe(false);
     expect(result.errors.some(e => e.includes('label_de'))).toBe(true);
@@ -774,7 +774,7 @@ describe('validateRegion', () => {
 // ============================================================
 
 describe('validateTrustItem', () => {
-  it('akzeptiert gÃ¼ltiges Trust-Item (editorial)', () => {
+  it('akzeptiert gültiges Trust-Item (editorial)', () => {
     expect(validateTrustItem({ item_type: 'editorial', name: 'Yoga-Hinweis' }).valid).toBe(true);
   });
 
@@ -788,7 +788,7 @@ describe('validateTrustItem', () => {
     }).valid).toBe(true);
   });
 
-  it('lehnt ungÃ¼ltigen item_type ab', () => {
+  it('lehnt ungültigen item_type ab', () => {
     const result = validateTrustItem({ item_type: 'badge', name: 'Test' });
     expect(result.valid).toBe(false);
     expect(result.errors.some(e => e.includes('item_type'))).toBe(true);
@@ -804,7 +804,7 @@ describe('validateTrustItem', () => {
     expect(result.errors.some(e => e.includes('logo_alt'))).toBe(true);
   });
 
-  it('lehnt ungÃ¼ltige external_url ab', () => {
+  it('lehnt ungültige external_url ab', () => {
     const result = validateTrustItem({
       item_type: 'info',
       name: 'Test',
@@ -820,7 +820,7 @@ describe('validateTrustItem', () => {
 // ============================================================
 
 describe('validateSortReorder', () => {
-  it('akzeptiert gÃ¼ltige Reorder-Liste', () => {
+  it('akzeptiert gültige Reorder-Liste', () => {
     const result = validateSortReorder([
       { id: 'abc', sort_order: 0 },
       { id: 'def', sort_order: 1 },
@@ -849,7 +849,7 @@ describe('validateSortReorder', () => {
 // ============================================================
 
 describe('validatePublishThemeWorld', () => {
-  it('akzeptiert vollstÃ¤ndige publizierbare Themenwelt', () => {
+  it('akzeptiert vollständige publizierbare Themenwelt', () => {
     const result = validatePublishThemeWorld(validPublishedThemeWorld());
     expect(result.valid).toBe(true);
     expect(result.errors).toEqual([]);
@@ -892,7 +892,7 @@ describe('validatePublishThemeWorld', () => {
 // ============================================================
 
 describe('validatePublishScenario', () => {
-  it('akzeptiert vollstÃ¤ndiges publizierbares Szenario', () => {
+  it('akzeptiert vollständiges publizierbares Szenario', () => {
     const scenario = {
       ...validScenario(),
       label_de: 'Berufseinstieg',
@@ -933,18 +933,18 @@ describe('validatePublishScenario', () => {
 //
 // Such-/URL-Layer  â†’ 'presence'    (VALID_DELIVERY_TYPES)
 // Regions-DB-Layer â†’ 'in_person'   (VALID_REGION_DELIVERY_PARAMS)
-// BrÃ¼cke           â†’ themeWorldAdapter.js:464 normalisiert in_person â†’ presence
+// Brücke           ⅒ themeWorldAdapter.js:464 normalisiert in_person ⅒ presence
 //
 // Diese Trennung ist beabsichtigt und wird hier festgeschrieben, damit die
-// beiden Listen nicht versehentlich wieder zusammengefÃ¼hrt werden.
+// beiden Listen nicht versehentlich wieder zusammengeführt werden.
 
 describe('Delivery-Vertrag â€” Trennung der Vokabulare', () => {
-  it('Such-Vokabular enthÃ¤lt presence, nicht in_person', () => {
+  it('Such-Vokabular enthält presence, nicht in_person', () => {
     expect(VALID_DELIVERY_TYPES).toContain('presence');
     expect(VALID_DELIVERY_TYPES).not.toContain('in_person');
   });
 
-  it('Regions-Vokabular enthÃ¤lt in_person, nicht presence', () => {
+  it('Regions-Vokabular enthält in_person, nicht presence', () => {
     expect(VALID_REGION_DELIVERY_PARAMS).toContain('in_person');
     expect(VALID_REGION_DELIVERY_PARAMS).not.toContain('presence');
   });
@@ -964,7 +964,7 @@ describe('Delivery-Vertrag â€” Trennung der Vokabulare', () => {
   });
 });
 
-describe('Delivery-Vertrag â€” Such-/CTA-Layer bleibt unverÃ¤ndert', () => {
+describe('Delivery-Vertrag — Such-/CTA-Layer bleibt unverändert', () => {
   it('predefined_searches akzeptiert presence', () => {
     expect(validatePredefinedSearches([{ label_de: 'Vor Ort', delivery: 'presence' }])).toHaveLength(0);
   });
@@ -1007,12 +1007,12 @@ describe('Delivery-Vertrag â€” Such-/CTA-Layer bleibt unverÃ¤ndert', () =
 describe('replace-regions â€” gemischter Regionssatz passiert die Validierung', () => {
   const items = [
     { label_de: 'Ganze Schweiz', loc_param: null, delivery_param: null },
-    { label_de: 'ZÃ¼rich', loc_param: 'ZÃ¼rich', delivery_param: null },
+    { label_de: 'Zürich', loc_param: 'Zürich', delivery_param: null },
     { label_de: 'Online', loc_param: null, delivery_param: 'online_live' },
     { label_de: 'Vor Ort', loc_param: null, delivery_param: 'in_person' },
   ];
 
-  it('alle vier Regionstypen sind einzeln gÃ¼ltig', () => {
+  it('alle vier Regionstypen sind einzeln gültig', () => {
     for (const item of items) {
       const result = validateRegion(item);
       expect(result.valid, `${item.label_de}: ${result.errors.join('; ')}`).toBe(true);
