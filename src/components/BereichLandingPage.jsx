@@ -19,10 +19,10 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
   // Legacy-Config (immer geladen als Basiswert + Fallback)
   const legacyConfig = getBereichBySlug(segment, slug);
 
-  // Dynamic config state â€” wird gesetzt wenn Pilot-Flag aktiv + DB-Antwort erfolgreich
+  // Dynamic config state — wird gesetzt wenn Pilot-Flag aktiv + DB-Antwort erfolgreich
   const [dynamicConfig, setDynamicConfig] = useState(null);
   const [dynamicNotFound, setDynamicNotFound] = useState(false);
-  // DB-only mode: kein Legacy-Eintrag vorhanden, aber DB global aktiv â†’ Ladeindikator bis Antwort
+  // DB-only mode: kein Legacy-Eintrag vorhanden, aber DB global aktiv → Ladeindikator bis Antwort
   const [dbOnlyLoading, setDbOnlyLoading] = useState(() => !legacyConfig && isThemeWorldDbEnabled());
 
   // Effektiver Config: DB wenn geladen, sonst Legacy
@@ -85,7 +85,7 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bereichKey, segment, slug]);
 
-  // Segment theme â€” normalize URL segment (privat-hobby â†’ privat_hobby)
+  // Segment theme — normalize URL segment (privat-hobby → privat_hobby)
   const segmentKey = segment?.replace(/-/g, '_') || segment;
   const theme = SEGMENT_CONFIG[segmentKey] || SEGMENT_CONFIG.beruflich;
 
@@ -100,7 +100,7 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
     if (!config) return;
 
     // Redaktionelle SEO-Felder (meta_title/meta_description) sind die erste
-    // Quelle â€” identisch zum Server-Prerender (api/_lib/theme-world-prerender.js).
+    // Quelle — identisch zum Server-Prerender (api/_lib/theme-world-prerender.js).
     // Legacy-Konfigurationen haben diese Felder nicht: dort greifen wie bisher
     // der sichtbare Titel und der Subtitle.
     const pageTitle = config.metaTitle || `${config.title[lang] || config.title.de} | KursNavi`;
@@ -148,7 +148,7 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
       tag.content = content;
     });
 
-    // og:image:alt â€” nur setzen wenn Alt-Text vorhanden
+    // og:image:alt — nur setzen wenn Alt-Text vorhanden
     const ogAltText = config.ogImageAlt || config.heroImageAlt || '';
     const ogAltProperty = 'og:image:alt';
     let ogAltTag = document.querySelector(`meta[property="${ogAltProperty}"]`);
@@ -443,7 +443,7 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
                 }}
                 className="relative flex min-w-0 flex-col overflow-hidden rounded-2xl bg-white border border-gray-100 hover:border-gray-200 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group"
               >
-                {/* Titelbild â€” durchgehendes 16:9-Band am Kartenkopf.
+                {/* Titelbild — durchgehendes 16:9-Band am Kartenkopf.
                     Das Band existiert immer und hat immer dieselbe Höhe: mit Bild
                     zeigt es das Bild, ohne Bild (oder bei Ladefehler) einen ruhigen
                     Platzhalter in der Themenfarbe. Dadurch bleiben alle Karten im
@@ -573,7 +573,7 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
         );
       })()}
 
-      {/* SCHNELLEINSTIEG â€” Vordefinierte Suchen */}
+      {/* SCHNELLEINSTIEG — Vordefinierte Suchen */}
       {config.predefinedSearches && config.predefinedSearches.filter((s) => s.label?.de).length > 0 && (
         <div className="max-w-5xl mx-auto px-4 py-12">
           <h2 className="text-xl font-heading font-bold text-dark mb-1 text-center">
@@ -611,7 +611,7 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
         </div>
       )}
 
-      {/* AUSBILDUNGSBEREICHE â€” Directory-Liste */}
+      {/* AUSBILDUNGSBEREICHE — Directory-Liste */}
       <div className="bg-white py-16">
         <div className="max-w-5xl mx-auto px-4">
           <h2 className="text-2xl font-heading font-bold text-dark mb-2 text-center">{sectionTitles.specialtiesTitle?.[lang] || sectionTitles.specialtiesTitle?.de || 'Ausbildungsbereiche'}</h2>

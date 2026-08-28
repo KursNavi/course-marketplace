@@ -4,10 +4,10 @@
  * Alle Validierungsfunktionen sind pure Funktionen ohne Seiteneffekte.
  * Rückgabe: { valid: boolean, errors: string[] }
  *
- * Keine externen Bibliotheken â€” konsistent mit dem bestehenden Projekt-Pattern.
+ * Keine externen Bibliotheken — konsistent mit dem bestehenden Projekt-Pattern.
  */
 
-// Quellenangaben teilen sich ein Regelwerk mit dem Frontend (Anzeige) â€” deshalb
+// Quellenangaben teilen sich ein Regelwerk mit dem Frontend (Anzeige) — deshalb
 // liegt die Logik in src/lib, genau wie seoUtils.js, das der Prerender mitnutzt.
 import { validateScenarioSources } from '../../src/lib/scenarioSources.js';
 
@@ -29,9 +29,9 @@ export const VALID_DELIVERY_TYPES = ['online_live', 'self_study', 'presence'];
 // Regionslinks speichern den DB-Wert, nicht den Such-URL-Wert.
 // theme_world_regions.delivery_param unterliegt der Constraint
 // regions_delivery_param_check (20260714_create_theme_worlds.sql:404),
-// die 'in_person' erlaubt â€” nicht 'presence'.
+// die 'in_person' erlaubt — nicht 'presence'.
 // Der Adapter kanonisiert beim Aufbau des Suchlinks via
-// normalizeDeliveryTypeKey: in_person â†’ presence (themeWorldAdapter.js:464).
+// normalizeDeliveryTypeKey: in_person → presence (themeWorldAdapter.js:464).
 export const VALID_REGION_DELIVERY_PARAMS = ['online_live', 'self_study', 'in_person'];
 
 export const VALID_TRUST_ITEM_TYPES = ['label', 'editorial', 'info'];
@@ -51,7 +51,7 @@ const SEARCH_CONFIG_ALLOWED_KEYS = new Set(['area_slug', 'type_key', 'kursart', 
 //
 // Der Adapter mappt diese DB-Keys erst für den Renderer auf camelCase-Multilang-
 // Objekte (trustTitle: { de }). Diese camelCase-Form ist ADAPTER-AUSGABE, kein
-// DB-Format â€” sie darf hier nicht validiert werden.
+// DB-Format — sie darf hier nicht validiert werden.
 //
 // Kein camelCase-Fallback: die frühere camelCase-Liste war ein toter Vertragsrest.
 // Sie wurde nie von einem Schreibpfad erreicht (der Admin sendete section_titles
@@ -141,7 +141,7 @@ function collect(errors, field, message) {
 export function detectEscapedHtmlDocument(html) {
   if (!html || typeof html !== 'string') return false;
 
-  // Match &lt;<tagname> followed by whitespace, >, /, or & (e.g. &lt;p&gt; â†’ after 'p' comes '&')
+  // Match &lt;<tagname> followed by whitespace, >, /, or & (e.g. &lt;p&gt; → after 'p' comes '&')
   const ESCAPED_TAG_PATTERNS = [
     /&lt;p(?:[\s>/]|&)/gi,
     /&lt;h[23456](?:[\s>/]|&)/gi,
@@ -275,7 +275,7 @@ export function validateSectionTitles(titles) {
       errors.push(`section_titles.${key}: Unbekannter Key nicht erlaubt.`);
       continue;
     }
-    if (val === null) continue; // "nicht gesetzt" â€” erlaubt
+    if (val === null) continue; // "nicht gesetzt" — erlaubt
     if (typeof val !== 'string') {
       errors.push(`section_titles.${key}: Muss ein String sein.`);
       continue;
@@ -358,8 +358,8 @@ export const MAX_CTA_LINKS = 5;
  *                       deshalb nicht verworfen.
  *   status              Redaktioneller Zustand des einzelnen Links aus dem
  *                       Importpaket. Er steuert keine Sichtbarkeit — die hängt
- *                       am Status der Themenwelt â€” wird aber verlustfrei
- *                       durchgereicht, damit ein Importâ†’Adminâ†’Speichern-Zyklus
+ *                       am Status der Themenwelt — wird aber verlustfrei
+ *                       durchgereicht, damit ein Import→Admin→Speichern-Zyklus
  *                       das Paket nicht stillschweigend beschneidet.
  */
 const CTA_LINK_ALLOWED_KEYS = new Set([
@@ -376,7 +376,7 @@ const CTA_LINK_ALLOWED_KEYS = new Set([
  * Felder explizit als null aus; würde der Validator das ablehnen, könnte ein
  * importierter Link im Admin nie wieder gespeichert werden.
  *
- * Diese Funktion validiert nur â€” sie trimmt und mutiert nicht. Die Normalisierung
+ * Diese Funktion validiert nur — sie trimmt und mutiert nicht. Die Normalisierung
  * (trimmen, leere optionale Felder entfernen) passiert im Admin vor dem Speichern.
  */
 export function validateCtaLinks(links) {
@@ -406,14 +406,14 @@ export function validateCtaLinks(links) {
     }
 
     // label_de: Pflicht. Ein reiner Whitespace-Wert ist fachlich leer und wurde
-    // clientseitig bereits abgelehnt â€” der Server muss denselben Vertrag halten.
+    // clientseitig bereits abgelehnt — der Server muss denselben Vertrag halten.
     if (typeof item.label_de !== 'string' || !item.label_de.trim()) {
       errors.push(`cta_links[${i}].label_de: Pflichtfeld fehlt oder leer.`);
     } else if (item.label_de.length > 60) {
       errors.push(`cta_links[${i}].label_de: Zu lang (max 60 Zeichen).`);
     }
 
-    // spec / focus / loc: optional, wenn gesetzt ein String. Reine Typsicherheit â€”
+    // spec / focus / loc: optional, wenn gesetzt ein String. Reine Typsicherheit —
     // bewusst keine Fach- oder Orts-Taxonomie an dieser Stelle, identisch zu
     // predefined_searches.
     for (const key of ['spec', 'focus', 'loc']) {
@@ -510,10 +510,10 @@ export function validateThemeWorldBase(data) {
     collect(errors, 'url_segment', `Ungültiger Wert. Erlaubt: ${VALID_URL_SEGMENTS.join(', ')}.`);
   }
 
-  // Konsistenz db_segment â†” url_segment
+  // Konsistenz db_segment ↔ url_segment
   const SEGMENT_MAP = { professionell: 'beruflich', privat: 'privat-hobby', kinder: 'kinder-jugend' };
   if (data.db_segment && data.url_segment && SEGMENT_MAP[data.db_segment] !== data.url_segment) {
-    collect(errors, 'db_segment/url_segment', `Inkonsistentes Segment-Paar: ${data.db_segment} â†’ ${data.url_segment} erwartet, nicht ${data.url_segment}.`);
+    collect(errors, 'db_segment/url_segment', `Inkonsistentes Segment-Paar: ${data.db_segment} → ${data.url_segment} erwartet, nicht ${data.url_segment}.`);
   }
 
   // Slug
@@ -573,12 +573,12 @@ export function validateThemeWorldUpdate(data) {
     return { valid: false, errors: ['Kein gültiger Request-Body.'] };
   }
 
-  // Pflichtfelder â€” nur validieren wenn im Payload enthalten
+  // Pflichtfelder — nur validieren wenn im Payload enthalten
   if ('key' in data) requireText(errors, data, 'key', 100);
   if ('title_de' in data) requireText(errors, data, 'title_de', 200);
   if ('area_slug' in data && data.area_slug !== null) requireText(errors, data, 'area_slug', 100);
 
-  // Segment-Werte â€” nur validieren wenn vorhanden
+  // Segment-Werte — nur validieren wenn vorhanden
   if ('db_segment' in data && !VALID_DB_SEGMENTS.includes(data.db_segment)) {
     collect(errors, 'db_segment', `Ungültiger Wert. Erlaubt: ${VALID_DB_SEGMENTS.join(', ')}.`);
   }
@@ -586,13 +586,13 @@ export function validateThemeWorldUpdate(data) {
     collect(errors, 'url_segment', `Ungültiger Wert. Erlaubt: ${VALID_URL_SEGMENTS.join(', ')}.`);
   }
 
-  // Segment-Konsistenz â€” nur wenn BEIDE Felder im Payload sind
+  // Segment-Konsistenz — nur wenn BEIDE Felder im Payload sind
   const SEGMENT_MAP = { professionell: 'beruflich', privat: 'privat-hobby', kinder: 'kinder-jugend' };
   if (data.db_segment && data.url_segment && SEGMENT_MAP[data.db_segment] !== data.url_segment) {
     collect(errors, 'db_segment/url_segment', `Inkonsistentes Segment-Paar: ${data.db_segment} erwartet ${SEGMENT_MAP[data.db_segment]}, nicht ${data.url_segment}.`);
   }
 
-  // Slug â€” nur validieren wenn vorhanden
+  // Slug — nur validieren wenn vorhanden
   if ('slug' in data && !isValidSlug(data.slug)) {
     collect(errors, 'slug', 'Ungültiges Slug-Format. Nur a-z, 0-9, Bindestriche erlaubt (kein Führungs-/Abschluss-Bindestrich).');
   }
@@ -618,7 +618,7 @@ export function validateThemeWorldUpdate(data) {
     collect(errors, 'hero_image_alt_de', 'Pflicht wenn hero_image_url gesetzt ist.');
   }
 
-  // JSONB-Felder â€” nur validieren wenn vorhanden
+  // JSONB-Felder — nur validieren wenn vorhanden
   if ('search_config' in data) errors.push(...validateSearchConfig(data.search_config));
   if ('section_titles' in data) errors.push(...validateSectionTitles(data.section_titles));
   if ('predefined_searches' in data) errors.push(...validatePredefinedSearches(data.predefined_searches));
@@ -702,7 +702,7 @@ export function validateScenario(data) {
 /**
  * Prüft ein redaktionelles Prüfdatum: reines Kalenderdatum JJJJ-MM-TT.
  *
- * Kein Timestamp und kein Freitext â€” der Wert landet in einer `date`-Spalte und
+ * Kein Timestamp und kein Freitext — der Wert landet in einer `date`-Spalte und
  * wird öffentlich als Vertrauensangabe ausgegeben (siehe
  * src/lib/editorialReviewDate.js).
  *
@@ -787,7 +787,7 @@ export function validateSpecialty(data) {
  * supabase/migrations/20260718_relax_regions_params_constraint.sql
  * ersatzlos entfernt. Bestehende Sport-/Yoga-Daten nutzen diesen Zustand.
  *
- * Ein TATSÃCHLICH GESETZTER, ungültiger delivery_param bleibt ein Fehler.
+ * Ein TATSÄCHLICH GESETZTER, ungültiger delivery_param bleibt ein Fehler.
  */
 export function validateRegion(data) {
   const errors = [];
@@ -927,7 +927,7 @@ export function validatePublishThemeWorld(themeWorld, opts = {}) {
  *
  * Quellenangaben (opts.requireSources):
  *   Die Prüfung existiert bereits vollständig, ist aber standardmässig AUS.
- *   Grund: Sport und Yoga sind live und haben noch keine Quellen â€” eine harte
+ *   Grund: Sport und Yoga sind live und haben noch keine Quellen — eine harte
  *   Pflicht würde jedes Re-Publish dieser Artikel blockieren. Sobald der
  *   Bestand nachgepflegt ist, genügt es, den Aufruf in
  *   api/admin-theme-world-scenarios.js auf { requireSources: true } zu setzen;

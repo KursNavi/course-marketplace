@@ -189,7 +189,7 @@ export default function AdminScenarioForm({
   /**
    * Verschiebt eine Quelle um eine Position.
    *
-   * Die Array-Reihenfolge ist die einzige Ordnungsangabe â€” es gibt keine
+   * Die Array-Reihenfolge ist die einzige Ordnungsangabe — es gibt keine
    * sort_order im Quellenformat. Ein Tausch benachbarter Einträge ist deshalb
    * die vollständige Umsortierlogik.
    *
@@ -569,7 +569,7 @@ export default function AdminScenarioForm({
         {/* CTA */}
         <Section title="Call-to-Action (Suchverlinkung)">
           <p className="text-sm text-gray-500 mb-4">
-            Strukturierte Suchparameter â€” keine freie URL-Eingabe.
+            Strukturierte Suchparameter — keine freie URL-Eingabe.
           </p>
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">

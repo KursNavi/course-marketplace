@@ -1,7 +1,7 @@
 /**
- * Datenadapter: DB-Format â†’ Legacy-Komponentenformat
+ * Datenadapter: DB-Format → Legacy-Komponentenformat
  *
- * Ãœbersetzt Daten aus der neuen Themenwelten-Datenbank in das Format,
+ * Übersetzt Daten aus der neuen Themenwelten-Datenbank in das Format,
  * das die bestehenden Komponenten BereichLandingPage und SzenarioArtikelView
  * erwarten. Dadurch müssen diese Komponenten beim Pilot-Start minimal geändert werden.
  *
@@ -22,21 +22,21 @@ import { pickLatestReviewDate } from './editorialReviewDate';
 // Konstanten
 // ---------------------------------------------------------------------------
 
-/** Mapping DB-Segment â†’ URL-Segment */
+/** Mapping DB-Segment → URL-Segment */
 const DB_TO_URL_SEGMENT = {
   professionell: 'beruflich',
   privat: 'privat-hobby',
   kinder: 'kinder-jugend',
 };
 
-/** Mapping DB-Segment â†’ interner Config-Key (typeKey) */
+/** Mapping DB-Segment → interner Config-Key (typeKey) */
 const DB_TO_TYPE_KEY = {
   professionell: 'beruflich',
   privat: 'privat_hobby',
   kinder: 'kinder_jugend',
 };
 
-/** Mapping URL-Segment â†’ DB-Segment */
+/** Mapping URL-Segment → DB-Segment */
 const URL_TO_DB_SEGMENT = {
   beruflich: 'professionell',
   'privat-hobby': 'privat',
@@ -44,7 +44,7 @@ const URL_TO_DB_SEGMENT = {
 };
 
 /**
- * Fallback-Hero-Bilder je Segment â€” werden verwendet wenn keine hero_image_url in DB gesetzt ist.
+ * Fallback-Hero-Bilder je Segment — werden verwendet wenn keine hero_image_url in DB gesetzt ist.
  * Dieselben Bilder wie in LandingView.jsx.
  */
 export const SEGMENT_FALLBACK_HERO_IMAGES = {
@@ -58,7 +58,7 @@ export const SEGMENT_FALLBACK_HERO_IMAGES = {
 // ---------------------------------------------------------------------------
 
 /**
- * Normalisiert ein URL-Segment (Bindestriche oder Unterstriche â†’ Bindestriche).
+ * Normalisiert ein URL-Segment (Bindestriche oder Unterstriche → Bindestriche).
  *
  * @param {string} segment
  * @returns {string}
@@ -101,7 +101,7 @@ export function urlSegmentToDbSegment(urlSegment) {
 }
 
 // ---------------------------------------------------------------------------
-// Haupt-Adapter: ThemeWorld â†’ BereichLandingPage-Format
+// Haupt-Adapter: ThemeWorld → BereichLandingPage-Format
 // ---------------------------------------------------------------------------
 
 /**
@@ -317,7 +317,7 @@ function adaptPredefinedSearch(search) {
 /**
  * Ein CTA-Link ist fachlich eine hervorgehobene vordefinierte Suche und trägt
  * deshalb dieselben vier Suchparameter. spec und focus waren früher nicht
- * abgebildet â€” ein Link mit Fachrichtung landete dadurch auf einer ungefilterten
+ * abgebildet — ein Link mit Fachrichtung landete dadurch auf einer ungefilterten
  * Ergebnisliste, obwohl der Wert gespeichert war.
  */
 function adaptCtaLink(link) {
@@ -388,7 +388,7 @@ function adaptTrustItem(item) {
 }
 
 // ---------------------------------------------------------------------------
-// Bridge-Adapter: Raw-DB-Daten â†’ Legacy-Komponentenformat
+// Bridge-Adapter: Raw-DB-Daten → Legacy-Komponentenformat
 // ---------------------------------------------------------------------------
 
 /**
@@ -449,7 +449,7 @@ export function adaptToLegacyBereichConfig({
     metaDescription: themeWorld.meta_description || null,
 
     // Redaktionelles Prüfdatum der Landingpage.
-    // theme_worlds hat keine eigene Spalte last_reviewed_at â€” die Landingpage
+    // theme_worlds hat keine eigene Spalte last_reviewed_at — die Landingpage
     // übernimmt deshalb das jüngste Prüfdatum ihrer publizierten Artikel, statt
     // ein eigenes Datum zu behaupten. Ohne geprüfte Artikel bleibt es null und
     // buildEditorialReviewNotice() lässt den Prüfsatz weg.
@@ -469,7 +469,7 @@ export function adaptToLegacyBereichConfig({
       lastReviewedAt: s.last_reviewed_at || null,
     })),
 
-    // Specialties: Array â†’ gekeyertes Objekt { label: { de, icon } }
+    // Specialties: Array → gekeyertes Objekt { label: { de, icon } }
     specialtyDescriptions: Object.fromEntries(
       (specialties || []).map((s) => [
         s.specialty_label,
@@ -538,7 +538,7 @@ export function adaptToLegacyBereichConfig({
     },
 
     // CTA-Links
-    // Dieselben vier Suchparameter wie predefined_searches â€” sonst ginge die
+    // Dieselben vier Suchparameter wie predefined_searches — sonst ginge die
     // gespeicherte Fachrichtung (spec/focus) beim Aufbau der öffentlichen
     // CTA-URL verloren.
     ctaLinks: (themeWorld.cta_links || []).map((l) => ({
@@ -596,13 +596,13 @@ export function adaptToLegacySzenarioConfig(scenario, themeWorldSearchConfig = {
     // updated_at wird BEWUSST nicht durchgereicht: der Trigger set_updated_at()
     // hebt es bei jedem UPDATE an, also auch bei reinen Status- oder
     // Sortierungsänderungen. Als dateModified wäre es eine Behauptung über eine
-    // inhaltliche Ã„nderung, die nie stattgefunden hat.
+    // inhaltliche Änderung, die nie stattgefunden hat.
     publishedAt: scenario.published_at || null,
     lastReviewedAt: scenario.last_reviewed_at || null,
 
     // Quellenangaben im Anzeigeformat [{title, publisher, url}].
     // Dieselbe Funktion normalisiert auch Legacy-Szenarien in
-    // SzenarioArtikelView â€” DB und Legacy landen dadurch im identischen Format
+    // SzenarioArtikelView — DB und Legacy landen dadurch im identischen Format
     // und teilen sich einen einzigen Renderpfad. Fehlt die Spalte (etwa bevor
     // die Migration angewendet wurde), ergibt das ein leeres Array und der
     // Quellenblock entfällt, statt dass die Seite bricht.

@@ -35,7 +35,7 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
   const [dynamicScenario, setDynamicScenario] = useState(null);
   const [dynamicArticleContent, setDynamicArticleContent] = useState(null);
   const [dynamicNotFound, setDynamicNotFound] = useState(false);
-  // DB-only mode: kein Legacy-Eintrag vorhanden, aber DB global aktiv â†’ Ladeindikator bis Antwort
+  // DB-only mode: kein Legacy-Eintrag vorhanden, aber DB global aktiv → Ladeindikator bis Antwort
   const [dbOnlyLoading, setDbOnlyLoading] = useState(() => !legacyBereichConfig && isThemeWorldDbEnabled());
 
 
@@ -43,7 +43,7 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
   const bereichConfig = dynamicBereichConfig || legacyBereichConfig;
   const scenario = dynamicScenario || legacyScenario;
 
-  // Normalize URL segment (privat-hobby â†’ privat_hobby) for SEGMENT_CONFIG lookup
+  // Normalize URL segment (privat-hobby → privat_hobby) for SEGMENT_CONFIG lookup
   const segmentKey = segment?.replace(/-/g, '_') || segment;
   const theme = SEGMENT_CONFIG[segmentKey] || SEGMENT_CONFIG.beruflich;
 
@@ -170,7 +170,7 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
             }
           } catch (sErr) {
             if (!cancelled) {
-              // Szenario nicht gefunden oder DB-Fehler â†’ Legacy-Fallback
+              // Szenario nicht gefunden oder DB-Fehler → Legacy-Fallback
               if (sErr.name === 'ThemeWorldNotFoundError') {
                 setDynamicNotFound(true);
               }
@@ -187,7 +187,7 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
           );
         }
       } finally {
-        // Immer freigeben â€” auch bei Fehler oder fehlendem DB-Szenario. Sonst
+        // Immer freigeben — auch bei Fehler oder fehlendem DB-Szenario. Sonst
         // bliebe die Seite im Ladezustand hängen, statt auf Legacy
         // zurückzufallen.
         if (!cancelled) setPilotLoading(false);
@@ -223,11 +223,11 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
     if (!scenario || !bereichConfig) return;
 
     // Redaktionelle SEO-Felder (meta_title/meta_description) sind die erste
-    // Quelle â€” identisch zum Server-Prerender (api/_lib/theme-world-prerender.js).
+    // Quelle — identisch zum Server-Prerender (api/_lib/theme-world-prerender.js).
     // Legacy-Szenarien haben diese Felder nicht: dort greifen wie bisher Label
     // und Teaser.
     const pageTitle = scenario.metaTitle
-      || `${scenario.label[lang] || scenario.label.de} â€” ${bereichConfig.title[lang] || bereichConfig.title.de} | KursNavi`;
+      || `${scenario.label[lang] || scenario.label.de} — ${bereichConfig.title[lang] || bereichConfig.title.de} | KursNavi`;
     document.title = pageTitle;
 
     const metaDesc = scenario.metaDescription || scenario.text[lang] || scenario.text.de;
@@ -288,7 +288,7 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
     // Article JSON-LD
     const segmentLabel = SEGMENT_CONFIG[segmentKey]?.label?.[lang] || SEGMENT_CONFIG[segmentKey]?.label?.de || segment;
     const bereichTitle = bereichConfig.title[lang] || bereichConfig.title.de;
-    // Datumsfelder ausschliesslich aus echten DB-Werten â€” identisch zum
+    // Datumsfelder ausschliesslich aus echten DB-Werten — identisch zum
     // Prerender (api/_lib/theme-world-prerender.js). Legacy-Szenarien haben
     // diese Felder nicht; dann entfällt datePublished/dateModified komplett,
     // statt das heutige Datum zu erfinden.
@@ -357,7 +357,7 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
   // Bewusst als Callback-Ref statt als Effekt mit Abhängigkeitsliste: Diese
   // Komponente hat mehrere frühe Returns und lädt Inhalte nach. Ein Effekt lief
   // dadurch genau einmal, solange articleRef.current noch null war, und danach
-  // nie wieder â€” die Tabelle blieb unmarkiert. Die Callback-Ref feuert dagegen
+  // nie wieder — die Tabelle blieb unmarkiert. Die Callback-Ref feuert dagegen
   // exakt dann, wenn der Knoten eingehängt wird; spätere Inhaltswechsel fängt
   // der MutationObserver in enhanceTableScrollContainers ab.
   const tableCleanupRef = useRef(null);
@@ -420,7 +420,7 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
   // Szenarien tragen sie (falls überhaupt) roh im Config-Objekt. Beide laufen
   // hier durch dieselbe Funktion, damit der Renderblock unten keine Ahnung
   // davon haben muss, woher der Artikel stammt. Doppeltes Normalisieren ist
-  // gefahrlos â€” die Funktion ist idempotent.
+  // gefahrlos — die Funktion ist idempotent.
   //
   // Deploy-Lifecycle: `sources` sind reiner Client-Content. Sie werden bei
   // jedem Seitenaufruf frisch aus der DB geladen (fetchPublishedScenario), sind
@@ -436,9 +436,9 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
   // Sichtbares Artikel-Titelbild.
   //
   // Es kommt aus den bereits vorhandenen Bildfeldern, keine neue Spalte:
-  //   card_image_url â€” das redaktionelle Artikelbild (erste Wahl)
-  //   og_image_url   â€” die Social-Vorschau, nur als Zweitquelle
-  // Fehlen beide (etwa in der Yoga-Themenwelt), wird schlicht nichts gerendert â€”
+  //   card_image_url — das redaktionelle Artikelbild (erste Wahl)
+  //   og_image_url   — die Social-Vorschau, nur als Zweitquelle
+  // Fehlen beide (etwa in der Yoga-Themenwelt), wird schlicht nichts gerendert —
   // kein Platzhalter, kein leerer Rahmen.
   const articleImageUrl = scenario.cardImageUrl || scenario.ogImageUrl || null;
   const articleImageAlt =
@@ -454,7 +454,7 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
   );
 
   const segmentLabel = theme.label?.[lang] || theme.label?.de || segment;
-  const bereichTitle = (bereichConfig.title[lang] || bereichConfig.title.de).split('â€”')[0].trim();
+  const bereichTitle = (bereichConfig.title[lang] || bereichConfig.title.de).split('—')[0].trim();
   // Für "Andere Szenarien"-Navigation: Legacy-Config nutzen (immer vollständig)
   const scenariosForNav = legacyBereichConfig?.scenarios || bereichConfig.scenarios || [];
   const otherScenarios = scenariosForNav.filter(s => s.slug !== szenarioSlug);
@@ -520,7 +520,7 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
 
       {/* Article Content */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* Titelbild direkt unter dem farbigen Header â€” gleiche Breite wie der
+        {/* Titelbild direkt unter dem farbigen Header — gleiche Breite wie der
             Artikel, 16:9 und beschnitten statt verzerrt. Schlägt das Laden fehl,
             verschwindet der ganze Rahmen statt ein kaputtes Bild zu zeigen. */}
         {showArticleImage && (
@@ -688,7 +688,7 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
  *
  * @param {object} props
  * @param {Array<{title: string, publisher: string, url: string}>} props.sources
- *        Bereits normalisiert (toDisplaySources) â€” hier findet keine
+ *        Bereits normalisiert (toDisplaySources) — hier findet keine
  *        Validierung mehr statt.
  */
 /**

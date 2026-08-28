@@ -299,7 +299,7 @@ describe('validateCtaLinks', () => {
     expect(errors.some(e => e.includes('url'))).toBe(true);
   });
 
-  // label_de: identischer Vertrag wie im Admin â€” getrimmt nicht leer, max 60.
+  // label_de: identischer Vertrag wie im Admin — getrimmt nicht leer, max 60.
   describe('label_de', () => {
     it('akzeptiert ein reguläres Label', () => {
       expect(validateCtaLinks([{ label_de: 'Kurse in Zürich' }])).toEqual([]);
@@ -340,7 +340,7 @@ describe('validateCtaLinks', () => {
   });
 
   // spec / focus / loc: optional, aber typsicher. Bewusst keine Fach- oder
-  // Orts-Taxonomie â€” identisch zu predefined_searches.
+  // Orts-Taxonomie — identisch zu predefined_searches.
   describe.each(['spec', 'focus', 'loc'])('%s', (field) => {
     it('akzeptiert ein fehlendes Feld', () => {
       expect(validateCtaLinks([{ label_de: 'Alle Kurse' }])).toEqual([]);
@@ -410,7 +410,7 @@ describe('validateCtaLinks', () => {
   });
 
   // Der Vertrag muss genau das Format des eingefrorenen Kreativkurse-Pakets
-  // tragen â€” sonst blockiert der Importâ†’Adminâ†’Speichern-Zyklus.
+  // tragen — sonst blockiert der Import→Admin→Speichern-Zyklus.
   it('akzeptiert das vollständige Importformat mit allen sieben Keys', () => {
     const errors = validateCtaLinks([
       {
@@ -629,7 +629,7 @@ describe('validateRegion', () => {
   //     Constraint regions_delivery_param_check
   //     (20260714_create_theme_worlds.sql:404) erlaubt 'in_person'.
   //   - Der Such-/URL-Layer nutzt 'presence' (VALID_DELIVERY_TYPES).
-  //   - themeWorldAdapter.js:464 kanonisiert in_person â†’ presence.
+  //   - themeWorldAdapter.js:464 kanonisiert in_person → presence.
   //
   // validateRegion muss deshalb gegen VALID_REGION_DELIVERY_PARAMS
   // prüfen, nicht gegen VALID_DELIVERY_TYPES.
@@ -663,7 +663,7 @@ describe('validateRegion', () => {
   });
 
   // ------------------------------------------------------------------
-  // Fall 6: anchor_text_de â€” SEO-Linktext des Regionenlinks.
+  // Fall 6: anchor_text_de — SEO-Linktext des Regionenlinks.
   //
   // Der Admin zeigt und speichert das Feld seit jeher, geprüft wurde es
   // serverseitig aber nicht. Ein Nicht-String oder ein ungebremst langer
@@ -931,14 +931,14 @@ describe('validatePublishScenario', () => {
 // Delivery-Vertrag: zwei Vokabulare, klar getrennt
 // ============================================================
 //
-// Such-/URL-Layer  â†’ 'presence'    (VALID_DELIVERY_TYPES)
-// Regions-DB-Layer â†’ 'in_person'   (VALID_REGION_DELIVERY_PARAMS)
+// Such-/URL-Layer  → 'presence'    (VALID_DELIVERY_TYPES)
+// Regions-DB-Layer → 'in_person'   (VALID_REGION_DELIVERY_PARAMS)
 // Brücke           ⅒ themeWorldAdapter.js:464 normalisiert in_person ⅒ presence
 //
 // Diese Trennung ist beabsichtigt und wird hier festgeschrieben, damit die
 // beiden Listen nicht versehentlich wieder zusammengeführt werden.
 
-describe('Delivery-Vertrag â€” Trennung der Vokabulare', () => {
+describe('Delivery-Vertrag — Trennung der Vokabulare', () => {
   it('Such-Vokabular enthält presence, nicht in_person', () => {
     expect(VALID_DELIVERY_TYPES).toContain('presence');
     expect(VALID_DELIVERY_TYPES).not.toContain('in_person');
@@ -1004,7 +1004,7 @@ describe('Delivery-Vertrag — Such-/CTA-Layer bleibt unverändert', () => {
 // replace-regions: gemischter Regionssatz
 // ============================================================
 
-describe('replace-regions â€” gemischter Regionssatz passiert die Validierung', () => {
+describe('replace-regions — gemischter Regionssatz passiert die Validierung', () => {
   const items = [
     { label_de: 'Ganze Schweiz', loc_param: null, delivery_param: null },
     { label_de: 'Zürich', loc_param: 'Zürich', delivery_param: null },
