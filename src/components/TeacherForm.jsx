@@ -32,7 +32,7 @@ const compressImage = async (file) => {
 };
 
 // --- Category Suggestion Modal Component ---
-const CategorySuggestionModal = ({ isOpen, onClose, taxonomy, types, showNotification, userEmail }) => {
+const CategorySuggestionModal = ({ isOpen, onClose, taxonomy, types, showNotification, userEmail, courseId, courseTitle, onSubmitSuggestion }) => {
     const [suggestionType, setSuggestionType] = useState('single'); // 'single' = neues Level unter bestehender Kategorie, 'path' = kompletter Pfad
     const [selectedType, setSelectedType] = useState('');
     const [selectedArea, setSelectedArea] = useState('');
@@ -136,41 +136,35 @@ const CategorySuggestionModal = ({ isOpen, onClose, taxonomy, types, showNotific
         }
 
         messageLines.push('');
+        messageLines.push(`Kurs: ${courseTitle || 'Noch nicht benannt'}`);
+        messageLines.push(`Kurs-ID: ${courseId || 'wird beim Speichern verknüpft'}`);
+        messageLines.push('');
         messageLines.push(`Eingesendet von: ${userEmail || 'Unbekannt'}`);
 
         const message = messageLines.join('\n');
 
         try {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (!session?.access_token) {
-                throw new Error('Nicht eingeloggt');
-            }
-
-            const response = await fetch("/api/contact", {
-                method: "POST",
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${session.access_token}`
-                },
-                body: JSON.stringify({
-                    type: 'category-suggestion',
-                    subject: `Kategorie-Vorschlag: ${newArea || newSpecialty || newFocus}`,
-                    message: message,
-                    email: userEmail || ''
-                })
+            const accepted = await onSubmitSuggestion({
+                subject: `Kategorie-Vorschlag: ${newArea || newSpecialty || newFocus}`,
+                message,
+                suggestion: {
+                    suggestionType,
+                    selectedType,
+                    selectedArea,
+                    selectedSpecialty,
+                    newArea,
+                    newSpecialty,
+                    newFocus,
+                    additionalNotes
+                }
             });
 
-            if (response.ok) {
-                showNotification('Vielen Dank! Dein Kategorie-Vorschlag wurde gesendet.');
-                resetForm();
-                onClose();
-            } else {
-                const errData = await response.json().catch(() => ({}));
-                throw new Error(errData.error || 'Senden fehlgeschlagen');
-            }
+            if (accepted === false) return;
+            resetForm();
+            onClose();
         } catch (err) {
             console.error('Category suggestion error:', err);
-            showNotification('Fehler beim Senden. Bitte versuche es später erneut.');
+            showNotification('Fehler beim Speichern oder Senden. Bitte versuche es erneut.');
         } finally {
             setIsSubmitting(false);
         }
@@ -367,7 +361,7 @@ const CategorySuggestionModal = ({ isOpen, onClose, taxonomy, types, showNotific
                             ) : (
                                 <>
                                     <Send className="w-4 h-4 mr-2" />
-                                    Vorschlag senden
+                                    Vorschlag senden &amp; Entwurf speichern
                                 </>
                             )}
                         </button>
@@ -557,6 +551,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
 
     // Refs for two-button submit (draft / publish)
     const pendingStatusRef = useRef(null);
+    const pendingCategorySuggestionRef = useRef(null);
     const formRef = useRef(null);
 
     // Use useLayoutEffect to update ref SYNCHRONOUSLY after render (before unmount cleanup runs)
@@ -1274,12 +1269,60 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
         return data;
     };
 
+    const sendCategorySuggestion = async ({ courseId, subject, message, suggestion }) => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.access_token) {
+            throw new Error('Nicht eingeloggt');
+        }
+
+        const response = await fetch('/api/contact', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${session.access_token}`
+            },
+            body: JSON.stringify({
+                type: 'category-suggestion',
+                courseId,
+                subject,
+                message,
+                suggestion,
+                email: user?.email || ''
+            })
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+            throw new Error(data.error || 'Kategorie-Vorschlag konnte nicht gesendet werden');
+        }
+        return data;
+    };
+
+    const clearPendingCategorySuggestion = () => {
+        pendingCategorySuggestionRef.current = null;
+    };
+
+    const handleCategorySuggestionSubmit = ({ subject, message, suggestion }) => {
+        const form = formRef.current;
+        if (!form) {
+            showNotification('Das Formular ist nicht verfügbar. Bitte öffne den Kurs erneut.', 'error');
+            return false;
+        }
+        // The main form performs its own validation in handlePublishCourse. Native
+        // constraint validation would otherwise prevent requestSubmit() from
+        // reaching that handler and leave the modal workflow without a result.
+        pendingCategorySuggestionRef.current = { subject, message, suggestion };
+        pendingStatusRef.current = 'draft-and-suggest';
+        form.requestSubmit();
+        return true;
+    };
+
     const handlePublishCourse = async (e) => {
         e.preventDefault();
 
         // 0. Safety Check for Lost Session
         if (!initialData && !user?.id) {
             showNotification("Fehler: Bitte einloggen, um fortzufahren.");
+            clearPendingCategorySuggestion();
             setIsSubmitting(false);
             return;
         }
@@ -1287,7 +1330,9 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
         const formData = new FormData(e.target);
 
         // Resolve submit intent from pending ref (set by action buttons) or fall back to state
-        const finalStatus = pendingStatusRef.current ?? courseStatus;
+        const requestedStatus = pendingStatusRef.current ?? courseStatus;
+        const isDraftAndSuggest = requestedStatus === 'draft-and-suggest';
+        const finalStatus = isDraftAndSuggest ? 'draft' : requestedStatus;
         pendingStatusRef.current = null;
 
         // Metadata (use controlled state values)
@@ -1301,8 +1346,9 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
         const partialExtraCategory = categories.slice(1).some(c =>
             (c.type || c.area || c.specialty) && !(c.type && c.area && c.specialty)
         );
-        if (partialExtraCategory) {
+        if (partialExtraCategory && finalStatus === 'published') {
             window.alert("Bitte fuelle Zusatz-Kategorien vollständig aus oder entferne die Zeile.");
+            clearPendingCategorySuggestion();
             return;
         }
 
@@ -1324,28 +1370,36 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
 
         const level = selectedLevel; // use state directly (select may be in collapsible section)
 
-        if (isSubmitting) return;
+        if (isSubmitting) {
+            clearPendingCategorySuggestion();
+            return;
+        }
 
         // 1. Core Validation
-        if (!titleVal || !descriptionVal) { window.alert("Titel und Beschreibung sind erforderlich."); return; }
-        if (!keywordsVal.trim()) { window.alert("Bitte gib Suchbegriffe ein. Diese helfen, dass dein Kurs gefunden wird."); return; }
-        if (!catType || !catArea || !catSpec) { window.alert("Bitte wählen Sie eine vollständige Kategorie aus."); return; }
+        if (!titleVal || !descriptionVal) { window.alert("Titel und Beschreibung sind erforderlich."); clearPendingCategorySuggestion(); return; }
+        if (!keywordsVal.trim()) { window.alert("Bitte gib Suchbegriffe ein. Diese helfen, dass dein Kurs gefunden wird."); clearPendingCategorySuggestion(); return; }
+        if (finalStatus === 'published' && (!catType || !catArea || !catSpec)) {
+            window.alert("Bitte wählen Sie eine vollständige Kategorie aus.");
+            clearPendingCategorySuggestion();
+            return;
+        }
 
         // 1a. Feldlängen prüfen (auch bei bestehenden Kursen beim nächsten Speichern)
-        if (titleVal.length > COURSE_FIELD_LIMITS.title) { window.alert(`Der Titel darf maximal ${COURSE_FIELD_LIMITS.title} Zeichen lang sein (aktuell: ${titleVal.length} Zeichen). Bitte kürze den Titel.`); return; }
-        if (descriptionVal.length > COURSE_FIELD_LIMITS.description) { window.alert(`Die Beschreibung darf maximal ${COURSE_FIELD_LIMITS.description} Zeichen lang sein (aktuell: ${descriptionVal.length} Zeichen).`); return; }
-        if (keywordsVal.length > COURSE_FIELD_LIMITS.keywords) { window.alert(`Die Suchbegriffe dürfen maximal ${COURSE_FIELD_LIMITS.keywords} Zeichen lang sein (aktuell: ${keywordsVal.length} Zeichen).`); return; }
-        if (priceInfo.length > COURSE_FIELD_LIMITS.priceInfo) { window.alert(`Die Preis-Beschreibung darf maximal ${COURSE_FIELD_LIMITS.priceInfo} Zeichen lang sein (aktuell: ${priceInfo.length} Zeichen).`); return; }
-        if (freeReason.length > COURSE_FIELD_LIMITS.freeReason) { window.alert(`Die Begründung für den kostenlosen Kurs darf maximal ${COURSE_FIELD_LIMITS.freeReason} Zeichen lang sein (aktuell: ${freeReason.length} Zeichen).`); return; }
-        if (sessionLength.length > COURSE_FIELD_LIMITS.sessionLength) { window.alert(`«Dauer & Umfang» darf maximal ${COURSE_FIELD_LIMITS.sessionLength} Zeichen lang sein (aktuell: ${sessionLength.length} Zeichen).`); return; }
-        if (objectives.length > COURSE_FIELD_LIMITS.objectives) { window.alert(`Die Lernziele dürfen maximal ${COURSE_FIELD_LIMITS.objectives} Zeichen lang sein (aktuell: ${objectives.length} Zeichen).`); return; }
-        if (prerequisites.length > COURSE_FIELD_LIMITS.prerequisites) { window.alert(`Die Voraussetzungen dürfen maximal ${COURSE_FIELD_LIMITS.prerequisites} Zeichen lang sein (aktuell: ${prerequisites.length} Zeichen).`); return; }
+        if (titleVal.length > COURSE_FIELD_LIMITS.title) { window.alert(`Der Titel darf maximal ${COURSE_FIELD_LIMITS.title} Zeichen lang sein (aktuell: ${titleVal.length} Zeichen). Bitte kürze den Titel.`); clearPendingCategorySuggestion(); return; }
+        if (descriptionVal.length > COURSE_FIELD_LIMITS.description) { window.alert(`Die Beschreibung darf maximal ${COURSE_FIELD_LIMITS.description} Zeichen lang sein (aktuell: ${descriptionVal.length} Zeichen).`); clearPendingCategorySuggestion(); return; }
+        if (keywordsVal.length > COURSE_FIELD_LIMITS.keywords) { window.alert(`Die Suchbegriffe dürfen maximal ${COURSE_FIELD_LIMITS.keywords} Zeichen lang sein (aktuell: ${keywordsVal.length} Zeichen).`); clearPendingCategorySuggestion(); return; }
+        if (priceInfo.length > COURSE_FIELD_LIMITS.priceInfo) { window.alert(`Die Preis-Beschreibung darf maximal ${COURSE_FIELD_LIMITS.priceInfo} Zeichen lang sein (aktuell: ${priceInfo.length} Zeichen).`); clearPendingCategorySuggestion(); return; }
+        if (freeReason.length > COURSE_FIELD_LIMITS.freeReason) { window.alert(`Die Begründung für den kostenlosen Kurs darf maximal ${COURSE_FIELD_LIMITS.freeReason} Zeichen lang sein (aktuell: ${freeReason.length} Zeichen).`); clearPendingCategorySuggestion(); return; }
+        if (sessionLength.length > COURSE_FIELD_LIMITS.sessionLength) { window.alert(`«Dauer & Umfang» darf maximal ${COURSE_FIELD_LIMITS.sessionLength} Zeichen lang sein (aktuell: ${sessionLength.length} Zeichen).`); clearPendingCategorySuggestion(); return; }
+        if (objectives.length > COURSE_FIELD_LIMITS.objectives) { window.alert(`Die Lernziele dürfen maximal ${COURSE_FIELD_LIMITS.objectives} Zeichen lang sein (aktuell: ${objectives.length} Zeichen).`); clearPendingCategorySuggestion(); return; }
+        if (prerequisites.length > COURSE_FIELD_LIMITS.prerequisites) { window.alert(`Die Voraussetzungen dürfen maximal ${COURSE_FIELD_LIMITS.prerequisites} Zeichen lang sein (aktuell: ${prerequisites.length} Zeichen).`); clearPendingCategorySuggestion(); return; }
         const tooLongEvent = events.find(ev => (ev.schedule_description || '').length > COURSE_FIELD_LIMITS.scheduleDescription);
-        if (tooLongEvent) { window.alert(`«Zeit / Details» eines Termins darf maximal ${COURSE_FIELD_LIMITS.scheduleDescription} Zeichen lang sein.`); return; }
+        if (tooLongEvent) { window.alert(`«Zeit / Details» eines Termins darf maximal ${COURSE_FIELD_LIMITS.scheduleDescription} Zeichen lang sein.`); clearPendingCategorySuggestion(); return; }
 
         // 1b. Payout Validation — Direkt-/Flex-Buchung nur mit Stripe Connect
         if (!payoutReady && bookingType !== 'lead') {
             window.alert("Direktbuchungen und flexible Buchungen sind erst möglich, wenn Sie Ihre Auszahlung eingerichtet haben. Bitte wählen Sie «Anfrage (Lead)» oder richten Sie zuerst Ihre Auszahlung ein.");
+            clearPendingCategorySuggestion();
             return;
         }
 
@@ -1364,17 +1418,19 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
         });
 
         if (bookingType === 'platform') {
-            if (validEvents.length === 0) { window.alert("Für Direktbuchungen benötigen wir mindestens einen Termin mit Datum. Präsenz-Termine benötigen zusätzlich Strasse, Ort und Kanton."); return; }
+            if (validEvents.length === 0) { window.alert("Für Direktbuchungen benötigen wir mindestens einen Termin mit Datum. Präsenz-Termine benötigen zusätzlich Strasse, Ort und Kanton."); clearPendingCategorySuggestion(); return; }
         }
 
         if ((bookingType === 'platform_flex' || bookingType === 'lead') && locationMode === 'locations') {
             if (locations.length === 0) {
                 window.alert("Bitte gib mindestens einen Standort an.");
+                clearPendingCategorySuggestion();
                 return;
             }
             for (const loc of locations) {
                 if (loc.type === 'presence' && !loc.canton) {
                     window.alert("Bitte wähle für jeden Präsenz-Standort einen Kanton aus.");
+                    clearPendingCategorySuggestion();
                     return;
                 }
             }
@@ -1383,6 +1439,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
         if ((bookingType === 'platform_flex' || bookingType === 'lead') && locationMode === 'events') {
             if (validEvents.length === 0) {
                 window.alert("Bitte gib mindestens einen Termin mit Datum an.");
+                clearPendingCategorySuggestion();
                 return;
             }
         }
@@ -1390,12 +1447,14 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
         // Preis: bei Direktbuchung/Flex ist ein Preis erforderlich
         if ((bookingType === 'platform' || bookingType === 'platform_flex') && !price) {
             window.alert("Bitte gib einen Preis ein. Für kostenlose Kurse trage 0 ein und begründe dies.");
+            clearPendingCategorySuggestion();
             setIsSubmitting(false);
             return;
         }
         // Kostenloser Kurs: free_reason ist Pflicht
         if ((bookingType === 'platform' || bookingType === 'platform_flex') && Number(price) === 0 && !freeReason.trim()) {
             window.alert("Bitte gib an, warum dieser Kurs kostenlos ist.");
+            clearPendingCategorySuggestion();
             setIsSubmitting(false);
             return;
         }
@@ -1404,6 +1463,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
         const primaryType = cleanedCategories[0]?.type;
         if ((primaryType === 'kinder' || primaryType === 'kinder_jugend') && !minAge) {
             window.alert("Für Kinder-Kurse ist das Mindestalter erforderlich.");
+            clearPendingCategorySuggestion();
             return;
         }
 
@@ -1436,6 +1496,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
                         imageUrl = await uploadImageWithHash(compressedFile, imageHash);
                     } catch (uploadError) {
                         showNotification("Bild-Upload fehlgeschlagen: " + uploadError.message);
+                        clearPendingCategorySuggestion();
                         setIsSubmitting(false);
                         return;
                     }
@@ -1490,8 +1551,9 @@ if (bookingType === 'platform' || locationMode === 'events') {
         // 5. Build Object - Safe access guards
         // Get numeric IDs for v2 schema
         const primaryIds = getCategoryIds(catType, catArea, catSpec, catFocus);
-        if (isV2 && !primaryIds.level3_id) {
+        if (isV2 && !primaryIds.level3_id && finalStatus === 'published') {
             window.alert("Die Kategorie konnte nicht eindeutig der aktuellen Taxonomie zugeordnet werden. Bitte wähle die Kategorie erneut aus und warte, bis die Taxonomie geladen ist.");
+            clearPendingCategorySuggestion();
             setIsSubmitting(false);
             return;
         }
@@ -1509,11 +1571,11 @@ if (bookingType === 'platform' || locationMode === 'events') {
             price: price !== '' ? Number(price) : null,
             languages: courseLanguages, // Array of languages
             rating: initialData?.rating || 0,
-            category: `${catType} | ${catArea}`,
+            category: catType && catArea ? `${catType} | ${catArea}` : null,
             // Legacy text fields (keep for backward compatibility)
-            category_type: normalizeCategoryType(catType),
-            category_area: catArea,
-            category_specialty: catSpec,
+            category_type: catType ? normalizeCategoryType(catType) : null,
+            category_area: catArea || null,
+            category_specialty: catSpec || null,
             category_focus: catFocus || null,
             // V2 numeric ID fields (legacy v2 schema)
             category_type_id: primaryIds.type_id,
@@ -1596,6 +1658,7 @@ if (bookingType === 'platform' || locationMode === 'events') {
         if (error) { 
             console.error(error); 
             showNotification("Fehler: " + error.message); 
+            clearPendingCategorySuggestion();
             setIsSubmitting(false);
             return; 
         } 
@@ -1611,6 +1674,7 @@ if (bookingType === 'platform' || locationMode === 'events') {
             const dupeIdx = eventKeys.findIndex((k, i) => eventKeys.indexOf(k) !== i);
             if (dupeIdx !== -1) {
                 showNotification("Zwei Termine haben dasselbe Startdatum, denselben Ort und Kanton. Bitte passe einen der Termine an.");
+                clearPendingCategorySuggestion();
                 setIsSubmitting(false);
                 return;
             }
@@ -1625,6 +1689,7 @@ if (bookingType === 'platform' || locationMode === 'events') {
             if (existingEventsError) {
                 console.error(existingEventsError);
                 showNotification("Fehler beim Laden der Termine: " + existingEventsError.message);
+                clearPendingCategorySuggestion();
                 setIsSubmitting(false);
                 return;
             }
@@ -1642,6 +1707,7 @@ if (bookingType === 'platform' || locationMode === 'events') {
                 if (deleteError) {
                     console.error(deleteError);
                     showNotification("Termine mit bestehenden Buchungen können nicht gelöscht werden. Bitte passe den Termin an, statt ihn zu entfernen.");
+                    clearPendingCategorySuggestion();
                     setIsSubmitting(false);
                     return;
                 }
@@ -1670,6 +1736,7 @@ if (bookingType === 'platform' || locationMode === 'events') {
                             ? "Zwei Termine dürfen nicht dasselbe Startdatum, denselben Ort und Kanton haben."
                             : "Fehler beim Aktualisieren eines Termins: " + updateEventError.message;
                         showNotification(msg);
+                        clearPendingCategorySuggestion();
                         setIsSubmitting(false);
                         return;
                     }
@@ -1684,6 +1751,7 @@ if (bookingType === 'platform' || locationMode === 'events') {
                             ? "Zwei Termine dürfen nicht dasselbe Startdatum, denselben Ort und Kanton haben."
                             : "Fehler beim Erstellen eines Termins: " + insertEventError.message;
                         showNotification(msg);
+                        clearPendingCategorySuggestion();
                         setIsSubmitting(false);
                         return;
                     }
@@ -1699,6 +1767,7 @@ if (bookingType === 'platform' || locationMode === 'events') {
             if (deleteStaleEventsError) {
                 console.error(deleteStaleEventsError);
                 showNotification("Fehler beim Bereinigen der Termine: " + deleteStaleEventsError.message);
+                clearPendingCategorySuggestion();
                 setIsSubmitting(false);
                 return;
             }
@@ -1747,6 +1816,7 @@ if (bookingType === 'platform' || locationMode === 'events') {
                 if (locError) {
                     console.error(locError);
                     showNotification("Fehler beim Speichern der Standorte: " + locError.message);
+                    clearPendingCategorySuggestion();
                     setIsSubmitting(false);
                     return;
                 }
@@ -1787,6 +1857,26 @@ if (bookingType === 'platform' || locationMode === 'events') {
             }
         }
 
+        // A missing category is allowed for drafts. When the provider used the
+        // combined action, send the suggestion only after the draft has a real
+        // course ID so the admin queue can link back to it.
+        const pendingCategorySuggestion = pendingCategorySuggestionRef.current;
+        let categorySuggestionError = null;
+        if (pendingCategorySuggestion && activeCourseId) {
+            pendingCategorySuggestionRef.current = null;
+            try {
+                await sendCategorySuggestion({
+                    courseId: activeCourseId,
+                    subject: pendingCategorySuggestion.subject,
+                    message: pendingCategorySuggestion.message,
+                    suggestion: pendingCategorySuggestion.suggestion
+                });
+            } catch (suggestionError) {
+                console.error('Category suggestion error:', suggestionError);
+                categorySuggestionError = suggestionError;
+            }
+        }
+
         // Clear draft after successful save
         try {
             sessionStorage.removeItem(draftKey);
@@ -1795,8 +1885,14 @@ if (bookingType === 'platform' || locationMode === 'events') {
         }
         setIsDirty(false);
 
-        showNotification(initialData?.id ? "Kurs aktualisiert!" : t.success_msg);
-        await refreshCoursesAfterMutation(fetchCourses, { followupDelayMs: courseStatus === 'published' ? 600 : 0 });
+        if (categorySuggestionError) {
+            showNotification('Entwurf gespeichert, aber der Kategorie-Vorschlag konnte nicht gesendet werden. Du kannst ihn beim nächsten Bearbeiten erneut senden.', 'error');
+        } else if (isDraftAndSuggest) {
+            showNotification('Entwurf und Kategorie-Vorschlag wurden gespeichert.');
+        } else {
+            showNotification(initialData?.id ? "Kurs aktualisiert!" : t.success_msg);
+        }
+        await refreshCoursesAfterMutation(fetchCourses, { followupDelayMs: finalStatus === 'published' ? 600 : 0 });
         setEditingCourse(null);
         sessionStorage.setItem('dashOpenTab', 'kursangebot');
         setView('dashboard');
@@ -1816,6 +1912,7 @@ if (bookingType === 'platform' || locationMode === 'events') {
 
     // Compute missing required fields for the Section 6 indicator
     const isKinder = categories[0]?.type === 'kinder' || categories[0]?.type === 'kinder_jugend';
+    const hasCompletePrimaryCategory = Boolean(categories[0]?.type && categories[0]?.area && categories[0]?.specialty);
     const missingRequiredFields = [];
     if (!title.trim()) missingRequiredFields.push('Kurstitel');
     if (!description.trim()) missingRequiredFields.push('Beschreibung');
@@ -1840,7 +1937,7 @@ if (bookingType === 'platform' || locationMode === 'events') {
         <div className="bg-white p-8 rounded-2xl shadow-xl border border-gray-200">
             <div className="mb-8 border-b pb-4"><h1 className="text-3xl font-bold text-dark font-heading">{initialData ? t.edit_course : t.create_course}</h1></div>
             
-            <form ref={formRef} onSubmit={handlePublishCourse} className="space-y-8">
+            <form ref={formRef} noValidate onSubmit={handlePublishCourse} className="space-y-8">
                 {initialData && <input type="hidden" name="course_id" value={initialData.id} />}
                 
                 {/* === ABSCHNITT 1: GRUNDANGABEN === */}
@@ -1917,6 +2014,17 @@ if (bookingType === 'platform' || locationMode === 'events') {
                     <p className="text-sm text-gray-500 mt-0.5">Hilf Interessierten, deinen Kurs zu finden.</p>
                 </div>
                 <div className="bg-beige p-6 rounded-xl border border-orange-100 space-y-4">
+                    {!hasCompletePrimaryCategory && (
+                        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex gap-3 items-start">
+                            <Lightbulb className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
+                            <div>
+                                <p className="text-sm font-bold text-blue-900">Noch keine passende Kategorie gefunden?</p>
+                                <p className="text-sm text-blue-800 mt-1">
+                                    Du kannst den Kurs trotzdem als Entwurf speichern. Er bleibt unsichtbar, bis eine vollständige Kategorie gewählt wurde.
+                                </p>
+                            </div>
+                        </div>
+                    )}
                     <div className="space-y-4">
                         {categories.map((row, idx) => (
                             <div key={idx} className="bg-white/60 p-4 rounded-lg border border-orange-200/60">
@@ -1942,7 +2050,7 @@ if (bookingType === 'platform' || locationMode === 'events') {
                                             value={row.type}
                                             onChange={(e) => updateCategoryRow(idx, 'type', e.target.value)}
                                             className="w-full px-3 py-2 border rounded-lg focus:ring-primary bg-white text-sm"
-                                            required={idx === 0}
+                                            required={false}
                                         >
                                             {idx > 0 && <option value="">Bitte wählen...</option>}
                                             {(types.length > 0 ? types : Object.keys(CATEGORY_TYPES).map(id => ({ id, slug: id, label_de: CATEGORY_TYPES[id].de }))).map(type => (
@@ -1958,7 +2066,7 @@ if (bookingType === 'platform' || locationMode === 'events') {
                                             onChange={(e) => updateCategoryRow(idx, 'area', e.target.value)}
                                             className="w-full px-3 py-2 border rounded-lg focus:ring-primary bg-white text-sm"
                                             disabled={!row.type}
-                                            required={idx === 0}
+                                             required={false}
                                         >
                                             <option value="">Bitte wählen...</option>
                                             {row.type && getAreasLocal(row.type).map(key => {
@@ -1977,7 +2085,7 @@ if (bookingType === 'platform' || locationMode === 'events') {
                                             onChange={(e) => updateCategoryRow(idx, 'specialty', e.target.value)}
                                             className="w-full px-3 py-2 border rounded-lg focus:ring-primary bg-white text-sm"
                                             disabled={!row.area}
-                                            required={idx === 0}
+                                             required={false}
                                         >
                                             <option value="">Bitte wählen...</option>
                                             {row.type && row.area && getSpecialtiesLocal(row.type, row.area).map(spec => (
@@ -2016,16 +2124,18 @@ if (bookingType === 'platform' || locationMode === 'events') {
                                 <Plus className="w-4 h-4 mr-1" /> Kategorie hinzufügen
                             </button>
                         </div>
-                        <div className="pt-3 border-t border-orange-200/50 mt-3">
-                            <button
-                                type="button"
-                                onClick={() => setShowCategorySuggestionModal(true)}
-                                className="text-sm text-purple-600 hover:text-purple-800 font-medium flex items-center gap-1.5 hover:underline transition"
-                            >
-                                <Lightbulb className="w-4 h-4" />
-                                Kategorie fehlt? Neue vorschlagen
-                            </button>
-                        </div>
+                        {!isAdminImpersonating && (
+                            <div className="pt-3 border-t border-orange-200/50 mt-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowCategorySuggestionModal(true)}
+                                    className="text-sm text-purple-600 hover:text-purple-800 font-medium flex items-center gap-1.5 hover:underline transition"
+                                >
+                                    <Lightbulb className="w-4 h-4" />
+                                    Kategorie fehlt? Vorschlagen &amp; als Entwurf speichern
+                                </button>
+                            </div>
+                        )}
                     </div>
 
                     {/* Kursart: berufliche Kurse */}
@@ -2682,6 +2792,9 @@ if (bookingType === 'platform' || locationMode === 'events') {
             types={types}
             showNotification={showNotification}
             userEmail={user?.email}
+            courseId={initialData?.id}
+            courseTitle={title}
+            onSubmitSuggestion={handleCategorySuggestionSubmit}
         />
 
         {/* Image Library Modal */}

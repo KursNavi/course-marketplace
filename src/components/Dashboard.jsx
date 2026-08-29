@@ -10,6 +10,7 @@ import {
 import { SWISS_CANTONS, CATEGORY_TYPES, NEW_TAXONOMY, CATEGORY_LABELS } from "../lib/constants";
 import { buildCoursePath } from '../lib/siteConfig';
 import { PLANS } from "../constants/plans";
+import { hasCompleteCourseCategory } from '../lib/courseStatus';
 
 import { DEFAULT_COURSE_IMAGE } from '../lib/imageUtils';
 const fallbackImage = DEFAULT_COURSE_IMAGE;
@@ -2572,7 +2573,15 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                                                 <a href={buildCoursePath(course)} target="_blank" rel="noopener noreferrer" onClick={(e) => { if (!e.ctrlKey && !e.metaKey && !e.shiftKey) { e.preventDefault(); handleNavigateToCourse(course); } }} className="text-xs px-2 py-1 rounded-md font-medium bg-gray-50 text-gray-700 hover:bg-gray-100 transition flex items-center gap-1"><Eye className="w-3 h-3" />Vorschau</a>
                                                                 <button onClick={() => handleDuplicateCourse(course.id)} className="text-xs px-2 py-1 rounded-md font-medium bg-purple-50 text-purple-700 hover:bg-purple-100 transition flex items-center gap-1" title="Kurs kopieren"><Copy className="w-3 h-3" />Kopieren</button>
                                                                 {course.status === 'draft' ? (
-                                                                    <button onClick={() => handleUpdateCourseStatus(course.id, 'published')} className="text-xs px-2 py-1 rounded-md font-medium bg-green-50 text-green-700 hover:bg-green-100 transition flex items-center gap-1"><CheckCircle className="w-3 h-3" />Veröffentlichen</button>
+                                                                    <button
+                                                                        onClick={() => handleUpdateCourseStatus(course.id, 'published')}
+                                                                        disabled={!hasCompleteCourseCategory(course)}
+                                                                        title={!hasCompleteCourseCategory(course) ? 'Bitte zuerst eine vollständige Kategorie auswählen.' : undefined}
+                                                                        className="text-xs px-2 py-1 rounded-md font-medium bg-green-50 text-green-700 hover:bg-green-100 transition flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-green-50"
+                                                                    >
+                                                                        <CheckCircle className="w-3 h-3" />
+                                                                        {hasCompleteCourseCategory(course) ? 'Veröffentlichen' : 'Kategorie fehlt'}
+                                                                    </button>
                                                                 ) : (
                                                                     <button onClick={() => handleUpdateCourseStatus(course.id, 'draft')} className="text-xs px-2 py-1 rounded-md font-medium bg-yellow-50 text-yellow-700 hover:bg-yellow-100 transition flex items-center gap-1"><EyeOff className="w-3 h-3" />Vom Marktplatz nehmen</button>
                                                                 )}

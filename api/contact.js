@@ -62,13 +62,28 @@ function escapeHtml(str) {
 const VALID_TYPES = ['contact', 'verification', 'category-suggestion'];
 const RATE_LIMIT_MINUTES = 5;
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const courseIdRegex = /^[1-9][0-9]*$/;
+
+function isValidCourseId(value) {
+  if (typeof value === 'number') return Number.isSafeInteger(value) && value > 0;
+  return typeof value === 'string' && courseIdRegex.test(value.trim());
+}
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { type, name, email, subject, message, _company } = req.body || {};
+  const {
+    type,
+    name,
+    email,
+    subject,
+    message,
+    courseId,
+    suggestion,
+    _company
+  } = req.body || {};
 
   // 1. Type validieren
   if (!type || !VALID_TYPES.includes(type)) {
@@ -150,8 +165,11 @@ export default async function handler(req, res) {
       <p style="color:#6B7280; font-size:14px;">Bitte im Admin Panel prüfen.</p>
     `;
   } else if (type === 'category-suggestion') {
-    if (!subject || !message) {
-      return res.status(400).json({ error: 'Fehlende Felder: subject, message' });
+    if (!subject || !message || !isValidCourseId(courseId) || !suggestion?.suggestionType || !suggestion?.selectedType) {
+      return res.status(400).json({ error: 'Fehlende Felder: subject, message, courseId oder Vorschlagsdaten' });
+    }
+    if (!['single', 'path'].includes(suggestion.suggestionType)) {
+      return res.status(400).json({ error: 'Ungültiger Vorschlagstyp' });
     }
     senderEmail = (email || authUser.email).toLowerCase();
     const safeMessage = escapeHtml(message).replace(/\n/g, '<br>');
@@ -160,6 +178,7 @@ export default async function handler(req, res) {
     emailBodyHtml = `
       <p>Neuer Kategorie-Vorschlag:</p>
       <div style="background:#F9FAFB; border-left:3px solid ${COLORS.primary}; padding:16px; border-radius:0 8px 8px 0; margin:20px 0;">
+        <p style="margin:0 0 10px; font-weight:600;">Kurs-ID: ${escapeHtml(courseId)}</p>
         <p style="margin:0;">${safeMessage}</p>
       </div>
       <p style="color:#6B7280; font-size:14px;">Eingesendet von: ${escapeHtml(senderEmail)}</p>
@@ -187,6 +206,25 @@ export default async function handler(req, res) {
 
     if (!countError && count > 0) {
       return res.status(429).json({ error: 'Bitte warte einige Minuten vor dem nächsten Senden.' });
+    }
+
+    // Category suggestions must always point to a course owned by the
+    // authenticated provider. The course ID is included in the existing
+    // contact/audit flow; no additional database table is required.
+    if (type === 'category-suggestion') {
+      const { data: course, error: courseError } = await supabase
+        .from('courses')
+        .select('id, title, user_id')
+        .eq('id', courseId)
+        .single();
+
+      if (courseError || !course) {
+        return res.status(404).json({ error: 'Der zugehörige Kurs wurde nicht gefunden.' });
+      }
+      if (course.user_id !== authUser.id) {
+        return res.status(403).json({ error: 'Der Kurs gehört nicht zu diesem Anbieter.' });
+      }
+
     }
 
     // 6. Audit-Record (status: pending)

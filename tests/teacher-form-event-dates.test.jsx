@@ -115,7 +115,7 @@ vi.mock('browser-image-compression', () => ({ default: async (file) => file }));
 
 const { default: TeacherForm } = await import('../src/components/TeacherForm.jsx');
 
-const COURSE_ID = 'course-1';
+const COURSE_ID = 1;
 const USER_ID = 'user-1';
 
 const baseCourse = {
@@ -135,12 +135,12 @@ const baseCourse = {
     delivery_types: ['presence']
 };
 
-const renderEditor = (courseEvents) => render(
+const renderEditor = (courseEvents, courseOverrides = {}) => render(
     <TeacherForm
         t={{ btn_back_dash: 'Zurück', edit_course: 'Kurs bearbeiten', create_course: 'Kurs erstellen', success_msg: 'Gespeichert' }}
         setView={() => {}}
         user={{ id: USER_ID, name: 'Test Anbieter' }}
-        initialData={{ ...baseCourse, course_events: courseEvents }}
+        initialData={{ ...baseCourse, ...courseOverrides, course_events: courseEvents }}
         fetchCourses={() => {}}
         showNotification={() => {}}
         setEditingCourse={() => {}}
@@ -166,6 +166,7 @@ const endDateInputs = () => inputsForLabel('Enddatum (optional)');
 describe('TeacherForm – Termine (start_date/end_date) reach the state and survive a reload', () => {
     beforeEach(() => {
         cleanup();
+        vi.unstubAllGlobals();
         vi.spyOn(window, 'alert').mockImplementation(() => {});
         db.courses = [{ ...baseCourse }];
         db.course_events = [
@@ -263,5 +264,64 @@ describe('TeacherForm – Termine (start_date/end_date) reach the state and surv
         // Updated in place (same row id), not deleted and re-created empty.
         expect(db.course_events[0].id).toBe(1);
         expect(db.course_events[0].start_date).toBe('2026-11-03');
+    });
+
+    it('saves a draft without a complete primary category and keeps it unpublished', async () => {
+        renderEditor(reloadEventsFromDb(), {
+            category_area: '',
+            category_specialty: '',
+            category_focus: '',
+            status: 'draft'
+        });
+
+        await waitFor(() => expect(startDateInputs().length).toBe(1));
+        document.querySelector('form').noValidate = true;
+
+        await act(async () => {
+            fireEvent.click(screen.getByTestId('save-course'));
+        });
+
+        expect(window.alert).not.toHaveBeenCalled();
+        await waitFor(() => {
+            expect(db.courses[0].status).toBe('draft');
+            expect(db.courses[0].category_level3_id).toBeNull();
+        });
+        expect(db.course_category_assignments).toHaveLength(0);
+        expect(screen.getByText('Jetzt veröffentlichen').closest('button')).toBeDisabled();
+    });
+
+    it('saves the draft first and links the category suggestion to the saved course', async () => {
+        const fetchMock = vi.fn().mockResolvedValue({
+            ok: true,
+            json: async () => ({ ok: true })
+        });
+        vi.stubGlobal('fetch', fetchMock);
+
+        renderEditor(reloadEventsFromDb(), {
+            category_area: '',
+            category_specialty: '',
+            category_focus: '',
+            status: 'draft'
+        });
+
+        await waitFor(() => expect(startDateInputs().length).toBe(1));
+        document.querySelector('form').noValidate = true;
+        fireEvent.click(screen.getByRole('button', { name: /Kategorie fehlt\?/i }));
+
+        const typeSelect = screen.getByText('Kategorietyp (Level 1) *').parentElement.querySelector('select');
+        fireEvent.change(typeSelect, { target: { value: typeSelect.options[1].value } });
+        fireEvent.change(screen.getByPlaceholderText('z.B. Digitale Kunst'), { target: { value: 'Neue Kurswelt' } });
+
+        await act(async () => {
+            fireEvent.click(screen.getByRole('button', { name: /Vorschlag senden & Entwurf speichern/i }));
+        });
+
+        await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+        const request = fetchMock.mock.calls[0][1];
+        const body = JSON.parse(request.body);
+        expect(body.type).toBe('category-suggestion');
+        expect(body.courseId).toBe(COURSE_ID);
+        expect(body.suggestion.newArea).toBe('Neue Kurswelt');
+        expect(db.courses[0].status).toBe('draft');
     });
 });
