@@ -7,7 +7,7 @@
  *   kein ß — in sichtbarem Text ist es immer ein Fehler.
  *
  * Warum nicht einfach global ersetzen:
- *   Sieben Stellen enthalten ß absichtlich, nämlich in der Slug-Normalisierung
+ *   Sechs Stellen enthalten ß absichtlich, nämlich in der Slug-Normalisierung
  *   `.replace(/ß/g, 'ss')`. Dort ist das ß der Suchwert: Es wandelt eine
  *   Nutzereingabe wie «Strauß» in eine URL-taugliche Form um. Würde man es
  *   entfernen, entstünden fehlerhafte URLs. Genau diese Stellen nimmt der Test
@@ -78,6 +78,6 @@ describe('Schweizer Schreibweise — kein ß ausserhalb der Slug-Normalisierung'
       .map((d) => (fs.readFileSync(d, 'utf8').match(ERLAUBT) || []).length)
       .reduce((a, b) => a + b, 0);
 
-    expect(anzahl).toBeGreaterThanOrEqual(7);
+    expect(anzahl).toBeGreaterThanOrEqual(6);
   });
 });

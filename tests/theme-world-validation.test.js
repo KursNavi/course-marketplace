@@ -131,6 +131,18 @@ describe('validateSearchConfig', () => {
     })).toEqual([]);
   });
 
+  it('akzeptiert einen Kursart-Filter ohne area_slug', () => {
+    expect(validateSearchConfig({ kursart: 'feriencamp' })).toEqual([]);
+  });
+
+  it('lehnt eine leere Filterkonfiguration ab', () => {
+    expect(validateSearchConfig({ type_key: 'kinder_jugend' }).some(e => e.includes('area_slug') || e.includes('kursart'))).toBe(true);
+  });
+
+  it('lehnt einen nur aus Leerzeichen bestehenden area_slug ab', () => {
+    expect(validateSearchConfig({ area_slug: '   ', kursart: 'feriencamp' }).some(e => e.includes('area_slug'))).toBe(true);
+  });
+
   it('lehnt fehlenden area_slug ab', () => {
     const errors = validateSearchConfig({ type_key: 'beruflich' });
     expect(errors.some(e => e.includes('area_slug'))).toBe(true);
@@ -236,6 +248,10 @@ describe('validatePredefinedSearches', () => {
       { label_de: 'Fitness Trainer Zürich', loc: 'Zürich', delivery: 'presence' },
       { label_de: 'Online Yoga' },
     ])).toEqual([]);
+  });
+
+  it('akzeptiert kursart in vordefinierten Suchen', () => {
+    expect(validatePredefinedSearches([{ label_de: 'Feriencamps', kursart: 'feriencamp' }])).toEqual([]);
   });
 
   it('lehnt fehlenden label_de ab', () => {
@@ -917,7 +933,7 @@ describe('validatePublishScenario', () => {
 //
 // Such-/URL-Layer  → 'presence'    (VALID_DELIVERY_TYPES)
 // Regions-DB-Layer → 'in_person'   (VALID_REGION_DELIVERY_PARAMS)
-// Brücke           → themeWorldAdapter.js:464 normalisiert in_person → presence
+// Brücke           ⅒ themeWorldAdapter.js:464 normalisiert in_person ⅒ presence
 //
 // Diese Trennung ist beabsichtigt und wird hier festgeschrieben, damit die
 // beiden Listen nicht versehentlich wieder zusammengeführt werden.

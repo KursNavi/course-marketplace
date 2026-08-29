@@ -490,7 +490,7 @@ async function applySequential(supabase, data) {
     slug: tw.slug,
     url_segment: tw.url_segment,
     db_segment: tw.db_segment,
-    area_slug: tw.area_slug || tw.key,
+    area_slug: tw.area_slug ?? null,
     title_de: tw.title_de,
     subtitle_de: tw.subtitle_de || null,
     intro_de: tw.intro_de || null,

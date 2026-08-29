@@ -20,6 +20,7 @@ import {
 import { SEGMENT_FALLBACK_HERO_IMAGES } from '../../lib/themeWorldAdapter';
 import { useTaxonomy } from '../../hooks/useTaxonomy';
 import { SWISS_CANTONS } from '../../lib/constants';
+import { normalizePredefinedSearches } from '../../lib/themeWorldAdminUtils';
 
 // ---------------------------------------------------------------------------
 // Konstanten
@@ -161,7 +162,7 @@ function buildSectionTitles(base, form, loadedForm) {
     const current = form[key] || '';
     const original = loadedForm[key] || '';
 
-    if (current === original) continue; // unverändert → Ausgangszustand behalten
+    if (current === original) continue; // unverändert ⅒ Ausgangszustand behalten
 
     const trimmed = current.trim();
     if (trimmed) next[key] = trimmed;
@@ -188,6 +189,7 @@ function ctaLinksToForm(raw) {
       focus: link.focus || '',
       loc: link.loc || '',
       delivery: link.delivery || '',
+      kursart: link.kursart || '',
       // null-fähig mitgeführt, nicht bearbeitbar:
       hadSortOrder: Number.isInteger(link.sort_order),
       status: typeof link.status === 'string' ? link.status : null,
@@ -209,6 +211,7 @@ function formToCtaLinks(rows) {
     ...(row.focus && row.focus.trim() ? { focus: row.focus.trim() } : {}),
     ...(row.loc && row.loc.trim() ? { loc: row.loc.trim() } : {}),
     ...(row.delivery ? { delivery: row.delivery } : {}),
+    ...(row.kursart && row.kursart.trim() ? { kursart: row.kursart.trim() } : {}),
     ...(row.hadSortOrder ? { sort_order: index + 1 } : {}),
     ...(row.status ? { status: row.status } : {}),
   }));
@@ -312,7 +315,7 @@ function buildTaxonomyOptions({ areas, specialties, focuses, areaSlug }) {
   const allFocuses = Array.isArray(focuses) ? focuses : [];
 
   // Eindeutige Area: exakt ein Treffer auf den Slug. Mehrdeutig oder unbekannt
-  // ⇒ keine Einschränkung, statt eine falsche Area zu raten.
+  // → keine Einschränkung, statt eine falsche Area zu raten.
   const slug = (areaSlug || '').trim();
   const slugHits = slug ? allAreas.filter((a) => a?.slug === slug) : [];
   const area = slugHits.length === 1 ? slugHits[0] : null;
@@ -440,7 +443,7 @@ export default function AdminThemeWorldForm({
   // Suche
   const sucheSave = useSaveState();
   const [suche, setSuche] = useState({
-    area_slug: '', type_key: '', default_spec: '', default_focus: '', area_label_de: '',
+    area_slug: '', kursart: '', type_key: '', default_spec: '', default_focus: '', area_label_de: '',
   });
   const [predefinedSearches, setPredefinedSearches] = useState([]);
 
@@ -541,6 +544,7 @@ export default function AdminThemeWorldForm({
       const sc = data.search_config || {};
       setSuche({
         area_slug: sc.area_slug || data.area_slug || '',
+        kursart: sc.kursart || '',
         type_key: sc.type_key || '',
         default_spec: sc.default_spec || '',
         default_focus: sc.default_focus || '',
@@ -618,7 +622,7 @@ export default function AdminThemeWorldForm({
         url_segment: grundlagen.url_segment,
         db_segment: URL_TO_DB[grundlagen.url_segment] || null,
         slug: grundlagen.slug,
-        area_slug: suche.area_slug || grundlagen.key,
+        area_slug: suche.area_slug || null,
       };
 
       if (isNew && !savedTwId) {
@@ -711,18 +715,13 @@ export default function AdminThemeWorldForm({
     sucheSave.startSaving();
     try {
       // Normalize: strip empty optional fields from predefined_searches
-      const normalizedSearches = predefinedSearches.map((s) => ({
-        label_de: (s.label_de || '').trim(),
-        ...(s.spec && s.spec.trim() ? { spec: s.spec.trim() } : {}),
-        ...(s.focus && s.focus.trim() ? { focus: s.focus.trim() } : {}),
-        ...(s.loc && s.loc.trim() ? { loc: s.loc.trim() } : {}),
-        ...(s.delivery ? { delivery: s.delivery } : {}),
-      }));
+      const normalizedSearches = normalizePredefinedSearches(predefinedSearches);
 
       await updateThemeWorld(id, {
-        area_slug: suche.area_slug,
+        area_slug: suche.area_slug || null,
         search_config: {
-          area_slug: suche.area_slug,
+          ...(suche.area_slug && suche.area_slug.trim() ? { area_slug: suche.area_slug.trim() } : {}),
+          ...(suche.kursart ? { kursart: suche.kursart.trim() } : {}),
           ...(suche.type_key && { type_key: suche.type_key }),
           ...(suche.default_spec && { default_spec: suche.default_spec }),
           ...(suche.default_focus && { default_focus: suche.default_focus }),
@@ -1103,7 +1102,7 @@ export default function AdminThemeWorldForm({
             </p>
 
             <div className="space-y-5">
-              <FormField label="Bereichs-Slug (area_slug)" hint="Exakter Slug aus taxonomy_level2. Beispiel: sport_fitness" required>
+              <FormField label="Bereichs-Slug (area_slug)" hint="Optionaler Slug aus taxonomy_level2. Beispiel: sport_fitness">
                 <input
                   type="text"
                   className="FormInput font-mono"
@@ -1113,9 +1112,20 @@ export default function AdminThemeWorldForm({
                 />
               </FormField>
 
+              <FormField label="Kursart (kursart)" hint="Optionaler Kursart-Filter, z. B. feriencamp">
+                <input
+                  type="text"
+                  className="FormInput font-mono"
+                  placeholder="z. B. feriencamp"
+                  maxLength={100}
+                  value={suche.kursart}
+                  onChange={(e) => { setSuche((p) => ({ ...p, kursart: e.target.value })); sucheSave.markDirty(); }}
+                />
+              </FormField>
+
               <FormField
                 label="Anzeigename in der Suche"
-                hint='Lesbare Bezeichnung für Breadcrumb, Seitentitel und Suchfilter, z. B. „Kreativ & Gestalten". Leer lassen um den Titel der Themenwelt zu verwenden.'
+                hint='Lesbare Bezeichnung für Breadcrumb, Seitentitel und Suchfilter, z. B. ”Kreativ & Gestalten". Leer lassen um den Titel der Themenwelt zu verwenden.'
               >
                 <input
                   type="text"
@@ -1164,7 +1174,7 @@ export default function AdminThemeWorldForm({
                 onChange={(items) => { setPredefinedSearches(items); sucheSave.markDirty(); }}
                 emptyLabel="Noch keine vordefinierten Suchen"
                 addLabel="Vordefinierte Suche hinzufügen"
-                newItem={() => ({ label_de: '', spec: '', focus: '', loc: '', delivery: '' })}
+                newItem={() => ({ label_de: '', spec: '', focus: '', loc: '', delivery: '', kursart: '' })}
                 renderItem={(item, i, update, remove) => (
                   <div className="space-y-3">
                     <div>
@@ -1226,6 +1236,16 @@ export default function AdminThemeWorldForm({
                           <option value="presence">Präsenz (vor Ort)</option>
                         </select>
                       </div>
+                      <div>
+                        <label className="text-xs font-semibold text-gray-600">Kursart (kursart)</label>
+                        <input
+                          className="FormInput mt-1"
+                          value={item.kursart || ''}
+                          onChange={(e) => update({ kursart: e.target.value })}
+                          placeholder="z. B. feriencamp"
+                          maxLength={100}
+                        />
+                      </div>
                     </div>
                     <div className="flex justify-end">
                       <button type="button" onClick={remove} className="text-xs text-red-500 hover:underline">
@@ -1273,7 +1293,7 @@ export default function AdminThemeWorldForm({
                   </div>
                   <div>
                     <label className="text-xs font-semibold text-gray-600">Emoji-Icon</label>
-                    <input className="FormInput mt-1" value={item.icon || ''} onChange={(e) => update({ icon: e.target.value })} placeholder="🏋️" />
+                    <input className="FormInput mt-1" value={item.icon || ''} onChange={(e) => update({ icon: e.target.value })} placeholder="ðŸ‹ï¸" />
                   </div>
                   <div>
                     <label className="text-xs font-semibold text-gray-600">Sortierung</label>
@@ -1643,7 +1663,7 @@ export default function AdminThemeWorldForm({
                     emptyLabel="Noch keine zusätzlichen CTA-Links"
                     addLabel="CTA-Link hinzufügen"
                     newItem={() => ({
-                      label_de: '', spec: '', focus: '', loc: '', delivery: '',
+                      label_de: '', spec: '', focus: '', loc: '', delivery: '', kursart: '',
                       hadSortOrder: false, status: null,
                     })}
                     renderItem={(item, i, update, remove) => (
@@ -1705,6 +1725,16 @@ export default function AdminThemeWorldForm({
                               <option value="self_study">Selbststudium</option>
                               <option value="presence">Präsenz (vor Ort)</option>
                             </select>
+                          </div>
+                          <div>
+                            <label className="text-xs font-semibold text-gray-600">Kursart (kursart)</label>
+                            <input
+                              className="FormInput mt-1"
+                              value={item.kursart || ''}
+                              onChange={(e) => update({ kursart: e.target.value })}
+                              placeholder="z. B. feriencamp"
+                              maxLength={100}
+                            />
                           </div>
                         </div>
                         <div className="flex justify-end">

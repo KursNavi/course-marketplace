@@ -13,6 +13,7 @@ import { fetchThemeWorldPage } from '../lib/themeWorldService';
 import { adaptToLegacyBereichConfig } from '../lib/themeWorldAdapter';
 import { normalizeDeliveryTypeKey } from '../lib/courseMetadata';
 import { buildEditorialReviewNotice } from '../lib/editorialReviewDate';
+import { matchesCourseTypeFilter } from '../lib/themeWorldCourseFilters';
 
 export default function BereichLandingPage({ segment, slug, courses, lang = 'de', t }) {
   // Legacy-Config (immer geladen als Basiswert + Fallback)
@@ -39,7 +40,7 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
   // Pilot-Integration: DB-Daten laden wenn Feature-Flag aktiv
   useEffect(() => {
     // DB-only-Modus: Themenwelt existiert nur in der DB, kein Legacy-Eintrag
-    // → direkt laden ohne Pilot-Key-Prüfung (keine Legacy-Einschränkung nötig)
+    // ⅒ direkt laden ohne Pilot-Key-Prüfung (keine Legacy-Einschränkung nötig)
     if (!legacyConfig && isThemeWorldDbEnabled()) {
       let cancelled = false;
       fetchThemeWorldPage(segment, slug)
@@ -239,7 +240,8 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
     courses.forEach(c => {
       if (c.status !== 'published' && c.status) return;
       (c.all_categories || []).forEach(cat => {
-        if (cat.category_type === dbType && cat.category_area === config.areaSlug) {
+        if (cat.category_type === dbType && (!config.areaSlug || cat.category_area === config.areaSlug) &&
+            matchesCourseTypeFilter(c, config.typeKey, config.kursart)) {
           const specLabel = cat.category_specialty_label || cat.category_specialty;
           if (specLabel) {
             counts[specLabel] = (counts[specLabel] || 0) + 1;
@@ -257,7 +259,8 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
     courses.forEach(c => {
       if (c.status !== 'published' && c.status) return;
       (c.all_categories || []).forEach(cat => {
-        if (cat.category_type === dbType && cat.category_area === config.areaSlug &&
+        if (cat.category_type === dbType && (!config.areaSlug || cat.category_area === config.areaSlug) &&
+            matchesCourseTypeFilter(c, config.typeKey, config.kursart) &&
             (cat.category_specialty_label === specLabel || cat.category_specialty === specLabel) &&
             cat.category_focus_label) {
           focuses.add(cat.category_focus_label);
@@ -274,7 +277,8 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
   const navigateToSearch = (extraParams = {}) => {
     const params = new URLSearchParams();
     params.set('type', config.typeKey);
-    params.set('area', config.areaSlug);
+    if (config.areaSlug) params.set('area', config.areaSlug);
+    if (config.kursart) params.set('kursart', config.kursart);
     if (searchQuery) params.set('q', searchQuery);
     Object.entries(extraParams).forEach(([k, v]) => {
       if (v) params.set(k, v);
@@ -304,7 +308,8 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
   const buildSearchUrl = (extraParams = {}) => {
     const params = new URLSearchParams();
     params.set('type', config.typeKey);
-    params.set('area', config.areaSlug);
+    if (config.areaSlug) params.set('area', config.areaSlug);
+    if (config.kursart) params.set('kursart', config.kursart);
     Object.entries(extraParams).forEach(([k, v]) => {
       if (!v) return;
       // Kanonisiere Delivery-Werte beim URL-Aufbau

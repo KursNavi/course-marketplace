@@ -84,7 +84,7 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
     let cancelled = false;
 
     // DB-only-Modus: Themenwelt existiert nur in der DB, kein Legacy-Eintrag
-    // → direkt laden ohne Pilot-Key-Prüfung (keine Legacy-Einschränkung nötig)
+    // ⅒ direkt laden ohne Pilot-Key-Prüfung (keine Legacy-Einschränkung nötig)
     if (!legacyBereichConfig && isThemeWorldDbEnabled()) {
       (async () => {
         try {
@@ -96,7 +96,8 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
             slug: tw.slug,
             segment: tw.url_segment,
             typeKey: tw.url_segment?.replace(/-/g, '_') || 'beruflich',
-            areaSlug: sc.area_slug || tw.area_slug || tw.key,
+            areaSlug: sc.area_slug ?? tw.area_slug ?? null,
+            kursart: sc.kursart || null,
             title: { de: tw.title_de || '' },
             scenarios: [],
           });
@@ -154,7 +155,8 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
             slug: tw.slug,
             segment: tw.url_segment,
             typeKey: tw.url_segment?.replace(/-/g, '_') || 'beruflich',
-            areaSlug: sc.area_slug || tw.area_slug || tw.key,
+            areaSlug: sc.area_slug ?? tw.area_slug ?? null,
+            kursart: sc.kursart || null,
             title: { de: tw.title_de || '' },
             scenarios: [], // Vollständige Szenario-Liste nicht nötig für Artikelansicht
           });
@@ -177,7 +179,7 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
           }
         }
       } catch (err) {
-        // Unerwarteter Fehler → Legacy bleibt aktiv (kein setState nötig)
+        // Unerwarteter Fehler ⅒ Legacy bleibt aktiv (kein setState nötig)
         if (import.meta.env.DEV) {
           console.warn(
             '[SzenarioArtikelView] Pilot-Ladevorgang fehlgeschlagen, Legacy-Fallback aktiv:',
@@ -200,7 +202,8 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
     if (!bereichConfig) return;
     const params = new URLSearchParams();
     params.set('type', bereichConfig.typeKey);
-    params.set('area', bereichConfig.areaSlug);
+    if (bereichConfig.areaSlug) params.set('area', bereichConfig.areaSlug);
+    if (bereichConfig.kursart) params.set('kursart', bereichConfig.kursart);
     Object.entries(extraParams).forEach(([k, v]) => {
       if (!v) return;
       // Kanonisiere Delivery-Werte beim URL-Aufbau
