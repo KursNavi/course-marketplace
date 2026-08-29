@@ -536,7 +536,18 @@ export default function KursNaviPro() {  // 1. Initial State Logic
       return key;
     };
 
-  const showNotification = (msg, type = 'success') => { setNotification(msg); setNotificationType(type); setTimeout(() => setNotification(null), 5000); };
+  const showNotification = useCallback((msg, type = 'success') => {
+    setNotification(msg);
+    setNotificationType(type);
+    setTimeout(() => setNotification(null), 5000);
+  }, []);
+
+  const handleAdminSessionExpired = useCallback(() => {
+    setUser(null);
+    setImpersonatedUser(null);
+    window.history.replaceState({ view: 'login' }, '', '/login');
+    setView('login');
+  }, []);
 
   // Store token from email link for manual verification (user must click a button).
   // Auto-verification fails because Proofpoint URL Defense scans pages with a
@@ -2313,6 +2324,7 @@ useEffect(() => {
           setView={setView}
           setSelectedThemeWorldId={setSelectedThemeWorldId}
           onNewCreate={() => setThemeWorldCreateNonce((n) => n + 1)}
+          onSessionExpired={handleAdminSessionExpired}
         />
       )}
       {view === 'admin-theme-world-form' && (
