@@ -175,9 +175,9 @@ describe('TeacherForm – Hinweis zu Suchbegriffen', () => {
 
         const keywordsInput = await screen.findByRole('textbox', { name: /Suchbegriffe für die Suche/i });
         expect(keywordsInput).toHaveAttribute('aria-describedby', 'course-keywords-hint');
-        expect(screen.getByText(/Neben dem Kurstitel werden nur diese Suchbegriffe/i)).toBeInTheDocument();
+        expect(screen.getByText(/Damit keine irrelevanten Kurse erscheinen/i)).toBeInTheDocument();
         expect(screen.getByText(/nicht die Kursbeschreibung/i)).toBeInTheDocument();
-        expect(screen.getByText(/Fotokurs.*Kaffee und Gipfeli.*Kaffeekurs/i)).toBeInTheDocument();
+        expect(screen.getByText(/Fotokurs.*Kaffee und Gipfeli.*bei «Kaffee» erscheinen/i)).toBeInTheDocument();
     });
 });
 
