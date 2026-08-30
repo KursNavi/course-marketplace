@@ -69,6 +69,17 @@ export async function requireAdmin(req, res) {
   // 4. Supabase-User verifizieren (JWT validieren)
   const { data: authData, error: authError } = await supabaseAdmin.auth.getUser(token);
   if (authError || !authData?.user) {
+    // Log only non-sensitive diagnostics so Preview project mismatches are visible
+    // without ever exposing the bearer token or service-role key.
+    console.error('[theme-world-auth] token verification failed', {
+      supabaseHost: (() => {
+        try { return new URL(supabaseUrl).host; } catch { return 'invalid-url'; }
+      })(),
+      vercelEnv: process.env.VERCEL_ENV || 'unknown',
+      code: authError?.code || null,
+      name: authError?.name || null,
+      message: authError?.message || null,
+    });
     res.status(401).json({ error: 'Ungültige oder abgelaufene Sitzung.' });
     return null;
   }
