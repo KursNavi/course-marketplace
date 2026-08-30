@@ -1719,9 +1719,8 @@ if (bookingType === 'platform' || locationMode === 'events') {
                         </div>
                         <input id="course-keywords" type="text" name="keywords" value={keywords} maxLength={COURSE_FIELD_LIMITS.keywords} onChange={(e) => { setKeywords(e.target.value); markDirty(); }} aria-describedby="course-keywords-hint" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" placeholder="z.B. Klavier, Musik, Anfänger, Kinder, Zürich" />
                         <div id="course-keywords-hint" className="mt-2 rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-xs text-gray-600 space-y-1">
-                            <p><strong className="text-gray-700">Wichtig für die Suche:</strong> Neben dem Kurstitel werden nur diese Suchbegriffe für die Textsuche verwendet – nicht die Kursbeschreibung. Wähle sie deshalb sorgfältig aus, damit Suchende möglichst relevante Kurse finden.</p>
-                            <p><strong className="text-gray-700">Beispiel:</strong> Erwähnt ein Fotokurs in seiner Beschreibung «Kaffee und Gipfeli», würde er bei einer Suche nach «Kaffee» erscheinen, obwohl es kein Kaffeekurs ist.</p>
-                            <p>Trenne mehrere Begriffe mit Komma.</p>
+                            <p><strong className="text-gray-700">Für relevante Suchergebnisse:</strong> Damit keine irrelevanten Kurse erscheinen, durchsucht KursNavi neben dem Kurstitel nur diese Suchbegriffe – nicht die Kursbeschreibung.</p>
+                            <p><strong className="text-gray-700">Beispiel:</strong> Ein Fotokurs mit «Kaffee und Gipfeli» in der Beschreibung würde sonst bei «Kaffee» erscheinen. Trenne mehrere Begriffe mit Komma.</p>
                         </div>
                     </div>
                     {/* Kursbild */}
