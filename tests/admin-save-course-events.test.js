@@ -109,6 +109,18 @@ const callSaveCourse = async (payload) => {
     return res;
 };
 
+const callStatus = async (newStatus) => {
+    const req = {
+        method: 'POST',
+        headers: { authorization: 'Bearer admin-token' },
+        query: { action: 'set-course-status' },
+        body: { userId: PROVIDER_ID, courseId: COURSE_ID, newStatus }
+    };
+    const res = makeRes();
+    await handler(req, res);
+    return res;
+};
+
 const courseEvents = () => db.course_events.filter(ev => ev.course_id === COURSE_ID);
 
 describe('/api/admin save-course — Termine dürfen nicht durch eine leere Liste ersetzt werden', () => {
@@ -199,5 +211,22 @@ describe('/api/admin save-course — Termine dürfen nicht durch eine leere List
         const byId = Object.fromEntries(courseEvents().map(ev => [ev.id, ev]));
         expect(byId['ev-1'].canton).toBeNull();
         expect(byId['ev-2'].canton).toBe('Ausland');
+    });
+
+    it('blocks publishing a course without a complete category', async () => {
+        const res = await callStatus('published');
+
+        expect(res.statusCode).toBe(422);
+        expect(res.body.error).toMatch(/vollständigen Kategorie/i);
+        expect(db.courses[0].status).not.toBe('published');
+    });
+
+    it('allows publishing when the course has a stored primary category', async () => {
+        db.courses[0].category_level3_id = 42;
+
+        const res = await callStatus('published');
+
+        expect(res.statusCode).toBe(200);
+        expect(db.courses[0].status).toBe('published');
     });
 });

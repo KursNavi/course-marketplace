@@ -9,6 +9,7 @@ import { isImageUsedByOtherCourses, deleteImageFromStorage } from './lib/imageUt
 import { BASE_URL, slugify as siteSlugify, buildCoursePath as siteBuildCoursePath } from './lib/siteConfig';
 import { buildSyntheticCategories, getNormalizedDeliveryTypes, getPrimaryCategorySlug, normalizeCategoryType, normalizeDeliveryTypeKey } from './lib/courseMetadata';
 import { refreshCoursesAfterMutation } from './lib/courseRefresh';
+import { hasCompleteCourseCategory } from './lib/courseStatus';
 import { trackPageView } from './lib/analytics';
 import { useTaxonomy } from './hooks/useTaxonomy';
 
@@ -683,6 +684,14 @@ export default function KursNaviPro() {  // 1. Initial State Logic
   };
 
   const handleUpdateCourseStatus = async (courseId, newStatus) => {
+    if (newStatus === 'published') {
+      const course = courses.find(c => c.id === courseId);
+      if (!hasCompleteCourseCategory(course)) {
+        showNotification('Veröffentlichen ist erst mit einer vollständigen Kategorie möglich.');
+        return;
+      }
+    }
+
     const previousCourses = courses;
     // Update local state immediately for responsive UI
     setCourses(prev => prev.map(c => c.id === courseId ? { ...c, status: newStatus } : c));
@@ -810,6 +819,9 @@ export default function KursNaviPro() {  // 1. Initial State Logic
   // --- DATA FETCHING & FILTER LOGIC ---
   // --- DATA FETCHING & FILTER LOGIC ---
   const normalizeCourse = (c) => {
+    const hasStoredCategory = c.category_level3_id != null
+      || c.category_specialty_id != null;
+
     // Bereits neues Schema?
     if (c.category_type) {
       const normalizedType = normalizeCategoryType(c.category_type);
@@ -821,6 +833,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
       return {
         ...c,
         category_type: normalizedType,
+        has_stored_category: hasStoredCategory,
         primary_category: primary,
         categories,
         all_categories: syntheticCategories,
@@ -866,6 +879,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
     return {
       ...c,
       category_type: type,
+      has_stored_category: hasStoredCategory,
       category_area: area,
       category_specialty: specialty,
       target_age_groups: age,
@@ -974,6 +988,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
           // die Kurslisten stellen dafür keine zusätzliche Abfrage.
           basic_lead_ranking_factor: prof?.basic_lead_ranking_factor ?? 1,
           all_categories: courseCategories.length > 0 ? courseCategories : buildSyntheticCategories(normalized), // Add real or synthesized categories
+          has_stored_category: normalized.has_stored_category || courseCategories.some(cat => cat.specialty_id != null),
           category_paths: categoryPaths, // Add category_paths for TeacherForm
         };
 

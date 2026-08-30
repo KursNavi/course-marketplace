@@ -39,7 +39,7 @@ function isValidUUID(str) {
 async function getOwnedCourse(supabaseAdmin, courseId) {
   const { data, error } = await supabaseAdmin
     .from('courses')
-    .select('id, user_id, image_url')
+    .select('id, user_id, image_url, category_level3_id, category_specialty_id, category_area, category_specialty')
     .eq('id', courseId)
     .single();
 
@@ -48,6 +48,21 @@ async function getOwnedCourse(supabaseAdmin, courseId) {
   }
 
   return { course: data, error: null };
+}
+
+async function hasCompleteStoredCategory(supabaseAdmin, course) {
+  if (course?.category_level3_id != null || course?.category_specialty_id != null) {
+    return true;
+  }
+
+  const { data, error } = await supabaseAdmin
+    .from('course_category_assignments')
+    .select('level3_id')
+    .eq('course_id', course.id)
+    .eq('is_primary', true);
+
+  if (error) throw error;
+  return (data || []).some((assignment) => assignment.level3_id != null);
 }
 
 export default async function handler(req, res) {
@@ -564,6 +579,18 @@ export default async function handler(req, res) {
       }
       if (existingCourse.user_id !== userId) {
         return res.status(403).json({ error: 'Kurs gehört nicht zum impersonierten Anbieter' });
+      }
+      if (newStatus === 'published') {
+        let hasCategory;
+        try {
+          hasCategory = await hasCompleteStoredCategory(supabaseAdmin, existingCourse);
+        } catch (categoryError) {
+          console.error('Course category check failed:', categoryError);
+          return res.status(500).json({ error: 'Kategorie konnte nicht geprüft werden.' });
+        }
+        if (!hasCategory) {
+          return res.status(422).json({ error: 'Ein Kurs kann erst mit einer vollständigen Kategorie veröffentlicht werden.' });
+        }
       }
 
       const { error } = await supabaseAdmin
