@@ -206,4 +206,40 @@ describe('Delete account dialogs render umlauts correctly', () => {
     expect(screen.getByText(/Geben Sie Ihr Passwort ein/)).toHaveTextContent('bestätigen');
     expect(screen.getByRole('button', { name: 'Endgültig löschen' })).toBeInTheDocument();
   });
+
+  it('shows the provider onboarding guide on the dashboard overview', async () => {
+    render(
+      <Dashboard
+        user={{ id: 'user-1', email: 'teacher@example.com', name: 'Max', role: 'teacher' }}
+        setUser={vi.fn()}
+        t={baseTranslations}
+        setView={vi.fn()}
+        courses={[{ id: 'course-1', user_id: 'user-1', title: 'Aquarellmalen' }]}
+        teacherEarnings={[]}
+        myBookings={[]}
+        savedCourses={[]}
+        savedCourseIds={[]}
+        onToggleSaveCourse={vi.fn()}
+        handleDeleteCourse={vi.fn()}
+        handleEditCourse={vi.fn()}
+        handleDuplicateCourse={vi.fn()}
+        handleUpdateCourseStatus={vi.fn()}
+        handleCancelEvent={vi.fn()}
+        showNotification={vi.fn()}
+        changeLanguage={vi.fn()}
+        setSelectedCourse={vi.fn()}
+        refreshBookings={vi.fn()}
+        refreshTeacherEarnings={vi.fn()}
+        isImpersonating={false}
+      />
+    );
+
+    expect(screen.getByTestId('provider-onboarding-guide')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'So wird dein Angebot sichtbar und vertrauenswürdig' })).toBeInTheDocument();
+    expect(screen.getByText('Logo und Kursbild richtig einsetzen')).toBeInTheDocument();
+    expect(screen.getByText('Dein Logo gehört ins Profil. Für den Kurs passt ein Bild, das den konkreten Kursinhalt zeigt.')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Profil jetzt ergänzen' }));
+    expect(await screen.findByText('Profil-Einstellungen')).toBeInTheDocument();
+  });
 });
