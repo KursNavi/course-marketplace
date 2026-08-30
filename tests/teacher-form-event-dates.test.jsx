@@ -160,6 +160,27 @@ const inputsForLabel = (labelText) => screen
     .map(label => label.parentElement.querySelector('input'))
     .filter(Boolean);
 
+describe('TeacherForm – Hinweis zu Suchbegriffen', () => {
+    beforeEach(() => {
+        cleanup();
+        vi.unstubAllGlobals();
+        db.courses = [{ ...baseCourse }];
+        db.course_events = [];
+        db.course_locations = [];
+        db.course_category_assignments = [];
+    });
+
+    it('erklärt die Suchlogik und enthält ein Beispiel für irrelevante Treffer', async () => {
+        renderEditor([]);
+
+        const keywordsInput = await screen.findByRole('textbox', { name: /Suchbegriffe für die Suche/i });
+        expect(keywordsInput).toHaveAttribute('aria-describedby', 'course-keywords-hint');
+        expect(screen.getByText(/Neben dem Kurstitel werden nur diese Suchbegriffe/i)).toBeInTheDocument();
+        expect(screen.getByText(/nicht die Kursbeschreibung/i)).toBeInTheDocument();
+        expect(screen.getByText(/Fotokurs.*Kaffee und Gipfeli.*Kaffeekurs/i)).toBeInTheDocument();
+    });
+});
+
 const startDateInputs = () => inputsForLabel('Startdatum');
 const endDateInputs = () => inputsForLabel('Enddatum (optional)');
 
