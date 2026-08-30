@@ -81,7 +81,6 @@ export default async function handler(req, res) {
     subject,
     message,
     courseId,
-    suggestion,
     _company
   } = req.body || {};
 
@@ -165,24 +164,11 @@ export default async function handler(req, res) {
       <p style="color:#6B7280; font-size:14px;">Bitte im Admin Panel prüfen.</p>
     `;
   } else if (type === 'category-suggestion') {
-    if (!subject || !message || !isValidCourseId(courseId) || !suggestion?.suggestionType || !suggestion?.selectedType) {
-      return res.status(400).json({ error: 'Fehlende Felder: subject, message, courseId oder Vorschlagsdaten' });
-    }
-    if (!['single', 'path'].includes(suggestion.suggestionType)) {
-      return res.status(400).json({ error: 'Ungültiger Vorschlagstyp' });
+    if (!subject || !message || !isValidCourseId(courseId)) {
+      return res.status(400).json({ error: 'Fehlende Felder: subject, message oder courseId' });
     }
     senderEmail = (email || authUser.email).toLowerCase();
-    const safeMessage = escapeHtml(message).replace(/\n/g, '<br>');
-
     emailSubject = subject;
-    emailBodyHtml = `
-      <p>Neuer Kategorie-Vorschlag:</p>
-      <div style="background:#F9FAFB; border-left:3px solid ${COLORS.primary}; padding:16px; border-radius:0 8px 8px 0; margin:20px 0;">
-        <p style="margin:0 0 10px; font-weight:600;">Kurs-ID: ${escapeHtml(courseId)}</p>
-        <p style="margin:0;">${safeMessage}</p>
-      </div>
-      <p style="color:#6B7280; font-size:14px;">Eingesendet von: ${escapeHtml(senderEmail)}</p>
-    `;
   }
 
   try {
@@ -225,6 +211,19 @@ export default async function handler(req, res) {
         return res.status(403).json({ error: 'Der Kurs gehört nicht zu diesem Anbieter.' });
       }
 
+      const safeMessage = escapeHtml(message).replace(/\n/g, '<br>');
+      const safeCourseTitle = escapeHtml(course.title || `Kurs #${course.id}`);
+      const courseUrl = `https://kursnavi.ch/course/${encodeURIComponent(String(course.id))}`;
+      const safeCourseUrl = escapeHtml(courseUrl);
+      emailBodyHtml = `
+        <p>Neuer Kategorie-Vorschlag:</p>
+        <div style="background:#F9FAFB; border-left:3px solid ${COLORS.primary}; padding:16px; border-radius:0 8px 8px 0; margin:20px 0;">
+          <p style="margin:0 0 10px; font-weight:600;">Kurs: <a href="${safeCourseUrl}">${safeCourseTitle}</a></p>
+          <p style="margin:0 0 10px; color:#6B7280; font-size:13px;">Kurs-ID: ${escapeHtml(course.id)}</p>
+          <p style="margin:0;">${safeMessage}</p>
+        </div>
+        <p style="color:#6B7280; font-size:14px;">Eingesendet von: ${escapeHtml(senderEmail)}</p>
+      `;
     }
 
     // 6. Audit-Record (status: pending)
