@@ -67,6 +67,7 @@ function triggerChunkReload() {
 // Eagerly loaded components (always needed)
 import { Navbar, Footer } from './components/Layout';
 import { Home } from './components/Home';
+import { NewsletterPopup } from './components/NewsletterPopup';
 
 // Lazy-loaded page components (code-splitting)
 // After a deploy, old chunk hashes no longer exist. The server returns index.html
@@ -910,7 +911,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
       if (userIds.length > 0) {
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
-          .select('id, bio_text, certificates, additional_locations, city, canton, verification_status, slug, package_tier, profile_published_at')
+          .select('id, bio_text, certificates, additional_locations, city, canton, verification_status, slug, package_tier, profile_published_at, basic_lead_ranking_factor')
           .in('id', userIds);
 
         if (!profileError && profileData) {
@@ -982,6 +983,10 @@ export default function KursNaviPro() {  // 1. Initial State Logic
           instructor_verified: prof?.verification_status === 'verified',
           instructor_slug: prof?.slug || null,
           instructor_has_public_profile: ['pro', 'premium', 'enterprise'].includes(instructorTier) && !!prof?.slug && !!prof?.profile_published_at,
+          // Ranking-Abschlag für Basic-Anbieter mit vielen qualifizierten Leads.
+          // Kommt aus derselben Profil-Abfrage wie die übrigen Anbieterdaten —
+          // die Kurslisten stellen dafür keine zusätzliche Abfrage.
+          basic_lead_ranking_factor: prof?.basic_lead_ranking_factor ?? 1,
           all_categories: courseCategories.length > 0 ? courseCategories : buildSyntheticCategories(normalized), // Add real or synthesized categories
           has_stored_category: normalized.has_stored_category || courseCategories.some(cat => cat.specialty_id != null),
           category_paths: categoryPaths, // Add category_paths for TeacherForm
@@ -1324,7 +1329,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
                   price,
                   payout: retainedRevenue * 0.85,
                   isPaidOut: booking.is_paid,
-                  date: new Date(booking.created_at).toLocaleDateString(),
+                  date: new Date(booking.created_at).toLocaleDateString('de-CH'),
                   bookingType: booking.booking_type,
                   deliveredAt: booking.delivered_at,
                   paidAt: booking.paid_at,
@@ -2169,17 +2174,16 @@ useEffect(() => {
       }>
 
       {/* GLOBAL LOADING STATE - Prevents White Screen on course-dependent views.
-          Only shown on 'home' and 'detail' which gate their content with !loading.
-          Static pages (AGB, Impressum, Landing, Blog, etc.) render immediately
-          and must NOT show this spinner. */}
-      {loading && (view === 'home' || view === 'detail') && (
+          Show spinner only for 'detail' view. For 'home' we render the Home component immediately and let it
+          display a local skeleton so the layout (nav/footer) remains visible without a blank main area. */}
+      {loading && view === 'detail' && (
           <div className="flex items-center justify-center min-h-[60vh]">
               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
           </div>
       )}
 
-      {!loading && view === 'home' && (
-                     <Home lang={lang} t={t} courses={publishedCourses} setView={setView} setSearchType={setSearchType} setSearchArea={setSearchArea} setSearchSpecialty={setSearchSpecialty} setSearchFocus={setSearchFocus} setSelectedCatPath={setSelectedCatPath} searchQuery={searchQuery} setSearchQuery={setSearchQuery} catMenuOpen={catMenuOpen} setCatMenuOpen={setCatMenuOpen} catMenuRef={catMenuRef} selectedLocations={selectedLocations} setSelectedLocations={setSelectedLocations} locMenuOpen={locMenuOpen} setLocMenuOpen={setLocMenuOpen} locMenuRef={locMenuRef} getCatLabel={getCatLabel} filterPro={filterPro} setFilterPro={setFilterPro} filterDirectBooking={filterDirectBooking} setFilterDirectBooking={setFilterDirectBooking} selectedDeliveryTypes={selectedDeliveryTypes} setSelectedDeliveryTypes={setSelectedDeliveryTypes} deliveryMenuOpen={deliveryMenuOpen} setDeliveryMenuOpen={setDeliveryMenuOpen} deliveryMenuRef={deliveryMenuRef} />
+      {view === 'home' && (
+                    <Home lang={lang} t={t} courses={publishedCourses} setView={setView} setSearchType={setSearchType} setSearchArea={setSearchArea} setSearchSpecialty={setSearchSpecialty} setSearchFocus={setSearchFocus} setSelectedCatPath={setSelectedCatPath} searchQuery={searchQuery} setSearchQuery={setSearchQuery} catMenuOpen={catMenuOpen} setCatMenuOpen={setCatMenuOpen} catMenuRef={catMenuRef} selectedLocations={selectedLocations} setSelectedLocations={setSelectedLocations} locMenuOpen={locMenuOpen} setLocMenuOpen={setLocMenuOpen} locMenuRef={locMenuRef} getCatLabel={getCatLabel} filterPro={filterPro} setFilterPro={setFilterPro} filterDirectBooking={filterDirectBooking} setFilterDirectBooking={setFilterDirectBooking} selectedDeliveryTypes={selectedDeliveryTypes} setSelectedDeliveryTypes={setSelectedDeliveryTypes} deliveryMenuOpen={deliveryMenuOpen} setDeliveryMenuOpen={setDeliveryMenuOpen} deliveryMenuRef={deliveryMenuRef} isLoading={loading} />
             )}
             
          {view === 'landing-private' && ( <LandingView title={t.landing_priv_title} subtitle={t.landing_priv_sub} variant="private" searchQuery={searchQuery} setSearchQuery={setSearchQuery} handleSearchSubmit={handleSearchSubmit} setView={setView} setSearchType={setSearchType} t={t} /> )}
@@ -2382,6 +2386,9 @@ useEffect(() => {
       </main>
 
       <Footer t={t} setView={setView} />
+
+      {/* Newsletter-Popup: nur auf der Startseite, erscheint nach 30 Sekunden. */}
+      {view === 'home' && <NewsletterPopup />}
       </div>
     </ErrorBoundary>
   );

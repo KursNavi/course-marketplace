@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
 import { getEmailConfig, resolveUserEmail, sendEmailOrThrow } from './_lib/email-config.js';
+import { requireCronSecret } from './_lib/cron-auth.js';
 
 // --- EMAIL HELPERS ---
 const EMAIL_TRANSLATIONS = {
@@ -54,6 +55,11 @@ const generateEmailHtml = (title, bodyHtml, ctaText) => `
 `;
 
 export default async function handler(req, res) {
+  if (req.method !== 'GET' && req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  if (!requireCronSecret(req, res, 'cron')) return;
 
   // --- SECURE KEYS ---
   const SUPABASE_URL = process.env.SUPABASE_URL;
@@ -527,16 +533,28 @@ export default async function handler(req, res) {
     }
 
     // ============================================
-    // PART 5: Retention – alte Leads & Contact Messages löschen
+    // PART 5: Retention – Anfragetexte & Contact Messages
     // ============================================
-    let deletedLeads = 0;
+    // Bis zur Lead-Analyse löschte cleanup_old_leads() ganze Lead-Datensätze
+    // nach 180 Tagen. Das darf nicht mehr passieren: Die Leads SIND die
+    // Langzeitstatistik. Entfernt werden nur noch die personenbezogenen
+    // Anteile — der verschlüsselte Anfragetext nach 60 Tagen und der
+    // E-Mail-Hash, sobald er fürs Rate-Limiting nicht mehr gebraucht wird.
+    let deletedLeadMessages = 0;
+    let expiredUnscoredLeads = 0;
+    let clearedEmailHashes = 0;
     let deletedContactMessages = 0;
 
     try {
-      const { data: leadsResult } = await supabase.rpc('cleanup_old_leads');
-      deletedLeads = leadsResult ?? 0;
+      const { data: retentionResult, error: retentionError } = await supabase.rpc('cleanup_expired_lead_messages');
+      if (retentionError) throw retentionError;
+      // Die Funktion liefert genau eine Zeile mit drei Zählern.
+      const row = Array.isArray(retentionResult) ? retentionResult[0] : retentionResult;
+      deletedLeadMessages = row?.deleted_messages ?? 0;
+      expiredUnscoredLeads = row?.expired_unscored ?? 0;
+      clearedEmailHashes = row?.cleared_email_hashes ?? 0;
     } catch (e) {
-      console.error('cleanup_old_leads failed:', e);
+      console.error('cleanup_expired_lead_messages failed:', e);
     }
 
     try {
@@ -554,7 +572,9 @@ export default async function handler(req, res) {
       remindersSent,
       expiredPackages,
       staleAlertsSent,
-      deletedLeads,
+      deletedLeadMessages,
+      expiredUnscoredLeads,
+      clearedEmailHashes,
       deletedContactMessages
     });
 

@@ -97,11 +97,23 @@ async function main() {
   }
 
   // 1. Clean up stale E2E data from previous runs
+  //
+  // Gesucht wird das Präfix ÜBERALL im Titel, nicht nur am Anfang, und zusätzlich
+  // jede "Kopie von"-Kette. Die frühere Bedingung (`E2E-%` oder
+  // `Kopie von E2E-%`) traf genau eine Kopierstufe. "Kopie von Kopie von E2E-…"
+  // fiel durch — solche Ketten blieben liegen und wuchsen bei jedem Lauf um eine
+  // weitere Stufe, bis der Titel über 1400 Zeichen lang war.
   log('CLEANUP', 'Removing old E2E courses and related data');
-  const { data: oldCourses } = await supabase
+  const { data: cleanupCandidates } = await supabase
     .from('courses')
-    .select('id')
-    .or(`title.like.${E2E_PREFIX}%,title.like.Kopie von ${E2E_PREFIX}%`);
+    .select('id, title')
+    .or(`title.like.%${E2E_PREFIX}%,title.like.Kopie von %`);
+
+  // Ausnahme: Vorrichtungen, die dieses Skript NICHT selbst wieder anlegt.
+  // Sie wurden von Hand erstellt und wären nach dem Löschen unwiederbringlich.
+  // Wer eine davon seed-fähig macht, kann sie hier streichen.
+  const KEEP_TITLES = new Set(['Platform E2E-Testkurs']);
+  const oldCourses = (cleanupCandidates || []).filter(c => !KEEP_TITLES.has(c.title));
 
   if (oldCourses?.length) {
     const ids = oldCourses.map(c => c.id);

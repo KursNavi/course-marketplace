@@ -80,7 +80,7 @@ export const LEGAL_CONTENT = {
     datenschutz: {
       title: "Datenschutzerklärung",
       company: "LifeSkills360 GmbH",
-      intro: "Datenschutzerklärung der LifeSkills360 GmbH für die Plattform KursNavi (Stand: 21. Juni 2026)",
+      intro: "Datenschutzerklärung der LifeSkills360 GmbH für die Plattform KursNavi (Stand: 25. August 2026)",
       sections: [
         {
           heading: "1. Verantwortliche Stelle",
@@ -92,11 +92,11 @@ export const LEGAL_CONTENT = {
         },
         {
           heading: "3. Zwecke der Bearbeitung",
-          text: "Wir bearbeiten Personendaten insbesondere zu folgenden Zwecken:\n• Bereitstellung und Betrieb der Plattform (Registrierung, Login, Nutzerkonto)\n• Abwicklung von Buchungen, Zahlungen, Rückerstattungen und Kommunikation im Zusammenhang mit Kursen\n• Verwaltung von Anbieterpaketen, Zusatzleistungen und kostenpflichtigen Funktionen\n• Weiterleitung von Kontakt- und Lead-Anfragen an den jeweils ausgewählten Kursanbieter\n• Dokumentation der Anfrageübermittlung, Missbrauchsprävention und Nachvollziehbarkeit technischer Vorgänge\n• Sicherheit und Missbrauchsprävention (z.B. Logs, Zugriffsschutz, Betrugsprävention)\n• Dokumentation der Annahme von AGB und Datenschutzerklärung (Consent-Nachweis) zur Erfüllung gesetzlicher Pflichten\n• Kundenservice und Durchsetzung sowie Rechtsabklärung von Ansprüchen"
+          text: "Wir bearbeiten Personendaten insbesondere zu folgenden Zwecken:\n• Bereitstellung und Betrieb der Plattform (Registrierung, Login, Nutzerkonto)\n• Abwicklung von Buchungen, Zahlungen, Rückerstattungen und Kommunikation im Zusammenhang mit Kursen\n• Verwaltung von Anbieterpaketen, Zusatzleistungen und kostenpflichtigen Funktionen\n• Weiterleitung von Kontakt- und Lead-Anfragen an den jeweils ausgewählten Kursanbieter\n• Automatisierte Qualitätsbewertung von Lead-Anfragen zur Erkennung von Spam und Missbrauch sowie zur Steuerung der Sichtbarkeit von Anbietern auf der Plattform\n• Dokumentation der Anfrageübermittlung, Missbrauchsprävention und Nachvollziehbarkeit technischer Vorgänge\n• Sicherheit und Missbrauchsprävention (z.B. Logs, Zugriffsschutz, Betrugsprävention)\n• Dokumentation der Annahme von AGB und Datenschutzerklärung (Consent-Nachweis) zur Erfüllung gesetzlicher Pflichten\n• Kundenservice und Durchsetzung sowie Rechtsabklärung von Ansprüchen"
         },
         {
           heading: "4. Technische Infrastruktur & Drittanbieter",
-          text: "Um unsere Dienste bereitzustellen, nutzen wir spezialisierte technische Dienstleister. Ihre Daten werden dabei teilweise auf Servern dieser Anbieter verarbeitet:\n\n• Hosting & Betrieb: Vercel Inc. (USA/Global). Vercel verarbeitet technische Zugriffslogs zur Gewährleistung der Sicherheit und Stabilität.\n• Datenbank & Authentifizierung: Supabase Inc. (USA/Global). Wir nutzen Supabase für die sichere Speicherung Ihrer Nutzerdaten und das Login-System.\n• Zahlungsabwicklung: Stripe (Zahlungsdaten werden direkt an Stripe übermittelt und nicht auf unseren Servern gespeichert).\n• E-Mail Versand: Resend, Inc. (USA/Global). Resend verarbeitet E-Mail-Adressdaten und technische Metadaten, um Transaktions-E-Mails (z.B. Buchungsbestätigungen) zuzustellen.\n• Fehleranalyse und Sicherheit: Sentry (Anbieter: Functional Software Inc., USA; Datenverarbeitung über EU-Datenzentrum). Wir nutzen Sentry zur Erkennung, Analyse und Behebung technischer Fehler. Dabei können technische Daten wie Browserinformationen, Geräteinformationen, aufgerufene URL, Zeitpunkt des Fehlers und technische Identifikatoren verarbeitet werden. Sentry ist nur in der Produktionsumgebung aktiv und wird nicht für Werbung verwendet."
+          text: "Um unsere Dienste bereitzustellen, nutzen wir spezialisierte technische Dienstleister. Ihre Daten werden dabei teilweise auf Servern dieser Anbieter verarbeitet:\n\n• Hosting & Betrieb: Vercel Inc. (USA/Global). Vercel verarbeitet technische Zugriffslogs zur Gewährleistung der Sicherheit und Stabilität.\n• Datenbank & Authentifizierung: Supabase Inc. (USA/Global). Wir nutzen Supabase für die sichere Speicherung Ihrer Nutzerdaten und das Login-System.\n• Zahlungsabwicklung: Stripe (Zahlungsdaten werden direkt an Stripe übermittelt und nicht auf unseren Servern gespeichert).\n• E-Mail Versand: Resend, Inc. (USA/Global). Resend verarbeitet E-Mail-Adressdaten und technische Metadaten, um Transaktions-E-Mails (z.B. Buchungsbestätigungen) zuzustellen.\n• Fehleranalyse und Sicherheit: Sentry (Anbieter: Functional Software Inc., USA; Datenverarbeitung über EU-Datenzentrum). Wir nutzen Sentry zur Erkennung, Analyse und Behebung technischer Fehler. Dabei können technische Daten wie Browserinformationen, Geräteinformationen, aufgerufene URL, Zeitpunkt des Fehlers und technische Identifikatoren verarbeitet werden. Sentry ist nur in der Produktionsumgebung aktiv und wird nicht für Werbung verwendet.\n• Automatisierte Lead-Qualitätsbewertung: Google Gemini API (Google LLC, USA/Global). Der Text einer Lead-Anfrage wird serverseitig zur automatisierten Bewertung an Google übermittelt. Im bezahlten Gemini-API-Tarif werden Prompts und Antworten gemäss Anbieterangaben nicht zur Verbesserung von Google-Produkten verwendet. Die Interaktion wird nicht zur späteren Wiederaufnahme gespeichert; begrenzte Missbrauchs- und Sicherheitsprotokolle des Dienstes können dennoch anfallen."
         },
         {
           heading: "5. Cookies & Tracking",
@@ -108,11 +108,11 @@ export const LEGAL_CONTENT = {
         },
         {
           heading: "7. Bekanntgabe ins Ausland",
-          text: "Wir bearbeiten Daten vorzugsweise in der Schweiz oder der EU. Durch den Einsatz moderner Cloud-Dienste können Daten auch in andere Länder, insbesondere die USA, gelangen. Soweit Empfänger in den USA nach dem Swiss-U.S. Data Privacy Framework zertifiziert sind, stützen wir uns auf dieses angemessene Datenschutzniveau. Andernfalls verwenden wir geeignete Garantien, insbesondere Standardvertragsklauseln (SCC), sowie angemessene technische und organisatorische Sicherheitsmassnahmen."
+          text: "Wir bearbeiten Daten vorzugsweise in der Schweiz oder der EU. Durch den Einsatz moderner Cloud-Dienste können Daten auch in andere Länder, insbesondere die USA, gelangen. Dies gilt auch für die automatisierte Lead-Qualitätsbewertung über die Google Gemini API. Soweit Empfänger in den USA nach dem Swiss-U.S. Data Privacy Framework zertifiziert sind, stützen wir uns auf dieses angemessene Datenschutzniveau. Andernfalls verwenden wir geeignete Garantien, insbesondere Standardvertragsklauseln (SCC), sowie angemessene technische und organisatorische Sicherheitsmassnahmen."
         },
         {
           heading: "8. Speicherdauer",
-          text: "Wir speichern Personendaten nur so lange, wie es für die genannten Zwecke erforderlich ist oder wir gesetzlich zur Aufbewahrung verpflichtet sind (z.B. handels- und steuerrechtliche Aufbewahrungspflichten). Danach werden die Daten gelöscht oder anonymisiert."
+          text: "Wir speichern Personendaten nur so lange, wie es für die genannten Zwecke erforderlich ist oder wir gesetzlich zur Aufbewahrung verpflichtet sind (z.B. handels- und steuerrechtliche Aufbewahrungspflichten). Der Freitext einer Lead-Anfrage wird verschlüsselt gespeichert und spätestens 60 Tage nach Eingang automatisch gelöscht. Für die Lead-Qualitätsbewertung bleibt danach lediglich eine Qualitätskennzahl von 1 bis 10 ohne Bezug zum ursprünglichen Text erhalten. Im Übrigen werden die Daten gelöscht oder anonymisiert."
         },
         {
           heading: "9. Datensicherheit",
@@ -282,7 +282,7 @@ export const LEGAL_CONTENT = {
     datenschutz: {
       title: "Privacy Policy",
       company: "LifeSkills360 GmbH",
-      intro: "Privacy Policy of LifeSkills360 GmbH for the KursNavi Platform (Status: 12 May 2026)",
+      intro: "Privacy Policy of LifeSkills360 GmbH for the KursNavi Platform (Status: 25 August 2026)",
       sections: [
         {
           heading: "1. Controller",
@@ -294,11 +294,11 @@ export const LEGAL_CONTENT = {
         },
         {
           heading: "3. Purposes of Processing",
-          text: "We process personal data in particular for the following purposes:\n• Provision and operation of the platform (registration, login, user account)\n• Processing of bookings, payments, refunds and communication related to courses\n• Forwarding of contact and lead enquiries to the respective selected course provider\n• Documentation of enquiry transmission, misuse prevention and traceability of technical processes\n• Security and fraud prevention (e.g. logs, access protection)\n• Customer service and enforcement as well as legal clarification of claims"
+          text: "We process personal data in particular for the following purposes:\n• Provision and operation of the platform (registration, login, user account)\n• Processing of bookings, payments, refunds and communication related to courses\n• Forwarding of contact and lead enquiries to the respective selected course provider\n• Automated quality assessment of lead enquiries to detect spam and misuse and to control provider visibility on the platform\n• Documentation of enquiry transmission, misuse prevention and traceability of technical processes\n• Security and fraud prevention (e.g. logs, access protection)\n• Customer service and enforcement as well as legal clarification of claims"
         },
         {
           heading: "4. Technical Infrastructure & Third Parties",
-          text: "To provide our services, we use specialized technical service providers. Your data is partially processed on servers of these providers:\n\n• Hosting & Operation: Vercel Inc. (USA/Global). Vercel processes technical access logs to ensure security and stability.\n• Database & Authentication: Supabase Inc. (USA/Global). We use Supabase for secure storage of user data and the login system.\n• Payment Processing: Stripe (payment data is transmitted directly to Stripe and not stored on our servers).\n• Email Delivery: Resend, Inc. (USA/Global). Resend processes email address data and technical metadata to deliver transactional emails (e.g. booking confirmations)."
+          text: "To provide our services, we use specialized technical service providers. Your data is partially processed on servers of these providers:\n\n• Hosting & Operation: Vercel Inc. (USA/Global). Vercel processes technical access logs to ensure security and stability.\n• Database & Authentication: Supabase Inc. (USA/Global). We use Supabase for secure storage of user data and the login system.\n• Payment Processing: Stripe (payment data is transmitted directly to Stripe and not stored on our servers).\n• Email Delivery: Resend, Inc. (USA/Global). Resend processes email address data and technical metadata to deliver transactional emails (e.g. booking confirmations).\n• Automated lead quality assessment: Google Gemini API (Google LLC, USA/Global). The text of a lead enquiry is transmitted to Google for automated scoring. In the paid Gemini API tier, prompts and responses are not used to improve Google products according to the provider. The interaction is not stored for later continuation; limited abuse-monitoring and security logs may still be generated."
         },
         {
           heading: "5. Cookies & Tracking",
@@ -310,11 +310,11 @@ export const LEGAL_CONTENT = {
         },
         {
           heading: "7. International Transfer",
-          text: "We prefer to process data in Switzerland or the EU. Through the use of modern cloud services (Supabase, Vercel, Resend), data may be transferred to the USA. We ensure protection through Standard Contractual Clauses (SCC) and appropriate security measures."
+          text: "We prefer to process data in Switzerland or the EU. Through the use of modern cloud services (Supabase, Vercel, Resend and the Google Gemini API), data may be transferred to the USA. We ensure protection through Standard Contractual Clauses (SCC) and appropriate security measures."
         },
         {
           heading: "8. Storage Duration",
-          text: "We store personal data only as long as necessary for the mentioned purposes or as required by legal obligations (e.g., commercial and tax retention periods). Afterwards, the data is deleted or anonymized."
+          text: "We store personal data only as long as necessary for the mentioned purposes or as required by legal obligations (e.g., commercial and tax retention periods). The free-text content of a lead enquiry is stored in encrypted form and automatically deleted no later than 60 days after receipt. Afterwards, only a quality score from 1 to 10 without reference to the original text remains for lead quality assessment. The data is then deleted or anonymized."
         },
         {
           heading: "9. Data Security",
@@ -484,7 +484,7 @@ export const LEGAL_CONTENT = {
     datenschutz: {
       title: "Déclaration de Confidentialité",
       company: "LifeSkills360 GmbH",
-      intro: "Déclaration de confidentialité de LifeSkills360 GmbH pour la plateforme KursNavi (État : 12 mai 2026)",
+      intro: "Déclaration de confidentialité de LifeSkills360 GmbH pour la plateforme KursNavi (État : 25 août 2026)",
       sections: [
         {
           heading: "1. Responsable",
@@ -496,11 +496,11 @@ export const LEGAL_CONTENT = {
         },
         {
           heading: "3. Buts du Traitement",
-          text: "Nous traitons les données personnelles notamment aux fins suivantes :\n• Fourniture et exploitation de la plateforme (inscription, connexion, compte utilisateur)\n• Traitement des réservations, paiements, remboursements et communication liée aux cours\n• Transmission de demandes de contact et de type lead au prestataire de cours sélectionné\n• Documentation de la transmission des demandes, prévention des abus et traçabilité des processus techniques\n• Sécurité et prévention de la fraude (ex. journaux, protection d'accès)\n• Service client et exécution ainsi que clarification juridique des réclamations"
+          text: "Nous traitons les données personnelles notamment aux fins suivantes :\n• Fourniture et exploitation de la plateforme (inscription, connexion, compte utilisateur)\n• Traitement des réservations, paiements, remboursements et communication liée aux cours\n• Transmission de demandes de contact et de type lead au prestataire de cours sélectionné\n• Évaluation automatisée de la qualité des demandes de type lead afin de détecter le spam et les abus et de gérer la visibilité des prestataires sur la plateforme\n• Documentation de la transmission des demandes, prévention des abus et traçabilité des processus techniques\n• Sécurité et prévention de la fraude (ex. journaux, protection d'accès)\n• Service client et exécution ainsi que clarification juridique des réclamations"
         },
         {
           heading: "4. Infrastructure Technique & Tiers",
-          text: "Pour fournir nos services, nous utilisons des prestataires techniques spécialisés. Vos données sont partiellement traitées sur les serveurs de ces prestataires :\n\n• Hébergement & Exploitation : Vercel Inc. (USA/Global). Vercel traite les journaux d'accès techniques pour garantir la sécurité et la stabilité.\n• Base de données & Authentification : Supabase Inc. (USA/Global). Nous utilisons Supabase pour le stockage sécurisé de vos données utilisateur et le système de connexion.\n• Traitement des paiements : Stripe (les données de paiement sont transmises directement à Stripe et ne sont pas stockées sur nos serveurs).\n• Envoi d'E-mails : Resend, Inc. (USA/Global). Resend traite les adresses e-mail et les métadonnées techniques pour livrer des e-mails transactionnels (ex. confirmations de réservation)."
+          text: "Pour fournir nos services, nous utilisons des prestataires techniques spécialisés. Vos données sont partiellement traitées sur les serveurs de ces prestataires :\n\n• Hébergement & Exploitation : Vercel Inc. (USA/Global). Vercel traite les journaux d'accès techniques pour garantir la sécurité et la stabilité.\n• Base de données & Authentification : Supabase Inc. (USA/Global). Nous utilisons Supabase pour le stockage sécurisé de vos données utilisateur et le système de connexion.\n• Traitement des paiements : Stripe (les données de paiement sont transmises directement à Stripe et ne sont pas stockées sur nos serveurs).\n• Envoi d'E-mails : Resend, Inc. (USA/Global). Resend traite les adresses e-mail et les métadonnées techniques pour livrer des e-mails transactionnels (ex. confirmations de réservation).\n• Évaluation automatisée de la qualité des demandes de type lead : Google Gemini API (Google LLC, USA/Global). Le texte d'une demande de type lead est transmis à Google pour une évaluation automatisée. Dans le cadre de l'offre API Gemini payante, les prompts et les réponses ne sont pas utilisés pour améliorer les produits Google selon les indications du prestataire. L'interaction n'est pas enregistrée pour une reprise ultérieure ; des journaux limités de prévention des abus et de sécurité peuvent toutefois être générés."
         },
         {
           heading: "5. Cookies & Suivi",
@@ -512,11 +512,11 @@ export const LEGAL_CONTENT = {
         },
         {
           heading: "7. Transfert International",
-          text: "Nous traitons les données de préférence en Suisse ou dans l'UE. Grâce à l'utilisation de services cloud modernes (Supabase, Vercel, Resend), des données peuvent être transférées aux États-Unis. Nous assurons la protection par des clauses contractuelles types (CCT) et des mesures de sécurité appropriées."
+          text: "Nous traitons les données de préférence en Suisse ou dans l'UE. Grâce à l'utilisation de services cloud modernes (Supabase, Vercel, Resend et Google Gemini API), des données peuvent être transférées aux États-Unis. Nous assurons la protection par des clauses contractuelles types (CCT) et des mesures de sécurité appropriées."
         },
         {
           heading: "8. Durée de Conservation",
-          text: "Nous ne conservons les données personnelles que le temps nécessaire aux fins mentionnées ou tel que requis par les obligations légales (ex. délais de conservation commerciaux et fiscaux). Ensuite, les données sont supprimées ou anonymisées."
+          text: "Nous ne conservons les données personnelles que le temps nécessaire aux fins mentionnées ou tel que requis par les obligations légales (ex. délais de conservation commerciaux et fiscaux). Le texte libre d'une demande de type lead est conservé sous forme chiffrée et supprimé automatiquement au plus tard 60 jours après sa réception. Ensuite, seul un score de qualité de 1 à 10 sans référence au texte d'origine est conservé pour l'évaluation de la qualité des leads. Les données sont ensuite supprimées ou anonymisées."
         },
         {
           heading: "9. Sécurité des Données",
@@ -682,7 +682,7 @@ export const LEGAL_CONTENT = {
     datenschutz: {
       title: "Informativa sulla Privacy",
       company: "LifeSkills360 GmbH",
-      intro: "Informativa sulla privacy di LifeSkills360 GmbH per la piattaforma KursNavi (Stato: 12 maggio 2026)",
+      intro: "Informativa sulla privacy di LifeSkills360 GmbH per la piattaforma KursNavi (Stato: 25 agosto 2026)",
       sections: [
         {
           heading: "1. Titolare del Trattamento",
@@ -694,11 +694,11 @@ export const LEGAL_CONTENT = {
         },
         {
           heading: "3. Finalità del Trattamento",
-          text: "Trattiamo i dati personali in particolare per le seguenti finalità:\n• Fornitura e funzionamento della piattaforma (registrazione, login, account utente)\n• Elaborazione di prenotazioni, pagamenti, rimborsi e comunicazioni relative ai corsi\n• Inoltro di richieste di contatto e lead al fornitore del corso selezionato\n• Documentazione della trasmissione delle richieste, prevenzione degli abusi e tracciabilità dei processi tecnici\n• Sicurezza e prevenzione delle frodi (ad es. log, protezione degli accessi)\n• Servizio clienti ed esecuzione nonché chiarimento legale dei reclami"
+          text: "Trattiamo i dati personali in particolare per le seguenti finalità:\n• Fornitura e funzionamento della piattaforma (registrazione, login, account utente)\n• Elaborazione di prenotazioni, pagamenti, rimborsi e comunicazioni relative ai corsi\n• Inoltro di richieste di contatto e lead al fornitore del corso selezionato\n• Valutazione automatizzata della qualità delle richieste lead per individuare spam e abusi e gestire la visibilità dei fornitori sulla piattaforma\n• Documentazione della trasmissione delle richieste, prevenzione degli abusi e tracciabilità dei processi tecnici\n• Sicurezza e prevenzione delle frodi (ad es. log, protezione degli accessi)\n• Servizio clienti ed esecuzione nonché chiarimento legale dei reclami"
         },
         {
           heading: "4. Infrastruttura Tecnica e Terze Parti",
-          text: "Per fornire i nostri servizi, utilizziamo fornitori di servizi tecnici specializzati. I vostri dati vengono parzialmente elaborati sui server di questi fornitori:\n\n• Hosting e Operazioni: Vercel Inc. (USA/Global). Vercel elabora i log di accesso tecnico per garantire sicurezza e stabilità.\n• Database e Autenticazione: Supabase Inc. (USA/Global). Utilizziamo Supabase per l'archiviazione sicura dei dati utente e il sistema di login.\n• Elaborazione dei Pagamenti: Stripe (i dati di pagamento vengono trasmessi direttamente a Stripe e non memorizzati sui nostri server).\n• Invio Email: Resend, Inc. (USA/Global). Resend elabora i dati degli indirizzi email e i metadati tecnici per recapitare email transazionali (ad es. conferme di prenotazione)."
+          text: "Per fornire i nostri servizi, utilizziamo fornitori di servizi tecnici specializzati. I vostri dati vengono parzialmente elaborati sui server di questi fornitori:\n\n• Hosting e Operazioni: Vercel Inc. (USA/Global). Vercel elabora i log di accesso tecnico per garantire sicurezza e stabilità.\n• Database e Autenticazione: Supabase Inc. (USA/Global). Utilizziamo Supabase per l'archiviazione sicura dei dati utente e il sistema di login.\n• Elaborazione dei Pagamenti: Stripe (i dati di pagamento vengono trasmessi direttamente a Stripe e non memorizzati sui nostri server).\n• Invio Email: Resend, Inc. (USA/Global). Resend elabora i dati degli indirizzi email e i metadati tecnici per recapitare email transazionali (ad es. conferme di prenotazione).\n• Valutazione automatizzata della qualità dei lead: Google Gemini API (Google LLC, USA/Global). Il testo di una richiesta lead viene trasmesso a Google per la valutazione automatizzata. Nel piano API Gemini a pagamento, prompt e risposte non vengono utilizzati per migliorare i prodotti Google secondo le indicazioni del fornitore. L'interazione non viene memorizzata per una successiva continuazione; possono tuttavia essere generati log limitati per la prevenzione degli abusi e la sicurezza."
         },
         {
           heading: "5. Cookie e Tracciamento",
@@ -710,11 +710,11 @@ export const LEGAL_CONTENT = {
         },
         {
           heading: "7. Trasferimento Internazionale",
-          text: "Trattiamo i dati preferibilmente in Svizzera o nell'UE. Attraverso l'uso di moderni servizi cloud (Supabase, Vercel, Resend), i dati possono essere trasferiti negli USA. Garantiamo la protezione tramite Clausole Contrattuali Standard (SCC) e misure di sicurezza appropriate."
+          text: "Trattiamo i dati preferibilmente in Svizzera o nell'UE. Attraverso l'uso di moderni servizi cloud (Supabase, Vercel, Resend e Google Gemini API), i dati possono essere trasferiti negli USA. Garantiamo la protezione tramite Clausole Contrattuali Standard (SCC) e misure di sicurezza appropriate."
         },
         {
           heading: "8. Durata di Conservazione",
-          text: "Conserviamo i dati personali solo per il tempo necessario alle finalità indicate o come richiesto dagli obblighi di legge (ad es. periodi di conservazione commerciale e fiscale). Successivamente, i dati vengono cancellati o anonimizzati."
+          text: "Conserviamo i dati personali solo per il tempo necessario alle finalità indicate o come richiesto dagli obblighi di legge (ad es. periodi di conservazione commerciale e fiscale). Il testo libero di una richiesta lead viene conservato in forma crittografata e cancellato automaticamente entro 60 giorni dalla ricezione. Successivamente, per la valutazione della qualità dei lead rimane solo un punteggio da 1 a 10 senza riferimento al testo originale. I dati vengono poi cancellati o anonimizzati."
         },
         {
           heading: "9. Sicurezza dei Dati",

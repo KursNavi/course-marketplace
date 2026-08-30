@@ -1,9 +1,10 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ChevronRight, Clock, ArrowRight, BookOpen } from 'lucide-react';
+import { ChevronRight, Clock, ArrowRight, BookOpen, Info } from 'lucide-react';
 import { BEREICH_LANDING_CONFIG, getBereichBySlug, getBereichUrl, findSzenario } from '../lib/bereichLandingConfig';
 import { SZENARIO_CONTENT } from '../lib/szenarioContent';
 import { SEGMENT_CONFIG } from '../lib/constants';
 import { enhanceImages, wrapTables, estimateReadingTime, buildArticleJsonLd, buildBreadcrumbJsonLd } from '../lib/seoUtils';
+import { enhanceTableScrollContainers } from '../lib/tableScroll';
 import { BASE_URL } from '../lib/siteConfig';
 import { shouldHandleClientNavigation } from '../lib/navigation';
 import { loadThemeWorldWithFallback, isThemeWorldPilotActive, isThemeWorldDbEnabled } from '../lib/themeWorldFeatureFlag';
@@ -12,6 +13,7 @@ import { adaptToLegacyBereichConfig, adaptToLegacySzenarioConfig } from '../lib/
 import { normalizeDeliveryTypeKey } from '../lib/courseMetadata';
 import { toDisplaySources } from '../lib/scenarioSources';
 import { buildEditorialReviewNotice } from '../lib/editorialReviewDate';
+import { buildTimeSensitiveNotice, containsTimeSensitiveFacts } from '../lib/timeSensitiveFacts';
 
 /**
  * SzenarioArtikelView
@@ -36,6 +38,7 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
   // DB-only mode: kein Legacy-Eintrag vorhanden, aber DB global aktiv → Ladeindikator bis Antwort
   const [dbOnlyLoading, setDbOnlyLoading] = useState(() => !legacyBereichConfig && isThemeWorldDbEnabled());
 
+
   // Effective values: DB wenn geladen, sonst Legacy
   const bereichConfig = dynamicBereichConfig || legacyBereichConfig;
   const scenario = dynamicScenario || legacyScenario;
@@ -51,8 +54,27 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
   const contentKey = bereichKey && szenarioSlug ? `${bereichKey}/${szenarioSlug}` : null;
   const legacyArticleContent = contentKey ? SZENARIO_CONTENT[contentKey] || null : null;
 
+  // Pilot-Modus: Legacy-Eintrag UND DB-Fassung vorhanden.
+  //
+  // Ohne diesen Zustand rendert der Artikel sofort die im JS-Bundle
+  // mitgelieferte Legacy-Fassung und tauscht sie erst aus, wenn die DB-Antwort
+  // da ist. Auf Produktion gemessen: rund 0,8 Sekunden lang war die ältere
+  // Fassung mit anderer Gliederung und ohne Quellenblock sichtbar, danach die
+  // aktuelle. Genau dieser Wechsel wurde als «veraltete Version» gemeldet — er
+  // hat nichts mit CDN- oder Cache-Verhalten zu tun.
+  //
+  // Solange die DB-Fassung unterwegs ist, wird deshalb keine Fassung angezeigt.
+  // Schlägt der Ladevorgang fehl oder gibt es kein DB-Szenario, bleibt der
+  // Legacy-Inhalt als Rückfallebene erhalten.
+  const pilotWillLoad = Boolean(bereichKey) && isThemeWorldPilotActive(bereichKey);
+  const [pilotLoading, setPilotLoading] = useState(() => pilotWillLoad);
+
   // Effective article content
   const articleContent = dynamicArticleContent !== null ? dynamicArticleContent : legacyArticleContent;
+
+  // Nur solange eine DB-Fassung tatsächlich erwartet wird und noch nicht da
+  // ist. Danach entscheidet wieder articleContent — inklusive Legacy-Rückfall.
+  const articleIsLoading = pilotLoading && dynamicArticleContent === null;
 
   const readingTime = estimateReadingTime(articleContent);
   const articleRef = useRef(null);
@@ -62,7 +84,7 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
     let cancelled = false;
 
     // DB-only-Modus: Themenwelt existiert nur in der DB, kein Legacy-Eintrag
-    // → direkt laden ohne Pilot-Key-Prüfung (keine Legacy-Einschränkung nötig)
+    // ⅒ direkt laden ohne Pilot-Key-Prüfung (keine Legacy-Einschränkung nötig)
     if (!legacyBereichConfig && isThemeWorldDbEnabled()) {
       (async () => {
         try {
@@ -74,7 +96,8 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
             slug: tw.slug,
             segment: tw.url_segment,
             typeKey: tw.url_segment?.replace(/-/g, '_') || 'beruflich',
-            areaSlug: sc.area_slug || tw.area_slug || tw.key,
+            areaSlug: sc.area_slug ?? tw.area_slug ?? null,
+            kursart: sc.kursart || null,
             title: { de: tw.title_de || '' },
             scenarios: [],
           });
@@ -132,7 +155,8 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
             slug: tw.slug,
             segment: tw.url_segment,
             typeKey: tw.url_segment?.replace(/-/g, '_') || 'beruflich',
-            areaSlug: sc.area_slug || tw.area_slug || tw.key,
+            areaSlug: sc.area_slug ?? tw.area_slug ?? null,
+            kursart: sc.kursart || null,
             title: { de: tw.title_de || '' },
             scenarios: [], // Vollständige Szenario-Liste nicht nötig für Artikelansicht
           });
@@ -155,13 +179,18 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
           }
         }
       } catch (err) {
-        // Unerwarteter Fehler → Legacy bleibt aktiv (kein setState nötig)
+        // Unerwarteter Fehler ⅒ Legacy bleibt aktiv (kein setState nötig)
         if (import.meta.env.DEV) {
           console.warn(
             '[SzenarioArtikelView] Pilot-Ladevorgang fehlgeschlagen, Legacy-Fallback aktiv:',
             err?.message,
           );
         }
+      } finally {
+        // Immer freigeben — auch bei Fehler oder fehlendem DB-Szenario. Sonst
+        // bliebe die Seite im Ladezustand hängen, statt auf Legacy
+        // zurückzufallen.
+        if (!cancelled) setPilotLoading(false);
       }
     })();
 
@@ -173,7 +202,8 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
     if (!bereichConfig) return;
     const params = new URLSearchParams();
     params.set('type', bereichConfig.typeKey);
-    params.set('area', bereichConfig.areaSlug);
+    if (bereichConfig.areaSlug) params.set('area', bereichConfig.areaSlug);
+    if (bereichConfig.kursart) params.set('kursart', bereichConfig.kursart);
     Object.entries(extraParams).forEach(([k, v]) => {
       if (!v) return;
       // Kanonisiere Delivery-Werte beim URL-Aufbau
@@ -321,6 +351,25 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
     return () => btns.forEach(b => b.remove());
   }, [articleContent, scenario, lang, goToSearch]);
 
+  // Breite Tabellen im Artikelinhalt als Scrollbereich kenntlich und mit der
+  // Tastatur bedienbar machen.
+  //
+  // Bewusst als Callback-Ref statt als Effekt mit Abhängigkeitsliste: Diese
+  // Komponente hat mehrere frühe Returns und lädt Inhalte nach. Ein Effekt lief
+  // dadurch genau einmal, solange articleRef.current noch null war, und danach
+  // nie wieder — die Tabelle blieb unmarkiert. Die Callback-Ref feuert dagegen
+  // exakt dann, wenn der Knoten eingehängt wird; spätere Inhaltswechsel fängt
+  // der MutationObserver in enhanceTableScrollContainers ab.
+  const tableCleanupRef = useRef(null);
+  const setArticleNode = useCallback((node) => {
+    articleRef.current = node;
+    if (tableCleanupRef.current) {
+      tableCleanupRef.current();
+      tableCleanupRef.current = null;
+    }
+    if (node) tableCleanupRef.current = enhanceTableScrollContainers(node);
+  }, []);
+
   // DB-only Ladeindikator — verhindert vorzeitigen 404 während DB-Abfrage läuft
   if (dbOnlyLoading) {
     return (
@@ -383,6 +432,26 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
   // Redaktioneller Prüfhinweis: nur aus echtem last_reviewed_at, nie aus
   // Build-, System- oder Git-Zeit. Ohne Wert entfällt der Prüfsatz komplett.
   const editorialNotice = buildEditorialReviewNotice(scenario.lastReviewedAt);
+
+  // Sichtbares Artikel-Titelbild.
+  //
+  // Es kommt aus den bereits vorhandenen Bildfeldern, keine neue Spalte:
+  //   card_image_url — das redaktionelle Artikelbild (erste Wahl)
+  //   og_image_url   — die Social-Vorschau, nur als Zweitquelle
+  // Fehlen beide (etwa in der Yoga-Themenwelt), wird schlicht nichts gerendert —
+  // kein Platzhalter, kein leerer Rahmen.
+  const articleImageUrl = scenario.cardImageUrl || scenario.ogImageUrl || null;
+  const articleImageAlt =
+    scenario.cardImageAlt
+    || scenario.ogImageAlt
+    || scenario.label[lang]
+    || scenario.label.de
+    || '';
+  // Doppelt zeigen wäre schlimmer als gar nicht zeigen: bringt der Artikeltext
+  // dasselbe Bild bereits mit, bleibt der Kopfbereich leer.
+  const showArticleImage = Boolean(
+    articleImageUrl && !(articleContent && articleContent.includes(articleImageUrl)),
+  );
 
   const segmentLabel = theme.label?.[lang] || theme.label?.de || segment;
   const bereichTitle = (bereichConfig.title[lang] || bereichConfig.title.de).split('—')[0].trim();
@@ -451,10 +520,43 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
 
       {/* Article Content */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        {/* Titelbild direkt unter dem farbigen Header — gleiche Breite wie der
+            Artikel, 16:9 und beschnitten statt verzerrt. Schlägt das Laden fehl,
+            verschwindet der ganze Rahmen statt ein kaputtes Bild zu zeigen. */}
+        {showArticleImage && (
+          <figure data-testid="szenario-artikelbild" className="mb-8">
+            <img
+              src={articleImageUrl}
+              alt={articleImageAlt}
+              decoding="async"
+              className="w-full aspect-video object-cover rounded-2xl shadow-sm border border-gray-100"
+              onError={(event) => {
+                const figure = event.currentTarget.parentElement;
+                if (figure) figure.hidden = true;
+              }}
+            />
+          </figure>
+        )}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 md:p-12">
-          {articleContent ? (
+          {articleIsLoading ? (
+            /* Die DB-Fassung ist unterwegs. Bis sie da ist, wird bewusst keine
+               Fassung gezeigt — sonst erschiene kurz die ältere Legacy-Version
+               mit anderer Gliederung und ohne Quellen. */
+            <div className="py-12" role="status" aria-live="polite" aria-busy="true">
+              <span className="sr-only">Artikel wird geladen…</span>
+              <div className="animate-pulse space-y-4" aria-hidden="true">
+                <div className="h-6 w-2/3 bg-gray-200 rounded" />
+                <div className="h-4 w-full bg-gray-100 rounded" />
+                <div className="h-4 w-11/12 bg-gray-100 rounded" />
+                <div className="h-4 w-4/5 bg-gray-100 rounded" />
+                <div className="h-6 w-1/2 bg-gray-200 rounded mt-8" />
+                <div className="h-4 w-full bg-gray-100 rounded" />
+                <div className="h-4 w-10/12 bg-gray-100 rounded" />
+              </div>
+            </div>
+          ) : articleContent ? (
             <div
-              ref={articleRef}
+              ref={setArticleNode}
               className="prose-ratgeber"
               dangerouslySetInnerHTML={{ __html: wrapTables(enhanceImages(articleContent)) }}
             />
@@ -475,6 +577,15 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
             </div>
           )}
         </div>
+
+        {/* Gültigkeitshinweis — nur bei Artikeln mit zeitabhängigen Angaben.
+            Steht bewusst direkt über den Quellen, damit Hinweis und offizielle
+            Stellen zusammen gelesen werden. */}
+        <TimeSensitiveNotice
+          articleContent={articleContent}
+          lastReviewedAt={scenario.lastReviewedAt}
+          hasSources={displaySources.length > 0}
+        />
 
         {/* Quellen & weiterführende Informationen — nur bei echten Quellen */}
         <SourcesSection sources={displaySources} />
@@ -580,6 +691,40 @@ export default function SzenarioArtikelView({ segment, slug, szenarioSlug, cours
  *        Bereits normalisiert (toDisplaySources) — hier findet keine
  *        Validierung mehr statt.
  */
+/**
+ * Gültigkeitshinweis für zeitabhängige Angaben.
+ *
+ * Erscheint nur, wenn der Artikel tatsächlich Beträge, Beitragssätze oder
+ * rechtliche Voraussetzungen führt — sonst wäre es blosses Rauschen. Der
+ * Hinweis nennt ausschliesslich, was in den Daten steht: das redaktionelle
+ * Prüfdatum des Artikels. Fehlt es, wird kein Stand behauptet.
+ *
+ * Bewusst zurückhaltend gestaltet: eine Einordnung, kein Warnhinweis.
+ */
+function TimeSensitiveNotice({ articleContent, lastReviewedAt, hasSources }) {
+  if (!containsTimeSensitiveFacts(articleContent)) return null;
+
+  const { intro, stand, verweis } = buildTimeSensitiveNotice({ lastReviewedAt, hasSources });
+
+  return (
+    <aside
+      aria-labelledby="szenario-gueltigkeit-heading"
+      className="bg-amber-50 border border-amber-200 rounded-2xl p-5 md:p-6 mt-6"
+    >
+      <h2
+        id="szenario-gueltigkeit-heading"
+        className="text-sm font-bold text-amber-900 mb-2 flex items-center gap-2"
+      >
+        <Info className="w-4 h-4 shrink-0" aria-hidden="true" />
+        Zeitabhängige Angaben
+      </h2>
+      <p className="text-sm text-amber-900/90 leading-relaxed">
+        {intro}{stand ? ` ${stand}` : ''} {verweis}
+      </p>
+    </aside>
+  );
+}
+
 function SourcesSection({ sources }) {
   if (!sources || sources.length === 0) return null;
 

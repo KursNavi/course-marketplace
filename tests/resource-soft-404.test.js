@@ -100,12 +100,15 @@ describe('vercel.json — 404-Fallback der Ressourcenfamilien', () => {
     }
   });
 
-  it('lässt Redirects, Headers und Crons unverändert', () => {
+  it('lässt Redirects, Headers und den täglichen Cron unverändert', () => {
     expect(vercelConfig.redirects.map((rule) => rule.source)).toEqual([
       '/:path*',
       '/bereich/privat_hobby/:path*',
     ]);
-    expect(vercelConfig.crons).toEqual([{ path: '/api/cron', schedule: '0 12 * * *' }]);
+    expect(vercelConfig.crons).toEqual([
+      { path: '/api/cron', schedule: '0 12 * * *' },
+      { path: '/api/cron-lead-scoring', schedule: '0 2 1 * *' },
+    ]);
     expect(vercelConfig.trailingSlash).toBe(false);
   });
 

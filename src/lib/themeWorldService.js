@@ -105,7 +105,10 @@ export async function fetchThemeWorld(urlSegment, slug) {
 export async function fetchPublishedScenarios(themeWorldId) {
   const { data, error } = await supabase
     .from('theme_world_scenarios')
-    .select('id, slug, icon, label_de, teaser_de, card_image_url, card_image_alt, sort_order, published_at')
+    // last_reviewed_at wird mitgeladen, damit die Landingpage ihren
+    // Prüfhinweis aus dem jüngsten echten Artikel-Prüfdatum bilden kann
+    // (theme_worlds selbst führt kein Prüfdatum).
+    .select('id, slug, icon, label_de, teaser_de, card_image_url, card_image_alt, sort_order, published_at, last_reviewed_at')
     .eq('theme_world_id', themeWorldId)
     .eq('status', 'published')
     .order('sort_order', { ascending: true })

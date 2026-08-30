@@ -3,6 +3,7 @@ import { ChevronRight, BookOpen } from 'lucide-react';
 import { RATGEBER_STRUCTURE, findCluster } from '../lib/ratgeberStructure';
 import { SEGMENT_CONFIG } from '../lib/constants';
 import { shouldHandleClientNavigation } from '../lib/navigation';
+import { buildEditorialReviewNotice } from '../lib/editorialReviewDate';
 import { buildBreadcrumbJsonLd } from '../lib/seoUtils';
 import { BASE_URL } from '../lib/siteConfig';
 
@@ -251,7 +252,7 @@ const RatgeberClusterView = ({ lang = 'de' }) => {
         </div>
 
         <div className="text-center text-sm text-gray-500 mt-8">
-          <p>Zuletzt redaktionell geprüft: März 2026. Die Inhalte dienen der Orientierung; maßgeblich sind im Zweifel die Angaben der jeweiligen Anbieter und offiziellen Stellen.</p>
+          <p>{buildEditorialReviewNotice(null)}</p>
           <p className="mt-2">
             Wenn dir in diesem Ratgeberbereich ein Fehler oder eine veraltete Information auffällt, gib uns gern kurz Bescheid.{' '}
             <a

@@ -2831,6 +2831,68 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                 <p className="text-sm text-gray-500 leading-relaxed">Statistiken, Buchungshistorie, Einnahmen und Abonnement verwalten.</p>
                             </button>
                         </div>
+                        <section
+                            aria-labelledby="provider-onboarding-title"
+                            data-testid="provider-onboarding-guide"
+                            className="mt-8 rounded-2xl border border-orange-200 bg-orange-50/70 p-6 md:p-8"
+                        >
+                            <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
+                                <div className="max-w-2xl">
+                                    <div className="flex items-start gap-3">
+                                        <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-orange-500 shadow-sm">
+                                            <Info className="h-5 w-5" aria-hidden="true" />
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-semibold uppercase tracking-wide text-orange-700">Dein Start als Anbieter</p>
+                                            <h2 id="provider-onboarding-title" className="mt-1 text-xl font-bold text-dark font-heading">
+                                                So wird dein Angebot sichtbar und vertrauenswürdig
+                                            </h2>
+                                        </div>
+                                    </div>
+                                    <p className="mt-4 text-sm leading-relaxed text-orange-900/80">
+                                        Du kannst in drei einfachen Schritten loslegen. Ein vollständiges Profil hilft Interessierten, dich und dein Angebot besser kennenzulernen.
+                                    </p>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setDashView('profile')}
+                                    className="inline-flex shrink-0 items-center justify-center gap-2 self-start rounded-lg bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:ring-offset-2"
+                                >
+                                    Profil jetzt ergänzen
+                                    <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                                </button>
+                            </div>
+
+                            <ol className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
+                                <li className="rounded-xl border border-orange-100 bg-white/80 p-4">
+                                    <div className="flex items-start gap-3">
+                                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-orange-100 text-sm font-bold text-orange-700">1</span>
+                                        <div>
+                                            <h3 className="font-bold text-dark">Profil ausfüllen</h3>
+                                            <p className="mt-1 text-sm leading-relaxed text-gray-600">Erzähle kurz, wer du bist, wo du Kurse anbietest und was Teilnehmende erwartet.</p>
+                                        </div>
+                                    </div>
+                                </li>
+                                <li className="rounded-xl border border-orange-100 bg-white/80 p-4">
+                                    <div className="flex items-start gap-3">
+                                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-orange-100 text-sm font-bold text-orange-700">2</span>
+                                        <div>
+                                            <h3 className="font-bold text-dark">Logo und Kursbild richtig einsetzen</h3>
+                                            <p className="mt-1 text-sm leading-relaxed text-gray-600">Dein Logo gehört ins Profil. Für den Kurs passt ein Bild, das den konkreten Kursinhalt zeigt.</p>
+                                        </div>
+                                    </div>
+                                </li>
+                                <li className="rounded-xl border border-orange-100 bg-white/80 p-4">
+                                    <div className="flex items-start gap-3">
+                                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-orange-100 text-sm font-bold text-orange-700">3</span>
+                                        <div>
+                                            <h3 className="font-bold text-dark">Kurs prüfen und veröffentlichen</h3>
+                                            <p className="mt-1 text-sm leading-relaxed text-gray-600">Kontrolliere Beschreibung, Preis, Termine und Zielgruppe. Danach ist dein Kurs bereit für Interessierte.</p>
+                                        </div>
+                                    </div>
+                                </li>
+                            </ol>
+                        </section>
                     </>
                 ) : (
                     <>

@@ -12,6 +12,8 @@ import { loadThemeWorldWithFallback, isThemeWorldPilotActive, isThemeWorldDbEnab
 import { fetchThemeWorldPage } from '../lib/themeWorldService';
 import { adaptToLegacyBereichConfig } from '../lib/themeWorldAdapter';
 import { normalizeDeliveryTypeKey } from '../lib/courseMetadata';
+import { buildEditorialReviewNotice } from '../lib/editorialReviewDate';
+import { matchesCourseTypeFilter } from '../lib/themeWorldCourseFilters';
 
 export default function BereichLandingPage({ segment, slug, courses, lang = 'de', t }) {
   // Legacy-Config (immer geladen als Basiswert + Fallback)
@@ -38,7 +40,7 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
   // Pilot-Integration: DB-Daten laden wenn Feature-Flag aktiv
   useEffect(() => {
     // DB-only-Modus: Themenwelt existiert nur in der DB, kein Legacy-Eintrag
-    // → direkt laden ohne Pilot-Key-Prüfung (keine Legacy-Einschränkung nötig)
+    // ⅒ direkt laden ohne Pilot-Key-Prüfung (keine Legacy-Einschränkung nötig)
     if (!legacyConfig && isThemeWorldDbEnabled()) {
       let cancelled = false;
       fetchThemeWorldPage(segment, slug)
@@ -238,7 +240,8 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
     courses.forEach(c => {
       if (c.status !== 'published' && c.status) return;
       (c.all_categories || []).forEach(cat => {
-        if (cat.category_type === dbType && cat.category_area === config.areaSlug) {
+        if (cat.category_type === dbType && (!config.areaSlug || cat.category_area === config.areaSlug) &&
+            matchesCourseTypeFilter(c, config.typeKey, config.kursart)) {
           const specLabel = cat.category_specialty_label || cat.category_specialty;
           if (specLabel) {
             counts[specLabel] = (counts[specLabel] || 0) + 1;
@@ -256,7 +259,8 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
     courses.forEach(c => {
       if (c.status !== 'published' && c.status) return;
       (c.all_categories || []).forEach(cat => {
-        if (cat.category_type === dbType && cat.category_area === config.areaSlug &&
+        if (cat.category_type === dbType && (!config.areaSlug || cat.category_area === config.areaSlug) &&
+            matchesCourseTypeFilter(c, config.typeKey, config.kursart) &&
             (cat.category_specialty_label === specLabel || cat.category_specialty === specLabel) &&
             cat.category_focus_label) {
           focuses.add(cat.category_focus_label);
@@ -273,7 +277,8 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
   const navigateToSearch = (extraParams = {}) => {
     const params = new URLSearchParams();
     params.set('type', config.typeKey);
-    params.set('area', config.areaSlug);
+    if (config.areaSlug) params.set('area', config.areaSlug);
+    if (config.kursart) params.set('kursart', config.kursart);
     if (searchQuery) params.set('q', searchQuery);
     Object.entries(extraParams).forEach(([k, v]) => {
       if (v) params.set(k, v);
@@ -303,7 +308,8 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
   const buildSearchUrl = (extraParams = {}) => {
     const params = new URLSearchParams();
     params.set('type', config.typeKey);
-    params.set('area', config.areaSlug);
+    if (config.areaSlug) params.set('area', config.areaSlug);
+    if (config.kursart) params.set('kursart', config.kursart);
     Object.entries(extraParams).forEach(([k, v]) => {
       if (!v) return;
       // Kanonisiere Delivery-Werte beim URL-Aufbau
@@ -435,52 +441,88 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
                   window.scrollTo(0, 0);
                   window.history.pushState({ view: 'bereich-szenario' }, '', `/bereich/${segment}/${slug}/${scenario.slug}`);
                 }}
-                className="relative min-w-0 overflow-hidden p-6 rounded-2xl bg-white border border-gray-100 hover:border-gray-200 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group block"
+                className="relative flex min-w-0 flex-col overflow-hidden rounded-2xl bg-white border border-gray-100 hover:border-gray-200 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group"
               >
-                {/* Kartenbild, falls vorhanden; sonst bestehender Icon-Fallback */}
-                {scenario.cardImageUrl ? (
-                  <div className="w-14 h-14 mb-4">
-                    <img
-                      data-testid={`scenario-card-image-${scenario.slug || i}`}
-                      src={scenario.cardImageUrl}
-                      alt={scenario.cardImageAlt || scenario.label[lang] || scenario.label.de || scenario.text[lang] || scenario.text.de || ''}
-                      className="w-full h-full rounded-2xl object-cover group-hover:scale-105 transition-transform duration-300"
-                      onError={(event) => {
-                        event.currentTarget.hidden = true;
-                        event.currentTarget.nextElementSibling?.removeAttribute('hidden');
-                      }}
-                    />
-                    <div hidden className={`w-full h-full ${theme.bgLight} rounded-2xl flex items-center justify-center`} aria-hidden="true">
-                      <span className="text-3xl">{scenario.icon}</span>
+                {/* Titelbild — durchgehendes 16:9-Band am Kartenkopf.
+                    Das Band existiert immer und hat immer dieselbe Höhe: mit Bild
+                    zeigt es das Bild, ohne Bild (oder bei Ladefehler) einen ruhigen
+                    Platzhalter in der Themenfarbe. Dadurch bleiben alle Karten im
+                    Raster gleich hoch und es entsteht nie eine leere Bildfläche. */}
+                <div
+                  data-testid={`scenario-card-media-${scenario.slug || i}`}
+                  className={`w-full aspect-video overflow-hidden ${theme.bgLight}`}
+                >
+                  {scenario.cardImageUrl ? (
+                    <>
+                      <img
+                        data-testid={`scenario-card-image-${scenario.slug || i}`}
+                        src={scenario.cardImageUrl}
+                        alt={scenario.cardImageAlt || scenario.label[lang] || scenario.label.de || scenario.text[lang] || scenario.text.de || ''}
+                        loading="lazy"
+                        decoding="async"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        onError={(event) => {
+                          event.currentTarget.hidden = true;
+                          event.currentTarget.nextElementSibling?.removeAttribute('hidden');
+                        }}
+                      />
+                      <div
+                        hidden
+                        data-testid={`scenario-card-media-fallback-${scenario.slug || i}`}
+                        className="w-full h-full flex items-center justify-center"
+                        aria-hidden="true"
+                      >
+                        <BookOpen className={`w-8 h-8 ${theme.text} opacity-40`} />
+                      </div>
+                    </>
+                  ) : (
+                    <div
+                      data-testid={`scenario-card-media-fallback-${scenario.slug || i}`}
+                      className="w-full h-full flex items-center justify-center"
+                      aria-hidden="true"
+                    >
+                      <BookOpen className={`w-8 h-8 ${theme.text} opacity-40`} />
                     </div>
+                  )}
+                </div>
+
+                {/* Inhalt — vollständig unterhalb des Bildbandes. Das Icon steht
+                    als eigene Spalte neben dem Titel, nicht mehr darüber. */}
+                <div className="flex min-w-0 flex-1 flex-col p-6">
+                  <div className="flex items-center gap-3 mb-2">
+                    <span
+                      data-testid={`scenario-card-icon-${scenario.slug || i}`}
+                      className={`shrink-0 flex h-10 w-10 items-center justify-center rounded-xl ${theme.bgLight} text-2xl leading-none`}
+                    >
+                      {scenario.icon}
+                    </span>
+
+                    {/* Title */}
+                    <h3
+                      data-testid={`scenario-card-title-${scenario.slug || i}`}
+                      className={`min-w-0 flex-1 break-words font-bold text-base ${theme.text} leading-snug`}
+                    >
+                      {scenario.label[lang] || scenario.label.de}
+                    </h3>
                   </div>
-                ) : (
-                  <div className={`w-14 h-14 ${theme.bgLight} rounded-2xl flex items-center justify-center mb-4 group-hover:scale-105 transition-transform duration-300`}>
-                    <span className="text-3xl">{scenario.icon}</span>
+
+                  {/* Description */}
+                  <p className="min-w-0 break-words text-sm text-gray-500 leading-relaxed line-clamp-3 mb-4">
+                    {scenario.text[lang] || scenario.text.de}
+                  </p>
+
+                  {/* Always-visible CTA */}
+                  <div className={`mt-auto flex items-center gap-1 text-xs font-semibold ${theme.text} group-hover:gap-2 transition-all duration-200`}>
+                    <BookOpen className="w-3.5 h-3.5" />
+                    <span>Ratgeber lesen</span>
+                    <ArrowRight className="w-3.5 h-3.5 ml-0.5" />
                   </div>
-                )}
-
-                {/* Title */}
-                <h3 className={`min-w-0 break-words font-bold text-base ${theme.text} mb-2 leading-snug`}>
-                  {scenario.label[lang] || scenario.label.de}
-                </h3>
-
-                {/* Description */}
-                <p className="min-w-0 break-words text-sm text-gray-500 leading-relaxed line-clamp-3 mb-4">
-                  {scenario.text[lang] || scenario.text.de}
-                </p>
-
-                {/* Always-visible CTA */}
-                <div className={`flex items-center gap-1 text-xs font-semibold ${theme.text} group-hover:gap-2 transition-all duration-200`}>
-                  <BookOpen className="w-3.5 h-3.5" />
-                  <span>Ratgeber lesen</span>
-                  <ArrowRight className="w-3.5 h-3.5 ml-0.5" />
                 </div>
               </a>
             ))}
           </div>
           <div className="text-center text-sm text-gray-500 mt-6">
-            <p>Zuletzt redaktionell geprüft: März 2026. Die Inhalte dienen der Orientierung; maßgeblich sind im Zweifel die Angaben der jeweiligen Anbieter und offiziellen Stellen.</p>
+            <p>{buildEditorialReviewNotice(config.lastReviewedAt)}</p>
             <p className="mt-2">
               Ist dir in einer Themenwelt ein Fehler oder eine veraltete Information aufgefallen? Gib uns gern kurz Bescheid.{' '}
               <a

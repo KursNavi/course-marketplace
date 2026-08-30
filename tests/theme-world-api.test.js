@@ -395,7 +395,7 @@ describe('admin-theme-worlds publish-gate', () => {
 
     expect(res._status).toBe(422);
     expect(res._body.details).toEqual(
-      expect.arrayContaining([expect.stringContaining('area_slug')])
+      expect.arrayContaining([expect.stringContaining('search_config')])
     );
   });
 });

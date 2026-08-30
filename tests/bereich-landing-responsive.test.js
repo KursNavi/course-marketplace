@@ -34,8 +34,17 @@ describe('BereichLandingPage mobile responsive regression guard', () => {
   });
 
   it('allows long scenario-card titles and teasers to wrap instead of expanding the grid', () => {
-    expect(componentSource).toContain('relative min-w-0 overflow-hidden p-6');
-    expect(componentSource).toContain('min-w-0 break-words font-bold text-base');
+    // Die Kachel ist eine Flex-Spalte (Bildband oben, Inhalt darunter). Für die
+    // 390px-Containment gilt unverändert: min-w-0 auf Kachel und Inhaltsblock,
+    // overflow-hidden auf der Kachel, break-words auf Titel und Teaser.
+    expect(componentSource).toContain('relative flex min-w-0 flex-col overflow-hidden');
+    expect(componentSource).toContain('flex min-w-0 flex-1 flex-col p-6');
+    expect(componentSource).toContain('min-w-0 flex-1 break-words font-bold text-base');
     expect(componentSource).toContain('min-w-0 break-words text-sm text-gray-500');
+  });
+
+  it('keeps the scenario card image inside a fixed-ratio band so it cannot stretch the card', () => {
+    expect(componentSource).toContain('w-full aspect-video overflow-hidden');
+    expect(componentSource).toContain('w-full h-full object-cover');
   });
 });

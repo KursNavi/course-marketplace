@@ -2,6 +2,11 @@ import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
 import { createHash } from 'crypto';
 import { getEmailConfig, resolveUserEmail, sendEmailOrThrow } from './_lib/email-config.js';
+import { encryptLeadMessage, normalizeLeadMessage } from './_lib/lead-message-crypto.js';
+import { providerMessageIdFromSendResult } from './_lib/lead-email-delivery.js';
+
+/** Aufbewahrungsfrist des Anfragetextes. Der Lead-Datensatz selbst bleibt. */
+const MESSAGE_RETENTION_DAYS = 60;
 
 const COLORS = {
   primary: '#FA6E28',
@@ -50,6 +55,20 @@ const generateEmailHtml = (title, bodyHtml, ctaText, ctaLink = "https://kursnavi
 </html>
 `;
 
+const VALID_TIERS = ['basic', 'pro', 'premium', 'enterprise'];
+
+/**
+ * Normalisiert das Paket für den Snapshot am Lead.
+ *
+ * Gibt null zurück, wenn der Wert unbekannt ist. null bedeutet in der
+ * Penalty-Logik "zählt nicht" — besser als ein geratenes 'basic', das den
+ * Anbieter fälschlich abstufen würde.
+ */
+function normalizeTier(tier) {
+  const normalized = String(tier || '').trim().toLowerCase();
+  return VALID_TIERS.includes(normalized) ? normalized : null;
+}
+
 function escapeHtml(str) {
   return String(str)
     .replace(/&/g, '&amp;')
@@ -92,15 +111,18 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Dieser Kurs unterstützt keine Anfragen' });
     }
 
-    // 2. Anbieter-E-Mail holen
+    // 2. Anbieter-E-Mail und aktuelles Paket holen
+    // package_tier wird für den Snapshot am Lead gebraucht (provider_tier_at_lead).
     let teacherEmail = null;
+    let providerTier = null;
     if (course.user_id) {
       const { data: teacherProfile } = await supabase
         .from('profiles')
-        .select('email')
+        .select('email, package_tier')
         .eq('id', course.user_id)
         .single();
       teacherEmail = await resolveUserEmail(supabase, course.user_id, teacherProfile?.email);
+      providerTier = normalizeTier(teacherProfile?.package_tier);
     }
 
     if (!teacherEmail) {
@@ -137,13 +159,51 @@ export default async function handler(req, res) {
         course_id: courseId,
         provider_id: course.user_id,
         requester_email_hash: emailHash,
-        status: 'pending'
+        status: 'pending',
+        email_delivery_status: 'pending',
+        // Snapshot: In welcher Paketphase ist diese Anfrage eingegangen? Später
+        // ist das nicht mehr rekonstruierbar, und die Basic-Ranking-Penalty
+        // hängt daran.
+        provider_tier_at_lead: providerTier
       })
       .select('id')
       .single();
 
-    if (leadError) {
+    // Der Lead-Datensatz ist obligatorisch: Er ist der Nachweis der Anfrage und
+    // die Grundlage der Leadstatistik. Bisher wurde ein Fehler hier nur
+    // protokolliert und die E-Mail trotzdem versendet — dabei entstand eine
+    // versandte, aber nirgends erfasste Anfrage. Jetzt wird abgebrochen, BEVOR
+    // die E-Mail rausgeht.
+    if (leadError || !lead?.id) {
       console.error('send-lead: Lead-Record konnte nicht erstellt werden', leadError);
+      return res.status(500).json({ error: 'Anfrage konnte nicht erfasst werden. Bitte versuche es später erneut.' });
+    }
+
+    // 3c. Anfragetext verschlüsselt und befristet ablegen.
+    // Fehler hier dürfen den Versand NICHT verhindern — der Text ist nur die
+    // Grundlage der späteren KI-Bewertung, nicht der Anfrage selbst. Der Lead
+    // bleibt bestehen und wird vom Retention-Lauf als 'expired_unscored'
+    // markiert, sobald klar ist, dass kein Text mehr kommt.
+    const normalizedMessage = normalizeLeadMessage(message);
+    if (normalizedMessage) {
+      try {
+        const expiresAt = new Date(Date.now() + MESSAGE_RETENTION_DAYS * 24 * 60 * 60 * 1000);
+        const { error: payloadError } = await supabase
+          .from('lead_message_payloads')
+          .insert({
+            lead_id: lead.id,
+            ciphertext: encryptLeadMessage(normalizedMessage),
+            expires_at: expiresAt.toISOString()
+          });
+        if (payloadError) throw payloadError;
+      } catch (payloadErr) {
+        // Bewusst nur Code und Meldung, niemals der Anfragetext.
+        console.error('send-lead: Anfragetext konnte nicht gespeichert werden:', payloadErr?.message || 'unknown error');
+        await supabase
+          .from('leads')
+          .update({ quality_error_code: 'payload_write_failed' })
+          .eq('id', lead.id);
+      }
     }
 
     // 4. E-Mail an Anbieter senden
@@ -165,8 +225,9 @@ export default async function handler(req, res) {
       <p style="color:#6B7280; font-size:14px;">Du kannst direkt auf diese E-Mail antworten, um mit der interessierten Person in Kontakt zu treten.</p>
     `;
 
+    let emailAccepted = false;
     try {
-      await sendEmailOrThrow(resend, 'lead-to-provider', {
+      const sendResult = await sendEmailOrThrow(resend, 'lead-to-provider', {
         from: emailConfig.from,
         to: teacherEmail,
         replyTo: email,
@@ -174,17 +235,49 @@ export default async function handler(req, res) {
         subject: `Neue Kursanfrage: ${course.title}`,
         html: generateEmailHtml('Neue Kursanfrage', bodyHtml, 'Zum Dashboard')
       });
+      emailAccepted = true;
 
-      // Audit-Trail: Status → sent
-      if (lead?.id) {
-        await supabase.from('leads').update({ status: 'sent' }).eq('id', lead.id);
+      // "accepted" bedeutet: Resend hat die Nachricht angenommen. Eine echte
+      // Zustellung wird später über den Resend-Webhook auf "delivered" gesetzt.
+      const sentUpdate = {
+          status: 'sent',
+          email_delivery_status: 'accepted',
+          email_provider_message_id: providerMessageIdFromSendResult(sendResult),
+          email_delivery_updated_at: new Date().toISOString(),
+          email_delivery_error_code: null,
+      };
+      let sentUpdateError = null;
+      // A transient database error must not turn a successfully sent email into
+      // a false `failed` lead. Retry once and surface a persistent failure for
+      // investigation instead of silently corrupting delivery metrics.
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        const { error: updateError } = await supabase
+          .from('leads')
+          .update(sentUpdate)
+          .eq('id', lead.id);
+        if (!updateError) {
+          sentUpdateError = null;
+          break;
+        }
+        sentUpdateError = updateError;
+      }
+      if (sentUpdateError) {
+        console.error('send-lead: Versand erfolgreich, Leadstatus konnte nicht gespeichert werden:', sentUpdateError.message);
+        throw new Error('Lead status persistence failed');
       }
 
       return res.status(200).json({ success: true });
     } catch (emailErr) {
-      // Audit-Trail: Status → failed
-      if (lead?.id) {
-        await supabase.from('leads').update({ status: 'failed' }).eq('id', lead.id);
+      // Audit-Trail: der Versanddienst hat die Nachricht nicht angenommen.
+      // Once Resend accepted the message, do not overwrite the durable lead
+      // with `failed` merely because the follow-up status update failed.
+      if (!emailAccepted) {
+        await supabase.from('leads').update({
+          status: 'failed',
+          email_delivery_status: 'failed',
+          email_delivery_updated_at: new Date().toISOString(),
+          email_delivery_error_code: 'send_failed',
+        }).eq('id', lead.id);
       }
       throw emailErr;
     }

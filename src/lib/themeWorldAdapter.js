@@ -16,6 +16,7 @@
 
 import { normalizeDeliveryTypeKey } from './courseMetadata';
 import { toDisplaySources } from './scenarioSources';
+import { pickLatestReviewDate } from './editorialReviewDate';
 
 // ---------------------------------------------------------------------------
 // Konstanten
@@ -159,8 +160,9 @@ export function adaptThemeWorldToConfig({
 
     // Suche
     searchConfig: {
-      areaSlug: searchConfig.area_slug || themeWorld.area_slug,
+      areaSlug: searchConfig.area_slug ?? themeWorld.area_slug ?? null,
       typeKey: searchConfig.type_key || typeKey,
+      kursart: searchConfig.kursart || null,
       defaultSpec: searchConfig.default_spec || null,
       defaultFocus: searchConfig.default_focus || null,
     },
@@ -281,7 +283,8 @@ export function adaptScenarioArticle(scenario, themeWorld) {
       focus: ctaConfig.focus || null,
       loc: ctaConfig.loc || null,
       delivery: ctaConfig.delivery || null,
-      areaSlug: twSearchConfig.area_slug || themeWorld?.area_slug || null,
+      kursart: ctaConfig.kursart || twSearchConfig.kursart || null,
+      areaSlug: twSearchConfig.area_slug ?? themeWorld?.area_slug ?? null,
       typeKey: urlSegmentToTypeKey(urlSegment),
     },
 
@@ -307,6 +310,7 @@ function adaptPredefinedSearch(search) {
     focus: search.focus || null,
     loc: search.loc || null,
     delivery: search.delivery || null,
+    kursart: search.kursart || null,
   };
 }
 
@@ -323,6 +327,7 @@ function adaptCtaLink(link) {
     focus: link.focus || null,
     loc: link.loc || null,
     delivery: link.delivery || null,
+    kursart: link.kursart || null,
   };
 }
 
@@ -424,7 +429,8 @@ export function adaptToLegacyBereichConfig({
     slug: themeWorld.slug,
     segment: urlSegment,
     typeKey,
-    areaSlug: searchConfig.area_slug || themeWorld.area_slug || themeWorld.key,
+    areaSlug: searchConfig.area_slug ?? themeWorld.area_slug ?? null,
+    kursart: searchConfig.kursart || null,
 
     // Titel / Subtitel als Multilingual-Objekte (Legacy-Format: { de: '...' })
     title: { de: themeWorld.title_de || '' },
@@ -442,6 +448,13 @@ export function adaptToLegacyBereichConfig({
     metaTitle: themeWorld.meta_title || null,
     metaDescription: themeWorld.meta_description || null,
 
+    // Redaktionelles Prüfdatum der Landingpage.
+    // theme_worlds hat keine eigene Spalte last_reviewed_at — die Landingpage
+    // übernimmt deshalb das jüngste Prüfdatum ihrer publizierten Artikel, statt
+    // ein eigenes Datum zu behaupten. Ohne geprüfte Artikel bleibt es null und
+    // buildEditorialReviewNotice() lässt den Prüfsatz weg.
+    lastReviewedAt: pickLatestReviewDate(scenarios.map((s) => s.last_reviewed_at)),
+
     // Szenario-Karten im Legacy-Format
     scenarios: scenarios.map((s, i) => ({
       slug: s.slug,
@@ -453,6 +466,7 @@ export function adaptToLegacyBereichConfig({
       ctaLabel: { de: s.cta_label_de || 'Kurse entdecken' },
       searchParams: _extractSearchParams(s.cta_config, searchConfig),
       sortOrder: s.sort_order || i + 1,
+      lastReviewedAt: s.last_reviewed_at || null,
     })),
 
     // Specialties: Array → gekeyertes Objekt { label: { de, icon } }
@@ -474,6 +488,7 @@ export function adaptToLegacyBereichConfig({
             params: {
               ...(r.loc_param ? { loc: r.loc_param } : {}),
               ...(r.delivery_param ? { delivery: normalizeDeliveryTypeKey(r.delivery_param) || r.delivery_param } : {}),
+              ...(searchConfig.kursart ? { kursart: searchConfig.kursart } : {}),
             },
           })),
         }
@@ -485,6 +500,7 @@ export function adaptToLegacyBereichConfig({
       params: {
         ...(s.spec ? { spec: s.spec } : {}),
         ...(s.focus ? { focus: s.focus } : {}),
+        ...(s.kursart ? { kursart: s.kursart } : {}),
       },
       extraParams: {
         ...(s.loc ? { loc: s.loc } : {}),
@@ -532,6 +548,7 @@ export function adaptToLegacyBereichConfig({
         ...(l.focus ? { focus: l.focus } : {}),
         ...(l.loc ? { loc: l.loc } : {}),
         ...(l.delivery ? { delivery: normalizeDeliveryTypeKey(l.delivery) || l.delivery } : {}),
+        ...(l.kursart ? { kursart: l.kursart } : {}),
       },
     })),
 
@@ -562,6 +579,12 @@ export function adaptToLegacySzenarioConfig(scenario, themeWorldSearchConfig = {
     searchParams: _extractSearchParams(scenario.cta_config, themeWorldSearchConfig),
     // Content für den Artikel (wird separat in der Komponente als articleContent behandelt)
     contentHtml: scenario.content_html || '',
+    // card_image_url ist das redaktionelle Artikelbild. Bisher wurde es nur auf
+    // der Szenario-Karte durchgereicht; die Artikelseite hatte deshalb gar kein
+    // sichtbares Bild zur Verfügung. og_image_url bleibt daneben unverändert die
+    // reine Social-Vorschau.
+    cardImageUrl: scenario.card_image_url || null,
+    cardImageAlt: scenario.card_image_alt || '',
     ogImageUrl: scenario.og_image_url || null,
     ogImageAlt: scenario.og_image_alt || '',
     metaTitle: scenario.meta_title || null,
@@ -598,5 +621,6 @@ function _extractSearchParams(ctaConfig, searchConfig = {}) {
     ...(c.focus ? { focus: c.focus } : {}),
     ...(c.loc ? { loc: c.loc } : {}),
     ...(c.delivery ? { delivery: normalizeDeliveryTypeKey(c.delivery) || c.delivery } : {}),
+    ...(c.kursart || searchConfig.kursart ? { kursart: c.kursart || searchConfig.kursart } : {}),
   };
 }

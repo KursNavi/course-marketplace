@@ -16,18 +16,19 @@
  *   5. FULL page reload (page.goto, not a client-side navigation)
  *   6. verify every Termin is still there
  *
- * KNOWN LIMITATION: steps 1–3 always run, but saving currently cannot succeed in
- * CI because the Supabase test project's `courses` table is behind the app
- * schema (missing e.g. `privat_kursart`) — the same gap that makes
- * course-creation.spec.mjs skip. Once the test project is migrated this spec
- * covers the full round-trip on its own. Until then the deterministic coverage
- * lives in tests/teacher-form-event-dates.test.jsx and
- * tests/admin-save-course-events.test.js.
+ * The former "KNOWN LIMITATION" note (test project's `courses` table behind the
+ * app schema, e.g. missing `privat_kursart`) no longer applies — the test project
+ * has been migrated and the full round-trip runs here. The skip branch below stays
+ * as a guard in case a future column lands in the app before the test project.
+ *
+ * Deterministic unit coverage for the same regression lives in
+ * tests/teacher-form-event-dates.test.jsx and tests/admin-save-course-events.test.js.
  */
 
 import { test, expect } from '@playwright/test';
 import { loginAsTeacherAndOpenTab, waitForDashboardReady } from './helpers/auth.mjs';
 import { mockApiRoutes } from './helpers/api-mocks.mjs';
+import { waitForCourseSaveToSettle } from './helpers/course-form.mjs';
 
 const DATES = ['2027-03-08', '2027-03-15', '2027-03-22'];
 
@@ -112,16 +113,17 @@ test.describe('Course Termine (app-e2e)', () => {
     await page.evaluate(() => { const f = document.querySelector('form'); if (f) f.noValidate = true; });
     await page.getByTestId('save-course').click();
 
-    // Give the Supabase round-trip a moment, then check for validation dialogs.
-    // NOTE: isVisible() must run WITHOUT a timeout here — with one it returns true
-    // the instant the still-open form is seen and the test would skip itself.
-    await page.waitForTimeout(3_000);
+    // Wait for the save to actually finish instead of guessing a duration —
+    // see waitForCourseSaveToSettle() for why a fixed timeout was wrong here.
+    await waitForCourseSaveToSettle(page);
 
     // A validation dialog here means the Termine did not make it into the state —
     // exactly the regression under test. Fail loudly with the message instead of
     // skipping, otherwise the test silently stops guarding anything.
     expect(alerts, `unexpected validation dialog(s): ${alerts.join(' | ')}`).toEqual([]);
 
+    // NOTE: isVisible() must run WITHOUT a timeout here — the save has settled, so
+    // a still-open form is a real failure and no longer a race.
     const formStillOpen = await page.locator('h1').filter({ hasText: 'Kurs erstellen' })
       .isVisible().catch(() => false);
     if (formStillOpen) {

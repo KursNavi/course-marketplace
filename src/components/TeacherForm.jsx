@@ -307,6 +307,18 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
     const pendingCategorySuggestionRef = useRef(null);
     const formRef = useRef(null);
 
+    // ID eines in dieser Formular-Sitzung neu angelegten Kurses.
+    // Das Speichern schreibt den Kurs zuerst und danach Termine, Standorte und
+    // Kategorien. Bricht einer dieser Folgeschritte ab, bleibt der Kurs bestehen.
+    // Ohne diese Merkung würde der nächste Speicherversuch erneut einen Kurs
+    // anlegen statt den vorhandenen zu aktualisieren (doppelte Kurse).
+    const createdCourseIdRef = useRef(null);
+
+    // Beim Wechsel auf einen anderen Kurs (oder ein leeres Formular) verfällt die Merkung.
+    useEffect(() => {
+        createdCourseIdRef.current = null;
+    }, [initialData?.id]);
+
     // Use useLayoutEffect to update ref SYNCHRONOUSLY after render (before unmount cleanup runs)
     // This ensures formDataRef always has the latest values when the component unmounts
     useLayoutEffect(() => {
@@ -1379,7 +1391,7 @@ if (bookingType === 'platform' || locationMode === 'events') {
             .filter(cat => cat.level3_id != null);
 
         // 6. DB Operations
-        let activeCourseId = initialData?.id;
+        let activeCourseId = initialData?.id ?? createdCourseIdRef.current;
         let error;
 
         if (isAdminImpersonating) {
@@ -1394,6 +1406,7 @@ if (bookingType === 'platform' || locationMode === 'events') {
                     locationMode
                 });
                 activeCourseId = result.courseId;
+                createdCourseIdRef.current = activeCourseId;
                 showNotification(activeCourseId && initialData?.id ? "Kurs aktualisiert!" : t.success_msg);
             } catch (adminError) {
                 error = adminError;
@@ -1403,7 +1416,12 @@ if (bookingType === 'platform' || locationMode === 'events') {
             error = err;
         } else {
             const { data: inserted, error: err } = await supabase.from('courses').insert([newCourse]).select();
-            if (inserted && inserted[0]) activeCourseId = inserted[0].id;
+            if (inserted && inserted[0]) {
+                activeCourseId = inserted[0].id;
+                // Sofort merken: schlägt ein Folgeschritt fehl, aktualisiert der
+                // nächste Speicherversuch diesen Kurs, statt einen zweiten anzulegen.
+                createdCourseIdRef.current = activeCourseId;
+            }
             error = err;
         }
 
