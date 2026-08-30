@@ -306,11 +306,10 @@ describe('TeacherForm – Termine (start_date/end_date) reach the state and surv
 
         await waitFor(() => expect(startDateInputs().length).toBe(1));
         document.querySelector('form').noValidate = true;
-        fireEvent.click(screen.getByRole('button', { name: /Kategorie fehlt\?/i }));
+        fireEvent.click(screen.getByRole('button', { name: /Kategorie vorschlagen/i }));
 
-        const typeSelect = screen.getByText('Kategorietyp (Level 1) *').parentElement.querySelector('select');
-        fireEvent.change(typeSelect, { target: { value: typeSelect.options[1].value } });
-        fireEvent.change(screen.getByPlaceholderText('z.B. Digitale Kunst'), { target: { value: 'Neue Kurswelt' } });
+        const suggestionMessage = screen.getByPlaceholderText(/Für meinen Kurs/i);
+        fireEvent.change(suggestionMessage, { target: { value: 'Für diesen Kurs fehlt eine passende Kategorie rund um kreative Ferienangebote.' } });
 
         await act(async () => {
             fireEvent.click(screen.getByRole('button', { name: /Vorschlag senden & Entwurf speichern/i }));
@@ -321,7 +320,8 @@ describe('TeacherForm – Termine (start_date/end_date) reach the state and surv
         const body = JSON.parse(request.body);
         expect(body.type).toBe('category-suggestion');
         expect(body.courseId).toBe(COURSE_ID);
-        expect(body.suggestion.newArea).toBe('Neue Kurswelt');
+        expect(body.message).toContain('kreative Ferienangebote');
+        expect(body.suggestion).toBeUndefined();
         expect(db.courses[0].status).toBe('draft');
     });
 });
