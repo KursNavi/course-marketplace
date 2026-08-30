@@ -32,7 +32,7 @@ const compressImage = async (file) => {
 };
 
 // --- Category Suggestion Modal Component ---
-const CategorySuggestionModal = ({ isOpen, onClose, showNotification, courseId, courseTitle, onSubmitSuggestion }) => {
+const CategorySuggestionModal = ({ isOpen, onClose, showNotification, courseTitle, courseDescription, onSubmitSuggestion }) => {
     const [message, setMessage] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -41,11 +41,6 @@ const CategorySuggestionModal = ({ isOpen, onClose, showNotification, courseId, 
     const handleSubmit = async (e) => {
         e.preventDefault();
         const trimmedMessage = message.trim();
-
-        if (!trimmedMessage) {
-            alert('Bitte beschreibe kurz, welche Kategorie fehlt oder für welchen Kurs eine Kategorie erstellt werden soll.');
-            return;
-        }
 
         setIsSubmitting(true);
         try {
@@ -78,7 +73,7 @@ const CategorySuggestionModal = ({ isOpen, onClose, showNotification, courseId, 
                             </div>
                             <div>
                                 <h2 className="text-xl font-bold text-dark font-heading">Passende Kategorie vorschlagen</h2>
-                                <p className="text-gray-600 text-sm mt-1">Du musst keine Kategorie-Stufe kennen.</p>
+                                <p className="text-gray-600 text-sm mt-1">Wir kümmern uns um die passende Zuordnung.</p>
                             </div>
                         </div>
                         <button type="button" onClick={() => { resetForm(); onClose(); }} aria-label="Schliessen" className="text-gray-400 hover:text-gray-600 text-2xl leading-none p-1">
@@ -88,23 +83,24 @@ const CategorySuggestionModal = ({ isOpen, onClose, showNotification, courseId, 
                 </div>
 
                 <form onSubmit={handleSubmit} className="p-6 space-y-5">
-                    <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
-                        <p className="font-bold">Beschreibe einfach, was dir fehlt.</p>
-                        <p className="mt-1">Schlage eine Kategorie vor oder beschreibe den Kurs, für den eine Kategorie erstellt werden soll. Wir ordnen deinen Vorschlag intern der passenden Kategorie-Stufe zu.</p>
+                    <div className="rounded-xl border-2 border-purple-200 bg-purple-50 p-4">
+                        <p className="text-xs font-bold uppercase tracking-wide text-purple-700">Dein Vorschlag gehört zu diesem Kurs</p>
+                        <p className="mt-1 text-lg font-bold text-purple-950">{courseTitle || 'Dein neuer Kurs'}</p>
+                        {courseDescription && <p className="mt-2 text-sm text-purple-900 line-clamp-3">{courseDescription}</p>}
                     </div>
 
                     <div>
-                        <label htmlFor="category-suggestion-message" className="block text-sm font-bold text-gray-700 mb-2">Dein Vorschlag</label>
+                        <label htmlFor="category-suggestion-message" className="block text-sm font-bold text-gray-700 mb-2">Was fehlt oder welche Kategorie schlägst du vor? <span className="font-normal text-gray-500">(optional)</span></label>
                         <textarea
                             id="category-suggestion-message"
                             value={message}
                             onChange={(e) => setMessage(e.target.value)}
                             rows={7}
                             autoFocus
-                            placeholder="z.B. Für meinen Kurs über ... finde ich keine passende Kategorie. Eine Kategorie rund um ... wäre hilfreich."
+                            placeholder="z.B. Eine Kategorie rund um ... wäre hilfreich. Oder beschreibe kurz, worum es in deinem Kurs geht."
                             className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-purple-500 outline-none resize-y"
                         />
-                        <p className="text-xs text-gray-500 mt-2">Aktueller Kurs: <span className="font-semibold">{courseTitle || 'Neuer Kurs'}</span>{courseId ? ` (Kurs-ID ${courseId})` : ''}</p>
+                        <p className="text-xs text-gray-500 mt-2">Wenn deine Kursbeschreibung den Inhalt bereits erklärt, musst du hier nichts ergänzen.</p>
                     </div>
 
                     <div className="flex gap-3 pt-1">
@@ -2541,8 +2537,8 @@ if (bookingType === 'platform' || locationMode === 'events') {
             isOpen={showCategorySuggestionModal}
             onClose={() => setShowCategorySuggestionModal(false)}
             showNotification={showNotification}
-            courseId={initialData?.id}
             courseTitle={title}
+            courseDescription={description}
             onSubmitSuggestion={handleCategorySuggestionSubmit}
         />
 

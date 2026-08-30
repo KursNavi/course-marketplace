@@ -164,8 +164,8 @@ export default async function handler(req, res) {
       <p style="color:#6B7280; font-size:14px;">Bitte im Admin Panel prüfen.</p>
     `;
   } else if (type === 'category-suggestion') {
-    if (!subject || !message || !isValidCourseId(courseId)) {
-      return res.status(400).json({ error: 'Fehlende Felder: subject, message oder courseId' });
+    if (!subject || !isValidCourseId(courseId)) {
+      return res.status(400).json({ error: 'Fehlende Felder: subject oder courseId' });
     }
     senderEmail = (email || authUser.email).toLowerCase();
     emailSubject = subject;
@@ -200,7 +200,7 @@ export default async function handler(req, res) {
     if (type === 'category-suggestion') {
       const { data: course, error: courseError } = await supabase
         .from('courses')
-        .select('id, title, user_id')
+        .select('id, title, description, user_id')
         .eq('id', courseId)
         .single();
 
@@ -211,7 +211,14 @@ export default async function handler(req, res) {
         return res.status(403).json({ error: 'Der Kurs gehört nicht zu diesem Anbieter.' });
       }
 
-      const safeMessage = escapeHtml(message).replace(/\n/g, '<br>');
+      const courseDescription = String(course.description || '').trim();
+      const providerMessage = String(message || '').trim();
+      if (!providerMessage && !courseDescription) {
+        return res.status(400).json({ error: 'Bitte beschreibe kurz deinen Kurs oder schlage eine Kategorie vor.' });
+      }
+
+      const safeMessage = escapeHtml(providerMessage).replace(/\n/g, '<br>');
+      const safeCourseDescription = escapeHtml(courseDescription).replace(/\n/g, '<br>');
       const safeCourseTitle = escapeHtml(course.title || `Kurs #${course.id}`);
       const courseUrl = `https://kursnavi.ch/course/${encodeURIComponent(String(course.id))}`;
       const safeCourseUrl = escapeHtml(courseUrl);
@@ -220,7 +227,8 @@ export default async function handler(req, res) {
         <div style="background:#F9FAFB; border-left:3px solid ${COLORS.primary}; padding:16px; border-radius:0 8px 8px 0; margin:20px 0;">
           <p style="margin:0 0 10px; font-weight:600;">Kurs: <a href="${safeCourseUrl}">${safeCourseTitle}</a></p>
           <p style="margin:0 0 10px; color:#6B7280; font-size:13px;">Kurs-ID: ${escapeHtml(course.id)}</p>
-          <p style="margin:0;">${safeMessage}</p>
+          ${safeCourseDescription ? `<p style="margin:0 0 10px;"><strong>Kursbeschreibung:</strong><br>${safeCourseDescription}</p>` : ''}
+          ${safeMessage ? `<p style="margin:0;"><strong>Zusätzliche Nachricht:</strong><br>${safeMessage}</p>` : ''}
         </div>
         <p style="color:#6B7280; font-size:14px;">Eingesendet von: ${escapeHtml(senderEmail)}</p>
       `;

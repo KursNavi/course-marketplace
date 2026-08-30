@@ -102,7 +102,12 @@ const makeResponse = () => {
 
 describe('/api/contact category suggestions', () => {
     beforeEach(() => {
-        course = { id: 42, title: 'Kreativkurs für Einsteiger', user_id: PROVIDER_ID };
+        course = {
+            id: 42,
+            title: 'Kreativkurs für Einsteiger',
+            description: 'Ein Kurs zum kreativen Gestalten für Einsteiger.',
+            user_id: PROVIDER_ID
+        };
         sentEmail = null;
     });
 
@@ -123,6 +128,23 @@ describe('/api/contact category suggestions', () => {
         expect(sentEmail.html).toContain('Kreativkurs für Einsteiger');
         expect(sentEmail.html).toContain('https://kursnavi.ch/course/42');
         expect(sentEmail.html).toContain('Für diesen Kurs fehlt eine passende Kategorie.');
+    });
+
+    it('uses the existing course description when no extra message is entered', async () => {
+        const response = makeResponse();
+        await handler({
+            method: 'POST',
+            headers: { authorization: 'Bearer provider-token' },
+            body: {
+                type: 'category-suggestion',
+                courseId: 42,
+                subject: 'Kategorie-Vorschlag: Kreativkurs',
+                message: ''
+            }
+        }, response);
+
+        expect(response.statusCode).toBe(200);
+        expect(sentEmail.html).toContain('Ein Kurs zum kreativen Gestalten für Einsteiger.');
     });
 
     it('rejects a suggestion for a course owned by another provider', async () => {

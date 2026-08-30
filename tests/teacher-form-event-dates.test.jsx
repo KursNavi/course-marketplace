@@ -308,7 +308,7 @@ describe('TeacherForm – Termine (start_date/end_date) reach the state and surv
         document.querySelector('form').noValidate = true;
         fireEvent.click(screen.getByRole('button', { name: /Kategorie vorschlagen/i }));
 
-        const suggestionMessage = screen.getByPlaceholderText(/Für meinen Kurs/i);
+        const suggestionMessage = screen.getByPlaceholderText(/Eine Kategorie rund um/i);
         fireEvent.change(suggestionMessage, { target: { value: 'Für diesen Kurs fehlt eine passende Kategorie rund um kreative Ferienangebote.' } });
 
         await act(async () => {
