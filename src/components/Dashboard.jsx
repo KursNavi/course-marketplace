@@ -1651,7 +1651,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
         if (section) { sessionStorage.removeItem('dashScrollTo'); return section; }
         return null;
     });
-    const [userTier, setUserTier] = useState('basic'); // basic, pro, premium, enterprise
+    const [userTier, setUserTier] = useState(() => user?.plan_tier || 'basic'); // basic, pro, premium, enterprise
     const [showSuccessModal, setShowSuccessModal] = useState(false); // NEW: Success Modal State
     const [showCaptureServiceModal, setShowCaptureServiceModal] = useState(false); // Capture Service Modal
     const [showCaptureSuccessModal, setShowCaptureSuccessModal] = useState(false); // Capture Service Success Modal
@@ -1677,6 +1677,15 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
     const [goodwillDecisionPercent, setGoodwillDecisionPercent] = useState(100);
     const [goodwillDecisionMessage, setGoodwillDecisionMessage] = useState('');
     const [goodwillSubmittingId, setGoodwillSubmittingId] = useState(null);
+
+    // App.jsx lädt das Paket bereits beim Login. So ist die Prio-Auswahl sofort
+    // sichtbar und wartet nicht unnötig auf eine zweite Profilabfrage.
+    useEffect(() => {
+        const tier = (user?.plan_tier || '').toString().toLowerCase().trim();
+        if (['basic', 'pro', 'premium', 'enterprise'].includes(tier)) {
+            setUserTier(tier);
+        }
+    }, [user?.plan_tier]);
 
     // Load taxonomy from DB for category labels
     const { taxonomy: dbTaxonomy, types: dbTypes, getTypeLabel: dbGetTypeLabel } = useTaxonomy();
@@ -2555,10 +2564,13 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                                             <td className="px-3 py-3 text-center">
                                                                 <label className="relative inline-flex items-center cursor-pointer">
                                                                     <input
+                                                                        data-testid="prio-course-toggle"
                                                                         type="checkbox"
                                                                         checked={isPrio}
                                                                         onChange={() => handleTogglePrio(course.id, isPrio)}
                                                                         disabled={!canEnablePrio && !isPrio}
+                                                                        aria-label={`${isPrio ? 'Hervorhebung entfernen' : 'Kurs hervorheben'}: ${course.title}`}
+                                                                        title={isPrio ? 'Hervorhebung entfernen' : 'Kurs hervorheben'}
                                                                         className="sr-only peer"
                                                                     />
                                                                     <div className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-all ${isPrio ? 'bg-yellow-400 border-yellow-500' : canEnablePrio ? 'bg-white border-gray-300 hover:border-yellow-400' : 'bg-gray-100 border-gray-200 cursor-not-allowed'}`}>
