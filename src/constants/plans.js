@@ -63,7 +63,7 @@ export const PLANS = [
     features: [
       { text: "Anbieterprofil in der Anbietersuche", isStrong: true },
       { text: "5 hervorgehobene Kurse", isStrong: true, description: "Hervorgehobene Kurse erhalten zusätzliche Sichtbarkeit in passenden Suchergebnissen und Empfehlungen. Die Relevanz bleibt entscheidend." },
-      { text: "Anbieterhomepage-Link bei jedem hervorgehobenen Kurs", isStrong: true, description: "Jeder hervorgehobene Kurs kann direkt auf die Homepage des Anbieters verlinken." },
+      { text: "Link zur Anbieterhomepage in jedem hervorgehobenen Kurs", isStrong: true, description: "Jeder hervorgehobene Kurs kann direkt auf die Homepage des Anbieters verlinken." },
       { text: "Verifizierungsprüfung inklusive", isStrong: true, description: "Bezahlpakete enthalten die Verifizierungsprüfung. Das Verifiziert-Badge erscheint nach erfolgreicher Prüfung durch KursNavi – Verifiziert ist ein Vertrauenssignal, keine Ranking-Garantie." },
       { text: "Kursservice für 5 Kurse pro Jahr inklusive", isStrong: true, separator: true, description: "Wir erfassen oder aktualisieren deine Kurse für KursNavi. Ein neuer Kurs zählt als ein Kurs. Zwei einfache Aktualisierungen zählen ebenfalls als ein Kurs. Zusätzlich: CHF 30 pro neuem Kurs / CHF 15 pro einfacher Aktualisierung." },
       { text: "Bis 3 Themenbereiche pro Kurs", description: "Pro Kurs können Sie bis zu 3 Themenbereiche wählen. So erscheint derselbe Kurs z.B. unter «Sport», «Fitness» und «Gesundheit» – und wird von mehr Interessenten gefunden." },
@@ -99,7 +99,7 @@ export const PLANS = [
     features: [
       { text: "Anbieterprofil in der Anbietersuche", isStrong: true },
       { text: "15 hervorgehobene Kurse", isStrong: true, description: "Hervorgehobene Kurse erhalten zusätzliche Sichtbarkeit in passenden Suchergebnissen und Empfehlungen. Die Relevanz bleibt entscheidend." },
-      { text: "Anbieterhomepage-Link bei jedem hervorgehobenen Kurs", isStrong: true, description: "Jeder hervorgehobene Kurs kann direkt auf die Homepage des Anbieters verlinken." },
+      { text: "Link zur Anbieterhomepage in jedem hervorgehobenen Kurs", isStrong: true, description: "Jeder hervorgehobene Kurs kann direkt auf die Homepage des Anbieters verlinken." },
       { text: "Verifizierungsprüfung inklusive", isStrong: true, description: "Bezahlpakete enthalten die Verifizierungsprüfung. Das Verifiziert-Badge erscheint nach erfolgreicher Prüfung durch KursNavi – Verifiziert ist ein Vertrauenssignal, keine Ranking-Garantie." },
       { text: "Kursservice für 15 Kurse pro Jahr inklusive", isStrong: true, separator: true, description: "Wir erfassen oder aktualisieren deine Kurse für KursNavi. Ein neuer Kurs zählt als ein Kurs. Zwei einfache Aktualisierungen zählen ebenfalls als ein Kurs. Zusätzlich: CHF 30 pro neuem Kurs / CHF 15 pro einfacher Aktualisierung." },
       { text: "Bis 3 Themenbereiche pro Kurs", description: "Pro Kurs können Sie bis zu 3 Themenbereiche wählen. So erscheint derselbe Kurs z.B. unter «Sport», «Fitness» und «Gesundheit» – und wird von mehr Interessenten gefunden." },
@@ -136,7 +136,7 @@ export const PLANS = [
     features: [
       { text: "Anbieterprofil in der Anbietersuche", isStrong: true },
       { text: "Unbegrenzt hervorgehobene Kurse", isStrong: true, description: "Alle Kurse erhalten zusätzliche Sichtbarkeit in passenden Suchergebnissen und Empfehlungen. Die Relevanz bleibt entscheidend." },
-      { text: "Anbieterhomepage-Link bei jedem hervorgehobenen Kurs", isStrong: true, description: "Jeder hervorgehobene Kurs kann direkt auf die Homepage des Anbieters verlinken." },
+      { text: "Link zur Anbieterhomepage in jedem hervorgehobenen Kurs", isStrong: true, description: "Jeder hervorgehobene Kurs kann direkt auf die Homepage des Anbieters verlinken." },
       { text: "Verifizierungsprüfung inklusive", isStrong: true, description: "Bezahlpakete enthalten die Verifizierungsprüfung. Das Verifiziert-Badge erscheint nach erfolgreicher Prüfung durch KursNavi – Verifiziert ist ein Vertrauenssignal, keine Ranking-Garantie." },
       { text: "Individueller Kursservice nach Absprache", isStrong: true, separator: true, description: "Für grössere Kursbestände und laufende Pflege: Umfang und Konditionen werden individuell vereinbart." },
       { text: "Bis 5 Themenbereiche pro Kurs", description: "Pro Kurs bis zu 5 Themenbereiche – maximale Sichtbarkeit. Ein Kurs kann z.B. unter «Sport», «Fitness», «Gesundheit», «Ernährung» und «Coaching» erscheinen." },

@@ -84,6 +84,43 @@ describe('DetailView', () => {
     );
   });
 
+  it('ergänzt bei einer gespeicherten Homepage ohne Protokoll automatisch https://', () => {
+    const course = {
+      id: 'prio-2',
+      title: 'Prio-Testkurs ohne Protokoll',
+      description: 'Ein hervorgehobener Testkurs.',
+      objectives: [],
+      instructor_name: 'Test Anbieter',
+      instructor_website_url: 'www.anbieter.example',
+      is_prio: true,
+      booking_type: 'lead',
+      price: 20,
+      canton: 'Zürich',
+      address: 'Zürich',
+      category_type: 'privat',
+      all_categories: [],
+    };
+
+    render(
+      <DetailView
+        course={course}
+        courses={[]}
+        setView={vi.fn()}
+        t={{ lbl_description: 'Beschreibung', lbl_learn_goals: 'Lernziele', btn_book: 'Jetzt buchen' }}
+        setSelectedTeacher={vi.fn()}
+        user={null}
+        savedCourseIds={[]}
+        onToggleSaveCourse={vi.fn()}
+        showNotification={vi.fn()}
+      />
+    );
+
+    expect(screen.getByTestId('prio-course-homepage-link')).toHaveAttribute(
+      'href',
+      'https://www.anbieter.example'
+    );
+  });
+
   it('zeigt den Homepage-Link nicht bei normalen Kursen', () => {
     const course = {
       id: 'normal-1',

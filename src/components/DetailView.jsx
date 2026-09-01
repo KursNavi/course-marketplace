@@ -32,9 +32,20 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
     const { taxonomy, getTypeLabel, getAreaLabel } = useTaxonomy();
 
     const isSaved = (savedCourseIds || []).includes(course?.id);
-    const providerHomepageUrl = /^https?:\/\//i.test(course?.instructor_website_url || '')
-        ? course.instructor_website_url
-        : null;
+    const providerHomepageUrl = (() => {
+        const rawUrl = String(course?.instructor_website_url || '').trim();
+        if (!rawUrl) return null;
+
+        const candidate = /^https?:\/\//i.test(rawUrl) ? rawUrl : `https://${rawUrl}`;
+        try {
+            const parsedUrl = new URL(candidate);
+            return ['http:', 'https:'].includes(parsedUrl.protocol) && parsedUrl.hostname
+                ? candidate
+                : null;
+        } catch {
+            return null;
+        }
+    })();
 
     // Scroll to top when course changes
     useEffect(() => {

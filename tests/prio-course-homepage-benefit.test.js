@@ -8,7 +8,7 @@ describe('Prio-Kurs-Homepage-Vorteil', () => {
     expect(paidPlans).toHaveLength(3);
     paidPlans.forEach((plan) => {
       expect(plan.features.map((feature) => feature.text)).toContain(
-        'Anbieterhomepage-Link bei jedem hervorgehobenen Kurs'
+        'Link zur Anbieterhomepage in jedem hervorgehobenen Kurs'
       );
     });
   });
@@ -17,7 +17,7 @@ describe('Prio-Kurs-Homepage-Vorteil', () => {
     const basic = PLANS.find((plan) => plan.id === 'basic');
 
     expect(basic.features.map((feature) => feature.text)).not.toContain(
-      'Anbieterhomepage-Link bei jedem hervorgehobenen Kurs'
+      'Link zur Anbieterhomepage in jedem hervorgehobenen Kurs'
     );
   });
 });
