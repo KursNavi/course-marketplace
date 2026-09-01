@@ -153,6 +153,12 @@ export function buildCourseStructuredData(course, baseUrl, { now = new Date() } 
   const rawEvents = collectRawEvents(course);
   const availability = resolveAvailability(rawEvents);
   const areaLabel = getPrimaryCategoryLabel(course) || null;
+  // `created_at` is the earliest reliably available publication timestamp in
+  // the current course data model. It is used as Offer.validFrom only when it
+  // is a valid ISO date; no guessed sales date is emitted for legacy records.
+  const validFrom = !Number.isNaN(new Date(course?.created_at).getTime())
+    ? course.created_at
+    : null;
 
   // --- Course ---------------------------------------------------------------
   const courseSchema = {
@@ -207,8 +213,19 @@ export function buildCourseStructuredData(course, baseUrl, { now = new Date() } 
       organizer: {
         '@type': 'Organization',
         name: course?.instructor_name,
+        // A provider profile is optional and its slug is not part of the
+        // prerender payload. The canonical KursNavi domain is therefore the
+        // stable public organizer URL in both prerendered and hydrated HTML.
+        url: base,
         sameAs: `${base}/teacher/${course?.user_id}`,
       },
+      performer: course?.instructor_name
+        ? {
+            '@type': 'Person',
+            name: course.instructor_name,
+          }
+        : undefined,
+      eventStatus: 'https://schema.org/EventScheduled',
       location: {
         '@type': 'Place',
         name: course?.address || course?.city || locationLabel,
@@ -226,8 +243,11 @@ export function buildCourseStructuredData(course, baseUrl, { now = new Date() } 
       },
     };
 
-    if (nextSchemaEvent.end_date) educationEvent.endDate = nextSchemaEvent.end_date;
+    // Google recommends using the start date as end date when only a day (and
+    // no end time) is known. It accurately describes our single-day events.
+    educationEvent.endDate = nextSchemaEvent.end_date || nextSchemaEvent.start_date;
     if (hasValidPrice) educationEvent.offers.price = priceVal;
+    if (validFrom) educationEvent.offers.validFrom = validFrom;
 
     const futureSchemaEvents = activeSchemaEvents.filter((ev) => {
       const start = new Date(ev.start_date);

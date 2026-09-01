@@ -31,7 +31,9 @@ test.describe('Lead Inquiry (hybrid app-e2e)', () => {
     await page.goto(`/courses/e2e/test/${courseId}-e2e-seed-testkurs`);
 
     // Wait for the detail page to load
-    await expect(page.getByText('E2E-Seed Testkurs')).toBeVisible({ timeout: 15_000 });
+    await expect(
+      page.getByRole('heading', { name: 'E2E-Seed Testkurs', exact: true })
+    ).toBeVisible({ timeout: 15_000 });
 
     // Open the lead inquiry modal — look for the inquiry button
     const inquiryButton = page.getByRole('button', { name: /anfragen|anfrage/i });

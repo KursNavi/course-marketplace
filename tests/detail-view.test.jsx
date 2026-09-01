@@ -379,6 +379,7 @@ describe('DetailView', () => {
       instructor_name: 'Max Trainer',
       booking_type: 'platform',
       price: 120,
+      created_at: '2026-01-01T09:00:00.000Z',
       canton: 'Zürich',
       address: 'Zürich',
       all_categories: [],
@@ -398,7 +399,11 @@ describe('DetailView', () => {
     const eventSchema = schemas.find(s => s['@type'] === 'EducationEvent');
     expect(eventSchema).toBeDefined();
     expect(eventSchema.startDate).toBe(futureDateStr);
-    expect(eventSchema.endDate).toBeUndefined();
+    expect(eventSchema.endDate).toBe(futureDateStr);
+    expect(eventSchema.eventStatus).toBe('https://schema.org/EventScheduled');
+    expect(eventSchema.performer).toEqual({ '@type': 'Person', name: 'Max Trainer' });
+    expect(eventSchema.organizer.url).toBe('https://kursnavi.ch');
+    expect(eventSchema.offers.validFrom).toBe('2026-01-01T09:00:00.000Z');
   });
 
   it('JSON-LD: kein EducationEvent ohne Termin (flexibler Kurs)', () => {

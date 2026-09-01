@@ -1,0 +1,16 @@
+{
+  "schema_version": "1.0",
+  "theme_world_key": "TBD",
+  "scenarios": [
+    {
+      "slug": "scenario-slug",
+      "sources": [
+        {
+          "title": "TBD",
+          "publisher": "TBD",
+          "url": "https://example.org/direct-source"
+        }
+      ]
+    }
+  ]
+}

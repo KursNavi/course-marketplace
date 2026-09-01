@@ -15,13 +15,13 @@ export const BEREICH_LANDING_CONFIG = {
     areaSlug: 'sport_fitness_beruf',
     typeKey: 'beruflich',
     title: {
-      de: 'Sport & Fitness - Finde deine Ausbildung',
+      de: 'Fitness-Ausbildung in der Schweiz: Dein Weg zum Fitnesstrainer',
       en: 'Sports & Fitness - Find Your Training',
       fr: 'Sport & Fitness - Trouve ta formation',
       it: 'Sport & Fitness - Trova la tua formazione'
     },
     subtitle: {
-      de: 'Fitnesstrainer, Personal Training, Group Fitness und mehr',
+      de: 'Vergleiche Fitness-Ausbildungen in der Schweiz: Fitnesstrainer, Personal Trainer, Group Fitness und spezialisierte Weiterbildungen.',
       en: 'Fitness Trainer, Personal Training, Group Fitness and more',
       fr: 'Coach fitness, entrainement personnel, fitness en groupe et plus',
       it: 'Istruttore fitness, personal training, fitness di gruppo e altro'
@@ -490,5 +490,4 @@ export const findSzenario = (bereichConfig, szenarioSlug) => {
   if (!bereichConfig?.scenarios) return null;
   return bereichConfig.scenarios.find(s => s.slug === szenarioSlug) || null;
 };
-
 

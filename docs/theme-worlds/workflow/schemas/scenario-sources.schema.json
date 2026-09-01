@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kursnavi.ch/schemas/theme-world-scenario-sources-v1.json",
+  "title": "KursNavi Themenwelt-Szenarioquellen",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "theme_world_key", "scenarios"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "theme_world_key": { "type": "string", "minLength": 1, "maxLength": 100 },
+    "scenarios": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["slug", "sources"],
+        "properties": {
+          "slug": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          },
+          "sources": {
+            "type": "array",
+            "maxItems": 10,
+            "uniqueItems": true,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["title", "publisher", "url"],
+              "properties": {
+                "title": { "type": "string", "minLength": 1 },
+                "publisher": { "type": "string", "minLength": 1 },
+                "url": { "type": "string", "pattern": "^https?://" }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

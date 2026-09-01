@@ -83,7 +83,7 @@ describe('vercel.json — 404-Fallback der Ressourcenfamilien', () => {
 
   it('lässt die bestehenden Spezial-Rewrites unverändert und vorne', () => {
     expect(rewriteSources).toContain('/sitemap.xml');
-    expect(rewriteSources).toContain('/courses/:__topic(\\d+)/:__loc/:__cseg');
+    expect(rewriteSources).toContain('/courses/:__topic/:__loc/:__cseg');
     expect(rewriteSources).toContain('/api/(.*)');
     expect(rewriteSources).toContain('/thema/:segment/:slug');
 
@@ -92,7 +92,7 @@ describe('vercel.json — 404-Fallback der Ressourcenfamilien', () => {
     );
     for (const source of [
       '/sitemap.xml',
-      '/courses/:__topic(\\d+)/:__loc/:__cseg',
+      '/courses/:__topic/:__loc/:__cseg',
       '/api/(.*)',
       '/thema/:segment/:slug',
     ]) {
@@ -489,15 +489,19 @@ describe('Routing — der Prerender-Output entscheidet über 200 vs. 404', () =>
     expect(firstResponse('/thema/privat-hobby/musik')).toBe('200');
   });
 
-  it('numerische Kurs-URLs erreichen weiterhin den Course-Redirect', () => {
+  it('numerische und überholte textbasierte Kurs-URLs erreichen den Course-Redirect', () => {
     expect(resolveRoute('/courses/12/zuerich/779-titel', staticPaths).target)
+      .toContain('/api/course-redirect');
+    expect(resolveRoute('/courses/alltag-leben/zuerich/779-titel', staticPaths).target)
       .toContain('/api/course-redirect');
   });
 
   it('Kurs- und Anbieter-URLs laufen nicht in den 404-Fallback', () => {
-    // Sie werden in PR #103 prerendert; ohne Datei bleibt der SPA-Catch-all —
-    // bewusst unverändert, das ist ein separater Audit-Punkt.
-    expect(firstResponse('/courses/kunst/zuerich/779-titel')).toBe('200 (SPA)');
+    // Kurs-URLs gehen ohne statische Datei durch den Kanonisierungs-Handler.
+    // Dieser liefert bei einem bereits kanonischen Pfad die SPA-Shell, ohne
+    // einen Redirect-Loop zu erzeugen; Anbieter bleiben im SPA-Catch-all.
+    expect(resolveRoute('/courses/kunst/zuerich/779-titel', staticPaths).target)
+      .toContain('/api/course-redirect');
     expect(firstResponse('/anbieter/beispiel-anbieter')).toBe('200 (SPA)');
   });
 

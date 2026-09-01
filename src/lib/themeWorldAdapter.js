@@ -159,8 +159,9 @@ export function adaptThemeWorldToConfig({
 
     // Suche
     searchConfig: {
-      areaSlug: searchConfig.area_slug || themeWorld.area_slug,
+      areaSlug: searchConfig.area_slug ?? themeWorld.area_slug ?? null,
       typeKey: searchConfig.type_key || typeKey,
+      kursart: searchConfig.kursart || null,
       defaultSpec: searchConfig.default_spec || null,
       defaultFocus: searchConfig.default_focus || null,
     },
@@ -281,7 +282,8 @@ export function adaptScenarioArticle(scenario, themeWorld) {
       focus: ctaConfig.focus || null,
       loc: ctaConfig.loc || null,
       delivery: ctaConfig.delivery || null,
-      areaSlug: twSearchConfig.area_slug || themeWorld?.area_slug || null,
+      kursart: ctaConfig.kursart || twSearchConfig.kursart || null,
+      areaSlug: twSearchConfig.area_slug ?? themeWorld?.area_slug ?? null,
       typeKey: urlSegmentToTypeKey(urlSegment),
     },
 
@@ -307,6 +309,7 @@ function adaptPredefinedSearch(search) {
     focus: search.focus || null,
     loc: search.loc || null,
     delivery: search.delivery || null,
+    kursart: search.kursart || null,
   };
 }
 
@@ -323,6 +326,7 @@ function adaptCtaLink(link) {
     focus: link.focus || null,
     loc: link.loc || null,
     delivery: link.delivery || null,
+    kursart: link.kursart || null,
   };
 }
 
@@ -424,7 +428,8 @@ export function adaptToLegacyBereichConfig({
     slug: themeWorld.slug,
     segment: urlSegment,
     typeKey,
-    areaSlug: searchConfig.area_slug || themeWorld.area_slug || themeWorld.key,
+    areaSlug: searchConfig.area_slug ?? themeWorld.area_slug ?? null,
+    kursart: searchConfig.kursart || null,
 
     // Titel / Subtitel als Multilingual-Objekte (Legacy-Format: { de: '...' })
     title: { de: themeWorld.title_de || '' },
@@ -474,6 +479,7 @@ export function adaptToLegacyBereichConfig({
             params: {
               ...(r.loc_param ? { loc: r.loc_param } : {}),
               ...(r.delivery_param ? { delivery: normalizeDeliveryTypeKey(r.delivery_param) || r.delivery_param } : {}),
+              ...(searchConfig.kursart ? { kursart: searchConfig.kursart } : {}),
             },
           })),
         }
@@ -485,6 +491,7 @@ export function adaptToLegacyBereichConfig({
       params: {
         ...(s.spec ? { spec: s.spec } : {}),
         ...(s.focus ? { focus: s.focus } : {}),
+        ...(s.kursart ? { kursart: s.kursart } : {}),
       },
       extraParams: {
         ...(s.loc ? { loc: s.loc } : {}),
@@ -532,6 +539,7 @@ export function adaptToLegacyBereichConfig({
         ...(l.focus ? { focus: l.focus } : {}),
         ...(l.loc ? { loc: l.loc } : {}),
         ...(l.delivery ? { delivery: normalizeDeliveryTypeKey(l.delivery) || l.delivery } : {}),
+        ...(l.kursart ? { kursart: l.kursart } : {}),
       },
     })),
 
@@ -598,5 +606,6 @@ function _extractSearchParams(ctaConfig, searchConfig = {}) {
     ...(c.focus ? { focus: c.focus } : {}),
     ...(c.loc ? { loc: c.loc } : {}),
     ...(c.delivery ? { delivery: normalizeDeliveryTypeKey(c.delivery) || c.delivery } : {}),
+    ...(c.kursart || searchConfig.kursart ? { kursart: c.kursart || searchConfig.kursart } : {}),
   };
 }

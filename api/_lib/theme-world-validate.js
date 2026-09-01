@@ -37,7 +37,7 @@ export const VALID_REGION_DELIVERY_PARAMS = ['online_live', 'self_study', 'in_pe
 export const VALID_TRUST_ITEM_TYPES = ['label', 'editorial', 'info'];
 
 // Erlaubte Keys in search_config JSONB
-const SEARCH_CONFIG_ALLOWED_KEYS = new Set(['area_slug', 'type_key', 'default_spec', 'default_focus', 'area_label_de']);
+const SEARCH_CONFIG_ALLOWED_KEYS = new Set(['area_slug', 'type_key', 'kursart', 'default_spec', 'default_focus', 'area_label_de']);
 
 // Erlaubte Abschnitts-Keys in section_titles JSONB.
 //
@@ -194,7 +194,9 @@ function optionalText(errors, obj, field, maxLength) {
 
 /**
  * Validiert search_config JSONB.
- * Pflicht: area_slug. Optional: type_key, default_spec, default_focus.
+ * Ein Suchraum braucht mindestens einen der beiden Filter: area_slug oder
+ * kursart. Damit können Themenwelten auch eine Kursart über mehrere Bereiche
+ * hinweg abbilden, ohne einen fachlich falschen Bereich zu erfinden.
  */
 export function validateSearchConfig(config) {
   const errors = [];
@@ -212,8 +214,22 @@ export function validateSearchConfig(config) {
     }
   }
 
-  if (!config.area_slug || typeof config.area_slug !== 'string') {
-    errors.push('search_config.area_slug: Pflichtfeld fehlt.');
+  const hasAreaSlug = typeof config.area_slug === 'string' && config.area_slug.trim();
+  const hasKursart = typeof config.kursart === 'string' && config.kursart.trim();
+  if (!hasAreaSlug && !hasKursart) {
+    errors.push('search_config: area_slug oder kursart muss gesetzt sein.');
+  }
+
+  if (config.area_slug !== undefined && config.area_slug !== null && typeof config.area_slug !== 'string') {
+    errors.push('search_config.area_slug: Muss ein String oder null sein.');
+  }
+
+  if (config.kursart !== undefined && config.kursart !== null) {
+    if (typeof config.kursart !== 'string' || !config.kursart.trim()) {
+      errors.push('search_config.kursart: Muss ein nicht leerer String oder null sein.');
+    } else if (config.kursart.length > 100) {
+      errors.push('search_config.kursart: Zu lang (max 100 Zeichen).');
+    }
   }
 
   if (config.type_key !== undefined) {
@@ -288,7 +304,7 @@ export function validatePredefinedSearches(searches) {
     errors.push('predefined_searches: Maximal 20 Einträge erlaubt.');
   }
 
-  const ALLOWED_KEYS = new Set(['label_de', 'spec', 'focus', 'loc', 'delivery']);
+  const ALLOWED_KEYS = new Set(['label_de', 'spec', 'focus', 'loc', 'delivery', 'kursart']);
 
   for (let i = 0; i < searches.length; i++) {
     const item = searches[i];
@@ -342,7 +358,7 @@ export const MAX_CTA_LINKS = 5;
  *                       das Paket nicht stillschweigend beschneidet.
  */
 const CTA_LINK_ALLOWED_KEYS = new Set([
-  'label_de', 'spec', 'focus', 'loc', 'delivery', 'sort_order', 'status',
+  'label_de', 'spec', 'focus', 'loc', 'delivery', 'kursart', 'sort_order', 'status',
 ]);
 
 /**
@@ -395,7 +411,7 @@ export function validateCtaLinks(links) {
     // spec / focus / loc: optional, wenn gesetzt ein String. Reine Typsicherheit —
     // bewusst keine Fach- oder Orts-Taxonomie an dieser Stelle, identisch zu
     // predefined_searches.
-    for (const key of ['spec', 'focus', 'loc']) {
+    for (const key of ['spec', 'focus', 'loc', 'kursart']) {
       const value = item[key];
       if (value === undefined || value === null) continue;
       if (typeof value !== 'string') {
@@ -434,11 +450,16 @@ export function validateCtaConfig(config) {
     return errors;
   }
 
-  const ALLOWED_KEYS = new Set(['spec', 'focus', 'loc', 'delivery']);
+  const ALLOWED_KEYS = new Set(['spec', 'focus', 'loc', 'delivery', 'kursart']);
   for (const key of Object.keys(config)) {
     if (!ALLOWED_KEYS.has(key)) {
       errors.push(`cta_config.${key}: Unbekannter Key nicht erlaubt.`);
     }
+  }
+
+  if (config.kursart !== undefined && config.kursart !== null
+      && (typeof config.kursart !== 'string' || !config.kursart.trim() || config.kursart.length > 100)) {
+    errors.push('cta_config.kursart: Muss ein nicht leerer String mit maximal 100 Zeichen oder null sein.');
   }
 
   if (config.delivery !== undefined && !VALID_DELIVERY_TYPES.includes(config.delivery)) {
@@ -465,7 +486,12 @@ export function validateThemeWorldBase(data) {
   // Pflichtfelder
   requireText(errors, data, 'key', 100);
   requireText(errors, data, 'title_de', 200);
-  requireText(errors, data, 'area_slug', 100);
+  if (data.area_slug === null) {
+    // Ein neuer Draft kann vor dem Speichern des Such-Tabs noch keinen
+    // Suchraum haben. Der Veröffentlichungs-Gate prüft ihn vollständig.
+  } else {
+    requireText(errors, data, 'area_slug', 100);
+  }
 
   // Segment
   if (!VALID_DB_SEGMENTS.includes(data.db_segment)) {
@@ -541,7 +567,7 @@ export function validateThemeWorldUpdate(data) {
   // Pflichtfelder — nur validieren wenn im Payload enthalten
   if ('key' in data) requireText(errors, data, 'key', 100);
   if ('title_de' in data) requireText(errors, data, 'title_de', 200);
-  if ('area_slug' in data) requireText(errors, data, 'area_slug', 100);
+  if ('area_slug' in data && data.area_slug !== null) requireText(errors, data, 'area_slug', 100);
 
   // Segment-Werte — nur validieren wenn vorhanden
   if ('db_segment' in data && !VALID_DB_SEGMENTS.includes(data.db_segment)) {
@@ -872,8 +898,10 @@ export function validatePublishThemeWorld(themeWorld, opts = {}) {
 
   // Suchkonfiguration (wenn gefordert)
   if (requireSearchConfig) {
-    if (!themeWorld.search_config || !themeWorld.search_config.area_slug) {
-      errors.push('search_config.area_slug: Pflichtfeld fehlt. Suchkonfiguration ist für Publikation erforderlich.');
+    if (!themeWorld.search_config) {
+      errors.push('search_config: Pflichtfeld fehlt (area_slug oder kursart erforderlich). Suchkonfiguration ist für Publikation erforderlich.');
+    } else {
+      errors.push(...validateSearchConfig(themeWorld.search_config));
     }
   }
 

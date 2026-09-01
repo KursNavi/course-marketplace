@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { MapPin, TrendingUp, Clock, Award, ChevronRight, Bookmark, BookmarkCheck } from 'lucide-react';
+import { MapPin, TrendingUp, Clock, Award, ChevronRight, Bookmark, BookmarkCheck, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { CATEGORY_TYPES } from '../lib/constants';
 import { formatPriceCHF, getPriceLabel } from '../lib/formatPrice';
 import { BASE_URL, buildCoursePath } from '../lib/siteConfig';
@@ -197,6 +197,17 @@ export default function CategoryLocationPage({
 
     const fallbackImage = DEFAULT_COURSE_IMAGE;
 
+    const handleViewCourses = () => {
+        const coursesSection = document.getElementById('kursangebote');
+        if (coursesSection) {
+            coursesSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            return;
+        }
+        // Empty states still have a useful next step: the full search.
+        setView('search');
+        window.scrollTo(0, 0);
+    };
+
     // --- GUARD: Prevent crash on initial load (empty slugs) ---
     if (!topicSlug || !locationSlug) {
         return (
@@ -233,6 +244,23 @@ export default function CategoryLocationPage({
                             : `Aktuell sind keine ${topicLabel}-Kurse in ${location} verfügbar. Erweitere deine Suche oder lasse dich benachrichtigen, wenn neue Kurse hinzukommen.`
                         }
                     </p>
+
+                    <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
+                        <button
+                            type="button"
+                            onClick={handleViewCourses}
+                            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 font-semibold text-white shadow-sm transition hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                        >
+                            {stats.totalCourses > 0 ? 'Kurse vergleichen' : 'Weitere Kurse suchen'}
+                            <ArrowRight className="w-4 h-4" aria-hidden="true" />
+                        </button>
+                        <span className="text-sm text-gray-500">Direkt beim Anbieter anfragen</span>
+                    </div>
+
+                    <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm text-gray-500" aria-label="Vorteile der Kurssuche">
+                        <span className="inline-flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-primary" aria-hidden="true" /> Anbieter vergleichen</span>
+                        <span className="inline-flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-primary" aria-hidden="true" /> Preise und Termine sehen</span>
+                    </div>
 
                     {/* Stats Cards (Unique Content for pSEO) */}
                     {stats.totalCourses > 0 && (
@@ -274,7 +302,7 @@ export default function CategoryLocationPage({
             </div>
 
             {/* Course Listing */}
-            <div className="max-w-6xl mx-auto px-4 py-12">
+            <div id="kursangebote" className="max-w-6xl mx-auto px-4 py-12 scroll-mt-6">
                 {stats.totalCourses > 0 ? (
                     <>
                         <h2 className="text-2xl font-heading font-bold text-dark mb-6">

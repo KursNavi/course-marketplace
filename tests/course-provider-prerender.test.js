@@ -696,6 +696,11 @@ describe('Course-Prerender: erstes HTML', () => {
 
     expect(courseSchema.offers.url).toBe(expectedUrl);
     expect(eventSchema.offers.url).toBe(expectedUrl);
+    expect(eventSchema.offers.validFrom).toBe(COURSE_PUBLISHED.created_at);
+    expect(eventSchema.endDate).toBe(FUTURE_DATE);
+    expect(eventSchema.eventStatus).toBe('https://schema.org/EventScheduled');
+    expect(eventSchema.performer).toEqual({ '@type': 'Person', name: COURSE_PUBLISHED.instructor_name });
+    expect(eventSchema.organizer.url).toBe(BASE);
     expect(html).toContain(`<link rel="canonical" href="${expectedUrl}"`);
     expect(html).toContain(`<meta property="og:url" content="${expectedUrl}"`);
   });
@@ -902,7 +907,7 @@ describe('Fail-safe: systemische Fehler brechen den Build ab', () => {
     expect(pageExists(COURSE_PATH)).toBe(true);
     const event = readJsonLd(COURSE_PATH).find((s) => s['@type'] === 'EducationEvent');
     expect(event.startDate).toBe(FUTURE_DATE);
-    expect(event.endDate).toBeUndefined();
+    expect(event.endDate).toBe(FUTURE_DATE);
     expect(console.warn).toHaveBeenCalledWith(
       expect.stringContaining('Optionale Spalten für Kurstermine nicht verfügbar')
     );

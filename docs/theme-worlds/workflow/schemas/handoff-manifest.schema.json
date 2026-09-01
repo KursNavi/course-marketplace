@@ -1,0 +1,181 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kursnavi.ch/schemas/theme-world-handoff-manifest-v1.json",
+  "title": "KursNavi Themenwelt Handoff Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "package_version",
+    "source_contract_version",
+    "generated_at",
+    "status",
+    "theme_world_key",
+    "theme_world_slug",
+    "artifacts",
+    "counts",
+    "validation",
+    "review",
+    "checksums_sha256",
+    "blockers"
+  ],
+  "properties": {
+    "package_version": { "const": "1.0" },
+    "source_contract_version": { "const": "1.0" },
+    "generated_at": { "type": ["string", "null"], "format": "date-time" },
+    "status": {
+      "enum": ["needs_review", "blocked_by_platform", "ready_for_admin_draft"]
+    },
+    "theme_world_key": { "type": "string", "minLength": 1 },
+    "theme_world_slug": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "artifacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["theme_world_package", "scenario_sources", "admin_copy"],
+      "properties": {
+        "theme_world_package": { "const": "theme-world-package.json" },
+        "scenario_sources": { "const": "scenario-sources.json" },
+        "admin_copy": { "const": "admin-copy.md" }
+      }
+    },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["scenarios", "public_sources"],
+      "properties": {
+        "scenarios": { "type": "integer", "minimum": 0 },
+        "public_sources": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "validation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "theme_world_json",
+        "scenario_sources_contract",
+        "platform_sources_supported",
+        "claims_traceable",
+        "search_links_checked",
+        "scenario_slugs_unique",
+        "source_urls_unique_per_scenario"
+      ],
+      "properties": {
+        "theme_world_json": { "type": "boolean" },
+        "scenario_sources_contract": { "type": "boolean" },
+        "platform_sources_supported": { "type": "boolean" },
+        "claims_traceable": { "type": "boolean" },
+        "search_links_checked": { "type": "boolean" },
+        "scenario_slugs_unique": { "type": "boolean" },
+        "source_urls_unique_per_scenario": { "type": "boolean" }
+      }
+    },
+    "review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["editorial", "data_sources", "reviewers_are_distinct"],
+      "properties": {
+        "editorial": { "$ref": "#/$defs/reviewer" },
+        "data_sources": { "$ref": "#/$defs/reviewer" },
+        "reviewers_are_distinct": { "type": "boolean" }
+      }
+    },
+    "checksums_sha256": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["theme_world_package", "scenario_sources", "admin_copy"],
+      "properties": {
+        "theme_world_package": { "$ref": "#/$defs/checksum" },
+        "scenario_sources": { "$ref": "#/$defs/checksum" },
+        "admin_copy": { "$ref": "#/$defs/checksum" }
+      }
+    },
+    "blockers": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    }
+  },
+  "$defs": {
+    "checksum": {
+      "anyOf": [
+        { "type": "null" },
+        { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+      ]
+    },
+    "reviewer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "reviewed_at"],
+      "properties": {
+        "name": { "type": ["string", "null"] },
+        "reviewed_at": { "type": ["string", "null"], "format": "date-time" }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "status": { "const": "ready_for_admin_draft" } },
+        "required": ["status"]
+      },
+      "then": {
+        "properties": {
+          "blockers": { "maxItems": 0 },
+          "validation": {
+            "properties": {
+              "theme_world_json": { "const": true },
+              "scenario_sources_contract": { "const": true },
+              "platform_sources_supported": { "const": true },
+              "claims_traceable": { "const": true },
+              "search_links_checked": { "const": true },
+              "scenario_slugs_unique": { "const": true },
+              "source_urls_unique_per_scenario": { "const": true }
+            }
+          },
+          "review": {
+            "properties": {
+              "editorial": {
+                "properties": {
+                  "name": { "type": "string", "minLength": 1 },
+                  "reviewed_at": { "type": "string", "format": "date-time" }
+                }
+              },
+              "data_sources": {
+                "properties": {
+                  "name": { "type": "string", "minLength": 1 },
+                  "reviewed_at": { "type": "string", "format": "date-time" }
+                }
+              },
+              "reviewers_are_distinct": { "const": true }
+            }
+          },
+          "checksums_sha256": {
+            "properties": {
+              "theme_world_package": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+              "scenario_sources": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+              "admin_copy": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "status": { "const": "blocked_by_platform" } },
+        "required": ["status"]
+      },
+      "then": {
+        "properties": {
+          "blockers": { "minItems": 1 },
+          "validation": {
+            "properties": {
+              "platform_sources_supported": { "const": false }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

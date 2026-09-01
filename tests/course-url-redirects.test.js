@@ -3,8 +3,8 @@
  *
  * Audit-Befund:
  *   - https://www.kursnavi.ch/... lieferte HTTP 200 (kein Redirect auf non-www)
- *   - /courses/12/zuerich/779-... lieferte HTTP 200 statt einer Weiterleitung
- *     auf /courses/kunst/zuerich/779-...
+ *   - alte /courses/-URLs lieferten HTTP 200 statt einer Weiterleitung auf
+ *     ihren aktuellen kanonischen Pfad
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
@@ -106,13 +106,13 @@ describe('www → non-www Redirect (vercel.json)', () => {
 });
 
 // ============================================================
-// Rewrite für numerische Kurs-URLs
+// Rewrite für nicht-kanonische Kurs-URLs
 // ============================================================
 
-describe('Rewrite für Kurs-URLs mit numerischem Themensegment', () => {
-  it('existiert und trifft nur rein numerische Themensegmente', () => {
+describe('Rewrite für Kurs-URLs', () => {
+  it('existiert und übergibt auch alte Text-Slugs an die Kanonisierung', () => {
     expect(courseRewrite).toBeDefined();
-    expect(courseRewrite.source).toBe('/courses/:__topic(\\d+)/:__loc/:__cseg');
+    expect(courseRewrite.source).toBe('/courses/:__topic/:__loc/:__cseg');
   });
 
   it('übergibt alle drei Segmente über die Source-Captures an die Funktion', () => {
@@ -313,6 +313,18 @@ describe('api/course-redirect Handler', () => {
     );
   });
 
+  it('kanonisiert auch einen überholten Text-Slug im Themenpfad', async () => {
+    await loadHandler(mockSupabase());
+    const res = makeRes();
+    await handler(
+      { query: { __topic: 'alltag-leben', __loc: 'falsch', __cseg: '779-veralteter-titel' } },
+      res
+    );
+
+    expect(res._status).toBe(308);
+    expect(res._headers.Location).toBe(CANONICAL_779);
+  });
+
   it('erhält den Querystring des Besuchers', async () => {
     await loadHandler(mockSupabase());
     const res = makeRes();
@@ -465,11 +477,28 @@ describe('api/course-redirect Handler', () => {
       );
     });
 
-    it('7. die kanonische semantische Kurs-URL trifft die Regel nicht', () => {
-      expect(simulateVercelRewrite(courseRewrite, CANONICAL_779)).toBeNull();
-      expect(
-        simulateVercelRewrite(courseRewrite, `${CANONICAL_779}?utm_source=audit`)
-      ).toBeNull();
+    it('7. auch ein alter Text-Slug erreicht die Function und wird dauerhaft korrigiert', async () => {
+      const oldTextSlugUrl =
+        '/courses/alltag-leben/zuerich/779-18k-gold-wax-ring-carving-workshop-fuer-zwei-personen';
+
+      expect(simulateVercelRewrite(courseRewrite, oldTextSlugUrl)).toEqual({
+        __topic: 'alltag-leben',
+        __loc: 'zuerich',
+        __cseg: '779-18k-gold-wax-ring-carving-workshop-fuer-zwei-personen',
+      });
+      expect(await follow(oldTextSlugUrl)).toBe(CANONICAL_779);
+    });
+
+    it('8. ein bereits kanonischer Pfad löst keinen Redirect-Loop aus', async () => {
+      const query = simulateVercelRewrite(courseRewrite, CANONICAL_779);
+      expect(query).not.toBeNull();
+
+      await loadHandler(mockSupabase());
+      const res = makeRes();
+      await handler({ query }, res);
+
+      expect(res._headers.Location).toBeUndefined();
+      expect([200, 404]).toContain(res._status);
     });
   });
 

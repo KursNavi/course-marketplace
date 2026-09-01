@@ -9,33 +9,11 @@
  * MapPin location block, and the locationLabel logic in the lead events list.
  */
 import { describe, it, expect } from 'vitest';
-
-/** Mirrors CANTON_ABBR from constants.js */
-const CANTON_ABBR = {
-  "Aargau": "AG", "Appenzell AI": "AI", "Appenzell AR": "AR",
-  "Basel-Landschaft": "BL", "Basel-Stadt": "BS", "Bern": "BE",
-  "Fribourg": "FR", "Genève": "GE", "Glarus": "GL", "Graubünden": "GR",
-  "Jura": "JU", "Liechtenstein": "FL", "Luzern": "LU", "Neuchâtel": "NE",
-  "Nidwalden": "NW", "Obwalden": "OW", "Schaffhausen": "SH", "Schwyz": "SZ",
-  "Solothurn": "SO", "St. Gallen": "SG", "Thurgau": "TG", "Ticino": "TI",
-  "Uri": "UR", "Valais": "VS", "Vaud": "VD", "Zug": "ZG", "Zürich": "ZH",
-};
-
-/** Mirrors formatLocationWithCanton from constants.js */
-function formatLocationWithCanton({ street, city, canton } = {}) {
-  const abbr = canton ? CANTON_ABBR[canton] : undefined;
-  const parts = [street, city].filter(Boolean);
-  if (parts.length === 0) return abbr || canton || '';
-  const base = parts.join(', ');
-  return abbr ? `${base} (${abbr})` : (canton ? `${base}, ${canton}` : base);
-}
-
-/** Mirrors extractCity helper from DetailView.jsx */
-function extractCity(loc) {
-    if (!loc) return '';
-    const idx = loc.lastIndexOf(',');
-    return idx !== -1 ? loc.substring(idx + 1).trim() : loc.trim();
-}
+import {
+    formatLocationWithCanton,
+    formatPublicLocation,
+    formatPublicLocations,
+} from '../src/lib/constants';
 
 /**
  * Mirrors the location display logic from DetailView.jsx (MapPin block).
@@ -51,16 +29,7 @@ function getCourseLocationText(course) {
     let locationText;
     if (presenceEvents.length > 0) {
         // Events mode: derive from course_events (authoritative)
-        const uniqueCantons = [...new Set(presenceEvents.map(ev => ev.canton).filter(Boolean))];
-        if (uniqueCantons.length === 1) {
-            const city = extractCity(presenceEvents[0].location);
-            const abbr = CANTON_ABBR[uniqueCantons[0]];
-            locationText = city
-                ? (abbr ? `${city} (${abbr})` : city)
-                : (abbr || uniqueCantons[0]);
-        } else {
-            locationText = uniqueCantons.map(c => CANTON_ABBR[c] || c).join(', ');
-        }
+        locationText = formatPublicLocations(presenceEvents);
     } else if (!Array.isArray(course.course_events) || course.course_events.length === 0) {
         // Locations mode: use course_locations as authoritative source
         const presenceLocs = Array.isArray(course.course_locations)
@@ -68,16 +37,16 @@ function getCourseLocationText(course) {
                 .filter(l => l.location_type === 'presence')
                 .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
             : [];
-        if (presenceLocs.length > 1) {
-            const cantons = [...new Set(presenceLocs.map(l => l.canton).filter(Boolean))];
-            locationText = cantons.map(c => CANTON_ABBR[c] || c).join(', ');
-        } else if (presenceLocs.length === 1) {
-            const loc = presenceLocs[0];
-            locationText = formatLocationWithCanton({ street: loc.street, city: loc.city, canton: loc.canton });
-        }
+        locationText = formatPublicLocations(presenceLocs);
     }
     // Final fallback
-    if (!locationText) locationText = course.address || course.city || (course.canton ? (CANTON_ABBR[course.canton] || course.canton) : '') || '';
+    if (!locationText) {
+        locationText = formatPublicLocation({
+            city: course.city,
+            canton: course.canton,
+            location: course.address,
+        });
+    }
     return locationText || '';
 }
 
@@ -85,16 +54,7 @@ function getCourseLocationText(course) {
  * Mirrors the locationLabel logic in the lead events list (DetailView.jsx).
  */
 function getEventLocationLabel(ev) {
-    const rawLoc = ev.location || '';
-    const commaIdx = rawLoc.lastIndexOf(',');
-    const evCity = commaIdx !== -1
-        ? rawLoc.substring(commaIdx + 1).trim()
-        : rawLoc.trim();
-    const evAbbr = ev.canton && ev.canton !== 'Online' && ev.canton !== 'Ausland'
-        ? CANTON_ABBR[ev.canton] : undefined;
-    return evCity
-        ? (evAbbr ? `${evCity} (${evAbbr})` : evCity)
-        : (evAbbr || ev.canton || '');
+    return formatPublicLocation(ev);
 }
 
 describe('getCourseLocationText — main location block (DetailView MapPin)', () => {
@@ -161,7 +121,7 @@ describe('getCourseLocationText — main location block (DetailView MapPin)', ()
         expect(getCourseLocationText(course)).toBe('Braunwald (GL)');
     });
 
-    it('zeigt volle Adresse mit Kantonskürzel für Locations-Modus-Kurs (keine Events)', () => {
+    it('zeigt im Locations-Modus ebenfalls nur den öffentlichen Ort', () => {
         const course = {
             booking_type: 'lead',
             address: 'Zürich',
@@ -172,10 +132,11 @@ describe('getCourseLocationText — main location block (DetailView MapPin)', ()
                 { location_type: 'presence', street: 'Bahnhofstrasse 1', city: 'Zürich', canton: 'Zürich', sort_order: 0 }
             ]
         };
-        expect(getCourseLocationText(course)).toBe('Bahnhofstrasse 1, Zürich (ZH)');
+        expect(getCourseLocationText(course)).toBe('Zürich (ZH)');
+        expect(getCourseLocationText(course)).not.toContain('Bahnhofstrasse');
     });
 
-    it('zeigt Kantonskürzel für Kurs mit mehreren Standorten (keine Events)', () => {
+    it('zeigt mehrere öffentliche Orte für einen Kurs mit mehreren Standorten', () => {
         const course = {
             booking_type: 'lead',
             address: 'Bern',
@@ -187,7 +148,7 @@ describe('getCourseLocationText — main location block (DetailView MapPin)', ()
                 { location_type: 'presence', street: null, city: 'Zürich', canton: 'Zürich', sort_order: 1 }
             ]
         };
-        expect(getCourseLocationText(course)).toBe('BE, ZH');
+        expect(getCourseLocationText(course)).toBe('Bern (BE), Zürich (ZH)');
     });
 
     it('zeigt mehrere Kantonskürzel für Multi-Ort-Event-Kurs', () => {

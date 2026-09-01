@@ -154,6 +154,15 @@ describe('validateSearchConfig', () => {
       expect.arrayContaining([expect.stringContaining('Muss ein Objekt sein')])
     );
   });
+
+  it('akzeptiert einen bereichsübergreifenden kursart-Suchraum', () => {
+    expect(validateSearchConfig({ area_slug: null, kursart: 'feriencamp' })).toEqual([]);
+  });
+
+  it('lehnt einen Suchraum ohne Bereich und Kursart ab', () => {
+    const errors = validateSearchConfig({ area_slug: null });
+    expect(errors.some((error) => error.includes('area_slug oder kursart'))).toBe(true);
+  });
 });
 
 // ============================================================
@@ -864,6 +873,14 @@ describe('validatePublishThemeWorld', () => {
     const result = validatePublishThemeWorld(data);
     expect(result.valid).toBe(false);
     expect(result.errors.some(e => e.includes('area_slug'))).toBe(true);
+  });
+
+  it('akzeptiert einen publizierbaren kursart-Suchraum ohne Bereichs-Slug', () => {
+    const data = {
+      ...validPublishedThemeWorld(),
+      search_config: { area_slug: null, kursart: 'feriencamp' },
+    };
+    expect(validatePublishThemeWorld(data).valid).toBe(true);
   });
 
   it('lehnt null-Themenwelt ab', () => {

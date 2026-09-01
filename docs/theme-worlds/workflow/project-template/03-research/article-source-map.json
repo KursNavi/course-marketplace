@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0",
+  "theme_world_key": "TBD",
+  "scenarios": [
+    {
+      "slug": "TBD",
+      "sources": [
+        {
+          "source_id": "S001",
+          "rank": 1,
+          "supports_claim_ids": ["C001"],
+          "selection_reason": "Direkte und glaubwürdige Originalquelle für eine zentrale Aussage des Artikels."
+        }
+      ]
+    }
+  ]
+}

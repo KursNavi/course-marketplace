@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Search, ArrowRight, ChevronDown, ChevronRight, BookOpen, Award, HelpCircle } from 'lucide-react';
+import { Search, ArrowRight, ChevronDown, ChevronRight, BookOpen, Award, HelpCircle, CheckCircle2 } from 'lucide-react';
 import { getBereichBySlug, getBereichUrl, BEREICH_LANDING_CONFIG } from '../lib/bereichLandingConfig';
 import { SEGMENT_LANDING_CONFIG } from '../lib/segmentLandingConfig';
 import { SEGMENT_CONFIG } from '../lib/constants';
@@ -12,6 +12,20 @@ import { loadThemeWorldWithFallback, isThemeWorldPilotActive, isThemeWorldDbEnab
 import { fetchThemeWorldPage } from '../lib/themeWorldService';
 import { adaptToLegacyBereichConfig } from '../lib/themeWorldAdapter';
 import { normalizeDeliveryTypeKey } from '../lib/courseMetadata';
+import { hasGoogleAdsAttribution, trackCampaignView, trackCampaignCta } from '../lib/analytics';
+
+// Shared with taxonomy-focused tests and helpers; this component file is the
+// canonical home for the filter logic, so opt out of the Fast Refresh rule.
+// eslint-disable-next-line react-refresh/only-export-components
+export function matchesCourseTypeFilter(course, typeKey, kursart) {
+  if (!kursart) return true;
+  const field = typeKey === 'kinder_jugend'
+    ? 'kinder_kursart'
+    : typeKey === 'privat_hobby'
+      ? 'privat_kursart'
+      : null;
+  return Boolean(field) && course?.[field] === kursart;
+}
 
 export default function BereichLandingPage({ segment, slug, courses, lang = 'de', t }) {
   // Legacy-Config (immer geladen als Basiswert + Fallback)
@@ -204,6 +218,13 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
     };
   }, [config, segment, slug, lang]);
 
+  // Record paid campaign landings once the page has a valid configuration.
+  // This hook intentionally runs before the loading/404 returns below so the
+  // component always keeps a stable hook order while the DB-backed page loads.
+  useEffect(() => {
+    if (config && hasGoogleAdsAttribution()) trackCampaignView(`bereich-${segment}-${slug}`);
+  }, [config, segment, slug]);
+
   // DB-only Ladeindikator — verhindert vorzeitigen 404 während DB-Abfrage läuft
   if (dbOnlyLoading) {
     return (
@@ -238,7 +259,9 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
     courses.forEach(c => {
       if (c.status !== 'published' && c.status) return;
       (c.all_categories || []).forEach(cat => {
-        if (cat.category_type === dbType && cat.category_area === config.areaSlug) {
+        if (cat.category_type === dbType
+            && (!config.areaSlug || cat.category_area === config.areaSlug)
+            && matchesCourseTypeFilter(c, config.typeKey, config.kursart)) {
           const specLabel = cat.category_specialty_label || cat.category_specialty;
           if (specLabel) {
             counts[specLabel] = (counts[specLabel] || 0) + 1;
@@ -256,7 +279,9 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
     courses.forEach(c => {
       if (c.status !== 'published' && c.status) return;
       (c.all_categories || []).forEach(cat => {
-        if (cat.category_type === dbType && cat.category_area === config.areaSlug &&
+        if (cat.category_type === dbType
+            && (!config.areaSlug || cat.category_area === config.areaSlug)
+            && matchesCourseTypeFilter(c, config.typeKey, config.kursart) &&
             (cat.category_specialty_label === specLabel || cat.category_specialty === specLabel) &&
             cat.category_focus_label) {
           focuses.add(cat.category_focus_label);
@@ -271,9 +296,11 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
 
   // Navigation helpers
   const navigateToSearch = (extraParams = {}) => {
+    if (hasGoogleAdsAttribution()) trackCampaignCta(`bereich-${segment}-${slug}`, 'search');
     const params = new URLSearchParams();
     params.set('type', config.typeKey);
-    params.set('area', config.areaSlug);
+    if (config.areaSlug) params.set('area', config.areaSlug);
+    if (config.kursart) params.set('kursart', config.kursart);
     if (searchQuery) params.set('q', searchQuery);
     Object.entries(extraParams).forEach(([k, v]) => {
       if (v) params.set(k, v);
@@ -303,7 +330,8 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
   const buildSearchUrl = (extraParams = {}) => {
     const params = new URLSearchParams();
     params.set('type', config.typeKey);
-    params.set('area', config.areaSlug);
+    if (config.areaSlug) params.set('area', config.areaSlug);
+    if (config.kursart) params.set('kursart', config.kursart);
     Object.entries(extraParams).forEach(([k, v]) => {
       if (!v) return;
       // Kanonisiere Delivery-Werte beim URL-Aufbau
@@ -356,6 +384,23 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
             {config.subtitle[lang] || config.subtitle.de}
           </p>
 
+          {/* Conversion reassurance: answer the three questions a search visitor
+              has before committing to the next click (what, where, how). */}
+          <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-white/85 mb-7" aria-label="Vorteile der Kurssuche">
+            <span className="inline-flex items-center gap-1.5">
+              <CheckCircle2 className="w-4 h-4 text-primary" aria-hidden="true" />
+              Kurse und Anbieter vergleichen
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <CheckCircle2 className="w-4 h-4 text-primary" aria-hidden="true" />
+              Preise und Termine auf einen Blick
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <CheckCircle2 className="w-4 h-4 text-primary" aria-hidden="true" />
+              Direkt beim Anbieter anfragen
+            </span>
+          </div>
+
           {/* Scenario Tags */}
           {config.scenarios && (
             <div className="flex min-w-0 flex-wrap gap-2 mb-10">
@@ -389,6 +434,7 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder={t?.search_placeholder || 'Kurs suchen...'}
+                  aria-label={t?.search_placeholder || 'Kurs suchen'}
                   className="w-full min-w-0 pl-12 pr-4 py-4 rounded-xl text-dark font-sans shadow-lg focus:outline-none focus:ring-2 focus:ring-primary text-lg bg-white sm:pr-32"
                 />
               </div>
@@ -411,6 +457,9 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
                 Alle Kurse anzeigen <ArrowRight className="w-4 h-4" />
               </button>
             </div>
+            <p className="mt-3 text-xs text-white/70">
+              Kostenlos vergleichen · bei passenden Kursen direkt und unverbindlich anfragen
+            </p>
           </form>
         </div>
       </div>

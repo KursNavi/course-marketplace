@@ -38,7 +38,7 @@
       "destination": "/api/sitemap"
     },
     {
-      "source": "/courses/:__topic(\\d+)/:__loc/:__cseg",
+      "source": "/courses/:__topic/:__loc/:__cseg",
       "destination": "/api/course-redirect"
     },
     {

@@ -40,6 +40,52 @@ export function formatLocationWithCanton({ street, city, canton } = {}) {
   return abbr ? `${base} (${abbr})` : (canton ? `${base}, ${canton}` : base);
 }
 
+/**
+ * Formats a location for public course pages.
+ *
+ * Public pages intentionally never expose the street. Event rows often only
+ * have a combined `location` value (for example "Street 1, 8000 Zürich"),
+ * so the last comma-separated segment is used as a backwards-compatible city
+ * fallback when the structured city field is missing.
+ */
+export function formatPublicLocation({ city, canton, location, type, location_type } = {}) {
+  const normalizedCity = typeof city === 'string' ? city.trim() : '';
+  const normalizedCanton = typeof canton === 'string' ? canton.trim() : '';
+  const normalizedLocation = typeof location === 'string' ? location.trim() : '';
+  const normalizedType = type || location_type || '';
+
+  if (normalizedType === 'online' || normalizedCanton === 'Online' || normalizedLocation === 'Online') {
+    return 'Online';
+  }
+  if (normalizedType === 'ausland' || normalizedCanton === 'Ausland') {
+    return 'Ausland';
+  }
+
+  let publicCity = normalizedCity;
+  if (!publicCity && normalizedLocation) {
+    const commaIndex = normalizedLocation.lastIndexOf(',');
+    publicCity = commaIndex !== -1
+      ? normalizedLocation.substring(commaIndex + 1).trim()
+      : normalizedLocation;
+  }
+
+  const abbr = normalizedCanton ? CANTON_ABBR[normalizedCanton] : undefined;
+  if (!publicCity) return abbr || normalizedCanton || '';
+  return abbr ? `${publicCity} (${abbr})` : (normalizedCanton ? `${publicCity}, ${normalizedCanton}` : publicCity);
+}
+
+/**
+ * Formats and de-duplicates multiple public locations while preserving order.
+ */
+export function formatPublicLocations(locations = []) {
+  const labels = [];
+  for (const location of locations) {
+    const label = formatPublicLocation(location);
+    if (label && !labels.includes(label)) labels.push(label);
+  }
+  return labels.join(', ');
+}
+
 // --- DELIVERY TYPES ---
 export const DELIVERY_TYPES = {
   presence: { de: "Präsenz (vor Ort)", en: "In-Person", fr: "En présentiel", it: "In presenza" },

@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo } from 'react';
-import { ArrowRight, ArrowLeft, Search } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Search, CheckCircle2 } from 'lucide-react';
 import { SIMPLE_TOPIC_CONTENT, SEGMENT_LANDING_CONFIG } from '../lib/segmentLandingConfig';
 import { buildCoursePath } from '../lib/siteConfig';
 import { buildCanonical, getRobotsPolicy } from '../lib/seoUtils';
+import { hasGoogleAdsAttribution, trackCampaignView, trackCampaignCta } from '../lib/analytics';
 
 // Segment URL → display label + back href
 const SEGMENT_META = {
@@ -38,6 +39,10 @@ export default function SimpleTopicLandingPage({
   const searchType = SEGMENT_TO_SEARCH_TYPE[segment] || 'privat_hobby';
   const areaSlug = config?.areaAliases?.[0] ?? null;
   const sauleKey = config?.sauleKey ?? null;
+
+  useEffect(() => {
+    if (config && hasGoogleAdsAttribution()) trackCampaignView(`thema-${segment}-${slug}`);
+  }, [config, segment, slug]);
 
   // Kursarten from segment config
   const kursarten = SEGMENT_LANDING_CONFIG[searchType]?.kursarten || [];
@@ -113,6 +118,7 @@ export default function SimpleTopicLandingPage({
   // Navigate to search pre-filtered with this topic's area + segment type
   // Optionally pass a sauleKey (e.g. 'diplome') to pre-select a Berufliche Säule
   const handleGoToSearch = (sauleKey = null) => {
+    if (hasGoogleAdsAttribution()) trackCampaignCta(`thema-${segment}-${slug}`, 'search');
     const params = new URLSearchParams({ type: searchType });
     if (areaSlug) params.set('area', areaSlug);
     if (sauleKey) params.set('saule', sauleKey);
@@ -181,6 +187,23 @@ export default function SimpleTopicLandingPage({
           </h1>
           <p className="text-lg text-primary font-medium mb-4">{config.subtitle}</p>
           <p className="text-gray-600 max-w-2xl leading-relaxed">{config.intro}</p>
+
+          {/* Primary next step for visitors arriving from a topic-specific ad. */}
+          <div className="mt-7 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
+            <button
+              type="button"
+              onClick={() => handleGoToSearch()}
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 font-semibold text-white shadow-sm transition hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+            >
+              Passende Kurse finden <ArrowRight className="w-4 h-4" aria-hidden="true" />
+            </button>
+            <span className="text-sm text-gray-500">Kostenlos vergleichen und direkt beim Anbieter anfragen</span>
+          </div>
+
+          <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm text-gray-500" aria-label="Vorteile der Kurssuche">
+            <span className="inline-flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-primary" aria-hidden="true" /> Anbieter vergleichen</span>
+            <span className="inline-flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-primary" aria-hidden="true" /> Preise und Termine sehen</span>
+          </div>
         </div>
       </div>
 

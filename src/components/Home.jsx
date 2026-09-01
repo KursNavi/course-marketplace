@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Search, ArrowRight, ChevronRight, ChevronLeft, ChevronDown, CreditCard, Info, Shield, Briefcase, Palette, Smile, BookOpen, LayoutGrid, Compass } from 'lucide-react';
+import { Search, ArrowRight, ChevronRight, ChevronLeft, ChevronDown, CreditCard, Info, Shield, Briefcase, Palette, Smile, BookOpen, LayoutGrid, Compass, CheckCircle2 } from 'lucide-react';
 import { LocationDropdown, DeliveryTypeFilter } from './Filters';
 import { CATEGORY_TYPES, SEGMENT_CONFIG } from '../lib/constants';
 import { useTaxonomy } from '../hooks/useTaxonomy';
 import { BASE_URL } from '../lib/siteConfig';
 import { RATGEBER_STRUCTURE } from '../lib/ratgeberStructure';
 import { getBereicheForSegment, getBereichUrl } from '../lib/bereichLandingConfig';
+import { hasGoogleAdsAttribution, trackCampaignView, trackCampaignCta } from '../lib/analytics';
 
 export const Home = ({
   lang, t, setView, courses, // Jetzt haben wir Zugriff auf die Kurse!
@@ -96,6 +97,10 @@ export const Home = ({
   // 'alle' = no explicit segment (auto-detect on search)
   const [homeSegment, setHomeSegment] = useState('alle');
 
+  useEffect(() => {
+    if (hasGoogleAdsAttribution()) trackCampaignView('home');
+  }, []);
+
   // Keyword-based auto-detection (Option B: no DB query)
   const guessTypeFromQuery = (q) => {
     const lower = q.toLowerCase();
@@ -112,6 +117,7 @@ export const Home = ({
 
   const handleSearch = (e) => {
     e.preventDefault();
+    if (hasGoogleAdsAttribution()) trackCampaignCta('home', 'search');
     const params = new URLSearchParams();
     if (searchQuery) params.set('q', searchQuery);
     if (selectedLocations?.length) params.set('loc', selectedLocations.join(','));
@@ -327,6 +333,7 @@ export const Home = ({
                     <input
                     type="text"
                     placeholder={t.search_placeholder}
+                    aria-label={t.search_placeholder || 'Kurs suchen'}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full pl-12 pr-32 py-4 rounded-xl text-dark font-sans shadow-sm focus:outline-none focus:ring-2 focus:ring-primary text-lg placeholder-transparent md:placeholder-gray-500 bg-white"
@@ -395,7 +402,12 @@ export const Home = ({
                         t={t}
                         buttonClassName={`w-full px-4 py-3 flex items-center justify-between font-medium rounded-xl transition-colors ${deliveryMenuOpen ? 'bg-primary/10 text-primary ring-2 ring-primary/30' : 'text-gray-700 hover:bg-gray-50'}`}
                     />
-                </div>
+              </div>
+            </div>
+            <div className="mt-5 flex flex-wrap justify-center gap-x-5 gap-y-2 text-xs text-white/80" aria-label="Vorteile von KursNavi">
+              <span className="inline-flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-primary" aria-hidden="true" /> Kurse vergleichen</span>
+              <span className="inline-flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-primary" aria-hidden="true" /> Preise und Termine sehen</span>
+              <span className="inline-flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-primary" aria-hidden="true" /> Direkt beim Anbieter anfragen</span>
             </div>
           </div>
 

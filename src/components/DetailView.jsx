@@ -1,21 +1,31 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, User, MapPin, Clock, CheckCircle, Calendar, Shield, ExternalLink, Mail, X, Send, Map, Info, Loader, Bookmark, BookmarkCheck, ChevronRight, AlertCircle, Compass, LogIn } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { formatPriceCHF, getPriceLabel } from '../lib/formatPrice';
 import { useTaxonomy } from '../hooks/useTaxonomy';
-import { SEGMENT_CONFIG, CANTON_ABBR, formatLocationWithCanton } from '../lib/constants';
+import { SEGMENT_CONFIG, formatPublicLocation, formatPublicLocations } from '../lib/constants';
 import { CANONICAL_BASE_URL, buildCoursePath } from '../lib/siteConfig';
 import { buildCourseJsonLdList, buildCourseSeo } from '../lib/courseSeo';
 import { getBereichByAreaSlug, getBereichUrl } from '../lib/bereichLandingConfig';
 import { DEFAULT_COURSE_IMAGE } from '../lib/imageUtils';
 import { getCourseCategoryText, isSyntheticCategory } from '../lib/courseMetadata';
-import { trackCourseView, trackPurchase, trackContactLead } from '../lib/analytics';
+import {
+    trackCourseView,
+    trackPurchase,
+    trackContactLead,
+    trackLeadCtaClick,
+    trackLeadModalOpen,
+    trackLeadFormStart,
+    trackLeadValidationError,
+    trackLeadSubmitError,
+} from '../lib/analytics';
 import { getRobotsPolicy } from '../lib/seoUtils';
 import { getRelatedCourses } from '../lib/courseRecommendations';
 
 const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, setUser, savedCourseIds, onToggleSaveCourse, showNotification, refreshBookings }) => {
     const [showLeadModal, setShowLeadModal] = useState(false);
     const [leadStatus, setLeadStatus] = useState('idle'); // idle, submitting, success
+    const leadFormStartedRef = useRef(false);
 
     const [showSavePrompt, setShowSavePrompt] = useState(false);
     const [pendingExternalUrl, setPendingExternalUrl] = useState(null);
@@ -37,6 +47,14 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
     useEffect(() => {
         window.scrollTo(0, 0);
     }, [course?.id]);
+
+    // Funnel-Signale: Öffnen und erstes Interagieren werden pro Modal-Öffnung
+    // erfasst. Es werden nur Kurs-/Fehlerkategorien, nie Feldwerte, gesendet.
+    useEffect(() => {
+        if (!showLeadModal || !course?.id) return;
+        leadFormStartedRef.current = false;
+        trackLeadModalOpen(course.id);
+    }, [showLeadModal, course?.id]);
 
     // Track detail view (session-deduplicated)
     useEffect(() => {
@@ -295,6 +313,7 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
         const type = effectiveBookingType || 'platform';
 
         if (type === 'lead') {
+            trackLeadCtaClick(course.id);
             setShowLeadModal(true);
             return;
         }
@@ -404,6 +423,7 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
         e.preventDefault();
         setLeadStatus('submitting');
         const fd = new FormData(e.target);
+        let submitErrorType = null;
         try {
             const resp = await fetch('/api/send-lead', {
                 method: 'POST',
@@ -416,15 +436,32 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
                 })
             });
             const data = await resp.json().catch(() => ({}));
-            if (!resp.ok) throw new Error(data.error || 'Anfrage konnte nicht gesendet werden.');
+            if (!resp.ok) {
+                submitErrorType = 'http';
+                trackLeadSubmitError(course.id, 'http');
+                throw new Error(data.error || 'Anfrage konnte nicht gesendet werden.');
+            }
             setLeadStatus('success');
             trackContactLead(course.id);
             setTimeout(() => { setShowLeadModal(false); setLeadStatus('idle'); }, 2500);
         } catch (err) {
             console.error('Lead submit error:', err);
+            // HTTP-Fehler werden bereits direkt nach der Response erfasst;
+            // dieser Zweig deckt Netzwerk-/Parsefehler ab.
+            if (!submitErrorType) trackLeadSubmitError(course.id, 'network');
             setLeadStatus('idle');
             if (typeof showNotification === 'function') showNotification(err.message || 'Anfrage konnte nicht gesendet werden. Bitte versuche es erneut.');
         }
+    };
+
+    const handleLeadFormStart = () => {
+        if (leadFormStartedRef.current) return;
+        leadFormStartedRef.current = true;
+        trackLeadFormStart(course.id);
+    };
+
+    const handleLeadValidationError = (event) => {
+        trackLeadValidationError(course.id, event.target?.name);
     };
 
     // Fix 2: Safety Guard (Render Check)
@@ -657,53 +694,33 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
                             <span className="font-medium group-hover:underline">{course.instructor_name}</span>
                         </button>
                         {(() => {
-                            // Helper: extract the city portion from a location string.
-                            // Stored location can be "City" or "Street, City" — always take the last segment.
-                            const extractCity = (loc) => {
-                                if (!loc) return '';
-                                const idx = loc.lastIndexOf(',');
-                                return idx !== -1 ? loc.substring(idx + 1).trim() : loc.trim();
-                            };
-
                             const presenceEvents = Array.isArray(course.course_events)
                                 ? course.course_events.filter(ev =>
                                     ev.start_date && ev.canton &&
                                     ev.canton !== 'Online' && ev.canton !== 'Ausland')
                                 : [];
+                            const presenceLocs = Array.isArray(course.course_locations)
+                                ? course.course_locations
+                                    .filter(l => l.location_type === 'presence')
+                                    .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+                                : [];
 
                             let locationText;
                             if (presenceEvents.length > 0) {
-                                // Events mode: derive location from course_events (authoritative).
-                                // course_locations and course.address may be stale after a mode switch.
-                                const uniqueCantons = [...new Set(presenceEvents.map(ev => ev.canton).filter(Boolean))];
-                                if (uniqueCantons.length === 1) {
-                                    // Single canton: show the city with canton abbreviation
-                                    const city = extractCity(presenceEvents[0].location);
-                                    const abbr = CANTON_ABBR[uniqueCantons[0]];
-                                    locationText = city
-                                        ? (abbr ? `${city} (${abbr})` : city)
-                                        : (abbr || uniqueCantons[0]);
-                                } else {
-                                    // Multiple cantons: list abbreviations (e.g. "BE, ZH, AG")
-                                    locationText = uniqueCantons.map(c => CANTON_ABBR[c] || c).join(', ');
-                                }
+                                // Events are authoritative when concrete dates exist.
+                                locationText = formatPublicLocations(presenceEvents);
                             } else if (!Array.isArray(course.course_events) || course.course_events.length === 0) {
-                                // Locations mode: use course_locations as the authoritative source
-                                const presenceLocs = Array.isArray(course.course_locations)
-                                    ? course.course_locations
-                                        .filter(l => l.location_type === 'presence')
-                                        .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
-                                    : [];
-                                if (presenceLocs.length > 1) {
-                                    const cantons = [...new Set(presenceLocs.map(l => l.canton).filter(Boolean))];
-                                    locationText = cantons.map(c => CANTON_ABBR[c] || c).join(', ');
-                                } else if (presenceLocs.length === 1) {
-                                    const loc = presenceLocs[0];
-                                    locationText = formatLocationWithCanton({ street: loc.street, city: loc.city, canton: loc.canton });
-                                }
+                                // Fixed locations use the same public city-only format.
+                                locationText = formatPublicLocations(presenceLocs);
                             }
                             // Final fallback to courses-table fields
-                            if (!locationText) locationText = course.address || course.city || (course.canton ? (CANTON_ABBR[course.canton] || course.canton) : '') || '';
+                            if (!locationText) {
+                                locationText = formatPublicLocation({
+                                    city: course.city,
+                                    canton: course.canton,
+                                    location: course.address
+                                });
+                            }
                             if (!locationText) return null;
                             return (
                                 <div className="flex items-center text-gray-700">
@@ -832,19 +849,7 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
                                         const dateLabel = startStr
                                             ? (endStr && endStr !== startStr ? `${startStr} – ${endStr}` : startStr)
                                             : 'Termin nach Absprache';
-                                        // Show only the city portion — ev.location may contain a
-                                        // "Street, City" string; for lead courses the exact address is
-                                        // shared by the teacher after contact, not needed publicly.
-                                        const rawLoc = ev.location || '';
-                                        const commaIdx = rawLoc.lastIndexOf(',');
-                                        const evCity = commaIdx !== -1
-                                            ? rawLoc.substring(commaIdx + 1).trim()
-                                            : rawLoc.trim();
-                                        const evAbbr = ev.canton && ev.canton !== 'Online' && ev.canton !== 'Ausland'
-                                            ? CANTON_ABBR[ev.canton] : undefined;
-                                        const locationLabel = evCity
-                                            ? (evAbbr ? `${evCity} (${evAbbr})` : evCity)
-                                            : (evAbbr || ev.canton || '');
+                                        const locationLabel = formatPublicLocation(ev);
                                         const secondLine = [ev.schedule_description, locationLabel].filter(Boolean).join(' · ');
                                         return (
                                             <div key={i} className="py-2 border-b border-gray-100 last:border-0 text-sm">
@@ -1209,10 +1214,10 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
                         <>
                             <h3 id="lead-modal-title" className="text-xl font-bold mb-1 font-heading">Kurs unverbindlich anfragen</h3>
                             <p className="text-xs text-gray-500 mb-6">Deine Anfrage geht direkt an {course.instructor_name}.</p>
-                            <form onSubmit={handleLeadSubmit} className="space-y-4">
-                                <div><label className="block text-xs font-bold text-gray-500 uppercase mb-1">Dein Name</label><input name="name" required defaultValue={user?.user_metadata?.full_name || user?.user_metadata?.name || ''} placeholder="Vor- und Nachname" className="w-full p-3 bg-gray-50 rounded-lg border border-transparent focus:bg-white focus:border-primary outline-none transition" /></div>
-                                <div><label className="block text-xs font-bold text-gray-500 uppercase mb-1">Deine Email</label><input name="email" type="email" required defaultValue={user?.email || ''} placeholder="deine@email.ch" className="w-full p-3 bg-gray-50 rounded-lg border border-transparent focus:bg-white focus:border-primary outline-none transition" /></div>
-                                <div><label className="block text-xs font-bold text-gray-500 uppercase mb-1">Nachricht <span className="font-normal normal-case text-gray-400">– kann angepasst werden</span></label><textarea name="message" rows="3" defaultValue={`Guten Tag, ich interessiere mich für den Kurs "${course.title}".`} className="w-full p-3 bg-gray-50 rounded-lg border border-transparent focus:bg-white focus:border-primary outline-none transition"></textarea></div>
+                            <form onSubmit={handleLeadSubmit} onInvalid={handleLeadValidationError} className="space-y-4">
+                                <div><label className="block text-xs font-bold text-gray-500 uppercase mb-1">Dein Name</label><input name="name" required onFocus={handleLeadFormStart} defaultValue={user?.user_metadata?.full_name || user?.user_metadata?.name || ''} placeholder="Vor- und Nachname" className="w-full p-3 bg-gray-50 rounded-lg border border-transparent focus:bg-white focus:border-primary outline-none transition" /></div>
+                                <div><label className="block text-xs font-bold text-gray-500 uppercase mb-1">Deine Email</label><input name="email" type="email" required onFocus={handleLeadFormStart} defaultValue={user?.email || ''} placeholder="deine@email.ch" className="w-full p-3 bg-gray-50 rounded-lg border border-transparent focus:bg-white focus:border-primary outline-none transition" /></div>
+                                <div><label className="block text-xs font-bold text-gray-500 uppercase mb-1">Nachricht <span className="font-normal normal-case text-gray-400">– kann angepasst werden</span></label><textarea name="message" rows="3" onFocus={handleLeadFormStart} defaultValue={`Guten Tag, ich interessiere mich für den Kurs "${course.title}".`} className="w-full p-3 bg-gray-50 rounded-lg border border-transparent focus:bg-white focus:border-primary outline-none transition"></textarea></div>
                                 <button type="submit" disabled={leadStatus === 'submitting'} className="w-full bg-primary text-white font-bold py-3 rounded-lg hover:bg-orange-600 transition flex items-center justify-center disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed"><Send className="w-4 h-4 mr-2"/> Anfrage absenden</button>
                             </form>
                         </>

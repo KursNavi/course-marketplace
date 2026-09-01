@@ -1,6 +1,6 @@
 /**
- * Permanenter Redirect von einer Kurs-URL mit numerischem Themensegment auf die
- * kanonische Kurs-URL.
+ * Permanenter Redirect von einer nicht-kanonischen Kurs-URL auf die kanonische
+ * Kurs-URL.
  *
  * Hintergrund: `courses.category_area` enthält bei neueren Kursen eine
  * numerische Taxonomie-ID. Die Sitemap hat daraus URLs wie
@@ -11,10 +11,13 @@
  * Content. Der Client korrigierte das bisher nur per history.replaceState,
  * was für Suchmaschinen wirkungslos ist.
  *
- * Routing (vercel.json): Nur Pfade, deren Themensegment rein numerisch ist,
- * werden hierher umgeschrieben. Kanonische Kurs-URLs haben nie ein numerisches
- * Themensegment (siehe getCanonicalCourseTopicSlug) und lösen deshalb weder
- * einen Funktionsaufruf noch eine Redirect-Schleife aus.
+ * Routing (vercel.json): Alle dreiteiligen /courses/-Pfade werden hierher
+ * umgeschrieben. Das ist nötig, weil ältere URLs nicht nur numerische
+ * Themen-IDs, sondern auch überholte Text-Slugs enthalten können (z. B.
+ * `alltag-leben` statt `freizeit-natur`). Statische kanonische Kursseiten
+ * werden von Vercel vor Rewrites ausgeliefert. Falls ausnahmsweise keine
+ * statische Datei vorliegt, verhindert der Gleichheitscheck unten trotzdem
+ * eine Redirect-Schleife.
  *
  * Fällt die Auflösung aus (Kurs unbekannt, DB nicht erreichbar), wird die
  * SPA-Shell mit HTTP 200 ausgeliefert — also exakt das bisherige Verhalten.

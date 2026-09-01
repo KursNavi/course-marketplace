@@ -20,14 +20,16 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 // vi.hoisted() stellt sicher, dass mockGetSession vor dem gehosteten vi.mock verfügbar ist.
 // ---------------------------------------------------------------------------
 
-const { mockGetSession } = vi.hoisted(() => ({
+const { mockGetSession, mockRefreshSession } = vi.hoisted(() => ({
   mockGetSession: vi.fn(),
+  mockRefreshSession: vi.fn(),
 }));
 
 vi.mock('../src/lib/supabase', () => ({
   supabase: {
     auth: {
       getSession: mockGetSession,
+      refreshSession: mockRefreshSession,
     },
   },
 }));
@@ -203,6 +205,76 @@ describe('apiCall — 401 Unauthorized', () => {
     await expect(listThemeWorlds()).rejects.toSatisfy((err) => {
       return err instanceof ApiError && err.status === 401 && err.isUnauthorized;
     });
+  });
+
+  it('erneuert den Token nach einem 401 genau einmal und wiederholt die Anfrage', async () => {
+    mockValidSession('stale-token');
+    mockRefreshSession.mockResolvedValue({
+      data: { session: { access_token: 'fresh-token', refresh_token: 'fresh-refresh-token' } },
+      error: null,
+    });
+    fetchSpy.mockImplementation((_url, options) => options.headers.Authorization === 'Bearer stale-token'
+      ? mockFetchResponse(401, { error: 'Session abgelaufen.' })
+      : mockFetchResponse(200, { data: [] }));
+
+    await listThemeWorlds();
+
+    expect(mockRefreshSession).toHaveBeenCalledOnce();
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
+    expect(fetchSpy.mock.calls[1][1].headers.Authorization).toBe('Bearer fresh-token');
+  });
+
+  it('erneuert einen kurz vor Ablauf stehenden Token vorsorglich', async () => {
+    mockGetSession.mockResolvedValue({
+      data: {
+        session: {
+          access_token: 'expiring-token',
+          refresh_token: 'refresh-token',
+          expires_at: Math.floor(Date.now() / 1000) + 5,
+        },
+      },
+      error: null,
+    });
+    mockRefreshSession.mockResolvedValue({
+      data: { session: { access_token: 'fresh-token', refresh_token: 'fresh-refresh-token' } },
+      error: null,
+    });
+    fetchSpy.mockReturnValue(mockFetchResponse(200, { data: [] }));
+
+    await listThemeWorlds();
+
+    expect(mockRefreshSession).toHaveBeenCalledOnce();
+    expect(fetchSpy.mock.calls[0][1].headers.Authorization).toBe('Bearer fresh-token');
+  });
+
+  it('teilt einen parallelen Session-Refresh zwischen Admin-Anfragen', async () => {
+    mockGetSession.mockResolvedValue({
+      data: {
+        session: {
+          access_token: 'expiring-token',
+          refresh_token: 'refresh-token',
+          expires_at: Math.floor(Date.now() / 1000) + 5,
+        },
+      },
+      error: null,
+    });
+
+    let resolveRefresh;
+    mockRefreshSession.mockImplementation(() => new Promise((resolve) => {
+      resolveRefresh = resolve;
+    }));
+    fetchSpy.mockReturnValue(mockFetchResponse(200, { data: [] }));
+
+    const requests = Promise.all([listThemeWorlds(), listThemeWorlds()]);
+    await Promise.resolve();
+    resolveRefresh({
+      data: { session: { access_token: 'fresh-token', refresh_token: 'fresh-refresh-token' } },
+      error: null,
+    });
+
+    await requests;
+    expect(mockRefreshSession).toHaveBeenCalledOnce();
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
   });
 
   it('isUnauthorized gibt false zurück für 403', () => {

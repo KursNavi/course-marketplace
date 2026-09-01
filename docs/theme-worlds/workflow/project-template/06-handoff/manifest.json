@@ -1,0 +1,43 @@
+{
+  "package_version": "1.0",
+  "source_contract_version": "1.0",
+  "generated_at": null,
+  "status": "needs_review",
+  "theme_world_key": "TBD",
+  "theme_world_slug": "theme-world-slug",
+  "artifacts": {
+    "theme_world_package": "theme-world-package.json",
+    "scenario_sources": "scenario-sources.json",
+    "admin_copy": "admin-copy.md"
+  },
+  "counts": {
+    "scenarios": 0,
+    "public_sources": 0
+  },
+  "validation": {
+    "theme_world_json": false,
+    "scenario_sources_contract": false,
+    "platform_sources_supported": false,
+    "claims_traceable": false,
+    "search_links_checked": false,
+    "scenario_slugs_unique": false,
+    "source_urls_unique_per_scenario": false
+  },
+  "review": {
+    "editorial": {
+      "name": null,
+      "reviewed_at": null
+    },
+    "data_sources": {
+      "name": null,
+      "reviewed_at": null
+    },
+    "reviewers_are_distinct": false
+  },
+  "checksums_sha256": {
+    "theme_world_package": null,
+    "scenario_sources": null,
+    "admin_copy": null
+  },
+  "blockers": ["TBD"]
+}

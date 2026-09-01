@@ -40,7 +40,7 @@ const checks = [
     id: 'admin-secret-header-ignored',
     title: 'Legacy x-admin-secret reicht nicht mehr',
     run: () => http('GET', '/api/admin?action=profiles&limit=1', {
-      headers: { 'x-admin-secret': 'KursNavi2025!' },
+      headers: { 'x-admin-secret': 'not-a-real-admin-secret' },
     }),
     expect: (r) => r.status === 401,
   },

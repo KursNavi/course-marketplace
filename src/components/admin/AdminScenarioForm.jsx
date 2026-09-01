@@ -98,7 +98,7 @@ export default function AdminScenarioForm({
     card_image_url: '', card_image_alt: '', og_image_url: '', og_image_alt: '',
     meta_title: '', meta_description: '',
     cta_label_de: '',
-    cta_spec: '', cta_focus: '', cta_loc: '', cta_delivery: '',
+    cta_spec: '', cta_focus: '', cta_loc: '', cta_delivery: '', cta_kursart: '',
     sources: [],
     last_reviewed_at: '',
     sort_order: 0,
@@ -135,6 +135,7 @@ export default function AdminScenarioForm({
         cta_focus: ctaCfg.focus || '',
         cta_loc: ctaCfg.loc || '',
         cta_delivery: normalizeDeliveryTypeKey(ctaCfg.delivery) || '',
+        cta_kursart: ctaCfg.kursart || '',
         sources: sourcesToFormRows(data.sources),
         // date-Input erwartet exakt JJJJ-MM-TT. Die DB-Spalte ist `date` und
         // liefert genau dieses Format; ein Timestamp würde abgeschnitten.
@@ -229,6 +230,7 @@ export default function AdminScenarioForm({
           ...(normalizeDeliveryTypeKey(form.cta_delivery) && {
             delivery: normalizeDeliveryTypeKey(form.cta_delivery),
           }),
+          ...(form.cta_kursart && { kursart: form.cta_kursart.trim() }),
         },
         // Reihenfolge im Payload = Reihenfolge im Formular = Anzeigereihenfolge.
         sources: formRowsToSources(form.sources),
@@ -594,6 +596,10 @@ export default function AdminScenarioForm({
                 <option value="self_study">Selbststudium</option>
                 <option value="presence">Vor Ort</option>
               </select>
+            </div>
+            <div>
+              <label className="FLabel">Kursart (kursart)</label>
+              <input className="FInput" value={form.cta_kursart} onChange={(e) => update({ cta_kursart: e.target.value })} placeholder="feriencamp" maxLength={100} />
             </div>
           </div>
         </Section>
