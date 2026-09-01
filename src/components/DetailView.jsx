@@ -32,6 +32,9 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
     const { taxonomy, getTypeLabel, getAreaLabel } = useTaxonomy();
 
     const isSaved = (savedCourseIds || []).includes(course?.id);
+    const providerHomepageUrl = /^https?:\/\//i.test(course?.instructor_website_url || '')
+        ? course.instructor_website_url
+        : null;
 
     // Scroll to top when course changes
     useEffect(() => {
@@ -660,6 +663,18 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
                             <User className="w-5 h-5 mr-3 text-gray-400 shrink-0"/>
                             <span className="font-medium group-hover:underline">{course.instructor_name}</span>
                         </button>
+                        {course.is_prio && providerHomepageUrl && (
+                            <a
+                                data-testid="prio-course-homepage-link"
+                                href={providerHomepageUrl}
+                                target="_blank"
+                                rel={course.instructor_homepage_link_rel || 'nofollow noopener'}
+                                className="flex items-center text-primary hover:text-orange-700 transition-colors group"
+                            >
+                                <ExternalLink className="w-5 h-5 mr-3 text-primary shrink-0" />
+                                <span className="font-medium group-hover:underline">Zur Anbieterhomepage</span>
+                            </a>
+                        )}
                         {(() => {
                             const presenceEvents = Array.isArray(course.course_events)
                                 ? course.course_events.filter(ev =>

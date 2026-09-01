@@ -201,7 +201,7 @@ export default async function handler(req, res) {
         const { data: fullCourses, error: fullError } = await supabase
           .from('courses')
           .select(`id, title, description, price, category_type, category_area,
-            category_specialty, category_focus, canton, booking_type, image_url, created_at, status, delivery_types, delivery_type`)
+            category_specialty, category_focus, canton, booking_type, image_url, created_at, status, is_prio, delivery_types, delivery_type`)
           .in('id', courseIdList)
           .order('created_at', { ascending: false });
 
@@ -225,6 +225,8 @@ export default async function handler(req, res) {
 
         courses = (fullCourses || []).map((course) => ({
           ...course,
+          instructor_website_url: provider.website_url || null,
+          instructor_homepage_link_rel: entitlements.homepageLinkRel,
           category_type: normalizeCategoryType(course.category_type),
           all_categories: (categoriesByCourseId[course.id] || []).length > 0
             ? mapCourseCategories(categoriesByCourseId[course.id] || [])

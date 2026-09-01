@@ -21,11 +21,12 @@ const providerPayload = {
     slug: 'ich',
     description: 'Testprofil',
     logoUrl: '',
+    websiteUrl: 'https://anbieter.example',
     location: { city: 'Zürich', canton: 'Zürich' },
     isVerified: true,
     courseCount: 1,
   },
-  entitlements: {},
+  entitlements: { homepageLinkRel: 'nofollow noopener' },
   courses: [
     {
       id: 'course-1',
@@ -69,6 +70,14 @@ describe('ProviderProfilePage', () => {
         headers: expect.objectContaining({ 'Cache-Control': 'no-cache' }),
       })
     );
+  });
+
+  it('shows the provider homepage link on the public profile', async () => {
+    render(<ProviderProfilePage t={{}} setView={vi.fn()} setSelectedCourse={vi.fn()} />);
+
+    const homepageLink = await screen.findByRole('link', { name: 'anbieter.example' });
+    expect(homepageLink).toHaveAttribute('href', 'https://anbieter.example');
+    expect(homepageLink).toHaveAttribute('rel', 'nofollow noopener');
   });
 
   it('sets SEO meta tags after provider loads', async () => {
