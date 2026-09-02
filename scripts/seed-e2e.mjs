@@ -11,10 +11,10 @@
  *   SUPABASE_URL_TEST           – test project URL
  *   SUPABASE_SECRET_KEY_TEST    – test project service_role key
  *   E2E_PROVIDER_EMAIL          – email of the teacher test user (already in auth.users)
- *   E2E_PROVIDER_PASSWORD       – (not used by seed, but validated for completeness)
+ *   E2E_PROVIDER_PASSWORD       – password to keep in sync on the test user
  *   E2E_PROVIDER_ID             – UUID of the teacher auth user
  *   E2E_LEARNER_EMAIL           – email of the student test user
- *   E2E_LEARNER_PASSWORD        – (not used by seed, but validated for completeness)
+ *   E2E_LEARNER_PASSWORD        – password to keep in sync on the test user
  *   E2E_LEARNER_ID              – UUID of the student auth user
  */
 
@@ -29,8 +29,10 @@ const REQUIRED_ENV = [
   'SUPABASE_PUBLISHABLE_KEY_TEST',
   'SUPABASE_SECRET_KEY_TEST',
   'E2E_PROVIDER_EMAIL',
+  'E2E_PROVIDER_PASSWORD',
   'E2E_PROVIDER_ID',
   'E2E_LEARNER_EMAIL',
+  'E2E_LEARNER_PASSWORD',
   'E2E_LEARNER_ID',
 ];
 
@@ -53,10 +55,13 @@ const supabase = createClient(
   }
 );
 
-const PROVIDER_ID = process.env.E2E_PROVIDER_ID;
+const CONFIGURED_PROVIDER_ID = process.env.E2E_PROVIDER_ID;
 const PROVIDER_EMAIL = process.env.E2E_PROVIDER_EMAIL;
-const LEARNER_ID = process.env.E2E_LEARNER_ID;
+const CONFIGURED_LEARNER_ID = process.env.E2E_LEARNER_ID;
 const LEARNER_EMAIL = process.env.E2E_LEARNER_EMAIL;
+
+let PROVIDER_ID;
+let LEARNER_ID;
 
 // Prefix for all E2E-created data — used for cleanup
 const E2E_PREFIX = 'E2E-';
@@ -75,9 +80,32 @@ async function assertOk(label, result) {
   return result.data;
 }
 
+async function resolveAuthUserId(email, configuredId, label) {
+  const { data, error } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 });
+  if (error) {
+    throw new Error(`Could not load ${label} test user: ${error.message}`);
+  }
+
+  const user = data.users.find(candidate => candidate.email?.toLowerCase() === email.toLowerCase());
+  if (!user) {
+    throw new Error(`Could not find ${label} test user for ${email}`);
+  }
+
+  if (configuredId && configuredId !== user.id) {
+    console.warn(`  [seed] WARNING: Configured ${label} ID does not match the Auth user found by email; using the Auth user ID.`);
+  }
+
+  return user.id;
+}
+
 // ── Main ────────────────────────────────────────────────────────
 async function main() {
   console.log(`\nSeeding E2E test data on: ${process.env.SUPABASE_URL_TEST}\n`);
+
+  // The email is the source of truth. This avoids orphan profiles when a test
+  // user's Auth ID changed after a manual recreation or password reset.
+  PROVIDER_ID = await resolveAuthUserId(PROVIDER_EMAIL, CONFIGURED_PROVIDER_ID, 'provider');
+  LEARNER_ID = await resolveAuthUserId(LEARNER_EMAIL, CONFIGURED_LEARNER_ID, 'learner');
 
   // 0. Schema-Check: verify that all required columns exist on the test DB.
   //    Columns added via migration files must be applied to the test project before tests run.
@@ -130,6 +158,15 @@ async function main() {
   // profiles.id = auth.users.id (confirmed via handle_new_user trigger + app code)
   // verification_status='verified' + is_professional=true → fetchVerifiedProvider() finds this profile.
   // slug + profile_published_at → appears in the public ProviderDirectory listing.
+  const { data: existingProviderProfile, error: existingProviderProfileError } = await supabase
+    .from('profiles')
+    .select('package_tier')
+    .eq('id', PROVIDER_ID)
+    .maybeSingle();
+  if (existingProviderProfileError) {
+    throw new Error(`Could not load provider profile before seeding: ${existingProviderProfileError.message}`);
+  }
+
   await assertOk(
     `Upsert provider profile (${PROVIDER_ID})`,
     await supabase.from('profiles').upsert({
@@ -137,7 +174,9 @@ async function main() {
       full_name: 'E2E Anbieter',
       email: PROVIDER_EMAIL,
       role: 'teacher',
-      package_tier: 'pro',
+      // Preserve the configured test user's package so seeding cannot downgrade
+      // an existing shared test account (for example Premium → Pro).
+      package_tier: existingProviderProfile?.package_tier || 'pro',
       preferred_language: 'de',
       is_professional: true,
       verification_status: 'verified',
@@ -158,18 +197,29 @@ async function main() {
     }, { onConflict: 'id' })
   );
 
-  // 2b. Optionally set user_metadata.role='teacher' in auth.users so applySession()
-  //     gets the role from the JWT immediately (skips async profiles-table fetch).
-  //     Non-fatal: sb_secret_ keys may not support Auth Admin API; tests fall back to
-  //     the profiles-table fetch which is covered by the 15-20 s waitFor timeouts.
+  // 2b. Keep Auth passwords in sync with the CI secrets. This makes the test users
+  //     deterministic even after a manual password reset in the shared test project.
+  //     The seed already requires a service-role-compatible key for its database writes.
   {
     const { error } = await supabase.auth.admin.updateUserById(PROVIDER_ID, {
+      password: process.env.E2E_PROVIDER_PASSWORD,
       user_metadata: { role: 'teacher' },
     });
     if (error) {
-      console.warn(`  [seed] WARNING: Could not set user_metadata.role (${error.message}) — tests rely on profiles-table role fetch`);
+      throw new Error(`Could not synchronize provider test user: ${error.message}`);
     } else {
-      log('OK', `Set user_metadata.role=teacher for provider (${PROVIDER_ID})`);
+      log('OK', 'Synchronized provider test user password and role');
+    }
+  }
+
+  {
+    const { error } = await supabase.auth.admin.updateUserById(LEARNER_ID, {
+      password: process.env.E2E_LEARNER_PASSWORD,
+    });
+    if (error) {
+      throw new Error(`Could not synchronize learner test user: ${error.message}`);
+    } else {
+      log('OK', 'Synchronized learner test user password');
     }
   }
 
@@ -231,3 +281,4 @@ main().catch(err => {
   console.error('\nSeed failed:', err.message);
   process.exit(1);
 });
+
