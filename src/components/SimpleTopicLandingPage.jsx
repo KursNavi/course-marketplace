@@ -181,6 +181,17 @@ export default function SimpleTopicLandingPage({
           </h1>
           <p className="text-lg text-primary font-medium mb-4">{config.subtitle}</p>
           <p className="text-gray-600 max-w-2xl leading-relaxed">{config.intro}</p>
+          <div className="mt-6 flex flex-col items-start gap-3 sm:flex-row sm:items-center">
+            <button
+              type="button"
+              data-testid="topic-landing-primary-cta"
+              onClick={() => handleGoToSearch()}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 font-bold text-white shadow-sm transition hover:bg-orange-600 sm:w-auto"
+            >
+              <Search className="h-4 w-4" aria-hidden="true" /> Kurse entdecken
+            </button>
+            <p className="text-xs text-gray-500">Vergleiche Anbieter, Preise und Termine – kostenlos und unverbindlich.</p>
+          </div>
         </div>
       </div>
 

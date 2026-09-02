@@ -626,6 +626,37 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
                             : (Number(course.price) > 0 ? 'Unverbindliche Preisangabe' : '')}
                     </p>
 
+                    {effectiveBookingType === 'lead' && (
+                        <div data-testid="lead-cta-summary" className="mb-5 rounded-xl border border-orange-100 bg-orange-50 p-4">
+                            <div className="flex items-start gap-3">
+                                <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-primary shadow-sm">
+                                    <Mail className="w-4 h-4" aria-hidden="true" />
+                                </div>
+                                <div className="min-w-0">
+                                    <p className="font-bold text-dark">Unverbindlich anfragen</p>
+                                    <p className="mt-1 text-xs leading-relaxed text-gray-600">
+                                        Schreib direkt an {course.instructor_name || 'den Anbieter'} und kläre Termin, Inhalt oder Verfügbarkeit.
+                                    </p>
+                                </div>
+                            </div>
+                            <ul className="mt-3 space-y-1.5 text-xs text-gray-700">
+                                <li className="flex items-center gap-2"><CheckCircle className="w-3.5 h-3.5 shrink-0 text-green-600" aria-hidden="true" /> Keine Zahlung über KursNavi</li>
+                                <li className="flex items-center gap-2"><CheckCircle className="w-3.5 h-3.5 shrink-0 text-green-600" aria-hidden="true" /> Antwort direkt vom Anbieter</li>
+                                {course.instructor_verified && (
+                                    <li className="flex items-center gap-2"><Shield className="w-3.5 h-3.5 shrink-0 text-green-600" aria-hidden="true" /> Anbieter verifiziert</li>
+                                )}
+                            </ul>
+                            <button
+                                type="button"
+                                data-testid="lead-inquiry-cta"
+                                onClick={() => handleBookingAction()}
+                                className="mt-4 w-full rounded-lg bg-primary py-3 text-sm font-bold text-white shadow-sm transition hover:bg-orange-600 active:scale-[.99]"
+                            >
+                                <Mail className="mr-2 inline-block h-4 w-4" aria-hidden="true" /> Anfrage senden
+                            </button>
+                        </div>
+                    )}
+
                     <div className="border-t border-gray-100 pt-4 mb-4 space-y-3">
                         <button
                             data-testid="instructor-profile-btn"
@@ -826,13 +857,6 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
                                         );
                                     })}
                                 </div>
-                                <button
-                                    onClick={() => handleBookingAction()}
-                                    className="w-full py-3 rounded-xl font-bold text-sm transition flex items-center justify-center bg-primary text-white hover:bg-orange-600 shadow-sm hover:shadow active:scale-95 mb-2"
-                                >
-                                    <Mail className="w-4 h-4 mr-2" />
-                                    Anfrage senden
-                                </button>
                                 </>
                             ) : (
                                 <div className="space-y-3 mb-6 max-h-96 overflow-y-auto pr-1 custom-scrollbar">
@@ -946,8 +970,10 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
                                 </div>
                             )}
 
-                            {!user && effectiveBookingType !== 'lead' ? (
-                                <div className="w-full">
+                            {effectiveBookingType !== 'lead' && (
+                                <>
+                                {!user ? (
+                                    <div className="w-full">
                                     <button
                                         onClick={() => {
                                             localStorage.setItem('pendingCourseId', course.id);
@@ -983,8 +1009,8 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
                                 </div>
                             )}
 
-                                </div>
-                            ) : (
+                                    </div>
+                                ) : (
                                 <button
                                     onClick={() => !bookingInProgress && (effectiveBookingType === 'platform_flex' || effectiveBookingType === 'lead') && handleBookingAction()}
                                     disabled={effectiveBookingType === 'platform' || (effectiveBookingType === 'platform_flex' && (!ticketAvailable || !guardianAttested)) || bookingInProgress}
@@ -1003,8 +1029,8 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
                                                 : <><Mail className="w-4 h-4 mr-2"/> Anfrage senden</>
                                     )}
                                 </button>
-                            )}
-                            {user?.credit_balance_cents > 0 && effectiveBookingType !== 'lead' && course.price > 0 && (() => {
+                                )}
+                                {user?.credit_balance_cents > 0 && course.price > 0 && (() => {
                                 const priceCents = Math.round(Number(course.price) * 100);
                                 const credit = user.credit_balance_cents;
                                 if (credit >= priceCents) {
@@ -1012,6 +1038,8 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
                                 }
                                 return <p className="text-xs text-green-700 text-center mt-2">CHF {(Math.min(credit, priceCents) / 100).toFixed(2)} Guthaben wird verrechnet</p>;
                             })()}
+                                </>
+                            )}
                         </div>
                     )}
                     </>)}
@@ -1156,7 +1184,7 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
         )}
         {showLeadModal && (
             <div className="fixed inset-0 bg-dark/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200" role="dialog" aria-modal="true" aria-labelledby="lead-modal-title">
-                <div className="bg-white rounded-2xl p-6 max-w-md w-full relative shadow-2xl">
+                <div className="bg-white rounded-2xl p-6 max-w-md w-full max-h-[calc(100vh-2rem)] overflow-y-auto relative shadow-2xl">
                     <button onClick={() => setShowLeadModal(false)} className="absolute top-4 right-4 text-gray-400 hover:text-dark transition-colors" aria-label="Schliessen"><X className="w-6 h-6" aria-hidden="true" /></button>
                     {leadStatus === 'success' ? (
                         <div className="text-center py-8 animate-in zoom-in duration-300">
@@ -1180,11 +1208,12 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
                     ) : (
                         <>
                             <h3 id="lead-modal-title" className="text-xl font-bold mb-1 font-heading">Kurs unverbindlich anfragen</h3>
-                            <p className="text-xs text-gray-500 mb-6">Deine Anfrage geht direkt an {course.instructor_name}.</p>
-                            <form onSubmit={handleLeadSubmit} className="space-y-4">
-                                <div><label className="block text-xs font-bold text-gray-500 uppercase mb-1">Dein Name</label><input name="name" required defaultValue={user?.user_metadata?.full_name || user?.user_metadata?.name || ''} placeholder="Vor- und Nachname" className="w-full p-3 bg-gray-50 rounded-lg border border-transparent focus:bg-white focus:border-primary outline-none transition" /></div>
-                                <div><label className="block text-xs font-bold text-gray-500 uppercase mb-1">Deine Email</label><input name="email" type="email" required defaultValue={user?.email || ''} placeholder="deine@email.ch" className="w-full p-3 bg-gray-50 rounded-lg border border-transparent focus:bg-white focus:border-primary outline-none transition" /></div>
-                                <div><label className="block text-xs font-bold text-gray-500 uppercase mb-1">Nachricht <span className="font-normal normal-case text-gray-400">– kann angepasst werden</span></label><textarea name="message" rows="3" defaultValue={`Guten Tag, ich interessiere mich für den Kurs "${course.title}".`} className="w-full p-3 bg-gray-50 rounded-lg border border-transparent focus:bg-white focus:border-primary outline-none transition"></textarea></div>
+                            <p className="text-sm text-gray-600 mb-1">Deine Anfrage geht direkt an {course.instructor_name}.</p>
+                            <p id="lead-form-help" className="text-xs text-gray-500 mb-5">Nur Name und E-Mail sind erforderlich. Die Nachricht ist optional und bereits vorausgefüllt.</p>
+                            <form onSubmit={handleLeadSubmit} className="space-y-4" aria-describedby="lead-form-help">
+                                <div><label className="block text-sm font-semibold text-gray-700 mb-1" htmlFor="lead-name">Name</label><input id="lead-name" name="name" required autoComplete="name" defaultValue={user?.user_metadata?.full_name || user?.user_metadata?.name || ''} placeholder="Vor- und Nachname" className="w-full p-3 bg-gray-50 rounded-lg border border-transparent focus:bg-white focus:border-primary outline-none transition" /></div>
+                                <div><label className="block text-sm font-semibold text-gray-700 mb-1" htmlFor="lead-email">E-Mail-Adresse</label><input id="lead-email" name="email" type="email" required autoComplete="email" defaultValue={user?.email || ''} placeholder="deine@email.ch" className="w-full p-3 bg-gray-50 rounded-lg border border-transparent focus:bg-white focus:border-primary outline-none transition" /></div>
+                                <div><label className="block text-sm font-semibold text-gray-700 mb-1" htmlFor="lead-message">Nachricht <span className="font-normal text-gray-500">(optional)</span></label><textarea id="lead-message" name="message" rows="3" defaultValue={`Guten Tag, ich interessiere mich für den Kurs "${course.title}".`} className="w-full p-3 bg-gray-50 rounded-lg border border-transparent focus:bg-white focus:border-primary outline-none transition"></textarea></div>
                                 <button type="submit" disabled={leadStatus === 'submitting'} className="w-full bg-primary text-white font-bold py-3 rounded-lg hover:bg-orange-600 transition flex items-center justify-center disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed"><Send className="w-4 h-4 mr-2"/> Anfrage absenden</button>
                             </form>
                         </>

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Search, ArrowRight, ChevronDown, ChevronRight, BookOpen, Award, HelpCircle } from 'lucide-react';
+import { Search, ArrowRight, ChevronDown, ChevronRight, BookOpen, Award, HelpCircle, CheckCircle, Shield } from 'lucide-react';
 import { getBereichBySlug, getBereichUrl, BEREICH_LANDING_CONFIG } from '../lib/bereichLandingConfig';
 import { SEGMENT_LANDING_CONFIG } from '../lib/segmentLandingConfig';
 import { SEGMENT_CONFIG } from '../lib/constants';
@@ -416,6 +416,11 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
               >
                 Alle Kurse anzeigen <ArrowRight className="w-4 h-4" />
               </button>
+            </div>
+            <div data-testid="landing-cta-benefits" className="mt-5 flex flex-col gap-2 text-xs text-white/85 sm:flex-row sm:flex-wrap sm:gap-x-5 sm:gap-y-2">
+              <span className="inline-flex items-center gap-1.5"><CheckCircle className="h-3.5 w-3.5 text-green-300" aria-hidden="true" /> Anbieter und Angebote vergleichen</span>
+              <span className="inline-flex items-center gap-1.5"><Shield className="h-3.5 w-3.5 text-green-300" aria-hidden="true" /> Direkt beim Anbieter anfragen</span>
+              <span className="inline-flex items-center gap-1.5"><CheckCircle className="h-3.5 w-3.5 text-green-300" aria-hidden="true" /> Kostenlos und unverbindlich</span>
             </div>
           </form>
         </div>

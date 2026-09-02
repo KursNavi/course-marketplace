@@ -33,6 +33,13 @@ describe('BereichLandingPage mobile responsive regression guard', () => {
     expect(componentSource).toContain('sm:absolute sm:right-2 sm:top-2 sm:w-auto');
   });
 
+  it('keeps the primary search CTA close to clear value and trust signals', () => {
+    expect(componentSource).toContain('data-testid="landing-cta-benefits"');
+    expect(componentSource).toContain('Anbieter und Angebote vergleichen');
+    expect(componentSource).toContain('Direkt beim Anbieter anfragen');
+    expect(componentSource).toContain('Kostenlos und unverbindlich');
+  });
+
   it('allows long scenario-card titles and teasers to wrap instead of expanding the grid', () => {
     // Die Kachel ist eine Flex-Spalte (Bildband oben, Inhalt darunter). Für die
     // 390px-Containment gilt unverändert: min-w-0 auf Kachel und Inhaltsblock,
