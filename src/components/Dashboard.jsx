@@ -1423,6 +1423,7 @@ const CaptureServiceModal = ({ isOpen, onClose, user, includedServices, usedServ
                     <button
                         onClick={handleSubmit}
                         disabled={isLoading}
+                        data-testid="capture-service-submit"
                         className="flex-1 px-6 py-3 bg-primary text-white rounded-xl font-semibold hover:bg-primary/90 transition flex items-center justify-center disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed"
                     >
                         {isLoading ? (

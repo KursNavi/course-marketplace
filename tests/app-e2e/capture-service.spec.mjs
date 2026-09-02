@@ -37,8 +37,13 @@ test.describe('Capture Service / Listungsservice (hybrid app-e2e)', () => {
     // Fill the URL field (first course entry)
     await modal.locator('input[type="url"]').first().fill('https://example.com/mein-testkurs');
 
-    // Click the payment button ("Zur Zahlung (CHF 75.-)" for basic tier, 1 course)
-    await modal.getByRole('button', { name: /zur zahlung/i }).click();
+    // The package tier can finish loading while the modal is open. Basic shows
+    // a paid checkout label, while included service units show a free booking
+    // label; both use the same submit flow and API contract.
+    const submitButton = modal.getByTestId('capture-service-submit');
+    await expect(submitButton).toBeVisible({ timeout: 5_000 });
+    await expect(submitButton).toHaveText(/zur zahlung|kostenlos buchen/i);
+    await submitButton.click();
 
     // ── 3-step validation ───────────────────────────────────
 
