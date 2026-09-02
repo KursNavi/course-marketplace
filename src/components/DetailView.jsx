@@ -32,6 +32,20 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
     const { taxonomy, getTypeLabel, getAreaLabel } = useTaxonomy();
 
     const isSaved = (savedCourseIds || []).includes(course?.id);
+    const providerHomepageUrl = (() => {
+        const rawUrl = String(course?.instructor_website_url || '').trim();
+        if (!rawUrl) return null;
+
+        const candidate = /^https?:\/\//i.test(rawUrl) ? rawUrl : `https://${rawUrl}`;
+        try {
+            const parsedUrl = new URL(candidate);
+            return ['http:', 'https:'].includes(parsedUrl.protocol) && parsedUrl.hostname
+                ? candidate
+                : null;
+        } catch {
+            return null;
+        }
+    })();
 
     // Scroll to top when course changes
     useEffect(() => {
@@ -660,6 +674,18 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
                             <User className="w-5 h-5 mr-3 text-gray-400 shrink-0"/>
                             <span className="font-medium group-hover:underline">{course.instructor_name}</span>
                         </button>
+                        {course.is_prio && providerHomepageUrl && (
+                            <a
+                                data-testid="prio-course-homepage-link"
+                                href={providerHomepageUrl}
+                                target="_blank"
+                                rel={course.instructor_homepage_link_rel || 'nofollow noopener'}
+                                className="flex items-center text-primary hover:text-orange-700 transition-colors group"
+                            >
+                                <ExternalLink className="w-5 h-5 mr-3 text-primary shrink-0" />
+                                <span className="font-medium group-hover:underline">Zur Anbieterhomepage</span>
+                            </a>
+                        )}
                         {(() => {
                             const presenceEvents = Array.isArray(course.course_events)
                                 ? course.course_events.filter(ev =>

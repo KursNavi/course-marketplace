@@ -42,6 +42,119 @@ vi.mock('../src/lib/imageUtils', () => ({
 import DetailView from '../src/components/DetailView';
 
 describe('DetailView', () => {
+  it('zeigt bei einem Prio-Kurs den Link zur Anbieterhomepage', () => {
+    const course = {
+      id: 'prio-1',
+      title: 'Prio-Testkurs',
+      description: 'Ein hervorgehobener Testkurs.',
+      objectives: [],
+      instructor_name: 'Test Anbieter',
+      instructor_website_url: 'https://anbieter.example',
+      instructor_homepage_link_rel: 'nofollow noopener',
+      is_prio: true,
+      booking_type: 'lead',
+      price: 20,
+      canton: 'Zürich',
+      address: 'Zürich',
+      category_type: 'privat',
+      all_categories: [],
+    };
+
+    render(
+      <DetailView
+        course={course}
+        courses={[]}
+        setView={vi.fn()}
+        t={{ lbl_description: 'Beschreibung', lbl_learn_goals: 'Lernziele', btn_book: 'Jetzt buchen' }}
+        setSelectedTeacher={vi.fn()}
+        user={null}
+        savedCourseIds={[]}
+        onToggleSaveCourse={vi.fn()}
+        showNotification={vi.fn()}
+      />
+    );
+
+    expect(screen.getByTestId('prio-course-homepage-link')).toHaveAttribute(
+      'href',
+      'https://anbieter.example'
+    );
+    expect(screen.getByTestId('prio-course-homepage-link')).toHaveAttribute(
+      'rel',
+      'nofollow noopener'
+    );
+  });
+
+  it('ergänzt bei einer gespeicherten Homepage ohne Protokoll automatisch https://', () => {
+    const course = {
+      id: 'prio-2',
+      title: 'Prio-Testkurs ohne Protokoll',
+      description: 'Ein hervorgehobener Testkurs.',
+      objectives: [],
+      instructor_name: 'Test Anbieter',
+      instructor_website_url: 'www.anbieter.example',
+      is_prio: true,
+      booking_type: 'lead',
+      price: 20,
+      canton: 'Zürich',
+      address: 'Zürich',
+      category_type: 'privat',
+      all_categories: [],
+    };
+
+    render(
+      <DetailView
+        course={course}
+        courses={[]}
+        setView={vi.fn()}
+        t={{ lbl_description: 'Beschreibung', lbl_learn_goals: 'Lernziele', btn_book: 'Jetzt buchen' }}
+        setSelectedTeacher={vi.fn()}
+        user={null}
+        savedCourseIds={[]}
+        onToggleSaveCourse={vi.fn()}
+        showNotification={vi.fn()}
+      />
+    );
+
+    expect(screen.getByTestId('prio-course-homepage-link')).toHaveAttribute(
+      'href',
+      'https://www.anbieter.example'
+    );
+  });
+
+  it('zeigt den Homepage-Link nicht bei normalen Kursen', () => {
+    const course = {
+      id: 'normal-1',
+      title: 'Normaler Testkurs',
+      description: 'Ein normaler Testkurs.',
+      objectives: [],
+      instructor_name: 'Test Anbieter',
+      instructor_website_url: 'https://anbieter.example',
+      is_prio: false,
+      booking_type: 'lead',
+      price: 20,
+      canton: 'Zürich',
+      address: 'Zürich',
+      category_type: 'privat',
+      all_categories: [],
+    };
+
+    render(
+      <DetailView
+        course={course}
+        courses={[]}
+        setView={vi.fn()}
+        t={{ lbl_description: 'Beschreibung', lbl_learn_goals: 'Lernziele', btn_book: 'Jetzt buchen' }}
+        setSelectedTeacher={vi.fn()}
+        user={null}
+        savedCourseIds={[]}
+        onToggleSaveCourse={vi.fn()}
+        showNotification={vi.fn()}
+      />
+    );
+
+    expect(screen.queryByTestId('prio-course-homepage-link')).not.toBeInTheDocument();
+  });
+
   it('hides raw legacy area labels when a synthetic specialty label is available', () => {
     const course = {
       id: '363',

@@ -10,6 +10,7 @@ import { BASE_URL, slugify as siteSlugify, buildCoursePath as siteBuildCoursePat
 import { buildSyntheticCategories, getNormalizedDeliveryTypes, getPrimaryCategorySlug, normalizeCategoryType, normalizeDeliveryTypeKey } from './lib/courseMetadata';
 import { refreshCoursesAfterMutation } from './lib/courseRefresh';
 import { hasCompleteCourseCategory } from './lib/courseStatus';
+import { getHomepageLinkRel } from './lib/entitlements';
 import { trackPageView } from './lib/analytics';
 import { useTaxonomy } from './hooks/useTaxonomy';
 
@@ -911,7 +912,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
       if (userIds.length > 0) {
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
-          .select('id, bio_text, certificates, additional_locations, city, canton, verification_status, slug, package_tier, profile_published_at, basic_lead_ranking_factor')
+          .select('id, bio_text, certificates, additional_locations, city, canton, verification_status, slug, package_tier, profile_published_at, website_url, basic_lead_ranking_factor')
           .in('id', userIds);
 
         if (!profileError && profileData) {
@@ -982,6 +983,8 @@ export default function KursNaviPro() {  // 1. Initial State Logic
           additional_locations: prof?.additional_locations,
           instructor_verified: prof?.verification_status === 'verified',
           instructor_slug: prof?.slug || null,
+          instructor_website_url: prof?.website_url || null,
+          instructor_homepage_link_rel: getHomepageLinkRel(instructorTier),
           instructor_has_public_profile: ['pro', 'premium', 'enterprise'].includes(instructorTier) && !!prof?.slug && !!prof?.profile_published_at,
           // Ranking-Abschlag für Basic-Anbieter mit vielen qualifizierten Leads.
           // Kommt aus derselben Profil-Abfrage wie die übrigen Anbieterdaten —
