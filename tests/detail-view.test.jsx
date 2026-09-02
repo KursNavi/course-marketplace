@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import React from 'react';
 
 vi.mock('../src/lib/supabase', () => ({
@@ -197,6 +197,49 @@ describe('DetailView', () => {
 
     expect(screen.getByText('Reisevorbereitung')).toBeInTheDocument();
     expect(screen.queryByText('sprachen_privat')).not.toBeInTheDocument();
+  });
+
+  it('places the lead CTA near the price and keeps the inquiry form short', () => {
+    const course = {
+      id: 'lead-cta-1',
+      title: 'Yoga für Einsteiger',
+      description: 'Ein entspannter Einstieg.',
+      instructor_name: 'Studio Muster',
+      instructor_verified: true,
+      booking_type: 'lead',
+      price: 0,
+      canton: 'Zürich',
+      address: 'Zürich',
+      category_type: 'privat',
+      all_categories: [],
+    };
+
+    render(
+      <DetailView
+        course={course}
+        courses={[]}
+        setView={vi.fn()}
+        t={{ lbl_description: 'Beschreibung', lbl_learn_goals: 'Lernziele', btn_book: 'Jetzt buchen' }}
+        setSelectedTeacher={vi.fn()}
+        user={null}
+        savedCourseIds={[]}
+        onToggleSaveCourse={vi.fn()}
+        showNotification={vi.fn()}
+      />
+    );
+
+    const summary = screen.getByTestId('lead-cta-summary');
+    expect(summary).toBeInTheDocument();
+    expect(summary).toContainElement(screen.getByTestId('lead-inquiry-cta'));
+    expect(screen.getByText('Keine Zahlung über KursNavi')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId('lead-inquiry-cta'));
+
+    expect(screen.getByRole('dialog')).toBeVisible();
+    expect(screen.getByLabelText('Name')).toBeRequired();
+    expect(screen.getByLabelText('E-Mail-Adresse')).toBeRequired();
+    expect(screen.getByLabelText(/Nachricht/)).not.toBeRequired();
+    expect(screen.getByText('Nur Name und E-Mail sind erforderlich. Die Nachricht ist optional und bereits vorausgefüllt.')).toBeInTheDocument();
   });
 
   it('hides Lernziele heading when objectives are empty or missing', () => {
