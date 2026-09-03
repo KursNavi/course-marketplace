@@ -180,7 +180,7 @@ export const Home = ({
   useEffect(() => {
     document.title = 'KursNavi - Der Schweizer Kursmarktplatz für Weiterbildung & Freizeit';
 
-    const metaDescription = 'Entdecke tausende Kurse in der Schweiz: Weiterbildung, Hobbys, Kinderkurse. Vergleiche Anbieter, buche direkt online. Dein Kursmarktplatz für alle Kantone.';
+    const metaDescription = 'Entdecke Kurse in der Schweiz: Weiterbildung, Hobbys sowie Kinder- und Jugendkurse. Vergleiche Anbieter und finde ein Angebot, das zu dir passt.';
 
     let metaDescTag = document.querySelector('meta[name="description"]');
     if (!metaDescTag) {
@@ -238,7 +238,7 @@ export const Home = ({
         "@type": "Organization",
         "name": "KursNavi",
         "url": BASE_URL,
-        "logo": `${BASE_URL}/og-default.png`,
+        "logo": `${BASE_URL}/images/brand/kursnavi-symbol-original.jpg`,
         "description": "Der Schweizer Kursmarktplatz für Weiterbildung, Freizeit und Kinderkurse",
         "address": {
             "@type": "PostalAddress",
@@ -307,128 +307,122 @@ export const Home = ({
 
       
       {/* 1. HERO SECTION */}
-      {/* min-h statt h auf Mobile: die Hero-Hoehe war fix, auf sehr schmalen Geraeten
-          (<= 320 px) ragte die Suchbox schon knapp heraus. Als Mindesthoehe sieht die
-          Sektion unveraendert aus, waechst aber mit, statt den Inhalt abzuschneiden.
-          Ab md gilt weiterhin exakt die feste Hoehe von 600 px. */}
-      <div className="relative min-h-[720px] md:min-h-0 md:h-[600px] w-full flex items-center justify-center">
-        {/* Background */}
-        <img
-          src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop"
-          srcSet="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=800&auto=format&fit=crop 800w, https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop 1200w, https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1920&auto=format&fit=crop 1920w"
-          sizes="100vw"
-          alt=""
-          fetchPriority="high"
-          aria-hidden="true"
-          className="absolute inset-0 w-full h-full object-cover object-center z-0"
-        />
-        <div className="absolute inset-0 bg-black/50 z-10"></div>
+      <section className="relative overflow-visible bg-beige border-b border-[#eadfd8]">
+        <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
+          <div className="absolute -right-24 -top-28 h-80 w-80 rounded-full bg-primaryLight/80 blur-3xl" />
+          <div className="absolute -left-32 bottom-0 h-72 w-72 rounded-full bg-secondaryLight/45 blur-3xl" />
+        </div>
 
-        {/* Content */}
-        <div className="relative z-20 text-center px-4 max-w-4xl mx-auto w-full">
-          <h1 className="text-4xl md:text-6xl font-heading font-bold text-white mb-6 tracking-tight">
-            {t.home_headline}
-          </h1>
-          <p className="text-lg md:text-xl text-gray-100 mb-8 font-sans max-w-2xl mx-auto leading-relaxed">
-            {t.home_subhead}
-          </p>
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 md:py-20 lg:py-24 grid lg:grid-cols-[1.05fr_.95fr] gap-12 lg:gap-16 items-center">
+          <div className="max-w-2xl">
+            <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-primary mb-5">
+              <span className="h-2 w-2 rounded-full bg-primary" /> KursNavi · Kurse in der Schweiz
+            </span>
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-heading font-bold text-dark tracking-[-0.045em] leading-[1.06] mb-5">
+              {t.home_headline}
+            </h1>
+            <p className="text-lg md:text-xl text-gray-600 mb-8 max-w-xl leading-relaxed">
+              {t.home_subhead}
+            </p>
 
-          {/* SEARCH & FILTERS CONTAINER */}
-          <div className="max-w-3xl mx-auto bg-white/10 backdrop-blur-md p-6 rounded-3xl border border-white/20 shadow-2xl relative">
-            
-            {/* Row 1: Search Bar */}
-            <form onSubmit={handleSearch} className="relative flex flex-col mb-4">
-                {/* Auf Mobile traegt dieses Label den Suchhinweis: neben dem "Suchen"-Button
-                    bleiben im Feld nur rund 130 px, der Platzhalter braucht rund 200 px und
-                    wurde deshalb bisher per placeholder-transparent unsichtbar gemacht — das
-                    Feld wirkte leer. Ab md zeigt ihn der Platzhalter wieder im Feld selbst,
-                    das Label bleibt dort als Screenreader-Beschriftung erhalten. */}
-                <label
-                    htmlFor="home-search-input"
-                    className="block md:sr-only text-left text-sm font-medium text-white mb-1.5"
-                >
-                    {t.search_placeholder}
-                </label>
-                <div className="relative flex items-center">
-                    <Search className="absolute left-4 text-gray-400 w-5 h-5 z-10" aria-hidden="true" />
+            {/* SEARCH & FILTERS CONTAINER */}
+            <div className="max-w-2xl bg-white p-3 sm:p-4 rounded-[1.75rem] border border-[#eadfd8] shadow-[0_18px_50px_rgba(93,64,48,0.12)] relative z-50">
+              <form onSubmit={handleSearch} className="relative flex flex-col gap-3">
+                <label htmlFor="home-search-input" className="sr-only">{t.search_placeholder}</label>
+                <div className="relative flex flex-col sm:flex-row gap-2">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5 z-10" aria-hidden="true" />
                     <input
-                    id="home-search-input"
-                    type="text"
-                    placeholder={t.search_placeholder}
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-12 pr-32 py-4 rounded-xl text-dark font-sans shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-transparent text-lg placeholder-transparent md:placeholder-gray-500 bg-white"
+                      id="home-search-input"
+                      type="text"
+                      placeholder={t.search_placeholder}
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full pl-12 pr-4 py-3.5 rounded-2xl text-dark font-sans focus:outline-none focus:ring-2 focus:ring-primary/40 text-base placeholder-gray-400 bg-beige/70 border border-transparent focus:bg-white"
                     />
-                    <button type="submit" className="absolute right-2 bg-primary hover:bg-orange-600 text-white px-6 py-2 rounded-lg font-bold transition-colors duration-300">
-                    {t.btn_search}
-                    </button>
+                  </div>
+                  <button type="submit" className="inline-flex items-center justify-center gap-2 bg-primary hover:bg-orange-600 text-white px-6 py-3.5 rounded-2xl font-bold transition-colors duration-300 shrink-0">
+                    {t.btn_search} <ArrowRight className="w-4 h-4" />
+                  </button>
                 </div>
-                <p className="text-xs text-white/70 mt-1.5 ml-1">{t.search_hint_boolean || 'Tipp: Kombiniere Begriffe mit AND oder OR (z.B. "Yoga AND Zürich")'}</p>
-            </form>
+                <p className="text-xs text-gray-500 px-1">{t.search_hint_boolean || 'Tipp: Kombiniere Begriffe, z.B. «Yoga Zürich» oder «Excel online».'}</p>
+              </form>
 
-            {/* Row 2: Suchbereich */}
-            <div className="mt-1 mb-3">
-                <p className="text-xs text-white/60 mb-2 text-left">Suchbereich</p>
+              <div className="mt-4 pt-4 border-t border-gray-100">
+                <p className="text-xs font-bold uppercase tracking-[0.12em] text-gray-400 mb-2.5">Suchbereich</p>
                 <div className="flex gap-2 flex-wrap" data-testid="home-segment-selector">
-                    {[
-                        { key: 'alle',         label: 'Alle Bereiche', Icon: null },
-                        { key: 'beruflich',    label: t.nav_professional || 'Beruflich',      Icon: Briefcase },
-                        { key: 'privat_hobby', label: t.nav_private || 'Privat & Hobby',      Icon: Palette   },
-                        { key: 'kinder_jugend',label: t.nav_kids || 'Kinder & Jugend',        Icon: Smile     },
-                    ].map(({ key, label, Icon }) => {
-                        const isActive = homeSegment === key;
-                        return (
-                            <button
-                                key={key}
-                                type="button"
-                                data-testid={`home-segment-${key}`}
-                                onClick={() => setHomeSegment(key)}
-                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all border ${
-                                    isActive
-                                        ? 'bg-white text-dark border-white shadow-sm'
-                                        : 'bg-white/15 text-white/80 border-white/30 hover:bg-white/25'
-                                }`}
-                            >
-                                {Icon && <Icon className="w-3.5 h-3.5" />}
-                                {label}
-                            </button>
-                        );
-                    })}
+                  {[
+                    { key: 'alle', label: 'Alle Bereiche', Icon: null },
+                    { key: 'beruflich', label: t.nav_professional || 'Beruflich', Icon: Briefcase },
+                    { key: 'privat_hobby', label: t.nav_private || 'Privat & Hobby', Icon: Palette },
+                    { key: 'kinder_jugend', label: t.nav_kids || 'Kinder & Jugend', Icon: Smile },
+                  ].map(({ key, label, Icon }) => {
+                    const isActive = homeSegment === key;
+                    const colorStyle = key === 'beruflich'
+                      ? (isActive ? 'bg-blue-100 text-blue-800 border-blue-200' : 'text-blue-700 border-blue-100 hover:bg-blue-50')
+                      : key === 'privat_hobby'
+                        ? (isActive ? 'bg-orange-100 text-orange-800 border-orange-200' : 'text-orange-700 border-orange-100 hover:bg-orange-50')
+                        : key === 'kinder_jugend'
+                          ? (isActive ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : 'text-emerald-700 border-emerald-100 hover:bg-emerald-50')
+                          : (isActive ? 'bg-dark text-white border-dark' : 'text-gray-600 border-gray-200 hover:bg-gray-50');
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        data-testid={`home-segment-${key}`}
+                        onClick={() => setHomeSegment(key)}
+                        className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-semibold transition-all border ${colorStyle}`}
+                      >
+                        {Icon && <Icon className="w-3.5 h-3.5" />}
+                        {label}
+                      </button>
+                    );
+                  })}
                 </div>
-            </div>
+              </div>
 
-            {/* Row 3: Location + Delivery Type */}
-            <div className="flex gap-3 flex-col sm:flex-row relative z-50">
-                {/* LOCATION DROPDOWN */}
-                <div className="flex-1 bg-white rounded-xl">
-                    <LocationDropdown
-                        selectedLocations={selectedLocations}
-                        setSelectedLocations={setSelectedLocations}
-                        locMenuOpen={locMenuOpen}
-                        setLocMenuOpen={setLocMenuOpen}
-                        locMenuRef={locMenuRef}
-                        t={t}
-                        buttonClassName={`w-full px-4 py-3 flex items-center justify-between font-medium rounded-xl transition-colors ${locMenuOpen ? 'bg-primary/10 text-primary ring-2 ring-primary/30' : 'text-gray-700 hover:bg-gray-50'}`}
-                    />
-                </div>
-
-                {/* DELIVERY TYPE FILTER */}
-                <div className="flex-1 bg-white rounded-xl">
-                    <DeliveryTypeFilter
-                        selectedDeliveryTypes={selectedDeliveryTypes}
-                        setSelectedDeliveryTypes={setSelectedDeliveryTypes}
-                        deliveryMenuOpen={deliveryMenuOpen}
-                        setDeliveryMenuOpen={setDeliveryMenuOpen}
-                        deliveryMenuRef={deliveryMenuRef}
-                        t={t}
-                        buttonClassName={`w-full px-4 py-3 flex items-center justify-between font-medium rounded-xl transition-colors ${deliveryMenuOpen ? 'bg-primary/10 text-primary ring-2 ring-primary/30' : 'text-gray-700 hover:bg-gray-50'}`}
-                    />
-                </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-3 relative z-50">
+                <LocationDropdown
+                  selectedLocations={selectedLocations}
+                  setSelectedLocations={setSelectedLocations}
+                  locMenuOpen={locMenuOpen}
+                  setLocMenuOpen={setLocMenuOpen}
+                  locMenuRef={locMenuRef}
+                  t={t}
+                  buttonClassName={`w-full px-4 py-3 flex items-center justify-between font-medium rounded-2xl transition-colors border ${locMenuOpen ? 'bg-primaryLight text-primary border-primary/30' : 'bg-beige/60 text-gray-700 border-transparent hover:bg-gray-100'}`}
+                />
+                <DeliveryTypeFilter
+                  selectedDeliveryTypes={selectedDeliveryTypes}
+                  setSelectedDeliveryTypes={setSelectedDeliveryTypes}
+                  deliveryMenuOpen={deliveryMenuOpen}
+                  setDeliveryMenuOpen={setDeliveryMenuOpen}
+                  deliveryMenuRef={deliveryMenuRef}
+                  t={t}
+                  buttonClassName={`w-full px-4 py-3 flex items-center justify-between font-medium rounded-2xl transition-colors border ${deliveryMenuOpen ? 'bg-primaryLight text-primary border-primary/30' : 'bg-beige/60 text-gray-700 border-transparent hover:bg-gray-100'}`}
+                />
+              </div>
             </div>
           </div>
 
+          <div className="relative min-h-[330px] sm:min-h-[420px]" aria-label="Kurswelten entdecken">
+            <div className="absolute right-0 top-4 w-[72%] sm:w-[66%] aspect-[4/3] rounded-[2rem] overflow-hidden border-8 border-white shadow-[0_20px_55px_rgba(93,64,48,0.16)] rotate-2">
+              <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1000&auto=format&fit=crop" alt="Menschen lernen gemeinsam" loading="eager" className="w-full h-full object-cover" />
+              <div className="absolute inset-0 bg-gradient-to-t from-dark/55 via-transparent to-transparent" />
+              <span className="absolute bottom-4 left-4 text-white text-sm font-bold">Gemeinsam Neues entdecken</span>
+            </div>
+            <div className="absolute left-0 bottom-5 w-[47%] sm:w-[43%] aspect-[4/3] rounded-[1.5rem] overflow-hidden border-8 border-white shadow-[0_18px_40px_rgba(93,64,48,0.14)] -rotate-3">
+              <img src="https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?q=80&w=700&auto=format&fit=crop" alt="Kreativer Kurs" loading="lazy" className="w-full h-full object-cover" />
+            </div>
+            <div className="absolute left-[10%] top-0 sm:top-4 rounded-2xl bg-blue-800 text-white px-4 py-3 shadow-lg">
+              <Briefcase className="w-5 h-5 mb-1" />
+              <span className="text-xs font-bold">Beruflich</span>
+            </div>
+            <div className="absolute right-[4%] bottom-0 rounded-2xl bg-white border border-[#eadfd8] px-4 py-3 shadow-lg">
+              <div className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-emerald-500" /><span className="text-xs font-bold text-dark">Kinder & Jugend</span></div>
+            </div>
+          </div>
         </div>
-      </div>
+      </section>
 
       {/* 2. CATEGORY PREVIEW (Static fallback filters) */}
       <div className="py-20 bg-beige max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
@@ -439,7 +433,7 @@ export const Home = ({
 
           {/* BERUFLICH - Blue */}
           <div className="flex flex-col">
-            <a href="/search?type=beruflich" onClick={(e) => { e.preventDefault(); setSearchType('beruflich'); window.history.pushState({ view: 'search' }, '', '/search?type=beruflich'); window.scrollTo(0,0); }} className="group relative h-80 rounded-2xl overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 block">
+            <a href="/search?type=beruflich" onClick={(e) => { e.preventDefault(); setSearchType('beruflich'); window.history.pushState({ view: 'search' }, '', '/search?type=beruflich'); window.scrollTo(0,0); }} className="group relative h-[280px] sm:h-[300px] rounded-3xl overflow-hidden cursor-pointer shadow-[0_12px_28px_rgba(93,64,48,0.12)] hover:shadow-[0_18px_38px_rgba(93,64,48,0.18)] transition-all duration-300 hover:-translate-y-1 block">
               <img src="https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=800&auto=format&fit=crop" srcSet="https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=400&auto=format&fit=crop 400w, https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=800&auto=format&fit=crop 800w" sizes="(max-width: 768px) 100vw, 33vw" alt="" aria-hidden="true" loading="lazy" className="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-110" />
               <div className="absolute inset-0 bg-gradient-to-t from-blue-800/90 via-blue-600/40 to-blue-500/20"></div>
               <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm rounded-full p-3">
@@ -467,12 +461,12 @@ export const Home = ({
                       key={cluster.slug}
                       href={`/ratgeber/${RATGEBER_STRUCTURE.beruflich.slug}/${cluster.slug}`}
                       onClick={(e) => { e.preventDefault(); window.history.pushState({}, '', `/ratgeber/${RATGEBER_STRUCTURE.beruflich.slug}/${cluster.slug}`); window.scrollTo(0,0); window.dispatchEvent(new PopStateEvent('popstate')); }}
-                      className="group/card flex items-start gap-2 p-3 rounded-xl bg-white border border-blue-100 hover:border-blue-300 hover:shadow-md transition-all duration-200"
+                      className="group/card min-w-0 flex items-start gap-2 p-3 rounded-xl bg-white border border-blue-100 hover:border-blue-300 hover:shadow-md transition-all duration-200"
                     >
                       <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center group-hover/card:bg-blue-200 transition-colors">
                         <ClusterIcon className="w-4 h-4 text-blue-600" />
                       </div>
-                      <span className="text-xs font-medium text-gray-700 group-hover/card:text-blue-700 leading-tight flex items-center min-h-[2rem]">
+                      <span className="min-w-0 flex-1 text-xs font-medium text-gray-700 group-hover/card:text-blue-700 leading-tight flex items-center min-h-[2rem]">
                         {cluster.label[lang] || cluster.label.de}
                       </span>
                     </a>
@@ -493,12 +487,12 @@ export const Home = ({
                       key={bereich.slug}
                       href={getBereichUrl(bereich)}
                       onClick={(e) => { e.preventDefault(); window.history.pushState({}, '', getBereichUrl(bereich)); window.scrollTo(0,0); }}
-                      className="group/card flex items-start gap-2 p-3 rounded-xl bg-white border border-blue-100 hover:border-blue-300 hover:shadow-md transition-all duration-200"
+                      className="group/card min-w-0 flex items-start gap-2 p-3 rounded-xl bg-white border border-blue-100 hover:border-blue-300 hover:shadow-md transition-all duration-200"
                     >
                       <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center group-hover/card:bg-blue-200 transition-colors">
                         <Compass className="w-4 h-4 text-blue-600" />
                       </div>
-                      <span className="text-xs font-medium text-gray-700 group-hover/card:text-blue-700 leading-tight flex items-center min-h-[2rem]">
+                      <span className="min-w-0 flex-1 text-xs font-medium text-gray-700 group-hover/card:text-blue-700 leading-tight flex items-center min-h-[2rem]">
                         {bereich.title[lang] || bereich.title.de}
                       </span>
                     </a>
@@ -513,7 +507,7 @@ export const Home = ({
 
           {/* PRIVAT & HOBBY - Orange */}
           <div className="flex flex-col">
-            <a href="/search?type=privat_hobby" onClick={(e) => { e.preventDefault(); setSearchType('privat_hobby'); window.history.pushState({ view: 'search' }, '', '/search?type=privat_hobby'); window.scrollTo(0,0); }} className="group relative h-80 rounded-2xl overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 block">
+            <a href="/search?type=privat_hobby" onClick={(e) => { e.preventDefault(); setSearchType('privat_hobby'); window.history.pushState({ view: 'search' }, '', '/search?type=privat_hobby'); window.scrollTo(0,0); }} className="group relative h-[280px] sm:h-[300px] rounded-3xl overflow-hidden cursor-pointer shadow-[0_12px_28px_rgba(93,64,48,0.12)] hover:shadow-[0_18px_38px_rgba(93,64,48,0.18)] transition-all duration-300 hover:-translate-y-1 block">
               <img src="https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?q=80&w=800&auto=format&fit=crop" srcSet="https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?q=80&w=400&auto=format&fit=crop 400w, https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?q=80&w=800&auto=format&fit=crop 800w" sizes="(max-width: 768px) 100vw, 33vw" alt="" aria-hidden="true" loading="lazy" className="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-110" />
               <div className="absolute inset-0 bg-gradient-to-t from-orange-700/90 via-orange-600/40 to-orange-500/20"></div>
               <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm rounded-full p-3">
@@ -541,12 +535,12 @@ export const Home = ({
                       key={cluster.slug}
                       href={`/ratgeber/${RATGEBER_STRUCTURE.privat_hobby.slug}/${cluster.slug}`}
                       onClick={(e) => { e.preventDefault(); window.history.pushState({}, '', `/ratgeber/${RATGEBER_STRUCTURE.privat_hobby.slug}/${cluster.slug}`); window.scrollTo(0,0); window.dispatchEvent(new PopStateEvent('popstate')); }}
-                      className="group/card flex items-start gap-2 p-3 rounded-xl bg-white border border-orange-100 hover:border-orange-300 hover:shadow-md transition-all duration-200"
+                      className="group/card min-w-0 flex items-start gap-2 p-3 rounded-xl bg-white border border-orange-100 hover:border-orange-300 hover:shadow-md transition-all duration-200"
                     >
                       <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center group-hover/card:bg-orange-200 transition-colors">
                         <ClusterIcon className="w-4 h-4 text-orange-600" />
                       </div>
-                      <span className="text-xs font-medium text-gray-700 group-hover/card:text-orange-700 leading-tight flex items-center min-h-[2rem]">
+                      <span className="min-w-0 flex-1 text-xs font-medium text-gray-700 group-hover/card:text-orange-700 leading-tight flex items-center min-h-[2rem]">
                         {cluster.label[lang] || cluster.label.de}
                       </span>
                     </a>
@@ -567,12 +561,12 @@ export const Home = ({
                       key={bereich.slug}
                       href={getBereichUrl(bereich)}
                       onClick={(e) => { e.preventDefault(); window.history.pushState({}, '', getBereichUrl(bereich)); window.scrollTo(0,0); }}
-                      className="group/card flex items-start gap-2 p-3 rounded-xl bg-white border border-orange-100 hover:border-orange-300 hover:shadow-md transition-all duration-200"
+                      className="group/card min-w-0 flex items-start gap-2 p-3 rounded-xl bg-white border border-orange-100 hover:border-orange-300 hover:shadow-md transition-all duration-200"
                     >
                       <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center group-hover/card:bg-orange-200 transition-colors">
                         <Compass className="w-4 h-4 text-orange-600" />
                       </div>
-                      <span className="text-xs font-medium text-gray-700 group-hover/card:text-orange-700 leading-tight flex items-center min-h-[2rem]">
+                      <span className="min-w-0 flex-1 text-xs font-medium text-gray-700 group-hover/card:text-orange-700 leading-tight flex items-center min-h-[2rem]">
                         {bereich.title[lang] || bereich.title.de}
                       </span>
                     </a>
@@ -587,7 +581,7 @@ export const Home = ({
 
           {/* KINDER & JUGEND - Green */}
           <div className="flex flex-col">
-            <a href="/search?type=kinder_jugend" onClick={(e) => { e.preventDefault(); setSearchType('kinder_jugend'); window.history.pushState({ view: 'search' }, '', '/search?type=kinder_jugend'); window.scrollTo(0,0); }} className="group relative h-80 rounded-2xl overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 block">
+            <a href="/search?type=kinder_jugend" onClick={(e) => { e.preventDefault(); setSearchType('kinder_jugend'); window.history.pushState({ view: 'search' }, '', '/search?type=kinder_jugend'); window.scrollTo(0,0); }} className="group relative h-[280px] sm:h-[300px] rounded-3xl overflow-hidden cursor-pointer shadow-[0_12px_28px_rgba(93,64,48,0.12)] hover:shadow-[0_18px_38px_rgba(93,64,48,0.18)] transition-all duration-300 hover:-translate-y-1 block">
               <img src="https://images.unsplash.com/photo-1503676260728-1c00da094a0b?q=80&w=800&auto=format&fit=crop" srcSet="https://images.unsplash.com/photo-1503676260728-1c00da094a0b?q=80&w=400&auto=format&fit=crop 400w, https://images.unsplash.com/photo-1503676260728-1c00da094a0b?q=80&w=800&auto=format&fit=crop 800w" sizes="(max-width: 768px) 100vw, 33vw" alt="" aria-hidden="true" loading="lazy" className="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-110" />
               <div className="absolute inset-0 bg-gradient-to-t from-emerald-800/90 via-emerald-600/40 to-emerald-500/20"></div>
               <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm rounded-full p-3">
@@ -615,12 +609,12 @@ export const Home = ({
                       key={cluster.slug}
                       href={`/ratgeber/${RATGEBER_STRUCTURE.kinder_jugend.slug}/${cluster.slug}`}
                       onClick={(e) => { e.preventDefault(); window.history.pushState({}, '', `/ratgeber/${RATGEBER_STRUCTURE.kinder_jugend.slug}/${cluster.slug}`); window.scrollTo(0,0); window.dispatchEvent(new PopStateEvent('popstate')); }}
-                      className="group/card flex items-start gap-2 p-3 rounded-xl bg-white border border-emerald-100 hover:border-emerald-300 hover:shadow-md transition-all duration-200"
+                      className="group/card min-w-0 flex items-start gap-2 p-3 rounded-xl bg-white border border-emerald-100 hover:border-emerald-300 hover:shadow-md transition-all duration-200"
                     >
                       <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center group-hover/card:bg-emerald-200 transition-colors">
                         <ClusterIcon className="w-4 h-4 text-emerald-600" />
                       </div>
-                      <span className="text-xs font-medium text-gray-700 group-hover/card:text-emerald-700 leading-tight flex items-center min-h-[2rem]">
+                      <span className="min-w-0 flex-1 text-xs font-medium text-gray-700 group-hover/card:text-emerald-700 leading-tight flex items-center min-h-[2rem]">
                         {cluster.label[lang] || cluster.label.de}
                       </span>
                     </a>
@@ -641,12 +635,12 @@ export const Home = ({
                       key={bereich.slug}
                       href={getBereichUrl(bereich)}
                       onClick={(e) => { e.preventDefault(); window.history.pushState({}, '', getBereichUrl(bereich)); window.scrollTo(0,0); }}
-                      className="group/card flex items-start gap-2 p-3 rounded-xl bg-white border border-emerald-100 hover:border-emerald-300 hover:shadow-md transition-all duration-200"
+                      className="group/card min-w-0 flex items-start gap-2 p-3 rounded-xl bg-white border border-emerald-100 hover:border-emerald-300 hover:shadow-md transition-all duration-200"
                     >
                       <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center group-hover/card:bg-emerald-200 transition-colors">
                         <Compass className="w-4 h-4 text-emerald-600" />
                       </div>
-                      <span className="text-xs font-medium text-gray-700 group-hover/card:text-emerald-700 leading-tight flex items-center min-h-[2rem]">
+                      <span className="min-w-0 flex-1 text-xs font-medium text-gray-700 group-hover/card:text-emerald-700 leading-tight flex items-center min-h-[2rem]">
                         {bereich.title[lang] || bereich.title.de}
                       </span>
                     </a>

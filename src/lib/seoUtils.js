@@ -132,7 +132,7 @@ export function buildArticleJsonLd({ title, description, url, image, datePublish
       '@type': 'Organization',
       name: 'KursNavi',
       url: 'https://kursnavi.ch',
-      logo: { '@type': 'ImageObject', url: 'https://kursnavi.ch/favicon.png' }
+       logo: { '@type': 'ImageObject', url: 'https://kursnavi.ch/images/brand/kursnavi-symbol-original.jpg' }
     },
     inLanguage: 'de-CH'
   };

@@ -28,7 +28,7 @@ export default function ProviderCard({ provider, onClick, segmentConfig }) {
   return (
     <div
       onClick={() => onClick?.(slug)}
-      className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
+      className="bg-white rounded-3xl shadow-[0_8px_24px_rgba(93,64,48,0.06)] border border-[#eadfd8] overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-[0_16px_35px_rgba(93,64,48,0.12)] hover:-translate-y-1"
     >
 
       <div className="p-5">

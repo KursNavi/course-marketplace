@@ -2148,7 +2148,7 @@ useEffect(() => {
   // --- RENDER ---
     return (
     <ErrorBoundary>
-      <div className="min-h-screen bg-beige font-sans text-dark selection:bg-orange-100 selection:text-primary flex flex-col font-sans">
+      <div className="min-h-screen overflow-x-clip bg-[#fbf7f3] font-sans text-dark selection:bg-orange-100 selection:text-primary flex flex-col">
       {notification && (<div className={`fixed top-24 left-1/2 transform -translate-x-1/2 text-white px-6 py-3 rounded-full shadow-2xl z-50 flex items-center animate-bounce font-heading ${notificationType === 'error' ? 'bg-red-700' : 'bg-dark'}`}>{notificationType === 'error' ? <XCircle className="w-5 h-5 mr-2 text-red-200" /> : <CheckCircle className="w-5 h-5 mr-2 text-primary" />}{notification}</div>)}
 
       <Navbar t={t} user={user} lang={lang} setLang={changeLanguage} setView={setView} handleLogout={handleLogout} setShowResults={() => setView('search')} setSelectedCatPath={setSelectedCatPath} />
@@ -2193,8 +2193,8 @@ useEffect(() => {
       {view === 'search' && (
         <>
           {/* Kurse / Anbieter Tab Bar */}
-          <div className="bg-white border-b shadow-sm">
-            <div className="max-w-7xl mx-auto px-4">
+          <div className="bg-[#fffdfb]/95 backdrop-blur-lg border-b border-[#eadfd8] shadow-sm">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <div className="flex" role="tablist" aria-label="Kurse oder Anbieter suchen">
                 <button
                   role="tab"
@@ -2207,7 +2207,7 @@ useEffect(() => {
                     window.history.pushState({ view: 'search' }, '', newUrl);
                     // syncFromUrl handles setSearchTab + setView via locationchange
                   }}
-                  className={`px-5 py-3 text-sm font-semibold border-b-2 transition-colors ${searchTab !== 'anbieter' ? 'border-orange-500 text-orange-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+                  className={`px-5 py-3.5 text-sm font-semibold border-b-2 transition-colors ${searchTab !== 'anbieter' ? 'border-orange-500 text-orange-700' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
                 >
                   Kurse
                 </button>
@@ -2221,7 +2221,7 @@ useEffect(() => {
                     window.history.pushState({ view: 'search' }, '', '/search?' + params.toString());
                     // syncFromUrl handles setSearchTab + setView via locationchange
                   }}
-                  className={`px-5 py-3 text-sm font-semibold border-b-2 transition-colors ${searchTab === 'anbieter' ? 'border-orange-500 text-orange-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+                  className={`px-5 py-3.5 text-sm font-semibold border-b-2 transition-colors ${searchTab === 'anbieter' ? 'border-orange-500 text-orange-700' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
                 >
                   Anbieter
                 </button>

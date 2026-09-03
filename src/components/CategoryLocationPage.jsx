@@ -207,7 +207,7 @@ export default function CategoryLocationPage({
     }
 
     return (
-        <div className="min-h-screen bg-beige">
+    <div className="min-h-screen bg-[#fbf7f3]">
             {/* Hero Section */}
             <div className="bg-gradient-to-br from-primary/10 via-white to-orange-50 py-16 px-4 border-b border-gray-100">
                 <div className="max-w-6xl mx-auto">
@@ -296,7 +296,7 @@ export default function CategoryLocationPage({
                                             e.preventDefault();
                                             window.history.pushState({ view: 'detail', courseId: course.id }, '', coursePath);
                                         }}
-                                        className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-all cursor-pointer group"
+                                        className="bg-white rounded-2xl shadow-[0_8px_24px_rgba(93,64,48,0.06)] border border-[#eadfd8] overflow-hidden hover:shadow-[0_16px_35px_rgba(93,64,48,0.12)] transition-all cursor-pointer group"
                                         style={{textDecoration: 'none', color: 'inherit'}}
                                     >
                                         <div className="aspect-video overflow-hidden relative">

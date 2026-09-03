@@ -620,7 +620,7 @@ const SearchPageView = ({
         (t.search_refine || 'Suchbegriff eingeben …');
 
     return (
-        <div className="min-h-screen bg-beige">
+        <div className="min-h-screen bg-[#fbf7f3]">
             {/* SEGMENT CONTEXT BANNER — compact strip above filters showing segment title/subtitle */}
             {searchType && (() => {
                 const meta = SEGMENT_META[searchType];
@@ -754,13 +754,13 @@ const SearchPageView = ({
             )}
 
             {/* Sticky filter bar (sticky only on sm+ to avoid mobile overflow) */}
-            <div className="bg-white border-b pt-3 pb-2 sm:sticky sm:top-20 z-30 shadow-sm">
-                <div className="max-w-7xl mx-auto px-4 space-y-2">
+            <div className="bg-[#fffdfb]/95 sm:backdrop-blur-lg border-b border-[#eadfd8] pt-4 pb-3 sm:sticky sm:top-[72px] z-30 shadow-[0_8px_24px_rgba(93,64,48,0.06)]">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-2.5">
                     {/* Row 1: Search + Location */}
                     <div className="flex flex-col md:flex-row gap-2 items-stretch">
                         <div className="relative flex-grow w-full md:w-auto">
                             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                            <input type="text" placeholder={searchPlaceholder} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full h-[36px] pl-9 pr-4 bg-beige border border-gray-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-colors" />
+                            <input type="text" placeholder={searchPlaceholder} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full h-[42px] pl-10 pr-4 bg-beige/70 border border-[#eadfd8] rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:bg-white transition-colors" />
                         </div>
                         <div className="flex items-center gap-2">
                             <LocationDropdown selectedLocations={selectedLocations} setSelectedLocations={setSelectedLocations} locMenuOpen={locMenuOpen} setLocMenuOpen={setLocMenuOpen} locMenuRef={locMenuRef} t={t} />
@@ -771,7 +771,7 @@ const SearchPageView = ({
                     </p>
 
                     {/* Row 2: Fachliche Filter (Cascade: Level 2 → 3 → 4) + Weitere Filter button */}
-                    <div className="flex gap-2 flex-wrap items-center border-t pt-2 border-gray-100">
+                    <div className="flex gap-2 flex-wrap items-center border-t pt-3 border-gray-100">
                         {/* Taxonomy cascade — shown when segment is set and courses have areas */}
                         {searchType && availableAreas.length > 0 && (() => {
                             const canonKey = CANONICAL_SEGMENT[searchType] || searchType;
@@ -779,8 +779,8 @@ const SearchPageView = ({
                             const areaTestId = canonKey === 'beruflich' ? 'select-fachbereich' : canonKey === 'kinder_jugend' ? 'select-angebotsbereich' : 'select-themenwelt';
                             const showSpecialty = !searchArea || availableSpecialties.length > 0;
                             const showFocus = !!searchArea && availableSpecialties.length > 0 && (!searchSpecialty || availableFocuses.length > 0);
-                            const selCls = (active) => `px-3 py-1.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-white border-gray-200 ${active ? 'text-gray-900' : 'text-gray-400'}`;
-                            const chipCls = 'text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-orange-200 flex items-center';
+                            const selCls = (active) => `px-3 py-2 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 bg-white border-[#eadfd8] ${active ? 'text-gray-900' : 'text-gray-500'}`;
+                            const chipCls = `text-xs px-2.5 py-1.5 rounded-full font-bold cursor-pointer flex items-center ${canonKey === 'beruflich' ? 'bg-blue-100 text-blue-800 hover:bg-blue-200' : canonKey === 'kinder_jugend' ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200' : 'bg-orange-100 text-orange-800 hover:bg-orange-200'}`;
                             return (
                                 <React.Fragment>
                                     {/* MOBILE (sm:hidden): progressive compact cascade — one level at a time */}
@@ -870,7 +870,7 @@ const SearchPageView = ({
                         <button
                             data-testid="btn-weitere-filter"
                             onClick={() => setShowMoreFilters(v => !v)}
-                            className={`ml-auto flex items-center gap-1.5 px-3 py-1 rounded-lg border text-xs font-medium transition-colors ${showMoreFilters ? 'bg-gray-100 border-gray-300 text-gray-700' : 'bg-white border-gray-200 text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+                            className={`ml-auto flex items-center gap-1.5 px-4 py-2 rounded-full border text-xs font-bold transition-colors ${showMoreFilters ? 'bg-dark border-dark text-white' : 'bg-white border-[#eadfd8] text-gray-600 hover:text-dark hover:border-gray-400'}`}
                         >
                             <Filter className="w-3.5 h-3.5" />
                             Weitere Filter{secondaryFilterCount > 0 ? ` (${secondaryFilterCount})` : ''}
@@ -880,7 +880,9 @@ const SearchPageView = ({
 
                     {/* SECONDARY FILTERS: Kursformat, Kursart, Säulen, Datum, Kurssprache, Preis, Niveau, Verifiziert, Direktbuchung */}
                     {showMoreFilters && (
-                        <div className="flex gap-3 flex-wrap pb-1 items-center border-t pt-2 border-gray-100 bg-gray-50 rounded-lg px-3 py-2 -mx-1">
+                        <React.Fragment>
+                        <button type="button" aria-label="Weitere Filter schliessen" onClick={() => setShowMoreFilters(false)} className="fixed inset-0 bg-dark/20 z-40 sm:hidden" />
+                        <div className="fixed left-4 right-4 bottom-4 max-h-[78vh] overflow-y-auto z-50 flex gap-3 flex-wrap pb-3 items-center border border-[#eadfd8] pt-3 bg-white rounded-2xl px-4 shadow-[0_20px_60px_rgba(51,51,51,0.22)] sm:static sm:max-h-none sm:overflow-visible sm:z-auto sm:border-0 sm:border-t sm:rounded-xl sm:px-3 sm:py-3 sm:shadow-none sm:bg-gray-50">
                             <DeliveryTypeFilter selectedDeliveryTypes={selectedDeliveryTypes} setSelectedDeliveryTypes={setSelectedDeliveryTypes} deliveryMenuOpen={deliveryMenuOpen} setDeliveryMenuOpen={setDeliveryMenuOpen} deliveryMenuRef={deliveryMenuRef} t={t} />
                             {/* Kursart — Privat & Hobby */}
                             {(searchType === 'privat' || searchType === 'privat_hobby') && (
@@ -946,6 +948,7 @@ const SearchPageView = ({
                                 <Info className="w-3 h-3 text-gray-400 hover:text-green-500 transition-colors" />
                             </label>
                         </div>
+                        </React.Fragment>
                     )}
                 </div>
                  {/* --- ACTIVE FILTER CHIPS --- */}
@@ -955,7 +958,7 @@ const SearchPageView = ({
                    (filterLevel && filterLevel !== 'All') || filterDateFrom || filterDateTo ||
                    filterPro || filterDirectBooking || selectedSaule ||
                    searchArea || searchSpecialty || searchFocus || searchQuery) && (
-                    <div className="max-w-7xl mx-auto px-4 pt-2 flex gap-2 flex-wrap items-center" data-testid="filter-chips">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-3 flex gap-2 flex-wrap items-center" data-testid="filter-chips">
                         {/* Search query chip */}
                         {searchQuery && (
                             <span onClick={() => setSearchQuery('')} className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-gray-200 flex items-center">
@@ -1139,7 +1142,7 @@ const SearchPageView = ({
                           if (e.ctrlKey || e.metaKey) return;
                           e.preventDefault();
                           window.history.pushState({ view: 'detail', courseId: course.id }, '', coursePath);
-                      }} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer group" style={{textDecoration: 'none', color: 'inherit'}}>
+                      }} className="bg-white rounded-2xl shadow-[0_8px_24px_rgba(93,64,48,0.06)] border border-[#eadfd8] overflow-hidden hover:shadow-[0_16px_35px_rgba(93,64,48,0.13)] hover:-translate-y-1 transition-all duration-300 cursor-pointer group" style={{textDecoration: 'none', color: 'inherit'}}>
                         <div className="relative aspect-video overflow-hidden">
                             <img
                                 src={course.image_url || fallbackImage}
@@ -1178,7 +1181,7 @@ const SearchPageView = ({
                             </button>
                         </div>
 
-                        <div className="p-5">
+                         <div className="p-5">
                             <h3 className="font-bold text-lg text-dark leading-tight line-clamp-3 mb-2 font-heading">
                                 {course.title}
                             </h3>
@@ -1223,7 +1226,7 @@ const SearchPageView = ({
 
                 {/* --- STATE A: NO MATCHES (filters too restrictive) --- */}
                 {!loading && !fetchError && filteredCourses.length === 0 && !isCatalogEmpty && (
-                  <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-gray-300 px-6" data-testid="empty-no-matches">
+                  <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-[#d8c9c0] px-6 shadow-sm" data-testid="empty-no-matches">
                     <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                         <SearchX className="w-8 h-8 text-gray-400" />
                     </div>
@@ -1260,7 +1263,7 @@ const SearchPageView = ({
 
                 {/* --- STATE B: CATALOG GENUINELY EMPTY --- */}
                 {!loading && !fetchError && filteredCourses.length === 0 && isCatalogEmpty && (
-                  <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-gray-300 px-6" data-testid="empty-catalog">
+                  <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-[#d8c9c0] px-6 shadow-sm" data-testid="empty-catalog">
                     <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
                         <Bell className="w-8 h-8 text-primary" />
                     </div>

@@ -547,14 +547,14 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
     const fallbackImage = DEFAULT_COURSE_IMAGE;
 
     return (
-    <div className="max-w-7xl mx-auto px-4 py-8 font-sans animate-in fade-in duration-500">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 font-sans animate-in fade-in duration-500">
         <button onClick={() => {
             if (window.history.length > 1) {
                 window.history.back();
             } else {
                 window.history.pushState({ view: 'search' }, '', '/search');
             }
-        }} className="flex items-center text-gray-500 hover:text-primary mb-6 transition-colors"><ArrowLeft className="w-4 h-4 mr-2"/> Zurück zur Suche</button>
+        }} className="inline-flex items-center text-gray-600 hover:text-primary mb-7 transition-colors rounded-full border border-[#eadfd8] bg-white px-4 py-2 text-sm font-semibold shadow-sm"><ArrowLeft className="w-4 h-4 mr-2"/> Zurück zur Suche</button>
 
         {/* Preview Banner for Draft courses (only visible to owner) */}
         {user?.id && String(course.user_id) === String(user.id) && course.status === 'draft' && (
@@ -570,7 +570,7 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
             {/* Kurstitel als eigenes Grid-Element: auf Mobile steht er dadurch vor Bild und
                 Preisbox, auf Desktop bleibt er an gewohnter Stelle oben in der linken Spalte. */}
             <div className="order-1 lg:order-none lg:col-span-2 lg:col-start-1 lg:row-start-1 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <h1 className="text-3xl font-bold font-heading text-dark break-words hyphens-auto">{course.title}</h1>
+                <h1 className="text-3xl md:text-4xl font-bold font-heading text-dark tracking-[-0.035em] break-words hyphens-auto">{course.title}</h1>
                 {course.is_pro && (
                     <span className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-xs font-bold flex items-center self-start md:self-auto shrink-0 border border-blue-100">
                         <CheckCircle className="w-3 h-3 mr-1" /> {t.lbl_professional_filter || 'Verifiziert'}
@@ -579,7 +579,7 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
             </div>
 
             <div className="order-3 lg:order-none lg:col-span-2 lg:col-start-1 lg:row-start-2 space-y-8">
-                <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
+                <div className="bg-white p-6 md:p-8 rounded-3xl shadow-[0_10px_30px_rgba(93,64,48,0.06)] border border-[#eadfd8]">
                     <div className="prose max-w-none text-gray-600 custom-rich-text">
                         <h3 className="text-xl font-bold text-dark mb-4">{t.lbl_description}</h3>
                         {renderDescription(course.description)}
@@ -607,7 +607,7 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
             </div>
 
             <div className="order-2 lg:order-none lg:col-span-1 lg:col-start-3 lg:row-start-1 lg:row-span-2 space-y-6">
-                <div className="w-full aspect-video bg-gray-100 rounded-2xl overflow-hidden shadow-lg relative group">
+                <div className="w-full aspect-video bg-gray-100 rounded-3xl overflow-hidden shadow-[0_14px_35px_rgba(93,64,48,0.12)] relative group">
                     <img
                         src={course.image_url || fallbackImage}
                         alt={`${course.title} in ${course.canton || 'Schweiz'}`}
@@ -618,7 +618,7 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                     />
                 </div>
-                <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100 sticky top-24">
+                <div className="bg-white p-6 rounded-3xl shadow-[0_14px_35px_rgba(93,64,48,0.10)] border border-[#eadfd8] sticky top-24">
                     <div className="text-3xl font-bold text-primary font-heading mb-1">{getPriceLabel(course)}</div>
                     <p className="text-gray-400 text-xs mb-4">
                         {(effectiveBookingType === 'platform' || effectiveBookingType === 'platform_flex')

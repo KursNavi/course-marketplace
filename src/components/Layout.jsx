@@ -5,17 +5,14 @@ import { MegaMenu, MobileMenuCategory } from './MegaMenu';
 import { trackNewsletter } from '../lib/analytics';
 import { subscribeToNewsletter, suppressNewsletterPopupForever } from '../lib/newsletter';
 
-// BRANDING: The "Compass & Book" Logo [Source: 9]
-// Recreated as SVG: A 4-point star (compass) floating above an abstract open book.
-export const KursNaviLogo = ({ className }) => (
-  <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" className={className}>
-    {/* The 4-Point Star (Compass) */}
-    <path d="M12 2L13.5 7L18.5 8.5L13.5 10L12 15L10.5 10L5.5 8.5L10.5 7L12 2Z" />
-    {/* The Book (Left Page) */}
-    <path d="M3 12L11 15V20L3 17V12Z" opacity="0.9" />
-    {/* The Book (Right Page) */}
-    <path d="M13 15L21 12V17L13 20V15Z" opacity="0.9" />
-  </svg>
+// BRANDING: use the supplied original KursNavi symbol without redrawing or modernising it.
+export const KursNaviLogo = ({ className = '' }) => (
+  <img
+    src="/images/brand/kursnavi-symbol-original.jpg"
+    alt=""
+    aria-hidden="true"
+    className={`object-contain ${className}`}
+  />
 );
 
 export const Navbar = ({ t, user, lang = 'de', setLang, setView, handleLogout, setShowResults, setSelectedCatPath }) => {
@@ -129,20 +126,20 @@ export const Navbar = ({ t, user, lang = 'de', setLang, setView, handleLogout, s
   return (
     <>
     <a href="#main-content" className="skip-to-content">Zum Inhalt springen</a>
-    <nav className="bg-white/80 backdrop-blur-md border-b border-gray-100 sticky top-0 z-50" aria-label="Hauptnavigation">
+    <nav className="bg-[#fffdfb]/95 backdrop-blur-lg border-b border-[#eadfd8] sticky top-0 z-50" aria-label="Hauptnavigation">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-20">
+        <div className="flex justify-between h-[72px]">
 
           {/* LOGO & MAIN LINKS */}
           <div className="flex items-center">
             <button type="button" onClick={() => navTo('home')} className="flex-shrink-0 flex items-center cursor-pointer group bg-transparent border-none p-0" aria-label="KursNavi — Zur Startseite">
-              <KursNaviLogo className="h-10 w-10 text-primary group-hover:scale-110 transition-transform duration-300" />
-              <span className="ml-2 text-2xl font-heading font-bold tracking-tighter text-dark">
+              <KursNaviLogo className="h-9 w-9 rounded-md group-hover:scale-[1.03] transition-transform duration-300" />
+              <span className="ml-2 text-[1.35rem] font-heading font-bold tracking-[-0.04em] text-dark">
                 Kurs<span className="text-primary">Navi</span>
               </span>
             </button>
 
-            <div className="hidden md:ml-10 md:flex md:space-x-6 md:items-center">
+            <div className="hidden xl:ml-8 xl:flex xl:space-x-1 xl:items-center">
               {segmentButtons.map(({ key, label, Icon, config }) => {
                 const isActive = activeSegment === key;
                 return (
@@ -157,15 +154,15 @@ export const Navbar = ({ t, user, lang = 'de', setLang, setView, handleLogout, s
                   />
                 );
               })}
-              <button onClick={() => navTo('how-it-works')} className="text-gray-500 hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors font-sans">{t.nav_howitworks}</button>
-              <button onClick={() => navTo('blog')} className="text-gray-500 hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors font-sans">{t.nav_news}</button>
+              <button onClick={() => navTo('how-it-works')} className="text-gray-600 hover:text-primary hover:bg-primaryLight px-3 py-2 rounded-full text-sm font-medium transition-colors font-sans">{t.nav_howitworks}</button>
+              <button onClick={() => navTo('blog')} className="text-gray-600 hover:text-primary hover:bg-primaryLight px-3 py-2 rounded-full text-sm font-medium transition-colors font-sans">{t.nav_news}</button>
               {/* Anbietersuche Dropdown */}
               <div
                 className="relative"
                 onMouseEnter={() => { if (anbieterTimeoutRef.current) clearTimeout(anbieterTimeoutRef.current); setAnbieterMenuOpen(true); }}
                 onMouseLeave={() => { anbieterTimeoutRef.current = setTimeout(() => setAnbieterMenuOpen(false), 150); }}
               >
-                <span className="flex items-center px-3 py-2 rounded-md text-sm font-medium text-gray-500 hover:text-primary transition-colors font-sans cursor-default select-none">
+                <span className="flex items-center px-3 py-2 rounded-full text-sm font-medium text-gray-600 hover:text-primary hover:bg-primaryLight transition-colors font-sans cursor-default select-none">
                   {t.nav_providers || 'Anbieter finden'}
                   <ChevronDown className={`w-3 h-3 ml-1 transition-transform duration-200 ${anbieterMenuOpen ? 'rotate-180' : ''}`} />
                 </span>
@@ -186,12 +183,12 @@ export const Navbar = ({ t, user, lang = 'de', setLang, setView, handleLogout, s
                   </div>
                 )}
               </div>
-              <button onClick={() => navTo('teacher-hub')} className={`${activePath === "/teacher-hub" ? "text-orange-600 font-bold" : "text-gray-500 font-medium hover:text-primary"} px-3 py-2 rounded-md text-sm transition-colors font-sans`}>{t.nav_for_providers}</button>
+              <button onClick={() => navTo('teacher-hub')} className={`${activePath === "/teacher-hub" ? "text-orange-700 bg-primaryLight font-bold border-primary/30" : "text-gray-700 font-semibold border-[#eadfd8] hover:border-primary/40 hover:text-primary"} px-3.5 py-2 rounded-full text-sm transition-colors font-sans border`}>{t.nav_for_providers}</button>
             </div>
           </div>
 
           {/* RIGHT SIDE */}
-          <div className="hidden md:flex items-center">
+          <div className="hidden xl:flex items-center">
             {/* Language switcher temporarily hidden for launch (German only)
             <div className="relative">
                 <button onClick={() => setLangMenuOpen(!langMenuOpen)} className="flex items-center space-x-1 text-gray-500 hover:text-primary p-2 rounded-full transition hover:bg-primaryLight">
@@ -229,12 +226,12 @@ export const Navbar = ({ t, user, lang = 'de', setLang, setView, handleLogout, s
                 <button onClick={handleLogout} className="flex items-center text-gray-400 hover:text-red-500 p-1.5 rounded-full hover:bg-red-50 transition-colors"><LogOut className="w-4 h-4" /></button>
               </div>
             ) : (
-              <button onClick={() => navTo('login')} className="bg-dark text-white px-6 py-2.5 rounded-full text-sm font-bold hover:bg-primary transition-all duration-300 shadow-lg hover:-translate-y-0.5 font-heading">{t.nav_login}</button>
+            <button onClick={() => navTo('login')} className="bg-dark text-white px-5 py-2.5 rounded-full text-sm font-bold hover:bg-primary transition-all duration-300 shadow-sm hover:-translate-y-0.5 font-heading">{t.nav_login}</button>
             )}
           </div>
 
           {/* MOBILE MENU BUTTON */}
-          <div className="flex items-center md:hidden">
+          <div className="flex items-center xl:hidden">
             <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="text-gray-500 hover:text-primary p-2">
               {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
@@ -244,7 +241,7 @@ export const Navbar = ({ t, user, lang = 'de', setLang, setView, handleLogout, s
 
       {/* MOBILE MENU */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-white border-t border-gray-100 absolute w-full left-0 shadow-xl h-screen overflow-y-auto pb-20">
+        <div className="xl:hidden bg-beige border-t border-[#eadfd8] absolute w-full left-0 shadow-xl h-screen overflow-y-auto pb-20">
           <div className="pt-2 pb-3">
             {segmentButtons.map(({ key, label, Icon, config }) => {
               const isActive = activeSegment === key;

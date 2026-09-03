@@ -324,7 +324,7 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
   };
 
   return (
-    <div className="min-h-screen bg-beige font-sans">
+    <div className="min-h-screen bg-[#fbf7f3] font-sans">
 
       {/* HERO SECTION */}
       <div className="relative py-20 md:py-28 px-4 text-white overflow-hidden" style={{ backgroundColor: '#2d2d2d' }}>
@@ -441,7 +441,7 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
                   window.scrollTo(0, 0);
                   window.history.pushState({ view: 'bereich-szenario' }, '', `/bereich/${segment}/${slug}/${scenario.slug}`);
                 }}
-                className="relative flex min-w-0 flex-col overflow-hidden rounded-2xl bg-white border border-gray-100 hover:border-gray-200 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group"
+                className="relative flex min-w-0 flex-col overflow-hidden rounded-3xl bg-white border border-[#eadfd8] hover:border-gray-300 hover:shadow-[0_16px_35px_rgba(93,64,48,0.12)] hover:-translate-y-1 transition-all duration-300 group"
               >
                 {/* Titelbild — durchgehendes 16:9-Band am Kartenkopf.
                     Das Band existiert immer und hat immer dieselbe Höhe: mit Bild

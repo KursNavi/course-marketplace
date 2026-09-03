@@ -330,31 +330,19 @@ export default function ProviderProfilePage({ t, setView, setSelectedCourse }) {
   if (!provider) return null;
 
   return (
-    <div className="min-h-screen bg-beige pt-24 pb-16">
-      {/* Cover Image */}
-      {provider.coverImageUrl && (
-        <div className="w-full h-48 md:h-64 lg:h-80 relative">
-          <img
-            src={provider.coverImageUrl}
-            alt={`${provider.name} Cover`}
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-        </div>
-      )}
-
+    <div className="min-h-screen bg-[#fbf7f3] pt-8 pb-16">
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
         {/* Back Button */}
         <button
           onClick={handleBack}
-          className="flex items-center text-gray-600 hover:text-gray-900 mb-6 mt-6"
+          className="inline-flex items-center text-gray-600 hover:text-primary mb-6 mt-2 rounded-full border border-[#eadfd8] bg-white px-4 py-2 text-sm font-semibold shadow-sm"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
           Zurück
         </button>
 
         {/* Profile Header */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8 mb-8">
+        <div className="bg-white rounded-3xl shadow-[0_12px_32px_rgba(93,64,48,0.08)] border border-[#eadfd8] p-6 md:p-8 mb-8">
           <div className="flex flex-col md:flex-row gap-6">
             {/* Logo */}
             <div className="flex-shrink-0">
@@ -362,11 +350,11 @@ export default function ProviderProfilePage({ t, setView, setSelectedCourse }) {
                 <img
                   src={provider.logoUrl}
                   alt={`${provider.name} Logo`}
-                  className="w-24 h-24 md:w-32 md:h-32 rounded-2xl object-contain bg-white border border-gray-100 p-1"
+                  className="w-20 h-20 md:w-24 md:h-24 rounded-2xl object-contain bg-beige border border-[#eadfd8] p-3"
                 />
               ) : (
-                <div className="w-24 h-24 md:w-32 md:h-32 rounded-2xl bg-gradient-to-br from-orange-100 to-orange-50 flex items-center justify-center">
-                  <span className="text-4xl font-bold text-orange-400">
+                <div className="w-20 h-20 md:w-24 md:h-24 rounded-2xl bg-primaryLight border border-orange-100 flex items-center justify-center">
+                  <span className="text-3xl font-bold text-orange-400">
                     {provider.name?.charAt(0)?.toUpperCase() || 'A'}
                   </span>
                 </div>
@@ -453,7 +441,7 @@ export default function ProviderProfilePage({ t, setView, setSelectedCourse }) {
           <div className="lg:col-span-2 space-y-8">
             {/* Description */}
             {provider.description && (
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8">
+              <div className="bg-white rounded-3xl shadow-[0_10px_30px_rgba(93,64,48,0.06)] border border-[#eadfd8] p-6 md:p-8">
                 <h2 className="text-xl font-bold text-gray-900 mb-4">Über uns</h2>
                 <div className="prose prose-gray max-w-none">
                   <p className="text-gray-600 whitespace-pre-line">{provider.description}</p>
@@ -463,7 +451,7 @@ export default function ProviderProfilePage({ t, setView, setSelectedCourse }) {
 
             {/* Certificates */}
             {provider.certificates?.length > 0 && (
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8">
+              <div className="bg-white rounded-3xl shadow-[0_10px_30px_rgba(93,64,48,0.06)] border border-[#eadfd8] p-6 md:p-8">
                 <h2 className="text-xl font-bold text-gray-900 mb-4">Zertifikate & Qualifikationen</h2>
                 <div className="flex flex-wrap gap-2">
                   {provider.certificates.map((cert, idx) => (
@@ -477,7 +465,7 @@ export default function ProviderProfilePage({ t, setView, setSelectedCourse }) {
             )}
 
             {/* Courses with Filter */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8">
+            <div className="bg-white rounded-3xl shadow-[0_10px_30px_rgba(93,64,48,0.06)] border border-[#eadfd8] p-6 md:p-8">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold text-gray-900">
                   Kurse von {provider.name}
@@ -539,10 +527,10 @@ export default function ProviderProfilePage({ t, setView, setSelectedCourse }) {
                         <img
                           src={course.image_url}
                           alt={course.title}
-                          className="w-20 h-20 rounded-lg object-cover flex-shrink-0"
+                          className="w-28 h-16 rounded-xl object-cover flex-shrink-0 aspect-video"
                         />
                       ) : (
-                        <div className="w-20 h-20 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                        <div className="w-28 h-16 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0 aspect-video">
                           <BookOpen className="w-6 h-6 text-gray-400" />
                         </div>
                       )}
@@ -576,7 +564,7 @@ export default function ProviderProfilePage({ t, setView, setSelectedCourse }) {
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Quick Info Card */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sticky top-24">
+            <div className="bg-white rounded-3xl shadow-[0_10px_30px_rgba(93,64,48,0.06)] border border-[#eadfd8] p-6 sticky top-24">
               <h3 className="font-bold text-gray-900 mb-4">Auf einen Blick</h3>
 
               <div className="space-y-4">

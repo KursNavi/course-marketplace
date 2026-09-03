@@ -305,7 +305,7 @@ const LandingView = ({
   }
 
   return (
-    <div className="min-h-screen bg-beige font-sans">
+    <div className="min-h-screen bg-[#fbf7f3] font-sans">
       <SegmentHero
         title={title}
         subtitle={subtitle}
