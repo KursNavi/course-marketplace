@@ -50,39 +50,22 @@ function navigateTo(href, setView, viewKey) {
 // Sub-components
 // ---------------------------------------------------------------------------
 
-function SegmentHero({ title, subtitle, bgImage, onExploreAll }) {
+function SegmentHero({ title, subtitle, bgImage, onExploreAll, accentText = 'text-blue-600', accentSurface = 'bg-blue-50' }) {
   return (
-    <div className="relative overflow-hidden" style={{ minHeight: '460px' }}>
-      <div className="absolute inset-0 z-0">
-        <img
-          src={bgImage}
-          alt=""
-          className="w-full h-full object-cover"
-          onError={(e) => { e.target.style.display = 'none'; }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/40 to-black/65" />
+    <section className="border-b border-[#EBE4DE] bg-[#FAF5F0] px-4 py-14 sm:px-6 sm:py-20">
+      <div className="mx-auto grid max-w-7xl items-center gap-10 lg:grid-cols-[1fr_0.9fr] lg:gap-16">
+        <div>
+          <p className={`mb-4 text-xs font-bold uppercase tracking-[0.2em] ${accentText}`}>KursNavi · Kursguide Schweiz</p>
+          <h1 className="max-w-2xl font-heading text-4xl font-bold leading-[1.05] tracking-[-0.045em] text-[#333333] sm:text-6xl">{title}</h1>
+          <p className="mt-5 max-w-xl text-base leading-7 text-[#594138] sm:text-lg">{subtitle}</p>
+          <button onClick={onExploreAll} className="mt-8 inline-flex items-center gap-2 rounded-lg bg-[#FA6E28] px-5 py-3 font-bold text-white transition hover:bg-[#A43D00] focus:outline-none focus:ring-2 focus:ring-[#78B3CE] focus:ring-offset-2">Alle Kurse entdecken <ArrowRight className="w-4" /></button>
+        </div>
+        <div className={`relative overflow-hidden rounded-2xl border ${accentSurface} p-3 shadow-[0_16px_40px_rgba(93,64,48,0.1)]`}>
+          <div className="aspect-[4/3] overflow-hidden rounded-xl"><img src={bgImage} alt="" className="h-full w-full object-cover" onError={(e) => { e.target.style.display = 'none'; }} /></div>
+          <div className="absolute bottom-6 left-6 rounded-lg bg-white/95 px-4 py-3 text-sm font-bold text-[#333333] shadow-sm">Entdecke passende Themen und Kurse</div>
+        </div>
       </div>
-      <div
-        className="relative z-10 flex flex-col items-center justify-center text-center text-white px-4 pt-20 pb-16 max-w-4xl mx-auto"
-        style={{ minHeight: '460px' }}
-      >
-        <p className="text-xs font-bold tracking-widest uppercase mb-4 opacity-70">
-          KursNavi · Kursguide Schweiz
-        </p>
-        <h1 className="text-4xl md:text-6xl font-heading font-bold mb-5 leading-tight drop-shadow-md">
-          {title}
-        </h1>
-        <p className="text-lg md:text-xl text-white/85 mb-8 max-w-2xl font-light leading-relaxed">
-          {subtitle}
-        </p>
-        <button
-          onClick={onExploreAll}
-          className="inline-flex items-center gap-2 bg-white/15 hover:bg-white/25 text-white border border-white/30 font-semibold px-6 py-3 rounded-full transition backdrop-blur-sm"
-        >
-          Alle Kurse entdecken <ArrowRight className="w-4 h-4" />
-        </button>
-      </div>
-    </div>
+    </section>
   );
 }
 
@@ -311,6 +294,8 @@ const LandingView = ({
         subtitle={subtitle}
         bgImage={bgImage}
         onExploreAll={handleExploreAll}
+        accentText={segCfg?.text}
+        accentSurface={segCfg?.bgLight}
       />
 
       <TopicsAndTypesSection

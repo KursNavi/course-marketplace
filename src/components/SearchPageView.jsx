@@ -620,7 +620,7 @@ const SearchPageView = ({
         (t.search_refine || 'Suchbegriff eingeben …');
 
     return (
-        <div className="min-h-screen bg-[#fbf7f3]">
+        <div className="min-h-screen bg-[#FAF5F0]">
             {/* SEGMENT CONTEXT BANNER — compact strip above filters showing segment title/subtitle */}
             {searchType && (() => {
                 const meta = SEGMENT_META[searchType];
@@ -754,13 +754,13 @@ const SearchPageView = ({
             )}
 
             {/* Sticky filter bar (sticky only on sm+ to avoid mobile overflow) */}
-            <div className="bg-[#fffdfb]/95 sm:backdrop-blur-lg border-b border-[#eadfd8] pt-4 pb-3 sm:sticky sm:top-[72px] z-30 shadow-[0_8px_24px_rgba(93,64,48,0.06)]">
+            <div className="border-b border-[#EBE4DE] bg-white/95 pt-5 pb-4 sm:backdrop-blur-lg sm:sticky sm:top-[72px] z-30 shadow-[0_8px_24px_rgba(93,64,48,0.05)]">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-2.5">
                     {/* Row 1: Search + Location */}
-                    <div className="flex flex-col md:flex-row gap-2 items-stretch">
+                    <div className="flex flex-col md:flex-row gap-3 items-stretch">
                         <div className="relative flex-grow w-full md:w-auto">
                             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                            <input type="text" placeholder={searchPlaceholder} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full h-[42px] pl-10 pr-4 bg-beige/70 border border-[#eadfd8] rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:bg-white transition-colors" />
+                            <input type="text" placeholder={searchPlaceholder} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full h-[46px] pl-10 pr-4 bg-[#FAF5F0] border border-[#EBE4DE] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#78B3CE]/40 focus:bg-white transition-colors" />
                         </div>
                         <div className="flex items-center gap-2">
                             <LocationDropdown selectedLocations={selectedLocations} setSelectedLocations={setSelectedLocations} locMenuOpen={locMenuOpen} setLocMenuOpen={setLocMenuOpen} locMenuRef={locMenuRef} t={t} />
@@ -771,7 +771,7 @@ const SearchPageView = ({
                     </p>
 
                     {/* Row 2: Fachliche Filter (Cascade: Level 2 → 3 → 4) + Weitere Filter button */}
-                    <div className="flex gap-2 flex-wrap items-center border-t pt-3 border-gray-100">
+                    <div className="flex gap-2 flex-wrap items-center border-t pt-4 border-[#EBE4DE]">
                         {/* Taxonomy cascade — shown when segment is set and courses have areas */}
                         {searchType && availableAreas.length > 0 && (() => {
                             const canonKey = CANONICAL_SEGMENT[searchType] || searchType;
@@ -1091,7 +1091,7 @@ const SearchPageView = ({
 
                 {/* --- RESULTS GRID --- */}
                 {!loading && !fetchError && filteredCourses.length > 0 && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8" data-testid="course-grid">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 lg:gap-6" data-testid="course-grid">
                     {sortedCourses.flatMap((course, courseIndex) => {
                       const bereichConfig = searchArea ? getBereichByAreaSlug(searchArea) : null;
                       const showRatgeberHere = bereichConfig && courseIndex === 6 && sortedCourses.length > 3;
@@ -1142,7 +1142,7 @@ const SearchPageView = ({
                           if (e.ctrlKey || e.metaKey) return;
                           e.preventDefault();
                           window.history.pushState({ view: 'detail', courseId: course.id }, '', coursePath);
-                      }} className="bg-white rounded-2xl shadow-[0_8px_24px_rgba(93,64,48,0.06)] border border-[#eadfd8] overflow-hidden hover:shadow-[0_16px_35px_rgba(93,64,48,0.13)] hover:-translate-y-1 transition-all duration-300 cursor-pointer group" style={{textDecoration: 'none', color: 'inherit'}}>
+                      }} className="bg-white rounded-xl shadow-[0_8px_24px_rgba(93,64,48,0.05)] border border-[#EBE4DE] overflow-hidden hover:shadow-[0_16px_35px_rgba(93,64,48,0.12)] hover:-translate-y-1 transition-all duration-300 cursor-pointer group" style={{textDecoration: 'none', color: 'inherit'}}>
                         <div className="relative aspect-video overflow-hidden">
                             <img
                                 src={course.image_url || fallbackImage}

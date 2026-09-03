@@ -350,10 +350,10 @@ export default function ProviderProfilePage({ t, setView, setSelectedCourse }) {
                 <img
                   src={provider.logoUrl}
                   alt={`${provider.name} Logo`}
-                  className="w-20 h-20 md:w-24 md:h-24 rounded-2xl object-contain bg-beige border border-[#eadfd8] p-3"
+                  className="w-16 h-16 md:w-20 md:h-20 rounded-xl object-contain bg-[#FAF5F0] border border-[#EBE4DE] p-2"
                 />
               ) : (
-                <div className="w-20 h-20 md:w-24 md:h-24 rounded-2xl bg-primaryLight border border-orange-100 flex items-center justify-center">
+                <div className="w-16 h-16 md:w-20 md:h-20 rounded-xl bg-primaryLight border border-orange-100 flex items-center justify-center">
                   <span className="text-3xl font-bold text-orange-400">
                     {provider.name?.charAt(0)?.toUpperCase() || 'A'}
                   </span>
@@ -516,31 +516,31 @@ export default function ProviderProfilePage({ t, setView, setSelectedCourse }) {
                   {searchQuery || filterCanton ? 'Keine Kurse für diese Filter gefunden.' : 'Momentan sind keine Kurse verfügbar.'}
                 </p>
               ) : (
-                <div className="space-y-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   {filteredCourses.map((course) => (
                     <div
                       key={course.id}
                       onClick={() => handleCourseClick(course)}
-                      className="flex gap-4 p-4 rounded-xl border border-gray-100 hover:border-orange-200 hover:bg-orange-50/30 cursor-pointer transition-all"
+                      className="relative overflow-hidden rounded-xl border border-[#EBE4DE] bg-[#FAF5F0] hover:border-orange-200 hover:bg-orange-50/30 cursor-pointer transition-all"
                     >
                       {course.image_url ? (
                         <img
                           src={course.image_url}
                           alt={course.title}
-                          className="w-28 h-16 rounded-xl object-cover flex-shrink-0 aspect-video"
+                          className="w-full aspect-video object-cover"
                         />
                       ) : (
-                        <div className="w-28 h-16 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0 aspect-video">
+                        <div className="w-full aspect-video bg-gray-100 flex items-center justify-center flex-shrink-0">
                           <BookOpen className="w-6 h-6 text-gray-400" />
                         </div>
                       )}
 
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-bold text-gray-900 line-clamp-1">{course.title}</h3>
-                        <p className="text-sm text-gray-500 mt-1">
+                      <div className="min-w-0 p-4">
+                        <h3 className="font-bold text-gray-900 line-clamp-2">{course.title}</h3>
+                        <p className="text-sm text-gray-500 mt-2">
                           {getCourseCategoryText(course)}
                         </p>
-                        <div className="flex items-center gap-4 mt-2 text-sm">
+                        <div className="flex items-center justify-between gap-3 mt-3 text-sm">
                           {course.canton && (
                             <span className="flex items-center text-gray-500">
                               <MapPin className="w-3.5 h-3.5 mr-1" />
@@ -553,7 +553,7 @@ export default function ProviderProfilePage({ t, setView, setSelectedCourse }) {
                         </div>
                       </div>
 
-                      <ChevronRight className="w-5 h-5 text-gray-400 flex-shrink-0 self-center" />
+                      <ChevronRight className="w-5 h-5 text-gray-400 absolute right-4 bottom-4" />
                     </div>
                   ))}
                 </div>
