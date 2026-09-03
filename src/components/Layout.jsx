@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Menu, X, Globe, LogOut, LayoutDashboard, ChevronDown, Mail, ArrowRight, Check, Loader2, Briefcase, Palette, Smile, Shield } from 'lucide-react';
 import { SEGMENT_CONFIG } from '../lib/constants';
-import { MegaMenu, MobileMenuCategory } from './MegaMenu';
+import { MobileMenuCategory } from './MegaMenu';
 import { trackNewsletter } from '../lib/analytics';
 import { subscribeToNewsletter, suppressNewsletterPopupForever } from '../lib/newsletter';
 
@@ -110,6 +110,14 @@ export const Navbar = ({ t, user, lang = 'de', setLang, setView, handleLogout, s
     window.history.pushState({ view: viewName }, '', url);
   };
 
+  const navToSegment = (segmentKey) => {
+    if (setSelectedCatPath) setSelectedCatPath([]);
+    setMobileMenuOpen(false);
+    window.scrollTo(0, 0);
+    window.history.pushState({ view: 'search' }, '', `/search?type=${segmentKey}`);
+    window.dispatchEvent(new Event('locationchange'));
+  };
+
   // Navigate to Anbieter tab in integrated search with a pre-selected segment.
   // Preserve existing URL params (e.g. q) so the search query is not lost.
   const navToAnbieter = (segmentKey) => {
@@ -126,53 +134,54 @@ export const Navbar = ({ t, user, lang = 'de', setLang, setView, handleLogout, s
   return (
     <>
     <a href="#main-content" className="skip-to-content">Zum Inhalt springen</a>
-    <nav className="bg-[#fffdfb]/95 backdrop-blur-lg border-b border-[#eadfd8] sticky top-0 z-50" aria-label="Hauptnavigation">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-[72px]">
+    <nav className="sticky top-0 z-50 border-b border-[#ebe4de] bg-[#fffdfb]/95 backdrop-blur-lg" aria-label="Hauptnavigation">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="flex h-[80px] items-center justify-between">
 
           {/* LOGO & MAIN LINKS */}
           <div className="flex items-center">
-            <button type="button" onClick={() => navTo('home')} className="flex-shrink-0 flex items-center cursor-pointer group bg-transparent border-none p-0" aria-label="KursNavi — Zur Startseite">
-              <KursNaviLogo className="h-9 w-9 rounded-md group-hover:scale-[1.03] transition-transform duration-300" />
-              <span className="ml-2 text-[1.35rem] font-heading font-bold tracking-[-0.04em] text-dark">
+            <button type="button" onClick={() => navTo('home')} className="group flex flex-shrink-0 cursor-pointer items-center border-none bg-transparent p-0" aria-label="KursNavi — Zur Startseite">
+              <KursNaviLogo className="h-10 w-10 rounded-md transition-transform duration-300 group-hover:scale-[1.03]" />
+              <span className="ml-2 font-heading text-[1.4rem] font-bold tracking-[-0.045em] text-dark">
                 Kurs<span className="text-primary">Navi</span>
               </span>
             </button>
 
-            <div className="hidden xl:ml-8 xl:flex xl:space-x-1 xl:items-center">
-              {segmentButtons.map(({ key, label, Icon, config }) => {
+            <div className="ml-10 hidden flex-1 items-center justify-center gap-0.5 lg:flex">
+              {segmentButtons.map(({ key, label, config }) => {
                 const isActive = activeSegment === key;
                 return (
-                  <MegaMenu
+                  <button
                     key={key}
-                    categoryKey={key}
-                    label={label}
-                    Icon={Icon}
-                    config={config}
-                    isActive={isActive}
-                    lang={lang}
-                  />
-                );
+                    type="button"
+                    onClick={() => navToSegment(key)}
+                    className={`rounded-full px-3.5 py-2 text-sm font-semibold transition-colors ${
+                      isActive ? `${config.text} ${config.bgLight}` : 'text-[#594138] hover:bg-[#FAF5F0] hover:text-[#A43D00]'
+                    }`}
+                  >
+                    {label}
+                  </button>
+              );
               })}
-              <button onClick={() => navTo('how-it-works')} className="text-gray-600 hover:text-primary hover:bg-primaryLight px-3 py-2 rounded-full text-sm font-medium transition-colors font-sans">{t.nav_howitworks}</button>
-              <button onClick={() => navTo('blog')} className="text-gray-600 hover:text-primary hover:bg-primaryLight px-3 py-2 rounded-full text-sm font-medium transition-colors font-sans">{t.nav_news}</button>
+              <button type="button" onClick={() => navTo('how-it-works')} className="rounded-full px-3.5 py-2 text-sm font-semibold text-[#594138] transition-colors hover:bg-[#FAF5F0] hover:text-[#A43D00]">{t.nav_howitworks}</button>
+              <button type="button" onClick={() => navTo('blog')} className="rounded-full px-3.5 py-2 text-sm font-semibold text-[#594138] transition-colors hover:bg-[#FAF5F0] hover:text-[#A43D00]">{t.nav_news}</button>
               {/* Anbietersuche Dropdown */}
               <div
                 className="relative"
                 onMouseEnter={() => { if (anbieterTimeoutRef.current) clearTimeout(anbieterTimeoutRef.current); setAnbieterMenuOpen(true); }}
                 onMouseLeave={() => { anbieterTimeoutRef.current = setTimeout(() => setAnbieterMenuOpen(false), 150); }}
               >
-                <span className="flex items-center px-3 py-2 rounded-full text-sm font-medium text-gray-600 hover:text-primary hover:bg-primaryLight transition-colors font-sans cursor-default select-none">
+                <span className="flex cursor-default select-none items-center rounded-full px-3.5 py-2 text-sm font-semibold text-[#594138] transition-colors hover:bg-[#FAF5F0] hover:text-[#A43D00]">
                   {t.nav_providers || 'Anbieter finden'}
-                  <ChevronDown className={`w-3 h-3 ml-1 transition-transform duration-200 ${anbieterMenuOpen ? 'rotate-180' : ''}`} />
+                  <ChevronDown className={`ml-1 h-3.5 w-3.5 transition-transform duration-200 ${anbieterMenuOpen ? 'rotate-180' : ''}`} />
                 </span>
                 {anbieterMenuOpen && (
-                  <div data-testid="anbieter-dropdown" className="absolute left-0 top-full mt-1 w-56 bg-white rounded-xl shadow-2xl border border-gray-100 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div data-testid="anbieter-dropdown" className="absolute left-0 top-full z-50 mt-2 w-60 rounded-xl border border-[#ebe4de] bg-white py-2 shadow-[0_18px_45px_rgba(93,64,48,0.16)] animate-in fade-in slide-in-from-top-2 duration-200">
                     {segmentButtons.map(({ key, label, Icon, config }) => (
                       <button
                         key={key}
                         onClick={() => navToAnbieter(key)}
-                        className={`w-full text-left px-4 py-3 flex items-center gap-3 ${config.hoverBg} transition-colors`}
+                        className={`flex w-full items-center gap-3 px-4 py-3 text-left ${config.hoverBg} transition-colors`}
                       >
                         <div className={`p-1.5 rounded-lg ${config.bgLight}`}>
                           <Icon className={`w-4 h-4 ${config.text}`} />
@@ -183,12 +192,12 @@ export const Navbar = ({ t, user, lang = 'de', setLang, setView, handleLogout, s
                   </div>
                 )}
               </div>
-              <button onClick={() => navTo('teacher-hub')} className={`${activePath === "/teacher-hub" ? "text-orange-700 bg-primaryLight font-bold border-primary/30" : "text-gray-700 font-semibold border-[#eadfd8] hover:border-primary/40 hover:text-primary"} px-3.5 py-2 rounded-full text-sm transition-colors font-sans border`}>{t.nav_for_providers}</button>
+              <button type="button" onClick={() => navTo('teacher-hub')} className={`${activePath === "/teacher-hub" ? "border-[#FA6E28] bg-[#FFF0EB] text-[#A43D00]" : "border-[#ebe4de] text-[#594138] hover:border-[#FA6E28] hover:text-[#A43D00]"} ml-2 rounded-full border px-4 py-2 text-sm font-bold transition-colors`}>{t.nav_for_providers}</button>
             </div>
           </div>
 
           {/* RIGHT SIDE */}
-          <div className="hidden xl:flex items-center">
+          <div className="hidden items-center lg:flex">
             {/* Language switcher temporarily hidden for launch (German only)
             <div className="relative">
                 <button onClick={() => setLangMenuOpen(!langMenuOpen)} className="flex items-center space-x-1 text-gray-500 hover:text-primary p-2 rounded-full transition hover:bg-primaryLight">
@@ -213,7 +222,7 @@ export const Navbar = ({ t, user, lang = 'de', setLang, setView, handleLogout, s
             */}
 
             {/* Divider between nav and user area */}
-            <div className="h-8 w-px bg-gray-200 mx-3"></div>
+            <div className="mx-4 h-8 w-px bg-[#ebe4de]"></div>
 
             {user ? (
               <div className="flex items-center space-x-3">
@@ -226,13 +235,13 @@ export const Navbar = ({ t, user, lang = 'de', setLang, setView, handleLogout, s
                 <button onClick={handleLogout} className="flex items-center text-gray-400 hover:text-red-500 p-1.5 rounded-full hover:bg-red-50 transition-colors"><LogOut className="w-4 h-4" /></button>
               </div>
             ) : (
-            <button onClick={() => navTo('login')} className="bg-dark text-white px-5 py-2.5 rounded-full text-sm font-bold hover:bg-primary transition-all duration-300 shadow-sm hover:-translate-y-0.5 font-heading">{t.nav_login}</button>
+            <button type="button" onClick={() => navTo('login')} className="rounded-full bg-[#333333] px-5 py-2.5 font-heading text-sm font-bold text-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#FA6E28]">{t.nav_login}</button>
             )}
           </div>
 
           {/* MOBILE MENU BUTTON */}
-          <div className="flex items-center xl:hidden">
-            <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="text-gray-500 hover:text-primary p-2">
+          <div className="flex items-center lg:hidden">
+            <button type="button" aria-label={mobileMenuOpen ? 'Menü schliessen' : 'Menü öffnen'} onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="rounded-full p-2 text-[#594138] transition-colors hover:bg-[#FAF5F0] hover:text-[#A43D00]">
               {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
           </div>
@@ -241,7 +250,7 @@ export const Navbar = ({ t, user, lang = 'de', setLang, setView, handleLogout, s
 
       {/* MOBILE MENU */}
       {mobileMenuOpen && (
-        <div className="xl:hidden bg-beige border-t border-[#eadfd8] absolute w-full left-0 shadow-xl h-screen overflow-y-auto pb-20">
+        <div className="absolute left-0 h-screen w-full overflow-y-auto border-t border-[#ebe4de] bg-[#FAF5F0] pb-20 shadow-xl lg:hidden">
           <div className="pt-2 pb-3">
             {segmentButtons.map(({ key, label, Icon, config }) => {
               const isActive = activeSegment === key;
