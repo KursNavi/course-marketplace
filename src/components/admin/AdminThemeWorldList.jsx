@@ -4,7 +4,7 @@
  * Archivieren, Publizieren und Zurückziehen mit Bestätigungsdialog.
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { ArrowLeft, Plus, Edit, Archive, Globe, EyeOff, Eye, FileText, Loader, AlertCircle, RefreshCw } from 'lucide-react';
 import AdminStatusBadge from './AdminStatusBadge';
 import {
@@ -22,31 +22,39 @@ const SEGMENT_LABELS = {
   'kinder-jugend': 'Kinder & Jugend',
 };
 
-export default function AdminThemeWorldList({ showNotification, setView, setSelectedThemeWorldId, onNewCreate }) {
+export default function AdminThemeWorldList({ showNotification, setView, setSelectedThemeWorldId, onNewCreate, onSessionExpired }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [actionItem, setActionItem] = useState(null); // { id, action, title }
   const [actionRunning, setActionRunning] = useState(false);
+  const requestIdRef = useRef(0);
 
   const fetchData = useCallback(async () => {
+    const requestId = ++requestIdRef.current;
     setLoading(true);
     setError(null);
     try {
       const data = await listThemeWorlds();
+      if (requestId !== requestIdRef.current) return;
       setItems(data);
     } catch (err) {
+      if (requestId !== requestIdRef.current) return;
       const msg = getErrorMessage(err, 'Liste konnte nicht geladen werden.');
       setError(msg);
       if (err instanceof ApiError && err.isUnauthorized) {
         showNotification('Sitzung abgelaufen. Bitte erneut anmelden.');
+        onSessionExpired?.();
       }
     } finally {
-      setLoading(false);
+      if (requestId === requestIdRef.current) setLoading(false);
     }
-  }, [showNotification]);
+  }, [onSessionExpired, showNotification]);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => {
+    fetchData();
+    return () => { requestIdRef.current += 1; };
+  }, [fetchData]);
 
   const handleNew = () => {
     onNewCreate?.();

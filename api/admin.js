@@ -80,6 +80,17 @@ export default async function handler(req, res) {
   const token = authHeader.replace('Bearer ', '');
   const { data: authData, error: authError } = await supabaseAdmin.auth.getUser(token);
   if (authError || !authData?.user) {
+    // Keep diagnostics useful for Preview environment mismatches without
+    // logging bearer tokens or service-role credentials.
+    console.error('[admin] token verification failed', {
+      supabaseHost: (() => {
+        try { return new URL(supabaseUrl).host; } catch { return 'invalid-url'; }
+      })(),
+      vercelEnv: process.env.VERCEL_ENV || 'unknown',
+      code: authError?.code || null,
+      name: authError?.name || null,
+      message: authError?.message || null,
+    });
     return res.status(401).json({ error: 'Unauthorized' });
   }
 

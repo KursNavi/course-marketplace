@@ -21,6 +21,12 @@ import { supabase } from './supabase';
 
 /** Standard-Timeout für API-Anfragen in Millisekunden */
 const DEFAULT_TIMEOUT_MS = 15_000;
+const SESSION_REFRESH_SKEW_SECONDS = 30;
+
+// Supabase serialisiert eigene Refresh-Aufrufe intern, aber mehrere parallele
+// Admin-Anfragen sollten trotzdem nicht jeweils einen eigenen Refresh anstossen.
+// Das ist besonders relevant für loadAll(), das Haupt- und Subdaten parallel lädt.
+let sessionRefreshPromise = null;
 
 // ---------------------------------------------------------------------------
 // Interne Hilfsfunktionen
@@ -33,11 +39,58 @@ const DEFAULT_TIMEOUT_MS = 15_000;
  * @returns {Promise<string>} Access Token
  * @throws {ApiError} mit status=401 wenn nicht angemeldet
  */
-async function getAuthToken() {
-  const { data: { session } } = await supabase.auth.getSession();
+async function refreshSessionOnce(currentSession) {
+  if (!sessionRefreshPromise) {
+    const refreshOptions = currentSession?.refresh_token
+      ? { refresh_token: currentSession.refresh_token }
+      : undefined;
+
+    sessionRefreshPromise = supabase.auth.refreshSession(refreshOptions)
+      .then(({ data, error }) => {
+        if (error || !data?.session?.access_token) {
+          throw error || new Error('Session refresh failed');
+        }
+        return data.session;
+      })
+      .finally(() => {
+        sessionRefreshPromise = null;
+      });
+  }
+
+  return sessionRefreshPromise;
+}
+
+/**
+ * Holt einen verwendbaren Access-Token.
+ *
+ * Ein Token, das in den nächsten 30 Sekunden abläuft, wird vorsorglich
+ * erneuert. forceRefresh wird nach einem serverseitigen 401 verwendet.
+ * Beide Wege teilen sich denselben Refresh-Promise und vermeiden damit
+ * Refresh-Token-Races.
+ */
+async function getAuthToken({ forceRefresh = false } = {}) {
+  let session;
+
+  try {
+    const { data, error } = await supabase.auth.getSession();
+    if (error) throw error;
+    session = data?.session;
+
+    const expiresAt = Number(session?.expires_at);
+    const expiresSoon = Number.isFinite(expiresAt)
+      && expiresAt <= Math.floor(Date.now() / 1000) + SESSION_REFRESH_SKEW_SECONDS;
+
+    if (forceRefresh || expiresSoon) {
+      session = await refreshSessionOnce(session);
+    }
+  } catch {
+    throw new ApiError('Sitzung konnte nicht erneuert werden. Bitte melde dich erneut an.', 401);
+  }
+
   if (!session?.access_token) {
     throw new ApiError('Nicht angemeldet. Bitte melde dich erneut an.', 401);
   }
+
   return session.access_token;
 }
 
@@ -53,14 +106,38 @@ async function getAuthToken() {
  * @throws {ApiError} bei HTTP-Fehlern oder Netzwerkproblemen
  */
 async function apiCall(url, { method = 'GET', body, timeoutMs = DEFAULT_TIMEOUT_MS } = {}) {
-  const token = await getAuthToken();
+  let token = await getAuthToken();
+  let result = await fetchWithToken(url, { method, body, timeoutMs }, token);
 
+  // Der Access-Token kann zwischen getSession() und dem Serveraufruf ablaufen.
+  // Ein einziger Refresh + Retry behebt diesen normalen Grenzfall, ohne bei
+  // echten Berechtigungsfehlern eine Endlosschleife zu erzeugen.
+  if (result.response.status === 401) {
+    token = await getAuthToken({ forceRefresh: true });
+    result = await fetchWithToken(url, { method, body, timeoutMs }, token);
+  }
+
+  const { response, data } = result;
+  if (!response.ok) {
+    throw new ApiError(
+      data?.error || `HTTP ${response.status}`,
+      response.status,
+      data?.details,
+    );
+  }
+
+  return data;
+}
+
+/** Führt genau einen HTTP-Aufruf mit dem angegebenen Token aus. */
+async function fetchWithToken(url, { method = 'GET', body, timeoutMs = DEFAULT_TIMEOUT_MS }, token) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
     const response = await fetch(url, {
       method,
+      cache: 'no-store',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`,
@@ -68,8 +145,6 @@ async function apiCall(url, { method = 'GET', body, timeoutMs = DEFAULT_TIMEOUT_
       body: body !== undefined ? JSON.stringify(body) : undefined,
       signal: controller.signal,
     });
-
-    clearTimeout(timeoutId);
 
     let data;
     const contentType = response.headers.get('content-type') || '';
@@ -79,21 +154,8 @@ async function apiCall(url, { method = 'GET', body, timeoutMs = DEFAULT_TIMEOUT_
       data = { message: await response.text() };
     }
 
-    if (!response.ok) {
-      throw new ApiError(
-        data?.error || `HTTP ${response.status}`,
-        response.status,
-        data?.details,
-      );
-    }
-
-    return data;
-
+    return { response, data };
   } catch (err) {
-    clearTimeout(timeoutId);
-
-    if (err instanceof ApiError) throw err;
-
     if (err.name === 'AbortError') {
       throw new ApiError(
         'Anfrage abgebrochen: Zeitlimit überschritten. Bitte versuche es erneut.',
@@ -109,6 +171,8 @@ async function apiCall(url, { method = 'GET', body, timeoutMs = DEFAULT_TIMEOUT_
       null,
       'network_error',
     );
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
 
