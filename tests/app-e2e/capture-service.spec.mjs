@@ -25,21 +25,43 @@ async function forceTeacherPackageTier(page, packageTier) {
       return;
     }
 
-    const response = await route.fetch();
-    if (!response.ok()) {
-      await route.fulfill({ response });
-      return;
-    }
-
-    const payload = await response.json();
-    const override = (profile) => ({
-      ...profile,
+    const idFilter = url.searchParams.get('id') || '';
+    const ids = idFilter.startsWith('in.(')
+      ? idFilter.slice(4, -1).split(',').filter(Boolean)
+      : [idFilter.replace(/^eq\./, '')].filter(Boolean);
+    const profileFor = (id) => ({
+      id,
+      full_name: 'E2E Anbieter',
+      email: 'e2e-provider@example.com',
+      role: 'teacher',
+      preferred_language: 'de',
+      is_professional: true,
       package_tier: packageTier,
       package_expires_at: null,
+      pending_package_tier: null,
+      pending_package_expires_at: null,
+      credit_balance_cents: 0,
+      stripe_connect_onboarding_complete: false,
+      bio_text: null,
+      certificates: [],
+      additional_locations: [],
+      city: null,
+      canton: null,
+      verification_status: 'verified',
+      slug: null,
+      profile_published_at: null,
+      website_url: null,
+      basic_lead_ranking_factor: null,
     });
-    const body = Array.isArray(payload) ? payload.map(override) : override(payload);
+    const profiles = ids.map(profileFor);
+    const isSingle = (request.headers().accept || '').includes('vnd.pgrst.object+json');
+    const body = isSingle ? (profiles[0] || profileFor(null)) : profiles;
 
-    await route.fulfill({ response, json: body });
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      json: body,
+    });
   });
 }
 
