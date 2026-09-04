@@ -44,6 +44,7 @@ function serializeJsonLd(value) {
  * @param {string} meta.canonical - absolute URL
  * @param {string} meta.title
  * @param {string} meta.description
+ * @param {string} [meta.robots] - robots directive, e.g. `noindex,follow`
  * @param {string} [meta.ogTitle] - abweichender og:title (Standard: title)
  * @param {string} [meta.ogDescription] - abweichende og:description (Standard: description)
  * @param {string} [meta.ogType] - z.B. 'website'; ohne Wert bleibt die Vorlage unverändert
@@ -60,6 +61,7 @@ export function injectHeadMeta(template, {
   canonical,
   title,
   description,
+  robots,
   ogTitle,
   ogDescription,
   ogType,
@@ -79,6 +81,12 @@ export function injectHeadMeta(template, {
     /(<meta name="description" content=")[^"]*(")/,
     `$1${escapeHtmlAttr(description)}$2`
   );
+  if (robots) {
+    html = html.replace(
+      /(<meta name="robots" content=")[^"]*(")/,
+      `$1${escapeHtmlAttr(robots)}$2`
+    );
+  }
   // Canonical direkt nach <meta name="robots"> einfügen (falls noch nicht vorhanden)
   if (/<link rel="canonical"/.test(html)) {
     html = html.replace(/(<link rel="canonical" href=")[^"]*(")/, `$1${canonical}$2`);
