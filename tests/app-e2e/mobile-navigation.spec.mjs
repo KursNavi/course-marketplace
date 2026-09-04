@@ -8,8 +8,7 @@ test.describe('Mobile Navigation (app-e2e)', () => {
     const nav = page.locator('nav[aria-label="Hauptnavigation"]');
     await expect(nav).toBeVisible({ timeout: 10_000 });
 
-    // The hamburger button lives inside a md:hidden container (only visible on mobile)
-    const hamburger = nav.locator('[class*="md:hidden"] button');
+    const hamburger = nav.getByRole('button', { name: 'Menü öffnen' });
     await hamburger.click();
 
     // Mobile menu should open — nav items become visible
@@ -29,7 +28,7 @@ test.describe('Mobile Navigation (app-e2e)', () => {
     const nav = page.locator('nav[aria-label="Hauptnavigation"]');
     await expect(nav).toBeVisible({ timeout: 10_000 });
 
-    const hamburger = nav.locator('[class*="md:hidden"] button');
+    const hamburger = nav.getByRole('button', { name: 'Menü öffnen' });
     await hamburger.click();
     await expect(page.getByRole('button', { name: 'Neuigkeiten' })).toBeVisible({ timeout: 3_000 });
 
