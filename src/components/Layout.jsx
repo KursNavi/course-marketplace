@@ -235,7 +235,13 @@ export const Navbar = ({ t, user, lang = 'de', setLang, setView, handleLogout, s
 
           {/* MOBILE MENU BUTTON */}
           <div className="flex items-center md:hidden">
-            <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="text-gray-500 hover:text-primary p-2">
+            <button
+              type="button"
+              aria-label={mobileMenuOpen ? 'Menü schliessen' : 'Menü öffnen'}
+              aria-expanded={mobileMenuOpen}
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="text-gray-500 hover:text-primary p-2"
+            >
               {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
           </div>
