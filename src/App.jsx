@@ -126,7 +126,6 @@ const RatgeberHubView = lazyWithRetry(() => import('./components/RatgeberHubView
 const BereichLandingPage = lazyWithRetry(() => import('./components/BereichLandingPage'));
 const SzenarioArtikelView = lazyWithRetry(() => import('./components/SzenarioArtikelView'));
 const SimpleTopicLandingPage = lazyWithRetry(() => import('./components/SimpleTopicLandingPage'));
-const CampaignLandingPage = lazyWithRetry(() => import('./components/CampaignLandingPage'));
 const NotFoundPage = lazyWithRetry(() => import('./components/NotFoundPage'));
 const SetPasswordView = lazyWithRetry(() => import('./components/SetPasswordView'));
 
@@ -254,9 +253,6 @@ export default function KursNaviPro() {  // 1. Initial State Logic
         return 'search';
       }
       if (path.startsWith('/anbieter/')) return 'provider-profile';
-
-      // GOOGLE ADS CAMPAIGN LANDING PAGE ROUTING
-      if (path.startsWith('/kampagne/')) return 'campaign-landing';
 
       // TEACHER PROFILE ROUTING (basic teachers without public profile)
       if (path.startsWith('/profil/')) return 'teacher-profile';
@@ -387,13 +383,6 @@ export default function KursNaviPro() {  // 1. Initial State Logic
     if (parts.length >= 3) {
       themaParams = { segment: parts[1], slug: parts[2] };
     }
-  }
-
-  // Google Ads campaign landing page params (read live from URL)
-  let campaignParams = { slug: '' };
-  if (window.location.pathname.startsWith('/kampagne/')) {
-    const parts = window.location.pathname.split('/').filter(Boolean);
-    if (parts.length >= 2) campaignParams = { slug: parts[1] };
   }
 
   // Filter States — lazy-initialized from URL to avoid URL-sync effect stripping params on first render
@@ -916,8 +905,12 @@ export default function KursNaviPro() {  // 1. Initial State Logic
 
   const fetchCourses = async () => {
     try {
-            setLoading(true);
-            setFetchError(false);
+      // Supabase hydrates the persisted auth session asynchronously. Wait for
+      // that hydration before querying courses so an authenticated provider's
+      // own drafts are included on the first app load as well.
+      await supabase.auth.getSession();
+      setLoading(true);
+      setFetchError(false);
 
       // V3.0 Data Sync (robust): Lade Kurse + Events zuerst, Profile danach separat (kein fragiler Join)
       const { data: courseData, error: courseError } = await supabase
@@ -1582,7 +1575,6 @@ export default function KursNaviPro() {  // 1. Initial State Logic
 // --- EFFECT HOOKS ---
     useEffect(() => {
     window.history.scrollRestoration = 'manual';
-    fetchCourses();
     fetchArticles();
 
     // Hält view + selectedCourse immer synchron zur URL (auch bei pushState/replaceState)
@@ -1858,6 +1850,14 @@ export default function KursNaviPro() {  // 1. Initial State Logic
 
   useEffect(() => {
     let cancelled = false;
+    let courseRefreshTimer = null;
+
+    const scheduleCoursesRefresh = () => {
+      if (courseRefreshTimer) clearTimeout(courseRefreshTimer);
+      courseRefreshTimer = setTimeout(() => {
+        if (!cancelled) fetchCourses();
+      }, 0);
+    };
 
     const applySession = async (session) => {
       if (cancelled) return;
@@ -1946,6 +1946,10 @@ export default function KursNaviPro() {  // 1. Initial State Logic
               : prev
           );
         }
+
+        // Refresh outside the auth callback so the authenticated session is
+        // available without re-entering Supabase's auth lock.
+        scheduleCoursesRefresh();
       } else {
         // Logout / kein User
         setUser(null);
@@ -1956,6 +1960,9 @@ export default function KursNaviPro() {  // 1. Initial State Logic
 
         if (['/dashboard', '/create-course'].includes(window.location.pathname)) setView('home');
         setLang('de');
+
+        // Revert to the public course set after logout.
+        scheduleCoursesRefresh();
       }
     };
 
@@ -1988,6 +1995,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
 
     return () => {
       cancelled = true;
+      if (courseRefreshTimer) clearTimeout(courseRefreshTimer);
       subscription.unsubscribe();
     };
   }, []);
@@ -2388,15 +2396,6 @@ useEffect(() => {
           setSearchType={setSearchType}
           setSearchArea={setSearchArea}
           publishedCourses={publishedCourses}
-          setSelectedCourse={setSelectedCourse}
-        />
-      )}
-      {view === 'campaign-landing' && (
-        <CampaignLandingPage
-          key={routePath}
-          slug={campaignParams.slug}
-          courses={publishedCourses}
-          setView={setView}
           setSelectedCourse={setSelectedCourse}
         />
       )}

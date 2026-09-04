@@ -6,6 +6,7 @@ import { createClient } from '@supabase/supabase-js';
  *
  * Actions:
  * - GET ?action=profiles           → Get all profiles
+ * - GET ?action=courses            → Get all courses, including drafts
  * - GET ?action=user-data          → Get dashboard data for a user (impersonation)
  * - POST action=set-tier           → Set user package tier
  * - POST action=set-verify         → Set user verification status
@@ -195,6 +196,25 @@ export default async function handler(req, res) {
           hasMore: (offset + limit) < (count || 0)
         }
       });
+    }
+
+    // ============================================
+    // ACTION: courses - Get all courses, including drafts
+    // ============================================
+    if (action === 'courses') {
+      if (req.method !== 'GET') {
+        return res.status(405).json({ error: 'Method not allowed' });
+      }
+
+      const { data, error } = await supabaseAdmin
+        .from('courses')
+        .select('*, course_events(*, bookings(count)), course_locations(*)')
+        .order('created_at', { ascending: false })
+        .limit(2000);
+
+      if (error) return res.status(500).json({ error: error.message });
+
+      return res.status(200).json({ data: data || [] });
     }
 
     // ============================================

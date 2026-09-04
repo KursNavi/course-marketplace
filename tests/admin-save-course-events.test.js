@@ -71,6 +71,8 @@ const makeBuilder = (table) => {
         delete() { state.op = 'delete'; return builder; },
         eq(col, val) { state.filters.push(['eq', col, val]); return builder; },
         in(col, vals) { state.filters.push(['in', col, vals]); return builder; },
+        order() { return builder; },
+        limit() { return builder; },
         single() { state.single = true; return builder; },
         then(resolve, reject) { return Promise.resolve(run()).then(resolve, reject); }
     };
@@ -115,6 +117,18 @@ const callStatus = async (newStatus) => {
         headers: { authorization: 'Bearer admin-token' },
         query: { action: 'set-course-status' },
         body: { userId: PROVIDER_ID, courseId: COURSE_ID, newStatus }
+    };
+    const res = makeRes();
+    await handler(req, res);
+    return res;
+};
+
+const callAdminCourses = async (method = 'GET') => {
+    const req = {
+        method,
+        headers: { authorization: 'Bearer admin-token' },
+        query: { action: 'courses' },
+        body: {}
     };
     const res = makeRes();
     await handler(req, res);
@@ -228,5 +242,34 @@ describe('/api/admin save-course — Termine dürfen nicht durch eine leere List
 
         expect(res.statusCode).toBe(200);
         expect(db.courses[0].status).toBe('published');
+    });
+});
+
+describe('/api/admin courses — Admin sieht auch Entwürfe', () => {
+    beforeEach(() => {
+        db = {
+            profiles: [{ id: ADMIN_ID, role: 'admin' }],
+            courses: [
+                { id: 944, user_id: PROVIDER_ID, title: 'Pâtisserie Candle Session', status: 'draft' },
+                { id: 951, user_id: PROVIDER_ID, title: 'Veröffentlichter Kurs', status: 'published' }
+            ],
+            course_events: [],
+            course_locations: []
+        };
+    });
+
+    it('liefert Entwürfe über die geschützte Admin-Abfrage', async () => {
+        const res = await callAdminCourses();
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.data).toEqual(expect.arrayContaining([
+            expect.objectContaining({ id: 944, status: 'draft' })
+        ]));
+    });
+
+    it('weist Schreibzugriffe auf die reine Leseabfrage zurück', async () => {
+        const res = await callAdminCourses('POST');
+
+        expect(res.statusCode).toBe(405);
     });
 });
