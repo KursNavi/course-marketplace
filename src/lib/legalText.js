@@ -804,3 +804,21 @@ export const LEGAL_CONTENT = {
     },
   }
 };
+
+// Die produktive Tracking-Konfiguration unterstützt neben Kursanfragen auch
+// Newsletter- und Registrierungs-Conversions. Der Hinweis wird zentral in der
+// Datenschutzsektion ergänzt, damit alle Sprachvarianten denselben Umfang haben.
+const GOOGLE_ADS_PRIVACY_NOTICES = {
+  de: '• Google-Ads-Conversion-Tracking: Sofern aktiviert, werden erfolgreiche Kursanfragen, Newsletter-Anmeldungen und Registrierungen nur nach Einwilligung in die Cookiebot-Kategorie «Marketing» an Google Ads übermittelt. Ohne die dafür erforderliche Betreiber-Konfiguration ist diese Funktion deaktiviert.',
+  en: '• Google Ads conversion tracking: If enabled, successful course enquiries, newsletter sign-ups and registrations are transmitted to Google Ads only after consent to Cookiebot’s “Marketing” category. The function remains disabled until the required operator configuration is supplied.',
+  fr: '• Suivi des conversions Google Ads : S’il est activé, les demandes de cours, inscriptions à la newsletter et inscriptions réussies ne sont transmises à Google Ads qu’après consentement à la catégorie « Marketing » de Cookiebot. La fonction reste désactivée tant que la configuration requise n’est pas fournie par l’exploitant.',
+  it: '• Monitoraggio delle conversioni Google Ads: Se attivato, le richieste di corso, le iscrizioni alla newsletter e le registrazioni completate vengono trasmesse a Google Ads solo dopo il consenso alla categoria «Marketing» di Cookiebot. La funzione resta disattivata finché il gestore non fornisce la configurazione necessaria.',
+};
+
+for (const [language, notice] of Object.entries(GOOGLE_ADS_PRIVACY_NOTICES)) {
+  const privacySection = LEGAL_CONTENT[language]?.datenschutz?.sections
+    ?.find((section) => section.heading.startsWith('5.'));
+  if (privacySection && !privacySection.text.includes('Google Ads')) {
+    privacySection.text = `${privacySection.text}\n${notice}`;
+  }
+}

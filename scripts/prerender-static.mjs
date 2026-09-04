@@ -42,6 +42,7 @@ import {
   readPublicSupabaseCredentials,
 } from '../api/_lib/course-prerender.js';
 import { buildActiveThemeWorldTopicKeys } from '../src/lib/themeWorldTakeover.js';
+import { CAMPAIGN_LANDING_CONFIG } from '../src/lib/campaignLandingConfig.js';
 import {
   RATGEBER_SEO_CATEGORY_SLUGS,
   getRatgeberCategorySeo,
@@ -73,12 +74,14 @@ function generateHtml(path, title, description, {
   ogType,
   ogImage,
   ogImageAlt,
+  robots,
   jsonLd,
 } = {}) {
   return injectHeadMeta(template, {
     canonical: `${BASE_URL}${path}`,
     title,
     description,
+    robots,
     ogTitle,
     ogDescription,
     ogType,
@@ -472,6 +475,14 @@ console.log(`\nPrerendering static routes → ${distDir}\n`);
 // Static pages
 for (const { path, title, description } of STATIC_PAGES) {
   writeRoute(path, title, description);
+}
+
+// Kampagnenrouten erhalten ein eigenes erstes HTML mit Canonical und noindex.
+// Die Kurskarten werden nach der Hydration aus der öffentlichen Kursliste geladen.
+for (const [slug, config] of Object.entries(CAMPAIGN_LANDING_CONFIG)) {
+  writeRoute(`/kampagne/${slug}`, `${config.title} | KursNavi`, config.subtitle, {
+    robots: 'noindex,follow',
+  });
 }
 
 /**

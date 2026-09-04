@@ -126,6 +126,7 @@ const RatgeberHubView = lazyWithRetry(() => import('./components/RatgeberHubView
 const BereichLandingPage = lazyWithRetry(() => import('./components/BereichLandingPage'));
 const SzenarioArtikelView = lazyWithRetry(() => import('./components/SzenarioArtikelView'));
 const SimpleTopicLandingPage = lazyWithRetry(() => import('./components/SimpleTopicLandingPage'));
+const CampaignLandingPage = lazyWithRetry(() => import('./components/CampaignLandingPage'));
 const NotFoundPage = lazyWithRetry(() => import('./components/NotFoundPage'));
 const SetPasswordView = lazyWithRetry(() => import('./components/SetPasswordView'));
 
@@ -253,6 +254,9 @@ export default function KursNaviPro() {  // 1. Initial State Logic
         return 'search';
       }
       if (path.startsWith('/anbieter/')) return 'provider-profile';
+
+      // GOOGLE ADS CAMPAIGN LANDING PAGE ROUTING
+      if (path.startsWith('/kampagne/')) return 'campaign-landing';
 
       // TEACHER PROFILE ROUTING (basic teachers without public profile)
       if (path.startsWith('/profil/')) return 'teacher-profile';
@@ -383,6 +387,13 @@ export default function KursNaviPro() {  // 1. Initial State Logic
     if (parts.length >= 3) {
       themaParams = { segment: parts[1], slug: parts[2] };
     }
+  }
+
+  // Google Ads campaign landing page params (read live from URL)
+  let campaignParams = { slug: '' };
+  if (window.location.pathname.startsWith('/kampagne/')) {
+    const parts = window.location.pathname.split('/').filter(Boolean);
+    if (parts.length >= 2) campaignParams = { slug: parts[1] };
   }
 
   // Filter States — lazy-initialized from URL to avoid URL-sync effect stripping params on first render
@@ -2365,6 +2376,15 @@ useEffect(() => {
           setSearchType={setSearchType}
           setSearchArea={setSearchArea}
           publishedCourses={publishedCourses}
+          setSelectedCourse={setSelectedCourse}
+        />
+      )}
+      {view === 'campaign-landing' && (
+        <CampaignLandingPage
+          key={routePath}
+          slug={campaignParams.slug}
+          courses={publishedCourses}
+          setView={setView}
           setSelectedCourse={setSelectedCourse}
         />
       )}
