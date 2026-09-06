@@ -14,6 +14,30 @@
          matching statistics or marketing decision. -->
     <script id="Cookiebot" src="https://consent.cookiebot.com/uc.js" data-cbid="8c90da7e-91e6-468f-bafe-2f78b241afa7" data-blockingmode="manual" async></script>
 
+    <!-- Contentsquare is loaded only after Cookiebot statistics consent. -->
+    <script>
+      (function () {
+        var contentsquareTagLoaded = false;
+
+        function applyContentsquareConsent() {
+          var consent = window.Cookiebot && window.Cookiebot.consent;
+          if (!consent || consent.statistics !== true || contentsquareTagLoaded) return;
+
+          var script = document.createElement('script');
+          script.async = true;
+          script.src = 'https://t.contentsquare.net/uxa/9d1e4f9cc0626.js';
+          script.dataset.kursnaviContentsquareTag = 'true';
+          document.head.appendChild(script);
+          contentsquareTagLoaded = true;
+        }
+
+        window.addEventListener('CookiebotOnConsentReady', applyContentsquareConsent);
+        window.addEventListener('CookiebotOnAccept', applyContentsquareConsent);
+        window.addEventListener('CookiebotOnDecline', applyContentsquareConsent);
+        window.setTimeout(applyContentsquareConsent, 0);
+      }());
+    </script>
+
     <!-- Google Consent Mode v2. The queue and default-denied state do not make
          a network request. The Google tag is inserted only after Cookiebot
          reports statistics and/or marketing consent. -->
