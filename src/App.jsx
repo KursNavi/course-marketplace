@@ -916,8 +916,12 @@ export default function KursNaviPro() {  // 1. Initial State Logic
 
   const fetchCourses = async () => {
     try {
-            setLoading(true);
-            setFetchError(false);
+      // Supabase hydrates the persisted auth session asynchronously. Wait for
+      // that hydration before querying courses so an authenticated provider's
+      // own drafts are included on the first app load as well.
+      await supabase.auth.getSession();
+      setLoading(true);
+      setFetchError(false);
 
       // V3.0 Data Sync (robust): Lade Kurse + Events zuerst, Profile danach separat (kein fragiler Join)
       const { data: courseData, error: courseError } = await supabase
@@ -1582,7 +1586,6 @@ export default function KursNaviPro() {  // 1. Initial State Logic
 // --- EFFECT HOOKS ---
     useEffect(() => {
     window.history.scrollRestoration = 'manual';
-    fetchCourses();
     fetchArticles();
 
     // Hält view + selectedCourse immer synchron zur URL (auch bei pushState/replaceState)
@@ -1858,6 +1861,14 @@ export default function KursNaviPro() {  // 1. Initial State Logic
 
   useEffect(() => {
     let cancelled = false;
+    let courseRefreshTimer = null;
+
+    const scheduleCoursesRefresh = () => {
+      if (courseRefreshTimer) clearTimeout(courseRefreshTimer);
+      courseRefreshTimer = setTimeout(() => {
+        if (!cancelled) fetchCourses();
+      }, 0);
+    };
 
     const applySession = async (session) => {
       if (cancelled) return;
@@ -1946,6 +1957,10 @@ export default function KursNaviPro() {  // 1. Initial State Logic
               : prev
           );
         }
+
+        // Refresh outside the auth callback so the authenticated session is
+        // available without re-entering Supabase's auth lock.
+        scheduleCoursesRefresh();
       } else {
         // Logout / kein User
         setUser(null);
@@ -1956,6 +1971,9 @@ export default function KursNaviPro() {  // 1. Initial State Logic
 
         if (['/dashboard', '/create-course'].includes(window.location.pathname)) setView('home');
         setLang('de');
+
+        // Revert to the public course set after logout.
+        scheduleCoursesRefresh();
       }
     };
 
@@ -1988,6 +2006,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
 
     return () => {
       cancelled = true;
+      if (courseRefreshTimer) clearTimeout(courseRefreshTimer);
       subscription.unsubscribe();
     };
   }, []);

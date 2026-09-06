@@ -15,6 +15,8 @@ const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView, user,
     const [pageSize, setPageSize] = useState(25);
     const [currentPage, setCurrentPage] = useState(1);
     const [totalCount, setTotalCount] = useState(0);
+    const [adminCourses, setAdminCourses] = useState([]);
+    const [coursesLoading, setCoursesLoading] = useState(false);
 
     const [debouncedSearch, setDebouncedSearch] = useState('');
     const [sortBy, setSortBy] = useState('created_at');
@@ -107,6 +109,29 @@ const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView, user,
             fetchProfiles();
         }
     }, [isAuthenticated, fetchProfiles, activeTab]);
+
+    const fetchAdminCourses = useCallback(async () => {
+        setCoursesLoading(true);
+        try {
+            const headers = await getAuthHeaders();
+            const res = await fetch('/api/admin?action=courses', { headers });
+            const json = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(json.error || 'Kurse konnten nicht geladen werden');
+            setAdminCourses(json.data || []);
+        } catch (error) {
+            console.error('Error loading admin courses:', error);
+            setAdminCourses([]);
+            showNotification('Kurse konnten nicht geladen werden: ' + error.message, 'error');
+        } finally {
+            setCoursesLoading(false);
+        }
+    }, [showNotification]);
+
+    useEffect(() => {
+        if (isAuthenticated && activeTab === 'courses') {
+            fetchAdminCourses();
+        }
+    }, [isAuthenticated, activeTab, fetchAdminCourses]);
 
     const handleImpersonate = (profile, fromTab) => {
         if (onImpersonate) {
@@ -387,7 +412,7 @@ const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView, user,
                 {/* Other Tabs - Table View */}
                 {activeTab !== 'categories' && activeTab !== 'lead-analytics' && (<>
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                    {loading ? (
+                    {(activeTab === 'courses' ? coursesLoading : loading) ? (
                         <div className="p-12 text-center"><Loader className="animate-spin mx-auto w-8 h-8 text-blue-600" /></div>
                     ) : (
                         <div className="overflow-x-auto">
@@ -549,7 +574,7 @@ const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView, user,
                                             </td>
                                         </tr>
                                     ))}
-                                    {activeTab === 'courses' && courses.map(course => (
+                                    {activeTab === 'courses' && adminCourses.map(course => (
                                         <tr key={course.id} className="hover:bg-gray-50">
                                             <td className="px-6 py-4 font-bold">{course.title}</td>
                                             <td className="px-6 py-4 text-gray-500">{course.instructor_name}</td>
