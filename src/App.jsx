@@ -321,6 +321,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
   const [courses, setCourses] = useState([]);
     const coursesRef = useRef([]);
     const coursesLoadedRef = useRef(false);
+    const impersonatedCourseIdsRef = useRef(new Set());
     const scrollRestoreRef = useRef(null);
 
   useEffect(() => {
@@ -656,6 +657,23 @@ export default function KursNaviPro() {  // 1. Initial State Logic
       });
       if (res.ok) {
         const json = await res.json();
+        const impersonatedCourses = Array.isArray(json.courses) ? json.courses : [];
+
+        // The admin session cannot see provider drafts through the normal
+        // client query. Merge the admin-only result into the shared course
+        // state so Dashboard can render the represented provider's courses.
+        setCourses((currentCourses) => {
+          const previousImpersonatedIds = impersonatedCourseIdsRef.current;
+          const currentIds = new Set(impersonatedCourses.map(course => String(course.id)));
+          const retainedCourses = currentCourses.filter(course => {
+            const courseId = String(course.id);
+            return !previousImpersonatedIds.has(courseId) && !currentIds.has(courseId);
+          });
+
+          impersonatedCourseIdsRef.current = currentIds;
+          return [...retainedCourses, ...impersonatedCourses];
+        });
+
         setMyBookings(json.bookings || []);
         setSavedCourses(json.savedCourses || []);
         setSavedCourseIds((json.savedCourses || []).map(c => c.id));
@@ -2020,6 +2038,8 @@ export default function KursNaviPro() {  // 1. Initial State Logic
   // Restore own data when stopping impersonation
   useEffect(() => {
     if (!impersonatedUser && user) {
+      impersonatedCourseIdsRef.current = new Set();
+      fetchCourses();
       fetchBookings(user.id);
       fetchSavedCourses(user.id);
       if (user.role === 'teacher') fetchTeacherEarnings(user.id);
