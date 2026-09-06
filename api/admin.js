@@ -795,6 +795,15 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'Missing or invalid userId' });
       }
 
+      // The dashboard can be viewed by an admin on behalf of a provider.
+      // Load that provider's complete course list as part of the same
+      // privileged, admin-only response so draft courses are available in
+      // the impersonated "Meine Kurse" view as well.
+      const { data: courses } = await supabaseAdmin
+        .from('courses')
+        .select('*, course_events(*, bookings(count)), course_locations(*)')
+        .eq('user_id', userId);
+
       // Fetch bookings
       const { data: bookings } = await supabaseAdmin
         .from('bookings')
@@ -857,6 +866,7 @@ export default async function handler(req, res) {
       }
 
       return res.status(200).json({
+        courses: courses || [],
         bookings: (bookings || []).map(b => ({
           id: b.id,
           course_id: b.course_id,

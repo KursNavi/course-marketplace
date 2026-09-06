@@ -123,6 +123,18 @@ const callStatus = async (newStatus) => {
     return res;
 };
 
+const callUserData = async () => {
+    const req = {
+        method: 'GET',
+        headers: { authorization: 'Bearer admin-token' },
+        query: { action: 'user-data', userId: PROVIDER_ID },
+        body: {}
+    };
+    const res = makeRes();
+    await handler(req, res);
+    return res;
+};
+
 const callAdminCourses = async (method = 'GET') => {
     const req = {
         method,
@@ -242,6 +254,15 @@ describe('/api/admin save-course — Termine dürfen nicht durch eine leere List
 
         expect(res.statusCode).toBe(200);
         expect(db.courses[0].status).toBe('published');
+    });
+
+    it('includes provider courses in the impersonated dashboard response', async () => {
+        const res = await callUserData();
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.courses).toHaveLength(1);
+        expect(res.body.courses[0].id).toBe(COURSE_ID);
+        expect(res.body.courses[0].user_id).toBe(PROVIDER_ID);
     });
 });
 
