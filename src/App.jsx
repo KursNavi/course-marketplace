@@ -10,6 +10,7 @@ import { BASE_URL, slugify as siteSlugify, buildCoursePath as siteBuildCoursePat
 import { buildSyntheticCategories, getNormalizedDeliveryTypes, getPrimaryCategorySlug, normalizeCategoryType, normalizeDeliveryTypeKey } from './lib/courseMetadata';
 import { refreshCoursesAfterMutation } from './lib/courseRefresh';
 import { hasCompleteCourseCategory } from './lib/courseStatus';
+import { mergeImpersonatedCourses } from './lib/impersonationCourses';
 import { getHomepageLinkRel } from './lib/entitlements';
 import { trackPageView } from './lib/analytics';
 import { useTaxonomy } from './hooks/useTaxonomy';
@@ -322,6 +323,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
     const coursesRef = useRef([]);
     const coursesLoadedRef = useRef(false);
     const impersonatedCourseIdsRef = useRef(new Set());
+    const impersonatedCoursesRef = useRef([]);
     const scrollRestoreRef = useRef(null);
 
   useEffect(() => {
@@ -658,6 +660,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
       if (res.ok) {
         const json = await res.json();
         const impersonatedCourses = Array.isArray(json.courses) ? json.courses : [];
+        impersonatedCoursesRef.current = impersonatedCourses;
 
         // The admin session cannot see provider drafts through the normal
         // client query. Merge the admin-only result into the shared course
@@ -671,7 +674,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
           });
 
           impersonatedCourseIdsRef.current = currentIds;
-          return [...retainedCourses, ...impersonatedCourses];
+          return mergeImpersonatedCourses(retainedCourses, impersonatedCourses);
         });
 
         setMyBookings(json.bookings || []);
@@ -1042,7 +1045,14 @@ export default function KursNaviPro() {  // 1. Initial State Logic
         return normalizedWithFallbacks;
       });
 
-      setCourses(migratedData);
+      // A normal client refresh cannot see drafts belonging to the provider
+      // represented by an admin. Keep the protected impersonation result in
+      // the shared list so navigation-triggered refreshes do not make them
+      // disappear from the provider dashboard.
+      const coursesForState = impersonatedCoursesRef.current.length > 0
+        ? mergeImpersonatedCourses(migratedData, impersonatedCoursesRef.current)
+        : migratedData;
+      setCourses(coursesForState);
       
       // Deep Link Logic (SEO Enhanced)
       const path = window.location.pathname;
@@ -2039,6 +2049,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
   useEffect(() => {
     if (!impersonatedUser && user) {
       impersonatedCourseIdsRef.current = new Set();
+      impersonatedCoursesRef.current = [];
       fetchCourses();
       fetchBookings(user.id);
       fetchSavedCourses(user.id);
