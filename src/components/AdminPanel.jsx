@@ -145,6 +145,10 @@ const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView, user,
                 is_professional: profile.is_professional,
                 plan_tier: profile.package_tier || 'basic'
             });
+            // The dashboard is a separate history entry. Without it, the
+            // detail view's Back action returns to the admin route and the
+            // admin's regular course list hides provider drafts.
+            window.history.pushState({ view: 'dashboard' }, '', '/dashboard');
             setView('dashboard');
         }
     };
