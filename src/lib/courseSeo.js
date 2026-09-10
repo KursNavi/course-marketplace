@@ -259,7 +259,7 @@ export function buildCourseStructuredData(course, baseUrl, { now = new Date() } 
         '@type': 'ListItem',
         position: 2,
         name: areaLabel || 'Kurse',
-        item: `${base}/courses/${topicSlug}/${locSlug}/`,
+        item: `${base}/courses/${topicSlug}/${locSlug}`,
       },
       { '@type': 'ListItem', position: 3, name: course?.title },
     ],

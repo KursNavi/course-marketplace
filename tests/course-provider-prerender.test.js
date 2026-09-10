@@ -718,7 +718,7 @@ describe('Course-Prerender: erstes HTML', () => {
     const breadcrumb = readJsonLd(COURSE_PATH).find((s) => s['@type'] === 'BreadcrumbList');
 
     expect(breadcrumb.itemListElement[0].item).toBe(BASE);
-    expect(breadcrumb.itemListElement[1].item).toBe(`${BASE}/courses/kunst-kreativ/zuerich/`);
+    expect(breadcrumb.itemListElement[1].item).toBe(`${BASE}/courses/kunst-kreativ/zuerich`);
     expect(breadcrumb.itemListElement[2].name).toBe(COURSE_PUBLISHED.title);
   });
 });
