@@ -373,9 +373,10 @@ describe('Sitemap: URLs und Eligibility unverändert', () => {
     const notEligible = await renderSitemap(fullTables({ courses: { data: [], error: null } }));
     expect(providerProfileLocs(notEligible._sent)).toEqual([]);
 
-    // Die statische Anbieter-Übersicht bleibt in beiden Fällen erhalten.
-    expect(entryFor(eligible._sent, `${BASE}/anbieter`)).toBeDefined();
-    expect(entryFor(notEligible._sent, `${BASE}/anbieter`)).toBeDefined();
+    // Die frühere statische Anbieter-Übersicht steht nicht mehr in der Sitemap,
+    // weil /anbieter clientseitig auf /search?tab=anbieter umgeschrieben wird.
+    expect(entryFor(eligible._sent, `${BASE}/anbieter`)).toBeUndefined();
+    expect(entryFor(notEligible._sent, `${BASE}/anbieter`)).toBeUndefined();
   });
 });
 

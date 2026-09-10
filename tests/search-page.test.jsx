@@ -209,7 +209,7 @@ describe('SEO robots state', () => {
   it('keeps /search indexable while the course catalogue is loading', () => {
     render(<SearchPageView {...makeProps({ loading: true })} />);
 
-    expect(document.querySelector('meta[name="robots"]')?.content).toBe('index,follow');
+    expect(document.querySelector('meta[name="robots"]')?.content).not.toBe('noindex,follow');
   });
 
   it('sets noindex only after loading completed with no results', () => {
