@@ -20,7 +20,7 @@ Conversion-Aktion muss in Google Ads angelegt und deren vollständiger Wert als
 Build-Variable gesetzt werden:
 
 ```text
-VITE_GOOGLE_ADS_LEAD_CONVERSION=AW-123456789/ConversionLabel
+VITE_GOOGLE_ADS_LEAD_CONVERSION=AW-18411030300/3ZgACPLJiekcEJyOiMtE
 ```
 
 Für Newsletter-Anmeldungen kann zusätzlich eine eigene Conversion-Aktion
