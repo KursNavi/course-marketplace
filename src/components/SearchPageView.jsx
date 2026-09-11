@@ -223,7 +223,11 @@ const SearchPageView = ({
             createdRobotsMeta = true;
         }
 
-        if (filteredCourses.length === 0) {
+        // Während des initialen Ladens ist eine leere Ergebnisliste kein echter
+        // Nulltreffer. Die statische /search-Seite ist indexierbar; ein
+        // vorübergehendes noindex würde Google je nach Render-Zeitpunkt ein
+        // falsches Signal geben.
+        if (!loading && filteredCourses.length === 0) {
             // 3.1 Empty Category/Search -> NOINDEX
             robotsMeta.content = "noindex,follow";
         } else {

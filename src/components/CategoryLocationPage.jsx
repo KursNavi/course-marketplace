@@ -8,7 +8,7 @@ import { DEFAULT_COURSE_IMAGE } from '../lib/imageUtils';
 
 /**
  * Programmatic SEO Landing Page for Topic/Location combinations
- * Example URLs: /courses/yoga/zurich/, /courses/business-mgmt/bern/
+ * Example URLs: /courses/yoga/zurich, /courses/business-mgmt/bern
  *
  * Generates unique content to avoid "Doorway Page" penalties:
  * - Statistics (course count, avg price, etc.)
@@ -110,7 +110,10 @@ export default function CategoryLocationPage({
         metaDescTag.content = pageDescription;
 
         // Canonical URL
-        const canonicalUrl = `${BASE_URL}/courses/${topicSlug}/${locationSlug}/`;
+        // Vercel normalisiert wegen trailingSlash=false auf die Variante ohne
+        // abschliessenden Slash. Canonical und tatsächliche Route müssen
+        // dieselbe URL-Form verwenden.
+        const canonicalUrl = `${BASE_URL}/courses/${topicSlug}/${locationSlug}`;
         let canonicalTag = document.querySelector('link[rel="canonical"]');
         if (!canonicalTag) {
             canonicalTag = document.createElement('link');

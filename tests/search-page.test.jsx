@@ -204,6 +204,21 @@ describe('Empty state differentiation', () => {
   });
 });
 
+// ===================== 2b. SEO ROBOTS STATE =====================
+describe('SEO robots state', () => {
+  it('keeps /search indexable while the course catalogue is loading', () => {
+    render(<SearchPageView {...makeProps({ loading: true })} />);
+
+    expect(document.querySelector('meta[name="robots"]')?.content).not.toBe('noindex,follow');
+  });
+
+  it('sets noindex only after loading completed with no results', () => {
+    render(<SearchPageView {...makeProps({ loading: false })} />);
+
+    expect(document.querySelector('meta[name="robots"]')?.content).toBe('noindex,follow');
+  });
+});
+
 // ===================== 3. FILTER RESET =====================
 describe('Filter reset', () => {
   it('resets real filters but preserves searchType (segment context)', () => {

@@ -111,7 +111,6 @@ export default async function handler(req, res) {
       '/children',
       '/teacher-hub',
       '/blog',
-      '/anbieter',
       '/agb',
       '/datenschutz',
       '/impressum',
