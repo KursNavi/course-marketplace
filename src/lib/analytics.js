@@ -21,8 +21,12 @@ function gtagSafe(category, ...args) {
 // Conversion-Aktionen werden ausschliesslich aus der Google-Ads-Konfiguration
 // übernommen. Die GA4-Measurement-ID darf hier nicht wiederverwendet werden.
 // Ohne Label bleibt die Ads-Ausleitung bewusst deaktiviert.
+// This is a public Google Ads destination (not a secret). Keep the
+// production fallback here so tracking remains active even when a deployment
+// was created before the corresponding Vercel environment variable existed.
+// The environment variable still takes precedence if it is configured.
 const GOOGLE_ADS_LEAD_CONVERSION = import.meta.env.MODE === 'production'
-  ? String(import.meta.env.VITE_GOOGLE_ADS_LEAD_CONVERSION || '').trim()
+  ? String(import.meta.env.VITE_GOOGLE_ADS_LEAD_CONVERSION || 'AW-18411030300/3ZgACPLJiekcEJyOiMtE').trim()
   : '';
 
 const GOOGLE_ADS_NEWSLETTER_CONVERSION = import.meta.env.MODE === 'production'

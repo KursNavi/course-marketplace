@@ -54,7 +54,12 @@
 
       (function () {
         var measurementId = 'G-F0TZT2L4YY';
+        // Public Google Ads destination used by the lead conversion event.
+        // It must be configured alongside GA4 so conversion events can be
+        // received by Google Ads after marketing consent is granted.
+        var googleAdsId = 'AW-18411030300';
         var googleTagLoaded = false;
+        var googleAdsConfigured = false;
 
         function applyCookiebotConsent() {
           var consent = window.Cookiebot && window.Cookiebot.consent;
@@ -69,18 +74,28 @@
             ad_personalization: marketing ? 'granted' : 'denied'
           });
 
-          if ((!statistics && !marketing) || googleTagLoaded) return;
-          var script = document.createElement('script');
-          script.async = true;
-          script.src = 'https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(measurementId);
-          script.dataset.kursnaviGoogleTag = 'true';
-          document.head.appendChild(script);
-          googleTagLoaded = true;
-          window.gtag('js', new Date());
-          window.gtag('config', measurementId, {
-            send_page_view: false,
-            anonymize_ip: true
-          });
+          if (!statistics && !marketing) return;
+
+          if (!googleTagLoaded) {
+            var script = document.createElement('script');
+            script.async = true;
+            script.src = 'https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(measurementId);
+            script.dataset.kursnaviGoogleTag = 'true';
+            document.head.appendChild(script);
+            googleTagLoaded = true;
+            window.gtag('js', new Date());
+            window.gtag('config', measurementId, {
+              send_page_view: false,
+              anonymize_ip: true
+            });
+          }
+
+          if (marketing && !googleAdsConfigured) {
+            window.gtag('config', googleAdsId, {
+              send_page_view: false
+            });
+            googleAdsConfigured = true;
+          }
         }
 
         window.addEventListener('CookiebotOnConsentReady', applyCookiebotConsent);
