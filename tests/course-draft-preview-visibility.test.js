@@ -8,6 +8,7 @@ const migration = fs.readFileSync(
   'utf8'
 );
 const appSource = fs.readFileSync(path.join(testDir, '..', 'src', 'App.jsx'), 'utf8');
+const dashboardSource = fs.readFileSync(path.join(testDir, '..', 'src', 'components', 'Dashboard.jsx'), 'utf8');
 
 describe('Kurs-Draft-Vorschau und Statuswechsel', () => {
   it('macht Kursdetaildaten per URL für beide öffentlichen Rollen lesbar', () => {
@@ -34,6 +35,17 @@ describe('Kurs-Draft-Vorschau und Statuswechsel', () => {
   it('hält Entwürfe aus der öffentlichen Suche heraus', () => {
     expect(appSource).toContain("const isPublished = course.status === 'published' || !course.status;");
     expect(appSource).toContain('if (!isPublished && !isOwner) return false;');
+  });
+
+  it('öffnet die Vorschau über die echte Kurs-URL', () => {
+    const previewMarkup = dashboardSource.match(
+      /<a href=\{buildCoursePath\(course\)\}[\s\S]*?Vorschau<\/a>/
+    )?.[0];
+
+    expect(previewMarkup).toBeDefined();
+    expect(previewMarkup).toContain('target="_blank"');
+    expect(previewMarkup).not.toContain('preventDefault');
+    expect(previewMarkup).not.toContain('handleNavigateToCourse');
   });
 });
 
