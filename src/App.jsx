@@ -750,7 +750,16 @@ export default function KursNaviPro() {  // 1. Initial State Logic
           newStatus
         });
       } else {
-        ({ error } = await supabase.from('courses').update({ status: newStatus }).eq('id', courseId));
+        const result = await supabase
+          .from('courses')
+          .update({ status: newStatus })
+          .eq('id', courseId)
+          .select('id, status')
+          .single();
+        ({ error } = result);
+        if (!error && result.data?.status !== newStatus) {
+          throw new Error('Der Kursstatus konnte nicht gespeichert werden.');
+        }
       }
       if (error) {
         throw error;
@@ -2478,3 +2487,4 @@ useEffect(() => {
     </ErrorBoundary>
   );
 }
+
