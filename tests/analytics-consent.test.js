@@ -7,6 +7,7 @@ describe('Google tracking consent boundaries', () => {
   beforeEach(() => {
     calls = [];
     window.gtag = (...args) => calls.push(args);
+    window._uxa = [];
     window.Cookiebot = { consent: { statistics: false, marketing: false } };
   });
 
@@ -17,6 +18,7 @@ describe('Google tracking consent boundaries', () => {
     trackSignup('email');
 
     expect(calls).toEqual([]);
+    expect(window._uxa).toEqual([]);
   });
 
   it('sends the GA4 lead event only with statistics consent', () => {
@@ -29,5 +31,18 @@ describe('Google tracking consent boundaries', () => {
       { event_category: 'contact', item_id: 'course-1' },
     ]);
     expect(calls.some(([, event]) => event === 'conversion')).toBe(false);
+    expect(window._uxa).toContainEqual(['trackPageEvent', 'Course Inquiry Submitted']);
+  });
+
+  it('queues only constant, non-identifying Contentsquare events with statistics consent', () => {
+    window.Cookiebot.consent.statistics = true;
+
+    trackPageView('/search?q=private', 'Private title');
+    trackContactLead('private-course-id');
+
+    expect(window._uxa).toEqual([
+      ['trackPageEvent', 'Page Viewed'],
+      ['trackPageEvent', 'Course Inquiry Submitted'],
+    ]);
   });
 });

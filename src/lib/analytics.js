@@ -18,6 +18,19 @@ function gtagSafe(category, ...args) {
   }
 }
 
+/**
+ * Datensparsame Contentsquare Page Events.
+ *
+ * Die Queue funktioniert auch dann, wenn das Contentsquare-Skript nach der
+ * Einwilligung noch nicht fertig geladen ist. Ereignisnamen bleiben bewusst
+ * konstant und enthalten weder Suchbegriffe noch Kurs- oder Nutzerkennungen.
+ */
+function contentsquareSafe(eventName) {
+  if (!hasConsent('statistics')) return;
+  window._uxa = window._uxa || [];
+  window._uxa.push(['trackPageEvent', eventName]);
+}
+
 // Conversion-Aktionen werden ausschliesslich aus der Google-Ads-Konfiguration
 // übernommen. Die GA4-Measurement-ID darf hier nicht wiederverwendet werden.
 // Ohne Label bleibt die Ads-Ausleitung bewusst deaktiviert.
@@ -74,12 +87,14 @@ export function trackPageView(path, title) {
     page_path: path,
     page_title: title,
   });
+  contentsquareSafe('Page Viewed');
 }
 
 /** Google-Ads-Landingpage angesehen (GA4, kein personenbeziehbarer Wert). */
 export function trackCampaignView(slug) {
   if (!slug) return;
   gtagSafe('statistics', 'event', 'campaign_landing_view', { campaign_slug: slug });
+  contentsquareSafe('Campaign Landing Viewed');
 }
 
 /** CTA auf einer Google-Ads-Landingpage angeklickt (GA4). */
@@ -89,6 +104,7 @@ export function trackCampaignCta(slug, destination = 'search') {
     campaign_slug: slug,
     destination,
   });
+  contentsquareSafe('Campaign CTA Clicked');
 }
 
 /** Kursdetail angesehen (E-Commerce: view_item) */
@@ -103,6 +119,7 @@ export function trackCourseView(course) {
       price: (course.base_price || 0) / 100,
     }],
   });
+  contentsquareSafe('Course Detail Viewed');
 }
 
 /** Suche ausgeführt */
@@ -111,6 +128,7 @@ export function trackSearch(query, resultCount) {
     search_term: query || '',
     result_count: resultCount,
   });
+  contentsquareSafe('Search Results Viewed');
 }
 
 /** Buchung abgeschlossen (E-Commerce: purchase) */
@@ -132,6 +150,7 @@ export function trackPurchase(course, bookingId, amountCents) {
 /** Registrierung */
 export function trackSignup(method) {
   gtagSafe('statistics', 'event', 'sign_up', { method });
+  contentsquareSafe('User Signup');
   trackAdsSignupConversion();
 }
 
@@ -156,6 +175,7 @@ export function trackNewsletter() {
   gtagSafe('statistics', 'event', 'generate_lead', {
     event_category: 'newsletter',
   });
+  contentsquareSafe('Newsletter Signup');
   trackAdsNewsletterConversion();
 }
 
@@ -165,5 +185,6 @@ export function trackContactLead(courseId) {
     event_category: 'contact',
     item_id: courseId,
   });
+  contentsquareSafe('Course Inquiry Submitted');
   trackAdsLeadConversion(courseId);
 }
