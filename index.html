@@ -49,6 +49,9 @@
         ad_user_data: 'denied',
         ad_personalization: 'denied',
         analytics_storage: 'denied',
+        functionality_storage: 'denied',
+        personalization_storage: 'denied',
+        security_storage: 'granted',
         wait_for_update: 500
       });
 
@@ -71,7 +74,10 @@
             analytics_storage: statistics ? 'granted' : 'denied',
             ad_storage: marketing ? 'granted' : 'denied',
             ad_user_data: marketing ? 'granted' : 'denied',
-            ad_personalization: marketing ? 'granted' : 'denied'
+            ad_personalization: marketing ? 'granted' : 'denied',
+            functionality_storage: 'denied',
+            personalization_storage: 'denied',
+            security_storage: 'granted'
           });
 
           if (!statistics && !marketing) return;

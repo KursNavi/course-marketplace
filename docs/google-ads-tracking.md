@@ -9,6 +9,10 @@
 - Statistik-Ereignisse wie `page_view` und `generate_lead` werden nur mit
   Statistik-Consent gesendet.
 - Google-Ads-Conversions werden nur mit Marketing-Consent gesendet.
+- Die verifizierte Google-Ads-Ziel-ID `AW-18411030300` wird ebenfalls erst
+  nach Marketing-Consent beim Google-Tag registriert. Dadurch kann Google Ads
+  die Tag-Installation erkennen, ohne dass vor der Einwilligung ein Ads-Ziel
+  aktiviert wird.
 - Eine erfolgreiche Kursanfrage ruft `trackContactLead()` erst nach einer
   erfolgreichen `/api/send-lead`-Antwort auf. Eine Newsletter-Conversion wird
   erst nach erfolgreicher Anmeldung ausgelöst.
@@ -38,9 +42,10 @@ VITE_GOOGLE_ADS_SIGNUP_CONVERSION=AW-123456789/ConversionLabel
 ```
 
 Die Werte müssen exakt aus Google Ads übernommen werden. `AW-18411030300` ist
-die im Projektauftrag genannte Google-Tag-ID, aber ohne Prüfung im Google-Ads-
-Konto wird sie nicht automatisch als Conversion-Label verwendet. Die GA4-
-Measurement-ID darf nicht als Ads-ID oder Label wiederverwendet werden.
+die im Google-Ads-Konto verifizierte Google-Tag-ID und wird in `index.html`
+consent-gesteuert registriert. Sie ersetzt nicht das aktionsspezifische
+Conversion-Label. Die GA4-Measurement-ID darf nicht als Ads-ID oder Label
+wiederverwendet werden.
 
 Ohne die Variablen bleibt die Ads-Ausleitung deaktiviert; GA4 funktioniert mit
 Statistik-Consent weiterhin. Nach dem Setzen der Variablen ist ein neuer
