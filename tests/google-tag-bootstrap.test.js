@@ -52,6 +52,10 @@ describe('Google tag bootstrap consent boundaries', () => {
     expect(scripts).toEqual([
       'https://www.googletagmanager.com/gtag/js?id=G-F0TZT2L4YY',
     ]);
-    expect(calls).toContainEqual(['config', 'AW-18411030300']);
+    expect(calls).toContainEqual([
+      'config',
+      'AW-18411030300',
+      { send_page_view: false },
+    ]);
   });
 });
