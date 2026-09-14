@@ -3,6 +3,14 @@ import { Resend } from 'resend';
 import { getEmailConfig, resolveUserEmail, sendEmailOrThrow } from './_lib/email-config.js';
 import { requireCronSecret } from './_lib/cron-auth.js';
 
+function escapeHtml(value) {
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
 // --- EMAIL HELPERS ---
 const EMAIL_TRANSLATIONS = {
   en: {
@@ -533,7 +541,88 @@ export default async function handler(req, res) {
     }
 
     // ============================================
-    // PART 5: Retention – Anfragetexte & Contact Messages
+    // PART 5: Lead-Antwort-SLA – Erinnerung nach 24h, Eskalation nach Frist
+    // ============================================
+    let providerLeadReminders = 0;
+    let escalatedLeads = 0;
+    const reminderCutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+
+    try {
+      const { data: overdueLeads, error: overdueError } = await supabase
+        .from('leads')
+        .select('id, course_id, provider_id, expected_response_by')
+        .eq('status', 'sent')
+        .eq('response_status', 'pending')
+        .is('reminder_sent_at', null)
+        .lte('created_at', reminderCutoff)
+        .limit(100);
+      if (overdueError) throw overdueError;
+
+      for (const lead of overdueLeads || []) {
+        const [{ data: profile }, { data: course }] = await Promise.all([
+          supabase.from('profiles').select('email').eq('id', lead.provider_id).single(),
+          lead.course_id
+            ? supabase.from('courses').select('title').eq('id', lead.course_id).single()
+            : Promise.resolve({ data: null }),
+        ]);
+        const providerEmail = await resolveUserEmail(supabase, lead.provider_id, profile?.email);
+        if (!providerEmail) continue;
+
+        await sendEmailOrThrow(resend, 'cron-lead-response-reminder', {
+          from: emailConfig.from,
+          to: providerEmail,
+          replyTo: emailConfig.supportEmail,
+          subject: `Erinnerung: Kursanfrage beantworten${course?.title ? ` – ${course.title}` : ''}`,
+          html: generateEmailHtml(
+            'Offene Kursanfrage',
+            `Für <strong>${escapeHtml(course?.title || 'deinen Kurs')}</strong> wartet noch eine interessierte Person auf deine Rückmeldung. Bitte bestätige und beantworte die Anfrage möglichst heute.<br><br>Referenz: ${escapeHtml(lead.id)}`,
+            'Anfrage im Dashboard prüfen'
+          )
+        });
+        await supabase.from('leads').update({ reminder_sent_at: new Date().toISOString() }).eq('id', lead.id);
+        providerLeadReminders += 1;
+        emailsSent += 1;
+      }
+    } catch (leadReminderError) {
+      console.error('Lead response reminders failed:', leadReminderError);
+    }
+
+    try {
+      const { data: escalationCandidates, error: escalationError } = await supabase
+        .from('leads')
+        .select('id, course_id, provider_id, expected_response_by')
+        .eq('status', 'sent')
+        .eq('response_status', 'pending')
+        .is('escalated_at', null)
+        .not('expected_response_by', 'is', null)
+        .lte('expected_response_by', nowISO)
+        .limit(100);
+      if (escalationError) throw escalationError;
+
+      if (escalationCandidates?.length) {
+        const rows = escalationCandidates.map((lead) => `<li>Lead ${escapeHtml(lead.id)} – Kurs ${escapeHtml(lead.course_id)} – Anbieter ${escapeHtml(lead.provider_id)}</li>`).join('');
+        await sendEmailOrThrow(resend, 'cron-lead-response-escalation', {
+          from: emailConfig.from,
+          to: ADMIN_EMAIL,
+          replyTo: emailConfig.supportEmail,
+          subject: `${escalationCandidates.length} Kursanfrage(n) ohne fristgerechte Reaktion`,
+          html: generateEmailHtml(
+            'Anfragen benötigen Unterstützung',
+            `Diese Anfragen haben ihre kommunizierte Antwortfrist überschritten:<ul>${rows}</ul>Bitte prüfe Anbieterreaktion und mögliche Alternativen.`,
+            'Admin Panel öffnen'
+          )
+        });
+        const leadIds = escalationCandidates.map((lead) => lead.id);
+        await supabase.from('leads').update({ escalated_at: new Date().toISOString() }).in('id', leadIds);
+        escalatedLeads = leadIds.length;
+        emailsSent += 1;
+      }
+    } catch (leadEscalationError) {
+      console.error('Lead response escalation failed:', leadEscalationError);
+    }
+
+    // ============================================
+    // PART 6: Retention – Anfragetexte & Contact Messages
     // ============================================
     // Bis zur Lead-Analyse löschte cleanup_old_leads() ganze Lead-Datensätze
     // nach 180 Tagen. Das darf nicht mehr passieren: Die Leads SIND die
@@ -572,6 +661,8 @@ export default async function handler(req, res) {
       remindersSent,
       expiredPackages,
       staleAlertsSent,
+      providerLeadReminders,
+      escalatedLeads,
       deletedLeadMessages,
       expiredUnscoredLeads,
       clearedEmailHashes,

@@ -48,7 +48,14 @@ function makeRes() {
   };
 }
 
-const COURSE = { id: 42, title: 'Yoga für Anfänger', user_id: 'provider-1', booking_type: 'lead' };
+const COURSE = {
+  id: 42,
+  title: 'Yoga für Anfänger',
+  user_id: 'provider-1',
+  booking_type: 'lead',
+  area: 'Yoga & Achtsamkeit',
+  canton: 'Zürich',
+};
 
 function buildSupabase({ providerTier = 'basic' } = {}) {
   return {
@@ -140,6 +147,7 @@ beforeEach(() => {
   process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-service-key';
   process.env.RESEND_API_KEY = 'test-resend-key';
   process.env.LEAD_HASH_SALT = 'test-salt';
+  process.env.LEAD_ACTION_SECRET = 'test-lead-action-secret';
   process.env.LEAD_MESSAGE_ENCRYPTION_KEY = randomBytes(32).toString('base64');
 
   vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -158,7 +166,9 @@ describe('Erfolgreicher Lead', () => {
 
     expect(res._status).toBe(200);
     expect(insertedLeads).toHaveLength(1);
-    expect(mockSentEmails).toHaveLength(1);
+    expect(mockSentEmails).toHaveLength(2);
+    expect(mockSentEmails[0].to).toBe('anbieter@test.local');
+    expect(mockSentEmails[1].to).toBe('sara@example.com');
     expect(leadUpdates).toContainEqual({
       id: 'lead-1',
       values: expect.objectContaining({
@@ -168,6 +178,47 @@ describe('Erfolgreicher Lead', () => {
       }),
     });
     expect(insertedLeads[0].email_delivery_status).toBe('pending');
+    expect(res._body.lead_id).toBe('lead-1');
+    expect(res._body.delivery_status).toBe('accepted');
+    expect(res._body.expected_response_by).toBeTruthy();
+    expect(res._body.confirmation_email_sent).toBe(true);
+  });
+
+  it('akzeptiert eine leere optionale Nachricht und erzeugt Provider-Kontext', async () => {
+    const res = await callHandler({ message: '', intent: 'availability', phone: '079 111 22 33' });
+
+    expect(res._status).toBe(200);
+    expect(insertedPayloads).toHaveLength(0);
+    expect(insertedLeads[0]).toEqual(expect.objectContaining({
+      lead_intent: 'availability',
+      course_topic_snapshot: 'Yoga & Achtsamkeit',
+      course_region_snapshot: 'Zürich',
+    }));
+    expect(mockSentEmails[0].html).toContain('Termine und Verfügbarkeit');
+    expect(mockSentEmails[0].html).toContain('079 111 22 33');
+  });
+
+  it('speichert Attribution nur bei erteilter Analytics-Einwilligung', async () => {
+    await callHandler({
+      analyticsConsent: true,
+      attribution: {
+        source: 'google', medium: 'cpc', campaign: 'kunst-zuerich',
+        gclid: 'test-gclid', landingPage: '/kampagne/kunst-zuerich'
+      }
+    });
+
+    expect(insertedLeads[0]).toEqual(expect.objectContaining({
+      attribution_source: 'google',
+      attribution_medium: 'cpc',
+      attribution_campaign: 'kunst-zuerich',
+      attribution_gclid: 'test-gclid',
+      attribution_landing_page: '/kampagne/kunst-zuerich',
+    }));
+
+    insertedLeads = [];
+    await callHandler({ analyticsConsent: false, attribution: { source: 'google', gclid: 'should-not-persist' } });
+    expect(insertedLeads[0]).not.toHaveProperty('attribution_source');
+    expect(insertedLeads[0]).not.toHaveProperty('attribution_gclid');
   });
 
   it('speichert das Paket des Anbieters als Snapshot am Lead', async () => {
@@ -224,7 +275,7 @@ describe('Anfragetext ist nicht versandkritisch', () => {
     const res = await callHandler();
 
     expect(res._status).toBe(200);
-    expect(mockSentEmails).toHaveLength(1);
+    expect(mockSentEmails).toHaveLength(2);
     expect(leadUpdates).toContainEqual({ id: 'lead-1', values: { quality_error_code: 'payload_write_failed' } });
   });
 
@@ -234,7 +285,7 @@ describe('Anfragetext ist nicht versandkritisch', () => {
     const res = await callHandler();
 
     expect(res._status).toBe(200);
-    expect(mockSentEmails).toHaveLength(1);
+    expect(mockSentEmails).toHaveLength(2);
     expect(insertedPayloads).toHaveLength(0);
   });
 

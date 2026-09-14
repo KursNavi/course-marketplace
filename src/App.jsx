@@ -12,7 +12,7 @@ import { refreshCoursesAfterMutation } from './lib/courseRefresh';
 import { hasCompleteCourseCategory } from './lib/courseStatus';
 import { mergeImpersonatedCourses } from './lib/impersonationCourses';
 import { getHomepageLinkRel } from './lib/entitlements';
-import { trackPageView } from './lib/analytics';
+import { trackPageView, trackPurchase } from './lib/analytics';
 import { useTaxonomy } from './hooks/useTaxonomy';
 
 // Disable browser scroll auto-restoration synchronously so it can't override
@@ -2123,6 +2123,8 @@ useEffect(() => {
     let stopped = false;
     const finalizeStripeReturn = async () => {
       const successShownAt = Date.now();
+      const pendingCourseId = localStorage.getItem('pendingCourseId');
+      let confirmationPayload = null;
       setView('success');
 
       for (let attempt = 0; attempt < 6; attempt += 1) {
@@ -2130,7 +2132,7 @@ useEffect(() => {
 
         if (session?.access_token) {
           try {
-            await fetch('/api/confirm-checkout-session', {
+            const confirmationResponse = await fetch('/api/confirm-checkout-session', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -2138,6 +2140,9 @@ useEffect(() => {
               },
               body: JSON.stringify({ sessionId })
             });
+            if (confirmationResponse.ok) {
+              confirmationPayload = await confirmationResponse.json().catch(() => null);
+            }
           } catch (error) {
             console.warn('Checkout confirmation fallback failed:', error);
           }
@@ -2145,7 +2150,7 @@ useEffect(() => {
 
         const { data } = await supabase
           .from('bookings')
-          .select('id')
+          .select('id, course_id, booking_type')
           .eq('user_id', user.id)
           .eq('stripe_checkout_session_id', sessionId)
           .maybeSingle();
@@ -2153,6 +2158,19 @@ useEffect(() => {
         if (stopped) return;
 
         if (data) {
+          const trackedCourseId = Number(data.course_id || confirmationPayload?.booking?.course_id || pendingCourseId);
+          const trackedCourse = (courses || []).find((item) => Number(item.id) === trackedCourseId) || {
+            id: trackedCourseId,
+            title: 'Kursbuchung',
+            booking_type: data.booking_type || confirmationPayload?.booking?.booking_type || 'platform',
+            category_area: '',
+          };
+          trackPurchase(
+            trackedCourse,
+            data.id,
+            Number(confirmationPayload?.amount_cents || trackedCourse.base_price || 0),
+            confirmationPayload?.event_id || sessionId,
+          );
           localStorage.removeItem('pendingCourseId');
           localStorage.removeItem('pendingEventId');
           await fetchBookings(user.id);
@@ -2487,4 +2505,3 @@ useEffect(() => {
     </ErrorBoundary>
   );
 }
-

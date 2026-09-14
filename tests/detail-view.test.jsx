@@ -1,5 +1,5 @@
-import { describe, it, expect, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, describe, it, expect, vi } from 'vitest';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import React from 'react';
 
 vi.mock('../src/lib/supabase', () => ({
@@ -40,6 +40,10 @@ vi.mock('../src/lib/imageUtils', () => ({
 }));
 
 import DetailView from '../src/components/DetailView';
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 describe('DetailView', () => {
   it('zeigt bei einem Prio-Kurs den Link zur Anbieterhomepage', () => {
@@ -238,8 +242,67 @@ describe('DetailView', () => {
     expect(screen.getByRole('dialog')).toBeVisible();
     expect(screen.getByLabelText('Name')).toBeRequired();
     expect(screen.getByLabelText('E-Mail-Adresse')).toBeRequired();
+    expect(screen.getByLabelText('Telefon (optional)')).not.toBeRequired();
+    expect(screen.getByLabelText(/Worum geht es/)).toHaveValue('availability');
     expect(screen.getByLabelText(/Nachricht/)).not.toBeRequired();
-    expect(screen.getByText('Nur Name und E-Mail sind erforderlich. Die Nachricht ist optional und bereits vorausgefüllt.')).toBeInTheDocument();
+    expect(screen.getByText('Nur Name und E-Mail sind erforderlich. Telefon und Nachricht sind optional.')).toBeInTheDocument();
+  });
+
+  it('submits without a message and keeps a traceable confirmation visible', async () => {
+    const course = {
+      id: 'lead-empty-message',
+      title: 'Keramik am Abend',
+      description: 'Ein kreativer Abendkurs.',
+      instructor_name: 'Atelier Muster',
+      booking_type: 'lead',
+      price: 0,
+      canton: 'Zürich',
+      address: 'Zürich',
+      category_type: 'privat',
+      all_categories: [],
+    };
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        success: true,
+        lead_id: 'lead-ref-123',
+        event_id: 'aa944df1-3dbd-4f4d-b9fb-12e7e95a7713',
+        delivery_status: 'accepted',
+        expected_response_by: '2026-09-16T12:00:00.000Z',
+        confirmation_email_sent: true,
+      }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(
+      <DetailView
+        course={course}
+        courses={[]}
+        setView={vi.fn()}
+        t={{ lbl_description: 'Beschreibung', lbl_learn_goals: 'Lernziele', btn_book: 'Jetzt buchen' }}
+        setSelectedTeacher={vi.fn()}
+        user={null}
+        savedCourseIds={[]}
+        onToggleSaveCourse={vi.fn()}
+        showNotification={vi.fn()}
+      />
+    );
+
+    fireEvent.click(screen.getByTestId('lead-inquiry-cta'));
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Sara Muster' } });
+    fireEvent.change(screen.getByLabelText('E-Mail-Adresse'), { target: { value: 'sara@example.com' } });
+    fireEvent.submit(screen.getByRole('button', { name: 'Anfrage absenden' }).closest('form'));
+
+    await waitFor(() => expect(screen.getByText('Anfrage erfolgreich übermittelt')).toBeVisible());
+    const submitted = JSON.parse(fetchMock.mock.calls[0][1].body);
+    expect(submitted).toEqual(expect.objectContaining({
+      courseId: 'lead-empty-message',
+      message: '',
+      intent: 'availability',
+    }));
+    expect(screen.getByText(/lead-ref-123/)).toBeVisible();
+    expect(screen.getByText('Du erhältst zusätzlich eine Bestätigung per E-Mail.')).toBeVisible();
+    expect(screen.getByRole('dialog')).toBeVisible();
   });
 
   it('hides Lernziele heading when objectives are empty or missing', () => {

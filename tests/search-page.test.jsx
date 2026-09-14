@@ -46,6 +46,8 @@ import SearchPageView from '../src/components/SearchPageView';
 
 beforeEach(() => {
   mockFetchPublishedThemeWorldAreaLabels.mockResolvedValue(new Map());
+  window.sessionStorage.clear();
+  window.history.replaceState({}, '', '/search');
 });
 
 // --- Helper: build default props (all required by SearchPageView) ---
@@ -102,6 +104,41 @@ function makeCourse(id, title = 'Testkurs', type = 'professionell') {
     created_at: new Date().toISOString(),
   };
 }
+
+describe('Lead CTA on search cards', () => {
+  it('opens the selected lead course and hands the inquiry intent to the detail view', () => {
+    const course = { ...makeCourse('lead-1', 'Keramikkurs'), booking_type: 'lead' };
+    const setSelectedCourse = vi.fn();
+    const setView = vi.fn();
+
+    render(<SearchPageView {...makeProps({
+      courses: [course],
+      filteredCourses: [course],
+      filteredCoursesPreCategory: [course],
+      setSelectedCourse,
+      setView,
+    })} />);
+
+    fireEvent.click(screen.getByTestId('lead-search-card-cta-lead-1'));
+
+    expect(window.sessionStorage.getItem('kn_open_lead_course')).toBe('lead-1');
+    expect(setSelectedCourse).toHaveBeenCalledWith(course);
+    expect(setView).toHaveBeenCalledWith('detail');
+    expect(window.location.pathname).toBe('/courses/test/lead-1');
+  });
+
+  it('keeps the save control outside the course link', () => {
+    const course = { ...makeCourse('lead-2'), booking_type: 'lead' };
+    render(<SearchPageView {...makeProps({
+      courses: [course],
+      filteredCourses: [course],
+      filteredCoursesPreCategory: [course],
+    })} />);
+
+    const saveButton = screen.getByRole('button', { name: 'Kurs merken' });
+    expect(saveButton.closest('a')).toBeNull();
+  });
+});
 
 // ===================== 1. RESULTS COUNTER =====================
 describe('Results counter', () => {
