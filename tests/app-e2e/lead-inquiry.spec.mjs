@@ -52,7 +52,8 @@ test.describe('Lead Inquiry (hybrid app-e2e)', () => {
     await modal.getByRole('button', { name: /anfrage absenden/i }).click();
 
     // Verify success message in modal
-    await expect(modal.getByText('Anfrage gesendet!')).toBeVisible({ timeout: 10_000 });
+    await expect(modal.getByText('Anfrage erfolgreich übermittelt')).toBeVisible({ timeout: 10_000 });
+    await expect(modal.getByText('e2e-lead-123')).toBeVisible();
 
     // Verify the API request was intercepted correctly
     const requests = getInterceptedRequests();
