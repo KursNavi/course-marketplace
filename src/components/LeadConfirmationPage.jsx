@@ -1,6 +1,5 @@
 import React, { useEffect } from 'react';
 import { CheckCircle, Info, Search } from 'lucide-react';
-import { Helmet } from 'react-helmet-async';
 import { readLeadConfirmationParams } from '../lib/leadConfirmation';
 
 function goToSearch(setView) {
@@ -14,19 +13,39 @@ export default function LeadConfirmationPage({ setView }) {
   const formattedDeadline = responseDeadline
     ? new Intl.DateTimeFormat('de-CH', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(responseDeadline))
     : null;
+  const isValidConfirmation = Boolean(reference);
 
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'auto' });
-  }, []);
+    const previousTitle = document.title;
+    const existingRobotsTags = Array.from(document.head.querySelectorAll('meta[name="robots"]'));
+    const previousRobots = existingRobotsTags.map((tag) => ({
+      tag,
+      content: tag.getAttribute('content'),
+    }));
 
-  const isValidConfirmation = Boolean(reference);
+    // index.html contains the site-wide default. Replace every existing tag
+    // while this route is mounted so crawlers cannot see conflicting policies.
+    existingRobotsTags.forEach((tag) => tag.remove());
+    const robotsTag = document.createElement('meta');
+    robotsTag.setAttribute('name', 'robots');
+    robotsTag.setAttribute('content', 'noindex,nofollow');
+    document.head.appendChild(robotsTag);
+    document.title = `${isValidConfirmation ? 'Anfrage erfolgreich übermittelt' : 'Anfragebestätigung'} | KursNavi`;
+    window.scrollTo({ top: 0, behavior: 'auto' });
+
+    return () => {
+      robotsTag.remove();
+      previousRobots.forEach(({ tag, content }) => {
+        if (content === null) tag.removeAttribute('content');
+        else tag.setAttribute('content', content);
+        document.head.appendChild(tag);
+      });
+      document.title = previousTitle;
+    };
+  }, [isValidConfirmation]);
 
   return (
     <>
-      <Helmet>
-        <title>{isValidConfirmation ? 'Anfrage erfolgreich übermittelt' : 'Anfragebestätigung'} | KursNavi</title>
-        <meta name="robots" content="noindex,nofollow" />
-      </Helmet>
       <main className="min-h-[70vh] flex items-center justify-center px-4 py-12">
         <section className="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full border border-gray-100 text-center" aria-labelledby="lead-confirmation-title">
           {isValidConfirmation ? (

@@ -34,7 +34,10 @@ describe('LeadConfirmationPage', () => {
     expect(screen.getByText('lead-ref-123')).toBeInTheDocument();
     expect(screen.getByText('16.09.2026')).toBeInTheDocument();
     expect(screen.getByText(/Notiere dir bitte die Referenz/)).toBeInTheDocument();
-    await waitFor(() => expect(document.querySelector('meta[name="robots"]')).toHaveAttribute('content', 'noindex,nofollow'));
+    await waitFor(() => {
+      expect(document.querySelectorAll('meta[name="robots"]')).toHaveLength(1);
+      expect(document.querySelector('meta[name="robots"]')).toHaveAttribute('content', 'noindex,nofollow');
+    });
 
     firstRender.unmount();
     renderPage();
@@ -60,5 +63,23 @@ describe('LeadConfirmationPage', () => {
 
     expect(window.location.pathname).toBe('/search');
     expect(setView).toHaveBeenCalledWith('search');
+  });
+
+  it('stellt die globale indexierbare Robots-Regel nach dem Verlassen wieder her', () => {
+    const defaultRobots = document.createElement('meta');
+    defaultRobots.name = 'robots';
+    defaultRobots.content = 'index,follow';
+    document.head.appendChild(defaultRobots);
+
+    window.history.replaceState({}, '', '/lead-confirmation?ref=lead-ref-123');
+    const page = renderPage();
+
+    expect(document.querySelectorAll('meta[name="robots"]')).toHaveLength(1);
+    expect(document.querySelector('meta[name="robots"]')).toHaveAttribute('content', 'noindex,nofollow');
+
+    page.unmount();
+
+    expect(document.querySelectorAll('meta[name="robots"]')).toHaveLength(1);
+    expect(document.querySelector('meta[name="robots"]')).toHaveAttribute('content', 'index,follow');
   });
 });
