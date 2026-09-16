@@ -7,6 +7,9 @@ const html = readFileSync(resolve(process.cwd(), 'index.html'), 'utf8');
 const bootstrap = [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)]
   .map((match) => match[1])
   .find((script) => script.includes("window.gtag('consent', 'default'"));
+const contentsquareBootstrap = [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)]
+  .map((match) => match[1])
+  .find((script) => script.includes('contentsquareTagLoaded'));
 
 function runBootstrap(consent) {
   const dom = new JSDOM('<!doctype html><html><head></head><body></body></html>', {
@@ -22,6 +25,22 @@ function runBootstrap(consent) {
   const scripts = Array.from(dom.window.document.scripts, (script) => script.src);
   dom.window.close();
   return { calls, scripts };
+}
+
+function runContentsquareBootstrap(consent, url = 'https://kursnavi.ch/') {
+  const dom = new JSDOM('<!doctype html><html><head></head><body></body></html>', {
+    runScripts: 'outside-only',
+    url,
+  });
+
+  dom.window.Cookiebot = { consent };
+  dom.window.eval(contentsquareBootstrap);
+  dom.window.dispatchEvent(new dom.window.Event('CookiebotOnConsentReady'));
+
+  const events = dom.window._uxa || [];
+  const scripts = Array.from(dom.window.document.scripts, (script) => script.src);
+  dom.window.close();
+  return { events, scripts };
 }
 
 describe('Google tag bootstrap consent boundaries', () => {
@@ -57,5 +76,21 @@ describe('Google tag bootstrap consent boundaries', () => {
       'AW-18411030300',
       { send_page_view: false },
     ]);
+  });
+});
+
+describe('Contentsquare bootstrap consent boundaries', () => {
+  it('records the initial page once statistics consent enables the tag', () => {
+    const { events, scripts } = runContentsquareBootstrap({ statistics: true, marketing: false });
+
+    expect(scripts).toEqual(['https://t.contentsquare.net/uxa/9d1e4f9cc0626.js']);
+    expect(events).toEqual([['trackPageEvent', 'Page Viewed']]);
+  });
+
+  it('does not load Contentsquare without statistics consent', () => {
+    const { events, scripts } = runContentsquareBootstrap({ statistics: false, marketing: false });
+
+    expect(scripts).toEqual([]);
+    expect(events).toEqual([]);
   });
 });

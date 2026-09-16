@@ -9,6 +9,7 @@ describe('Google tracking consent boundaries', () => {
     window.gtag = (...args) => calls.push(args);
     window._uxa = [];
     window.Cookiebot = { consent: { statistics: false, marketing: false } };
+    window.history.replaceState({}, '', '/');
   });
 
   it('does not send analytics or Ads events without consent', () => {
@@ -44,5 +45,15 @@ describe('Google tracking consent boundaries', () => {
       ['trackPageEvent', 'Page Viewed'],
       ['trackPageEvent', 'Course Inquiry Submitted'],
     ]);
+  });
+
+  it('does not queue public UX events on private dashboard routes', () => {
+    window.Cookiebot.consent.statistics = true;
+    window.history.replaceState({}, '', '/dashboard');
+
+    trackPageView('/dashboard', 'Dashboard');
+    trackContactLead('course-1');
+
+    expect(window._uxa).toEqual([]);
   });
 });
