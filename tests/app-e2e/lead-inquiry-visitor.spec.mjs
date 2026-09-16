@@ -41,9 +41,13 @@ test.describe('Lead Inquiry — Visitor (app-e2e)', () => {
     // Submit
     await modal.getByRole('button', { name: /anfrage absenden/i }).click();
 
-    // Verify success
-    await expect(modal.getByText('Anfrage erfolgreich übermittelt')).toBeVisible({ timeout: 10_000 });
-    await expect(modal.getByText('e2e-lead-123')).toBeVisible();
+    // Verify the reload-safe confirmation page
+    await expect(page.getByRole('heading', { name: 'Anfrage erfolgreich übermittelt' })).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText('e2e-lead-123')).toBeVisible();
+    await expect(page).toHaveURL(/\/lead-confirmation\?ref=e2e-lead-123/);
+    await page.reload();
+    await expect(page.getByRole('heading', { name: 'Anfrage erfolgreich übermittelt' })).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText('e2e-lead-123')).toBeVisible();
 
     // Verify API request
     const requests = getInterceptedRequests();

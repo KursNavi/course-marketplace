@@ -111,6 +111,7 @@ const ContactPage = lazyWithRetry(() => import('./components/ContactPage'));
 const AboutPage = lazyWithRetry(() => import('./components/AboutPage'));
 const HowItWorksPage = lazyWithRetry(() => import('./components/HowItWorksPage'));
 const SuccessView = lazyWithRetry(() => import('./components/SuccessView'));
+const LeadConfirmationPage = lazyWithRetry(() => import('./components/LeadConfirmationPage'));
 const BlogList = lazyWithRetry(() => import('./components/BlogList'));
 const BlogDetail = lazyWithRetry(() => import('./components/BlogDetail'));
 const AdminBlogManager = lazyWithRetry(() => import('./components/AdminBlogManager'));
@@ -237,7 +238,8 @@ export default function KursNaviPro() {  // 1. Initial State Logic
           '/impressum': 'impressum',
           '/widerruf-storno': 'widerruf',
           '/vertrauen-sicherheit': 'trust',
-          '/set-password': 'set-password'
+          '/set-password': 'set-password',
+          '/lead-confirmation': 'lead-confirmation'
       };
       
       if (routes[path]) return routes[path];
@@ -2355,6 +2357,7 @@ useEffect(() => {
 
 
             {view === 'success' && <SuccessView setView={setView} t={t} />}
+            {view === 'lead-confirmation' && <LeadConfirmationPage setView={setView} />}
 
       {!loading && view === 'detail' && selectedCourse && (
         <DetailView

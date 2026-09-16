@@ -43,6 +43,7 @@ import DetailView from '../src/components/DetailView';
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  window.history.replaceState({}, '', '/');
 });
 
 describe('DetailView', () => {
@@ -273,12 +274,13 @@ describe('DetailView', () => {
       }),
     });
     vi.stubGlobal('fetch', fetchMock);
+    const setView = vi.fn();
 
     render(
       <DetailView
         course={course}
         courses={[]}
-        setView={vi.fn()}
+        setView={setView}
         t={{ lbl_description: 'Beschreibung', lbl_learn_goals: 'Lernziele', btn_book: 'Jetzt buchen' }}
         setSelectedTeacher={vi.fn()}
         user={null}
@@ -293,7 +295,7 @@ describe('DetailView', () => {
     fireEvent.change(screen.getByLabelText('E-Mail-Adresse'), { target: { value: 'sara@example.com' } });
     fireEvent.submit(screen.getByRole('button', { name: 'Anfrage absenden' }).closest('form'));
 
-    await waitFor(() => expect(screen.getByText('Anfrage erfolgreich übermittelt')).toBeVisible());
+    await waitFor(() => expect(setView).toHaveBeenCalledWith('lead-confirmation'));
     const submitted = JSON.parse(fetchMock.mock.calls[0][1].body);
     expect(submitted).toEqual(expect.objectContaining({
       courseId: 'lead-empty-message',
@@ -303,6 +305,9 @@ describe('DetailView', () => {
     expect(screen.getByText(/lead-ref-123/)).toBeVisible();
     expect(screen.getByText('Du erhältst zusätzlich eine Bestätigung per E-Mail.')).toBeVisible();
     expect(screen.getByRole('dialog')).toBeVisible();
+    expect(window.location.pathname).toBe('/lead-confirmation');
+    expect(window.location.search).toContain('ref=lead-ref-123');
+    expect(window.location.search).not.toContain('sara%40example.com');
   });
 
   it('hides Lernziele heading when objectives are empty or missing', () => {

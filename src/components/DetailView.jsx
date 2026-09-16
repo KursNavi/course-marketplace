@@ -21,6 +21,7 @@ import {
 } from '../lib/analytics';
 import { getRobotsPolicy } from '../lib/seoUtils';
 import { getRelatedCourses } from '../lib/courseRecommendations';
+import { buildLeadConfirmationPath } from '../lib/leadConfirmation';
 
 const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, setUser, savedCourseIds, onToggleSaveCourse, showNotification, refreshBookings }) => {
     const [showLeadModal, setShowLeadModal] = useState(false);
@@ -499,6 +500,18 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
             if (data.delivery_status === 'delivered') {
                 trackLeadDelivered(course.id, confirmedEventId);
             }
+
+            // Keep only a non-sensitive reference and response deadline in the
+            // URL so the confirmation remains available after a reload.
+            window.history.replaceState(
+                { view: 'lead-confirmation' },
+                document.title,
+                buildLeadConfirmationPath({
+                    reference: data.lead_id || data.leadId || data.id,
+                    responseDeadline: data.expected_response_by || data.response_deadline || data.responseDeadline,
+                })
+            );
+            if (typeof setView === 'function') setView('lead-confirmation');
         } catch (err) {
             console.error('Lead submit error:', err);
             setLeadStatus('idle');
