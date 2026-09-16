@@ -3,7 +3,8 @@
  * seed-e2e.mjs — Idempotent seed script for the Supabase test project.
  *
  * Seeds minimal test data required by hybrid app-e2e tests.
- * Safe to run multiple times — all operations use upsert or delete-before-insert.
+ * Safe to run multiple times — stable test courses retain their IDs so leads
+ * and bookings do not lose their course relationship during a CI run.
  *
  * Run: npm run seed:e2e
  *
@@ -140,7 +141,7 @@ async function main() {
   // Ausnahme: Vorrichtungen, die dieses Skript NICHT selbst wieder anlegt.
   // Sie wurden von Hand erstellt und wären nach dem Löschen unwiederbringlich.
   // Wer eine davon seed-fähig macht, kann sie hier streichen.
-  const KEEP_TITLES = new Set(['Platform E2E-Testkurs']);
+  const KEEP_TITLES = new Set(['Platform E2E-Testkurs', 'E2E-Seed Testkurs']);
   const oldCourses = (cleanupCandidates || []).filter(c => !KEEP_TITLES.has(c.title));
 
   if (oldCourses?.length) {
@@ -225,9 +226,7 @@ async function main() {
 
   // 3. Seed a published lead course (for the inquiry / detail-view test)
   // is_pro=true → fetchVerifiedCourse() finds this course; also exercises the Verifiziert filter.
-  const seedCourse = await assertOk(
-    'Insert seed course (E2E-Seed Testkurs)',
-    await supabase.from('courses').insert({
+  const seedCourseValues = {
       title: 'E2E-Seed Testkurs',
       price: 150,
       languages: ['Deutsch'],
@@ -243,22 +242,39 @@ async function main() {
       user_id: PROVIDER_ID,
       status: 'published',
       is_pro: true,
-    }).select('id').single()
+  };
+  const existingSeedCourse = (cleanupCandidates || []).find(c => c.title === seedCourseValues.title);
+  const seedCourse = await assertOk(
+    `${existingSeedCourse ? 'Update' : 'Insert'} seed course (E2E-Seed Testkurs)`,
+    existingSeedCourse
+      ? await supabase.from('courses').update(seedCourseValues).eq('id', existingSeedCourse.id).select('id').single()
+      : await supabase.from('courses').insert(seedCourseValues).select('id').single()
   );
 
   // 4. Seed a course event for the test course (future date)
   if (seedCourse?.id) {
-    await assertOk(
-      `Insert course event for seed course (id=${seedCourse.id})`,
-      await supabase.from('course_events').insert({
-        course_id: seedCourse.id,
-        start_date: '2099-06-01',
-        location: 'Zürich',
-        canton: 'Zürich',
-        schedule_description: 'Mo-Fr 09:00-17:00',
-        max_participants: 20,
-      })
-    );
+    const { data: existingEvent, error: eventLookupError } = await supabase
+      .from('course_events')
+      .select('id')
+      .eq('course_id', seedCourse.id)
+      .eq('start_date', '2099-06-01')
+      .maybeSingle();
+    if (eventLookupError) throw new Error(`Could not load seed course event: ${eventLookupError.message}`);
+    if (existingEvent) {
+      log('SKIP', `Seed course event already exists (id=${existingEvent.id})`);
+    } else {
+      await assertOk(
+        `Insert course event for seed course (id=${seedCourse.id})`,
+        await supabase.from('course_events').insert({
+          course_id: seedCourse.id,
+          start_date: '2099-06-01',
+          location: 'Zürich',
+          canton: 'Zürich',
+          schedule_description: 'Mo-Fr 09:00-17:00',
+          max_participants: 20,
+        })
+      );
+    }
   }
 
   // 5. Ensure storage buckets exist
@@ -281,4 +297,3 @@ main().catch(err => {
   console.error('\nSeed failed:', err.message);
   process.exit(1);
 });
-
