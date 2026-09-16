@@ -160,11 +160,15 @@ export default async function handler(req, res) {
     // 1. Kurs laden
     const { data: course, error: courseError } = await supabase
       .from('courses')
-      .select('id, title, user_id, booking_type, area, canton')
+      .select('id, title, user_id, booking_type, category_area, canton')
       .eq('id', courseId)
       .single();
 
-    if (courseError || !course) {
+    if (courseError && courseError.code !== 'PGRST116') {
+      console.error('send-lead: Kursabfrage fehlgeschlagen', courseError);
+      return res.status(500).json({ error: 'Kurs konnte nicht geladen werden' });
+    }
+    if (!course) {
       return res.status(404).json({ error: 'Kurs nicht gefunden' });
     }
 
@@ -232,7 +236,7 @@ export default async function handler(req, res) {
         requester_email_hash: emailHash,
         event_id: normalizedEventId,
         lead_intent: normalizedIntent,
-        course_topic_snapshot: cleanText(course.area, 160),
+        course_topic_snapshot: cleanText(course.category_area, 160),
         course_region_snapshot: cleanText(course.canton, 120),
         expected_response_by: expectedResponseBy.toISOString(),
         status: 'pending',

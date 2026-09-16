@@ -17,6 +17,7 @@ let insertedPayloads;
 let leadUpdates;
 let leadInsertError;
 let payloadInsertError;
+let courseSelectError;
 let mockEmailShouldFail;
 let sentStatusUpdateErrors;
 
@@ -53,7 +54,7 @@ const COURSE = {
   title: 'Yoga für Anfänger',
   user_id: 'provider-1',
   booking_type: 'lead',
-  area: 'Yoga & Achtsamkeit',
+  category_area: 'Yoga & Achtsamkeit',
   canton: 'Zürich',
 };
 
@@ -62,7 +63,17 @@ function buildSupabase({ providerTier = 'basic' } = {}) {
     from(table) {
       if (table === 'courses') {
         return {
-          select: () => ({ eq: () => ({ single: async () => ({ data: COURSE, error: null }) }) }),
+          select: (columns) => {
+            expect(columns).toContain('category_area');
+            expect(columns.split(',').map((column) => column.trim())).not.toContain('area');
+            return {
+              eq: () => ({
+                single: async () => courseSelectError
+                  ? { data: null, error: courseSelectError }
+                  : { data: COURSE, error: null },
+              }),
+            };
+          },
         };
       }
       if (table === 'profiles') {
@@ -139,6 +150,7 @@ beforeEach(() => {
   leadUpdates = [];
   leadInsertError = null;
   payloadInsertError = null;
+  courseSelectError = null;
   mockEmailShouldFail = false;
   sentStatusUpdateErrors = [];
   mockSupabase = buildSupabase();
@@ -330,6 +342,14 @@ describe('E-Mail-Fehler', () => {
 });
 
 describe('Eingabeprüfung bleibt bestehen', () => {
+  it('meldet einen Datenbankfehler nicht fälschlich als unbekannten Kurs', async () => {
+    courseSelectError = { code: '42703', message: 'column does not exist' };
+    const res = await callHandler();
+    expect(res._status).toBe(500);
+    expect(res._body.error).toMatch(/nicht geladen/);
+    expect(mockSentEmails).toHaveLength(0);
+  });
+
   it('weist fehlende Felder ab', async () => {
     const { default: handler } = await import('../api/send-lead.js');
     const res = makeRes();
