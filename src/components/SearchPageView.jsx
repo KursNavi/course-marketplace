@@ -1224,9 +1224,9 @@ const SearchPageView = ({
                              <button
                                type="button"
                                data-testid={`lead-search-card-cta-${course.id}`}
-                               aria-label={`Unverbindlich anfragen: ${course.title}`}
+                               aria-label={`Kurs unverbindlich anfragen: ${course.title}`}
                                onClick={(event) => {
-                                   trackCourseCardCta(course);
+                                   trackCourseCardCta(course, 'search_card');
                                    try {
                                        window.sessionStorage.setItem('kn_open_lead_course', String(course.id));
                                    } catch {
@@ -1234,10 +1234,10 @@ const SearchPageView = ({
                                    }
                                    openCourse(event);
                                }}
-                               className="w-full inline-flex items-center justify-center gap-2 rounded-lg border border-primary/30 bg-orange-50 px-3 py-2.5 text-sm font-bold text-primary transition hover:bg-primary hover:text-white focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                               className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-3 py-3 text-sm font-bold text-white shadow-md transition hover:bg-orange-700 hover:shadow-lg active:scale-[.99] focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
                              >
                                <Mail className="w-4 h-4" aria-hidden="true" />
-                               Unverbindlich anfragen
+                               Kurs unverbindlich anfragen
                              </button>
                            </div>
                          )}

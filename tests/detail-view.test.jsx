@@ -243,10 +243,8 @@ describe('DetailView', () => {
     expect(screen.getByRole('dialog')).toBeVisible();
     expect(screen.getByLabelText('Name')).toBeRequired();
     expect(screen.getByLabelText('E-Mail-Adresse')).toBeRequired();
-    expect(screen.getByLabelText('Telefon (optional)')).not.toBeRequired();
-    expect(screen.getByLabelText(/Worum geht es/)).toHaveValue('availability');
     expect(screen.getByLabelText(/Nachricht/)).not.toBeRequired();
-    expect(screen.getByText('Nur Name und E-Mail sind erforderlich. Telefon und Nachricht sind optional.')).toBeInTheDocument();
+    expect(screen.getByText('Nur Name und E-Mail sind erforderlich. Eine Nachricht ist optional.')).toBeInTheDocument();
   });
 
   it('submits without a message and keeps a traceable confirmation visible', async () => {
@@ -299,8 +297,9 @@ describe('DetailView', () => {
     expect(submitted).toEqual(expect.objectContaining({
       courseId: 'lead-empty-message',
       message: '',
-      intent: 'availability',
     }));
+    expect(submitted).not.toHaveProperty('phone');
+    expect(submitted).not.toHaveProperty('intent');
     expect(screen.getByText(/lead-ref-123/)).toBeVisible();
     expect(screen.getByText('Du erhältst zusätzlich eine Bestätigung per E-Mail.')).toBeVisible();
     expect(screen.getByRole('dialog')).toBeVisible();
@@ -341,7 +340,7 @@ describe('DetailView', () => {
     expect(screen.queryByText('Lernziele')).not.toBeInTheDocument();
   });
 
-  it('shows lead inquiry (Anfrage senden) when all platform course events are in the past', () => {
+  it('shows lead inquiry (Kurs unverbindlich anfragen) when all platform course events are in the past', () => {
     const course = {
       id: '789',
       title: 'Abgelaufener Kurs',
@@ -383,8 +382,8 @@ describe('DetailView', () => {
 
     // Widget-Titel sollte "Keine aktuellen Termine" zeigen
     expect(screen.getByText('Keine aktuellen Termine')).toBeInTheDocument();
-    // Button sollte "Anfrage senden" zeigen (Lead-Verhalten)
-    expect(screen.getByText('Anfrage senden')).toBeInTheDocument();
+    // Button sollte "Kurs unverbindlich anfragen" zeigen (Lead-Verhalten)
+    expect(screen.getAllByRole('button', { name: 'Kurs unverbindlich anfragen' }).length).toBeGreaterThan(0);
     // Der vergangene Termin darf nicht als Datum angezeigt werden
     expect(screen.queryByText('15.03.2020')).not.toBeInTheDocument();
   });
@@ -438,7 +437,7 @@ describe('DetailView', () => {
     // Stattdessen Fallback-Meldung
     expect(screen.getByText('Keine aktuellen Termine')).toBeInTheDocument();
     // Anfrage-Button bleibt sichtbar
-    expect(screen.getByText('Anfrage senden')).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: 'Kurs unverbindlich anfragen' }).length).toBeGreaterThan(0);
   });
 
   // --- Empfehlungsbereich ---

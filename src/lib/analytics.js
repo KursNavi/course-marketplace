@@ -215,10 +215,11 @@ export function trackSearch(query, resultCount) {
   contentsquareSafe('Search Results Viewed');
 }
 
-export function trackCourseCardCta(course) {
+export function trackCourseCardCta(course, placement = 'search_card') {
   gtagSafe('statistics', 'event', 'course_card_cta_click', {
     item_id: String(course.id),
     booking_type: course.booking_type || 'lead',
+    placement,
   });
   contentsquareSafe('Course Card CTA Clicked');
 }
