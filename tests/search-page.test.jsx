@@ -37,15 +37,25 @@ vi.mock('../src/lib/imageUtils', () => ({
 const { mockFetchPublishedThemeWorldAreaLabels } = vi.hoisted(() => ({
   mockFetchPublishedThemeWorldAreaLabels: vi.fn(),
 }));
+const { mockTrackCourseCardCta } = vi.hoisted(() => ({
+  mockTrackCourseCardCta: vi.fn(),
+}));
 
 vi.mock('../src/lib/themeWorldService', () => ({
   fetchPublishedThemeWorldAreaLabels: mockFetchPublishedThemeWorldAreaLabels,
+}));
+vi.mock('../src/lib/analytics', () => ({
+  trackCourseCardCta: mockTrackCourseCardCta,
+  trackSearch: vi.fn(),
 }));
 
 import SearchPageView from '../src/components/SearchPageView';
 
 beforeEach(() => {
   mockFetchPublishedThemeWorldAreaLabels.mockResolvedValue(new Map());
+  mockTrackCourseCardCta.mockClear();
+  window.sessionStorage.clear();
+  window.history.replaceState({}, '', '/search');
 });
 
 // --- Helper: build default props (all required by SearchPageView) ---
@@ -102,6 +112,74 @@ function makeCourse(id, title = 'Testkurs', type = 'professionell') {
     created_at: new Date().toISOString(),
   };
 }
+
+describe('Lead CTA on search cards', () => {
+  it('opens the selected lead course and hands the inquiry intent to the detail view', () => {
+    const course = { ...makeCourse('lead-1', 'Keramikkurs'), booking_type: 'lead' };
+    const setSelectedCourse = vi.fn();
+    const setView = vi.fn();
+
+    render(<SearchPageView {...makeProps({
+      courses: [course],
+      filteredCourses: [course],
+      filteredCoursesPreCategory: [course],
+      setSelectedCourse,
+      setView,
+    })} />);
+
+    const cta = screen.getByTestId('lead-search-card-cta-lead-1');
+    expect(cta).toHaveTextContent('Unverbindlich anfragen');
+    expect(cta).toHaveClass('border-orange-300', 'min-h-10');
+    expect(cta).not.toHaveClass('bg-primary');
+
+    fireEvent.click(cta);
+
+    expect(mockTrackCourseCardCta).toHaveBeenCalledWith(course, 'search_card');
+    expect(window.sessionStorage.getItem('kn_open_lead_course')).toBe('lead-1');
+    expect(setSelectedCourse).toHaveBeenCalledWith(course);
+    expect(setView).toHaveBeenCalledWith('detail');
+    expect(window.location.pathname).toBe('/courses/test/lead-1');
+  });
+
+  it.each([
+    ['Ctrl', { ctrlKey: true }],
+    ['Cmd', { metaKey: true }],
+    ['Shift', { shiftKey: true }],
+    ['Alt', { altKey: true }],
+  ])('does not track or set inquiry intent for %s-clicks', (_modifier, modifiers) => {
+    const course = { ...makeCourse('lead-modifier'), booking_type: 'lead' };
+    const setSelectedCourse = vi.fn();
+    const setView = vi.fn();
+
+    render(<SearchPageView {...makeProps({
+      courses: [course],
+      filteredCourses: [course],
+      filteredCoursesPreCategory: [course],
+      setSelectedCourse,
+      setView,
+    })} />);
+
+    fireEvent.click(screen.getByTestId('lead-search-card-cta-lead-modifier'), modifiers);
+
+    expect(mockTrackCourseCardCta).not.toHaveBeenCalled();
+    expect(window.sessionStorage.getItem('kn_open_lead_course')).toBeNull();
+    expect(setSelectedCourse).not.toHaveBeenCalled();
+    expect(setView).not.toHaveBeenCalled();
+    expect(window.location.pathname).toBe('/search');
+  });
+
+  it('keeps the save control outside the course link', () => {
+    const course = { ...makeCourse('lead-2'), booking_type: 'lead' };
+    render(<SearchPageView {...makeProps({
+      courses: [course],
+      filteredCourses: [course],
+      filteredCoursesPreCategory: [course],
+    })} />);
+
+    const saveButton = screen.getByRole('button', { name: 'Kurs merken' });
+    expect(saveButton.closest('a')).toBeNull();
+  });
+});
 
 // ===================== 1. RESULTS COUNTER =====================
 describe('Results counter', () => {

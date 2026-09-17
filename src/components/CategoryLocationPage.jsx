@@ -6,6 +6,32 @@ import { BASE_URL, buildCoursePath } from '../lib/siteConfig';
 import { useTaxonomy } from '../hooks/useTaxonomy';
 import { DEFAULT_COURSE_IMAGE } from '../lib/imageUtils';
 
+const BOOKABLE_BOOKING_TYPES = new Set(['platform', 'platform_flex']);
+
+/**
+ * Keep pSEO copy honest about the next step: most marketplace offers start
+ * with an enquiry, while only platform/platform_flex offers can be booked.
+ */
+function getCategoryLocationPositioning({ topicLabel, location, totalCourses, bookableCourses }) {
+    if (totalCourses <= 0) {
+        return {
+            metaDescription: `Finde ${topicLabel}-Kurse in ${location}. Vergleiche Anbieter, Preise und Termine auf KursNavi.`,
+            heroDescription: `Aktuell sind keine ${topicLabel}-Kurse in ${location} verfügbar. Erweitere deine Suche oder lasse dich benachrichtigen, wenn neue Kurse hinzukommen.`
+        };
+    }
+
+    const bookingPhrase = bookableCourses >= totalCourses
+        ? 'Buche passende Angebote direkt online.'
+        : bookableCourses > 0
+            ? 'Einige Angebote kannst du direkt online buchen, bei anderen fragst du unverbindlich an.'
+            : 'Frage unverbindlich beim passenden Anbieter an.';
+
+    return {
+        metaDescription: `${totalCourses} ${topicLabel}-Kurse in ${location} ab CHF {avgPrice}. Vergleiche ${bookableCourses > 0 ? 'Anbieter und verfügbare Angebote' : 'Anbieter, Preise und Termine'} auf KursNavi. ${bookingPhrase}`,
+        heroDescription: `Entdecke ${totalCourses} ${topicLabel}-Kurse von ${bookableCourses > 0 ? 'verschiedenen Anbietern' : 'Anbietern'} in ${location}. Vergleiche Preise und Termine und ${bookableCourses > 0 ? 'buche passende Angebote direkt online oder ' : ''}frage unverbindlich beim passenden Anbieter an.`
+    };
+}
+
 /**
  * Programmatic SEO Landing Page for Topic/Location combinations
  * Example URLs: /courses/yoga/zurich, /courses/business-mgmt/bern
@@ -70,7 +96,7 @@ export default function CategoryLocationPage({
             ? Math.round(filteredCourses.reduce((sum, c) => sum + (Number(c.price) || 0), 0) / filteredCourses.length)
             : 0,
         providers: [...new Set(filteredCourses.map(c => c.instructor_name))].length,
-        bookableCourses: filteredCourses.filter(c => c.booking_type === 'platform').length
+        bookableCourses: filteredCourses.filter(c => BOOKABLE_BOOKING_TYPES.has(c.booking_type)).length
     };
 
     // Get human-readable labels from DB taxonomy
@@ -94,9 +120,13 @@ export default function CategoryLocationPage({
     // SEO Meta Tags
     useEffect(() => {
         const pageTitle = `${topicLabel} in ${location} - ${stats.totalCourses} Kurse vergleichen | KursNavi`;
-        const pageDescription = stats.totalCourses > 0
-            ? `${stats.totalCourses} ${topicLabel}-Kurse in ${location} ab CHF ${formatPriceCHF(stats.avgPrice)}. Vergleiche ${stats.providers} Anbieter und buche direkt online.`
-            : `Finde ${topicLabel}-Kurse in ${location}. Vergleiche Anbieter, Preise und Termine auf KursNavi.`;
+        const positioning = getCategoryLocationPositioning({
+            topicLabel,
+            location,
+            totalCourses: stats.totalCourses,
+            bookableCourses: stats.bookableCourses
+        });
+        const pageDescription = positioning.metaDescription.replace('{avgPrice}', formatPriceCHF(stats.avgPrice));
 
         document.title = pageTitle;
 
@@ -194,7 +224,7 @@ export default function CategoryLocationPage({
         }
         breadcrumbScript.text = JSON.stringify(breadcrumbData);
 
-    }, [topicSlug, locationSlug, stats.totalCourses, topicLabel, location]);
+    }, [topicSlug, locationSlug, stats.totalCourses, stats.bookableCourses, stats.avgPrice, topicLabel, location]);
 
     // getPriceLabel imported from '../lib/formatPrice'
 
@@ -231,10 +261,12 @@ export default function CategoryLocationPage({
                     </h1>
 
                     <p className="text-xl text-gray-600 mb-8 max-w-3xl">
-                        {stats.totalCourses > 0
-                            ? `Entdecke ${stats.totalCourses} ${topicLabel}-Kurse von ${stats.providers} Anbietern in ${location}. Vergleiche Preise, Termine und buche direkt online.`
-                            : `Aktuell sind keine ${topicLabel}-Kurse in ${location} verfügbar. Erweitere deine Suche oder lasse dich benachrichtigen, wenn neue Kurse hinzukommen.`
-                        }
+                        {getCategoryLocationPositioning({
+                            topicLabel,
+                            location,
+                            totalCourses: stats.totalCourses,
+                            bookableCourses: stats.bookableCourses
+                        }).heroDescription}
                     </p>
 
                     {/* Stats Cards (Unique Content for pSEO) */}

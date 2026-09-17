@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useCallback } from 'react';
-import { Search, ChevronRight, ChevronDown, Filter, User, X, Shield, MapPin, CheckCircle, Loader, Bell, ArrowDown, ArrowRight, Sparkles, Bookmark, BookmarkCheck, CreditCard, Info, EyeOff, Briefcase, Palette, Smile, BookOpen, Compass, SearchX, AlertTriangle, RotateCcw } from 'lucide-react';
+import { Search, ChevronRight, ChevronDown, Filter, User, X, Shield, MapPin, CheckCircle, Loader, Bell, ArrowDown, ArrowRight, Sparkles, Bookmark, BookmarkCheck, CreditCard, Info, EyeOff, Briefcase, Palette, Smile, BookOpen, Compass, SearchX, AlertTriangle, RotateCcw, Mail } from 'lucide-react';
 import { LocationDropdown, LanguageDropdown, DeliveryTypeFilter, SaeulenFilter, KursartFilter } from './Filters';
 import { PRIVAT_KURSART_ICONS, KINDER_KURSART_ICONS } from '../lib/kursartIcons';
 import { Globe } from 'lucide-react';
@@ -12,7 +12,7 @@ import { getBereichByAreaSlug, getBereichUrl } from '../lib/bereichLandingConfig
 import { SEARCH_STRINGS } from '../lib/searchStrings';
 import { getNormalizedDeliveryTypes } from '../lib/courseMetadata';
 import { fetchPublishedThemeWorldAreaLabels } from '../lib/themeWorldService';
-import { trackSearch } from '../lib/analytics';
+import { trackCourseCardCta, trackSearch } from '../lib/analytics';
 import { getSearchHeader } from '../lib/searchHeaderConfig';
 import { sortCoursesByRelevance, stableSeed } from '../lib/searchRelevance';
 
@@ -169,7 +169,7 @@ const SearchPageView = ({
                 : `${typeLabel} in ${locationLabel} | KursNavi`;
 
         const pageDescription = filteredCourses.length > 0
-            ? `${filteredCourses.length} ${areaLabel || typeLabel} in ${locationLabel} finden. Jetzt vergleichen und buchen auf KursNavi.`
+            ? `${filteredCourses.length} ${areaLabel || typeLabel} in ${locationLabel} finden. Angebote vergleichen und unverbindlich anfragen auf KursNavi.`
             : `Finde Kurse in ${locationLabel} - Der Schweizer Kursmarktplatz für Weiterbildung, Freizeit und Kinderkurse.`;
 
         document.title = pageTitle;
@@ -1136,15 +1136,19 @@ const SearchPageView = ({
                       const slugify = (input) => (input || '').toString().trim().toLowerCase()
                           .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
                           .replace(/&/g, ' und ').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-                      const coursePath = buildCoursePath(course) || slugify(course.title || 'detail');
+                       const coursePath = buildCoursePath(course) || slugify(course.title || 'detail');
+                       const openCourse = (e) => {
+                           if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+                           e.preventDefault();
+                           window.history.pushState({ view: 'detail', courseId: course.id }, '', coursePath);
+                           setSelectedCourse?.(course);
+                           setView?.('detail');
+                       };
 
-                      items.push(
-                      <a key={course.id} href={coursePath} onClick={(e) => {
-                          if (e.ctrlKey || e.metaKey) return;
-                          e.preventDefault();
-                          window.history.pushState({ view: 'detail', courseId: course.id }, '', coursePath);
-                      }} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer group" style={{textDecoration: 'none', color: 'inherit'}}>
-                        <div className="relative aspect-video overflow-hidden">
+                       items.push(
+                       <article key={course.id} className="relative bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
+                         <a href={coursePath} onClick={openCourse} className="block cursor-pointer" style={{textDecoration: 'none', color: 'inherit'}}>
+                           <div className="relative aspect-video overflow-hidden">
                             <img
                                 src={course.image_url || fallbackImage}
                                 alt={`${course.title} - Kurs in ${course.canton}`}
@@ -1163,26 +1167,9 @@ const SearchPageView = ({
                                 {isSoldOut(course) && <div className="bg-red-500/90 text-white px-2 py-1 rounded text-xs font-bold shadow-sm">Ausgebucht</div>}
                             </div>
 
-                            <button
-                                type="button"
-                                title={(savedCourseIds || []).includes(course.id) ? "Aus Merkliste entfernen" : "Kurs merken"}
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    onToggleSaveCourse && onToggleSaveCourse(course);
-                                }}
-                                className={`absolute top-3 right-3 w-10 h-10 rounded-full shadow-sm border flex items-center justify-center transition
-                                    ${(savedCourseIds || []).includes(course.id)
-                                        ? 'bg-primary text-white border-primary'
-                                        : 'bg-white/95 text-gray-700 border-white/70 hover:bg-white'}`}
-                            >
-                                {(savedCourseIds || []).includes(course.id)
-                                    ? <BookmarkCheck className="w-5 h-5" />
-                                    : <Bookmark className="w-5 h-5" />
-                                }
-                            </button>
-                        </div>
+                           </div>
 
-                        <div className="p-5">
+                           <div className="p-5">
                             <h3 className="font-bold text-lg text-dark leading-tight line-clamp-3 mb-2 font-heading">
                                 {course.title}
                             </h3>
@@ -1216,8 +1203,49 @@ const SearchPageView = ({
                                     {getPriceLabel(course)}
                                 </span>
                             </div>
-                        </div>
-                      </a>
+                           </div>
+                         </a>
+                         <button
+                           type="button"
+                           title={(savedCourseIds || []).includes(course.id) ? 'Aus Merkliste entfernen' : 'Kurs merken'}
+                           aria-label={(savedCourseIds || []).includes(course.id) ? 'Aus Merkliste entfernen' : 'Kurs merken'}
+                           onClick={() => onToggleSaveCourse?.(course)}
+                           className={`absolute right-3 top-3 z-10 flex h-10 w-10 items-center justify-center rounded-full border shadow-sm transition
+                             ${(savedCourseIds || []).includes(course.id)
+                               ? 'border-primary bg-primary text-white'
+                               : 'border-white/70 bg-white/95 text-gray-700 hover:bg-white'}`}
+                         >
+                           {(savedCourseIds || []).includes(course.id)
+                             ? <BookmarkCheck className="h-5 w-5" aria-hidden="true" />
+                             : <Bookmark className="h-5 w-5" aria-hidden="true" />}
+                         </button>
+                         {course.booking_type === 'lead' && (
+                           <div className="px-5 pb-5">
+                             <button
+                               type="button"
+                               data-testid={`lead-search-card-cta-${course.id}`}
+                               aria-label={`Kurs unverbindlich anfragen: ${course.title}`}
+                               onClick={(event) => {
+                                   if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) {
+                                       openCourse(event);
+                                       return;
+                                   }
+                                   trackCourseCardCta(course, 'search_card');
+                                   try {
+                                       window.sessionStorage.setItem('kn_open_lead_course', String(course.id));
+                                   } catch {
+                                       // Direct detail navigation remains available without storage.
+                                   }
+                                   openCourse(event);
+                               }}
+                               className="w-full min-h-10 inline-flex items-center justify-center gap-1.5 rounded-md border border-orange-300 bg-white px-3 py-2 text-xs font-semibold text-orange-800 transition hover:border-orange-700 hover:bg-orange-50 hover:text-orange-900 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                             >
+                               <Mail className="w-4 h-4" aria-hidden="true" />
+                               Unverbindlich anfragen
+                             </button>
+                           </div>
+                         )}
+                       </article>
                       );
 
                       return items;

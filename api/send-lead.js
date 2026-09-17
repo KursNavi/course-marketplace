@@ -1,9 +1,10 @@
 import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
-import { createHash } from 'crypto';
+import { createHash, randomUUID } from 'crypto';
 import { getEmailConfig, resolveUserEmail, sendEmailOrThrow } from './_lib/email-config.js';
 import { encryptLeadMessage, normalizeLeadMessage } from './_lib/lead-message-crypto.js';
 import { providerMessageIdFromSendResult } from './_lib/lead-email-delivery.js';
+import { getBaseUrl } from './_lib/base-url.js';
 
 /** Aufbewahrungsfrist des Anfragetextes. Der Lead-Datensatz selbst bleibt. */
 const MESSAGE_RETENTION_DAYS = 60;
@@ -56,6 +57,44 @@ const generateEmailHtml = (title, bodyHtml, ctaText, ctaLink = "https://kursnavi
 `;
 
 const VALID_TIERS = ['basic', 'pro', 'premium', 'enterprise'];
+const VALID_INTENTS = new Set(['availability', 'price_details', 'advice']);
+const INTENT_LABELS = Object.freeze({
+  availability: 'Termine und Verfügbarkeit',
+  price_details: 'Preis und Details',
+  advice: 'Beratung zum Kurs',
+});
+
+function cleanText(value, maxLength = 255) {
+  if (typeof value !== 'string') return null;
+  const cleaned = Array.from(value, (character) => {
+    const code = character.charCodeAt(0);
+    return code < 32 || code === 127 ? ' ' : character;
+  }).join('').replace(/\s+/g, ' ').trim();
+  return cleaned ? cleaned.slice(0, maxLength) : null;
+}
+
+function normalizeIntent(value) {
+  const intent = cleanText(value, 40);
+  return VALID_INTENTS.has(intent) ? intent : null;
+}
+
+function normalizeAttribution(value, consentGranted) {
+  if (!consentGranted || !value || typeof value !== 'object') return {};
+
+  return {
+    attribution_source: cleanText(value.source, 120),
+    attribution_medium: cleanText(value.medium, 120),
+    attribution_campaign: cleanText(value.campaign, 180),
+    attribution_term: cleanText(value.term, 180),
+    attribution_content: cleanText(value.content, 180),
+    attribution_landing_page: cleanText(value.landingPage, 500),
+    attribution_referrer: cleanText(value.referrer, 500),
+    attribution_device: cleanText(value.device, 40),
+    attribution_gclid: cleanText(value.gclid, 200),
+    attribution_gbraid: cleanText(value.gbraid, 200),
+    attribution_wbraid: cleanText(value.wbraid, 200),
+  };
+}
 
 /**
  * Normalisiert das Paket für den Snapshot am Lead.
@@ -82,10 +121,20 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { courseId, name, email, message } = req.body || {};
+  const {
+    courseId,
+    name,
+    email,
+    message = '',
+    phone = '',
+    intent,
+    eventId,
+    analyticsConsent = false,
+    attribution,
+  } = req.body || {};
 
-  if (!courseId || !name || !email || !message) {
-    return res.status(400).json({ error: 'Fehlende Felder: courseId, name, email, message' });
+  if (!courseId || !cleanText(name, 160) || !cleanText(email, 320)) {
+    return res.status(400).json({ error: 'Fehlende Felder: courseId, name, email' });
   }
 
   try {
@@ -99,11 +148,15 @@ export default async function handler(req, res) {
     // 1. Kurs laden
     const { data: course, error: courseError } = await supabase
       .from('courses')
-      .select('id, title, user_id, booking_type')
+      .select('id, title, user_id, booking_type, category_area, canton')
       .eq('id', courseId)
       .single();
 
-    if (courseError || !course) {
+    if (courseError && courseError.code !== 'PGRST116') {
+      console.error('send-lead: Kursabfrage fehlgeschlagen', courseError);
+      return res.status(500).json({ error: 'Kurs konnte nicht geladen werden' });
+    }
+    if (!course) {
       return res.status(404).json({ error: 'Kurs nicht gefunden' });
     }
 
@@ -137,8 +190,17 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'Server-Konfigurationsfehler' });
     }
 
+    const normalizedEmail = cleanText(email, 320).toLowerCase();
+    const normalizedName = cleanText(name, 160);
+    const normalizedPhone = cleanText(phone, 80);
+    const normalizedIntent = normalizeIntent(intent);
+    const normalizedEventId = typeof eventId === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(eventId)
+      ? eventId
+      : randomUUID();
+    const attributionFields = normalizeAttribution(attribution, analyticsConsent === true);
+
     const emailHash = createHash('sha256')
-      .update(email.toLowerCase().trim() + salt)
+      .update(normalizedEmail + salt)
       .digest('hex');
 
     // 3b. Rate-Limiting: max 1 Lead pro Email+Kurs alle 5 Minuten
@@ -159,12 +221,17 @@ export default async function handler(req, res) {
         course_id: courseId,
         provider_id: course.user_id,
         requester_email_hash: emailHash,
+        event_id: normalizedEventId,
+        lead_intent: normalizedIntent,
+        course_topic_snapshot: cleanText(course.category_area, 160),
+        course_region_snapshot: cleanText(course.canton, 120),
         status: 'pending',
         email_delivery_status: 'pending',
         // Snapshot: In welcher Paketphase ist diese Anfrage eingegangen? Später
         // ist das nicht mehr rekonstruierbar, und die Basic-Ranking-Penalty
         // hängt daran.
-        provider_tier_at_lead: providerTier
+        provider_tier_at_lead: providerTier,
+        ...attributionFields,
       })
       .select('id')
       .single();
@@ -207,22 +274,30 @@ export default async function handler(req, res) {
     }
 
     // 4. E-Mail an Anbieter senden
-    const safeName = escapeHtml(name);
-    const safeEmail = escapeHtml(email);
-    const safeMessage = escapeHtml(message).replace(/\n/g, '<br>');
+    const defaultMessage = normalizedIntent
+      ? `Ich interessiere mich für: ${INTENT_LABELS[normalizedIntent]}.`
+      : 'Ich interessiere mich für diesen Kurs und freue mich über weitere Informationen.';
+    const providerMessage = normalizedMessage || defaultMessage;
+    const safeName = escapeHtml(normalizedName);
+    const safeEmail = escapeHtml(normalizedEmail);
+    const safePhone = normalizedPhone ? escapeHtml(normalizedPhone) : null;
+    const safeIntent = normalizedIntent ? escapeHtml(INTENT_LABELS[normalizedIntent]) : null;
+    const safeMessage = escapeHtml(providerMessage).replace(/\n/g, '<br>');
     const safeTitle = escapeHtml(course.title);
-
+    const baseUrl = getBaseUrl(req);
     const bodyHtml = `
       <p>Du hast eine neue Anfrage für deinen Kurs <strong>${safeTitle}</strong> erhalten.</p>
       <table style="width:100%; border-collapse:collapse; margin: 20px 0;">
         <tr><td style="padding:8px 0; color:#6B7280; width:100px;">Name:</td><td style="padding:8px 0;"><strong>${safeName}</strong></td></tr>
         <tr><td style="padding:8px 0; color:#6B7280;">E-Mail:</td><td style="padding:8px 0;"><strong>${safeEmail}</strong></td></tr>
+        ${safePhone ? `<tr><td style="padding:8px 0; color:#6B7280;">Telefon:</td><td style="padding:8px 0;"><strong>${safePhone}</strong></td></tr>` : ''}
+        ${safeIntent ? `<tr><td style="padding:8px 0; color:#6B7280;">Anliegen:</td><td style="padding:8px 0;"><strong>${safeIntent}</strong></td></tr>` : ''}
       </table>
       <div style="background:#F9FAFB; border-left:3px solid ${COLORS.primary}; padding:16px; border-radius:0 8px 8px 0; margin:20px 0;">
         <p style="margin:0; color:#6B7280; font-size:13px; font-weight:600; margin-bottom:6px;">Nachricht:</p>
         <p style="margin:0;">${safeMessage}</p>
       </div>
-      <p style="color:#6B7280; font-size:14px;">Du kannst direkt auf diese E-Mail antworten, um mit der interessierten Person in Kontakt zu treten.</p>
+      <p style="color:#6B7280; font-size:14px;">Bitte antworte direkt auf diese E-Mail, um mit der interessierten Person Kontakt aufzunehmen.</p>
     `;
 
     let emailAccepted = false;
@@ -230,7 +305,7 @@ export default async function handler(req, res) {
       const sendResult = await sendEmailOrThrow(resend, 'lead-to-provider', {
         from: emailConfig.from,
         to: teacherEmail,
-        replyTo: email,
+        replyTo: normalizedEmail,
         bcc: emailConfig.adminEmail,
         subject: `Neue Kursanfrage: ${course.title}`,
         html: generateEmailHtml('Neue Kursanfrage', bodyHtml, 'Zum Dashboard')
@@ -266,7 +341,35 @@ export default async function handler(req, res) {
         throw new Error('Lead status persistence failed');
       }
 
-      return res.status(200).json({ success: true });
+      let confirmationEmailSent = false;
+      try {
+        const confirmationBody = `
+          <p>Deine Anfrage für <strong>${safeTitle}</strong> wurde an den Anbieter weitergeleitet.</p>
+          <p style="background:#F9FAFB; padding:16px; border-radius:8px;">
+            Referenz: <strong>${escapeHtml(lead.id)}</strong>
+          </p>
+          <p style="color:#6B7280; font-size:14px;">Falls du keine Antwort erhältst, antworte auf diese E-Mail oder kontaktiere ${escapeHtml(emailConfig.supportEmail)}. Wir helfen dir gern mit passenden Alternativen.</p>
+        `;
+        await sendEmailOrThrow(resend, 'lead-confirmation-requester', {
+          from: emailConfig.from,
+          to: normalizedEmail,
+          replyTo: emailConfig.supportEmail,
+          subject: `Deine Kursanfrage: ${course.title}`,
+          html: generateEmailHtml('Anfrage erfolgreich übermittelt', confirmationBody, 'Weitere Kurse entdecken', `${baseUrl}/search`)
+        });
+        confirmationEmailSent = true;
+        await supabase.from('leads').update({ requester_confirmation_sent_at: new Date().toISOString() }).eq('id', lead.id);
+      } catch (confirmationError) {
+        console.error('send-lead: Bestätigung an anfragende Person fehlgeschlagen:', confirmationError?.message || 'unknown error');
+      }
+
+      return res.status(200).json({
+        success: true,
+        lead_id: lead.id,
+        event_id: normalizedEventId,
+        delivery_status: 'accepted',
+        confirmation_email_sent: confirmationEmailSent,
+      });
     } catch (emailErr) {
       // Audit-Trail: der Versanddienst hat die Nachricht nicht angenommen.
       // Once Resend accepted the message, do not overwrite the durable lead

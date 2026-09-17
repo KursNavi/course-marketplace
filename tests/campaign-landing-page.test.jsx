@@ -85,18 +85,23 @@ describe('CampaignLandingPage', () => {
     expect(config.searchParams.area).toBeUndefined();
   });
 
-  it('sends one campaign view after statistics consent arrives late', () => {
+  it('sends the campaign and unified landing views after statistics consent arrives late', () => {
     render(<CampaignLandingPage slug="fitnesstrainer-ausbildung" courses={[]} />);
     expect(window.gtag).not.toHaveBeenCalled();
 
     window.Cookiebot.consent.statistics = true;
     window.dispatchEvent(new Event('CookiebotOnAccept'));
 
-    expect(window.gtag).toHaveBeenCalledTimes(1);
+    expect(window.gtag).toHaveBeenCalledTimes(2);
     expect(window.gtag.mock.calls[0]).toEqual([
       'event',
       'campaign_landing_view',
       { campaign_slug: 'fitnesstrainer-ausbildung' },
+    ]);
+    expect(window.gtag.mock.calls[1]).toEqual([
+      'event',
+      'landing_view',
+      { campaign_slug: 'fitnesstrainer-ausbildung', landing_type: 'campaign' },
     ]);
   });
 });

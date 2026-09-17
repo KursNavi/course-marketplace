@@ -9,13 +9,26 @@ import { buildCourseJsonLdList, buildCourseSeo } from '../lib/courseSeo';
 import { getBereichByAreaSlug, getBereichUrl } from '../lib/bereichLandingConfig';
 import { DEFAULT_COURSE_IMAGE } from '../lib/imageUtils';
 import { getCourseCategoryText, isSyntheticCategory } from '../lib/courseMetadata';
-import { trackCourseView, trackPurchase, trackContactLead } from '../lib/analytics';
+import {
+    createAnalyticsEventId,
+    getLeadAttribution,
+    trackCourseCardCta,
+    trackBookingStart,
+    trackCourseView,
+    trackLeadDelivered,
+    trackLeadFormStart,
+    trackLeadSubmitted,
+    trackPurchase,
+} from '../lib/analytics';
 import { getRobotsPolicy } from '../lib/seoUtils';
 import { getRelatedCourses } from '../lib/courseRecommendations';
+import { buildLeadConfirmationPath } from '../lib/leadConfirmation';
 
 const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, setUser, savedCourseIds, onToggleSaveCourse, showNotification, refreshBookings }) => {
     const [showLeadModal, setShowLeadModal] = useState(false);
     const [leadStatus, setLeadStatus] = useState('idle'); // idle, submitting, success
+    const [leadResult, setLeadResult] = useState(null);
+    const [leadEventId, setLeadEventId] = useState(null);
 
     const [showSavePrompt, setShowSavePrompt] = useState(false);
     const [pendingExternalUrl, setPendingExternalUrl] = useState(null);
@@ -32,6 +45,43 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
     const { taxonomy, getTypeLabel, getAreaLabel } = useTaxonomy();
 
     const isSaved = (savedCourseIds || []).includes(course?.id);
+
+    const openLeadInquiry = (placement = null) => {
+        if (placement) trackCourseCardCta(course, placement);
+        const nextEventId = createAnalyticsEventId('lead');
+        setLeadEventId(nextEventId);
+        setLeadStatus('idle');
+        setLeadResult(null);
+        setShowLeadModal(true);
+        trackLeadFormStart(course?.id, nextEventId);
+    };
+
+    useEffect(() => {
+        if (!course?.id || course.booking_type !== 'lead') return;
+        try {
+            const pendingCourseId = window.sessionStorage.getItem('kn_open_lead_course');
+            if (pendingCourseId !== String(course.id)) return;
+            window.sessionStorage.removeItem('kn_open_lead_course');
+            openLeadInquiry();
+        } catch {
+            // Session storage is an enhancement; the normal detail CTA remains.
+        }
+        // Only consume a card-to-lead handoff when the course changes.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [course?.id]);
+
+    useEffect(() => {
+        if (!showLeadModal) return undefined;
+        const handleEscape = (event) => {
+            if (event.key === 'Escape') {
+                setShowLeadModal(false);
+                setLeadStatus('idle');
+                setLeadResult(null);
+            }
+        };
+        window.addEventListener('keydown', handleEscape);
+        return () => window.removeEventListener('keydown', handleEscape);
+    }, [showLeadModal]);
     const providerHomepageUrl = (() => {
         const rawUrl = String(course?.instructor_website_url || '').trim();
         if (!rawUrl) return null;
@@ -309,9 +359,11 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
         const type = effectiveBookingType || 'platform';
 
         if (type === 'lead') {
-            setShowLeadModal(true);
+            openLeadInquiry('detail_primary');
             return;
         }
+
+        trackBookingStart(course, createAnalyticsEventId('booking'));
 
         // Booking attestation required for platform/platform_flex
         if (!guardianAttested) {
@@ -418,6 +470,8 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
         e.preventDefault();
         setLeadStatus('submitting');
         const fd = new FormData(e.target);
+        const eventId = leadEventId || createAnalyticsEventId('lead');
+        const consentAwareAttribution = getLeadAttribution();
         try {
             const resp = await fetch('/api/send-lead', {
                 method: 'POST',
@@ -426,14 +480,38 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
                     courseId: course.id,
                     name: fd.get('name'),
                     email: fd.get('email'),
-                    message: fd.get('message')
+                    message: String(fd.get('message') || '').trim(),
+                    eventId,
+                    ...consentAwareAttribution,
                 })
             });
             const data = await resp.json().catch(() => ({}));
             if (!resp.ok) throw new Error(data.error || 'Anfrage konnte nicht gesendet werden.');
             setLeadStatus('success');
-            trackContactLead(course.id);
-            setTimeout(() => { setShowLeadModal(false); setLeadStatus('idle'); }, 2500);
+            setLeadResult({
+                id: data.lead_id || data.leadId || data.id || null,
+                responseDeadline: data.expected_response_by || data.response_deadline || data.responseDeadline || null,
+                confirmationEmailSent: data.confirmation_email_sent !== false,
+            });
+            const confirmedEventId = data.event_id || eventId;
+            trackLeadSubmitted(course.id, confirmedEventId);
+            // "accepted" only means the email provider accepted the send. The
+            // primary conversion is reserved for the verified delivery webhook.
+            if (data.delivery_status === 'delivered') {
+                trackLeadDelivered(course.id, confirmedEventId);
+            }
+
+            // Keep only a non-sensitive reference and response deadline in the
+            // URL so the confirmation remains available after a reload.
+            window.history.replaceState(
+                { view: 'lead-confirmation' },
+                document.title,
+                buildLeadConfirmationPath({
+                    reference: data.lead_id || data.leadId || data.id,
+                    responseDeadline: data.expected_response_by || data.response_deadline || data.responseDeadline,
+                })
+            );
+            if (typeof setView === 'function') setView('lead-confirmation');
         } catch (err) {
             console.error('Lead submit error:', err);
             setLeadStatus('idle');
@@ -560,8 +638,15 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
 
     const fallbackImage = DEFAULT_COURSE_IMAGE;
 
+    const closeLeadModal = () => {
+        setShowLeadModal(false);
+        setLeadStatus('idle');
+        setLeadResult(null);
+        setLeadEventId(null);
+    };
+
     return (
-    <div className="max-w-7xl mx-auto px-4 py-8 font-sans animate-in fade-in duration-500">
+    <div className={`max-w-7xl mx-auto px-4 py-8 font-sans animate-in fade-in duration-500 ${effectiveBookingType === 'lead' ? 'pb-24 lg:pb-8' : ''}`}>
         <button onClick={() => {
             if (window.history.length > 1) {
                 window.history.back();
@@ -641,13 +726,13 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
                     </p>
 
                     {effectiveBookingType === 'lead' && (
-                        <div data-testid="lead-cta-summary" className="mb-5 rounded-xl border border-orange-100 bg-orange-50 p-4">
+                        <div data-testid="lead-cta-summary" className="mb-5 rounded-2xl border-2 border-primary/20 bg-orange-50 p-4 shadow-sm">
                             <div className="flex items-start gap-3">
                                 <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-primary shadow-sm">
                                     <Mail className="w-4 h-4" aria-hidden="true" />
                                 </div>
                                 <div className="min-w-0">
-                                    <p className="font-bold text-dark">Unverbindlich anfragen</p>
+                                    <p className="font-bold text-dark">Kurs unverbindlich anfragen</p>
                                     <p className="mt-1 text-xs leading-relaxed text-gray-600">
                                         Schreib direkt an {course.instructor_name || 'den Anbieter'} und kläre Termin, Inhalt oder Verfügbarkeit.
                                     </p>
@@ -664,9 +749,9 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
                                 type="button"
                                 data-testid="lead-inquiry-cta"
                                 onClick={() => handleBookingAction()}
-                                className="mt-4 w-full rounded-lg bg-primary py-3 text-sm font-bold text-white shadow-sm transition hover:bg-orange-600 active:scale-[.99]"
+                                className="mt-4 w-full rounded-xl bg-primary py-3.5 text-base font-bold text-white shadow-md transition hover:bg-orange-700 hover:shadow-lg active:scale-[.99] focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
                             >
-                                <Mail className="mr-2 inline-block h-4 w-4" aria-hidden="true" /> Anfrage senden
+                                <Mail className="mr-2 inline-block h-5 w-5" aria-hidden="true" /> Kurs unverbindlich anfragen
                             </button>
                         </div>
                     )}
@@ -1052,7 +1137,7 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
                                             ? 'Derzeit nicht buchbar'
                                             : effectiveBookingType === 'platform_flex'
                                                 ? (ticketAvailable ? `Jetzt buchen (${getPriceLabel(course)})` : 'Ausgebucht')
-                                                : <><Mail className="w-4 h-4 mr-2"/> Anfrage senden</>
+                                                : <><Mail className="w-4 h-4 mr-2"/> Kurs unverbindlich anfragen</>
                                     )}
                                 </button>
                                 )}
@@ -1211,12 +1296,22 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
         {showLeadModal && (
             <div className="fixed inset-0 bg-dark/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200" role="dialog" aria-modal="true" aria-labelledby="lead-modal-title">
                 <div className="bg-white rounded-2xl p-6 max-w-md w-full max-h-[calc(100vh-2rem)] overflow-y-auto relative shadow-2xl">
-                    <button onClick={() => setShowLeadModal(false)} className="absolute top-4 right-4 text-gray-400 hover:text-dark transition-colors" aria-label="Schliessen"><X className="w-6 h-6" aria-hidden="true" /></button>
+                    <button onClick={closeLeadModal} className="absolute top-4 right-4 text-gray-400 hover:text-dark transition-colors" aria-label="Schliessen"><X className="w-6 h-6" aria-hidden="true" /></button>
                     {leadStatus === 'success' ? (
-                        <div className="text-center py-8 animate-in zoom-in duration-300">
+                        <div className="text-center py-6 animate-in zoom-in duration-300">
                             <div className="w-16 h-16 bg-green-100 text-green-500 rounded-full flex items-center justify-center mx-auto mb-4"><CheckCircle className="w-8 h-8" /></div>
-                            <h3 id="lead-modal-title" className="text-xl font-bold font-heading mb-2">Anfrage gesendet!</h3>
-                            <p className="text-gray-600">Der Anbieter wird sich bald bei dir melden.</p>
+                            <h3 id="lead-modal-title" className="text-xl font-bold font-heading mb-2">Anfrage erfolgreich übermittelt</h3>
+                            <p className="text-gray-600">Deine Anfrage wurde an {course.instructor_name} weitergeleitet.</p>
+                            <div className="mt-5 rounded-xl bg-gray-50 p-4 text-left text-sm text-gray-700 space-y-2">
+                                <p><strong>Antwort erwartet:</strong>{' '}
+                                    {leadResult?.responseDeadline
+                                        ? new Date(leadResult.responseDeadline).toLocaleDateString('de-CH', { day: '2-digit', month: '2-digit', year: 'numeric' })
+                                        : 'innerhalb von 2 Werktagen'}
+                                </p>
+                                {leadResult?.id && <p><strong>Referenz:</strong> <span className="break-all">{leadResult.id}</span></p>}
+                                <p>{leadResult?.confirmationEmailSent ? 'Du erhältst zusätzlich eine Bestätigung per E-Mail.' : 'Notiere dir bitte die Referenznummer für Rückfragen.'}</p>
+                                <p>Keine Antwort erhalten? Schreibe uns an <a href="mailto:info@kursnavi.ch" className="font-semibold text-primary hover:underline">info@kursnavi.ch</a>.</p>
+                            </div>
 
                             {!isSaved && (
                                 <div className="mt-6">
@@ -1230,21 +1325,34 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
                                     </button>
                                 </div>
                             )}
+                            <button type="button" onClick={closeLeadModal} className="mt-4 w-full border border-gray-200 text-gray-700 font-bold py-3 rounded-lg hover:bg-gray-50 transition">Schliessen</button>
                         </div>
                     ) : (
                         <>
                             <h3 id="lead-modal-title" className="text-xl font-bold mb-1 font-heading">Kurs unverbindlich anfragen</h3>
                             <p className="text-sm text-gray-600 mb-1">Deine Anfrage geht direkt an {course.instructor_name}.</p>
-                            <p id="lead-form-help" className="text-xs text-gray-500 mb-5">Nur Name und E-Mail sind erforderlich. Die Nachricht ist optional und bereits vorausgefüllt.</p>
+                            <p id="lead-form-help" className="text-xs text-gray-500 mb-5">Nur Name und E-Mail sind erforderlich. Eine Nachricht ist optional.</p>
                             <form onSubmit={handleLeadSubmit} className="space-y-4" aria-describedby="lead-form-help">
-                                <div><label className="block text-sm font-semibold text-gray-700 mb-1" htmlFor="lead-name">Name</label><input id="lead-name" name="name" required autoComplete="name" defaultValue={user?.user_metadata?.full_name || user?.user_metadata?.name || ''} placeholder="Vor- und Nachname" className="w-full p-3 bg-gray-50 rounded-lg border border-transparent focus:bg-white focus:border-primary outline-none transition" /></div>
+                                <div><label className="block text-sm font-semibold text-gray-700 mb-1" htmlFor="lead-name">Name</label><input id="lead-name" name="name" required autoFocus autoComplete="name" defaultValue={user?.user_metadata?.full_name || user?.user_metadata?.name || ''} placeholder="Vor- und Nachname" className="w-full p-3 bg-gray-50 rounded-lg border border-transparent focus:bg-white focus:border-primary outline-none transition" /></div>
                                 <div><label className="block text-sm font-semibold text-gray-700 mb-1" htmlFor="lead-email">E-Mail-Adresse</label><input id="lead-email" name="email" type="email" required autoComplete="email" defaultValue={user?.email || ''} placeholder="deine@email.ch" className="w-full p-3 bg-gray-50 rounded-lg border border-transparent focus:bg-white focus:border-primary outline-none transition" /></div>
-                                <div><label className="block text-sm font-semibold text-gray-700 mb-1" htmlFor="lead-message">Nachricht <span className="font-normal text-gray-500">(optional)</span></label><textarea id="lead-message" name="message" rows="3" defaultValue={`Guten Tag, ich interessiere mich für den Kurs "${course.title}".`} className="w-full p-3 bg-gray-50 rounded-lg border border-transparent focus:bg-white focus:border-primary outline-none transition"></textarea></div>
+                                <div><label className="block text-sm font-semibold text-gray-700 mb-1" htmlFor="lead-message">Nachricht <span className="font-normal text-gray-500">(optional)</span></label><textarea id="lead-message" name="message" rows="3" className="w-full p-3 bg-gray-50 rounded-lg border border-transparent focus:bg-white focus:border-primary outline-none transition"></textarea></div>
                                 <button type="submit" disabled={leadStatus === 'submitting'} className="w-full bg-primary text-white font-bold py-3 rounded-lg hover:bg-orange-600 transition flex items-center justify-center disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed"><Send className="w-4 h-4 mr-2"/> Anfrage absenden</button>
                             </form>
                         </>
                     )}
                 </div>
+            </div>
+        )}
+        {effectiveBookingType === 'lead' && !showLeadModal && (
+            <div className="fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white/95 p-3 shadow-[0_-8px_24px_rgba(0,0,0,0.08)] backdrop-blur lg:hidden">
+                <button
+                    type="button"
+                    onClick={() => openLeadInquiry('mobile_sticky')}
+                    className="mx-auto flex w-full max-w-md items-center justify-center rounded-xl bg-primary px-4 py-3.5 text-base font-bold text-white shadow-md transition hover:bg-orange-700 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                >
+                    <Mail className="mr-2 h-5 w-5" aria-hidden="true" />
+                    Kurs unverbindlich anfragen
+                </button>
             </div>
         )}
     </div>

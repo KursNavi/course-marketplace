@@ -254,7 +254,7 @@ export default function ProviderDirectory({ t, setView, embedded = false }) {
   // → Google's Renderer sieht Titel, Description und Canonical ohne auf Supabase zu warten
   useEffect(() => {
     const pageTitle = 'Kursanbieter in der Schweiz | KursNavi';
-    const metaDescription = 'Entdecke geprüfte Kursanbieter und Bildungsinstitutionen in der Schweiz. Finde den passenden Anbieter für deine Weiterbildung.';
+    const metaDescription = 'Entdecke Kursanbieter und Bildungsinstitutionen in der Schweiz. Vergleiche Profile und finde den passenden Anbieter für deine Weiterbildung.';
 
     document.title = pageTitle;
 
@@ -277,7 +277,7 @@ export default function ProviderDirectory({ t, setView, embedded = false }) {
 
   // SEO: Schema.org ItemList – wird aktualisiert sobald Anbieter geladen sind
   useEffect(() => {
-    const metaDescription = 'Entdecke geprüfte Kursanbieter und Bildungsinstitutionen in der Schweiz. Finde den passenden Anbieter für deine Weiterbildung.';
+    const metaDescription = 'Entdecke Kursanbieter und Bildungsinstitutionen in der Schweiz. Vergleiche Profile und finde den passenden Anbieter für deine Weiterbildung.';
 
     const schemaData = {
       "@context": "https://schema.org",

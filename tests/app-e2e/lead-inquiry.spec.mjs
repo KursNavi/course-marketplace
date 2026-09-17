@@ -51,8 +51,16 @@ test.describe('Lead Inquiry (hybrid app-e2e)', () => {
     // Submit
     await modal.getByRole('button', { name: /anfrage absenden/i }).click();
 
-    // Verify success message in modal
-    await expect(modal.getByText('Anfrage gesendet!')).toBeVisible({ timeout: 10_000 });
+    // Verify the reload-safe confirmation page
+    await expect(page.getByRole('heading', { name: 'Anfrage erfolgreich übermittelt' })).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText('e2e-lead-123')).toBeVisible();
+    await expect(page).toHaveURL(/\/lead-confirmation\?ref=e2e-lead-123/);
+    const confirmationUrl = page.url();
+    expect(confirmationUrl).not.toContain('e2e-test-lead@example.com');
+    expect(confirmationUrl).not.toContain('message');
+    await page.reload();
+    await expect(page.getByRole('heading', { name: 'Anfrage erfolgreich übermittelt' })).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText('e2e-lead-123')).toBeVisible();
 
     // Verify the API request was intercepted correctly
     const requests = getInterceptedRequests();

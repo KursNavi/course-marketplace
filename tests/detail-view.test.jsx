@@ -1,5 +1,5 @@
-import { describe, it, expect, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, describe, it, expect, vi } from 'vitest';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import React from 'react';
 
 vi.mock('../src/lib/supabase', () => ({
@@ -40,6 +40,11 @@ vi.mock('../src/lib/imageUtils', () => ({
 }));
 
 import DetailView from '../src/components/DetailView';
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+  window.history.replaceState({}, '', '/');
+});
 
 describe('DetailView', () => {
   it('zeigt bei einem Prio-Kurs den Link zur Anbieterhomepage', () => {
@@ -239,7 +244,68 @@ describe('DetailView', () => {
     expect(screen.getByLabelText('Name')).toBeRequired();
     expect(screen.getByLabelText('E-Mail-Adresse')).toBeRequired();
     expect(screen.getByLabelText(/Nachricht/)).not.toBeRequired();
-    expect(screen.getByText('Nur Name und E-Mail sind erforderlich. Die Nachricht ist optional und bereits vorausgefüllt.')).toBeInTheDocument();
+    expect(screen.getByText('Nur Name und E-Mail sind erforderlich. Eine Nachricht ist optional.')).toBeInTheDocument();
+  });
+
+  it('submits without a message and keeps a traceable confirmation visible', async () => {
+    const course = {
+      id: 'lead-empty-message',
+      title: 'Keramik am Abend',
+      description: 'Ein kreativer Abendkurs.',
+      instructor_name: 'Atelier Muster',
+      booking_type: 'lead',
+      price: 0,
+      canton: 'Zürich',
+      address: 'Zürich',
+      category_type: 'privat',
+      all_categories: [],
+    };
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        success: true,
+        lead_id: 'lead-ref-123',
+        event_id: 'aa944df1-3dbd-4f4d-b9fb-12e7e95a7713',
+        delivery_status: 'accepted',
+        confirmation_email_sent: true,
+      }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const setView = vi.fn();
+
+    render(
+      <DetailView
+        course={course}
+        courses={[]}
+        setView={setView}
+        t={{ lbl_description: 'Beschreibung', lbl_learn_goals: 'Lernziele', btn_book: 'Jetzt buchen' }}
+        setSelectedTeacher={vi.fn()}
+        user={null}
+        savedCourseIds={[]}
+        onToggleSaveCourse={vi.fn()}
+        showNotification={vi.fn()}
+      />
+    );
+
+    fireEvent.click(screen.getByTestId('lead-inquiry-cta'));
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Sara Muster' } });
+    fireEvent.change(screen.getByLabelText('E-Mail-Adresse'), { target: { value: 'sara@example.com' } });
+    fireEvent.submit(screen.getByRole('button', { name: 'Anfrage absenden' }).closest('form'));
+
+    await waitFor(() => expect(setView).toHaveBeenCalledWith('lead-confirmation'));
+    const submitted = JSON.parse(fetchMock.mock.calls[0][1].body);
+    expect(submitted).toEqual(expect.objectContaining({
+      courseId: 'lead-empty-message',
+      message: '',
+    }));
+    expect(submitted).not.toHaveProperty('phone');
+    expect(submitted).not.toHaveProperty('intent');
+    expect(screen.getByText(/lead-ref-123/)).toBeVisible();
+    expect(screen.getByText('Du erhältst zusätzlich eine Bestätigung per E-Mail.')).toBeVisible();
+    expect(screen.getByRole('dialog')).toBeVisible();
+    expect(window.location.pathname).toBe('/lead-confirmation');
+    expect(window.location.search).toContain('ref=lead-ref-123');
+    expect(window.location.search).not.toContain('sara%40example.com');
   });
 
   it('hides Lernziele heading when objectives are empty or missing', () => {
@@ -274,7 +340,7 @@ describe('DetailView', () => {
     expect(screen.queryByText('Lernziele')).not.toBeInTheDocument();
   });
 
-  it('shows lead inquiry (Anfrage senden) when all platform course events are in the past', () => {
+  it('shows lead inquiry (Kurs unverbindlich anfragen) when all platform course events are in the past', () => {
     const course = {
       id: '789',
       title: 'Abgelaufener Kurs',
@@ -316,8 +382,8 @@ describe('DetailView', () => {
 
     // Widget-Titel sollte "Keine aktuellen Termine" zeigen
     expect(screen.getByText('Keine aktuellen Termine')).toBeInTheDocument();
-    // Button sollte "Anfrage senden" zeigen (Lead-Verhalten)
-    expect(screen.getByText('Anfrage senden')).toBeInTheDocument();
+    // Button sollte "Kurs unverbindlich anfragen" zeigen (Lead-Verhalten)
+    expect(screen.getAllByRole('button', { name: 'Kurs unverbindlich anfragen' }).length).toBeGreaterThan(0);
     // Der vergangene Termin darf nicht als Datum angezeigt werden
     expect(screen.queryByText('15.03.2020')).not.toBeInTheDocument();
   });
@@ -371,7 +437,7 @@ describe('DetailView', () => {
     // Stattdessen Fallback-Meldung
     expect(screen.getByText('Keine aktuellen Termine')).toBeInTheDocument();
     // Anfrage-Button bleibt sichtbar
-    expect(screen.getByText('Anfrage senden')).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: 'Kurs unverbindlich anfragen' }).length).toBeGreaterThan(0);
   });
 
   // --- Empfehlungsbereich ---

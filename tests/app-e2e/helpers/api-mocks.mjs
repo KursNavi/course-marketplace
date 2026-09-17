@@ -13,7 +13,14 @@
 const DEFAULT_MOCKS = {
   '/api/send-lead': {
     status: 200,
-    body: { success: true, message: 'Lead gespeichert' }
+    body: {
+      success: true,
+      message: 'Lead gespeichert',
+      lead_id: 'e2e-lead-123',
+      event_id: 'lead-e2e-event-123',
+      delivery_status: 'accepted',
+      confirmation_email_sent: true
+    }
   },
   '/api/create-package-checkout': {
     status: 200,

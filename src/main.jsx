@@ -5,8 +5,20 @@ import { inject } from '@vercel/analytics'
 import App from './App.jsx'
 import './index.css'
 
-// Vercel Web Analytics – cookie-free, DSGVO-konform, erfasst alle Besucher
-inject()
+// Vercel Web Analytics aggregates cookie-free page views. Strip query strings
+// so campaign click IDs, search terms and checkout parameters are never sent.
+inject({
+  beforeSend(event) {
+    try {
+      const url = new URL(event.url)
+      url.search = ''
+      url.hash = ''
+      return { ...event, url: url.toString() }
+    } catch {
+      return event
+    }
+  },
+})
 
 // Render immediately — don't block on Sentry (357 KB)
 ReactDOM.createRoot(document.getElementById('root')).render(
