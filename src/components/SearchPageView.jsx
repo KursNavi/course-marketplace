@@ -1226,6 +1226,10 @@ const SearchPageView = ({
                                data-testid={`lead-search-card-cta-${course.id}`}
                                aria-label={`Kurs unverbindlich anfragen: ${course.title}`}
                                onClick={(event) => {
+                                   if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) {
+                                       openCourse(event);
+                                       return;
+                                   }
                                    trackCourseCardCta(course, 'search_card');
                                    try {
                                        window.sessionStorage.setItem('kn_open_lead_course', String(course.id));
