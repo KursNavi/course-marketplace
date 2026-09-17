@@ -159,7 +159,6 @@ beforeEach(() => {
   process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-service-key';
   process.env.RESEND_API_KEY = 'test-resend-key';
   process.env.LEAD_HASH_SALT = 'test-salt';
-  process.env.LEAD_ACTION_SECRET = 'test-lead-action-secret';
   process.env.LEAD_MESSAGE_ENCRYPTION_KEY = randomBytes(32).toString('base64');
 
   vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -181,6 +180,8 @@ describe('Erfolgreicher Lead', () => {
     expect(mockSentEmails).toHaveLength(2);
     expect(mockSentEmails[0].to).toBe('anbieter@test.local');
     expect(mockSentEmails[1].to).toBe('sara@example.com');
+    expect(mockSentEmails[0].html).not.toContain('Anfragestatus');
+    expect(mockSentEmails[0].html).not.toContain('api/lead-action');
     expect(leadUpdates).toContainEqual({
       id: 'lead-1',
       values: expect.objectContaining({
@@ -190,9 +191,10 @@ describe('Erfolgreicher Lead', () => {
       }),
     });
     expect(insertedLeads[0].email_delivery_status).toBe('pending');
+    expect(insertedLeads[0]).not.toHaveProperty('expected_response_by');
     expect(res._body.lead_id).toBe('lead-1');
     expect(res._body.delivery_status).toBe('accepted');
-    expect(res._body.expected_response_by).toBeTruthy();
+    expect(res._body).not.toHaveProperty('expected_response_by');
     expect(res._body.confirmation_email_sent).toBe(true);
   });
 

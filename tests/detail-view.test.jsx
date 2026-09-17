@@ -269,7 +269,6 @@ describe('DetailView', () => {
         lead_id: 'lead-ref-123',
         event_id: 'aa944df1-3dbd-4f4d-b9fb-12e7e95a7713',
         delivery_status: 'accepted',
-        expected_response_by: '2026-09-16T12:00:00.000Z',
         confirmation_email_sent: true,
       }),
     });

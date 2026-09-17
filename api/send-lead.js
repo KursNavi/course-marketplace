@@ -5,7 +5,6 @@ import { getEmailConfig, resolveUserEmail, sendEmailOrThrow } from './_lib/email
 import { encryptLeadMessage, normalizeLeadMessage } from './_lib/lead-message-crypto.js';
 import { providerMessageIdFromSendResult } from './_lib/lead-email-delivery.js';
 import { getBaseUrl } from './_lib/base-url.js';
-import { buildLeadActionUrl, LEAD_ACTIONS } from './_lib/lead-action-token.js';
 
 /** Aufbewahrungsfrist des Anfragetextes. Der Lead-Datensatz selbst bleibt. */
 const MESSAGE_RETENTION_DAYS = 60;
@@ -95,17 +94,6 @@ function normalizeAttribution(value, consentGranted) {
     attribution_gbraid: cleanText(value.gbraid, 200),
     attribution_wbraid: cleanText(value.wbraid, 200),
   };
-}
-
-function addBusinessDays(date, numberOfDays) {
-  const result = new Date(date);
-  let remaining = numberOfDays;
-  while (remaining > 0) {
-    result.setUTCDate(result.getUTCDate() + 1);
-    const weekday = result.getUTCDay();
-    if (weekday !== 0 && weekday !== 6) remaining -= 1;
-  }
-  return result;
 }
 
 /**
@@ -209,7 +197,6 @@ export default async function handler(req, res) {
     const normalizedEventId = typeof eventId === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(eventId)
       ? eventId
       : randomUUID();
-    const expectedResponseBy = addBusinessDays(new Date(), 2);
     const attributionFields = normalizeAttribution(attribution, analyticsConsent === true);
 
     const emailHash = createHash('sha256')
@@ -238,7 +225,6 @@ export default async function handler(req, res) {
         lead_intent: normalizedIntent,
         course_topic_snapshot: cleanText(course.category_area, 160),
         course_region_snapshot: cleanText(course.canton, 120),
-        expected_response_by: expectedResponseBy.toISOString(),
         status: 'pending',
         email_delivery_status: 'pending',
         // Snapshot: In welcher Paketphase ist diese Anfrage eingegangen? Später
@@ -299,21 +285,6 @@ export default async function handler(req, res) {
     const safeMessage = escapeHtml(providerMessage).replace(/\n/g, '<br>');
     const safeTitle = escapeHtml(course.title);
     const baseUrl = getBaseUrl(req);
-    const actionLinks = Object.entries(LEAD_ACTIONS)
-      .map(([action, label]) => {
-        const url = buildLeadActionUrl({
-          baseUrl,
-          leadId: lead.id,
-          action,
-          secret: process.env.LEAD_ACTION_SECRET,
-        });
-        return url
-          ? `<a href="${escapeHtml(url)}" style="display:inline-block;margin:4px;padding:9px 12px;border:1px solid ${COLORS.primary};border-radius:8px;color:${COLORS.primary};text-decoration:none;font-size:13px;font-weight:700;">${escapeHtml(label)}</a>`
-          : '';
-      })
-      .filter(Boolean)
-      .join('');
-
     const bodyHtml = `
       <p>Du hast eine neue Anfrage für deinen Kurs <strong>${safeTitle}</strong> erhalten.</p>
       <table style="width:100%; border-collapse:collapse; margin: 20px 0;">
@@ -326,9 +297,7 @@ export default async function handler(req, res) {
         <p style="margin:0; color:#6B7280; font-size:13px; font-weight:600; margin-bottom:6px;">Nachricht:</p>
         <p style="margin:0;">${safeMessage}</p>
       </div>
-      <p style="color:#6B7280; font-size:14px;">Du kannst direkt auf diese E-Mail antworten, um mit der interessierten Person in Kontakt zu treten.</p>
-      <p style="color:#6B7280; font-size:14px;">Bitte bestätige die Anfrage möglichst innerhalb von 24 Stunden und nimm innerhalb von 2 Werktagen Kontakt auf.</p>
-      ${actionLinks ? `<div style="margin-top:18px;"><p style="margin-bottom:8px;font-size:13px;font-weight:700;color:#4B5563;">Anfragestatus:</p>${actionLinks}</div>` : ''}
+      <p style="color:#6B7280; font-size:14px;">Bitte antworte direkt auf diese E-Mail, um mit der interessierten Person Kontakt aufzunehmen.</p>
     `;
 
     let emailAccepted = false;
@@ -374,16 +343,12 @@ export default async function handler(req, res) {
 
       let confirmationEmailSent = false;
       try {
-        const deadlineLabel = expectedResponseBy.toLocaleDateString('de-CH', {
-          day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Europe/Zurich'
-        });
         const confirmationBody = `
           <p>Deine Anfrage für <strong>${safeTitle}</strong> wurde an den Anbieter weitergeleitet.</p>
-          <p>Der Anbieter sollte sich bis spätestens <strong>${escapeHtml(deadlineLabel)}</strong> bei dir melden.</p>
           <p style="background:#F9FAFB; padding:16px; border-radius:8px;">
             Referenz: <strong>${escapeHtml(lead.id)}</strong>
           </p>
-          <p style="color:#6B7280; font-size:14px;">Falls du bis dahin keine Antwort erhältst, antworte auf diese E-Mail oder kontaktiere ${escapeHtml(emailConfig.supportEmail)}. Wir helfen dir gern mit passenden Alternativen.</p>
+          <p style="color:#6B7280; font-size:14px;">Falls du keine Antwort erhältst, antworte auf diese E-Mail oder kontaktiere ${escapeHtml(emailConfig.supportEmail)}. Wir helfen dir gern mit passenden Alternativen.</p>
         `;
         await sendEmailOrThrow(resend, 'lead-confirmation-requester', {
           from: emailConfig.from,
@@ -403,7 +368,6 @@ export default async function handler(req, res) {
         lead_id: lead.id,
         event_id: normalizedEventId,
         delivery_status: 'accepted',
-        expected_response_by: expectedResponseBy.toISOString(),
         confirmation_email_sent: confirmationEmailSent,
       });
     } catch (emailErr) {
