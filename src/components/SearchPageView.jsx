@@ -1234,10 +1234,10 @@ const SearchPageView = ({
                                    }
                                    openCourse(event);
                                }}
-                               className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-3 py-3 text-sm font-bold text-white shadow-md transition hover:bg-orange-700 hover:shadow-lg active:scale-[.99] focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                               className="w-full min-h-10 inline-flex items-center justify-center gap-1.5 rounded-md border border-orange-300 bg-white px-3 py-2 text-xs font-semibold text-orange-800 transition hover:border-orange-700 hover:bg-orange-50 hover:text-orange-900 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
                              >
                                <Mail className="w-4 h-4" aria-hidden="true" />
-                               Kurs unverbindlich anfragen
+                               Unverbindlich anfragen
                              </button>
                            </div>
                          )}

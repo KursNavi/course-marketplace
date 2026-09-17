@@ -119,7 +119,12 @@ describe('Lead CTA on search cards', () => {
       setView,
     })} />);
 
-    fireEvent.click(screen.getByTestId('lead-search-card-cta-lead-1'));
+    const cta = screen.getByTestId('lead-search-card-cta-lead-1');
+    expect(cta).toHaveTextContent('Unverbindlich anfragen');
+    expect(cta).toHaveClass('border-orange-300', 'min-h-10');
+    expect(cta).not.toHaveClass('bg-primary');
+
+    fireEvent.click(cta);
 
     expect(window.sessionStorage.getItem('kn_open_lead_course')).toBe('lead-1');
     expect(setSelectedCourse).toHaveBeenCalledWith(course);
