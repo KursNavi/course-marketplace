@@ -19,9 +19,18 @@
       (function () {
         var contentsquareTagLoaded = false;
 
+        function isInternalAnalyticsRoute() {
+          var pathname = window.location.pathname || '/';
+          if (pathname.indexOf('/app/') === 0) pathname = '/' + pathname.slice(5);
+          return pathname === '/dashboard'
+            || pathname === '/create-course'
+            || pathname === '/admin-blog'
+            || pathname.indexOf('/control-room-2025') === 0;
+        }
+
         function applyContentsquareConsent() {
           var consent = window.Cookiebot && window.Cookiebot.consent;
-          if (!consent || consent.statistics !== true || contentsquareTagLoaded) return;
+          if (!consent || consent.statistics !== true || contentsquareTagLoaded || isInternalAnalyticsRoute()) return;
 
           var script = document.createElement('script');
           script.async = true;

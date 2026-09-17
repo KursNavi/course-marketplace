@@ -93,4 +93,14 @@ describe('Contentsquare bootstrap consent boundaries', () => {
     expect(scripts).toEqual([]);
     expect(events).toEqual([]);
   });
+
+  it('does not start Contentsquare on private dashboard routes', () => {
+    const { events, scripts } = runContentsquareBootstrap(
+      { statistics: true, marketing: false },
+      'https://kursnavi.ch/dashboard',
+    );
+
+    expect(scripts).toEqual([]);
+    expect(events).toEqual([]);
+  });
 });

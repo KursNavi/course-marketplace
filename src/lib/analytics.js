@@ -160,6 +160,7 @@ export function trackPurchase(course, bookingId, amountCents) {
       quantity: 1,
     }],
   });
+  contentsquareSafe('Course Booking Completed');
 }
 
 /** Registrierung */

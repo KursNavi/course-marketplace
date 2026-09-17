@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { trackContactLead, trackPageView, trackNewsletter, trackSignup } from '../src/lib/analytics.js';
+import { trackContactLead, trackPageView, trackNewsletter, trackPurchase, trackSignup } from '../src/lib/analytics.js';
 
 describe('Google tracking consent boundaries', () => {
   let calls;
@@ -55,5 +55,14 @@ describe('Google tracking consent boundaries', () => {
     trackContactLead('course-1');
 
     expect(window._uxa).toEqual([]);
+  });
+
+  it('queues a generic booking completion event with statistics consent', () => {
+    window.Cookiebot.consent.statistics = true;
+    trackPurchase({ id: 'course-1', title: 'Testkurs', category_area: 'gesundheit' }, 'booking-1', 12000);
+
+    expect(window._uxa).toEqual([
+      ['trackPageEvent', 'Course Booking Completed'],
+    ]);
   });
 });
