@@ -19,6 +19,15 @@
       (function () {
         var contentsquareTagLoaded = false;
 
+        function isInternalAnalyticsRoute() {
+          var pathname = window.location.pathname || '/';
+          if (pathname.indexOf('/app/') === 0) pathname = '/' + pathname.slice(5);
+          return pathname === '/dashboard'
+            || pathname === '/create-course'
+            || pathname === '/admin-blog'
+            || pathname.indexOf('/control-room-2025') === 0;
+        }
+
         function applyContentsquareConsent() {
           var consent = window.Cookiebot && window.Cookiebot.consent;
           if (!consent) return;
@@ -29,7 +38,7 @@
             }
             return;
           }
-          if (contentsquareTagLoaded) return;
+          if (contentsquareTagLoaded || isInternalAnalyticsRoute()) return;
 
           var script = document.createElement('script');
           script.async = true;
@@ -37,6 +46,12 @@
           script.dataset.kursnaviContentsquareTag = 'true';
           document.head.appendChild(script);
           contentsquareTagLoaded = true;
+
+          // The app may have rendered before statistics consent was granted.
+          // Record the current route once the tag is actually enabled so the
+          // initial page is not missing from Contentsquare replays/events.
+          window._uxa = window._uxa || [];
+          window._uxa.push(['trackPageEvent', 'Page Viewed']);
         }
 
         window.addEventListener('CookiebotOnConsentReady', applyContentsquareConsent);

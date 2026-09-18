@@ -11,6 +11,21 @@ function hasConsent(category) {
   return window.Cookiebot?.consent?.[category] === true;
 }
 
+/**
+ * Private provider/admin routes are excluded from public UX analytics.
+ * This keeps internal work in dashboards and the control room from inflating
+ * the public funnel while leaving all public routes measurable.
+ */
+function isInternalAnalyticsRoute() {
+  if (typeof window === 'undefined') return false;
+  let pathname = window.location.pathname || '/';
+  if (pathname.startsWith('/app/')) pathname = `/${pathname.slice('/app/'.length)}`;
+  return pathname === '/dashboard'
+    || pathname === '/create-course'
+    || pathname === '/admin-blog'
+    || pathname.startsWith('/control-room-2025');
+}
+
 function gtagSafe(category, ...args) {
   if (!hasConsent(category)) return;
   if (typeof window.gtag === 'function') {
@@ -26,7 +41,7 @@ function gtagSafe(category, ...args) {
  * konstant und enthalten weder Suchbegriffe noch Kurs- oder Nutzerkennungen.
  */
 function contentsquareSafe(eventName) {
-  if (!hasConsent('statistics')) return;
+  if (!hasConsent('statistics') || isInternalAnalyticsRoute()) return;
   window._uxa = window._uxa || [];
   window._uxa.push(['trackPageEvent', eventName]);
 }
@@ -285,6 +300,7 @@ export function trackPurchase(course, bookingId, amountCents, eventId = bookingI
       quantity: 1,
     }],
   });
+  contentsquareSafe('Course Booking Completed');
 }
 
 /** Registrierung */

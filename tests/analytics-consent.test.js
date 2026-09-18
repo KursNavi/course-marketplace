@@ -55,6 +55,25 @@ describe('Google tracking consent boundaries', () => {
     ]);
   });
 
+  it('does not queue public UX events on private dashboard routes', () => {
+    window.Cookiebot.consent.statistics = true;
+    window.history.replaceState({}, '', '/dashboard');
+
+    trackPageView('/dashboard', 'Dashboard');
+    trackContactLead('course-1');
+
+    expect(window._uxa).toEqual([]);
+  });
+
+  it('queues a generic booking completion event with statistics consent', () => {
+    window.Cookiebot.consent.statistics = true;
+    trackPurchase({ id: 'course-1', title: 'Testkurs', category_area: 'gesundheit' }, 'booking-1', 12000);
+
+    expect(window._uxa).toEqual([
+      ['trackPageEvent', 'Course Booking Completed'],
+    ]);
+  });
+
   it('never sends a freely entered search phrase to analytics', () => {
     window.Cookiebot.consent.statistics = true;
     trackSearch('sara@example.com persönlicher Kurs', 4);

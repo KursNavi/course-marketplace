@@ -711,6 +711,7 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
                         src={course.image_url || fallbackImage}
                         alt={`${course.title} in ${course.canton || 'Schweiz'}`}
                         loading="eager"
+                        fetchPriority="high"
                         decoding="async"
                         width="600"
                         height="338"
