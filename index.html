@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>KursNavi – Der Schweizer Kursmarktplatz</title>
-    <meta name="description" content="Entdecke tausende Kurse und Weiterbildungen in der Schweiz. Vergleiche Angebote, buche direkt und finde den perfekten Kurs für Beruf, Freizeit oder Kinder." />
+    <meta name="description" content="Entdecke Kurse und Weiterbildungen in der Schweiz. Vergleiche lokale Anbieter und frage passende Angebote unverbindlich an." />
     <meta name="robots" content="index,follow" />
     <meta name="google" content="notranslate" />
     <link rel="icon" type="image/png" href="/favicon.png" />
@@ -30,7 +30,15 @@
 
         function applyContentsquareConsent() {
           var consent = window.Cookiebot && window.Cookiebot.consent;
-          if (!consent || consent.statistics !== true || contentsquareTagLoaded || isInternalAnalyticsRoute()) return;
+          if (!consent) return;
+          if (consent.statistics !== true) {
+            if (contentsquareTagLoaded) {
+              window._uxa = window._uxa || [];
+              window._uxa.push(['optout']);
+            }
+            return;
+          }
+          if (contentsquareTagLoaded || isInternalAnalyticsRoute()) return;
 
           var script = document.createElement('script');
           script.async = true;
@@ -130,7 +138,7 @@
     <meta property="og:site_name" content="KursNavi" />
     <meta property="og:type" content="website" />
     <meta property="og:title" content="KursNavi – Der Schweizer Kursmarktplatz" />
-    <meta property="og:description" content="Entdecke tausende Kurse und Weiterbildungen in der Schweiz." />
+    <meta property="og:description" content="Vergleiche lokale Kursanbieter und frage passende Angebote unverbindlich an." />
     <meta property="og:url" content="https://kursnavi.ch/" />
     <meta property="og:image" content="https://kursnavi.ch/og-default.png" />
     <meta property="og:locale" content="de_CH" />

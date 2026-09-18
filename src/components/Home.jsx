@@ -180,7 +180,7 @@ export const Home = ({
   useEffect(() => {
     document.title = 'KursNavi - Der Schweizer Kursmarktplatz für Weiterbildung & Freizeit';
 
-    const metaDescription = 'Entdecke tausende Kurse in der Schweiz: Weiterbildung, Hobbys, Kinderkurse. Vergleiche Anbieter, buche direkt online. Dein Kursmarktplatz für alle Kantone.';
+    const metaDescription = 'Entdecke Kurse in der Schweiz: Weiterbildung, Hobbys und Kinderkurse. Vergleiche lokale Anbieter und frage passende Angebote unverbindlich an.';
 
     let metaDescTag = document.querySelector('meta[name="description"]');
     if (!metaDescTag) {

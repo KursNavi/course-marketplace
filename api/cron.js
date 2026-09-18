@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
-import { getEmailConfig, resolveUserEmail, sendEmailOrThrow } from './_lib/email-config.js';
+import { getEmailConfig, sendEmailOrThrow } from './_lib/email-config.js';
 import { requireCronSecret } from './_lib/cron-auth.js';
 
 // --- EMAIL HELPERS ---
@@ -533,7 +533,7 @@ export default async function handler(req, res) {
     }
 
     // ============================================
-    // PART 5: Retention – Anfragetexte & Contact Messages
+    // PART 6: Retention – Anfragetexte & Contact Messages
     // ============================================
     // Bis zur Lead-Analyse löschte cleanup_old_leads() ganze Lead-Datensätze
     // nach 180 Tagen. Das darf nicht mehr passieren: Die Leads SIND die

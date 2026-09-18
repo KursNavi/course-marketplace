@@ -55,12 +55,18 @@ export default async function handler(req, res) {
 
     const { data: existingBooking } = await supabase
       .from('bookings')
-      .select('id')
+      .select('id, course_id, booking_type')
       .eq('stripe_checkout_session_id', session.id)
       .maybeSingle();
 
     if (existingBooking) {
-      return res.status(200).json({ received: true, note: 'Already processed' });
+      return res.status(200).json({
+        received: true,
+        note: 'Already processed',
+        booking: existingBooking,
+        amount_cents: session.amount_total || 0,
+        event_id: session.id,
+      });
     }
 
     const courseId = metadata.courseId;
@@ -196,14 +202,20 @@ export default async function handler(req, res) {
         });
 
         if (restoredBooking) {
-          return res.status(200).json({ received: true, note: 'Restored refunded flex booking' });
+          return res.status(200).json({
+            received: true,
+            note: 'Restored refunded flex booking',
+            booking: { ...restoredBooking, course_id: Number(courseId), booking_type: bookingType },
+            amount_cents: session.amount_total || 0,
+            event_id: session.id,
+          });
         }
       } catch (restoreError) {
         console.error('Flex rebooking pre-insert restore failed:', restoreError);
       }
     }
 
-    const { error: insertError } = await supabase.from('bookings').insert({
+    const { data: insertedBooking, error: insertError } = await supabase.from('bookings').insert({
       user_id: user.id,
       course_id: courseId,
       event_id: eventId || null,
@@ -218,7 +230,7 @@ export default async function handler(req, res) {
       guardian_attestation: metadata.guardianAttestation === 'true',
       paid_via_credit: false,
       credit_used_cents: deductedCreditCents
-    });
+    }).select('id, course_id, booking_type').single();
 
     if (insertError) {
       if (insertError.code === '23505' && bookingType === 'platform_flex' && !eventId) {
@@ -240,7 +252,13 @@ export default async function handler(req, res) {
           });
 
           if (restoredBooking) {
-            return res.status(200).json({ received: true, note: 'Restored refunded flex booking' });
+            return res.status(200).json({
+              received: true,
+              note: 'Restored refunded flex booking',
+              booking: { ...restoredBooking, course_id: Number(courseId), booking_type: bookingType },
+              amount_cents: session.amount_total || 0,
+              event_id: session.id,
+            });
           }
         } catch (restoreError) {
           console.error('Flex rebooking restore failed:', restoreError);
@@ -292,7 +310,13 @@ export default async function handler(req, res) {
       amountTotal: session.amount_total
     });
 
-    return res.status(200).json({ received: true, note: 'Processed' });
+    return res.status(200).json({
+      received: true,
+      note: 'Processed',
+      booking: insertedBooking,
+      amount_cents: session.amount_total || 0,
+      event_id: session.id,
+    });
   } catch (error) {
     console.error('Confirm checkout session failed:', error);
     return res.status(500).json({ error: error.message || 'Internal server error' });
