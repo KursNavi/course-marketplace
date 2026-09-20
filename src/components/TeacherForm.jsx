@@ -150,7 +150,7 @@ const CharCount = ({ value, max }) => {
     );
 };
 
-const TeacherForm = ({ t, setView, user, initialData, fetchCourses, refreshImpersonatedData, onImpersonatedCourseSaved, showNotification, setEditingCourse, isAdminImpersonating = false }) => {
+const TeacherForm = ({ t, setView, user, initialData, fetchCourses, refreshImpersonatedData, onCourseSaved, showNotification, setEditingCourse, isAdminImpersonating = false }) => {
     // Stripe Connect: Auszahlung eingerichtet?
     const payoutReady = user?.stripe_connect_onboarding_complete === true;
 
@@ -1467,14 +1467,20 @@ if (bookingType === 'platform' || activeLocationMode === 'events') {
                 });
                 activeCourseId = result.courseId;
                 createdCourseIdRef.current = activeCourseId;
-                onImpersonatedCourseSaved?.(result.course || { id: activeCourseId, ...newCourse });
+                onCourseSaved?.(result.course || { id: activeCourseId, ...newCourse });
                 showNotification(activeCourseId && initialData?.id ? "Kurs aktualisiert!" : t.success_msg);
             } catch (adminError) {
                 error = adminError;
             }
         } else if (activeCourseId) {
-            const { error: err } = await supabase.from('courses').update(newCourse).eq('id', activeCourseId);
+            const { data: updatedCourse, error: err } = await supabase
+                .from('courses')
+                .update(newCourse)
+                .eq('id', activeCourseId)
+                .select('*')
+                .single();
             error = err;
+            if (!error && updatedCourse) onCourseSaved?.(updatedCourse);
         } else {
             const { data: inserted, error: err } = await supabase.from('courses').insert([newCourse]).select();
             if (inserted && inserted[0]) {

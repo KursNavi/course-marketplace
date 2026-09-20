@@ -697,7 +697,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
     }
   }, []);
 
-  const handleImpersonatedCourseSaved = useCallback((savedCourse) => {
+  const handleCourseSaved = useCallback((savedCourse) => {
     if (!savedCourse?.id) return;
     const savedId = String(savedCourse.id);
     impersonatedCoursesRef.current = impersonatedCoursesRef.current.some((course) => String(course.id) === savedId)
@@ -2516,7 +2516,7 @@ useEffect(() => {
       {view === 'ratgeber-artikel' && <RatgeberArtikelView key={routePath} lang={lang} />}
       {view === 'not-found' && <NotFoundPage setView={setView} />}
       {view === 'dashboard' && effectiveUser && <Dashboard user={effectiveUser} setUser={impersonatedUser ? () => {} : setUser} t={t} setView={setView} courses={courses} teacherEarnings={teacherEarnings} myBookings={myBookings} savedCourses={savedCourses} savedCourseIds={savedCourseIds} onToggleSaveCourse={toggleSaveCourse} handleDeleteCourse={handleDeleteCourse} handleEditCourse={handleEditCourse} handleDuplicateCourse={handleDuplicateCourse} handleUpdateCourseStatus={handleUpdateCourseStatus} handleCancelEvent={handleCancelEvent} showNotification={showNotification} changeLanguage={changeLanguage} setSelectedCourse={setSelectedCourse} refreshBookings={fetchBookings} refreshTeacherEarnings={fetchTeacherEarnings} isImpersonating={!!impersonatedUser} />}
-      {view === 'create' && effectiveUser?.role === 'teacher' && <TeacherForm key={editingCourse?.id || 'new'} t={t} setView={setView} user={effectiveUser} fetchCourses={fetchCourses} refreshImpersonatedData={impersonatedUser ? () => loadImpersonatedData(impersonatedUser.id) : undefined} onImpersonatedCourseSaved={impersonatedUser ? handleImpersonatedCourseSaved : undefined} showNotification={showNotification} setEditingCourse={setEditingCourse} initialData={editingCourse} isAdminImpersonating={!!impersonatedUser} />}
+      {view === 'create' && effectiveUser?.role === 'teacher' && <TeacherForm key={editingCourse?.id || 'new'} t={t} setView={setView} user={effectiveUser} fetchCourses={fetchCourses} refreshImpersonatedData={impersonatedUser ? () => loadImpersonatedData(impersonatedUser.id) : undefined} onCourseSaved={handleCourseSaved} showNotification={showNotification} setEditingCourse={setEditingCourse} initialData={editingCourse} isAdminImpersonating={!!impersonatedUser} />}
       </Suspense>
       </main>
 

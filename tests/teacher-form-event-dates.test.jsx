@@ -445,7 +445,7 @@ describe('TeacherForm – Termine (start_date/end_date) reach the state and surv
             }]
         }, {
             isAdminImpersonating: true,
-            onImpersonatedCourseSaved: (course) => { savedCourse = course; }
+            onCourseSaved: (course) => { savedCourse = course; }
         });
 
         const introductionRadio = await screen.findByRole('radio', { name: /Einführung/i });
