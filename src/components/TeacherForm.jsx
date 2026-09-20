@@ -150,7 +150,7 @@ const CharCount = ({ value, max }) => {
     );
 };
 
-const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotification, setEditingCourse, isAdminImpersonating = false }) => {
+const TeacherForm = ({ t, setView, user, initialData, fetchCourses, refreshImpersonatedData, showNotification, setEditingCourse, isAdminImpersonating = false }) => {
     // Stripe Connect: Auszahlung eingerichtet?
     const payoutReady = user?.stripe_connect_onboarding_complete === true;
 
@@ -1716,7 +1716,13 @@ if (bookingType === 'platform' || activeLocationMode === 'events') {
         } else {
             showNotification(initialData?.id ? "Kurs aktualisiert!" : t.success_msg);
         }
-        await refreshCoursesAfterMutation(fetchCourses, { followupDelayMs: finalStatus === 'published' ? 600 : 0 });
+        await refreshCoursesAfterMutation(fetchCourses, {
+            followupDelayMs: finalStatus === 'published' ? 600 : 0,
+            // A normal Supabase refresh cannot see provider drafts while an
+            // admin is impersonating a provider. Refresh the protected admin
+            // response so the editor never reopens stale course metadata.
+            refresh: isAdminImpersonating ? refreshImpersonatedData : undefined
+        });
         setEditingCourse(null);
         sessionStorage.setItem('dashOpenTab', 'kursangebot');
         setView('dashboard');

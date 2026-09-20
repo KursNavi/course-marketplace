@@ -22,4 +22,17 @@ describe('refreshCoursesAfterMutation', () => {
     await refreshCoursesAfterMutation(refresh, { followupDelayMs: 0 });
     expect(refresh).toHaveBeenCalledTimes(1);
   });
+
+  it('uses the protected impersonation refresh when one is supplied', async () => {
+    const publicRefresh = vi.fn().mockResolvedValue(undefined);
+    const impersonatedRefresh = vi.fn().mockResolvedValue(undefined);
+
+    await refreshCoursesAfterMutation(publicRefresh, {
+      followupDelayMs: 0,
+      refresh: impersonatedRefresh
+    });
+
+    expect(impersonatedRefresh).toHaveBeenCalledTimes(1);
+    expect(publicRefresh).not.toHaveBeenCalled();
+  });
 });
