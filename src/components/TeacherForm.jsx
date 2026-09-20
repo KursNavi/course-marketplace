@@ -270,6 +270,12 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
     // UX section states
     // locationMode: 'locations' = Feste Standort(e), 'events' = Konkrete Termine
     const [locationMode, setLocationMode] = useState(draft?.locationMode || 'locations');
+    // Keep the latest mode available to the submit handler even when a user
+    // switches the mode and clicks save before React has rendered the update.
+    const locationModeRef = useRef(locationMode);
+    useLayoutEffect(() => {
+        locationModeRef.current = locationMode;
+    }, [locationMode]);
     const [showOptionalDetails, setShowOptionalDetails] = useState(false);
 
     // Image Library State (for reusing existing images)
@@ -1123,6 +1129,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
         const requestedStatus = pendingStatusRef.current ?? courseStatus;
         const isDraftAndSuggest = requestedStatus === 'draft-and-suggest';
         const finalStatus = isDraftAndSuggest ? 'draft' : requestedStatus;
+        const activeLocationMode = locationModeRef.current;
         pendingStatusRef.current = null;
 
         // Metadata (use controlled state values)
@@ -1225,7 +1232,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
             if (validEvents.length === 0) { window.alert("Für Direktbuchungen benötigen wir mindestens einen Termin mit Datum. Präsenz-Termine benötigen zusätzlich Strasse, Ort und Kanton."); clearPendingCategorySuggestion(); return; }
         }
 
-        if ((bookingType === 'platform_flex' || bookingType === 'lead') && locationMode === 'locations') {
+        if ((bookingType === 'platform_flex' || bookingType === 'lead') && activeLocationMode === 'locations') {
             if (locations.length === 0) {
                 window.alert("Bitte gib mindestens einen Standort an.");
                 clearPendingCategorySuggestion();
@@ -1240,13 +1247,21 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
             }
         }
 
-        if ((bookingType === 'platform_flex' || bookingType === 'lead') && locationMode === 'events') {
+        if ((bookingType === 'platform_flex' || bookingType === 'lead') && activeLocationMode === 'events') {
             if (validEvents.length === 0) {
                 window.alert("Bitte gib mindestens einen Termin mit Datum an.");
                 clearPendingCategorySuggestion();
                 return;
             }
         }
+
+        // Fixed-location courses deliberately have no concrete Termine. When
+        // switching an existing course from event mode, omit the old event
+        // rows from every persistence path so they are removed instead of
+        // being written back alongside the new location mode.
+        const eventsForPersistence = (
+            activeLocationMode === 'locations' && bookingType !== 'platform'
+        ) ? [] : validEvents;
 
         // Preis: bei Direktbuchung/Flex ist ein Preis erforderlich
         if ((bookingType === 'platform' || bookingType === 'platform_flex') && !price) {
@@ -1322,8 +1337,8 @@ let publicLocationLabel = "";
 let mainCanton = "";
 let mainDate = null;
 
-if (bookingType === 'platform' || locationMode === 'events') {
-    const sortedEvents = [...validEvents].sort((a, b) => a.start_date.localeCompare(b.start_date));
+if (bookingType === 'platform' || activeLocationMode === 'events') {
+    const sortedEvents = [...eventsForPersistence].sort((a, b) => a.start_date.localeCompare(b.start_date));
     const firstEvent = sortedEvents[0];
     if (firstEvent) {
         mainDate = firstEvent.start_date;
@@ -1366,7 +1381,7 @@ if (bookingType === 'platform' || locationMode === 'events') {
             delivery_types: deliveryTypes,
             canton: mainCanton,
             address: publicLocationLabel,
-            course_events: validEvents
+    course_events: eventsForPersistence
         });
 
         const newCourse = {
@@ -1439,11 +1454,11 @@ if (bookingType === 'platform' || locationMode === 'events') {
                 const result = await saveCourseViaAdmin({
                     coursePayload: newCourse,
                     courseId: activeCourseId,
-                    validEvents,
+                    validEvents: eventsForPersistence,
                     categories: consolidatedCategories,
                     locations,
                     bookingType,
-                    locationMode
+                    locationMode: activeLocationMode
                 });
                 activeCourseId = result.courseId;
                 createdCourseIdRef.current = activeCourseId;
@@ -1476,9 +1491,9 @@ if (bookingType === 'platform' || locationMode === 'events') {
 
 
         // 7. Update Events Table (platform always; lead/flex when in events mode)
-        if (!isAdminImpersonating && activeCourseId && (bookingType === 'platform' || locationMode === 'events')) {
+        if (!isAdminImpersonating && activeCourseId && (bookingType === 'platform' || activeLocationMode === 'events')) {
             // Dedupe check: no two events may share (start_date, location, canton)
-            const eventKeys = validEvents.map(ev =>
+            const eventKeys = eventsForPersistence.map(ev =>
                 `${ev.start_date}|${ev.location || ''}|${ev.canton || (fallbackCantons.length > 0 ? fallbackCantons[0] : '')}`
             );
             const dupeIdx = eventKeys.findIndex((k, i) => eventKeys.indexOf(k) !== i);
@@ -1489,7 +1504,7 @@ if (bookingType === 'platform' || locationMode === 'events') {
                 return;
             }
 
-            const existingEventIds = validEvents.map(ev => ev.id).filter(Boolean);
+            const existingEventIds = eventsForPersistence.map(ev => ev.id).filter(Boolean);
 
             const { data: existingEvents, error: existingEventsError } = await supabase
                 .from('course_events')
@@ -1523,7 +1538,7 @@ if (bookingType === 'platform' || locationMode === 'events') {
                 }
             }
 
-            for (const ev of validEvents) {
+            for (const ev of eventsForPersistence) {
                 const eventPayload = {
                     course_id: activeCourseId,
                     start_date: ev.start_date,
@@ -1567,7 +1582,7 @@ if (bookingType === 'platform' || locationMode === 'events') {
                     }
                 }
             }
-        } else if (!isAdminImpersonating && activeCourseId && bookingType !== 'platform' && locationMode === 'locations') {
+        } else if (!isAdminImpersonating && activeCourseId && bookingType !== 'platform' && activeLocationMode === 'locations') {
             // Lead/flex switched to "Feste Standorte": delete any lingering events so the course
             // reloads in locations mode next time (mode is inferred from whether events exist in DB).
             const { error: deleteStaleEventsError } = await supabase
@@ -1593,7 +1608,7 @@ if (bookingType === 'platform' || locationMode === 'events') {
 
             let locationPayloads = [];
 
-            if (locationMode === 'locations' && bookingType !== 'platform') {
+            if (activeLocationMode === 'locations' && bookingType !== 'platform') {
                 // Feste Standorte (lead/flex only): save full address from locations state
                 locationPayloads = locations.map((loc, i) => ({
                     course_id: activeCourseId,
@@ -1609,7 +1624,7 @@ if (bookingType === 'platform' || locationMode === 'events') {
                 // Do NOT copy street — events are the authoritative source for the full address;
                 // course_locations in this mode serve only as a canton-based filter index.
                 const seen = new Set();
-                locationPayloads = validEvents
+                locationPayloads = eventsForPersistence
                     .filter(ev => ev.type === 'presence' && ev.canton && !seen.has(ev.canton) && seen.add(ev.canton))
                     .map((ev, i) => ({
                         course_id: activeCourseId,
@@ -2125,7 +2140,7 @@ if (bookingType === 'platform' || locationMode === 'events') {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                 <button
                                     type="button"
-                                    onClick={() => { setLocationMode('locations'); markDirty(); }}
+                                    onClick={() => { locationModeRef.current = 'locations'; setLocationMode('locations'); markDirty(); }}
                                     className={`text-left p-4 rounded-xl border-2 transition ${locationMode === 'locations' ? 'border-gray-700 bg-gray-50' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'}`}
                                 >
                                     <div className="flex items-center gap-2 mb-1.5">
@@ -2136,7 +2151,7 @@ if (bookingType === 'platform' || locationMode === 'events') {
                                 </button>
                                 <button
                                     type="button"
-                                    onClick={() => { setLocationMode('events'); markDirty(); }}
+                                    onClick={() => { locationModeRef.current = 'events'; setLocationMode('events'); markDirty(); }}
                                     className={`text-left p-4 rounded-xl border-2 transition ${locationMode === 'events' ? 'border-gray-700 bg-gray-50' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'}`}
                                 >
                                     <div className="flex items-center gap-2 mb-1.5">
