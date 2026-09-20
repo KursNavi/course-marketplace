@@ -182,6 +182,7 @@ describe('/api/admin save-course — Termine dürfen nicht durch eine leere List
 
         expect(res.statusCode).toBe(200);
         expect(db.courses[0].privat_kursart).toBe('workshop_event');
+        expect(res.body.course.privat_kursart).toBe('workshop_event');
     });
 
     it('treats events without a start_date as empty and keeps the saved Termine', async () => {

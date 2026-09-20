@@ -150,7 +150,7 @@ const CharCount = ({ value, max }) => {
     );
 };
 
-const TeacherForm = ({ t, setView, user, initialData, fetchCourses, refreshImpersonatedData, showNotification, setEditingCourse, isAdminImpersonating = false }) => {
+const TeacherForm = ({ t, setView, user, initialData, fetchCourses, refreshImpersonatedData, onImpersonatedCourseSaved, showNotification, setEditingCourse, isAdminImpersonating = false }) => {
     // Stripe Connect: Auszahlung eingerichtet?
     const payoutReady = user?.stripe_connect_onboarding_complete === true;
 
@@ -1467,6 +1467,7 @@ if (bookingType === 'platform' || activeLocationMode === 'events') {
                 });
                 activeCourseId = result.courseId;
                 createdCourseIdRef.current = activeCourseId;
+                onImpersonatedCourseSaved?.(result.course || { id: activeCourseId, ...newCourse });
                 showNotification(activeCourseId && initialData?.id ? "Kurs aktualisiert!" : t.success_msg);
             } catch (adminError) {
                 error = adminError;

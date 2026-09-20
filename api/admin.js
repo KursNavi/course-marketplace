@@ -528,7 +528,34 @@ export default async function handler(req, res) {
         }
       }
 
-      return res.status(200).json({ ok: true, courseId: activeCourseId });
+      // Re-apply the format fields after the related course data has been
+      // synchronized. Return the persisted row so the admin UI can replace
+      // its stale list item with the database result immediately.
+      const formatPatch = {};
+      if (Object.prototype.hasOwnProperty.call(course, 'privat_kursart')) {
+        formatPatch.privat_kursart = course.privat_kursart || null;
+      }
+      if (Object.prototype.hasOwnProperty.call(course, 'kinder_kursart')) {
+        formatPatch.kinder_kursart = course.kinder_kursart || null;
+      }
+      if (Object.keys(formatPatch).length > 0) {
+        const { error: formatError } = await supabaseAdmin
+          .from('courses')
+          .update(formatPatch)
+          .eq('id', activeCourseId);
+
+        if (formatError) return res.status(500).json({ error: formatError.message });
+      }
+
+      const { data: savedCourse, error: savedCourseError } = await supabaseAdmin
+        .from('courses')
+        .select('*')
+        .eq('id', activeCourseId)
+        .single();
+
+      if (savedCourseError) return res.status(500).json({ error: savedCourseError.message });
+
+      return res.status(200).json({ ok: true, courseId: activeCourseId, course: savedCourse });
     }
 
     // ============================================

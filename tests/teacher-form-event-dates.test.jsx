@@ -422,9 +422,14 @@ describe('TeacherForm – Termine (start_date/end_date) reach the state and surv
     });
 
     it('sends the newly selected private course format through the admin API', async () => {
+        let savedCourse;
         const fetchMock = vi.fn().mockResolvedValue({
             ok: true,
-            json: async () => ({ ok: true, courseId: COURSE_ID })
+            json: async () => ({
+                ok: true,
+                courseId: COURSE_ID,
+                course: { id: COURSE_ID, privat_kursart: 'einfuehrungskurs' }
+            })
         });
         vi.stubGlobal('fetch', fetchMock);
 
@@ -439,7 +444,8 @@ describe('TeacherForm – Termine (start_date/end_date) reach the state and surv
                 sort_order: 0
             }]
         }, {
-            isAdminImpersonating: true
+            isAdminImpersonating: true,
+            onImpersonatedCourseSaved: (course) => { savedCourse = course; }
         });
 
         const introductionRadio = await screen.findByRole('radio', { name: /Einführung/i });
@@ -454,6 +460,7 @@ describe('TeacherForm – Termine (start_date/end_date) reach the state and surv
         await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
         const body = JSON.parse(fetchMock.mock.calls[0][1].body);
         expect(body.course.privat_kursart).toBe('einfuehrungskurs');
+        expect(savedCourse).toMatchObject({ id: COURSE_ID, privat_kursart: 'einfuehrungskurs' });
         expect(window.alert).not.toHaveBeenCalled();
     });
 
