@@ -48,6 +48,7 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
     preferred_language: 'de',
     website_url: '',
     email: user?.email || '',
+    lead_email: '',
     password: '',
     confirmPassword: '',
     // Public profile fields (Pro+)
@@ -202,7 +203,7 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
         `;
 
         // Optional columns from migration (may not exist yet)
-        const optionalColumns = ['slug', 'logo_url', 'cover_image_url', 'show_email_publicly', 'profile_published_at', 'last_slug_change_at'];
+        const optionalColumns = ['slug', 'logo_url', 'cover_image_url', 'show_email_publicly', 'profile_published_at', 'last_slug_change_at', 'lead_email'];
 
         // Try with all columns first
         let { data, error } = await supabase
@@ -230,7 +231,8 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
             cover_image_url: '',
             show_email_publicly: false,
             profile_published_at: null,
-            last_slug_change_at: null
+            last_slug_change_at: null,
+            lead_email: null
           };
         }
 
@@ -244,6 +246,7 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
           preferred_language: data.preferred_language || 'de',
           website_url: data.website_url || '',
           email: user.email || '',
+          lead_email: data.lead_email || '',
           password: '',
           confirmPassword: '',
           slug: data.slug || '',
@@ -403,6 +406,13 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
       }
 
       const validLocations = additionalLocations.filter(loc => loc.canton?.trim());
+      const leadEmail = profileData.lead_email?.trim() || '';
+
+      if (leadEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(leadEmail)) {
+        showNotification?.('Bitte geben Sie eine gültige E-Mail-Adresse für Kursanfragen ein', 'error');
+        setSaving(false);
+        return;
+      }
 
       const profileUpdates = {
         full_name: profileData.full_name,
@@ -416,7 +426,8 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
         additional_locations: validLocations.length > 0 ? JSON.stringify(validLocations) : '',
         logo_url: profileData.logo_url,
         show_email_publicly: profileData.show_email_publicly,
-        email: profileData.email
+        email: profileData.email,
+        lead_email: leadEmail || null
       };
 
       // Include cover image only for Enterprise
@@ -446,7 +457,7 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
 
         if (error) {
           console.warn('Full update failed:', error.message);
-          const optionalColumns = ['show_email_publicly', 'logo_url', 'cover_image_url'];
+          const optionalColumns = ['show_email_publicly', 'logo_url', 'cover_image_url', 'lead_email'];
           let lastError = error;
 
           for (const col of optionalColumns) {
@@ -1263,6 +1274,33 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
                 placeholder="z.B. Master in Pädagogik&#10;Dipl. Yoga Instruktor..."
                 className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-400 outline-none bg-gray-50 focus:bg-white transition-colors"
               />
+            </div>
+          )}
+
+          {/* Separate lead recipient */}
+          {isTeacher && (
+            <div className="border-t pt-6 mt-6">
+              <h3 className="text-lg font-bold mb-4 text-gray-800 flex items-center">
+                <Mail className="w-5 h-5 mr-2 text-orange-500" />
+                E-Mail für Kursanfragen
+              </h3>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1" htmlFor="lead_email">
+                  Separate Empfangsadresse <span className="font-normal text-gray-500">(optional)</span>
+                </label>
+                <input
+                  id="lead_email"
+                  type="email"
+                  name="lead_email"
+                  value={profileData.lead_email}
+                  onChange={handleChange}
+                  placeholder="z. B. leads@beispiel.ch"
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-400 outline-none bg-gray-50 focus:bg-white transition-colors"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Kursanfragen werden an diese Adresse gesendet. Wenn das Feld leer bleibt, wird weiterhin Ihre normale Konto-E-Mail verwendet.
+                </p>
+              </div>
             </div>
           )}
 

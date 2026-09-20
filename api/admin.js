@@ -657,7 +657,7 @@ export default async function handler(req, res) {
       const allowedFields = [
         'full_name', 'city', 'canton', 'bio_text', 'certificates',
         'preferred_language', 'website_url', 'additional_locations',
-        'logo_url', 'cover_image_url', 'show_email_publicly', 'email', 'slug'
+        'logo_url', 'cover_image_url', 'show_email_publicly', 'email', 'lead_email', 'slug'
       ];
 
       const filtered = {};

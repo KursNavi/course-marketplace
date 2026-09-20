@@ -78,6 +78,11 @@ function normalizeIntent(value) {
   return VALID_INTENTS.has(intent) ? intent : null;
 }
 
+function normalizeRecipientEmail(value) {
+  const normalized = cleanText(value, 320)?.toLowerCase();
+  return normalized && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized) ? normalized : null;
+}
+
 function normalizeAttribution(value, consentGranted) {
   if (!consentGranted || !value || typeof value !== 'object') return {};
 
@@ -167,18 +172,20 @@ export default async function handler(req, res) {
     // 2. Anbieter-E-Mail und aktuelles Paket holen
     // package_tier wird für den Snapshot am Lead gebraucht (provider_tier_at_lead).
     let teacherEmail = null;
+    let leadEmail = null;
     let providerTier = null;
     if (course.user_id) {
       const { data: teacherProfile } = await supabase
         .from('profiles')
-        .select('email, package_tier')
+        .select('email, lead_email, package_tier')
         .eq('id', course.user_id)
         .single();
       teacherEmail = await resolveUserEmail(supabase, course.user_id, teacherProfile?.email);
+      leadEmail = normalizeRecipientEmail(teacherProfile?.lead_email) || teacherEmail;
       providerTier = normalizeTier(teacherProfile?.package_tier);
     }
 
-    if (!teacherEmail) {
+    if (!leadEmail) {
       console.error('send-lead: Keine Anbieter-E-Mail gefunden für Kurs', courseId);
       return res.status(500).json({ error: 'Anbieter-E-Mail nicht gefunden' });
     }
@@ -304,7 +311,7 @@ export default async function handler(req, res) {
     try {
       const sendResult = await sendEmailOrThrow(resend, 'lead-to-provider', {
         from: emailConfig.from,
-        to: teacherEmail,
+        to: leadEmail,
         replyTo: normalizedEmail,
         bcc: emailConfig.adminEmail,
         subject: `Neue Kursanfrage: ${course.title}`,
