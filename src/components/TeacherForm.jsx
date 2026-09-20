@@ -1491,14 +1491,13 @@ if (bookingType === 'platform' || activeLocationMode === 'events') {
                 error = adminError;
             }
         } else if (activeCourseId) {
-            const { data: updatedCourse, error: err } = await supabase
+            const { error: err } = await supabase
                 .from('courses')
                 .update(newCourse)
                 .eq('id', activeCourseId)
                 .select('*')
                 .single();
             error = err;
-            if (!error && updatedCourse) onCourseSaved?.(updatedCourse);
         } else {
             const { data: inserted, error: err } = await supabase.from('courses').insert([newCourse]).select();
             if (inserted && inserted[0]) {
@@ -1729,6 +1728,40 @@ if (bookingType === 'platform' || activeLocationMode === 'events') {
                 console.error('Category suggestion error:', suggestionError);
                 categorySuggestionError = suggestionError;
             }
+        }
+
+        // Related-table synchronization can restore an older course snapshot
+        // in legacy data flows. Re-apply the complete provider payload after
+        // all related writes and use the persisted row for the dashboard state.
+        if (!isAdminImpersonating && activeCourseId) {
+            const { error: finalCourseError } = await supabase
+                .from('courses')
+                .update(newCourse)
+                .eq('id', activeCourseId);
+
+            if (finalCourseError) {
+                console.error(finalCourseError);
+                showNotification("Fehler beim abschließenden Speichern: " + finalCourseError.message);
+                clearPendingCategorySuggestion();
+                setIsSubmitting(false);
+                return;
+            }
+
+            const { data: savedCourse, error: savedCourseError } = await supabase
+                .from('courses')
+                .select('*')
+                .eq('id', activeCourseId)
+                .single();
+
+            if (savedCourseError) {
+                console.error(savedCourseError);
+                showNotification("Fehler beim erneuten Laden des Kurses: " + savedCourseError.message);
+                clearPendingCategorySuggestion();
+                setIsSubmitting(false);
+                return;
+            }
+
+            onCourseSaved?.(savedCourse);
         }
 
         // Clear draft after successful save

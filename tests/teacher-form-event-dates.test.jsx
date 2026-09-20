@@ -22,6 +22,7 @@ const db = {
     course_category_assignments: []
 };
 let nextEventId = 1000;
+let restoreCourseFormatAfterRelatedWrite = false;
 
 const matches = (row, filters) => filters.every(([kind, col, val]) => (
     kind === 'in' ? val.includes(row[col]) : row[col] === val
@@ -49,6 +50,11 @@ const runQuery = (state) => {
         const rows = Array.isArray(state.payload) ? state.payload : [state.payload];
         const inserted = rows.map(row => ({ id: row.id ?? nextEventId++, ...row }));
         table.push(...inserted);
+        if (restoreCourseFormatAfterRelatedWrite && state.table === 'course_category_assignments') {
+            const courseId = inserted[0]?.course_id;
+            const course = db.courses.find(row => row.id === courseId);
+            if (course) course.privat_kursart = 'wochenkurs';
+        }
         return { data: inserted, error: null };
     }
     return { data: null, error: null };
@@ -169,6 +175,7 @@ describe('TeacherForm – Hinweis zu Suchbegriffen', () => {
         db.course_events = [];
         db.course_locations = [];
         db.course_category_assignments = [];
+        restoreCourseFormatAfterRelatedWrite = false;
     });
 
     it('erklärt die Suchlogik und enthält ein Beispiel für irrelevante Treffer', async () => {
@@ -423,6 +430,7 @@ describe('TeacherForm – Termine (start_date/end_date) reach the state and surv
 
     it('does not block provider metadata edits because of a legacy location without canton', async () => {
         db.courses = [{ ...baseCourse, privat_kursart: 'wochenkurs' }];
+        restoreCourseFormatAfterRelatedWrite = true;
         db.course_locations = [{
             id: 'location-legacy',
             course_id: COURSE_ID,
