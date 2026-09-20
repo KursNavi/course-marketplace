@@ -983,6 +983,17 @@ export default function KursNaviPro() {  // 1. Initial State Logic
 
       if (courseError) throw courseError;
 
+      const diagnosticCourse = (courseData || []).find((course) => String(course.id) === '937');
+      if (diagnosticCourse) {
+        console.log('[App] course fetch row', JSON.stringify({
+          courseId: diagnosticCourse.id,
+          title: diagnosticCourse.title,
+          privatKursart: diagnosticCourse.privat_kursart,
+          level: diagnosticCourse.level,
+          minAge: diagnosticCourse.min_age
+        }));
+      }
+
       // Instructor-Profile in einer zweiten Query holen
       const userIds = [...new Set((courseData || []).map(c => c.user_id).filter(Boolean))];
 
