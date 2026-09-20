@@ -33,6 +33,8 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
   const [saving, setSaving] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
+  const [resettingLogo, setResettingLogo] = useState(false);
+  const [resettingCover, setResettingCover] = useState(false);
 
   // Combined profile data
   const [profileData, setProfileData] = useState({
@@ -137,6 +139,50 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data.error || 'Upload fehlgeschlagen');
     return data;
+  };
+
+  const resetProviderImage = async (type) => {
+    const fieldName = type === 'logo' ? 'logo_url' : 'cover_image_url';
+
+    if (isImpersonating) {
+      await callAdminApi({
+        action: 'save-profile',
+        userId: user.id,
+        profileUpdates: { [fieldName]: null },
+        syncInstructorName: false,
+      });
+    } else {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error('Nicht eingeloggt');
+
+      const response = await fetch('/api/upload-provider-image', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({ type, reset: true })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'Bild konnte nicht zurückgesetzt werden');
+    }
+
+    setProfileData(prev => ({ ...prev, [fieldName]: '' }));
+    showNotification?.(`${type === 'logo' ? 'Logo' : 'Cover'} zurückgesetzt`, 'success');
+  };
+
+  const handleImageReset = async (type) => {
+    const setResetting = type === 'logo' ? setResettingLogo : setResettingCover;
+
+    try {
+      setResetting(true);
+      await resetProviderImage(type);
+    } catch (err) {
+      console.error('Error resetting image:', err);
+      showNotification?.('Fehler beim Zurücksetzen: ' + (err.message || 'Unbekannter Fehler'), 'error');
+    } finally {
+      setResetting(false);
+    }
   };
 
   // Load profile data
@@ -1097,7 +1143,8 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
                   </div>
                 )}
                 <div>
-                  <label className="cursor-pointer">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <label className="cursor-pointer">
                     <span className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors inline-flex items-center text-sm">
                       {uploadingLogo ? (
                         <Loader className="w-4 h-4 mr-2 animate-spin" />
@@ -1112,9 +1159,20 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
                       onChange={(e) => handleImageUpload(e.target.files[0], 'logo')}
                       className="hidden"
                     />
-                  </label>
+                    </label>
+                    {profileData.logo_url && (
+                      <button
+                        type="button"
+                        onClick={() => handleImageReset('logo')}
+                        disabled={resettingLogo}
+                        className="px-3 py-2 text-sm text-gray-600 rounded-lg hover:bg-red-50 hover:text-red-600 disabled:opacity-50 transition-colors"
+                      >
+                        {resettingLogo ? 'Wird zurückgesetzt…' : 'Logo zurücksetzen'}
+                      </button>
+                    )}
+                  </div>
                   <p className="text-xs text-gray-500 mt-2">
-                    Logo: quadratisch, mindestens 200x200px, max. 2MB
+                    Logo: quadratisch, mindestens 200x200px, max. 2MB. Wird vollständig übernommen.
                   </p>
                 </div>
               </div>
@@ -1132,26 +1190,38 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
                 <img
                   src={profileData.cover_image_url || DEFAULT_COVER_IMAGE}
                   alt={`${profileData.name || 'Anbieter'} Coverbild`}
-                  className="block w-full h-auto max-h-64 rounded-xl object-contain bg-gray-50 border border-gray-200"
+                  className="block w-full h-48 md:h-64 rounded-xl object-contain bg-gray-50 border border-gray-200"
                 />
-                <label className="cursor-pointer inline-block">
-                  <span className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors inline-flex items-center text-sm">
-                    {uploadingCover ? (
-                      <Loader className="w-4 h-4 mr-2 animate-spin" />
-                    ) : (
-                      <Image className="w-4 h-4 mr-2" />
-                    )}
-                    Cover hochladen
-                  </span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => handleImageUpload(e.target.files[0], 'cover')}
-                    className="hidden"
-                  />
-                </label>
+                <div className="flex flex-wrap items-center gap-2">
+                  <label className="cursor-pointer inline-block">
+                    <span className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors inline-flex items-center text-sm">
+                      {uploadingCover ? (
+                        <Loader className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <Image className="w-4 h-4 mr-2" />
+                      )}
+                      Cover hochladen
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleImageUpload(e.target.files[0], 'cover')}
+                      className="hidden"
+                    />
+                  </label>
+                  {profileData.cover_image_url && (
+                    <button
+                      type="button"
+                      onClick={() => handleImageReset('cover')}
+                      disabled={resettingCover}
+                      className="px-3 py-2 text-sm text-gray-600 rounded-lg hover:bg-red-50 hover:text-red-600 disabled:opacity-50 transition-colors"
+                    >
+                      {resettingCover ? 'Wird zurückgesetzt…' : 'Cover zurücksetzen'}
+                    </button>
+                  )}
+                </div>
                 <p className="text-xs text-gray-500">
-                  Empfohlen: Querformat im Verhältnis ca. 4:1, z. B. 1200x300px oder 1600x400px, max. 2MB. Das Bild wird vollständig übernommen und nicht zugeschnitten.
+                  Empfohlen: Querformat, z. B. 1200x300px oder 1600x400px, max. 2MB. Das Bild wird vollständig übernommen und innerhalb einer begrenzten Höhe dargestellt; bei anderen Formaten bleiben seitlich oder oben und unten freie Flächen.
                 </p>
               </div>
             </div>

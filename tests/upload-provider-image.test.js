@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mockState = { client: null };
+const mockState = { client: null, upload: null, remove: null, profileUpdate: null };
 
 vi.mock('@supabase/supabase-js', () => ({
   createClient: vi.fn(() => mockState.client),
@@ -36,6 +36,17 @@ describe('upload-provider-image API', () => {
     const profileUpdate = vi.fn().mockReturnValue({
       eq: vi.fn().mockResolvedValue({ error: null }),
     });
+    const profileSelect = vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnValue({
+        single: vi.fn().mockResolvedValue({
+          data: {
+            logo_url: 'https://example.supabase.co/storage/v1/object/public/course-images/providers/user-1/logo_old.png',
+            cover_image_url: null,
+          },
+          error: null,
+        }),
+      }),
+    });
     const storageFrom = vi.fn(() => ({ upload, remove, getPublicUrl }));
 
     mockState.client = {
@@ -46,9 +57,10 @@ describe('upload-provider-image API', () => {
         }),
       },
       storage: { from: storageFrom },
-      from: vi.fn(() => ({ update: profileUpdate })),
+      from: vi.fn(() => ({ update: profileUpdate, select: profileSelect })),
     };
     mockState.upload = upload;
+    mockState.remove = remove;
     mockState.profileUpdate = profileUpdate;
   });
 
@@ -81,5 +93,19 @@ describe('upload-provider-image API', () => {
     await handler({ method: 'POST', headers: {}, body: {} }, response);
 
     expect(response.statusCode).toBe(401);
+  });
+
+  it('resets the image field and removes the owned storage object', async () => {
+    const response = makeResponse();
+    await handler({
+      method: 'POST',
+      headers: { authorization: 'Bearer valid-token' },
+      body: { type: 'logo', reset: true },
+    }, response);
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body.publicUrl).toBeNull();
+    expect(mockState.remove).toHaveBeenCalledWith(['providers/user-1/logo_old.png']);
+    expect(mockState.profileUpdate).toHaveBeenCalledWith({ logo_url: null });
   });
 });

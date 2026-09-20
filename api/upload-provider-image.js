@@ -50,8 +50,53 @@ export default async function handler(req, res) {
       return res.status(401).json({ error: 'Ungültiges oder abgelaufenes Token' });
     }
 
-    const { imageBase64, fileName, type } = parseBody(req);
-    if (!imageBase64 || !fileName || !ALLOWED_TYPES.has(type)) {
+    const { imageBase64, fileName, type, reset } = parseBody(req);
+    if (!ALLOWED_TYPES.has(type)) {
+      return res.status(400).json({ error: 'Ungültige Bilddaten' });
+    }
+
+    const fieldName = type === 'logo' ? 'logo_url' : 'cover_image_url';
+
+    if (reset) {
+      const { data: profile, error: profileReadError } = await supabaseAdmin
+        .from('profiles')
+        .select(fieldName)
+        .eq('id', authData.user.id)
+        .single();
+
+      if (profileReadError) {
+        console.error('upload-provider-image profile read error:', profileReadError);
+        return res.status(500).json({ error: 'Profil konnte nicht gelesen werden' });
+      }
+
+      const currentUrl = profile?.[fieldName];
+      const publicPathMarker = `/storage/v1/object/public/${BUCKET_NAME}/`;
+      const encodedPath = currentUrl?.includes(publicPathMarker)
+        ? currentUrl.split(publicPathMarker)[1]
+        : null;
+      const currentPath = encodedPath ? decodeURIComponent(encodedPath) : null;
+
+      if (currentPath?.startsWith(`providers/${authData.user.id}/`)) {
+        const { error: removeError } = await supabaseAdmin.storage
+          .from(BUCKET_NAME)
+          .remove([currentPath]);
+        if (removeError) console.warn('upload-provider-image cleanup warning:', removeError);
+      }
+
+      const { error: profileError } = await supabaseAdmin
+        .from('profiles')
+        .update({ [fieldName]: null })
+        .eq('id', authData.user.id);
+
+      if (profileError) {
+        console.error('upload-provider-image reset error:', profileError);
+        return res.status(500).json({ error: 'Profil-Update fehlgeschlagen' });
+      }
+
+      return res.status(200).json({ ok: true, publicUrl: null });
+    }
+
+    if (!imageBase64 || !fileName) {
       return res.status(400).json({ error: 'Ungültige Bilddaten' });
     }
 
@@ -81,8 +126,6 @@ export default async function handler(req, res) {
       .from(BUCKET_NAME)
       .getPublicUrl(storagePath);
     const publicUrl = urlData.publicUrl;
-    const fieldName = type === 'logo' ? 'logo_url' : 'cover_image_url';
-
     const { error: profileError } = await supabaseAdmin
       .from('profiles')
       .update({ [fieldName]: publicUrl })
