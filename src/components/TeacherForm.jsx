@@ -1751,7 +1751,7 @@ if (bookingType === 'platform' || activeLocationMode === 'events') {
 
             if (finalCourseError) {
                 console.error(finalCourseError);
-                showNotification("Fehler beim abschließenden Speichern: " + finalCourseError.message);
+                showNotification("Fehler beim abschliessenden Speichern: " + finalCourseError.message);
                 clearPendingCategorySuggestion();
                 setIsSubmitting(false);
                 return;
