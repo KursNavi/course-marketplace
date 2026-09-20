@@ -13,6 +13,7 @@ test.describe('Provider Profile Edit (app-e2e)', () => {
     // Profile form should load (ProviderProfileEditor has async loading state)
     const nameInput = page.locator('input[name="full_name"]');
     await expect(nameInput).toBeVisible({ timeout: 20_000 });
+    await expect(page.locator('input[name="lead_email"]')).toBeVisible({ timeout: 20_000 });
 
     // Read current values
     const originalName = await nameInput.inputValue();

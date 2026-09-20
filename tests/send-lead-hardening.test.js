@@ -58,7 +58,7 @@ const COURSE = {
   canton: 'Zürich',
 };
 
-function buildSupabase({ providerTier = 'basic' } = {}) {
+function buildSupabase({ providerTier = 'basic', leadEmail = null } = {}) {
   return {
     from(table) {
       if (table === 'courses') {
@@ -78,9 +78,12 @@ function buildSupabase({ providerTier = 'basic' } = {}) {
       }
       if (table === 'profiles') {
         return {
-          select: () => ({
-            eq: () => ({ single: async () => ({ data: { email: 'anbieter@test.local', package_tier: providerTier }, error: null }) }),
-          }),
+          select: (columns) => {
+            expect(columns).toContain('lead_email');
+            return {
+              eq: () => ({ single: async () => ({ data: { email: 'anbieter@test.local', lead_email: leadEmail, package_tier: providerTier }, error: null }) }),
+            };
+          },
         };
       }
       if (table === 'leads') {
@@ -196,6 +199,24 @@ describe('Erfolgreicher Lead', () => {
     expect(res._body.delivery_status).toBe('accepted');
     expect(res._body).not.toHaveProperty('expected_response_by');
     expect(res._body.confirmation_email_sent).toBe(true);
+  });
+
+  it('verwendet die optionale separate Lead-Adresse', async () => {
+    mockSupabase = buildSupabase({ leadEmail: 'leads@test.local' });
+
+    const res = await callHandler();
+
+    expect(res._status).toBe(200);
+    expect(mockSentEmails[0].to).toBe('leads@test.local');
+  });
+
+  it('fällt bei einer ungültigen Lead-Adresse auf die Profiladresse zurück', async () => {
+    mockSupabase = buildSupabase({ leadEmail: 'keine-gueltige-adresse' });
+
+    const res = await callHandler();
+
+    expect(res._status).toBe(200);
+    expect(mockSentEmails[0].to).toBe('anbieter@test.local');
   });
 
   it('akzeptiert eine leere optionale Nachricht und erzeugt Provider-Kontext', async () => {
