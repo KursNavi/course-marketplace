@@ -399,7 +399,10 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, refreshImper
             initializedCourseId: initializedCourseIdRef.current,
             currentCourseId: currentCourseId,
             initialDataId: initialData?.id,
-            category_paths: initialData?.category_paths
+            category_paths: initialData?.category_paths,
+            privatKursart: initialData?.privat_kursart,
+            level: initialData?.level,
+            minAge: initialData?.min_age
         });
 
         // Skip loading initialData if form has already been initialized FOR THIS COURSE
