@@ -295,6 +295,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, refreshImper
     // Using useRef so the flag persists across re-renders without triggering updates
     // This is set to true after draft is loaded OR after initialData is loaded
     const hasInitializedRef = useRef(false);
+    const skipCourseTypeDefaultRef = useRef(false);
 
     // Track which course ID was initialized
     const initializedCourseIdRef = useRef(null);
@@ -399,10 +400,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, refreshImper
             initializedCourseId: initializedCourseIdRef.current,
             currentCourseId: currentCourseId,
             initialDataId: initialData?.id,
-            category_paths: initialData?.category_paths,
-            privatKursart: initialData?.privat_kursart,
-            level: initialData?.level,
-            minAge: initialData?.min_age
+            category_paths: initialData?.category_paths
         });
 
         // Skip loading initialData if form has already been initialized FOR THIS COURSE
@@ -422,6 +420,11 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, refreshImper
 
         // 1. Load Initial Data if editing
         if (initialData) {
+            // Do not let the category-based default overwrite a persisted
+            // course format during the same render cycle as initial hydration.
+            if (initialData.privat_kursart || initialData.kinder_kursart || (Array.isArray(initialData.beruf_saeulen) && initialData.beruf_saeulen.length > 0)) {
+                skipCourseTypeDefaultRef.current = true;
+            }
             if (initialData.booking_type) setBookingType(initialData.booking_type);
             if (initialData.ticket_limit_30d !== undefined && initialData.ticket_limit_30d !== null) setTicketLimit30d(String(initialData.ticket_limit_30d));
 
@@ -661,6 +664,10 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, refreshImper
 
     // Auto-set Kursart defaults when segment type changes (only if kursart not yet set)
     useEffect(() => {
+        if (skipCourseTypeDefaultRef.current) {
+            skipCourseTypeDefaultRef.current = false;
+            return;
+        }
         if (!hasInitializedRef.current) return; // skip during initialization
         const type = categories[0]?.type;
         if (!type) return;
@@ -1460,14 +1467,6 @@ if (bookingType === 'platform' || activeLocationMode === 'events') {
             free_reason: (Number(price) === 0 || !price) && (bookingType === 'platform' || bookingType === 'platform_flex') ? freeReason.trim() : null
         };
 
-        console.log('[TeacherForm] course save payload', JSON.stringify({
-            courseId: initialData?.id ?? createdCourseIdRef.current,
-            categoryType: normalizedCategoryType,
-            privatKursart: newCourse.privat_kursart,
-            level: newCourse.level,
-            minAge: newCourse.min_age
-        }));
-
         const consolidatedCategories = cleanedCategories
             .map((cat, idx) => {
                 const catIds = getCategoryIds(cat.type, cat.area, cat.specialty, cat.focus);
@@ -1773,12 +1772,6 @@ if (bookingType === 'platform' || activeLocationMode === 'events') {
             }
 
             onCourseSaved?.(savedCourse);
-            console.log('[TeacherForm] course save persisted row', JSON.stringify({
-                courseId: savedCourse?.id,
-                privatKursart: savedCourse?.privat_kursart,
-                level: savedCourse?.level,
-                minAge: savedCourse?.min_age
-            }));
         }
 
         // Clear draft after successful save

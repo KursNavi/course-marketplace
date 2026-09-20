@@ -428,6 +428,15 @@ describe('TeacherForm – Termine (start_date/end_date) reach the state and surv
         expect(window.alert).not.toHaveBeenCalled();
     });
 
+    it('keeps a persisted private course format selected when the editor opens', async () => {
+        renderEditor([], { privat_kursart: 'einfuehrungskurs' });
+
+        await waitFor(() => {
+            expect(screen.getByRole('radio', { name: /Einführung/i })).toBeChecked();
+        });
+        expect(screen.getByRole('radio', { name: /Wochenkurs/i })).not.toBeChecked();
+    });
+
     it('does not block provider metadata edits because of a legacy location without canton', async () => {
         db.courses = [{ ...baseCourse, privat_kursart: 'wochenkurs' }];
         restoreCourseFormatAfterRelatedWrite = true;
