@@ -1130,7 +1130,7 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
                 <img
                   src={profileData.cover_image_url || DEFAULT_COVER_IMAGE}
                   alt={`${profileData.name || 'Anbieter'} Coverbild`}
-                  className="w-full h-40 rounded-xl object-cover border border-gray-200"
+                  className="block w-full h-auto max-h-64 rounded-xl object-contain bg-gray-50 border border-gray-200"
                 />
                 <label className="cursor-pointer inline-block">
                   <span className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors inline-flex items-center text-sm">
@@ -1149,7 +1149,7 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
                   />
                 </label>
                 <p className="text-xs text-gray-500">
-                  Empfohlen: 1200x400px, max 2MB
+                  Kein festes Format nötig. Empfohlen: Querformat ab 1200px Breite, z. B. 1600x400px (4:1), max. 2MB. Das Bild wird vollständig übernommen und nicht zugeschnitten.
                 </p>
               </div>
             </div>

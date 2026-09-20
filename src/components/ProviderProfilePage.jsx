@@ -333,11 +333,11 @@ export default function ProviderProfilePage({ t, setView, setSelectedCourse }) {
     <div className="min-h-screen bg-beige pt-24 pb-16">
       {/* Cover Image */}
       {provider.coverImageUrl && (
-        <div className="w-full h-48 md:h-64 lg:h-80 relative">
+        <div className="w-full relative">
           <img
             src={provider.coverImageUrl}
             alt={`${provider.name} Cover`}
-            className="w-full h-full object-cover"
+            className="block w-full h-auto"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
         </div>
