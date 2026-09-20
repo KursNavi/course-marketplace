@@ -549,7 +549,10 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
 
         const { error: uploadError } = await supabase.storage
           .from('course-images')
-          .upload(storageName, file, { upsert: true });
+          // Der Dateiname enthält bereits userId, Bildtyp und Zeitstempel.
+          // Ein Überschreiben ist daher nicht nötig und würde zusätzliche
+          // Storage-RLS-Rechte für SELECT/UPDATE voraussetzen.
+          .upload(storageName, file, { upsert: false });
         if (uploadError) throw uploadError;
 
         const { data: urlData } = supabase.storage
@@ -1112,7 +1115,7 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
                     />
                   </label>
                   <p className="text-xs text-gray-500 mt-2">
-                    Empfohlen: 200x200px, max 2MB
+                    Logo: quadratisch, mindestens 200x200px, max. 2MB
                   </p>
                 </div>
               </div>
@@ -1149,7 +1152,7 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
                   />
                 </label>
                 <p className="text-xs text-gray-500">
-                  Kein festes Format nötig. Empfohlen: Querformat ab 1200px Breite, z. B. 1600x400px (4:1), max. 2MB. Das Bild wird vollständig übernommen und nicht zugeschnitten.
+                  Empfohlen: Querformat im Verhältnis ca. 4:1, z. B. 1200x300px oder 1600x400px, max. 2MB. Das Bild wird vollständig übernommen und nicht zugeschnitten.
                 </p>
               </div>
             </div>
