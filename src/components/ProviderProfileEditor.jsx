@@ -115,6 +115,30 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
     return data;
   };
 
+  const uploadProviderImage = async (file, type) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) throw new Error('Nicht eingeloggt');
+
+    const base64 = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result.split(',')[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
+    const response = await fetch('/api/upload-provider-image', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`
+      },
+      body: JSON.stringify({ imageBase64: base64, fileName: file.name, type })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || 'Upload fehlgeschlagen');
+    return data;
+  };
+
   // Load profile data
   useEffect(() => {
     if (!user?.id) return;
@@ -544,35 +568,10 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
         setProfileData(prev => ({ ...prev, [fieldName]: result.publicUrl }));
         showNotification?.('Bild hochgeladen und gespeichert', 'success');
       } else {
-        const fileExt = file.name.split('.').pop();
-        const storageName = `providers/${user.id}/${type}_${Date.now()}.${fileExt}`;
-
-        const { error: uploadError } = await supabase.storage
-          .from('course-images')
-          // Der Dateiname enthält bereits userId, Bildtyp und Zeitstempel.
-          // Ein Überschreiben ist daher nicht nötig und würde zusätzliche
-          // Storage-RLS-Rechte für SELECT/UPDATE voraussetzen.
-          .upload(storageName, file, { upsert: false });
-        if (uploadError) throw uploadError;
-
-        const { data: urlData } = supabase.storage
-          .from('course-images')
-          .getPublicUrl(storageName);
-        const publicUrl = urlData.publicUrl;
-
+        const result = await uploadProviderImage(file, type);
+        const publicUrl = result.publicUrl;
         setProfileData(prev => ({ ...prev, [fieldName]: publicUrl }));
-
-        const { error: dbError } = await supabase
-          .from('profiles')
-          .update({ [fieldName]: publicUrl })
-          .eq('id', user.id);
-
-        if (dbError) {
-          console.warn('Could not save image URL to database:', dbError.message);
-          showNotification?.('Bild hochgeladen (bitte Profil speichern)', 'warning');
-        } else {
-          showNotification?.('Bild hochgeladen und gespeichert', 'success');
-        }
+        showNotification?.('Bild hochgeladen und gespeichert', 'success');
       }
     } catch (err) {
       console.error('Error uploading image:', err);
