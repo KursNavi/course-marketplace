@@ -421,6 +421,42 @@ describe('TeacherForm – Termine (start_date/end_date) reach the state and surv
         expect(window.alert).not.toHaveBeenCalled();
     });
 
+    it('sends the newly selected private course format through the admin API', async () => {
+        const fetchMock = vi.fn().mockResolvedValue({
+            ok: true,
+            json: async () => ({ ok: true, courseId: COURSE_ID })
+        });
+        vi.stubGlobal('fetch', fetchMock);
+
+        renderEditor([], {
+            privat_kursart: 'wochenkurs',
+            course_locations: [{
+                id: 'location-1',
+                location_type: 'presence',
+                street: 'Bahnhofstrasse 1',
+                city: '8000 Zürich',
+                canton: 'Zürich',
+                sort_order: 0
+            }]
+        }, {
+            isAdminImpersonating: true
+        });
+
+        const introductionRadio = await screen.findByRole('radio', { name: /Einführung/i });
+        expect(screen.getByRole('radio', { name: /Wochenkurs/i })).toBeChecked();
+
+        document.querySelector('form').noValidate = true;
+        await act(async () => {
+            fireEvent.click(introductionRadio);
+            fireEvent.click(screen.getByTestId('save-course'));
+        });
+
+        await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+        const body = JSON.parse(fetchMock.mock.calls[0][1].body);
+        expect(body.course.privat_kursart).toBe('einfuehrungskurs');
+        expect(window.alert).not.toHaveBeenCalled();
+    });
+
     it('still requires a valid date after switching to Konkrete Termine', async () => {
         const fetchMock = vi.fn();
         vi.stubGlobal('fetch', fetchMock);

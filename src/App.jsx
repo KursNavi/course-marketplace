@@ -318,6 +318,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
 
   // Admin Impersonation State
   const [impersonatedUser, setImpersonatedUser] = useState(null);
+  const impersonatedDataRequestRef = useRef(0);
   const effectiveUser = impersonatedUser || user;
 
   // App Data State
@@ -649,18 +650,25 @@ export default function KursNaviPro() {  // 1. Initial State Logic
   const loadImpersonatedData = useCallback(async (targetUserId) => {
     if (!targetUserId) return;
 
+    const requestId = ++impersonatedDataRequestRef.current;
+
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) return;
       const params = new URLSearchParams({
         action: 'user-data',
-        userId: targetUserId
+        userId: targetUserId,
+        // Prevent a cached response or an older in-flight request from
+        // restoring stale course metadata after an admin save.
+        refresh: String(Date.now())
       });
       const res = await fetch(`/api/admin?${params}`, {
-        headers: { 'Authorization': `Bearer ${session.access_token}` }
+        headers: { 'Authorization': `Bearer ${session.access_token}` },
+        cache: 'no-store'
       });
       if (res.ok) {
         const json = await res.json();
+        if (requestId !== impersonatedDataRequestRef.current) return;
         const impersonatedCourses = Array.isArray(json.courses) ? json.courses : [];
         impersonatedCoursesRef.current = impersonatedCourses;
 

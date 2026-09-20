@@ -1384,6 +1384,8 @@ if (bookingType === 'platform' || activeLocationMode === 'events') {
     course_events: eventsForPersistence
         });
 
+        const normalizedCategoryType = normalizeCategoryType(catType);
+
         const newCourse = {
             title: titleVal,
             instructor_name: user?.name || initialData?.instructor_name || '',
@@ -1392,7 +1394,7 @@ if (bookingType === 'platform' || activeLocationMode === 'events') {
             rating: initialData?.rating || 0,
             category: catType && catArea ? `${catType} | ${catArea}` : null,
             // Legacy text fields (keep for backward compatibility)
-            category_type: catType ? normalizeCategoryType(catType) : null,
+            category_type: normalizedCategoryType,
             category_area: catArea || null,
             category_specialty: catSpec || null,
             category_focus: catFocus || null,
@@ -1427,8 +1429,11 @@ if (bookingType === 'platform' || activeLocationMode === 'events') {
             is_pro: user?.is_professional ?? initialData?.is_pro ?? false,
             status: finalStatus,
             beruf_saeulen: (catType === 'professionell' || catType === 'beruflich') && berufSaeulen.length > 0 ? berufSaeulen : null,
-            ...(catType === 'privat' && privatKursart ? { privat_kursart: privatKursart } : {}),
-            ...(catType === 'kinder' && kinderKursart ? { kinder_kursart: kinderKursart } : {}),
+            // Always send these fields explicitly. This updates a changed
+            // value reliably and also handles legacy category values such as
+            // `privat_hobby` after normalization.
+            privat_kursart: normalizedCategoryType === 'privat' ? (privatKursart || null) : null,
+            kinder_kursart: normalizedCategoryType === 'kinder' ? (kinderKursart || null) : null,
             min_age: minAge ? Number(minAge) : null,
             requires_guardian_booking: requiresGuardianBooking,
             free_reason: (Number(price) === 0 || !price) && (bookingType === 'platform' || bookingType === 'platform_flex') ? freeReason.trim() : null

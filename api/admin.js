@@ -865,6 +865,12 @@ export default async function handler(req, res) {
         });
       }
 
+      // This response contains mutable impersonated dashboard data. Never let
+      // a preview/CDN cache replay the course metadata from before an admin
+      // save.
+      if (typeof res.setHeader === 'function') {
+        res.setHeader('Cache-Control', 'private, no-store, max-age=0');
+      }
       return res.status(200).json({
         courses: courses || [],
         bookings: (bookings || []).map(b => ({
