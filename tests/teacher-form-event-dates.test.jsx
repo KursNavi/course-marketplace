@@ -135,7 +135,7 @@ const baseCourse = {
     delivery_types: ['presence']
 };
 
-const renderEditor = (courseEvents, courseOverrides = {}) => render(
+const renderEditor = (courseEvents, courseOverrides = {}, formOverrides = {}) => render(
     <TeacherForm
         t={{ btn_back_dash: 'Zurück', edit_course: 'Kurs bearbeiten', create_course: 'Kurs erstellen', success_msg: 'Gespeichert' }}
         setView={() => {}}
@@ -144,6 +144,7 @@ const renderEditor = (courseEvents, courseOverrides = {}) => render(
         fetchCourses={() => {}}
         showNotification={() => {}}
         setEditingCourse={() => {}}
+        {...formOverrides}
     />
 );
 
@@ -285,6 +286,54 @@ describe('TeacherForm – Termine (start_date/end_date) reach the state and surv
         // Updated in place (same row id), not deleted and re-created empty.
         expect(db.course_events[0].id).toBe(1);
         expect(db.course_events[0].start_date).toBe('2026-11-03');
+    });
+
+    it('sends newly added platform Termine with the inherited location through the admin API', async () => {
+        const existingEvent = {
+            id: 'event-1',
+            course_id: COURSE_ID,
+            start_date: '2026-10-05',
+            end_date: '2026-10-09',
+            location: 'Atelierstrasse 8, 8000 Zürich',
+            canton: 'Zürich',
+            schedule_description: '',
+            max_participants: 0
+        };
+        const fetchMock = vi.fn().mockResolvedValue({
+            ok: true,
+            json: async () => ({ ok: true, courseId: COURSE_ID })
+        });
+        vi.stubGlobal('fetch', fetchMock);
+
+        renderEditor([existingEvent], {
+            booking_type: 'platform',
+            price: 120,
+            status: 'draft'
+        }, {
+            user: { id: USER_ID, name: 'Test Anbieter', stripe_connect_onboarding_complete: true },
+            isAdminImpersonating: true
+        });
+
+        const dateInputs = () => [...document.querySelectorAll('input[type="date"]')];
+        await waitFor(() => expect(dateInputs()).toHaveLength(1));
+        await act(async () => { fireEvent.click(screen.getByRole('button', { name: /Termin hinzufügen/i })); });
+        expect(dateInputs()).toHaveLength(2);
+
+        await act(async () => {
+            fireEvent.change(dateInputs()[1], { target: { value: '2027-02-15' } });
+            document.querySelector('form').noValidate = true;
+            fireEvent.click(screen.getByTestId('save-course'));
+        });
+
+        await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+        const body = JSON.parse(fetchMock.mock.calls[0][1].body);
+        expect(body.validEvents).toHaveLength(2);
+        expect(body.validEvents.map(event => event.start_date)).toEqual(['2026-10-05', '2027-02-15']);
+        expect(body.validEvents[1]).toMatchObject({
+            street: 'Atelierstrasse 8',
+            city: '8000 Zürich',
+            canton: 'Zürich'
+        });
     });
 
     it('saves a draft without a complete primary category and keeps it unpublished', async () => {

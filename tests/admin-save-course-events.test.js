@@ -224,6 +224,34 @@ describe('/api/admin save-course — Termine dürfen nicht durch eine leere List
         expect(courseEvents().some(ev => ev.id === 'ev-2')).toBe(false);
     });
 
+    it('persists an arbitrary multi-row event payload, including all five SKDZ blocks', async () => {
+        const blocks = [
+            ['2026-10-05', '2026-10-09'],
+            ['2027-02-15', '2027-02-19'],
+            ['2027-04-26', '2027-04-30'],
+            ['2027-07-19', '2027-07-23'],
+            ['2027-08-16', '2027-08-20']
+        ];
+        const res = await callSaveCourse({
+            bookingType: 'platform',
+            locationMode: 'events',
+            validEvents: blocks.map(([start_date, end_date]) => ({
+                id: null,
+                type: 'presence',
+                start_date,
+                end_date,
+                location: 'Atelierstrasse 8, 8000 Zürich',
+                canton: 'Zürich',
+                schedule_description: 'Mo–Fr, 09:00–17:00',
+                max_participants: 12
+            }))
+        });
+
+        expect(res.statusCode).toBe(200);
+        expect(courseEvents().map(event => [event.start_date, event.end_date])).toEqual(blocks);
+        expect(courseEvents()).toHaveLength(blocks.length);
+    });
+
     it('normalises the canton of online Termine like the direct save path does', async () => {
         await callSaveCourse({
             bookingType: 'lead',
