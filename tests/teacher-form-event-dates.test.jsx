@@ -336,6 +336,122 @@ describe('TeacherForm – Termine (start_date/end_date) reach the state and surv
         });
     });
 
+    it('saves a lead course in Feste-Standorte mode without concrete Termine through the admin API', async () => {
+        const fetchMock = vi.fn().mockResolvedValue({
+            ok: true,
+            json: async () => ({ ok: true, courseId: COURSE_ID })
+        });
+        vi.stubGlobal('fetch', fetchMock);
+
+        renderEditor([], {
+            booking_type: 'lead',
+            course_locations: [{
+                id: 'location-1',
+                location_type: 'presence',
+                street: 'Bahnhofstrasse 1',
+                city: '8000 Zürich',
+                canton: 'Zürich',
+                sort_order: 0
+            }]
+        }, {
+            isAdminImpersonating: true
+        });
+
+        await waitFor(() => expect(screen.getByText('Feste Standorte')).toBeInTheDocument());
+        document.querySelector('form').noValidate = true;
+
+        await act(async () => {
+            fireEvent.click(screen.getByTestId('save-course'));
+        });
+
+        await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+        const body = JSON.parse(fetchMock.mock.calls[0][1].body);
+        expect(body.locationMode).toBe('locations');
+        expect(body.validEvents).toEqual([]);
+        expect(body.locations[0]).toMatchObject({
+            street: 'Bahnhofstrasse 1',
+            city: '8000 Zürich',
+            canton: 'Zürich'
+        });
+        expect(window.alert).not.toHaveBeenCalled();
+    });
+
+    it('uses the just-selected Feste-Standorte mode when saving immediately', async () => {
+        const fetchMock = vi.fn().mockResolvedValue({
+            ok: true,
+            json: async () => ({ ok: true, courseId: COURSE_ID })
+        });
+        vi.stubGlobal('fetch', fetchMock);
+
+        renderEditor([{
+            id: 'event-1',
+            course_id: COURSE_ID,
+            start_date: '2026-10-05',
+            end_date: null,
+            location: 'Bahnhofstrasse 1, 8000 Zürich',
+            canton: 'Zürich',
+            schedule_description: '',
+            max_participants: 0
+        }], {
+            booking_type: 'lead',
+            course_locations: [{
+                id: 'location-1',
+                location_type: 'presence',
+                street: 'Bahnhofstrasse 1',
+                city: '8000 Zürich',
+                canton: 'Zürich',
+                sort_order: 0
+            }]
+        }, {
+            isAdminImpersonating: true
+        });
+
+        await waitFor(() => expect(screen.getByText('Feste Standorte')).toBeInTheDocument());
+        document.querySelector('form').noValidate = true;
+
+        await act(async () => {
+            fireEvent.click(screen.getByRole('button', { name: /Feste Standorte/i }));
+            fireEvent.click(screen.getByTestId('save-course'));
+        });
+
+        await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+        const body = JSON.parse(fetchMock.mock.calls[0][1].body);
+        expect(body.locationMode).toBe('locations');
+        expect(body.validEvents).toEqual([]);
+        expect(window.alert).not.toHaveBeenCalled();
+    });
+
+    it('still requires a valid date after switching to Konkrete Termine', async () => {
+        const fetchMock = vi.fn();
+        vi.stubGlobal('fetch', fetchMock);
+
+        renderEditor([], {
+            booking_type: 'lead',
+            course_locations: [{
+                id: 'location-1',
+                location_type: 'presence',
+                street: 'Bahnhofstrasse 1',
+                city: '8000 Zürich',
+                canton: 'Zürich',
+                sort_order: 0
+            }]
+        }, {
+            isAdminImpersonating: true
+        });
+
+        await waitFor(() => expect(screen.getByRole('button', { name: /Konkrete Termine/i })).toBeInTheDocument());
+        document.querySelector('form').noValidate = true;
+
+        await act(async () => {
+            fireEvent.click(screen.getByRole('button', { name: /Konkrete Termine/i }));
+            fireEvent.click(screen.getByTestId('save-course'));
+        });
+
+        expect(window.alert).toHaveBeenCalledWith('Bitte gib mindestens einen Termin mit Datum an.');
+        expect(fetchMock).not.toHaveBeenCalled();
+        window.alert.mockClear();
+    });
+
     it('saves a draft without a complete primary category and keeps it unpublished', async () => {
         renderEditor(reloadEventsFromDb(), {
             category_area: '',
