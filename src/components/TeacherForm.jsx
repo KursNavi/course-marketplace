@@ -150,7 +150,7 @@ const CharCount = ({ value, max }) => {
     );
 };
 
-const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotification, setEditingCourse, isAdminImpersonating = false }) => {
+const TeacherForm = ({ t, setView, user, initialData, fetchCourses, refreshImpersonatedData, onCourseSaved, showNotification, setEditingCourse, isAdminImpersonating = false }) => {
     // Stripe Connect: Auszahlung eingerichtet?
     const payoutReady = user?.stripe_connect_onboarding_complete === true;
 
@@ -273,6 +273,11 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
     // Keep the latest mode available to the submit handler even when a user
     // switches the mode and clicks save before React has rendered the update.
     const locationModeRef = useRef(locationMode);
+    // A legacy course can contain a presence location without a canton. Do not
+    // let that unrelated, pre-existing data block edits to course metadata.
+    // Once the provider edits the locations section, the normal canton
+    // validation applies again.
+    const locationFieldsDirtyRef = useRef(false);
     useLayoutEffect(() => {
         locationModeRef.current = locationMode;
     }, [locationMode]);
@@ -290,6 +295,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
     // Using useRef so the flag persists across re-renders without triggering updates
     // This is set to true after draft is loaded OR after initialData is loaded
     const hasInitializedRef = useRef(false);
+    const skipCourseTypeDefaultRef = useRef(false);
 
     // Track which course ID was initialized
     const initializedCourseIdRef = useRef(null);
@@ -414,6 +420,11 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
 
         // 1. Load Initial Data if editing
         if (initialData) {
+            // Do not let the category-based default overwrite a persisted
+            // course format during the same render cycle as initial hydration.
+            if (initialData.privat_kursart || initialData.kinder_kursart || (Array.isArray(initialData.beruf_saeulen) && initialData.beruf_saeulen.length > 0)) {
+                skipCourseTypeDefaultRef.current = true;
+            }
             if (initialData.booking_type) setBookingType(initialData.booking_type);
             if (initialData.ticket_limit_30d !== undefined && initialData.ticket_limit_30d !== null) setTicketLimit30d(String(initialData.ticket_limit_30d));
 
@@ -653,6 +664,10 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
 
     // Auto-set Kursart defaults when segment type changes (only if kursart not yet set)
     useEffect(() => {
+        if (skipCourseTypeDefaultRef.current) {
+            skipCourseTypeDefaultRef.current = false;
+            return;
+        }
         if (!hasInitializedRef.current) return; // skip during initialization
         const type = categories[0]?.type;
         if (!type) return;
@@ -909,9 +924,20 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
         markDirty();
     };
 
-    const addLocation = () => { setLocations([...locations, { type: 'presence', street: '', city: '', canton: '', location_abroad: '' }]); markDirty(); };
-    const removeLocation = (index) => { if (locations.length > 1) { setLocations(locations.filter((_, i) => i !== index)); markDirty(); } };
+    const addLocation = () => {
+        locationFieldsDirtyRef.current = true;
+        setLocations([...locations, { type: 'presence', street: '', city: '', canton: '', location_abroad: '' }]);
+        markDirty();
+    };
+    const removeLocation = (index) => {
+        if (locations.length > 1) {
+            locationFieldsDirtyRef.current = true;
+            setLocations(locations.filter((_, i) => i !== index));
+            markDirty();
+        }
+    };
     const updateLocation = (index, field, value) => {
+        locationFieldsDirtyRef.current = true;
         const updated = [...locations];
         updated[index] = { ...updated[index], [field]: value };
         setLocations(updated);
@@ -1238,11 +1264,13 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
                 clearPendingCategorySuggestion();
                 return;
             }
-            for (const loc of locations) {
-                if (loc.type === 'presence' && !loc.canton) {
-                    window.alert("Bitte wähle für jeden Präsenz-Standort einen Kanton aus.");
-                    clearPendingCategorySuggestion();
-                    return;
+            if (!initialData?.id || locationFieldsDirtyRef.current) {
+                for (const loc of locations) {
+                    if (loc.type === 'presence' && !loc.canton) {
+                        window.alert("Bitte wähle für jeden Präsenz-Standort einen Kanton aus.");
+                        clearPendingCategorySuggestion();
+                        return;
+                    }
                 }
             }
         }
@@ -1384,6 +1412,8 @@ if (bookingType === 'platform' || activeLocationMode === 'events') {
     course_events: eventsForPersistence
         });
 
+        const normalizedCategoryType = normalizeCategoryType(catType);
+
         const newCourse = {
             title: titleVal,
             instructor_name: user?.name || initialData?.instructor_name || '',
@@ -1392,7 +1422,7 @@ if (bookingType === 'platform' || activeLocationMode === 'events') {
             rating: initialData?.rating || 0,
             category: catType && catArea ? `${catType} | ${catArea}` : null,
             // Legacy text fields (keep for backward compatibility)
-            category_type: catType ? normalizeCategoryType(catType) : null,
+            category_type: normalizedCategoryType,
             category_area: catArea || null,
             category_specialty: catSpec || null,
             category_focus: catFocus || null,
@@ -1427,8 +1457,11 @@ if (bookingType === 'platform' || activeLocationMode === 'events') {
             is_pro: user?.is_professional ?? initialData?.is_pro ?? false,
             status: finalStatus,
             beruf_saeulen: (catType === 'professionell' || catType === 'beruflich') && berufSaeulen.length > 0 ? berufSaeulen : null,
-            ...(catType === 'privat' && privatKursart ? { privat_kursart: privatKursart } : {}),
-            ...(catType === 'kinder' && kinderKursart ? { kinder_kursart: kinderKursart } : {}),
+            // Always send these fields explicitly. This updates a changed
+            // value reliably and also handles legacy category values such as
+            // `privat_hobby` after normalization.
+            privat_kursart: normalizedCategoryType === 'privat' ? (privatKursart || null) : null,
+            kinder_kursart: normalizedCategoryType === 'kinder' ? (kinderKursart || null) : null,
             min_age: minAge ? Number(minAge) : null,
             requires_guardian_booking: requiresGuardianBooking,
             free_reason: (Number(price) === 0 || !price) && (bookingType === 'platform' || bookingType === 'platform_flex') ? freeReason.trim() : null
@@ -1462,12 +1495,18 @@ if (bookingType === 'platform' || activeLocationMode === 'events') {
                 });
                 activeCourseId = result.courseId;
                 createdCourseIdRef.current = activeCourseId;
+                onCourseSaved?.(result.course || { id: activeCourseId, ...newCourse });
                 showNotification(activeCourseId && initialData?.id ? "Kurs aktualisiert!" : t.success_msg);
             } catch (adminError) {
                 error = adminError;
             }
         } else if (activeCourseId) {
-            const { error: err } = await supabase.from('courses').update(newCourse).eq('id', activeCourseId);
+            const { error: err } = await supabase
+                .from('courses')
+                .update(newCourse)
+                .eq('id', activeCourseId)
+                .select('*')
+                .single();
             error = err;
         } else {
             const { data: inserted, error: err } = await supabase.from('courses').insert([newCourse]).select();
@@ -1701,6 +1740,40 @@ if (bookingType === 'platform' || activeLocationMode === 'events') {
             }
         }
 
+        // Related-table synchronization can restore an older course snapshot
+        // in legacy data flows. Re-apply the complete provider payload after
+        // all related writes and use the persisted row for the dashboard state.
+        if (!isAdminImpersonating && activeCourseId) {
+            const { error: finalCourseError } = await supabase
+                .from('courses')
+                .update(newCourse)
+                .eq('id', activeCourseId);
+
+            if (finalCourseError) {
+                console.error(finalCourseError);
+                showNotification("Fehler beim abschliessenden Speichern: " + finalCourseError.message);
+                clearPendingCategorySuggestion();
+                setIsSubmitting(false);
+                return;
+            }
+
+            const { data: savedCourse, error: savedCourseError } = await supabase
+                .from('courses')
+                .select('*')
+                .eq('id', activeCourseId)
+                .single();
+
+            if (savedCourseError) {
+                console.error(savedCourseError);
+                showNotification("Fehler beim erneuten Laden des Kurses: " + savedCourseError.message);
+                clearPendingCategorySuggestion();
+                setIsSubmitting(false);
+                return;
+            }
+
+            onCourseSaved?.(savedCourse);
+        }
+
         // Clear draft after successful save
         try {
             sessionStorage.removeItem(draftKey);
@@ -1716,7 +1789,13 @@ if (bookingType === 'platform' || activeLocationMode === 'events') {
         } else {
             showNotification(initialData?.id ? "Kurs aktualisiert!" : t.success_msg);
         }
-        await refreshCoursesAfterMutation(fetchCourses, { followupDelayMs: finalStatus === 'published' ? 600 : 0 });
+        await refreshCoursesAfterMutation(fetchCourses, {
+            followupDelayMs: finalStatus === 'published' ? 600 : 0,
+            // A normal Supabase refresh cannot see provider drafts while an
+            // admin is impersonating a provider. Refresh the protected admin
+            // response so the editor never reopens stale course metadata.
+            refresh: isAdminImpersonating ? refreshImpersonatedData : undefined
+        });
         setEditingCourse(null);
         sessionStorage.setItem('dashOpenTab', 'kursangebot');
         setView('dashboard');
@@ -2140,7 +2219,7 @@ if (bookingType === 'platform' || activeLocationMode === 'events') {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                 <button
                                     type="button"
-                                    onClick={() => { locationModeRef.current = 'locations'; setLocationMode('locations'); markDirty(); }}
+                                        onClick={() => { locationFieldsDirtyRef.current = true; locationModeRef.current = 'locations'; setLocationMode('locations'); markDirty(); }}
                                     className={`text-left p-4 rounded-xl border-2 transition ${locationMode === 'locations' ? 'border-gray-700 bg-gray-50' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'}`}
                                 >
                                     <div className="flex items-center gap-2 mb-1.5">
@@ -2151,7 +2230,7 @@ if (bookingType === 'platform' || activeLocationMode === 'events') {
                                 </button>
                                 <button
                                     type="button"
-                                    onClick={() => { locationModeRef.current = 'events'; setLocationMode('events'); markDirty(); }}
+                                        onClick={() => { locationFieldsDirtyRef.current = true; locationModeRef.current = 'events'; setLocationMode('events'); markDirty(); }}
                                     className={`text-left p-4 rounded-xl border-2 transition ${locationMode === 'events' ? 'border-gray-700 bg-gray-50' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'}`}
                                 >
                                     <div className="flex items-center gap-2 mb-1.5">

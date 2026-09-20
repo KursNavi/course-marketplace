@@ -154,7 +154,7 @@ describe('/api/admin save-course — Termine dürfen nicht durch eine leere List
         nextId = 1;
         db = {
             profiles: [{ id: ADMIN_ID, role: 'admin' }],
-            courses: [{ id: COURSE_ID, user_id: PROVIDER_ID, image_url: null, title: 'Kurs' }],
+            courses: [{ id: COURSE_ID, user_id: PROVIDER_ID, image_url: null, title: 'Kurs', privat_kursart: 'wochenkurs' }],
             course_events: [
                 { id: 'ev-1', course_id: COURSE_ID, start_date: '2026-10-05', end_date: null, location: 'Bahnhofstrasse 1, 8000 Zürich', canton: 'Zürich', schedule_description: '', max_participants: 0 },
                 { id: 'ev-2', course_id: COURSE_ID, start_date: '2026-10-12', end_date: null, location: 'Bahnhofstrasse 1, 8000 Zürich', canton: 'Zürich', schedule_description: '', max_participants: 0 }
@@ -172,6 +172,17 @@ describe('/api/admin save-course — Termine dürfen nicht durch eine leere List
         expect(res.statusCode).toBe(400);
         expect(res.body.error).toMatch(/gespeicherte Termine/i);
         expect(courseEvents().map(ev => ev.start_date)).toEqual(['2026-10-05', '2026-10-12']);
+    });
+
+    it('persists privat_kursart from the admin editor payload', async () => {
+        const res = await callSaveCourse({
+            course: { title: 'Kurs', privat_kursart: 'workshop_event' },
+            validEvents: [{ id: 'ev-1', start_date: '2026-10-05', location: 'Zürich', canton: 'Zürich' }]
+        });
+
+        expect(res.statusCode).toBe(200);
+        expect(db.courses[0].privat_kursart).toBe('workshop_event');
+        expect(res.body.course.privat_kursart).toBe('workshop_event');
     });
 
     it('treats events without a start_date as empty and keeps the saved Termine', async () => {

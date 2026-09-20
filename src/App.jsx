@@ -318,6 +318,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
 
   // Admin Impersonation State
   const [impersonatedUser, setImpersonatedUser] = useState(null);
+  const impersonatedDataRequestRef = useRef(0);
   const effectiveUser = impersonatedUser || user;
 
   // App Data State
@@ -649,18 +650,25 @@ export default function KursNaviPro() {  // 1. Initial State Logic
   const loadImpersonatedData = useCallback(async (targetUserId) => {
     if (!targetUserId) return;
 
+    const requestId = ++impersonatedDataRequestRef.current;
+
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) return;
       const params = new URLSearchParams({
         action: 'user-data',
-        userId: targetUserId
+        userId: targetUserId,
+        // Prevent a cached response or an older in-flight request from
+        // restoring stale course metadata after an admin save.
+        refresh: String(Date.now())
       });
       const res = await fetch(`/api/admin?${params}`, {
-        headers: { 'Authorization': `Bearer ${session.access_token}` }
+        headers: { 'Authorization': `Bearer ${session.access_token}` },
+        cache: 'no-store'
       });
       if (res.ok) {
         const json = await res.json();
+        if (requestId !== impersonatedDataRequestRef.current) return;
         const impersonatedCourses = Array.isArray(json.courses) ? json.courses : [];
         impersonatedCoursesRef.current = impersonatedCourses;
 
@@ -687,6 +695,18 @@ export default function KursNaviPro() {  // 1. Initial State Logic
     } catch (e) {
       console.warn('Failed to load impersonated user data:', e);
     }
+  }, []);
+
+  const handleCourseSaved = useCallback((savedCourse) => {
+    if (!savedCourse?.id) return;
+    const savedId = String(savedCourse.id);
+    impersonatedCoursesRef.current = impersonatedCoursesRef.current.some((course) => String(course.id) === savedId)
+      ? impersonatedCoursesRef.current.map((course) => String(course.id) === savedId ? { ...course, ...savedCourse } : course)
+      : [...impersonatedCoursesRef.current, savedCourse];
+
+    setCourses((currentCourses) => currentCourses.map((course) => (
+      String(course.id) === savedId ? { ...course, ...savedCourse } : course
+    )));
   }, []);
 
   const handleDeleteCourse = async (courseId) => {
@@ -2496,7 +2516,7 @@ useEffect(() => {
       {view === 'ratgeber-artikel' && <RatgeberArtikelView key={routePath} lang={lang} />}
       {view === 'not-found' && <NotFoundPage setView={setView} />}
       {view === 'dashboard' && effectiveUser && <Dashboard user={effectiveUser} setUser={impersonatedUser ? () => {} : setUser} t={t} setView={setView} courses={courses} teacherEarnings={teacherEarnings} myBookings={myBookings} savedCourses={savedCourses} savedCourseIds={savedCourseIds} onToggleSaveCourse={toggleSaveCourse} handleDeleteCourse={handleDeleteCourse} handleEditCourse={handleEditCourse} handleDuplicateCourse={handleDuplicateCourse} handleUpdateCourseStatus={handleUpdateCourseStatus} handleCancelEvent={handleCancelEvent} showNotification={showNotification} changeLanguage={changeLanguage} setSelectedCourse={setSelectedCourse} refreshBookings={fetchBookings} refreshTeacherEarnings={fetchTeacherEarnings} isImpersonating={!!impersonatedUser} />}
-      {view === 'create' && effectiveUser?.role === 'teacher' && <TeacherForm key={editingCourse?.id || 'new'} t={t} setView={setView} user={effectiveUser} fetchCourses={fetchCourses} showNotification={showNotification} setEditingCourse={setEditingCourse} initialData={editingCourse} isAdminImpersonating={!!impersonatedUser} />}
+      {view === 'create' && effectiveUser?.role === 'teacher' && <TeacherForm key={editingCourse?.id || 'new'} t={t} setView={setView} user={effectiveUser} fetchCourses={fetchCourses} refreshImpersonatedData={impersonatedUser ? () => loadImpersonatedData(impersonatedUser.id) : undefined} onCourseSaved={handleCourseSaved} showNotification={showNotification} setEditingCourse={setEditingCourse} initialData={editingCourse} isAdminImpersonating={!!impersonatedUser} />}
       </Suspense>
       </main>
 

@@ -22,6 +22,7 @@ const db = {
     course_category_assignments: []
 };
 let nextEventId = 1000;
+let restoreCourseFormatAfterRelatedWrite = false;
 
 const matches = (row, filters) => filters.every(([kind, col, val]) => (
     kind === 'in' ? val.includes(row[col]) : row[col] === val
@@ -49,6 +50,11 @@ const runQuery = (state) => {
         const rows = Array.isArray(state.payload) ? state.payload : [state.payload];
         const inserted = rows.map(row => ({ id: row.id ?? nextEventId++, ...row }));
         table.push(...inserted);
+        if (restoreCourseFormatAfterRelatedWrite && state.table === 'course_category_assignments') {
+            const courseId = inserted[0]?.course_id;
+            const course = db.courses.find(row => row.id === courseId);
+            if (course) course.privat_kursart = 'wochenkurs';
+        }
         return { data: inserted, error: null };
     }
     return { data: null, error: null };
@@ -169,6 +175,7 @@ describe('TeacherForm – Hinweis zu Suchbegriffen', () => {
         db.course_events = [];
         db.course_locations = [];
         db.course_category_assignments = [];
+        restoreCourseFormatAfterRelatedWrite = false;
     });
 
     it('erklärt die Suchlogik und enthält ein Beispiel für irrelevante Treffer', async () => {
@@ -418,6 +425,90 @@ describe('TeacherForm – Termine (start_date/end_date) reach the state and surv
         const body = JSON.parse(fetchMock.mock.calls[0][1].body);
         expect(body.locationMode).toBe('locations');
         expect(body.validEvents).toEqual([]);
+        expect(window.alert).not.toHaveBeenCalled();
+    });
+
+    it('keeps a persisted private course format selected when the editor opens', async () => {
+        renderEditor([], { privat_kursart: 'einfuehrungskurs' });
+
+        await waitFor(() => {
+            expect(screen.getByRole('radio', { name: /Einführung/i })).toBeChecked();
+        });
+        expect(screen.getByRole('radio', { name: /Wochenkurs/i })).not.toBeChecked();
+    });
+
+    it('does not block provider metadata edits because of a legacy location without canton', async () => {
+        db.courses = [{ ...baseCourse, privat_kursart: 'wochenkurs' }];
+        restoreCourseFormatAfterRelatedWrite = true;
+        db.course_locations = [{
+            id: 'location-legacy',
+            course_id: COURSE_ID,
+            location_type: 'presence',
+            street: 'Bahnhofstrasse 1',
+            city: '8000 Zürich',
+            canton: null,
+            sort_order: 0
+        }];
+
+        renderEditor([], {
+            privat_kursart: 'wochenkurs',
+            course_locations: db.course_locations
+        }, {
+            isAdminImpersonating: false
+        });
+
+        const introductionRadio = await screen.findByRole('radio', { name: /Einführung/i });
+        document.querySelector('form').noValidate = true;
+
+        await act(async () => {
+            fireEvent.click(introductionRadio);
+            fireEvent.click(screen.getByTestId('save-course'));
+        });
+
+        await waitFor(() => expect(db.courses[0].privat_kursart).toBe('einfuehrungskurs'));
+        expect(window.alert).not.toHaveBeenCalledWith('Bitte wähle für jeden Präsenz-Standort einen Kanton aus.');
+    });
+
+    it('sends the newly selected private course format through the admin API', async () => {
+        let savedCourse;
+        const fetchMock = vi.fn().mockResolvedValue({
+            ok: true,
+            json: async () => ({
+                ok: true,
+                courseId: COURSE_ID,
+                course: { id: COURSE_ID, privat_kursart: 'einfuehrungskurs' }
+            })
+        });
+        vi.stubGlobal('fetch', fetchMock);
+
+        renderEditor([], {
+            privat_kursart: 'wochenkurs',
+            course_locations: [{
+                id: 'location-1',
+                location_type: 'presence',
+                street: 'Bahnhofstrasse 1',
+                city: '8000 Zürich',
+                canton: 'Zürich',
+                sort_order: 0
+            }]
+        }, {
+            isAdminImpersonating: true,
+            onCourseSaved: (course) => { savedCourse = course; }
+        });
+
+        const introductionRadio = await screen.findByRole('radio', { name: /Einführung/i });
+        expect(screen.getByRole('radio', { name: /Wochenkurs/i })).toBeChecked();
+
+        document.querySelector('form').noValidate = true;
+        await act(async () => {
+            fireEvent.click(introductionRadio);
+            fireEvent.click(screen.getByTestId('save-course'));
+        });
+
+        await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+        const body = JSON.parse(fetchMock.mock.calls[0][1].body);
+        expect(body.course.privat_kursart).toBe('einfuehrungskurs');
+        expect(savedCourse).toMatchObject({ id: COURSE_ID, privat_kursart: 'einfuehrungskurs' });
         expect(window.alert).not.toHaveBeenCalled();
     });
 
