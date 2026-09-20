@@ -1190,7 +1190,7 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
                 <img
                   src={profileData.cover_image_url || DEFAULT_COVER_IMAGE}
                   alt={`${profileData.name || 'Anbieter'} Coverbild`}
-                  className="block w-full h-48 md:h-64 rounded-xl object-contain bg-gray-50 border border-gray-200"
+                  className="block w-full h-auto max-h-64 rounded-xl object-contain bg-gray-50 border border-gray-200"
                 />
                 <div className="flex flex-wrap items-center gap-2">
                   <label className="cursor-pointer inline-block">

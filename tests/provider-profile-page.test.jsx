@@ -189,7 +189,7 @@ describe('ProviderProfilePage', () => {
 
     const coverImage = await screen.findByRole('img', { name: 'ICH Cover' });
     expect(coverImage).toHaveAttribute('src', 'https://anbieter.example/cover.jpg');
-    expect(coverImage).toHaveClass('w-full', 'h-full', 'object-contain');
+    expect(coverImage).toHaveClass('w-full', 'h-auto', 'object-contain', 'max-h-[320px]');
     expect(coverImage).not.toHaveClass('object-cover');
   });
 });
