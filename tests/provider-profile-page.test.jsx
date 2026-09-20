@@ -172,4 +172,24 @@ describe('ProviderProfilePage', () => {
     await waitFor(() => expect(screen.getByText('ICH')).toBeInTheDocument());
     expect(screen.queryByText('Verifiziert')).not.toBeInTheDocument();
   });
+
+  it('zeigt das Anbieter-Coverbild ohne Zuschnitt', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        ...providerPayload,
+        provider: {
+          ...providerPayload.provider,
+          coverImageUrl: 'https://anbieter.example/cover.jpg',
+        },
+      }),
+    });
+
+    render(<ProviderProfilePage t={{}} setView={vi.fn()} setSelectedCourse={vi.fn()} />);
+
+    const coverImage = await screen.findByRole('img', { name: 'ICH Cover' });
+    expect(coverImage).toHaveAttribute('src', 'https://anbieter.example/cover.jpg');
+    expect(coverImage).toHaveClass('w-full', 'h-auto', 'object-contain', 'max-h-[320px]');
+    expect(coverImage).not.toHaveClass('object-cover');
+  });
 });
