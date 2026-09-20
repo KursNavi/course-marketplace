@@ -1457,6 +1457,14 @@ if (bookingType === 'platform' || activeLocationMode === 'events') {
             free_reason: (Number(price) === 0 || !price) && (bookingType === 'platform' || bookingType === 'platform_flex') ? freeReason.trim() : null
         };
 
+        console.log('[TeacherForm] course save payload', JSON.stringify({
+            courseId: initialData?.id ?? createdCourseIdRef.current,
+            categoryType: normalizedCategoryType,
+            privatKursart: newCourse.privat_kursart,
+            level: newCourse.level,
+            minAge: newCourse.min_age
+        }));
+
         const consolidatedCategories = cleanedCategories
             .map((cat, idx) => {
                 const catIds = getCategoryIds(cat.type, cat.area, cat.specialty, cat.focus);
@@ -1762,6 +1770,12 @@ if (bookingType === 'platform' || activeLocationMode === 'events') {
             }
 
             onCourseSaved?.(savedCourse);
+            console.log('[TeacherForm] course save persisted row', JSON.stringify({
+                courseId: savedCourse?.id,
+                privatKursart: savedCourse?.privat_kursart,
+                level: savedCourse?.level,
+                minAge: savedCourse?.min_age
+            }));
         }
 
         // Clear draft after successful save
