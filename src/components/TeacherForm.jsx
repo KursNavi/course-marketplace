@@ -846,8 +846,34 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
         // For Direktbuchung (platform) the street is required and meaningful,
         // so pre-fill from profile. For lead/flex events the profile street must
         // NOT be pre-filled: the event location is a town/venue, not the office address.
-        const prefillStreet = bookingType === 'platform' ? (loc?.street || '') : '';
-        setEvents(previousEvents => [...previousEvents, { id: null, bookingCount: 0, type: 'presence', start_date: '', end_date: '', street: prefillStreet, city: loc?.city || '', max_participants: 0, canton: loc?.canton || '', schedule_description: '', location_abroad: '', showLoc: !!(loc?.canton) }]);
+        // When editing an existing course, the profile location ref is not
+        // populated. Reuse the first complete presence event in that case so a
+        // newly added date row does not look filled in but get filtered out of
+        // validEvents just before saving.
+        setEvents(previousEvents => {
+            const existingPresence = previousEvents.find(event => (
+                event.type === 'presence' && event.street && event.city && event.canton
+            ));
+            const profileLocationIsComplete = loc?.street && loc?.city && loc?.canton;
+            const fallbackLocation = profileLocationIsComplete ? loc : (existingPresence || loc);
+            const prefillStreet = bookingType === 'platform' ? (fallbackLocation?.street || '') : '';
+            const prefillCity = fallbackLocation?.city || '';
+            const prefillCanton = fallbackLocation?.canton || '';
+            return [...previousEvents, {
+                id: null,
+                bookingCount: 0,
+                type: 'presence',
+                start_date: '',
+                end_date: '',
+                street: prefillStreet,
+                city: prefillCity,
+                max_participants: 0,
+                canton: prefillCanton,
+                schedule_description: '',
+                location_abroad: '',
+                showLoc: !!prefillCanton
+            }];
+        });
         markDirty();
     };
     const removeEvent = (index) => {
@@ -1180,6 +1206,20 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, showNotifica
             if (bookingType === 'platform' && (!ev.type || ev.type === 'presence')) return ev.city && ev.street && ev.canton;
             return true;
         });
+
+        // Do not silently discard a dated row that is incomplete for a direct
+        // booking. Without this check, the date remains visible in the input,
+        // but the row never reaches /api/admin or course_events.
+        if (bookingType === 'platform') {
+            const incompleteEvent = potentialEvents.find(ev => (
+                ev.start_date && (!ev.type || ev.type === 'presence') && (!ev.city || !ev.street || !ev.canton)
+            ));
+            if (incompleteEvent) {
+                window.alert("Für jeden Präsenz-Termin benötigen wir Strasse, Ort und Kanton.");
+                clearPendingCategorySuggestion();
+                return;
+            }
+        }
 
         if (bookingType === 'platform') {
             if (validEvents.length === 0) { window.alert("Für Direktbuchungen benötigen wir mindestens einen Termin mit Datum. Präsenz-Termine benötigen zusätzlich Strasse, Ort und Kanton."); clearPendingCategorySuggestion(); return; }
