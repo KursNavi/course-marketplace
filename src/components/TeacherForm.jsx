@@ -273,6 +273,11 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, refreshImper
     // Keep the latest mode available to the submit handler even when a user
     // switches the mode and clicks save before React has rendered the update.
     const locationModeRef = useRef(locationMode);
+    // A legacy course can contain a presence location without a canton. Do not
+    // let that unrelated, pre-existing data block edits to course metadata.
+    // Once the provider edits the locations section, the normal canton
+    // validation applies again.
+    const locationFieldsDirtyRef = useRef(false);
     useLayoutEffect(() => {
         locationModeRef.current = locationMode;
     }, [locationMode]);
@@ -909,9 +914,20 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, refreshImper
         markDirty();
     };
 
-    const addLocation = () => { setLocations([...locations, { type: 'presence', street: '', city: '', canton: '', location_abroad: '' }]); markDirty(); };
-    const removeLocation = (index) => { if (locations.length > 1) { setLocations(locations.filter((_, i) => i !== index)); markDirty(); } };
+    const addLocation = () => {
+        locationFieldsDirtyRef.current = true;
+        setLocations([...locations, { type: 'presence', street: '', city: '', canton: '', location_abroad: '' }]);
+        markDirty();
+    };
+    const removeLocation = (index) => {
+        if (locations.length > 1) {
+            locationFieldsDirtyRef.current = true;
+            setLocations(locations.filter((_, i) => i !== index));
+            markDirty();
+        }
+    };
     const updateLocation = (index, field, value) => {
+        locationFieldsDirtyRef.current = true;
         const updated = [...locations];
         updated[index] = { ...updated[index], [field]: value };
         setLocations(updated);
@@ -1238,11 +1254,13 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, refreshImper
                 clearPendingCategorySuggestion();
                 return;
             }
-            for (const loc of locations) {
-                if (loc.type === 'presence' && !loc.canton) {
-                    window.alert("Bitte wähle für jeden Präsenz-Standort einen Kanton aus.");
-                    clearPendingCategorySuggestion();
-                    return;
+            if (!initialData?.id || locationFieldsDirtyRef.current) {
+                for (const loc of locations) {
+                    if (loc.type === 'presence' && !loc.canton) {
+                        window.alert("Bitte wähle für jeden Präsenz-Standort einen Kanton aus.");
+                        clearPendingCategorySuggestion();
+                        return;
+                    }
                 }
             }
         }
@@ -2158,7 +2176,7 @@ if (bookingType === 'platform' || activeLocationMode === 'events') {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                 <button
                                     type="button"
-                                    onClick={() => { locationModeRef.current = 'locations'; setLocationMode('locations'); markDirty(); }}
+                                        onClick={() => { locationFieldsDirtyRef.current = true; locationModeRef.current = 'locations'; setLocationMode('locations'); markDirty(); }}
                                     className={`text-left p-4 rounded-xl border-2 transition ${locationMode === 'locations' ? 'border-gray-700 bg-gray-50' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'}`}
                                 >
                                     <div className="flex items-center gap-2 mb-1.5">
@@ -2169,7 +2187,7 @@ if (bookingType === 'platform' || activeLocationMode === 'events') {
                                 </button>
                                 <button
                                     type="button"
-                                    onClick={() => { locationModeRef.current = 'events'; setLocationMode('events'); markDirty(); }}
+                                        onClick={() => { locationFieldsDirtyRef.current = true; locationModeRef.current = 'events'; setLocationMode('events'); markDirty(); }}
                                     className={`text-left p-4 rounded-xl border-2 transition ${locationMode === 'events' ? 'border-gray-700 bg-gray-50' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'}`}
                                 >
                                     <div className="flex items-center gap-2 mb-1.5">

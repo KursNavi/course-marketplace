@@ -421,6 +421,37 @@ describe('TeacherForm – Termine (start_date/end_date) reach the state and surv
         expect(window.alert).not.toHaveBeenCalled();
     });
 
+    it('does not block provider metadata edits because of a legacy location without canton', async () => {
+        db.courses = [{ ...baseCourse, privat_kursart: 'wochenkurs' }];
+        db.course_locations = [{
+            id: 'location-legacy',
+            course_id: COURSE_ID,
+            location_type: 'presence',
+            street: 'Bahnhofstrasse 1',
+            city: '8000 Zürich',
+            canton: null,
+            sort_order: 0
+        }];
+
+        renderEditor([], {
+            privat_kursart: 'wochenkurs',
+            course_locations: db.course_locations
+        }, {
+            isAdminImpersonating: false
+        });
+
+        const introductionRadio = await screen.findByRole('radio', { name: /Einführung/i });
+        document.querySelector('form').noValidate = true;
+
+        await act(async () => {
+            fireEvent.click(introductionRadio);
+            fireEvent.click(screen.getByTestId('save-course'));
+        });
+
+        await waitFor(() => expect(db.courses[0].privat_kursart).toBe('einfuehrungskurs'));
+        expect(window.alert).not.toHaveBeenCalledWith('Bitte wähle für jeden Präsenz-Standort einen Kanton aus.');
+    });
+
     it('sends the newly selected private course format through the admin API', async () => {
         let savedCourse;
         const fetchMock = vi.fn().mockResolvedValue({
