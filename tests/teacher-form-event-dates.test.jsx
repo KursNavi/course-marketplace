@@ -23,6 +23,7 @@ const db = {
 };
 let nextEventId = 1000;
 let restoreCourseFormatAfterRelatedWrite = false;
+let ignoreCourseUpdates = false;
 
 const matches = (row, filters) => filters.every(([kind, col, val]) => (
     kind === 'in' ? val.includes(row[col]) : row[col] === val
@@ -41,10 +42,17 @@ const runQuery = (state) => {
         return { data: null, error: null };
     }
     if (state.op === 'update') {
+        if (state.table === 'courses' && ignoreCourseUpdates) {
+            return { data: [], error: null };
+        }
+        const updated = [];
         table.forEach(row => {
-            if (matches(row, state.filters)) Object.assign(row, state.payload);
+            if (matches(row, state.filters)) {
+                Object.assign(row, state.payload);
+                updated.push(row);
+            }
         });
-        return { data: null, error: null };
+        return { data: updated, error: null };
     }
     if (state.op === 'insert') {
         const rows = Array.isArray(state.payload) ? state.payload : [state.payload];
@@ -70,9 +78,12 @@ const makeBuilder = (table) => {
         eq(col, val) { state.filters.push(['eq', col, val]); return builder; },
         in(col, vals) { state.filters.push(['in', col, vals]); return builder; },
         single() { state.single = true; return builder; },
+        maybeSingle() { state.maybeSingle = true; return builder; },
         then(resolve, reject) {
             const result = runQuery(state);
-            if (state.single) result.data = Array.isArray(result.data) ? (result.data[0] || null) : result.data;
+            if (state.single || state.maybeSingle) {
+                result.data = Array.isArray(result.data) ? (result.data[0] || null) : result.data;
+            }
             return Promise.resolve(result).then(resolve, reject);
         }
     };
@@ -204,6 +215,7 @@ describe('TeacherForm – Termine (start_date/end_date) reach the state and surv
         db.course_locations = [];
         db.course_category_assignments = [];
         nextEventId = 1000;
+        ignoreCourseUpdates = false;
     });
 
     it('keeps every entered Startdatum, clears the hint, and still shows all Termine after a reload', async () => {
@@ -269,6 +281,18 @@ describe('TeacherForm – Termine (start_date/end_date) reach the state and surv
         await waitFor(() => expect(startDateInputs().length).toBe(3));
         expect(startDateInputs().map(i => i.value).sort()).toEqual(['2026-10-05', '2026-10-12', '2026-10-19']);
         expect(screen.queryByText('Mindestens ein Termin mit Datum')).not.toBeInTheDocument();
+    });
+
+    it('meldet ein fehlendes Update als Fehler statt den Speichervorgang als erfolgreich zu melden', async () => {
+        ignoreCourseUpdates = true;
+        const notifications = [];
+        renderEditor(reloadEventsFromDb(), {}, { showNotification: (message) => notifications.push(message) });
+
+        await waitFor(() => expect(startDateInputs().length).toBe(1));
+        await act(async () => { fireEvent.click(screen.getByTestId('save-course')); });
+
+        await waitFor(() => expect(notifications.some((message) => message.includes('Berechtigung'))).toBe(true));
+        expect(notifications).not.toContain('Gespeichert');
     });
 
     it('does not wipe saved Termine when a single date field is edited', async () => {
