@@ -1504,22 +1504,30 @@ if (bookingType === 'platform' || activeLocationMode === 'events') {
                 error = adminError;
             }
         } else if (activeCourseId) {
-            const { error: err } = await supabase
+            const { data: updatedCourse, error: err } = await supabase
                 .from('courses')
                 .update(newCourse)
                 .eq('id', activeCourseId)
-                .select('*')
-                .single();
-            error = err;
+                .select('id')
+                .maybeSingle();
+            error = err || (!updatedCourse
+                ? new Error('Der Kurs konnte nicht aktualisiert werden. Bitte prüfe deine Berechtigung für diesen Kurs und versuche es erneut.')
+                : null);
         } else {
-            const { data: inserted, error: err } = await supabase.from('courses').insert([newCourse]).select();
-            if (inserted && inserted[0]) {
-                activeCourseId = inserted[0].id;
+            const { data: inserted, error: err } = await supabase
+                .from('courses')
+                .insert([newCourse])
+                .select('id')
+                .maybeSingle();
+            if (inserted) {
+                activeCourseId = inserted.id;
                 // Sofort merken: schlägt ein Folgeschritt fehl, aktualisiert der
                 // nächste Speicherversuch diesen Kurs, statt einen zweiten anzulegen.
                 createdCourseIdRef.current = activeCourseId;
             }
-            error = err;
+            error = err || (!inserted
+                ? new Error('Der Kurs konnte nicht erstellt werden. Bitte versuche es erneut.')
+                : null);
         }
 
         if (error) { 
@@ -1646,7 +1654,18 @@ if (bookingType === 'platform' || activeLocationMode === 'events') {
         // Note: platform courses previously skipped this block, leaving stale locations in DB.
         if (!isAdminImpersonating && activeCourseId) {
             // Delete all existing locations for this course, then re-insert
-            await supabase.from('course_locations').delete().eq('course_id', activeCourseId);
+            const { error: deleteLocationsError } = await supabase
+                .from('course_locations')
+                .delete()
+                .eq('course_id', activeCourseId);
+
+            if (deleteLocationsError) {
+                console.error(deleteLocationsError);
+                showNotification("Fehler beim Aktualisieren der Standorte: " + deleteLocationsError.message);
+                clearPendingCategorySuggestion();
+                setIsSubmitting(false);
+                return;
+            }
 
             let locationPayloads = [];
 
@@ -1691,13 +1710,24 @@ if (bookingType === 'platform' || activeLocationMode === 'events') {
         }
 
         // 8. Update course_category_assignments junction table (for Zweitkategorien support)
-        if (!isAdminImpersonating && activeCourseId && cleanedCategories && cleanedCategories.length > 0) {
+        if (!isAdminImpersonating && activeCourseId) {
             console.log('[CAT-DEBUG] cleanedCategories:', JSON.stringify(cleanedCategories));
             console.log('[CAT-DEBUG] types available:', types.map(t => ({ id: t.id, slug: t.slug, idType: typeof t.id })));
             console.log('[CAT-DEBUG] areas available:', areas.map(a => ({ id: a.id, slug: a.slug, idType: typeof a.id })));
             console.log('[CAT-DEBUG] specialties available:', specialties.map(s => ({ id: s.id, area_id: s.area_id, level2_id: s.level2_id, label_de: s.label_de })));
 
-            await supabase.from('course_category_assignments').delete().eq('course_id', activeCourseId);
+            const { error: deleteCategoriesError } = await supabase
+                .from('course_category_assignments')
+                .delete()
+                .eq('course_id', activeCourseId);
+
+            if (deleteCategoriesError) {
+                console.error(deleteCategoriesError);
+                showNotification("Fehler beim Aktualisieren der Kategorien: " + deleteCategoriesError.message);
+                clearPendingCategorySuggestion();
+                setIsSubmitting(false);
+                return;
+            }
 
             // Filter categories that have valid level3_id
             const dbCategories = consolidatedCategories.map(cat => ({
@@ -1716,6 +1746,10 @@ if (bookingType === 'platform' || activeLocationMode === 'events') {
 
                 if (catErr) {
                     console.error('[CAT-DEBUG] INSERT ERROR:', catErr);
+                    showNotification("Fehler beim Speichern der Kategorien: " + catErr.message);
+                    clearPendingCategorySuggestion();
+                    setIsSubmitting(false);
+                    return;
                 } else {
                     console.log('[CAT-DEBUG] INSERT SUCCESS');
                 }
@@ -1747,14 +1781,17 @@ if (bookingType === 'platform' || activeLocationMode === 'events') {
         // in legacy data flows. Re-apply the complete provider payload after
         // all related writes and use the persisted row for the dashboard state.
         if (!isAdminImpersonating && activeCourseId) {
-            const { error: finalCourseError } = await supabase
+            const { data: finalCourse, error: finalCourseError } = await supabase
                 .from('courses')
                 .update(newCourse)
-                .eq('id', activeCourseId);
+                .eq('id', activeCourseId)
+                .select('id')
+                .maybeSingle();
 
-            if (finalCourseError) {
-                console.error(finalCourseError);
-                showNotification("Fehler beim abschliessenden Speichern: " + finalCourseError.message);
+            if (finalCourseError || !finalCourse) {
+                const saveError = finalCourseError || new Error('Der Kurs konnte nicht abschliessend gespeichert werden. Bitte prüfe deine Berechtigung für diesen Kurs und versuche es erneut.');
+                console.error(saveError);
+                showNotification("Fehler beim abschliessenden Speichern: " + saveError.message);
                 clearPendingCategorySuggestion();
                 setIsSubmitting(false);
                 return;
