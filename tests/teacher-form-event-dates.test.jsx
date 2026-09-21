@@ -295,6 +295,54 @@ describe('TeacherForm – Termine (start_date/end_date) reach the state and surv
         expect(notifications).not.toContain('Gespeichert');
     });
 
+    it('persistiert Lead-Termine beim Wechsel von festen Standorten zu konkreten Terminen', async () => {
+        sessionStorage.clear();
+        db.course_events = [];
+        db.course_locations = [{
+            id: 'location-1',
+            course_id: COURSE_ID,
+            location_type: 'presence',
+            street: 'Else-Züblin-Strasse 21',
+            city: '8404 Winterthur',
+            canton: 'Zürich',
+            sort_order: 0
+        }];
+
+        renderEditor([], {
+            booking_type: 'lead',
+            course_locations: db.course_locations
+        }, { isAdminImpersonating: false });
+
+        await waitFor(() => expect(screen.getByRole('button', { name: /Konkrete Termine/i })).toBeInTheDocument());
+        document.querySelector('form').noValidate = true;
+
+        await act(async () => {
+            fireEvent.click(screen.getByRole('button', { name: /Konkrete Termine/i }));
+        });
+
+        const dateInputs = startDateInputs;
+        await waitFor(() => expect(dateInputs().length).toBeGreaterThanOrEqual(1));
+        const dates = ['2026-10-02', '2026-10-09', '2026-10-17'];
+        for (let index = 0; index < dates.length; index += 1) {
+            await act(async () => {
+                fireEvent.click(screen.getAllByRole('button', { name: /Abweichenden Ort angeben/i })[0]);
+                fireEvent.change(dateInputs()[index], { target: { value: dates[index] } });
+                fireEvent.change(inputsForLabel('PLZ / Ort')[index], { target: { value: '8404 Winterthur' } });
+                if (index < dates.length - 1) {
+                    fireEvent.click(screen.getByRole('button', { name: /Termin hinzufügen/i }));
+                }
+            });
+        }
+        await act(async () => { fireEvent.click(screen.getByTestId('save-course')); });
+
+        await waitFor(() => expect(db.course_events.filter(ev => ev.course_id === COURSE_ID)).toHaveLength(3));
+        expect(db.course_events.map(ev => ev.start_date).sort()).toEqual(dates);
+        expect(db.course_events.map(ev => ev.location)).toEqual([
+            '8404 Winterthur', '8404 Winterthur', '8404 Winterthur'
+        ]);
+        expect(window.alert).not.toHaveBeenCalled();
+    });
+
     it('does not wipe saved Termine when a single date field is edited', async () => {
         renderEditor(reloadEventsFromDb());
         await waitFor(() => expect(startDateInputs().length).toBe(1));
