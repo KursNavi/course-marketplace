@@ -498,6 +498,25 @@ export default async function handler(req, res) {
       // Requires an explicit bookingType: without it a payload that simply omits
       // the field would delete every saved Standort and insert nothing back.
       if (bookingType !== '' && bookingType !== 'platform' && Array.isArray(locations)) {
+        const locationsForPersistence = locationMode === 'events'
+          ? sanitizedEvents
+              .filter(ev => ev.type === 'presence' && ev.canton)
+              .reduce((unique, ev) => {
+                const key = `${ev.street?.trim() || ''}|${ev.city?.trim() || ''}|${ev.canton}`;
+                if (!unique.some(location => location._key === key)) {
+                  unique.push({
+                    _key: key,
+                    type: 'presence',
+                    street: ev.street,
+                    city: ev.city,
+                    canton: ev.canton
+                  });
+                }
+                return unique;
+              }, [])
+              .map(({ _key, ...location }) => location)
+          : locations;
+
         const { error: deleteLocError } = await supabaseAdmin
           .from('course_locations')
           .delete()
@@ -507,8 +526,8 @@ export default async function handler(req, res) {
           return res.status(500).json({ error: deleteLocError.message });
         }
 
-        if (locations.length > 0) {
-          const locationPayloads = locations.map((loc, i) => ({
+        if (locationsForPersistence.length > 0) {
+          const locationPayloads = locationsForPersistence.map((loc, i) => ({
             course_id: activeCourseId,
             location_type: loc.type,
             street: loc.type === 'presence' ? (loc.street?.trim() || null)
@@ -555,7 +574,33 @@ export default async function handler(req, res) {
 
       if (savedCourseError) return res.status(500).json({ error: savedCourseError.message });
 
-      return res.status(200).json({ ok: true, courseId: activeCourseId, course: savedCourse });
+      // Return the same related data that the dashboard query uses. The
+      // editor callback replaces the in-memory course with this response;
+      // returning only the courses row made an immediate re-open fall back to
+      // "Feste Standorte" until a full dashboard reload fetched the joins.
+      const [{ data: savedEvents, error: savedEventsError }, { data: savedLocations, error: savedLocationsError }] = await Promise.all([
+        supabaseAdmin
+          .from('course_events')
+          .select('*, bookings(count)')
+          .eq('course_id', activeCourseId),
+        supabaseAdmin
+          .from('course_locations')
+          .select('*')
+          .eq('course_id', activeCourseId)
+      ]);
+
+      if (savedEventsError) return res.status(500).json({ error: savedEventsError.message });
+      if (savedLocationsError) return res.status(500).json({ error: savedLocationsError.message });
+
+      return res.status(200).json({
+        ok: true,
+        courseId: activeCourseId,
+        course: {
+          ...savedCourse,
+          course_events: savedEvents || [],
+          course_locations: savedLocations || []
+        }
+      });
     }
 
     // ============================================
@@ -960,3 +1005,4 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Internal server error', details: error.message });
   }
 }
+

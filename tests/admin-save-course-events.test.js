@@ -235,6 +235,55 @@ describe('/api/admin save-course — Termine dürfen nicht durch eine leere List
         expect(courseEvents().some(ev => ev.id === 'ev-2')).toBe(false);
     });
 
+    it('gibt nach dem Speichern Termine und Standorte für das Dashboard zurück', async () => {
+        const res = await callSaveCourse({
+            bookingType: 'lead',
+            locationMode: 'events',
+            locations: [{ type: 'presence', street: 'Alte Strasse 1', city: '8000 Zürich', canton: 'Zürich' }],
+            validEvents: [{
+                id: 'ev-1', type: 'presence', start_date: '2026-10-02',
+                location: 'Else-Züblin-Strasse 21, 8404 Winterthur',
+                street: 'Else-Züblin-Strasse 21', city: '8404 Winterthur', canton: 'Zürich'
+            }]
+        });
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.course.course_events).toEqual(expect.arrayContaining([
+            expect.objectContaining({ id: 'ev-1', start_date: '2026-10-02' })
+        ]));
+        expect(res.body.course.course_locations).toEqual(expect.arrayContaining([
+            expect.objectContaining({ street: 'Else-Züblin-Strasse 21', city: '8404 Winterthur' })
+        ]));
+    });
+
+    it('spiegelt im Admin-Terminmodus die Event-Adressen statt alte feste Standorte', async () => {
+        const res = await callSaveCourse({
+            bookingType: 'lead',
+            locationMode: 'events',
+            locations: [{ type: 'presence', street: 'Alte Strasse 1', city: '8000 Zürich', canton: 'Zürich' }],
+            validEvents: [{
+                id: 'ev-1',
+                type: 'presence',
+                start_date: '2026-10-02',
+                location: 'Else-Züblin-Strasse 21, 8404 Winterthur',
+                street: 'Else-Züblin-Strasse 21',
+                city: '8404 Winterthur',
+                canton: 'Zürich',
+                schedule_description: '',
+                max_participants: 0
+            }]
+        });
+
+        expect(res.statusCode).toBe(200);
+        expect(db.course_locations).toEqual([
+            expect.objectContaining({
+                street: 'Else-Züblin-Strasse 21',
+                city: '8404 Winterthur',
+                canton: 'Zürich'
+            })
+        ]);
+    });
+
     it('persists an arbitrary multi-row event payload, including all five SKDZ blocks', async () => {
         const blocks = [
             ['2026-10-05', '2026-10-09'],
@@ -333,3 +382,4 @@ describe('/api/admin courses — Admin sieht auch Entwürfe', () => {
         expect(res.statusCode).toBe(405);
     });
 });
+
