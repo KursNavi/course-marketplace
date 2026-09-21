@@ -1315,6 +1315,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, refreshImper
         }
 
         setIsSubmitting(true);
+        let savedCourseForDashboard = null;
 
         // 3. Image Upload (mit automatischer Komprimierung) oder bestehendes Bild verwenden
         let imageUrl = initialData?.image_url || DEFAULT_COURSE_IMAGE;
@@ -1498,7 +1499,8 @@ if (bookingType === 'platform' || activeLocationMode === 'events') {
                 });
                 activeCourseId = result.courseId;
                 createdCourseIdRef.current = activeCourseId;
-                onCourseSaved?.(result.course || { id: activeCourseId, ...newCourse });
+                savedCourseForDashboard = result.course || { id: activeCourseId, ...newCourse };
+                onCourseSaved?.(savedCourseForDashboard);
                 showNotification(activeCourseId && initialData?.id ? "Kurs aktualisiert!" : t.success_msg);
             } catch (adminError) {
                 error = adminError;
@@ -1806,7 +1808,7 @@ if (bookingType === 'platform' || activeLocationMode === 'events') {
 
             const { data: savedCourse, error: savedCourseError } = await supabase
                 .from('courses')
-                .select('*')
+                .select('*, course_events(*, bookings(count)), course_locations(*)')
                 .eq('id', activeCourseId)
                 .single();
 
@@ -1819,6 +1821,7 @@ if (bookingType === 'platform' || activeLocationMode === 'events') {
             }
 
             onCourseSaved?.(savedCourse);
+            savedCourseForDashboard = savedCourse;
         }
 
         // Clear draft after successful save
@@ -1843,6 +1846,11 @@ if (bookingType === 'platform' || activeLocationMode === 'events') {
             // response so the editor never reopens stale course metadata.
             refresh: isAdminImpersonating ? refreshImpersonatedData : undefined
         });
+        // The refresh can race with the save response and return an older
+        // impersonated dashboard snapshot. Re-apply the authoritative save
+        // response, including its related events and locations, before the
+        // editor is closed and the dashboard becomes visible.
+        if (savedCourseForDashboard) onCourseSaved?.(savedCourseForDashboard);
         setEditingCourse(null);
         sessionStorage.setItem('dashOpenTab', 'kursangebot');
         setView('dashboard');
