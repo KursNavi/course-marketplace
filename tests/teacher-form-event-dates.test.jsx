@@ -383,6 +383,58 @@ describe('TeacherForm – Termine (start_date/end_date) reach the state and surv
         expect(window.alert).not.toHaveBeenCalled();
     });
 
+    it('sends lead-course Termine through the admin API and preserves structured count on edit', async () => {
+        const fetchMock = vi.fn().mockResolvedValue({
+            ok: true,
+            json: async () => ({ ok: true, courseId: COURSE_ID })
+        });
+        vi.stubGlobal('fetch', fetchMock);
+
+        renderEditor([{
+            id: 'event-1',
+            course_id: COURSE_ID,
+            start_date: '2026-10-02',
+            end_date: null,
+            location: 'Atelierstrasse 8, 8000 Zürich',
+            canton: 'Zürich',
+            schedule_description: '17:30 Uhr',
+            max_participants: 8
+        }], {
+            booking_type: 'lead',
+            session_count: 3,
+            session_length: 'Rund 5 Stunden',
+            course_locations: [{
+                id: 'location-1',
+                location_type: 'presence',
+                street: 'Atelierstrasse 8',
+                city: '8000 Zürich',
+                canton: 'Zürich',
+                sort_order: 0
+            }]
+        }, {
+            isAdminImpersonating: true
+        });
+
+        await waitFor(() => expect(screen.getByRole('button', { name: /Konkrete Termine/i })).toBeInTheDocument());
+        document.querySelector('form').noValidate = true;
+
+        await act(async () => {
+            fireEvent.click(screen.getByTestId('save-course'));
+        });
+
+        await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+        const body = JSON.parse(fetchMock.mock.calls[0][1].body);
+        expect(body.locationMode).toBe('events');
+        expect(body.validEvents).toHaveLength(1);
+        expect(body.validEvents[0]).toMatchObject({
+            start_date: '2026-10-02',
+            location: 'Atelierstrasse 8, 8000 Zürich',
+            canton: 'Zürich'
+        });
+        expect(body.course.session_count).toBe(3);
+        expect(window.alert).not.toHaveBeenCalled();
+    });
+
     it('uses the just-selected Feste-Standorte mode when saving immediately', async () => {
         const fetchMock = vi.fn().mockResolvedValue({
             ok: true,

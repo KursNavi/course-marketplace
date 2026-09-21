@@ -1449,7 +1449,10 @@ if (bookingType === 'platform' || activeLocationMode === 'events') {
             keywords: keywordsVal,
             objectives: objectivesList,
             prerequisites: prerequisitesVal,
-            session_count: null, // merged into session_length
+            // The editor currently presents count and length as one combined
+            // field. Keep an existing structured count when the legacy count
+            // state is empty, otherwise an unrelated edit silently erased it.
+            session_count: sessionCount || initialData?.session_count || null,
             session_length: sessionLength || null,
             price_info: priceInfo || null,
             provider_url: providerUrl,
