@@ -588,6 +588,53 @@ describe('TeacherForm – Termine (start_date/end_date) reach the state and surv
         expect(window.alert).not.toHaveBeenCalled();
     });
 
+    it('übernimmt nach Admin-Save den vollständigen Kurszustand für das sofortige erneute Bearbeiten', async () => {
+        const savedCourse = {
+            ...baseCourse,
+            course_events: [{
+                id: 'event-1',
+                start_date: '2026-11-06',
+                location: 'Else-Züblin-Strasse 21, 8000 Zürich',
+                canton: 'Zürich'
+            }],
+            course_locations: [{
+                id: 'location-1',
+                location_type: 'presence',
+                street: 'Else-Züblin-Strasse 21',
+                city: '8000 Zürich',
+                canton: 'Zürich',
+                sort_order: 0
+            }]
+        };
+        const fetchMock = vi.fn().mockResolvedValue({
+            ok: true,
+            json: async () => ({ ok: true, courseId: COURSE_ID, course: savedCourse })
+        });
+        vi.stubGlobal('fetch', fetchMock);
+        let dashboardCourse;
+
+        const view = renderEditor([], {
+            course_locations: savedCourse.course_locations
+        }, {
+            isAdminImpersonating: true,
+            onCourseSaved: (course) => { dashboardCourse = course; }
+        });
+
+        document.querySelector('form').noValidate = true;
+        await act(async () => { fireEvent.click(screen.getByTestId('save-course')); });
+        await waitFor(() => expect(dashboardCourse?.course_events).toHaveLength(1));
+
+        view.unmount();
+        renderEditor(dashboardCourse.course_events, dashboardCourse, {
+            isAdminImpersonating: true
+        });
+
+        await waitFor(() => expect(screen.getByText('Konkrete Termine')).toBeInTheDocument());
+        expect(screen.getByDisplayValue('2026-11-06')).toBeInTheDocument();
+        expect(screen.getByDisplayValue('8000 Zürich')).toBeInTheDocument();
+        expect(screen.getByDisplayValue('Else-Züblin-Strasse 21')).toBeInTheDocument();
+    });
+
     it('still requires a valid date after switching to Konkrete Termine', async () => {
         const fetchMock = vi.fn();
         vi.stubGlobal('fetch', fetchMock);
@@ -617,6 +664,51 @@ describe('TeacherForm – Termine (start_date/end_date) reach the state and surv
         expect(window.alert).toHaveBeenCalledWith('Bitte gib mindestens einen Termin mit Datum an.');
         expect(fetchMock).not.toHaveBeenCalled();
         window.alert.mockClear();
+    });
+
+    it('spiegelt die vollständige strukturierte Event-Adresse in course_locations', async () => {
+        sessionStorage.clear();
+        db.course_events = [];
+        db.course_locations = [{
+            id: 'location-1',
+            course_id: COURSE_ID,
+            location_type: 'presence',
+            street: 'Else-Züblin-Strasse 21',
+            city: '8404 Winterthur',
+            canton: 'Zürich',
+            sort_order: 0
+        }];
+
+        renderEditor([], {
+            booking_type: 'lead',
+            course_locations: db.course_locations
+        }, { isAdminImpersonating: false });
+
+        await waitFor(() => expect(screen.getByRole('button', { name: /Konkrete Termine/i })).toBeInTheDocument());
+        document.querySelector('form').noValidate = true;
+        await act(async () => {
+            fireEvent.click(screen.getByRole('button', { name: /Konkrete Termine/i }));
+        });
+
+        const dateInput = startDateInputs()[0];
+        await act(async () => {
+            fireEvent.click(screen.getAllByRole('button', { name: /Abweichenden Ort angeben/i })[0]);
+            fireEvent.change(dateInput, { target: { value: '2026-10-02' } });
+            fireEvent.change(screen.getAllByPlaceholderText('Musterstrasse 12')[0], { target: { value: 'Else-Züblin-Strasse 21' } });
+            fireEvent.change(inputsForLabel('PLZ / Ort')[0], { target: { value: '8404 Winterthur' } });
+            fireEvent.change(screen.getAllByRole('combobox').at(-1), { target: { value: 'Zürich' } });
+            fireEvent.click(screen.getByTestId('save-course'));
+        });
+
+        await waitFor(() => expect(db.course_events).toHaveLength(1));
+        expect(db.course_events[0].location).toBe('Else-Züblin-Strasse 21, 8404 Winterthur');
+        expect(db.course_locations).toEqual(expect.arrayContaining([
+            expect.objectContaining({
+                street: 'Else-Züblin-Strasse 21',
+                city: '8404 Winterthur',
+                canton: 'Zürich'
+            })
+        ]));
     });
 
     it('saves a draft without a complete primary category and keeps it unpublished', async () => {
@@ -678,3 +770,4 @@ describe('TeacherForm – Termine (start_date/end_date) reach the state and surv
         expect(db.courses[0].status).toBe('draft');
     });
 });
+

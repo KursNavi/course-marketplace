@@ -1315,6 +1315,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, refreshImper
         }
 
         setIsSubmitting(true);
+        let savedCourseForDashboard = null;
 
         // 3. Image Upload (mit automatischer Komprimierung) oder bestehendes Bild verwenden
         let imageUrl = initialData?.image_url || DEFAULT_COURSE_IMAGE;
@@ -1498,7 +1499,8 @@ if (bookingType === 'platform' || activeLocationMode === 'events') {
                 });
                 activeCourseId = result.courseId;
                 createdCourseIdRef.current = activeCourseId;
-                onCourseSaved?.(result.course || { id: activeCourseId, ...newCourse });
+                savedCourseForDashboard = result.course || { id: activeCourseId, ...newCourse };
+                onCourseSaved?.(savedCourseForDashboard);
                 showNotification(activeCourseId && initialData?.id ? "Kurs aktualisiert!" : t.success_msg);
             } catch (adminError) {
                 error = adminError;
@@ -1681,16 +1683,23 @@ if (bookingType === 'platform' || activeLocationMode === 'events') {
                     sort_order: i
                 }));
             } else {
-                // Events mode (platform + lead/flex): mirror unique presence cantons from events.
-                // Do NOT copy street — events are the authoritative source for the full address;
-                // course_locations in this mode serve only as a canton-based filter index.
+                // Events mode (platform + lead/flex): mirror the structured
+                // presence address from each event. This keeps provider
+                // editing and preview queries from losing street/city data
+                // when course_locations is reloaded.
                 const seen = new Set();
                 locationPayloads = eventsForPersistence
-                    .filter(ev => ev.type === 'presence' && ev.canton && !seen.has(ev.canton) && seen.add(ev.canton))
+                    .filter(ev => {
+                        if (ev.type !== 'presence' || !ev.canton) return false;
+                        const key = `${ev.street?.trim() || ''}|${ev.city?.trim() || ''}|${ev.canton}`;
+                        if (seen.has(key)) return false;
+                        seen.add(key);
+                        return true;
+                    })
                     .map((ev, i) => ({
                         course_id: activeCourseId,
                         location_type: 'presence',
-                        street: null,
+                        street: ev.street?.trim() || null,
                         city: ev.city?.trim() || null,
                         canton: ev.canton,
                         sort_order: i
@@ -1799,7 +1808,7 @@ if (bookingType === 'platform' || activeLocationMode === 'events') {
 
             const { data: savedCourse, error: savedCourseError } = await supabase
                 .from('courses')
-                .select('*')
+                .select('*, course_events(*, bookings(count)), course_locations(*)')
                 .eq('id', activeCourseId)
                 .single();
 
@@ -1812,6 +1821,7 @@ if (bookingType === 'platform' || activeLocationMode === 'events') {
             }
 
             onCourseSaved?.(savedCourse);
+            savedCourseForDashboard = savedCourse;
         }
 
         // Clear draft after successful save
@@ -1836,6 +1846,11 @@ if (bookingType === 'platform' || activeLocationMode === 'events') {
             // response so the editor never reopens stale course metadata.
             refresh: isAdminImpersonating ? refreshImpersonatedData : undefined
         });
+        // The refresh can race with the save response and return an older
+        // impersonated dashboard snapshot. Re-apply the authoritative save
+        // response, including its related events and locations, before the
+        // editor is closed and the dashboard becomes visible.
+        if (savedCourseForDashboard) onCourseSaved?.(savedCourseForDashboard);
         setEditingCourse(null);
         sessionStorage.setItem('dashOpenTab', 'kursangebot');
         setView('dashboard');
@@ -2410,7 +2425,11 @@ if (bookingType === 'platform' || activeLocationMode === 'events') {
                                                     </div>
                                                     {evType === 'presence' && (
                                                         <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
-                                                            <div className="md:col-span-7">
+                                                            <div className="md:col-span-5">
+                                                                <label className="text-xs font-bold text-gray-500 uppercase">Strasse / Nr.</label>
+                                                                <input type="text" value={ev.street} onChange={e => updateEvent(i, 'street', e.target.value)} placeholder="Musterstrasse 12" className="w-full px-3 py-2 border rounded bg-white focus:ring-2 focus:ring-primary outline-none" />
+                                                            </div>
+                                                            <div className="md:col-span-4">
                                                                 <label className="text-xs font-bold text-gray-500 uppercase">PLZ / Ort</label>
                                                                 <input type="text" value={ev.city} onChange={e => updateEvent(i, 'city', e.target.value)} placeholder="8000 Zürich" className="w-full px-3 py-2 border rounded bg-white focus:ring-2 focus:ring-primary outline-none" />
                                                             </div>
@@ -2910,3 +2929,4 @@ if (bookingType === 'platform' || activeLocationMode === 'events') {
 };
 
 export default TeacherForm;
+
