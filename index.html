@@ -19,6 +19,31 @@
       (function () {
         var contentsquareTagLoaded = false;
 
+        function getSafeContentsquarePath(pathname) {
+          var path = pathname || '/';
+          if (path.indexOf('/app/') === 0) path = '/' + path.slice('/app/'.length);
+
+          if (path === '/' || path === '/search' || path === '/private' || path === '/professional' || path === '/children'
+            || path === '/lead-confirmation' || path === '/login' || path === '/contact' || path === '/about'
+            || path === '/how-it-works' || path === '/agb' || path === '/datenschutz' || path === '/impressum'
+            || path === '/widerruf-storno' || path === '/vertrauen-sicherheit' || path === '/ratgeber') return path;
+          if (/^\/courses\/[^/]+\/[^/]+\/[^/]+\/?$/.test(path)) return '/courses/course-detail';
+          if (/^\/courses\/[^/]+\/[^/]+\/?$/.test(path)) return '/courses/category-location';
+          if (/^\/courses\/[^/]+\/?$/.test(path)) return '/courses/search-entry';
+          if (/^\/course\/[^/]+(?:\/.*)?$/.test(path)) return '/course/course-detail';
+          if (/^\/anbieter\/[^/]+(?:\/.*)?$/.test(path)) return '/anbieter/profile';
+          if (/^\/kampagne\/[^/]+(?:\/.*)?$/.test(path)) return '/kampagne/landing';
+          if (/^\/bereich\/.+/.test(path)) return '/bereich/landing';
+          if (/^\/thema\/.+/.test(path)) return '/thema/landing';
+          if (/^\/profil\/.+/.test(path)) return '/profil/teacher-profile';
+          if (/^\/blog\/.+/.test(path)) return '/blog/article';
+          if (/^\/ratgeber\/.+/.test(path)) return '/ratgeber/content';
+          return '/other';
+        }
+
+        window.__kursnaviContentsquareSafePath = getSafeContentsquarePath;
+        window.__kursnaviContentsquareObservedPath = window.location.pathname || '/';
+
         function isInternalAnalyticsRoute() {
           var pathname = window.location.pathname || '/';
           if (pathname.indexOf('/app/') === 0) pathname = '/' + pathname.slice(5);
@@ -40,6 +65,21 @@
           }
           if (contentsquareTagLoaded || isInternalAnalyticsRoute()) return;
 
+          // The tag's initial pageview uses this sanitized path override before
+          // the external script can read the browser URL.
+          window.__kursnaviContentsquareObservedPath = window.location.pathname || '/';
+          window._uxa = window._uxa || [];
+          window._uxa.push(['setPath', getSafeContentsquarePath(window.location.pathname)]);
+          window._uxa.push(['setQuery', '']);
+          window._uxa.push(['referrer:removeQueryString']);
+          [
+            '/courses/:topic/:location/:course',
+            '/course/:course',
+            '/anbieter/:provider',
+            '/profil/:teacher',
+          ].forEach(function (pattern) {
+            window._uxa.push(['referrer:maskUrl', window.location.origin + pattern]);
+          });
           var script = document.createElement('script');
           script.async = true;
           script.src = 'https://t.contentsquare.net/uxa/9d1e4f9cc0626.js';
@@ -49,14 +89,14 @@
 
           // The app may have rendered before statistics consent was granted.
           // Record the current route once the tag is actually enabled so the
-          // initial page is not missing from Contentsquare replays/events.
-          window._uxa = window._uxa || [];
+          // initial page is captured without query strings or route identifiers.
           window._uxa.push(['trackPageEvent', 'Page Viewed']);
         }
 
         window.addEventListener('CookiebotOnConsentReady', applyContentsquareConsent);
         window.addEventListener('CookiebotOnAccept', applyContentsquareConsent);
         window.addEventListener('CookiebotOnDecline', applyContentsquareConsent);
+        window.addEventListener('locationchange', applyContentsquareConsent);
         window.setTimeout(applyContentsquareConsent, 0);
       }());
     </script>
