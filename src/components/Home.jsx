@@ -178,9 +178,9 @@ export const Home = ({
 
   // SEO Meta Tags for Home Page
   useEffect(() => {
-    document.title = 'KursNavi - Der Schweizer Kursmarktplatz für Weiterbildung & Freizeit';
+    document.title = 'Kurse in der Schweiz finden – Weiterbildung, Hobby & Kinder | KursNavi';
 
-    const metaDescription = 'Entdecke Kurse in der Schweiz: Weiterbildung, Hobbys und Kinderkurse. Vergleiche lokale Anbieter und frage passende Angebote unverbindlich an.';
+    const metaDescription = 'Finde Kurse in der Schweiz: berufliche Weiterbildungen, Hobbykurse und Angebote für Kinder und Jugendliche. Vergleiche Anbieter und entdecke passende Kurse.';
 
     let metaDescTag = document.querySelector('meta[name="description"]');
     if (!metaDescTag) {
@@ -205,7 +205,7 @@ export const Home = ({
 
     // OG Tags
     const ogTags = {
-        'og:title': 'KursNavi - Der Schweizer Kursmarktplatz',
+        'og:title': 'Kurse in der Schweiz finden – KursNavi',
         'og:description': metaDescription,
         'og:url': canonicalUrl,
         'og:image': `${BASE_URL}/og-default.png`,
@@ -213,7 +213,7 @@ export const Home = ({
         'og:locale': 'de_CH',
         'og:site_name': 'KursNavi',
         'twitter:card': 'summary_large_image',
-        'twitter:title': 'KursNavi - Der Schweizer Kursmarktplatz',
+        'twitter:title': 'Kurse in der Schweiz finden – KursNavi',
         'twitter:description': metaDescription,
         'twitter:image': `${BASE_URL}/og-default.png`
     };
