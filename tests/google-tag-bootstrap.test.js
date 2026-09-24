@@ -85,8 +85,13 @@ describe('Contentsquare bootstrap consent boundaries', () => {
 
     expect(scripts).toEqual(['https://t.contentsquare.net/uxa/9d1e4f9cc0626.js']);
     expect(events).toEqual([
+      ['setPath', '/'],
       ['setQuery', ''],
       ['referrer:removeQueryString'],
+      ['referrer:maskUrl', 'https://kursnavi.ch/courses/:topic/:location/:course'],
+      ['referrer:maskUrl', 'https://kursnavi.ch/course/:course'],
+      ['referrer:maskUrl', 'https://kursnavi.ch/anbieter/:provider'],
+      ['referrer:maskUrl', 'https://kursnavi.ch/profil/:teacher'],
       ['trackPageEvent', 'Page Viewed'],
     ]);
   });
