@@ -13,6 +13,7 @@ import { hasCompleteCourseCategory } from './lib/courseStatus';
 import { mergeImpersonatedCourses } from './lib/impersonationCourses';
 import { getHomepageLinkRel } from './lib/entitlements';
 import { trackPageView, trackPurchase } from './lib/analytics';
+import { trackContentsquareRouteChange } from './lib/contentsquare';
 import { useTaxonomy } from './hooks/useTaxonomy';
 
 // Disable browser scroll auto-restoration synchronously so it can't override
@@ -1861,6 +1862,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
     // GA4 Pageview bei jedem Routenwechsel (setTimeout damit document.title aktuell ist)
     const trackRoute = () => {
       setTimeout(() => {
+        trackContentsquareRouteChange();
         trackPageView(window.location.pathname + window.location.search, document.title);
       }, 0);
     };
