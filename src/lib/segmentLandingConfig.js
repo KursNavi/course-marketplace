@@ -658,6 +658,9 @@ export const SIMPLE_TOPIC_CONTENT = {
       { icon: '✂️', title: 'Nähen, Stricken & mehr', text: 'Textile Kreativität verbindet Handwerk, Ästhetik und Entspannung.' },
     ],
     showCourseList: true,
+    // Canonical taxonomy slug for the search filter; areaAliases below also
+    // contain historical values to keep older course records on this page.
+    searchAreaSlug: 'kunst_kreativ',
     // Aliase des zusammengeführten Slugs 'kunst-kreativitaet' sind hier
     // enthalten, damit kein Kurs durch die Zusammenführung aus der Liste fällt.
     typeAliases: ['privat_hobby', 'privat', '2'],
