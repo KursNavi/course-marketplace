@@ -13,6 +13,7 @@ import { SEARCH_STRINGS } from '../lib/searchStrings';
 import { getNormalizedDeliveryTypes } from '../lib/courseMetadata';
 import { fetchPublishedThemeWorldAreaLabels } from '../lib/themeWorldService';
 import { trackCourseCardCta, trackSearch } from '../lib/analytics';
+import { trackContentsquareSearchFilterApplied } from '../lib/contentsquare';
 import { getSearchHeader } from '../lib/searchHeaderConfig';
 import { sortCoursesByRelevance, stableSeed } from '../lib/searchRelevance';
 
@@ -266,6 +267,23 @@ const SearchPageView = ({
         if (loading) return;
         trackSearch(searchQuery, filteredCourses.length);
     }, [filteredCourses.length, loading, searchQuery]);
+
+    // Contentsquare filter signal. Values stay local and are never sent with the event.
+    const filterStateSignature = JSON.stringify([
+        searchType || '', searchArea || '', searchSpecialty || '', searchFocus || '',
+        selectedLocations || [], Boolean(searchQuery?.trim()),
+        filterDateFrom || '', filterDateTo || '', filterPriceMax || '', filterLevel || 'All',
+        Boolean(filterPro), Boolean(filterDirectBooking), selectedLanguages || [],
+        selectedDeliveryTypes || [], selectedSaule || '', selectedKursart || '',
+    ]);
+    const previousFilterStateRef = useRef(null);
+    useEffect(() => {
+        if (loading) return;
+        if (previousFilterStateRef.current !== null && previousFilterStateRef.current !== filterStateSignature) {
+            trackContentsquareSearchFilterApplied();
+        }
+        previousFilterStateRef.current = filterStateSignature;
+    }, [filterStateSignature, loading]);
 
     // Track impressions for rendered course cards (session-deduplicated, batch insert)
     useEffect(() => {
