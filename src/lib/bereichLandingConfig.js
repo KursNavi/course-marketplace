@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Bereichs-Landingpage Configuration
  *
  * Konfiguration für Level-2-Landingpages (Bereiche/Themenwelten).
@@ -15,17 +15,19 @@ export const BEREICH_LANDING_CONFIG = {
     areaSlug: 'sport_fitness_beruf',
     typeKey: 'beruflich',
     title: {
-      de: 'Sport & Fitness - Finde deine Ausbildung',
+      de: 'Fitness-Ausbildungen in der Schweiz finden',
       en: 'Sports & Fitness - Find Your Training',
       fr: 'Sport & Fitness - Trouve ta formation',
       it: 'Sport & Fitness - Trova la tua formazione'
     },
     subtitle: {
-      de: 'Fitnesstrainer, Personal Training, Group Fitness und mehr',
+      de: 'Vergleiche Ausbildungen für Fitnesstrainer, Personal Training und Group Fitness. Prüfe Inhalte, Lernformat und Abschluss direkt beim jeweiligen Anbieter.',
       en: 'Fitness Trainer, Personal Training, Group Fitness and more',
       fr: 'Coach fitness, entrainement personnel, fitness en groupe et plus',
       it: 'Istruttore fitness, personal training, fitness di gruppo e altro'
     },
+    metaTitle: 'Fitness-Ausbildung in der Schweiz: Trainer & Group Fitness | KursNavi',
+    metaDescription: 'Vergleiche Ausbildungen für Fitnesstrainer, Personal Training und Group Fitness. Prüfe Inhalte, Lernformat und Abschluss direkt beim jeweiligen Anbieter.',
     heroImage: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&q=80&w=2000',
 
     scenarios: [
@@ -490,5 +492,4 @@ export const findSzenario = (bereichConfig, szenarioSlug) => {
   if (!bereichConfig?.scenarios) return null;
   return bereichConfig.scenarios.find(s => s.slug === szenarioSlug) || null;
 };
-
 
