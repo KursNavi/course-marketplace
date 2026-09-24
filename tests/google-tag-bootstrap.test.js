@@ -84,7 +84,11 @@ describe('Contentsquare bootstrap consent boundaries', () => {
     const { events, scripts } = runContentsquareBootstrap({ statistics: true, marketing: false });
 
     expect(scripts).toEqual(['https://t.contentsquare.net/uxa/9d1e4f9cc0626.js']);
-    expect(events).toEqual([['trackPageEvent', 'Page Viewed']]);
+    expect(events).toEqual([
+      ['setQuery', ''],
+      ['referrer:removeQueryString'],
+      ['trackPageEvent', 'Page Viewed'],
+    ]);
   });
 
   it('does not load Contentsquare without statistics consent', () => {
