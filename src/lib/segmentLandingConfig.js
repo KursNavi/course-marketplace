@@ -24,7 +24,7 @@
 // KURSARTEN + THEMEN PER SEGMENT
 // ------------------------------------------------------------
 
-import { SEARCH_AREA_ALIASES } from './searchAreaAliases';
+import { SEARCH_AREA_ALIASES } from './searchAreaAliases.js';
 
 export const SEGMENT_LANDING_CONFIG = {
   beruflich: {
