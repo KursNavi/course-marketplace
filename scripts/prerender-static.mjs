@@ -298,8 +298,8 @@ const STATIC_PAGES = [
   },
   {
     path: '/private',
-    title: 'Privatkurse & Hobbykurse in der Schweiz | KursNavi',
-    description: 'Entdecke Kurse für deine Freizeit, Hobbys und persönliche Entwicklung in der Schweiz. Von Yoga bis Kreativkurse – finde dein nächstes Hobby.',
+    title: 'Privatkurse und Hobbykurse in der Schweiz finden | KursNavi',
+    description: 'Entdecke Kurse für Freizeit und persönliche Interessen: von Yoga und Musik bis zu Kreativkursen. Vergleiche Angebote in deiner Region oder online.',
   },
   {
     path: '/professional',
@@ -308,8 +308,8 @@ const STATIC_PAGES = [
   },
   {
     path: '/children',
-    title: 'Kinderkurse & Jugendkurse in der Schweiz | KursNavi',
-    description: 'Entdecke Kurse und Freizeitangebote für Kinder und Jugendliche in der Schweiz. Sport, Kreativität, Musik und mehr – für jedes Alter das Richtige.',
+    title: 'Kinderkurse, Jugendkurse & schulisches Lernen | KursNavi',
+    description: 'Finde Freizeitkurse und Ferienangebote für Kinder und Jugendliche sowie Nachhilfe, Lerncoaching und Prüfungsvorbereitung in der Schweiz.',
   },
   {
     path: '/agb',
@@ -575,7 +575,11 @@ if (dbThemeWorlds.enabled) {
 for (const bereich of Object.values(BEREICH_LANDING_CONFIG)) {
   const bereichPath = `/bereich/${bereich.segment}/${bereich.slug}`;
   if (!writtenPaths.has(bereichPath)) {
-    writeRoute(bereichPath, `${bereich.title.de} | KursNavi`, bereich.subtitle.de);
+    writeRoute(
+      bereichPath,
+      bereich.metaTitle || `${bereich.title.de} | KursNavi`,
+      bereich.metaDescription || bereich.subtitle.de
+    );
   }
 
   for (const szenario of (bereich.scenarios || [])) {
