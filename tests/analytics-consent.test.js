@@ -55,6 +55,21 @@ describe('Google tracking consent boundaries', () => {
     ]);
   });
 
+  it('removes query strings and referrers from GA4 page context', () => {
+    window.Cookiebot.consent.statistics = true;
+    window.history.replaceState({}, '', '/search?q=private@example.com');
+
+    trackPageView('/search?q=private@example.com', 'Private search');
+
+    const pageView = calls.find(([command, event]) => command === 'event' && event === 'page_view');
+    expect(pageView[2]).toMatchObject({
+      page_path: '/search',
+      page_location: `${window.location.origin}/search`,
+      page_referrer: '',
+    });
+    expect(JSON.stringify(calls)).not.toContain('private@example.com');
+  });
+
   it('does not queue public UX events on private dashboard routes', () => {
     window.Cookiebot.consent.statistics = true;
     window.history.replaceState({}, '', '/dashboard');
@@ -81,7 +96,11 @@ describe('Google tracking consent boundaries', () => {
     const serialized = JSON.stringify(calls);
     expect(serialized).not.toContain('sara@example.com');
     expect(serialized).not.toContain('persönlicher Kurs');
-    expect(calls).toContainEqual(['event', 'search_view', { has_search_term: true, result_count: 4 }]);
+    expect(calls).toContainEqual([
+      'event',
+      'search_view',
+      expect.objectContaining({ has_search_term: true, result_count: 4 }),
+    ]);
   });
 
   it('deduplicates a delivered lead event by event id', () => {
