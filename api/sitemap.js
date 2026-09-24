@@ -12,6 +12,7 @@ import { isThemeWorldDbEnabledServer } from './_lib/theme-world-takeover.js';
 // bewusst abhängigkeitsfrei und darf deshalb hier importiert werden.
 import { buildCanonicalCoursePath, hasStableCanonicalTopic } from '../src/lib/courseUrl.js';
 import { attachPrimaryCategories, fetchCourseCategoryRows } from './_lib/course-categories.js';
+import { buildCategoryLocationRoutes } from '../src/lib/categoryLocation.js';
 
 export default async function handler(req, res) {
   // 1. Supabase Init (Robust Environment Check)
@@ -151,6 +152,15 @@ export default async function handler(req, res) {
           <priority>0.7</priority>
       </url>`;
     }).join('');
+
+    // Nur Thema/Kanton-Kombinationen mit echtem, veröffentlichtem Kursbestand
+    // aufnehmen. Dieselbe Aggregation erzeugt das Build-Prerendering.
+    const categoryLocationUrls = buildCategoryLocationRoutes(publishableCourses).map((route) => `
+      <url>
+          <loc>${escapeXml(`${baseUrl}${route.path}`)}</loc>
+          <changefreq>daily</changefreq>
+          <priority>0.7</priority>
+      </url>`).join('');
 
     // 6. Generate Blog Post URLs (Dynamic)
     const blogUrls = (blogPosts || []).map((post) => {
@@ -339,6 +349,7 @@ export default async function handler(req, res) {
     <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
       ${staticPages}
       ${courseUrls}
+      ${categoryLocationUrls}
       ${blogUrls}
       ${providerUrls}
       ${ratgeberUrls}
