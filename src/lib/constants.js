@@ -823,7 +823,7 @@ export const TRANSLATIONS = {
     admin_btn_verify: "Verifizieren (Pro)", admin_btn_unverify: "Pro entfernen", admin_verified: "Verifizierter Pro",
 
     // HOME PAGE
-    home_headline: "Gestalte deine Zukunft mit KursNavi",
+    home_headline: "Kurse und Weiterbildungen in der Schweiz finden",
     home_subhead: "Entdecke Kurse, lerne neue Fähigkeiten und entfalte dein Potenzial mit Experten, die dich weiterbringen.",
     home_verified_tutors: "Geprüfte Kursanbieter",
     home_students: "Lernende",
@@ -836,9 +836,9 @@ export const TRANSLATIONS = {
     btn_explore: "ENTDECKEN",
 
     // LANDING TITLES
-    landing_priv_title: "Entfessle deine Leidenschaft.", landing_priv_sub: "Hobby-Kurse",
+    landing_priv_title: "Privatkurse und Hobbykurse für deine Freizeit", landing_priv_sub: "Kurse für Freizeit und persönliche Interessen",
     landing_prof_title: "Karriere-Boost.", landing_prof_sub: "Berufliche Weiterbildung",
-    landing_kids_title: "Spielerisch lernen.", landing_kids_sub: "Kinderkurse",
+    landing_kids_title: "Kurse für Kinder, Jugendliche & schulisches Lernen", landing_kids_sub: "Freizeitkurse, Ferienangebote und schulische Lernangebote",
 
     // SEARCH FILTERS
     search_refine: "Suche verfeinern...",
@@ -994,7 +994,7 @@ export const TRANSLATIONS = {
     admin_btn_verify: "Vérifier Pro", admin_btn_unverify: "Retirer Pro", admin_verified: "Pro Vérifié",
 
     // HOME PAGE
-    home_headline: "Naviguez vers votre avenir avec KursNavi",
+    home_headline: "Trouvez des cours et formations en Suisse",
     home_subhead: "Découvrez des cours, acquérez de nouvelles compétences et libérez votre potentiel avec des experts.",
     home_verified_tutors: "Prestataires vérifiés",
     home_students: "Apprenants",
@@ -1165,7 +1165,7 @@ export const TRANSLATIONS = {
     admin_btn_verify: "Verifica Pro", admin_btn_unverify: "Rimuovi Pro", admin_verified: "Pro Verificato",
 
     // HOME PAGE
-    home_headline: "Naviga il tuo futuro con KursNavi",
+    home_headline: "Trova corsi e formazione in Svizzera",
     home_subhead: "Scopri corsi, acquisisci nuove competenze e sblocca il tuo potenziale con esperti.",
     home_verified_tutors: "Fornitori verificati",
     home_students: "Apprendenti",
