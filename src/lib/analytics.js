@@ -30,11 +30,18 @@ function gtagSafe(category, ...args) {
   if (!hasConsent(category)) return;
   if (typeof window.gtag === 'function') {
     // GA4 otherwise attaches the browser's full location and referrer to events.
-    window.gtag('set', {
-      page_location: `${window.location.origin}${analyticsPath(window.location.pathname)}`,
-      page_referrer: '',
-    });
-    window.gtag(...args);
+    // Keep the sanitized context on the event itself so this does not create
+    // extra gtag calls and every SPA route uses its own current path.
+    const eventArgs = [...args];
+    if (eventArgs[0] === 'event') {
+      const params = eventArgs[2] && typeof eventArgs[2] === 'object' ? eventArgs[2] : {};
+      eventArgs[2] = {
+        ...params,
+        page_location: `${window.location.origin}${analyticsPath(window.location.pathname)}`,
+        page_referrer: '',
+      };
+    }
+    window.gtag(...eventArgs);
   }
 }
 
