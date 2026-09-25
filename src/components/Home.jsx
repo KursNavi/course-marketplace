@@ -336,37 +336,7 @@ export const Home = ({
           {/* SEARCH & FILTERS CONTAINER */}
           <div className="max-w-3xl mx-auto bg-white/10 backdrop-blur-md p-6 rounded-3xl border border-white/20 shadow-2xl relative">
             
-            {/* Row 1: Search Bar */}
-            <form onSubmit={handleSearch} className="relative flex flex-col mb-4">
-                {/* Auf Mobile traegt dieses Label den Suchhinweis: neben dem "Suchen"-Button
-                    bleiben im Feld nur rund 130 px, der Platzhalter braucht rund 200 px und
-                    wurde deshalb bisher per placeholder-transparent unsichtbar gemacht — das
-                    Feld wirkte leer. Ab md zeigt ihn der Platzhalter wieder im Feld selbst,
-                    das Label bleibt dort als Screenreader-Beschriftung erhalten. */}
-                <label
-                    htmlFor="home-search-input"
-                    className="block md:sr-only text-left text-sm font-medium text-white mb-1.5"
-                >
-                    {t.search_placeholder}
-                </label>
-                <div className="relative flex items-center">
-                    <Search className="absolute left-4 text-gray-400 w-5 h-5 z-10" aria-hidden="true" />
-                    <input
-                    id="home-search-input"
-                    type="text"
-                    placeholder={t.search_placeholder}
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-12 pr-32 py-4 rounded-xl text-dark font-sans shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-transparent text-lg placeholder-transparent md:placeholder-gray-500 bg-white"
-                    />
-                    <button type="submit" className="absolute right-2 bg-primary hover:bg-orange-600 text-white px-6 py-2 rounded-lg font-bold transition-colors duration-300">
-                    {t.btn_search}
-                    </button>
-                </div>
-                <p className="text-xs text-white/70 mt-1.5 ml-1">{t.search_hint_boolean || 'Tipp: Kombiniere Begriffe mit AND oder OR (z.B. "Yoga AND Zürich")'}</p>
-            </form>
-
-            {/* Row 2: Suchbereich */}
+            {/* First choose the area, then enter a search term. */}
             <div className="mt-1 mb-3">
                 <p className="text-xs text-white/60 mb-2 text-left">Suchbereich</p>
                 <div className="flex gap-2 flex-wrap" data-testid="home-segment-selector">
@@ -396,6 +366,41 @@ export const Home = ({
                     })}
                 </div>
             </div>
+
+            {/* Search Bar */}
+            <form onSubmit={handleSearch} className="relative flex flex-col mb-4">
+                {/* Auf Mobile traegt dieses Label den Suchhinweis: neben dem "Suchen"-Button
+                    bleiben im Feld nur rund 130 px, der Platzhalter braucht rund 200 px und
+                    wurde deshalb bisher per placeholder-transparent unsichtbar gemacht — das
+                    Feld wirkte leer. Ab md zeigt ihn der Platzhalter wieder im Feld selbst,
+                    das Label bleibt dort als Screenreader-Beschriftung erhalten. */}
+                <label
+                    htmlFor="home-search-input"
+                    className="block md:sr-only text-left text-sm font-medium text-white mb-1.5"
+                >
+                    {t.search_placeholder}
+                </label>
+                <div className="relative flex items-center">
+                    <Search className="absolute left-4 text-gray-400 w-5 h-5 z-10" aria-hidden="true" />
+                    <input
+                    id="home-search-input"
+                    type="text"
+                    placeholder={t.search_placeholder}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-12 pr-32 py-4 rounded-xl text-dark font-sans shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-transparent text-lg placeholder-transparent md:placeholder-gray-500 bg-white"
+                    />
+                    <button type="submit" className="absolute right-2 bg-primary hover:bg-orange-600 text-white px-6 py-2 rounded-lg font-bold transition-colors duration-300">
+                    {t.btn_search}
+                    </button>
+                </div>
+                <details className="mt-1.5 ml-1 text-left">
+                    <summary className="inline-flex min-h-11 cursor-pointer items-center text-xs text-white/80 underline underline-offset-2">
+                        {t.search_help_label || 'Such-Tipp'}
+                    </summary>
+                    <p className="pb-2 text-xs text-white/80">{t.search_hint_boolean || 'Tipp: Kombiniere Begriffe mit AND oder OR (z.B. "Yoga AND Zürich")'}</p>
+                </details>
+            </form>
 
             {/* Row 3: Location + Delivery Type */}
             <div className="flex gap-3 flex-col sm:flex-row relative z-50">

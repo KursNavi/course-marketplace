@@ -14,6 +14,7 @@ import { getNormalizedDeliveryTypes } from '../lib/courseMetadata';
 import { fetchPublishedThemeWorldAreaLabels } from '../lib/themeWorldService';
 import { trackCourseCardCta, trackSearch } from '../lib/analytics';
 import { getSearchHeader } from '../lib/searchHeaderConfig';
+import { getSearchAreaSlugs } from '../lib/searchAreaAliases';
 import { sortCoursesByRelevance, stableSeed } from '../lib/searchRelevance';
 
 import { DEFAULT_COURSE_IMAGE } from '../lib/imageUtils';
@@ -333,6 +334,7 @@ const SearchPageView = ({
 
     // Map URL slug to DB slug for filtering
     const dbSearchType = searchType ? (URL_TO_DB_TYPE[searchType] || searchType) : '';
+    const searchAreaSlugs = getSearchAreaSlugs(searchArea);
 
     // Level 2-4: Alphabetically sorted by label
     // Only include area slugs that exist in the DB taxonomy (prevents stale/old slugs from appearing)
@@ -369,7 +371,7 @@ const SearchPageView = ({
             if (Array.isArray(c.all_categories) && c.all_categories.length > 0) {
                 c.all_categories.forEach(cat => {
                     const typeMatch = !dbSearchType || cat.category_type === dbSearchType;
-                    const areaMatch = !searchArea || cat.category_area === searchArea;
+                    const areaMatch = !searchArea || searchAreaSlugs.includes(cat.category_area);
                     if (typeMatch && areaMatch && (cat.category_specialty || cat.category_specialty_label)) {
                         specialties.push(cat.category_specialty_label || cat.category_specialty);
                     }
@@ -385,7 +387,7 @@ const SearchPageView = ({
             if (Array.isArray(c.all_categories) && c.all_categories.length > 0) {
                 c.all_categories.forEach(cat => {
                     const typeMatch = !dbSearchType || cat.category_type === dbSearchType;
-                    const areaMatch = !searchArea || cat.category_area === searchArea;
+                    const areaMatch = !searchArea || searchAreaSlugs.includes(cat.category_area);
                     const specMatch = !searchSpecialty ||
                         cat.category_specialty_label === searchSpecialty ||
                         cat.category_specialty === searchSpecialty;

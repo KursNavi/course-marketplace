@@ -36,7 +36,9 @@ export default function SimpleTopicLandingPage({
 
   const segmentMeta = SEGMENT_META[segment] || { label: 'Übersicht', href: '/' };
   const searchType = SEGMENT_TO_SEARCH_TYPE[segment] || 'privat_hobby';
-  const areaSlug = config?.areaAliases?.[0] ?? null;
+  // Use the current taxonomy slug for search. areaAliases also include legacy
+  // slugs used only to keep older course records visible on this landing page.
+  const areaSlug = config?.searchAreaSlug ?? config?.areaAliases?.[0] ?? null;
   const sauleKey = config?.sauleKey ?? null;
 
   // Kursarten from segment config
