@@ -641,7 +641,7 @@ export const TRANSLATIONS = {
     nav_dashboard: "My Area", 
     nav_news: "News", nav_providers: "Provider Search", 
     nav_for_providers: "For Providers",hero_title: "Discover courses near you.", hero_subtitle: "From yodeling in Appenzell to coding in Zürich. Learn locally.",
-    search_placeholder: "What do you want to learn?", filter_label_cat: "Category", filter_label_loc: "Location", btn_search: "Search", search_hint_boolean: "Tip: Combine terms with AND or OR (e.g. \"Yoga AND Zurich\")",
+    search_placeholder: "What do you want to learn?", filter_label_cat: "Category", filter_label_loc: "Location", btn_search: "Search", search_help_label: "Search tip", search_hint_boolean: "Tip: Combine terms with AND or OR (e.g. \"Yoga AND Zurich\")",
     no_results: "No courses found matching criteria.", btn_book: "Book Course", btn_pay: "Pay & Book", btn_publish: "Publish Course", btn_send: "Send Message",
     
     // ADMIN
@@ -813,7 +813,7 @@ export const TRANSLATIONS = {
     nav_dashboard: "Mein Bereich", 
     nav_news: "Neuigkeiten", nav_providers: "Anbieter finden",
     nav_for_providers: "Für Anbieter",hero_title: "Finde Kurse in deiner Nähe.", hero_subtitle: "Vom Jodeln bis zum Programmieren.",
-    search_placeholder: "Was möchtest du lernen?", filter_label_cat: "Kategorie", filter_label_loc: "Ort", btn_search: "Suchen", search_hint_boolean: "Tipp: Kombiniere Begriffe mit AND oder OR (z.B. \"Yoga AND Zürich\")",
+    search_placeholder: "Was möchtest du lernen?", filter_label_cat: "Kategorie", filter_label_loc: "Ort", btn_search: "Suchen", search_help_label: "Such-Tipp", search_hint_boolean: "Tipp: Kombiniere Begriffe mit AND oder OR (z.B. \"Yoga AND Zürich\")",
     no_results: "Keine Kurse gefunden.", btn_book: "Kurs buchen", btn_pay: "Bezahlen & Buchen", btn_publish: "Veröffentlichen", btn_send: "Senden",
     
     // ADMIN
@@ -823,7 +823,7 @@ export const TRANSLATIONS = {
     admin_btn_verify: "Verifizieren (Pro)", admin_btn_unverify: "Pro entfernen", admin_verified: "Verifizierter Pro",
 
     // HOME PAGE
-    home_headline: "Gestalte deine Zukunft mit KursNavi",
+    home_headline: "Kurse und Weiterbildungen in der Schweiz finden",
     home_subhead: "Entdecke Kurse, lerne neue Fähigkeiten und entfalte dein Potenzial mit Experten, die dich weiterbringen.",
     home_verified_tutors: "Geprüfte Kursanbieter",
     home_students: "Lernende",
@@ -836,9 +836,9 @@ export const TRANSLATIONS = {
     btn_explore: "ENTDECKEN",
 
     // LANDING TITLES
-    landing_priv_title: "Entfessle deine Leidenschaft.", landing_priv_sub: "Hobby-Kurse",
+    landing_priv_title: "Privatkurse und Hobbykurse für deine Freizeit", landing_priv_sub: "Kurse für Freizeit und persönliche Interessen",
     landing_prof_title: "Karriere-Boost.", landing_prof_sub: "Berufliche Weiterbildung",
-    landing_kids_title: "Spielerisch lernen.", landing_kids_sub: "Kinderkurse",
+    landing_kids_title: "Kurse für Kinder, Jugendliche & schulisches Lernen", landing_kids_sub: "Freizeitkurse, Ferienangebote und schulische Lernangebote",
 
     // SEARCH FILTERS
     search_refine: "Suche verfeinern...",
@@ -984,7 +984,7 @@ export const TRANSLATIONS = {
     nav_dashboard: "Mon Espace", 
     nav_news: "Actualités", nav_providers: "Recherche prestataires", 
     nav_for_providers: "Pour Prestataires",hero_title: "Découvrez des cours.", hero_subtitle: "Apprenez localement.",
-    search_placeholder: "Que voulez-vous apprendre?", filter_label_cat: "Catégorie", filter_label_loc: "Lieu", btn_search: "Rechercher", search_hint_boolean: "Astuce: Combinez les termes avec AND ou OR (ex. \"Yoga AND Zurich\")",
+    search_placeholder: "Que voulez-vous apprendre?", filter_label_cat: "Catégorie", filter_label_loc: "Lieu", btn_search: "Rechercher", search_help_label: "Astuce de recherche", search_hint_boolean: "Astuce: Combinez les termes avec AND ou OR (ex. \"Yoga AND Zurich\")",
     no_results: "Aucun cours trouvé.", btn_book: "Réserver", btn_pay: "Payer et réserver", btn_publish: "Publier", btn_send: "Envoyer",
     
     // ADMIN
@@ -994,7 +994,7 @@ export const TRANSLATIONS = {
     admin_btn_verify: "Vérifier Pro", admin_btn_unverify: "Retirer Pro", admin_verified: "Pro Vérifié",
 
     // HOME PAGE
-    home_headline: "Naviguez vers votre avenir avec KursNavi",
+    home_headline: "Trouvez des cours et formations en Suisse",
     home_subhead: "Découvrez des cours, acquérez de nouvelles compétences et libérez votre potentiel avec des experts.",
     home_verified_tutors: "Prestataires vérifiés",
     home_students: "Apprenants",
@@ -1155,7 +1155,7 @@ export const TRANSLATIONS = {
     nav_dashboard: "Mia Area", 
     nav_news: "Novità", nav_providers: "Ricerca fornitori", 
     nav_for_providers: "Per Fornitori",hero_title: "Scopri corsi vicino a te.", hero_subtitle: "Dallo jodel a Appenzello alla programmazione a Zurigo.",
-    search_placeholder: "Cosa vuoi imparare?", filter_label_cat: "Categoria", filter_label_loc: "Luogo", btn_search: "Cerca", search_hint_boolean: "Suggerimento: Combina i termini con AND o OR (es. \"Yoga AND Zurigo\")",
+    search_placeholder: "Cosa vuoi imparare?", filter_label_cat: "Categoria", filter_label_loc: "Luogo", btn_search: "Cerca", search_help_label: "Suggerimento di ricerca", search_hint_boolean: "Suggerimento: Combina i termini con AND o OR (es. \"Yoga AND Zurigo\")",
     no_results: "Nessun corso trovato.", btn_book: "Prenota", btn_pay: "Paga & Prenota", btn_publish: "Pubblica", btn_send: "Invia",
     
     // ADMIN
@@ -1165,7 +1165,7 @@ export const TRANSLATIONS = {
     admin_btn_verify: "Verifica Pro", admin_btn_unverify: "Rimuovi Pro", admin_verified: "Pro Verificato",
 
     // HOME PAGE
-    home_headline: "Naviga il tuo futuro con KursNavi",
+    home_headline: "Trova corsi e formazione in Svizzera",
     home_subhead: "Scopri corsi, acquisisci nuove competenze e sblocca il tuo potenziale con esperti.",
     home_verified_tutors: "Fornitori verificati",
     home_students: "Apprendenti",

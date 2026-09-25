@@ -92,16 +92,17 @@ describe('CampaignLandingPage', () => {
     window.Cookiebot.consent.statistics = true;
     window.dispatchEvent(new Event('CookiebotOnAccept'));
 
-    expect(window.gtag).toHaveBeenCalledTimes(2);
-    expect(window.gtag.mock.calls[0]).toEqual([
+    const eventCalls = window.gtag.mock.calls.filter(([command]) => command === 'event');
+    expect(eventCalls).toHaveLength(2);
+    expect(eventCalls[0]).toEqual([
       'event',
       'campaign_landing_view',
-      { campaign_slug: 'fitnesstrainer-ausbildung' },
+      expect.objectContaining({ campaign_slug: 'fitnesstrainer-ausbildung' }),
     ]);
-    expect(window.gtag.mock.calls[1]).toEqual([
+    expect(eventCalls[1]).toEqual([
       'event',
       'landing_view',
-      { campaign_slug: 'fitnesstrainer-ausbildung', landing_type: 'campaign' },
+      expect.objectContaining({ campaign_slug: 'fitnesstrainer-ausbildung', landing_type: 'campaign' }),
     ]);
   });
 });

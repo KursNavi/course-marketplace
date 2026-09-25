@@ -1,36 +1,18 @@
 import React, { useEffect } from 'react';
 import { MapPin, TrendingUp, Clock, Award, ChevronRight, Bookmark, BookmarkCheck } from 'lucide-react';
-import { CATEGORY_TYPES } from '../lib/constants';
 import { formatPriceCHF, getPriceLabel } from '../lib/formatPrice';
 import { BASE_URL, buildCoursePath } from '../lib/siteConfig';
 import { useTaxonomy } from '../hooks/useTaxonomy';
 import { DEFAULT_COURSE_IMAGE } from '../lib/imageUtils';
+import {
+    buildCategoryLocationSeo,
+    filterCoursesForCategoryLocation,
+    getCourseTopicEntries,
+    MIN_INDEXABLE_CATEGORY_LOCATION_COURSES,
+    resolveSwissCanton,
+} from '../lib/categoryLocation';
 
 const BOOKABLE_BOOKING_TYPES = new Set(['platform', 'platform_flex']);
-
-/**
- * Keep pSEO copy honest about the next step: most marketplace offers start
- * with an enquiry, while only platform/platform_flex offers can be booked.
- */
-function getCategoryLocationPositioning({ topicLabel, location, totalCourses, bookableCourses }) {
-    if (totalCourses <= 0) {
-        return {
-            metaDescription: `Finde ${topicLabel}-Kurse in ${location}. Vergleiche Anbieter, Preise und Termine auf KursNavi.`,
-            heroDescription: `Aktuell sind keine ${topicLabel}-Kurse in ${location} verfügbar. Erweitere deine Suche oder lasse dich benachrichtigen, wenn neue Kurse hinzukommen.`
-        };
-    }
-
-    const bookingPhrase = bookableCourses >= totalCourses
-        ? 'Buche passende Angebote direkt online.'
-        : bookableCourses > 0
-            ? 'Einige Angebote kannst du direkt online buchen, bei anderen fragst du unverbindlich an.'
-            : 'Frage unverbindlich beim passenden Anbieter an.';
-
-    return {
-        metaDescription: `${totalCourses} ${topicLabel}-Kurse in ${location} ab CHF {avgPrice}. Vergleiche ${bookableCourses > 0 ? 'Anbieter und verfügbare Angebote' : 'Anbieter, Preise und Termine'} auf KursNavi. ${bookingPhrase}`,
-        heroDescription: `Entdecke ${totalCourses} ${topicLabel}-Kurse von ${bookableCourses > 0 ? 'verschiedenen Anbietern' : 'Anbietern'} in ${location}. Vergleiche Preise und Termine und ${bookableCourses > 0 ? 'buche passende Angebote direkt online oder ' : ''}frage unverbindlich beim passenden Anbieter an.`
-    };
-}
 
 /**
  * Programmatic SEO Landing Page for Topic/Location combinations
@@ -59,35 +41,9 @@ export default function CategoryLocationPage({
         window.scrollTo(0, 0);
     }, [topicSlug, locationSlug]);
 
-    // Normalize slugs back to database values
-        const location = (locationSlug || '').charAt(0).toUpperCase() + (locationSlug || '').slice(1);
-        const safeCourses = Array.isArray(courses) ? courses : [];
-        
-        // Filter courses (SAFE MODE)
-        const filteredCourses = safeCourses.filter(c => {
-            if (!c) return false;
-
-            // Status filter: Only show published courses (no drafts on pSEO pages)
-            const isPublished = c.status === 'published' || !c.status; // backward compat
-            if (!isPublished) return false;
-
-            // Safety Check: Location
-            const courseLocation = (c.canton || '').toLowerCase();
-            const targetLocation = (locationSlug || '').toLowerCase();
-            const matchesLocation = courseLocation === targetLocation;
-
-            // Safety Check: Topic
-            // Falls category_area fehlt, fallback auf leeren String, damit .replace() nicht abstürzt
-            const courseArea = (c.category_area || '').toLowerCase().replace(/_/g, '-');
-            const targetTopic = (topicSlug || '').toLowerCase();
-
-            // Optional: Check auch primary_category als Fallback
-            const coursePrimary = (c.primary_category || '').toLowerCase().replace(/_/g, '-');
-
-            const matchesTopic = courseArea === targetTopic || coursePrimary === targetTopic;
-
-            return matchesLocation && matchesTopic;
-        });
+    const resolvedLocation = resolveSwissCanton(locationSlug);
+    const location = resolvedLocation?.label || (locationSlug || '').replace(/-/g, ' ');
+    const filteredCourses = filterCoursesForCategoryLocation(courses, topicSlug, locationSlug);
 
     // Calculate unique statistics (for pSEO)
     const stats = {
@@ -95,21 +51,19 @@ export default function CategoryLocationPage({
         avgPrice: filteredCourses.length > 0
             ? Math.round(filteredCourses.reduce((sum, c) => sum + (Number(c.price) || 0), 0) / filteredCourses.length)
             : 0,
-        providers: [...new Set(filteredCourses.map(c => c.instructor_name))].length,
+        providers: [...new Set(filteredCourses.map(c => c.instructor_name).filter(Boolean))].length,
         bookableCourses: filteredCourses.filter(c => BOOKABLE_BOOKING_TYPES.has(c.booking_type)).length
     };
 
     // Get human-readable labels from DB taxonomy
-    let topicLabel = topicSlug;
+    let topicLabel = filteredCourses
+        .flatMap((course) => getCourseTopicEntries(course))
+        .find((entry) => entry.slug === topicSlug)?.label || topicSlug;
     try {
         // Convert URL slug (e.g. "wirtschaft-management") to DB slug format (e.g. "wirtschaft_management")
         const dbSlug = topicSlug.replace(/-/g, '_');
         // Find area by slug (exact or partial match)
-        const area = dbAreas.find(a =>
-            a.slug === dbSlug ||
-            a.slug.startsWith(dbSlug) ||
-            dbSlug.startsWith(a.slug)
-        );
+        const area = dbAreas.find(a => a.slug === dbSlug);
         if (area?.label_de) {
             topicLabel = area.label_de;
         }
@@ -119,16 +73,13 @@ export default function CategoryLocationPage({
 
     // SEO Meta Tags
     useEffect(() => {
-        const pageTitle = `${topicLabel} in ${location} - ${stats.totalCourses} Kurse vergleichen | KursNavi`;
-        const positioning = getCategoryLocationPositioning({
+        const seo = buildCategoryLocationSeo({
             topicLabel,
-            location,
-            totalCourses: stats.totalCourses,
-            bookableCourses: stats.bookableCourses
+            locationLabel: location,
+            stats,
         });
-        const pageDescription = positioning.metaDescription.replace('{avgPrice}', formatPriceCHF(stats.avgPrice));
 
-        document.title = pageTitle;
+        document.title = seo.title;
 
         // Meta Description
         let metaDescTag = document.querySelector('meta[name="description"]');
@@ -137,13 +88,14 @@ export default function CategoryLocationPage({
             metaDescTag.name = 'description';
             document.head.appendChild(metaDescTag);
         }
-        metaDescTag.content = pageDescription;
+        metaDescTag.content = seo.description;
 
         // Canonical URL
         // Vercel normalisiert wegen trailingSlash=false auf die Variante ohne
         // abschliessenden Slash. Canonical und tatsächliche Route müssen
         // dieselbe URL-Form verwenden.
-        const canonicalUrl = `${BASE_URL}/courses/${topicSlug}/${locationSlug}`;
+        const canonicalLocationSlug = resolvedLocation?.slug || locationSlug;
+        const canonicalUrl = `${BASE_URL}/courses/${topicSlug}/${canonicalLocationSlug}`;
         let canonicalTag = document.querySelector('link[rel="canonical"]');
         if (!canonicalTag) {
             canonicalTag = document.createElement('link');
@@ -157,14 +109,14 @@ export default function CategoryLocationPage({
 
         // OG Tags
         const ogTags = {
-            'og:title': pageTitle,
-            'og:description': pageDescription,
+            'og:title': seo.title,
+            'og:description': seo.description,
             'og:url': canonicalUrl,
             'og:type': 'website',
             'og:site_name': 'KursNavi',
             'twitter:card': 'summary',
-            'twitter:title': pageTitle,
-            'twitter:description': pageDescription
+            'twitter:title': seo.title,
+            'twitter:description': seo.description
         };
 
         Object.entries(ogTags).forEach(([property, content]) => {
@@ -181,14 +133,16 @@ export default function CategoryLocationPage({
             tag.content = content;
         });
 
-        // Robots meta (noindex if no courses)
+        // Dünne Einzeltrefferseiten bleiben ebenso noindex wie Nulltreffer.
         let robotsMeta = document.querySelector('meta[name="robots"]');
         if (!robotsMeta) {
             robotsMeta = document.createElement('meta');
             robotsMeta.name = "robots";
             document.head.appendChild(robotsMeta);
         }
-        robotsMeta.content = stats.totalCourses > 0 ? "index,follow" : "noindex,follow";
+        robotsMeta.content = stats.totalCourses >= MIN_INDEXABLE_CATEGORY_LOCATION_COURSES
+            ? "index,follow"
+            : "noindex,follow";
 
         // BreadcrumbList Schema
         const breadcrumbData = {
@@ -261,12 +215,9 @@ export default function CategoryLocationPage({
                     </h1>
 
                     <p className="text-xl text-gray-600 mb-8 max-w-3xl">
-                        {getCategoryLocationPositioning({
-                            topicLabel,
-                            location,
-                            totalCourses: stats.totalCourses,
-                            bookableCourses: stats.bookableCourses
-                        }).heroDescription}
+                        {stats.totalCourses < MIN_INDEXABLE_CATEGORY_LOCATION_COURSES
+                            ? `Aktuell sind keine ausreichend vielfältigen ${topicLabel}-Kurse in ${location} verfügbar. Erweitere deine Suche oder schaue später wieder vorbei.`
+                            : `Entdecke ${stats.totalCourses} ${topicLabel}-Kurse von ${stats.providers || 'regionalen'} Anbietern in ${location}. Vergleiche Preise und Termine und frage unverbindlich beim passenden Anbieter an.`}
                     </p>
 
                     {/* Stats Cards (Unique Content for pSEO) */}

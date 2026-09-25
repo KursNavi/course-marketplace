@@ -88,10 +88,6 @@ describe('Contentsquare bootstrap consent boundaries', () => {
       ['setPath', '/'],
       ['setQuery', ''],
       ['referrer:removeQueryString'],
-      ['referrer:maskUrl', 'https://kursnavi.ch/courses/:topic/:location/:course'],
-      ['referrer:maskUrl', 'https://kursnavi.ch/course/:course'],
-      ['referrer:maskUrl', 'https://kursnavi.ch/anbieter/:provider'],
-      ['referrer:maskUrl', 'https://kursnavi.ch/profil/:teacher'],
       ['trackPageEvent', 'Page Viewed'],
     ]);
   });

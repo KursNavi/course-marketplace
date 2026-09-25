@@ -32,6 +32,7 @@ import {
   SEGMENT_LANDING_CONFIG,
 } from '../src/lib/segmentLandingConfig.js';
 import { buildActiveThemeWorldTopicKeys, resolveTopicTarget } from '../src/lib/themeWorldTakeover.js';
+import { getSearchAreaSlugs } from '../src/lib/searchAreaAliases.js';
 
 const BASE = 'https://kursnavi.ch';
 
@@ -158,6 +159,11 @@ describe('Kunst-Themenseite — genau ein indexierbarer Inhalt', () => {
     expect(SIMPLE_TOPIC_CONTENT[LEADER_KEY].typeAliases).toEqual(
       expect.arrayContaining(['privat_hobby', 'privat', '2'])
     );
+  });
+
+  it('sucht mit dem kanonischen Kunst-Slug auch ältere Kurse mit Alias-Slugs', () => {
+    const aliases = getSearchAreaSlugs(SIMPLE_TOPIC_CONTENT[LEADER_KEY].searchAreaSlug);
+    expect(aliases).toEqual(expect.arrayContaining(['kunst', 'kunst_kreativ', 'kunst_kreativitaet']));
   });
 
   it('kein Alias zeigt auf einen Alias (Ketten sind schon in der Config ausgeschlossen)', () => {

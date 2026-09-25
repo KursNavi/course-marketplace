@@ -3,8 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>KursNavi – Der Schweizer Kursmarktplatz</title>
-    <meta name="description" content="Entdecke Kurse und Weiterbildungen in der Schweiz. Vergleiche lokale Anbieter und frage passende Angebote unverbindlich an." />
+    <title>Kurse in der Schweiz finden – Weiterbildung, Hobby &amp; Kinder | KursNavi</title>
+    <meta name="description" content="Finde Kurse in der Schweiz: berufliche Weiterbildungen, Hobbykurse und Angebote für Kinder und Jugendliche. Vergleiche Anbieter und entdecke passende Kurse." />
     <meta name="robots" content="index,follow" />
     <meta name="google" content="notranslate" />
     <link rel="icon" type="image/png" href="/favicon.png" />
@@ -72,14 +72,21 @@
           window._uxa.push(['setPath', getSafeContentsquarePath(window.location.pathname)]);
           window._uxa.push(['setQuery', '']);
           window._uxa.push(['referrer:removeQueryString']);
-          [
-            '/courses/:topic/:location/:course',
-            '/course/:course',
-            '/anbieter/:provider',
-            '/profil/:teacher',
-          ].forEach(function (pattern) {
-            window._uxa.push(['referrer:maskUrl', window.location.origin + pattern]);
-          });
+          // Keep the privacy-safe referrer masking from the lead-tracking change.
+          if (document.referrer) {
+            try {
+              var referrerUrl = new URL(document.referrer);
+              var referrerSegments = referrerUrl.pathname.split('/').filter(Boolean);
+              var maskedReferrerPath = referrerSegments.length
+                ? '/' + referrerSegments.map(function (_segment, index) {
+                  return ':REFERRER_SEGMENT_' + (index + 1);
+                }).join('/')
+                : '/';
+              window._uxa.push(['referrer:maskUrl', referrerUrl.origin + maskedReferrerPath]);
+            } catch (_error) {
+              // If a referrer cannot be parsed, do not forward its URL pattern.
+            }
+          }
           var script = document.createElement('script');
           script.async = true;
           script.src = 'https://t.contentsquare.net/uxa/9d1e4f9cc0626.js';
@@ -177,8 +184,8 @@
     <!-- Open Graph Fallback (before JS hydration) -->
     <meta property="og:site_name" content="KursNavi" />
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="KursNavi – Der Schweizer Kursmarktplatz" />
-    <meta property="og:description" content="Vergleiche lokale Kursanbieter und frage passende Angebote unverbindlich an." />
+    <meta property="og:title" content="Kurse in der Schweiz finden – KursNavi" />
+    <meta property="og:description" content="Berufliche Weiterbildungen, Hobbykurse und Angebote für Kinder und Jugendliche in der Schweiz entdecken." />
     <meta property="og:url" content="https://kursnavi.ch/" />
     <meta property="og:image" content="https://kursnavi.ch/og-default.png" />
     <meta property="og:locale" content="de_CH" />

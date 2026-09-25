@@ -15,6 +15,7 @@ import { getHomepageLinkRel } from './lib/entitlements';
 import { trackPageView, trackPurchase } from './lib/analytics';
 import { trackContentsquareRouteChange } from './lib/contentsquare';
 import { useTaxonomy } from './hooks/useTaxonomy';
+import { getSearchAreaSlugs } from './lib/searchAreaAliases';
 
 // Disable browser scroll auto-restoration synchronously so it can't override
 // React's scroll-to-top in useLayoutEffect before scrollRestoration is set in useEffect.
@@ -1578,6 +1579,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
 
   // Stage 2: Apply category filters on top of pre-category results
   const dbSearchType = searchType ? (URL_TO_DB_TYPE_FILTER[searchType] || searchType) : '';
+  const searchAreaSlugs = getSearchAreaSlugs(searchArea);
 
   const filteredCourses = filteredCoursesPreCategory.filter(course => {
     let matchesType = true;
@@ -1589,10 +1591,10 @@ export default function KursNaviPro() {  // 1. Initial State Logic
 
     let matchesArea = true;
     if (searchArea) {
-      matchesArea = course.category_area === searchArea ||
-        (Array.isArray(course.categories) && course.categories.includes(searchArea)) ||
+      matchesArea = searchAreaSlugs.includes(course.category_area) ||
+        (Array.isArray(course.categories) && course.categories.some(area => searchAreaSlugs.includes(area))) ||
         (Array.isArray(course.all_categories) &&
-         course.all_categories.some(cat => cat && cat.category_area === searchArea));
+         course.all_categories.some(cat => cat && searchAreaSlugs.includes(cat.category_area)));
     }
 
     let matchesSpecialty = true;
