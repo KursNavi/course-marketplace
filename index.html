@@ -40,6 +40,25 @@
           }
           if (contentsquareTagLoaded || isInternalAnalyticsRoute()) return;
 
+          // Strip page and referrer query values before Contentsquare loads.
+          window._uxa = window._uxa || [];
+          window._uxa.push(['setQuery', '']);
+          window._uxa.push(['referrer:removeQueryString']);
+          if (document.referrer) {
+            try {
+              var referrerUrl = new URL(document.referrer);
+              var referrerSegments = referrerUrl.pathname.split('/').filter(Boolean);
+              var maskedReferrerPath = referrerSegments.length
+                ? '/' + referrerSegments.map(function (_segment, index) {
+                  return ':REFERRER_SEGMENT_' + (index + 1);
+                }).join('/')
+                : '/';
+              window._uxa.push(['referrer:maskUrl', referrerUrl.origin + maskedReferrerPath]);
+            } catch (_error) {
+              // If a referrer cannot be parsed, do not forward its URL pattern.
+            }
+          }
+
           var script = document.createElement('script');
           script.async = true;
           script.src = 'https://t.contentsquare.net/uxa/9d1e4f9cc0626.js';

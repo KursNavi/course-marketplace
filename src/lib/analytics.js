@@ -29,7 +29,19 @@ function isInternalAnalyticsRoute() {
 function gtagSafe(category, ...args) {
   if (!hasConsent(category)) return;
   if (typeof window.gtag === 'function') {
-    window.gtag(...args);
+    // GA4 otherwise attaches the browser's full location and referrer to events.
+    // Keep the sanitized context on the event itself so this does not create
+    // extra gtag calls and every SPA route uses its own current path.
+    const eventArgs = [...args];
+    if (eventArgs[0] === 'event') {
+      const params = eventArgs[2] && typeof eventArgs[2] === 'object' ? eventArgs[2] : {};
+      eventArgs[2] = {
+        ...params,
+        page_location: `${window.location.origin}${analyticsPath(window.location.pathname)}`,
+        page_referrer: '',
+      };
+    }
+    window.gtag(...eventArgs);
   }
 }
 
@@ -46,7 +58,8 @@ function contentsquareSafe(eventName) {
   window._uxa.push(['trackPageEvent', eventName]);
 }
 
-const ATTRIBUTION_STORAGE_KEY = 'kn_attribution_v1';
+// v2 deliberately drops the previously stored full landing URL and referrer.
+const ATTRIBUTION_STORAGE_KEY = 'kn_attribution_v2';
 const CONVERSION_DEDUPE_PREFIX = 'kn_conversion_event_';
 
 export function createAnalyticsEventId(prefix = 'evt') {
@@ -77,25 +90,48 @@ function cleanAttributionValue(value, maxLength = 500) {
   return cleaned ? cleaned.slice(0, maxLength) : null;
 }
 
+function cleanCampaignValue(value, maxLength) {
+  const cleaned = cleanAttributionValue(value, maxLength);
+  if (!cleaned) return null;
+  // Campaign labels are allowed only when they do not look like contact data.
+  if (/[^\s@]+@[^\s@]+\.[^\s@]+/.test(cleaned)) return null;
+  if (/^\+?[\d\s()./-]{8,}$/.test(cleaned) && cleaned.replace(/\D/g, '').length >= 8) return null;
+  return cleaned;
+}
+
+function analyticsPath(path) {
+  if (typeof window === 'undefined') return '/';
+  try {
+    return new URL(path || window.location.pathname, window.location.origin).pathname || '/';
+  } catch {
+    return window.location.pathname || '/';
+  }
+}
+
 function captureCurrentAttribution() {
   if (typeof window === 'undefined') return null;
+  try {
+    // Purge the old value, which could contain the entire query and referrer.
+    window.sessionStorage.removeItem('kn_attribution_v1');
+  } catch {
+    // Tracking must not block the product flow when storage is unavailable.
+  }
   const statisticsConsent = hasConsent('statistics');
   const marketingConsent = hasConsent('marketing');
   if (!statisticsConsent && !marketingConsent) return null;
 
   const params = new URLSearchParams(window.location.search);
   const current = {
-    source: cleanAttributionValue(params.get('utm_source'), 120),
-    medium: cleanAttributionValue(params.get('utm_medium'), 120),
-    campaign: cleanAttributionValue(params.get('utm_campaign'), 180),
-    term: cleanAttributionValue(params.get('utm_term'), 180),
-    content: cleanAttributionValue(params.get('utm_content'), 180),
-    landingPage: cleanAttributionValue(`${window.location.pathname}${window.location.search}`, 500),
-    referrer: cleanAttributionValue(document.referrer, 500),
+    source: cleanCampaignValue(params.get('utm_source'), 120),
+    medium: cleanCampaignValue(params.get('utm_medium'), 120),
+    campaign: cleanCampaignValue(params.get('utm_campaign'), 180),
+    content: cleanCampaignValue(params.get('utm_content'), 180),
+    landingPage: cleanAttributionValue(window.location.pathname, 500),
+    referrer: null,
     device: window.matchMedia?.('(max-width: 767px)')?.matches ? 'mobile' : 'desktop',
-    gclid: marketingConsent ? cleanAttributionValue(params.get('gclid'), 200) : null,
-    gbraid: marketingConsent ? cleanAttributionValue(params.get('gbraid'), 200) : null,
-    wbraid: marketingConsent ? cleanAttributionValue(params.get('wbraid'), 200) : null,
+    gclid: marketingConsent ? cleanCampaignValue(params.get('gclid'), 200) : null,
+    gbraid: marketingConsent ? cleanCampaignValue(params.get('gbraid'), 200) : null,
+    wbraid: marketingConsent ? cleanCampaignValue(params.get('wbraid'), 200) : null,
   };
   const hasCampaignData = Object.entries(current).some(([key, value]) =>
     !['landingPage', 'referrer', 'device'].includes(key) && Boolean(value)
@@ -174,7 +210,7 @@ export function trackAdsSignupConversion() {
 export function trackPageView(path, title) {
   captureCurrentAttribution();
   gtagSafe('statistics', 'event', 'page_view', {
-    page_path: path,
+    page_path: analyticsPath(path),
     page_title: title,
   });
   contentsquareSafe('Page Viewed');
@@ -248,16 +284,18 @@ export function trackLeadFormStart(courseId, eventId) {
 }
 
 export function trackLeadSubmitted(courseId, eventId) {
-  if (conversionAlreadyTracked('lead_submitted', eventId)) return;
+  if (conversionAlreadyTracked('generate_lead_course_inquiry', eventId)) return;
   const params = {
-    event_category: 'contact',
+    lead_type: 'course_inquiry',
     item_id: String(courseId),
     ...(eventId ? { event_id: eventId } : {}),
   };
+  // Keep the operational event for existing reports; only generate_lead is a
+  // GA4 key event, so this does not count a second conversion.
   gtagSafe('statistics', 'event', 'lead_submitted', params);
-  // Keep the established GA4 event while downstream reports migrate.
   gtagSafe('statistics', 'event', 'generate_lead', params);
   contentsquareSafe('Course Inquiry Submitted');
+  trackAdsLeadConversion(courseId, eventId);
 }
 
 export function trackLeadDelivered(courseId, eventId) {
@@ -267,7 +305,6 @@ export function trackLeadDelivered(courseId, eventId) {
     ...(eventId ? { event_id: eventId } : {}),
   });
   contentsquareSafe('Course Inquiry Delivered');
-  trackAdsLeadConversion(courseId, eventId);
 }
 
 export function trackBookingStart(course, eventId) {
@@ -327,9 +364,11 @@ export function trackArticleView(article) {
 }
 
 /** Newsletter-Anmeldung */
-export function trackNewsletter() {
+export function trackNewsletter(eventId = createAnalyticsEventId('newsletter')) {
+  if (conversionAlreadyTracked('generate_lead_newsletter', eventId)) return;
   gtagSafe('statistics', 'event', 'generate_lead', {
-    event_category: 'newsletter',
+    lead_type: 'newsletter',
+    event_id: eventId,
   });
   contentsquareSafe('Newsletter Signup');
   trackAdsNewsletterConversion();

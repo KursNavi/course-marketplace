@@ -495,8 +495,8 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
             });
             const confirmedEventId = data.event_id || eventId;
             trackLeadSubmitted(course.id, confirmedEventId);
-            // "accepted" only means the email provider accepted the send. The
-            // primary conversion is reserved for the verified delivery webhook.
+            // Delivery remains a separate quality signal; the lead conversion
+            // is recorded once the API has accepted the lead.
             if (data.delivery_status === 'delivered') {
                 trackLeadDelivered(course.id, confirmedEventId);
             }
