@@ -189,10 +189,10 @@ async function loadDbThemeWorlds() {
  *     → Warnung, Datensatz wird übersprungen. Es entsteht dann garantiert keine
  *       falsche URL und keine SEO-Seite mit erfundenen Werten.
  *
- * @returns {Promise<{enabled: boolean, courseRoutes: Array, providerRoutes: Array}>}
+ * @returns {Promise<{enabled: boolean, courseRoutes: Array, providerRoutes: Array, categoryLocationRoutes: Array}>}
  */
 async function loadCourseAndProviderRoutes() {
-  const empty = { enabled: false, courseRoutes: [], providerRoutes: [] };
+  const empty = { enabled: false, courseRoutes: [], providerRoutes: [], categoryLocationRoutes: [] };
 
   if (!isCoursePrerenderEnabled()) {
     console.warn(
@@ -636,7 +636,11 @@ const courseAndProviders = await loadCourseAndProviderRoutes();
 
 if (courseAndProviders.enabled) {
   const before = count;
-  for (const route of [...courseAndProviders.courseRoutes, ...courseAndProviders.providerRoutes]) {
+  for (const route of [
+    ...courseAndProviders.courseRoutes,
+    ...courseAndProviders.providerRoutes,
+    ...courseAndProviders.categoryLocationRoutes,
+  ]) {
     writeRoute(route.path, route.title, route.description, {
       ogTitle: route.ogTitle,
       ogDescription: route.ogDescription,
@@ -646,8 +650,9 @@ if (courseAndProviders.enabled) {
     });
   }
   console.log(
-    `  → ${courseAndProviders.courseRoutes.length} Kursseite(n) und ` +
-      `${courseAndProviders.providerRoutes.length} Anbieterprofil(e) prerendert ` +
+    `  → ${courseAndProviders.courseRoutes.length} Kursseite(n), ` +
+      `${courseAndProviders.providerRoutes.length} Anbieterprofil(e) und ` +
+      `${courseAndProviders.categoryLocationRoutes.length} Kategorie-/Kanton-Seite(n) prerendert ` +
       `(${count - before} Dateien).`
   );
 }

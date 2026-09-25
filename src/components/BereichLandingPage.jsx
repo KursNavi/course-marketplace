@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Search, ArrowRight, ChevronDown, ChevronRight, BookOpen, Award, HelpCircle, CheckCircle, Shield } from 'lucide-react';
 import { getBereichBySlug, getBereichUrl, BEREICH_LANDING_CONFIG } from '../lib/bereichLandingConfig';
+import { buildCategoryLocationRoutes } from '../lib/categoryLocation';
+import { slugify } from '../lib/courseUrl';
 import { SEGMENT_LANDING_CONFIG } from '../lib/segmentLandingConfig';
 import { SEGMENT_CONFIG } from '../lib/constants';
 import { useTaxonomy } from '../hooks/useTaxonomy';
@@ -232,6 +234,11 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
     beruflich: 'professionell', privat_hobby: 'privat', kinder_jugend: 'kinder'
   };
   const dbType = TYPE_TO_DB[config.typeKey] || config.typeKey;
+  const categoryLocationLinks = config.areaSlug
+    ? buildCategoryLocationRoutes(courses)
+        .filter((route) => route.topicSlug === slugify(config.areaSlug))
+        .map(({ path, locationLabel }) => ({ path, locationLabel }))
+    : [];
 
   // Count courses per specialty (L3)
   const getSpecialtyCounts = () => {
@@ -427,6 +434,25 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
       </div>
 
       {/* SCENARIO DETAIL SECTION */}
+      {categoryLocationLinks.length > 0 && (
+        <section className="max-w-6xl mx-auto px-4 pt-10" aria-labelledby="courses-by-canton-title">
+          <h2 id="courses-by-canton-title" className="text-xl font-heading font-bold text-dark mb-4">
+            {config.title[lang] || config.title.de} nach Kanton
+          </h2>
+          <nav className="flex flex-wrap gap-2" aria-label="Kurse nach Kanton">
+            {categoryLocationLinks.map(({ path, locationLabel }) => (
+              <a
+                key={path}
+                href={path}
+                className="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm text-gray-700 hover:border-primary hover:text-primary"
+              >
+                {config.title[lang] || config.title.de} in {locationLabel}
+              </a>
+            ))}
+          </nav>
+        </section>
+      )}
+
       {config.scenarios && (
         <div className="max-w-6xl mx-auto px-4 py-16">
           <h2 className="text-2xl font-heading font-bold text-dark mb-2 text-center">
