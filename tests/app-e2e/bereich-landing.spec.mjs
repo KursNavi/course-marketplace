@@ -8,7 +8,7 @@ test.describe('Bereich Landing & Szenario (app-e2e)', () => {
 
     // Page title should contain the Bereich name
     await expect(page.locator('h1')).toBeVisible({ timeout: 15_000 });
-    await expect(page.locator('h1')).toContainText('Sport');
+    await expect(page.locator('h1')).toContainText('Fitness-Ausbildungen');
 
     // Breadcrumb should be visible
     await expect(page.locator('nav[aria-label="Breadcrumb"]')).toBeVisible();

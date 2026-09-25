@@ -85,6 +85,7 @@ describe('Contentsquare bootstrap consent boundaries', () => {
 
     expect(scripts).toEqual(['https://t.contentsquare.net/uxa/9d1e4f9cc0626.js']);
     expect(events).toEqual([
+      ['setPath', '/'],
       ['setQuery', ''],
       ['referrer:removeQueryString'],
       ['trackPageEvent', 'Page Viewed'],
