@@ -314,8 +314,8 @@ export const Home = ({
       <div className="relative min-h-[720px] md:min-h-0 md:h-[600px] w-full flex items-center justify-center">
         {/* Background */}
         <img
-          src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop"
-          srcSet="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=800&auto=format&fit=crop 800w, https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop 1200w, https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1920&auto=format&fit=crop 1920w"
+          src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=65&w=1200&auto=format&fit=crop"
+          srcSet="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=65&w=800&auto=format&fit=crop 800w, https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=65&w=1200&auto=format&fit=crop 1200w, https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=65&w=1920&auto=format&fit=crop 1920w"
           sizes="100vw"
           alt=""
           fetchPriority="high"
