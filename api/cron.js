@@ -580,6 +580,6 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error('Cron error:', error);
-    return res.status(500).json({ success: false, error: error.message });
+    return res.status(500).json({ success: false, error: 'Cron run failed' });
   }
 }

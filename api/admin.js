@@ -181,7 +181,7 @@ export default async function handler(req, res) {
       baseQuery = baseQuery.range(offset, offset + limit - 1);
 
       const { data, error, count } = await baseQuery;
-      if (error) return res.status(500).json({ error: error.message });
+      if (error) { console.error('admin: Datenbankfehler', error); return res.status(500).json({ error: 'Datenbankfehler' }); }
 
       // Enrich page with last_sign_in_at from auth
       const authMap = await getAuthMap();
@@ -212,7 +212,7 @@ export default async function handler(req, res) {
         .order('created_at', { ascending: false })
         .limit(2000);
 
-      if (error) return res.status(500).json({ error: error.message });
+      if (error) { console.error('admin: Datenbankfehler', error); return res.status(500).json({ error: 'Datenbankfehler' }); }
 
       return res.status(200).json({ data: data || [] });
     }
@@ -262,7 +262,7 @@ export default async function handler(req, res) {
         .select('*')
         .single();
 
-      if (error) return res.status(500).json({ error: error.message });
+      if (error) { console.error('admin: Datenbankfehler', error); return res.status(500).json({ error: 'Datenbankfehler' }); }
 
       return res.status(200).json({ data });
     }
@@ -357,7 +357,7 @@ export default async function handler(req, res) {
           .update(coursePayload)
           .eq('id', activeCourseId);
 
-        if (error) return res.status(500).json({ error: error.message });
+        if (error) { console.error('admin: Datenbankfehler', error); return res.status(500).json({ error: 'Datenbankfehler' }); }
       } else {
         const { data, error } = await supabaseAdmin
           .from('courses')
@@ -365,7 +365,7 @@ export default async function handler(req, res) {
           .select('id')
           .single();
 
-        if (error) return res.status(500).json({ error: error.message });
+        if (error) { console.error('admin: Datenbankfehler', error); return res.status(500).json({ error: 'Datenbankfehler' }); }
         activeCourseId = data?.id;
       }
 
@@ -632,7 +632,7 @@ export default async function handler(req, res) {
         .delete()
         .eq('id', courseId);
 
-      if (error) return res.status(500).json({ error: error.message });
+      if (error) { console.error('admin: Datenbankfehler', error); return res.status(500).json({ error: 'Datenbankfehler' }); }
 
       // Clean up orphaned image from storage (best-effort)
       if (imageUrl && imageUrl.includes('course-images') && !imageUrl.includes('unsplash.com')) {
@@ -701,7 +701,7 @@ export default async function handler(req, res) {
         .update({ status: newStatus })
         .eq('id', courseId);
 
-      if (error) return res.status(500).json({ error: error.message });
+      if (error) { console.error('admin: Datenbankfehler', error); return res.status(500).json({ error: 'Datenbankfehler' }); }
 
       return res.status(200).json({ ok: true });
     }
@@ -746,7 +746,7 @@ export default async function handler(req, res) {
         .update(filtered)
         .eq('id', userId);
 
-      if (error) return res.status(500).json({ error: error.message });
+      if (error) { console.error('admin: Datenbankfehler', error); return res.status(500).json({ error: 'Datenbankfehler' }); }
 
       // Sync instructor_name on all courses if requested
       if (syncInstructorName && filtered.full_name) {
@@ -849,7 +849,7 @@ export default async function handler(req, res) {
         .update({ is_prio: !!isPrio })
         .eq('id', courseId);
 
-      if (error) return res.status(500).json({ error: error.message });
+      if (error) { console.error('admin: Datenbankfehler', error); return res.status(500).json({ error: 'Datenbankfehler' }); }
 
       return res.status(200).json({ ok: true });
     }
@@ -992,7 +992,7 @@ export default async function handler(req, res) {
         .select('package_expires_at')
         .single();
 
-      if (error) return res.status(500).json({ error: error.message });
+      if (error) { console.error('admin: Datenbankfehler', error); return res.status(500).json({ error: 'Datenbankfehler' }); }
 
       return res.status(200).json({ data });
     }
@@ -1002,7 +1002,7 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error('Admin API error:', error);
-    return res.status(500).json({ error: 'Internal server error', details: error.message });
+    return res.status(500).json({ error: 'Internal server error' });
   }
 }
 

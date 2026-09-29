@@ -242,7 +242,7 @@ export default async function handler(req, res) {
         scorer = createScorer();
       } catch (err) {
         if (err instanceof ScorerNotConfiguredError) {
-          return res.status(501).json({ error: 'lead_scoring_not_configured', detail: err.message });
+          return res.status(501).json({ error: 'lead_scoring_not_configured' });
         }
         throw err;
       }

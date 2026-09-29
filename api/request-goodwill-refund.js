@@ -234,6 +234,6 @@ export default async function handler(req, res) {
     return res.status(200).json({ success: true, message: 'Kulanzanfrage gesendet' });
   } catch (error) {
     console.error('Request goodwill refund error:', error);
-    return res.status(500).json({ error: error.message || 'Internal server error' });
+    return res.status(500).json({ error: 'Es ist ein Fehler aufgetreten. Bitte versuche es später erneut.' });
   }
 }

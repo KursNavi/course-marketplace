@@ -68,11 +68,17 @@ export default async function handler(req, res) {
         return res.status(200).json({ success: true, already: true, message: 'Bereits angemeldet' });
       }
 
-      // Fehler sauber ans Frontend weitergeben (kein throw -> kein 500)
-      return res.status(response.status).json({
+      // Der genaue Brevo-Fehler bleibt im Log. Nach aussen geht nur eine
+      // allgemeine Meldung — der Endpunkt ist oeffentlich erreichbar, und
+      // Brevo-Codes und -Texte verraten Interna der Listenkonfiguration.
+      console.error('subscribe: Brevo lehnte die Anmeldung ab', {
+        status: response.status,
+        code: data?.code || null,
+        message: data?.message || null,
+      });
+      return res.status(502).json({
         success: false,
-        code: data?.code,
-        message: data?.message || 'Brevo API Fehler'
+        error: 'Die Anmeldung ist gerade nicht moeglich. Bitte versuche es spaeter erneut.'
       });
     }
 
@@ -80,11 +86,11 @@ export default async function handler(req, res) {
     return res.status(200).json({ success: true, already: false });
 
   } catch (error) {
+    // Details nur ins Log — hier landet unter anderem der fehlende
+    // BREVO_API_KEY, der nichts im Browser verloren hat.
     console.error('Newsletter Critical Error:', error);
-    // WICHTIG: Den Fehler an das Frontend senden, damit wir ihn sehen
-    return res.status(500).json({ 
-      error: 'Server Error', 
-      details: error.message 
+    return res.status(500).json({
+      error: 'Die Anmeldung ist gerade nicht moeglich. Bitte versuche es spaeter erneut.'
     });
   }
 }

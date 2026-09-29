@@ -364,9 +364,6 @@ export default async function handler(req, res) {
 
   } catch (e) {
     console.error("SITEMAP ERROR:", e);
-    res.status(500).json({ 
-      error: 'Error generating sitemap', 
-      details: e.message 
-    });
+    res.status(500).json({ error: 'Error generating sitemap' });
   }
 }
