@@ -58,10 +58,10 @@ function isChunkLoadError(error) {
 }
 
 function triggerChunkReload() {
-  const lastReload = sessionStorage.getItem(CHUNK_RELOAD_KEY);
+  const lastReload = readSession(CHUNK_RELOAD_KEY);
   const now = Date.now();
   if (!lastReload || now - Number(lastReload) > CHUNK_RELOAD_COOLDOWN_MS) {
-    sessionStorage.setItem(CHUNK_RELOAD_KEY, String(now));
+    writeSession(CHUNK_RELOAD_KEY, String(now));
     window.location.reload();
     return true;
   }
@@ -72,6 +72,7 @@ function triggerChunkReload() {
 import { Navbar, Footer } from './components/Layout';
 import { Home } from './components/Home';
 import { NewsletterPopup } from './components/NewsletterPopup';
+import { readStored, writeStored, removeStored, readSession, writeSession } from './lib/safeStorage';
 
 // Lazy-loaded page components (code-splitting)
 // After a deploy, old chunk hashes no longer exist. The server returns index.html
@@ -1340,11 +1341,11 @@ export default function KursNaviPro() {  // 1. Initial State Logic
   };
 
   const syncPendingSavedCourse = async (userId) => {
-    const pending = localStorage.getItem('pendingSavedCourseId');
+    const pending = readStored('pendingSavedCourseId');
     if (!pending || !userId) return;
 
     const courseId = Number(pending);
-    localStorage.removeItem('pendingSavedCourseId');
+    removeStored('pendingSavedCourseId');
 
     if (!courseId) return;
 
@@ -1362,7 +1363,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
     if (!course?.id) return;
 
     if (!user) {
-      localStorage.setItem('pendingSavedCourseId', String(course.id));
+      writeStored('pendingSavedCourseId', String(course.id));
       showNotification("Bitte anmelden, um Kurse zu merken.");
       setView('login');
       return;
@@ -2252,7 +2253,7 @@ useEffect(() => {
     let stopped = false;
     const finalizeStripeReturn = async () => {
       const successShownAt = Date.now();
-      const pendingCourseId = localStorage.getItem('pendingCourseId');
+      const pendingCourseId = readStored('pendingCourseId');
       let confirmationPayload = null;
       setView('success');
 
@@ -2300,8 +2301,8 @@ useEffect(() => {
             Number(confirmationPayload?.amount_cents || trackedCourse.base_price || 0),
             confirmationPayload?.event_id || sessionId,
           );
-          localStorage.removeItem('pendingCourseId');
-          localStorage.removeItem('pendingEventId');
+          removeStored('pendingCourseId');
+          removeStored('pendingEventId');
           await fetchBookings(user.id);
 
           const remainingMs = Math.max(0, 3000 - (Date.now() - successShownAt));
@@ -2330,7 +2331,7 @@ useEffect(() => {
     /*
     if (pendingCourseId) {
       const saveBooking = async () => {
-        const pendingEventId = localStorage.getItem('pendingEventId');
+        const pendingEventId = readStored('pendingEventId');
 
         // ✅ WICHTIG: localStorage liefert Strings -> wir casten sicher auf Number
         const courseId = Number(pendingCourseId);
@@ -2338,8 +2339,8 @@ useEffect(() => {
 
         // Wenn courseId nicht sauber ist, aufräumen damit es nicht “hängen bleibt”
         if (!Number.isFinite(courseId) || courseId <= 0) {
-          localStorage.removeItem('pendingCourseId');
-          localStorage.removeItem('pendingEventId');
+          removeStored('pendingCourseId');
+          removeStored('pendingEventId');
           showNotification("Fehler: Ungültige Kurs-ID (pendingCourseId).");
           return;
         }
@@ -2356,8 +2357,8 @@ useEffect(() => {
         const { error } = await supabase.from('bookings').insert([payload]);
 
         if (!error) {
-          localStorage.removeItem('pendingCourseId');
-          localStorage.removeItem('pendingEventId');
+          removeStored('pendingCourseId');
+          removeStored('pendingEventId');
 
           showNotification("Course booked successfully!");
           fetchBookings(user.id);

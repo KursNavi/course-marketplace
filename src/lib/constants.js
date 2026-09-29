@@ -636,7 +636,7 @@ export const CATEGORY_LABELS = {
 };
 export const TRANSLATIONS = {
   en: {
-    nav_explore: "Explore", nav_about: "About Us", nav_contact: "Contact", nav_login: "Login", nav_logout: "Logout", nav_dashboard: "Dashboard",
+    nav_explore: "Explore", nav_about: "About Us", nav_contact: "Contact", nav_login: "Login", nav_logout: "Logout",
     nav_private: "Private & Hobby", nav_professional: "Professional", nav_kids: "Children", nav_howitworks: "How it Works",
     nav_dashboard: "My Area", 
     nav_news: "News", nav_providers: "Provider Search", 
@@ -671,7 +671,6 @@ export const TRANSLATIONS = {
     // SEARCH FILTERS
     search_refine: "Refine search...",
     lbl_max_price: "Max CHF",
-    lbl_type: "Type", lbl_area: "Area", lbl_specialty: "Specialty", 
     msg_no_courses: "No courses available.", msg_all_topics: "All topics in this area.", 
     msg_select_area: "Select an area.", lbl_select_cat: "Select Category",
     lbl_professional_filter: "Verified",
@@ -750,7 +749,7 @@ export const TRANSLATIONS = {
     profile_settings: "Profile Settings", lbl_city: "My City / Town", lbl_bio: "About Me (Bio)", lbl_language: "Preferred Language",
     profile_lang_note: "We will use this for emails and website content.", btn_save: "Save Changes",
     dash_overview: "Courses", dash_profile: "My Profile", dash_settings: "Profile", dash_new_course: "New Course",
-    lbl_account_security: "Account Security", lbl_new_password: "New Password", lbl_confirm_password: "Confirm Password",
+    lbl_account_security: "Account Security", lbl_new_password: "New Password",
     lbl_update_auth: "Update Login Details", msg_auth_success: "Account details updated!",
     
     // LEGAL MICRO-COPY
@@ -808,7 +807,7 @@ export const TRANSLATIONS = {
     setpw_verify_btn: "Continue to Password Reset",
   },
   de: {
-    nav_explore: "Entdecken", nav_about: "Über uns", nav_contact: "Kontakt", nav_login: "Anmelden", nav_logout: "Abmelden", nav_dashboard: "Dashboard",
+    nav_explore: "Entdecken", nav_about: "Über uns", nav_contact: "Kontakt", nav_login: "Anmelden", nav_logout: "Abmelden",
     nav_private: "Privat & Hobby", nav_professional: "Beruflich", nav_kids: "Kinder & Jugend", nav_howitworks: "So funktioniert's",
     nav_dashboard: "Mein Bereich", 
     nav_news: "Neuigkeiten", nav_providers: "Anbieter finden",
@@ -843,7 +842,6 @@ export const TRANSLATIONS = {
     // SEARCH FILTERS
     search_refine: "Suche verfeinern...",
     lbl_max_price: "Max CHF",
-    lbl_type: "Typ", lbl_area: "Bereich", lbl_specialty: "Spezialgebiet", 
     msg_no_courses: "Keine Kurse verfügbar.", msg_all_topics: "Alle Themen in diesem Bereich.", 
     msg_select_area: "Wähle einen Bereich.", lbl_select_cat: "Kategorie wählen",
     lbl_professional_filter: "Verifiziert",
@@ -921,7 +919,7 @@ export const TRANSLATIONS = {
     profile_settings: "Profileinstellungen", lbl_city: "Meine Stadt / Ort", lbl_bio: "Über uns", lbl_language: "Bevorzugte Sprache",
     profile_lang_note: "Wir verwenden dies für E-Mails und Webseiteninhalte.", btn_save: "Speichern",
     dash_overview: "Kursangebot", dash_profile: "Mein Profil", dash_settings: "Profil", dash_new_course: "Neuer Kurs",
-    lbl_account_security: "Konto & Sicherheit", lbl_new_password: "Neues Passwort", lbl_confirm_password: "Passwort bestätigen",
+    lbl_account_security: "Konto & Sicherheit", lbl_new_password: "Neues Passwort",
     lbl_update_auth: "Zugangsdaten aktualisieren", msg_auth_success: "Konto aktualisiert!",
 
     // LEGAL MICRO-COPY
@@ -979,7 +977,7 @@ export const TRANSLATIONS = {
     setpw_verify_btn: "Weiter zum Passwort setzen",
   },
   fr: {
-    nav_explore: "Explorer", nav_about: "À propos", nav_contact: "Contact", nav_login: "Connexion", nav_logout: "Déconnexion", nav_dashboard: "Tableau de bord",
+    nav_explore: "Explorer", nav_about: "À propos", nav_contact: "Contact", nav_login: "Connexion", nav_logout: "Déconnexion",
     nav_private: "Privé & Loisirs", nav_professional: "Professionnel", nav_kids: "Enfants", nav_howitworks: "Comment ça marche",
     nav_dashboard: "Mon Espace", 
     nav_news: "Actualités", nav_providers: "Recherche prestataires", 
@@ -1014,7 +1012,6 @@ export const TRANSLATIONS = {
     // SEARCH FILTERS
     search_refine: "Affiner la recherche...",
     lbl_max_price: "Max CHF",
-    lbl_type: "Type", lbl_area: "Domaine", lbl_specialty: "Spécialité", 
     msg_no_courses: "Aucun cours disponible.", msg_all_topics: "Tous les sujets.", 
     msg_select_area: "Choisissez un domaine.", lbl_select_cat: "Choisir catégorie",
     lbl_professional_filter: "Vérifié",
@@ -1092,7 +1089,7 @@ export const TRANSLATIONS = {
     profile_settings: "Paramètres du profil", lbl_city: "Ma Ville / Localité", lbl_bio: "À propos de moi", lbl_language: "Langue préférée",
     profile_lang_note: "Nous utiliserons ceci pour les e-mails.", btn_save: "Enregistrer",
     dash_overview: "Offre de cours", dash_profile: "Mon Profil", dash_settings: "Profil", dash_new_course: "Nouveau Cours",
-    lbl_account_security: "Compte et Sécurité", lbl_new_password: "Nouveau mot de passe", lbl_confirm_password: "Confirmer",
+    lbl_account_security: "Compte et Sécurité", lbl_new_password: "Nouveau mot de passe",
     lbl_update_auth: "Mettre à jour", msg_auth_success: "Compte mis à jour !",
 
     // LEGAL MICRO-COPY
@@ -1150,7 +1147,7 @@ export const TRANSLATIONS = {
     setpw_verify_btn: "Continuer",
   },
   it: {
-    nav_explore: "Esplora", nav_about: "Chi siamo", nav_contact: "Contatto", nav_login: "Accedi", nav_logout: "Esci", nav_dashboard: "Dashboard",
+    nav_explore: "Esplora", nav_about: "Chi siamo", nav_contact: "Contatto", nav_login: "Accedi", nav_logout: "Esci",
     nav_private: "Privato & Hobby", nav_professional: "Professionale", nav_kids: "Bambini", nav_howitworks: "Come funziona",
     nav_dashboard: "Mia Area", 
     nav_news: "Novità", nav_providers: "Ricerca fornitori", 
@@ -1185,7 +1182,6 @@ export const TRANSLATIONS = {
     // SEARCH FILTERS
     search_refine: "Affina la ricerca...",
     lbl_max_price: "Max CHF",
-    lbl_type: "Tipo", lbl_area: "Area", lbl_specialty: "Specialità", 
     msg_no_courses: "Nessun corso disponibile.", msg_all_topics: "Tutti gli argomenti.", 
     msg_select_area: "Scegli un'area.", lbl_select_cat: "Scegli categoria",
     lbl_professional_filter: "Verificato",
@@ -1263,7 +1259,7 @@ export const TRANSLATIONS = {
     profile_settings: "Impostazioni Profilo", lbl_city: "La mia Città", lbl_bio: "Su di me (Bio)", lbl_language: "Lingua preferita",
     profile_lang_note: "Useremo questa lingua per email e sito web.", btn_save: "Salva modifiche",
     dash_overview: "Offerta corsi", dash_profile: "Il mio Profilo", dash_settings: "Profilo", dash_new_course: "Nuovo Corso",
-    lbl_account_security: "Sicurezza Account", lbl_new_password: "Nuova Password", lbl_confirm_password: "Conferma",
+    lbl_account_security: "Sicurezza Account", lbl_new_password: "Nuova Password",
     lbl_update_auth: "Aggiorna Account", msg_auth_success: "Account aggiornato!",
 
     // LEGAL MICRO-COPY

@@ -24,7 +24,9 @@ export default defineConfig([
     },
     rules: {
       'no-unused-vars': 'off',
-      'no-dupe-keys': 'off',
+      // Doppelte Keys sind immer ein Fehler: der spaetere Wert gewinnt still,
+      // der frueher notierte Text ist tot. In TRANSLATIONS lagen so 20 Stueck.
+      'no-dupe-keys': 'error',
       'no-irregular-whitespace': 'off',
     },
   },

@@ -1,6 +1,7 @@
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
 import { getRequiredSanitizedEnv } from './_lib/env.js';
+import { getEventCutoffDate } from '../src/lib/eventDates.js';
 
 function getBaseUrl(req) {
   const forwardedProto = req.headers['x-forwarded-proto'];
@@ -105,18 +106,6 @@ export default async function handler(req, res) {
     if (course.requires_guardian_booking && !guardianAttestation) {
       return res.status(400).json({ error: 'Für diesen Kurs ist die Bestätigung durch eine erziehungsberechtigte Person erforderlich.' });
     }
-
-    const getEventCutoffDate = (value) => {
-      if (!value) return null;
-      const normalizedValue = String(value).trim();
-      if (!normalizedValue) return null;
-
-      const parsed = normalizedValue.includes('T')
-        ? new Date(normalizedValue)
-        : new Date(`${normalizedValue}T23:59:59`);
-
-      return Number.isNaN(parsed.getTime()) ? null : parsed;
-    };
 
     let effectiveBookingType = course.booking_type;
 

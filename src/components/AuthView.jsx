@@ -5,6 +5,7 @@ import { TRANSLATIONS } from '../lib/constants';
 import { supabase } from '../lib/supabase';
 import { trackSignup, trackLogin } from '../lib/analytics';
 import { TERMS_VERSION, PRIVACY_VERSION } from '../lib/legalVersions';
+import { readStored, removeStored } from '../lib/safeStorage';
 
 const AuthView = ({ setView, setUser, showNotification, lang }) => {
     const [isSignUp, setIsSignUp] = useState(false); 
@@ -22,12 +23,12 @@ const AuthView = ({ setView, setUser, showNotification, lang }) => {
     const t = TRANSLATIONS[lang] || TRANSLATIONS['de']; 
 
     const restorePendingBookingFlow = () => {
-        const redirectPath = localStorage.getItem('postLoginRedirectPath');
+        const redirectPath = readStored('postLoginRedirectPath');
         if (!redirectPath) return false;
 
-        localStorage.removeItem('pendingCourseId');
-        localStorage.removeItem('pendingEventId');
-        localStorage.removeItem('postLoginRedirectPath');
+        removeStored('pendingCourseId');
+        removeStored('pendingEventId');
+        removeStored('postLoginRedirectPath');
         window.history.replaceState({ view: 'detail' }, document.title, redirectPath);
         setView('detail');
         showNotification('Bitte bestätige die Buchung noch einmal, um fortzufahren.');
@@ -43,7 +44,7 @@ const AuthView = ({ setView, setUser, showNotification, lang }) => {
                 
                 // LOGIC: Retrieve selected package from previous step (TeacherHub)
             const selectedPackage = role === 'teacher'
-                ? (localStorage.getItem('selectedPackage') || 'basic')
+                ? (readStored('selectedPackage') || 'basic')
                 : 'basic';
 
             const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -71,7 +72,7 @@ const AuthView = ({ setView, setUser, showNotification, lang }) => {
                     }], { onConflict: 'id' });
                     if (profileError) console.warn('Profile insert failed (will retry on login):', profileError.message);
                 }
-                localStorage.removeItem('selectedPackage');
+                removeStored('selectedPackage');
                 trackSignup('email');
 
                 // Consent-Nachweis serverseitig speichern (fire-and-forget)
