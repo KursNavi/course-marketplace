@@ -94,14 +94,31 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'Missing slug parameter' });
       }
 
-      // Check for alias (old slug)
-      const { data: aliasData } = await supabase
-        .from('provider_slug_aliases')
-        .select('new_slug, provider_id')
-        .eq('old_slug', slug)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
+      // Alias-Pruefung (alter Slug) und Profilabfrage sind voneinander
+      // unabhaengig und laufen deshalb parallel statt nacheinander. Im
+      // Normalfall — kein Alias — sparen wir damit einen ganzen Roundtrip.
+      const [aliasResult, fullQuery] = await Promise.all([
+        supabase
+          .from('provider_slug_aliases')
+          .select('new_slug, provider_id')
+          .eq('old_slug', slug)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single(),
+        // Try with show_email_publicly first, fallback without it if column doesn't exist yet
+        supabase
+          .from('profiles')
+          .select(`
+            id, full_name, slug, logo_url, cover_image_url,
+            show_email_publicly, profile_published_at, website_url, street, city, canton,
+            additional_locations, verification_status, package_tier, bio_text, certificates,
+            phone, social_linkedin, social_instagram, social_facebook, social_youtube
+          `)
+          .eq('slug', slug)
+          .single(),
+      ]);
+
+      const aliasData = aliasResult.data;
 
       if (aliasData) {
         return res.status(200).json({
@@ -112,21 +129,8 @@ export default async function handler(req, res) {
       }
 
       // Fetch provider by slug
-      // Try with show_email_publicly first, fallback without it if column doesn't exist yet
       let provider;
       let providerError;
-
-      // Try extended query with new fields, fallback gracefully
-      const fullQuery = await supabase
-        .from('profiles')
-        .select(`
-          id, full_name, slug, logo_url, cover_image_url,
-          show_email_publicly, profile_published_at, website_url, street, city, canton,
-          additional_locations, verification_status, package_tier, bio_text, certificates,
-          phone, social_linkedin, social_instagram, social_facebook, social_youtube
-        `)
-        .eq('slug', slug)
-        .single();
 
       if (fullQuery.error) {
         // Fallback query without new columns (pre-migration)
@@ -186,28 +190,25 @@ export default async function handler(req, res) {
         homepageLinkRel: tier === 'enterprise' ? 'sponsored noopener' : 'nofollow noopener'
       };
 
-      // Fetch all courses for this provider
+      // Kurse des Anbieters direkt ueber user_id laden. Frueher lief hier erst
+      // eine reine ID-Abfrage und danach dieselbe Menge noch einmal ueber
+      // .in('id', ...) — ein vollstaendig redundanter Roundtrip.
       const providerId = provider.id;
 
-      const { data: allCoursesRaw } = await supabase
+      const { data: fullCourses, error: fullError } = await supabase
         .from('courses')
-        .select('id, title, status, user_id')
-        .eq('user_id', providerId);
+        .select(`id, title, description, price, category_type, category_area,
+          category_specialty, category_focus, canton, booking_type, image_url, created_at, status, is_prio, delivery_types, delivery_type`)
+        .eq('user_id', providerId)
+        .order('created_at', { ascending: false });
 
-      // Now fetch full course details for display
+      if (fullError) {
+        console.error('Error loading full courses:', fullError.message);
+      }
+
       let courses = [];
-      if (allCoursesRaw && allCoursesRaw.length > 0) {
-        const courseIdList = allCoursesRaw.map(c => c.id);
-        const { data: fullCourses, error: fullError } = await supabase
-          .from('courses')
-          .select(`id, title, description, price, category_type, category_area,
-            category_specialty, category_focus, canton, booking_type, image_url, created_at, status, is_prio, delivery_types, delivery_type`)
-          .in('id', courseIdList)
-          .order('created_at', { ascending: false });
-
-        if (fullError) {
-          console.error('Error loading full courses:', fullError.message);
-        }
+      if (fullCourses && fullCourses.length > 0) {
+        const courseIdList = fullCourses.map(c => c.id);
         const { data: categoriesData, error: categoriesError } = await supabase
           .from('v_course_full_categories')
           .select('*')
