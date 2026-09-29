@@ -209,6 +209,54 @@ function parseDeliveryParam(param) {
   return [...new Set(param.split(',').map(normalizeDeliveryTypeKey).filter(Boolean))];
 }
 
+/** Kurs + Termine + Standorte — identisch für Katalog- und Einzelabfrage. */
+const COURSE_WITH_RELATIONS_SELECT = '*, course_events(*, bookings(count)), course_locations(*)';
+
+/** Anbieterfelder, die die Kursliste und die Kursdetailseite brauchen. */
+const COURSE_PROFILE_SELECT = 'id, bio_text, certificates, additional_locations, city, canton, verification_status, slug, package_tier, profile_published_at, website_url, basic_lead_ranking_factor';
+
+/**
+ * Liest die Kurs-ID aus einer Detail-URL (/courses/thema/ort/123-slug oder /course/123).
+ * Gibt null zurück, wenn der Pfad keine Kursdetailseite ist.
+ */
+function getCourseIdFromPath(pathname) {
+  let path = pathname || '';
+  if (path.startsWith('/app/')) path = '/' + path.slice('/app/'.length);
+
+  if (path.startsWith('/courses/')) {
+    const parts = path.split('/').filter(Boolean);
+    if (parts.length < 4) return null;
+    const id = (parts[3] || '').split('-')[0];
+    return id || null;
+  }
+
+  if (path.startsWith('/course/')) {
+    return path.split('/')[2] || null;
+  }
+
+  return null;
+}
+
+/** Zeile aus v_course_full_categories in die App-interne Kategorie-Form bringen. */
+function mapCourseCategoryRow(cat) {
+  return {
+    course_id: cat.course_id,
+    category_type: cat.level1_slug,
+    category_type_label: cat.level1_label_de,
+    category_area: cat.level2_slug,
+    category_area_label: cat.level2_label_de,
+    category_specialty: cat.level3_slug,
+    category_specialty_label: cat.level3_label_de,
+    category_focus: cat.level4_slug || null,
+    category_focus_label: cat.level4_label_de || null,
+    type_id: cat.level1_id,
+    area_id: cat.level2_id,
+    specialty_id: cat.level3_id,
+    focus_id: cat.level4_id,
+    is_primary: cat.is_primary
+  };
+}
+
 // --- MAIN APP COMPONENT ---
 export default function KursNaviPro() {  // 1. Initial State Logic
   const getInitialView = () => {
@@ -968,13 +1016,87 @@ export default function KursNaviPro() {  // 1. Initial State Logic
   };
 
 
+  /**
+   * Rohdaten aus der DB (Kurszeile, Anbieterprofil, Kategoriezeilen) in den
+   * angereicherten Kursdatensatz überführen, den die Oberfläche erwartet.
+   * Wird von der Katalogabfrage und von der Einzelabfrage der Kursdetailseite
+   * genutzt, damit beide Wege exakt dieselben Felder liefern.
+   */
+  const buildCourseRecord = (c, prof, courseCategories = []) => {
+    const normalized = normalizeCourse(c);
+
+    // Build category_paths for TeacherForm compatibility
+    // NOTE: type uses SLUG, area uses NUMERIC ID (because getAreasLocal returns _areaIds),
+    // specialty and focus use LABELS (because dropdowns display labels)
+    const categoryPaths = courseCategories.map(cat => {
+      return {
+        type: cat.category_type,           // slug (e.g., "professionell")
+        area: cat.area_id,                 // numeric ID (e.g., 22) - getAreasLocal returns IDs
+        specialty: cat.category_specialty_label || cat.category_specialty || '', // label (e.g., "Hauswirtschaft")
+        focus: cat.category_focus_label || cat.category_focus || '',             // label (e.g., "Bäuerliche Hauswirtschaft")
+        is_primary: cat.is_primary
+      };
+    });
+
+    const instructorTier = (prof?.package_tier || 'basic').toLowerCase();
+    return {
+      ...normalized,
+      instructor_bio: prof?.bio_text,
+      instructor_certificates: prof?.certificates,
+      additional_locations: prof?.additional_locations,
+      instructor_verified: prof?.verification_status === 'verified',
+      instructor_slug: prof?.slug || null,
+      instructor_website_url: prof?.website_url || null,
+      instructor_homepage_link_rel: getHomepageLinkRel(instructorTier),
+      instructor_has_public_profile: ['pro', 'premium', 'enterprise'].includes(instructorTier) && !!prof?.slug && !!prof?.profile_published_at,
+      // Ranking-Abschlag für Basic-Anbieter mit vielen qualifizierten Leads.
+      // Kommt aus derselben Profil-Abfrage wie die übrigen Anbieterdaten —
+      // die Kurslisten stellen dafür keine zusätzliche Abfrage.
+      basic_lead_ranking_factor: prof?.basic_lead_ranking_factor ?? 1,
+      all_categories: courseCategories.length > 0 ? courseCategories : buildSyntheticCategories(normalized), // Add real or synthesized categories
+      has_stored_category: normalized.has_stored_category || courseCategories.some(cat => cat.specialty_id != null),
+      category_paths: categoryPaths, // Add category_paths for TeacherForm
+    };
+  };
+
+  /**
+   * Lädt genau einen Kurs samt Anbieter und Kategorien.
+   *
+   * Beim Direkteinstieg auf eine Kursdetailseite (Google-Treffer, geteilter Link,
+   * Reload) musste die Seite bisher auf den kompletten Kurskatalog warten — mehrere
+   * Megabyte für eine Seite, die nur einen Kurs zeigt. Diese Abfrage liefert genau
+   * den einen Kurs; der Katalog lädt unabhängig davon im Hintergrund weiter.
+   */
+  const fetchSingleCourse = async (courseId) => {
+    const { data: courseRows, error: courseError } = await supabase
+      .from('courses')
+      .select(COURSE_WITH_RELATIONS_SELECT)
+      .eq('id', courseId);
+
+    const courseRow = (courseRows || [])[0];
+    if (courseError || !courseRow) return null;
+
+    const [profileResult, categoryResult] = await Promise.all([
+      courseRow.user_id
+        ? supabase.from('profiles').select(COURSE_PROFILE_SELECT).eq('id', courseRow.user_id)
+        : Promise.resolve({ data: [] }),
+      supabase.from('v_course_full_categories').select('*').eq('course_id', courseRow.id),
+    ]);
+
+    const courseCategories = (categoryResult?.data || []).map(mapCourseCategoryRow);
+    return buildCourseRecord(courseRow, (profileResult?.data || [])[0], courseCategories);
+  };
+
   const fetchCourses = async () => {
     try {
       // Supabase hydrates the persisted auth session asynchronously. Wait for
       // that hydration before querying courses so an authenticated provider's
       // own drafts are included on the first app load as well.
       await supabase.auth.getSession();
-      setLoading(true);
+      // Nur der erste Ladevorgang zeigt den Ladezustand. Spätere Hintergrund-
+      // Aktualisierungen (z. B. nach einer Token-Erneuerung) dürfen eine bereits
+      // sichtbare Seite nicht gegen einen Spinner tauschen.
+      if (!coursesLoadedRef.current) setLoading(true);
       setFetchError(false);
 
       // V3.0 Data Sync (robust): Lade Kurse + Events zuerst, Profile danach separat (kein fragiler Join)
@@ -1015,68 +1137,13 @@ export default function KursNaviPro() {  // 1. Initial State Logic
             if (!acc[cat.course_id]) {
               acc[cat.course_id] = [];
             }
-            acc[cat.course_id].push({
-              course_id: cat.course_id,
-              category_type: cat.level1_slug,
-              category_type_label: cat.level1_label_de,
-              category_area: cat.level2_slug,
-              category_area_label: cat.level2_label_de,
-              category_specialty: cat.level3_slug,
-              category_specialty_label: cat.level3_label_de,
-              category_focus: cat.level4_slug || null,
-              category_focus_label: cat.level4_label_de || null,
-              type_id: cat.level1_id,
-              area_id: cat.level2_id,
-              specialty_id: cat.level3_id,
-              focus_id: cat.level4_id,
-              is_primary: cat.is_primary
-            });
+            acc[cat.course_id].push(mapCourseCategoryRow(cat));
             return acc;
           }, {});
         }
       }
 
-      const migratedData = (courseData || []).map(c => {
-        const normalized = normalizeCourse(c);
-        const prof = profileMap[c.user_id];
-        const courseCategories = categoriesMap[c.id] || [];
-
-        // Build category_paths for TeacherForm compatibility
-        // NOTE: type uses SLUG, area uses NUMERIC ID (because getAreasLocal returns _areaIds),
-        // specialty and focus use LABELS (because dropdowns display labels)
-        // Build: 2026-02-21-v3 - Added debug logging
-        const categoryPaths = courseCategories.map(cat => {
-          return {
-            type: cat.category_type,           // slug (e.g., "professionell")
-            area: cat.area_id,                 // numeric ID (e.g., 22) - getAreasLocal returns IDs
-            specialty: cat.category_specialty_label || cat.category_specialty || '', // label (e.g., "Hauswirtschaft")
-            focus: cat.category_focus_label || cat.category_focus || '',             // label (e.g., "Bäuerliche Hauswirtschaft")
-            is_primary: cat.is_primary
-          };
-        });
-
-        const instructorTier = (prof?.package_tier || 'basic').toLowerCase();
-        const normalizedWithFallbacks = {
-          ...normalized,
-          instructor_bio: prof?.bio_text,
-          instructor_certificates: prof?.certificates,
-          additional_locations: prof?.additional_locations,
-          instructor_verified: prof?.verification_status === 'verified',
-          instructor_slug: prof?.slug || null,
-          instructor_website_url: prof?.website_url || null,
-          instructor_homepage_link_rel: getHomepageLinkRel(instructorTier),
-          instructor_has_public_profile: ['pro', 'premium', 'enterprise'].includes(instructorTier) && !!prof?.slug && !!prof?.profile_published_at,
-          // Ranking-Abschlag für Basic-Anbieter mit vielen qualifizierten Leads.
-          // Kommt aus derselben Profil-Abfrage wie die übrigen Anbieterdaten —
-          // die Kurslisten stellen dafür keine zusätzliche Abfrage.
-          basic_lead_ranking_factor: prof?.basic_lead_ranking_factor ?? 1,
-          all_categories: courseCategories.length > 0 ? courseCategories : buildSyntheticCategories(normalized), // Add real or synthesized categories
-          has_stored_category: normalized.has_stored_category || courseCategories.some(cat => cat.specialty_id != null),
-          category_paths: categoryPaths, // Add category_paths for TeacherForm
-        };
-
-        return normalizedWithFallbacks;
-      });
+      const migratedData = (courseData || []).map(c => buildCourseRecord(c, profileMap[c.user_id], categoriesMap[c.id] || []));
 
       // A normal client refresh cannot see drafts belonging to the provider
       // represented by an admin. Keep the protected impersonation result in
@@ -1646,6 +1713,42 @@ export default function KursNaviPro() {  // 1. Initial State Logic
   });
   
 // --- EFFECT HOOKS ---
+
+  // Direkteinstieg auf eine Kursdetailseite: den einen Kurs sofort nachladen,
+  // statt auf den vollständigen Katalog zu warten. Der Katalog läuft parallel
+  // weiter und ersetzt den Datensatz anschliessend durch die Listenversion.
+  useEffect(() => {
+    const courseId = getCourseIdFromPath(window.location.pathname);
+    if (!courseId) return undefined;
+
+    let cancelled = false;
+
+    fetchSingleCourse(courseId)
+      .then(course => {
+        if (cancelled || !course) return;
+        // Nicht anwenden, wenn der Nutzer inzwischen woanders ist.
+        if (getCourseIdFromPath(window.location.pathname) !== courseId) return;
+        setSelectedCourse(prev => (prev && String(prev.id) === String(course.id) ? prev : course));
+        setView('detail');
+
+        // --- SEO TRAFFIC COP ---
+        // Dieselbe Canonical-Korrektur wie in der Katalog-Logik, nur sofort.
+        // Die Seite ist ab hier sichtbar, deshalb darf die URL nicht erst
+        // Sekunden später unter dem Nutzer wegspringen.
+        const canonicalPath = buildCoursePath(course);
+        if (canonicalPath && window.location.pathname !== canonicalPath) {
+          window.history.replaceState({ view: 'detail', courseId: course.id }, '', canonicalPath);
+        }
+      })
+      .catch(() => {
+        // Kein Fehlerfall: der vollständige Katalog liefert den Kurs gleich nach.
+      });
+
+    return () => { cancelled = true; };
+    // Läuft bewusst nur beim ersten Rendern — spätere Wechsel deckt syncFromUrl ab.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
     useEffect(() => {
     window.history.scrollRestoration = 'manual';
     fetchArticles();
@@ -2304,7 +2407,7 @@ useEffect(() => {
       {/* GLOBAL LOADING STATE - Prevents White Screen on course-dependent views.
           Show spinner only for 'detail' view. For 'home' we render the Home component immediately and let it
           display a local skeleton so the layout (nav/footer) remains visible without a blank main area. */}
-      {loading && view === 'detail' && (
+      {loading && view === 'detail' && !selectedCourse && (
           <div className="flex items-center justify-center min-h-[60vh]">
               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
           </div>
@@ -2383,7 +2486,7 @@ useEffect(() => {
             {view === 'success' && <SuccessView setView={setView} t={t} />}
             {view === 'lead-confirmation' && <LeadConfirmationPage setView={setView} />}
 
-      {!loading && view === 'detail' && selectedCourse && (
+      {view === 'detail' && selectedCourse && (
         <DetailView
           course={selectedCourse}
           courses={publishedCourses}
