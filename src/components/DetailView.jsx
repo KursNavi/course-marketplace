@@ -23,6 +23,8 @@ import {
 import { getRobotsPolicy } from '../lib/seoUtils';
 import { getRelatedCourses } from '../lib/courseRecommendations';
 import { buildLeadConfirmationPath } from '../lib/leadConfirmation';
+import { isRelevantEvent } from '../lib/eventDates';
+import { writeStored, readSession, writeSession, removeSession } from '../lib/safeStorage';
 
 const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, setUser, savedCourseIds, onToggleSaveCourse, showNotification, refreshBookings }) => {
     const [showLeadModal, setShowLeadModal] = useState(false);
@@ -59,9 +61,9 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
     useEffect(() => {
         if (!course?.id || course.booking_type !== 'lead') return;
         try {
-            const pendingCourseId = window.sessionStorage.getItem('kn_open_lead_course');
+            const pendingCourseId = readSession('kn_open_lead_course');
             if (pendingCourseId !== String(course.id)) return;
-            window.sessionStorage.removeItem('kn_open_lead_course');
+            removeSession('kn_open_lead_course');
             openLeadInquiry();
         } catch {
             // Session storage is an enhancement; the normal detail CTA remains.
@@ -106,15 +108,15 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
     useEffect(() => {
         if (!course?.id) return;
         const key = `det_${course.id}`;
-        if (sessionStorage.getItem(key)) return;
-        sessionStorage.setItem(key, '1');
+        if (readSession(key)) return;
+        writeSession(key, '1');
         trackCourseView(course);
 
         supabase.from('course_views').insert({
             course_id: course.id,
             view_type: 'detail',
             viewer_id: user?.id || null,
-            source: sessionStorage.getItem('cv_source') || 'search'
+            source: readSession('cv_source') || 'search'
         }).then(({ error }) => {
             if (error) console.warn('Detail view tracking failed:', error.message);
         });
@@ -324,35 +326,8 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
         }
     }, [course]);
     
-    const getEventCutoffDate = (value) => {
-        if (!value) return null;
-        if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value;
-
-        const normalizedValue = String(value).trim();
-        if (!normalizedValue) return null;
-
-        const parsed = normalizedValue.includes('T')
-            ? new Date(normalizedValue)
-            : new Date(`${normalizedValue}T23:59:59`);
-
-        return Number.isNaN(parsed.getTime()) ? null : parsed;
-    };
-
-    const isUpcomingEventDate = (value) => {
-        const cutoff = getEventCutoffDate(value);
-        return cutoff ? cutoff >= new Date() : false;
-    };
-
-    // An event is relevant (not yet past) if:
-    // - end_date exists and is today or in the future, OR
-    // - no end_date and start_date is today or in the future
-    const isRelevantEvent = (ev) => {
-        if (ev.end_date) {
-            const endCutoff = getEventCutoffDate(ev.end_date);
-            return endCutoff ? endCutoff >= new Date() : isUpcomingEventDate(ev.start_date);
-        }
-        return isUpcomingEventDate(ev.start_date);
-    };
+    // Termin-Logik liegt gemeinsam in src/lib/eventDates.js — dieselbe Regel
+    // gilt fuer JSON-LD, Empfehlungen und die Buchungs-Endpunkte.
 
     // --- SMART BOOKING HANDLER ---
     const handleBookingAction = async (courseEvent = null) => {
@@ -381,9 +356,9 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
         }
 
         if (!user) {
-            localStorage.setItem('pendingCourseId', course.id);
-            if (courseEvent?.id) localStorage.setItem('pendingEventId', courseEvent.id);
-            localStorage.setItem('postLoginRedirectPath', `${window.location.pathname}${window.location.search}`);
+            writeStored('pendingCourseId', course.id);
+            if (courseEvent?.id) writeStored('pendingEventId', courseEvent.id);
+            writeStored('postLoginRedirectPath', `${window.location.pathname}${window.location.search}`);
             setView('login');
             return;
         }
@@ -993,9 +968,9 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
                                                 <div className="w-full">
                                                     <button
                                                         onClick={() => {
-                                                            localStorage.setItem('pendingCourseId', course.id);
-                                                            if (ev?.id) localStorage.setItem('pendingEventId', ev.id);
-                                                            localStorage.setItem('postLoginRedirectPath', `${window.location.pathname}${window.location.search}`);
+                                                            writeStored('pendingCourseId', course.id);
+                                                            if (ev?.id) writeStored('pendingEventId', ev.id);
+                                                            writeStored('postLoginRedirectPath', `${window.location.pathname}${window.location.search}`);
                                                             setView('login');
                                                         }}
                                                         className="w-full py-2.5 rounded-lg font-bold text-sm transition flex items-center justify-center bg-primary text-white hover:bg-orange-600 shadow-sm hover:shadow active:scale-95"
@@ -1088,8 +1063,8 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
                                     <div className="w-full">
                                     <button
                                         onClick={() => {
-                                            localStorage.setItem('pendingCourseId', course.id);
-                                            localStorage.setItem('postLoginRedirectPath', `${window.location.pathname}${window.location.search}`);
+                                            writeStored('pendingCourseId', course.id);
+                                            writeStored('postLoginRedirectPath', `${window.location.pathname}${window.location.search}`);
                                             setView('login');
                                         }}
                                         className="w-full font-bold py-3 rounded-lg transition shadow-sm flex items-center justify-center bg-primary text-white hover:bg-orange-600 active:scale-95"
@@ -1263,7 +1238,7 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
                                     await onToggleSaveCourse(course);
                                 } else {
                                     // Wenn ausgeloggt: für später merken, aber User nicht blockieren
-                                    localStorage.setItem('pendingSavedCourseId', String(course.id));
+                                    writeStored('pendingSavedCourseId', String(course.id));
                                     if (showNotification) showNotification("Kurs wird nach Login gemerkt.");
                                 }
 

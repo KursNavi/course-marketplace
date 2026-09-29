@@ -7,6 +7,7 @@ import {
 } from './_lib/course-booking-email.js';
 import { getDashboardUrl } from './_lib/base-url.js';
 import { restoreRefundedFlexBooking } from './_lib/rebook-flex.js';
+import { getEventCutoffDate } from '../src/lib/eventDates.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -78,18 +79,6 @@ export default async function handler(req, res) {
     if (!isFreeCourse && creditBalance < coursePriceCents) {
       return res.status(400).json({ error: 'Nicht genügend Guthaben' });
     }
-
-    const getEventCutoffDate = (value) => {
-      if (!value) return null;
-      const normalizedValue = String(value).trim();
-      if (!normalizedValue) return null;
-
-      const parsed = normalizedValue.includes('T')
-        ? new Date(normalizedValue)
-        : new Date(`${normalizedValue}T23:59:59`);
-
-      return Number.isNaN(parsed.getTime()) ? null : parsed;
-    };
 
     // 3. Determine effective booking type
     let effectiveBookingType = course.booking_type;

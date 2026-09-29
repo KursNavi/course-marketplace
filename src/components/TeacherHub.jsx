@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { BASE_URL } from '../lib/siteConfig';
 import PlanCardGrid from './PlanCardGrid';
+import { writeStored } from '../lib/safeStorage';
 
 const heroBullets = [
   'Kostenlos starten',
@@ -115,7 +116,7 @@ const TeacherHub = ({ user, showNotification }) => {
 
   const handlePrimaryCta = () => {
     if (!user) {
-      localStorage.setItem('selectedPackage', 'basic');
+      writeStored('selectedPackage', 'basic');
       window.history.pushState({ view: 'login' }, '', '/login');
       return;
     }
@@ -129,7 +130,7 @@ const TeacherHub = ({ user, showNotification }) => {
       return;
     }
     if (!user) {
-      localStorage.setItem('selectedPackage', planId);
+      writeStored('selectedPackage', planId);
       window.history.pushState({ view: 'login' }, '', '/login');
       return;
     }

@@ -8,6 +8,7 @@ import { computeImageHash, getExistingImageByHash, uploadImageWithHash, getUserC
 import imageCompression from 'browser-image-compression';
 import { refreshCoursesAfterMutation } from '../lib/courseRefresh';
 import { getNormalizedDeliveryTypes, normalizeCategoryType } from '../lib/courseMetadata';
+import { isEventPast } from '../lib/eventDates';
 
 // --- Image Compression Helper ---
 const compressImage = async (file) => {
@@ -395,26 +396,17 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, refreshImper
         // Limits entfernt: kein Gatekeeping mehr noetig
 
         const currentCourseId = initialData?.id || 'new';
-        console.log('[TeacherForm] useEffect triggered:', {
-            hasInitialized: hasInitializedRef.current,
-            initializedCourseId: initializedCourseIdRef.current,
-            currentCourseId: currentCourseId,
-            initialDataId: initialData?.id,
-            category_paths: initialData?.category_paths
-        });
 
         // Skip loading initialData if form has already been initialized FOR THIS COURSE
         // Reset if we're editing a different course
         if (hasInitializedRef.current && initializedCourseIdRef.current === currentCourseId) {
             // Already initialized for this course, skip loading
-            console.log('[TeacherForm] Skipping - already initialized for course', currentCourseId);
             initCompleteRef.current = true;
             return;
         }
 
         // Reset for new course
         if (initializedCourseIdRef.current !== currentCourseId) {
-            console.log('[TeacherForm] New course detected, resetting initialization');
             hasInitializedRef.current = false;
         }
 
@@ -445,14 +437,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, refreshImper
             if (initialData.provider_url) setProviderUrl(initialData.provider_url);
 
             // Kategorie(n) wiederherstellen (primary + optional)
-            console.log('[TeacherForm] Loading categories from initialData:', {
-                category_paths: initialData.category_paths,
-                category_type: initialData.category_type,
-                category_area: initialData.category_area,
-                all_categories: initialData.all_categories
-            });
             if (Array.isArray(initialData.category_paths) && initialData.category_paths.length > 0) {
-                console.log('[TeacherForm] Using category_paths:', initialData.category_paths);
                 setCategories(initialData.category_paths.map(c => ({
                     type: normalizeCategoryType(c?.type) || 'privat',
                     area: c?.area || '',
@@ -1039,21 +1024,6 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, refreshImper
 
     // UX Logic: Has the user entered a Valid Date?
     const hasDatedEvents = events.some(ev => !!ev.start_date);
-    const getEventCutoffDate = (value) => {
-        if (!value) return null;
-        const normalizedValue = String(value).trim();
-        if (!normalizedValue) return null;
-
-        const parsed = normalizedValue.includes('T')
-            ? new Date(normalizedValue)
-            : new Date(`${normalizedValue}T23:59:59`);
-
-        return Number.isNaN(parsed.getTime()) ? null : parsed;
-    };
-    const isEventPast = (value) => {
-        const cutoff = getEventCutoffDate(value);
-        return cutoff ? cutoff < new Date() : false;
-    };
     const archivedBookedEvents = events.filter(ev => (ev.bookingCount || 0) > 0 && isEventPast(ev.start_date));
     const visibleEvents = events.filter(ev => !((ev.bookingCount || 0) > 0 && isEventPast(ev.start_date)));
 
@@ -1720,11 +1690,6 @@ if (bookingType === 'platform' || activeLocationMode === 'events') {
 
         // 8. Update course_category_assignments junction table (for Zweitkategorien support)
         if (!isAdminImpersonating && activeCourseId) {
-            console.log('[CAT-DEBUG] cleanedCategories:', JSON.stringify(cleanedCategories));
-            console.log('[CAT-DEBUG] types available:', types.map(t => ({ id: t.id, slug: t.slug, idType: typeof t.id })));
-            console.log('[CAT-DEBUG] areas available:', areas.map(a => ({ id: a.id, slug: a.slug, idType: typeof a.id })));
-            console.log('[CAT-DEBUG] specialties available:', specialties.map(s => ({ id: s.id, area_id: s.area_id, level2_id: s.level2_id, label_de: s.label_de })));
-
             const { error: deleteCategoriesError } = await supabase
                 .from('course_category_assignments')
                 .delete()
@@ -1746,24 +1711,20 @@ if (bookingType === 'platform' || activeLocationMode === 'events') {
                 is_primary: cat.is_primary
             }));
 
-            console.log('[CAT-DEBUG] consolidatedCategories to insert:', JSON.stringify(dbCategories));
-
             if (dbCategories.length > 0) {
                 const { error: catErr } = await supabase
                     .from('course_category_assignments')
                     .insert(dbCategories);
 
                 if (catErr) {
-                    console.error('[CAT-DEBUG] INSERT ERROR:', catErr);
+                    console.error('Kategorie-Zuordnung konnte nicht gespeichert werden:', catErr);
                     showNotification("Fehler beim Speichern der Kategorien: " + catErr.message);
                     clearPendingCategorySuggestion();
                     setIsSubmitting(false);
                     return;
-                } else {
-                    console.log('[CAT-DEBUG] INSERT SUCCESS');
                 }
             } else {
-                console.warn('[CAT-DEBUG] No valid categories to insert! All level3_id were null.');
+                console.warn('Keine gueltige Kategorie zum Speichern — alle level3_id waren leer.');
             }
         }
 
