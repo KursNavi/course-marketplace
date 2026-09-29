@@ -1730,6 +1730,15 @@ export default function KursNaviPro() {  // 1. Initial State Logic
         if (getCourseIdFromPath(window.location.pathname) !== courseId) return;
         setSelectedCourse(prev => (prev && String(prev.id) === String(course.id) ? prev : course));
         setView('detail');
+
+        // --- SEO TRAFFIC COP ---
+        // Dieselbe Canonical-Korrektur wie in der Katalog-Logik, nur sofort.
+        // Die Seite ist ab hier sichtbar, deshalb darf die URL nicht erst
+        // Sekunden später unter dem Nutzer wegspringen.
+        const canonicalPath = buildCoursePath(course);
+        if (canonicalPath && window.location.pathname !== canonicalPath) {
+          window.history.replaceState({ view: 'detail', courseId: course.id }, '', canonicalPath);
+        }
       })
       .catch(() => {
         // Kein Fehlerfall: der vollständige Katalog liefert den Kurs gleich nach.

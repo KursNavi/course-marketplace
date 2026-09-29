@@ -151,6 +151,10 @@ describe('Kursdetailseite lädt unabhängig vom Kurskatalog', () => {
     expect(catalogueLoaded).toBe(false);
     expect(catalogueRequests).toBeGreaterThan(0);
 
+    // Die kanonische URL wird sofort korrigiert und nicht erst Sekunden später,
+    // wenn der Nutzer schon liest.
+    expect(window.location.pathname).toBe('/courses/yoga/zuerich/42');
+
     // Ähnliche Kurse kommen nach, sobald der Katalog da ist.
     expect(screen.getByTestId('detail-view')).toHaveAttribute('data-related-count', '0');
 
