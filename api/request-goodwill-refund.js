@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
 import { getDashboardUrl } from './_lib/base-url.js';
 import { getEmailConfig, resolveUserEmail, sendEmailOrThrow } from './_lib/email-config.js';
+import { COLORS, generateEmailHtml } from './_lib/email-template.js';
 
 const EMAIL_TEXTS = {
   de: {
@@ -57,34 +58,6 @@ const EMAIL_TEXTS = {
     cta: 'Vai alla dashboard'
   }
 };
-
-const generateEmailHtml = (title, bodyHtml, ctaText, ctaLink) => `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <style>
-    body { font-family: Arial, sans-serif; background-color: #F3F4F6; padding: 0; margin: 0; }
-    .container { max-width: 600px; margin: 0 auto; background: #FFFFFF; border-radius: 12px; overflow: hidden; }
-    .header { padding: 28px 36px; border-bottom: 3px solid #FA6E28; text-align: center; }
-    .content { padding: 36px; color: #1F2937; line-height: 1.6; }
-    .btn { display: inline-block; background: #FA6E28; color: #FFFFFF; padding: 12px 22px; text-decoration: none; border-radius: 8px; font-weight: bold; }
-    .footer { padding: 18px; text-align: center; font-size: 12px; color: #9CA3AF; background: #F9FAFB; }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="header"><h1 style="margin:0;color:#FA6E28;">KursNavi</h1></div>
-    <div class="content">
-      <h2 style="margin-top:0;">${title}</h2>
-      <div>${bodyHtml}</div>
-      <p style="margin-top:24px;"><a href="${ctaLink}" class="btn">${ctaText}</a></p>
-    </div>
-    <div class="footer">Dies ist eine automatische Nachricht.</div>
-  </div>
-</body>
-</html>
-`;
 
 function isWithinAutoRefundWindow(booking) {
   return (
