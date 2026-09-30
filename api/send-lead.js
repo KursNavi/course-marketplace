@@ -9,6 +9,30 @@ import { getBaseUrl } from './_lib/base-url.js';
 /** Aufbewahrungsfrist des Anfragetextes. Der Lead-Datensatz selbst bleibt. */
 const MESSAGE_RETENTION_DAYS = 60;
 
+/** Eine Anfrage pro Adresse und Kurs in diesem Fenster. */
+const EMAIL_RATE_LIMIT_MINUTES = 5;
+
+/**
+ * Anfragen pro Absender-IP und Stunde, kursuebergreifend.
+ * Grosszuegig genug fuer eine Person, die mehrere Kurse vergleicht — und eng
+ * genug, dass Massenversand an Anbieter nicht funktioniert.
+ */
+const IP_RATE_LIMIT_PER_HOUR = 8;
+
+/**
+ * Salted Hash der Absender-IP — dieselbe Technik wie beim E-Mail-Hash:
+ * begrenzt missbrauchbar, aber ausreichend, um Wiederholungen zu erkennen.
+ * Die rohe IP wird nirgends gespeichert.
+ */
+function hashClientIp(req, salt) {
+  const forwarded = req?.headers?.['x-forwarded-for'];
+  const raw = Array.isArray(forwarded) ? forwarded[0] : String(forwarded || '');
+  // Vercel haengt bei mehreren Proxies mehrere Adressen an; die erste ist der Client.
+  const ip = raw.split(',')[0].trim() || String(req?.socket?.remoteAddress || '').trim();
+  if (!ip) return null;
+  return createHash('sha256').update(ip + salt).digest('hex');
+}
+
 const COLORS = {
   primary: '#FA6E28',
   secondary: '#2563EB',
@@ -136,10 +160,28 @@ export default async function handler(req, res) {
     eventId,
     analyticsConsent = false,
     attribution,
+    _company,
   } = req.body || {};
 
-  if (!courseId || !cleanText(name, 160) || !cleanText(email, 320)) {
+  // Honeypot: ein im Formular verstecktes Feld, das nur Bots ausfuellen.
+  // Stille 200 — der Bot soll nicht lernen, dass er erkannt wurde.
+  // Gleiches Verfahren wie in api/contact.js.
+  if (_company) {
+    return res.status(200).json({ success: true });
+  }
+
+  if (!courseId || !cleanText(name, 160)) {
     return res.status(400).json({ error: 'Fehlende Felder: courseId, name, email' });
+  }
+
+  // Die Formatpruefung gab es bisher nur fuer die Anbieteradresse. Ohne sie
+  // legte ein direkter POST mit "abc" als Adresse einen Lead an; der Versand
+  // scheiterte danach bei Resend, und der Aufrufer bekam einen 500er statt
+  // einer klaren Rueckmeldung. Der Lead blieb als 'failed' liegen und
+  // verfaelschte die Leadstatistik.
+  const normalizedEmail = normalizeRecipientEmail(email);
+  if (!normalizedEmail) {
+    return res.status(400).json({ error: 'Bitte gib eine gültige E-Mail-Adresse an.' });
   }
 
   try {
@@ -197,7 +239,6 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'Server-Konfigurationsfehler' });
     }
 
-    const normalizedEmail = cleanText(email, 320).toLowerCase();
     const normalizedName = cleanText(name, 160);
     const normalizedPhone = cleanText(phone, 80);
     const normalizedIntent = normalizeIntent(intent);
@@ -209,39 +250,91 @@ export default async function handler(req, res) {
     const emailHash = createHash('sha256')
       .update(normalizedEmail + salt)
       .digest('hex');
+    const ipHash = hashClientIp(req, salt);
 
-    // 3b. Rate-Limiting: max 1 Lead pro Email+Kurs alle 5 Minuten
+    // 3b. Rate-Limiting, zwei Stufen.
+    //
+    // Stufe 1 (bisher): eine Anfrage pro Adresse und Kurs alle 5 Minuten.
+    // Diese Stufe allein war wirkungslos — mit wechselnder Absenderadresse
+    // liess sich ein Anbieter unbegrenzt mit Fake-Anfragen zuspammen.
+    //
+    // Stufe 2 (neu): Anfragen pro Absender-IP und Stunde, kursuebergreifend.
+    // Bewusst an der IP und NICHT am Kurs: Ein Limit pro Kurs liesse sich
+    // umgekehrt missbrauchen, um die Anfragen eines Mitbewerbers gezielt zu
+    // blockieren.
+    //
+    // Beide Stufen sind fail-closed. Bisher galt `if (!rlError && ...)` —
+    // fiel die Zaehlabfrage aus, war gar kein Limit mehr aktiv.
+    const seit = (minuten) => new Date(Date.now() - minuten * 60 * 1000).toISOString();
+
     const { count: recentCount, error: rlError } = await supabase
       .from('leads')
       .select('id', { count: 'exact', head: true })
       .eq('requester_email_hash', emailHash)
       .eq('course_id', courseId)
-      .gte('created_at', new Date(Date.now() - 5 * 60 * 1000).toISOString());
+      .gte('created_at', seit(EMAIL_RATE_LIMIT_MINUTES));
 
-    if (!rlError && recentCount > 0) {
+    if (rlError) {
+      console.error('send-lead: Rate-Limit-Abfrage fehlgeschlagen, Anfrage abgewiesen', rlError);
+      return res.status(429).json({ error: 'Anfragen sind gerade nicht möglich. Bitte versuche es in ein paar Minuten erneut.' });
+    }
+    if (recentCount > 0) {
       return res.status(429).json({ error: 'Bitte warte einige Minuten vor dem nächsten Senden.' });
     }
 
-    const { data: lead, error: leadError } = await supabase
+    if (ipHash) {
+      const { count: ipCount, error: ipError } = await supabase
+        .from('leads')
+        .select('id', { count: 'exact', head: true })
+        .eq('requester_ip_hash', ipHash)
+        .gte('created_at', seit(60));
+
+      if (ipError) {
+        // Solange die Migration 20260930_add_lead_ip_hash.sql nicht eingespielt
+        // ist, kennt die Tabelle die Spalte nicht. Dann darf diese Stufe die
+        // Anfrage NICHT abweisen — sonst faellt das Anfrageformular komplett
+        // aus. Stufe 1 bleibt in jedem Fall aktiv.
+        console.warn('send-lead: IP-Limit uebersprungen (Spalte requester_ip_hash fehlt?):', ipError.message);
+      } else if (ipCount >= IP_RATE_LIMIT_PER_HOUR) {
+        console.warn('send-lead: IP-Stundenlimit erreicht');
+        return res.status(429).json({ error: 'Zu viele Anfragen in kurzer Zeit. Bitte versuche es später erneut.' });
+      }
+    }
+
+    const leadRow = {
+      course_id: courseId,
+      provider_id: course.user_id,
+      requester_email_hash: emailHash,
+      event_id: normalizedEventId,
+      lead_intent: normalizedIntent,
+      course_topic_snapshot: cleanText(course.category_area, 160),
+      course_region_snapshot: cleanText(course.canton, 120),
+      status: 'pending',
+      email_delivery_status: 'pending',
+      // Snapshot: In welcher Paketphase ist diese Anfrage eingegangen? Später
+      // ist das nicht mehr rekonstruierbar, und die Basic-Ranking-Penalty
+      // hängt daran.
+      provider_tier_at_lead: providerTier,
+      ...attributionFields,
+    };
+
+    // Der IP-Hash wird nur geschrieben, wenn die Spalte existiert. Solange die
+    // Migration 20260930_add_lead_ip_hash.sql nicht eingespielt ist, wuerde der
+    // Insert sonst fehlschlagen — und damit das ganze Anfrageformular.
+    let { data: lead, error: leadError } = await supabase
       .from('leads')
-      .insert({
-        course_id: courseId,
-        provider_id: course.user_id,
-        requester_email_hash: emailHash,
-        event_id: normalizedEventId,
-        lead_intent: normalizedIntent,
-        course_topic_snapshot: cleanText(course.category_area, 160),
-        course_region_snapshot: cleanText(course.canton, 120),
-        status: 'pending',
-        email_delivery_status: 'pending',
-        // Snapshot: In welcher Paketphase ist diese Anfrage eingegangen? Später
-        // ist das nicht mehr rekonstruierbar, und die Basic-Ranking-Penalty
-        // hängt daran.
-        provider_tier_at_lead: providerTier,
-        ...attributionFields,
-      })
+      .insert(ipHash ? { ...leadRow, requester_ip_hash: ipHash } : leadRow)
       .select('id')
       .single();
+
+    if (leadError && ipHash && /requester_ip_hash/i.test(leadError.message || '')) {
+      console.warn('send-lead: Spalte requester_ip_hash fehlt — Lead wird ohne IP-Hash gespeichert. Migration 20260930_add_lead_ip_hash.sql einspielen.');
+      ({ data: lead, error: leadError } = await supabase
+        .from('leads')
+        .insert(leadRow)
+        .select('id')
+        .single());
+    }
 
     // Der Lead-Datensatz ist obligatorisch: Er ist der Nachweis der Anfrage und
     // die Grundlage der Leadstatistik. Bisher wurde ein Fehler hier nur

@@ -29,6 +29,8 @@ export function NewsletterPopup({ delayMs = POPUP_DELAY_MS }) {
   const [open, setOpen] = useState(false);
   const [visible, setVisible] = useState(false); // steuert nur die Einblend-Animation
   const [email, setEmail] = useState('');
+  // Honeypot: fuer Menschen unsichtbar, Bots fuellen es aus.
+  const [company, setCompany] = useState('');
   const [status, setStatus] = useState('idle'); // idle | loading | success | already | error
   const inputRef = useRef(null);
   const previouslyFocusedRef = useRef(null);
@@ -110,7 +112,7 @@ export function NewsletterPopup({ delayMs = POPUP_DELAY_MS }) {
     if (!email || status === 'loading') return;
 
     setStatus('loading');
-    const result = await subscribeToNewsletter(email);
+    const result = await subscribeToNewsletter(email, company);
 
     if (result.status === 'success' || result.status === 'already') {
       // Wer angemeldet ist, soll das Popup nie wieder sehen.
@@ -187,6 +189,16 @@ export function NewsletterPopup({ delayMs = POPUP_DELAY_MS }) {
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="flex gap-2">
+              <input
+                type="text"
+                name="_company"
+                value={company}
+                onChange={(e) => setCompany(e.target.value)}
+                style={{ display: 'none' }}
+                tabIndex="-1"
+                autoComplete="off"
+                aria-hidden="true"
+              />
               <div className="relative flex-grow">
                 <Mail className="absolute left-3 top-3.5 text-gray-500 w-5 h-5" aria-hidden="true" />
                 <input

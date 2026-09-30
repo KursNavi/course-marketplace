@@ -457,6 +457,7 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
                     email: fd.get('email'),
                     message: String(fd.get('message') || '').trim(),
                     eventId,
+                    _company: fd.get('_company') || '',
                     ...consentAwareAttribution,
                 })
             });
@@ -1309,6 +1310,9 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
                             <p className="text-sm text-gray-600 mb-1">Deine Anfrage geht direkt an {course.instructor_name}.</p>
                             <p id="lead-form-help" className="text-xs text-gray-500 mb-5">Nur Name und E-Mail sind erforderlich. Eine Nachricht ist optional.</p>
                             <form onSubmit={handleLeadSubmit} className="space-y-4" aria-describedby="lead-form-help">
+                                {/* Honeypot: fuer Menschen unsichtbar, Bots fuellen es aus.
+                                    Gleiches Feld wie im Kontaktformular. */}
+                                <input type="text" name="_company" style={{ display: 'none' }} tabIndex="-1" autoComplete="off" aria-hidden="true" />
                                 <div><label className="block text-sm font-semibold text-gray-700 mb-1" htmlFor="lead-name">Name</label><input id="lead-name" name="name" required autoFocus autoComplete="name" defaultValue={user?.user_metadata?.full_name || user?.user_metadata?.name || ''} placeholder="Vor- und Nachname" className="w-full p-3 bg-gray-50 rounded-lg border border-transparent focus:bg-white focus:border-primary outline-none transition" /></div>
                                 <div><label className="block text-sm font-semibold text-gray-700 mb-1" htmlFor="lead-email">E-Mail-Adresse</label><input id="lead-email" name="email" type="email" required autoComplete="email" defaultValue={user?.email || ''} placeholder="deine@email.ch" className="w-full p-3 bg-gray-50 rounded-lg border border-transparent focus:bg-white focus:border-primary outline-none transition" /></div>
                                 <div><label className="block text-sm font-semibold text-gray-700 mb-1" htmlFor="lead-message">Nachricht <span className="font-normal text-gray-500">(optional)</span></label><textarea id="lead-message" name="message" rows="3" className="w-full p-3 bg-gray-50 rounded-lg border border-transparent focus:bg-white focus:border-primary outline-none transition"></textarea></div>
