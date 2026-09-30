@@ -364,7 +364,11 @@ function runValidate(packageObject) {
   }
 }
 
-describe('Importer: scenarios[].sources', () => {
+// Jeder Fall in diesem Block startet ueber execFileSync einen eigenen
+// Node-Prozess. Das dauert auf langsamen Rechnern und ausgelasteten
+// CI-Runnern laenger als die 5 Sekunden, die vitest standardmaessig gibt —
+// der Block wurde dadurch sporadisch rot, ohne dass etwas kaputt war.
+describe('Importer: scenarios[].sources', { timeout: 30000 }, () => {
   it('lässt ein gültiges Quellenpaket durch', () => {
     const result = runValidate(buildImportPackage([SOURCE_SBFI, SOURCE_SDBB, SOURCE_SVEB]));
     expect(result.code).toBe(0);
