@@ -129,7 +129,8 @@ test.describe('Newsletter-Popup auf der Startseite', () => {
     await dialog.getByLabel('E-Mail-Adresse für Newsletter').fill('e2e@kursnavi.ch');
     await dialog.getByRole('button', { name: 'Newsletter abonnieren' }).click();
 
-    expect((await request).postDataJSON()).toEqual({ email: 'e2e@kursnavi.ch' });
+    // `_company` ist das Honeypot-Feld — bei einem echten Menschen immer leer.
+    expect((await request).postDataJSON()).toEqual({ email: 'e2e@kursnavi.ch', _company: '' });
     await expect(dialog.getByText('Erfolgreich angemeldet!')).toBeVisible();
 
     // Wer angemeldet ist, sieht das Popup nicht wieder.
@@ -154,7 +155,8 @@ test.describe('Newsletter-Formular im Footer', () => {
     await footer.getByLabel('E-Mail-Adresse für Newsletter').fill('footer@kursnavi.ch');
     await footer.getByRole('button', { name: 'Newsletter abonnieren' }).click();
 
-    expect((await request).postDataJSON()).toEqual({ email: 'footer@kursnavi.ch' });
+    // `_company` ist das Honeypot-Feld — bei einem echten Menschen immer leer.
+    expect((await request).postDataJSON()).toEqual({ email: 'footer@kursnavi.ch', _company: '' });
     await expect(footer.getByText('Erfolgreich angemeldet!')).toBeVisible();
     expect(await readPopupState(page)).toBe('never');
   });
