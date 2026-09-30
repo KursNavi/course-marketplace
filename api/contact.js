@@ -190,7 +190,13 @@ export default async function handler(req, res) {
       .eq('type', type)
       .gte('created_at', new Date(Date.now() - RATE_LIMIT_MINUTES * 60 * 1000).toISOString());
 
-    if (!countError && count > 0) {
+    // Fail-closed: Bisher galt `if (!countError && ...)` — fiel die
+    // Zaehlabfrage aus, war gar kein Limit mehr aktiv.
+    if (countError) {
+      console.error('contact: Rate-Limit-Abfrage fehlgeschlagen, Anfrage abgewiesen', countError);
+      return res.status(429).json({ error: 'Nachrichten sind gerade nicht möglich. Bitte versuche es in ein paar Minuten erneut.' });
+    }
+    if (count > 0) {
       return res.status(429).json({ error: 'Bitte warte einige Minuten vor dem nächsten Senden.' });
     }
 

@@ -128,14 +128,18 @@ export function isAlreadySubscribed(statusCode, payload) {
 
 /**
  * Meldet eine E-Mail-Adresse am Newsletter an.
+ *
+ * `honeypot` ist der Inhalt des versteckten Formularfelds. Menschen lassen es
+ * leer, Bots fuellen es aus — der Server antwortet dann still mit Erfolg.
+ *
  * @returns {Promise<{ status: 'success' | 'already' | 'error' }>}
  */
-export async function subscribeToNewsletter(email) {
+export async function subscribeToNewsletter(email, honeypot = '') {
   try {
     const res = await fetch('/api/subscribe', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email }),
+      body: JSON.stringify({ email, _company: honeypot }),
     });
 
     // Vorsichtig lesen: bei einem 404 kommt HTML statt JSON zurück.
