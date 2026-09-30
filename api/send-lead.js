@@ -5,6 +5,7 @@ import { getEmailConfig, resolveUserEmail, sendEmailOrThrow } from './_lib/email
 import { encryptLeadMessage, normalizeLeadMessage } from './_lib/lead-message-crypto.js';
 import { providerMessageIdFromSendResult } from './_lib/lead-email-delivery.js';
 import { getBaseUrl } from './_lib/base-url.js';
+import { buildCanonicalCoursePath } from '../src/lib/courseUrl.js';
 
 /** Aufbewahrungsfrist des Anfragetextes. Der Lead-Datensatz selbst bleibt. */
 const MESSAGE_RETENTION_DAYS = 60;
@@ -385,8 +386,18 @@ export default async function handler(req, res) {
     const safeMessage = escapeHtml(providerMessage).replace(/\n/g, '<br>');
     const safeTitle = escapeHtml(course.title);
     const baseUrl = getBaseUrl(req);
+
+    // Der Kursname war in beiden Mails blau hervorgehoben, aber nicht
+    // anklickbar — Anbieter wie Anfragende mussten den Kurs selbst suchen.
+    // Die Kurs-URL wird mit demselben Pfad-Bauer erzeugt, den auch Sitemap und
+    // Kursdetailseite nutzen. Die App liest die Kurs-ID aus dem letzten
+    // Segment; die vorderen Segmente sind reine SEO-Kosmetik und muessen nicht
+    // exakt kanonisch sein, damit der Link trifft.
+    const courseUrl = `${baseUrl}${buildCanonicalCoursePath(course)}`;
+    const courseLink = `<a href="${escapeHtml(courseUrl)}" style="color:#2563EB; font-weight:bold; text-decoration:underline;">${safeTitle}</a>`;
+
     const bodyHtml = `
-      <p>Du hast eine neue Anfrage für deinen Kurs <strong>${safeTitle}</strong> erhalten.</p>
+      <p>Du hast eine neue Anfrage für deinen Kurs ${courseLink} erhalten.</p>
       <table style="width:100%; border-collapse:collapse; margin: 20px 0;">
         <tr><td style="padding:8px 0; color:#6B7280; width:100px;">Name:</td><td style="padding:8px 0;"><strong>${safeName}</strong></td></tr>
         <tr><td style="padding:8px 0; color:#6B7280;">E-Mail:</td><td style="padding:8px 0;"><strong>${safeEmail}</strong></td></tr>
@@ -444,7 +455,7 @@ export default async function handler(req, res) {
       let confirmationEmailSent = false;
       try {
         const confirmationBody = `
-          <p>Deine Anfrage für <strong>${safeTitle}</strong> wurde an den Anbieter weitergeleitet.</p>
+          <p>Deine Anfrage für ${courseLink} wurde an den Anbieter weitergeleitet.</p>
           <p style="background:#F9FAFB; padding:16px; border-radius:8px;">
             Referenz: <strong>${escapeHtml(lead.id)}</strong>
           </p>
