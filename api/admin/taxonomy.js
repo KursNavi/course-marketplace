@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { clientError, respondWithError } from '../_lib/client-error.js';
 
 const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -49,7 +50,7 @@ export default async function handler(req, res) {
                 return await getLegacyTaxonomy(supabaseAdmin, res);
             }
         } catch (err) {
-            return res.status(500).json({ error: err.message });
+            return respondWithError(res, 'admin/taxonomy lesen', err, 'Taxonomie konnte nicht geladen werden');
         }
     }
 
@@ -72,7 +73,9 @@ export default async function handler(req, res) {
                 return await handleLegacyMutation(supabaseAdmin, action, entity, data, res);
             }
         } catch (err) {
-            return res.status(500).json({ error: err.message });
+            // clientError()-Meldungen (z. B. "Typ mit Slug X nicht gefunden")
+            // sind fuer den Admin gedacht und gehen weiterhin durch.
+            return respondWithError(res, 'admin/taxonomy schreiben', err, 'Taxonomie-Aenderung fehlgeschlagen');
         }
     }
 
@@ -318,7 +321,7 @@ async function handleConsolidatedMutation(supabase, action, entity, data, res) {
                 .select('id')
                 .eq('slug', insertData.level1_id)
                 .single();
-            if (!parentData) throw new Error(`Typ mit Slug "${insertData.level1_id}" nicht gefunden`);
+            if (!parentData) throw clientError(`Typ mit Slug "${insertData.level1_id}" nicht gefunden`);
             insertData.level1_id = parentData.id;
         }
         if ((entity === 'specialty' || entity === 'level3') && insertData.level2_id && isNaN(Number(insertData.level2_id))) {
@@ -327,7 +330,7 @@ async function handleConsolidatedMutation(supabase, action, entity, data, res) {
                 .select('id')
                 .eq('slug', insertData.level2_id)
                 .single();
-            if (!parentData) throw new Error(`Bereich mit Slug "${insertData.level2_id}" nicht gefunden`);
+            if (!parentData) throw clientError(`Bereich mit Slug "${insertData.level2_id}" nicht gefunden`);
             insertData.level2_id = parentData.id;
         }
         if ((entity === 'focus' || entity === 'level4') && insertData.level3_id && isNaN(Number(insertData.level3_id))) {
@@ -336,7 +339,7 @@ async function handleConsolidatedMutation(supabase, action, entity, data, res) {
                 .select('id')
                 .eq('slug', insertData.level3_id)
                 .single();
-            if (!parentData) throw new Error(`Spezialgebiet mit Slug "${insertData.level3_id}" nicht gefunden`);
+            if (!parentData) throw clientError(`Spezialgebiet mit Slug "${insertData.level3_id}" nicht gefunden`);
             insertData.level3_id = parentData.id;
         }
 

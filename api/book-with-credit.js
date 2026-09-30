@@ -369,6 +369,6 @@ export default async function handler(req, res) {
     });
   } catch (error) {
     console.error('Book with credit error:', error);
-    return res.status(500).json({ error: error.message || 'Interner Fehler' });
+    return res.status(500).json({ error: 'Es ist ein Fehler aufgetreten. Bitte versuche es später erneut.' });
   }
 }

@@ -28,6 +28,12 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
+      # Schlaegt an, sobald eine Produktionsabhaengigkeit eine bekannte Luecke
+      # ab Schweregrad "high" hat. Dev-Abhaengigkeiten landen nicht beim
+      # Besucher und wuerden den Lauf sonst dauerhaft rot faerben.
+      - name: Security audit (production dependencies)
+        run: npm audit --omit=dev --audit-level=high
+
       - name: Check text encoding
         run: npm run check:mojibake
 

@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { safeCompareSecret } from './_lib/lead-message-crypto.js';
 
 const LEGACY_CATEGORY_TYPE_MAP = {
   beruflich: 'professionell',
@@ -572,7 +573,7 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: 'Debug endpoint not configured' });
       }
       const incoming = req.headers['x-admin-secret'];
-      if (!incoming || incoming !== adminSecret) {
+      if (!safeCompareSecret(incoming, adminSecret)) {
         return res.status(401).json({ error: 'Unauthorized - admin access required' });
       }
       const { slug } = req.query;
@@ -856,7 +857,7 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: 'Debug endpoint not configured' });
       }
       const incoming = req.headers['x-admin-secret'];
-      if (!incoming || incoming !== adminSecret) {
+      if (!safeCompareSecret(incoming, adminSecret)) {
         return res.status(401).json({ error: 'Unauthorized - admin access required' });
       }
 
@@ -920,6 +921,6 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error('Provider API error:', error);
-    return res.status(500).json({ error: 'Internal server error', details: error.message });
+    return res.status(500).json({ error: 'Internal server error' });
   }
 }
