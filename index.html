@@ -134,22 +134,22 @@
         var googleTagLoaded = false;
         var googleAdsConfigured = false;
 
-        function applyCookiebotConsent() {
+        // Idempotent: lädt gtag.js und sendet die beiden "config"-Befehle
+        // höchstens einmal. Wird sowohl von den Cookiebot-Events unten als
+        // auch direkt von gtagSafe() in src/lib/analytics.js aufgerufen —
+        // als Absicherung gegen eine Race Condition, bei der Cookiebot schon
+        // `consent.statistics === true` meldet, das eigene
+        // CookiebotOnConsentReady-Event aber noch nicht gefeuert hat. Ohne
+        // diese Absicherung konnte ein SPA-"event"-Befehl vor dem "config"-
+        // Befehl im dataLayer landen; gtag.js verwirft ein Event dann beim
+        // Abarbeiten der Warteschlange, weil noch kein Ziel konfiguriert ist
+        // — sichtbar im dataLayer, aber ohne Netzwerk-Request.
+        function ensureGoogleTagConfigured() {
           var consent = window.Cookiebot && window.Cookiebot.consent;
           if (!consent) return;
 
           var statistics = consent.statistics === true;
           var marketing = consent.marketing === true;
-          window.gtag('consent', 'update', {
-            analytics_storage: statistics ? 'granted' : 'denied',
-            ad_storage: marketing ? 'granted' : 'denied',
-            ad_user_data: marketing ? 'granted' : 'denied',
-            ad_personalization: marketing ? 'granted' : 'denied',
-            functionality_storage: 'denied',
-            personalization_storage: 'denied',
-            security_storage: 'granted'
-          });
-
           if (!statistics && !marketing) return;
 
           if (!googleTagLoaded) {
@@ -173,6 +173,29 @@
             googleAdsConfigured = true;
           }
         }
+
+        function applyCookiebotConsent() {
+          var consent = window.Cookiebot && window.Cookiebot.consent;
+          if (!consent) return;
+
+          var statistics = consent.statistics === true;
+          var marketing = consent.marketing === true;
+          window.gtag('consent', 'update', {
+            analytics_storage: statistics ? 'granted' : 'denied',
+            ad_storage: marketing ? 'granted' : 'denied',
+            ad_user_data: marketing ? 'granted' : 'denied',
+            ad_personalization: marketing ? 'granted' : 'denied',
+            functionality_storage: 'denied',
+            personalization_storage: 'denied',
+            security_storage: 'granted'
+          });
+
+          ensureGoogleTagConfigured();
+        }
+
+        // Aufruf durch die SPA (gtagSafe), bevor sie ein GA4-Event in den
+        // dataLayer schreibt — siehe Kommentar an ensureGoogleTagConfigured.
+        window.__kursnaviEnsureGoogleTag = ensureGoogleTagConfigured;
 
         window.addEventListener('CookiebotOnConsentReady', applyCookiebotConsent);
         window.addEventListener('CookiebotOnAccept', applyCookiebotConsent);
