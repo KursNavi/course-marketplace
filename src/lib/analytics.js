@@ -29,6 +29,15 @@ function isInternalAnalyticsRoute() {
 function gtagSafe(category, ...args) {
   if (!hasConsent(category)) return;
   if (typeof window.gtag === 'function') {
+    // Race-Schutz: Cookiebot kann consent.statistics/marketing schon melden,
+    // bevor sein eigenes CookiebotOnConsentReady-Event in index.html die
+    // gtag-"config"-Befehle ausgelöst hat. Ohne diesen Aufruf konnte ein
+    // "event"-Befehl vor "config" im dataLayer landen — gtag.js verwirft ein
+    // Event dann beim Abarbeiten der Warteschlange, weil noch kein Ziel
+    // konfiguriert ist (sichtbar im dataLayer, aber nie als Netzwerk-Request).
+    // Idempotent: tut nichts, wenn config bereits lief.
+    window.__kursnaviEnsureGoogleTag?.();
+
     // GA4 otherwise attaches the browser's full location and referrer to events.
     // Keep the sanitized context on the event itself so this does not create
     // extra gtag calls and every SPA route uses its own current path.
