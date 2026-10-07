@@ -25,6 +25,13 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Laeuft bewusst direkt nach npm ci, unabhaengig von Lint/Tests/E2E:
+      # ein Build- bzw. Modulaufloesungsfehler (z.B. in scripts/prerender-static.mjs)
+      # soll sofort auffallen und nicht durch einen spaeter fehlschlagenden,
+      # unabhaengigen Schritt maskiert werden.
+      - name: Build
+        run: npm run build
+
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
@@ -61,9 +68,6 @@ jobs:
         run: |
           npm run seed:e2e
           npm run test:e2e:app
-
-      - name: Build
-        run: npm run build
 
       - name: Upload Playwright report
         if: always()
