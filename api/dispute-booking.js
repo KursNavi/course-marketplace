@@ -2,44 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
 import { getDashboardUrl } from './_lib/base-url.js';
 import { getEmailConfig, resolveUserEmail, sendEmailOrThrow } from './_lib/email-config.js';
-
-const generateEmailHtml = (title, bodyHtml, ctaText, ctaLink) => `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <style>
-    body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #F3F4F6; padding: 0; margin: 0; }
-    .wrapper { width: 100%; table-layout: fixed; background-color: #F3F4F6; padding-bottom: 40px; }
-    .container { max-width: 600px; margin: 0 auto; background-color: #FFFFFF; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-    .header { background-color: #FFFFFF; padding: 30px 40px; text-align: center; border-bottom: 3px solid #FA6E28; }
-    .header h1 { margin: 0; color: #FA6E28; font-size: 28px; font-weight: 800; letter-spacing: -0.5px; }
-    .content { padding: 40px; color: #1F2937; line-height: 1.6; font-size: 16px; }
-    .btn-container { text-align: center; margin-top: 30px; }
-    .btn { display: inline-block; background-color: #FA6E28; color: #FFFFFF; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; }
-    .footer { background-color: #F9FAFB; padding: 20px; text-align: center; font-size: 12px; color: #9CA3AF; border-top: 1px solid #E5E7EB; }
-    strong { color: #2563EB; }
-  </style>
-</head>
-<body>
-  <div class="wrapper">
-    <div class="container">
-      <div class="header"><h1>KursNavi</h1></div>
-      <div class="content">
-        <h2 style="margin-top: 0; color: #1F2937;">${title}</h2>
-        <div style="color: #4B5563;">${bodyHtml}</div>
-        <div class="btn-container">
-          <a href="${ctaLink}" class="btn">${ctaText}</a>
-        </div>
-      </div>
-      <div class="footer">
-        <p>&copy; ${new Date().getFullYear()} KursNavi Schweiz. Alle Rechte vorbehalten.</p>
-      </div>
-    </div>
-  </div>
-</body>
-</html>
-`;
+import { COLORS, generateEmailHtml } from './_lib/email-template.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {

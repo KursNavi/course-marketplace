@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
 import { getEmailConfig, sendEmailOrThrow } from './_lib/email-config.js';
 import { requireCronSecret } from './_lib/cron-auth.js';
+import { COLORS, generateEmailHtml } from './_lib/email-template.js';
 
 // --- EMAIL HELPERS ---
 const EMAIL_TRANSLATIONS = {
@@ -24,35 +25,6 @@ const EMAIL_TRANSLATIONS = {
     cta: "Vérifier les coordonnées"
   }
 };
-
-const generateEmailHtml = (title, bodyHtml, ctaText) => `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <style>
-    body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f9f9f9; padding: 20px; }
-    .container { max-width: 600px; margin: 0 auto; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-    .header { background-color: #FA6E28; color: white; padding: 20px; text-align: center; }
-    .header h1 { margin: 0; font-size: 24px; letter-spacing: 1px; }
-    .content { padding: 30px; color: #333333; line-height: 1.6; }
-    .btn { display: inline-block; background-color: #FA6E28; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 20px; }
-    .footer { background-color: #f1f1f1; padding: 15px; text-align: center; font-size: 12px; color: #888; }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="header"><h1>KursNavi</h1></div>
-    <div class="content">
-      <h2>${title}</h2>
-      <p>${bodyHtml}</p>
-      <a href="https://www.kursnavi.ch/dashboard" class="btn">${ctaText}</a>
-    </div>
-    <div class="footer"><p>© ${new Date().getFullYear()} KursNavi Schweiz.</p></div>
-  </div>
-</body>
-</html>
-`;
 
 export default async function handler(req, res) {
   if (req.method !== 'GET' && req.method !== 'POST') {

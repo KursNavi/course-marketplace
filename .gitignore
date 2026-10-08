@@ -19,3 +19,6 @@ nul
 .vercel
 supabase/.temp
 scripts/sql/
+
+# git-Worktrees, die versehentlich im Repo statt daneben angelegt wurden
+worktrees/
