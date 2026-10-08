@@ -156,7 +156,16 @@ test.describe('Course all editable fields roundtrip (app-e2e)', () => {
       await expect(page.locator('select[name="category_focus_0"]')).toHaveValue(selectedCategory.focus);
       await expect(page.locator('textarea[name="description"]')).toHaveValue('Geänderte Roundtrip Beschreibung.');
       await expect(page.locator('input[name="keywords"]')).toHaveValue('Geändert, Speicherung, E2E');
-      await expect(page.getByRole('radio', { name: /Einführung/ })).toBeChecked();
+      // Der Zustand der ganzen Kursart-Gruppe wird in die Fehlermeldung
+      // gehaengt. "Einführung ist nicht gewaehlt" allein sagt nicht, ob nichts
+      // gewaehlt ist (Wert verloren) oder etwas anderes (Vorgabe hat
+      // ueberschrieben) — und das sind zwei verschiedene Ursachen.
+      const kursartZustand = await page.locator('input[name="privat_kursart"]')
+        .evaluateAll((inputs) => inputs.map((i) => `${i.value}=${i.checked}`).join(', '));
+      await expect(
+        page.getByRole('radio', { name: /Einführung/ }),
+        `Kursart-Gruppe nach dem Neuladen: ${kursartZustand || '(keine Radios gefunden)'}`,
+      ).toBeChecked();
       await expect(page.getByRole('radio', { name: /Anfrage/ })).toBeChecked();
       await expect(page.locator('input[name="price"]')).toHaveValue('123');
       await expect(page.locator('input[placeholder*="CHF"]').first()).toHaveValue('CHF 123 pro Person');
