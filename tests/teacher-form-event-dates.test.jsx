@@ -295,6 +295,64 @@ describe('TeacherForm – Termine (start_date/end_date) reach the state and surv
         expect(notifications).not.toContain('Gespeichert');
     });
 
+    // Aus PR #160, der am 21.09.2026 geschlossen statt gemergt wurde: Der
+    // zugehoerige Fix war schon ueber #159 in main, der PR enthielt aber ZWEI
+    // Tests — und nur der vorige landete. Dieser deckt genau die Abfolge ab,
+    // bei der im September Kursdaten still verlorengingen: feste Standorte
+    // -> konkrete Termine -> mehrere Lead-Termine mit Ort -> speichern.
+    //
+    // Hoeherer Timeout: Der Fall rendert den Editor, wechselt den Modus und
+    // fuellt drei Termine mit je drei Feldern. Im Gesamtlauf brauchte er 5507 ms
+    // gegen das 5000-ms-Standardlimit und war genau deshalb rot — moeglicherweise
+    // der Grund, warum PR #160 damals liegenblieb.
+    it('persistiert Lead-Termine beim Wechsel von festen Standorten zu konkreten Terminen', { timeout: 30000 }, async () => {
+        sessionStorage.clear();
+        db.course_events = [];
+        db.course_locations = [{
+            id: 'location-1',
+            course_id: COURSE_ID,
+            location_type: 'presence',
+            street: 'Else-Züblin-Strasse 21',
+            city: '8404 Winterthur',
+            canton: 'Zürich',
+            sort_order: 0
+        }];
+
+        renderEditor([], {
+            booking_type: 'lead',
+            course_locations: db.course_locations
+        }, { isAdminImpersonating: false });
+
+        await waitFor(() => expect(screen.getByRole('button', { name: /Konkrete Termine/i })).toBeInTheDocument());
+        document.querySelector('form').noValidate = true;
+
+        await act(async () => {
+            fireEvent.click(screen.getByRole('button', { name: /Konkrete Termine/i }));
+        });
+
+        const dateInputs = startDateInputs;
+        await waitFor(() => expect(dateInputs().length).toBeGreaterThanOrEqual(1));
+        const dates = ['2026-10-02', '2026-10-09', '2026-10-17'];
+        for (let index = 0; index < dates.length; index += 1) {
+            await act(async () => {
+                fireEvent.click(screen.getAllByRole('button', { name: /Abweichenden Ort angeben/i })[0]);
+                fireEvent.change(dateInputs()[index], { target: { value: dates[index] } });
+                fireEvent.change(inputsForLabel('PLZ / Ort')[index], { target: { value: '8404 Winterthur' } });
+                if (index < dates.length - 1) {
+                    fireEvent.click(screen.getByRole('button', { name: /Termin hinzufügen/i }));
+                }
+            });
+        }
+        await act(async () => { fireEvent.click(screen.getByTestId('save-course')); });
+
+        await waitFor(() => expect(db.course_events.filter(ev => ev.course_id === COURSE_ID)).toHaveLength(3));
+        expect(db.course_events.map(ev => ev.start_date).sort()).toEqual(dates);
+        expect(db.course_events.map(ev => ev.location)).toEqual([
+            '8404 Winterthur', '8404 Winterthur', '8404 Winterthur'
+        ]);
+        expect(window.alert).not.toHaveBeenCalled();
+    });
+
     it('does not wipe saved Termine when a single date field is edited', async () => {
         renderEditor(reloadEventsFromDb());
         await waitFor(() => expect(startDateInputs().length).toBe(1));
