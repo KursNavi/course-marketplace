@@ -1172,7 +1172,8 @@ const SearchPageView = ({
                             <img
                                 src={course.image_url || fallbackImage}
                                 alt={`${course.title} - Kurs in ${course.canton}`}
-                                loading="lazy"
+                                loading={courseIndex < 2 ? 'eager' : 'lazy'}
+                                fetchPriority={courseIndex === 0 ? 'high' : 'auto'}
                                 decoding="async"
                                 width="600"
                                 height="338"
