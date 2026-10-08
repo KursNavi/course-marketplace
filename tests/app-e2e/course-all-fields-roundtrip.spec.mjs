@@ -144,19 +144,11 @@ test.describe('Course all editable fields roundtrip (app-e2e)', () => {
 
       await saveCourse(page, editedTitle, alerts);
 
-      // Nach dem Neuladen zeigt die Gruppe 'wochenkurs' — also die Vorgabe der
-      // Kategorie, nicht den gewaehlten Wert. Dafuer gibt es zwei Erklaerungen,
-      // die nach dem Neuladen gleich aussehen:
-      //   1. Der Schreibvorgang hat 'einfuehrungskurs' nicht uebernommen.
-      //   2. Er hat uebernommen, aber beim Oeffnen setzt die Kategorie-Vorgabe
-      //      den Wert zurueck, weil die Schutzvorkehrung nicht greift.
-      // Diese Zeile trennt sie: Zeigt die Oberflaeche direkt nach dem Speichern
-      // noch den gewaehlten Wert, bleibt nur Erklaerung 1 oder ein Problem beim
-      // Lesen; zeigt sie hier schon die Vorgabe, hat das Speichern selbst sie
-      // zurueckgesetzt.
-      const nachDemSpeichern = await page.locator('input[name="privat_kursart"]')
-        .evaluateAll((inputs) => inputs.map((i) => `${i.value}=${i.checked}`).join(', '));
-      console.log(`[Diagnose] Kursart-Gruppe direkt nach dem Speichern: ${nachDemSpeichern}`);
+      // Hinweis fuer die weitere Fehlersuche: Eine Zwischenpruefung direkt hier
+      // bringt nichts — saveCourse() schliesst den Editor, es ist kein Formular
+      // mehr da. Belegt durch einen CI-Lauf, der an dieser Stelle eine leere
+      // Radio-Gruppe fand. Wer "Schreiben" von "Lesen" trennen will, muss den
+      // Supabase-Aufruf mitschneiden, nicht die Oberflaeche befragen.
 
       // A full browser reload must reconstruct the editor from persisted data,
       // not from the previous React state or the dashboard row.
