@@ -56,10 +56,13 @@ test.describe('Course all editable fields roundtrip (app-e2e)', () => {
     await mockApiRoutes(page);
 
     const alerts = [];
-    page.on('dialog', async (dialog) => {
+    // Benannt, damit der Handler im Aufraeum-Teil gezielt wieder abgemeldet
+    // werden kann — dort brauchen wir Zustimmung statt Abweisung.
+    const recordAndDismiss = async (dialog) => {
       alerts.push(dialog.message());
-      await dialog.dismiss();
-    });
+      await dialog.dismiss().catch(() => {});
+    };
+    page.on('dialog', recordAndDismiss);
 
     await loginAsTeacherAndOpenTab(page, 'kursangebot');
     await openCourseList(page);
@@ -203,19 +206,34 @@ test.describe('Course all editable fields roundtrip (app-e2e)', () => {
     } finally {
       // Keep the shared test project tidy even if an assertion fails halfway
       // through the roundtrip.
-      const dashboardBack = page.getByRole('button', { name: /Zurück zum Dashboard/ });
-      if (await dashboardBack.isVisible().catch(() => false)) {
-        await dashboardBack.click().catch(() => {});
-      }
-      await openCourseList(page).catch(() => {});
-      for (const title of [...createdTitles].reverse()) {
-        const row = page.locator('tr', { hasText: title });
-        if (await row.count() !== 1) continue;
-        const deleteButton = row.getByRole('button', { name: 'Löschen' });
-        if (!await deleteButton.isVisible().catch(() => false)) continue;
-        page.once('dialog', dialog => dialog.accept());
-        await deleteButton.click().catch(() => {});
-        await expect(row).toHaveCount(0, { timeout: 10_000 }).catch(() => {});
+      //
+      // Zum Loeschen muss die Rueckfrage BESTAETIGT werden. Der testweite
+      // Handler oben weist Dialoge dagegen ab. Lagen beide gleichzeitig an,
+      // wies der erste ab und der zweite fand den Dialog schon behandelt vor —
+      // Playwright brach mit "Cannot accept dialog which is already handled!"
+      // ab und riss die Browser-Sitzung mit. Der Test war deshalb seit dem
+      // 20.09.2026 rot, ohne dass an der Plattform etwas fehlte.
+      //
+      // Darum: den abweisenden Handler abmelden, den zustimmenden anmelden.
+      page.off('dialog', recordAndDismiss);
+      const acceptDialog = (dialog) => dialog.accept().catch(() => {});
+      page.on('dialog', acceptDialog);
+      try {
+        const dashboardBack = page.getByRole('button', { name: /Zurück zum Dashboard/ });
+        if (await dashboardBack.isVisible().catch(() => false)) {
+          await dashboardBack.click().catch(() => {});
+        }
+        await openCourseList(page).catch(() => {});
+        for (const title of [...createdTitles].reverse()) {
+          const row = page.locator('tr', { hasText: title });
+          if (await row.count().catch(() => 0) !== 1) continue;
+          const deleteButton = row.getByRole('button', { name: 'Löschen' });
+          if (!await deleteButton.isVisible().catch(() => false)) continue;
+          await deleteButton.click().catch(() => {});
+          await expect(row).toHaveCount(0, { timeout: 10_000 }).catch(() => {});
+        }
+      } finally {
+        page.off('dialog', acceptDialog);
       }
     }
   });
