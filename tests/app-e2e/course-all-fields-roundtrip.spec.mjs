@@ -130,6 +130,18 @@ test.describe('Course all editable fields roundtrip (app-e2e)', () => {
       await page.locator('input[placeholder="Leer = kein Mindestalter"]').fill('16');
       await page.locator('input[name="providerUrl"]').fill('https://example.test/roundtrip');
 
+      // Zwischenprüfung VOR dem Speichern. Die Prüfung nach dem Neuladen
+      // (weiter unten) schlug fehl: Die Kursart war nicht mehr gewählt. Damit
+      // liess sich nicht unterscheiden, ob die Auswahl schon im Formular
+      // verlorengeht — etwa weil eine der Änderungen oben sie zurücksetzt —
+      // oder erst beim Speichern bzw. Laden. Diese Zeile trennt die beiden
+      // Fälle: Schlägt sie an, liegt es am Formular; bleibt sie grün und nur
+      // die Prüfung nach dem Neuladen scheitert, liegt es am Speicherweg.
+      await expect(
+        page.getByRole('radio', { name: /Einführung/ }),
+        'Kursart muss unmittelbar vor dem Speichern noch gewählt sein',
+      ).toBeChecked();
+
       await saveCourse(page, editedTitle, alerts);
 
       // A full browser reload must reconstruct the editor from persisted data,
