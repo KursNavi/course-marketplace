@@ -46,6 +46,7 @@
 
 import { buildCanonicalCoursePath } from '../../src/lib/courseUrl.js';
 import { buildCourseJsonLdList, buildCourseSeo } from '../../src/lib/courseSeo.js';
+import { buildCategoryLocationRoutes } from '../../src/lib/categoryLocation.js';
 import {
   PUBLIC_PROFILE_TIERS,
   buildProviderJsonLdList,
@@ -503,7 +504,7 @@ export function buildProviderPrerenderRoutes({ providers = [], baseUrl, logger =
  * @param {string} params.baseUrl
  * @param {object} [params.env=process.env]
  * @param {object} [params.logger=console]
- * @returns {Promise<{enabled: boolean, courseRoutes: Array, providerRoutes: Array}>}
+ * @returns {Promise<{enabled: boolean, courseRoutes: Array, providerRoutes: Array, categoryLocationRoutes: Array}>}
  * @throws {CoursePrerenderError} bei systemischen Fehlern
  */
 export async function loadCourseAndProviderPrerenderRoutes({
@@ -513,7 +514,7 @@ export async function loadCourseAndProviderPrerenderRoutes({
   logger = console,
 }) {
   if (!isCoursePrerenderEnabled(env)) {
-    return { enabled: false, courseRoutes: [], providerRoutes: [] };
+    return { enabled: false, courseRoutes: [], providerRoutes: [], categoryLocationRoutes: [] };
   }
 
   const courses = await fetchPublicCourses(supabase, { logger });
@@ -526,5 +527,6 @@ export async function loadCourseAndProviderPrerenderRoutes({
     enabled: true,
     courseRoutes: buildCoursePrerenderRoutes({ courses, baseUrl, logger }),
     providerRoutes: buildProviderPrerenderRoutes({ providers, baseUrl, logger }),
+    categoryLocationRoutes: buildCategoryLocationRoutes(courses),
   };
 }

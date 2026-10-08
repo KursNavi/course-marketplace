@@ -20,6 +20,7 @@ describe('Google tracking consent boundaries', () => {
     window.gtag = (...args) => calls.push(args);
     window._uxa = [];
     window.Cookiebot = { consent: { statistics: false, marketing: false } };
+    delete window.__kursnaviEnsureGoogleTag;
   });
 
   it('does not send analytics or Ads events without consent', () => {
@@ -30,6 +31,33 @@ describe('Google tracking consent boundaries', () => {
 
     expect(calls).toEqual([]);
     expect(window._uxa).toEqual([]);
+  });
+
+  it('asks index.html to configure the Google tag before queuing a GA4 event (race-condition guard)', () => {
+    // Simuliert genau die Produktionsbeobachtung: Cookiebot meldet bereits
+    // statistics: true, aber das CookiebotOnConsentReady-Event in index.html
+    // hat die gtag-"config"-Befehle noch nicht ausgelöst. window.gtag ist
+    // zwar schon eine Funktion (der Stub aus index.html), ohne diese
+    // Absicherung würde das Event trotzdem vor "config" im dataLayer landen.
+    window.Cookiebot.consent.statistics = true;
+    let configuredBeforeEvent = null;
+    window.__kursnaviEnsureGoogleTag = () => {
+      configuredBeforeEvent = calls.length === 0;
+      calls.push(['config', 'G-F0TZT2L4YY']);
+    };
+
+    trackPageView(
+      '/courses/sport-fitness/st-gallen/394-ganzkoerpertraining-bodyforming',
+      'Ganzkörpertraining / Bodyforming in St. Gallen | KursNavi'
+    );
+
+    expect(configuredBeforeEvent).toBe(true);
+    const configIndex = calls.findIndex(([command]) => command === 'config');
+    const pageViewIndex = calls.findIndex(([, event]) => event === 'page_view');
+    expect(configIndex).toBeGreaterThanOrEqual(0);
+    expect(configIndex).toBeLessThan(pageViewIndex);
+    // Genau ein page_view - die Absicherung darf keinen zweiten erzeugen.
+    expect(calls.filter(([, event]) => event === 'page_view')).toHaveLength(1);
   });
 
   it('sends the GA4 lead event only with statistics consent', () => {
@@ -53,6 +81,21 @@ describe('Google tracking consent boundaries', () => {
       ['trackPageEvent', 'Page Viewed'],
       ['trackPageEvent', 'Course Inquiry Submitted'],
     ]);
+  });
+
+  it('removes query strings and referrers from GA4 page context', () => {
+    window.Cookiebot.consent.statistics = true;
+    window.history.replaceState({}, '', '/search?q=private@example.com');
+
+    trackPageView('/search?q=private@example.com', 'Private search');
+
+    const pageView = calls.find(([command, event]) => command === 'event' && event === 'page_view');
+    expect(pageView[2]).toMatchObject({
+      page_path: '/search',
+      page_location: `${window.location.origin}/search`,
+      page_referrer: '',
+    });
+    expect(JSON.stringify(calls)).not.toContain('private@example.com');
   });
 
   it('does not queue public UX events on private dashboard routes', () => {
@@ -81,7 +124,11 @@ describe('Google tracking consent boundaries', () => {
     const serialized = JSON.stringify(calls);
     expect(serialized).not.toContain('sara@example.com');
     expect(serialized).not.toContain('persönlicher Kurs');
-    expect(calls).toContainEqual(['event', 'search_view', { has_search_term: true, result_count: 4 }]);
+    expect(calls).toContainEqual([
+      'event',
+      'search_view',
+      expect.objectContaining({ has_search_term: true, result_count: 4 }),
+    ]);
   });
 
   it('deduplicates a delivered lead event by event id', () => {

@@ -23,13 +23,13 @@ const VARIANT_META = {
     path: '/professional',
   },
   private: {
-    title: 'Privatkurse & Hobbykurse in der Schweiz | KursNavi',
-    description: 'Entdecke Kurse für deine Freizeit, Hobbys und persönliche Entwicklung in der Schweiz. Von Yoga bis Kreativkurse – finde dein nächstes Hobby.',
+    title: 'Privatkurse und Hobbykurse in der Schweiz finden | KursNavi',
+    description: 'Entdecke Kurse für Freizeit und persönliche Interessen: von Yoga und Musik bis zu Kreativkursen. Vergleiche Angebote in deiner Region oder online.',
     path: '/private',
   },
   kids: {
-    title: 'Kinderkurse & Jugendkurse in der Schweiz | KursNavi',
-    description: 'Entdecke Kurse und Freizeitangebote für Kinder und Jugendliche in der Schweiz. Sport, Kreativität, Musik und mehr – für jedes Alter das Richtige.',
+    title: 'Kinderkurse, Jugendkurse & schulisches Lernen | KursNavi',
+    description: 'Finde Freizeitkurse und Ferienangebote für Kinder und Jugendliche sowie Nachhilfe, Lerncoaching und Prüfungsvorbereitung in der Schweiz.',
     path: '/children',
   },
 };

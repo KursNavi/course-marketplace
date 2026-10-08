@@ -3,6 +3,69 @@ import { ChevronRight, ChevronDown, Plus, Trash2, Edit2, Save, X, Loader, AlertT
 import { invalidateTaxonomyCache } from '../hooks/useTaxonomy';
 import { supabase } from '../lib/supabase';
 
+/**
+ * Bearbeitbares Label in der Kategorie-Verwaltung.
+ *
+ * Diese Komponente stand frueher INNERHALB von AdminCategoryManager. Damit
+ * entstand bei jedem Tastendruck eine neue Funktionsidentitaet: React erkannte
+ * das <input> nicht wieder, baute es komplett neu auf und setzte durch
+ * `autoFocus` den Cursor ans Ende. Wer vor dem ersten Buchstaben etwas
+ * einfuegen wollte ("Kategorie" -> "Super Kategorie"), wurde nach jedem
+ * Zeichen ans Zeilenende geworfen.
+ *
+ * Auf Modulebene bleibt die Identitaet stabil, React aktualisiert das Feld
+ * statt es zu ersetzen, und die Cursorposition bleibt erhalten.
+ */
+const EditableField = ({
+    entity,
+    id,
+    field,
+    value,
+    className = '',
+    editing,
+    editValue,
+    onChange,
+    onSave,
+    onCancel,
+    onStart,
+}) => {
+    const isEditing = editing?.entity === entity && editing?.id === id && editing?.field === field;
+
+    if (isEditing) {
+        return (
+            <div className="flex items-center gap-1">
+                <input
+                    type="text"
+                    value={editValue}
+                    onChange={(e) => onChange(e.target.value)}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter') onSave();
+                        if (e.key === 'Escape') onCancel();
+                    }}
+                    className="px-2 py-1 border rounded text-sm w-48"
+                    autoFocus
+                />
+                <button onClick={onSave} className="p-1 text-green-600 hover:bg-green-50 rounded">
+                    <Save className="w-4 h-4" />
+                </button>
+                <button onClick={onCancel} className="p-1 text-gray-400 hover:bg-gray-100 rounded">
+                    <X className="w-4 h-4" />
+                </button>
+            </div>
+        );
+    }
+
+    return (
+        <span
+            className={`cursor-pointer hover:bg-yellow-50 px-1 rounded ${className}`}
+            onClick={() => onStart(entity, id, field, value)}
+            title="Klicken zum Bearbeiten"
+        >
+            {value || <span className="text-gray-400 italic">leer</span>}
+        </span>
+    );
+};
+
 const AdminCategoryManager = ({ showNotification }) => {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -292,43 +355,16 @@ const AdminCategoryManager = ({ showNotification }) => {
         }
     };
 
-    // Render editable field
-    const EditableField = ({ entity, id, field, value, className = '' }) => {
-        const isEditing = editingItem?.entity === entity && editingItem?.id === id && editingItem?.field === field;
-
-        if (isEditing) {
-            return (
-                <div className="flex items-center gap-1">
-                    <input
-                        type="text"
-                        value={editValue}
-                        onChange={(e) => setEditValue(e.target.value)}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter') saveEdit();
-                            if (e.key === 'Escape') cancelEdit();
-                        }}
-                        className="px-2 py-1 border rounded text-sm w-48"
-                        autoFocus
-                    />
-                    <button onClick={saveEdit} className="p-1 text-green-600 hover:bg-green-50 rounded">
-                        <Save className="w-4 h-4" />
-                    </button>
-                    <button onClick={cancelEdit} className="p-1 text-gray-400 hover:bg-gray-100 rounded">
-                        <X className="w-4 h-4" />
-                    </button>
-                </div>
-            );
-        }
-
-        return (
-            <span
-                className={`cursor-pointer hover:bg-yellow-50 px-1 rounded ${className}`}
-                onClick={() => startEdit(entity, id, field, value)}
-                title="Klicken zum Bearbeiten"
-            >
-                {value || <span className="text-gray-400 italic">leer</span>}
-            </span>
-        );
+    // Gemeinsame Anbindung fuer alle bearbeitbaren Labels. Die Komponente
+    // selbst liegt auf Modulebene (siehe Kommentar dort) — nur ihr Zustand
+    // kommt von hier.
+    const editFieldProps = {
+        editing: editingItem,
+        editValue,
+        onChange: setEditValue,
+        onSave: saveEdit,
+        onCancel: cancelEdit,
+        onStart: startEdit,
     };
 
     if (loading) {
@@ -409,7 +445,7 @@ const AdminCategoryManager = ({ showNotification }) => {
                             <div className="flex-1">
                                 <div className="flex items-center gap-2">
                                     <span className="font-bold text-primary">
-                                        <EditableField entity="type" id={type.id} field="label_de" value={type.label_de} />
+                                        <EditableField {...editFieldProps} entity="type" id={type.id} field="label_de" value={type.label_de} />
                                     </span>
                                     <span className="text-xs text-gray-400 font-mono">{type.id}</span>
                                     <span className={`text-xs px-1.5 py-0.5 rounded-full ${courseCounts.types[type.id] ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
@@ -417,9 +453,9 @@ const AdminCategoryManager = ({ showNotification }) => {
                                     </span>
                                 </div>
                                 <div className="text-xs text-gray-500 flex gap-3 mt-0.5">
-                                    <span>EN: <EditableField entity="type" id={type.id} field="label_en" value={type.label_en} /></span>
-                                    <span>FR: <EditableField entity="type" id={type.id} field="label_fr" value={type.label_fr} /></span>
-                                    <span>IT: <EditableField entity="type" id={type.id} field="label_it" value={type.label_it} /></span>
+                                    <span>EN: <EditableField {...editFieldProps} entity="type" id={type.id} field="label_en" value={type.label_en} /></span>
+                                    <span>FR: <EditableField {...editFieldProps} entity="type" id={type.id} field="label_fr" value={type.label_fr} /></span>
+                                    <span>IT: <EditableField {...editFieldProps} entity="type" id={type.id} field="label_it" value={type.label_it} /></span>
                                 </div>
                             </div>
                             <button
@@ -480,7 +516,7 @@ const AdminCategoryManager = ({ showNotification }) => {
                                             <div className="flex-1">
                                                 <div className="flex items-center gap-2">
                                                     <span className="font-medium text-gray-800">
-                                                        <EditableField entity="area" id={area.id} field="label_de" value={area.label_de} />
+                                                        <EditableField {...editFieldProps} entity="area" id={area.id} field="label_de" value={area.label_de} />
                                                     </span>
                                                     <span className="text-xs text-gray-400 font-mono">{area.id}</span>
                                                     <span className={`text-xs px-1.5 py-0.5 rounded-full ${courseCounts.areas[area.id] ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
@@ -547,7 +583,7 @@ const AdminCategoryManager = ({ showNotification }) => {
                                                                     }
                                                                 </button>
                                                                 <span className="flex-1 text-sm text-gray-700 flex items-center gap-1.5">
-                                                                    <EditableField entity="specialty" id={spec.id} field="name" value={spec.name} />
+                                                                    <EditableField {...editFieldProps} entity="specialty" id={spec.id} field="name" value={spec.name} />
                                                                     <span className={`text-xs px-1.5 py-0.5 rounded-full ${getSpecialtyCount(spec) ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
                                                                         {getSpecialtyCount(spec)}
                                                                     </span>
@@ -597,7 +633,7 @@ const AdminCategoryManager = ({ showNotification }) => {
                                                                         <div key={f.id} className="flex items-center gap-2 px-3 py-0.5 hover:bg-white group/focus">
                                                                             <span className="w-1 h-1 bg-purple-300 rounded-full"></span>
                                                                             <span className="flex-1 text-xs text-gray-600 flex items-center gap-1.5">
-                                                                                <EditableField entity="focus" id={f.id} field="name" value={f.name} />
+                                                                                <EditableField {...editFieldProps} entity="focus" id={f.id} field="name" value={f.name} />
                                                                                 <span className={`text-xs px-1 py-0.5 rounded ${getFocusCount(f) ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'}`}>
                                                                                     {getFocusCount(f)}
                                                                                 </span>

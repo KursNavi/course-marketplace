@@ -5,56 +5,35 @@ import { getEmailConfig, resolveUserEmail, sendEmailOrThrow } from './_lib/email
 import { encryptLeadMessage, normalizeLeadMessage } from './_lib/lead-message-crypto.js';
 import { providerMessageIdFromSendResult } from './_lib/lead-email-delivery.js';
 import { getBaseUrl } from './_lib/base-url.js';
+import { buildCanonicalCoursePath } from '../src/lib/courseUrl.js';
+import { COLORS, generateEmailHtml } from './_lib/email-template.js';
 
 /** Aufbewahrungsfrist des Anfragetextes. Der Lead-Datensatz selbst bleibt. */
 const MESSAGE_RETENTION_DAYS = 60;
 
-const COLORS = {
-  primary: '#FA6E28',
-  secondary: '#2563EB',
-  text: '#1F2937',
-  gray: '#F3F4F6',
-  white: '#FFFFFF'
-};
+/** Eine Anfrage pro Adresse und Kurs in diesem Fenster. */
+const EMAIL_RATE_LIMIT_MINUTES = 5;
 
-const generateEmailHtml = (title, bodyHtml, ctaText, ctaLink = "https://kursnavi.ch/dashboard") => `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <style>
-    body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: ${COLORS.gray}; padding: 0; margin: 0; }
-    .wrapper { width: 100%; table-layout: fixed; background-color: ${COLORS.gray}; padding-bottom: 40px; }
-    .container { max-width: 600px; margin: 0 auto; background-color: ${COLORS.white}; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-    .header { background-color: ${COLORS.white}; padding: 30px 40px; text-align: center; border-bottom: 3px solid ${COLORS.primary}; }
-    .header h1 { margin: 0; color: ${COLORS.primary}; font-size: 28px; font-weight: 800; letter-spacing: -0.5px; }
-    .content { padding: 40px; color: ${COLORS.text}; line-height: 1.6; font-size: 16px; }
-    .btn-container { text-align: center; margin-top: 30px; }
-    .btn { display: inline-block; background-color: ${COLORS.primary}; color: ${COLORS.white}; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; }
-    .footer { background-color: #F9FAFB; padding: 20px; text-align: center; font-size: 12px; color: #9CA3AF; border-top: 1px solid #E5E7EB; }
-    strong { color: ${COLORS.secondary}; }
-  </style>
-</head>
-<body>
-  <div class="wrapper">
-    <div class="container">
-      <div class="header"><h1>KursNavi</h1></div>
-      <div class="content">
-        <h2 style="margin-top: 0; color: ${COLORS.text};">${title}</h2>
-        <div style="color: #4B5563;">${bodyHtml}</div>
-        <div class="btn-container">
-          <a href="${ctaLink}" class="btn">${ctaText}</a>
-        </div>
-      </div>
-      <div class="footer">
-        <p>© ${new Date().getFullYear()} KursNavi Schweiz. Alle Rechte vorbehalten.</p>
-        <p>Dies ist eine automatische Nachricht.</p>
-      </div>
-    </div>
-  </div>
-</body>
-</html>
-`;
+/**
+ * Anfragen pro Absender-IP und Stunde, kursuebergreifend.
+ * Grosszuegig genug fuer eine Person, die mehrere Kurse vergleicht — und eng
+ * genug, dass Massenversand an Anbieter nicht funktioniert.
+ */
+const IP_RATE_LIMIT_PER_HOUR = 8;
+
+/**
+ * Salted Hash der Absender-IP — dieselbe Technik wie beim E-Mail-Hash:
+ * begrenzt missbrauchbar, aber ausreichend, um Wiederholungen zu erkennen.
+ * Die rohe IP wird nirgends gespeichert.
+ */
+function hashClientIp(req, salt) {
+  const forwarded = req?.headers?.['x-forwarded-for'];
+  const raw = Array.isArray(forwarded) ? forwarded[0] : String(forwarded || '');
+  // Vercel haengt bei mehreren Proxies mehrere Adressen an; die erste ist der Client.
+  const ip = raw.split(',')[0].trim() || String(req?.socket?.remoteAddress || '').trim();
+  if (!ip) return null;
+  return createHash('sha256').update(ip + salt).digest('hex');
+}
 
 const VALID_TIERS = ['basic', 'pro', 'premium', 'enterprise'];
 const VALID_INTENTS = new Set(['availability', 'price_details', 'advice']);
@@ -136,10 +115,28 @@ export default async function handler(req, res) {
     eventId,
     analyticsConsent = false,
     attribution,
+    _company,
   } = req.body || {};
 
-  if (!courseId || !cleanText(name, 160) || !cleanText(email, 320)) {
+  // Honeypot: ein im Formular verstecktes Feld, das nur Bots ausfuellen.
+  // Stille 200 — der Bot soll nicht lernen, dass er erkannt wurde.
+  // Gleiches Verfahren wie in api/contact.js.
+  if (_company) {
+    return res.status(200).json({ success: true });
+  }
+
+  if (!courseId || !cleanText(name, 160)) {
     return res.status(400).json({ error: 'Fehlende Felder: courseId, name, email' });
+  }
+
+  // Die Formatpruefung gab es bisher nur fuer die Anbieteradresse. Ohne sie
+  // legte ein direkter POST mit "abc" als Adresse einen Lead an; der Versand
+  // scheiterte danach bei Resend, und der Aufrufer bekam einen 500er statt
+  // einer klaren Rueckmeldung. Der Lead blieb als 'failed' liegen und
+  // verfaelschte die Leadstatistik.
+  const normalizedEmail = normalizeRecipientEmail(email);
+  if (!normalizedEmail) {
+    return res.status(400).json({ error: 'Bitte gib eine gültige E-Mail-Adresse an.' });
   }
 
   try {
@@ -197,7 +194,6 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'Server-Konfigurationsfehler' });
     }
 
-    const normalizedEmail = cleanText(email, 320).toLowerCase();
     const normalizedName = cleanText(name, 160);
     const normalizedPhone = cleanText(phone, 80);
     const normalizedIntent = normalizeIntent(intent);
@@ -209,39 +205,91 @@ export default async function handler(req, res) {
     const emailHash = createHash('sha256')
       .update(normalizedEmail + salt)
       .digest('hex');
+    const ipHash = hashClientIp(req, salt);
 
-    // 3b. Rate-Limiting: max 1 Lead pro Email+Kurs alle 5 Minuten
+    // 3b. Rate-Limiting, zwei Stufen.
+    //
+    // Stufe 1 (bisher): eine Anfrage pro Adresse und Kurs alle 5 Minuten.
+    // Diese Stufe allein war wirkungslos — mit wechselnder Absenderadresse
+    // liess sich ein Anbieter unbegrenzt mit Fake-Anfragen zuspammen.
+    //
+    // Stufe 2 (neu): Anfragen pro Absender-IP und Stunde, kursuebergreifend.
+    // Bewusst an der IP und NICHT am Kurs: Ein Limit pro Kurs liesse sich
+    // umgekehrt missbrauchen, um die Anfragen eines Mitbewerbers gezielt zu
+    // blockieren.
+    //
+    // Beide Stufen sind fail-closed. Bisher galt `if (!rlError && ...)` —
+    // fiel die Zaehlabfrage aus, war gar kein Limit mehr aktiv.
+    const seit = (minuten) => new Date(Date.now() - minuten * 60 * 1000).toISOString();
+
     const { count: recentCount, error: rlError } = await supabase
       .from('leads')
       .select('id', { count: 'exact', head: true })
       .eq('requester_email_hash', emailHash)
       .eq('course_id', courseId)
-      .gte('created_at', new Date(Date.now() - 5 * 60 * 1000).toISOString());
+      .gte('created_at', seit(EMAIL_RATE_LIMIT_MINUTES));
 
-    if (!rlError && recentCount > 0) {
+    if (rlError) {
+      console.error('send-lead: Rate-Limit-Abfrage fehlgeschlagen, Anfrage abgewiesen', rlError);
+      return res.status(429).json({ error: 'Anfragen sind gerade nicht möglich. Bitte versuche es in ein paar Minuten erneut.' });
+    }
+    if (recentCount > 0) {
       return res.status(429).json({ error: 'Bitte warte einige Minuten vor dem nächsten Senden.' });
     }
 
-    const { data: lead, error: leadError } = await supabase
+    if (ipHash) {
+      const { count: ipCount, error: ipError } = await supabase
+        .from('leads')
+        .select('id', { count: 'exact', head: true })
+        .eq('requester_ip_hash', ipHash)
+        .gte('created_at', seit(60));
+
+      if (ipError) {
+        // Solange die Migration 20260930_add_lead_ip_hash.sql nicht eingespielt
+        // ist, kennt die Tabelle die Spalte nicht. Dann darf diese Stufe die
+        // Anfrage NICHT abweisen — sonst faellt das Anfrageformular komplett
+        // aus. Stufe 1 bleibt in jedem Fall aktiv.
+        console.warn('send-lead: IP-Limit uebersprungen (Spalte requester_ip_hash fehlt?):', ipError.message);
+      } else if (ipCount >= IP_RATE_LIMIT_PER_HOUR) {
+        console.warn('send-lead: IP-Stundenlimit erreicht');
+        return res.status(429).json({ error: 'Zu viele Anfragen in kurzer Zeit. Bitte versuche es später erneut.' });
+      }
+    }
+
+    const leadRow = {
+      course_id: courseId,
+      provider_id: course.user_id,
+      requester_email_hash: emailHash,
+      event_id: normalizedEventId,
+      lead_intent: normalizedIntent,
+      course_topic_snapshot: cleanText(course.category_area, 160),
+      course_region_snapshot: cleanText(course.canton, 120),
+      status: 'pending',
+      email_delivery_status: 'pending',
+      // Snapshot: In welcher Paketphase ist diese Anfrage eingegangen? Später
+      // ist das nicht mehr rekonstruierbar, und die Basic-Ranking-Penalty
+      // hängt daran.
+      provider_tier_at_lead: providerTier,
+      ...attributionFields,
+    };
+
+    // Der IP-Hash wird nur geschrieben, wenn die Spalte existiert. Solange die
+    // Migration 20260930_add_lead_ip_hash.sql nicht eingespielt ist, wuerde der
+    // Insert sonst fehlschlagen — und damit das ganze Anfrageformular.
+    let { data: lead, error: leadError } = await supabase
       .from('leads')
-      .insert({
-        course_id: courseId,
-        provider_id: course.user_id,
-        requester_email_hash: emailHash,
-        event_id: normalizedEventId,
-        lead_intent: normalizedIntent,
-        course_topic_snapshot: cleanText(course.category_area, 160),
-        course_region_snapshot: cleanText(course.canton, 120),
-        status: 'pending',
-        email_delivery_status: 'pending',
-        // Snapshot: In welcher Paketphase ist diese Anfrage eingegangen? Später
-        // ist das nicht mehr rekonstruierbar, und die Basic-Ranking-Penalty
-        // hängt daran.
-        provider_tier_at_lead: providerTier,
-        ...attributionFields,
-      })
+      .insert(ipHash ? { ...leadRow, requester_ip_hash: ipHash } : leadRow)
       .select('id')
       .single();
+
+    if (leadError && ipHash && /requester_ip_hash/i.test(leadError.message || '')) {
+      console.warn('send-lead: Spalte requester_ip_hash fehlt — Lead wird ohne IP-Hash gespeichert. Migration 20260930_add_lead_ip_hash.sql einspielen.');
+      ({ data: lead, error: leadError } = await supabase
+        .from('leads')
+        .insert(leadRow)
+        .select('id')
+        .single());
+    }
 
     // Der Lead-Datensatz ist obligatorisch: Er ist der Nachweis der Anfrage und
     // die Grundlage der Leadstatistik. Bisher wurde ein Fehler hier nur
@@ -292,8 +340,18 @@ export default async function handler(req, res) {
     const safeMessage = escapeHtml(providerMessage).replace(/\n/g, '<br>');
     const safeTitle = escapeHtml(course.title);
     const baseUrl = getBaseUrl(req);
+
+    // Der Kursname war in beiden Mails blau hervorgehoben, aber nicht
+    // anklickbar — Anbieter wie Anfragende mussten den Kurs selbst suchen.
+    // Die Kurs-URL wird mit demselben Pfad-Bauer erzeugt, den auch Sitemap und
+    // Kursdetailseite nutzen. Die App liest die Kurs-ID aus dem letzten
+    // Segment; die vorderen Segmente sind reine SEO-Kosmetik und muessen nicht
+    // exakt kanonisch sein, damit der Link trifft.
+    const courseUrl = `${baseUrl}${buildCanonicalCoursePath(course)}`;
+    const courseLink = `<a href="${escapeHtml(courseUrl)}" style="color:#2563EB; font-weight:bold; text-decoration:underline;">${safeTitle}</a>`;
+
     const bodyHtml = `
-      <p>Du hast eine neue Anfrage für deinen Kurs <strong>${safeTitle}</strong> erhalten.</p>
+      <p>Du hast eine neue Anfrage für deinen Kurs ${courseLink} erhalten.</p>
       <table style="width:100%; border-collapse:collapse; margin: 20px 0;">
         <tr><td style="padding:8px 0; color:#6B7280; width:100px;">Name:</td><td style="padding:8px 0;"><strong>${safeName}</strong></td></tr>
         <tr><td style="padding:8px 0; color:#6B7280;">E-Mail:</td><td style="padding:8px 0;"><strong>${safeEmail}</strong></td></tr>
@@ -351,7 +409,7 @@ export default async function handler(req, res) {
       let confirmationEmailSent = false;
       try {
         const confirmationBody = `
-          <p>Deine Anfrage für <strong>${safeTitle}</strong> wurde an den Anbieter weitergeleitet.</p>
+          <p>Deine Anfrage für ${courseLink} wurde an den Anbieter weitergeleitet.</p>
           <p style="background:#F9FAFB; padding:16px; border-radius:8px;">
             Referenz: <strong>${escapeHtml(lead.id)}</strong>
           </p>

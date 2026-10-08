@@ -5,7 +5,11 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist', '.vercel/**', 'supabase/.temp/**']),
+  // `worktrees/**`: Liegt ein git-Worktree versehentlich INNERHALB des Repos,
+  // lintet eslint dessen komplette Kopie mit. `npm run lint` meldete dadurch
+  // lokal tausende Fehler und war unbrauchbar. Der CI faellt das nicht auf,
+  // weil sie frisch klont.
+  globalIgnores(['dist', '.vercel/**', 'supabase/.temp/**', 'worktrees/**']),
   {
     linterOptions: {
       reportUnusedDisableDirectives: 'off',
@@ -23,8 +27,15 @@ export default defineConfig([
       },
     },
     rules: {
+      // Bleibt bewusst aus: 806 Fundstellen im Bestand, ganz ueberwiegend
+      // Aufraeumarbeit ohne Fehlerwirkung. Als Warnung waeren sie nur Rauschen,
+      // in dem die 38 wirklich relevanten Hook-Hinweise untergingen. Wer den
+      // Bestand angeht, schaltet die Regel hier scharf:
+      //   npx eslint . --rule '{"no-unused-vars":["error",{"args":"none"}]}'
       'no-unused-vars': 'off',
-      'no-dupe-keys': 'off',
+      // Doppelte Keys sind immer ein Fehler: der spaetere Wert gewinnt still,
+      // der frueher notierte Text ist tot. In TRANSLATIONS lagen so 20 Stueck.
+      'no-dupe-keys': 'error',
       'no-irregular-whitespace': 'off',
     },
   },
@@ -34,11 +45,16 @@ export default defineConfig([
     languageOptions: {
       globals: globals.browser,
     },
+    // Diese vier Regeln waren alle abgeschaltet. Sie finden echte Fehler:
+    // veraltete Werte in Effekten, Render-Schleifen, verlorene Memoisierung.
+    // Der Bestand ist mit 38 Fundstellen ueberschaubar — als Warnung sind sie
+    // sichtbar und abarbeitbar, ohne dass die CI am Altbestand haengenbleibt.
+    // Sobald der Bestand abgetragen ist, gehoeren sie auf 'error'.
     rules: {
-      'react-hooks/exhaustive-deps': 'off',
-      'react-hooks/immutability': 'off',
-      'react-hooks/set-state-in-effect': 'off',
-      'react-hooks/preserve-manual-memoization': 'off',
+      'react-hooks/exhaustive-deps': 'warn',
+      'react-hooks/immutability': 'warn',
+      'react-hooks/set-state-in-effect': 'warn',
+      'react-hooks/preserve-manual-memoization': 'warn',
     },
   },
   {

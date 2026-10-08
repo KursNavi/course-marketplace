@@ -295,9 +295,10 @@ describe('Newsletter-Popup — Komponente', () => {
       expect(screen.getByText('Erfolgreich angemeldet!')).toBeInTheDocument();
     });
 
+    // `_company` ist das Honeypot-Feld — bei einem echten Menschen immer leer.
     expect(fetchMock).toHaveBeenCalledWith('/api/subscribe', expect.objectContaining({
       method: 'POST',
-      body: JSON.stringify({ email: 'test@kursnavi.ch' }),
+      body: JSON.stringify({ email: 'test@kursnavi.ch', _company: '' }),
     }));
     expect(window.localStorage.getItem(NEWSLETTER_POPUP_STORAGE_KEY)).toBe('never');
   });

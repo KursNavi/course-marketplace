@@ -46,10 +46,14 @@ const runQuery = (state) => {
         return { data: null, error: null };
     }
     if (state.op === 'update') {
+        const updated = [];
         table.forEach(row => {
-            if (matches(row, state.filters)) Object.assign(row, state.payload);
+            if (matches(row, state.filters)) {
+                Object.assign(row, state.payload);
+                updated.push(row);
+            }
         });
-        return { data: null, error: null };
+        return { data: updated, error: null };
     }
     if (state.op === 'insert') {
         if (state.table === 'course_events' && failNextEventInsert) {
@@ -74,9 +78,12 @@ const makeBuilder = (table) => {
         eq(col, val) { state.filters.push(['eq', col, val]); return builder; },
         in(col, vals) { state.filters.push(['in', col, vals]); return builder; },
         single() { state.single = true; return builder; },
+        maybeSingle() { state.maybeSingle = true; return builder; },
         then(resolve, reject) {
             const result = runQuery(state);
-            if (state.single) result.data = Array.isArray(result.data) ? (result.data[0] || null) : result.data;
+            if (state.single || state.maybeSingle) {
+                result.data = Array.isArray(result.data) ? (result.data[0] || null) : result.data;
+            }
             return Promise.resolve(result).then(resolve, reject);
         }
     };

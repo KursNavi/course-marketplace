@@ -19,6 +19,7 @@
 
 import { getPrimaryCategory, getNormalizedDeliveryTypes, normalizeCategoryType } from './courseMetadata';
 import { applyBasicLeadFactor } from './basicLeadPenalty';
+import { isEventUpcoming } from './eventDates';
 
 // Segmente, die niemals zusammen empfohlen werden sollen
 const SEGMENT_HARD_EXCLUSIONS = {
@@ -75,15 +76,13 @@ export function isCourseOnline(course) {
 /**
  * Gibt true zurück, wenn ein Kurs mindestens einen zukünftigen Termin hat.
  */
-export function hasFutureEvent(course) {
+export function hasFutureEvent(course, now = new Date()) {
     if (!Array.isArray(course?.course_events)) return false;
-    const now = new Date();
     return course.course_events.some(e => {
         if (e.cancelled_at) return false;
         // Laufende Mehrtages-Events: end_date in der Zukunft zählt
-        if (e.end_date && new Date(e.end_date) > now) return true;
-        if (e.start_date && new Date(e.start_date) > now) return true;
-        return false;
+        if (e.end_date && isEventUpcoming(e.end_date, now)) return true;
+        return isEventUpcoming(e.start_date, now);
     });
 }
 

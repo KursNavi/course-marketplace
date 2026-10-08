@@ -13,7 +13,9 @@ import { SEARCH_STRINGS } from '../lib/searchStrings';
 import { getNormalizedDeliveryTypes } from '../lib/courseMetadata';
 import { fetchPublishedThemeWorldAreaLabels } from '../lib/themeWorldService';
 import { trackCourseCardCta, trackSearch } from '../lib/analytics';
+import { trackContentsquareSearchFilterApplied } from '../lib/contentsquare';
 import { getSearchHeader } from '../lib/searchHeaderConfig';
+import { getSearchAreaSlugs } from '../lib/searchAreaAliases';
 import { sortCoursesByRelevance, stableSeed } from '../lib/searchRelevance';
 
 import { DEFAULT_COURSE_IMAGE } from '../lib/imageUtils';
@@ -267,6 +269,23 @@ const SearchPageView = ({
         trackSearch(searchQuery, filteredCourses.length);
     }, [filteredCourses.length, loading, searchQuery]);
 
+    // Contentsquare filter signal. Values stay local and are never sent with the event.
+    const filterStateSignature = JSON.stringify([
+        searchType || '', searchArea || '', searchSpecialty || '', searchFocus || '',
+        selectedLocations || [], Boolean(searchQuery?.trim()),
+        filterDateFrom || '', filterDateTo || '', filterPriceMax || '', filterLevel || 'All',
+        Boolean(filterPro), Boolean(filterDirectBooking), selectedLanguages || [],
+        selectedDeliveryTypes || [], selectedSaule || '', selectedKursart || '',
+    ]);
+    const previousFilterStateRef = useRef(null);
+    useEffect(() => {
+        if (loading) return;
+        if (previousFilterStateRef.current !== null && previousFilterStateRef.current !== filterStateSignature) {
+            trackContentsquareSearchFilterApplied();
+        }
+        previousFilterStateRef.current = filterStateSignature;
+    }, [filterStateSignature, loading]);
+
     // Track impressions for rendered course cards (session-deduplicated, batch insert)
     useEffect(() => {
         if (loading || !filteredCourses.length) return;
@@ -333,6 +352,7 @@ const SearchPageView = ({
 
     // Map URL slug to DB slug for filtering
     const dbSearchType = searchType ? (URL_TO_DB_TYPE[searchType] || searchType) : '';
+    const searchAreaSlugs = getSearchAreaSlugs(searchArea);
 
     // Level 2-4: Alphabetically sorted by label
     // Only include area slugs that exist in the DB taxonomy (prevents stale/old slugs from appearing)
@@ -369,7 +389,7 @@ const SearchPageView = ({
             if (Array.isArray(c.all_categories) && c.all_categories.length > 0) {
                 c.all_categories.forEach(cat => {
                     const typeMatch = !dbSearchType || cat.category_type === dbSearchType;
-                    const areaMatch = !searchArea || cat.category_area === searchArea;
+                    const areaMatch = !searchArea || searchAreaSlugs.includes(cat.category_area);
                     if (typeMatch && areaMatch && (cat.category_specialty || cat.category_specialty_label)) {
                         specialties.push(cat.category_specialty_label || cat.category_specialty);
                     }
@@ -385,7 +405,7 @@ const SearchPageView = ({
             if (Array.isArray(c.all_categories) && c.all_categories.length > 0) {
                 c.all_categories.forEach(cat => {
                     const typeMatch = !dbSearchType || cat.category_type === dbSearchType;
-                    const areaMatch = !searchArea || cat.category_area === searchArea;
+                    const areaMatch = !searchArea || searchAreaSlugs.includes(cat.category_area);
                     const specMatch = !searchSpecialty ||
                         cat.category_specialty_label === searchSpecialty ||
                         cat.category_specialty === searchSpecialty;
@@ -1152,7 +1172,8 @@ const SearchPageView = ({
                             <img
                                 src={course.image_url || fallbackImage}
                                 alt={`${course.title} - Kurs in ${course.canton}`}
-                                loading="lazy"
+                                loading={courseIndex < 2 ? 'eager' : 'lazy'}
+                                fetchPriority={courseIndex === 0 ? 'high' : 'auto'}
                                 decoding="async"
                                 width="600"
                                 height="338"

@@ -3,6 +3,7 @@ import { Menu, X, Globe, LogOut, LayoutDashboard, ChevronDown, Mail, ArrowRight,
 import { SEGMENT_CONFIG } from '../lib/constants';
 import { MegaMenu, MobileMenuCategory } from './MegaMenu';
 import { trackNewsletter } from '../lib/analytics';
+import { trackContentsquareNewsletterSuccess } from '../lib/contentsquare';
 import { subscribeToNewsletter, suppressNewsletterPopupForever } from '../lib/newsletter';
 
 // BRANDING: The "Compass & Book" Logo [Source: 9]
@@ -333,6 +334,8 @@ export const Navbar = ({ t, user, lang = 'de', setLang, setView, handleLogout, s
 
 export const Footer = ({ t, setView }) => {
     const [email, setEmail] = useState('');
+    // Honeypot: fuer Menschen unsichtbar, Bots fuellen es aus.
+    const [company, setCompany] = useState('');
   const [status, setStatus] = useState('idle'); // idle, loading, success, already, error
 
   // Helper: Convert view name to URL path (same as in Navbar)
@@ -373,12 +376,15 @@ export const Footer = ({ t, setView }) => {
     if (!email) return;
 
     setStatus('loading');
-    const result = await subscribeToNewsletter(email);
+    const result = await subscribeToNewsletter(email, company);
 
     if (result.status === 'success' || result.status === 'already') {
       // Wer sich hier anmeldet, soll das Startseiten-Popup nicht mehr sehen.
       suppressNewsletterPopupForever();
-      if (result.status === 'success') trackNewsletter();
+      if (result.status === 'success') {
+        trackNewsletter();
+        trackContentsquareNewsletterSuccess();
+      }
       setEmail('');
     }
     setStatus(result.status);
@@ -416,6 +422,16 @@ export const Footer = ({ t, setView }) => {
              </div>
           ) : (
             <form onSubmit={handleSubscribe} className="flex gap-2">
+              <input
+                type="text"
+                name="_company"
+                value={company}
+                onChange={(e) => setCompany(e.target.value)}
+                style={{ display: 'none' }}
+                tabIndex="-1"
+                autoComplete="off"
+                aria-hidden="true"
+              />
               <div className="relative flex-grow">
                 <Mail className="absolute left-3 top-3.5 text-gray-500 w-5 h-5" aria-hidden="true" />
                 <input

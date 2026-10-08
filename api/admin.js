@@ -181,7 +181,7 @@ export default async function handler(req, res) {
       baseQuery = baseQuery.range(offset, offset + limit - 1);
 
       const { data, error, count } = await baseQuery;
-      if (error) return res.status(500).json({ error: error.message });
+      if (error) { console.error('admin: Datenbankfehler', error); return res.status(500).json({ error: 'Datenbankfehler' }); }
 
       // Enrich page with last_sign_in_at from auth
       const authMap = await getAuthMap();
@@ -212,7 +212,7 @@ export default async function handler(req, res) {
         .order('created_at', { ascending: false })
         .limit(2000);
 
-      if (error) return res.status(500).json({ error: error.message });
+      if (error) { console.error('admin: Datenbankfehler', error); return res.status(500).json({ error: 'Datenbankfehler' }); }
 
       return res.status(200).json({ data: data || [] });
     }
@@ -262,7 +262,7 @@ export default async function handler(req, res) {
         .select('*')
         .single();
 
-      if (error) return res.status(500).json({ error: error.message });
+      if (error) { console.error('admin: Datenbankfehler', error); return res.status(500).json({ error: 'Datenbankfehler' }); }
 
       return res.status(200).json({ data });
     }
@@ -357,7 +357,7 @@ export default async function handler(req, res) {
           .update(coursePayload)
           .eq('id', activeCourseId);
 
-        if (error) return res.status(500).json({ error: error.message });
+        if (error) { console.error('admin: Datenbankfehler', error); return res.status(500).json({ error: 'Datenbankfehler' }); }
       } else {
         const { data, error } = await supabaseAdmin
           .from('courses')
@@ -365,7 +365,7 @@ export default async function handler(req, res) {
           .select('id')
           .single();
 
-        if (error) return res.status(500).json({ error: error.message });
+        if (error) { console.error('admin: Datenbankfehler', error); return res.status(500).json({ error: 'Datenbankfehler' }); }
         activeCourseId = data?.id;
       }
 
@@ -498,6 +498,25 @@ export default async function handler(req, res) {
       // Requires an explicit bookingType: without it a payload that simply omits
       // the field would delete every saved Standort and insert nothing back.
       if (bookingType !== '' && bookingType !== 'platform' && Array.isArray(locations)) {
+        const locationsForPersistence = locationMode === 'events'
+          ? sanitizedEvents
+              .filter(ev => ev.type === 'presence' && ev.canton)
+              .reduce((unique, ev) => {
+                const key = `${ev.street?.trim() || ''}|${ev.city?.trim() || ''}|${ev.canton}`;
+                if (!unique.some(location => location._key === key)) {
+                  unique.push({
+                    _key: key,
+                    type: 'presence',
+                    street: ev.street,
+                    city: ev.city,
+                    canton: ev.canton
+                  });
+                }
+                return unique;
+              }, [])
+              .map(({ _key, ...location }) => location)
+          : locations;
+
         const { error: deleteLocError } = await supabaseAdmin
           .from('course_locations')
           .delete()
@@ -507,8 +526,8 @@ export default async function handler(req, res) {
           return res.status(500).json({ error: deleteLocError.message });
         }
 
-        if (locations.length > 0) {
-          const locationPayloads = locations.map((loc, i) => ({
+        if (locationsForPersistence.length > 0) {
+          const locationPayloads = locationsForPersistence.map((loc, i) => ({
             course_id: activeCourseId,
             location_type: loc.type,
             street: loc.type === 'presence' ? (loc.street?.trim() || null)
@@ -555,7 +574,33 @@ export default async function handler(req, res) {
 
       if (savedCourseError) return res.status(500).json({ error: savedCourseError.message });
 
-      return res.status(200).json({ ok: true, courseId: activeCourseId, course: savedCourse });
+      // Return the same related data that the dashboard query uses. The
+      // editor callback replaces the in-memory course with this response;
+      // returning only the courses row made an immediate re-open fall back to
+      // "Feste Standorte" until a full dashboard reload fetched the joins.
+      const [{ data: savedEvents, error: savedEventsError }, { data: savedLocations, error: savedLocationsError }] = await Promise.all([
+        supabaseAdmin
+          .from('course_events')
+          .select('*, bookings(count)')
+          .eq('course_id', activeCourseId),
+        supabaseAdmin
+          .from('course_locations')
+          .select('*')
+          .eq('course_id', activeCourseId)
+      ]);
+
+      if (savedEventsError) return res.status(500).json({ error: savedEventsError.message });
+      if (savedLocationsError) return res.status(500).json({ error: savedLocationsError.message });
+
+      return res.status(200).json({
+        ok: true,
+        courseId: activeCourseId,
+        course: {
+          ...savedCourse,
+          course_events: savedEvents || [],
+          course_locations: savedLocations || []
+        }
+      });
     }
 
     // ============================================
@@ -587,7 +632,7 @@ export default async function handler(req, res) {
         .delete()
         .eq('id', courseId);
 
-      if (error) return res.status(500).json({ error: error.message });
+      if (error) { console.error('admin: Datenbankfehler', error); return res.status(500).json({ error: 'Datenbankfehler' }); }
 
       // Clean up orphaned image from storage (best-effort)
       if (imageUrl && imageUrl.includes('course-images') && !imageUrl.includes('unsplash.com')) {
@@ -656,7 +701,7 @@ export default async function handler(req, res) {
         .update({ status: newStatus })
         .eq('id', courseId);
 
-      if (error) return res.status(500).json({ error: error.message });
+      if (error) { console.error('admin: Datenbankfehler', error); return res.status(500).json({ error: 'Datenbankfehler' }); }
 
       return res.status(200).json({ ok: true });
     }
@@ -701,7 +746,7 @@ export default async function handler(req, res) {
         .update(filtered)
         .eq('id', userId);
 
-      if (error) return res.status(500).json({ error: error.message });
+      if (error) { console.error('admin: Datenbankfehler', error); return res.status(500).json({ error: 'Datenbankfehler' }); }
 
       // Sync instructor_name on all courses if requested
       if (syncInstructorName && filtered.full_name) {
@@ -804,7 +849,7 @@ export default async function handler(req, res) {
         .update({ is_prio: !!isPrio })
         .eq('id', courseId);
 
-      if (error) return res.status(500).json({ error: error.message });
+      if (error) { console.error('admin: Datenbankfehler', error); return res.status(500).json({ error: 'Datenbankfehler' }); }
 
       return res.status(200).json({ ok: true });
     }
@@ -947,7 +992,7 @@ export default async function handler(req, res) {
         .select('package_expires_at')
         .single();
 
-      if (error) return res.status(500).json({ error: error.message });
+      if (error) { console.error('admin: Datenbankfehler', error); return res.status(500).json({ error: 'Datenbankfehler' }); }
 
       return res.status(200).json({ data });
     }
@@ -957,6 +1002,7 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error('Admin API error:', error);
-    return res.status(500).json({ error: 'Internal server error', details: error.message });
+    return res.status(500).json({ error: 'Internal server error' });
   }
 }
+

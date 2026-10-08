@@ -8,7 +8,12 @@ test.describe('Bereich Landing & Szenario (app-e2e)', () => {
 
     // Page title should contain the Bereich name
     await expect(page.locator('h1')).toBeVisible({ timeout: 15_000 });
-    await expect(page.locator('h1')).toContainText('Sport');
+    // Dieser String spiegelt bewusst den aktuellen SEO-Titel aus
+    // bereichLandingConfig.js (title.de, Bereich sport_fitness_beruf).
+    // Bei einer gewollten Textaenderung dort muss dieser Erwartungswert
+    // hier bewusst mit angepasst werden - ein Fail hier zeigt eine
+    // ungeprüfte SEO-Textänderung an und ist beabsichtigt.
+    await expect(page.locator('h1')).toContainText('Fitness-Ausbildungen');
 
     // Breadcrumb should be visible
     await expect(page.locator('nav[aria-label="Breadcrumb"]')).toBeVisible();

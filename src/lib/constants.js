@@ -636,12 +636,12 @@ export const CATEGORY_LABELS = {
 };
 export const TRANSLATIONS = {
   en: {
-    nav_explore: "Explore", nav_about: "About Us", nav_contact: "Contact", nav_login: "Login", nav_logout: "Logout", nav_dashboard: "Dashboard",
+    nav_explore: "Explore", nav_about: "About Us", nav_contact: "Contact", nav_login: "Login", nav_logout: "Logout",
     nav_private: "Private & Hobby", nav_professional: "Professional", nav_kids: "Children", nav_howitworks: "How it Works",
     nav_dashboard: "My Area", 
     nav_news: "News", nav_providers: "Provider Search", 
     nav_for_providers: "For Providers",hero_title: "Discover courses near you.", hero_subtitle: "From yodeling in Appenzell to coding in Zürich. Learn locally.",
-    search_placeholder: "What do you want to learn?", filter_label_cat: "Category", filter_label_loc: "Location", btn_search: "Search", search_hint_boolean: "Tip: Combine terms with AND or OR (e.g. \"Yoga AND Zurich\")",
+    search_placeholder: "What do you want to learn?", filter_label_cat: "Category", filter_label_loc: "Location", btn_search: "Search", search_help_label: "Search tip", search_hint_boolean: "Tip: Combine terms with AND or OR (e.g. \"Yoga AND Zurich\")",
     no_results: "No courses found matching criteria.", btn_book: "Book Course", btn_pay: "Pay & Book", btn_publish: "Publish Course", btn_send: "Send Message",
     
     // ADMIN
@@ -671,7 +671,6 @@ export const TRANSLATIONS = {
     // SEARCH FILTERS
     search_refine: "Refine search...",
     lbl_max_price: "Max CHF",
-    lbl_type: "Type", lbl_area: "Area", lbl_specialty: "Specialty", 
     msg_no_courses: "No courses available.", msg_all_topics: "All topics in this area.", 
     msg_select_area: "Select an area.", lbl_select_cat: "Select Category",
     lbl_professional_filter: "Verified",
@@ -750,7 +749,7 @@ export const TRANSLATIONS = {
     profile_settings: "Profile Settings", lbl_city: "My City / Town", lbl_bio: "About Me (Bio)", lbl_language: "Preferred Language",
     profile_lang_note: "We will use this for emails and website content.", btn_save: "Save Changes",
     dash_overview: "Courses", dash_profile: "My Profile", dash_settings: "Profile", dash_new_course: "New Course",
-    lbl_account_security: "Account Security", lbl_new_password: "New Password", lbl_confirm_password: "Confirm Password",
+    lbl_account_security: "Account Security", lbl_new_password: "New Password",
     lbl_update_auth: "Update Login Details", msg_auth_success: "Account details updated!",
     
     // LEGAL MICRO-COPY
@@ -808,12 +807,12 @@ export const TRANSLATIONS = {
     setpw_verify_btn: "Continue to Password Reset",
   },
   de: {
-    nav_explore: "Entdecken", nav_about: "Über uns", nav_contact: "Kontakt", nav_login: "Anmelden", nav_logout: "Abmelden", nav_dashboard: "Dashboard",
+    nav_explore: "Entdecken", nav_about: "Über uns", nav_contact: "Kontakt", nav_login: "Anmelden", nav_logout: "Abmelden",
     nav_private: "Privat & Hobby", nav_professional: "Beruflich", nav_kids: "Kinder & Jugend", nav_howitworks: "So funktioniert's",
     nav_dashboard: "Mein Bereich", 
     nav_news: "Neuigkeiten", nav_providers: "Anbieter finden",
     nav_for_providers: "Für Anbieter",hero_title: "Finde Kurse in deiner Nähe.", hero_subtitle: "Vom Jodeln bis zum Programmieren.",
-    search_placeholder: "Was möchtest du lernen?", filter_label_cat: "Kategorie", filter_label_loc: "Ort", btn_search: "Suchen", search_hint_boolean: "Tipp: Kombiniere Begriffe mit AND oder OR (z.B. \"Yoga AND Zürich\")",
+    search_placeholder: "Was möchtest du lernen?", filter_label_cat: "Kategorie", filter_label_loc: "Ort", btn_search: "Suchen", search_help_label: "Such-Tipp", search_hint_boolean: "Tipp: Kombiniere Begriffe mit AND oder OR (z.B. \"Yoga AND Zürich\")",
     no_results: "Keine Kurse gefunden.", btn_book: "Kurs buchen", btn_pay: "Bezahlen & Buchen", btn_publish: "Veröffentlichen", btn_send: "Senden",
     
     // ADMIN
@@ -823,7 +822,7 @@ export const TRANSLATIONS = {
     admin_btn_verify: "Verifizieren (Pro)", admin_btn_unverify: "Pro entfernen", admin_verified: "Verifizierter Pro",
 
     // HOME PAGE
-    home_headline: "Gestalte deine Zukunft mit KursNavi",
+    home_headline: "Kurse und Weiterbildungen in der Schweiz finden",
     home_subhead: "Entdecke Kurse, lerne neue Fähigkeiten und entfalte dein Potenzial mit Experten, die dich weiterbringen.",
     home_verified_tutors: "Geprüfte Kursanbieter",
     home_students: "Lernende",
@@ -836,14 +835,13 @@ export const TRANSLATIONS = {
     btn_explore: "ENTDECKEN",
 
     // LANDING TITLES
-    landing_priv_title: "Entfessle deine Leidenschaft.", landing_priv_sub: "Hobby-Kurse",
+    landing_priv_title: "Privatkurse und Hobbykurse für deine Freizeit", landing_priv_sub: "Kurse für Freizeit und persönliche Interessen",
     landing_prof_title: "Karriere-Boost.", landing_prof_sub: "Berufliche Weiterbildung",
-    landing_kids_title: "Spielerisch lernen.", landing_kids_sub: "Kinderkurse",
+    landing_kids_title: "Kurse für Kinder, Jugendliche & schulisches Lernen", landing_kids_sub: "Freizeitkurse, Ferienangebote und schulische Lernangebote",
 
     // SEARCH FILTERS
     search_refine: "Suche verfeinern...",
     lbl_max_price: "Max CHF",
-    lbl_type: "Typ", lbl_area: "Bereich", lbl_specialty: "Spezialgebiet", 
     msg_no_courses: "Keine Kurse verfügbar.", msg_all_topics: "Alle Themen in diesem Bereich.", 
     msg_select_area: "Wähle einen Bereich.", lbl_select_cat: "Kategorie wählen",
     lbl_professional_filter: "Verifiziert",
@@ -921,7 +919,7 @@ export const TRANSLATIONS = {
     profile_settings: "Profileinstellungen", lbl_city: "Meine Stadt / Ort", lbl_bio: "Über uns", lbl_language: "Bevorzugte Sprache",
     profile_lang_note: "Wir verwenden dies für E-Mails und Webseiteninhalte.", btn_save: "Speichern",
     dash_overview: "Kursangebot", dash_profile: "Mein Profil", dash_settings: "Profil", dash_new_course: "Neuer Kurs",
-    lbl_account_security: "Konto & Sicherheit", lbl_new_password: "Neues Passwort", lbl_confirm_password: "Passwort bestätigen",
+    lbl_account_security: "Konto & Sicherheit", lbl_new_password: "Neues Passwort",
     lbl_update_auth: "Zugangsdaten aktualisieren", msg_auth_success: "Konto aktualisiert!",
 
     // LEGAL MICRO-COPY
@@ -979,12 +977,12 @@ export const TRANSLATIONS = {
     setpw_verify_btn: "Weiter zum Passwort setzen",
   },
   fr: {
-    nav_explore: "Explorer", nav_about: "À propos", nav_contact: "Contact", nav_login: "Connexion", nav_logout: "Déconnexion", nav_dashboard: "Tableau de bord",
+    nav_explore: "Explorer", nav_about: "À propos", nav_contact: "Contact", nav_login: "Connexion", nav_logout: "Déconnexion",
     nav_private: "Privé & Loisirs", nav_professional: "Professionnel", nav_kids: "Enfants", nav_howitworks: "Comment ça marche",
     nav_dashboard: "Mon Espace", 
     nav_news: "Actualités", nav_providers: "Recherche prestataires", 
     nav_for_providers: "Pour Prestataires",hero_title: "Découvrez des cours.", hero_subtitle: "Apprenez localement.",
-    search_placeholder: "Que voulez-vous apprendre?", filter_label_cat: "Catégorie", filter_label_loc: "Lieu", btn_search: "Rechercher", search_hint_boolean: "Astuce: Combinez les termes avec AND ou OR (ex. \"Yoga AND Zurich\")",
+    search_placeholder: "Que voulez-vous apprendre?", filter_label_cat: "Catégorie", filter_label_loc: "Lieu", btn_search: "Rechercher", search_help_label: "Astuce de recherche", search_hint_boolean: "Astuce: Combinez les termes avec AND ou OR (ex. \"Yoga AND Zurich\")",
     no_results: "Aucun cours trouvé.", btn_book: "Réserver", btn_pay: "Payer et réserver", btn_publish: "Publier", btn_send: "Envoyer",
     
     // ADMIN
@@ -994,7 +992,7 @@ export const TRANSLATIONS = {
     admin_btn_verify: "Vérifier Pro", admin_btn_unverify: "Retirer Pro", admin_verified: "Pro Vérifié",
 
     // HOME PAGE
-    home_headline: "Naviguez vers votre avenir avec KursNavi",
+    home_headline: "Trouvez des cours et formations en Suisse",
     home_subhead: "Découvrez des cours, acquérez de nouvelles compétences et libérez votre potentiel avec des experts.",
     home_verified_tutors: "Prestataires vérifiés",
     home_students: "Apprenants",
@@ -1014,7 +1012,6 @@ export const TRANSLATIONS = {
     // SEARCH FILTERS
     search_refine: "Affiner la recherche...",
     lbl_max_price: "Max CHF",
-    lbl_type: "Type", lbl_area: "Domaine", lbl_specialty: "Spécialité", 
     msg_no_courses: "Aucun cours disponible.", msg_all_topics: "Tous les sujets.", 
     msg_select_area: "Choisissez un domaine.", lbl_select_cat: "Choisir catégorie",
     lbl_professional_filter: "Vérifié",
@@ -1092,7 +1089,7 @@ export const TRANSLATIONS = {
     profile_settings: "Paramètres du profil", lbl_city: "Ma Ville / Localité", lbl_bio: "À propos de moi", lbl_language: "Langue préférée",
     profile_lang_note: "Nous utiliserons ceci pour les e-mails.", btn_save: "Enregistrer",
     dash_overview: "Offre de cours", dash_profile: "Mon Profil", dash_settings: "Profil", dash_new_course: "Nouveau Cours",
-    lbl_account_security: "Compte et Sécurité", lbl_new_password: "Nouveau mot de passe", lbl_confirm_password: "Confirmer",
+    lbl_account_security: "Compte et Sécurité", lbl_new_password: "Nouveau mot de passe",
     lbl_update_auth: "Mettre à jour", msg_auth_success: "Compte mis à jour !",
 
     // LEGAL MICRO-COPY
@@ -1150,12 +1147,12 @@ export const TRANSLATIONS = {
     setpw_verify_btn: "Continuer",
   },
   it: {
-    nav_explore: "Esplora", nav_about: "Chi siamo", nav_contact: "Contatto", nav_login: "Accedi", nav_logout: "Esci", nav_dashboard: "Dashboard",
+    nav_explore: "Esplora", nav_about: "Chi siamo", nav_contact: "Contatto", nav_login: "Accedi", nav_logout: "Esci",
     nav_private: "Privato & Hobby", nav_professional: "Professionale", nav_kids: "Bambini", nav_howitworks: "Come funziona",
     nav_dashboard: "Mia Area", 
     nav_news: "Novità", nav_providers: "Ricerca fornitori", 
     nav_for_providers: "Per Fornitori",hero_title: "Scopri corsi vicino a te.", hero_subtitle: "Dallo jodel a Appenzello alla programmazione a Zurigo.",
-    search_placeholder: "Cosa vuoi imparare?", filter_label_cat: "Categoria", filter_label_loc: "Luogo", btn_search: "Cerca", search_hint_boolean: "Suggerimento: Combina i termini con AND o OR (es. \"Yoga AND Zurigo\")",
+    search_placeholder: "Cosa vuoi imparare?", filter_label_cat: "Categoria", filter_label_loc: "Luogo", btn_search: "Cerca", search_help_label: "Suggerimento di ricerca", search_hint_boolean: "Suggerimento: Combina i termini con AND o OR (es. \"Yoga AND Zurigo\")",
     no_results: "Nessun corso trovato.", btn_book: "Prenota", btn_pay: "Paga & Prenota", btn_publish: "Pubblica", btn_send: "Invia",
     
     // ADMIN
@@ -1165,7 +1162,7 @@ export const TRANSLATIONS = {
     admin_btn_verify: "Verifica Pro", admin_btn_unverify: "Rimuovi Pro", admin_verified: "Pro Verificato",
 
     // HOME PAGE
-    home_headline: "Naviga il tuo futuro con KursNavi",
+    home_headline: "Trova corsi e formazione in Svizzera",
     home_subhead: "Scopri corsi, acquisisci nuove competenze e sblocca il tuo potenziale con esperti.",
     home_verified_tutors: "Fornitori verificati",
     home_students: "Apprendenti",
@@ -1185,7 +1182,6 @@ export const TRANSLATIONS = {
     // SEARCH FILTERS
     search_refine: "Affina la ricerca...",
     lbl_max_price: "Max CHF",
-    lbl_type: "Tipo", lbl_area: "Area", lbl_specialty: "Specialità", 
     msg_no_courses: "Nessun corso disponibile.", msg_all_topics: "Tutti gli argomenti.", 
     msg_select_area: "Scegli un'area.", lbl_select_cat: "Scegli categoria",
     lbl_professional_filter: "Verificato",
@@ -1263,7 +1259,7 @@ export const TRANSLATIONS = {
     profile_settings: "Impostazioni Profilo", lbl_city: "La mia Città", lbl_bio: "Su di me (Bio)", lbl_language: "Lingua preferita",
     profile_lang_note: "Useremo questa lingua per email e sito web.", btn_save: "Salva modifiche",
     dash_overview: "Offerta corsi", dash_profile: "Il mio Profilo", dash_settings: "Profilo", dash_new_course: "Nuovo Corso",
-    lbl_account_security: "Sicurezza Account", lbl_new_password: "Nuova Password", lbl_confirm_password: "Conferma",
+    lbl_account_security: "Sicurezza Account", lbl_new_password: "Nuova Password",
     lbl_update_auth: "Aggiorna Account", msg_auth_success: "Account aggiornato!",
 
     // LEGAL MICRO-COPY

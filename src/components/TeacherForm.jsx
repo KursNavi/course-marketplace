@@ -8,6 +8,7 @@ import { computeImageHash, getExistingImageByHash, uploadImageWithHash, getUserC
 import imageCompression from 'browser-image-compression';
 import { refreshCoursesAfterMutation } from '../lib/courseRefresh';
 import { getNormalizedDeliveryTypes, normalizeCategoryType } from '../lib/courseMetadata';
+import { isEventPast } from '../lib/eventDates';
 
 // --- Image Compression Helper ---
 const compressImage = async (file) => {
@@ -395,26 +396,17 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, refreshImper
         // Limits entfernt: kein Gatekeeping mehr noetig
 
         const currentCourseId = initialData?.id || 'new';
-        console.log('[TeacherForm] useEffect triggered:', {
-            hasInitialized: hasInitializedRef.current,
-            initializedCourseId: initializedCourseIdRef.current,
-            currentCourseId: currentCourseId,
-            initialDataId: initialData?.id,
-            category_paths: initialData?.category_paths
-        });
 
         // Skip loading initialData if form has already been initialized FOR THIS COURSE
         // Reset if we're editing a different course
         if (hasInitializedRef.current && initializedCourseIdRef.current === currentCourseId) {
             // Already initialized for this course, skip loading
-            console.log('[TeacherForm] Skipping - already initialized for course', currentCourseId);
             initCompleteRef.current = true;
             return;
         }
 
         // Reset for new course
         if (initializedCourseIdRef.current !== currentCourseId) {
-            console.log('[TeacherForm] New course detected, resetting initialization');
             hasInitializedRef.current = false;
         }
 
@@ -445,14 +437,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, refreshImper
             if (initialData.provider_url) setProviderUrl(initialData.provider_url);
 
             // Kategorie(n) wiederherstellen (primary + optional)
-            console.log('[TeacherForm] Loading categories from initialData:', {
-                category_paths: initialData.category_paths,
-                category_type: initialData.category_type,
-                category_area: initialData.category_area,
-                all_categories: initialData.all_categories
-            });
             if (Array.isArray(initialData.category_paths) && initialData.category_paths.length > 0) {
-                console.log('[TeacherForm] Using category_paths:', initialData.category_paths);
                 setCategories(initialData.category_paths.map(c => ({
                     type: normalizeCategoryType(c?.type) || 'privat',
                     area: c?.area || '',
@@ -1039,21 +1024,6 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, refreshImper
 
     // UX Logic: Has the user entered a Valid Date?
     const hasDatedEvents = events.some(ev => !!ev.start_date);
-    const getEventCutoffDate = (value) => {
-        if (!value) return null;
-        const normalizedValue = String(value).trim();
-        if (!normalizedValue) return null;
-
-        const parsed = normalizedValue.includes('T')
-            ? new Date(normalizedValue)
-            : new Date(`${normalizedValue}T23:59:59`);
-
-        return Number.isNaN(parsed.getTime()) ? null : parsed;
-    };
-    const isEventPast = (value) => {
-        const cutoff = getEventCutoffDate(value);
-        return cutoff ? cutoff < new Date() : false;
-    };
     const archivedBookedEvents = events.filter(ev => (ev.bookingCount || 0) > 0 && isEventPast(ev.start_date));
     const visibleEvents = events.filter(ev => !((ev.bookingCount || 0) > 0 && isEventPast(ev.start_date)));
 
@@ -1315,6 +1285,7 @@ const TeacherForm = ({ t, setView, user, initialData, fetchCourses, refreshImper
         }
 
         setIsSubmitting(true);
+        let savedCourseForDashboard = null;
 
         // 3. Image Upload (mit automatischer Komprimierung) oder bestehendes Bild verwenden
         let imageUrl = initialData?.image_url || DEFAULT_COURSE_IMAGE;
@@ -1449,7 +1420,10 @@ if (bookingType === 'platform' || activeLocationMode === 'events') {
             keywords: keywordsVal,
             objectives: objectivesList,
             prerequisites: prerequisitesVal,
-            session_count: null, // merged into session_length
+            // The editor currently presents count and length as one combined
+            // field. Keep an existing structured count when the legacy count
+            // state is empty, otherwise an unrelated edit silently erased it.
+            session_count: sessionCount || initialData?.session_count || null,
             session_length: sessionLength || null,
             price_info: priceInfo || null,
             provider_url: providerUrl,
@@ -1495,28 +1469,37 @@ if (bookingType === 'platform' || activeLocationMode === 'events') {
                 });
                 activeCourseId = result.courseId;
                 createdCourseIdRef.current = activeCourseId;
-                onCourseSaved?.(result.course || { id: activeCourseId, ...newCourse });
+                savedCourseForDashboard = result.course || { id: activeCourseId, ...newCourse };
+                onCourseSaved?.(savedCourseForDashboard);
                 showNotification(activeCourseId && initialData?.id ? "Kurs aktualisiert!" : t.success_msg);
             } catch (adminError) {
                 error = adminError;
             }
         } else if (activeCourseId) {
-            const { error: err } = await supabase
+            const { data: updatedCourse, error: err } = await supabase
                 .from('courses')
                 .update(newCourse)
                 .eq('id', activeCourseId)
-                .select('*')
-                .single();
-            error = err;
+                .select('id')
+                .maybeSingle();
+            error = err || (!updatedCourse
+                ? new Error('Der Kurs konnte nicht aktualisiert werden. Bitte prüfe deine Berechtigung für diesen Kurs und versuche es erneut.')
+                : null);
         } else {
-            const { data: inserted, error: err } = await supabase.from('courses').insert([newCourse]).select();
-            if (inserted && inserted[0]) {
-                activeCourseId = inserted[0].id;
+            const { data: inserted, error: err } = await supabase
+                .from('courses')
+                .insert([newCourse])
+                .select('id')
+                .maybeSingle();
+            if (inserted) {
+                activeCourseId = inserted.id;
                 // Sofort merken: schlägt ein Folgeschritt fehl, aktualisiert der
                 // nächste Speicherversuch diesen Kurs, statt einen zweiten anzulegen.
                 createdCourseIdRef.current = activeCourseId;
             }
-            error = err;
+            error = err || (!inserted
+                ? new Error('Der Kurs konnte nicht erstellt werden. Bitte versuche es erneut.')
+                : null);
         }
 
         if (error) { 
@@ -1643,7 +1626,18 @@ if (bookingType === 'platform' || activeLocationMode === 'events') {
         // Note: platform courses previously skipped this block, leaving stale locations in DB.
         if (!isAdminImpersonating && activeCourseId) {
             // Delete all existing locations for this course, then re-insert
-            await supabase.from('course_locations').delete().eq('course_id', activeCourseId);
+            const { error: deleteLocationsError } = await supabase
+                .from('course_locations')
+                .delete()
+                .eq('course_id', activeCourseId);
+
+            if (deleteLocationsError) {
+                console.error(deleteLocationsError);
+                showNotification("Fehler beim Aktualisieren der Standorte: " + deleteLocationsError.message);
+                clearPendingCategorySuggestion();
+                setIsSubmitting(false);
+                return;
+            }
 
             let locationPayloads = [];
 
@@ -1659,16 +1653,23 @@ if (bookingType === 'platform' || activeLocationMode === 'events') {
                     sort_order: i
                 }));
             } else {
-                // Events mode (platform + lead/flex): mirror unique presence cantons from events.
-                // Do NOT copy street — events are the authoritative source for the full address;
-                // course_locations in this mode serve only as a canton-based filter index.
+                // Events mode (platform + lead/flex): mirror the structured
+                // presence address from each event. This keeps provider
+                // editing and preview queries from losing street/city data
+                // when course_locations is reloaded.
                 const seen = new Set();
                 locationPayloads = eventsForPersistence
-                    .filter(ev => ev.type === 'presence' && ev.canton && !seen.has(ev.canton) && seen.add(ev.canton))
+                    .filter(ev => {
+                        if (ev.type !== 'presence' || !ev.canton) return false;
+                        const key = `${ev.street?.trim() || ''}|${ev.city?.trim() || ''}|${ev.canton}`;
+                        if (seen.has(key)) return false;
+                        seen.add(key);
+                        return true;
+                    })
                     .map((ev, i) => ({
                         course_id: activeCourseId,
                         location_type: 'presence',
-                        street: null,
+                        street: ev.street?.trim() || null,
                         city: ev.city?.trim() || null,
                         canton: ev.canton,
                         sort_order: i
@@ -1688,13 +1689,19 @@ if (bookingType === 'platform' || activeLocationMode === 'events') {
         }
 
         // 8. Update course_category_assignments junction table (for Zweitkategorien support)
-        if (!isAdminImpersonating && activeCourseId && cleanedCategories && cleanedCategories.length > 0) {
-            console.log('[CAT-DEBUG] cleanedCategories:', JSON.stringify(cleanedCategories));
-            console.log('[CAT-DEBUG] types available:', types.map(t => ({ id: t.id, slug: t.slug, idType: typeof t.id })));
-            console.log('[CAT-DEBUG] areas available:', areas.map(a => ({ id: a.id, slug: a.slug, idType: typeof a.id })));
-            console.log('[CAT-DEBUG] specialties available:', specialties.map(s => ({ id: s.id, area_id: s.area_id, level2_id: s.level2_id, label_de: s.label_de })));
+        if (!isAdminImpersonating && activeCourseId) {
+            const { error: deleteCategoriesError } = await supabase
+                .from('course_category_assignments')
+                .delete()
+                .eq('course_id', activeCourseId);
 
-            await supabase.from('course_category_assignments').delete().eq('course_id', activeCourseId);
+            if (deleteCategoriesError) {
+                console.error(deleteCategoriesError);
+                showNotification("Fehler beim Aktualisieren der Kategorien: " + deleteCategoriesError.message);
+                clearPendingCategorySuggestion();
+                setIsSubmitting(false);
+                return;
+            }
 
             // Filter categories that have valid level3_id
             const dbCategories = consolidatedCategories.map(cat => ({
@@ -1704,20 +1711,20 @@ if (bookingType === 'platform' || activeLocationMode === 'events') {
                 is_primary: cat.is_primary
             }));
 
-            console.log('[CAT-DEBUG] consolidatedCategories to insert:', JSON.stringify(dbCategories));
-
             if (dbCategories.length > 0) {
                 const { error: catErr } = await supabase
                     .from('course_category_assignments')
                     .insert(dbCategories);
 
                 if (catErr) {
-                    console.error('[CAT-DEBUG] INSERT ERROR:', catErr);
-                } else {
-                    console.log('[CAT-DEBUG] INSERT SUCCESS');
+                    console.error('Kategorie-Zuordnung konnte nicht gespeichert werden:', catErr);
+                    showNotification("Fehler beim Speichern der Kategorien: " + catErr.message);
+                    clearPendingCategorySuggestion();
+                    setIsSubmitting(false);
+                    return;
                 }
             } else {
-                console.warn('[CAT-DEBUG] No valid categories to insert! All level3_id were null.');
+                console.warn('Keine gueltige Kategorie zum Speichern — alle level3_id waren leer.');
             }
         }
 
@@ -1744,14 +1751,17 @@ if (bookingType === 'platform' || activeLocationMode === 'events') {
         // in legacy data flows. Re-apply the complete provider payload after
         // all related writes and use the persisted row for the dashboard state.
         if (!isAdminImpersonating && activeCourseId) {
-            const { error: finalCourseError } = await supabase
+            const { data: finalCourse, error: finalCourseError } = await supabase
                 .from('courses')
                 .update(newCourse)
-                .eq('id', activeCourseId);
+                .eq('id', activeCourseId)
+                .select('id')
+                .maybeSingle();
 
-            if (finalCourseError) {
-                console.error(finalCourseError);
-                showNotification("Fehler beim abschliessenden Speichern: " + finalCourseError.message);
+            if (finalCourseError || !finalCourse) {
+                const saveError = finalCourseError || new Error('Der Kurs konnte nicht abschliessend gespeichert werden. Bitte prüfe deine Berechtigung für diesen Kurs und versuche es erneut.');
+                console.error(saveError);
+                showNotification("Fehler beim abschliessenden Speichern: " + saveError.message);
                 clearPendingCategorySuggestion();
                 setIsSubmitting(false);
                 return;
@@ -1759,7 +1769,7 @@ if (bookingType === 'platform' || activeLocationMode === 'events') {
 
             const { data: savedCourse, error: savedCourseError } = await supabase
                 .from('courses')
-                .select('*')
+                .select('*, course_events(*, bookings(count)), course_locations(*)')
                 .eq('id', activeCourseId)
                 .single();
 
@@ -1772,6 +1782,7 @@ if (bookingType === 'platform' || activeLocationMode === 'events') {
             }
 
             onCourseSaved?.(savedCourse);
+            savedCourseForDashboard = savedCourse;
         }
 
         // Clear draft after successful save
@@ -1796,6 +1807,11 @@ if (bookingType === 'platform' || activeLocationMode === 'events') {
             // response so the editor never reopens stale course metadata.
             refresh: isAdminImpersonating ? refreshImpersonatedData : undefined
         });
+        // The refresh can race with the save response and return an older
+        // impersonated dashboard snapshot. Re-apply the authoritative save
+        // response, including its related events and locations, before the
+        // editor is closed and the dashboard becomes visible.
+        if (savedCourseForDashboard) onCourseSaved?.(savedCourseForDashboard);
         setEditingCourse(null);
         sessionStorage.setItem('dashOpenTab', 'kursangebot');
         setView('dashboard');
@@ -2370,7 +2386,11 @@ if (bookingType === 'platform' || activeLocationMode === 'events') {
                                                     </div>
                                                     {evType === 'presence' && (
                                                         <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
-                                                            <div className="md:col-span-7">
+                                                            <div className="md:col-span-5">
+                                                                <label className="text-xs font-bold text-gray-500 uppercase">Strasse / Nr.</label>
+                                                                <input type="text" value={ev.street} onChange={e => updateEvent(i, 'street', e.target.value)} placeholder="Musterstrasse 12" className="w-full px-3 py-2 border rounded bg-white focus:ring-2 focus:ring-primary outline-none" />
+                                                            </div>
+                                                            <div className="md:col-span-4">
                                                                 <label className="text-xs font-bold text-gray-500 uppercase">PLZ / Ort</label>
                                                                 <input type="text" value={ev.city} onChange={e => updateEvent(i, 'city', e.target.value)} placeholder="8000 Zürich" className="w-full px-3 py-2 border rounded bg-white focus:ring-2 focus:ring-primary outline-none" />
                                                             </div>
@@ -2870,3 +2890,4 @@ if (bookingType === 'platform' || activeLocationMode === 'events') {
 };
 
 export default TeacherForm;
+

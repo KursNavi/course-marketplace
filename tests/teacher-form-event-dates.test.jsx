@@ -23,6 +23,7 @@ const db = {
 };
 let nextEventId = 1000;
 let restoreCourseFormatAfterRelatedWrite = false;
+let ignoreCourseUpdates = false;
 
 const matches = (row, filters) => filters.every(([kind, col, val]) => (
     kind === 'in' ? val.includes(row[col]) : row[col] === val
@@ -41,10 +42,17 @@ const runQuery = (state) => {
         return { data: null, error: null };
     }
     if (state.op === 'update') {
+        if (state.table === 'courses' && ignoreCourseUpdates) {
+            return { data: [], error: null };
+        }
+        const updated = [];
         table.forEach(row => {
-            if (matches(row, state.filters)) Object.assign(row, state.payload);
+            if (matches(row, state.filters)) {
+                Object.assign(row, state.payload);
+                updated.push(row);
+            }
         });
-        return { data: null, error: null };
+        return { data: updated, error: null };
     }
     if (state.op === 'insert') {
         const rows = Array.isArray(state.payload) ? state.payload : [state.payload];
@@ -70,9 +78,12 @@ const makeBuilder = (table) => {
         eq(col, val) { state.filters.push(['eq', col, val]); return builder; },
         in(col, vals) { state.filters.push(['in', col, vals]); return builder; },
         single() { state.single = true; return builder; },
+        maybeSingle() { state.maybeSingle = true; return builder; },
         then(resolve, reject) {
             const result = runQuery(state);
-            if (state.single) result.data = Array.isArray(result.data) ? (result.data[0] || null) : result.data;
+            if (state.single || state.maybeSingle) {
+                result.data = Array.isArray(result.data) ? (result.data[0] || null) : result.data;
+            }
             return Promise.resolve(result).then(resolve, reject);
         }
     };
@@ -204,6 +215,7 @@ describe('TeacherForm – Termine (start_date/end_date) reach the state and surv
         db.course_locations = [];
         db.course_category_assignments = [];
         nextEventId = 1000;
+        ignoreCourseUpdates = false;
     });
 
     it('keeps every entered Startdatum, clears the hint, and still shows all Termine after a reload', async () => {
@@ -269,6 +281,18 @@ describe('TeacherForm – Termine (start_date/end_date) reach the state and surv
         await waitFor(() => expect(startDateInputs().length).toBe(3));
         expect(startDateInputs().map(i => i.value).sort()).toEqual(['2026-10-05', '2026-10-12', '2026-10-19']);
         expect(screen.queryByText('Mindestens ein Termin mit Datum')).not.toBeInTheDocument();
+    });
+
+    it('meldet ein fehlendes Update als Fehler statt den Speichervorgang als erfolgreich zu melden', async () => {
+        ignoreCourseUpdates = true;
+        const notifications = [];
+        renderEditor(reloadEventsFromDb(), {}, { showNotification: (message) => notifications.push(message) });
+
+        await waitFor(() => expect(startDateInputs().length).toBe(1));
+        await act(async () => { fireEvent.click(screen.getByTestId('save-course')); });
+
+        await waitFor(() => expect(notifications.some((message) => message.includes('Berechtigung'))).toBe(true));
+        expect(notifications).not.toContain('Gespeichert');
     });
 
     it('does not wipe saved Termine when a single date field is edited', async () => {
@@ -380,6 +404,58 @@ describe('TeacherForm – Termine (start_date/end_date) reach the state and surv
             city: '8000 Zürich',
             canton: 'Zürich'
         });
+        expect(window.alert).not.toHaveBeenCalled();
+    });
+
+    it('sends lead-course Termine through the admin API and preserves structured count on edit', async () => {
+        const fetchMock = vi.fn().mockResolvedValue({
+            ok: true,
+            json: async () => ({ ok: true, courseId: COURSE_ID })
+        });
+        vi.stubGlobal('fetch', fetchMock);
+
+        renderEditor([{
+            id: 'event-1',
+            course_id: COURSE_ID,
+            start_date: '2026-10-02',
+            end_date: null,
+            location: 'Atelierstrasse 8, 8000 Zürich',
+            canton: 'Zürich',
+            schedule_description: '17:30 Uhr',
+            max_participants: 8
+        }], {
+            booking_type: 'lead',
+            session_count: 3,
+            session_length: 'Rund 5 Stunden',
+            course_locations: [{
+                id: 'location-1',
+                location_type: 'presence',
+                street: 'Atelierstrasse 8',
+                city: '8000 Zürich',
+                canton: 'Zürich',
+                sort_order: 0
+            }]
+        }, {
+            isAdminImpersonating: true
+        });
+
+        await waitFor(() => expect(screen.getByRole('button', { name: /Konkrete Termine/i })).toBeInTheDocument());
+        document.querySelector('form').noValidate = true;
+
+        await act(async () => {
+            fireEvent.click(screen.getByTestId('save-course'));
+        });
+
+        await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+        const body = JSON.parse(fetchMock.mock.calls[0][1].body);
+        expect(body.locationMode).toBe('events');
+        expect(body.validEvents).toHaveLength(1);
+        expect(body.validEvents[0]).toMatchObject({
+            start_date: '2026-10-02',
+            location: 'Atelierstrasse 8, 8000 Zürich',
+            canton: 'Zürich'
+        });
+        expect(body.course.session_count).toBe(3);
         expect(window.alert).not.toHaveBeenCalled();
     });
 
@@ -512,6 +588,53 @@ describe('TeacherForm – Termine (start_date/end_date) reach the state and surv
         expect(window.alert).not.toHaveBeenCalled();
     });
 
+    it('übernimmt nach Admin-Save den vollständigen Kurszustand für das sofortige erneute Bearbeiten', async () => {
+        const savedCourse = {
+            ...baseCourse,
+            course_events: [{
+                id: 'event-1',
+                start_date: '2026-11-06',
+                location: 'Else-Züblin-Strasse 21, 8000 Zürich',
+                canton: 'Zürich'
+            }],
+            course_locations: [{
+                id: 'location-1',
+                location_type: 'presence',
+                street: 'Else-Züblin-Strasse 21',
+                city: '8000 Zürich',
+                canton: 'Zürich',
+                sort_order: 0
+            }]
+        };
+        const fetchMock = vi.fn().mockResolvedValue({
+            ok: true,
+            json: async () => ({ ok: true, courseId: COURSE_ID, course: savedCourse })
+        });
+        vi.stubGlobal('fetch', fetchMock);
+        let dashboardCourse;
+
+        const view = renderEditor([], {
+            course_locations: savedCourse.course_locations
+        }, {
+            isAdminImpersonating: true,
+            onCourseSaved: (course) => { dashboardCourse = course; }
+        });
+
+        document.querySelector('form').noValidate = true;
+        await act(async () => { fireEvent.click(screen.getByTestId('save-course')); });
+        await waitFor(() => expect(dashboardCourse?.course_events).toHaveLength(1));
+
+        view.unmount();
+        renderEditor(dashboardCourse.course_events, dashboardCourse, {
+            isAdminImpersonating: true
+        });
+
+        await waitFor(() => expect(screen.getByText('Konkrete Termine')).toBeInTheDocument());
+        expect(screen.getByDisplayValue('2026-11-06')).toBeInTheDocument();
+        expect(screen.getByDisplayValue('8000 Zürich')).toBeInTheDocument();
+        expect(screen.getByDisplayValue('Else-Züblin-Strasse 21')).toBeInTheDocument();
+    });
+
     it('still requires a valid date after switching to Konkrete Termine', async () => {
         const fetchMock = vi.fn();
         vi.stubGlobal('fetch', fetchMock);
@@ -541,6 +664,51 @@ describe('TeacherForm – Termine (start_date/end_date) reach the state and surv
         expect(window.alert).toHaveBeenCalledWith('Bitte gib mindestens einen Termin mit Datum an.');
         expect(fetchMock).not.toHaveBeenCalled();
         window.alert.mockClear();
+    });
+
+    it('spiegelt die vollständige strukturierte Event-Adresse in course_locations', async () => {
+        sessionStorage.clear();
+        db.course_events = [];
+        db.course_locations = [{
+            id: 'location-1',
+            course_id: COURSE_ID,
+            location_type: 'presence',
+            street: 'Else-Züblin-Strasse 21',
+            city: '8404 Winterthur',
+            canton: 'Zürich',
+            sort_order: 0
+        }];
+
+        renderEditor([], {
+            booking_type: 'lead',
+            course_locations: db.course_locations
+        }, { isAdminImpersonating: false });
+
+        await waitFor(() => expect(screen.getByRole('button', { name: /Konkrete Termine/i })).toBeInTheDocument());
+        document.querySelector('form').noValidate = true;
+        await act(async () => {
+            fireEvent.click(screen.getByRole('button', { name: /Konkrete Termine/i }));
+        });
+
+        const dateInput = startDateInputs()[0];
+        await act(async () => {
+            fireEvent.click(screen.getAllByRole('button', { name: /Abweichenden Ort angeben/i })[0]);
+            fireEvent.change(dateInput, { target: { value: '2026-10-02' } });
+            fireEvent.change(screen.getAllByPlaceholderText('Musterstrasse 12')[0], { target: { value: 'Else-Züblin-Strasse 21' } });
+            fireEvent.change(inputsForLabel('PLZ / Ort')[0], { target: { value: '8404 Winterthur' } });
+            fireEvent.change(screen.getAllByRole('combobox').at(-1), { target: { value: 'Zürich' } });
+            fireEvent.click(screen.getByTestId('save-course'));
+        });
+
+        await waitFor(() => expect(db.course_events).toHaveLength(1));
+        expect(db.course_events[0].location).toBe('Else-Züblin-Strasse 21, 8404 Winterthur');
+        expect(db.course_locations).toEqual(expect.arrayContaining([
+            expect.objectContaining({
+                street: 'Else-Züblin-Strasse 21',
+                city: '8404 Winterthur',
+                canton: 'Zürich'
+            })
+        ]));
     });
 
     it('saves a draft without a complete primary category and keeps it unpublished', async () => {
@@ -602,3 +770,4 @@ describe('TeacherForm – Termine (start_date/end_date) reach the state and surv
         expect(db.courses[0].status).toBe('draft');
     });
 });
+

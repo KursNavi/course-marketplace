@@ -20,6 +20,7 @@
 
 import { buildCanonicalCourseUrl, getCanonicalCourseTopicSlug, slugify } from './courseUrl.js';
 import { getPrimaryCategoryLabel } from './courseCategory.js';
+import { isEventUpcoming } from './eventDates.js';
 
 /** Standard-OG-Bild (relativ zur Site-Basis-URL). */
 export const DEFAULT_OG_IMAGE_PATH = '/og-default.png';
@@ -187,14 +188,9 @@ export function buildCourseStructuredData(course, baseUrl, { now = new Date() } 
   // Ein Termin gilt als aktuell, solange er nicht beendet ist:
   // end_date >= now, oder (ohne end_date) start_date >= now.
   const activeSchemaEvents = rawEvents.filter((ev) => !ev.cancelled_at && ev.start_date);
-  const nextSchemaEvent = activeSchemaEvents.find((ev) => {
-    if (ev.end_date) {
-      const end = new Date(ev.end_date);
-      return !Number.isNaN(end.getTime()) && end >= now;
-    }
-    const start = new Date(ev.start_date);
-    return !Number.isNaN(start.getTime()) && start >= now;
-  });
+  const nextSchemaEvent = activeSchemaEvents.find((ev) => (
+    ev.end_date ? isEventUpcoming(ev.end_date, now) : isEventUpcoming(ev.start_date, now)
+  ));
 
   let educationEvent = null;
   if (nextSchemaEvent) {
@@ -229,10 +225,7 @@ export function buildCourseStructuredData(course, baseUrl, { now = new Date() } 
     if (nextSchemaEvent.end_date) educationEvent.endDate = nextSchemaEvent.end_date;
     if (hasValidPrice) educationEvent.offers.price = priceVal;
 
-    const futureSchemaEvents = activeSchemaEvents.filter((ev) => {
-      const start = new Date(ev.start_date);
-      return !Number.isNaN(start.getTime()) && start >= now;
-    });
+    const futureSchemaEvents = activeSchemaEvents.filter((ev) => isEventUpcoming(ev.start_date, now));
     if (futureSchemaEvents.length > 1) {
       educationEvent.eventSchedule = futureSchemaEvents.map((ev) => {
         const entry = {

@@ -23,6 +23,8 @@ import {
 import { getRobotsPolicy } from '../lib/seoUtils';
 import { getRelatedCourses } from '../lib/courseRecommendations';
 import { buildLeadConfirmationPath } from '../lib/leadConfirmation';
+import { isRelevantEvent } from '../lib/eventDates';
+import { writeStored, readSession, writeSession, removeSession } from '../lib/safeStorage';
 
 const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, setUser, savedCourseIds, onToggleSaveCourse, showNotification, refreshBookings }) => {
     const [showLeadModal, setShowLeadModal] = useState(false);
@@ -59,9 +61,9 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
     useEffect(() => {
         if (!course?.id || course.booking_type !== 'lead') return;
         try {
-            const pendingCourseId = window.sessionStorage.getItem('kn_open_lead_course');
+            const pendingCourseId = readSession('kn_open_lead_course');
             if (pendingCourseId !== String(course.id)) return;
-            window.sessionStorage.removeItem('kn_open_lead_course');
+            removeSession('kn_open_lead_course');
             openLeadInquiry();
         } catch {
             // Session storage is an enhancement; the normal detail CTA remains.
@@ -106,15 +108,15 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
     useEffect(() => {
         if (!course?.id) return;
         const key = `det_${course.id}`;
-        if (sessionStorage.getItem(key)) return;
-        sessionStorage.setItem(key, '1');
+        if (readSession(key)) return;
+        writeSession(key, '1');
         trackCourseView(course);
 
         supabase.from('course_views').insert({
             course_id: course.id,
             view_type: 'detail',
             viewer_id: user?.id || null,
-            source: sessionStorage.getItem('cv_source') || 'search'
+            source: readSession('cv_source') || 'search'
         }).then(({ error }) => {
             if (error) console.warn('Detail view tracking failed:', error.message);
         });
@@ -324,35 +326,8 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
         }
     }, [course]);
     
-    const getEventCutoffDate = (value) => {
-        if (!value) return null;
-        if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value;
-
-        const normalizedValue = String(value).trim();
-        if (!normalizedValue) return null;
-
-        const parsed = normalizedValue.includes('T')
-            ? new Date(normalizedValue)
-            : new Date(`${normalizedValue}T23:59:59`);
-
-        return Number.isNaN(parsed.getTime()) ? null : parsed;
-    };
-
-    const isUpcomingEventDate = (value) => {
-        const cutoff = getEventCutoffDate(value);
-        return cutoff ? cutoff >= new Date() : false;
-    };
-
-    // An event is relevant (not yet past) if:
-    // - end_date exists and is today or in the future, OR
-    // - no end_date and start_date is today or in the future
-    const isRelevantEvent = (ev) => {
-        if (ev.end_date) {
-            const endCutoff = getEventCutoffDate(ev.end_date);
-            return endCutoff ? endCutoff >= new Date() : isUpcomingEventDate(ev.start_date);
-        }
-        return isUpcomingEventDate(ev.start_date);
-    };
+    // Termin-Logik liegt gemeinsam in src/lib/eventDates.js — dieselbe Regel
+    // gilt fuer JSON-LD, Empfehlungen und die Buchungs-Endpunkte.
 
     // --- SMART BOOKING HANDLER ---
     const handleBookingAction = async (courseEvent = null) => {
@@ -381,9 +356,9 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
         }
 
         if (!user) {
-            localStorage.setItem('pendingCourseId', course.id);
-            if (courseEvent?.id) localStorage.setItem('pendingEventId', courseEvent.id);
-            localStorage.setItem('postLoginRedirectPath', `${window.location.pathname}${window.location.search}`);
+            writeStored('pendingCourseId', course.id);
+            if (courseEvent?.id) writeStored('pendingEventId', courseEvent.id);
+            writeStored('postLoginRedirectPath', `${window.location.pathname}${window.location.search}`);
             setView('login');
             return;
         }
@@ -482,6 +457,7 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
                     email: fd.get('email'),
                     message: String(fd.get('message') || '').trim(),
                     eventId,
+                    _company: fd.get('_company') || '',
                     ...consentAwareAttribution,
                 })
             });
@@ -495,8 +471,8 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
             });
             const confirmedEventId = data.event_id || eventId;
             trackLeadSubmitted(course.id, confirmedEventId);
-            // "accepted" only means the email provider accepted the send. The
-            // primary conversion is reserved for the verified delivery webhook.
+            // Delivery remains a separate quality signal; the lead conversion
+            // is recorded once the API has accepted the lead.
             if (data.delivery_status === 'delivered') {
                 trackLeadDelivered(course.id, confirmedEventId);
             }
@@ -993,9 +969,9 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
                                                 <div className="w-full">
                                                     <button
                                                         onClick={() => {
-                                                            localStorage.setItem('pendingCourseId', course.id);
-                                                            if (ev?.id) localStorage.setItem('pendingEventId', ev.id);
-                                                            localStorage.setItem('postLoginRedirectPath', `${window.location.pathname}${window.location.search}`);
+                                                            writeStored('pendingCourseId', course.id);
+                                                            if (ev?.id) writeStored('pendingEventId', ev.id);
+                                                            writeStored('postLoginRedirectPath', `${window.location.pathname}${window.location.search}`);
                                                             setView('login');
                                                         }}
                                                         className="w-full py-2.5 rounded-lg font-bold text-sm transition flex items-center justify-center bg-primary text-white hover:bg-orange-600 shadow-sm hover:shadow active:scale-95"
@@ -1088,8 +1064,8 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
                                     <div className="w-full">
                                     <button
                                         onClick={() => {
-                                            localStorage.setItem('pendingCourseId', course.id);
-                                            localStorage.setItem('postLoginRedirectPath', `${window.location.pathname}${window.location.search}`);
+                                            writeStored('pendingCourseId', course.id);
+                                            writeStored('postLoginRedirectPath', `${window.location.pathname}${window.location.search}`);
                                             setView('login');
                                         }}
                                         className="w-full font-bold py-3 rounded-lg transition shadow-sm flex items-center justify-center bg-primary text-white hover:bg-orange-600 active:scale-95"
@@ -1263,7 +1239,7 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
                                     await onToggleSaveCourse(course);
                                 } else {
                                     // Wenn ausgeloggt: für später merken, aber User nicht blockieren
-                                    localStorage.setItem('pendingSavedCourseId', String(course.id));
+                                    writeStored('pendingSavedCourseId', String(course.id));
                                     if (showNotification) showNotification("Kurs wird nach Login gemerkt.");
                                 }
 
@@ -1334,6 +1310,9 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
                             <p className="text-sm text-gray-600 mb-1">Deine Anfrage geht direkt an {course.instructor_name}.</p>
                             <p id="lead-form-help" className="text-xs text-gray-500 mb-5">Nur Name und E-Mail sind erforderlich. Eine Nachricht ist optional.</p>
                             <form onSubmit={handleLeadSubmit} className="space-y-4" aria-describedby="lead-form-help">
+                                {/* Honeypot: fuer Menschen unsichtbar, Bots fuellen es aus.
+                                    Gleiches Feld wie im Kontaktformular. */}
+                                <input type="text" name="_company" style={{ display: 'none' }} tabIndex="-1" autoComplete="off" aria-hidden="true" />
                                 <div><label className="block text-sm font-semibold text-gray-700 mb-1" htmlFor="lead-name">Name</label><input id="lead-name" name="name" required autoFocus autoComplete="name" defaultValue={user?.user_metadata?.full_name || user?.user_metadata?.name || ''} placeholder="Vor- und Nachname" className="w-full p-3 bg-gray-50 rounded-lg border border-transparent focus:bg-white focus:border-primary outline-none transition" /></div>
                                 <div><label className="block text-sm font-semibold text-gray-700 mb-1" htmlFor="lead-email">E-Mail-Adresse</label><input id="lead-email" name="email" type="email" required autoComplete="email" defaultValue={user?.email || ''} placeholder="deine@email.ch" className="w-full p-3 bg-gray-50 rounded-lg border border-transparent focus:bg-white focus:border-primary outline-none transition" /></div>
                                 <div><label className="block text-sm font-semibold text-gray-700 mb-1" htmlFor="lead-message">Nachricht <span className="font-normal text-gray-500">(optional)</span></label><textarea id="lead-message" name="message" rows="3" className="w-full p-3 bg-gray-50 rounded-lg border border-transparent focus:bg-white focus:border-primary outline-none transition"></textarea></div>

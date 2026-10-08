@@ -20,6 +20,7 @@ import { useTaxonomy } from '../hooks/useTaxonomy';
 import ProviderProfileEditor from './ProviderProfileEditor';
 import AnalyticsDashboard from './AnalyticsDashboard';
 import PlanCardGrid from './PlanCardGrid';
+import { getEventCutoffDate } from '../lib/eventDates';
 
 // --- HELPER COMPONENT: User Profile Settings ---
 const UserProfileSection = ({ user, setUser, showNotification, setLang, t, isImpersonating }) => {
@@ -2935,7 +2936,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                     const canRefund = booking.booking_status === 'confirmed' && booking.auto_refund_until && new Date() < new Date(booking.auto_refund_until);
                                     const isFlexBooking = booking.booking_type === 'platform_flex';
                                     const isEventCancelled = booking.event?.cancelled_at;
-                                    const eventDisplayDate = booking.event?.start_date ? new Date(`${booking.event.start_date}T23:59:59`) : null;
+                                    const eventDisplayDate = getEventCutoffDate(booking.event?.start_date);
                                     const isPartialGoodwillRefund = booking.goodwill_status === 'approved'
                                         && booking.goodwill_refund_percent > 0
                                         && booking.goodwill_refund_percent < 100;

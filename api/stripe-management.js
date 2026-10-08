@@ -1,18 +1,7 @@
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
 import { getRequiredSanitizedEnv } from './_lib/env.js';
-
-function getBaseUrl(req) {
-  const forwardedProto = req.headers['x-forwarded-proto'];
-  const forwardedHost = req.headers['x-forwarded-host'] || req.headers.host;
-
-  if (forwardedHost) {
-    return `${forwardedProto || 'https'}://${forwardedHost}`.replace(/\/$/, '');
-  }
-
-  const raw = process.env.VITE_SITE_URL || process.env.SITE_URL || 'https://kursnavi.ch';
-  return raw.replace(/\/$/, '');
-}
+import { getBaseUrl } from './_lib/base-url.js';
 
 async function requireAuthUser(req, supabase) {
   const authHeader = req.headers.authorization;
@@ -59,11 +48,7 @@ export default async function handler(req, res) {
     }
   } catch (error) {
     console.error('Stripe Management Error:', error);
-    return res.status(500).json({
-      error: error.message,
-      type: error.type || 'unknown',
-      code: error.code || null
-    });
+    return res.status(500).json({ error: 'Es ist ein Fehler aufgetreten. Bitte versuche es später erneut.' });
   }
 }
 

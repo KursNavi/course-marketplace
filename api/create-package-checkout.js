@@ -1,17 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { getStripeClient, logStripeError, toStripeClientMessage } from './_lib/stripe.js';
-
-function getBaseUrl(req) {
-    const forwardedProto = req.headers['x-forwarded-proto'];
-    const forwardedHost = req.headers['x-forwarded-host'] || req.headers.host;
-
-    if (forwardedHost) {
-        return `${forwardedProto || 'https'}://${forwardedHost}`.replace(/\/$/, '');
-    }
-
-    const raw = process.env.VITE_SITE_URL || process.env.SITE_URL || 'https://kursnavi.ch';
-    return raw.replace(/\/$/, '');
-}
+import { getBaseUrl } from './_lib/base-url.js';
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') {

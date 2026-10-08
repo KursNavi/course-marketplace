@@ -25,8 +25,21 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Laeuft bewusst direkt nach npm ci, unabhaengig von Lint/Tests/E2E:
+      # ein Build- bzw. Modulaufloesungsfehler (z.B. in scripts/prerender-static.mjs)
+      # soll sofort auffallen und nicht durch einen spaeter fehlschlagenden,
+      # unabhaengigen Schritt maskiert werden.
+      - name: Build
+        run: npm run build
+
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
+
+      # Schlaegt an, sobald eine Produktionsabhaengigkeit eine bekannte Luecke
+      # ab Schweregrad "high" hat. Dev-Abhaengigkeiten landen nicht beim
+      # Besucher und wuerden den Lauf sonst dauerhaft rot faerben.
+      - name: Security audit (production dependencies)
+        run: npm audit --omit=dev --audit-level=high
 
       - name: Check text encoding
         run: npm run check:mojibake
@@ -55,9 +68,6 @@ jobs:
         run: |
           npm run seed:e2e
           npm run test:e2e:app
-
-      - name: Build
-        run: npm run build
 
       - name: Upload Playwright report
         if: always()
