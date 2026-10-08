@@ -1911,7 +1911,12 @@ if (bookingType === 'platform' || activeLocationMode === 'events') {
                                 </div>
                             )}
                             <div className="flex flex-wrap gap-3">
-                                <input type="file" id="courseImageInput" name="courseImage" accept="image/*" onChange={handleImageChange} className="hidden" />
+                                {/* onClick leert den Wert: Ohne das loest die Auswahl
+                                    DESSELBEN Bildes kein change-Ereignis aus, weil der
+                                    Wert des Feldes unveraendert bleibt. Wer ein Bild
+                                    waehlt, es wieder entfernt und dasselbe erneut
+                                    waehlt, sah bisher gar keine Reaktion. */}
+                                <input type="file" id="courseImageInput" name="courseImage" accept="image/*" aria-label="Kursbild-Datei auswählen" onClick={(e) => { e.currentTarget.value = ''; }} onChange={handleImageChange} className="hidden" />
                                 <label htmlFor="courseImageInput" className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-full text-sm font-medium text-gray-700 hover:bg-gray-100 hover:border-gray-400 cursor-pointer transition">
                                     <Upload className="w-4 h-4" />
                                     Bild hochladen

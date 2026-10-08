@@ -1164,9 +1164,14 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
                       )}
                       Logo hochladen
                     </span>
+                    {/* onClick leert den Wert — sonst loest dasselbe Bild beim
+                        zweiten Mal kein change-Ereignis aus. Nach "Zuruecksetzen"
+                        liess sich das vorherige Logo so nicht wieder waehlen. */}
                     <input
                       type="file"
                       accept="image/*"
+                      aria-label="Logo-Datei auswählen"
+                      onClick={(e) => { e.currentTarget.value = ''; }}
                       onChange={(e) => handleImageUpload(e.target.files[0], 'logo')}
                       className="hidden"
                     />
@@ -1213,9 +1218,13 @@ export default function ProviderProfileEditor({ user, showNotification, setUser,
                       )}
                       Cover hochladen
                     </span>
+                    {/* Gleiches Problem wie beim Logo: ohne Leeren des Werts
+                        bleibt die erneute Auswahl desselben Bildes wirkungslos. */}
                     <input
                       type="file"
                       accept="image/*"
+                      aria-label="Cover-Datei auswählen"
+                      onClick={(e) => { e.currentTarget.value = ''; }}
                       onChange={(e) => handleImageUpload(e.target.files[0], 'cover')}
                       className="hidden"
                     />
