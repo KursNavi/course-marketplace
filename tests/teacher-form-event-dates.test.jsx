@@ -513,6 +513,39 @@ describe('TeacherForm – Termine (start_date/end_date) reach the state and surv
         expect(screen.getByRole('radio', { name: /Wochenkurs/i })).not.toBeChecked();
     });
 
+    // Anlass: Der App-E2E-Test course-all-fields-roundtrip scheitert genau an
+    // dieser Stelle — nach Speichern und Neuladen ist die Kursart nicht mehr
+    // gewaehlt. Die bestehenden Faelle oben decken nur Kurse ab, die SCHON eine
+    // Kursart haben. Hier wird sie erstmals gesetzt, so wie im E2E-Lauf.
+    it('persists a private course format that is set for the first time', async () => {
+        // baseCourse hat absichtlich kein privat_kursart.
+        db.courses = [{ ...baseCourse }];
+        renderEditor([]);
+
+        const introductionRadio = await screen.findByRole('radio', { name: /Einführung/i });
+        document.querySelector('form').noValidate = true;
+
+        await act(async () => {
+            fireEvent.click(introductionRadio);
+        });
+        expect(introductionRadio).toBeChecked();
+
+        await act(async () => {
+            fireEvent.click(screen.getByTestId('save-course'));
+        });
+
+        await waitFor(() => expect(db.courses[0].privat_kursart).toBe('einfuehrungskurs'));
+
+        // Neu montieren aus dem, was in der Datenbank landete — das Pendant
+        // zum vollstaendigen Neuladen der Seite im E2E-Test.
+        cleanup();
+        renderEditor([], { privat_kursart: db.courses[0].privat_kursart });
+
+        await waitFor(() => {
+            expect(screen.getByRole('radio', { name: /Einführung/i })).toBeChecked();
+        });
+    });
+
     it('does not block provider metadata edits because of a legacy location without canton', async () => {
         db.courses = [{ ...baseCourse, privat_kursart: 'wochenkurs' }];
         restoreCourseFormatAfterRelatedWrite = true;
