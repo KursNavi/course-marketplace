@@ -337,6 +337,10 @@ export default function ProviderProfilePage({ t, setView, setSelectedCourse }) {
           <img
             src={provider.coverImageUrl}
             alt={`${provider.name} Cover`}
+            width="1200"
+            height="320"
+            loading="eager"
+            decoding="async"
             className="block w-full h-auto max-h-[320px] object-contain mx-auto"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent pointer-events-none" />
@@ -362,6 +366,10 @@ export default function ProviderProfilePage({ t, setView, setSelectedCourse }) {
                 <img
                   src={provider.logoUrl}
                   alt={`${provider.name} Logo`}
+                  width="128"
+                  height="128"
+                  loading="eager"
+                  decoding="async"
                   className="w-24 h-24 md:w-32 md:h-32 rounded-2xl object-contain bg-white border border-gray-100 p-1"
                 />
               ) : (
@@ -539,6 +547,10 @@ export default function ProviderProfilePage({ t, setView, setSelectedCourse }) {
                         <img
                           src={course.image_url}
                           alt={course.title}
+                          width="80"
+                          height="80"
+                          loading="lazy"
+                          decoding="async"
                           className="w-20 h-20 rounded-lg object-cover flex-shrink-0"
                         />
                       ) : (

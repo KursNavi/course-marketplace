@@ -40,6 +40,10 @@ export default function ProviderCard({ provider, onClick, segmentConfig }) {
               <img
                 src={logoUrl}
                 alt={`${name} Logo`}
+                width="64"
+                height="64"
+                loading="lazy"
+                decoding="async"
                 className="w-16 h-16 rounded-xl object-contain bg-white border border-gray-100 p-1"
               />
             ) : (

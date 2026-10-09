@@ -171,7 +171,7 @@ export default function BlogDetail({ article, setView, courses }) {
         {/* Hero Section */}
         <div className="bg-stone-900 text-white py-20 px-4 relative overflow-hidden">
             <div className="absolute inset-0 opacity-30">
-                {article.image_url && <img src={heroImage} alt={article.title} className="w-full h-full object-cover blur-sm" />}
+                {article.image_url && <img src={heroImage} alt={article.title} loading="eager" decoding="async" className="w-full h-full object-cover blur-sm" />}
             </div>
             <div className="relative max-w-3xl mx-auto text-center z-10">
                 <button onClick={() => setView('blog')} className="mb-6 inline-flex items-center text-stone-300 hover:text-white transition-colors text-sm font-bold uppercase tracking-widest">

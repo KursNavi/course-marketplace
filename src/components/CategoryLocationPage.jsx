@@ -289,6 +289,8 @@ export default function CategoryLocationPage({
                                             <img
                                                 src={course.image_url || fallbackImage}
                                                 alt={`${course.title} - ${topicLabel} Kurs in ${location}`}
+                                                width="600"
+                                                height="338"
                                                 loading="lazy"
                                                 decoding="async"
                                                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"

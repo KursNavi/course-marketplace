@@ -272,8 +272,12 @@ export default function ProviderDirectory({ t, setView, embedded = false }) {
       canonicalTag.rel = 'canonical';
       document.head.appendChild(canonicalTag);
     }
-    canonicalTag.href = `${BASE_URL}/anbieter`;
-  }, []);
+    // /anbieter selbst redirected clientseitig sofort auf /search?tab=anbieter
+    // (siehe App.jsx) und liefert nie Inhalt aus — canonical muss auf die
+    // tatsächlich erreichbare URL zeigen, sonst zeigt Google auf eine
+    // Weiterleitungs-URL statt auf die indexierbare Seite.
+    canonicalTag.href = embedded ? `${BASE_URL}/search?tab=anbieter` : `${BASE_URL}/anbieter`;
+  }, [embedded]);
 
   // SEO: Schema.org ItemList – wird aktualisiert sobald Anbieter geladen sind
   useEffect(() => {
