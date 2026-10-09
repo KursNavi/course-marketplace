@@ -347,6 +347,11 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t, isImp
         setUploadingDoc(true);
 
         const newDocUrls = [];
+        // Fehlgeschlagene Dateien sammeln: Bisher landete ein Fehlschlag nur in
+        // der Browser-Konsole, die Schleife lief weiter und am Ende passierte
+        // sichtbar nichts. Wer eine Datei hochlud, sah "Lade hoch..." und
+        // danach keinerlei Rueckmeldung — weder Erfolg noch Fehler.
+        const fehlgeschlagen = [];
 
         for (const file of files) {
             const fileExt = file.name.split('.').pop();
@@ -355,11 +360,20 @@ const UserProfileSection = ({ user, setUser, showNotification, setLang, t, isImp
 
             if (uploadError) {
                 console.error("Upload failed", uploadError);
-                continue; 
+                fehlgeschlagen.push(file.name);
+                continue;
             }
 
             const { data: { signedUrl } } = await supabase.storage.from('certificates').createSignedUrl(fileName, 315360000);
             newDocUrls.push(signedUrl);
+        }
+
+        if (fehlgeschlagen.length > 0) {
+            showNotification(
+                fehlgeschlagen.length === files.length
+                    ? 'Die Datei konnte nicht hochgeladen werden. Bitte versuche es erneut oder melde dich bei uns.'
+                    : `${fehlgeschlagen.length} von ${files.length} Dateien konnten nicht hochgeladen werden: ${fehlgeschlagen.join(', ')}`
+            );
         }
 
         if (newDocUrls.length > 0) {
