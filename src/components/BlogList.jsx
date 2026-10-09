@@ -84,7 +84,7 @@ export default function BlogList({ articles, setView, setSelectedArticle }) {
             <div key={article.id} onClick={() => handleRead(article)} className="bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all cursor-pointer overflow-hidden group border border-stone-100">
               <div className="h-48 bg-gray-200 overflow-hidden relative">
                 {article.image_url ? (
-                    <img src={normalizeEditorialImageUrl(article.image_url, article.title)} alt={article.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    <img src={normalizeEditorialImageUrl(article.image_url, article.title)} alt={article.title} width="400" height="192" loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                 ) : (
                     <div className="w-full h-full flex items-center justify-center bg-stone-100 text-stone-300 font-heading text-4xl font-bold">KN</div>
                 )}
