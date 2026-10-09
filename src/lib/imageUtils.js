@@ -160,12 +160,20 @@ function extractFileNameFromUrl(imageUrl) {
 }
 
 /**
- * Löscht ein Bild aus dem Storage
+ * Löscht ein Bild aus dem Storage.
+ *
+ * Der Fehler wurde hier früher nur protokolliert und nicht weitergereicht.
+ * Weil im Speicher gar keine Löschregel hinterlegt war, scheiterte jedes
+ * Löschen — die Oberfläche meldete trotzdem Erfolg, und die Datei blieb
+ * öffentlich erreichbar. Wer ein falsches Bild "gelöscht" hatte, hatte es
+ * nicht gelöscht.
+ *
  * @param {string} imageUrl - Die Public URL des Bildes
+ * @returns {{ success: boolean, error?: string }}
  */
 export async function deleteImageFromStorage(imageUrl) {
     const fileName = extractFileNameFromUrl(imageUrl);
-    if (!fileName) return;
+    if (!fileName) return { success: false, error: 'Dateiname konnte nicht ermittelt werden' };
 
     const { error } = await supabase.storage
         .from(BUCKET_NAME)
@@ -173,7 +181,10 @@ export async function deleteImageFromStorage(imageUrl) {
 
     if (error) {
         console.error('Fehler beim Löschen des Bildes:', error);
+        return { success: false, error: error.message };
     }
+
+    return { success: true };
 }
 
 /**
@@ -232,8 +243,20 @@ export async function deleteImageFromLibrary(imageUrl, courseIds = []) {
             }
         }
 
-        // 2. Lösche das Bild aus dem Storage
-        await deleteImageFromStorage(imageUrl);
+        // 2. Lösche das Bild aus dem Storage.
+        // Scheitert das, melden wir es — die Kurse zeigen zwar schon das
+        // Standardbild, aber die Datei liegt weiter im Speicher und bleibt
+        // unter ihrer Adresse abrufbar. Das als Erfolg zu melden war
+        // irreführend: Wer ein falsches Bild entfernen wollte, hatte es nicht
+        // entfernt.
+        const storageResult = await deleteImageFromStorage(imageUrl);
+        if (!storageResult.success) {
+            return {
+                success: false,
+                updatedCourses: courseIds.length,
+                error: 'Die Kurse wurden auf das Standardbild gesetzt, die Bilddatei selbst konnte aber nicht gelöscht werden.',
+            };
+        }
 
         return { success: true, updatedCourses: courseIds.length };
     } catch (error) {
