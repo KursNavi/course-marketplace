@@ -3,7 +3,7 @@ import {
   getLeadAttribution,
   trackContactLead,
   trackLeadDelivered,
-  trackNewsletter,
+  trackNewsletterSignup,
   trackPageView,
   trackPurchase,
   trackSearch,
@@ -26,11 +26,20 @@ describe('Google tracking consent boundaries', () => {
   it('does not send analytics or Ads events without consent', () => {
     trackPageView('/kampagne/test', 'Test');
     trackContactLead('course-1');
-    trackNewsletter();
+    trackNewsletterSignup();
     trackSignup('email');
 
     expect(calls).toEqual([]);
     expect(window._uxa).toEqual([]);
+  });
+
+  it('sends newsletter signups as their own event, never as generate_lead', () => {
+    window.Cookiebot.consent.statistics = true;
+    trackNewsletterSignup();
+
+    expect(calls.some(([command, event]) => command === 'event' && event === 'newsletter_signup')).toBe(true);
+    expect(calls.some(([command, event]) => command === 'event' && event === 'generate_lead')).toBe(false);
+    expect(window._uxa).toContainEqual(['trackPageEvent', 'Newsletter Signup']);
   });
 
   it('asks index.html to configure the Google tag before queuing a GA4 event (race-condition guard)', () => {

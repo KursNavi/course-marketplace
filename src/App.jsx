@@ -2303,6 +2303,9 @@ useEffect(() => {
           );
           removeStored('pendingCourseId');
           removeStored('pendingEventId');
+          removeStored('pendingPurchaseSessionId');
+          removeStored('pendingPurchaseEventId');
+          removeStored('pendingPurchaseFirstSeenAt');
           await fetchBookings(user.id);
 
           const remainingMs = Math.max(0, 3000 - (Date.now() - successShownAt));
@@ -2320,6 +2323,13 @@ useEffect(() => {
         }
       }
 
+      // Die Buchung wurde in der Zeit nicht gefunden (z.B. Webhook noch nicht
+      // angekommen). Nicht aufgeben: beim naechsten Laden mit angemeldetem
+      // Nutzer wird unten einmalig nachgeprueft, damit eine tatsaechlich
+      // bezahlte Buchung nicht dauerhaft ungetrackt bleibt.
+      writeStored('pendingPurchaseSessionId', sessionId);
+      writeStored('pendingPurchaseEventId', confirmationPayload?.event_id || sessionId);
+      writeStored('pendingPurchaseFirstSeenAt', String(Date.now()));
       await fetchBookings(user.id);
     };
 
@@ -2373,6 +2383,74 @@ useEffect(() => {
       setView('dashboard');
     }
     */
+  }
+
+  // Nachtrag fuer eine Stripe-Buchung, deren Bestaetigung beim letzten Besuch
+  // nicht rechtzeitig gefunden wurde (siehe pendingPurchaseSessionId oben).
+  // Laeuft nur, wenn aktuell kein eigener Stripe-Rueckkehr-Flow aktiv ist.
+  if (!sessionId && user) {
+    const pendingSessionId = readStored('pendingPurchaseSessionId');
+    if (pendingSessionId) {
+      const firstSeenAt = Number(readStored('pendingPurchaseFirstSeenAt') || 0);
+      const isStale = !firstSeenAt || Date.now() - firstSeenAt > 7 * 24 * 60 * 60 * 1000;
+      if (isStale) {
+        removeStored('pendingPurchaseSessionId');
+        removeStored('pendingPurchaseEventId');
+        removeStored('pendingPurchaseFirstSeenAt');
+      } else {
+        const verifyPendingPurchase = async () => {
+          let confirmationPayload = null;
+          const { data: { session } } = await supabase.auth.getSession();
+
+          if (session?.access_token) {
+            try {
+              const confirmationResponse = await fetch('/api/confirm-checkout-session', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${session.access_token}`
+                },
+                body: JSON.stringify({ sessionId: pendingSessionId })
+              });
+              if (confirmationResponse.ok) {
+                confirmationPayload = await confirmationResponse.json().catch(() => null);
+              }
+            } catch (error) {
+              console.warn('Pending purchase confirmation fallback failed:', error);
+            }
+          }
+
+          const { data } = await supabase
+            .from('bookings')
+            .select('id, course_id, booking_type')
+            .eq('user_id', user.id)
+            .eq('stripe_checkout_session_id', pendingSessionId)
+            .maybeSingle();
+
+          if (!data) return;
+
+          const trackedCourseId = Number(data.course_id || confirmationPayload?.booking?.course_id);
+          const trackedCourse = (courses || []).find((item) => Number(item.id) === trackedCourseId) || {
+            id: trackedCourseId,
+            title: 'Kursbuchung',
+            booking_type: data.booking_type || confirmationPayload?.booking?.booking_type || 'platform',
+            category_area: '',
+          };
+          trackPurchase(
+            trackedCourse,
+            data.id,
+            Number(confirmationPayload?.amount_cents || trackedCourse.base_price || 0),
+            confirmationPayload?.event_id || readStored('pendingPurchaseEventId') || pendingSessionId,
+          );
+          removeStored('pendingPurchaseSessionId');
+          removeStored('pendingPurchaseEventId');
+          removeStored('pendingPurchaseFirstSeenAt');
+          await fetchBookings(user.id);
+        };
+
+        verifyPendingPurchase();
+      }
+    }
   }
 }, [user]);
 

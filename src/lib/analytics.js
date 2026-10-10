@@ -372,11 +372,16 @@ export function trackArticleView(article) {
   });
 }
 
-/** Newsletter-Anmeldung */
-export function trackNewsletter(eventId = createAnalyticsEventId('newsletter')) {
-  if (conversionAlreadyTracked('generate_lead_newsletter', eventId)) return;
-  gtagSafe('statistics', 'event', 'generate_lead', {
-    lead_type: 'newsletter',
+/**
+ * Newsletter-Anmeldung.
+ *
+ * Eigenes Event statt generate_lead: generate_lead ist für echte Kursanfragen
+ * reserviert (siehe trackLeadSubmitted) und wäre sonst in GA4 nicht mehr
+ * eindeutig zwischen Anfrage und Newsletter unterscheidbar.
+ */
+export function trackNewsletterSignup(eventId = createAnalyticsEventId('newsletter')) {
+  if (conversionAlreadyTracked('newsletter_signup', eventId)) return;
+  gtagSafe('statistics', 'event', 'newsletter_signup', {
     event_id: eventId,
   });
   contentsquareSafe('Newsletter Signup');

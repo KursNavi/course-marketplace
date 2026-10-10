@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Menu, X, Globe, LogOut, LayoutDashboard, ChevronDown, Mail, ArrowRight, Check, Loader2, Briefcase, Palette, Smile, Shield } from 'lucide-react';
 import { SEGMENT_CONFIG } from '../lib/constants';
 import { MegaMenu, MobileMenuCategory } from './MegaMenu';
-import { trackNewsletter } from '../lib/analytics';
+import { trackNewsletterSignup } from '../lib/analytics';
 import { trackContentsquareNewsletterSuccess } from '../lib/contentsquare';
 import { subscribeToNewsletter, suppressNewsletterPopupForever } from '../lib/newsletter';
 
@@ -382,7 +382,7 @@ export const Footer = ({ t, setView }) => {
       // Wer sich hier anmeldet, soll das Startseiten-Popup nicht mehr sehen.
       suppressNewsletterPopupForever();
       if (result.status === 'success') {
-        trackNewsletter();
+        trackNewsletterSignup();
         trackContentsquareNewsletterSuccess();
       }
       setEmail('');
