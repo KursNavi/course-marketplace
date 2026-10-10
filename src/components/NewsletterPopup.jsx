@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Mail, X, Check, Loader2, ArrowRight } from 'lucide-react';
-import { trackNewsletter } from '../lib/analytics';
+import { trackNewsletterSignup } from '../lib/analytics';
 import { trackContentsquareNewsletterSuccess } from '../lib/contentsquare';
 import {
   CONSENT_RECHECK_MS,
@@ -118,7 +118,7 @@ export function NewsletterPopup({ delayMs = POPUP_DELAY_MS }) {
       // Wer angemeldet ist, soll das Popup nie wieder sehen.
       suppressNewsletterPopupForever();
       if (result.status === 'success') {
-        trackNewsletter();
+        trackNewsletterSignup();
         trackContentsquareNewsletterSuccess();
       }
       setEmail('');
