@@ -29,6 +29,15 @@ Befinden sich in `tests/app-e2e/`.
 npm run test:e2e      # harness + app-e2e
 ```
 
+### 4. Live-Smoke-Tests (Playwright, gegen kursnavi.ch)
+```bash
+npm run test:prod-smoke
+```
+Rein lesende Checks (Navigation, keine Logins, keine Schreibaktionen) direkt gegen
+die Produktionsseite: Startseite, Suche, ein Kursdetail, Rechtsseiten, 404-Seite.
+Eigene Config (`playwright.prod-smoke.config.mjs`, kein lokaler Dev-Server). Nur
+manuell ausführen, z.B. nach einem Deploy — läuft bewusst **nicht** in der CI.
+
 ---
 
 ## Supabase-Testprojekt einrichten
