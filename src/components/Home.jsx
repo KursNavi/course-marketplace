@@ -497,7 +497,7 @@ export const Home = ({
 
               {/* Ebene 1: Beruflich / Privat & Hobby / Kinder & Jugend */}
               {!activeType && (
-                <div className="flex flex-col gap-2" role="list">
+                <div className="flex flex-col gap-2">
                   {[
                     { key: 'beruflich', label: t.nav_professional || 'Beruflich' },
                     { key: 'privat_hobby', label: t.nav_private || 'Privat & Hobby' },
@@ -508,7 +508,6 @@ export const Home = ({
                       <button
                         key={key}
                         type="button"
-                        role="listitem"
                         onClick={() => selectType(key)}
                         className={`flex items-center gap-3 w-full px-4 py-3 rounded-md border border-grey bg-white hover:${border}/50 hover:bg-beige transition-colors text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-petrol`}
                       >
@@ -525,14 +524,13 @@ export const Home = ({
 
               {/* Ebene 2: Bereiche im gewaehlten Typ */}
               {activeType && !activeArea && (
-                <div className="flex flex-col gap-1.5 max-h-72 overflow-y-auto pr-1" role="list">
+                <div className="flex flex-col gap-1.5 max-h-72 overflow-y-auto pr-1">
                   {visibleAreas.length === 0 ? (
                     <p className="text-sm text-gray-500 py-4">Keine weiteren Unterkategorien verfügbar.</p>
                   ) : visibleAreas.map(areaSlug => (
                     <button
                       key={areaSlug}
                       type="button"
-                      role="listitem"
                       onClick={() => selectArea(areaSlug)}
                       className="flex items-center justify-between w-full px-3.5 py-2.5 rounded-md border border-grey bg-white hover:border-petrol/40 hover:bg-beige transition-colors text-left text-sm text-dark focus:outline-none focus-visible:ring-2 focus-visible:ring-petrol"
                     >
@@ -545,7 +543,7 @@ export const Home = ({
 
               {/* Ebene 3: Spezialgebiete im gewaehlten Bereich */}
               {activeType && activeArea && !activeSpecialty && (
-                <div className="flex flex-col gap-1.5 max-h-72 overflow-y-auto pr-1" role="list">
+                <div className="flex flex-col gap-1.5 max-h-72 overflow-y-auto pr-1">
                   <button
                     type="button"
                     onClick={showAllInArea}
@@ -558,7 +556,6 @@ export const Home = ({
                     <button
                       key={spec.label}
                       type="button"
-                      role="listitem"
                       onClick={() => selectSpecialty(spec.label, spec.hasFocuses)}
                       className="flex items-center justify-between w-full px-3.5 py-2.5 rounded-md border border-grey bg-white hover:border-petrol/40 hover:bg-beige transition-colors text-left text-sm text-dark focus:outline-none focus-visible:ring-2 focus-visible:ring-petrol"
                     >
@@ -571,7 +568,7 @@ export const Home = ({
 
               {/* Ebene 4: Schwerpunkte im gewaehlten Spezialgebiet */}
               {activeType && activeArea && activeSpecialty && visibleFocuses.length > 0 && (
-                <div className="flex flex-col gap-1.5 max-h-72 overflow-y-auto pr-1" role="list">
+                <div className="flex flex-col gap-1.5 max-h-72 overflow-y-auto pr-1">
                   <button
                     type="button"
                     onClick={showAllInSpecialty}
@@ -584,7 +581,6 @@ export const Home = ({
                     <button
                       key={focus}
                       type="button"
-                      role="listitem"
                       onClick={() => selectFocus(focus)}
                       className="flex items-center justify-between w-full px-3.5 py-2.5 rounded-md border border-grey bg-white hover:border-petrol/40 hover:bg-beige transition-colors text-left text-sm text-dark focus:outline-none focus-visible:ring-2 focus-visible:ring-petrol"
                     >
