@@ -23,6 +23,7 @@ export default {
         segBeruflich: '#347FA0', // Beruflich bleibt blau
         segKinder: '#39835B',    // Kinder & Jugend bleibt grün
         // Privat & Hobby bleibt orange — nutzt weiterhin den bestehenden `primary`-Token.
+        borderSubtle: '#EBE4DE', // etwas wärmerer Rahmenton als `grey`, fürs Header/Hero-Umfeld
       },
       fontFamily: {
         // Official Font Pair [Source: 156]

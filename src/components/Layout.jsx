@@ -130,7 +130,7 @@ export const Navbar = ({ t, user, lang = 'de', setLang, setView, handleLogout, s
   return (
     <>
     <a href="#main-content" className="skip-to-content">Zum Inhalt springen</a>
-    <nav className="bg-white/80 backdrop-blur-md border-b border-gray-100 sticky top-0 z-50" aria-label="Hauptnavigation">
+    <nav className="bg-beige border-b border-borderSubtle sticky top-0 z-50" aria-label="Hauptnavigation">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-20">
 
@@ -143,30 +143,35 @@ export const Navbar = ({ t, user, lang = 'de', setLang, setView, handleLogout, s
               </span>
             </button>
 
-            <div className="hidden md:ml-10 md:flex md:space-x-6 md:items-center">
-              {segmentButtons.map(({ key, label, Icon, config }) => {
-                const isActive = activeSegment === key;
-                return (
-                  <MegaMenu
-                    key={key}
-                    categoryKey={key}
-                    label={label}
-                    Icon={Icon}
-                    config={config}
-                    isActive={isActive}
-                    lang={lang}
-                  />
-                );
-              })}
-              <button onClick={() => navTo('how-it-works')} className="text-gray-500 hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors font-sans">{t.nav_howitworks}</button>
-              <button onClick={() => navTo('blog')} className="text-gray-500 hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors font-sans">{t.nav_news}</button>
-              {/* Anbietersuche Dropdown */}
+            <div className="hidden md:ml-10 md:flex md:items-center">
+              {/* Kategorie-Gruppe */}
+              <div className="flex items-center gap-6">
+                {segmentButtons.map(({ key, label, Icon, config }) => {
+                  const isActive = activeSegment === key;
+                  return (
+                    <MegaMenu
+                      key={key}
+                      categoryKey={key}
+                      label={label}
+                      Icon={Icon}
+                      config={config}
+                      isActive={isActive}
+                      lang={lang}
+                    />
+                  );
+                })}
+              </div>
+
+              {/* Trenner 1 */}
+              <div className="h-6 border-l border-borderSubtle mx-4"></div>
+
+              {/* Anbietersuche Dropdown — eigenstaendig, wie im Entwurf */}
               <div
                 className="relative"
                 onMouseEnter={() => { if (anbieterTimeoutRef.current) clearTimeout(anbieterTimeoutRef.current); setAnbieterMenuOpen(true); }}
                 onMouseLeave={() => { anbieterTimeoutRef.current = setTimeout(() => setAnbieterMenuOpen(false), 150); }}
               >
-                <span className="flex items-center px-3 py-2 rounded-md text-sm font-medium text-gray-500 hover:text-primary transition-colors font-sans cursor-default select-none">
+                <span className="flex items-center py-2 text-sm font-medium text-gray-500 hover:text-primary transition-colors font-sans cursor-default select-none">
                   {t.nav_providers || 'Anbieter finden'}
                   <ChevronDown className={`w-3 h-3 ml-1 transition-transform duration-200 ${anbieterMenuOpen ? 'rotate-180' : ''}`} />
                 </span>
@@ -187,7 +192,16 @@ export const Navbar = ({ t, user, lang = 'de', setLang, setView, handleLogout, s
                   </div>
                 )}
               </div>
-              <button onClick={() => navTo('teacher-hub')} className={`${activePath === "/teacher-hub" ? "text-orange-600 font-bold" : "text-gray-500 font-medium hover:text-primary"} px-3 py-2 rounded-md text-sm transition-colors font-sans`}>{t.nav_for_providers}</button>
+
+              {/* Trenner 2 */}
+              <div className="h-6 border-l border-borderSubtle mx-4"></div>
+
+              {/* Sekundaer-Gruppe */}
+              <div className="flex items-center gap-6">
+                <button onClick={() => navTo('how-it-works')} className="text-gray-500 hover:text-primary text-sm font-medium transition-colors font-sans whitespace-nowrap">{t.nav_howitworks}</button>
+                <button onClick={() => navTo('teacher-hub')} className={`${activePath === "/teacher-hub" ? "text-orange-600 font-bold" : "text-gray-500 font-medium hover:text-primary"} text-sm transition-colors font-sans whitespace-nowrap`}>{t.nav_for_providers}</button>
+                <button onClick={() => navTo('blog')} className="text-gray-500 hover:text-primary text-sm font-medium transition-colors font-sans whitespace-nowrap">{t.nav_news}</button>
+              </div>
             </div>
           </div>
 
@@ -230,7 +244,7 @@ export const Navbar = ({ t, user, lang = 'de', setLang, setView, handleLogout, s
                 <button onClick={handleLogout} className="flex items-center text-gray-400 hover:text-red-500 p-1.5 rounded-full hover:bg-red-50 transition-colors"><LogOut className="w-4 h-4" /></button>
               </div>
             ) : (
-              <button onClick={() => navTo('login')} className="bg-petrol text-white px-6 py-2.5 rounded-full text-sm font-bold hover:bg-petrolDark transition-all duration-300 shadow-lg hover:-translate-y-0.5 font-heading">{t.nav_login}</button>
+              <button onClick={() => navTo('login')} className="bg-petrol text-white px-6 py-2.5 rounded-lg text-sm font-bold hover:bg-petrolDark transition-colors duration-200 shadow-sm font-heading">{t.nav_login}</button>
             )}
           </div>
 

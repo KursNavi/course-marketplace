@@ -30,7 +30,6 @@ export const Home = ({
   // Load taxonomy from DB (with fallback to constants.js)
   const { taxonomy, types, areas, getTypeLabel: dbGetTypeLabel, getAreaLabel: dbGetAreaLabel } = useTaxonomy();
 
-
   // State für das Mega-Menü
   const [activeType, setActiveType] = useState('beruflich'); // Spalte 1 Auswahl
   const [activeArea, setActiveArea] = useState(null);           // Spalte 2 Auswahl
@@ -369,7 +368,6 @@ export const Home = ({
     );
   };
 
-
   return (
     <div className="relative flex flex-col w-full font-sans">
       {isLoading && (
@@ -421,11 +419,11 @@ export const Home = ({
 
             {/* RECHTS: Suchkarte */}
             <div className="lg:col-span-6">
-              <div className="max-w-xl mx-auto lg:mx-0 lg:ml-auto bg-beige text-dark p-6 md:p-8 rounded-2xl border border-grey shadow-2xl relative">
+              <div className="max-w-xl mx-auto lg:mx-0 lg:ml-auto bg-beige text-dark p-6 md:p-8 rounded-xl border border-grey shadow-xl relative">
 
                 {/* Suchbereich: zuerst Bereich waehlen, dann Suchbegriff eingeben */}
-                <div className="mt-1 mb-4">
-                    <p className="text-xs text-gray-500 mb-2 text-left uppercase tracking-wide font-medium">Suchbereich</p>
+                <div className="mb-5 pb-5 border-b border-grey">
+                    <p className="text-xs text-gray-500 mb-2 text-left uppercase tracking-wide font-semibold">Suchbereich</p>
                     <div className="flex gap-2 flex-wrap" data-testid="home-segment-selector">
                         {[
                             { key: 'alle', label: 'Alle Bereiche', Icon: null, active: 'bg-petrol text-white border-petrol', inactive: 'bg-white text-gray-700 border-grey hover:border-petrol/40' },
@@ -440,7 +438,7 @@ export const Home = ({
                                     type="button"
                                     data-testid={`home-segment-${key}`}
                                     onClick={() => setHomeSegment(key)}
-                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all border ${isActive ? active : inactive}`}
+                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all border ${isActive ? active : inactive}`}
                                 >
                                     {Icon && <Icon className="w-3.5 h-3.5" />}
                                     {label}
@@ -450,69 +448,71 @@ export const Home = ({
                     </div>
                 </div>
 
-                {/* Search Bar */}
-                <form onSubmit={handleSearch} className="relative flex flex-col mb-4">
-                    {/* Auf Mobile traegt dieses Label den Suchhinweis: neben dem "Suchen"-Button
-                        bleiben im Feld nur rund 130 px, der Platzhalter braucht rund 200 px und
-                        wurde deshalb bisher per placeholder-transparent unsichtbar gemacht - das
-                        Feld wirkte leer. Ab md zeigt ihn den Platzhalter wieder im Feld selbst,
-                        das Label bleibt dort als Screenreader-Beschriftung erhalten. */}
-                    <label
-                        htmlFor="home-search-input"
-                        className="block md:sr-only text-left text-sm font-medium text-dark mb-1.5"
-                    >
-                        {t.search_placeholder}
-                    </label>
-                    <div className="relative flex items-center">
-                        <Search className="absolute left-4 text-gray-400 w-5 h-5 z-10" aria-hidden="true" />
-                        <input
-                        id="home-search-input"
-                        type="text"
-                        placeholder={t.search_placeholder}
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-12 pr-32 py-4 rounded-xl text-dark font-sans shadow-sm border border-grey focus:outline-none focus:ring-2 focus:ring-petrol focus:border-petrol text-lg placeholder-transparent md:placeholder-gray-500 bg-white"
-                        />
-                        <button type="submit" className="absolute right-2 bg-petrol hover:bg-petrolDark text-white px-6 py-2 rounded-lg font-bold transition-colors duration-300">
-                        {t.btn_search}
-                        </button>
+                {/* Suchfeld, Ort/PLZ, Kursformat — jeweils mit sichtbarem Label, dann separater Suchen-Button */}
+                <form onSubmit={handleSearch} className="flex flex-col gap-4">
+                    <div className="flex flex-col gap-1.5 text-left">
+                        <label
+                            htmlFor="home-search-input"
+                            className="text-xs font-semibold text-dark uppercase tracking-wide"
+                        >
+                            {t.search_placeholder}
+                        </label>
+                        <div className="relative flex items-center">
+                            <Search className="absolute left-4 text-gray-400 w-4 h-4" aria-hidden="true" />
+                            <input
+                            id="home-search-input"
+                            type="text"
+                            placeholder={t.search_placeholder}
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full pl-11 pr-4 py-3 rounded-md text-dark font-sans border border-grey focus:outline-none focus:ring-1 focus:ring-petrol focus:border-petrol text-sm bg-white placeholder:text-gray-400"
+                            />
+                        </div>
+                        <details className="mt-0.5">
+                            <summary className="inline-flex min-h-11 cursor-pointer items-center text-xs text-gray-500 underline underline-offset-2">
+                                {t.search_help_label || 'Such-Tipp'}
+                            </summary>
+                            <p className="pb-1 text-xs text-gray-500">{t.search_hint_boolean || 'Tipp: Kombiniere Begriffe mit AND oder OR (z.B. "Yoga AND Zürich")'}</p>
+                        </details>
                     </div>
-                    <details className="mt-1.5 ml-1 text-left">
-                        <summary className="inline-flex min-h-11 cursor-pointer items-center text-xs text-gray-500 underline underline-offset-2">
-                            {t.search_help_label || 'Such-Tipp'}
-                        </summary>
-                        <p className="pb-2 text-xs text-gray-500">{t.search_hint_boolean || 'Tipp: Kombiniere Begriffe mit AND oder OR (z.B. "Yoga AND Zürich")'}</p>
-                    </details>
+
+                    {/* Ort oder PLZ (bestehender Standort-Filter) */}
+                    <div className="flex flex-col gap-1.5 text-left">
+                        <label className="text-xs font-semibold text-dark uppercase tracking-wide">{t.filter_label_loc || 'Ort oder PLZ'}</label>
+                        <div className="bg-white rounded-md border border-grey">
+                            <LocationDropdown
+                                selectedLocations={selectedLocations}
+                                setSelectedLocations={setSelectedLocations}
+                                locMenuOpen={locMenuOpen}
+                                setLocMenuOpen={setLocMenuOpen}
+                                locMenuRef={locMenuRef}
+                                t={t}
+                                buttonClassName={`w-full px-4 py-3 flex items-center justify-between font-medium rounded-md text-sm transition-colors ${locMenuOpen ? 'bg-primary/10 text-primary ring-1 ring-primary/30' : 'text-gray-700 hover:bg-gray-50'}`}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Kursformat (bestehender Kursformat-Filter: Praesenz / Online Live / Selbststudium) */}
+                    <div className="flex flex-col gap-1.5 text-left">
+                        <label className="text-xs font-semibold text-dark uppercase tracking-wide">Kursformat</label>
+                        <div className="bg-white rounded-md border border-grey">
+                            <DeliveryTypeFilter
+                                selectedDeliveryTypes={selectedDeliveryTypes}
+                                setSelectedDeliveryTypes={setSelectedDeliveryTypes}
+                                deliveryMenuOpen={deliveryMenuOpen}
+                                setDeliveryMenuOpen={setDeliveryMenuOpen}
+                                deliveryMenuRef={deliveryMenuRef}
+                                t={t}
+                                buttonClassName={`w-full px-4 py-3 flex items-center justify-between font-medium rounded-md text-sm transition-colors ${deliveryMenuOpen ? 'bg-primary/10 text-primary ring-1 ring-primary/30' : 'text-gray-700 hover:bg-gray-50'}`}
+                            />
+                        </div>
+                    </div>
+
+                    <button type="submit" className="mt-1 w-full bg-petrol hover:bg-petrolDark text-white font-label-md text-sm font-semibold px-6 py-3 rounded-md transition-all shadow-sm flex items-center justify-center gap-2">
+                        <span>{t.btn_search}</span>
+                        <Search className="w-4 h-4" aria-hidden="true" />
+                    </button>
                 </form>
-
-                {/* Row 3: Location + Delivery Type */}
-                <div className="flex gap-3 flex-col sm:flex-row relative z-50">
-                    {/* LOCATION DROPDOWN */}
-                    <div className="flex-1 bg-white rounded-xl border border-grey">
-                        <LocationDropdown
-                            selectedLocations={selectedLocations}
-                            setSelectedLocations={setSelectedLocations}
-                            locMenuOpen={locMenuOpen}
-                            setLocMenuOpen={setLocMenuOpen}
-                            locMenuRef={locMenuRef}
-                            t={t}
-                            buttonClassName={`w-full px-4 py-3 flex items-center justify-between font-medium rounded-xl transition-colors ${locMenuOpen ? 'bg-primary/10 text-primary ring-2 ring-primary/30' : 'text-gray-700 hover:bg-gray-50'}`}
-                        />
-                    </div>
-
-                    {/* DELIVERY TYPE FILTER (bestehender Kursformat-Filter: Praesenz / Online Live / Selbststudium) */}
-                    <div className="flex-1 bg-white rounded-xl border border-grey">
-                        <DeliveryTypeFilter
-                            selectedDeliveryTypes={selectedDeliveryTypes}
-                            setSelectedDeliveryTypes={setSelectedDeliveryTypes}
-                            deliveryMenuOpen={deliveryMenuOpen}
-                            setDeliveryMenuOpen={setDeliveryMenuOpen}
-                            deliveryMenuRef={deliveryMenuRef}
-                            t={t}
-                            buttonClassName={`w-full px-4 py-3 flex items-center justify-between font-medium rounded-xl transition-colors ${deliveryMenuOpen ? 'bg-primary/10 text-primary ring-2 ring-primary/30' : 'text-gray-700 hover:bg-gray-50'}`}
-                        />
-                    </div>
-                </div>
               </div>
             </div>
 
@@ -520,59 +520,72 @@ export const Home = ({
         </div>
       </div>
 
-      {/* 2. WAEHLE DEINEN WEG — drei gleichwertige Kurswelten, Segmentfarben Blau/Orange/Gruen */}
+      {/* 2. WAEHLE DEINEN WEG — drei gleichwertige Kurswelten, Segmentfarben Blau/Orange/Gruen.
+          Bewusst ohne Nummerierung ("Bereich 01/02/03") an den Karten, aus demselben Grund
+          wie beim Wegweiser oben: die drei Bereiche sind gleichwertig, keine Rangfolge. */}
       <div className="py-20 bg-beige max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-        <h2 className="text-3xl font-heading font-bold text-dark mb-2 text-center">{t.home_path_title}</h2>
-        <p className="text-gray-500 text-center mb-12 font-sans">{t.home_path_sub}</p>
+        <div className="flex flex-col md:flex-row md:items-end md:justify-between mb-10 pb-4 border-b border-grey gap-3">
+          <div>
+            <div className="flex items-center gap-2 text-xs font-bold text-petrol uppercase tracking-wider mb-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-petrol"></span>
+              <span>Drei klare Richtungen</span>
+            </div>
+            <h2 className="font-heading text-2xl md:text-3xl font-bold text-dark">{t.home_path_title}</h2>
+            <p className="font-sans text-gray-500 mt-1">{t.home_path_sub}</p>
+          </div>
+        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
           {/* BERUFLICH - Blau */}
-          <a href="/search?type=beruflich" onClick={(e) => { e.preventDefault(); setSearchType('beruflich'); window.history.pushState({ view: 'search' }, '', '/search?type=beruflich'); window.scrollTo(0,0); }} className="group relative h-80 rounded-2xl overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 block">
-            <img src="https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=800&auto=format&fit=crop" srcSet="https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=400&auto=format&fit=crop 400w, https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=800&auto=format&fit=crop 800w" sizes="(max-width: 768px) 100vw, 33vw" alt="" aria-hidden="true" loading="lazy" className="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-110" />
-            <div className="absolute inset-0 bg-gradient-to-t from-segBeruflich/90 via-segBeruflich/50 to-segBeruflich/10"></div>
-            <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm rounded-full p-3">
-              <Briefcase className="w-6 h-6 text-white" aria-hidden="true" />
+          <a href="/search?type=beruflich" onClick={(e) => { e.preventDefault(); setSearchType('beruflich'); window.history.pushState({ view: 'search' }, '', '/search?type=beruflich'); window.scrollTo(0,0); }} className="group bg-white border-t-4 border-segBeruflich border-x border-b border-grey rounded-b-lg p-6 md:p-8 flex flex-col justify-between hover:shadow-md transition-shadow">
+            <div>
+              <div className="flex items-center justify-end mb-4">
+                <Briefcase className="w-5 h-5 text-segBeruflich" aria-hidden="true" />
+              </div>
+              <div className="h-44 w-full rounded overflow-hidden mb-5 bg-beige">
+                <img src="https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=800&auto=format&fit=crop" srcSet="https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=400&auto=format&fit=crop 400w, https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=800&auto=format&fit=crop 800w" sizes="(max-width: 768px) 100vw, 33vw" alt="" aria-hidden="true" loading="lazy" className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300" />
+              </div>
+              <h3 className="font-heading text-xl font-bold text-dark mb-2">{t.nav_professional}</h3>
+              <p className="font-sans text-gray-500 text-sm mb-6">{t.home_card_prof_sub}</p>
             </div>
-            <div className="absolute bottom-0 left-0 p-6">
-              <h3 className="text-2xl font-bold text-white font-heading mb-1">{t.nav_professional}</h3>
-              <p className="text-white/90 text-sm font-sans mb-4">{t.home_card_prof_sub}</p>
-              <span className="inline-flex items-center text-white font-bold text-sm uppercase tracking-wider group-hover:underline transition-colors">
-                {t.btn_explore} <ArrowRight className="w-4 h-4 ml-2" aria-hidden="true" />
-              </span>
-            </div>
+            <span className="inline-flex items-center justify-between pt-4 border-t border-grey font-semibold text-sm text-segBeruflich group-hover:translate-x-1 transition-transform">
+              {t.btn_explore} <ArrowRight className="w-4 h-4 ml-2" aria-hidden="true" />
+            </span>
           </a>
 
           {/* PRIVAT & HOBBY - Orange */}
-          <a href="/search?type=privat_hobby" onClick={(e) => { e.preventDefault(); setSearchType('privat_hobby'); window.history.pushState({ view: 'search' }, '', '/search?type=privat_hobby'); window.scrollTo(0,0); }} className="group relative h-80 rounded-2xl overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 block">
-            <img src="https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?q=80&w=800&auto=format&fit=crop" srcSet="https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?q=80&w=400&auto=format&fit=crop 400w, https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?q=80&w=800&auto=format&fit=crop 800w" sizes="(max-width: 768px) 100vw, 33vw" alt="" aria-hidden="true" loading="lazy" className="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-110" />
-            <div className="absolute inset-0 bg-gradient-to-t from-primary/90 via-primary/50 to-primary/10"></div>
-            <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm rounded-full p-3">
-              <Palette className="w-6 h-6 text-white" aria-hidden="true" />
+          <a href="/search?type=privat_hobby" onClick={(e) => { e.preventDefault(); setSearchType('privat_hobby'); window.history.pushState({ view: 'search' }, '', '/search?type=privat_hobby'); window.scrollTo(0,0); }} className="group bg-white border-t-4 border-primary border-x border-b border-grey rounded-b-lg p-6 md:p-8 flex flex-col justify-between hover:shadow-md transition-shadow">
+            <div>
+              <div className="flex items-center justify-end mb-4">
+                <Palette className="w-5 h-5 text-primary" aria-hidden="true" />
+              </div>
+              <div className="h-44 w-full rounded overflow-hidden mb-5 bg-beige">
+                <img src="https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?q=80&w=800&auto=format&fit=crop" srcSet="https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?q=80&w=400&auto=format&fit=crop 400w, https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?q=80&w=800&auto=format&fit=crop 800w" sizes="(max-width: 768px) 100vw, 33vw" alt="" aria-hidden="true" loading="lazy" className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300" />
+              </div>
+              <h3 className="font-heading text-xl font-bold text-dark mb-2">{t.nav_private}</h3>
+              <p className="font-sans text-gray-500 text-sm mb-6">{t.home_card_priv_sub}</p>
             </div>
-            <div className="absolute bottom-0 left-0 p-6">
-              <h3 className="text-2xl font-bold text-white font-heading mb-1">{t.nav_private}</h3>
-              <p className="text-white/90 text-sm font-sans mb-4">{t.home_card_priv_sub}</p>
-              <span className="inline-flex items-center text-white font-bold text-sm uppercase tracking-wider group-hover:underline transition-colors">
-                {t.btn_explore} <ArrowRight className="w-4 h-4 ml-2" aria-hidden="true" />
-              </span>
-            </div>
+            <span className="inline-flex items-center justify-between pt-4 border-t border-grey font-semibold text-sm text-primary group-hover:translate-x-1 transition-transform">
+              {t.btn_explore} <ArrowRight className="w-4 h-4 ml-2" aria-hidden="true" />
+            </span>
           </a>
 
           {/* KINDER & JUGEND - Gruen */}
-          <a href="/search?type=kinder_jugend" onClick={(e) => { e.preventDefault(); setSearchType('kinder_jugend'); window.history.pushState({ view: 'search' }, '', '/search?type=kinder_jugend'); window.scrollTo(0,0); }} className="group relative h-80 rounded-2xl overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 block">
-            <img src="https://images.unsplash.com/photo-1503676260728-1c00da094a0b?q=80&w=800&auto=format&fit=crop" srcSet="https://images.unsplash.com/photo-1503676260728-1c00da094a0b?q=80&w=400&auto=format&fit=crop 400w, https://images.unsplash.com/photo-1503676260728-1c00da094a0b?q=80&w=800&auto=format&fit=crop 800w" sizes="(max-width: 768px) 100vw, 33vw" alt="" aria-hidden="true" loading="lazy" className="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-110" />
-            <div className="absolute inset-0 bg-gradient-to-t from-segKinder/90 via-segKinder/50 to-segKinder/10"></div>
-            <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm rounded-full p-3">
-              <Smile className="w-6 h-6 text-white" aria-hidden="true" />
+          <a href="/search?type=kinder_jugend" onClick={(e) => { e.preventDefault(); setSearchType('kinder_jugend'); window.history.pushState({ view: 'search' }, '', '/search?type=kinder_jugend'); window.scrollTo(0,0); }} className="group bg-white border-t-4 border-segKinder border-x border-b border-grey rounded-b-lg p-6 md:p-8 flex flex-col justify-between hover:shadow-md transition-shadow">
+            <div>
+              <div className="flex items-center justify-end mb-4">
+                <Smile className="w-5 h-5 text-segKinder" aria-hidden="true" />
+              </div>
+              <div className="h-44 w-full rounded overflow-hidden mb-5 bg-beige">
+                <img src="https://images.unsplash.com/photo-1503676260728-1c00da094a0b?q=80&w=800&auto=format&fit=crop" srcSet="https://images.unsplash.com/photo-1503676260728-1c00da094a0b?q=80&w=400&auto=format&fit=crop 400w, https://images.unsplash.com/photo-1503676260728-1c00da094a0b?q=80&w=800&auto=format&fit=crop 800w" sizes="(max-width: 768px) 100vw, 33vw" alt="" aria-hidden="true" loading="lazy" className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300" />
+              </div>
+              <h3 className="font-heading text-xl font-bold text-dark mb-2">{t.nav_kids}</h3>
+              <p className="font-sans text-gray-500 text-sm mb-6">{t.home_card_kids_sub}</p>
             </div>
-            <div className="absolute bottom-0 left-0 p-6">
-              <h3 className="text-2xl font-bold text-white font-heading mb-1">{t.nav_kids}</h3>
-              <p className="text-white/90 text-sm font-sans mb-4">{t.home_card_kids_sub}</p>
-              <span className="inline-flex items-center text-white font-bold text-sm uppercase tracking-wider group-hover:underline transition-colors">
-                {t.btn_explore} <ArrowRight className="w-4 h-4 ml-2" aria-hidden="true" />
-              </span>
-            </div>
+            <span className="inline-flex items-center justify-between pt-4 border-t border-grey font-semibold text-sm text-segKinder group-hover:translate-x-1 transition-transform">
+              {t.btn_explore} <ArrowRight className="w-4 h-4 ml-2" aria-hidden="true" />
+            </span>
           </a>
 
         </div>
