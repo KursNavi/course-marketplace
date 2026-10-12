@@ -6,6 +6,15 @@ import { useTaxonomy } from '../hooks/useTaxonomy';
 import { BASE_URL } from '../lib/siteConfig';
 import { RATGEBER_STRUCTURE } from '../lib/ratgeberStructure';
 import { getBereicheForSegment, getBereichUrl } from '../lib/bereichLandingConfig';
+import { NewsletterSignup } from './Layout';
+
+// Pro Segment: Anzeigefarbe (Beruflich=blau, Privat & Hobby=orange, Kinder & Jugend=gruen) und Icon.
+// Rein praesentational — wird fuer Wegweiser-Kacheln, Suchbereich-Pills und Wegkarten verwendet.
+const SEGMENT_VISUALS = {
+  beruflich: { icon: Briefcase, bg: 'bg-segBeruflich', text: 'text-segBeruflich', border: 'border-segBeruflich' },
+  privat_hobby: { icon: Palette, bg: 'bg-primary', text: 'text-primary', border: 'border-primary' },
+  kinder_jugend: { icon: Smile, bg: 'bg-segKinder', text: 'text-segKinder', border: 'border-segKinder' },
+};
 
 export const Home = ({
   lang, t, setView, courses, // Jetzt haben wir Zugriff auf die Kurse!
@@ -293,6 +302,74 @@ export const Home = ({
     }
   }, [activeType, courses]);
 
+  // Rendert ein Ratgeber-/Themenwelten-Panel fuer ein Segment. Nutzt dieselben
+  // Datenquellen wie zuvor (RATGEBER_STRUCTURE, getBereicheForSegment, getBereichUrl) —
+  // nur die Darstellung wandert aus den Wegkarten in einen eigenen Abschnitt.
+  const renderRatgeberPanel = (segmentKey, label) => {
+    const visuals = SEGMENT_VISUALS[segmentKey];
+    const SegmentIcon = visuals.icon;
+    const clusters = Object.values(RATGEBER_STRUCTURE[segmentKey].clusters);
+    const bereiche = getBereicheForSegment(segmentKey);
+
+    return (
+      <div key={segmentKey} className={`bg-white border-l-4 ${visuals.border} border-t border-r border-b border-grey rounded-r-xl p-6 md:p-8 shadow-sm`}>
+        <div className="flex items-center gap-3 pb-4 border-b border-grey mb-6">
+          <span className={`w-8 h-8 rounded-full ${visuals.bg} text-white flex items-center justify-center shrink-0`}>
+            <SegmentIcon className="w-4 h-4" />
+          </span>
+          <h3 className="font-heading text-xl font-bold text-dark">{label}</h3>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div>
+            <h4 className="font-label-md text-xs font-bold text-dark uppercase tracking-wider mb-4">{t.ratgeber_title || 'Ratgeber'}</h4>
+            <div className="grid grid-cols-1 gap-2.5">
+              {clusters.map(cluster => {
+                const ClusterIcon = cluster.icon;
+                return (
+                  <a
+                    key={cluster.slug}
+                    href={`/ratgeber/${RATGEBER_STRUCTURE[segmentKey].slug}/${cluster.slug}`}
+                    onClick={(e) => { e.preventDefault(); window.history.pushState({}, '', `/ratgeber/${RATGEBER_STRUCTURE[segmentKey].slug}/${cluster.slug}`); window.scrollTo(0,0); window.dispatchEvent(new PopStateEvent('popstate')); }}
+                    className="flex items-center gap-2.5 p-3 rounded-lg bg-beige hover:bg-grey/60 transition-colors border border-grey/60"
+                  >
+                    <span className={`shrink-0 w-7 h-7 rounded-lg bg-white border ${visuals.border}/30 flex items-center justify-center`}>
+                      <ClusterIcon className={`w-3.5 h-3.5 ${visuals.text}`} />
+                    </span>
+                    <span className="text-sm font-medium text-dark leading-tight">{cluster.label[lang] || cluster.label.de}</span>
+                  </a>
+                );
+              })}
+            </div>
+          </div>
+
+          {bereiche.length > 0 && (
+            <div className="flex flex-col justify-between">
+              <div>
+                <h4 className="font-label-md text-xs font-bold text-dark uppercase tracking-wider mb-4">Themenwelten</h4>
+                <div className="grid grid-cols-1 gap-2.5">
+                  {bereiche.map(bereich => (
+                    <a
+                      key={bereich.slug}
+                      href={getBereichUrl(bereich)}
+                      onClick={(e) => { e.preventDefault(); window.history.pushState({}, '', getBereichUrl(bereich)); window.scrollTo(0,0); }}
+                      className={`p-4 rounded-lg border-2 ${visuals.border}/30 bg-beige hover:bg-grey/60 transition-colors flex items-center justify-between text-dark`}
+                    >
+                      <span className="text-sm font-bold">{bereich.title[lang] || bereich.title.de}</span>
+                      <ArrowRight className={`w-4 h-4 shrink-0 ${visuals.text}`} aria-hidden="true" />
+                    </a>
+                  ))}
+                </div>
+              </div>
+              <p className="text-xs text-gray-500 mt-4">Weitere Themenwelten sind in Arbeit und folgen demnächst.</p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+
   return (
     <div className="relative flex flex-col w-full font-sans">
       {isLoading && (
@@ -306,365 +383,220 @@ export const Home = ({
       )}
 
       
-      {/* 1. HERO SECTION */}
-      {/* min-h statt h auf Mobile: die Hero-Hoehe war fix, auf sehr schmalen Geraeten
-          (<= 320 px) ragte die Suchbox schon knapp heraus. Als Mindesthoehe sieht die
-          Sektion unveraendert aus, waechst aber mit, statt den Inhalt abzuschneiden.
-          Ab md gilt weiterhin exakt die feste Hoehe von 600 px. */}
-      <div className="relative min-h-[720px] md:min-h-0 md:h-[600px] w-full flex items-center justify-center">
-        {/* Background */}
-        <img
-          src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=65&w=1200&auto=format&fit=crop"
-          srcSet="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=65&w=800&auto=format&fit=crop 800w, https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=65&w=1200&auto=format&fit=crop 1200w, https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=65&w=1920&auto=format&fit=crop 1920w"
-          sizes="100vw"
-          alt=""
-          fetchPriority="high"
-          aria-hidden="true"
-          className="absolute inset-0 w-full h-full object-cover object-center z-0"
-        />
-        <div className="absolute inset-0 bg-black/50 z-10"></div>
+      {/* 1. HERO SECTION — petrolfarbener Hintergrund statt Vollbild-Foto */}
+      <div className="relative w-full bg-petrol text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 md:py-20">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 lg:items-center">
 
-        {/* Content */}
-        <div className="relative z-20 text-center px-4 max-w-4xl mx-auto w-full">
-          <h1 className="text-4xl md:text-6xl font-heading font-bold text-white mb-6 tracking-tight">
-            {t.home_headline}
-          </h1>
-          <p className="text-lg md:text-xl text-gray-100 mb-8 font-sans max-w-2xl mx-auto leading-relaxed">
-            {t.home_subhead}
-          </p>
+            {/* LINKS: Headline, Subhead, Wegweiser */}
+            <div className="lg:col-span-6 text-center lg:text-left">
+              <h1 className="text-4xl md:text-5xl font-heading font-bold text-white mb-5 tracking-tight">
+                {t.home_headline}
+              </h1>
+              <p className="text-lg text-white/80 mb-8 font-sans max-w-xl mx-auto lg:mx-0 leading-relaxed">
+                {t.home_subhead}
+              </p>
 
-          {/* SEARCH & FILTERS CONTAINER */}
-          <div className="max-w-3xl mx-auto bg-white/10 backdrop-blur-md p-6 rounded-3xl border border-white/20 shadow-2xl relative">
-            
-            {/* First choose the area, then enter a search term. */}
-            <div className="mt-1 mb-3">
-                <p className="text-xs text-white/60 mb-2 text-left">Suchbereich</p>
-                <div className="flex gap-2 flex-wrap" data-testid="home-segment-selector">
-                    {[
-                        { key: 'alle',         label: 'Alle Bereiche', Icon: null },
-                        { key: 'beruflich',    label: t.nav_professional || 'Beruflich',      Icon: Briefcase },
-                        { key: 'privat_hobby', label: t.nav_private || 'Privat & Hobby',      Icon: Palette   },
-                        { key: 'kinder_jugend',label: t.nav_kids || 'Kinder & Jugend',        Icon: Smile     },
-                    ].map(({ key, label, Icon }) => {
-                        const isActive = homeSegment === key;
-                        return (
-                            <button
-                                key={key}
-                                type="button"
-                                data-testid={`home-segment-${key}`}
-                                onClick={() => setHomeSegment(key)}
-                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all border ${
-                                    isActive
-                                        ? 'bg-white text-dark border-white shadow-sm'
-                                        : 'bg-white/15 text-white/80 border-white/30 hover:bg-white/25'
-                                }`}
-                            >
-                                {Icon && <Icon className="w-3.5 h-3.5" />}
-                                {label}
-                            </button>
-                        );
-                    })}
-                </div>
+              {/* WEGWEISER: drei gleichwertige, parallele Richtungen - bewusst ohne
+                  Nummerierung und ohne verbindende Linie, da Beruflich / Privat & Hobby /
+                  Kinder & Jugend keine Abfolge sind, sondern unabhaengige Einstiege. */}
+              <div className="grid grid-cols-3 gap-2.5 md:gap-3" data-testid="home-wegweiser">
+                {[
+                  { key: 'beruflich', label: t.nav_professional || 'Beruflich' },
+                  { key: 'privat_hobby', label: t.nav_private || 'Privat & Hobby' },
+                  { key: 'kinder_jugend', label: t.nav_kids || 'Kinder & Jugend' },
+                ].map(({ key, label }) => {
+                  const { icon: Icon, bg } = SEGMENT_VISUALS[key];
+                  return (
+                    <div key={key} className="flex flex-col items-center gap-2 text-center bg-white/5 border border-white/15 rounded-xl py-4 px-2">
+                      <span className={`w-9 h-9 md:w-10 md:h-10 rounded-full flex items-center justify-center shrink-0 ${bg}`}>
+                        <Icon className="w-4 h-4 md:w-5 md:h-5 text-white" aria-hidden="true" />
+                      </span>
+                      <span className="text-xs md:text-sm text-white font-medium leading-tight">{label}</span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
 
-            {/* Search Bar */}
-            <form onSubmit={handleSearch} className="relative flex flex-col mb-4">
-                {/* Auf Mobile traegt dieses Label den Suchhinweis: neben dem "Suchen"-Button
-                    bleiben im Feld nur rund 130 px, der Platzhalter braucht rund 200 px und
-                    wurde deshalb bisher per placeholder-transparent unsichtbar gemacht — das
-                    Feld wirkte leer. Ab md zeigt ihn der Platzhalter wieder im Feld selbst,
-                    das Label bleibt dort als Screenreader-Beschriftung erhalten. */}
-                <label
-                    htmlFor="home-search-input"
-                    className="block md:sr-only text-left text-sm font-medium text-white mb-1.5"
-                >
-                    {t.search_placeholder}
-                </label>
-                <div className="relative flex items-center">
-                    <Search className="absolute left-4 text-gray-400 w-5 h-5 z-10" aria-hidden="true" />
-                    <input
-                    id="home-search-input"
-                    type="text"
-                    placeholder={t.search_placeholder}
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-12 pr-32 py-4 rounded-xl text-dark font-sans shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-transparent text-lg placeholder-transparent md:placeholder-gray-500 bg-white"
-                    />
-                    <button type="submit" className="absolute right-2 bg-primary hover:bg-orange-600 text-white px-6 py-2 rounded-lg font-bold transition-colors duration-300">
-                    {t.btn_search}
-                    </button>
-                </div>
-                <details className="mt-1.5 ml-1 text-left">
-                    <summary className="inline-flex min-h-11 cursor-pointer items-center text-xs text-white/80 underline underline-offset-2">
-                        {t.search_help_label || 'Such-Tipp'}
-                    </summary>
-                    <p className="pb-2 text-xs text-white/80">{t.search_hint_boolean || 'Tipp: Kombiniere Begriffe mit AND oder OR (z.B. "Yoga AND Zürich")'}</p>
-                </details>
-            </form>
+            {/* RECHTS: Suchkarte */}
+            <div className="lg:col-span-6">
+              <div className="max-w-xl mx-auto lg:mx-0 lg:ml-auto bg-beige text-dark p-6 md:p-8 rounded-2xl border border-grey shadow-2xl relative">
 
-            {/* Row 3: Location + Delivery Type */}
-            <div className="flex gap-3 flex-col sm:flex-row relative z-50">
-                {/* LOCATION DROPDOWN */}
-                <div className="flex-1 bg-white rounded-xl">
-                    <LocationDropdown
-                        selectedLocations={selectedLocations}
-                        setSelectedLocations={setSelectedLocations}
-                        locMenuOpen={locMenuOpen}
-                        setLocMenuOpen={setLocMenuOpen}
-                        locMenuRef={locMenuRef}
-                        t={t}
-                        buttonClassName={`w-full px-4 py-3 flex items-center justify-between font-medium rounded-xl transition-colors ${locMenuOpen ? 'bg-primary/10 text-primary ring-2 ring-primary/30' : 'text-gray-700 hover:bg-gray-50'}`}
-                    />
+                {/* Suchbereich: zuerst Bereich waehlen, dann Suchbegriff eingeben */}
+                <div className="mt-1 mb-4">
+                    <p className="text-xs text-gray-500 mb-2 text-left uppercase tracking-wide font-medium">Suchbereich</p>
+                    <div className="flex gap-2 flex-wrap" data-testid="home-segment-selector">
+                        {[
+                            { key: 'alle', label: 'Alle Bereiche', Icon: null, active: 'bg-petrol text-white border-petrol', inactive: 'bg-white text-gray-700 border-grey hover:border-petrol/40' },
+                            { key: 'beruflich', label: t.nav_professional || 'Beruflich', Icon: SEGMENT_VISUALS.beruflich.icon, active: `${SEGMENT_VISUALS.beruflich.bg} text-white ${SEGMENT_VISUALS.beruflich.border}`, inactive: `bg-white ${SEGMENT_VISUALS.beruflich.text} ${SEGMENT_VISUALS.beruflich.border}/40 hover:bg-segBeruflich/10` },
+                            { key: 'privat_hobby', label: t.nav_private || 'Privat & Hobby', Icon: SEGMENT_VISUALS.privat_hobby.icon, active: `${SEGMENT_VISUALS.privat_hobby.bg} text-white ${SEGMENT_VISUALS.privat_hobby.border}`, inactive: `bg-white ${SEGMENT_VISUALS.privat_hobby.text} ${SEGMENT_VISUALS.privat_hobby.border}/40 hover:bg-primary/10` },
+                            { key: 'kinder_jugend', label: t.nav_kids || 'Kinder & Jugend', Icon: SEGMENT_VISUALS.kinder_jugend.icon, active: `${SEGMENT_VISUALS.kinder_jugend.bg} text-white ${SEGMENT_VISUALS.kinder_jugend.border}`, inactive: `bg-white ${SEGMENT_VISUALS.kinder_jugend.text} ${SEGMENT_VISUALS.kinder_jugend.border}/40 hover:bg-segKinder/10` },
+                        ].map(({ key, label, Icon, active, inactive }) => {
+                            const isActive = homeSegment === key;
+                            return (
+                                <button
+                                    key={key}
+                                    type="button"
+                                    data-testid={`home-segment-${key}`}
+                                    onClick={() => setHomeSegment(key)}
+                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all border ${isActive ? active : inactive}`}
+                                >
+                                    {Icon && <Icon className="w-3.5 h-3.5" />}
+                                    {label}
+                                </button>
+                            );
+                        })}
+                    </div>
                 </div>
 
-                {/* DELIVERY TYPE FILTER */}
-                <div className="flex-1 bg-white rounded-xl">
-                    <DeliveryTypeFilter
-                        selectedDeliveryTypes={selectedDeliveryTypes}
-                        setSelectedDeliveryTypes={setSelectedDeliveryTypes}
-                        deliveryMenuOpen={deliveryMenuOpen}
-                        setDeliveryMenuOpen={setDeliveryMenuOpen}
-                        deliveryMenuRef={deliveryMenuRef}
-                        t={t}
-                        buttonClassName={`w-full px-4 py-3 flex items-center justify-between font-medium rounded-xl transition-colors ${deliveryMenuOpen ? 'bg-primary/10 text-primary ring-2 ring-primary/30' : 'text-gray-700 hover:bg-gray-50'}`}
-                    />
+                {/* Search Bar */}
+                <form onSubmit={handleSearch} className="relative flex flex-col mb-4">
+                    {/* Auf Mobile traegt dieses Label den Suchhinweis: neben dem "Suchen"-Button
+                        bleiben im Feld nur rund 130 px, der Platzhalter braucht rund 200 px und
+                        wurde deshalb bisher per placeholder-transparent unsichtbar gemacht - das
+                        Feld wirkte leer. Ab md zeigt ihn den Platzhalter wieder im Feld selbst,
+                        das Label bleibt dort als Screenreader-Beschriftung erhalten. */}
+                    <label
+                        htmlFor="home-search-input"
+                        className="block md:sr-only text-left text-sm font-medium text-dark mb-1.5"
+                    >
+                        {t.search_placeholder}
+                    </label>
+                    <div className="relative flex items-center">
+                        <Search className="absolute left-4 text-gray-400 w-5 h-5 z-10" aria-hidden="true" />
+                        <input
+                        id="home-search-input"
+                        type="text"
+                        placeholder={t.search_placeholder}
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full pl-12 pr-32 py-4 rounded-xl text-dark font-sans shadow-sm border border-grey focus:outline-none focus:ring-2 focus:ring-petrol focus:border-petrol text-lg placeholder-transparent md:placeholder-gray-500 bg-white"
+                        />
+                        <button type="submit" className="absolute right-2 bg-petrol hover:bg-petrolDark text-white px-6 py-2 rounded-lg font-bold transition-colors duration-300">
+                        {t.btn_search}
+                        </button>
+                    </div>
+                    <details className="mt-1.5 ml-1 text-left">
+                        <summary className="inline-flex min-h-11 cursor-pointer items-center text-xs text-gray-500 underline underline-offset-2">
+                            {t.search_help_label || 'Such-Tipp'}
+                        </summary>
+                        <p className="pb-2 text-xs text-gray-500">{t.search_hint_boolean || 'Tipp: Kombiniere Begriffe mit AND oder OR (z.B. "Yoga AND Zürich")'}</p>
+                    </details>
+                </form>
+
+                {/* Row 3: Location + Delivery Type */}
+                <div className="flex gap-3 flex-col sm:flex-row relative z-50">
+                    {/* LOCATION DROPDOWN */}
+                    <div className="flex-1 bg-white rounded-xl border border-grey">
+                        <LocationDropdown
+                            selectedLocations={selectedLocations}
+                            setSelectedLocations={setSelectedLocations}
+                            locMenuOpen={locMenuOpen}
+                            setLocMenuOpen={setLocMenuOpen}
+                            locMenuRef={locMenuRef}
+                            t={t}
+                            buttonClassName={`w-full px-4 py-3 flex items-center justify-between font-medium rounded-xl transition-colors ${locMenuOpen ? 'bg-primary/10 text-primary ring-2 ring-primary/30' : 'text-gray-700 hover:bg-gray-50'}`}
+                        />
+                    </div>
+
+                    {/* DELIVERY TYPE FILTER (bestehender Kursformat-Filter: Praesenz / Online Live / Selbststudium) */}
+                    <div className="flex-1 bg-white rounded-xl border border-grey">
+                        <DeliveryTypeFilter
+                            selectedDeliveryTypes={selectedDeliveryTypes}
+                            setSelectedDeliveryTypes={setSelectedDeliveryTypes}
+                            deliveryMenuOpen={deliveryMenuOpen}
+                            setDeliveryMenuOpen={setDeliveryMenuOpen}
+                            deliveryMenuRef={deliveryMenuRef}
+                            t={t}
+                            buttonClassName={`w-full px-4 py-3 flex items-center justify-between font-medium rounded-xl transition-colors ${deliveryMenuOpen ? 'bg-primary/10 text-primary ring-2 ring-primary/30' : 'text-gray-700 hover:bg-gray-50'}`}
+                        />
+                    </div>
                 </div>
+              </div>
             </div>
+
           </div>
-
         </div>
       </div>
 
-      {/* 2. CATEGORY PREVIEW (Static fallback filters) */}
+      {/* 2. WAEHLE DEINEN WEG — drei gleichwertige Kurswelten, Segmentfarben Blau/Orange/Gruen */}
       <div className="py-20 bg-beige max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
         <h2 className="text-3xl font-heading font-bold text-dark mb-2 text-center">{t.home_path_title}</h2>
         <p className="text-gray-500 text-center mb-12 font-sans">{t.home_path_sub}</p>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
 
-          {/* BERUFLICH - Blue */}
-          <div className="flex flex-col">
-            <a href="/search?type=beruflich" onClick={(e) => { e.preventDefault(); setSearchType('beruflich'); window.history.pushState({ view: 'search' }, '', '/search?type=beruflich'); window.scrollTo(0,0); }} className="group relative h-80 rounded-2xl overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 block">
-              <img src="https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=800&auto=format&fit=crop" srcSet="https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=400&auto=format&fit=crop 400w, https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=800&auto=format&fit=crop 800w" sizes="(max-width: 768px) 100vw, 33vw" alt="" aria-hidden="true" loading="lazy" className="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-110" />
-              <div className="absolute inset-0 bg-gradient-to-t from-blue-800/90 via-blue-600/40 to-blue-500/20"></div>
-              <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm rounded-full p-3">
-                <Briefcase className="w-6 h-6 text-white" />
-              </div>
-              <div className="absolute bottom-0 left-0 p-6">
-                <h3 className="text-2xl font-bold text-white font-heading mb-1">{t.nav_professional}</h3>
-                <p className="text-blue-100 text-sm font-sans mb-4">{t.home_card_prof_sub}</p>
-                <span className="inline-flex items-center text-white font-bold text-sm uppercase tracking-wider group-hover:text-blue-200 transition-colors">
-                  {t.btn_explore} <ArrowRight className="w-4 h-4 ml-2" />
-                </span>
-              </div>
-            </a>
-            {/* Ratgeber Links - Beruflich */}
-            <div className="mt-5">
-              <div className="flex items-center gap-2 mb-3">
-                <BookOpen className="w-4 h-4 text-blue-600" />
-                <span className="text-sm font-semibold text-gray-700">{t.ratgeber_title || 'Ratgeber'}</span>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                {Object.values(RATGEBER_STRUCTURE.beruflich.clusters).map(cluster => {
-                  const ClusterIcon = cluster.icon;
-                  return (
-                    <a
-                      key={cluster.slug}
-                      href={`/ratgeber/${RATGEBER_STRUCTURE.beruflich.slug}/${cluster.slug}`}
-                      onClick={(e) => { e.preventDefault(); window.history.pushState({}, '', `/ratgeber/${RATGEBER_STRUCTURE.beruflich.slug}/${cluster.slug}`); window.scrollTo(0,0); window.dispatchEvent(new PopStateEvent('popstate')); }}
-                      className="group/card flex items-start gap-2 p-3 rounded-xl bg-white border border-blue-100 hover:border-blue-300 hover:shadow-md transition-all duration-200"
-                    >
-                      <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center group-hover/card:bg-blue-200 transition-colors">
-                        <ClusterIcon className="w-4 h-4 text-blue-600" />
-                      </div>
-                      <span className="text-xs font-medium text-gray-700 group-hover/card:text-blue-700 leading-tight flex items-center min-h-[2rem]">
-                        {cluster.label[lang] || cluster.label.de}
-                      </span>
-                    </a>
-                  );
-                })}
-              </div>
+          {/* BERUFLICH - Blau */}
+          <a href="/search?type=beruflich" onClick={(e) => { e.preventDefault(); setSearchType('beruflich'); window.history.pushState({ view: 'search' }, '', '/search?type=beruflich'); window.scrollTo(0,0); }} className="group relative h-80 rounded-2xl overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 block">
+            <img src="https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=800&auto=format&fit=crop" srcSet="https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=400&auto=format&fit=crop 400w, https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=800&auto=format&fit=crop 800w" sizes="(max-width: 768px) 100vw, 33vw" alt="" aria-hidden="true" loading="lazy" className="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-110" />
+            <div className="absolute inset-0 bg-gradient-to-t from-segBeruflich/90 via-segBeruflich/50 to-segBeruflich/10"></div>
+            <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm rounded-full p-3">
+              <Briefcase className="w-6 h-6 text-white" aria-hidden="true" />
             </div>
-            {/* Themenwelten - Beruflich */}
-            {getBereicheForSegment('beruflich').length > 0 && (
-              <div className="mt-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <Compass className="w-4 h-4 text-blue-600" />
-                  <span className="text-sm font-semibold text-gray-700">Themenwelten</span>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  {getBereicheForSegment('beruflich').map(bereich => (
-                    <a
-                      key={bereich.slug}
-                      href={getBereichUrl(bereich)}
-                      onClick={(e) => { e.preventDefault(); window.history.pushState({}, '', getBereichUrl(bereich)); window.scrollTo(0,0); }}
-                      className="group/card flex items-start gap-2 p-3 rounded-xl bg-white border border-blue-100 hover:border-blue-300 hover:shadow-md transition-all duration-200"
-                    >
-                      <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center group-hover/card:bg-blue-200 transition-colors">
-                        <Compass className="w-4 h-4 text-blue-600" />
-                      </div>
-                      <span className="text-xs font-medium text-gray-700 group-hover/card:text-blue-700 leading-tight flex items-center min-h-[2rem]">
-                        {bereich.title[lang] || bereich.title.de}
-                      </span>
-                    </a>
-                  ))}
-                </div>
-                <p className="mt-2 text-xs text-blue-700/80">
-                  Weitere Themenwelten sind in Arbeit und folgen demnächst.
-                </p>
-              </div>
-            )}
-          </div>
+            <div className="absolute bottom-0 left-0 p-6">
+              <h3 className="text-2xl font-bold text-white font-heading mb-1">{t.nav_professional}</h3>
+              <p className="text-white/90 text-sm font-sans mb-4">{t.home_card_prof_sub}</p>
+              <span className="inline-flex items-center text-white font-bold text-sm uppercase tracking-wider group-hover:underline transition-colors">
+                {t.btn_explore} <ArrowRight className="w-4 h-4 ml-2" aria-hidden="true" />
+              </span>
+            </div>
+          </a>
 
           {/* PRIVAT & HOBBY - Orange */}
-          <div className="flex flex-col">
-            <a href="/search?type=privat_hobby" onClick={(e) => { e.preventDefault(); setSearchType('privat_hobby'); window.history.pushState({ view: 'search' }, '', '/search?type=privat_hobby'); window.scrollTo(0,0); }} className="group relative h-80 rounded-2xl overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 block">
-              <img src="https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?q=80&w=800&auto=format&fit=crop" srcSet="https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?q=80&w=400&auto=format&fit=crop 400w, https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?q=80&w=800&auto=format&fit=crop 800w" sizes="(max-width: 768px) 100vw, 33vw" alt="" aria-hidden="true" loading="lazy" className="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-110" />
-              <div className="absolute inset-0 bg-gradient-to-t from-orange-700/90 via-orange-600/40 to-orange-500/20"></div>
-              <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm rounded-full p-3">
-                <Palette className="w-6 h-6 text-white" />
-              </div>
-              <div className="absolute bottom-0 left-0 p-6">
-                <h3 className="text-2xl font-bold text-white font-heading mb-1">{t.nav_private}</h3>
-                <p className="text-orange-100 text-sm font-sans mb-4">{t.home_card_priv_sub}</p>
-                <span className="inline-flex items-center text-white font-bold text-sm uppercase tracking-wider group-hover:text-orange-200 transition-colors">
-                  {t.btn_explore} <ArrowRight className="w-4 h-4 ml-2" />
-                </span>
-              </div>
-            </a>
-            {/* Ratgeber Links - Privat & Hobby */}
-            <div className="mt-5">
-              <div className="flex items-center gap-2 mb-3">
-                <BookOpen className="w-4 h-4 text-orange-600" />
-                <span className="text-sm font-semibold text-gray-700">{t.ratgeber_title || 'Ratgeber'}</span>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                {Object.values(RATGEBER_STRUCTURE.privat_hobby.clusters).map(cluster => {
-                  const ClusterIcon = cluster.icon;
-                  return (
-                    <a
-                      key={cluster.slug}
-                      href={`/ratgeber/${RATGEBER_STRUCTURE.privat_hobby.slug}/${cluster.slug}`}
-                      onClick={(e) => { e.preventDefault(); window.history.pushState({}, '', `/ratgeber/${RATGEBER_STRUCTURE.privat_hobby.slug}/${cluster.slug}`); window.scrollTo(0,0); window.dispatchEvent(new PopStateEvent('popstate')); }}
-                      className="group/card flex items-start gap-2 p-3 rounded-xl bg-white border border-orange-100 hover:border-orange-300 hover:shadow-md transition-all duration-200"
-                    >
-                      <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center group-hover/card:bg-orange-200 transition-colors">
-                        <ClusterIcon className="w-4 h-4 text-orange-600" />
-                      </div>
-                      <span className="text-xs font-medium text-gray-700 group-hover/card:text-orange-700 leading-tight flex items-center min-h-[2rem]">
-                        {cluster.label[lang] || cluster.label.de}
-                      </span>
-                    </a>
-                  );
-                })}
-              </div>
+          <a href="/search?type=privat_hobby" onClick={(e) => { e.preventDefault(); setSearchType('privat_hobby'); window.history.pushState({ view: 'search' }, '', '/search?type=privat_hobby'); window.scrollTo(0,0); }} className="group relative h-80 rounded-2xl overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 block">
+            <img src="https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?q=80&w=800&auto=format&fit=crop" srcSet="https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?q=80&w=400&auto=format&fit=crop 400w, https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?q=80&w=800&auto=format&fit=crop 800w" sizes="(max-width: 768px) 100vw, 33vw" alt="" aria-hidden="true" loading="lazy" className="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-110" />
+            <div className="absolute inset-0 bg-gradient-to-t from-primary/90 via-primary/50 to-primary/10"></div>
+            <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm rounded-full p-3">
+              <Palette className="w-6 h-6 text-white" aria-hidden="true" />
             </div>
-            {/* Themenwelten - Privat & Hobby */}
-            {getBereicheForSegment('privat_hobby').length > 0 && (
-              <div className="mt-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <Compass className="w-4 h-4 text-orange-600" />
-                  <span className="text-sm font-semibold text-gray-700">Themenwelten</span>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  {getBereicheForSegment('privat_hobby').map(bereich => (
-                    <a
-                      key={bereich.slug}
-                      href={getBereichUrl(bereich)}
-                      onClick={(e) => { e.preventDefault(); window.history.pushState({}, '', getBereichUrl(bereich)); window.scrollTo(0,0); }}
-                      className="group/card flex items-start gap-2 p-3 rounded-xl bg-white border border-orange-100 hover:border-orange-300 hover:shadow-md transition-all duration-200"
-                    >
-                      <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center group-hover/card:bg-orange-200 transition-colors">
-                        <Compass className="w-4 h-4 text-orange-600" />
-                      </div>
-                      <span className="text-xs font-medium text-gray-700 group-hover/card:text-orange-700 leading-tight flex items-center min-h-[2rem]">
-                        {bereich.title[lang] || bereich.title.de}
-                      </span>
-                    </a>
-                  ))}
-                </div>
-                <p className="mt-2 text-xs text-orange-700/80">
-                  Weitere Themenwelten sind in Arbeit und folgen demnächst.
-                </p>
-              </div>
-            )}
-          </div>
+            <div className="absolute bottom-0 left-0 p-6">
+              <h3 className="text-2xl font-bold text-white font-heading mb-1">{t.nav_private}</h3>
+              <p className="text-white/90 text-sm font-sans mb-4">{t.home_card_priv_sub}</p>
+              <span className="inline-flex items-center text-white font-bold text-sm uppercase tracking-wider group-hover:underline transition-colors">
+                {t.btn_explore} <ArrowRight className="w-4 h-4 ml-2" aria-hidden="true" />
+              </span>
+            </div>
+          </a>
 
-          {/* KINDER & JUGEND - Green */}
-          <div className="flex flex-col">
-            <a href="/search?type=kinder_jugend" onClick={(e) => { e.preventDefault(); setSearchType('kinder_jugend'); window.history.pushState({ view: 'search' }, '', '/search?type=kinder_jugend'); window.scrollTo(0,0); }} className="group relative h-80 rounded-2xl overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 block">
-              <img src="https://images.unsplash.com/photo-1503676260728-1c00da094a0b?q=80&w=800&auto=format&fit=crop" srcSet="https://images.unsplash.com/photo-1503676260728-1c00da094a0b?q=80&w=400&auto=format&fit=crop 400w, https://images.unsplash.com/photo-1503676260728-1c00da094a0b?q=80&w=800&auto=format&fit=crop 800w" sizes="(max-width: 768px) 100vw, 33vw" alt="" aria-hidden="true" loading="lazy" className="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-110" />
-              <div className="absolute inset-0 bg-gradient-to-t from-emerald-800/90 via-emerald-600/40 to-emerald-500/20"></div>
-              <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm rounded-full p-3">
-                <Smile className="w-6 h-6 text-white" />
-              </div>
-              <div className="absolute bottom-0 left-0 p-6">
-                <h3 className="text-2xl font-bold text-white font-heading mb-1">{t.nav_kids}</h3>
-                <p className="text-emerald-100 text-sm font-sans mb-4">{t.home_card_kids_sub}</p>
-                <span className="inline-flex items-center text-white font-bold text-sm uppercase tracking-wider group-hover:text-emerald-200 transition-colors">
-                  {t.btn_explore} <ArrowRight className="w-4 h-4 ml-2" />
-                </span>
-              </div>
-            </a>
-            {/* Ratgeber Links - Kinder & Jugend */}
-            <div className="mt-5">
-              <div className="flex items-center gap-2 mb-3">
-                <BookOpen className="w-4 h-4 text-emerald-600" />
-                <span className="text-sm font-semibold text-gray-700">{t.ratgeber_title || 'Ratgeber'}</span>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                {Object.values(RATGEBER_STRUCTURE.kinder_jugend.clusters).map(cluster => {
-                  const ClusterIcon = cluster.icon;
-                  return (
-                    <a
-                      key={cluster.slug}
-                      href={`/ratgeber/${RATGEBER_STRUCTURE.kinder_jugend.slug}/${cluster.slug}`}
-                      onClick={(e) => { e.preventDefault(); window.history.pushState({}, '', `/ratgeber/${RATGEBER_STRUCTURE.kinder_jugend.slug}/${cluster.slug}`); window.scrollTo(0,0); window.dispatchEvent(new PopStateEvent('popstate')); }}
-                      className="group/card flex items-start gap-2 p-3 rounded-xl bg-white border border-emerald-100 hover:border-emerald-300 hover:shadow-md transition-all duration-200"
-                    >
-                      <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center group-hover/card:bg-emerald-200 transition-colors">
-                        <ClusterIcon className="w-4 h-4 text-emerald-600" />
-                      </div>
-                      <span className="text-xs font-medium text-gray-700 group-hover/card:text-emerald-700 leading-tight flex items-center min-h-[2rem]">
-                        {cluster.label[lang] || cluster.label.de}
-                      </span>
-                    </a>
-                  );
-                })}
-              </div>
+          {/* KINDER & JUGEND - Gruen */}
+          <a href="/search?type=kinder_jugend" onClick={(e) => { e.preventDefault(); setSearchType('kinder_jugend'); window.history.pushState({ view: 'search' }, '', '/search?type=kinder_jugend'); window.scrollTo(0,0); }} className="group relative h-80 rounded-2xl overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 block">
+            <img src="https://images.unsplash.com/photo-1503676260728-1c00da094a0b?q=80&w=800&auto=format&fit=crop" srcSet="https://images.unsplash.com/photo-1503676260728-1c00da094a0b?q=80&w=400&auto=format&fit=crop 400w, https://images.unsplash.com/photo-1503676260728-1c00da094a0b?q=80&w=800&auto=format&fit=crop 800w" sizes="(max-width: 768px) 100vw, 33vw" alt="" aria-hidden="true" loading="lazy" className="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-110" />
+            <div className="absolute inset-0 bg-gradient-to-t from-segKinder/90 via-segKinder/50 to-segKinder/10"></div>
+            <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm rounded-full p-3">
+              <Smile className="w-6 h-6 text-white" aria-hidden="true" />
             </div>
-            {/* Themenwelten - Kinder & Jugend */}
-            {getBereicheForSegment('kinder_jugend').length > 0 && (
-              <div className="mt-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <Compass className="w-4 h-4 text-emerald-600" />
-                  <span className="text-sm font-semibold text-gray-700">Themenwelten</span>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  {getBereicheForSegment('kinder_jugend').map(bereich => (
-                    <a
-                      key={bereich.slug}
-                      href={getBereichUrl(bereich)}
-                      onClick={(e) => { e.preventDefault(); window.history.pushState({}, '', getBereichUrl(bereich)); window.scrollTo(0,0); }}
-                      className="group/card flex items-start gap-2 p-3 rounded-xl bg-white border border-emerald-100 hover:border-emerald-300 hover:shadow-md transition-all duration-200"
-                    >
-                      <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center group-hover/card:bg-emerald-200 transition-colors">
-                        <Compass className="w-4 h-4 text-emerald-600" />
-                      </div>
-                      <span className="text-xs font-medium text-gray-700 group-hover/card:text-emerald-700 leading-tight flex items-center min-h-[2rem]">
-                        {bereich.title[lang] || bereich.title.de}
-                      </span>
-                    </a>
-                  ))}
-                </div>
-                <p className="mt-2 text-xs text-emerald-700/80">
-                  Weitere Themenwelten sind in Arbeit und folgen demnächst.
-                </p>
-              </div>
-            )}
-          </div>
+            <div className="absolute bottom-0 left-0 p-6">
+              <h3 className="text-2xl font-bold text-white font-heading mb-1">{t.nav_kids}</h3>
+              <p className="text-white/90 text-sm font-sans mb-4">{t.home_card_kids_sub}</p>
+              <span className="inline-flex items-center text-white font-bold text-sm uppercase tracking-wider group-hover:underline transition-colors">
+                {t.btn_explore} <ArrowRight className="w-4 h-4 ml-2" aria-hidden="true" />
+              </span>
+            </div>
+          </a>
 
         </div>
+      </div>
+
+      {/* 3. RATGEBER & THEMENWELTEN — eigener Abschnitt, gleiche Datenquellen wie zuvor in den Wegkarten */}
+      <div className="bg-[#F6F3F2] border-y border-grey py-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="mb-10">
+            <h2 className="font-heading text-2xl md:text-3xl font-bold text-dark mb-2">{t.home_ratgeber_title || 'Ratgeber & Themenwelten'}</h2>
+            <p className="font-sans text-gray-500 max-w-2xl">{t.home_ratgeber_sub || ''}</p>
+          </div>
+
+          <div className="flex flex-col gap-8">
+            {renderRatgeberPanel('beruflich', t.nav_professional || 'Beruflich')}
+            {renderRatgeberPanel('privat_hobby', t.nav_private || 'Privat & Hobby')}
+            {renderRatgeberPanel('kinder_jugend', t.nav_kids || 'Kinder & Jugend')}
+          </div>
+        </div>
+      </div>
+
+      {/* 4. NEWSLETTER — eigener Bereich auf der Startseite (der Footer blendet seine eigene Karte hier aus, siehe App.jsx) */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 w-full">
+        <NewsletterSignup t={t} />
       </div>
     </div>
   );

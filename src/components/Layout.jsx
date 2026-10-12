@@ -230,7 +230,7 @@ export const Navbar = ({ t, user, lang = 'de', setLang, setView, handleLogout, s
                 <button onClick={handleLogout} className="flex items-center text-gray-400 hover:text-red-500 p-1.5 rounded-full hover:bg-red-50 transition-colors"><LogOut className="w-4 h-4" /></button>
               </div>
             ) : (
-              <button onClick={() => navTo('login')} className="bg-dark text-white px-6 py-2.5 rounded-full text-sm font-bold hover:bg-primary transition-all duration-300 shadow-lg hover:-translate-y-0.5 font-heading">{t.nav_login}</button>
+              <button onClick={() => navTo('login')} className="bg-petrol text-white px-6 py-2.5 rounded-full text-sm font-bold hover:bg-petrolDark transition-all duration-300 shadow-lg hover:-translate-y-0.5 font-heading">{t.nav_login}</button>
             )}
           </div>
 
@@ -321,7 +321,7 @@ export const Navbar = ({ t, user, lang = 'de', setLang, setView, handleLogout, s
                     <button onClick={handleLogout} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-red-500 hover:bg-red-50 font-sans">{t.nav_logout}</button>
                     </>
                 ) : (
-                    <button onClick={() => navTo('login')} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-primary font-bold font-sans">{t.nav_login}</button>
+                    <button onClick={() => navTo('login')} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-petrol font-bold font-sans">{t.nav_login}</button>
                 )}
             </div>
           </div>
@@ -332,12 +332,106 @@ export const Navbar = ({ t, user, lang = 'de', setLang, setView, handleLogout, s
   );
 };
 
-export const Footer = ({ t, setView }) => {
-    const [email, setEmail] = useState('');
-    // Honeypot: fuer Menschen unsichtbar, Bots fuellen es aus.
-    const [company, setCompany] = useState('');
+// Newsletter-Anmeldekarte. Eigenstaendige Komponente, weil sie an zwei Stellen
+// gebraucht wird: im Footer (alle Seiten) und als eigener Abschnitt auf der
+// Startseite (dort blendet der Footer seine eigene Karte aus, siehe `showNewsletter`).
+export const NewsletterSignup = ({ t, className = '' }) => {
+  const [email, setEmail] = useState('');
+  // Honeypot: fuer Menschen unsichtbar, Bots fuellen es aus.
+  const [company, setCompany] = useState('');
   const [status, setStatus] = useState('idle'); // idle, loading, success, already, error
 
+  const handleSubscribe = async (e) => {
+    e.preventDefault();
+    if (!email) return;
+
+    setStatus('loading');
+    const result = await subscribeToNewsletter(email, company);
+
+    if (result.status === 'success' || result.status === 'already') {
+      // Wer sich hier anmeldet, soll das Startseiten-Popup nicht mehr sehen.
+      suppressNewsletterPopupForever();
+      if (result.status === 'success') {
+        trackNewsletterSignup();
+        trackContentsquareNewsletterSuccess();
+      }
+      setEmail('');
+    }
+    setStatus(result.status);
+  };
+
+  return (
+    <div className={`bg-petrol rounded-2xl p-8 flex flex-col md:flex-row items-center justify-between gap-8 shadow-xl relative overflow-hidden ${className}`}>
+      {/* Abstract Background Decoration */}
+      <div className="absolute top-0 right-0 w-64 h-64 bg-primary opacity-10 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
+
+      <div className="relative z-10 max-w-lg">
+        <h3 className="text-2xl font-bold text-white font-heading mb-2">Verpasse keine neuen Kurse!</h3>
+        <p className="text-gray-300 text-sm">Erhalte regelmässig handverlesene Kurs-Empfehlungen, exklusive Angebote und interessante Informationen direkt in dein Postfach.</p>
+      </div>
+
+      <div className="relative z-10 w-full max-w-md">
+                  {(status === 'success' || status === 'already') ? (
+           <div
+             className={`px-4 py-3 rounded-xl flex items-center justify-center animate-in fade-in border ${
+               status === 'success'
+                 ? 'bg-green-500/20 border-green-500/50 text-green-400'
+                 : 'bg-blue-500/20 border-blue-500/50 text-blue-200'
+             }`}
+           >
+              <Check className="w-5 h-5 mr-2" />
+              <span className="font-bold">
+                {status === 'success'
+                  ? (t?.msg_newsletter_success || 'Erfolgreich angemeldet!')
+                  : (t?.msg_newsletter_already || 'Du bist bereits angemeldet.')}
+              </span>
+           </div>
+        ) : (
+          <form onSubmit={handleSubscribe} className="flex gap-2">
+            <input
+              type="text"
+              name="_company"
+              value={company}
+              onChange={(e) => setCompany(e.target.value)}
+              style={{ display: 'none' }}
+              tabIndex="-1"
+              autoComplete="off"
+              aria-hidden="true"
+            />
+            <div className="relative flex-grow">
+              <Mail className="absolute left-3 top-3.5 text-gray-500 w-5 h-5" aria-hidden="true" />
+              <input
+                type="email"
+                required
+                aria-label="E-Mail-Adresse für Newsletter"
+                placeholder="Deine E-Mail Adresse"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white/20 transition"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={status === 'loading'}
+              aria-label="Newsletter abonnieren"
+              className="bg-primary hover:bg-orange-600 text-white px-6 py-3 rounded-xl font-bold transition flex items-center disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed"
+            >
+              {status === 'loading' ? <Loader2 className="w-5 h-5 animate-spin" /> : <ArrowRight className="w-5 h-5" />}
+            </button>
+          </form>
+        )}
+        {status === 'error' && (
+          <p className="text-red-400 text-xs mt-2 ml-1">
+            {t?.msg_newsletter_error || 'Hoppla, das hat nicht geklappt. Versuch es später noch einmal.'}
+          </p>
+        )}
+
+      </div>
+    </div>
+  );
+};
+
+export const Footer = ({ t, setView, showNewsletter = true }) => {
   // Helper: Convert view name to URL path (same as in Navbar)
   const getUrlForView = (viewName) => {
     const urlMap = {
@@ -371,97 +465,12 @@ export const Footer = ({ t, setView }) => {
     window.history.pushState({ view: viewName }, '', url);
   };
 
-  const handleSubscribe = async (e) => {
-    e.preventDefault();
-    if (!email) return;
-
-    setStatus('loading');
-    const result = await subscribeToNewsletter(email, company);
-
-    if (result.status === 'success' || result.status === 'already') {
-      // Wer sich hier anmeldet, soll das Startseiten-Popup nicht mehr sehen.
-      suppressNewsletterPopupForever();
-      if (result.status === 'success') {
-        trackNewsletterSignup();
-        trackContentsquareNewsletterSuccess();
-      }
-      setEmail('');
-    }
-    setStatus(result.status);
-  };
-
   return (
-  <footer className="bg-white border-t border-gray-200 py-12 font-sans" role="contentinfo">
+  <footer className="bg-beige border-t border-grey py-12 font-sans" role="contentinfo">
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      
-      {/* NEWSLETTER SECTION */}
-      <div className="bg-dark rounded-2xl p-8 mb-12 flex flex-col md:flex-row items-center justify-between gap-8 shadow-xl relative overflow-hidden">
-        {/* Abstract Background Decoration */}
-        <div className="absolute top-0 right-0 w-64 h-64 bg-primary opacity-10 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
-        
-        <div className="relative z-10 max-w-lg">
-          <h3 className="text-2xl font-bold text-white font-heading mb-2">Verpasse keine neuen Kurse!</h3>
-          <p className="text-gray-300 text-sm">Erhalte regelmässig handverlesene Kurs-Empfehlungen, exklusive Angebote und interessante Informationen direkt in dein Postfach.</p>
-        </div>
-        
-        <div className="relative z-10 w-full max-w-md">
-                    {(status === 'success' || status === 'already') ? (
-             <div
-               className={`px-4 py-3 rounded-xl flex items-center justify-center animate-in fade-in border ${
-                 status === 'success'
-                   ? 'bg-green-500/20 border-green-500/50 text-green-400'
-                   : 'bg-blue-500/20 border-blue-500/50 text-blue-200'
-               }`}
-             >
-                <Check className="w-5 h-5 mr-2" />
-                <span className="font-bold">
-                  {status === 'success'
-                    ? (t?.msg_newsletter_success || 'Erfolgreich angemeldet!')
-                    : (t?.msg_newsletter_already || 'Du bist bereits angemeldet.')}
-                </span>
-             </div>
-          ) : (
-            <form onSubmit={handleSubscribe} className="flex gap-2">
-              <input
-                type="text"
-                name="_company"
-                value={company}
-                onChange={(e) => setCompany(e.target.value)}
-                style={{ display: 'none' }}
-                tabIndex="-1"
-                autoComplete="off"
-                aria-hidden="true"
-              />
-              <div className="relative flex-grow">
-                <Mail className="absolute left-3 top-3.5 text-gray-500 w-5 h-5" aria-hidden="true" />
-                <input
-                  type="email"
-                  required
-                  aria-label="E-Mail-Adresse für Newsletter"
-                  placeholder="Deine E-Mail Adresse"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white/20 transition"
-                />
-              </div>
-              <button
-                type="submit"
-                disabled={status === 'loading'}
-                aria-label="Newsletter abonnieren"
-                className="bg-primary hover:bg-orange-600 text-white px-6 py-3 rounded-xl font-bold transition flex items-center disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed"
-              >
-                {status === 'loading' ? <Loader2 className="w-5 h-5 animate-spin" /> : <ArrowRight className="w-5 h-5" />}
-              </button>
-            </form>
-          )}
-          {status === 'error' && (
-            <p className="text-red-400 text-xs mt-2 ml-1">
-              {t?.msg_newsletter_error || 'Hoppla, das hat nicht geklappt. Versuch es später noch einmal.'}
-            </p>
-          )}
 
-        </div>
-      </div>
+      {/* NEWSLETTER SECTION — ausgeblendet, wenn die Seite (z.B. Startseite) bereits einen eigenen Newsletter-Bereich zeigt */}
+      {showNewsletter && <NewsletterSignup t={t} className="mb-12" />}
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
         <div className="col-span-1 md:col-span-1">

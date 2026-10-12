@@ -2706,7 +2706,7 @@ useEffect(() => {
       </Suspense>
       </main>
 
-      <Footer t={t} setView={setView} />
+      <Footer t={t} setView={setView} showNewsletter={view !== 'home'} />
 
       {/* Newsletter-Popup: nur auf der Startseite, erscheint nach 30 Sekunden. */}
       {view === 'home' && <NewsletterPopup />}
