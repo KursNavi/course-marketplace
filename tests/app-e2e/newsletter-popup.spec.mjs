@@ -123,7 +123,7 @@ test.describe('Newsletter-Popup auf der Startseite', () => {
     await page.goto('/');
     await fastForwardPastDelay(page);
 
-    // Auf den Dialog eingrenzen — das Footer-Formular trägt dieselben Labels.
+    // Auf den Dialog eingrenzen — der Newsletter-Abschnitt auf der Startseite trägt dieselben Labels.
     const dialog = page.locator(DIALOG);
     const request = page.waitForRequest('**/api/subscribe');
     await dialog.getByLabel('E-Mail-Adresse für Newsletter').fill('e2e@kursnavi.ch');
@@ -138,7 +138,11 @@ test.describe('Newsletter-Popup auf der Startseite', () => {
   });
 });
 
-test.describe('Newsletter-Formular im Footer', () => {
+// Das Newsletter-Formular lebt in einer gemeinsamen `NewsletterSignup`-Komponente,
+// die sowohl im Footer (auf allen Seiten) als auch — ohne Dopplung — als eigener
+// Abschnitt direkt auf der Startseite erscheint (der Footer blendet seine eigene
+// Karte dort aus). Diese Tests prüfen die Startseiten-Variante.
+test.describe('Newsletter-Formular auf der Startseite', () => {
   test('meldet an und unterdrückt danach das Startseiten-Popup', async ({ page }) => {
     await page.route('**/api/subscribe', (route) =>
       route.fulfill({
@@ -150,14 +154,14 @@ test.describe('Newsletter-Formular im Footer', () => {
 
     await page.goto('/');
 
-    const footer = page.getByRole('contentinfo');
+    const section = page.getByTestId('home-newsletter-section');
     const request = page.waitForRequest('**/api/subscribe');
-    await footer.getByLabel('E-Mail-Adresse für Newsletter').fill('footer@kursnavi.ch');
-    await footer.getByRole('button', { name: 'Newsletter abonnieren' }).click();
+    await section.getByLabel('E-Mail-Adresse für Newsletter').fill('footer@kursnavi.ch');
+    await section.getByRole('button', { name: 'Newsletter abonnieren' }).click();
 
     // `_company` ist das Honeypot-Feld — bei einem echten Menschen immer leer.
     expect((await request).postDataJSON()).toEqual({ email: 'footer@kursnavi.ch', _company: '' });
-    await expect(footer.getByText('Erfolgreich angemeldet!')).toBeVisible();
+    await expect(section.getByText('Erfolgreich angemeldet!')).toBeVisible();
     expect(await readPopupState(page)).toBe('never');
   });
 
@@ -172,10 +176,10 @@ test.describe('Newsletter-Formular im Footer', () => {
 
     await page.goto('/');
 
-    const footer = page.getByRole('contentinfo');
-    await footer.getByLabel('E-Mail-Adresse für Newsletter').fill('footer@kursnavi.ch');
-    await footer.getByRole('button', { name: 'Newsletter abonnieren' }).click();
+    const section = page.getByTestId('home-newsletter-section');
+    await section.getByLabel('E-Mail-Adresse für Newsletter').fill('footer@kursnavi.ch');
+    await section.getByRole('button', { name: 'Newsletter abonnieren' }).click();
 
-    await expect(footer.getByText('Du bist bereits angemeldet.')).toBeVisible();
+    await expect(section.getByText('Du bist bereits angemeldet.')).toBeVisible();
   });
 });

@@ -608,7 +608,7 @@ export const Home = ({
       </div>
 
       {/* 4. NEWSLETTER — eigener Bereich auf der Startseite (der Footer blendet seine eigene Karte hier aus, siehe App.jsx) */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 w-full">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 w-full" data-testid="home-newsletter-section">
         <NewsletterSignup t={t} />
       </div>
     </div>
