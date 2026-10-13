@@ -143,7 +143,7 @@ export const Navbar = ({ t, user, lang = 'de', setLang, setView, handleLogout, s
               </span>
             </button>
 
-            <div className="hidden md:ml-10 md:flex md:items-center">
+            <div className="hidden lg:ml-10 lg:flex lg:items-center">
               {/* Kategorie-Gruppe */}
               <div className="flex items-center gap-6">
                 {segmentButtons.map(({ key, label, Icon, config }) => {
@@ -206,7 +206,7 @@ export const Navbar = ({ t, user, lang = 'de', setLang, setView, handleLogout, s
           </div>
 
           {/* RIGHT SIDE */}
-          <div className="hidden md:flex items-center">
+          <div className="hidden lg:flex items-center">
             {/* Language switcher temporarily hidden for launch (German only)
             <div className="relative">
                 <button onClick={() => setLangMenuOpen(!langMenuOpen)} className="flex items-center space-x-1 text-gray-500 hover:text-primary p-2 rounded-full transition hover:bg-primaryLight">
@@ -249,7 +249,7 @@ export const Navbar = ({ t, user, lang = 'de', setLang, setView, handleLogout, s
           </div>
 
           {/* MOBILE MENU BUTTON */}
-          <div className="flex items-center md:hidden">
+          <div className="flex items-center lg:hidden">
             <button
               type="button"
               aria-label={mobileMenuOpen ? 'Menü schliessen' : 'Menü öffnen'}
@@ -265,7 +265,7 @@ export const Navbar = ({ t, user, lang = 'de', setLang, setView, handleLogout, s
 
       {/* MOBILE MENU */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-white border-t border-gray-100 absolute w-full left-0 shadow-xl h-screen overflow-y-auto pb-20">
+        <div className="lg:hidden bg-white border-t border-gray-100 absolute w-full left-0 shadow-xl h-screen overflow-y-auto pb-20">
           <div className="pt-2 pb-3">
             {segmentButtons.map(({ key, label, Icon, config }) => {
               const isActive = activeSegment === key;
