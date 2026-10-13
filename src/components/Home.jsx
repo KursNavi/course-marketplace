@@ -328,7 +328,7 @@ export const Home = ({
                     className={`group flex items-center justify-between p-3.5 rounded-lg bg-white/5 border border-white/10 ${hoverBorder} hover:bg-white/10 transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-white`}
                   >
                     <div className="flex items-center gap-3.5">
-                      <div className="w-8 h-8 rounded flex items-center justify-center bg-white/10 shrink-0">
+                      <div className="w-8 h-8 rounded flex items-center justify-center bg-beige shrink-0">
                         <img src={icon} alt="" aria-hidden="true" className="w-4 h-4" />
                       </div>
                       <div>
