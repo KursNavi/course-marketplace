@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <title>Beruflich</title>
+  <rect x="3.25" y="7.5" width="17.5" height="12.5" rx="2" stroke="#123F46" stroke-width="1.8"/>
+  <path d="M8.2 7.5V5.9c0-.95.75-1.7 1.7-1.7h4.2c.95 0 1.7.75 1.7 1.7v1.6M3.65 12.2c2.35 1.55 5.2 2.3 8.35 2.3s6-.75 8.35-2.3M12 13.25v2.1" stroke="#123F46" stroke-width="1.8"/>
+  <path d="M10.8 14.05h2.4" stroke="#E38A45" stroke-width="2.1"/>
+</svg>

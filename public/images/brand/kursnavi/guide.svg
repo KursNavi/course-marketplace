@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <title>Ratgeber</title>
+  <path d="M12 7.1c-1.7-1.65-4.2-2.35-8-2.1v13c3.8-.25 6.3.45 8 2.1 1.7-1.65 4.2-2.35 8-2.1V5c-3.8-.25-6.3.45-8 2.1Z" stroke="#123F46" stroke-width="1.8"/>
+  <path d="M12 7.2v12.4M6.8 9.1c1.45.05 2.65.3 3.65.8M17.2 9.1c-1.45.05-2.65.3-3.65.8" stroke="#397FA6" stroke-width="1.55"/>
+</svg>

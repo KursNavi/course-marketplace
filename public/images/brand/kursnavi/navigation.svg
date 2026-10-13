@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <title>Wegweiser und Navigation</title>
+  <path d="M9 12.6v7.7M6.6 20.3h4.8" stroke="#123F46" stroke-width="1.85"/>
+  <path d="M4 6.1h11.3L19.5 9.5l-4.2 3.4H4V6.1Z" stroke="#123F46" stroke-width="1.8"/>
+  <path d="M8 9.5h6" stroke="#397FA6" stroke-width="1.8"/>
+</svg>

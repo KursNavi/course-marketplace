@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <title>Kinder und Jugend</title>
+  <circle cx="7.1" cy="6.25" r="2.05" stroke="#123F46" stroke-width="1.75"/>
+  <circle cx="16.7" cy="5.55" r="2.45" stroke="#123F46" stroke-width="1.75"/>
+  <path d="M3.4 19v-1.05a3.7 3.7 0 0 1 7.4 0V19M12.2 19v-1.45a4.5 4.5 0 0 1 9 0V19" stroke="#123F46" stroke-width="1.8"/>
+  <path d="M5.9 12.5h2.4" stroke="#E38A45" stroke-width="1.8"/>
+</svg>
