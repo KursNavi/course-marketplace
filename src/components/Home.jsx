@@ -546,7 +546,7 @@ export const Home = ({
           <form onSubmit={handleSearch} className="relative rounded-2xl border border-white/10 bg-[#14313B]/90 backdrop-blur-sm p-5 sm:p-7 lg:p-8">
           <div className="mb-6 md:mb-7">
             <h2 className="text-xl md:text-2xl font-heading font-bold text-beige mb-1.5">Wie möchtest du starten?</h2>
-            <p className="text-sm text-white/70 max-w-2xl leading-relaxed">
+            <p className="text-sm text-white/70 leading-relaxed">
               Durchstöbere die Bildungsbereiche oder suche direkt nach einem Thema. Verfeinere deine Auswahl anschliessend optional mit Ort, Kursformat und weiteren Filtern.
             </p>
           </div>
@@ -554,7 +554,7 @@ export const Home = ({
 
             {/* LINKS (Desktop) / 2. Block (Mobile): mehrstufiger Kategorie-Browser */}
             <div className="order-2 lg:order-1 lg:col-span-5 flex flex-col">
-              <div className="flex items-center gap-2.5 pb-4 border-b border-white/15 mb-6">
+              <div className="flex items-center gap-2.5 mb-6">
                 <span className="w-6 h-6 rounded-full bg-beige flex items-center justify-center shrink-0">
                   <img src="/images/brand/kursnavi/navigation.svg" alt="" aria-hidden="true" className="w-3.5 h-3.5" />
                 </span>
@@ -708,9 +708,10 @@ export const Home = ({
               </div>
             </div>
 
-            {/* RECHTS (Desktop) / 1. Block (Mobile): Textsuche, etwas tiefer angesetzt, schwebt
-                als heller Block leicht über der Petrol-Flaeche statt wie ein generisches Formular */}
-            <div className="order-1 lg:order-2 lg:col-span-7 w-full lg:pt-6">
+            {/* RECHTS (Desktop) / 1. Block (Mobile): Textsuche, schwebt als heller Block ueber der
+                Petrol-Flaeche statt wie ein generisches Formular. Startet jetzt auf gleicher Hoehe
+                wie "Bereiche entdecken" links. */}
+            <div className="order-1 lg:order-2 lg:col-span-7 w-full">
               <div className="bg-beige text-dark rounded-xl p-6 md:p-8 shadow-lg shadow-black/20">
                 <div className="flex items-center gap-2.5 pb-4 border-b border-grey mb-6">
                   <img src="/images/brand/kursnavi/search.svg" alt="" aria-hidden="true" className="w-4 h-4" />
