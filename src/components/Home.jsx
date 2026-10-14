@@ -518,10 +518,10 @@ export const Home = ({
             <div className="mb-3">
               <SectionMarker dark>Dein Bildungswegweiser für die Schweiz</SectionMarker>
             </div>
-            <h1 className="text-3xl md:text-5xl font-heading font-bold tracking-tight text-beige mb-3 leading-tight max-w-4xl">
+            <h1 className="text-3xl md:text-5xl font-heading font-bold tracking-tight text-beige mb-3 leading-tight">
               {t.home_headline}
             </h1>
-            <p className="text-base md:text-lg text-white/80 max-w-3xl leading-relaxed">
+            <p className="text-base md:text-lg text-white/80 leading-relaxed">
               {t.home_subhead}
             </p>
           </div>
@@ -542,11 +542,8 @@ export const Home = ({
 
             {/* LINKS (Desktop) / 2. Block (Mobile): mehrstufiger Kategorie-Browser */}
             <div className="order-2 lg:order-1 lg:col-span-5 flex flex-col">
-              <div className="flex items-center gap-2.5 mb-6">
-                <span className="w-6 h-6 rounded-full bg-beige flex items-center justify-center shrink-0">
-                  <img src="/images/brand/kursnavi/navigation.svg" alt="" aria-hidden="true" className="w-3.5 h-3.5" />
-                </span>
-                <span className="text-sm font-semibold text-white/80">Bereiche entdecken</span>
+              <div className="mb-6">
+                <SectionMarker dark>Bereiche entdecken</SectionMarker>
               </div>
 
               {/* Breadcrumb: erscheint erst, sobald ein Bereich gewaehlt ist — im Ausgangszustand
@@ -696,16 +693,13 @@ export const Home = ({
               </div>
             </div>
 
-            {/* RECHTS (Desktop) / 1. Block (Mobile): Textsuche. Ueberschrift sitzt jetzt wie bei
-                "Bereiche entdecken" auf der Petrol-Flaeche (nicht mehr in der hellen Box), damit
-                beide Einstiege auf gleicher Ebene stehen; die helle Box enthaelt nur noch das
-                eigentliche Eingabefeld-Modul. */}
+            {/* RECHTS (Desktop) / 1. Block (Mobile): Textsuche. Ueberschrift sitzt wie bei
+                "Bereiche entdecken" auf der Petrol-Flaeche (nicht in der hellen Box), mit
+                demselben Linie-mit-Punkt-Marker, damit beide Einstiege erkennbar auf gleicher
+                Ebene stehen; die helle Box enthaelt nur noch das eigentliche Eingabefeld-Modul. */}
             <div className="order-1 lg:order-2 lg:col-span-7 w-full flex flex-col">
-              <div className="flex items-center gap-2.5 mb-6">
-                <span className="w-6 h-6 rounded-full bg-beige flex items-center justify-center shrink-0">
-                  <img src="/images/brand/kursnavi/search.svg" alt="" aria-hidden="true" className="w-3.5 h-3.5" />
-                </span>
-                <span className="text-sm font-semibold text-white/80">Gezielt suchen</span>
+              <div className="mb-6">
+                <SectionMarker dark>Gezielt suchen</SectionMarker>
               </div>
 
               <div className="bg-beige text-dark rounded-xl p-6 md:p-8 shadow-lg shadow-black/20">
@@ -742,14 +736,9 @@ export const Home = ({
               Trennlinie vom Zwei-Spalten-Bereich abgesetzt. Ort/Kursformat immer sichtbar,
               Rest hinter "Weitere Filter". */}
           <div className="mt-8 pt-6 border-t border-white/10">
-            <div className="flex items-start gap-2 mb-5">
-              <span className="w-6 h-6 rounded-full bg-beige flex items-center justify-center shrink-0 mt-0.5">
-                <img src="/images/brand/kursnavi/filter.svg" alt="" aria-hidden="true" className="w-3.5 h-3.5" />
-              </span>
-              <div>
-                <span className="text-sm font-semibold text-white/85">Verfeinern (optional)</span>
-                <p className="text-xs text-white/55 mt-0.5">Verfeinere deine Auswahl – unabhängig davon, wie du gestartet bist.</p>
-              </div>
+            <div className="mb-5">
+              <SectionMarker dark>Verfeinern (optional)</SectionMarker>
+              <p className="text-xs text-white/55 mt-1.5">Verfeinere deine Auswahl – unabhängig davon, wie du gestartet bist.</p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
