@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Menu, X, Globe, LogOut, LayoutDashboard, ChevronDown, Mail, ArrowRight, Check, Loader2, Briefcase, Palette, Smile, Shield } from 'lucide-react';
+import { Menu, X, Globe, LogOut, LayoutDashboard, ChevronDown, Mail, ArrowRight, Check, Loader2, Shield } from 'lucide-react';
 import { SEGMENT_CONFIG } from '../lib/constants';
+import { CareerIcon, PrivateHobbyIcon, ChildrenYouthIcon } from '../lib/segmentIcons';
 import { MegaMenu, MobileMenuCategory } from './MegaMenu';
 import { trackNewsletterSignup } from '../lib/analytics';
 import { trackContentsquareNewsletterSuccess } from '../lib/contentsquare';
@@ -63,9 +64,9 @@ export const Navbar = ({ t, user, lang = 'de', setLang, setView, handleLogout, s
 
   // Segment navigation buttons config
   const segmentButtons = [
-    { key: 'beruflich', label: t.nav_professional, Icon: Briefcase, config: SEGMENT_CONFIG.beruflich },
-    { key: 'privat_hobby', label: t.nav_private, Icon: Palette, config: SEGMENT_CONFIG.privat_hobby },
-    { key: 'kinder_jugend', label: t.nav_kids, Icon: Smile, config: SEGMENT_CONFIG.kinder_jugend },
+    { key: 'beruflich', label: t.nav_professional, Icon: CareerIcon, config: SEGMENT_CONFIG.beruflich },
+    { key: 'privat_hobby', label: t.nav_private, Icon: PrivateHobbyIcon, config: SEGMENT_CONFIG.privat_hobby },
+    { key: 'kinder_jugend', label: t.nav_kids, Icon: ChildrenYouthIcon, config: SEGMENT_CONFIG.kinder_jugend },
   ];
 
   // Using text codes instead of flags for Windows compatibility
