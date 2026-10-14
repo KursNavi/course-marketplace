@@ -178,6 +178,9 @@ export const Home = ({
     return areaKey;
   };
 
+  // Label der aktuell tiefsten gewaehlten Browsing-Ebene, fuer den Satz "Du stoeberst in X."
+  const currentBrowseLabel = activeSpecialty || (activeArea ? getAreaLabel(activeType, activeArea) : (activeType ? getTypeLabel(activeType) : null));
+
   // --- FREITEXTSUCHE: Zieltyp wird aus dem Suchbegriff geraten. ---
   // Keyword-based auto-detection (Option B: no DB query)
   const guessTypeFromQuery = (q) => {
@@ -541,28 +544,32 @@ export const Home = ({
               bg-Deckkraft bewusst hoch (wenig transparent), damit das Hintergrundfoto hier nicht
               von der Bedienung ablenkt. */}
           <form onSubmit={handleSearch} className="relative rounded-2xl border border-white/10 bg-[#14313B]/90 backdrop-blur-sm p-5 sm:p-7 lg:p-8">
+          <div className="mb-6 md:mb-7">
+            <h2 className="text-xl md:text-2xl font-heading font-bold text-beige mb-1.5">Wie möchtest du starten?</h2>
+            <p className="text-sm text-white/70 max-w-2xl leading-relaxed">
+              Durchstöbere die Bildungsbereiche oder suche direkt nach einem Thema. Verfeinere deine Auswahl anschliessend optional mit Ort, Kursformat und weiteren Filtern.
+            </p>
+          </div>
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
 
             {/* LINKS (Desktop) / 2. Block (Mobile): mehrstufiger Kategorie-Browser */}
             <div className="order-2 lg:order-1 lg:col-span-5 flex flex-col">
-              <div className="flex items-center gap-2 pb-3 border-b border-white/15 mb-4">
+              <div className="flex items-center gap-2.5 pb-4 border-b border-white/15 mb-6">
                 <span className="w-6 h-6 rounded-full bg-beige flex items-center justify-center shrink-0">
                   <img src="/images/brand/kursnavi/navigation.svg" alt="" aria-hidden="true" className="w-3.5 h-3.5" />
                 </span>
                 <span className="text-sm font-semibold text-white/80">Bereiche entdecken</span>
               </div>
 
-              {/* Breadcrumb: zeigt die aktuelle Auswahl, jede fruehere Ebene ist klickbar */}
+              {/* Breadcrumb: erscheint erst, sobald ein Bereich gewaehlt ist — im Ausgangszustand
+                  wuerde "Alle Bereiche" hier nur die Ueberschrift "Bereiche entdecken" wiederholen. */}
+              {activeType && (
               <nav aria-label="Kategorie-Navigation" className="mb-4">
                 <ol className="flex flex-wrap items-center gap-1.5 text-xs">
                   <li>
-                    {activeType ? (
-                      <button type="button" onClick={resetToAllCategories} className="text-white/60 hover:text-white underline-offset-2 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">
-                        Alle Bereiche
-                      </button>
-                    ) : (
-                      <span aria-current="page" className="text-white font-semibold">Alle Bereiche</span>
-                    )}
+                    <button type="button" onClick={resetToAllCategories} className="text-white/60 hover:text-white underline-offset-2 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">
+                      Alle Bereiche
+                    </button>
                   </li>
                   {activeType && (
                     <li className="flex items-center gap-1.5">
@@ -596,6 +603,13 @@ export const Home = ({
                   )}
                 </ol>
               </nav>
+              )}
+
+              {activeType && (
+                <p className="text-xs text-white/55 mb-3 leading-relaxed">
+                  Du stöberst in <span className="font-semibold text-white/80">{currentBrowseLabel}</span>. Wähle ein Unterthema oder zeige direkt alle passenden Kurse.
+                </p>
+              )}
 
               <div className="space-y-2.5">
                 {/* Ebene 1: die drei gleichwertigen Bereiche — als eigenstaendige Entdeckungs-
@@ -743,7 +757,7 @@ export const Home = ({
                 </span>
                 <div>
                   <span className="text-sm font-semibold text-white/85">Verfeinern (optional)</span>
-                  <p className="text-xs text-white/55 mt-0.5">Verfeinere deine Suche – egal, ob du einen Bereich auswählst oder gezielt suchst.</p>
+                  <p className="text-xs text-white/55 mt-0.5">Verfeinere deine Auswahl – unabhängig davon, wie du gestartet bist.</p>
                 </div>
               </div>
               {hasActiveHomeFilters && (
@@ -972,7 +986,7 @@ export const Home = ({
               damit eine logische Reihenfolge entsteht: Bereich entdecken oder gezielt suchen,
               optional verfeinern, dann Kurse finden. Fasst Bereichsauswahl (falls getroffen),
               Suchtext (falls eingegeben) und alle Filter in einer Aktion zusammen. */}
-          <div className="mt-6 pt-6 border-t border-white/10 flex justify-center sm:justify-start">
+          <div className="mt-6 pt-6 border-t border-white/10 flex justify-center sm:justify-end">
             <button
               type="submit"
               className="w-full sm:w-auto px-10 py-3.5 bg-primary hover:bg-orange-600 text-white font-label-md text-base font-semibold rounded-lg shadow-sm transition-colors flex items-center justify-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#14313B]"
