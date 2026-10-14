@@ -83,7 +83,12 @@ const SearchPageView = ({
 
     // Ref for scroll-to-results behavior
     const resultsRef = useRef(null);
-    // Track whether initial mount has happened (skip scroll on first render)
+    // Track whether the first real data load has completed (skip the auto-scroll for that
+    // initial load, only scroll on later filter/search changes). Keyed to "loading" rather than
+    // "has rendered" — otherwise the effect's own dependency array fires a second time the
+    // moment the initial fetch finishes (loading true -> false), which the old render-based flag
+    // no longer treats as the first run, auto-scrolling straight past the new "Bereiche
+    // entdecken" browse panel on every fresh page load.
     const hasMountedRef = useRef(false);
     // Price validation error state
     const [priceError, setPriceError] = React.useState(false);
@@ -597,11 +602,11 @@ const SearchPageView = ({
 
     // --- SCROLL TO RESULTS on filter/search change ---
     useEffect(() => {
+        if (loading) return;
         if (!hasMountedRef.current) {
             hasMountedRef.current = true;
             return;
         }
-        if (loading) return;
         // Scroll results area into view after filter change
         if (resultsRef.current) {
             resultsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
