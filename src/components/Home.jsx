@@ -18,6 +18,42 @@ const SEGMENT_VISUALS = {
   kinder_jugend: { icon: ChildrenYouthIcon, bg: 'bg-segKinder', text: 'text-segKinder', border: 'border-segKinder' },
 };
 
+// Vorgeschriebene Klassen-Kombinationen (nicht per Template-String aus SEGMENT_VISUALS
+// zusammengesetzt!) fuer die "Alle Kurse in X anzeigen"-Buttons im Kategorie-Browser.
+// Tailwind generiert Opacity-Varianten (z.B. /15, /40) nur fuer Klassen, die irgendwo im
+// Quelltext woertlich vorkommen — ${segAccent.bg}/15 wuerde vom Scanner nicht erkannt.
+const SEG_SHOW_ALL_STYLES = {
+  beruflich: { card: 'bg-segBeruflich/15 border-segBeruflich/40 hover:bg-segBeruflich/25', arrow: 'text-segBeruflich' },
+  privat_hobby: { card: 'bg-primary/15 border-primary/40 hover:bg-primary/25', arrow: 'text-primary' },
+  kinder_jugend: { card: 'bg-segKinder/15 border-segKinder/40 hover:bg-segKinder/25', arrow: 'text-segKinder' },
+};
+
+// Dieselbe Einschraenkung gilt fuer die 30%-Rahmenfarbe im Ratgeber-Panel (renderRatgeberPanel) —
+// ${visuals.border}/30 wuerde von Tailwind nicht erkannt, deshalb hier als Literal hinterlegt.
+const SEG_BORDER_30 = {
+  beruflich: 'border-segBeruflich/30',
+  privat_hobby: 'border-primary/30',
+  kinder_jugend: 'border-segKinder/30',
+};
+
+// Wiederkehrendes Leitelement "Linie mit Punkt" (siehe public/images/brand/kursnavi/marker-hero.svg)
+// vor Abschnittslabels. Auf hellem Grund wird das Original-Asset verwendet (Petrol-Linie,
+// orangener Punkt); auf dem dunklen Hero-Petrol ist die feste Petrol-Strichfarbe des Assets
+// nicht lesbar, deshalb dort dieselbe Form/Proportion inline nachgebaut, nur die Linie heller.
+const SectionMarker = ({ children, dark = false }) => (
+  <div className="flex items-center gap-2.5">
+    {dark ? (
+      <svg width="34" height="8" viewBox="0 0 34 8" fill="none" aria-hidden="true" className="shrink-0">
+        <path d="M1 4H24" stroke="rgba(255,255,255,0.35)" strokeWidth="1.5" strokeLinecap="round" />
+        <circle cx="30" cy="4" r="3" fill="#E17A3B" />
+      </svg>
+    ) : (
+      <img src="/images/brand/kursnavi/marker-hero.svg" alt="" aria-hidden="true" className="h-2 w-auto shrink-0" />
+    )}
+    <span className={`text-xs font-semibold uppercase tracking-wider ${dark ? 'text-white/75' : 'text-petrol'}`}>{children}</span>
+  </div>
+);
+
 export const Home = ({
   lang, t, setView, courses, // Jetzt haben wir Zugriff auf die Kurse!
   setSearchType, setSearchArea, setSearchSpecialty, setSearchFocus,
@@ -238,6 +274,11 @@ export const Home = ({
     setFilterLevel('All');
   };
 
+  // Akzentfarbe des aktuell gewaehlten Bereichs fuer die "Alle Kurse in X anzeigen"-Buttons
+  // im Kategorie-Browser (Blau/Orange/Gruen statt immer Orange) — faellt auf Orange zurueck,
+  // solange noch kein Bereich gewaehlt ist.
+  const segShowAll = SEG_SHOW_ALL_STYLES[activeType] || SEG_SHOW_ALL_STYLES.privat_hobby;
+
   // SEO Meta Tags for Home Page
   useEffect(() => {
     document.title = 'Kurse in der Schweiz finden – Weiterbildung, Hobby & Kinder | KursNavi';
@@ -377,7 +418,7 @@ export const Home = ({
                     onClick={(e) => { e.preventDefault(); window.history.pushState({}, '', `/ratgeber/${RATGEBER_STRUCTURE[segmentKey].slug}/${cluster.slug}`); window.scrollTo(0,0); window.dispatchEvent(new PopStateEvent('popstate')); }}
                     className="flex items-center gap-2.5 p-3 rounded-lg bg-beige hover:bg-grey/60 transition-colors border border-grey/60"
                   >
-                    <span className={`shrink-0 w-7 h-7 rounded-lg bg-white border ${visuals.border}/30 flex items-center justify-center`}>
+                    <span className={`shrink-0 w-7 h-7 rounded-lg bg-white border ${SEG_BORDER_30[segmentKey]} flex items-center justify-center`}>
                       <ClusterIcon className={`w-3.5 h-3.5 ${visuals.text}`} />
                     </span>
                     <span className="text-sm font-medium text-dark leading-tight">{cluster.label[lang] || cluster.label.de}</span>
@@ -397,7 +438,7 @@ export const Home = ({
                       key={bereich.slug}
                       href={getBereichUrl(bereich)}
                       onClick={(e) => { e.preventDefault(); window.history.pushState({}, '', getBereichUrl(bereich)); window.scrollTo(0,0); }}
-                      className={`p-4 rounded-lg border-2 ${visuals.border}/30 bg-beige hover:bg-grey/60 transition-colors flex items-center justify-between text-dark`}
+                      className={`p-4 rounded-lg border-2 ${SEG_BORDER_30[segmentKey]} bg-beige hover:bg-grey/60 transition-colors flex items-center justify-between text-dark`}
                     >
                       <span className="text-sm font-bold">{bereich.title[lang] || bereich.title.de}</span>
                       <ArrowRight className={`w-4 h-4 shrink-0 ${visuals.text}`} aria-hidden="true" />
@@ -430,21 +471,25 @@ export const Home = ({
           Einstiege: links Browsing durch die Kategorien, rechts die Textsuche. Darunter ein
           gemeinsamer Filterblock, der fuer beide Einstiege gilt. Kein Kompass-/Weggabelungs-
           Symbol, keine Nummerierung — die drei Bereiche sind gleichwertig. */}
-      <section className="relative w-full bg-[#14313B] text-white overflow-hidden">
-        {/* Dezenter Schimmer im Hintergrund, rein dekorativ */}
-        <div className="absolute -top-32 right-1/4 w-[650px] h-[650px] bg-segBeruflich/15 rounded-full blur-3xl pointer-events-none" aria-hidden="true"></div>
-        <div className="absolute top-1/2 left-0 w-[450px] h-[450px] bg-primary/10 rounded-full blur-3xl pointer-events-none" aria-hidden="true"></div>
+      <section className="relative w-full bg-gradient-to-br from-[#17383F] via-[#14313B] to-[#0f262d] text-white overflow-hidden">
+        {/* Dezente organische Lichtflaechen, rein dekorativ */}
+        <div className="absolute -top-32 right-1/4 w-[550px] h-[550px] bg-segBeruflich/10 rounded-full blur-3xl pointer-events-none" aria-hidden="true"></div>
+        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-primary/[0.07] rounded-full blur-3xl pointer-events-none" aria-hidden="true"></div>
+        {/* Sehr feine Linienstruktur, nur bei genauerem Hinsehen wahrnehmbar */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{ backgroundImage: 'repeating-linear-gradient(135deg, rgba(255,255,255,0.025) 0px, rgba(255,255,255,0.025) 1px, transparent 1px, transparent 28px)' }}
+          aria-hidden="true"
+        ></div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16 relative z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-10 relative z-10">
 
           {/* Abschnittsmarker + Ueberschrift + Intro ueber die gesamte Breite */}
-          <div className="max-w-2xl mb-8 md:mb-10">
-            <div className="flex items-center gap-2.5 mb-3">
-              <span className="w-2 h-2 rounded-full bg-primary shrink-0" aria-hidden="true"></span>
-              <span className="w-7 h-[1.5px] bg-white/40 shrink-0" aria-hidden="true"></span>
-              <span className="text-xs font-semibold tracking-wider uppercase text-white/70">Dein Bildungswegweiser für die Schweiz</span>
+          <div className="max-w-2xl mb-6 md:mb-7">
+            <div className="mb-3">
+              <SectionMarker dark>Dein Bildungswegweiser für die Schweiz</SectionMarker>
             </div>
-            <h1 className="text-3xl md:text-5xl font-heading font-bold tracking-tight text-beige mb-4 leading-tight">
+            <h1 className="text-3xl md:text-5xl font-heading font-bold tracking-tight text-beige mb-3 leading-tight">
               {t.home_headline}
             </h1>
             <p className="text-base md:text-lg text-white/80 max-w-2xl leading-relaxed">
@@ -452,11 +497,16 @@ export const Home = ({
             </p>
           </div>
 
+          {/* Gemeinsames Panel: Browsing links und Suche rechts gehoeren sichtbar zusammen */}
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-5 sm:p-7 lg:p-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
 
             {/* LINKS (Desktop) / 2. Block (Mobile): mehrstufiger Kategorie-Browser */}
             <div className="order-2 lg:order-1 lg:col-span-5 flex flex-col">
-              <div className="flex items-center justify-between pb-3 border-b border-white/15 mb-4">
+              <div className="flex items-center gap-2 pb-3 border-b border-white/15 mb-4">
+                <span className="w-6 h-6 rounded-full bg-beige flex items-center justify-center shrink-0">
+                  <img src="/images/brand/kursnavi/navigation.svg" alt="" aria-hidden="true" className="w-3.5 h-3.5" />
+                </span>
                 <span className="text-xs font-semibold uppercase tracking-wider text-white/70">Durchsuche alle Bildungsthemen</span>
               </div>
 
@@ -506,37 +556,40 @@ export const Home = ({
               </nav>
 
               <div className="space-y-2.5">
-                {/* Ebene 1: die drei gleichwertigen Bereiche */}
+                {/* Ebene 1: die drei gleichwertigen Bereiche — als eigenstaendige Entdeckungs-
+                    Einstiege, nicht als identische Formularzeilen: je ein Icon, ein dezenter
+                    linker Farbakzent, Name, kurze Beschreibung und ein Pfeil. */}
                 {!activeType && [
-                  { key: 'beruflich', icon: CareerIcon, label: t.nav_professional || 'Beruflich', dot: 'bg-segBeruflich', hoverBorder: 'hover:border-segBeruflich' },
-                  { key: 'privat_hobby', icon: PrivateHobbyIcon, label: t.nav_private || 'Privat & Hobby', dot: 'bg-primary', hoverBorder: 'hover:border-primary' },
-                  { key: 'kinder_jugend', icon: ChildrenYouthIcon, label: t.nav_kids || 'Kinder & Jugend', dot: 'bg-segKinder', hoverBorder: 'hover:border-segKinder' },
-                ].map(({ key, icon: Icon, label, dot, hoverBorder }) => (
+                  { key: 'beruflich', icon: CareerIcon, label: t.nav_professional || 'Beruflich', desc: t.home_card_prof_sub, accentBorder: 'border-segBeruflich/60', dot: 'bg-segBeruflich' },
+                  { key: 'privat_hobby', icon: PrivateHobbyIcon, label: t.nav_private || 'Privat & Hobby', desc: t.home_card_priv_sub, accentBorder: 'border-primary/60', dot: 'bg-primary' },
+                  { key: 'kinder_jugend', icon: ChildrenYouthIcon, label: t.nav_kids || 'Kinder & Jugend', desc: t.home_card_kids_sub, accentBorder: 'border-segKinder/60', dot: 'bg-segKinder' },
+                ].map(({ key, icon: Icon, label, desc, accentBorder, dot }) => (
                   <button
                     key={key}
                     type="button"
                     onClick={() => selectType(key)}
-                    className={`w-full group flex items-center justify-between p-3.5 rounded-lg bg-white/5 border border-white/10 ${hoverBorder} hover:bg-white/10 transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-white`}
+                    className={`w-full group flex items-center gap-3.5 rounded-lg border-l-[3px] ${accentBorder} bg-white/5 pl-4 pr-3.5 py-3.5 hover:bg-white/10 transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-white`}
                   >
-                    <span className="flex items-center gap-3.5">
-                      <span className="w-8 h-8 rounded flex items-center justify-center bg-beige shrink-0">
-                        <Icon className="w-4 h-4" />
-                      </span>
+                    <span className="w-9 h-9 rounded-full flex items-center justify-center bg-beige shrink-0">
+                      <Icon className="w-4 h-4" />
+                    </span>
+                    <span className="flex-1 min-w-0 text-left">
                       <span className="flex items-center gap-2">
                         <span className={`w-1.5 h-1.5 rounded-full ${dot}`} aria-hidden="true"></span>
                         <span className="text-base font-bold text-beige group-hover:text-white transition-colors">{label}</span>
                       </span>
+                      <p className="text-xs text-white/60 mt-0.5 leading-snug">{desc}</p>
                     </span>
-                    <ChevronRight className="w-4 h-4 text-white/50 group-hover:text-white group-hover:translate-x-1 transition-all shrink-0" aria-hidden="true" />
+                    <ArrowRight className="w-4 h-4 text-white/40 group-hover:text-white group-hover:translate-x-1 transition-all shrink-0" aria-hidden="true" />
                   </button>
                 ))}
 
-                {/* Ebene 2: Bereiche innerhalb des gewaehlten Typs, plus "alle anzeigen" */}
+                {/* Ebene 2: Bereiche innerhalb des gewaehlten Typs, plus "alle anzeigen" in Segmentfarbe */}
                 {activeType && !activeArea && (
                   <>
-                    <button type="button" onClick={showAllInType} className="w-full flex items-center justify-between p-3.5 rounded-lg bg-primary/15 border border-primary/40 hover:bg-primary/25 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white">
+                    <button type="button" onClick={showAllInType} className={`w-full flex items-center justify-between p-3.5 rounded-lg border ${segShowAll.card} transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white`}>
                       <span className="text-sm font-bold text-beige">Alle Kurse in {getTypeLabel(activeType)} anzeigen</span>
-                      <ArrowRight className="w-4 h-4 text-beige shrink-0" aria-hidden="true" />
+                      <ArrowRight className={`w-4 h-4 ${segShowAll.arrow} shrink-0`} aria-hidden="true" />
                     </button>
                     {visibleAreas.map(areaSlug => (
                       <button key={areaSlug} type="button" onClick={() => selectArea(areaSlug)} className="w-full flex items-center justify-between p-3.5 rounded-lg bg-white/5 border border-white/10 hover:border-white/30 hover:bg-white/10 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white">
@@ -550,9 +603,9 @@ export const Home = ({
                 {/* Ebene 3: Spezialgebiete innerhalb des gewaehlten Bereichs, plus "alle anzeigen" */}
                 {activeArea && !activeSpecialty && (
                   <>
-                    <button type="button" onClick={showAllInArea} className="w-full flex items-center justify-between p-3.5 rounded-lg bg-primary/15 border border-primary/40 hover:bg-primary/25 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white">
+                    <button type="button" onClick={showAllInArea} className={`w-full flex items-center justify-between p-3.5 rounded-lg border ${segShowAll.card} transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white`}>
                       <span className="text-sm font-bold text-beige">Alle Kurse in {getAreaLabel(activeType, activeArea)} anzeigen</span>
-                      <ArrowRight className="w-4 h-4 text-beige shrink-0" aria-hidden="true" />
+                      <ArrowRight className={`w-4 h-4 ${segShowAll.arrow} shrink-0`} aria-hidden="true" />
                     </button>
                     {visibleSpecialties.map(spec => (
                       <button key={spec.label} type="button" onClick={() => selectSpecialty(spec.label)} className="w-full flex items-center justify-between p-3.5 rounded-lg bg-white/5 border border-white/10 hover:border-white/30 hover:bg-white/10 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white">
@@ -566,9 +619,9 @@ export const Home = ({
                 {/* Ebene 4: Schwerpunkte innerhalb des gewaehlten Spezialgebiets, plus "alle anzeigen" */}
                 {activeSpecialty && (
                   <>
-                    <button type="button" onClick={showAllInSpecialty} className="w-full flex items-center justify-between p-3.5 rounded-lg bg-primary/15 border border-primary/40 hover:bg-primary/25 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white">
+                    <button type="button" onClick={showAllInSpecialty} className={`w-full flex items-center justify-between p-3.5 rounded-lg border ${segShowAll.card} transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white`}>
                       <span className="text-sm font-bold text-beige">Alle Kurse in {activeSpecialty} anzeigen</span>
-                      <ArrowRight className="w-4 h-4 text-beige shrink-0" aria-hidden="true" />
+                      <ArrowRight className={`w-4 h-4 ${segShowAll.arrow} shrink-0`} aria-hidden="true" />
                     </button>
                     {visibleFocuses.map(focus => (
                       <button key={focus} type="button" onClick={() => selectFocus(focus)} className="w-full flex items-center justify-between p-3.5 rounded-lg bg-white/5 border border-white/10 hover:border-white/30 hover:bg-white/10 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white">
@@ -581,30 +634,31 @@ export const Home = ({
               </div>
             </div>
 
-            {/* RECHTS (Desktop) / 1. Block (Mobile): Textsuche, etwas tiefer angesetzt */}
-            <div className="order-1 lg:order-2 lg:col-span-7 w-full lg:mt-9">
-              <div className="bg-beige text-dark rounded-lg p-6 md:p-8 border border-grey h-full flex flex-col">
+            {/* RECHTS (Desktop) / 1. Block (Mobile): Textsuche, etwas tiefer angesetzt, schwebt
+                als heller Block leicht über der Petrol-Flaeche statt wie ein generisches Formular */}
+            <div className="order-1 lg:order-2 lg:col-span-7 w-full lg:pt-6">
+              <div className="bg-beige text-dark rounded-xl p-6 md:p-8 shadow-lg shadow-black/20">
                 <div className="flex items-center gap-2.5 pb-4 border-b border-grey mb-6">
                   <img src="/images/brand/kursnavi/search.svg" alt="" aria-hidden="true" className="w-4 h-4" />
                   <span className="text-xs font-bold uppercase tracking-wider text-petrol">Gezielt suchen</span>
                 </div>
 
-                <form onSubmit={handleSearch} className="flex flex-col flex-1">
+                <form onSubmit={handleSearch}>
                   <label htmlFor="home-search-input" className="block text-xs font-semibold uppercase tracking-wider text-dark mb-2">
                     {t.search_placeholder}
                   </label>
                   <div className="relative">
-                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4 pointer-events-none" aria-hidden="true" />
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 w-5 h-5 pointer-events-none" aria-hidden="true" />
                     <input
                       id="home-search-input"
                       type="text"
                       placeholder={t.search_placeholder}
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full pl-11 pr-4 py-3 bg-white border border-grey rounded text-base text-dark placeholder:text-gray-400 focus:outline-none focus:border-petrol focus:ring-1 focus:ring-petrol transition-colors"
+                      className="w-full pl-12 pr-4 py-4 bg-white border border-grey rounded-lg text-lg text-dark placeholder:text-gray-400 focus:outline-none focus:border-petrol focus:ring-1 focus:ring-petrol transition-colors"
                     />
                   </div>
-                  <details className="mt-1.5 mb-6">
+                  <details className="mt-2 mb-6">
                     <summary className="inline-flex min-h-11 cursor-pointer items-center text-xs text-gray-500 underline underline-offset-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-petrol rounded">
                       {t.search_help_label || 'Such-Tipp'}
                     </summary>
@@ -613,34 +667,35 @@ export const Home = ({
 
                   <button
                     type="submit"
-                    className="mt-auto w-full sm:w-auto self-start px-8 py-3 bg-primary hover:bg-orange-600 text-white font-label-md text-sm font-semibold rounded shadow-sm transition-colors flex items-center justify-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-petrol focus-visible:ring-offset-2"
+                    className="w-full px-8 py-3.5 bg-primary hover:bg-orange-600 text-white font-label-md text-base font-semibold rounded-lg shadow-sm transition-colors flex items-center justify-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-petrol focus-visible:ring-offset-2"
                   >
                     <span>{t.btn_search}</span>
                     <ArrowRight className="w-4 h-4" aria-hidden="true" />
                   </button>
                 </form>
-
-                <p className="mt-6 pt-6 border-t border-grey text-xs text-gray-500">
-                  Die Filter unten gelten für Browsing und Suche gleichermassen.
-                </p>
               </div>
             </div>
 
           </div>
 
           {/* GEMEINSAME FILTER — gelten gleichermassen fuer den Kategorie-Browser links und die
-              Textsuche rechts. Ort/Kursformat immer sichtbar, Rest hinter "Weitere Filter". */}
-          <div className="mt-8 lg:mt-10 bg-beige text-dark rounded-lg p-6 md:p-8 border border-grey">
-            <div className="flex items-center justify-between pb-4 border-b border-grey mb-5 gap-3 flex-wrap">
-              <div className="flex items-center gap-2.5">
-                <img src="/images/brand/kursnavi/filter.svg" alt="" aria-hidden="true" className="w-4 h-4" />
-                <span className="text-xs font-bold uppercase tracking-wider text-petrol">Filter für Suche &amp; Browsing</span>
+              Textsuche rechts. Bewusst kein zweites schweres Beige-Panel: der Filterbereich
+              bleibt leicht/transparent und damit optisch mit dem Hero verbunden, nur per
+              Trennlinie vom Zwei-Spalten-Bereich abgesetzt. Ort/Kursformat immer sichtbar,
+              Rest hinter "Weitere Filter". */}
+          <div className="mt-8 pt-6 border-t border-white/10">
+            <div className="flex items-center justify-between pb-4 mb-5 gap-3 flex-wrap">
+              <div className="flex items-center gap-2">
+                <span className="w-6 h-6 rounded-full bg-beige flex items-center justify-center shrink-0">
+                  <img src="/images/brand/kursnavi/filter.svg" alt="" aria-hidden="true" className="w-3.5 h-3.5" />
+                </span>
+                <span className="text-xs font-bold uppercase tracking-wider text-white/75">Filter für Suche &amp; Browsing</span>
               </div>
               {hasActiveHomeFilters && (
                 <button
                   type="button"
                   onClick={resetAllHomeFilters}
-                  className="text-xs font-semibold text-petrol hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-petrol rounded"
+                  className="text-xs font-semibold text-white/70 hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded"
                 >
                   Alle zurücksetzen
                 </button>
@@ -649,7 +704,7 @@ export const Home = ({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-dark mb-1.5">{t.filter_label_loc || 'Ort'}</label>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-white/70 mb-1.5">{t.filter_label_loc || 'Ort'}</label>
                 <div className="bg-white rounded border border-grey">
                   <LocationDropdown
                     selectedLocations={selectedLocations}
@@ -663,7 +718,7 @@ export const Home = ({
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-dark mb-1.5">Kursformat</label>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-white/70 mb-1.5">Kursformat</label>
                 <div className="bg-white rounded border border-grey">
                   <DeliveryTypeFilter
                     selectedDeliveryTypes={selectedDeliveryTypes}
@@ -678,13 +733,13 @@ export const Home = ({
               </div>
             </div>
 
-            <div className="pt-4 mt-4 border-t border-grey">
+            <div className="pt-4 mt-4 border-t border-white/10">
               <button
                 type="button"
                 onClick={() => setShowMoreFilters(v => !v)}
                 aria-expanded={showMoreFilters}
                 aria-controls="home-more-filters"
-                className="text-xs font-medium text-petrol hover:text-primary inline-flex items-center gap-1.5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-petrol rounded"
+                className="text-xs font-medium text-white/70 hover:text-primary inline-flex items-center gap-1.5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded"
               >
                 <span>Weitere Filter{secondaryFilterCount > 0 ? ` (${secondaryFilterCount})` : ''}</span>
                 <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${showMoreFilters ? 'rotate-180' : ''}`} aria-hidden="true" />
@@ -692,7 +747,7 @@ export const Home = ({
             </div>
 
             {showMoreFilters && (
-              <div id="home-more-filters" className="mt-4 pt-4 border-t border-grey grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div id="home-more-filters" className="mt-4 pt-4 border-t border-white/10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {activeType === 'beruflich' && (
                   <div className="sm:col-span-2 lg:col-span-3">
                     <SaeulenFilter selectedSaule={selectedSaule} setSelectedSaule={setSelectedSaule} />
@@ -764,98 +819,99 @@ export const Home = ({
             )}
 
             {hasActiveHomeFilters && (
-              <div className="mt-4 pt-4 border-t border-grey flex flex-wrap items-center gap-2">
-                <span className="text-xs text-gray-500 mr-1">Aktive Filter:</span>
+              <div className="mt-4 pt-4 border-t border-white/10 flex flex-wrap items-center gap-2">
+                <span className="text-xs text-white/50 mr-1">Aktive Filter:</span>
                 {selectedLocations?.map(loc => (
-                  <span key={loc} className="inline-flex items-center gap-1 pl-2.5 pr-1.5 py-1 rounded bg-grey/60 text-xs text-dark">
+                  <span key={loc} className="inline-flex items-center gap-1 pl-2.5 pr-1.5 py-1 rounded bg-white/10 text-xs text-white">
                     {loc}
-                    <button type="button" onClick={() => setSelectedLocations(selectedLocations.filter(l => l !== loc))} aria-label={`Ort ${loc} entfernen`} className="hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-petrol rounded">
+                    <button type="button" onClick={() => setSelectedLocations(selectedLocations.filter(l => l !== loc))} aria-label={`Ort ${loc} entfernen`} className="hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">
                       <X className="w-3 h-3" aria-hidden="true" />
                     </button>
                   </span>
                 ))}
                 {selectedDeliveryTypes?.map(dtKey => (
-                  <span key={dtKey} className="inline-flex items-center gap-1 pl-2.5 pr-1.5 py-1 rounded bg-grey/60 text-xs text-dark">
+                  <span key={dtKey} className="inline-flex items-center gap-1 pl-2.5 pr-1.5 py-1 rounded bg-white/10 text-xs text-white">
                     {DELIVERY_TYPES[dtKey]?.[lang] || DELIVERY_TYPES[dtKey]?.de || dtKey}
-                    <button type="button" onClick={() => setSelectedDeliveryTypes(selectedDeliveryTypes.filter(d => d !== dtKey))} aria-label="Kursformat entfernen" className="hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-petrol rounded">
+                    <button type="button" onClick={() => setSelectedDeliveryTypes(selectedDeliveryTypes.filter(d => d !== dtKey))} aria-label="Kursformat entfernen" className="hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">
                       <X className="w-3 h-3" aria-hidden="true" />
                     </button>
                   </span>
                 ))}
                 {selectedSaule && (
-                  <span className="inline-flex items-center gap-1 pl-2.5 pr-1.5 py-1 rounded bg-grey/60 text-xs text-dark">
+                  <span className="inline-flex items-center gap-1 pl-2.5 pr-1.5 py-1 rounded bg-white/10 text-xs text-white">
                     {BERUF_SAEULEN[selectedSaule]?.shortDe || selectedSaule}
-                    <button type="button" onClick={() => setSelectedSaule('')} aria-label="Säule-Filter entfernen" className="hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-petrol rounded">
+                    <button type="button" onClick={() => setSelectedSaule('')} aria-label="Säule-Filter entfernen" className="hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">
                       <X className="w-3 h-3" aria-hidden="true" />
                     </button>
                   </span>
                 )}
                 {selectedKursart && (
-                  <span className="inline-flex items-center gap-1 pl-2.5 pr-1.5 py-1 rounded bg-grey/60 text-xs text-dark">
+                  <span className="inline-flex items-center gap-1 pl-2.5 pr-1.5 py-1 rounded bg-white/10 text-xs text-white">
                     {(PRIVAT_KURSARTEN[selectedKursart] || KINDER_KURSARTEN[selectedKursart])?.shortDe || selectedKursart}
-                    <button type="button" onClick={() => setSelectedKursart('')} aria-label="Kursart-Filter entfernen" className="hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-petrol rounded">
+                    <button type="button" onClick={() => setSelectedKursart('')} aria-label="Kursart-Filter entfernen" className="hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">
                       <X className="w-3 h-3" aria-hidden="true" />
                     </button>
                   </span>
                 )}
                 {filterDateFrom && (
-                  <span className="inline-flex items-center gap-1 pl-2.5 pr-1.5 py-1 rounded bg-grey/60 text-xs text-dark">
+                  <span className="inline-flex items-center gap-1 pl-2.5 pr-1.5 py-1 rounded bg-white/10 text-xs text-white">
                     Ab {filterDateFrom}
-                    <button type="button" onClick={() => setFilterDateFrom('')} aria-label="Datum-von-Filter entfernen" className="hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-petrol rounded">
+                    <button type="button" onClick={() => setFilterDateFrom('')} aria-label="Datum-von-Filter entfernen" className="hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">
                       <X className="w-3 h-3" aria-hidden="true" />
                     </button>
                   </span>
                 )}
                 {filterDateTo && (
-                  <span className="inline-flex items-center gap-1 pl-2.5 pr-1.5 py-1 rounded bg-grey/60 text-xs text-dark">
+                  <span className="inline-flex items-center gap-1 pl-2.5 pr-1.5 py-1 rounded bg-white/10 text-xs text-white">
                     Bis {filterDateTo}
-                    <button type="button" onClick={() => setFilterDateTo('')} aria-label="Datum-bis-Filter entfernen" className="hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-petrol rounded">
+                    <button type="button" onClick={() => setFilterDateTo('')} aria-label="Datum-bis-Filter entfernen" className="hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">
                       <X className="w-3 h-3" aria-hidden="true" />
                     </button>
                   </span>
                 )}
                 {filterPriceMax && (
-                  <span className="inline-flex items-center gap-1 pl-2.5 pr-1.5 py-1 rounded bg-grey/60 text-xs text-dark">
+                  <span className="inline-flex items-center gap-1 pl-2.5 pr-1.5 py-1 rounded bg-white/10 text-xs text-white">
                     Max CHF {filterPriceMax}
-                    <button type="button" onClick={() => setFilterPriceMax('')} aria-label="Preis-Filter entfernen" className="hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-petrol rounded">
+                    <button type="button" onClick={() => setFilterPriceMax('')} aria-label="Preis-Filter entfernen" className="hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">
                       <X className="w-3 h-3" aria-hidden="true" />
                     </button>
                   </span>
                 )}
                 {filterLevel && filterLevel !== 'All' && (
-                  <span className="inline-flex items-center gap-1 pl-2.5 pr-1.5 py-1 rounded bg-grey/60 text-xs text-dark">
+                  <span className="inline-flex items-center gap-1 pl-2.5 pr-1.5 py-1 rounded bg-white/10 text-xs text-white">
                     {COURSE_LEVELS[filterLevel]?.[lang] || COURSE_LEVELS[filterLevel]?.de || filterLevel}
-                    <button type="button" onClick={() => setFilterLevel('All')} aria-label="Niveau-Filter entfernen" className="hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-petrol rounded">
+                    <button type="button" onClick={() => setFilterLevel('All')} aria-label="Niveau-Filter entfernen" className="hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">
                       <X className="w-3 h-3" aria-hidden="true" />
                     </button>
                   </span>
                 )}
                 {selectedLanguages?.map(langKey => (
-                  <span key={langKey} className="inline-flex items-center gap-1 pl-2.5 pr-1.5 py-1 rounded bg-grey/60 text-xs text-dark">
+                  <span key={langKey} className="inline-flex items-center gap-1 pl-2.5 pr-1.5 py-1 rounded bg-white/10 text-xs text-white">
                     {langKey}
-                    <button type="button" onClick={() => setSelectedLanguages(selectedLanguages.filter(l => l !== langKey))} aria-label={`Sprache ${langKey} entfernen`} className="hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-petrol rounded">
+                    <button type="button" onClick={() => setSelectedLanguages(selectedLanguages.filter(l => l !== langKey))} aria-label={`Sprache ${langKey} entfernen`} className="hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">
                       <X className="w-3 h-3" aria-hidden="true" />
                     </button>
                   </span>
                 ))}
                 {filterPro && (
-                  <span className="inline-flex items-center gap-1 pl-2.5 pr-1.5 py-1 rounded bg-grey/60 text-xs text-dark">
+                  <span className="inline-flex items-center gap-1 pl-2.5 pr-1.5 py-1 rounded bg-white/10 text-xs text-white">
                     {t.lbl_professional_filter || 'Verifiziert'}
-                    <button type="button" onClick={() => setFilterPro(false)} aria-label="Verifiziert-Filter entfernen" className="hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-petrol rounded">
+                    <button type="button" onClick={() => setFilterPro(false)} aria-label="Verifiziert-Filter entfernen" className="hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">
                       <X className="w-3 h-3" aria-hidden="true" />
                     </button>
                   </span>
                 )}
                 {filterDirectBooking && (
-                  <span className="inline-flex items-center gap-1 pl-2.5 pr-1.5 py-1 rounded bg-grey/60 text-xs text-dark">
+                  <span className="inline-flex items-center gap-1 pl-2.5 pr-1.5 py-1 rounded bg-white/10 text-xs text-white">
                     {t.lbl_direct_booking_filter || 'Direktbuchung'}
-                    <button type="button" onClick={() => setFilterDirectBooking(false)} aria-label="Direktbuchung-Filter entfernen" className="hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-petrol rounded">
+                    <button type="button" onClick={() => setFilterDirectBooking(false)} aria-label="Direktbuchung-Filter entfernen" className="hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">
                       <X className="w-3 h-3" aria-hidden="true" />
                     </button>
                   </span>
                 )}
               </div>
             )}
+          </div>
           </div>
         </div>
       </section>
@@ -866,10 +922,8 @@ export const Home = ({
       <div className="py-20 bg-beige max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
         <div className="flex flex-col md:flex-row md:items-end md:justify-between mb-10 pb-4 border-b border-grey gap-3">
           <div>
-            <div className="flex items-center gap-2.5 text-xs font-bold text-petrol uppercase tracking-wider mb-2">
-              <span className="w-2 h-2 rounded-full bg-primary shrink-0" aria-hidden="true"></span>
-              <span className="w-7 h-[1.5px] bg-petrol/30 shrink-0" aria-hidden="true"></span>
-              <span>Direkt zu den Kursen</span>
+            <div className="mb-2">
+              <SectionMarker>Direkt zu den Kursen</SectionMarker>
             </div>
             <h2 className="font-heading text-2xl md:text-3xl font-bold text-dark">{t.home_path_title}</h2>
             <p className="font-sans text-gray-500 mt-1">{t.home_path_sub}</p>
@@ -936,8 +990,14 @@ export const Home = ({
       <div className="bg-[#F6F3F2] border-y border-grey py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="mb-10">
-            <h2 className="font-heading text-2xl md:text-3xl font-bold text-dark mb-2">{t.home_ratgeber_title || 'Ratgeber & Themenwelten'}</h2>
-            <p className="font-sans text-gray-500 max-w-2xl">{t.home_ratgeber_sub || ''}</p>
+            <div className="mb-2">
+              <SectionMarker>Orientierung &amp; Vertiefung</SectionMarker>
+            </div>
+            <div className="flex items-center gap-2.5">
+              <img src="/images/brand/kursnavi/guide.svg" alt="" aria-hidden="true" className="w-5 h-5" />
+              <h2 className="font-heading text-2xl md:text-3xl font-bold text-dark">{t.home_ratgeber_title || 'Ratgeber & Themenwelten'}</h2>
+            </div>
+            <p className="font-sans text-gray-500 max-w-2xl mt-1">{t.home_ratgeber_sub || ''}</p>
           </div>
 
           <div className="flex flex-col gap-8">
