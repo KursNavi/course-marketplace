@@ -36,6 +36,20 @@ const SEG_BORDER_30 = {
   kinder_jugend: 'border-segKinder/30',
 };
 
+// Nur fuer die Startseiten-Suchbox: bewusst berufsnahe Beispiele statt Freizeit-/Kinder-
+// Beispielen, damit KursNavi hier nicht primaer wie eine Hobby-/Kinderplattform wirkt
+// (die bestehenden i18n-Keys search_placeholder/btn_search bleiben unveraendert, da sie auch
+// auf BereichLandingPage.jsx verwendet werden).
+const HOME_SEARCH_EXAMPLES = {
+  de: 'z. B. Projektmanagement, Leadership, Marketing, Excel …',
+  en: 'e.g. project management, leadership, marketing, Excel …',
+  fr: 'p. ex. gestion de projet, leadership, marketing, Excel …',
+  it: 'es. project management, leadership, marketing, Excel …',
+};
+const HOME_SEARCH_BTN_LABEL = {
+  de: 'Kurse finden', en: 'Find courses', fr: 'Trouver des cours', it: 'Trova corsi',
+};
+
 // Wiederkehrendes Leitelement "Linie mit Punkt" (siehe public/images/brand/kursnavi/marker-hero.svg)
 // vor Abschnittslabels. Auf hellem Grund wird das Original-Asset verwendet (Petrol-Linie,
 // orangener Punkt); auf dem dunklen Hero-Petrol ist die feste Petrol-Strichfarbe des Assets
@@ -471,34 +485,45 @@ export const Home = ({
           Einstiege: links Browsing durch die Kategorien, rechts die Textsuche. Darunter ein
           gemeinsamer Filterblock, der fuer beide Einstiege gilt. Kein Kompass-/Weggabelungs-
           Symbol, keine Nummerierung — die drei Bereiche sind gleichwertig. */}
-      <section className="relative w-full bg-gradient-to-br from-[#17383F] via-[#14313B] to-[#0f262d] text-white overflow-hidden">
-        {/* Dezente organische Lichtflaechen, rein dekorativ */}
-        <div className="absolute -top-32 right-1/4 w-[550px] h-[550px] bg-segBeruflich/10 rounded-full blur-3xl pointer-events-none" aria-hidden="true"></div>
-        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-primary/[0.07] rounded-full blur-3xl pointer-events-none" aria-hidden="true"></div>
-        {/* Sehr feine Linienstruktur, nur bei genauerem Hinsehen wahrnehmbar */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{ backgroundImage: 'repeating-linear-gradient(135deg, rgba(255,255,255,0.025) 0px, rgba(255,255,255,0.025) 1px, transparent 1px, transparent 28px)' }}
-          aria-hidden="true"
-        ></div>
+      <section className="relative w-full bg-[#14313B] text-white">
+        {/* Hintergrund-Ebene: Foto + Petrol-Verlauf + dezente Lichtflaechen. Bewusst in einem
+            eigenen "overflow-hidden"-Wrapper statt auf der Section selbst — sonst wuerden die
+            Ort-/Kursformat-Dropdowns im Filterbereich weiter unten am Section-Rand abgeschnitten,
+            sobald ihr aufklappendes Menue ueber die Section-Kante hinausragt. */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
+          <img
+            src={SEGMENT_CONFIG.beruflich.heroBg}
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover"
+            onError={(e) => { e.target.style.display = 'none'; }}
+          />
+          {/* Petrol-Verlauf: oben (hinter Titel) am dunkelsten fuer Lesbarkeit, in der Mitte
+              etwas heller (Foto darf atmosphaerisch durchscheinen), unten (hinter dem Panel)
+              wieder ruhig/dunkel, damit Formularfelder nicht vor unruhigem Bildhintergrund stehen. */}
+          <div className="absolute inset-0 bg-gradient-to-b from-[#0f262d]/92 via-[#14313B]/70 to-[#0f262d]/93"></div>
+          <div className="absolute -top-32 right-1/4 w-[550px] h-[550px] bg-segBeruflich/10 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-primary/[0.06] rounded-full blur-3xl"></div>
+        </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-10 relative z-10">
 
-          {/* Abschnittsmarker + Ueberschrift + Intro ueber die gesamte Breite */}
-          <div className="max-w-2xl mb-6 md:mb-7">
+          {/* Abschnittsmarker + Ueberschrift + Intro ueber die gesamte verfuegbare Breite */}
+          <div className="mb-6 md:mb-7">
             <div className="mb-3">
               <SectionMarker dark>Dein Bildungswegweiser für die Schweiz</SectionMarker>
             </div>
-            <h1 className="text-3xl md:text-5xl font-heading font-bold tracking-tight text-beige mb-3 leading-tight">
+            <h1 className="text-3xl md:text-5xl font-heading font-bold tracking-tight text-beige mb-3 leading-tight max-w-4xl">
               {t.home_headline}
             </h1>
-            <p className="text-base md:text-lg text-white/80 max-w-2xl leading-relaxed">
+            <p className="text-base md:text-lg text-white/80 max-w-3xl leading-relaxed">
               {t.home_subhead}
             </p>
           </div>
 
-          {/* Gemeinsames Panel: Browsing links und Suche rechts gehoeren sichtbar zusammen */}
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-5 sm:p-7 lg:p-8">
+          {/* Gemeinsames Panel: Browsing links und Suche rechts gehoeren sichtbar zusammen.
+              backdrop-blur sorgt dafuer, dass die Inhalte vor dem Hintergrundfoto gut lesbar
+              bleiben, auch wenn das Foto an einer Stelle einmal heller/unruhiger ist. */}
+          <div className="relative rounded-2xl border border-white/10 bg-[#14313B]/60 backdrop-blur-sm p-5 sm:p-7 lg:p-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
 
             {/* LINKS (Desktop) / 2. Block (Mobile): mehrstufiger Kategorie-Browser */}
@@ -507,7 +532,7 @@ export const Home = ({
                 <span className="w-6 h-6 rounded-full bg-beige flex items-center justify-center shrink-0">
                   <img src="/images/brand/kursnavi/navigation.svg" alt="" aria-hidden="true" className="w-3.5 h-3.5" />
                 </span>
-                <span className="text-xs font-semibold uppercase tracking-wider text-white/70">Durchsuche alle Bildungsthemen</span>
+                <span className="text-sm font-semibold text-white/80">Bereiche entdecken</span>
               </div>
 
               {/* Breadcrumb: zeigt die aktuelle Auswahl, jede fruehere Ebene ist klickbar */}
@@ -591,6 +616,9 @@ export const Home = ({
                       <span className="text-sm font-bold text-beige">Alle Kurse in {getTypeLabel(activeType)} anzeigen</span>
                       <ArrowRight className={`w-4 h-4 ${segShowAll.arrow} shrink-0`} aria-hidden="true" />
                     </button>
+                    {visibleAreas.length > 0 && (
+                      <p className="text-xs text-white/50 pt-1 pb-0.5 px-1">Oder weiter stöbern:</p>
+                    )}
                     {visibleAreas.map(areaSlug => (
                       <button key={areaSlug} type="button" onClick={() => selectArea(areaSlug)} className="w-full flex items-center justify-between p-3.5 rounded-lg bg-white/5 border border-white/10 hover:border-white/30 hover:bg-white/10 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white">
                         <span className="text-sm font-medium text-beige">{getAreaLabel(activeType, areaSlug)}</span>
@@ -607,6 +635,9 @@ export const Home = ({
                       <span className="text-sm font-bold text-beige">Alle Kurse in {getAreaLabel(activeType, activeArea)} anzeigen</span>
                       <ArrowRight className={`w-4 h-4 ${segShowAll.arrow} shrink-0`} aria-hidden="true" />
                     </button>
+                    {visibleSpecialties.length > 0 && (
+                      <p className="text-xs text-white/50 pt-1 pb-0.5 px-1">Oder weiter stöbern:</p>
+                    )}
                     {visibleSpecialties.map(spec => (
                       <button key={spec.label} type="button" onClick={() => selectSpecialty(spec.label)} className="w-full flex items-center justify-between p-3.5 rounded-lg bg-white/5 border border-white/10 hover:border-white/30 hover:bg-white/10 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white">
                         <span className="text-sm font-medium text-beige">{spec.label}</span>
@@ -623,6 +654,9 @@ export const Home = ({
                       <span className="text-sm font-bold text-beige">Alle Kurse in {activeSpecialty} anzeigen</span>
                       <ArrowRight className={`w-4 h-4 ${segShowAll.arrow} shrink-0`} aria-hidden="true" />
                     </button>
+                    {visibleFocuses.length > 0 && (
+                      <p className="text-xs text-white/50 pt-1 pb-0.5 px-1">Oder weiter stöbern:</p>
+                    )}
                     {visibleFocuses.map(focus => (
                       <button key={focus} type="button" onClick={() => selectFocus(focus)} className="w-full flex items-center justify-between p-3.5 rounded-lg bg-white/5 border border-white/10 hover:border-white/30 hover:bg-white/10 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white">
                         <span className="text-sm font-medium text-beige">{focus}</span>
@@ -640,11 +674,11 @@ export const Home = ({
               <div className="bg-beige text-dark rounded-xl p-6 md:p-8 shadow-lg shadow-black/20">
                 <div className="flex items-center gap-2.5 pb-4 border-b border-grey mb-6">
                   <img src="/images/brand/kursnavi/search.svg" alt="" aria-hidden="true" className="w-4 h-4" />
-                  <span className="text-xs font-bold uppercase tracking-wider text-petrol">Gezielt suchen</span>
+                  <span className="text-sm font-semibold text-petrol">Gezielt suchen</span>
                 </div>
 
                 <form onSubmit={handleSearch}>
-                  <label htmlFor="home-search-input" className="block text-xs font-semibold uppercase tracking-wider text-dark mb-2">
+                  <label htmlFor="home-search-input" className="block text-sm font-medium text-dark mb-2">
                     {t.search_placeholder}
                   </label>
                   <div className="relative">
@@ -652,10 +686,10 @@ export const Home = ({
                     <input
                       id="home-search-input"
                       type="text"
-                      placeholder={t.search_placeholder}
+                      placeholder={HOME_SEARCH_EXAMPLES[lang] || HOME_SEARCH_EXAMPLES.de}
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full pl-12 pr-4 py-4 bg-white border border-grey rounded-lg text-lg text-dark placeholder:text-gray-400 focus:outline-none focus:border-petrol focus:ring-1 focus:ring-petrol transition-colors"
+                      className="w-full pl-12 pr-4 py-4 bg-white border border-grey rounded-lg text-lg text-dark placeholder:text-gray-400 placeholder:text-base focus:outline-none focus:border-petrol focus:ring-1 focus:ring-petrol transition-colors"
                     />
                   </div>
                   <details className="mt-2 mb-6">
@@ -667,9 +701,9 @@ export const Home = ({
 
                   <button
                     type="submit"
-                    className="w-full px-8 py-3.5 bg-primary hover:bg-orange-600 text-white font-label-md text-base font-semibold rounded-lg shadow-sm transition-colors flex items-center justify-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-petrol focus-visible:ring-offset-2"
+                    className="w-full sm:w-auto px-8 py-3.5 bg-primary hover:bg-orange-600 text-white font-label-md text-base font-semibold rounded-lg shadow-sm transition-colors flex items-center justify-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-petrol focus-visible:ring-offset-2"
                   >
-                    <span>{t.btn_search}</span>
+                    <span>{HOME_SEARCH_BTN_LABEL[lang] || HOME_SEARCH_BTN_LABEL.de}</span>
                     <ArrowRight className="w-4 h-4" aria-hidden="true" />
                   </button>
                 </form>
@@ -684,18 +718,21 @@ export const Home = ({
               Trennlinie vom Zwei-Spalten-Bereich abgesetzt. Ort/Kursformat immer sichtbar,
               Rest hinter "Weitere Filter". */}
           <div className="mt-8 pt-6 border-t border-white/10">
-            <div className="flex items-center justify-between pb-4 mb-5 gap-3 flex-wrap">
-              <div className="flex items-center gap-2">
-                <span className="w-6 h-6 rounded-full bg-beige flex items-center justify-center shrink-0">
+            <div className="flex items-start justify-between mb-5 gap-3 flex-wrap">
+              <div className="flex items-start gap-2">
+                <span className="w-6 h-6 rounded-full bg-beige flex items-center justify-center shrink-0 mt-0.5">
                   <img src="/images/brand/kursnavi/filter.svg" alt="" aria-hidden="true" className="w-3.5 h-3.5" />
                 </span>
-                <span className="text-xs font-bold uppercase tracking-wider text-white/75">Filter für Suche &amp; Browsing</span>
+                <div>
+                  <span className="text-sm font-semibold text-white/85">Verfeinern (optional)</span>
+                  <p className="text-xs text-white/55 mt-0.5">Verfeinere deine Suche – egal, ob du einen Bereich auswählst oder gezielt suchst.</p>
+                </div>
               </div>
               {hasActiveHomeFilters && (
                 <button
                   type="button"
                   onClick={resetAllHomeFilters}
-                  className="text-xs font-semibold text-white/70 hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded"
+                  className="text-xs font-semibold text-white/70 hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded shrink-0"
                 >
                   Alle zurücksetzen
                 </button>
@@ -704,7 +741,7 @@ export const Home = ({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-white/70 mb-1.5">{t.filter_label_loc || 'Ort'}</label>
+                <label className="block text-sm font-medium text-white/70 mb-1.5">{t.filter_label_loc || 'Ort'}</label>
                 <div className="bg-white rounded border border-grey">
                   <LocationDropdown
                     selectedLocations={selectedLocations}
@@ -718,7 +755,7 @@ export const Home = ({
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-white/70 mb-1.5">Kursformat</label>
+                <label className="block text-sm font-medium text-white/70 mb-1.5">Kursformat</label>
                 <div className="bg-white rounded border border-grey">
                   <DeliveryTypeFilter
                     selectedDeliveryTypes={selectedDeliveryTypes}
@@ -733,13 +770,13 @@ export const Home = ({
               </div>
             </div>
 
-            <div className="pt-4 mt-4 border-t border-white/10">
+            <div className="pt-3 mt-3">
               <button
                 type="button"
                 onClick={() => setShowMoreFilters(v => !v)}
                 aria-expanded={showMoreFilters}
                 aria-controls="home-more-filters"
-                className="text-xs font-medium text-white/70 hover:text-primary inline-flex items-center gap-1.5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded"
+                className="text-sm font-medium text-white/70 hover:text-primary inline-flex items-center gap-1.5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded"
               >
                 <span>Weitere Filter{secondaryFilterCount > 0 ? ` (${secondaryFilterCount})` : ''}</span>
                 <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${showMoreFilters ? 'rotate-180' : ''}`} aria-hidden="true" />
