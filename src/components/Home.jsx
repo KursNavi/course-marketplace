@@ -497,10 +497,11 @@ export const Home = ({
             className="absolute inset-0 w-full h-full object-cover"
             onError={(e) => { e.target.style.display = 'none'; }}
           />
-          {/* Petrol-Verlauf: oben (hinter Titel) am dunkelsten fuer Lesbarkeit, in der Mitte
-              etwas heller (Foto darf atmosphaerisch durchscheinen), unten (hinter dem Panel)
-              wieder ruhig/dunkel, damit Formularfelder nicht vor unruhigem Bildhintergrund stehen. */}
-          <div className="absolute inset-0 bg-gradient-to-b from-[#0f262d]/92 via-[#14313B]/70 to-[#0f262d]/93"></div>
+          {/* Durchgehend dunkle, halbtransparente Petrol-Flaeche ueber dem Foto (wie eine dunkle
+              transparente Rechteck-Ebene in einer Praesentation) — das Foto bleibt als Atmosphaere
+              erkennbar, aber der weisse Text ist ueberall zuverlaessig lesbar. Vorherige Version
+              liess in der Bildmitte zu viel Helligkeit durch (dort sass u.a. die Ueberschrift). */}
+          <div className="absolute inset-0 bg-petrolDark/80"></div>
           <div className="absolute -top-32 right-1/4 w-[550px] h-[550px] bg-segBeruflich/10 rounded-full blur-3xl"></div>
           <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-primary/[0.06] rounded-full blur-3xl"></div>
         </div>
