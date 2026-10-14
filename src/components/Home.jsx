@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, ArrowRight, ChevronRight, ChevronDown, CreditCard, Shield, X } from 'lucide-react';
+import { Search, ArrowRight, ChevronRight, ChevronLeft, ChevronDown, CreditCard, Shield, X } from 'lucide-react';
 import { LocationDropdown, DeliveryTypeFilter, LanguageDropdown, SaeulenFilter, KursartFilter } from './Filters';
 import { SEGMENT_CONFIG, DELIVERY_TYPES, CATEGORY_TYPES, COURSE_LEVELS, BERUF_SAEULEN, PRIVAT_KURSARTEN, KINDER_KURSARTEN } from '../lib/constants';
 import { PRIVAT_KURSART_ICONS, KINDER_KURSART_ICONS } from '../lib/kursartIcons';
@@ -41,10 +41,10 @@ const SEG_BORDER_30 = {
 // (die bestehenden i18n-Keys search_placeholder/btn_search bleiben unveraendert, da sie auch
 // auf BereichLandingPage.jsx verwendet werden).
 const HOME_SEARCH_EXAMPLES = {
-  de: 'z. B. Projektmanagement, Leadership, Marketing, Excel …',
-  en: 'e.g. project management, leadership, marketing, Excel …',
-  fr: 'p. ex. gestion de projet, leadership, marketing, Excel …',
-  it: 'es. project management, leadership, marketing, Excel …',
+  de: 'z. B. Projektmanagement, Klavier, Marketing, Design-Workshop …',
+  en: 'e.g. project management, piano, marketing, design workshop …',
+  fr: 'p. ex. gestion de projet, piano, marketing, atelier design …',
+  it: 'es. project management, pianoforte, marketing, workshop di design …',
 };
 const HOME_SEARCH_BTN_LABEL = {
   de: 'Kurse finden', en: 'Find courses', fr: 'Trouver des cours', it: 'Trova corsi',
@@ -200,10 +200,24 @@ export const Home = ({
     if (selectedLocations?.length) params.set('loc', selectedLocations.join(','));
     if (selectedDeliveryTypes?.length) params.set('delivery', selectedDeliveryTypes.join(','));
 
-    // Auto-detect segment from query, mark with autoType flag for search page hint
-    const guessedType = searchQuery ? guessTypeFromQuery(searchQuery) : 'privat_hobby';
-    params.set('type', guessedType);
-    params.set('autoType', '1');
+    if (activeType) {
+      // Nutzer hat im "Bereiche entdecken"-Pfad zusaetzlich einen Bereich gewaehlt, bevor
+      // "Kurse finden" gedrueckt wurde — Bereich und Suchtext sind kombinierbar, aber keines
+      // ist Pflicht. Der gewaehlte Bereich hat Vorrang vor der Text-Vermutung unten; ein
+      // eingegebener Suchtext bleibt als zusaetzlicher Filter (q) erhalten.
+      setSearchType(activeType);
+      setSearchArea(activeArea || "");
+      setSearchSpecialty(activeSpecialty || "");
+      setSearchFocus("");
+      params.set('type', activeType);
+      if (activeArea) params.set('area', activeArea);
+      if (activeSpecialty) params.set('spec', activeSpecialty);
+    } else {
+      // Kein Bereich gewaehlt: Zieltyp wird wie bisher aus dem Suchtext geraten.
+      const guessedType = searchQuery ? guessTypeFromQuery(searchQuery) : 'privat_hobby';
+      params.set('type', guessedType);
+      params.set('autoType', '1');
+    }
 
     window.history.pushState({ view: 'search' }, '', '/search?' + params.toString());
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -521,10 +535,12 @@ export const Home = ({
             </p>
           </div>
 
-          {/* Gemeinsames Panel: Browsing links und Suche rechts gehoeren sichtbar zusammen.
-              backdrop-blur sorgt dafuer, dass die Inhalte vor dem Hintergrundfoto gut lesbar
-              bleiben, auch wenn das Foto an einer Stelle einmal heller/unruhiger ist. */}
-          <div className="relative rounded-2xl border border-white/10 bg-[#14313B]/60 backdrop-blur-sm p-5 sm:p-7 lg:p-8">
+          {/* Gemeinsames Panel UND gemeinsames Formular: Browsing links und Suche rechts gehoeren
+              sichtbar zusammen, beide sind kombinierbar (Bereich und/oder Suchtext), die Filter
+              darunter gelten fuer beides, und "Kurse finden" am Ende fasst alles zusammen.
+              bg-Deckkraft bewusst hoch (wenig transparent), damit das Hintergrundfoto hier nicht
+              von der Bedienung ablenkt. */}
+          <form onSubmit={handleSearch} className="relative rounded-2xl border border-white/10 bg-[#14313B]/90 backdrop-blur-sm p-5 sm:p-7 lg:p-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
 
             {/* LINKS (Desktop) / 2. Block (Mobile): mehrstufiger Kategorie-Browser */}
@@ -626,6 +642,9 @@ export const Home = ({
                         <ChevronRight className="w-4 h-4 text-white/50 shrink-0" aria-hidden="true" />
                       </button>
                     ))}
+                    <button type="button" onClick={() => setActiveType(null)} className="inline-flex items-center gap-1 text-xs text-white/50 hover:text-white pt-2 px-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">
+                      <ChevronLeft className="w-3.5 h-3.5" aria-hidden="true" /> Zurück
+                    </button>
                   </>
                 )}
 
@@ -645,6 +664,9 @@ export const Home = ({
                         <ChevronRight className="w-4 h-4 text-white/50 shrink-0" aria-hidden="true" />
                       </button>
                     ))}
+                    <button type="button" onClick={() => selectType(activeType)} className="inline-flex items-center gap-1 text-xs text-white/50 hover:text-white pt-2 px-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">
+                      <ChevronLeft className="w-3.5 h-3.5" aria-hidden="true" /> Zurück
+                    </button>
                   </>
                 )}
 
@@ -664,6 +686,9 @@ export const Home = ({
                         <ArrowRight className="w-4 h-4 text-white/50 shrink-0" aria-hidden="true" />
                       </button>
                     ))}
+                    <button type="button" onClick={() => selectArea(activeArea)} className="inline-flex items-center gap-1 text-xs text-white/50 hover:text-white pt-2 px-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">
+                      <ChevronLeft className="w-3.5 h-3.5" aria-hidden="true" /> Zurück
+                    </button>
                   </>
                 )}
               </div>
@@ -678,7 +703,7 @@ export const Home = ({
                   <span className="text-sm font-semibold text-petrol">Gezielt suchen</span>
                 </div>
 
-                <form onSubmit={handleSearch}>
+                <div>
                   <label htmlFor="home-search-input" className="block text-sm font-medium text-dark mb-2">
                     {t.search_placeholder}
                   </label>
@@ -693,21 +718,13 @@ export const Home = ({
                       className="w-full pl-12 pr-4 py-4 bg-white border border-grey rounded-lg text-lg text-dark placeholder:text-gray-400 placeholder:text-base focus:outline-none focus:border-petrol focus:ring-1 focus:ring-petrol transition-colors"
                     />
                   </div>
-                  <details className="mt-2 mb-6">
+                  <details className="mt-2">
                     <summary className="inline-flex min-h-11 cursor-pointer items-center text-xs text-gray-500 underline underline-offset-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-petrol rounded">
                       {t.search_help_label || 'Such-Tipp'}
                     </summary>
                     <p className="pb-1 text-xs text-gray-500">{t.search_hint_boolean || 'Tipp: Kombiniere Begriffe mit AND oder OR (z.B. "Yoga AND Zürich")'}</p>
                   </details>
-
-                  <button
-                    type="submit"
-                    className="w-full sm:w-auto px-8 py-3.5 bg-primary hover:bg-orange-600 text-white font-label-md text-base font-semibold rounded-lg shadow-sm transition-colors flex items-center justify-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-petrol focus-visible:ring-offset-2"
-                  >
-                    <span>{HOME_SEARCH_BTN_LABEL[lang] || HOME_SEARCH_BTN_LABEL.de}</span>
-                    <ArrowRight className="w-4 h-4" aria-hidden="true" />
-                  </button>
-                </form>
+                </div>
               </div>
             </div>
 
@@ -950,7 +967,21 @@ export const Home = ({
               </div>
             )}
           </div>
+
+          {/* Gemeinsame Hauptaktion — steht bewusst ganz am Ende, nach Bereich/Suche UND Filtern,
+              damit eine logische Reihenfolge entsteht: Bereich entdecken oder gezielt suchen,
+              optional verfeinern, dann Kurse finden. Fasst Bereichsauswahl (falls getroffen),
+              Suchtext (falls eingegeben) und alle Filter in einer Aktion zusammen. */}
+          <div className="mt-6 pt-6 border-t border-white/10 flex justify-center sm:justify-start">
+            <button
+              type="submit"
+              className="w-full sm:w-auto px-10 py-3.5 bg-primary hover:bg-orange-600 text-white font-label-md text-base font-semibold rounded-lg shadow-sm transition-colors flex items-center justify-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#14313B]"
+            >
+              <span>{HOME_SEARCH_BTN_LABEL[lang] || HOME_SEARCH_BTN_LABEL.de}</span>
+              <ArrowRight className="w-4 h-4" aria-hidden="true" />
+            </button>
           </div>
+          </form>
         </div>
       </section>
 
