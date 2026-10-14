@@ -16,8 +16,9 @@ export default {
         dark: '#333333',         // Black/Grey (Text)
         grey: '#EBEBEB',         // Light Grey (Borders)
 
-        // Homepage "Swiss Editorial" restyle (additive, homepage-only — see tailwind.config.js usage in Home.jsx/Layout.jsx).
-        // Not part of SEGMENT_CONFIG and intentionally not wired into other pages.
+        // "Swiss Editorial" restyle tokens (additive) — originally homepage-only, now also used
+        // on the search page (SearchPageView.jsx) for the "Bereiche entdecken" browse context.
+        // Not part of SEGMENT_CONFIG, which still drives the rest of the site's segment colors.
         petrol: '#183642',
         petrolDark: '#0f232b',
         segBeruflich: '#347FA0', // Beruflich bleibt blau

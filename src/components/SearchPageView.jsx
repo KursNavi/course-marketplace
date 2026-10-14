@@ -17,6 +17,8 @@ import { trackContentsquareSearchFilterApplied } from '../lib/contentsquare';
 import { getSearchHeader } from '../lib/searchHeaderConfig';
 import { getSearchAreaSlugs } from '../lib/searchAreaAliases';
 import { sortCoursesByRelevance, stableSeed } from '../lib/searchRelevance';
+import { SectionMarker } from './SectionMarker';
+import { SEGMENT_VISUALS, SEG_SHOW_ALL_STYLES, SEG_BORDER_60 } from '../lib/segmentVisuals';
 
 import { DEFAULT_COURSE_IMAGE } from '../lib/imageUtils';
 const fallbackImage = DEFAULT_COURSE_IMAGE;
@@ -524,6 +526,35 @@ const SearchPageView = ({
         setSearchQuery("");
     }, [setSearchQuery]);
 
+    // --- "BEREICHE ENTDECKEN" BROWSE-KONTEXT ---
+    // Nutzt dieselbe Kategorie-Auswahl (searchType/Area/Specialty/Focus) wie die bestehende
+    // Filterkaskade weiter unten im Filterbereich — beide schreiben/lesen denselben State und
+    // bleiben dadurch automatisch synchron, ohne eine zweite parallele Suchlogik zu benötigen.
+    const canonSegKey = CANONICAL_SEGMENT[searchType] || null;
+
+    const selectSegmentBrowse = (segKey) => {
+        const params = new URLSearchParams(window.location.search);
+        params.set('type', segKey);
+        params.delete('autoType'); params.delete('area'); params.delete('spec'); params.delete('focus');
+        window.history.pushState({ view: 'search' }, '', '/search?' + params.toString());
+        setSearchType(segKey);
+        setSearchArea(''); setSearchSpecialty(''); setSearchFocus('');
+        setIsAutoType(false);
+        if (setAutoType) setAutoType(false);
+    };
+    const resetToAllSegmentsBrowse = () => {
+        const params = new URLSearchParams(window.location.search);
+        params.delete('type'); params.delete('autoType'); params.delete('area'); params.delete('spec'); params.delete('focus');
+        window.history.pushState({ view: 'search' }, '', '/search' + (params.toString() ? '?' + params.toString() : ''));
+        setSearchType(''); setSearchArea(''); setSearchSpecialty(''); setSearchFocus('');
+    };
+    const selectAreaBrowse = (slug) => { setSearchArea(slug); setSearchSpecialty(''); setSearchFocus(''); };
+    const selectSpecialtyBrowse = (label) => { setSearchSpecialty(label); setSearchFocus(''); };
+    const selectFocusBrowse = (label) => { setSearchFocus(label); };
+    const showAllInTypeBrowse = () => { setSearchArea(''); setSearchSpecialty(''); setSearchFocus(''); };
+    const showAllInAreaBrowse = () => { setSearchSpecialty(''); setSearchFocus(''); };
+    const showAllInSpecialtyBrowse = () => { setSearchFocus(''); };
+
     // Count active secondary filters (Kursformat, Kursart, Säulen, Datum, Kurssprache, Preis, Niveau, Verifiziert, Direktbuchung)
     const secondaryFilterCount = [
         selectedDeliveryTypes.length > 0,
@@ -777,9 +808,176 @@ const SearchPageView = ({
                 </div>
             )}
 
+            {/* BEREICHE ENTDECKEN — sichtbarer Browse-Kontext oberhalb von Filtern & Ergebnissen.
+                Zeigt entweder die drei gleichwertigen Bereiche (kein searchType) oder den
+                aktuellen Kategoriepfad mit klickbarer naechster Ebene und einer "Alle Kurse in
+                diesem Bereich anzeigen"-Aktion auf jeder Ebene (nicht erst auf der untersten). */}
+            <div className="bg-white border-b border-borderSubtle">
+                <div className="max-w-7xl mx-auto px-4 py-5">
+                    <div className="mb-4">
+                        <SectionMarker>Bereiche entdecken</SectionMarker>
+                    </div>
+
+                    {!searchType ? (
+                        <>
+                            <p className="text-sm text-gray-600 mb-4 max-w-2xl">
+                                Stöbere durch die Bereiche oder suche direkt nach einem Thema. Wähle einen Bereich und vertiefe dich Schritt für Schritt in passende Themen — oder nutze die Suche oben und verfeinere deine Auswahl anschliessend mit Ort, Kursformat und weiteren Filtern.
+                            </p>
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3" data-testid="browse-segment-picker">
+                                {['beruflich', 'privat_hobby', 'kinder_jugend'].map(segKey => {
+                                    const visuals = SEGMENT_VISUALS[segKey];
+                                    const Icon = visuals.icon;
+                                    const label = segKey === 'beruflich' ? (t.nav_professional || 'Beruflich') : segKey === 'privat_hobby' ? (t.nav_private || 'Privat & Hobby') : (t.nav_kids || 'Kinder & Jugend');
+                                    const desc = segKey === 'beruflich' ? t.home_card_prof_sub : segKey === 'privat_hobby' ? t.home_card_priv_sub : t.home_card_kids_sub;
+                                    return (
+                                        <button
+                                            key={segKey}
+                                            type="button"
+                                            data-testid={`browse-segment-${segKey}`}
+                                            onClick={() => selectSegmentBrowse(segKey)}
+                                            className={`group flex items-center gap-3 rounded-lg border-l-[3px] ${SEG_BORDER_60[segKey]} bg-beige/60 hover:bg-beige pl-4 pr-3.5 py-3.5 transition-colors text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-petrol`}
+                                        >
+                                            <span className="w-9 h-9 rounded-full flex items-center justify-center bg-white border border-borderSubtle shrink-0">
+                                                <Icon className="w-4 h-4" />
+                                            </span>
+                                            <span className="flex-1 min-w-0">
+                                                <span className="block text-sm font-bold text-dark">{label}</span>
+                                                {desc && <span className="block text-xs text-gray-500 mt-0.5">{desc}</span>}
+                                            </span>
+                                            <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-dark group-hover:translate-x-0.5 transition-all shrink-0" aria-hidden="true" />
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </>
+                    ) : (
+                        <>
+                            {/* Kategoriepfad — jede fruehere Ebene ist klickbar und fuehrt dorthin zurueck */}
+                            <nav aria-label="Kategorie-Navigation" className="mb-4">
+                                <ol className="flex flex-wrap items-center gap-1.5 text-sm" data-testid="browse-breadcrumb">
+                                    <li>
+                                        <button type="button" onClick={resetToAllSegmentsBrowse} className="text-gray-500 hover:text-petrol underline-offset-2 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-petrol rounded">
+                                            Alle Bereiche
+                                        </button>
+                                    </li>
+                                    <li className="flex items-center gap-1.5">
+                                        <ChevronRight className="w-3.5 h-3.5 text-gray-300" aria-hidden="true" />
+                                        {searchArea ? (
+                                            <button type="button" onClick={showAllInTypeBrowse} className="text-gray-500 hover:text-petrol underline-offset-2 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-petrol rounded">
+                                                {getLabel(searchType, 'type')}
+                                            </button>
+                                        ) : (
+                                            <span aria-current="page" className="font-semibold text-dark">{getLabel(searchType, 'type')}</span>
+                                        )}
+                                    </li>
+                                    {searchArea && (
+                                        <li className="flex items-center gap-1.5">
+                                            <ChevronRight className="w-3.5 h-3.5 text-gray-300" aria-hidden="true" />
+                                            {searchSpecialty ? (
+                                                <button type="button" onClick={showAllInAreaBrowse} className="text-gray-500 hover:text-petrol underline-offset-2 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-petrol rounded">
+                                                    {getLabel(searchArea, 'area')}
+                                                </button>
+                                            ) : (
+                                                <span aria-current="page" className="font-semibold text-dark">{getLabel(searchArea, 'area')}</span>
+                                            )}
+                                        </li>
+                                    )}
+                                    {searchSpecialty && (
+                                        <li className="flex items-center gap-1.5">
+                                            <ChevronRight className="w-3.5 h-3.5 text-gray-300" aria-hidden="true" />
+                                            {searchFocus ? (
+                                                <button type="button" onClick={showAllInSpecialtyBrowse} className="text-gray-500 hover:text-petrol underline-offset-2 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-petrol rounded">
+                                                    {searchSpecialty}
+                                                </button>
+                                            ) : (
+                                                <span aria-current="page" className="font-semibold text-dark">{searchSpecialty}</span>
+                                            )}
+                                        </li>
+                                    )}
+                                    {searchFocus && (
+                                        <li className="flex items-center gap-1.5">
+                                            <ChevronRight className="w-3.5 h-3.5 text-gray-300" aria-hidden="true" />
+                                            <span aria-current="page" className="font-semibold text-dark">{searchFocus}</span>
+                                        </li>
+                                    )}
+                                </ol>
+                            </nav>
+
+                            {/* Naechste Ebene als klickbare Auswahl, plus "Alle Kurse in diesem Bereich
+                                anzeigen" auf jeder Ebene — nicht erst nach der untersten Ebene */}
+                            {!searchArea && (
+                                <>
+                                    <button type="button" data-testid="browse-show-all-type" onClick={showAllInTypeBrowse} className={`inline-flex items-center gap-1.5 text-sm font-semibold ${canonSegKey ? SEG_SHOW_ALL_STYLES[canonSegKey].arrow : 'text-primary'} hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-petrol rounded`}>
+                                        Alle Kurse in {getLabel(searchType, 'type')} anzeigen <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
+                                    </button>
+                                    {availableAreas.length > 0 && (
+                                        <>
+                                            <p className="text-xs text-gray-500 mt-3 mb-2">Oder weiter stöbern:</p>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2" data-testid="browse-areas">
+                                                {availableAreas.map(slug => (
+                                                    <button key={slug} type="button" onClick={() => selectAreaBrowse(slug)} className="flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-lg border border-borderSubtle bg-beige/50 hover:bg-beige hover:border-gray-300 transition-colors text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-petrol">
+                                                        <span className="text-sm font-medium text-dark truncate">{getLabel(slug, 'area')}</span>
+                                                        <ChevronRight className="w-4 h-4 text-gray-400 shrink-0" aria-hidden="true" />
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </>
+                                    )}
+                                </>
+                            )}
+
+                            {searchArea && !searchSpecialty && (
+                                <>
+                                    <button type="button" data-testid="browse-show-all-area" onClick={showAllInAreaBrowse} className={`inline-flex items-center gap-1.5 text-sm font-semibold ${canonSegKey ? SEG_SHOW_ALL_STYLES[canonSegKey].arrow : 'text-primary'} hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-petrol rounded`}>
+                                        Alle Kurse in {getLabel(searchArea, 'area')} anzeigen <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
+                                    </button>
+                                    {availableSpecialties.length > 0 && (
+                                        <>
+                                            <p className="text-xs text-gray-500 mt-3 mb-2">Oder weiter stöbern:</p>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2" data-testid="browse-specialties">
+                                                {availableSpecialties.map(spec => (
+                                                    <button key={spec} type="button" onClick={() => selectSpecialtyBrowse(spec)} className="flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-lg border border-borderSubtle bg-beige/50 hover:bg-beige hover:border-gray-300 transition-colors text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-petrol">
+                                                        <span className="text-sm font-medium text-dark truncate">{spec}</span>
+                                                        <ChevronRight className="w-4 h-4 text-gray-400 shrink-0" aria-hidden="true" />
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </>
+                                    )}
+                                </>
+                            )}
+
+                            {searchSpecialty && (
+                                <>
+                                    <button type="button" data-testid="browse-show-all-specialty" onClick={showAllInSpecialtyBrowse} className={`inline-flex items-center gap-1.5 text-sm font-semibold ${canonSegKey ? SEG_SHOW_ALL_STYLES[canonSegKey].arrow : 'text-primary'} hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-petrol rounded`}>
+                                        Alle Kurse in {searchSpecialty} anzeigen <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
+                                    </button>
+                                    {!searchFocus && availableFocuses.length > 0 && (
+                                        <>
+                                            <p className="text-xs text-gray-500 mt-3 mb-2">Oder weiter stöbern:</p>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2" data-testid="browse-focuses">
+                                                {availableFocuses.map(f => (
+                                                    <button key={f} type="button" onClick={() => selectFocusBrowse(f)} className="flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-lg border border-borderSubtle bg-beige/50 hover:bg-beige hover:border-gray-300 transition-colors text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-petrol">
+                                                        <span className="text-sm font-medium text-dark truncate">{f}</span>
+                                                        <ArrowRight className="w-4 h-4 text-gray-400 shrink-0" aria-hidden="true" />
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </>
+                                    )}
+                                </>
+                            )}
+                        </>
+                    )}
+                </div>
+            </div>
+
             {/* Sticky filter bar (sticky only on sm+ to avoid mobile overflow) */}
             <div className="bg-white border-b pt-3 pb-2 sm:sticky sm:top-20 z-30 shadow-sm">
                 <div className="max-w-7xl mx-auto px-4 space-y-2">
+                    <p className="text-[11px] text-gray-400 -mb-1">
+                        Ort, Kursformat und weitere Filter gelten für beide Einstiege — egal, ob du oben durch die Bereiche stöberst oder direkt suchst.
+                    </p>
                     {/* Row 1: Search + Location */}
                     <div className="flex flex-col md:flex-row gap-2 items-stretch">
                         <div className="relative flex-grow w-full md:w-auto">
@@ -1037,17 +1235,17 @@ const SearchPageView = ({
                             </span>
                         )}
                         {searchArea && (
-                            <span onClick={() => { setSearchArea(''); setSearchSpecialty(''); setSearchFocus(''); }} className="hidden sm:flex text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-orange-200 items-center">
+                            <span onClick={() => { setSearchArea(''); setSearchSpecialty(''); setSearchFocus(''); }} className="flex text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-orange-200 items-center">
                                 {getLabel(searchArea, 'area')} <X className="w-3 h-3 ml-1 opacity-50" />
                             </span>
                         )}
                         {searchSpecialty && (
-                            <span onClick={() => { setSearchSpecialty(''); setSearchFocus(''); }} className="hidden sm:flex text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-orange-200 items-center">
+                            <span onClick={() => { setSearchSpecialty(''); setSearchFocus(''); }} className="flex text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-orange-200 items-center">
                                 {searchSpecialty} <X className="w-3 h-3 ml-1 opacity-50" />
                             </span>
                         )}
                         {searchFocus && (
-                            <span onClick={() => setSearchFocus('')} className="hidden sm:flex text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-orange-200 items-center">
+                            <span onClick={() => setSearchFocus('')} className="flex text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-orange-200 items-center">
                                 {searchFocus} <X className="w-3 h-3 ml-1 opacity-50" />
                             </span>
                         )}

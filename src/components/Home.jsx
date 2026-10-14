@@ -9,32 +9,8 @@ import { RATGEBER_STRUCTURE } from '../lib/ratgeberStructure';
 import { getBereicheForSegment, getBereichUrl } from '../lib/bereichLandingConfig';
 import { NewsletterSignup } from './Layout';
 import { CareerIcon, PrivateHobbyIcon, ChildrenYouthIcon } from '../lib/segmentIcons';
-
-// Pro Segment: Anzeigefarbe (Beruflich=blau, Privat & Hobby=orange, Kinder & Jugend=gruen) und Icon.
-// Rein praesentational — wird fuer Bereichs-Links, Wegkarten und Ratgeber-Panels verwendet.
-const SEGMENT_VISUALS = {
-  beruflich: { icon: CareerIcon, bg: 'bg-segBeruflich', text: 'text-segBeruflich', border: 'border-segBeruflich' },
-  privat_hobby: { icon: PrivateHobbyIcon, bg: 'bg-primary', text: 'text-primary', border: 'border-primary' },
-  kinder_jugend: { icon: ChildrenYouthIcon, bg: 'bg-segKinder', text: 'text-segKinder', border: 'border-segKinder' },
-};
-
-// Vorgeschriebene Klassen-Kombinationen (nicht per Template-String aus SEGMENT_VISUALS
-// zusammengesetzt!) fuer die "Alle Kurse in X anzeigen"-Buttons im Kategorie-Browser.
-// Tailwind generiert Opacity-Varianten (z.B. /15, /40) nur fuer Klassen, die irgendwo im
-// Quelltext woertlich vorkommen — ${segAccent.bg}/15 wuerde vom Scanner nicht erkannt.
-const SEG_SHOW_ALL_STYLES = {
-  beruflich: { card: 'bg-segBeruflich/15 border-segBeruflich/40 hover:bg-segBeruflich/25', arrow: 'text-segBeruflich' },
-  privat_hobby: { card: 'bg-primary/15 border-primary/40 hover:bg-primary/25', arrow: 'text-primary' },
-  kinder_jugend: { card: 'bg-segKinder/15 border-segKinder/40 hover:bg-segKinder/25', arrow: 'text-segKinder' },
-};
-
-// Dieselbe Einschraenkung gilt fuer die 30%-Rahmenfarbe im Ratgeber-Panel (renderRatgeberPanel) —
-// ${visuals.border}/30 wuerde von Tailwind nicht erkannt, deshalb hier als Literal hinterlegt.
-const SEG_BORDER_30 = {
-  beruflich: 'border-segBeruflich/30',
-  privat_hobby: 'border-primary/30',
-  kinder_jugend: 'border-segKinder/30',
-};
+import { SEGMENT_VISUALS, SEG_SHOW_ALL_STYLES, SEG_BORDER_30 } from '../lib/segmentVisuals';
+import { SectionMarker } from './SectionMarker';
 
 // Nur fuer die Startseiten-Suchbox: bewusst berufsnahe Beispiele statt Freizeit-/Kinder-
 // Beispielen, damit KursNavi hier nicht primaer wie eine Hobby-/Kinderplattform wirkt
@@ -49,24 +25,6 @@ const HOME_SEARCH_EXAMPLES = {
 const HOME_SEARCH_BTN_LABEL = {
   de: 'Kurse finden', en: 'Find courses', fr: 'Trouver des cours', it: 'Trova corsi',
 };
-
-// Wiederkehrendes Leitelement "Linie mit Punkt" (siehe public/images/brand/kursnavi/marker-hero.svg)
-// vor Abschnittslabels. Auf hellem Grund wird das Original-Asset verwendet (Petrol-Linie,
-// orangener Punkt); auf dem dunklen Hero-Petrol ist die feste Petrol-Strichfarbe des Assets
-// nicht lesbar, deshalb dort dieselbe Form/Proportion inline nachgebaut, nur die Linie heller.
-const SectionMarker = ({ children, dark = false }) => (
-  <div className="flex items-center gap-2.5">
-    {dark ? (
-      <svg width="34" height="8" viewBox="0 0 34 8" fill="none" aria-hidden="true" className="shrink-0">
-        <path d="M1 4H24" stroke="rgba(255,255,255,0.35)" strokeWidth="1.5" strokeLinecap="round" />
-        <circle cx="30" cy="4" r="3" fill="#E17A3B" />
-      </svg>
-    ) : (
-      <img src="/images/brand/kursnavi/marker-hero.svg" alt="" aria-hidden="true" className="h-2 w-auto shrink-0" />
-    )}
-    <span className={`text-xs font-semibold uppercase tracking-wider ${dark ? 'text-white/75' : 'text-petrol'}`}>{children}</span>
-  </div>
-);
 
 export const Home = ({
   lang, t, setView, courses, // Jetzt haben wir Zugriff auf die Kurse!
