@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Search, ArrowRight, ChevronRight, ChevronLeft, ChevronDown, CreditCard, Shield, X } from 'lucide-react';
+import { Search, ArrowRight, ChevronRight, ChevronLeft, ChevronDown, CreditCard, Shield } from 'lucide-react';
 import { LocationDropdown, DeliveryTypeFilter, LanguageDropdown, SaeulenFilter, KursartFilter } from './Filters';
-import { SEGMENT_CONFIG, DELIVERY_TYPES, CATEGORY_TYPES, COURSE_LEVELS, BERUF_SAEULEN, PRIVAT_KURSARTEN, KINDER_KURSARTEN } from '../lib/constants';
+import { SEGMENT_CONFIG, CATEGORY_TYPES, COURSE_LEVELS, PRIVAT_KURSARTEN, KINDER_KURSARTEN } from '../lib/constants';
 import { PRIVAT_KURSART_ICONS, KINDER_KURSART_ICONS } from '../lib/kursartIcons';
 import { useTaxonomy } from '../hooks/useTaxonomy';
 import { BASE_URL } from '../lib/siteConfig';
@@ -283,27 +283,15 @@ export const Home = ({
   const [showMoreFilters, setShowMoreFilters] = useState(false);
   const [priceError, setPriceError] = useState(false);
 
+  // Zeigt nur noch als kleine Zahl auf dem "Weitere Filter"-Button an, wie viele erweiterte
+  // Filter aktiv sind — die Startseite zeigt (anders als die Suchseite) keine eigene
+  // "Aktive Filter"-Zusammenfassung mit Tags mehr.
   const secondaryFilterCount = [
     selectedLanguages?.length > 0, filterPro, filterDirectBooking,
     Boolean(selectedSaule), Boolean(selectedKursart),
     Boolean(filterDateFrom), Boolean(filterDateTo), Boolean(filterPriceMax),
     Boolean(filterLevel && filterLevel !== 'All'),
   ].filter(Boolean).length;
-  const hasActiveHomeFilters = selectedLocations?.length > 0 || selectedDeliveryTypes?.length > 0 || secondaryFilterCount > 0;
-
-  const resetAllHomeFilters = () => {
-    setSelectedLocations([]);
-    setSelectedDeliveryTypes([]);
-    setSelectedLanguages([]);
-    setFilterPro(false);
-    setFilterDirectBooking(false);
-    setSelectedSaule('');
-    setSelectedKursart('');
-    setFilterDateFrom('');
-    setFilterDateTo('');
-    setFilterPriceMax('');
-    setFilterLevel('All');
-  };
 
   // Akzentfarbe des aktuell gewaehlten Bereichs fuer die "Alle Kurse in X anzeigen"-Buttons
   // im Kategorie-Browser (Blau/Orange/Gruen statt immer Orange) — faellt auf Orange zurueck,
@@ -708,16 +696,19 @@ export const Home = ({
               </div>
             </div>
 
-            {/* RECHTS (Desktop) / 1. Block (Mobile): Textsuche, schwebt als heller Block ueber der
-                Petrol-Flaeche statt wie ein generisches Formular. Startet jetzt auf gleicher Hoehe
-                wie "Bereiche entdecken" links. */}
-            <div className="order-1 lg:order-2 lg:col-span-7 w-full">
-              <div className="bg-beige text-dark rounded-xl p-6 md:p-8 shadow-lg shadow-black/20">
-                <div className="flex items-center gap-2.5 pb-4 border-b border-grey mb-6">
-                  <img src="/images/brand/kursnavi/search.svg" alt="" aria-hidden="true" className="w-4 h-4" />
-                  <span className="text-sm font-semibold text-petrol">Gezielt suchen</span>
-                </div>
+            {/* RECHTS (Desktop) / 1. Block (Mobile): Textsuche. Ueberschrift sitzt jetzt wie bei
+                "Bereiche entdecken" auf der Petrol-Flaeche (nicht mehr in der hellen Box), damit
+                beide Einstiege auf gleicher Ebene stehen; die helle Box enthaelt nur noch das
+                eigentliche Eingabefeld-Modul. */}
+            <div className="order-1 lg:order-2 lg:col-span-7 w-full flex flex-col">
+              <div className="flex items-center gap-2.5 mb-6">
+                <span className="w-6 h-6 rounded-full bg-beige flex items-center justify-center shrink-0">
+                  <img src="/images/brand/kursnavi/search.svg" alt="" aria-hidden="true" className="w-3.5 h-3.5" />
+                </span>
+                <span className="text-sm font-semibold text-white/80">Gezielt suchen</span>
+              </div>
 
+              <div className="bg-beige text-dark rounded-xl p-6 md:p-8 shadow-lg shadow-black/20">
                 <div>
                   <label htmlFor="home-search-input" className="block text-sm font-medium text-dark mb-2">
                     {t.search_placeholder}
@@ -751,25 +742,14 @@ export const Home = ({
               Trennlinie vom Zwei-Spalten-Bereich abgesetzt. Ort/Kursformat immer sichtbar,
               Rest hinter "Weitere Filter". */}
           <div className="mt-8 pt-6 border-t border-white/10">
-            <div className="flex items-start justify-between mb-5 gap-3 flex-wrap">
-              <div className="flex items-start gap-2">
-                <span className="w-6 h-6 rounded-full bg-beige flex items-center justify-center shrink-0 mt-0.5">
-                  <img src="/images/brand/kursnavi/filter.svg" alt="" aria-hidden="true" className="w-3.5 h-3.5" />
-                </span>
-                <div>
-                  <span className="text-sm font-semibold text-white/85">Verfeinern (optional)</span>
-                  <p className="text-xs text-white/55 mt-0.5">Verfeinere deine Auswahl – unabhängig davon, wie du gestartet bist.</p>
-                </div>
+            <div className="flex items-start gap-2 mb-5">
+              <span className="w-6 h-6 rounded-full bg-beige flex items-center justify-center shrink-0 mt-0.5">
+                <img src="/images/brand/kursnavi/filter.svg" alt="" aria-hidden="true" className="w-3.5 h-3.5" />
+              </span>
+              <div>
+                <span className="text-sm font-semibold text-white/85">Verfeinern (optional)</span>
+                <p className="text-xs text-white/55 mt-0.5">Verfeinere deine Auswahl – unabhängig davon, wie du gestartet bist.</p>
               </div>
-              {hasActiveHomeFilters && (
-                <button
-                  type="button"
-                  onClick={resetAllHomeFilters}
-                  className="text-xs font-semibold text-white/70 hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded shrink-0"
-                >
-                  Alle zurücksetzen
-                </button>
-              )}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -887,107 +867,15 @@ export const Home = ({
                 </label>
               </div>
             )}
-
-            {hasActiveHomeFilters && (
-              <div className="mt-4 pt-4 border-t border-white/10 flex flex-wrap items-center gap-2">
-                <span className="text-xs text-white/50 mr-1">Aktive Filter:</span>
-                {selectedLocations?.map(loc => (
-                  <span key={loc} className="inline-flex items-center gap-1 pl-2.5 pr-1.5 py-1 rounded bg-white/10 text-xs text-white">
-                    {loc}
-                    <button type="button" onClick={() => setSelectedLocations(selectedLocations.filter(l => l !== loc))} aria-label={`Ort ${loc} entfernen`} className="hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">
-                      <X className="w-3 h-3" aria-hidden="true" />
-                    </button>
-                  </span>
-                ))}
-                {selectedDeliveryTypes?.map(dtKey => (
-                  <span key={dtKey} className="inline-flex items-center gap-1 pl-2.5 pr-1.5 py-1 rounded bg-white/10 text-xs text-white">
-                    {DELIVERY_TYPES[dtKey]?.[lang] || DELIVERY_TYPES[dtKey]?.de || dtKey}
-                    <button type="button" onClick={() => setSelectedDeliveryTypes(selectedDeliveryTypes.filter(d => d !== dtKey))} aria-label="Kursformat entfernen" className="hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">
-                      <X className="w-3 h-3" aria-hidden="true" />
-                    </button>
-                  </span>
-                ))}
-                {selectedSaule && (
-                  <span className="inline-flex items-center gap-1 pl-2.5 pr-1.5 py-1 rounded bg-white/10 text-xs text-white">
-                    {BERUF_SAEULEN[selectedSaule]?.shortDe || selectedSaule}
-                    <button type="button" onClick={() => setSelectedSaule('')} aria-label="Säule-Filter entfernen" className="hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">
-                      <X className="w-3 h-3" aria-hidden="true" />
-                    </button>
-                  </span>
-                )}
-                {selectedKursart && (
-                  <span className="inline-flex items-center gap-1 pl-2.5 pr-1.5 py-1 rounded bg-white/10 text-xs text-white">
-                    {(PRIVAT_KURSARTEN[selectedKursart] || KINDER_KURSARTEN[selectedKursart])?.shortDe || selectedKursart}
-                    <button type="button" onClick={() => setSelectedKursart('')} aria-label="Kursart-Filter entfernen" className="hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">
-                      <X className="w-3 h-3" aria-hidden="true" />
-                    </button>
-                  </span>
-                )}
-                {filterDateFrom && (
-                  <span className="inline-flex items-center gap-1 pl-2.5 pr-1.5 py-1 rounded bg-white/10 text-xs text-white">
-                    Ab {filterDateFrom}
-                    <button type="button" onClick={() => setFilterDateFrom('')} aria-label="Datum-von-Filter entfernen" className="hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">
-                      <X className="w-3 h-3" aria-hidden="true" />
-                    </button>
-                  </span>
-                )}
-                {filterDateTo && (
-                  <span className="inline-flex items-center gap-1 pl-2.5 pr-1.5 py-1 rounded bg-white/10 text-xs text-white">
-                    Bis {filterDateTo}
-                    <button type="button" onClick={() => setFilterDateTo('')} aria-label="Datum-bis-Filter entfernen" className="hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">
-                      <X className="w-3 h-3" aria-hidden="true" />
-                    </button>
-                  </span>
-                )}
-                {filterPriceMax && (
-                  <span className="inline-flex items-center gap-1 pl-2.5 pr-1.5 py-1 rounded bg-white/10 text-xs text-white">
-                    Max CHF {filterPriceMax}
-                    <button type="button" onClick={() => setFilterPriceMax('')} aria-label="Preis-Filter entfernen" className="hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">
-                      <X className="w-3 h-3" aria-hidden="true" />
-                    </button>
-                  </span>
-                )}
-                {filterLevel && filterLevel !== 'All' && (
-                  <span className="inline-flex items-center gap-1 pl-2.5 pr-1.5 py-1 rounded bg-white/10 text-xs text-white">
-                    {COURSE_LEVELS[filterLevel]?.[lang] || COURSE_LEVELS[filterLevel]?.de || filterLevel}
-                    <button type="button" onClick={() => setFilterLevel('All')} aria-label="Niveau-Filter entfernen" className="hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">
-                      <X className="w-3 h-3" aria-hidden="true" />
-                    </button>
-                  </span>
-                )}
-                {selectedLanguages?.map(langKey => (
-                  <span key={langKey} className="inline-flex items-center gap-1 pl-2.5 pr-1.5 py-1 rounded bg-white/10 text-xs text-white">
-                    {langKey}
-                    <button type="button" onClick={() => setSelectedLanguages(selectedLanguages.filter(l => l !== langKey))} aria-label={`Sprache ${langKey} entfernen`} className="hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">
-                      <X className="w-3 h-3" aria-hidden="true" />
-                    </button>
-                  </span>
-                ))}
-                {filterPro && (
-                  <span className="inline-flex items-center gap-1 pl-2.5 pr-1.5 py-1 rounded bg-white/10 text-xs text-white">
-                    {t.lbl_professional_filter || 'Verifiziert'}
-                    <button type="button" onClick={() => setFilterPro(false)} aria-label="Verifiziert-Filter entfernen" className="hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">
-                      <X className="w-3 h-3" aria-hidden="true" />
-                    </button>
-                  </span>
-                )}
-                {filterDirectBooking && (
-                  <span className="inline-flex items-center gap-1 pl-2.5 pr-1.5 py-1 rounded bg-white/10 text-xs text-white">
-                    {t.lbl_direct_booking_filter || 'Direktbuchung'}
-                    <button type="button" onClick={() => setFilterDirectBooking(false)} aria-label="Direktbuchung-Filter entfernen" className="hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">
-                      <X className="w-3 h-3" aria-hidden="true" />
-                    </button>
-                  </span>
-                )}
-              </div>
-            )}
           </div>
 
           {/* Gemeinsame Hauptaktion — steht bewusst ganz am Ende, nach Bereich/Suche UND Filtern,
               damit eine logische Reihenfolge entsteht: Bereich entdecken oder gezielt suchen,
               optional verfeinern, dann Kurse finden. Fasst Bereichsauswahl (falls getroffen),
-              Suchtext (falls eingegeben) und alle Filter in einer Aktion zusammen. */}
-          <div className="mt-6 pt-6 border-t border-white/10 flex justify-center sm:justify-end">
+              Suchtext (falls eingegeben) und alle Filter in einer Aktion zusammen. Abstand bewusst
+              knapp, da ohne die "Aktive Filter"-Zusammenfassung auf der Startseite kein grosser
+              Leerraum vor dem Button mehr noetig ist. */}
+          <div className="mt-4 pt-4 border-t border-white/10 flex justify-center sm:justify-end">
             <button
               type="submit"
               className="w-full sm:w-auto px-10 py-3.5 bg-primary hover:bg-orange-600 text-white font-label-md text-base font-semibold rounded-lg shadow-sm transition-colors flex items-center justify-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#14313B]"
