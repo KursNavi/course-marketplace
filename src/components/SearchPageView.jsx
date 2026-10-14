@@ -90,6 +90,8 @@ const SearchPageView = ({
     // no longer treats as the first run, auto-scrolling straight past the new "Bereiche
     // entdecken" browse panel on every fresh page load.
     const hasMountedRef = useRef(false);
+    // Course-id-key seen the last time the scroll effect actually ran — see effect below.
+    const lastCourseKeyRef = useRef(null);
     // Price validation error state
     const [priceError, setPriceError] = React.useState(false);
 
@@ -603,10 +605,20 @@ const SearchPageView = ({
     // --- SCROLL TO RESULTS on filter/search change ---
     useEffect(() => {
         if (loading) return;
+        // `loading` can settle to false more than once while the initial data fetch is still
+        // resolving (e.g. a second related query completing shortly after the first), which
+        // re-fires this effect even though the result set hasn't actually changed for the user
+        // yet. Comparing against the last course-id-key we scrolled for (instead of only
+        // "have we ever seen loading=false before") makes this robust to that flicker: only a
+        // genuine change in which courses are shown triggers the scroll.
+        const courseKey = filteredCourses.map(c => c.id).join(',');
         if (!hasMountedRef.current) {
             hasMountedRef.current = true;
+            lastCourseKeyRef.current = courseKey;
             return;
         }
+        if (courseKey === lastCourseKeyRef.current) return;
+        lastCourseKeyRef.current = courseKey;
         // Scroll results area into view after filter change
         if (resultsRef.current) {
             resultsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
