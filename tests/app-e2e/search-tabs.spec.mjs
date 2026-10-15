@@ -182,7 +182,7 @@ test.describe('Search Tabs — Kurse / Anbieter', () => {
     await anbieterMenu.hover();
     const dropdown = page.locator('[data-testid="anbieter-dropdown"]');
     if (await dropdown.isVisible({ timeout: 3_000 }).catch(() => false)) {
-      const segmentBtn = dropdown.getByRole('button', { name: /Beruflich/i }).first();
+      const segmentBtn = dropdown.getByRole('button', { name: /Beruf/i }).first();
       await segmentBtn.click();
       await expect(page).toHaveURL(/\/search\?.*tab=anbieter/, { timeout: 5_000 });
     }
