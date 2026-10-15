@@ -8,8 +8,11 @@ import { useTaxonomy } from '../hooks/useTaxonomy';
 // Dadurch entkommt das Panel jedem overflow:hidden/auto eines Vorfahren (z.B. der scrollbaren
 // Sidebar) — es wird nie mehr am Rand eines Vorfahren abgeschnitten. Misst die tatsächliche
 // Panel-Breite (panelRef) und schiebt das Panel bei Bedarf nach links, damit es nie über den
-// rechten Viewport-Rand hinausragt — unabhängig davon, wo der Trigger-Button steht. Bleibt bei
-// Scroll/Resize korrekt positioniert, solange das Menü offen ist.
+// rechten Viewport-Rand hinausragt. Begrenzt die Panel-Höhe zusätzlich auf den tatsächlich
+// verfügbaren Platz zum Viewport-Rand (oeffnet bei Bedarf nach oben statt nach unten) — so bleibt
+// jeder Eintrag erreichbar, selbst wenn der Trigger-Button weit unten im sichtbaren Bereich steht,
+// weil das Panel dann notfalls innerhalb seiner eigenen Grenzen scrollt statt ueber den
+// Bildschirmrand hinauszuragen. Bleibt bei Scroll/Resize korrekt positioniert, solange offen.
 function useFixedMenuPosition(triggerRef, panelRef, isOpen) {
     const [pos, setPos] = useState(null);
     useEffect(() => {
@@ -19,12 +22,19 @@ function useFixedMenuPosition(triggerRef, panelRef, isOpen) {
             const r = triggerRef.current.getBoundingClientRect();
             const margin = 8;
             const vw = window.innerWidth;
+            const vh = window.innerHeight;
             const panelWidth = panelRef.current ? panelRef.current.offsetWidth : 0;
             let left = r.left;
             if (panelWidth && left + panelWidth + margin > vw) {
                 left = Math.max(margin, vw - panelWidth - margin);
             }
-            setPos({ top: r.bottom + 6, left });
+            const spaceBelow = vh - r.bottom - margin;
+            const spaceAbove = r.top - margin;
+            const openUp = spaceBelow < 220 && spaceAbove > spaceBelow;
+            const maxHeight = Math.max(160, Math.floor(openUp ? spaceAbove : spaceBelow));
+            setPos(openUp
+                ? { bottom: vh - r.top + 6, left, maxHeight }
+                : { top: r.bottom + 6, left, maxHeight });
         };
         update();
         const raf = requestAnimationFrame(update);
@@ -235,7 +245,14 @@ export const LocationDropdown = ({ selectedLocations, setSelectedLocations, locM
             {locMenuOpen && (
                 <div
                     ref={panelRef}
-                    style={{ position: 'fixed', top: menuPos?.top ?? -9999, left: menuPos?.left ?? -9999, visibility: menuPos ? 'visible' : 'hidden' }}
+                    style={{
+                        position: 'fixed',
+                        left: menuPos?.left ?? -9999,
+                        ...(menuPos?.bottom !== undefined ? { bottom: menuPos.bottom } : { top: menuPos?.top ?? -9999 }),
+                        maxHeight: menuPos?.maxHeight,
+                        overflowY: 'auto',
+                        visibility: menuPos ? 'visible' : 'hidden',
+                    }}
                     className="w-[calc(100vw-2rem)] md:w-[560px] max-w-[calc(100vw-2rem)] bg-white rounded-xl shadow-2xl border border-gray-100 p-4">
                     {/* Online + Ausland – special items above canton grid */}
                     <div className="flex gap-4 pb-3 mb-2 border-b border-gray-100">
@@ -298,7 +315,14 @@ export const LanguageDropdown = ({ selectedLanguages, setSelectedLanguages, lang
             {langMenuOpen && (
                 <div
                     ref={panelRef}
-                    style={{ position: 'fixed', top: menuPos?.top ?? -9999, left: menuPos?.left ?? -9999, visibility: menuPos ? 'visible' : 'hidden' }}
+                    style={{
+                        position: 'fixed',
+                        left: menuPos?.left ?? -9999,
+                        ...(menuPos?.bottom !== undefined ? { bottom: menuPos.bottom } : { top: menuPos?.top ?? -9999 }),
+                        maxHeight: menuPos?.maxHeight,
+                        overflowY: 'auto',
+                        visibility: menuPos ? 'visible' : 'hidden',
+                    }}
                     className="w-[250px] max-w-[calc(100vw-2rem)] bg-white rounded-xl shadow-2xl border border-gray-100 p-4">
                     <div className="space-y-1">
                         {Object.keys(COURSE_LANGUAGES).map(lang => (
@@ -357,7 +381,14 @@ export const DeliveryTypeFilter = ({ selectedDeliveryTypes, setSelectedDeliveryT
             {deliveryMenuOpen && (
                 <div
                     ref={panelRef}
-                    style={{ position: 'fixed', top: menuPos?.top ?? -9999, left: menuPos?.left ?? -9999, visibility: menuPos ? 'visible' : 'hidden' }}
+                    style={{
+                        position: 'fixed',
+                        left: menuPos?.left ?? -9999,
+                        ...(menuPos?.bottom !== undefined ? { bottom: menuPos.bottom } : { top: menuPos?.top ?? -9999 }),
+                        maxHeight: menuPos?.maxHeight,
+                        overflowY: 'auto',
+                        visibility: menuPos ? 'visible' : 'hidden',
+                    }}
                     className="w-[250px] max-w-[calc(100vw-2rem)] bg-white rounded-xl shadow-2xl border border-gray-100 p-4">
                     <div className="space-y-1">
                         {Object.keys(DELIVERY_TYPES).map(key => (
