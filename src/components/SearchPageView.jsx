@@ -1291,7 +1291,7 @@ const SearchPageView = ({
                        items.push(
                        <article key={course.id} className="relative bg-white rounded-lg border border-gray-100 overflow-hidden hover:shadow-md hover:border-gray-200 transition-all duration-300 group">
                          <a href={coursePath} onClick={openCourse} className="flex gap-3 p-3 cursor-pointer" style={{textDecoration: 'none', color: 'inherit'}}>
-                           <div className="relative w-28 sm:w-40 aspect-video shrink-0 rounded-md overflow-hidden">
+                           <div className="relative w-28 sm:w-40 aspect-video self-start shrink-0 rounded-md overflow-hidden">
                             <img
                                 src={course.image_url || fallbackImage}
                                 alt={`${course.title} - Kurs in ${course.canton}`}
