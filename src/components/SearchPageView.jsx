@@ -950,8 +950,6 @@ const SearchPageView = ({
                                             const canonKey = CANONICAL_SEGMENT[searchType] || searchType;
                                             const areaLabel = canonKey === 'beruflich' ? 'Fachbereich' : canonKey === 'kinder_jugend' ? 'Angebotsbereich' : 'Themenwelt';
                                             const areaTestId = canonKey === 'beruflich' ? 'select-fachbereich' : canonKey === 'kinder_jugend' ? 'select-angebotsbereich' : 'select-themenwelt';
-                                            const showSpecialty = !searchArea || availableSpecialties.length > 0;
-                                            const showFocus = !!searchArea && availableSpecialties.length > 0 && (!searchSpecialty || availableFocuses.length > 0);
                                             const selCls = (active) => `px-3 py-1.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-white border-gray-200 ${active ? 'text-gray-900' : 'text-gray-400'}`;
                                             const chipCls = 'text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-orange-200 flex items-center';
                                             return (
@@ -997,37 +995,49 @@ const SearchPageView = ({
                                                             </button>
                                                         )}
                                                     </div>
-                                                    {/* DESKTOP (hidden sm:flex): all three selects, disabled cascade */}
+                                                    {/* DESKTOP (hidden sm:flex): progressive cascade — zeigt pro Ebene nur das
+                                                        jeweils naechste relevante Auswahlfeld, genau wie mobil. Eine bereits
+                                                        gewaehlte Ebene steht schon im Breadcrumb oben; ein zusaetzliches,
+                                                        unausgefuellt wirkendes Auswahlfeld fuer dieselbe Ebene waere redundant
+                                                        und verwirrend (daher kein "disabled"-Folgefeld mit Platzhaltertext mehr). */}
                                                     <div data-testid="taxonomy-cascade-desktop" className="hidden sm:flex flex-col gap-2">
-                                                        <select data-testid={areaTestId} value={searchArea}
-                                                            onChange={(e) => { setSearchArea(e.target.value); setSearchSpecialty(''); setSearchFocus(''); }}
-                                                            className={selCls(!!searchArea)}>
-                                                            <option value="" className="text-gray-400">— {areaLabel} —</option>
-                                                            {availableAreas.map(slug => (<option key={slug} value={slug} className="text-gray-900">{getLabel(slug, 'area')}</option>))}
-                                                        </select>
-                                                        {showSpecialty && (
-                                                            <select data-testid="select-specialty" value={searchSpecialty} disabled={!searchArea}
+                                                        {!searchArea ? (
+                                                            <select data-testid={areaTestId} value={searchArea}
+                                                                onChange={(e) => { setSearchArea(e.target.value); setSearchSpecialty(''); setSearchFocus(''); }}
+                                                                className={selCls(false)}>
+                                                                <option value="" className="text-gray-400">— {areaLabel} —</option>
+                                                                {availableAreas.map(slug => (<option key={slug} value={slug} className="text-gray-900">{getLabel(slug, 'area')}</option>))}
+                                                            </select>
+                                                        ) : (
+                                                            <button type="button" data-testid="desktop-area-chip" onClick={() => { setSearchArea(''); setSearchSpecialty(''); setSearchFocus(''); }} className={chipCls}>
+                                                                {getLabel(searchArea, 'area')} <X className="w-3 h-3 ml-1 opacity-50" />
+                                                            </button>
+                                                        )}
+                                                        {searchArea && !searchSpecialty && availableSpecialties.length > 0 && (
+                                                            <select data-testid="select-specialty" value={searchSpecialty}
                                                                 onChange={(e) => { setSearchSpecialty(e.target.value); setSearchFocus(''); }}
-                                                                className={!searchArea
-                                                                    ? 'px-3 py-1.5 border rounded-lg text-sm bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed opacity-60'
-                                                                    : selCls(!!searchSpecialty)}>
-                                                                <option value="" className="text-gray-400">
-                                                                    {!searchArea ? (canonKey === 'beruflich' ? 'Zuerst Fachbereich wählen' : canonKey === 'kinder_jugend' ? 'Zuerst Angebotsbereich wählen' : 'Zuerst Themenwelt wählen') : `— ${t.lbl_specialty || 'Fachgebiet'} —`}
-                                                                </option>
-                                                                {searchArea && availableSpecialties.map(spec => (<option key={spec} value={spec} className="text-gray-900">{spec}</option>))}
+                                                                className={selCls(false)}>
+                                                                <option value="" className="text-gray-400">— {t.lbl_specialty || 'Fachgebiet'} —</option>
+                                                                {availableSpecialties.map(spec => (<option key={spec} value={spec} className="text-gray-900">{spec}</option>))}
                                                             </select>
                                                         )}
-                                                        {showFocus && (
-                                                            <select data-testid="select-focus" value={searchFocus || ''} disabled={!searchSpecialty}
+                                                        {searchArea && searchSpecialty && (
+                                                            <button type="button" data-testid="desktop-specialty-chip" onClick={() => { setSearchSpecialty(''); setSearchFocus(''); }} className={chipCls}>
+                                                                {searchSpecialty} <X className="w-3 h-3 ml-1 opacity-50" />
+                                                            </button>
+                                                        )}
+                                                        {searchArea && searchSpecialty && !searchFocus && availableFocuses.length > 0 && (
+                                                            <select data-testid="select-focus" value={searchFocus || ''}
                                                                 onChange={(e) => setSearchFocus(e.target.value)}
-                                                                className={!searchSpecialty
-                                                                    ? 'px-3 py-1.5 border rounded-lg text-sm bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed opacity-60'
-                                                                    : selCls(!!searchFocus)}>
-                                                                <option value="" className="text-gray-400">
-                                                                    {!searchSpecialty ? 'Zuerst Spezialgebiet wählen' : `— ${t.lbl_focus || 'Fokus'} —`}
-                                                                </option>
-                                                                {searchSpecialty && availableFocuses.map(f => (<option key={f} value={f} className="text-gray-900">{f}</option>))}
+                                                                className={selCls(false)}>
+                                                                <option value="" className="text-gray-400">— {t.lbl_focus || 'Fokus'} —</option>
+                                                                {availableFocuses.map(f => (<option key={f} value={f} className="text-gray-900">{f}</option>))}
                                                             </select>
+                                                        )}
+                                                        {searchArea && searchSpecialty && searchFocus && (
+                                                            <button type="button" data-testid="desktop-focus-chip" onClick={() => setSearchFocus('')} className={chipCls}>
+                                                                {searchFocus} <X className="w-3 h-3 ml-1 opacity-50" />
+                                                            </button>
                                                         )}
                                                     </div>
                                                 </div>
