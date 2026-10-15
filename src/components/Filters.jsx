@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { ChevronDown, ChevronRight, ChevronLeft, MapPin, Globe, Monitor } from 'lucide-react';
 import { SWISS_CANTONS, DELIVERY_TYPES, COURSE_LANGUAGES, TYPE_DISPLAY_LABELS, BERUF_SAEULEN, PRIVAT_KURSARTEN, KINDER_KURSARTEN } from '../lib/constants';
 import { Clock, BookOpen, Award, GraduationCap } from 'lucide-react';
@@ -242,11 +243,13 @@ export const LocationDropdown = ({ selectedLocations, setSelectedLocations, locM
             >
                  <div className="flex items-center"><MapPin className="w-4 h-4 mr-2" aria-hidden="true" /><span>{selectedLocations.length > 0 ? `${selectedLocations.length} ausgewählt` : t.filter_label_loc}</span></div><ChevronDown className="w-4 h-4" aria-hidden="true" />
             </button>
-            {locMenuOpen && (
+            {locMenuOpen && createPortal(
                 <div
                     ref={panelRef}
+                    data-menu-portal="ort"
                     style={{
                         position: 'fixed',
+                        zIndex: 9999,
                         left: menuPos?.left ?? -9999,
                         ...(menuPos?.bottom !== undefined ? { bottom: menuPos.bottom } : { top: menuPos?.top ?? -9999 }),
                         maxHeight: menuPos?.maxHeight,
@@ -277,7 +280,8 @@ export const LocationDropdown = ({ selectedLocations, setSelectedLocations, locM
                         ))}
                     </div>
                     <div className="pt-3 mt-3 border-t flex justify-between items-center"><button onClick={() => setSelectedLocations([])} className="text-xs text-gray-400 hover:text-red-500">Löschen</button><button onClick={() => setLocMenuOpen(false)} className="text-xs font-bold text-primary">Fertig</button></div>
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     );
@@ -312,11 +316,13 @@ export const LanguageDropdown = ({ selectedLanguages, setSelectedLanguages, lang
                 </div>
                 <ChevronDown className="w-4 h-4" aria-hidden="true" />
             </button>
-            {langMenuOpen && (
+            {langMenuOpen && createPortal(
                 <div
                     ref={panelRef}
+                    data-menu-portal="sprache"
                     style={{
                         position: 'fixed',
+                        zIndex: 9999,
                         left: menuPos?.left ?? -9999,
                         ...(menuPos?.bottom !== undefined ? { bottom: menuPos.bottom } : { top: menuPos?.top ?? -9999 }),
                         maxHeight: menuPos?.maxHeight,
@@ -341,7 +347,8 @@ export const LanguageDropdown = ({ selectedLanguages, setSelectedLanguages, lang
                         <button onClick={() => setSelectedLanguages([])} className="text-xs text-gray-400 hover:text-red-500">Löschen</button>
                         <button onClick={() => setLangMenuOpen(false)} className="text-xs font-bold text-primary">Fertig</button>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     );
@@ -378,11 +385,13 @@ export const DeliveryTypeFilter = ({ selectedDeliveryTypes, setSelectedDeliveryT
                 </div>
                 <ChevronDown className="w-4 h-4" aria-hidden="true" />
             </button>
-            {deliveryMenuOpen && (
+            {deliveryMenuOpen && createPortal(
                 <div
                     ref={panelRef}
+                    data-menu-portal="kursformat"
                     style={{
                         position: 'fixed',
+                        zIndex: 9999,
                         left: menuPos?.left ?? -9999,
                         ...(menuPos?.bottom !== undefined ? { bottom: menuPos.bottom } : { top: menuPos?.top ?? -9999 }),
                         maxHeight: menuPos?.maxHeight,
@@ -407,7 +416,8 @@ export const DeliveryTypeFilter = ({ selectedDeliveryTypes, setSelectedDeliveryT
                         <button onClick={() => setSelectedDeliveryTypes([])} className="text-xs text-gray-400 hover:text-red-500">Löschen</button>
                         <button onClick={() => setDeliveryMenuOpen(false)} className="text-xs font-bold text-primary">Fertig</button>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     );

@@ -2197,11 +2197,18 @@ export default function KursNaviPro() {  // 1. Initial State Logic
   }, [!impersonatedUser]);
 
   useEffect(() => {
+    // Ort-/Sprache-/Kursformat-Panels werden per Portal direkt in document.body gerendert
+    // (damit sie keinem Vorfahren-Stacking-Context mehr zum Opfer fallen). Ein Klick darin
+    // ist deshalb kein DOM-Nachfahre des gerefften Trigger-Wrappers mehr — über das
+    // data-menu-portal-Attribut zählt er trotzdem als "innerhalb".
+    function isInsideMenuPortal(event, name) {
+      return !!(event.target.closest && event.target.closest(`[data-menu-portal="${name}"]`));
+    }
     function handleClickOutside(event) {
       if (catMenuRef.current && !catMenuRef.current.contains(event.target)) setCatMenuOpen(false);
-      if (locMenuRef.current && !locMenuRef.current.contains(event.target)) setLocMenuOpen(false);
-      if (langMenuRef.current && !langMenuRef.current.contains(event.target)) setLangMenuOpen(false);
-      if (deliveryMenuRef.current && !deliveryMenuRef.current.contains(event.target)) setDeliveryMenuOpen(false);
+      if (locMenuRef.current && !locMenuRef.current.contains(event.target) && !isInsideMenuPortal(event, 'ort')) setLocMenuOpen(false);
+      if (langMenuRef.current && !langMenuRef.current.contains(event.target) && !isInsideMenuPortal(event, 'sprache')) setLangMenuOpen(false);
+      if (deliveryMenuRef.current && !deliveryMenuRef.current.contains(event.target) && !isInsideMenuPortal(event, 'kursformat')) setDeliveryMenuOpen(false);
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
