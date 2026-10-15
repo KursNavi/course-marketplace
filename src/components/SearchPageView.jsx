@@ -831,7 +831,7 @@ const SearchPageView = ({
 
                     {/* ================= SIDEBAR: FILTER & WEGWEISER ================= */}
                     <aside className="lg:col-span-4 mb-6 lg:mb-0" aria-label="Filter und Kategorien">
-                        <div className="lg:sticky lg:top-24 bg-white border border-borderSubtle rounded-xl p-4 lg:p-5 space-y-5">
+                        <div className="lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto bg-white border border-borderSubtle rounded-xl p-4 lg:p-5 space-y-5">
 
                             {/* --- AKTUELLE AUSWAHL: Kurzübersicht über Bereich, Suche und Filter --- */}
                             {/* searchType is NOT shown as a chip (it is segment context, not a filter) */}
