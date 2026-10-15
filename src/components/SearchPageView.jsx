@@ -836,31 +836,15 @@ const SearchPageView = ({
                     <aside className="lg:col-span-4 mb-6 lg:mb-0" aria-label="Filter und Kategorien">
                         <div className="lg:sticky lg:top-24 bg-white border border-borderSubtle rounded-xl p-4 lg:p-5 space-y-5">
 
-                            {/* Header + persistenter Reset */}
-                            <div className="flex items-center justify-between gap-3">
-                                <SectionMarker>Filter & Wegweiser</SectionMarker>
-                                <button
-                                    type="button"
-                                    data-testid="btn-sidebar-reset"
-                                    onClick={resetFilters}
-                                    className="text-xs font-medium text-gray-500 hover:text-petrol hover:underline shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-petrol rounded"
-                                >
-                                    Zurücksetzen
-                                </button>
-                            </div>
-                            <p className="text-[11px] text-gray-400 -mt-3">
-                                Ort, Kursformat und weitere Filter gelten für beide Einstiege — egal, ob du durch die Bereiche stöberst oder direkt suchst.
-                            </p>
-
-                            {/* --- ACTIVE FILTER CHIPS ("Aktuelle Auswahl") --- */}
+                            {/* --- AKTUELLE AUSWAHL: Kurzübersicht über Bereich, Suche und Filter --- */}
                             {/* searchType is NOT shown as a chip (it is segment context, not a filter) */}
                             {(selectedLanguages.length > 0 || selectedLocations.length > 0 ||
                               selectedDeliveryTypes.length > 0 || (filterPriceMax && filterPriceMax !== '') ||
                               (filterLevel && filterLevel !== 'All') || filterDateFrom || filterDateTo ||
                               filterPro || filterDirectBooking || selectedSaule ||
                               searchArea || searchSpecialty || searchFocus || searchQuery) && (
-                                <div className="flex gap-2 flex-wrap items-center pt-1 border-t border-borderSubtle" data-testid="filter-chips">
-                                    <span className="text-[11px] font-semibold uppercase tracking-wide text-gray-400 w-full mt-2 mb-0.5">Aktuelle Auswahl</span>
+                                <div className="flex gap-2 flex-wrap items-center pb-4 border-b border-borderSubtle" data-testid="filter-chips">
+                                    <span className="text-[11px] font-semibold uppercase tracking-wide text-gray-400 w-full mb-0.5">Aktuelle Auswahl</span>
                                     {/* Search query chip */}
                                     {searchQuery && (
                                         <span onClick={() => setSearchQuery('')} className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-gray-200 flex items-center">
@@ -944,23 +928,11 @@ const SearchPageView = ({
                                 </div>
                             )}
 
-                            {/* --- TEXTSUCHE + STANDORT --- */}
-                            <div className="space-y-2 pt-1 border-t border-borderSubtle">
-                                <div className="relative pt-3">
-                                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                                    <input type="text" placeholder={searchPlaceholder} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full h-10 pl-9 pr-4 bg-beige border border-gray-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-colors" />
-                                </div>
-                                <LocationDropdown selectedLocations={selectedLocations} setSelectedLocations={setSelectedLocations} locMenuOpen={locMenuOpen} setLocMenuOpen={setLocMenuOpen} locMenuRef={locMenuRef} t={t} />
-                                <p className="text-xs text-gray-400">
-                                    Tipp: Du kannst mehrere Begriffe kombinieren, z.B. <em>Yoga Zürich</em> oder <em>Excel online</em>.
-                                </p>
-                            </div>
-
-                            {/* --- BEREICHE ENTDECKEN: Browse-Kontext & Kategorie-Navigation ---
+                            {/* ========== SCHRITT 1: BEREICHE ENTDECKEN ==========
                                 Zeigt entweder die drei gleichwertigen Bereiche (kein searchType) oder den
                                 aktuellen Kategoriepfad mit klickbarer naechster Ebene und einer "Alle Kurse in
                                 diesem Bereich anzeigen"-Aktion auf jeder Ebene (nicht erst auf der untersten). */}
-                            <div className="pt-4 border-t border-borderSubtle">
+                            <div>
                                 <div className="mb-3">
                                     <SectionMarker>Bereiche entdecken</SectionMarker>
                                 </div>
@@ -968,7 +940,7 @@ const SearchPageView = ({
                                 {!searchType ? (
                                     <>
                                         <p className="text-sm text-gray-600 mb-3">
-                                            Stöbere durch die Bereiche oder suche direkt nach einem Thema.
+                                            Stöbere durch die Bildungsbereiche und öffne danach die passende Kategorie.
                                         </p>
                                         <div className="grid grid-cols-1 gap-2" data-testid="browse-segment-picker">
                                             {['beruflich', 'privat_hobby', 'kinder_jugend'].map(segKey => {
@@ -1118,8 +1090,57 @@ const SearchPageView = ({
                                 )}
                             </div>
 
-                            {/* Row 2 (ehemals): Fachliche Filter (Cascade: Level 2 → 3 → 4) + Weitere Filter button */}
-                            <div className="flex flex-col gap-2 pt-4 border-t border-borderSubtle">
+                            {/* ========== SCHRITT 2: GEZIELT SUCHEN ========== */}
+                            <div className="pt-4 border-t border-borderSubtle">
+                                <div className="mb-2">
+                                    <SectionMarker>Gezielt suchen</SectionMarker>
+                                </div>
+                                <p className="text-sm text-gray-600 mb-2">
+                                    Suche direkt nach einem Thema, Kurs oder Abschluss.
+                                </p>
+                                <div className="relative">
+                                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                                    <input
+                                        type="text"
+                                        aria-label="Gezielt nach Kurs, Thema oder Abschluss suchen"
+                                        placeholder={searchPlaceholder}
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        className="w-full h-10 pl-9 pr-4 bg-beige border border-gray-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-colors"
+                                    />
+                                </div>
+                                <p className="text-xs text-gray-400 mt-2">
+                                    Lässt sich unten mit Ort, Kursformat und weiteren Filtern kombinieren. Mehrere Begriffe wie <em>Yoga Zürich</em> funktionieren ebenfalls.
+                                </p>
+                            </div>
+
+                            {/* ========== SCHRITT 3: VERFEINERN ==========
+                                Gilt gleichermassen für den Browse-Einstieg (Schritt 1) und die Textsuche (Schritt 2). */}
+                            <div className="pt-4 border-t border-borderSubtle">
+                                <div className="flex items-center justify-between gap-3 mb-2">
+                                    <SectionMarker>Verfeinern</SectionMarker>
+                                    <button
+                                        type="button"
+                                        data-testid="btn-sidebar-reset"
+                                        onClick={resetFilters}
+                                        className="text-xs font-medium text-gray-500 hover:text-petrol hover:underline shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-petrol rounded"
+                                    >
+                                        Zurücksetzen
+                                    </button>
+                                </div>
+                                <p className="text-sm text-gray-600 mb-3">
+                                    Verfeinere deine Auswahl optional mit Ort, Kursformat und weiteren Filtern — unabhängig davon, ob du oben gestöbert oder gesucht hast.
+                                </p>
+
+                                {/* Ort + Kursformat: prominent und ohne Einklappen erreichbar */}
+                                <div className="flex flex-col gap-2 mb-2">
+                                    <LocationDropdown selectedLocations={selectedLocations} setSelectedLocations={setSelectedLocations} locMenuOpen={locMenuOpen} setLocMenuOpen={setLocMenuOpen} locMenuRef={locMenuRef} t={t} />
+                                    <DeliveryTypeFilter selectedDeliveryTypes={selectedDeliveryTypes} setSelectedDeliveryTypes={setSelectedDeliveryTypes} deliveryMenuOpen={deliveryMenuOpen} setDeliveryMenuOpen={setDeliveryMenuOpen} deliveryMenuRef={deliveryMenuRef} t={t} />
+                                </div>
+
+                                {/* Alte Fachbereich/Spezialgebiet/Fokus-Auswahlfelder — bleiben als zusätzliche,
+                                    feinere Kategorieauswahl innerhalb von "Verfeinern" erhalten, synchron mit Schritt 1. */}
+                                <div className="flex flex-col gap-2 mb-2">
                                 {/* Taxonomy cascade — shown when segment is set and courses have areas */}
                                 {searchType && availableAreas.length > 0 && (() => {
                             const canonKey = CANONICAL_SEGMENT[searchType] || searchType;
@@ -1228,7 +1249,7 @@ const SearchPageView = ({
                         {/* SECONDARY FILTERS: Kursformat, Kursart, Säulen, Datum, Kurssprache, Preis, Niveau, Verifiziert, Direktbuchung */}
                         {showMoreFilters && (
                         <div className="flex gap-3 flex-wrap items-center bg-gray-50 rounded-lg px-3 py-2">
-                            <DeliveryTypeFilter selectedDeliveryTypes={selectedDeliveryTypes} setSelectedDeliveryTypes={setSelectedDeliveryTypes} deliveryMenuOpen={deliveryMenuOpen} setDeliveryMenuOpen={setDeliveryMenuOpen} deliveryMenuRef={deliveryMenuRef} t={t} />
+                            {/* Kursformat (DeliveryTypeFilter) steht jetzt prominent oben bei Ort — hier nicht doppelt */}
                             {/* Kursart — Privat & Hobby */}
                             {(searchType === 'privat' || searchType === 'privat_hobby') && (
                                 <KursartFilter
@@ -1306,6 +1327,7 @@ const SearchPageView = ({
                                 Filter anwenden
                             </button>
                         </div>
+                        </div>
                     </aside>
 
                     {/* ================= RESULTS COLUMN ================= */}
@@ -1375,7 +1397,7 @@ const SearchPageView = ({
 
                 {/* --- RESULTS LIST (vertikale Trefferliste statt Kartenraster) --- */}
                 {!loading && !fetchError && filteredCourses.length > 0 && (
-                  <div className="flex flex-col gap-4" data-testid="course-grid">
+                  <div className="flex flex-col gap-3" data-testid="course-grid">
                     {sortedCourses.flatMap((course, courseIndex) => {
                       const bereichConfig = searchArea ? getBereichByAreaSlug(searchArea) : null;
                       const showRatgeberHere = bereichConfig && courseIndex === 6 && sortedCourses.length > 3;
@@ -1429,9 +1451,9 @@ const SearchPageView = ({
                        };
 
                        items.push(
-                       <article key={course.id} className="relative bg-white rounded-xl border border-gray-100 overflow-hidden hover:shadow-md hover:border-gray-200 transition-all duration-300 group">
-                         <a href={coursePath} onClick={openCourse} className="flex flex-col sm:flex-row cursor-pointer" style={{textDecoration: 'none', color: 'inherit'}}>
-                           <div className="relative w-full sm:w-56 md:w-64 shrink-0 aspect-[16/10] sm:aspect-[4/3] overflow-hidden">
+                       <article key={course.id} className="relative bg-white rounded-lg border border-gray-100 overflow-hidden hover:shadow-md hover:border-gray-200 transition-all duration-300 group">
+                         <a href={coursePath} onClick={openCourse} className="flex gap-3 p-3 cursor-pointer" style={{textDecoration: 'none', color: 'inherit'}}>
+                           <div className="relative w-20 h-20 sm:w-28 sm:h-28 shrink-0 rounded-md overflow-hidden">
                             <img
                                 src={course.image_url || fallbackImage}
                                 alt={`${course.title} - Kurs in ${course.canton}`}
@@ -1442,23 +1464,23 @@ const SearchPageView = ({
                                 height="338"
                                 className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300"
                             />
-                            <div className="absolute top-3 left-3 flex flex-col gap-1 items-start">
+                            <div className="absolute top-1 left-1 flex flex-col gap-0.5 items-start">
                                 {/* Draft badge - only visible to course owner */}
                                 {user?.id && String(course.user_id) === String(user.id) && course.status === 'draft' && (
-                                    <div className="bg-yellow-500/95 text-white px-2 py-1 rounded text-xs font-bold shadow-sm flex items-center"><EyeOff className="w-3 h-3 mr-1" /> Entwurf</div>
+                                    <div className="bg-yellow-500/95 text-white px-1.5 py-0.5 rounded text-[9px] font-bold shadow-sm flex items-center"><EyeOff className="w-2.5 h-2.5 mr-0.5" /> Entwurf</div>
                                 )}
-                                {course.instructor_verified && <div className="bg-blue-600/90 text-white px-2 py-1 rounded text-xs font-bold shadow-sm flex items-center"><CheckCircle className="w-3 h-3 mr-1" /> Verifiziert</div>}
-                                {isSoldOut(course) && <div className="bg-red-500/90 text-white px-2 py-1 rounded text-xs font-bold shadow-sm">Ausgebucht</div>}
+                                {course.instructor_verified && <div className="bg-blue-600/90 text-white px-1.5 py-0.5 rounded text-[9px] font-bold shadow-sm flex items-center"><CheckCircle className="w-2.5 h-2.5 mr-0.5" /> Verifiziert</div>}
+                                {isSoldOut(course) && <div className="bg-red-500/90 text-white px-1.5 py-0.5 rounded text-[9px] font-bold shadow-sm">Ausgebucht</div>}
                             </div>
 
                            </div>
 
-                           <div className="flex-1 min-w-0 p-4 sm:py-4 sm:pr-5 flex flex-col">
+                           <div className="flex-1 min-w-0 pr-8 flex flex-col justify-center">
                             {/* Anbieterzeile: Anbieter + Ort/Umgebung */}
-                            <div className="flex items-center gap-3 text-xs text-gray-500 mb-1.5 flex-wrap">
+                            <div className="flex items-center gap-2.5 text-xs text-gray-500 mb-1 flex-wrap">
                                 <span className="inline-flex items-center gap-1 min-w-0">
                                     <User className="w-3 h-3 shrink-0" />
-                                    <span className="truncate max-w-[10rem]" title={course.instructor_name}>{course.instructor_name}</span>
+                                    <span className="truncate max-w-[9rem]" title={course.instructor_name}>{course.instructor_name}</span>
                                 </span>
                                 {course.canton && (
                                     <span className="inline-flex items-center gap-1 shrink-0">
@@ -1467,12 +1489,12 @@ const SearchPageView = ({
                                 )}
                             </div>
 
-                            <h3 className="font-bold text-base sm:text-lg text-dark leading-snug line-clamp-2 mb-1.5 font-heading">
+                            <h3 className="font-bold text-sm sm:text-base text-dark leading-snug line-clamp-2 font-heading">
                                 {course.title}
                             </h3>
 
                             {course.description && (
-                                <p className="text-sm text-gray-500 line-clamp-2 mb-2">{course.description}</p>
+                                <p className="text-xs text-gray-500 line-clamp-1 sm:line-clamp-2 mt-0.5">{course.description}</p>
                             )}
 
                             {/* Kursformat-Badges */}
@@ -1480,64 +1502,61 @@ const SearchPageView = ({
                                 const types = getNormalizedDeliveryTypes(course);
                                 if (types.length === 0) return null;
                                 return (
-                                    <div className="flex flex-wrap gap-1 mb-2">
+                                    <div className="flex flex-wrap gap-1 mt-1">
                                         {types.map(type => (
-                                            <span key={type} className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">
+                                            <span key={type} className="text-[9px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">
                                                 {DELIVERY_TYPES[type]?.de?.split(' ')[0] || type}
                                             </span>
                                         ))}
                                     </div>
                                 );
                             })()}
-
-                            <div className="mt-auto flex items-center justify-end gap-2 pt-3 border-t border-gray-100">
-                                {/* Preis */}
-                                <span className="font-heading font-bold text-primary text-sm leading-tight text-right break-words">
-                                    {getPriceLabel(course)}
-                                </span>
-                            </div>
                            </div>
                          </a>
+                         <div className="flex items-center justify-between gap-2 px-3 pb-2.5 -mt-1">
+                             {/* Preis */}
+                             <span className="font-heading font-bold text-primary text-sm leading-tight break-words">
+                                 {getPriceLabel(course)}
+                             </span>
+                             {course.booking_type === 'lead' && (
+                               <button
+                                 type="button"
+                                 data-testid={`lead-search-card-cta-${course.id}`}
+                                 aria-label={`Kurs unverbindlich anfragen: ${course.title}`}
+                                 onClick={(event) => {
+                                     if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) {
+                                         openCourse(event);
+                                         return;
+                                     }
+                                     trackCourseCardCta(course, 'search_card');
+                                     try {
+                                         window.sessionStorage.setItem('kn_open_lead_course', String(course.id));
+                                     } catch {
+                                         // Direct detail navigation remains available without storage.
+                                     }
+                                     openCourse(event);
+                                 }}
+                                 className="shrink-0 min-h-10 inline-flex items-center gap-1 rounded-md border border-orange-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-orange-800 transition hover:border-orange-700 hover:bg-orange-50 hover:text-orange-900 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1"
+                               >
+                                 <Mail className="w-3.5 h-3.5" aria-hidden="true" />
+                                 Unverbindlich anfragen
+                               </button>
+                             )}
+                         </div>
                          <button
                            type="button"
                            title={(savedCourseIds || []).includes(course.id) ? 'Aus Merkliste entfernen' : 'Kurs merken'}
                            aria-label={(savedCourseIds || []).includes(course.id) ? 'Aus Merkliste entfernen' : 'Kurs merken'}
                            onClick={() => onToggleSaveCourse?.(course)}
-                           className={`absolute right-3 top-3 z-10 flex h-10 w-10 items-center justify-center rounded-full border shadow-sm transition
+                           className={`absolute right-2 top-2 z-10 flex h-8 w-8 items-center justify-center rounded-full border shadow-sm transition
                              ${(savedCourseIds || []).includes(course.id)
                                ? 'border-primary bg-primary text-white'
                                : 'border-white/70 bg-white/95 text-gray-700 hover:bg-white'}`}
                          >
                            {(savedCourseIds || []).includes(course.id)
-                             ? <BookmarkCheck className="h-5 w-5" aria-hidden="true" />
-                             : <Bookmark className="h-5 w-5" aria-hidden="true" />}
+                             ? <BookmarkCheck className="h-4 w-4" aria-hidden="true" />
+                             : <Bookmark className="h-4 w-4" aria-hidden="true" />}
                          </button>
-                         {course.booking_type === 'lead' && (
-                           <div className="px-5 pb-5">
-                             <button
-                               type="button"
-                               data-testid={`lead-search-card-cta-${course.id}`}
-                               aria-label={`Kurs unverbindlich anfragen: ${course.title}`}
-                               onClick={(event) => {
-                                   if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) {
-                                       openCourse(event);
-                                       return;
-                                   }
-                                   trackCourseCardCta(course, 'search_card');
-                                   try {
-                                       window.sessionStorage.setItem('kn_open_lead_course', String(course.id));
-                                   } catch {
-                                       // Direct detail navigation remains available without storage.
-                                   }
-                                   openCourse(event);
-                               }}
-                               className="w-full min-h-10 inline-flex items-center justify-center gap-1.5 rounded-md border border-orange-300 bg-white px-3 py-2 text-xs font-semibold text-orange-800 transition hover:border-orange-700 hover:bg-orange-50 hover:text-orange-900 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-                             >
-                               <Mail className="w-4 h-4" aria-hidden="true" />
-                               Unverbindlich anfragen
-                             </button>
-                           </div>
-                         )}
                        </article>
                       );
 
