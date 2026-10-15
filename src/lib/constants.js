@@ -268,18 +268,18 @@ export const AGE_GROUPS = {
 
 export const CATEGORY_TYPES = {
   // New consolidated schema slugs — labels match header/navigation
-  professionell: { de: "Beruflich", en: "Professional", fr: "Professionnel", it: "Professionale" },
+  professionell: { de: "Beruf & Karriere", en: "Professional", fr: "Professionnel", it: "Professionale" },
   privat: { de: "Privat & Hobby", en: "Private & Hobby", fr: "Privé & Loisirs", it: "Privato & Hobby" },
   kinder: { de: "Kinder", en: "Children", fr: "Enfants", it: "Bambini" },
   // Legacy slugs (for backward compatibility during transition)
-  beruflich: { de: "Beruflich", en: "Professional", fr: "Professionnel", it: "Professionale" },
+  beruflich: { de: "Beruf & Karriere", en: "Professional", fr: "Professionnel", it: "Professionale" },
   privat_hobby: { de: "Privat & Hobby", en: "Private & Hobby", fr: "Privé & Loisirs", it: "Privato & Hobby" },
   kinder_jugend: { de: "Kinder", en: "Children", fr: "Enfants", it: "Bambini" }
 };
 
 // Display-Label Override für DB taxonomy_level1.label_de → konsistent mit Header/Navigation
 export const TYPE_DISPLAY_LABELS = {
-  professionell: 'Beruflich',
+  professionell: 'Beruf & Karriere',
   privat: 'Privat & Hobby',
   kinder: 'Kinder',
 };
@@ -287,10 +287,10 @@ export const TYPE_DISPLAY_LABELS = {
 // --- SEGMENT VISUAL CONFIG ---
 // Visual styling for the three main category segments
 export const SEGMENT_CONFIG = {
-  // Professionell / Beruflich - Blue theme
+  // Professionell / Beruf & Karriere - Blue theme
   professionell: {
     icon: Briefcase,
-    label: { de: "Beruflich", en: "Professional", fr: "Professionnel", it: "Professionale" },
+    label: { de: "Beruf & Karriere", en: "Professional", fr: "Professionnel", it: "Professionale" },
     color: 'blue',
     bgLight: 'bg-blue-50',
     bgSolid: 'bg-blue-500',
@@ -609,7 +609,7 @@ export const CATEGORY_HIERARCHY = {
 
 export const CATEGORY_LABELS = {
   "Private & Hobby": { de: "Privat & Hobby", fr: "Privé & Loisirs", it: "Privato & Hobby" },
-  "Professional": { de: "Beruflich", fr: "Professionnel", it: "Professionale" },
+  "Professional": { de: "Beruf & Karriere", fr: "Professionnel", it: "Professionale" },
   "Children": { de: "Kinder", fr: "Enfants", it: "Bambini" },
   "Music & Audio": { de: "Musik & Audio", fr: "Musique & Audio", it: "Musica & Audio" },
   "Languages": { de: "Sprachen", fr: "Langues", it: "Lingue" },
@@ -810,7 +810,7 @@ export const TRANSLATIONS = {
   },
   de: {
     nav_explore: "Entdecken", nav_about: "Über uns", nav_contact: "Kontakt", nav_login: "Anmelden", nav_logout: "Abmelden",
-    nav_private: "Privat & Hobby", nav_professional: "Beruflich", nav_kids: "Kinder & Jugend", nav_howitworks: "So funktioniert's",
+    nav_private: "Privat & Hobby", nav_professional: "Beruf & Karriere", nav_kids: "Kinder & Jugend", nav_howitworks: "So funktioniert's",
     nav_dashboard: "Mein Bereich", 
     nav_news: "Neuigkeiten", nav_providers: "Anbieter finden",
     nav_for_providers: "Für Anbieter",hero_title: "Finde Kurse in deiner Nähe.", hero_subtitle: "Vom Jodeln bis zum Programmieren.",

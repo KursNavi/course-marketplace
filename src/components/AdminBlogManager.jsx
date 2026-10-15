@@ -35,7 +35,7 @@ export default function AdminBlogManager({ showNotification, setView, courses })
 
   // FALLBACK CONSTANTS
   const LOCAL_CATEGORY_TYPES = {
-      'beruflich': 'Beruflich',
+      'beruflich': 'Beruf & Karriere',
       'privat_hobby': 'Privat & Hobby',
       'kinder_jugend': 'Kinder & Jugend'
   };

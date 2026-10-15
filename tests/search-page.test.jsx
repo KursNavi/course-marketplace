@@ -471,17 +471,6 @@ describe('Filter chips', () => {
     expect(screen.queryByTestId('filter-chips')).not.toBeInTheDocument();
   });
 
-  it('shows segment context banner (not chip) when searchType is set', () => {
-    const c = makeCourse('1');
-    const props = makeProps({
-      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
-      searchType: 'beruflich',
-    });
-    render(<SearchPageView {...props} />);
-    const banner = screen.getByTestId('segment-context-banner');
-    expect(banner).toBeInTheDocument();
-    expect(screen.getByTestId('segment-context-title')).toHaveTextContent('Beruflich');
-  });
 });
 
 // ===================== 6. PRICE VALIDATION =====================
@@ -652,44 +641,12 @@ describe('Verifiziert-Badge auf Kurskarten', () => {
 });
 
 // ===================== 9. SEGMENT CONTEXT BANNER =====================
-describe('Segment context banner', () => {
-  it('shows "Beruflich" title for type=beruflich', () => {
-    const c = makeCourse('1');
-    render(<SearchPageView {...makeProps({ courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c], searchType: 'beruflich' })} />);
-    expect(screen.getByTestId('segment-context-title')).toHaveTextContent('Beruflich');
-  });
-
-  it('shows "Privat & Hobby" title for type=privat_hobby', () => {
-    const c = makeCourse('1');
-    render(<SearchPageView {...makeProps({ courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c], searchType: 'privat_hobby' })} />);
-    expect(screen.getByTestId('segment-context-title')).toHaveTextContent('Privat & Hobby');
-  });
-
-  it('shows "Kinder & Jugend" title for type=kinder_jugend', () => {
-    const c = makeCourse('1');
-    render(<SearchPageView {...makeProps({ courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c], searchType: 'kinder_jugend' })} />);
-    expect(screen.getByTestId('segment-context-title')).toHaveTextContent('Kinder & Jugend');
-  });
-
-  it('does NOT render banner when no searchType', () => {
-    const c = makeCourse('1');
-    render(<SearchPageView {...makeProps({ courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c], searchType: '' })} />);
-    expect(screen.queryByTestId('segment-context-banner')).not.toBeInTheDocument();
-  });
-
+describe('Segment context (no redundant banner)', () => {
   it('does NOT show segment type as filter chip when type is set', () => {
     const c = makeCourse('1');
     render(<SearchPageView {...makeProps({ courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c], searchType: 'privat_hobby' })} />);
     // No chip container should appear if only type is active (no real filters)
     expect(screen.queryByTestId('filter-chips')).not.toBeInTheDocument();
-  });
-
-  it('shows landing page link in banner', () => {
-    const c = makeCourse('1');
-    render(<SearchPageView {...makeProps({ courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c], searchType: 'beruflich' })} />);
-    const link = screen.getByTestId('segment-context-landing-link');
-    expect(link).toBeInTheDocument();
-    expect(link).toHaveAttribute('href', '/professional');
   });
 
   it('does NOT show auto-type hint when autoType prop is false (default)', () => {

@@ -6,7 +6,7 @@ import { buildCanonical, getRobotsPolicy } from '../lib/seoUtils';
 
 // Segment URL → display label + back href
 const SEGMENT_META = {
-  beruflich:     { label: 'Beruflich',      href: '/professional' },
+  beruflich:     { label: 'Beruf & Karriere', href: '/professional' },
   'privat-hobby': { label: 'Privat & Hobby', href: '/private' },
   'kinder-jugend': { label: 'Kinder & Jugend', href: '/children' },
 };

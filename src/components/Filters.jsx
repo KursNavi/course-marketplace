@@ -71,7 +71,7 @@ export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCat
     };
 
     return (
-        <div ref={catMenuRef} className="static relative z-50 text-left">
+        <div ref={catMenuRef} className={`static relative text-left ${catMenuOpen ? 'z-[60]' : 'z-50'}`}>
             <button
                 type="button"
                 onClick={() => setCatMenuOpen(!catMenuOpen)}
@@ -182,7 +182,7 @@ export const LocationDropdown = ({ selectedLocations, setSelectedLocations, locM
     const displayList = SWISS_CANTONS.filter(c => c !== "Ausland");
     const defaultBtnClass = `w-full md:w-auto px-3 py-1.5 border rounded-full flex items-center justify-between space-x-2 text-sm font-medium transition shadow-sm ${selectedLocations.length > 0 ? 'bg-primary text-white border-primary' : 'bg-white text-gray-700 hover:border-gray-400'}`;
     return (
-        <div ref={locMenuRef} className="static relative z-50 text-left">
+        <div ref={locMenuRef} className={`static relative text-left ${locMenuOpen ? 'z-[60]' : 'z-50'}`}>
             <button
                 type="button"
                 onClick={() => setLocMenuOpen(!locMenuOpen)}
@@ -234,7 +234,7 @@ export const LanguageDropdown = ({ selectedLanguages, setSelectedLanguages, lang
     };
 
     return (
-        <div ref={langMenuRef} className="static relative z-50 text-left">
+        <div ref={langMenuRef} className={`static relative text-left ${langMenuOpen ? 'z-[60]' : 'z-50'}`}>
             <button
                 type="button"
                 onClick={() => setLangMenuOpen(!langMenuOpen)}
@@ -286,7 +286,7 @@ export const DeliveryTypeFilter = ({ selectedDeliveryTypes, setSelectedDeliveryT
     const defaultBtnClass = `w-full md:w-auto px-3 py-1.5 border rounded-full flex items-center justify-between space-x-2 text-sm font-medium transition shadow-sm ${selectedDeliveryTypes.length > 0 ? 'bg-primary text-white border-primary' : 'bg-white text-gray-700 hover:border-gray-400'}`;
 
     return (
-        <div ref={deliveryMenuRef} className="static relative z-50 text-left">
+        <div ref={deliveryMenuRef} className={`static relative text-left ${deliveryMenuOpen ? 'z-[60]' : 'z-50'}`}>
             <button
                 type="button"
                 onClick={() => setDeliveryMenuOpen(!deliveryMenuOpen)}

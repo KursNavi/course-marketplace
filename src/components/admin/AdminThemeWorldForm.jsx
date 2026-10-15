@@ -39,7 +39,7 @@ const TABS = [
 ];
 
 const SEGMENTS = [
-  { value: 'beruflich', dbValue: 'professionell', label: 'Beruflich' },
+  { value: 'beruflich', dbValue: 'professionell', label: 'Beruf & Karriere' },
   { value: 'privat-hobby', dbValue: 'privat', label: 'Privat & Hobby' },
   { value: 'kinder-jugend', dbValue: 'kinder', label: 'Kinder & Jugend' },
 ];

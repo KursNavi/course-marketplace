@@ -35,11 +35,11 @@ const URL_TO_DB_TYPE = {
 };
 
 // ---------------------------------------------------------------------------
-// Segment context metadata (for banner above filters)
+// Segment context metadata (used by the auto-type hint bar)
 // ---------------------------------------------------------------------------
 const SEGMENT_META = {
-    beruflich:     { title: 'Beruflich',       subtitle: 'Finde Weiterbildungen, Zertifikate und Ausbildungen für deine Karriere.', landingUrl: '/professional', landingLabel: 'Übersicht Beruflich' },
-    professionell: { title: 'Beruflich',       subtitle: 'Finde Weiterbildungen, Zertifikate und Ausbildungen für deine Karriere.', landingUrl: '/professional', landingLabel: 'Übersicht Beruflich' },
+    beruflich:     { title: 'Beruf & Karriere', subtitle: 'Finde Weiterbildungen, Zertifikate und Ausbildungen für deine Karriere.', landingUrl: '/professional', landingLabel: 'Übersicht Beruf & Karriere' },
+    professionell: { title: 'Beruf & Karriere', subtitle: 'Finde Weiterbildungen, Zertifikate und Ausbildungen für deine Karriere.', landingUrl: '/professional', landingLabel: 'Übersicht Beruf & Karriere' },
     privat_hobby:  { title: 'Privat & Hobby',  subtitle: 'Entdecke Kurse – vom Schnupperabend bis zum Wochenkurs.',                landingUrl: '/private',       landingLabel: 'Übersicht Privat & Hobby' },
     privat:        { title: 'Privat & Hobby',  subtitle: 'Entdecke Kurse – vom Schnupperabend bis zum Wochenkurs.',                landingUrl: '/private',       landingLabel: 'Übersicht Privat & Hobby' },
     kinder_jugend: { title: 'Kinder & Jugend', subtitle: 'Betreute Kurse und Camps, passend zum Alter deines Kindes.',            landingUrl: '/children',      landingLabel: 'Übersicht Kinder & Jugend' },
@@ -691,46 +691,6 @@ const SearchPageView = ({
     return (
         <div className="min-h-screen bg-beige">
             {/* SEGMENT CONTEXT BANNER — compact strip above filters showing segment title/subtitle */}
-            {searchType && (() => {
-                const meta = SEGMENT_META[searchType];
-                const canonKey = CANONICAL_SEGMENT[searchType] || searchType;
-                const cfg = SEGMENT_CONFIG[canonKey];
-                if (!meta || !cfg) return null;
-                const otherSegments = OTHER_SEGMENTS.filter(s => s.key !== canonKey);
-                return (
-                    <div data-testid="segment-context-banner" className={`border-b ${cfg.borderLight || 'border-gray-200'} ${cfg.bgLight || 'bg-gray-50'}`}>
-                        <div className="max-w-7xl mx-auto px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-4">
-                            {/* Icon + Title + Subtitle */}
-                            <div className="flex items-center gap-2 flex-1 min-w-0">
-                                {cfg.icon && <cfg.icon className={`w-5 h-5 shrink-0 ${cfg.text}`} />}
-                                <div className="min-w-0">
-                                    <span className={`font-bold text-sm ${cfg.textDark}`} data-testid="segment-context-title">{meta.title}</span>
-                                    <span className="text-xs text-gray-500 ml-2 truncate hidden sm:inline" data-testid="segment-context-subtitle">{meta.subtitle}</span>
-                                </div>
-                            </div>
-                            {/* Mobile subtitle */}
-                            <p className="text-xs text-gray-500 sm:hidden pl-7" data-testid="segment-context-subtitle-mobile">{meta.subtitle}</p>
-                            {/* Landing page link (secondary) */}
-                            <div className="flex items-center gap-2 flex-wrap text-xs pl-7 sm:pl-0">
-                                <a
-                                    href={meta.landingUrl}
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        window.scrollTo(0, 0);
-                                        window.history.pushState({}, '', meta.landingUrl);
-                                        window.dispatchEvent(new Event('locationchange'));
-                                    }}
-                                    className={`${cfg.text} hover:underline font-medium`}
-                                    data-testid="segment-context-landing-link"
-                                >
-                                    {meta.landingLabel}
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                );
-            })()}
-
             {/* AUTO-TYPE HINT BAR — visible only when homepage auto-detected the segment */}
             {isAutoType && searchType && (() => {
                 const canonKey = CANONICAL_SEGMENT[searchType] || searchType;
@@ -774,52 +734,14 @@ const SearchPageView = ({
                 );
             })()}
 
-            {/* COMPACT SEGMENT HEADER — shown only when a sub-area (or deeper filter) is active */}
+            {/* Seiten-H1 (SEO/Accessibility): dieselbe dynamische Titel-Fallback-Kette wie zuvor,
+                jetzt ohne die redundante grosse Hero-Darstellung — der Bereich/die Kategorie ist
+                bereits über "In diesem Bereich stöbern" und den Breadcrumb in der Seitenleiste
+                sichtbar. Visuell nicht angezeigt (sr-only), aber weiterhin vorhanden. */}
             {activeSegmentConfig && searchArea && (
-                <div className="relative overflow-hidden">
-                    {activeSegmentConfig.heroBg && (
-                        <div
-                            className="absolute inset-0 bg-cover bg-center opacity-[0.06]"
-                            style={{ backgroundImage: `url("${activeSegmentConfig.heroBg}")` }}
-                        />
-                    )}
-                    <div className={`absolute inset-0 ${activeSegmentConfig.bgLight} opacity-80`} />
-                    <div className="relative py-8 md:py-10">
-                        <div className="max-w-7xl mx-auto px-4">
-                            <div className="flex items-center mb-4">
-                                <div className="flex items-center text-sm">
-                                    <activeSegmentConfig.icon className={`w-4 h-4 mr-2 ${activeSegmentConfig.text}`} />
-                                    <span className={`font-medium ${activeSegmentConfig.text}`}>{getLabel(searchType, 'type')}</span>
-                                    {searchArea && (
-                                        <>
-                                            <ChevronRight className="w-4 h-4 mx-2 text-gray-400" />
-                                            <span className="text-gray-600">{getLabel(searchArea, 'area')}</span>
-                                        </>
-                                    )}
-                                    {searchSpecialty && (
-                                        <>
-                                            <ChevronRight className="w-4 h-4 mx-2 text-gray-400" />
-                                            <span className="text-gray-600">{searchSpecialty}</span>
-                                        </>
-                                    )}
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-6">
-                                <div className={`hidden md:flex items-center justify-center w-16 h-16 rounded-2xl ${activeSegmentConfig.bgSolid} shadow-lg`}>
-                                    <activeSegmentConfig.icon className="w-8 h-8 text-white" />
-                                </div>
-                                <div>
-                                    <h1 className={`text-2xl md:text-3xl font-bold font-heading ${activeSegmentConfig.textDark}`}>
-                                        {dynamicHeader?.title || dynamicThemeWorldTitle || activeSegmentConfig.heroTitle?.de || getLabel(searchType, 'type')}
-                                    </h1>
-                                    <p className="text-gray-600 mt-1">
-                                        {dynamicHeader?.subtitle || activeSegmentConfig.heroSubtitle?.de || ''}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <h1 className="sr-only">
+                    {dynamicHeader?.title || dynamicThemeWorldTitle || activeSegmentConfig.heroTitle?.de || getLabel(searchType, 'type')}
+                </h1>
             )}
 
             {/* ===================== TWO-COLUMN SEARCH LAYOUT =====================
@@ -1369,7 +1291,7 @@ const SearchPageView = ({
                        items.push(
                        <article key={course.id} className="relative bg-white rounded-lg border border-gray-100 overflow-hidden hover:shadow-md hover:border-gray-200 transition-all duration-300 group">
                          <a href={coursePath} onClick={openCourse} className="flex gap-3 p-3 cursor-pointer" style={{textDecoration: 'none', color: 'inherit'}}>
-                           <div className="relative w-20 h-20 sm:w-28 sm:h-28 shrink-0 rounded-md overflow-hidden">
+                           <div className="relative w-28 sm:w-40 aspect-video shrink-0 rounded-md overflow-hidden">
                             <img
                                 src={course.image_url || fallbackImage}
                                 alt={`${course.title} - Kurs in ${course.canton}`}
