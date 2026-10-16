@@ -1,8 +1,65 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { ChevronDown, ChevronRight, ChevronLeft, MapPin, Globe, Monitor } from 'lucide-react';
 import { SWISS_CANTONS, DELIVERY_TYPES, COURSE_LANGUAGES, TYPE_DISPLAY_LABELS, BERUF_SAEULEN, PRIVAT_KURSARTEN, KINDER_KURSARTEN } from '../lib/constants';
 import { Clock, BookOpen, Award, GraduationCap } from 'lucide-react';
 import { useTaxonomy } from '../hooks/useTaxonomy';
+
+// Positioniert ein Dropdown-Panel mit position:fixed anhand der Trigger-Button-Koordinaten.
+// Dadurch entkommt das Panel jedem overflow:hidden/auto eines Vorfahren (z.B. der scrollbaren
+// Sidebar) — es wird nie mehr am Rand eines Vorfahren abgeschnitten. Misst die tatsächliche
+// Panel-Breite (panelRef) und schiebt das Panel bei Bedarf nach links, damit es nie über den
+// rechten Viewport-Rand hinausragt. Begrenzt die Panel-Höhe zusätzlich auf den tatsächlich
+// verfügbaren Platz zum Viewport-Rand (oeffnet bei Bedarf nach oben statt nach unten) — so bleibt
+// jeder Eintrag erreichbar, selbst wenn der Trigger-Button weit unten im sichtbaren Bereich steht,
+// weil das Panel dann notfalls innerhalb seiner eigenen Grenzen scrollt statt ueber den
+// Bildschirmrand hinauszuragen.
+// Bleibt nur bei Resize korrekt nachpositioniert. Ein laufendes Scroll (statt Resize) schliesst
+// das Panel stattdessen ueber onRequestClose: auf Mobile aendert sich window.innerHeight waehrend
+// des Scrollens fortlaufend, weil die Adressleiste des Browsers dabei ein-/ausklappt — das liess
+// das Panel kurzzeitig falsch (zu weit oben, ueber dem Seiten-Header) berechnen. Schliessen statt
+// Nachrechnen ist robust gegen dieses Verhalten und ist ohnehin das ueblichere Verhalten.
+function useFixedMenuPosition(triggerRef, panelRef, isOpen, onRequestClose) {
+    const [pos, setPos] = useState(null);
+    // Ref instead of a plain dependency: onRequestClose is an inline closure recreated on every
+    // render of the caller, which would otherwise tear down and reattach the scroll/resize
+    // listeners on every render while the menu is open.
+    const onRequestCloseRef = useRef(onRequestClose);
+    useEffect(() => { onRequestCloseRef.current = onRequestClose; });
+    useEffect(() => {
+        if (!isOpen) { setPos(null); return undefined; }
+        const update = () => {
+            if (!triggerRef.current) return;
+            const r = triggerRef.current.getBoundingClientRect();
+            const margin = 8;
+            const vw = window.innerWidth;
+            const vh = window.innerHeight;
+            const panelWidth = panelRef.current ? panelRef.current.offsetWidth : 0;
+            let left = r.left;
+            if (panelWidth && left + panelWidth + margin > vw) {
+                left = Math.max(margin, vw - panelWidth - margin);
+            }
+            const spaceBelow = vh - r.bottom - margin;
+            const spaceAbove = r.top - margin;
+            const openUp = spaceBelow < 220 && spaceAbove > spaceBelow;
+            const maxHeight = Math.max(160, Math.floor(openUp ? spaceAbove : spaceBelow));
+            setPos(openUp
+                ? { bottom: vh - r.top + 6, left, maxHeight }
+                : { top: r.bottom + 6, left, maxHeight });
+        };
+        update();
+        const raf = requestAnimationFrame(update);
+        const handleScroll = () => { if (onRequestCloseRef.current) onRequestCloseRef.current(); };
+        window.addEventListener('scroll', handleScroll, true);
+        window.addEventListener('resize', update);
+        return () => {
+            cancelAnimationFrame(raf);
+            window.removeEventListener('scroll', handleScroll, true);
+            window.removeEventListener('resize', update);
+        };
+    }, [isOpen, triggerRef, panelRef]);
+    return pos;
+}
 
 export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCatPath, catMenuOpen, setCatMenuOpen, t, catMenuRef }) => {
     // Load taxonomy from DB
@@ -71,7 +128,7 @@ export const CategoryDropdown = ({ rootCategory, selectedCatPath, setSelectedCat
     };
 
     return (
-        <div ref={catMenuRef} className="static relative z-50 text-left">
+        <div ref={catMenuRef} className={`static relative text-left ${catMenuOpen ? 'z-[60]' : 'z-50'}`}>
             <button
                 type="button"
                 onClick={() => setCatMenuOpen(!catMenuOpen)}
@@ -181,9 +238,13 @@ export const LocationDropdown = ({ selectedLocations, setSelectedLocations, locM
     const toggleLoc = (loc) => { if (selectedLocations.includes(loc)) setSelectedLocations(selectedLocations.filter(l => l !== loc)); else setSelectedLocations([...selectedLocations, loc]); };
     const displayList = SWISS_CANTONS.filter(c => c !== "Ausland");
     const defaultBtnClass = `w-full md:w-auto px-3 py-1.5 border rounded-full flex items-center justify-between space-x-2 text-sm font-medium transition shadow-sm ${selectedLocations.length > 0 ? 'bg-primary text-white border-primary' : 'bg-white text-gray-700 hover:border-gray-400'}`;
+    const btnRef = useRef(null);
+    const panelRef = useRef(null);
+    const menuPos = useFixedMenuPosition(btnRef, panelRef, locMenuOpen, () => setLocMenuOpen(false));
     return (
-        <div ref={locMenuRef} className="static relative z-50 text-left">
+        <div ref={locMenuRef} className="static relative text-left">
             <button
+                ref={btnRef}
                 type="button"
                 onClick={() => setLocMenuOpen(!locMenuOpen)}
                 aria-label="Standort auswählen"
@@ -193,8 +254,20 @@ export const LocationDropdown = ({ selectedLocations, setSelectedLocations, locM
             >
                  <div className="flex items-center"><MapPin className="w-4 h-4 mr-2" aria-hidden="true" /><span>{selectedLocations.length > 0 ? `${selectedLocations.length} ausgewählt` : t.filter_label_loc}</span></div><ChevronDown className="w-4 h-4" aria-hidden="true" />
             </button>
-            {locMenuOpen && (
-                <div className="absolute top-10 left-0 md:left-auto md:right-0 w-[calc(100vw-2rem)] md:w-[560px] max-w-[calc(100vw-2rem)] bg-white rounded-xl shadow-2xl border border-gray-100 p-4">
+            {locMenuOpen && createPortal(
+                <div
+                    ref={panelRef}
+                    data-menu-portal="ort"
+                    style={{
+                        position: 'fixed',
+                        zIndex: 9999,
+                        left: menuPos?.left ?? -9999,
+                        ...(menuPos?.bottom !== undefined ? { bottom: menuPos.bottom } : { top: menuPos?.top ?? -9999 }),
+                        maxHeight: menuPos?.maxHeight,
+                        overflowY: 'auto',
+                        visibility: menuPos ? 'visible' : 'hidden',
+                    }}
+                    className="w-[calc(100vw-2rem)] md:w-[560px] max-w-[calc(100vw-2rem)] bg-white rounded-xl shadow-2xl border border-gray-100 p-4">
                     {/* Online + Ausland – special items above canton grid */}
                     <div className="flex gap-4 pb-3 mb-2 border-b border-gray-100">
                         <label className="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
@@ -218,7 +291,8 @@ export const LocationDropdown = ({ selectedLocations, setSelectedLocations, locM
                         ))}
                     </div>
                     <div className="pt-3 mt-3 border-t flex justify-between items-center"><button onClick={() => setSelectedLocations([])} className="text-xs text-gray-400 hover:text-red-500">Löschen</button><button onClick={() => setLocMenuOpen(false)} className="text-xs font-bold text-primary">Fertig</button></div>
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     );
@@ -233,9 +307,13 @@ export const LanguageDropdown = ({ selectedLanguages, setSelectedLanguages, lang
         }
     };
 
+    const btnRef = useRef(null);
+    const panelRef = useRef(null);
+    const menuPos = useFixedMenuPosition(btnRef, panelRef, langMenuOpen, () => setLangMenuOpen(false));
     return (
-        <div ref={langMenuRef} className="static relative z-50 text-left">
+        <div ref={langMenuRef} className="static relative text-left">
             <button
+                ref={btnRef}
                 type="button"
                 onClick={() => setLangMenuOpen(!langMenuOpen)}
                 aria-label="Kurssprache auswählen"
@@ -249,8 +327,20 @@ export const LanguageDropdown = ({ selectedLanguages, setSelectedLanguages, lang
                 </div>
                 <ChevronDown className="w-4 h-4" aria-hidden="true" />
             </button>
-            {langMenuOpen && (
-                <div className="absolute top-10 left-0 w-[250px] max-w-[calc(100vw-2rem)] bg-white rounded-xl shadow-2xl border border-gray-100 p-4">
+            {langMenuOpen && createPortal(
+                <div
+                    ref={panelRef}
+                    data-menu-portal="sprache"
+                    style={{
+                        position: 'fixed',
+                        zIndex: 9999,
+                        left: menuPos?.left ?? -9999,
+                        ...(menuPos?.bottom !== undefined ? { bottom: menuPos.bottom } : { top: menuPos?.top ?? -9999 }),
+                        maxHeight: menuPos?.maxHeight,
+                        overflowY: 'auto',
+                        visibility: menuPos ? 'visible' : 'hidden',
+                    }}
+                    className="w-[250px] max-w-[calc(100vw-2rem)] bg-white rounded-xl shadow-2xl border border-gray-100 p-4">
                     <div className="space-y-1">
                         {Object.keys(COURSE_LANGUAGES).map(lang => (
                             <label key={lang} className="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
@@ -268,7 +358,8 @@ export const LanguageDropdown = ({ selectedLanguages, setSelectedLanguages, lang
                         <button onClick={() => setSelectedLanguages([])} className="text-xs text-gray-400 hover:text-red-500">Löschen</button>
                         <button onClick={() => setLangMenuOpen(false)} className="text-xs font-bold text-primary">Fertig</button>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     );
@@ -285,9 +376,13 @@ export const DeliveryTypeFilter = ({ selectedDeliveryTypes, setSelectedDeliveryT
 
     const defaultBtnClass = `w-full md:w-auto px-3 py-1.5 border rounded-full flex items-center justify-between space-x-2 text-sm font-medium transition shadow-sm ${selectedDeliveryTypes.length > 0 ? 'bg-primary text-white border-primary' : 'bg-white text-gray-700 hover:border-gray-400'}`;
 
+    const btnRef = useRef(null);
+    const panelRef = useRef(null);
+    const menuPos = useFixedMenuPosition(btnRef, panelRef, deliveryMenuOpen, () => setDeliveryMenuOpen(false));
     return (
-        <div ref={deliveryMenuRef} className="static relative z-50 text-left">
+        <div ref={deliveryMenuRef} className="static relative text-left">
             <button
+                ref={btnRef}
                 type="button"
                 onClick={() => setDeliveryMenuOpen(!deliveryMenuOpen)}
                 aria-label="Kursformat auswählen"
@@ -301,8 +396,20 @@ export const DeliveryTypeFilter = ({ selectedDeliveryTypes, setSelectedDeliveryT
                 </div>
                 <ChevronDown className="w-4 h-4" aria-hidden="true" />
             </button>
-            {deliveryMenuOpen && (
-                <div className="absolute top-10 left-0 md:left-auto md:right-0 w-[250px] max-w-[calc(100vw-2rem)] bg-white rounded-xl shadow-2xl border border-gray-100 p-4">
+            {deliveryMenuOpen && createPortal(
+                <div
+                    ref={panelRef}
+                    data-menu-portal="kursformat"
+                    style={{
+                        position: 'fixed',
+                        zIndex: 9999,
+                        left: menuPos?.left ?? -9999,
+                        ...(menuPos?.bottom !== undefined ? { bottom: menuPos.bottom } : { top: menuPos?.top ?? -9999 }),
+                        maxHeight: menuPos?.maxHeight,
+                        overflowY: 'auto',
+                        visibility: menuPos ? 'visible' : 'hidden',
+                    }}
+                    className="w-[250px] max-w-[calc(100vw-2rem)] bg-white rounded-xl shadow-2xl border border-gray-100 p-4">
                     <div className="space-y-1">
                         {Object.keys(DELIVERY_TYPES).map(key => (
                             <label key={key} className="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
@@ -320,7 +427,8 @@ export const DeliveryTypeFilter = ({ selectedDeliveryTypes, setSelectedDeliveryT
                         <button onClick={() => setSelectedDeliveryTypes([])} className="text-xs text-gray-400 hover:text-red-500">Löschen</button>
                         <button onClick={() => setDeliveryMenuOpen(false)} className="text-xs font-bold text-primary">Fertig</button>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     );

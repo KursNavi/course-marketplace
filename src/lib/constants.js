@@ -268,18 +268,18 @@ export const AGE_GROUPS = {
 
 export const CATEGORY_TYPES = {
   // New consolidated schema slugs — labels match header/navigation
-  professionell: { de: "Beruflich", en: "Professional", fr: "Professionnel", it: "Professionale" },
+  professionell: { de: "Beruf & Karriere", en: "Professional", fr: "Professionnel", it: "Professionale" },
   privat: { de: "Privat & Hobby", en: "Private & Hobby", fr: "Privé & Loisirs", it: "Privato & Hobby" },
   kinder: { de: "Kinder", en: "Children", fr: "Enfants", it: "Bambini" },
   // Legacy slugs (for backward compatibility during transition)
-  beruflich: { de: "Beruflich", en: "Professional", fr: "Professionnel", it: "Professionale" },
+  beruflich: { de: "Beruf & Karriere", en: "Professional", fr: "Professionnel", it: "Professionale" },
   privat_hobby: { de: "Privat & Hobby", en: "Private & Hobby", fr: "Privé & Loisirs", it: "Privato & Hobby" },
   kinder_jugend: { de: "Kinder", en: "Children", fr: "Enfants", it: "Bambini" }
 };
 
 // Display-Label Override für DB taxonomy_level1.label_de → konsistent mit Header/Navigation
 export const TYPE_DISPLAY_LABELS = {
-  professionell: 'Beruflich',
+  professionell: 'Beruf & Karriere',
   privat: 'Privat & Hobby',
   kinder: 'Kinder',
 };
@@ -287,10 +287,10 @@ export const TYPE_DISPLAY_LABELS = {
 // --- SEGMENT VISUAL CONFIG ---
 // Visual styling for the three main category segments
 export const SEGMENT_CONFIG = {
-  // Professionell / Beruflich - Blue theme
+  // Professionell / Beruf & Karriere - Blue theme
   professionell: {
     icon: Briefcase,
-    label: { de: "Beruflich", en: "Professional", fr: "Professionnel", it: "Professionale" },
+    label: { de: "Beruf & Karriere", en: "Professional", fr: "Professionnel", it: "Professionale" },
     color: 'blue',
     bgLight: 'bg-blue-50',
     bgSolid: 'bg-blue-500',
@@ -609,7 +609,7 @@ export const CATEGORY_HIERARCHY = {
 
 export const CATEGORY_LABELS = {
   "Private & Hobby": { de: "Privat & Hobby", fr: "Privé & Loisirs", it: "Privato & Hobby" },
-  "Professional": { de: "Beruflich", fr: "Professionnel", it: "Professionale" },
+  "Professional": { de: "Beruf & Karriere", fr: "Professionnel", it: "Professionale" },
   "Children": { de: "Kinder", fr: "Enfants", it: "Bambini" },
   "Music & Audio": { de: "Musik & Audio", fr: "Musique & Audio", it: "Musica & Audio" },
   "Languages": { de: "Sprachen", fr: "Langues", it: "Lingue" },
@@ -658,7 +658,9 @@ export const TRANSLATIONS = {
     home_rating: "Rating",
     home_path_title: "Choose Your Path",
     home_path_sub: "Explore our most popular learning directions",
-    home_card_prof_sub: "Advance your career with certified skills.",
+    home_ratgeber_title: "Guides & Topic Worlds",
+    home_ratgeber_sub: "Guidance and in-depth topic worlds for your learning in Switzerland.",
+    home_card_prof_sub: "Courses and training for your career.",
     home_card_priv_sub: "Cooking, Photography, Sports & more.",
     home_card_kids_sub: "Fun and engaging courses for children.",
     btn_explore: "EXPLORE",
@@ -808,7 +810,7 @@ export const TRANSLATIONS = {
   },
   de: {
     nav_explore: "Entdecken", nav_about: "Über uns", nav_contact: "Kontakt", nav_login: "Anmelden", nav_logout: "Abmelden",
-    nav_private: "Privat & Hobby", nav_professional: "Beruflich", nav_kids: "Kinder & Jugend", nav_howitworks: "So funktioniert's",
+    nav_private: "Privat & Hobby", nav_professional: "Beruf & Karriere", nav_kids: "Kinder & Jugend", nav_howitworks: "So funktioniert's",
     nav_dashboard: "Mein Bereich", 
     nav_news: "Neuigkeiten", nav_providers: "Anbieter finden",
     nav_for_providers: "Für Anbieter",hero_title: "Finde Kurse in deiner Nähe.", hero_subtitle: "Vom Jodeln bis zum Programmieren.",
@@ -829,8 +831,10 @@ export const TRANSLATIONS = {
     home_rating: "Bewertung",
     home_path_title: "Wähle deinen Weg",
     home_path_sub: "Entdecke unsere beliebtesten Lernbereiche",
-    home_card_prof_sub: "Karriere fördern mit zertifizierten Skills.",
-    home_card_priv_sub: "Kochen, Fotografie, Sport & mehr.",
+    home_ratgeber_title: "Ratgeber & Themenwelten",
+    home_ratgeber_sub: "Orientierungshilfen und vertiefte Themenwelten für deine Weiterbildung in der Schweiz.",
+    home_card_prof_sub: "Fachkurse und Weiterbildung für deine Karriere.",
+    home_card_priv_sub: "Kochen, Fotografie, Sport, Musik & mehr.",
     home_card_kids_sub: "Spassige und spannende Kurse für Kinder.",
     btn_explore: "ENTDECKEN",
 
@@ -840,7 +844,7 @@ export const TRANSLATIONS = {
     landing_kids_title: "Kurse für Kinder, Jugendliche & schulisches Lernen", landing_kids_sub: "Freizeitkurse, Ferienangebote und schulische Lernangebote",
 
     // SEARCH FILTERS
-    search_refine: "Suche verfeinern...",
+    search_refine: "Nach Kurs, Thema oder Abschluss suchen...",
     lbl_max_price: "Max CHF",
     msg_no_courses: "Keine Kurse verfügbar.", msg_all_topics: "Alle Themen in diesem Bereich.", 
     msg_select_area: "Wähle einen Bereich.", lbl_select_cat: "Kategorie wählen",
@@ -999,7 +1003,9 @@ export const TRANSLATIONS = {
     home_rating: "Évaluation",
     home_path_title: "Choisissez votre voie",
     home_path_sub: "Explorez nos domaines d'apprentissage les plus populaires",
-    home_card_prof_sub: "Avancez votre carrière avec des compétences certifiées.",
+    home_ratgeber_title: "Guides & univers thématiques",
+    home_ratgeber_sub: "Des conseils et des univers thématiques approfondis pour votre formation en Suisse.",
+    home_card_prof_sub: "Cours et formations pour votre carrière.",
     home_card_priv_sub: "Cuisine, Photographie, Sport & plus.",
     home_card_kids_sub: "Cours amusants et stimulants pour les enfants.",
     btn_explore: "EXPLORER",
@@ -1169,7 +1175,9 @@ export const TRANSLATIONS = {
     home_rating: "Valutazione",
     home_path_title: "Scegli il tuo percorso",
     home_path_sub: "Esplora i nostri percorsi di apprendimento più popolari",
-    home_card_prof_sub: "Avanza nella tua carriera con competenze certificate.",
+    home_ratgeber_title: "Guide & mondi tematici",
+    home_ratgeber_sub: "Consigli e approfondimenti tematici per la tua formazione in Svizzera.",
+    home_card_prof_sub: "Corsi e formazione per la tua carriera.",
     home_card_priv_sub: "Cucina, Fotografia, Sport & altro.",
     home_card_kids_sub: "Corsi divertenti e coinvolgenti per bambini.",
     btn_explore: "ESPLORA",

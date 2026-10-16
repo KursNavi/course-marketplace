@@ -17,7 +17,7 @@ import {
 } from '../../lib/themeWorldAdminApi';
 
 const SEGMENT_LABELS = {
-  beruflich: 'Beruflich',
+  beruflich: 'Beruf & Karriere',
   'privat-hobby': 'Privat & Hobby',
   'kinder-jugend': 'Kinder & Jugend',
 };

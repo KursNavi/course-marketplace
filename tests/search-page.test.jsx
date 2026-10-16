@@ -349,7 +349,7 @@ describe('Filter reset', () => {
 
 // ===================== 4. SCROLL TO RESULTS =====================
 describe('Scroll to results', () => {
-  it('calls scrollIntoView on filter change (after initial mount)', () => {
+  it('does NOT auto-scroll to results on filter change (user stays put, scrolls manually when done)', () => {
     const c1 = makeCourse('1');
     const c2 = makeCourse('2');
 
@@ -367,10 +367,11 @@ describe('Scroll to results', () => {
     const scrollSpy = vi.fn();
     if (resultsEl) resultsEl.scrollIntoView = scrollSpy;
 
-    // Re-render with different filteredCourses to trigger the effect
+    // Re-render with different filteredCourses (a filter/category/search change) — this must
+    // NOT jump the page to the results on its own, since the user may not be done refining yet.
     rerender(<SearchPageView {...props} filteredCourses={[c1]} />);
 
-    expect(scrollSpy).toHaveBeenCalled();
+    expect(scrollSpy).not.toHaveBeenCalled();
   });
 });
 
@@ -471,17 +472,6 @@ describe('Filter chips', () => {
     expect(screen.queryByTestId('filter-chips')).not.toBeInTheDocument();
   });
 
-  it('shows segment context banner (not chip) when searchType is set', () => {
-    const c = makeCourse('1');
-    const props = makeProps({
-      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
-      searchType: 'beruflich',
-    });
-    render(<SearchPageView {...props} />);
-    const banner = screen.getByTestId('segment-context-banner');
-    expect(banner).toBeInTheDocument();
-    expect(screen.getByTestId('segment-context-title')).toHaveTextContent('Beruflich');
-  });
 });
 
 // ===================== 6. PRICE VALIDATION =====================
@@ -652,44 +642,12 @@ describe('Verifiziert-Badge auf Kurskarten', () => {
 });
 
 // ===================== 9. SEGMENT CONTEXT BANNER =====================
-describe('Segment context banner', () => {
-  it('shows "Beruflich" title for type=beruflich', () => {
-    const c = makeCourse('1');
-    render(<SearchPageView {...makeProps({ courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c], searchType: 'beruflich' })} />);
-    expect(screen.getByTestId('segment-context-title')).toHaveTextContent('Beruflich');
-  });
-
-  it('shows "Privat & Hobby" title for type=privat_hobby', () => {
-    const c = makeCourse('1');
-    render(<SearchPageView {...makeProps({ courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c], searchType: 'privat_hobby' })} />);
-    expect(screen.getByTestId('segment-context-title')).toHaveTextContent('Privat & Hobby');
-  });
-
-  it('shows "Kinder & Jugend" title for type=kinder_jugend', () => {
-    const c = makeCourse('1');
-    render(<SearchPageView {...makeProps({ courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c], searchType: 'kinder_jugend' })} />);
-    expect(screen.getByTestId('segment-context-title')).toHaveTextContent('Kinder & Jugend');
-  });
-
-  it('does NOT render banner when no searchType', () => {
-    const c = makeCourse('1');
-    render(<SearchPageView {...makeProps({ courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c], searchType: '' })} />);
-    expect(screen.queryByTestId('segment-context-banner')).not.toBeInTheDocument();
-  });
-
+describe('Segment context (no redundant banner)', () => {
   it('does NOT show segment type as filter chip when type is set', () => {
     const c = makeCourse('1');
     render(<SearchPageView {...makeProps({ courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c], searchType: 'privat_hobby' })} />);
     // No chip container should appear if only type is active (no real filters)
     expect(screen.queryByTestId('filter-chips')).not.toBeInTheDocument();
-  });
-
-  it('shows landing page link in banner', () => {
-    const c = makeCourse('1');
-    render(<SearchPageView {...makeProps({ courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c], searchType: 'beruflich' })} />);
-    const link = screen.getByTestId('segment-context-landing-link');
-    expect(link).toBeInTheDocument();
-    expect(link).toHaveAttribute('href', '/professional');
   });
 
   it('does NOT show auto-type hint when autoType prop is false (default)', () => {
@@ -813,11 +771,11 @@ describe('Level 2 taxonomy (Fachbereich/Themenwelt/Angebotsbereich) in Weitere F
     };
   }
 
-  it('shows select-fachbereich (not select-bereich) for beruflich type when area active', () => {
+  it('shows select-fachbereich (not select-bereich) for beruflich type before an area is chosen', () => {
     const c = makeCourseTyped('1', 'professionell', 'it_digital');
     render(<SearchPageView {...makeProps({
       courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
-      searchType: 'beruflich', searchArea: 'it_digital',
+      searchType: 'beruflich', searchArea: '',
     })} />);
     expect(document.querySelector('[data-testid="select-fachbereich"]')).toBeInTheDocument();
     expect(document.querySelector('[data-testid="select-bereich"]')).not.toBeInTheDocument();
@@ -825,11 +783,11 @@ describe('Level 2 taxonomy (Fachbereich/Themenwelt/Angebotsbereich) in Weitere F
     expect(document.querySelector('[data-testid="select-angebotsbereich"]')).not.toBeInTheDocument();
   });
 
-  it('shows select-themenwelt for privat_hobby type when area active', () => {
+  it('shows select-themenwelt for privat_hobby type before an area is chosen', () => {
     const c = makeCourseTyped('2', 'privat', 'yoga_pilates');
     render(<SearchPageView {...makeProps({
       courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
-      searchType: 'privat_hobby', searchArea: 'yoga_pilates',
+      searchType: 'privat_hobby', searchArea: '',
     })} />);
     expect(document.querySelector('[data-testid="select-themenwelt"]')).toBeInTheDocument();
     expect(document.querySelector('[data-testid="select-bereich"]')).not.toBeInTheDocument();
@@ -837,15 +795,25 @@ describe('Level 2 taxonomy (Fachbereich/Themenwelt/Angebotsbereich) in Weitere F
     expect(document.querySelector('[data-testid="select-angebotsbereich"]')).not.toBeInTheDocument();
   });
 
-  it('shows select-angebotsbereich for kinder_jugend type when area active', () => {
+  it('shows select-angebotsbereich for kinder_jugend type before an area is chosen', () => {
     const c = makeCourseTyped('3', 'kinder', 'sport_bewegung');
     render(<SearchPageView {...makeProps({
       courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
-      searchType: 'kinder_jugend', searchArea: 'sport_bewegung',
+      searchType: 'kinder_jugend', searchArea: '',
     })} />);
     expect(document.querySelector('[data-testid="select-angebotsbereich"]')).toBeInTheDocument();
     expect(document.querySelector('[data-testid="select-bereich"]')).not.toBeInTheDocument();
     expect(document.querySelector('[data-testid="select-fachbereich"]')).not.toBeInTheDocument();
+  });
+
+  it('replaces select-fachbereich with a chip once an area is chosen (no redundant dropdown)', () => {
+    const c = makeCourseTyped('1', 'professionell', 'it_digital');
+    render(<SearchPageView {...makeProps({
+      courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
+      searchType: 'beruflich', searchArea: 'it_digital',
+    })} />);
+    expect(document.querySelector('[data-testid="select-fachbereich"]')).not.toBeInTheDocument();
+    expect(document.querySelector('[data-testid="desktop-area-chip"]')).toBeInTheDocument();
   });
 
   it('does NOT count area in secondaryFilterCount — area is now a primary filter', () => {
@@ -901,65 +869,54 @@ describe('Cascade logic: Fachbereich/Themenwelt/Angebotsbereich → Spezialgebie
     };
   }
 
-  it('select-specialty is disabled and shows "Zuerst Fachbereich wählen" when no area (beruflich)', () => {
+  it('select-specialty is not shown before an area is chosen (beruflich) — no redundant disabled field', () => {
     const c = makeTaxCourse('1', 'professionell', 'it_digital', 'Webentwicklung', null);
     render(<SearchPageView {...makeProps({
       courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
       searchType: 'beruflich', searchArea: '',
       // Note: no filterPriceMax needed — taxonomy cascade is in the primary filter bar
     })} />);
-    const sel = document.querySelector('[data-testid="select-specialty"]');
-    expect(sel).toBeInTheDocument();
-    expect(sel).toBeDisabled();
-    expect(sel.options[0].text).toBe('Zuerst Fachbereich wählen');
+    expect(document.querySelector('[data-testid="select-specialty"]')).not.toBeInTheDocument();
   });
 
-  it('select-specialty is disabled and shows "Zuerst Themenwelt wählen" for privat_hobby', () => {
+  it('select-specialty is not shown before a Themenwelt is chosen (privat_hobby)', () => {
     const c = makeTaxCourse('2', 'privat', 'yoga_pilates', 'Yoga', null);
     render(<SearchPageView {...makeProps({
       courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
       searchType: 'privat_hobby', searchArea: '',
     })} />);
-    const sel = document.querySelector('[data-testid="select-specialty"]');
-    expect(sel).toBeInTheDocument();
-    expect(sel).toBeDisabled();
-    expect(sel.options[0].text).toBe('Zuerst Themenwelt wählen');
+    expect(document.querySelector('[data-testid="select-specialty"]')).not.toBeInTheDocument();
   });
 
-  it('select-specialty is disabled and shows "Zuerst Angebotsbereich wählen" for kinder_jugend', () => {
+  it('select-specialty is not shown before an Angebotsbereich is chosen (kinder_jugend)', () => {
     const c = makeTaxCourse('3', 'kinder', 'sport_bewegung', 'Fussball', null);
     render(<SearchPageView {...makeProps({
       courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
       searchType: 'kinder_jugend', searchArea: '',
     })} />);
-    const sel = document.querySelector('[data-testid="select-specialty"]');
-    expect(sel).toBeInTheDocument();
-    expect(sel).toBeDisabled();
-    expect(sel.options[0].text).toBe('Zuerst Angebotsbereich wählen');
+    expect(document.querySelector('[data-testid="select-specialty"]')).not.toBeInTheDocument();
   });
 
-  it('select-specialty is enabled and shows options after area is selected', () => {
+  it('select-specialty appears with options after area is selected', () => {
     const c = makeTaxCourse('1', 'professionell', 'it_digital', 'Webentwicklung', null);
     render(<SearchPageView {...makeProps({
       courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
       searchType: 'beruflich', searchArea: 'it_digital',
     })} />);
     const sel = document.querySelector('[data-testid="select-specialty"]');
+    expect(sel).toBeInTheDocument();
     expect(sel).not.toBeDisabled();
     expect(sel.querySelectorAll('option').length).toBeGreaterThan(1); // default + at least 1 option
     expect(sel).toHaveTextContent('Webentwicklung');
   });
 
-  it('select-focus is disabled with "Zuerst Spezialgebiet wählen" when area set but no specialty', () => {
+  it('select-focus is not shown when area is set but no specialty chosen yet', () => {
     const c = makeTaxCourse('1', 'professionell', 'it_digital', 'Webentwicklung', 'Frontend');
     render(<SearchPageView {...makeProps({
       courses: [c], filteredCourses: [c], filteredCoursesPreCategory: [c],
       searchType: 'beruflich', searchArea: 'it_digital', searchSpecialty: '',
     })} />);
-    const sel = document.querySelector('[data-testid="select-focus"]');
-    expect(sel).toBeInTheDocument();
-    expect(sel).toBeDisabled();
-    expect(sel.options[0].text).toBe('Zuerst Spezialgebiet wählen');
+    expect(document.querySelector('[data-testid="select-focus"]')).not.toBeInTheDocument();
   });
 
   it('select-focus is enabled and shows options after specialty is selected', () => {
@@ -973,7 +930,7 @@ describe('Cascade logic: Fachbereich/Themenwelt/Angebotsbereich → Spezialgebie
     expect(sel).toHaveTextContent('Frontend');
   });
 
-  it('changing area calls setSearchSpecialty("") and setSearchFocus("")', () => {
+  it('clicking the area chip calls setSearchArea/Specialty/Focus("") — removes the whole selection', () => {
     const setArea = vi.fn();
     const setSpec = vi.fn();
     const setFocus = vi.fn();
@@ -984,13 +941,13 @@ describe('Cascade logic: Fachbereich/Themenwelt/Angebotsbereich → Spezialgebie
       searchSpecialty: 'Webentwicklung', searchFocus: 'Frontend',
       setSearchArea: setArea, setSearchSpecialty: setSpec, setSearchFocus: setFocus,
     })} />);
-    fireEvent.change(document.querySelector('[data-testid="select-fachbereich"]'), { target: { value: '' } });
+    fireEvent.click(document.querySelector('[data-testid="desktop-area-chip"]'));
     expect(setArea).toHaveBeenCalledWith('');
     expect(setSpec).toHaveBeenCalledWith('');
     expect(setFocus).toHaveBeenCalledWith('');
   });
 
-  it('changing specialty calls setSearchFocus("")', () => {
+  it('clicking the specialty chip calls setSearchSpecialty/Focus("") — removes specialty and focus', () => {
     const setSpec = vi.fn();
     const setFocus = vi.fn();
     const c = makeTaxCourse('1', 'professionell', 'it_digital', 'Webentwicklung', 'Frontend');
@@ -1000,7 +957,7 @@ describe('Cascade logic: Fachbereich/Themenwelt/Angebotsbereich → Spezialgebie
       searchSpecialty: 'Webentwicklung', searchFocus: 'Frontend',
       setSearchSpecialty: setSpec, setSearchFocus: setFocus,
     })} />);
-    fireEvent.change(document.querySelector('[data-testid="select-specialty"]'), { target: { value: '' } });
+    fireEvent.click(document.querySelector('[data-testid="desktop-specialty-chip"]'));
     expect(setSpec).toHaveBeenCalledWith('');
     expect(setFocus).toHaveBeenCalledWith('');
   });

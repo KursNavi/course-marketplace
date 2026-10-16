@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useCallback } from 'react';
-import { Search, ChevronRight, ChevronDown, Filter, User, X, Shield, MapPin, CheckCircle, Loader, Bell, ArrowDown, ArrowRight, Sparkles, Bookmark, BookmarkCheck, CreditCard, Info, EyeOff, Briefcase, Palette, Smile, BookOpen, Compass, SearchX, AlertTriangle, RotateCcw, Mail } from 'lucide-react';
+import { Search, ChevronRight, ChevronDown, Filter, User, X, Shield, MapPin, CheckCircle, Loader, Bell, ArrowDown, Sparkles, Bookmark, BookmarkCheck, CreditCard, Info, EyeOff, Briefcase, Palette, Smile, BookOpen, Compass, SearchX, AlertTriangle, RotateCcw, Mail } from 'lucide-react';
 import { LocationDropdown, LanguageDropdown, DeliveryTypeFilter, SaeulenFilter, KursartFilter } from './Filters';
 import { PRIVAT_KURSART_ICONS, KINDER_KURSART_ICONS } from '../lib/kursartIcons';
 import { Globe } from 'lucide-react';
@@ -17,6 +17,8 @@ import { trackContentsquareSearchFilterApplied } from '../lib/contentsquare';
 import { getSearchHeader } from '../lib/searchHeaderConfig';
 import { getSearchAreaSlugs } from '../lib/searchAreaAliases';
 import { sortCoursesByRelevance, stableSeed } from '../lib/searchRelevance';
+import { SectionMarker } from './SectionMarker';
+import { SEGMENT_VISUALS, SEG_BORDER_60 } from '../lib/segmentVisuals';
 
 import { DEFAULT_COURSE_IMAGE } from '../lib/imageUtils';
 const fallbackImage = DEFAULT_COURSE_IMAGE;
@@ -33,11 +35,11 @@ const URL_TO_DB_TYPE = {
 };
 
 // ---------------------------------------------------------------------------
-// Segment context metadata (for banner above filters)
+// Segment context metadata (used by the auto-type hint bar)
 // ---------------------------------------------------------------------------
 const SEGMENT_META = {
-    beruflich:     { title: 'Beruflich',       subtitle: 'Finde Weiterbildungen, Zertifikate und Ausbildungen für deine Karriere.', landingUrl: '/professional', landingLabel: 'Übersicht Beruflich' },
-    professionell: { title: 'Beruflich',       subtitle: 'Finde Weiterbildungen, Zertifikate und Ausbildungen für deine Karriere.', landingUrl: '/professional', landingLabel: 'Übersicht Beruflich' },
+    beruflich:     { title: 'Beruf & Karriere', subtitle: 'Finde Weiterbildungen, Zertifikate und Ausbildungen für deine Karriere.', landingUrl: '/professional', landingLabel: 'Übersicht Beruf & Karriere' },
+    professionell: { title: 'Beruf & Karriere', subtitle: 'Finde Weiterbildungen, Zertifikate und Ausbildungen für deine Karriere.', landingUrl: '/professional', landingLabel: 'Übersicht Beruf & Karriere' },
     privat_hobby:  { title: 'Privat & Hobby',  subtitle: 'Entdecke Kurse – vom Schnupperabend bis zum Wochenkurs.',                landingUrl: '/private',       landingLabel: 'Übersicht Privat & Hobby' },
     privat:        { title: 'Privat & Hobby',  subtitle: 'Entdecke Kurse – vom Schnupperabend bis zum Wochenkurs.',                landingUrl: '/private',       landingLabel: 'Übersicht Privat & Hobby' },
     kinder_jugend: { title: 'Kinder & Jugend', subtitle: 'Betreute Kurse und Camps, passend zum Alter deines Kindes.',            landingUrl: '/children',      landingLabel: 'Übersicht Kinder & Jugend' },
@@ -79,10 +81,10 @@ const SearchPageView = ({
     autoType, setAutoType,
 }) => {
 
-    // Ref for scroll-to-results behavior
+    // Ref used as the scroll-margin anchor for the results column (no auto-scroll-into-view
+    // happens anymore — users stay put while refining filters and scroll down themselves once
+    // they're done).
     const resultsRef = useRef(null);
-    // Track whether initial mount has happened (skip scroll on first render)
-    const hasMountedRef = useRef(false);
     // Price validation error state
     const [priceError, setPriceError] = React.useState(false);
 
@@ -524,6 +526,32 @@ const SearchPageView = ({
         setSearchQuery("");
     }, [setSearchQuery]);
 
+    // --- "BEREICHE ENTDECKEN" BROWSE-KONTEXT ---
+    // Nutzt dieselbe Kategorie-Auswahl (searchType/Area/Specialty/Focus) wie die bestehende
+    // Filterkaskade weiter unten im Filterbereich — beide schreiben/lesen denselben State und
+    // bleiben dadurch automatisch synchron, ohne eine zweite parallele Suchlogik zu benötigen.
+    const canonSegKey = CANONICAL_SEGMENT[searchType] || null;
+
+    const selectSegmentBrowse = (segKey) => {
+        const params = new URLSearchParams(window.location.search);
+        params.set('type', segKey);
+        params.delete('autoType'); params.delete('area'); params.delete('spec'); params.delete('focus');
+        window.history.pushState({ view: 'search' }, '', '/search?' + params.toString());
+        setSearchType(segKey);
+        setSearchArea(''); setSearchSpecialty(''); setSearchFocus('');
+        setIsAutoType(false);
+        if (setAutoType) setAutoType(false);
+    };
+    const resetToAllSegmentsBrowse = () => {
+        const params = new URLSearchParams(window.location.search);
+        params.delete('type'); params.delete('autoType'); params.delete('area'); params.delete('spec'); params.delete('focus');
+        window.history.pushState({ view: 'search' }, '', '/search' + (params.toString() ? '?' + params.toString() : ''));
+        setSearchType(''); setSearchArea(''); setSearchSpecialty(''); setSearchFocus('');
+    };
+    const showAllInTypeBrowse = () => { setSearchArea(''); setSearchSpecialty(''); setSearchFocus(''); };
+    const showAllInAreaBrowse = () => { setSearchSpecialty(''); setSearchFocus(''); };
+    const showAllInSpecialtyBrowse = () => { setSearchFocus(''); };
+
     // Count active secondary filters (Kursformat, Kursart, Säulen, Datum, Kurssprache, Preis, Niveau, Verifiziert, Direktbuchung)
     const secondaryFilterCount = [
         selectedDeliveryTypes.length > 0,
@@ -563,19 +591,6 @@ const SearchPageView = ({
         if (n === 1) return SEARCH_STRINGS.results_one;
         return SEARCH_STRINGS.results_many(n);
     }, [loading, filteredCourses.length, searchQuery]);
-
-    // --- SCROLL TO RESULTS on filter/search change ---
-    useEffect(() => {
-        if (!hasMountedRef.current) {
-            hasMountedRef.current = true;
-            return;
-        }
-        if (loading) return;
-        // Scroll results area into view after filter change
-        if (resultsRef.current) {
-            resultsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-    }, [filteredCourses, loading]);
 
     // --- RANKING LOGIC (v5.1) ---
     // Formula: Score = (Prio(1.2|1.0) * Booking + SeededRandom(0..0.15)) * BasicLeadFaktor
@@ -646,46 +661,6 @@ const SearchPageView = ({
     return (
         <div className="min-h-screen bg-beige">
             {/* SEGMENT CONTEXT BANNER — compact strip above filters showing segment title/subtitle */}
-            {searchType && (() => {
-                const meta = SEGMENT_META[searchType];
-                const canonKey = CANONICAL_SEGMENT[searchType] || searchType;
-                const cfg = SEGMENT_CONFIG[canonKey];
-                if (!meta || !cfg) return null;
-                const otherSegments = OTHER_SEGMENTS.filter(s => s.key !== canonKey);
-                return (
-                    <div data-testid="segment-context-banner" className={`border-b ${cfg.borderLight || 'border-gray-200'} ${cfg.bgLight || 'bg-gray-50'}`}>
-                        <div className="max-w-7xl mx-auto px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-4">
-                            {/* Icon + Title + Subtitle */}
-                            <div className="flex items-center gap-2 flex-1 min-w-0">
-                                {cfg.icon && <cfg.icon className={`w-5 h-5 shrink-0 ${cfg.text}`} />}
-                                <div className="min-w-0">
-                                    <span className={`font-bold text-sm ${cfg.textDark}`} data-testid="segment-context-title">{meta.title}</span>
-                                    <span className="text-xs text-gray-500 ml-2 truncate hidden sm:inline" data-testid="segment-context-subtitle">{meta.subtitle}</span>
-                                </div>
-                            </div>
-                            {/* Mobile subtitle */}
-                            <p className="text-xs text-gray-500 sm:hidden pl-7" data-testid="segment-context-subtitle-mobile">{meta.subtitle}</p>
-                            {/* Landing page link (secondary) */}
-                            <div className="flex items-center gap-2 flex-wrap text-xs pl-7 sm:pl-0">
-                                <a
-                                    href={meta.landingUrl}
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        window.scrollTo(0, 0);
-                                        window.history.pushState({}, '', meta.landingUrl);
-                                        window.dispatchEvent(new Event('locationchange'));
-                                    }}
-                                    className={`${cfg.text} hover:underline font-medium`}
-                                    data-testid="segment-context-landing-link"
-                                >
-                                    {meta.landingLabel}
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                );
-            })()}
-
             {/* AUTO-TYPE HINT BAR — visible only when homepage auto-detected the segment */}
             {isAutoType && searchType && (() => {
                 const canonKey = CANONICAL_SEGMENT[searchType] || searchType;
@@ -729,183 +704,389 @@ const SearchPageView = ({
                 );
             })()}
 
-            {/* COMPACT SEGMENT HEADER — shown only when a sub-area (or deeper filter) is active */}
+            {/* Seiten-H1 (SEO/Accessibility): dieselbe dynamische Titel-Fallback-Kette wie zuvor,
+                jetzt ohne die redundante grosse Hero-Darstellung — der Bereich/die Kategorie ist
+                bereits über "In diesem Bereich stöbern" und den Breadcrumb in der Seitenleiste
+                sichtbar. Visuell nicht angezeigt (sr-only), aber weiterhin vorhanden. */}
             {activeSegmentConfig && searchArea && (
-                <div className="relative overflow-hidden">
-                    {activeSegmentConfig.heroBg && (
-                        <div
-                            className="absolute inset-0 bg-cover bg-center opacity-[0.06]"
-                            style={{ backgroundImage: `url("${activeSegmentConfig.heroBg}")` }}
-                        />
-                    )}
-                    <div className={`absolute inset-0 ${activeSegmentConfig.bgLight} opacity-80`} />
-                    <div className="relative py-8 md:py-10">
-                        <div className="max-w-7xl mx-auto px-4">
-                            <div className="flex items-center mb-4">
-                                <div className="flex items-center text-sm">
-                                    <activeSegmentConfig.icon className={`w-4 h-4 mr-2 ${activeSegmentConfig.text}`} />
-                                    <span className={`font-medium ${activeSegmentConfig.text}`}>{getLabel(searchType, 'type')}</span>
-                                    {searchArea && (
-                                        <>
-                                            <ChevronRight className="w-4 h-4 mx-2 text-gray-400" />
-                                            <span className="text-gray-600">{getLabel(searchArea, 'area')}</span>
-                                        </>
-                                    )}
-                                    {searchSpecialty && (
-                                        <>
-                                            <ChevronRight className="w-4 h-4 mx-2 text-gray-400" />
-                                            <span className="text-gray-600">{searchSpecialty}</span>
-                                        </>
-                                    )}
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-6">
-                                <div className={`hidden md:flex items-center justify-center w-16 h-16 rounded-2xl ${activeSegmentConfig.bgSolid} shadow-lg`}>
-                                    <activeSegmentConfig.icon className="w-8 h-8 text-white" />
-                                </div>
-                                <div>
-                                    <h1 className={`text-2xl md:text-3xl font-bold font-heading ${activeSegmentConfig.textDark}`}>
-                                        {dynamicHeader?.title || dynamicThemeWorldTitle || activeSegmentConfig.heroTitle?.de || getLabel(searchType, 'type')}
-                                    </h1>
-                                    <p className="text-gray-600 mt-1">
-                                        {dynamicHeader?.subtitle || activeSegmentConfig.heroSubtitle?.de || ''}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <h1 className="sr-only">
+                    {dynamicHeader?.title || dynamicThemeWorldTitle || activeSegmentConfig.heroTitle?.de || getLabel(searchType, 'type')}
+                </h1>
             )}
 
-            {/* Sticky filter bar (sticky only on sm+ to avoid mobile overflow) */}
-            <div className="bg-white border-b pt-3 pb-2 sm:sticky sm:top-20 z-30 shadow-sm">
-                <div className="max-w-7xl mx-auto px-4 space-y-2">
-                    {/* Row 1: Search + Location */}
-                    <div className="flex flex-col md:flex-row gap-2 items-stretch">
-                        <div className="relative flex-grow w-full md:w-auto">
-                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                            <input type="text" placeholder={searchPlaceholder} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full h-[36px] pl-9 pr-4 bg-beige border border-gray-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-colors" />
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <LocationDropdown selectedLocations={selectedLocations} setSelectedLocations={setSelectedLocations} locMenuOpen={locMenuOpen} setLocMenuOpen={setLocMenuOpen} locMenuRef={locMenuRef} t={t} />
-                        </div>
-                    </div>
-                    <p className="hidden sm:block text-xs text-gray-500 -mt-1 ml-3">
-                        Tipp: Du kannst mehrere Begriffe kombinieren, z.B. <em>Yoga Zürich</em> oder <em>Excel online</em>.
-                    </p>
+            {/* ===================== TWO-COLUMN SEARCH LAYOUT =====================
+                Links: Sidebar "Filter & Wegweiser" (Suche, Standort, Bereiche entdecken,
+                Kategorie-Auswahl, weitere Filter, Zurücksetzen).
+                Rechts: kompakter Browse-Status, Ergebniszähler, Ergebnisliste. */}
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
+                <div className="lg:grid lg:grid-cols-12 lg:gap-6 xl:gap-8">
 
-                    {/* Row 2: Fachliche Filter (Cascade: Level 2 → 3 → 4) + Weitere Filter button */}
-                    <div className="flex gap-2 flex-wrap items-center border-t pt-2 border-gray-100">
-                        {/* Taxonomy cascade — shown when segment is set and courses have areas */}
-                        {searchType && availableAreas.length > 0 && (() => {
-                            const canonKey = CANONICAL_SEGMENT[searchType] || searchType;
-                            const areaLabel = canonKey === 'beruflich' ? 'Fachbereich' : canonKey === 'kinder_jugend' ? 'Angebotsbereich' : 'Themenwelt';
-                            const areaTestId = canonKey === 'beruflich' ? 'select-fachbereich' : canonKey === 'kinder_jugend' ? 'select-angebotsbereich' : 'select-themenwelt';
-                            const showSpecialty = !searchArea || availableSpecialties.length > 0;
-                            const showFocus = !!searchArea && availableSpecialties.length > 0 && (!searchSpecialty || availableFocuses.length > 0);
-                            const selCls = (active) => `px-3 py-1.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-white border-gray-200 ${active ? 'text-gray-900' : 'text-gray-400'}`;
-                            const chipCls = 'text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-orange-200 flex items-center';
-                            return (
-                                <React.Fragment>
-                                    {/* MOBILE (sm:hidden): progressive compact cascade — one level at a time */}
-                                    <div data-testid="taxonomy-cascade-mobile" className="sm:hidden flex gap-2 flex-wrap items-center min-w-0">
-                                        {/* Area: show select when not chosen; chip when chosen */}
-                                        {!searchArea ? (
-                                            <select data-testid={`${areaTestId}-m`} value={searchArea}
-                                                onChange={(e) => { setSearchArea(e.target.value); setSearchSpecialty(''); setSearchFocus(''); }}
-                                                className={selCls(false)}>
-                                                <option value="" className="text-gray-400">— {areaLabel} —</option>
-                                                {availableAreas.map(slug => (<option key={slug} value={slug} className="text-gray-900">{getLabel(slug, 'area')}</option>))}
-                                            </select>
-                                        ) : (
-                                            <button data-testid="mobile-area-chip" onClick={() => { setSearchArea(''); setSearchSpecialty(''); setSearchFocus(''); }} className={chipCls}>
-                                                {getLabel(searchArea, 'area')} <X className="w-3 h-3 ml-1 opacity-50" />
-                                            </button>
-                                        )}
-                                        {/* Specialty: show select after area chosen (if options); show chip when chosen */}
-                                        {searchArea && !searchSpecialty && availableSpecialties.length > 0 && (
-                                            <select data-testid="select-specialty-m" value={searchSpecialty}
-                                                onChange={(e) => { setSearchSpecialty(e.target.value); setSearchFocus(''); }}
-                                                className={selCls(false)}>
-                                                <option value="" className="text-gray-400">— {t.lbl_specialty || 'Fachgebiet'} —</option>
-                                                {availableSpecialties.map(spec => (<option key={spec} value={spec} className="text-gray-900">{spec}</option>))}
-                                            </select>
-                                        )}
-                                        {searchArea && searchSpecialty && (
-                                            <button data-testid="mobile-specialty-chip" onClick={() => { setSearchSpecialty(''); setSearchFocus(''); }} className={chipCls}>
-                                                {searchSpecialty} <X className="w-3 h-3 ml-1 opacity-50" />
-                                            </button>
-                                        )}
-                                        {/* Focus: show select after specialty chosen (if options); show chip when chosen */}
-                                        {searchArea && searchSpecialty && !searchFocus && availableFocuses.length > 0 && (
-                                            <select data-testid="select-focus-m" value={searchFocus || ''}
-                                                onChange={(e) => setSearchFocus(e.target.value)}
-                                                className={selCls(false)}>
-                                                <option value="" className="text-gray-400">— {t.lbl_focus || 'Fokus'} —</option>
-                                                {availableFocuses.map(f => (<option key={f} value={f} className="text-gray-900">{f}</option>))}
-                                            </select>
-                                        )}
-                                        {searchArea && searchSpecialty && searchFocus && (
-                                            <button data-testid="mobile-focus-chip" onClick={() => setSearchFocus('')} className={chipCls}>
-                                                {searchFocus} <X className="w-3 h-3 ml-1 opacity-50" />
-                                            </button>
-                                        )}
-                                    </div>
-                                    {/* DESKTOP (hidden sm:flex): all three selects, disabled cascade */}
-                                    <div data-testid="taxonomy-cascade-desktop" className="hidden sm:flex gap-2 flex-wrap items-center">
-                                        {/* Level 2: Area */}
-                                        <select data-testid={areaTestId} value={searchArea}
-                                            onChange={(e) => { setSearchArea(e.target.value); setSearchSpecialty(''); setSearchFocus(''); }}
-                                            className={selCls(!!searchArea)}>
-                                            <option value="" className="text-gray-400">— {areaLabel} —</option>
-                                            {availableAreas.map(slug => (<option key={slug} value={slug} className="text-gray-900">{getLabel(slug, 'area')}</option>))}
-                                        </select>
-                                        {/* Level 3: Specialty */}
-                                        {showSpecialty && (
-                                            <select data-testid="select-specialty" value={searchSpecialty} disabled={!searchArea}
-                                                onChange={(e) => { setSearchSpecialty(e.target.value); setSearchFocus(''); }}
-                                                className={!searchArea
-                                                    ? 'px-3 py-1.5 border rounded-lg text-sm bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed opacity-60'
-                                                    : selCls(!!searchSpecialty)}>
-                                                <option value="" className="text-gray-400">
-                                                    {!searchArea ? (canonKey === 'beruflich' ? 'Zuerst Fachbereich wählen' : canonKey === 'kinder_jugend' ? 'Zuerst Angebotsbereich wählen' : 'Zuerst Themenwelt wählen') : `— ${t.lbl_specialty || 'Fachgebiet'} —`}
-                                                </option>
-                                                {searchArea && availableSpecialties.map(spec => (<option key={spec} value={spec} className="text-gray-900">{spec}</option>))}
-                                            </select>
-                                        )}
-                                        {/* Level 4: Focus */}
-                                        {showFocus && (
-                                            <select data-testid="select-focus" value={searchFocus || ''} disabled={!searchSpecialty}
-                                                onChange={(e) => setSearchFocus(e.target.value)}
-                                                className={!searchSpecialty
-                                                    ? 'px-3 py-1.5 border rounded-lg text-sm bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed opacity-60'
-                                                    : selCls(!!searchFocus)}>
-                                                <option value="" className="text-gray-400">
-                                                    {!searchSpecialty ? 'Zuerst Spezialgebiet wählen' : `— ${t.lbl_focus || 'Fokus'} —`}
-                                                </option>
-                                                {searchSpecialty && availableFocuses.map(f => (<option key={f} value={f} className="text-gray-900">{f}</option>))}
-                                            </select>
-                                        )}
-                                    </div>
-                                </React.Fragment>
-                            );
-                        })()}
-                        {/* "Weitere Filter" toggle button */}
+                    {/* ================= SIDEBAR: FILTER & WEGWEISER ================= */}
+                    <aside className="lg:col-span-4 mb-6 lg:mb-0" aria-label="Filter und Kategorien">
+                        <div className="lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto space-y-4">
+
+                            {/* --- AKTUELLE AUSWAHL: Kurzübersicht über Bereich, Suche und Filter --- */}
+                            {/* searchType is NOT shown as a chip (it is segment context, not a filter) */}
+                            {(selectedLanguages.length > 0 || selectedLocations.length > 0 ||
+                              selectedDeliveryTypes.length > 0 || (filterPriceMax && filterPriceMax !== '') ||
+                              (filterLevel && filterLevel !== 'All') || filterDateFrom || filterDateTo ||
+                              filterPro || filterDirectBooking || selectedSaule ||
+                              searchArea || searchSpecialty || searchFocus || searchQuery) && (
+                                <div className="flex gap-2 flex-wrap items-center bg-white border border-borderSubtle rounded-xl p-3" data-testid="filter-chips">
+                                    <span className="text-[11px] font-semibold uppercase tracking-wide text-gray-400 w-full mb-0.5">Aktuelle Auswahl</span>
+                                    {/* Search query chip */}
+                                    {searchQuery && (
+                                        <span onClick={() => setSearchQuery('')} className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-gray-200 flex items-center">
+                                            <Search className="w-3 h-3 mr-1" />«{searchQuery}» <X className="w-3 h-3 ml-1 opacity-50" />
+                                        </span>
+                                    )}
+                                    {selectedLanguages.map((lang, i) => (
+                                        <span key={`lang-${i}`} onClick={() => setSelectedLanguages(selectedLanguages.filter(l => l !== lang))} className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-purple-200 flex items-center">
+                                            <Globe className="w-3 h-3 mr-1"/> {lang} <X className="w-3 h-3 ml-1 opacity-50" />
+                                        </span>
+                                    ))}
+                                    {selectedLocations.map((loc, i) => (
+                                        <span key={`loc-${i}`} onClick={() => setSelectedLocations(selectedLocations.filter(l => l !== loc))} className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-blue-200 flex items-center">
+                                            <MapPin className="w-3 h-3 mr-1"/> {loc} <X className="w-3 h-3 ml-1 opacity-50" />
+                                        </span>
+                                    ))}
+                                    {selectedDeliveryTypes.map((dt, i) => (
+                                        <span key={`dt-${i}`} onClick={() => setSelectedDeliveryTypes(selectedDeliveryTypes.filter(d => d !== dt))} className="text-xs bg-cyan-100 text-cyan-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-cyan-200 flex items-center">
+                                            {DELIVERY_TYPES[dt]?.de || dt} <X className="w-3 h-3 ml-1 opacity-50" />
+                                        </span>
+                                    ))}
+                                    {filterPriceMax && filterPriceMax !== '' && (
+                                        <span onClick={() => setFilterPriceMax('')} className="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-amber-200 flex items-center">
+                                            Max CHF {formatPriceCHF(Number(filterPriceMax))} <X className="w-3 h-3 ml-1 opacity-50" />
+                                        </span>
+                                    )}
+                                    {filterLevel && filterLevel !== 'All' && (
+                                        <span onClick={() => setFilterLevel('All')} className="text-xs bg-indigo-100 text-indigo-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-indigo-200 flex items-center">
+                                            {COURSE_LEVELS[filterLevel]?.de || filterLevel} <X className="w-3 h-3 ml-1 opacity-50" />
+                                        </span>
+                                    )}
+                                    {filterDateFrom && (
+                                        <span onClick={() => setFilterDateFrom('')} className="text-xs bg-teal-100 text-teal-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-teal-200 flex items-center">
+                                            Ab {filterDateFrom} <X className="w-3 h-3 ml-1 opacity-50" />
+                                        </span>
+                                    )}
+                                    {filterDateTo && (
+                                        <span onClick={() => setFilterDateTo('')} className="text-xs bg-teal-100 text-teal-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-teal-200 flex items-center">
+                                            Bis {filterDateTo} <X className="w-3 h-3 ml-1 opacity-50" />
+                                        </span>
+                                    )}
+                                    {filterPro && (
+                                        <span onClick={() => setFilterPro(false)} className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-blue-100 flex items-center">
+                                            <Shield className="w-3 h-3 mr-1"/> {t.lbl_professional_filter} <X className="w-3 h-3 ml-1 opacity-50" />
+                                        </span>
+                                    )}
+                                    {filterDirectBooking && (
+                                        <span onClick={() => setFilterDirectBooking(false)} className="text-xs bg-green-50 text-green-700 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-green-100 flex items-center">
+                                            <CreditCard className="w-3 h-3 mr-1"/> {t.lbl_direct_booking_filter} <X className="w-3 h-3 ml-1 opacity-50" />
+                                        </span>
+                                    )}
+                                    {selectedSaule && (
+                                        <span onClick={() => setSelectedSaule('')} className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-blue-200 flex items-center">
+                                            {BERUF_SAEULEN[selectedSaule]?.shortDe || selectedSaule} <X className="w-3 h-3 ml-1 opacity-50" />
+                                        </span>
+                                    )}
+                                    {searchArea && (
+                                        <span onClick={() => { setSearchArea(''); setSearchSpecialty(''); setSearchFocus(''); }} className="flex text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-orange-200 items-center">
+                                            {getLabel(searchArea, 'area')} <X className="w-3 h-3 ml-1 opacity-50" />
+                                        </span>
+                                    )}
+                                    {searchSpecialty && (
+                                        <span onClick={() => { setSearchSpecialty(''); setSearchFocus(''); }} className="flex text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-orange-200 items-center">
+                                            {searchSpecialty} <X className="w-3 h-3 ml-1 opacity-50" />
+                                        </span>
+                                    )}
+                                    {searchFocus && (
+                                        <span onClick={() => setSearchFocus('')} className="flex text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-orange-200 items-center">
+                                            {searchFocus} <X className="w-3 h-3 ml-1 opacity-50" />
+                                        </span>
+                                    )}
+                                    {/* Global reset button */}
+                                    <button
+                                        data-testid="btn-reset-all-chips"
+                                        onClick={resetFilters}
+                                        className="ml-auto text-xs text-gray-400 hover:text-gray-600 hover:underline flex items-center gap-1 shrink-0"
+                                    >
+                                        <X className="w-3 h-3" />
+                                        Alle zurücksetzen
+                                    </button>
+                                </div>
+                            )}
+
+                            {/* ========== SCHRITT 1: BEREICHE ENTDECKEN ==========
+                                Zeigt entweder die drei gleichwertigen Bereiche (kein searchType) oder den
+                                aktuellen Kategoriepfad mit klickbarer naechster Ebene und einer "Alle Kurse in
+                                diesem Bereich anzeigen"-Aktion auf jeder Ebene (nicht erst auf der untersten). */}
+                            <div className="bg-petrol rounded-xl p-4 lg:p-5">
+                                <div className="mb-3">
+                                    <SectionMarker dark>Bereiche entdecken</SectionMarker>
+                                </div>
+
+                                {!searchType ? (
+                                    <>
+                                        <p className="text-sm text-white/70 mb-3">
+                                            Stöbere durch die Bildungsbereiche und öffne danach die passende Kategorie.
+                                        </p>
+                                        <div className="grid grid-cols-1 gap-2" data-testid="browse-segment-picker">
+                                            {['beruflich', 'privat_hobby', 'kinder_jugend'].map(segKey => {
+                                                const visuals = SEGMENT_VISUALS[segKey];
+                                                const Icon = visuals.icon;
+                                                const label = segKey === 'beruflich' ? (t.nav_professional || 'Beruflich') : segKey === 'privat_hobby' ? (t.nav_private || 'Privat & Hobby') : (t.nav_kids || 'Kinder & Jugend');
+                                                const desc = segKey === 'beruflich' ? t.home_card_prof_sub : segKey === 'privat_hobby' ? t.home_card_priv_sub : t.home_card_kids_sub;
+                                                return (
+                                                    <button
+                                                        key={segKey}
+                                                        type="button"
+                                                        data-testid={`browse-segment-${segKey}`}
+                                                        onClick={() => selectSegmentBrowse(segKey)}
+                                                        className={`group flex items-center gap-3 rounded-lg border-l-[3px] ${SEG_BORDER_60[segKey]} bg-white/5 hover:bg-white/10 pl-4 pr-3.5 py-3.5 transition-colors text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-white`}
+                                                    >
+                                                        <span className="w-9 h-9 rounded-full flex items-center justify-center bg-beige shrink-0">
+                                                            <Icon className="w-4 h-4" />
+                                                        </span>
+                                                        <span className="flex-1 min-w-0">
+                                                            <span className="flex items-center gap-2">
+                                                                <span className={`w-1.5 h-1.5 rounded-full ${visuals.bg}`} aria-hidden="true"></span>
+                                                                <span className="text-sm font-bold text-beige group-hover:text-white break-words transition-colors">{label}</span>
+                                                            </span>
+                                                            {desc && <span className="block text-xs text-white/60 mt-0.5 min-h-[2rem]">{desc}</span>}
+                                                        </span>
+                                                        <ChevronRight className="w-4 h-4 text-white/40 group-hover:text-white group-hover:translate-x-0.5 transition-all shrink-0" aria-hidden="true" />
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </>
+                                ) : (
+                                    <>
+                                        {/* Kategoriepfad — jede fruehere Ebene ist klickbar und fuehrt dorthin zurueck */}
+                                        <nav aria-label="Kategorie-Navigation" className="mb-3">
+                                            <ol className="flex flex-wrap items-center gap-1.5 text-sm" data-testid="browse-breadcrumb">
+                                                <li>
+                                                    <button type="button" onClick={resetToAllSegmentsBrowse} className="text-white/60 hover:text-white underline-offset-2 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">
+                                                        Alle Bereiche
+                                                    </button>
+                                                </li>
+                                                <li className="flex items-center gap-1.5">
+                                                    <ChevronRight className="w-3.5 h-3.5 text-white/30" aria-hidden="true" />
+                                                    {searchArea ? (
+                                                        <button type="button" onClick={showAllInTypeBrowse} className="text-white/60 hover:text-white underline-offset-2 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">
+                                                            {getLabel(searchType, 'type')}
+                                                        </button>
+                                                    ) : (
+                                                        <span aria-current="page" className="font-semibold text-white break-words">{getLabel(searchType, 'type')}</span>
+                                                    )}
+                                                </li>
+                                                {searchArea && (
+                                                    <li className="flex items-center gap-1.5">
+                                                        <ChevronRight className="w-3.5 h-3.5 text-white/30" aria-hidden="true" />
+                                                        {searchSpecialty ? (
+                                                            <button type="button" onClick={showAllInAreaBrowse} className="text-white/60 hover:text-white underline-offset-2 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">
+                                                                {getLabel(searchArea, 'area')}
+                                                            </button>
+                                                        ) : (
+                                                            <span aria-current="page" className="font-semibold text-white break-words">{getLabel(searchArea, 'area')}</span>
+                                                        )}
+                                                    </li>
+                                                )}
+                                                {searchSpecialty && (
+                                                    <li className="flex items-center gap-1.5">
+                                                        <ChevronRight className="w-3.5 h-3.5 text-white/30" aria-hidden="true" />
+                                                        {searchFocus ? (
+                                                            <button type="button" onClick={showAllInSpecialtyBrowse} className="text-white/60 hover:text-white underline-offset-2 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">
+                                                                {searchSpecialty}
+                                                            </button>
+                                                        ) : (
+                                                            <span aria-current="page" className="font-semibold text-white break-words">{searchSpecialty}</span>
+                                                        )}
+                                                    </li>
+                                                )}
+                                                {searchFocus && (
+                                                    <li className="flex items-center gap-1.5">
+                                                        <ChevronRight className="w-3.5 h-3.5 text-white/30" aria-hidden="true" />
+                                                        <span aria-current="page" className="font-semibold text-white break-words">{searchFocus}</span>
+                                                    </li>
+                                                )}
+                                            </ol>
+                                        </nav>
+
+                                        {/* Kompakte Kategorie-Dropdowns statt Kartenraster — dieselben bewaehrten
+                                            Select-Felder wie zuvor im unteren Filterbereich, jetzt an der einen
+                                            Stelle, an der die Kategorie ausgewaehlt wird. Jede Auswahl aktualisiert
+                                            sofort URL und Ergebnisse; "Alle Kurse in ... anzeigen" entfaellt, weil
+                                            die aktuelle Auswahl bereits automatisch alle passenden Kurse zeigt. */}
+                                        {availableAreas.length > 0 && (() => {
+                                            const canonKey = CANONICAL_SEGMENT[searchType] || searchType;
+                                            const areaLabel = canonKey === 'beruflich' ? 'Fachbereich' : canonKey === 'kinder_jugend' ? 'Angebotsbereich' : 'Themenwelt';
+                                            const areaTestId = canonKey === 'beruflich' ? 'select-fachbereich' : canonKey === 'kinder_jugend' ? 'select-angebotsbereich' : 'select-themenwelt';
+                                            const selCls = (active) => `px-3 py-1.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-white border-gray-200 ${active ? 'text-gray-900' : 'text-gray-400'}`;
+                                            const chipCls = 'text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-orange-200 flex items-center';
+                                            return (
+                                                <div className="mt-3">
+                                                    {/* MOBILE (sm:hidden): progressive compact cascade — one level at a time */}
+                                                    <div data-testid="taxonomy-cascade-mobile" className="sm:hidden flex gap-2 flex-wrap items-center min-w-0">
+                                                        {!searchArea ? (
+                                                            <select data-testid={`${areaTestId}-m`} value={searchArea}
+                                                                onChange={(e) => { setSearchArea(e.target.value); setSearchSpecialty(''); setSearchFocus(''); }}
+                                                                className={selCls(false)}>
+                                                                <option value="" className="text-gray-400">— {areaLabel} —</option>
+                                                                {availableAreas.map(slug => (<option key={slug} value={slug} className="text-gray-900">{getLabel(slug, 'area')}</option>))}
+                                                            </select>
+                                                        ) : (
+                                                            <button data-testid="mobile-area-chip" onClick={() => { setSearchArea(''); setSearchSpecialty(''); setSearchFocus(''); }} className={chipCls}>
+                                                                {getLabel(searchArea, 'area')} <X className="w-3 h-3 ml-1 opacity-50" />
+                                                            </button>
+                                                        )}
+                                                        {searchArea && !searchSpecialty && availableSpecialties.length > 0 && (
+                                                            <select data-testid="select-specialty-m" value={searchSpecialty}
+                                                                onChange={(e) => { setSearchSpecialty(e.target.value); setSearchFocus(''); }}
+                                                                className={selCls(false)}>
+                                                                <option value="" className="text-gray-400">— {t.lbl_specialty || 'Fachgebiet'} —</option>
+                                                                {availableSpecialties.map(spec => (<option key={spec} value={spec} className="text-gray-900">{spec}</option>))}
+                                                            </select>
+                                                        )}
+                                                        {searchArea && searchSpecialty && (
+                                                            <button data-testid="mobile-specialty-chip" onClick={() => { setSearchSpecialty(''); setSearchFocus(''); }} className={chipCls}>
+                                                                {searchSpecialty} <X className="w-3 h-3 ml-1 opacity-50" />
+                                                            </button>
+                                                        )}
+                                                        {searchArea && searchSpecialty && !searchFocus && availableFocuses.length > 0 && (
+                                                            <select data-testid="select-focus-m" value={searchFocus || ''}
+                                                                onChange={(e) => setSearchFocus(e.target.value)}
+                                                                className={selCls(false)}>
+                                                                <option value="" className="text-gray-400">— {t.lbl_focus || 'Fokus'} —</option>
+                                                                {availableFocuses.map(f => (<option key={f} value={f} className="text-gray-900">{f}</option>))}
+                                                            </select>
+                                                        )}
+                                                        {searchArea && searchSpecialty && searchFocus && (
+                                                            <button data-testid="mobile-focus-chip" onClick={() => setSearchFocus('')} className={chipCls}>
+                                                                {searchFocus} <X className="w-3 h-3 ml-1 opacity-50" />
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                    {/* DESKTOP (hidden sm:flex): progressive cascade — zeigt pro Ebene nur das
+                                                        jeweils naechste relevante Auswahlfeld, genau wie mobil. Eine bereits
+                                                        gewaehlte Ebene steht schon im Breadcrumb oben; ein zusaetzliches,
+                                                        unausgefuellt wirkendes Auswahlfeld fuer dieselbe Ebene waere redundant
+                                                        und verwirrend (daher kein "disabled"-Folgefeld mit Platzhaltertext mehr). */}
+                                                    <div data-testid="taxonomy-cascade-desktop" className="hidden sm:flex flex-col gap-2">
+                                                        {!searchArea ? (
+                                                            <select data-testid={areaTestId} value={searchArea}
+                                                                onChange={(e) => { setSearchArea(e.target.value); setSearchSpecialty(''); setSearchFocus(''); }}
+                                                                className={selCls(false)}>
+                                                                <option value="" className="text-gray-400">— {areaLabel} —</option>
+                                                                {availableAreas.map(slug => (<option key={slug} value={slug} className="text-gray-900">{getLabel(slug, 'area')}</option>))}
+                                                            </select>
+                                                        ) : (
+                                                            <button type="button" data-testid="desktop-area-chip" onClick={() => { setSearchArea(''); setSearchSpecialty(''); setSearchFocus(''); }} className={chipCls}>
+                                                                {getLabel(searchArea, 'area')} <X className="w-3 h-3 ml-1 opacity-50" />
+                                                            </button>
+                                                        )}
+                                                        {searchArea && !searchSpecialty && availableSpecialties.length > 0 && (
+                                                            <select data-testid="select-specialty" value={searchSpecialty}
+                                                                onChange={(e) => { setSearchSpecialty(e.target.value); setSearchFocus(''); }}
+                                                                className={selCls(false)}>
+                                                                <option value="" className="text-gray-400">— {t.lbl_specialty || 'Fachgebiet'} —</option>
+                                                                {availableSpecialties.map(spec => (<option key={spec} value={spec} className="text-gray-900">{spec}</option>))}
+                                                            </select>
+                                                        )}
+                                                        {searchArea && searchSpecialty && (
+                                                            <button type="button" data-testid="desktop-specialty-chip" onClick={() => { setSearchSpecialty(''); setSearchFocus(''); }} className={chipCls}>
+                                                                {searchSpecialty} <X className="w-3 h-3 ml-1 opacity-50" />
+                                                            </button>
+                                                        )}
+                                                        {searchArea && searchSpecialty && !searchFocus && availableFocuses.length > 0 && (
+                                                            <select data-testid="select-focus" value={searchFocus || ''}
+                                                                onChange={(e) => setSearchFocus(e.target.value)}
+                                                                className={selCls(false)}>
+                                                                <option value="" className="text-gray-400">— {t.lbl_focus || 'Fokus'} —</option>
+                                                                {availableFocuses.map(f => (<option key={f} value={f} className="text-gray-900">{f}</option>))}
+                                                            </select>
+                                                        )}
+                                                        {searchArea && searchSpecialty && searchFocus && (
+                                                            <button type="button" data-testid="desktop-focus-chip" onClick={() => setSearchFocus('')} className={chipCls}>
+                                                                {searchFocus} <X className="w-3 h-3 ml-1 opacity-50" />
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })()}
+                                    </>
+                                )}
+                            </div>
+
+                            {/* ========== SCHRITT 2: GEZIELT SUCHEN ==========
+                                Helle, leicht hervorgehobene Karte (bg-beige statt reinem Weiss) — zweiter
+                                gleichwertiger Einstieg neben "Bereiche entdecken" oben, aber bewusst nicht
+                                im selben dunklen Ton, damit beide Einstiege unterscheidbar bleiben. */}
+                            <div className="bg-beige border border-borderSubtle rounded-xl p-4 lg:p-5">
+                                <div className="mb-2">
+                                    <SectionMarker>Gezielt suchen</SectionMarker>
+                                </div>
+                                <p className="text-sm text-gray-600 mb-2">
+                                    Suche direkt nach einem Thema, Kurs oder Abschluss.
+                                </p>
+                                <div className="relative">
+                                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                                    <input
+                                        type="text"
+                                        placeholder={searchPlaceholder}
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        className="w-full h-10 pl-9 pr-4 bg-white border border-gray-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-colors"
+                                    />
+                                </div>
+                                <p className="text-xs text-gray-400 mt-2">
+                                    Lässt sich unten mit Ort, Kursformat und weiteren Filtern kombinieren. Mehrere Begriffe wie <em>Yoga Zürich</em> funktionieren ebenfalls.
+                                </p>
+                            </div>
+
+                            {/* ========== SCHRITT 3: VERFEINERN ==========
+                                Gilt gleichermassen für den Browse-Einstieg (Schritt 1) und die Textsuche (Schritt 2).
+                                Bewusst schlicht gehalten (einfache weisse Karte, keine Akzentfarben), damit sie
+                                nicht mit den beiden Einstiegen oben um Aufmerksamkeit konkurriert. */}
+                            <div className="bg-white border border-borderSubtle rounded-xl p-4 lg:p-5">
+                                <div className="flex items-center justify-between gap-3 mb-2">
+                                    <SectionMarker>Verfeinern</SectionMarker>
+                                    <button
+                                        type="button"
+                                        data-testid="btn-sidebar-reset"
+                                        onClick={resetFilters}
+                                        className="text-xs font-medium text-gray-500 hover:text-petrol hover:underline shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-petrol rounded"
+                                    >
+                                        Zurücksetzen
+                                    </button>
+                                </div>
+                                <p className="text-sm text-gray-600 mb-3">
+                                    Verfeinere deine Auswahl optional mit Ort, Kursformat und weiteren Filtern — unabhängig davon, ob du oben gestöbert oder gesucht hast.
+                                </p>
+
+                                {/* Ort + Kursformat: prominent und ohne Einklappen erreichbar */}
+                                <div className="flex flex-col gap-2 mb-2">
+                                    <LocationDropdown selectedLocations={selectedLocations} setSelectedLocations={setSelectedLocations} locMenuOpen={locMenuOpen} setLocMenuOpen={setLocMenuOpen} locMenuRef={locMenuRef} t={t} />
+                                    <DeliveryTypeFilter selectedDeliveryTypes={selectedDeliveryTypes} setSelectedDeliveryTypes={setSelectedDeliveryTypes} deliveryMenuOpen={deliveryMenuOpen} setDeliveryMenuOpen={setDeliveryMenuOpen} deliveryMenuRef={deliveryMenuRef} t={t} />
+                                </div>
+
+                                {/* "Weitere Filter" toggle button */}
                         <button
                             data-testid="btn-weitere-filter"
                             onClick={() => setShowMoreFilters(v => !v)}
-                            className={`ml-auto flex items-center gap-1.5 px-3 py-1 rounded-lg border text-xs font-medium transition-colors ${showMoreFilters ? 'bg-gray-100 border-gray-300 text-gray-700' : 'bg-white border-gray-200 text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors self-start ${showMoreFilters ? 'bg-gray-100 border-gray-300 text-gray-700' : 'bg-white border-gray-200 text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
                         >
                             <Filter className="w-3.5 h-3.5" />
                             Weitere Filter{secondaryFilterCount > 0 ? ` (${secondaryFilterCount})` : ''}
                             <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${showMoreFilters ? 'rotate-180' : ''}`} />
                         </button>
-                    </div>
 
-                    {/* SECONDARY FILTERS: Kursformat, Kursart, Säulen, Datum, Kurssprache, Preis, Niveau, Verifiziert, Direktbuchung */}
-                    {showMoreFilters && (
-                        <div className="flex gap-3 flex-wrap pb-1 items-center border-t pt-2 border-gray-100 bg-gray-50 rounded-lg px-3 py-2 -mx-1">
-                            <DeliveryTypeFilter selectedDeliveryTypes={selectedDeliveryTypes} setSelectedDeliveryTypes={setSelectedDeliveryTypes} deliveryMenuOpen={deliveryMenuOpen} setDeliveryMenuOpen={setDeliveryMenuOpen} deliveryMenuRef={deliveryMenuRef} t={t} />
+                        {/* SECONDARY FILTERS: Kursformat, Kursart, Säulen, Datum, Kurssprache, Preis, Niveau, Verifiziert, Direktbuchung */}
+                        {showMoreFilters && (
+                        <div className="flex gap-3 flex-wrap items-center bg-gray-50 rounded-lg px-3 py-2">
+                            {/* Kursformat (DeliveryTypeFilter) steht jetzt prominent oben bei Ort — hier nicht doppelt */}
                             {/* Kursart — Privat & Hobby */}
                             {(searchType === 'privat' || searchType === 'privat_hobby') && (
                                 <KursartFilter
@@ -972,100 +1153,30 @@ const SearchPageView = ({
                         </div>
                     )}
                 </div>
-                 {/* --- ACTIVE FILTER CHIPS --- */}
-                 {/* searchType is NOT shown as a chip (it is segment context, not a filter) */}
-                 {(selectedLanguages.length > 0 || selectedLocations.length > 0 ||
-                   selectedDeliveryTypes.length > 0 || (filterPriceMax && filterPriceMax !== '') ||
-                   (filterLevel && filterLevel !== 'All') || filterDateFrom || filterDateTo ||
-                   filterPro || filterDirectBooking || selectedSaule ||
-                   searchArea || searchSpecialty || searchFocus || searchQuery) && (
-                    <div className="max-w-7xl mx-auto px-4 pt-2 flex gap-2 flex-wrap items-center" data-testid="filter-chips">
-                        {/* Search query chip */}
-                        {searchQuery && (
-                            <span onClick={() => setSearchQuery('')} className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-gray-200 flex items-center">
-                                <Search className="w-3 h-3 mr-1" />«{searchQuery}» <X className="w-3 h-3 ml-1 opacity-50" />
-                            </span>
-                        )}
-                        {selectedLanguages.map((lang, i) => (
-                            <span key={`lang-${i}`} onClick={() => setSelectedLanguages(selectedLanguages.filter(l => l !== lang))} className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-purple-200 flex items-center">
-                                <Globe className="w-3 h-3 mr-1"/> {lang} <X className="w-3 h-3 ml-1 opacity-50" />
-                            </span>
-                        ))}
-                        {selectedLocations.map((loc, i) => (
-                            <span key={`loc-${i}`} onClick={() => setSelectedLocations(selectedLocations.filter(l => l !== loc))} className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-blue-200 flex items-center">
-                                <MapPin className="w-3 h-3 mr-1"/> {loc} <X className="w-3 h-3 ml-1 opacity-50" />
-                            </span>
-                        ))}
-                        {selectedDeliveryTypes.map((dt, i) => (
-                            <span key={`dt-${i}`} onClick={() => setSelectedDeliveryTypes(selectedDeliveryTypes.filter(d => d !== dt))} className="text-xs bg-cyan-100 text-cyan-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-cyan-200 flex items-center">
-                                {DELIVERY_TYPES[dt]?.de || dt} <X className="w-3 h-3 ml-1 opacity-50" />
-                            </span>
-                        ))}
-                        {filterPriceMax && filterPriceMax !== '' && (
-                            <span onClick={() => setFilterPriceMax('')} className="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-amber-200 flex items-center">
-                                Max CHF {formatPriceCHF(Number(filterPriceMax))} <X className="w-3 h-3 ml-1 opacity-50" />
-                            </span>
-                        )}
-                        {filterLevel && filterLevel !== 'All' && (
-                            <span onClick={() => setFilterLevel('All')} className="text-xs bg-indigo-100 text-indigo-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-indigo-200 flex items-center">
-                                {COURSE_LEVELS[filterLevel]?.de || filterLevel} <X className="w-3 h-3 ml-1 opacity-50" />
-                            </span>
-                        )}
-                        {filterDateFrom && (
-                            <span onClick={() => setFilterDateFrom('')} className="text-xs bg-teal-100 text-teal-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-teal-200 flex items-center">
-                                Ab {filterDateFrom} <X className="w-3 h-3 ml-1 opacity-50" />
-                            </span>
-                        )}
-                        {filterDateTo && (
-                            <span onClick={() => setFilterDateTo('')} className="text-xs bg-teal-100 text-teal-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-teal-200 flex items-center">
-                                Bis {filterDateTo} <X className="w-3 h-3 ml-1 opacity-50" />
-                            </span>
-                        )}
-                        {filterPro && (
-                            <span onClick={() => setFilterPro(false)} className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-blue-100 flex items-center">
-                                <Shield className="w-3 h-3 mr-1"/> {t.lbl_professional_filter} <X className="w-3 h-3 ml-1 opacity-50" />
-                            </span>
-                        )}
-                        {filterDirectBooking && (
-                            <span onClick={() => setFilterDirectBooking(false)} className="text-xs bg-green-50 text-green-700 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-green-100 flex items-center">
-                                <CreditCard className="w-3 h-3 mr-1"/> {t.lbl_direct_booking_filter} <X className="w-3 h-3 ml-1 opacity-50" />
-                            </span>
-                        )}
-                        {selectedSaule && (
-                            <span onClick={() => setSelectedSaule('')} className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-blue-200 flex items-center">
-                                {BERUF_SAEULEN[selectedSaule]?.shortDe || selectedSaule} <X className="w-3 h-3 ml-1 opacity-50" />
-                            </span>
-                        )}
-                        {searchArea && (
-                            <span onClick={() => { setSearchArea(''); setSearchSpecialty(''); setSearchFocus(''); }} className="hidden sm:flex text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-orange-200 items-center">
-                                {getLabel(searchArea, 'area')} <X className="w-3 h-3 ml-1 opacity-50" />
-                            </span>
-                        )}
-                        {searchSpecialty && (
-                            <span onClick={() => { setSearchSpecialty(''); setSearchFocus(''); }} className="hidden sm:flex text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-orange-200 items-center">
-                                {searchSpecialty} <X className="w-3 h-3 ml-1 opacity-50" />
-                            </span>
-                        )}
-                        {searchFocus && (
-                            <span onClick={() => setSearchFocus('')} className="hidden sm:flex text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-orange-200 items-center">
-                                {searchFocus} <X className="w-3 h-3 ml-1 opacity-50" />
-                            </span>
-                        )}
-                        {/* Global reset button */}
-                        <button
-                            data-testid="btn-reset-all-chips"
-                            onClick={resetFilters}
-                            className="ml-auto text-xs text-gray-400 hover:text-gray-600 hover:underline flex items-center gap-1 shrink-0"
-                        >
-                            <X className="w-3 h-3" />
-                            Alle zurücksetzen
-                        </button>
-                    </div>
-                 )}
-            </div>
+                        </div>
+                    </aside>
 
-            <main ref={resultsRef} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" style={{ scrollMarginTop: '180px' }}>
-                {/* --- RESULTS HEADER (counter + aria-live) --- */}
+                    {/* ================= RESULTS COLUMN ================= */}
+                    <main ref={resultsRef} className="lg:col-span-8 min-w-0" style={{ scrollMarginTop: '180px' }}>
+                        {/* Kompakter Browse-Status: zeigt, in welchem Bereich/welcher Kategorie man
+                            sich aktuell befindet. Die volle Navigation lebt in der Seitenleiste links. */}
+                        {searchType && canonSegKey && (() => {
+                            const StripIcon = SEGMENT_VISUALS[canonSegKey]?.icon;
+                            return (
+                                <div className="mb-4 flex items-center gap-2 text-sm flex-wrap" data-testid="browse-status-compact">
+                                    <span className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">In diesem Bereich stöbern:</span>
+                                    <span className="inline-flex items-center gap-1.5 font-semibold text-dark">
+                                        {StripIcon && <StripIcon className="w-4 h-4" />}
+                                        {getLabel(searchType, 'type')}
+                                    </span>
+                                    {searchArea && (<><ChevronRight className="w-3.5 h-3.5 text-gray-300" aria-hidden="true" /><span className="text-gray-600">{getLabel(searchArea, 'area')}</span></>)}
+                                    {searchSpecialty && (<><ChevronRight className="w-3.5 h-3.5 text-gray-300" aria-hidden="true" /><span className="text-gray-600">{searchSpecialty}</span></>)}
+                                    {searchFocus && (<><ChevronRight className="w-3.5 h-3.5 text-gray-300" aria-hidden="true" /><span className="text-gray-600">{searchFocus}</span></>)}
+                                </div>
+                            );
+                        })()}
+
+                        {/* --- RESULTS HEADER (counter + aria-live) --- */}
                 <div
                     className="mb-6"
                     aria-live="polite"
@@ -1110,9 +1221,9 @@ const SearchPageView = ({
                     </div>
                 )}
 
-                {/* --- RESULTS GRID --- */}
+                {/* --- RESULTS LIST (vertikale Trefferliste statt Kartenraster) --- */}
                 {!loading && !fetchError && filteredCourses.length > 0 && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8" data-testid="course-grid">
+                  <div className="flex flex-col gap-3" data-testid="course-grid">
                     {sortedCourses.flatMap((course, courseIndex) => {
                       const bereichConfig = searchArea ? getBereichByAreaSlug(searchArea) : null;
                       const showRatgeberHere = bereichConfig && courseIndex === 6 && sortedCourses.length > 3;
@@ -1166,9 +1277,9 @@ const SearchPageView = ({
                        };
 
                        items.push(
-                       <article key={course.id} className="relative bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
-                         <a href={coursePath} onClick={openCourse} className="block cursor-pointer" style={{textDecoration: 'none', color: 'inherit'}}>
-                           <div className="relative aspect-video overflow-hidden">
+                       <article key={course.id} className="relative bg-white rounded-lg border border-gray-100 overflow-hidden hover:shadow-md hover:border-gray-200 transition-all duration-300 group">
+                         <a href={coursePath} onClick={openCourse} className="flex gap-3 p-3 cursor-pointer" style={{textDecoration: 'none', color: 'inherit'}}>
+                           <div className="relative w-28 sm:w-40 aspect-video self-start shrink-0 rounded-md overflow-hidden">
                             <img
                                 src={course.image_url || fallbackImage}
                                 alt={`${course.title} - Kurs in ${course.canton}`}
@@ -1179,93 +1290,99 @@ const SearchPageView = ({
                                 height="338"
                                 className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300"
                             />
-                            <div className="absolute top-3 left-3 flex flex-col gap-1 items-start">
+                            <div className="absolute top-1 left-1 flex flex-col gap-0.5 items-start">
                                 {/* Draft badge - only visible to course owner */}
                                 {user?.id && String(course.user_id) === String(user.id) && course.status === 'draft' && (
-                                    <div className="bg-yellow-500/95 text-white px-2 py-1 rounded text-xs font-bold shadow-sm flex items-center"><EyeOff className="w-3 h-3 mr-1" /> Entwurf</div>
+                                    <div className="bg-yellow-500/95 text-white px-1.5 py-0.5 rounded text-[9px] font-bold shadow-sm flex items-center"><EyeOff className="w-2.5 h-2.5 mr-0.5" /> Entwurf</div>
                                 )}
-                                {course.instructor_verified && <div className="bg-blue-600/90 text-white px-2 py-1 rounded text-xs font-bold shadow-sm flex items-center"><CheckCircle className="w-3 h-3 mr-1" /> Verifiziert</div>}
-                                {isSoldOut(course) && <div className="bg-red-500/90 text-white px-2 py-1 rounded text-xs font-bold shadow-sm">Ausgebucht</div>}
+                                {course.instructor_verified && <div className="bg-blue-600/90 text-white px-1.5 py-0.5 rounded text-[9px] font-bold shadow-sm flex items-center"><CheckCircle className="w-2.5 h-2.5 mr-0.5" /> Verifiziert</div>}
+                                {isSoldOut(course) && <div className="bg-red-500/90 text-white px-1.5 py-0.5 rounded text-[9px] font-bold shadow-sm">Ausgebucht</div>}
                             </div>
 
                            </div>
 
-                           <div className="p-5">
-                            <h3 className="font-bold text-lg text-dark leading-tight line-clamp-3 mb-2 font-heading">
+                           <div className="flex-1 min-w-0 pr-8 flex flex-col justify-center">
+                            {/* Anbieterzeile: Anbieter + Ort/Umgebung */}
+                            <div className="flex items-center gap-2.5 text-xs text-gray-500 mb-1 flex-wrap">
+                                <span className="inline-flex items-center gap-1 min-w-0">
+                                    <User className="w-3 h-3 shrink-0" />
+                                    <span className="truncate max-w-[9rem]" title={course.instructor_name}>{course.instructor_name}</span>
+                                </span>
+                                {course.canton && (
+                                    <span className="inline-flex items-center gap-1 shrink-0">
+                                        <MapPin className="w-3 h-3" /> {course.canton}
+                                    </span>
+                                )}
+                            </div>
+
+                            <h3 className="font-bold text-sm sm:text-base text-dark leading-snug line-clamp-2 font-heading">
                                 {course.title}
                             </h3>
+
+                            {course.description && (
+                                <p className="text-xs text-gray-500 line-clamp-1 sm:line-clamp-2 mt-0.5">{course.description}</p>
+                            )}
 
                             {/* Kursformat-Badges */}
                             {(() => {
                                 const types = getNormalizedDeliveryTypes(course);
                                 if (types.length === 0) return null;
                                 return (
-                                    <div className="flex flex-wrap gap-1 mb-3">
+                                    <div className="flex flex-wrap gap-1 mt-1">
                                         {types.map(type => (
-                                            <span key={type} className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">
+                                            <span key={type} className="text-[9px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">
                                                 {DELIVERY_TYPES[type]?.de?.split(' ')[0] || type}
                                             </span>
                                         ))}
                                     </div>
                                 );
                             })()}
-
-                            <div className="flex items-center justify-between gap-2 pt-4 border-t border-gray-100">
-                                {/* Anbieter-Badge */}
-                                <div className="min-w-0 flex-1">
-                                    <div className="inline-flex items-center bg-beige px-2 py-1 rounded text-xs text-gray-500 max-w-full">
-                                        <User className="w-3 h-3 text-gray-500 mr-1 shrink-0" />
-                                        <span className="truncate" title={course.instructor_name}>{course.instructor_name}</span>
-                                    </div>
-                                </div>
-
-                                {/* Preis */}
-                                <span className="font-heading font-bold text-primary text-xs leading-tight text-right max-w-[55%] break-words">
-                                    {getPriceLabel(course)}
-                                </span>
-                            </div>
                            </div>
                          </a>
+                         <div className="flex items-center justify-between gap-2 px-3 pb-2.5 -mt-1">
+                             {/* Preis */}
+                             <span className="font-heading font-bold text-primary text-sm leading-tight break-words">
+                                 {getPriceLabel(course)}
+                             </span>
+                             {course.booking_type === 'lead' && (
+                               <button
+                                 type="button"
+                                 data-testid={`lead-search-card-cta-${course.id}`}
+                                 aria-label={`Kurs unverbindlich anfragen: ${course.title}`}
+                                 onClick={(event) => {
+                                     if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) {
+                                         openCourse(event);
+                                         return;
+                                     }
+                                     trackCourseCardCta(course, 'search_card');
+                                     try {
+                                         window.sessionStorage.setItem('kn_open_lead_course', String(course.id));
+                                     } catch {
+                                         // Direct detail navigation remains available without storage.
+                                     }
+                                     openCourse(event);
+                                 }}
+                                 className="shrink-0 min-h-10 inline-flex items-center gap-1 rounded-md border border-orange-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-orange-800 transition hover:border-orange-700 hover:bg-orange-50 hover:text-orange-900 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1"
+                               >
+                                 <Mail className="w-3.5 h-3.5" aria-hidden="true" />
+                                 Unverbindlich anfragen
+                               </button>
+                             )}
+                         </div>
                          <button
                            type="button"
                            title={(savedCourseIds || []).includes(course.id) ? 'Aus Merkliste entfernen' : 'Kurs merken'}
                            aria-label={(savedCourseIds || []).includes(course.id) ? 'Aus Merkliste entfernen' : 'Kurs merken'}
                            onClick={() => onToggleSaveCourse?.(course)}
-                           className={`absolute right-3 top-3 z-10 flex h-10 w-10 items-center justify-center rounded-full border shadow-sm transition
+                           className={`absolute right-2 top-2 z-10 flex h-8 w-8 items-center justify-center rounded-full border shadow-sm transition
                              ${(savedCourseIds || []).includes(course.id)
                                ? 'border-primary bg-primary text-white'
                                : 'border-white/70 bg-white/95 text-gray-700 hover:bg-white'}`}
                          >
                            {(savedCourseIds || []).includes(course.id)
-                             ? <BookmarkCheck className="h-5 w-5" aria-hidden="true" />
-                             : <Bookmark className="h-5 w-5" aria-hidden="true" />}
+                             ? <BookmarkCheck className="h-4 w-4" aria-hidden="true" />
+                             : <Bookmark className="h-4 w-4" aria-hidden="true" />}
                          </button>
-                         {course.booking_type === 'lead' && (
-                           <div className="px-5 pb-5">
-                             <button
-                               type="button"
-                               data-testid={`lead-search-card-cta-${course.id}`}
-                               aria-label={`Kurs unverbindlich anfragen: ${course.title}`}
-                               onClick={(event) => {
-                                   if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) {
-                                       openCourse(event);
-                                       return;
-                                   }
-                                   trackCourseCardCta(course, 'search_card');
-                                   try {
-                                       window.sessionStorage.setItem('kn_open_lead_course', String(course.id));
-                                   } catch {
-                                       // Direct detail navigation remains available without storage.
-                                   }
-                                   openCourse(event);
-                               }}
-                               className="w-full min-h-10 inline-flex items-center justify-center gap-1.5 rounded-md border border-orange-300 bg-white px-3 py-2 text-xs font-semibold text-orange-800 transition hover:border-orange-700 hover:bg-orange-50 hover:text-orange-900 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-                             >
-                               <Mail className="w-4 h-4" aria-hidden="true" />
-                               Unverbindlich anfragen
-                             </button>
-                           </div>
-                         )}
                        </article>
                       );
 
@@ -1331,7 +1448,9 @@ const SearchPageView = ({
                     </button>
                   </div>
                 )}
-            </main>
+                    </main>
+                </div>
+            </div>
         </div>
     );
 };

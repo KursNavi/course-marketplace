@@ -14,7 +14,7 @@ export const RATGEBER_STRUCTURE = {
   beruflich: {
     slug: 'beruflich',
     label: {
-      de: 'Beruflich',
+      de: 'Beruf & Karriere',
       en: 'Professional',
       fr: 'Professionnel',
       it: 'Professionale'
