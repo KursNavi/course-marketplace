@@ -349,7 +349,7 @@ describe('Filter reset', () => {
 
 // ===================== 4. SCROLL TO RESULTS =====================
 describe('Scroll to results', () => {
-  it('calls scrollIntoView on filter change (after initial mount)', () => {
+  it('does NOT auto-scroll to results on filter change (user stays put, scrolls manually when done)', () => {
     const c1 = makeCourse('1');
     const c2 = makeCourse('2');
 
@@ -367,10 +367,11 @@ describe('Scroll to results', () => {
     const scrollSpy = vi.fn();
     if (resultsEl) resultsEl.scrollIntoView = scrollSpy;
 
-    // Re-render with different filteredCourses to trigger the effect
+    // Re-render with different filteredCourses (a filter/category/search change) — this must
+    // NOT jump the page to the results on its own, since the user may not be done refining yet.
     rerender(<SearchPageView {...props} filteredCourses={[c1]} />);
 
-    expect(scrollSpy).toHaveBeenCalled();
+    expect(scrollSpy).not.toHaveBeenCalled();
   });
 });
 

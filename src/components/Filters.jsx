@@ -13,9 +13,19 @@ import { useTaxonomy } from '../hooks/useTaxonomy';
 // verfügbaren Platz zum Viewport-Rand (oeffnet bei Bedarf nach oben statt nach unten) — so bleibt
 // jeder Eintrag erreichbar, selbst wenn der Trigger-Button weit unten im sichtbaren Bereich steht,
 // weil das Panel dann notfalls innerhalb seiner eigenen Grenzen scrollt statt ueber den
-// Bildschirmrand hinauszuragen. Bleibt bei Scroll/Resize korrekt positioniert, solange offen.
-function useFixedMenuPosition(triggerRef, panelRef, isOpen) {
+// Bildschirmrand hinauszuragen.
+// Bleibt nur bei Resize korrekt nachpositioniert. Ein laufendes Scroll (statt Resize) schliesst
+// das Panel stattdessen ueber onRequestClose: auf Mobile aendert sich window.innerHeight waehrend
+// des Scrollens fortlaufend, weil die Adressleiste des Browsers dabei ein-/ausklappt — das liess
+// das Panel kurzzeitig falsch (zu weit oben, ueber dem Seiten-Header) berechnen. Schliessen statt
+// Nachrechnen ist robust gegen dieses Verhalten und ist ohnehin das ueblichere Verhalten.
+function useFixedMenuPosition(triggerRef, panelRef, isOpen, onRequestClose) {
     const [pos, setPos] = useState(null);
+    // Ref instead of a plain dependency: onRequestClose is an inline closure recreated on every
+    // render of the caller, which would otherwise tear down and reattach the scroll/resize
+    // listeners on every render while the menu is open.
+    const onRequestCloseRef = useRef(onRequestClose);
+    useEffect(() => { onRequestCloseRef.current = onRequestClose; });
     useEffect(() => {
         if (!isOpen) { setPos(null); return undefined; }
         const update = () => {
@@ -39,11 +49,12 @@ function useFixedMenuPosition(triggerRef, panelRef, isOpen) {
         };
         update();
         const raf = requestAnimationFrame(update);
-        window.addEventListener('scroll', update, true);
+        const handleScroll = () => { if (onRequestCloseRef.current) onRequestCloseRef.current(); };
+        window.addEventListener('scroll', handleScroll, true);
         window.addEventListener('resize', update);
         return () => {
             cancelAnimationFrame(raf);
-            window.removeEventListener('scroll', update, true);
+            window.removeEventListener('scroll', handleScroll, true);
             window.removeEventListener('resize', update);
         };
     }, [isOpen, triggerRef, panelRef]);
@@ -229,7 +240,7 @@ export const LocationDropdown = ({ selectedLocations, setSelectedLocations, locM
     const defaultBtnClass = `w-full md:w-auto px-3 py-1.5 border rounded-full flex items-center justify-between space-x-2 text-sm font-medium transition shadow-sm ${selectedLocations.length > 0 ? 'bg-primary text-white border-primary' : 'bg-white text-gray-700 hover:border-gray-400'}`;
     const btnRef = useRef(null);
     const panelRef = useRef(null);
-    const menuPos = useFixedMenuPosition(btnRef, panelRef, locMenuOpen);
+    const menuPos = useFixedMenuPosition(btnRef, panelRef, locMenuOpen, () => setLocMenuOpen(false));
     return (
         <div ref={locMenuRef} className={`static relative text-left ${locMenuOpen ? 'z-[60]' : 'z-50'}`}>
             <button
@@ -298,7 +309,7 @@ export const LanguageDropdown = ({ selectedLanguages, setSelectedLanguages, lang
 
     const btnRef = useRef(null);
     const panelRef = useRef(null);
-    const menuPos = useFixedMenuPosition(btnRef, panelRef, langMenuOpen);
+    const menuPos = useFixedMenuPosition(btnRef, panelRef, langMenuOpen, () => setLangMenuOpen(false));
     return (
         <div ref={langMenuRef} className={`static relative text-left ${langMenuOpen ? 'z-[60]' : 'z-50'}`}>
             <button
@@ -367,7 +378,7 @@ export const DeliveryTypeFilter = ({ selectedDeliveryTypes, setSelectedDeliveryT
 
     const btnRef = useRef(null);
     const panelRef = useRef(null);
-    const menuPos = useFixedMenuPosition(btnRef, panelRef, deliveryMenuOpen);
+    const menuPos = useFixedMenuPosition(btnRef, panelRef, deliveryMenuOpen, () => setDeliveryMenuOpen(false));
     return (
         <div ref={deliveryMenuRef} className={`static relative text-left ${deliveryMenuOpen ? 'z-[60]' : 'z-50'}`}>
             <button

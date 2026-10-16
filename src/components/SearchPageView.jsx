@@ -81,17 +81,10 @@ const SearchPageView = ({
     autoType, setAutoType,
 }) => {
 
-    // Ref for scroll-to-results behavior
+    // Ref used as the scroll-margin anchor for the results column (no auto-scroll-into-view
+    // happens anymore — users stay put while refining filters and scroll down themselves once
+    // they're done).
     const resultsRef = useRef(null);
-    // Track whether the first real data load has completed (skip the auto-scroll for that
-    // initial load, only scroll on later filter/search changes). Keyed to "loading" rather than
-    // "has rendered" — otherwise the effect's own dependency array fires a second time the
-    // moment the initial fetch finishes (loading true -> false), which the old render-based flag
-    // no longer treats as the first run, auto-scrolling straight past the new "Bereiche
-    // entdecken" browse panel on every fresh page load.
-    const hasMountedRef = useRef(false);
-    // Course-id-key seen the last time the scroll effect actually ran — see effect below.
-    const lastCourseKeyRef = useRef(null);
     // Price validation error state
     const [priceError, setPriceError] = React.useState(false);
 
@@ -599,29 +592,6 @@ const SearchPageView = ({
         return SEARCH_STRINGS.results_many(n);
     }, [loading, filteredCourses.length, searchQuery]);
 
-    // --- SCROLL TO RESULTS on filter/search change ---
-    useEffect(() => {
-        if (loading) return;
-        // `loading` can settle to false more than once while the initial data fetch is still
-        // resolving (e.g. a second related query completing shortly after the first), which
-        // re-fires this effect even though the result set hasn't actually changed for the user
-        // yet. Comparing against the last course-id-key we scrolled for (instead of only
-        // "have we ever seen loading=false before") makes this robust to that flicker: only a
-        // genuine change in which courses are shown triggers the scroll.
-        const courseKey = filteredCourses.map(c => c.id).join(',');
-        if (!hasMountedRef.current) {
-            hasMountedRef.current = true;
-            lastCourseKeyRef.current = courseKey;
-            return;
-        }
-        if (courseKey === lastCourseKeyRef.current) return;
-        lastCourseKeyRef.current = courseKey;
-        // Scroll results area into view after filter change
-        if (resultsRef.current) {
-            resultsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-    }, [filteredCourses, loading]);
-
     // --- RANKING LOGIC (v5.1) ---
     // Formula: Score = (Prio(1.2|1.0) * Booking + SeededRandom(0..0.15)) * BasicLeadFaktor
     // BasicLeadFaktor stuft Basic-Anbieter ab, die in ihrer aktuellen
@@ -880,7 +850,7 @@ const SearchPageView = ({
                                                         </span>
                                                         <span className="flex-1 min-w-0">
                                                             <span className="block text-sm font-bold text-dark break-words">{label}</span>
-                                                            {desc && <span className="block text-xs text-gray-500 mt-0.5">{desc}</span>}
+                                                            {desc && <span className="block text-xs text-gray-500 mt-0.5 min-h-[2rem]">{desc}</span>}
                                                         </span>
                                                         <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-dark group-hover:translate-x-0.5 transition-all shrink-0" aria-hidden="true" />
                                                     </button>

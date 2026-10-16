@@ -844,7 +844,7 @@ export const TRANSLATIONS = {
     landing_kids_title: "Kurse für Kinder, Jugendliche & schulisches Lernen", landing_kids_sub: "Freizeitkurse, Ferienangebote und schulische Lernangebote",
 
     // SEARCH FILTERS
-    search_refine: "Suche verfeinern...",
+    search_refine: "Nach Kurs, Thema oder Abschluss suchen...",
     lbl_max_price: "Max CHF",
     msg_no_courses: "Keine Kurse verfügbar.", msg_all_topics: "Alle Themen in diesem Bereich.", 
     msg_select_area: "Wähle einen Bereich.", lbl_select_cat: "Kategorie wählen",

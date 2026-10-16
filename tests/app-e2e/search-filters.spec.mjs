@@ -12,7 +12,7 @@ test.describe('Search & Filters (app-e2e)', () => {
     await expect(resultsCounter).not.toContainText('Lade', { timeout: 10_000 });
 
     // Type a search query
-    const searchInput = page.getByRole('textbox', { name: /Suche verfeinern/ });
+    const searchInput = page.getByRole('textbox', { name: /Nach Kurs, Thema oder Abschluss suchen/ });
     await searchInput.fill('Yoga');
 
     // Wait for URL to sync (replaceState, debounced)
@@ -151,7 +151,7 @@ test.describe('Search & Filters (app-e2e)', () => {
     await expect(resultsCounter).toBeVisible({ timeout: 15_000 });
     await expect(resultsCounter).not.toContainText('Lade', { timeout: 10_000 });
 
-    const searchInput = page.getByRole('textbox', { name: /Suche verfeinern/ });
+    const searchInput = page.getByRole('textbox', { name: /Nach Kurs, Thema oder Abschluss suchen/ });
     await searchInput.fill('xyzNonExistent999');
 
     // Wait for URL to sync

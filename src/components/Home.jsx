@@ -577,7 +577,7 @@ export const Home = ({
                         <span className={`w-1.5 h-1.5 rounded-full ${dot}`} aria-hidden="true"></span>
                         <span className="text-base font-bold text-beige group-hover:text-white transition-colors">{label}</span>
                       </span>
-                      <p className="text-xs text-white/60 mt-0.5 leading-snug">{desc}</p>
+                      <p className="text-xs text-white/60 mt-0.5 leading-snug min-h-[2rem]">{desc}</p>
                     </span>
                     <ArrowRight className="w-4 h-4 text-white/40 group-hover:text-white group-hover:translate-x-1 transition-all shrink-0" aria-hidden="true" />
                   </button>
@@ -861,7 +861,7 @@ export const Home = ({
                 <img src="https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=800&auto=format&fit=crop" srcSet="https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=400&auto=format&fit=crop 400w, https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=800&auto=format&fit=crop 800w" sizes="(max-width: 768px) 100vw, 33vw" alt="" aria-hidden="true" loading="lazy" className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300" />
               </div>
               <h3 className="font-heading text-xl font-bold text-dark mb-2">{t.nav_professional}</h3>
-              <p className="font-sans text-gray-500 text-sm mb-6">{t.home_card_prof_sub}</p>
+              <p className="font-sans text-gray-500 text-sm mb-6 min-h-[2.5rem]">{t.home_card_prof_sub}</p>
             </div>
             <span className="inline-flex items-center justify-between pt-4 border-t border-grey font-semibold text-sm text-segBeruflich group-hover:translate-x-1 transition-transform">
               {t.btn_explore} <ArrowRight className="w-4 h-4 ml-2" aria-hidden="true" />
@@ -878,7 +878,7 @@ export const Home = ({
                 <img src="https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?q=80&w=800&auto=format&fit=crop" srcSet="https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?q=80&w=400&auto=format&fit=crop 400w, https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?q=80&w=800&auto=format&fit=crop 800w" sizes="(max-width: 768px) 100vw, 33vw" alt="" aria-hidden="true" loading="lazy" className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300" />
               </div>
               <h3 className="font-heading text-xl font-bold text-dark mb-2">{t.nav_private}</h3>
-              <p className="font-sans text-gray-500 text-sm mb-6">{t.home_card_priv_sub}</p>
+              <p className="font-sans text-gray-500 text-sm mb-6 min-h-[2.5rem]">{t.home_card_priv_sub}</p>
             </div>
             <span className="inline-flex items-center justify-between pt-4 border-t border-grey font-semibold text-sm text-primary group-hover:translate-x-1 transition-transform">
               {t.btn_explore} <ArrowRight className="w-4 h-4 ml-2" aria-hidden="true" />
@@ -895,7 +895,7 @@ export const Home = ({
                 <img src="https://images.unsplash.com/photo-1503676260728-1c00da094a0b?q=80&w=800&auto=format&fit=crop" srcSet="https://images.unsplash.com/photo-1503676260728-1c00da094a0b?q=80&w=400&auto=format&fit=crop 400w, https://images.unsplash.com/photo-1503676260728-1c00da094a0b?q=80&w=800&auto=format&fit=crop 800w" sizes="(max-width: 768px) 100vw, 33vw" alt="" aria-hidden="true" loading="lazy" className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300" />
               </div>
               <h3 className="font-heading text-xl font-bold text-dark mb-2">{t.nav_kids}</h3>
-              <p className="font-sans text-gray-500 text-sm mb-6">{t.home_card_kids_sub}</p>
+              <p className="font-sans text-gray-500 text-sm mb-6 min-h-[2.5rem]">{t.home_card_kids_sub}</p>
             </div>
             <span className="inline-flex items-center justify-between pt-4 border-t border-grey font-semibold text-sm text-segKinder group-hover:translate-x-1 transition-transform">
               {t.btn_explore} <ArrowRight className="w-4 h-4 ml-2" aria-hidden="true" />
