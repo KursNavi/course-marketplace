@@ -723,7 +723,7 @@ const SearchPageView = ({
 
                     {/* ================= SIDEBAR: FILTER & WEGWEISER ================= */}
                     <aside className="lg:col-span-4 mb-6 lg:mb-0" aria-label="Filter und Kategorien">
-                        <div className="lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto bg-white border border-borderSubtle rounded-xl p-4 lg:p-5 space-y-5">
+                        <div className="lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto space-y-4">
 
                             {/* --- AKTUELLE AUSWAHL: Kurzübersicht über Bereich, Suche und Filter --- */}
                             {/* searchType is NOT shown as a chip (it is segment context, not a filter) */}
@@ -732,7 +732,7 @@ const SearchPageView = ({
                               (filterLevel && filterLevel !== 'All') || filterDateFrom || filterDateTo ||
                               filterPro || filterDirectBooking || selectedSaule ||
                               searchArea || searchSpecialty || searchFocus || searchQuery) && (
-                                <div className="flex gap-2 flex-wrap items-center pb-4 border-b border-borderSubtle" data-testid="filter-chips">
+                                <div className="flex gap-2 flex-wrap items-center bg-white border border-borderSubtle rounded-xl p-3" data-testid="filter-chips">
                                     <span className="text-[11px] font-semibold uppercase tracking-wide text-gray-400 w-full mb-0.5">Aktuelle Auswahl</span>
                                     {/* Search query chip */}
                                     {searchQuery && (
@@ -821,14 +821,14 @@ const SearchPageView = ({
                                 Zeigt entweder die drei gleichwertigen Bereiche (kein searchType) oder den
                                 aktuellen Kategoriepfad mit klickbarer naechster Ebene und einer "Alle Kurse in
                                 diesem Bereich anzeigen"-Aktion auf jeder Ebene (nicht erst auf der untersten). */}
-                            <div>
+                            <div className="bg-petrol rounded-xl p-4 lg:p-5">
                                 <div className="mb-3">
-                                    <SectionMarker>Bereiche entdecken</SectionMarker>
+                                    <SectionMarker dark>Bereiche entdecken</SectionMarker>
                                 </div>
 
                                 {!searchType ? (
                                     <>
-                                        <p className="text-sm text-gray-600 mb-3">
+                                        <p className="text-sm text-white/70 mb-3">
                                             Stöbere durch die Bildungsbereiche und öffne danach die passende Kategorie.
                                         </p>
                                         <div className="grid grid-cols-1 gap-2" data-testid="browse-segment-picker">
@@ -843,16 +843,19 @@ const SearchPageView = ({
                                                         type="button"
                                                         data-testid={`browse-segment-${segKey}`}
                                                         onClick={() => selectSegmentBrowse(segKey)}
-                                                        className={`group flex items-center gap-3 rounded-lg border-l-[3px] ${SEG_BORDER_60[segKey]} bg-beige/60 hover:bg-beige pl-4 pr-3.5 py-3.5 transition-colors text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-petrol`}
+                                                        className={`group flex items-center gap-3 rounded-lg border-l-[3px] ${SEG_BORDER_60[segKey]} bg-white/5 hover:bg-white/10 pl-4 pr-3.5 py-3.5 transition-colors text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-white`}
                                                     >
-                                                        <span className="w-9 h-9 rounded-full flex items-center justify-center bg-white border border-borderSubtle shrink-0">
+                                                        <span className="w-9 h-9 rounded-full flex items-center justify-center bg-beige shrink-0">
                                                             <Icon className="w-4 h-4" />
                                                         </span>
                                                         <span className="flex-1 min-w-0">
-                                                            <span className="block text-sm font-bold text-dark break-words">{label}</span>
-                                                            {desc && <span className="block text-xs text-gray-500 mt-0.5 min-h-[2rem]">{desc}</span>}
+                                                            <span className="flex items-center gap-2">
+                                                                <span className={`w-1.5 h-1.5 rounded-full ${visuals.bg}`} aria-hidden="true"></span>
+                                                                <span className="text-sm font-bold text-beige group-hover:text-white break-words transition-colors">{label}</span>
+                                                            </span>
+                                                            {desc && <span className="block text-xs text-white/60 mt-0.5 min-h-[2rem]">{desc}</span>}
                                                         </span>
-                                                        <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-dark group-hover:translate-x-0.5 transition-all shrink-0" aria-hidden="true" />
+                                                        <ChevronRight className="w-4 h-4 text-white/40 group-hover:text-white group-hover:translate-x-0.5 transition-all shrink-0" aria-hidden="true" />
                                                     </button>
                                                 );
                                             })}
@@ -864,48 +867,48 @@ const SearchPageView = ({
                                         <nav aria-label="Kategorie-Navigation" className="mb-3">
                                             <ol className="flex flex-wrap items-center gap-1.5 text-sm" data-testid="browse-breadcrumb">
                                                 <li>
-                                                    <button type="button" onClick={resetToAllSegmentsBrowse} className="text-gray-500 hover:text-petrol underline-offset-2 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-petrol rounded">
+                                                    <button type="button" onClick={resetToAllSegmentsBrowse} className="text-white/60 hover:text-white underline-offset-2 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">
                                                         Alle Bereiche
                                                     </button>
                                                 </li>
                                                 <li className="flex items-center gap-1.5">
-                                                    <ChevronRight className="w-3.5 h-3.5 text-gray-300" aria-hidden="true" />
+                                                    <ChevronRight className="w-3.5 h-3.5 text-white/30" aria-hidden="true" />
                                                     {searchArea ? (
-                                                        <button type="button" onClick={showAllInTypeBrowse} className="text-gray-500 hover:text-petrol underline-offset-2 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-petrol rounded">
+                                                        <button type="button" onClick={showAllInTypeBrowse} className="text-white/60 hover:text-white underline-offset-2 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">
                                                             {getLabel(searchType, 'type')}
                                                         </button>
                                                     ) : (
-                                                        <span aria-current="page" className="font-semibold text-dark break-words">{getLabel(searchType, 'type')}</span>
+                                                        <span aria-current="page" className="font-semibold text-white break-words">{getLabel(searchType, 'type')}</span>
                                                     )}
                                                 </li>
                                                 {searchArea && (
                                                     <li className="flex items-center gap-1.5">
-                                                        <ChevronRight className="w-3.5 h-3.5 text-gray-300" aria-hidden="true" />
+                                                        <ChevronRight className="w-3.5 h-3.5 text-white/30" aria-hidden="true" />
                                                         {searchSpecialty ? (
-                                                            <button type="button" onClick={showAllInAreaBrowse} className="text-gray-500 hover:text-petrol underline-offset-2 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-petrol rounded">
+                                                            <button type="button" onClick={showAllInAreaBrowse} className="text-white/60 hover:text-white underline-offset-2 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">
                                                                 {getLabel(searchArea, 'area')}
                                                             </button>
                                                         ) : (
-                                                            <span aria-current="page" className="font-semibold text-dark break-words">{getLabel(searchArea, 'area')}</span>
+                                                            <span aria-current="page" className="font-semibold text-white break-words">{getLabel(searchArea, 'area')}</span>
                                                         )}
                                                     </li>
                                                 )}
                                                 {searchSpecialty && (
                                                     <li className="flex items-center gap-1.5">
-                                                        <ChevronRight className="w-3.5 h-3.5 text-gray-300" aria-hidden="true" />
+                                                        <ChevronRight className="w-3.5 h-3.5 text-white/30" aria-hidden="true" />
                                                         {searchFocus ? (
-                                                            <button type="button" onClick={showAllInSpecialtyBrowse} className="text-gray-500 hover:text-petrol underline-offset-2 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-petrol rounded">
+                                                            <button type="button" onClick={showAllInSpecialtyBrowse} className="text-white/60 hover:text-white underline-offset-2 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">
                                                                 {searchSpecialty}
                                                             </button>
                                                         ) : (
-                                                            <span aria-current="page" className="font-semibold text-dark break-words">{searchSpecialty}</span>
+                                                            <span aria-current="page" className="font-semibold text-white break-words">{searchSpecialty}</span>
                                                         )}
                                                     </li>
                                                 )}
                                                 {searchFocus && (
                                                     <li className="flex items-center gap-1.5">
-                                                        <ChevronRight className="w-3.5 h-3.5 text-gray-300" aria-hidden="true" />
-                                                        <span aria-current="page" className="font-semibold text-dark break-words">{searchFocus}</span>
+                                                        <ChevronRight className="w-3.5 h-3.5 text-white/30" aria-hidden="true" />
+                                                        <span aria-current="page" className="font-semibold text-white break-words">{searchFocus}</span>
                                                     </li>
                                                 )}
                                             </ol>
@@ -1017,8 +1020,11 @@ const SearchPageView = ({
                                 )}
                             </div>
 
-                            {/* ========== SCHRITT 2: GEZIELT SUCHEN ========== */}
-                            <div className="pt-4 border-t border-borderSubtle">
+                            {/* ========== SCHRITT 2: GEZIELT SUCHEN ==========
+                                Helle, leicht hervorgehobene Karte (bg-beige statt reinem Weiss) — zweiter
+                                gleichwertiger Einstieg neben "Bereiche entdecken" oben, aber bewusst nicht
+                                im selben dunklen Ton, damit beide Einstiege unterscheidbar bleiben. */}
+                            <div className="bg-beige border border-borderSubtle rounded-xl p-4 lg:p-5">
                                 <div className="mb-2">
                                     <SectionMarker>Gezielt suchen</SectionMarker>
                                 </div>
@@ -1032,7 +1038,7 @@ const SearchPageView = ({
                                         placeholder={searchPlaceholder}
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
-                                        className="w-full h-10 pl-9 pr-4 bg-beige border border-gray-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-colors"
+                                        className="w-full h-10 pl-9 pr-4 bg-white border border-gray-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-colors"
                                     />
                                 </div>
                                 <p className="text-xs text-gray-400 mt-2">
@@ -1041,8 +1047,10 @@ const SearchPageView = ({
                             </div>
 
                             {/* ========== SCHRITT 3: VERFEINERN ==========
-                                Gilt gleichermassen für den Browse-Einstieg (Schritt 1) und die Textsuche (Schritt 2). */}
-                            <div className="pt-4 border-t border-borderSubtle">
+                                Gilt gleichermassen für den Browse-Einstieg (Schritt 1) und die Textsuche (Schritt 2).
+                                Bewusst schlicht gehalten (einfache weisse Karte, keine Akzentfarben), damit sie
+                                nicht mit den beiden Einstiegen oben um Aufmerksamkeit konkurriert. */}
+                            <div className="bg-white border border-borderSubtle rounded-xl p-4 lg:p-5">
                                 <div className="flex items-center justify-between gap-3 mb-2">
                                     <SectionMarker>Verfeinern</SectionMarker>
                                     <button

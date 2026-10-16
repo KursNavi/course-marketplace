@@ -834,7 +834,7 @@ export const TRANSLATIONS = {
     home_ratgeber_title: "Ratgeber & Themenwelten",
     home_ratgeber_sub: "Orientierungshilfen und vertiefte Themenwelten für deine Weiterbildung in der Schweiz.",
     home_card_prof_sub: "Fachkurse und Weiterbildung für deine Karriere.",
-    home_card_priv_sub: "Kochen, Fotografie, Sport & mehr.",
+    home_card_priv_sub: "Kochen, Fotografie, Sport, Musik & mehr.",
     home_card_kids_sub: "Spassige und spannende Kurse für Kinder.",
     btn_explore: "ENTDECKEN",
 

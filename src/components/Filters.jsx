@@ -242,7 +242,7 @@ export const LocationDropdown = ({ selectedLocations, setSelectedLocations, locM
     const panelRef = useRef(null);
     const menuPos = useFixedMenuPosition(btnRef, panelRef, locMenuOpen, () => setLocMenuOpen(false));
     return (
-        <div ref={locMenuRef} className={`static relative text-left ${locMenuOpen ? 'z-[60]' : 'z-50'}`}>
+        <div ref={locMenuRef} className="static relative text-left">
             <button
                 ref={btnRef}
                 type="button"
@@ -311,7 +311,7 @@ export const LanguageDropdown = ({ selectedLanguages, setSelectedLanguages, lang
     const panelRef = useRef(null);
     const menuPos = useFixedMenuPosition(btnRef, panelRef, langMenuOpen, () => setLangMenuOpen(false));
     return (
-        <div ref={langMenuRef} className={`static relative text-left ${langMenuOpen ? 'z-[60]' : 'z-50'}`}>
+        <div ref={langMenuRef} className="static relative text-left">
             <button
                 ref={btnRef}
                 type="button"
@@ -380,7 +380,7 @@ export const DeliveryTypeFilter = ({ selectedDeliveryTypes, setSelectedDeliveryT
     const panelRef = useRef(null);
     const menuPos = useFixedMenuPosition(btnRef, panelRef, deliveryMenuOpen, () => setDeliveryMenuOpen(false));
     return (
-        <div ref={deliveryMenuRef} className={`static relative text-left ${deliveryMenuOpen ? 'z-[60]' : 'z-50'}`}>
+        <div ref={deliveryMenuRef} className="static relative text-left">
             <button
                 ref={btnRef}
                 type="button"
