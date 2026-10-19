@@ -2179,6 +2179,7 @@ if (bookingType === 'platform' || activeLocationMode === 'events') {
                             {(bookingType === 'platform' || bookingType === 'platform_flex') && price !== '' && Number(price) === 0 && (
                                 <p className="text-xs text-amber-600 mt-1">Kostenloser Kurs – bitte Grund angeben</p>
                             )}
+                            <p className="text-xs text-gray-500 mt-1">Wird für die Preisfilter in der Kurssuche verwendet und auf der Kursseite angezeigt, solange keine Preis-Beschreibung (rechts) ausgefüllt ist.</p>
                         </div>
                         <div>
                             <div className="flex justify-between items-baseline mb-1">
@@ -2186,7 +2187,8 @@ if (bookingType === 'platform' || activeLocationMode === 'events') {
                                 <CharCount value={priceInfo} max={COURSE_FIELD_LIMITS.priceInfo} />
                             </div>
                             <input type="text" value={priceInfo} maxLength={COURSE_FIELD_LIMITS.priceInfo} onChange={(e) => { setPriceInfo(e.target.value); markDirty(); }} placeholder="z.B. CHF 150 pro Person, ab CHF 80, auf Anfrage" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none" />
-                            <p className="text-xs text-gray-500 mt-1">Ergänzt oder ersetzt den numerischen Preis auf der Kursseite.</p>
+                            <p className="text-xs text-gray-500 mt-1">Ersetzt den numerischen Preis (links) komplett auf der Kursseite – trage hier den vollständigen Preistext ein, z.B. „CHF 50 pro Stunde", nicht nur „pro Stunde".</p>
+                            <p className="text-xs text-gray-500 mt-1">Weitere Beispiele: „ab CHF 80, je nach Gruppengrösse", „CHF 450 für 5-Wochen-Kurs", „auf Anfrage". Der Preis (links) wird trotzdem für die Filter in der Kurssuche benötigt.</p>
                         </div>
                         {(bookingType === 'platform' || bookingType === 'platform_flex') && (
                             <div>
