@@ -433,6 +433,44 @@ export default function BereichLandingPage({ segment, slug, courses, lang = 'de'
         </div>
       </div>
 
+      {/* ZIEL-EINSTIEG — welche Ausbildung passt zum Ziel? (nur falls in der Config vorhanden) */}
+      {config.introSection && (
+        <div className="max-w-3xl mx-auto px-4 py-14">
+          <h2 className="text-xl font-heading font-bold text-dark mb-4">
+            {config.introSection.heading[lang] || config.introSection.heading.de}
+          </h2>
+          <div className="space-y-4 text-gray-600 leading-relaxed mb-6">
+            {(config.introSection.paragraphs[lang] || config.introSection.paragraphs.de).map((paragraph, i) => (
+              <p key={i}>{paragraph}</p>
+            ))}
+          </div>
+          {config.introSection.links && config.introSection.links.length > 0 && (
+            <div className="flex flex-wrap gap-3">
+              {config.introSection.links
+                .filter((link) => !link.params?.spec || (specialtyCounts[link.params.spec] || 0) > 0)
+                .map((link, i) => {
+                  const url = buildSearchUrl(link.params || {});
+                  return (
+                    <a
+                      key={i}
+                      href={url}
+                      onClick={(e) => {
+                        if (!shouldHandleClientNavigation(e)) return;
+                        e.preventDefault();
+                        navigateToSearch(link.params || {});
+                      }}
+                      className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full border-2 ${theme.borderLight} ${theme.text} bg-white hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 font-medium text-sm`}
+                    >
+                      {link.label[lang] || link.label.de}
+                      <ArrowRight className="w-4 h-4" />
+                    </a>
+                  );
+                })}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* SCENARIO DETAIL SECTION */}
       {categoryLocationLinks.length > 0 && (
         <section className="max-w-6xl mx-auto px-4 pt-10" aria-labelledby="courses-by-canton-title">

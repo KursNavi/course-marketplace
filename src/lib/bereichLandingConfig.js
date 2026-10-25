@@ -21,7 +21,7 @@ export const BEREICH_LANDING_CONFIG = {
       it: 'Sport & Fitness - Trova la tua formazione'
     },
     subtitle: {
-      de: 'Vergleiche Ausbildungen für Fitnesstrainer, Personal Training und Group Fitness. Prüfe Inhalte, Lernformat und Abschluss direkt beim jeweiligen Anbieter.',
+      de: 'Du suchst eine Fitness-Ausbildung in der Schweiz? Vergleiche Lehrgänge für Fitnesstrainer, Personal Training und Group Fitness nach Lerninhalten, Praxis, Voraussetzungen und Abschlussziel. Die konkreten Angaben findest du beim jeweiligen Anbieter.',
       en: 'Fitness Trainer, Personal Training, Group Fitness and more',
       fr: 'Coach fitness, entrainement personnel, fitness en groupe et plus',
       it: 'Istruttore fitness, personal training, fitness di gruppo e altro'
@@ -91,6 +91,19 @@ export const BEREICH_LANDING_CONFIG = {
       ],
     },
 
+    introSection: {
+      heading: { de: 'Welche Fitness-Ausbildung passt zu deinem Ziel?' },
+      paragraphs: { de: [
+        'Eine Ausbildung in der Fitness- und Gesundheitsbranche kann zu unterschiedlichen Tätigkeiten führen. Für den Einstieg als Fitnesstrainer sind Grundlagen zu Trainingslehre, Anatomie sowie Kraft- und Ausdauertraining wichtig. Eine Personal-Trainer-Ausbildung vertieft die individuelle Betreuung, etwa Trainingsplanung und die Arbeit mit Kundinnen und Kunden. Wer Gruppen unterrichten möchte, vergleicht Group-Fitness-Ausbildungen und deren Kursformate. Für erfahrene Trainer kommen Weiterbildungen wie Functional Training oder Sporternährung infrage.',
+        'Vergleiche vor der Anmeldung, welche Vorkenntnisse verlangt werden, wie viel Praxis enthalten ist, welches Abschlussziel der Lehrgang hat und ob Zeitmodell und Gesamtkosten zu deinem Alltag passen. Bezeichnungen und Abschlüsse sind je nach Anbieter verschieden. Kläre deshalb direkt, wofür die jeweilige Qualifikation vorbereitet und welche Anforderungen für dein geplantes Tätigkeitsfeld gelten.',
+      ]},
+      links: [
+        { label: { de: 'Fitnesstrainer-Ausbildung finden' }, params: { spec: 'Fitness-Trainer-Ausbildung' } },
+        { label: { de: 'Personal-Trainer-Ausbildung finden' }, params: { spec: 'Personal-Trainer-Ausbildung' } },
+        { label: { de: 'Group-Fitness-Ausbildung finden' }, params: { spec: 'Group-Fitness / Kursleitung' } },
+      ],
+    },
+
     predefinedSearches: [
       { label: { de: 'Fitnesstrainer Basiskurs' }, params: { spec: 'Fitness-Trainer-Ausbildung', focus: 'Basis-Ausbildung' } },
       { label: { de: 'Fitness Trainer Ausbildung Zürich' }, params: { spec: 'Fitness-Trainer-Ausbildung' }, extraParams: { loc: 'Zürich' } },
@@ -102,19 +115,6 @@ export const BEREICH_LANDING_CONFIG = {
     ],
 
     editorialSections: [
-      {
-        heading: { de: 'Woran du einen passenden Lehrgang erkennst' },
-        intro: { de: 'Nicht der werblichste Anbieter ist automatisch der beste. Für eine gute Entscheidung helfen vor allem diese sechs Fragen:' },
-        items: { de: [
-          'Welches Abschlussziel verfolge ich genau?',
-          'Wie viel Praxis ist vorgesehen und wie realistisch ist der Praxiserwerb?',
-          'Wie transparent sind Kosten, Zeitmodell und Voraussetzungen beschrieben?',
-          'Ist der Lehrgang förderfähig oder klar an ein anerkanntes Prüfungsziel angebunden?',
-          'Welche Qualitätssignale bringt der Anbieter mit?',
-          'Passt das Format zu meinem Berufsalltag oder nur auf dem Papier?',
-        ]},
-        closing: { de: 'Ein gutes Angebot erklärt nicht nur Inhalte, sondern auch Weg, Aufwand und Grenzen.' },
-      },
       {
         heading: { de: 'Qualität vergleichen statt nur Titel sammeln' },
         intro: { de: 'Bei Sport- und Fitnessausbildungen lohnt sich ein Blick auf mehrere Ebenen gleichzeitig:' },
