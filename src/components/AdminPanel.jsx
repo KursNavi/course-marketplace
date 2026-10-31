@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Lock, Loader, Shield, CheckCircle, Eye, ExternalLink, FileText, FolderTree, Search, ChevronLeft, ChevronRight, UserCheck, BarChart3 } from 'lucide-react';
+import { Lock, Loader, Shield, CheckCircle, XCircle, Eye, ExternalLink, FileText, FolderTree, Search, ChevronLeft, ChevronRight, UserCheck, BarChart3 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { PLANS } from '../lib/plans';
 import { formatPriceCHF } from '../lib/formatPrice';
@@ -517,43 +517,46 @@ const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView, user,
                                                 <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">{fmtDate(user.created_at)}</td>
                                                 <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">{fmtDate(user.last_sign_in_at)}</td>
 
-                                                <td className="px-6 py-4 text-right flex items-center justify-end gap-2">
-                                                    <button
-                                                        onClick={() => handleImpersonate(user, 'teachers')}
-                                                        className="text-purple-600 hover:text-purple-800 p-2 rounded-md hover:bg-purple-50 transition"
-                                                        title="Als User anschauen"
-                                                    >
-                                                        <UserCheck className="w-4 h-4" />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => alert(`--- LEHRER PROFIL ---\n\nBIOGRAFIE:\n${user.bio_text || 'Keine Biografie vorhanden.'}\n\nZERTIFIKATE:\n${user.certificates && user.certificates.length > 0 ? user.certificates.map(c => '- ' + c).join('\n') : 'Keine Zertifikate hochgeladen.'}`)}
-                                                        className="text-gray-500 hover:text-primary p-2 rounded-md hover:bg-gray-100 transition"
-                                                        title="Details ansehen"
-                                                    >
-                                                        <Eye className="w-4 h-4" />
-                                                    </button>
-
-                                                    {/* DOCUMENT LINK BUTTON */}
-                                                    {user.verification_docs && user.verification_docs.length > 0 && (
-                                                        <a 
-                                                            href={user.verification_docs[0]} 
-                                                            target="_blank" 
-                                                            rel="noreferrer"
-                                                            className="text-blue-500 hover:text-blue-700 p-2 rounded-md hover:bg-blue-50 transition"
-                                                            title="Verifizierungs-Dokument ansehen"
+                                                <td className="px-6 py-4 text-right">
+                                                    <div className="flex flex-wrap items-center justify-end gap-1.5">
+                                                        <button
+                                                            onClick={() => handleImpersonate(user, 'teachers')}
+                                                            className="text-xs px-2 py-1 rounded-md font-medium bg-purple-50 text-purple-700 hover:bg-purple-100 transition flex items-center gap-1"
+                                                            title="Als User anschauen"
                                                         >
-                                                            <ExternalLink className="w-4 h-4" />
-                                                        </a>
-                                                    )}
+                                                            <UserCheck className="w-3 h-3" />Anschauen
+                                                        </button>
+                                                        <button
+                                                            onClick={() => alert(`--- LEHRER PROFIL ---\n\nBIOGRAFIE:\n${user.bio_text || 'Keine Biografie vorhanden.'}\n\nZERTIFIKATE:\n${user.certificates && user.certificates.length > 0 ? user.certificates.map(c => '- ' + c).join('\n') : 'Keine Zertifikate hochgeladen.'}`)}
+                                                            className="text-xs px-2 py-1 rounded-md font-medium bg-gray-50 text-gray-700 hover:bg-gray-100 transition flex items-center gap-1"
+                                                            title="Details ansehen"
+                                                        >
+                                                            <Eye className="w-3 h-3" />Details
+                                                        </button>
 
-                                                    <button
-                                                        onClick={() => toggleVerify(user.id, user.is_professional, user.email)}
-                                                        className={`text-xs font-bold px-3 py-1.5 rounded transition ${
-                                                            user.is_professional ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-green-50 text-green-600 hover:bg-green-100'
-                                                        }`}
-                                                    >
-                                                        {user.is_professional ? (t.admin_btn_unverify || "Unverify") : (t.admin_btn_verify || "Verify")}
-                                                    </button>
+                                                        {/* DOCUMENT LINK BUTTON */}
+                                                        {user.verification_docs && user.verification_docs.length > 0 && (
+                                                            <a
+                                                                href={user.verification_docs[0]}
+                                                                target="_blank"
+                                                                rel="noreferrer"
+                                                                className="text-xs px-2 py-1 rounded-md font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 transition flex items-center gap-1"
+                                                                title="Verifizierungs-Dokument ansehen"
+                                                            >
+                                                                <ExternalLink className="w-3 h-3" />Dokument
+                                                            </a>
+                                                        )}
+
+                                                        <button
+                                                            onClick={() => toggleVerify(user.id, user.is_professional, user.email)}
+                                                            className={`text-xs px-2 py-1 rounded-md font-medium transition flex items-center gap-1 ${
+                                                                user.is_professional ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-green-50 text-green-600 hover:bg-green-100'
+                                                            }`}
+                                                        >
+                                                            {user.is_professional ? <XCircle className="w-3 h-3" /> : <CheckCircle className="w-3 h-3" />}
+                                                            {user.is_professional ? (t.admin_btn_unverify || "Unverify") : (t.admin_btn_verify || "Verify")}
+                                                        </button>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         );
@@ -570,10 +573,10 @@ const AdminPanel = ({ t, courses, showNotification, fetchCourses, setView, user,
                                             <td className="px-6 py-4 text-right">
                                                 <button
                                                     onClick={() => handleImpersonate(user, 'students')}
-                                                    className="text-purple-600 hover:text-purple-800 p-2 rounded-md hover:bg-purple-50 transition"
+                                                    className="text-xs px-2 py-1 rounded-md font-medium bg-purple-50 text-purple-700 hover:bg-purple-100 transition flex items-center gap-1 ml-auto"
                                                     title="Als User anschauen"
                                                 >
-                                                    <UserCheck className="w-4 h-4" />
+                                                    <UserCheck className="w-3 h-3" />Anschauen
                                                 </button>
                                             </td>
                                         </tr>
