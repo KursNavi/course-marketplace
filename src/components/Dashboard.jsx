@@ -2719,7 +2719,7 @@ const Dashboard = ({ user, setUser, t, setView, courses, teacherEarnings, myBook
                                     <span className="text-2xl font-bold capitalize">{currentPlan.title}</span>
                                 </div>
                                 <p className="text-xs text-gray-400 mt-1">
-                                    {isEnterprisePlan ? 'Unbegrenzt hervorgehobene Kurse' : `${currentPlan.maxPrioCourses} hervorgehobene Kurse`} • bis {currentPlan.maxCategoriesPerCourse} Kategorien/Kurs • {currentPlan.includedCaptureServices > 0 ? `Kursservice für ${currentPlan.includedCaptureServices} Kurse inkl.` : 'kein Kursservice inklusive'}
+                                    {isEnterprisePlan ? 'Anzahl hervorgehobener Kurse nach Absprache' : `${currentPlan.maxPrioCourses} hervorgehobene Kurse`} • bis {currentPlan.maxCategoriesPerCourse} Kategorien/Kurs • {currentPlan.includedCaptureServices > 0 ? `Kursservice für ${currentPlan.includedCaptureServices} Kurse inkl.` : 'kein Kursservice inklusive'}
                                 </p>
                                 {packageExpiresAt && userTier !== 'basic' && (
                                     <p className="text-xs text-yellow-400 mt-1">Gültig bis: {new Date(packageExpiresAt).toLocaleDateString('de-CH')}</p>

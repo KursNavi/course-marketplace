@@ -135,7 +135,7 @@ export const PLANS = [
 
     features: [
       { text: "Anbieterprofil in der Anbietersuche", isStrong: true },
-      { text: "Unbegrenzt hervorgehobene Kurse", isStrong: true, description: "Alle Kurse erhalten zusätzliche Sichtbarkeit in passenden Suchergebnissen und Empfehlungen. Die Relevanz bleibt entscheidend." },
+      { text: "Anzahl hervorgehobener Kurse nach Absprache", isStrong: true, description: "Hervorgehobene Kurse erhalten zusätzliche Sichtbarkeit in passenden Suchergebnissen und Empfehlungen. Die Relevanz bleibt entscheidend." },
       { text: "Link zur Anbieterhomepage in jedem hervorgehobenen Kurs", isStrong: true, description: "Jeder hervorgehobene Kurs kann direkt auf die Homepage des Anbieters verlinken." },
       { text: "Verifizierungsprüfung inklusive", isStrong: true, description: "Bezahlpakete enthalten die Verifizierungsprüfung. Das Verifiziert-Badge erscheint nach erfolgreicher Prüfung durch KursNavi – Verifiziert ist ein Vertrauenssignal, keine Ranking-Garantie." },
       { text: "Individueller Kursservice nach Absprache", isStrong: true, separator: true, description: "Für grössere Kursbestände und laufende Pflege: Umfang und Konditionen werden individuell vereinbart." },
