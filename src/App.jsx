@@ -1840,12 +1840,12 @@ export default function KursNaviPro() {  // 1. Initial State Logic
           const isFullUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(profilePart);
           if (isFullUuid) {
             // Legacy: vollständige UUID in URL
-            supabase.from('profiles').select('*').eq('id', profilePart).single()
+            supabase.from('public_teacher_profiles').select('*').eq('id', profilePart).single()
               .then(({ data }) => { if (data) setSelectedTeacher(data); });
           } else {
             // Slug oder Name-Slug: zuerst slug, dann full_name (case-insensitiv)
             const nameSearch = profilePart.replace(/-/g, ' ');
-            supabase.from('profiles').select('*')
+            supabase.from('public_teacher_profiles').select('*')
               .or(`slug.eq.${profilePart},full_name.ilike.${nameSearch}`)
               .limit(1)
               .then(({ data }) => { if (data?.[0]) setSelectedTeacher(data[0]); });
