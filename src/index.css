@@ -27,15 +27,18 @@
   }
 }
 
-/* Scrollbar styling for a cleaner look */
+/* Scrollbar styling for a cleaner look. Thumb bewusst neutral/dezent (nicht Markenorange) —
+   ein durchgaengig oranger Scrollbar-Streifen auf jedem scrollbaren Element (inkl. Seiten- und
+   Sidebar-Scrollbars) wirkte wie ein ungewolltes grelles Gestaltungselement statt wie ein
+   zurueckhaltendes UI-Detail. */
 ::-webkit-scrollbar {
   width: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #FAF5F0; 
+  background: #FAF5F0;
 }
 ::-webkit-scrollbar-thumb {
-  background: #FA6E28;
+  background: #D8CFC6;
   border-radius: 4px;
 }
 
