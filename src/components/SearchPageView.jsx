@@ -34,6 +34,14 @@ const URL_TO_DB_TYPE = {
     'kinder': 'kinder'
 };
 
+// Inverse von URL_TO_DB_TYPE: DB-Typ eines Kurses -> Segment-Key fuer SEGMENT_VISUALS
+// (dezente linke Bereichslinie auf Ergebnis-Karten + Legende bei gemischten Treffern).
+const DB_TYPE_TO_SEGMENT = {
+    professionell: 'beruflich',
+    privat: 'privat_hobby',
+    kinder: 'kinder_jugend',
+};
+
 // ---------------------------------------------------------------------------
 // Segment context metadata (used by the auto-type hint bar)
 // ---------------------------------------------------------------------------
@@ -52,7 +60,7 @@ const CANONICAL_SEGMENT = {
     kinder_jugend: 'kinder_jugend', kinder: 'kinder_jugend',
 };
 const OTHER_SEGMENTS = [
-    { key: 'beruflich',    label: 'Beruflich' },
+    { key: 'beruflich',    label: 'Beruf & Karriere' },
     { key: 'privat_hobby', label: 'Privat & Hobby' },
     { key: 'kinder_jugend', label: 'Kinder & Jugend' },
 ];
@@ -626,6 +634,19 @@ const SearchPageView = ({
         });
     }, [filteredCourses, filterDateFrom, filterDateTo, sortSeed, searchQuery]);
 
+    // Welche Bereiche stecken tatsaechlich in der aktuellen Trefferliste? Treibt die kleine
+    // Legende oberhalb der Ergebnisse: nur bei echt gemischten Bereichen sichtbar, und nie bei
+    // einer bereits aktiv ausgewaehlten Einzelkategorie (dort ist searchType gesetzt).
+    const mixedSegmentKeys = useMemo(() => {
+        const keys = new Set();
+        sortedCourses.forEach(c => {
+            const segKey = DB_TYPE_TO_SEGMENT[c?.category_type];
+            if (segKey) keys.add(segKey);
+        });
+        return [...keys];
+    }, [sortedCourses]);
+    const showSegmentLegend = !searchType && mixedSegmentKeys.length > 1;
+
     // Get segment config for banner
     const getActiveSegmentConfig = () => {
         if (!searchType) return null;
@@ -656,7 +677,7 @@ const SearchPageView = ({
         (searchType === 'beruflich' || searchType === 'professionell') ? 'Beruf, Fachgebiet oder Abschluss suchen …' :
         (searchType === 'privat_hobby' || searchType === 'privat')     ? 'Hobby, Thema oder Kurs suchen …' :
         (searchType === 'kinder_jugend' || searchType === 'kinder')    ? 'Kurs, Camp oder Aktivität suchen …' :
-        (t.search_refine || 'Suchbegriff eingeben …');
+        'Nach Kurs, Thema oder Abschluss suchen …';
 
     return (
         <div className="min-h-screen bg-beige">
@@ -828,9 +849,6 @@ const SearchPageView = ({
 
                                 {!searchType ? (
                                     <>
-                                        <p className="text-sm text-white/70 mb-3">
-                                            Stöbere durch die Bildungsbereiche und öffne danach die passende Kategorie.
-                                        </p>
                                         <div className="grid grid-cols-1 gap-2" data-testid="browse-segment-picker">
                                             {['beruflich', 'privat_hobby', 'kinder_jugend'].map(segKey => {
                                                 const visuals = SEGMENT_VISUALS[segKey];
@@ -1029,7 +1047,7 @@ const SearchPageView = ({
                                     <SectionMarker>Gezielt suchen</SectionMarker>
                                 </div>
                                 <p className="text-sm text-gray-600 mb-2">
-                                    Suche direkt nach einem Thema, Kurs oder Abschluss.
+                                    Suche direkt nach Kurs, Thema oder Abschluss.
                                 </p>
                                 <div className="relative">
                                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -1042,7 +1060,7 @@ const SearchPageView = ({
                                     />
                                 </div>
                                 <p className="text-xs text-gray-400 mt-2">
-                                    Lässt sich unten mit Ort, Kursformat und weiteren Filtern kombinieren. Mehrere Begriffe wie <em>Yoga Zürich</em> funktionieren ebenfalls.
+                                    Mehrere Begriffe sind möglich, zum Beispiel <em>Yoga Zürich</em>.
                                 </p>
                             </div>
 
@@ -1063,7 +1081,7 @@ const SearchPageView = ({
                                     </button>
                                 </div>
                                 <p className="text-sm text-gray-600 mb-3">
-                                    Verfeinere deine Auswahl optional mit Ort, Kursformat und weiteren Filtern — unabhängig davon, ob du oben gestöbert oder gesucht hast.
+                                    Ort, Kursformat und weitere Filter.
                                 </p>
 
                                 {/* Ort + Kursformat: prominent und ohne Einklappen erreichbar */}
@@ -1189,6 +1207,22 @@ const SearchPageView = ({
                     </p>
                 </div>
 
+                {/* BEREICHE-LEGENDE — nur bei echt gemischten Treffern (kein Bereich aktiv
+                    ausgewaehlt), dieselben Farben wie die linke Linie auf den Ergebnis-Karten.
+                    Dezent gehalten: kleine Punkte statt grosser Flaechen, wirkt nicht wie ein
+                    zusaetzlicher Filter. */}
+                {showSegmentLegend && (
+                    <div className="mb-4 flex items-center gap-x-4 gap-y-1 flex-wrap text-xs text-gray-500" data-testid="segment-legend">
+                        <span className="font-semibold uppercase tracking-wide text-[11px] text-gray-400">Bereiche</span>
+                        {['beruflich', 'privat_hobby', 'kinder_jugend'].map(segKey => (
+                            <span key={segKey} className="inline-flex items-center gap-1.5">
+                                <span className={`w-2 h-2 rounded-full ${SEGMENT_VISUALS[segKey].bg}`} aria-hidden="true"></span>
+                                {segKey === 'beruflich' ? (t.nav_professional || 'Beruf & Karriere') : segKey === 'privat_hobby' ? (t.nav_private || 'Privat & Hobby') : (t.nav_kids || 'Kinder & Jugend')}
+                            </span>
+                        ))}
+                    </div>
+                )}
+
                 {/* --- STATE D: LOADING --- */}
                 {loading && (
                     <div className="text-center py-20" data-testid="loading-state">
@@ -1275,9 +1309,19 @@ const SearchPageView = ({
                            setSelectedCourse?.(course);
                            setView?.('detail');
                        };
+                       // Dezente Bereichskennzeichnung: schmale linke Linie statt Flaeche/Icon,
+                       // damit die Karte weiss und ruhig bleibt (siehe Legende oberhalb der Liste).
+                       // Als eigene absolut positionierte Leiste statt Border-Utility, damit sie
+                       // nicht mit der bestehenden grauen Kartenumrandung/dem Hover-Zustand
+                       // kollidiert (Tailwind-Border-Farb-Utilities ueberschreiben sich sonst
+                       // gegenseitig auf allen vier Seiten).
+                       const courseSegKey = DB_TYPE_TO_SEGMENT[course.category_type];
 
                        items.push(
                        <article key={course.id} className="relative bg-white rounded-lg border border-gray-100 overflow-hidden hover:shadow-md hover:border-gray-200 transition-all duration-300 group">
+                         {courseSegKey && (
+                           <div className={`absolute inset-y-0 left-0 w-1 ${SEGMENT_VISUALS[courseSegKey].bg}`} aria-hidden="true"></div>
+                         )}
                          <a href={coursePath} onClick={openCourse} className="flex gap-3 p-3 cursor-pointer" style={{textDecoration: 'none', color: 'inherit'}}>
                            <div className="relative w-28 sm:w-40 aspect-video self-start shrink-0 rounded-md overflow-hidden">
                             <img
