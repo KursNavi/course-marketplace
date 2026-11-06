@@ -101,6 +101,31 @@ export default async function handler(req, res) {
                 .eq('id', userId);
         }
 
+        // Wenn komplett kostenlos: Kontingent zuerst atomar reservieren, bevor
+        // die Anfrage gespeichert wird — verhindert, dass zwei gleichzeitige
+        // Anfragen dasselbe Kontingent doppelt verbrauchen (siehe PR-Beschreibung).
+        if (totalAmount === 0) {
+            const { data: reserveData, error: reserveError } = await supabase.rpc(
+                'reserve_free_capture_service_units',
+                {
+                    p_user_id: userId,
+                    p_requested_units: serviceUnits,
+                    p_included_units: includedServices
+                }
+            );
+
+            if (reserveError) {
+                console.error('Capture service quota reservation failed:', reserveError);
+                return res.status(500).json({ error: 'Es ist ein Fehler aufgetreten. Bitte versuche es später erneut.' });
+            }
+
+            if ((reserveData?.[0]?.free_units ?? 0) < serviceUnits) {
+                return res.status(409).json({
+                    error: 'Dein kostenloses Kontingent wurde inzwischen anderweitig verbraucht. Bitte lade die Seite neu und versuche es erneut.'
+                });
+            }
+        }
+
         const { data: insertData, error: insertError } = await supabase
             .from('capture_service_requests')
             .insert({
@@ -121,15 +146,8 @@ export default async function handler(req, res) {
             requestId = insertData.id;
         }
 
-        // Wenn komplett kostenlos: used_capture_services updaten
+        // Kontingent wurde oben bereits atomar reserviert — hier nur noch antworten.
         if (totalAmount === 0) {
-            await supabase
-                .from('profiles')
-                .update({
-                    used_capture_services: usedServices + serviceUnits
-                })
-                .eq('id', userId);
-
             return res.status(200).json({
                 success: true,
                 message: 'Kostenlos gebucht - inkludierte Services verwendet',

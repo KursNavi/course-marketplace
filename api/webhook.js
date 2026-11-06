@@ -881,21 +881,12 @@ export default async function handler(req, res) {
             }
         }
 
-        // 2. Update used_capture_services in profiles
-        const { data: profile } = await supabase
-            .from('profiles')
-            .select('used_capture_services')
-            .eq('id', userId)
-            .maybeSingle();
-
-        const currentUsed = profile?.used_capture_services || 0;
-
-        const { error: profileError } = await supabase
-            .from('profiles')
-            .update({
-                used_capture_services: currentUsed + courseCount
-            })
-            .eq('id', userId);
+        // 2. Update used_capture_services in profiles (atomar, damit zwei zeitgleich
+        // abgeschlossene Zahlungen desselben Nutzers sich nicht gegenseitig überschreiben)
+        const { error: profileError } = await supabase.rpc('increment_capture_service_usage', {
+            p_user_id: userId,
+            p_units: courseCount
+        });
 
         if (profileError) {
             console.error('Failed to update used_capture_services:', profileError);
