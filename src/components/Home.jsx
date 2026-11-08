@@ -271,52 +271,54 @@ export const Home = ({
             className="absolute inset-0 w-full h-full object-cover"
             onError={(e) => { e.target.style.display = 'none'; }}
           />
-          {/* Warmer Off-White-Schleier als ein weich auslaufender Verlauf statt zweier gleich
-              starker Flaechen: links deckend (Lesbarkeit von Ueberschrift und Suchkarte), rechts
-              sichtbar schwaecher, damit das Foto dort erkennbarer und kontrastreicher durchscheint.
-              Auf Mobile bleibt der Schleier insgesamt kraeftiger (to-beige/60 statt /15) — dort
-              liegt der Textblock ueber die volle Breite, waehrend er auf groesseren Screens nur
-              die linke Haelfte einnimmt und rechts mehr Foto frei bleibt. */}
-          <div className="absolute inset-0 bg-gradient-to-r from-beige via-beige/80 to-beige/60 md:to-beige/15"></div>
+          {/* Warmer Off-White-Schleier, asymmetrisch statt gleichmaessig ueber die Breite verteilt:
+              links deckend (Lesbarkeit von Ueberschrift und Suchkarte), faellt dann zügiger ab
+              (via-Stop bei ~38% statt 50%), damit auf der rechten Haelfte spuerbar mehr vom Foto
+              sichtbar bleibt statt eines gleichmaessigen Verwaschens ueber die ganze Breite. Auf
+              Mobile bleibt der Schleier insgesamt kraeftiger (to-beige/55 statt /8) — dort liegt
+              der Textblock ueber die volle Breite, waehrend er auf groesseren Screens nur die
+              linke Haelfte einnimmt. */}
+          <div className="absolute inset-0 bg-gradient-to-r from-beige via-beige/75 via-[38%] to-beige/55 md:to-beige/8"></div>
         </div>
 
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-16 relative z-10">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-10 relative z-10">
 
-          <div className="max-w-2xl mb-5">
-            <div className="mb-2.5">
-              <SectionMarker>Dein Bildungswegweiser für die Schweiz</SectionMarker>
-            </div>
-            <h1 className="text-3xl md:text-4xl font-heading font-bold tracking-tight text-dark mb-2 leading-tight">
-              {t.home_headline}
-            </h1>
-            <p className="text-base text-gray-600 leading-relaxed">
-              {t.home_subhead}
-            </p>
-          </div>
-
-          {/* Zentrale, helle Suchkarte — die wichtigste Aktion der Startseite. Bewusst unabhaengig
-              von der linksbuendigen Ueberschriften-Spalte: mx-auto zentriert sie im gesamten
-              Hero-Bereich, nicht nur innerhalb der Ueberschriften-Breite. max-w-3xl (~768px) haelt
-              sie auf grossen Screens kompakt statt ueberbreit. Nutzt dieselbe Suchlogik/URL-
-              Parameter wie die Suchuebersicht (siehe handleSearch oben): kein Bereich wird hier
-              vorausgewaehlt, die Suche laeuft ueber alle drei Bereiche. */}
-          <form onSubmit={handleSearch} className="relative max-w-3xl mx-auto rounded-2xl border border-grey bg-white/95 shadow-lg shadow-black/5 backdrop-blur-sm p-5 sm:p-6">
-            <label htmlFor="home-search-input" className="block text-sm font-semibold text-dark mb-2">
-              {t.search_placeholder}
-            </label>
-            <div className="relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 w-5 h-5 pointer-events-none" aria-hidden="true" />
-              <input
-                id="home-search-input"
-                type="text"
-                placeholder={HOME_SEARCH_EXAMPLES[lang] || HOME_SEARCH_EXAMPLES.de}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-12 pr-4 py-3 bg-white border border-grey rounded-lg text-lg text-dark placeholder:text-gray-400 placeholder:text-base focus:outline-none focus:border-petrol focus:ring-1 focus:ring-petrol transition-colors"
-              />
+          {/* Gemeinsame, zentrierte Content-Spalte: Eyebrow, Ueberschrift, Untertitel und Suchkarte
+              beginnen alle an derselben linken Kante dieser einen Spalte, die als Ganzes (mx-auto)
+              im Hero zentriert ist — bewusst nicht mehr Text links + Suchkarte separat zentriert. */}
+          <div className="max-w-3xl mx-auto">
+            <div className="mb-4">
+              <div className="mb-2">
+                <SectionMarker>Dein Bildungswegweiser für die Schweiz</SectionMarker>
+              </div>
+              <h1 className="text-3xl md:text-4xl font-heading font-bold tracking-tight text-dark mb-2 leading-tight">
+                {t.home_headline}
+              </h1>
+              <p className="text-base text-gray-600 leading-relaxed">
+                {t.home_subhead}
+              </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mt-3">
+            {/* Suchkarte — die wichtigste Aktion der Startseite. Nutzt dieselbe Suchlogik/URL-
+                Parameter wie die Suchuebersicht (siehe handleSearch oben): kein Bereich wird hier
+                vorausgewaehlt, die Suche laeuft ueber alle drei Bereiche. */}
+            <form onSubmit={handleSearch} className="relative rounded-2xl border border-grey bg-white/95 shadow-lg shadow-black/5 backdrop-blur-sm p-5 sm:p-6">
+              <label htmlFor="home-search-input" className="block text-sm font-semibold text-dark mb-2">
+                {t.search_placeholder}
+              </label>
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 w-5 h-5 pointer-events-none" aria-hidden="true" />
+                <input
+                  id="home-search-input"
+                  type="text"
+                  placeholder={HOME_SEARCH_EXAMPLES[lang] || HOME_SEARCH_EXAMPLES.de}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-12 pr-4 py-3 bg-white border border-grey rounded-lg text-lg text-dark placeholder:text-gray-400 placeholder:text-base focus:outline-none focus:border-petrol focus:ring-1 focus:ring-petrol transition-colors"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mt-3">
               <div>
                 <label className="block text-sm font-medium text-gray-600 mb-1.5">{t.filter_label_loc || 'Ort oder Online'}</label>
                 <div className="bg-white rounded border border-grey">
@@ -425,14 +427,17 @@ export const Home = ({
                 <ArrowRight className="w-4 h-4" aria-hidden="true" />
               </button>
             </div>
-          </form>
+            </form>
+          </div>
         </div>
       </section>
 
       {/* 2. WAEHLE DEINEN WEG — drei gleichwertige Kurswelten, Segmentfarben Blau/Orange/Gruen.
           Bewusst ohne Nummerierung ("Bereich 01/02/03") an den Karten, aus demselben Grund
-          wie beim Wegweiser oben: die drei Bereiche sind gleichwertig, keine Rangfolge. */}
-      <div className="py-20 bg-beige max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+          wie beim Wegweiser oben: die drei Bereiche sind gleichwertig, keine Rangfolge. Oben
+          bewusst weniger Vorlauf (pt) als unten (pb), damit der Abschnitt auf einem normalen
+          Laptop-Bildschirm nach dem verkuerzten Hero schon mit seiner Ueberschrift anschneidet. */}
+      <div className="pt-10 pb-16 md:pt-14 md:pb-20 bg-beige max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
         <div className="flex flex-col md:flex-row md:items-end md:justify-between mb-10 pb-4 border-b border-grey gap-3">
           <div>
             <div className="mb-2">

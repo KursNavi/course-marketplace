@@ -1383,12 +1383,16 @@ const SearchPageView = ({
                                 )}
                             </div>
 
-                            <h3 className="font-bold text-sm sm:text-base text-dark leading-snug line-clamp-2 font-heading">
+                            {/* Kurstitel als wichtigste Information deutlich hervorgehoben; die
+                                Beschreibung bleibt vorhanden, aber bewusst auf eine Zeile begrenzt,
+                                damit sich mehrere Karten schneller ueberfliegen und vergleichen
+                                lassen, ohne lange Textbloecke lesen zu muessen. */}
+                            <h3 className="font-bold text-base sm:text-lg text-dark leading-snug line-clamp-2 font-heading">
                                 {course.title}
                             </h3>
 
                             {course.description && (
-                                <p className="text-xs text-gray-500 line-clamp-1 sm:line-clamp-2 mt-0.5">{course.description}</p>
+                                <p className="text-xs text-gray-500 line-clamp-1 mt-0.5">{course.description}</p>
                             )}
 
                             {/* Kursformat-Badges */}
@@ -1407,7 +1411,10 @@ const SearchPageView = ({
                             })()}
                            </div>
                          </a>
-                         <div className="flex items-center justify-between gap-2 px-3 pb-2.5 -mt-1">
+                         {/* Abschlusszone: Preis klar links, Anfrage-Button klar rechts, durch eine
+                             duenne obere Trennlinie als eigene Zone von Titel/Beschreibung
+                             abgesetzt statt lose im Weissraum zu stehen. */}
+                         <div className="flex items-center justify-between gap-2 px-3 py-2 border-t border-gray-100">
                              {/* Preis */}
                              <span className="font-heading font-bold text-primary text-sm leading-tight break-words">
                                  {getPriceLabel(course)}
