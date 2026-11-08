@@ -271,22 +271,23 @@ export const Home = ({
             className="absolute inset-0 w-full h-full object-cover"
             onError={(e) => { e.target.style.display = 'none'; }}
           />
-          {/* Warmer Off-White-Schleier: links fast deckend (Lesbarkeit der Ueberschrift), nach
-              rechts hin durchscheinender, damit das Foto als Atmosphaere erkennbar bleibt. */}
-          <div className="absolute inset-0 bg-gradient-to-r from-beige/95 via-beige/90 to-beige/70"></div>
-          <div className="absolute inset-0 bg-beige/30"></div>
+          {/* Warmer Off-White-Schleier als ein weich auslaufender Verlauf statt zweier gleich
+              starker Flaechen: links fast deckend (Lesbarkeit von Ueberschrift und Suchkarte),
+              rechts sichtbar schwaecher, damit das Foto dort erkennbarer und kontrastreicher
+              durchscheint. */}
+          <div className="absolute inset-0 bg-gradient-to-r from-beige via-beige/80 to-beige/25"></div>
         </div>
 
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-14 md:py-20 relative z-10">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-16 relative z-10">
 
-          <div className="max-w-2xl mb-8">
-            <div className="mb-3">
+          <div className="max-w-2xl mb-5">
+            <div className="mb-2.5">
               <SectionMarker>Dein Bildungswegweiser für die Schweiz</SectionMarker>
             </div>
-            <h1 className="text-3xl md:text-5xl font-heading font-bold tracking-tight text-dark mb-3 leading-tight">
+            <h1 className="text-3xl md:text-4xl font-heading font-bold tracking-tight text-dark mb-2 leading-tight">
               {t.home_headline}
             </h1>
-            <p className="text-base md:text-lg text-gray-600 leading-relaxed">
+            <p className="text-base text-gray-600 leading-relaxed">
               {t.home_subhead}
             </p>
           </div>
@@ -294,7 +295,7 @@ export const Home = ({
           {/* Zentrale, helle Suchkarte — die wichtigste Aktion der Startseite. Nutzt dieselbe
               Suchlogik/URL-Parameter wie die Suchuebersicht (siehe handleSearch oben): kein
               Bereich wird hier vorausgewaehlt, die Suche laeuft ueber alle drei Bereiche. */}
-          <form onSubmit={handleSearch} className="relative max-w-2xl rounded-2xl border border-grey bg-white/95 shadow-lg shadow-black/5 backdrop-blur-sm p-5 sm:p-7 lg:p-8">
+          <form onSubmit={handleSearch} className="relative max-w-2xl rounded-2xl border border-grey bg-white/95 shadow-lg shadow-black/5 backdrop-blur-sm p-5 sm:p-6 lg:p-7">
             <label htmlFor="home-search-input" className="block text-sm font-semibold text-dark mb-2">
               {t.search_placeholder}
             </label>
@@ -306,11 +307,11 @@ export const Home = ({
                 placeholder={HOME_SEARCH_EXAMPLES[lang] || HOME_SEARCH_EXAMPLES.de}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-12 pr-4 py-4 bg-white border border-grey rounded-lg text-lg text-dark placeholder:text-gray-400 placeholder:text-base focus:outline-none focus:border-petrol focus:ring-1 focus:ring-petrol transition-colors"
+                className="w-full pl-12 pr-4 py-3.5 bg-white border border-grey rounded-lg text-lg text-dark placeholder:text-gray-400 placeholder:text-base focus:outline-none focus:border-petrol focus:ring-1 focus:ring-petrol transition-colors"
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
               <div>
                 <label className="block text-sm font-medium text-gray-600 mb-1.5">{t.filter_label_loc || 'Ort oder Online'}</label>
                 <div className="bg-white rounded border border-grey">
@@ -341,21 +342,8 @@ export const Home = ({
               </div>
             </div>
 
-            <div className="pt-3 mt-1">
-              <button
-                type="button"
-                onClick={() => setShowMoreFilters(v => !v)}
-                aria-expanded={showMoreFilters}
-                aria-controls="home-more-filters"
-                className="text-sm font-medium text-gray-500 hover:text-primary inline-flex items-center gap-1.5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-petrol rounded"
-              >
-                <span>Weitere Filter{secondaryFilterCount > 0 ? ` (${secondaryFilterCount})` : ''}</span>
-                <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${showMoreFilters ? 'rotate-180' : ''}`} aria-hidden="true" />
-              </button>
-            </div>
-
             {showMoreFilters && (
-              <div id="home-more-filters" className="mt-4 pt-4 border-t border-grey grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div id="home-more-filters" className="mt-3 pt-3 border-t border-grey grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <label className="flex items-center bg-white px-2.5 py-2 rounded border border-grey cursor-pointer">
                   <span className="text-xs text-gray-500 mr-1.5 whitespace-nowrap">Von</span>
                   <input type="date" value={filterDateFrom} onChange={(e) => setFilterDateFrom(e.target.value)} className="bg-transparent text-xs outline-none text-gray-700 cursor-pointer w-full" />
@@ -410,10 +398,23 @@ export const Home = ({
               </div>
             )}
 
-            <div className="mt-5 flex justify-center sm:justify-end">
+            {/* Abschlusszeile: "Weitere Filter" und "Kurse finden" gehoeren sichtbar zusammen,
+                direkt unter der Ort/Kursformat-Zeile statt mit grossem Leerraum dazwischen.
+                Auf Mobile bleibt der Button ueber die volle Breite gut erreichbar. */}
+            <div className="mt-3 pt-3 border-t border-grey flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <button
+                type="button"
+                onClick={() => setShowMoreFilters(v => !v)}
+                aria-expanded={showMoreFilters}
+                aria-controls="home-more-filters"
+                className="text-sm font-medium text-gray-500 hover:text-primary inline-flex items-center gap-1.5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-petrol rounded"
+              >
+                <span>Weitere Filter{secondaryFilterCount > 0 ? ` (${secondaryFilterCount})` : ''}</span>
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${showMoreFilters ? 'rotate-180' : ''}`} aria-hidden="true" />
+              </button>
               <button
                 type="submit"
-                className="w-full sm:w-auto px-10 py-3.5 bg-primary hover:bg-orange-600 text-white font-label-md text-base font-semibold rounded-lg shadow-sm transition-colors flex items-center justify-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-petrol focus-visible:ring-offset-2"
+                className="w-full sm:w-auto px-10 py-3 bg-primary hover:bg-orange-600 text-white font-label-md text-base font-semibold rounded-lg shadow-sm transition-colors flex items-center justify-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-petrol focus-visible:ring-offset-2"
               >
                 <span>{HOME_SEARCH_BTN_LABEL[lang] || HOME_SEARCH_BTN_LABEL.de}</span>
                 <ArrowRight className="w-4 h-4" aria-hidden="true" />

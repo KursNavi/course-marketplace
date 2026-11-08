@@ -65,6 +65,14 @@ const OTHER_SEGMENTS = [
     { key: 'kinder_jugend', label: 'Kinder & Jugend' },
 ];
 
+// Sehr kurze, einzeilige Kurzbeschreibung fuer die kompakten Bereichs-Karten in der
+// Suchuebersicht-Sidebar (bewusst kuerzer als die Home-Card-Saetze in constants.js).
+const SEGMENT_SHORT_DESC = {
+    beruflich: 'Weiterbildung & Karriere',
+    privat_hobby: 'Hobby & Freizeit',
+    kinder_jugend: 'Kurse & Camps für Kinder',
+};
+
 // ---------------------------------------------------------------------------
 
 const SearchPageView = ({
@@ -842,36 +850,39 @@ const SearchPageView = ({
                                 Zeigt entweder die drei gleichwertigen Bereiche (kein searchType) oder den
                                 aktuellen Kategoriepfad mit klickbarer naechster Ebene und einer "Alle Kurse in
                                 diesem Bereich anzeigen"-Aktion auf jeder Ebene (nicht erst auf der untersten). */}
-                            <div className="bg-petrol rounded-xl p-4 lg:p-5">
-                                <div className="mb-3">
+                            <div className="bg-petrol rounded-xl p-3.5 lg:p-4">
+                                <div className="mb-2.5">
                                     <SectionMarker dark>Bereiche entdecken</SectionMarker>
                                 </div>
 
                                 {!searchType ? (
                                     <>
-                                        <div className="grid grid-cols-1 gap-2" data-testid="browse-segment-picker">
+                                        <div className="grid grid-cols-1 gap-1.5" data-testid="browse-segment-picker">
                                             {['beruflich', 'privat_hobby', 'kinder_jugend'].map(segKey => {
                                                 const visuals = SEGMENT_VISUALS[segKey];
                                                 const Icon = visuals.icon;
-                                                const label = segKey === 'beruflich' ? (t.nav_professional || 'Beruflich') : segKey === 'privat_hobby' ? (t.nav_private || 'Privat & Hobby') : (t.nav_kids || 'Kinder & Jugend');
-                                                const desc = segKey === 'beruflich' ? t.home_card_prof_sub : segKey === 'privat_hobby' ? t.home_card_priv_sub : t.home_card_kids_sub;
+                                                const label = segKey === 'beruflich' ? (t.nav_professional || 'Beruf & Karriere') : segKey === 'privat_hobby' ? (t.nav_private || 'Privat & Hobby') : (t.nav_kids || 'Kinder & Jugend');
+                                                // Bewusst eine sehr kurze, einzeilige Kurzbeschreibung statt der
+                                                // laengeren Home-Card-Saetze — die Karten hier sollen kompakter
+                                                // sein als die emotionalen Bildkarten auf der Startseite.
+                                                const shortDesc = SEGMENT_SHORT_DESC[segKey];
                                                 return (
                                                     <button
                                                         key={segKey}
                                                         type="button"
                                                         data-testid={`browse-segment-${segKey}`}
                                                         onClick={() => selectSegmentBrowse(segKey)}
-                                                        className={`group flex items-center gap-3 rounded-lg border-l-[3px] ${SEG_BORDER_60[segKey]} bg-white/5 hover:bg-white/10 pl-4 pr-3.5 py-3.5 transition-colors text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-white`}
+                                                        className={`group flex items-center gap-2.5 rounded-lg border-l-[3px] ${SEG_BORDER_60[segKey]} bg-white/5 hover:bg-white/10 pl-3.5 pr-3 py-2.5 transition-colors text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-white`}
                                                     >
-                                                        <span className="w-9 h-9 rounded-full flex items-center justify-center bg-beige shrink-0">
-                                                            <Icon className="w-4 h-4" />
+                                                        <span className="w-8 h-8 rounded-full flex items-center justify-center bg-beige shrink-0">
+                                                            <Icon className="w-3.5 h-3.5" />
                                                         </span>
                                                         <span className="flex-1 min-w-0">
                                                             <span className="flex items-center gap-2">
                                                                 <span className={`w-1.5 h-1.5 rounded-full ${visuals.bg}`} aria-hidden="true"></span>
                                                                 <span className="text-sm font-bold text-beige group-hover:text-white break-words transition-colors">{label}</span>
                                                             </span>
-                                                            {desc && <span className="block text-xs text-white/60 mt-0.5 min-h-[2rem]">{desc}</span>}
+                                                            {shortDesc && <span className="block text-xs text-white/60 mt-0.5 truncate">{shortDesc}</span>}
                                                         </span>
                                                         <ChevronRight className="w-4 h-4 text-white/40 group-hover:text-white group-hover:translate-x-0.5 transition-all shrink-0" aria-hidden="true" />
                                                     </button>
