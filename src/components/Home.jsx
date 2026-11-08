@@ -272,10 +272,12 @@ export const Home = ({
             onError={(e) => { e.target.style.display = 'none'; }}
           />
           {/* Warmer Off-White-Schleier als ein weich auslaufender Verlauf statt zweier gleich
-              starker Flaechen: links fast deckend (Lesbarkeit von Ueberschrift und Suchkarte),
-              rechts sichtbar schwaecher, damit das Foto dort erkennbarer und kontrastreicher
-              durchscheint. */}
-          <div className="absolute inset-0 bg-gradient-to-r from-beige via-beige/80 to-beige/25"></div>
+              starker Flaechen: links deckend (Lesbarkeit von Ueberschrift und Suchkarte), rechts
+              sichtbar schwaecher, damit das Foto dort erkennbarer und kontrastreicher durchscheint.
+              Auf Mobile bleibt der Schleier insgesamt kraeftiger (to-beige/60 statt /15) — dort
+              liegt der Textblock ueber die volle Breite, waehrend er auf groesseren Screens nur
+              die linke Haelfte einnimmt und rechts mehr Foto frei bleibt. */}
+          <div className="absolute inset-0 bg-gradient-to-r from-beige via-beige/80 to-beige/60 md:to-beige/15"></div>
         </div>
 
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-16 relative z-10">
@@ -292,10 +294,13 @@ export const Home = ({
             </p>
           </div>
 
-          {/* Zentrale, helle Suchkarte — die wichtigste Aktion der Startseite. Nutzt dieselbe
-              Suchlogik/URL-Parameter wie die Suchuebersicht (siehe handleSearch oben): kein
-              Bereich wird hier vorausgewaehlt, die Suche laeuft ueber alle drei Bereiche. */}
-          <form onSubmit={handleSearch} className="relative max-w-2xl rounded-2xl border border-grey bg-white/95 shadow-lg shadow-black/5 backdrop-blur-sm p-5 sm:p-6 lg:p-7">
+          {/* Zentrale, helle Suchkarte — die wichtigste Aktion der Startseite. Bewusst unabhaengig
+              von der linksbuendigen Ueberschriften-Spalte: mx-auto zentriert sie im gesamten
+              Hero-Bereich, nicht nur innerhalb der Ueberschriften-Breite. max-w-3xl (~768px) haelt
+              sie auf grossen Screens kompakt statt ueberbreit. Nutzt dieselbe Suchlogik/URL-
+              Parameter wie die Suchuebersicht (siehe handleSearch oben): kein Bereich wird hier
+              vorausgewaehlt, die Suche laeuft ueber alle drei Bereiche. */}
+          <form onSubmit={handleSearch} className="relative max-w-3xl mx-auto rounded-2xl border border-grey bg-white/95 shadow-lg shadow-black/5 backdrop-blur-sm p-5 sm:p-6">
             <label htmlFor="home-search-input" className="block text-sm font-semibold text-dark mb-2">
               {t.search_placeholder}
             </label>
@@ -307,11 +312,11 @@ export const Home = ({
                 placeholder={HOME_SEARCH_EXAMPLES[lang] || HOME_SEARCH_EXAMPLES.de}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-12 pr-4 py-3.5 bg-white border border-grey rounded-lg text-lg text-dark placeholder:text-gray-400 placeholder:text-base focus:outline-none focus:border-petrol focus:ring-1 focus:ring-petrol transition-colors"
+                className="w-full pl-12 pr-4 py-3 bg-white border border-grey rounded-lg text-lg text-dark placeholder:text-gray-400 placeholder:text-base focus:outline-none focus:border-petrol focus:ring-1 focus:ring-petrol transition-colors"
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mt-3">
               <div>
                 <label className="block text-sm font-medium text-gray-600 mb-1.5">{t.filter_label_loc || 'Ort oder Online'}</label>
                 <div className="bg-white rounded border border-grey">
@@ -401,7 +406,7 @@ export const Home = ({
             {/* Abschlusszeile: "Weitere Filter" und "Kurse finden" gehoeren sichtbar zusammen,
                 direkt unter der Ort/Kursformat-Zeile statt mit grossem Leerraum dazwischen.
                 Auf Mobile bleibt der Button ueber die volle Breite gut erreichbar. */}
-            <div className="mt-3 pt-3 border-t border-grey flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="mt-2.5 pt-2.5 border-t border-grey flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <button
                 type="button"
                 onClick={() => setShowMoreFilters(v => !v)}
