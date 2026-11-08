@@ -39,9 +39,18 @@ function useFixedMenuPosition(triggerRef, panelRef, isOpen, onRequestClose) {
             if (panelWidth && left + panelWidth + margin > vw) {
                 left = Math.max(margin, vw - panelWidth - margin);
             }
+            // Oeffnet das Panel nach oben nie ueber den eigentlichen Seiten-Header hinaus (sticky,
+            // z-50) — sonst legt sich das Panel (z-9999) sichtbar ueber Logo/Navigation. Dafuer
+            // wird die tatsaechliche Header-Hoehe gemessen statt eine feste Pixelzahl anzunehmen.
+            const headerEl = document.querySelector('nav[aria-label="Hauptnavigation"]');
+            const headerBottom = headerEl ? headerEl.getBoundingClientRect().bottom : 0;
+            const topBoundary = Math.max(margin, headerBottom + margin);
             const spaceBelow = vh - r.bottom - margin;
-            const spaceAbove = r.top - margin;
-            const openUp = spaceBelow < 220 && spaceAbove > spaceBelow;
+            const spaceAbove = r.top - topBoundary;
+            // Zusaetzlich zur reinen Platzfrage: nur nach oben oeffnen, wenn dort wirklich
+            // sinnvoll viel Platz frei bleibt — sonst lieber nach unten oeffnen (notfalls mit
+            // weniger Komfort), statt ein zu kleines Panel ueber den Header zu quetschen.
+            const openUp = spaceBelow < 220 && spaceAbove > spaceBelow && spaceAbove >= 120;
             const maxHeight = Math.max(160, Math.floor(openUp ? spaceAbove : spaceBelow));
             setPos(openUp
                 ? { bottom: vh - r.top + 6, left, maxHeight }

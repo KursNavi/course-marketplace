@@ -34,6 +34,14 @@ const URL_TO_DB_TYPE = {
     'kinder': 'kinder'
 };
 
+// Inverse von URL_TO_DB_TYPE: DB-Typ eines Kurses -> Segment-Key fuer SEGMENT_VISUALS
+// (dezente linke Bereichslinie auf Ergebnis-Karten + Legende bei gemischten Treffern).
+const DB_TYPE_TO_SEGMENT = {
+    professionell: 'beruflich',
+    privat: 'privat_hobby',
+    kinder: 'kinder_jugend',
+};
+
 // ---------------------------------------------------------------------------
 // Segment context metadata (used by the auto-type hint bar)
 // ---------------------------------------------------------------------------
@@ -52,10 +60,18 @@ const CANONICAL_SEGMENT = {
     kinder_jugend: 'kinder_jugend', kinder: 'kinder_jugend',
 };
 const OTHER_SEGMENTS = [
-    { key: 'beruflich',    label: 'Beruflich' },
+    { key: 'beruflich',    label: 'Beruf & Karriere' },
     { key: 'privat_hobby', label: 'Privat & Hobby' },
     { key: 'kinder_jugend', label: 'Kinder & Jugend' },
 ];
+
+// Sehr kurze, einzeilige Kurzbeschreibung fuer die kompakten Bereichs-Karten in der
+// Suchuebersicht-Sidebar (bewusst kuerzer als die Home-Card-Saetze in constants.js).
+const SEGMENT_SHORT_DESC = {
+    beruflich: 'Kurse & Weiterbildung',
+    privat_hobby: 'Hobby & Freizeit',
+    kinder_jugend: 'Kurse & Camps',
+};
 
 // ---------------------------------------------------------------------------
 
@@ -626,6 +642,19 @@ const SearchPageView = ({
         });
     }, [filteredCourses, filterDateFrom, filterDateTo, sortSeed, searchQuery]);
 
+    // Welche Bereiche stecken tatsaechlich in der aktuellen Trefferliste? Treibt die kleine
+    // Legende oberhalb der Ergebnisse: nur bei echt gemischten Bereichen sichtbar, und nie bei
+    // einer bereits aktiv ausgewaehlten Einzelkategorie (dort ist searchType gesetzt).
+    const mixedSegmentKeys = useMemo(() => {
+        const keys = new Set();
+        sortedCourses.forEach(c => {
+            const segKey = DB_TYPE_TO_SEGMENT[c?.category_type];
+            if (segKey) keys.add(segKey);
+        });
+        return [...keys];
+    }, [sortedCourses]);
+    const showSegmentLegend = !searchType && mixedSegmentKeys.length > 1;
+
     // Get segment config for banner
     const getActiveSegmentConfig = () => {
         if (!searchType) return null;
@@ -656,7 +685,7 @@ const SearchPageView = ({
         (searchType === 'beruflich' || searchType === 'professionell') ? 'Beruf, Fachgebiet oder Abschluss suchen …' :
         (searchType === 'privat_hobby' || searchType === 'privat')     ? 'Hobby, Thema oder Kurs suchen …' :
         (searchType === 'kinder_jugend' || searchType === 'kinder')    ? 'Kurs, Camp oder Aktivität suchen …' :
-        (t.search_refine || 'Suchbegriff eingeben …');
+        'Nach Kurs, Thema oder Abschluss suchen …';
 
     return (
         <div className="min-h-screen bg-beige">
@@ -821,39 +850,39 @@ const SearchPageView = ({
                                 Zeigt entweder die drei gleichwertigen Bereiche (kein searchType) oder den
                                 aktuellen Kategoriepfad mit klickbarer naechster Ebene und einer "Alle Kurse in
                                 diesem Bereich anzeigen"-Aktion auf jeder Ebene (nicht erst auf der untersten). */}
-                            <div className="bg-petrol rounded-xl p-4 lg:p-5">
-                                <div className="mb-3">
+                            <div className="bg-petrol rounded-xl p-3 lg:p-3.5">
+                                <div className="mb-2">
                                     <SectionMarker dark>Bereiche entdecken</SectionMarker>
                                 </div>
 
                                 {!searchType ? (
                                     <>
-                                        <p className="text-sm text-white/70 mb-3">
-                                            Stöbere durch die Bildungsbereiche und öffne danach die passende Kategorie.
-                                        </p>
-                                        <div className="grid grid-cols-1 gap-2" data-testid="browse-segment-picker">
+                                        <div className="grid grid-cols-1 gap-1" data-testid="browse-segment-picker">
                                             {['beruflich', 'privat_hobby', 'kinder_jugend'].map(segKey => {
                                                 const visuals = SEGMENT_VISUALS[segKey];
                                                 const Icon = visuals.icon;
-                                                const label = segKey === 'beruflich' ? (t.nav_professional || 'Beruflich') : segKey === 'privat_hobby' ? (t.nav_private || 'Privat & Hobby') : (t.nav_kids || 'Kinder & Jugend');
-                                                const desc = segKey === 'beruflich' ? t.home_card_prof_sub : segKey === 'privat_hobby' ? t.home_card_priv_sub : t.home_card_kids_sub;
+                                                const label = segKey === 'beruflich' ? (t.nav_professional || 'Beruf & Karriere') : segKey === 'privat_hobby' ? (t.nav_private || 'Privat & Hobby') : (t.nav_kids || 'Kinder & Jugend');
+                                                // Bewusst eine sehr kurze, einzeilige Kurzbeschreibung statt der
+                                                // laengeren Home-Card-Saetze — die Karten hier sollen kompakter
+                                                // sein als die emotionalen Bildkarten auf der Startseite.
+                                                const shortDesc = SEGMENT_SHORT_DESC[segKey];
                                                 return (
                                                     <button
                                                         key={segKey}
                                                         type="button"
                                                         data-testid={`browse-segment-${segKey}`}
                                                         onClick={() => selectSegmentBrowse(segKey)}
-                                                        className={`group flex items-center gap-3 rounded-lg border-l-[3px] ${SEG_BORDER_60[segKey]} bg-white/5 hover:bg-white/10 pl-4 pr-3.5 py-3.5 transition-colors text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-white`}
+                                                        className={`group flex items-center gap-2 rounded-lg border-l-[3px] ${SEG_BORDER_60[segKey]} bg-white/5 hover:bg-white/10 pl-3 pr-2.5 py-2 transition-colors text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-white`}
                                                     >
-                                                        <span className="w-9 h-9 rounded-full flex items-center justify-center bg-beige shrink-0">
-                                                            <Icon className="w-4 h-4" />
+                                                        <span className="w-7 h-7 rounded-full flex items-center justify-center bg-beige shrink-0">
+                                                            <Icon className="w-3 h-3" />
                                                         </span>
                                                         <span className="flex-1 min-w-0">
                                                             <span className="flex items-center gap-2">
                                                                 <span className={`w-1.5 h-1.5 rounded-full ${visuals.bg}`} aria-hidden="true"></span>
                                                                 <span className="text-sm font-bold text-beige group-hover:text-white break-words transition-colors">{label}</span>
                                                             </span>
-                                                            {desc && <span className="block text-xs text-white/60 mt-0.5 min-h-[2rem]">{desc}</span>}
+                                                            {shortDesc && <span className="block text-xs text-white/60 mt-0.5 truncate">{shortDesc}</span>}
                                                         </span>
                                                         <ChevronRight className="w-4 h-4 text-white/40 group-hover:text-white group-hover:translate-x-0.5 transition-all shrink-0" aria-hidden="true" />
                                                     </button>
@@ -1029,7 +1058,7 @@ const SearchPageView = ({
                                     <SectionMarker>Gezielt suchen</SectionMarker>
                                 </div>
                                 <p className="text-sm text-gray-600 mb-2">
-                                    Suche direkt nach einem Thema, Kurs oder Abschluss.
+                                    Suche direkt nach Kurs, Thema oder Abschluss.
                                 </p>
                                 <div className="relative">
                                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -1042,7 +1071,7 @@ const SearchPageView = ({
                                     />
                                 </div>
                                 <p className="text-xs text-gray-400 mt-2">
-                                    Lässt sich unten mit Ort, Kursformat und weiteren Filtern kombinieren. Mehrere Begriffe wie <em>Yoga Zürich</em> funktionieren ebenfalls.
+                                    Mehrere Begriffe sind möglich, zum Beispiel <em>Yoga Zürich</em>.
                                 </p>
                             </div>
 
@@ -1063,7 +1092,7 @@ const SearchPageView = ({
                                     </button>
                                 </div>
                                 <p className="text-sm text-gray-600 mb-3">
-                                    Verfeinere deine Auswahl optional mit Ort, Kursformat und weiteren Filtern — unabhängig davon, ob du oben gestöbert oder gesucht hast.
+                                    Ort, Kursformat und weitere Filter.
                                 </p>
 
                                 {/* Ort + Kursformat: prominent und ohne Einklappen erreichbar */}
@@ -1189,6 +1218,22 @@ const SearchPageView = ({
                     </p>
                 </div>
 
+                {/* BEREICHE-LEGENDE — nur bei echt gemischten Treffern (kein Bereich aktiv
+                    ausgewaehlt), dieselben Farben wie die linke Linie auf den Ergebnis-Karten.
+                    Dezent gehalten: kleine Punkte statt grosser Flaechen, wirkt nicht wie ein
+                    zusaetzlicher Filter. */}
+                {showSegmentLegend && (
+                    <div className="mb-4 flex items-center gap-x-4 gap-y-1 flex-wrap text-xs text-gray-500" data-testid="segment-legend">
+                        <span className="font-semibold uppercase tracking-wide text-[11px] text-gray-400">Bereiche</span>
+                        {['beruflich', 'privat_hobby', 'kinder_jugend'].map(segKey => (
+                            <span key={segKey} className="inline-flex items-center gap-1.5">
+                                <span className={`w-2 h-2 rounded-full ${SEGMENT_VISUALS[segKey].bg}`} aria-hidden="true"></span>
+                                {segKey === 'beruflich' ? (t.nav_professional || 'Beruf & Karriere') : segKey === 'privat_hobby' ? (t.nav_private || 'Privat & Hobby') : (t.nav_kids || 'Kinder & Jugend')}
+                            </span>
+                        ))}
+                    </div>
+                )}
+
                 {/* --- STATE D: LOADING --- */}
                 {loading && (
                     <div className="text-center py-20" data-testid="loading-state">
@@ -1275,9 +1320,19 @@ const SearchPageView = ({
                            setSelectedCourse?.(course);
                            setView?.('detail');
                        };
+                       // Dezente Bereichskennzeichnung: schmale linke Linie statt Flaeche/Icon,
+                       // damit die Karte weiss und ruhig bleibt (siehe Legende oberhalb der Liste).
+                       // Als eigene absolut positionierte Leiste statt Border-Utility, damit sie
+                       // nicht mit der bestehenden grauen Kartenumrandung/dem Hover-Zustand
+                       // kollidiert (Tailwind-Border-Farb-Utilities ueberschreiben sich sonst
+                       // gegenseitig auf allen vier Seiten).
+                       const courseSegKey = DB_TYPE_TO_SEGMENT[course.category_type];
 
                        items.push(
                        <article key={course.id} className="relative bg-white rounded-lg border border-gray-100 overflow-hidden hover:shadow-md hover:border-gray-200 transition-all duration-300 group">
+                         {courseSegKey && (
+                           <div className={`absolute inset-y-0 left-0 w-1 ${SEGMENT_VISUALS[courseSegKey].bg}`} aria-hidden="true"></div>
+                         )}
                          <a href={coursePath} onClick={openCourse} className="flex gap-3 p-3 cursor-pointer" style={{textDecoration: 'none', color: 'inherit'}}>
                            <div className="relative w-28 sm:w-40 aspect-video self-start shrink-0 rounded-md overflow-hidden">
                             <img
@@ -1302,7 +1357,14 @@ const SearchPageView = ({
                            </div>
 
                            <div className="flex-1 min-w-0 pr-8 flex flex-col justify-center">
-                            {/* Anbieterzeile: Anbieter + Ort/Umgebung */}
+                            {/* Anbieterzeile: Anbieter + Ort/Umgebung + optional Bereichspunkt.
+                                Der Bereichspunkt erscheint nur, wenn Treffer aus mehreren Bereichen
+                                gemischt angezeigt werden (dieselbe Bedingung wie die Legende oben) —
+                                ist bereits ein Einzelbereich aktiv gewaehlt, ist das an anderer
+                                Stelle (Breadcrumb, Browse-Status) eindeutig sichtbar und eine
+                                Wiederholung auf jeder Karte waere redundant. Die linke Linie bleibt
+                                das Hauptsignal, der Punkt ist nur die zusaetzliche, textbasierte
+                                Bestaetigung fuer alle, die sich nicht allein auf Farbe verlassen. */}
                             <div className="flex items-center gap-2.5 text-xs text-gray-500 mb-1 flex-wrap">
                                 <span className="inline-flex items-center gap-1 min-w-0">
                                     <User className="w-3 h-3 shrink-0" />
@@ -1313,14 +1375,24 @@ const SearchPageView = ({
                                         <MapPin className="w-3 h-3" /> {course.canton}
                                     </span>
                                 )}
+                                {!searchType && courseSegKey && (
+                                    <span className="inline-flex items-center gap-1 shrink-0">
+                                        <span className={`w-1.5 h-1.5 rounded-full ${SEGMENT_VISUALS[courseSegKey].bg}`} aria-hidden="true"></span>
+                                        {courseSegKey === 'beruflich' ? (t.nav_professional || 'Beruf & Karriere') : courseSegKey === 'privat_hobby' ? (t.nav_private || 'Privat & Hobby') : (t.nav_kids || 'Kinder & Jugend')}
+                                    </span>
+                                )}
                             </div>
 
-                            <h3 className="font-bold text-sm sm:text-base text-dark leading-snug line-clamp-2 font-heading">
+                            {/* Kurstitel als wichtigste Information deutlich hervorgehoben; die
+                                Beschreibung bleibt vorhanden, aber bewusst auf eine Zeile begrenzt,
+                                damit sich mehrere Karten schneller ueberfliegen und vergleichen
+                                lassen, ohne lange Textbloecke lesen zu muessen. */}
+                            <h3 className="font-bold text-base sm:text-lg text-dark leading-snug line-clamp-2 font-heading">
                                 {course.title}
                             </h3>
 
                             {course.description && (
-                                <p className="text-xs text-gray-500 line-clamp-1 sm:line-clamp-2 mt-0.5">{course.description}</p>
+                                <p className="text-xs text-gray-500 line-clamp-1 mt-0.5">{course.description}</p>
                             )}
 
                             {/* Kursformat-Badges */}
@@ -1339,7 +1411,10 @@ const SearchPageView = ({
                             })()}
                            </div>
                          </a>
-                         <div className="flex items-center justify-between gap-2 px-3 pb-2.5 -mt-1">
+                         {/* Abschlusszone: Preis klar links, Anfrage-Button klar rechts, durch eine
+                             duenne obere Trennlinie als eigene Zone von Titel/Beschreibung
+                             abgesetzt statt lose im Weissraum zu stehen. */}
+                         <div className="flex items-center justify-between gap-2 px-3 py-2 border-t border-gray-100">
                              {/* Preis */}
                              <span className="font-heading font-bold text-primary text-sm leading-tight break-words">
                                  {getPriceLabel(course)}

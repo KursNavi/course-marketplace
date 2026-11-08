@@ -1,15 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Search, ArrowRight, ChevronRight, ChevronLeft, ChevronDown, CreditCard, Shield } from 'lucide-react';
-import { LocationDropdown, DeliveryTypeFilter, LanguageDropdown, SaeulenFilter, KursartFilter } from './Filters';
-import { SEGMENT_CONFIG, CATEGORY_TYPES, COURSE_LEVELS, PRIVAT_KURSARTEN, KINDER_KURSARTEN } from '../lib/constants';
-import { PRIVAT_KURSART_ICONS, KINDER_KURSART_ICONS } from '../lib/kursartIcons';
-import { useTaxonomy } from '../hooks/useTaxonomy';
+import { Search, ArrowRight, ChevronDown, CreditCard, Shield } from 'lucide-react';
+import { LocationDropdown, DeliveryTypeFilter, LanguageDropdown } from './Filters';
+import { SEGMENT_CONFIG, COURSE_LEVELS } from '../lib/constants';
 import { BASE_URL } from '../lib/siteConfig';
 import { RATGEBER_STRUCTURE } from '../lib/ratgeberStructure';
 import { getBereicheForSegment, getBereichUrl } from '../lib/bereichLandingConfig';
 import { NewsletterSignup } from './Layout';
 import { CareerIcon, PrivateHobbyIcon, ChildrenYouthIcon } from '../lib/segmentIcons';
-import { SEGMENT_VISUALS, SEG_SHOW_ALL_STYLES, SEG_BORDER_30 } from '../lib/segmentVisuals';
+import { SEGMENT_VISUALS, SEG_BORDER_30 } from '../lib/segmentVisuals';
 import { SectionMarker } from './SectionMarker';
 
 // Nur fuer die Startseiten-Suchbox: bewusst berufsnahe Beispiele statt Freizeit-/Kinder-
@@ -41,203 +39,24 @@ export const Home = ({
   isLoading = false
 }) => {
 
-  // Load taxonomy from DB (with fallback to constants.js)
-  const { areas, getTypeLabel: dbGetTypeLabel, getAreaLabel: dbGetAreaLabel } = useTaxonomy();
-
-  // --- KATEGORIEN-BROWSING STATE ("Durchsuche alle Bildungsthemen") ---
-  // null = noch nichts ausgewaehlt -> zeigt nur die 3 Einstiege, keine lange Liste.
-  const [activeType, setActiveType] = useState(null);           // Ebene 1 Auswahl
-  const [activeArea, setActiveArea] = useState(null);           // Ebene 2 Auswahl
-  const [activeSpecialty, setActiveSpecialty] = useState(null); // Ebene 3 Auswahl
-
-  // Map frontend type keys to DB type slugs (same as SearchPageView)
-  const TYPE_TO_DB = {
-    beruflich: 'professionell', privat_hobby: 'privat', kinder_jugend: 'kinder',
-    professionell: 'professionell', privat: 'privat', kinder: 'kinder'
-  };
-
-  // Ebene 2: welche Bereiche hat ein Typ, mit Kursen dahinter?
-  const getAreasFor = (typeKey) => {
-    if (!courses || courses.length === 0 || areas.length === 0 || !typeKey) return [];
-    const dbType = TYPE_TO_DB[typeKey] || typeKey;
-    const areaSlugs = new Set();
-    courses.forEach(c => {
-      (c.all_categories || []).forEach(cat => {
-        if (cat.category_type === dbType && cat.category_area) {
-          areaSlugs.add(cat.category_area);
-        }
-      });
-    });
-    // Return only DB-known area slugs, sorted alphabetically by label
-    return areas
-      .filter(a => areaSlugs.has(a.slug))
-      .sort((a, b) => (a.label_de || '').localeCompare(b.label_de || '', 'de'))
-      .map(a => a.slug);
-  };
-
-  // Ebene 3: welche Spezialgebiete hat ein Bereich, mit Kursen dahinter?
-  const getSpecialtiesFor = (typeKey, areaSlug) => {
-    if (!courses || courses.length === 0 || !areaSlug) return [];
-    const dbType = TYPE_TO_DB[typeKey] || typeKey;
-    const specs = new Map();
-    courses.forEach(c => {
-      (c.all_categories || []).forEach(cat => {
-        if (cat.category_type === dbType && cat.category_area === areaSlug && (cat.category_specialty || cat.category_specialty_label)) {
-          const label = cat.category_specialty_label || cat.category_specialty;
-          if (!specs.has(label)) {
-            specs.set(label, { label, slug: cat.category_specialty, hasFocuses: !!cat.category_focus });
-          } else if (cat.category_focus) {
-            specs.get(label).hasFocuses = true;
-          }
-        }
-      });
-    });
-    return [...specs.values()].sort((a, b) => a.label.localeCompare(b.label, 'de'));
-  };
-
-  // Ebene 4: welche Schwerpunkte hat ein Spezialgebiet, mit Kursen dahinter?
-  const getFocusesFor = (typeKey, areaSlug, specialtyLabel) => {
-    if (!courses || courses.length === 0 || !areaSlug || !specialtyLabel) return [];
-    const dbType = TYPE_TO_DB[typeKey] || typeKey;
-    const focuses = new Set();
-    courses.forEach(c => {
-      (c.all_categories || []).forEach(cat => {
-        if (cat.category_type === dbType && cat.category_area === areaSlug &&
-            (cat.category_specialty_label === specialtyLabel || cat.category_specialty === specialtyLabel) &&
-            cat.category_focus) {
-          focuses.add(cat.category_focus_label || cat.category_focus);
-        }
-      });
-    });
-    return [...focuses].sort((a, b) => a.localeCompare(b, 'de'));
-  };
-
-  const visibleAreas = getAreasFor(activeType);
-  const visibleSpecialties = getSpecialtiesFor(activeType, activeArea);
-  const visibleFocuses = getFocusesFor(activeType, activeArea, activeSpecialty);
-
-  // Helper fuer Labels - nutzt DB-Taxonomie zuerst, dann Fallback auf constants.js
-  const getTypeLabel = (key) => {
-    const dbLabel = dbGetTypeLabel(key, lang);
-    if (dbLabel && dbLabel !== key) return dbLabel;
-    return CATEGORY_TYPES[key]?.[lang] || CATEGORY_TYPES[key]?.de || key;
-  };
-
-  const getAreaLabel = (type, areaKey) => {
-    let areaBySlug = areas.find(a => a.slug === areaKey);
-    if (!areaBySlug) {
-      areaBySlug = areas.find(a => a.slug.startsWith(areaKey) || areaKey.startsWith(a.slug));
-    }
-    if (areaBySlug) {
-      return areaBySlug[`label_${lang}`] || areaBySlug.label_de || areaKey;
-    }
-    const dbLabel = dbGetAreaLabel(type, areaKey, lang);
-    if (dbLabel && dbLabel !== areaKey) return dbLabel;
-    return areaKey;
-  };
-
-  // Label der aktuell tiefsten gewaehlten Browsing-Ebene, fuer den Satz "Du stoeberst in X."
-  const currentBrowseLabel = activeSpecialty || (activeArea ? getAreaLabel(activeType, activeArea) : (activeType ? getTypeLabel(activeType) : null));
-
-  // --- FREITEXTSUCHE: Zieltyp wird aus dem Suchbegriff geraten. ---
-  // Keyword-based auto-detection (Option B: no DB query)
-  const guessTypeFromQuery = (q) => {
-    const lower = q.toLowerCase();
-    const kinderKeywords = ['kinder', 'jugend', 'camp', 'feriencamp', 'geburtstag', 'kid', 'schüler'];
-    const beruflichKeywords = ['excel', 'zertifikat', 'zertifizierung', 'ausbildung', 'diplom',
-      'fachausweis', 'mba', 'cas', 'das', 'eidg', 'fachkraft', 'weiterbildung',
-      'berufs', 'karriere', 'lehrgang', 'seminar', 'brevet'];
-    if (kinderKeywords.some(kw => lower.includes(kw))) return 'kinder_jugend';
-    if (beruflichKeywords.some(kw => lower.includes(kw))) return 'beruflich';
-    return 'privat_hobby';
-  };
-
   // --- ACTIONS ---
 
+  // Freitextsuche im Hero: kein Bereich wird hier vorausgewaehlt, daher laeuft die Suche
+  // bewusst ueber alle drei Bereiche (Beruf & Karriere / Privat & Hobby / Kinder & Jugend) —
+  // kein Keyword-Raten mehr, das z.B. "Yoga" fest einem einzigen Bereich zuordnen wuerde.
+  // Die Suchuebersicht (SearchPageView/App.jsx) nutzt exakt dieselbe URL-Parameter-Konvention,
+  // nur ohne "type", solange keiner gesetzt ist.
   const handleSearch = (e) => {
     e.preventDefault();
     const params = new URLSearchParams();
     if (searchQuery) params.set('q', searchQuery);
     if (selectedLocations?.length) params.set('loc', selectedLocations.join(','));
     if (selectedDeliveryTypes?.length) params.set('delivery', selectedDeliveryTypes.join(','));
-
-    if (activeType) {
-      // Nutzer hat im "Bereiche entdecken"-Pfad zusaetzlich einen Bereich gewaehlt, bevor
-      // "Kurse finden" gedrueckt wurde — Bereich und Suchtext sind kombinierbar, aber keines
-      // ist Pflicht. Der gewaehlte Bereich hat Vorrang vor der Text-Vermutung unten; ein
-      // eingegebener Suchtext bleibt als zusaetzlicher Filter (q) erhalten.
-      setSearchType(activeType);
-      setSearchArea(activeArea || "");
-      setSearchSpecialty(activeSpecialty || "");
-      setSearchFocus("");
-      params.set('type', activeType);
-      if (activeArea) params.set('area', activeArea);
-      if (activeSpecialty) params.set('spec', activeSpecialty);
-    } else {
-      // Kein Bereich gewaehlt: Zieltyp wird wie bisher aus dem Suchtext geraten.
-      const guessedType = searchQuery ? guessTypeFromQuery(searchQuery) : 'privat_hobby';
-      params.set('type', guessedType);
-      params.set('autoType', '1');
-    }
-
     window.history.pushState({ view: 'search' }, '', '/search?' + params.toString());
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Navigiert direkt zu einem Bereich (Beruflich/Privat & Hobby/Kinder & Jugend), z.B. von den
-  // drei gleichwertigen Bereichs-Links im Hero. Gemeinsame Filter (Ort, Kursformat, Sprache,
-  // Verifiziert, Direktbuchung) werden NICHT hier in die URL geschrieben: App.jsx synchronisiert
-  // sie automatisch in die URL, sobald `view` auf 'search' wechselt (siehe App.jsx, useEffect ueber
-  // searchType/.../filterDirectBooking). Dadurch gelten dieselben Filter unabhaengig vom Einstieg.
-  const handleCategorySelect = (typeKey, areaKey, specialtyKey, focusKey) => {
-    setSearchType(typeKey);
-    setSearchArea(areaKey || "");
-    setSearchSpecialty(specialtyKey || "");
-    setSearchFocus(focusKey || "");
-
-    setCatMenuOpen(false);
-    const params = new URLSearchParams();
-    if (typeKey) params.set('type', typeKey);
-    if (areaKey) params.set('area', areaKey);
-    if (specialtyKey) params.set('spec', specialtyKey);
-    if (focusKey) params.set('focus', focusKey);
-    const qs = params.toString();
-    window.history.pushState({ view: 'search' }, '', '/search' + (qs ? '?' + qs : ''));
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  // --- Klick-Handler fuer "Durchsuche alle Bildungsthemen" ---
-  // Jede Ebene zeigt zusaetzlich zu den Unterkategorien eine "Alle Kurse in X"-Option, damit
-  // man nicht erst bis zum Ende durchklicken muss, um zu einer gefilterten Suche zu kommen.
-  const selectType = (typeKey) => {
-    setActiveType(typeKey);
-    setActiveArea(null);
-    setActiveSpecialty(null);
-  };
-
-  const selectArea = (areaSlug) => {
-    setActiveArea(areaSlug);
-    setActiveSpecialty(null);
-  };
-
-  const selectSpecialty = (specialtyLabel) => {
-    setActiveSpecialty(specialtyLabel);
-  };
-
-  const selectFocus = (focusLabel) => handleCategorySelect(activeType, activeArea, activeSpecialty, focusLabel);
-
-  const showAllInType = () => handleCategorySelect(activeType, null, null, null);
-  const showAllInArea = () => handleCategorySelect(activeType, activeArea, null, null);
-  const showAllInSpecialty = () => handleCategorySelect(activeType, activeArea, activeSpecialty, null);
-
-  const resetToAllCategories = () => {
-    setActiveType(null);
-    setActiveArea(null);
-    setActiveSpecialty(null);
-  };
-
-  // --- GEMEINSAME FILTER (gelten fuer Bereichs-Links UND Freitextsuche, siehe Kommentar bei
-  // handleCategorySelect: App.jsx synchronisiert diesen Zustand automatisch in die Such-URL) ---
+  // --- GEMEINSAME FILTER (gelten fuer die Freitextsuche im Hero) ---
   const [showMoreFilters, setShowMoreFilters] = useState(false);
   const [priceError, setPriceError] = useState(false);
 
@@ -250,11 +69,6 @@ export const Home = ({
     Boolean(filterDateFrom), Boolean(filterDateTo), Boolean(filterPriceMax),
     Boolean(filterLevel && filterLevel !== 'All'),
   ].filter(Boolean).length;
-
-  // Akzentfarbe des aktuell gewaehlten Bereichs fuer die "Alle Kurse in X anzeigen"-Buttons
-  // im Kategorie-Browser (Blau/Orange/Gruen statt immer Orange) — faellt auf Orange zurueck,
-  // solange noch kein Bereich gewaehlt ist.
-  const segShowAll = SEG_SHOW_ALL_STYLES[activeType] || SEG_SHOW_ALL_STYLES.privat_hobby;
 
   // SEO Meta Tags for Home Page
   useEffect(() => {
@@ -444,15 +258,12 @@ export const Home = ({
       )}
 
 
-      {/* 1. HERO SECTION — Ueberschrift ueber volle Breite, darunter zwei gleichwertige
-          Einstiege: links Browsing durch die Kategorien, rechts die Textsuche. Darunter ein
-          gemeinsamer Filterblock, der fuer beide Einstiege gilt. Kein Kompass-/Weggabelungs-
-          Symbol, keine Nummerierung — die drei Bereiche sind gleichwertig. */}
-      <section className="relative w-full bg-[#14313B] text-white">
-        {/* Hintergrund-Ebene: Foto + Petrol-Verlauf + dezente Lichtflaechen. Bewusst in einem
-            eigenen "overflow-hidden"-Wrapper statt auf der Section selbst — sonst wuerden die
-            Ort-/Kursformat-Dropdowns im Filterbereich weiter unten am Section-Rand abgeschnitten,
-            sobald ihr aufklappendes Menue ueber die Section-Kante hinausragt. */}
+      {/* 1. HERO SECTION — hell und freundlich: ein Foto im Hintergrund, darueber ein warmer,
+          halbtransparenter Off-White-Schleier (links staerker, damit die Ueberschrift sicher
+          lesbar ist). Dunkler Text statt weisser Schrift. Die zentrale Aktion ist die Textsuche;
+          die Bereichsauswahl lebt ausschliesslich weiter unten bei "Wähle deinen Weg" — hier im
+          Hero gibt es bewusst keine zweite, parallele Bereichsauswahl mehr. */}
+      <section className="relative w-full">
         <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
           <img
             src={SEGMENT_CONFIG.beruflich.heroBg}
@@ -460,248 +271,56 @@ export const Home = ({
             className="absolute inset-0 w-full h-full object-cover"
             onError={(e) => { e.target.style.display = 'none'; }}
           />
-          {/* Durchgehend dunkle, halbtransparente Petrol-Flaeche ueber dem Foto (wie eine dunkle
-              transparente Rechteck-Ebene in einer Praesentation) — das Foto bleibt als Atmosphaere
-              erkennbar, aber der weisse Text ist ueberall zuverlaessig lesbar. Vorherige Version
-              liess in der Bildmitte zu viel Helligkeit durch (dort sass u.a. die Ueberschrift). */}
-          <div className="absolute inset-0 bg-petrolDark/80"></div>
-          <div className="absolute -top-32 right-1/4 w-[550px] h-[550px] bg-segBeruflich/10 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-primary/[0.06] rounded-full blur-3xl"></div>
+          {/* Warmer Off-White-Schleier, asymmetrisch statt gleichmaessig ueber die Breite verteilt:
+              links deckend (Lesbarkeit von Ueberschrift und Suchkarte), faellt dann zügiger ab
+              (via-Stop bei ~38% statt 50%), damit auf der rechten Haelfte spuerbar mehr vom Foto
+              sichtbar bleibt statt eines gleichmaessigen Verwaschens ueber die ganze Breite. Auf
+              Mobile bleibt der Schleier insgesamt kraeftiger (to-beige/55 statt /8) — dort liegt
+              der Textblock ueber die volle Breite, waehrend er auf groesseren Screens nur die
+              linke Haelfte einnimmt. */}
+          <div className="absolute inset-0 bg-gradient-to-r from-beige via-beige/75 via-[38%] to-beige/55 md:to-beige/8"></div>
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-10 relative z-10">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-10 relative z-10">
 
-          {/* Abschnittsmarker + Ueberschrift + Intro ueber die gesamte verfuegbare Breite */}
-          <div className="mb-6 md:mb-7">
-            <div className="mb-3">
-              <SectionMarker dark>Dein Bildungswegweiser für die Schweiz</SectionMarker>
-            </div>
-            <h1 className="text-3xl md:text-5xl font-heading font-bold tracking-tight text-beige mb-3 leading-tight">
-              {t.home_headline}
-            </h1>
-            <p className="text-base md:text-lg text-white/80 leading-relaxed">
-              {t.home_subhead}
-            </p>
-          </div>
-
-          {/* Gemeinsames Panel UND gemeinsames Formular: Browsing links und Suche rechts gehoeren
-              sichtbar zusammen, beide sind kombinierbar (Bereich und/oder Suchtext), die Filter
-              darunter gelten fuer beides, und "Kurse finden" am Ende fasst alles zusammen.
-              bg-Deckkraft bewusst hoch (wenig transparent), damit das Hintergrundfoto hier nicht
-              von der Bedienung ablenkt. */}
-          <form onSubmit={handleSearch} className="relative rounded-2xl border border-white/10 bg-[#14313B]/90 backdrop-blur-sm p-5 sm:p-7 lg:p-8">
-          <div className="mb-6 md:mb-7">
-            <h2 className="text-xl md:text-2xl font-heading font-bold text-beige mb-1.5">Wie möchtest du starten?</h2>
-            <p className="text-sm text-white/70 leading-relaxed">
-              Durchstöbere die Bildungsbereiche oder suche direkt nach einem Thema. Verfeinere deine Auswahl anschliessend optional mit Ort, Kursformat und weiteren Filtern.
-            </p>
-          </div>
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
-
-            {/* LINKS (Desktop) / 2. Block (Mobile): mehrstufiger Kategorie-Browser */}
-            <div className="order-2 lg:order-1 lg:col-span-5 flex flex-col">
-              <div className="mb-6">
-                <SectionMarker dark>Bereiche entdecken</SectionMarker>
+          {/* Gemeinsame, zentrierte Content-Spalte: Eyebrow, Ueberschrift, Untertitel und Suchkarte
+              beginnen alle an derselben linken Kante dieser einen Spalte, die als Ganzes (mx-auto)
+              im Hero zentriert ist — bewusst nicht mehr Text links + Suchkarte separat zentriert. */}
+          <div className="max-w-3xl mx-auto">
+            <div className="mb-4">
+              <div className="mb-2">
+                <SectionMarker>Dein Bildungswegweiser für die Schweiz</SectionMarker>
               </div>
-
-              {/* Breadcrumb: erscheint erst, sobald ein Bereich gewaehlt ist — im Ausgangszustand
-                  wuerde "Alle Bereiche" hier nur die Ueberschrift "Bereiche entdecken" wiederholen. */}
-              {activeType && (
-              <nav aria-label="Kategorie-Navigation" className="mb-4">
-                <ol className="flex flex-wrap items-center gap-1.5 text-xs">
-                  <li>
-                    <button type="button" onClick={resetToAllCategories} className="text-white/60 hover:text-white underline-offset-2 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">
-                      Alle Bereiche
-                    </button>
-                  </li>
-                  {activeType && (
-                    <li className="flex items-center gap-1.5">
-                      <ChevronRight className="w-3 h-3 text-white/40" aria-hidden="true" />
-                      {activeArea ? (
-                        <button type="button" onClick={() => selectType(activeType)} className="text-white/60 hover:text-white underline-offset-2 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">
-                          {getTypeLabel(activeType)}
-                        </button>
-                      ) : (
-                        <span aria-current="page" className="text-white font-semibold">{getTypeLabel(activeType)}</span>
-                      )}
-                    </li>
-                  )}
-                  {activeArea && (
-                    <li className="flex items-center gap-1.5">
-                      <ChevronRight className="w-3 h-3 text-white/40" aria-hidden="true" />
-                      {activeSpecialty ? (
-                        <button type="button" onClick={() => selectArea(activeArea)} className="text-white/60 hover:text-white underline-offset-2 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">
-                          {getAreaLabel(activeType, activeArea)}
-                        </button>
-                      ) : (
-                        <span aria-current="page" className="text-white font-semibold">{getAreaLabel(activeType, activeArea)}</span>
-                      )}
-                    </li>
-                  )}
-                  {activeSpecialty && (
-                    <li className="flex items-center gap-1.5">
-                      <ChevronRight className="w-3 h-3 text-white/40" aria-hidden="true" />
-                      <span aria-current="page" className="text-white font-semibold">{activeSpecialty}</span>
-                    </li>
-                  )}
-                </ol>
-              </nav>
-              )}
-
-              {activeType && (
-                <p className="text-xs text-white/55 mb-3 leading-relaxed">
-                  Du stöberst in <span className="font-semibold text-white/80">{currentBrowseLabel}</span>. Wähle ein Unterthema oder zeige direkt alle passenden Kurse.
-                </p>
-              )}
-
-              <div className="space-y-2.5">
-                {/* Ebene 1: die drei gleichwertigen Bereiche — als eigenstaendige Entdeckungs-
-                    Einstiege, nicht als identische Formularzeilen: je ein Icon, ein dezenter
-                    linker Farbakzent, Name, kurze Beschreibung und ein Pfeil. */}
-                {!activeType && [
-                  { key: 'beruflich', icon: CareerIcon, label: t.nav_professional || 'Beruflich', desc: t.home_card_prof_sub, accentBorder: 'border-segBeruflich/60', dot: 'bg-segBeruflich' },
-                  { key: 'privat_hobby', icon: PrivateHobbyIcon, label: t.nav_private || 'Privat & Hobby', desc: t.home_card_priv_sub, accentBorder: 'border-primary/60', dot: 'bg-primary' },
-                  { key: 'kinder_jugend', icon: ChildrenYouthIcon, label: t.nav_kids || 'Kinder & Jugend', desc: t.home_card_kids_sub, accentBorder: 'border-segKinder/60', dot: 'bg-segKinder' },
-                ].map(({ key, icon: Icon, label, desc, accentBorder, dot }) => (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => selectType(key)}
-                    className={`w-full group flex items-center gap-3.5 rounded-lg border-l-[3px] ${accentBorder} bg-white/5 pl-4 pr-3.5 py-3.5 hover:bg-white/10 transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-white`}
-                  >
-                    <span className="w-9 h-9 rounded-full flex items-center justify-center bg-beige shrink-0">
-                      <Icon className="w-4 h-4" />
-                    </span>
-                    <span className="flex-1 min-w-0 text-left">
-                      <span className="flex items-center gap-2">
-                        <span className={`w-1.5 h-1.5 rounded-full ${dot}`} aria-hidden="true"></span>
-                        <span className="text-base font-bold text-beige group-hover:text-white transition-colors">{label}</span>
-                      </span>
-                      <p className="text-xs text-white/60 mt-0.5 leading-snug min-h-[2rem]">{desc}</p>
-                    </span>
-                    <ArrowRight className="w-4 h-4 text-white/40 group-hover:text-white group-hover:translate-x-1 transition-all shrink-0" aria-hidden="true" />
-                  </button>
-                ))}
-
-                {/* Ebene 2: Bereiche innerhalb des gewaehlten Typs, plus "alle anzeigen" in Segmentfarbe */}
-                {activeType && !activeArea && (
-                  <>
-                    <button type="button" onClick={showAllInType} className={`w-full flex items-center justify-between p-3.5 rounded-lg border ${segShowAll.card} transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white`}>
-                      <span className="text-sm font-bold text-beige">Alle Kurse in {getTypeLabel(activeType)} anzeigen</span>
-                      <ArrowRight className={`w-4 h-4 ${segShowAll.arrow} shrink-0`} aria-hidden="true" />
-                    </button>
-                    {visibleAreas.length > 0 && (
-                      <p className="text-xs text-white/50 pt-1 pb-0.5 px-1">Oder weiter stöbern:</p>
-                    )}
-                    {visibleAreas.map(areaSlug => (
-                      <button key={areaSlug} type="button" onClick={() => selectArea(areaSlug)} className="w-full flex items-center justify-between p-3.5 rounded-lg bg-white/5 border border-white/10 hover:border-white/30 hover:bg-white/10 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white">
-                        <span className="text-sm font-medium text-beige">{getAreaLabel(activeType, areaSlug)}</span>
-                        <ChevronRight className="w-4 h-4 text-white/50 shrink-0" aria-hidden="true" />
-                      </button>
-                    ))}
-                    <button type="button" onClick={() => setActiveType(null)} className="inline-flex items-center gap-1 text-xs text-white/50 hover:text-white pt-2 px-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">
-                      <ChevronLeft className="w-3.5 h-3.5" aria-hidden="true" /> Zurück
-                    </button>
-                  </>
-                )}
-
-                {/* Ebene 3: Spezialgebiete innerhalb des gewaehlten Bereichs, plus "alle anzeigen" */}
-                {activeArea && !activeSpecialty && (
-                  <>
-                    <button type="button" onClick={showAllInArea} className={`w-full flex items-center justify-between p-3.5 rounded-lg border ${segShowAll.card} transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white`}>
-                      <span className="text-sm font-bold text-beige">Alle Kurse in {getAreaLabel(activeType, activeArea)} anzeigen</span>
-                      <ArrowRight className={`w-4 h-4 ${segShowAll.arrow} shrink-0`} aria-hidden="true" />
-                    </button>
-                    {visibleSpecialties.length > 0 && (
-                      <p className="text-xs text-white/50 pt-1 pb-0.5 px-1">Oder weiter stöbern:</p>
-                    )}
-                    {visibleSpecialties.map(spec => (
-                      <button key={spec.label} type="button" onClick={() => selectSpecialty(spec.label)} className="w-full flex items-center justify-between p-3.5 rounded-lg bg-white/5 border border-white/10 hover:border-white/30 hover:bg-white/10 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white">
-                        <span className="text-sm font-medium text-beige">{spec.label}</span>
-                        <ChevronRight className="w-4 h-4 text-white/50 shrink-0" aria-hidden="true" />
-                      </button>
-                    ))}
-                    <button type="button" onClick={() => selectType(activeType)} className="inline-flex items-center gap-1 text-xs text-white/50 hover:text-white pt-2 px-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">
-                      <ChevronLeft className="w-3.5 h-3.5" aria-hidden="true" /> Zurück
-                    </button>
-                  </>
-                )}
-
-                {/* Ebene 4: Schwerpunkte innerhalb des gewaehlten Spezialgebiets, plus "alle anzeigen" */}
-                {activeSpecialty && (
-                  <>
-                    <button type="button" onClick={showAllInSpecialty} className={`w-full flex items-center justify-between p-3.5 rounded-lg border ${segShowAll.card} transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white`}>
-                      <span className="text-sm font-bold text-beige">Alle Kurse in {activeSpecialty} anzeigen</span>
-                      <ArrowRight className={`w-4 h-4 ${segShowAll.arrow} shrink-0`} aria-hidden="true" />
-                    </button>
-                    {visibleFocuses.length > 0 && (
-                      <p className="text-xs text-white/50 pt-1 pb-0.5 px-1">Oder weiter stöbern:</p>
-                    )}
-                    {visibleFocuses.map(focus => (
-                      <button key={focus} type="button" onClick={() => selectFocus(focus)} className="w-full flex items-center justify-between p-3.5 rounded-lg bg-white/5 border border-white/10 hover:border-white/30 hover:bg-white/10 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white">
-                        <span className="text-sm font-medium text-beige">{focus}</span>
-                        <ArrowRight className="w-4 h-4 text-white/50 shrink-0" aria-hidden="true" />
-                      </button>
-                    ))}
-                    <button type="button" onClick={() => selectArea(activeArea)} className="inline-flex items-center gap-1 text-xs text-white/50 hover:text-white pt-2 px-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">
-                      <ChevronLeft className="w-3.5 h-3.5" aria-hidden="true" /> Zurück
-                    </button>
-                  </>
-                )}
-              </div>
+              <h1 className="text-3xl md:text-4xl font-heading font-bold tracking-tight text-dark mb-2 leading-tight">
+                {t.home_headline}
+              </h1>
+              <p className="text-base text-gray-600 leading-relaxed">
+                {t.home_subhead}
+              </p>
             </div>
 
-            {/* RECHTS (Desktop) / 1. Block (Mobile): Textsuche. Ueberschrift sitzt wie bei
-                "Bereiche entdecken" auf der Petrol-Flaeche (nicht in der hellen Box), mit
-                demselben Linie-mit-Punkt-Marker, damit beide Einstiege erkennbar auf gleicher
-                Ebene stehen; die helle Box enthaelt nur noch das eigentliche Eingabefeld-Modul. */}
-            <div className="order-1 lg:order-2 lg:col-span-7 w-full flex flex-col">
-              <div className="mb-6">
-                <SectionMarker dark>Gezielt suchen</SectionMarker>
+            {/* Suchkarte — die wichtigste Aktion der Startseite. Nutzt dieselbe Suchlogik/URL-
+                Parameter wie die Suchuebersicht (siehe handleSearch oben): kein Bereich wird hier
+                vorausgewaehlt, die Suche laeuft ueber alle drei Bereiche. */}
+            <form onSubmit={handleSearch} className="relative rounded-2xl border border-grey bg-white/95 shadow-lg shadow-black/5 backdrop-blur-sm p-5 sm:p-6">
+              <label htmlFor="home-search-input" className="block text-sm font-semibold text-dark mb-2">
+                {t.search_placeholder}
+              </label>
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 w-5 h-5 pointer-events-none" aria-hidden="true" />
+                <input
+                  id="home-search-input"
+                  type="text"
+                  placeholder={HOME_SEARCH_EXAMPLES[lang] || HOME_SEARCH_EXAMPLES.de}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-12 pr-4 py-3 bg-white border border-grey rounded-lg text-lg text-dark placeholder:text-gray-400 placeholder:text-base focus:outline-none focus:border-petrol focus:ring-1 focus:ring-petrol transition-colors"
+                />
               </div>
 
-              <div className="bg-beige text-dark rounded-xl p-6 md:p-8 shadow-lg shadow-black/20">
-                <div>
-                  <label htmlFor="home-search-input" className="block text-sm font-medium text-dark mb-2">
-                    {t.search_placeholder}
-                  </label>
-                  <div className="relative">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 w-5 h-5 pointer-events-none" aria-hidden="true" />
-                    <input
-                      id="home-search-input"
-                      type="text"
-                      placeholder={HOME_SEARCH_EXAMPLES[lang] || HOME_SEARCH_EXAMPLES.de}
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full pl-12 pr-4 py-4 bg-white border border-grey rounded-lg text-lg text-dark placeholder:text-gray-400 placeholder:text-base focus:outline-none focus:border-petrol focus:ring-1 focus:ring-petrol transition-colors"
-                    />
-                  </div>
-                  <details className="mt-2">
-                    <summary className="inline-flex min-h-11 cursor-pointer items-center text-xs text-gray-500 underline underline-offset-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-petrol rounded">
-                      {t.search_help_label || 'Such-Tipp'}
-                    </summary>
-                    <p className="pb-1 text-xs text-gray-500">{t.search_hint_boolean || 'Tipp: Kombiniere Begriffe mit AND oder OR (z.B. "Yoga AND Zürich")'}</p>
-                  </details>
-                </div>
-              </div>
-            </div>
-
-          </div>
-
-          {/* GEMEINSAME FILTER — gelten gleichermassen fuer den Kategorie-Browser links und die
-              Textsuche rechts. Bewusst kein zweites schweres Beige-Panel: der Filterbereich
-              bleibt leicht/transparent und damit optisch mit dem Hero verbunden, nur per
-              Trennlinie vom Zwei-Spalten-Bereich abgesetzt. Ort/Kursformat immer sichtbar,
-              Rest hinter "Weitere Filter". */}
-          <div className="mt-8 pt-6 border-t border-white/10">
-            <div className="mb-5">
-              <SectionMarker dark>Verfeinern (optional)</SectionMarker>
-              <p className="text-xs text-white/55 mt-1.5">Verfeinere deine Auswahl – unabhängig davon, wie du gestartet bist.</p>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mt-3">
               <div>
-                <label className="block text-sm font-medium text-white/70 mb-1.5">{t.filter_label_loc || 'Ort'}</label>
+                <label className="block text-sm font-medium text-gray-600 mb-1.5">{t.filter_label_loc || 'Ort oder Online'}</label>
                 <div className="bg-white rounded border border-grey">
                   <LocationDropdown
                     selectedLocations={selectedLocations}
@@ -715,7 +334,7 @@ export const Home = ({
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-white/70 mb-1.5">Kursformat</label>
+                <label className="block text-sm font-medium text-gray-600 mb-1.5">Kursformat</label>
                 <div className="bg-white rounded border border-grey">
                   <DeliveryTypeFilter
                     selectedDeliveryTypes={selectedDeliveryTypes}
@@ -730,37 +349,8 @@ export const Home = ({
               </div>
             </div>
 
-            <div className="pt-3 mt-3">
-              <button
-                type="button"
-                onClick={() => setShowMoreFilters(v => !v)}
-                aria-expanded={showMoreFilters}
-                aria-controls="home-more-filters"
-                className="text-sm font-medium text-white/70 hover:text-primary inline-flex items-center gap-1.5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded"
-              >
-                <span>Weitere Filter{secondaryFilterCount > 0 ? ` (${secondaryFilterCount})` : ''}</span>
-                <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${showMoreFilters ? 'rotate-180' : ''}`} aria-hidden="true" />
-              </button>
-            </div>
-
             {showMoreFilters && (
-              <div id="home-more-filters" className="mt-4 pt-4 border-t border-white/10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {activeType === 'beruflich' && (
-                  <div className="sm:col-span-2 lg:col-span-3">
-                    <SaeulenFilter selectedSaule={selectedSaule} setSelectedSaule={setSelectedSaule} />
-                  </div>
-                )}
-                {activeType === 'privat_hobby' && (
-                  <div className="sm:col-span-2 lg:col-span-3">
-                    <KursartFilter kursarten={PRIVAT_KURSARTEN} icons={PRIVAT_KURSART_ICONS} selectedKursart={selectedKursart} setSelectedKursart={setSelectedKursart} colorScheme="orange" />
-                  </div>
-                )}
-                {activeType === 'kinder_jugend' && (
-                  <div className="sm:col-span-2 lg:col-span-3">
-                    <KursartFilter kursarten={KINDER_KURSARTEN} icons={KINDER_KURSART_ICONS} selectedKursart={selectedKursart} setSelectedKursart={setSelectedKursart} colorScheme="green" />
-                  </div>
-                )}
-
+              <div id="home-more-filters" className="mt-3 pt-3 border-t border-grey grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <label className="flex items-center bg-white px-2.5 py-2 rounded border border-grey cursor-pointer">
                   <span className="text-xs text-gray-500 mr-1.5 whitespace-nowrap">Von</span>
                   <input type="date" value={filterDateFrom} onChange={(e) => setFilterDateFrom(e.target.value)} className="bg-transparent text-xs outline-none text-gray-700 cursor-pointer w-full" />
@@ -814,31 +404,40 @@ export const Home = ({
                 </label>
               </div>
             )}
-          </div>
 
-          {/* Gemeinsame Hauptaktion — steht bewusst ganz am Ende, nach Bereich/Suche UND Filtern,
-              damit eine logische Reihenfolge entsteht: Bereich entdecken oder gezielt suchen,
-              optional verfeinern, dann Kurse finden. Fasst Bereichsauswahl (falls getroffen),
-              Suchtext (falls eingegeben) und alle Filter in einer Aktion zusammen. Abstand bewusst
-              knapp, da ohne die "Aktive Filter"-Zusammenfassung auf der Startseite kein grosser
-              Leerraum vor dem Button mehr noetig ist. */}
-          <div className="mt-4 pt-4 border-t border-white/10 flex justify-center sm:justify-end">
-            <button
-              type="submit"
-              className="w-full sm:w-auto px-10 py-3.5 bg-primary hover:bg-orange-600 text-white font-label-md text-base font-semibold rounded-lg shadow-sm transition-colors flex items-center justify-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#14313B]"
-            >
-              <span>{HOME_SEARCH_BTN_LABEL[lang] || HOME_SEARCH_BTN_LABEL.de}</span>
-              <ArrowRight className="w-4 h-4" aria-hidden="true" />
-            </button>
+            {/* Abschlusszeile: "Weitere Filter" und "Kurse finden" gehoeren sichtbar zusammen,
+                direkt unter der Ort/Kursformat-Zeile statt mit grossem Leerraum dazwischen.
+                Auf Mobile bleibt der Button ueber die volle Breite gut erreichbar. */}
+            <div className="mt-2.5 pt-2.5 border-t border-grey flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <button
+                type="button"
+                onClick={() => setShowMoreFilters(v => !v)}
+                aria-expanded={showMoreFilters}
+                aria-controls="home-more-filters"
+                className="text-sm font-medium text-gray-500 hover:text-primary inline-flex items-center gap-1.5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-petrol rounded"
+              >
+                <span>Weitere Filter{secondaryFilterCount > 0 ? ` (${secondaryFilterCount})` : ''}</span>
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${showMoreFilters ? 'rotate-180' : ''}`} aria-hidden="true" />
+              </button>
+              <button
+                type="submit"
+                className="w-full sm:w-auto px-10 py-3 bg-primary hover:bg-orange-600 text-white font-label-md text-base font-semibold rounded-lg shadow-sm transition-colors flex items-center justify-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-petrol focus-visible:ring-offset-2"
+              >
+                <span>{HOME_SEARCH_BTN_LABEL[lang] || HOME_SEARCH_BTN_LABEL.de}</span>
+                <ArrowRight className="w-4 h-4" aria-hidden="true" />
+              </button>
+            </div>
+            </form>
           </div>
-          </form>
         </div>
       </section>
 
       {/* 2. WAEHLE DEINEN WEG — drei gleichwertige Kurswelten, Segmentfarben Blau/Orange/Gruen.
           Bewusst ohne Nummerierung ("Bereich 01/02/03") an den Karten, aus demselben Grund
-          wie beim Wegweiser oben: die drei Bereiche sind gleichwertig, keine Rangfolge. */}
-      <div className="py-20 bg-beige max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+          wie beim Wegweiser oben: die drei Bereiche sind gleichwertig, keine Rangfolge. Oben
+          bewusst weniger Vorlauf (pt) als unten (pb), damit der Abschnitt auf einem normalen
+          Laptop-Bildschirm nach dem verkuerzten Hero schon mit seiner Ueberschrift anschneidet. */}
+      <div className="pt-10 pb-16 md:pt-14 md:pb-20 bg-beige max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
         <div className="flex flex-col md:flex-row md:items-end md:justify-between mb-10 pb-4 border-b border-grey gap-3">
           <div>
             <div className="mb-2">
@@ -920,7 +519,7 @@ export const Home = ({
           </div>
 
           <div className="flex flex-col gap-8">
-            {renderRatgeberPanel('beruflich', t.nav_professional || 'Beruflich')}
+            {renderRatgeberPanel('beruflich', t.nav_professional || 'Beruf & Karriere')}
             {renderRatgeberPanel('privat_hobby', t.nav_private || 'Privat & Hobby')}
             {renderRatgeberPanel('kinder_jugend', t.nav_kids || 'Kinder & Jugend')}
           </div>

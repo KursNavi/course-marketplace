@@ -482,7 +482,7 @@ export const RATGEBER_STRUCTURE = {
   kinder_jugend: {
     slug: 'kinder',
     label: {
-      de: 'Kinder & Jugendliche',
+      de: 'Kinder & Jugend',
       en: 'Kids & Teens',
       fr: 'Enfants & Ados',
       it: 'Bambini & Adolescenti'

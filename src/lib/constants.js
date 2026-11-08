@@ -270,18 +270,18 @@ export const CATEGORY_TYPES = {
   // New consolidated schema slugs — labels match header/navigation
   professionell: { de: "Beruf & Karriere", en: "Professional", fr: "Professionnel", it: "Professionale" },
   privat: { de: "Privat & Hobby", en: "Private & Hobby", fr: "Privé & Loisirs", it: "Privato & Hobby" },
-  kinder: { de: "Kinder", en: "Children", fr: "Enfants", it: "Bambini" },
+  kinder: { de: "Kinder & Jugend", en: "Kids & Teens", fr: "Enfants & Ados", it: "Bambini & Adolescenti" },
   // Legacy slugs (for backward compatibility during transition)
   beruflich: { de: "Beruf & Karriere", en: "Professional", fr: "Professionnel", it: "Professionale" },
   privat_hobby: { de: "Privat & Hobby", en: "Private & Hobby", fr: "Privé & Loisirs", it: "Privato & Hobby" },
-  kinder_jugend: { de: "Kinder", en: "Children", fr: "Enfants", it: "Bambini" }
+  kinder_jugend: { de: "Kinder & Jugend", en: "Kids & Teens", fr: "Enfants & Ados", it: "Bambini & Adolescenti" }
 };
 
 // Display-Label Override für DB taxonomy_level1.label_de → konsistent mit Header/Navigation
 export const TYPE_DISPLAY_LABELS = {
   professionell: 'Beruf & Karriere',
   privat: 'Privat & Hobby',
-  kinder: 'Kinder',
+  kinder: 'Kinder & Jugend',
 };
 
 // --- SEGMENT VISUAL CONFIG ---

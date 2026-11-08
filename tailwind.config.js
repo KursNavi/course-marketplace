@@ -21,8 +21,11 @@ export default {
         // Not part of SEGMENT_CONFIG, which still drives the rest of the site's segment colors.
         petrol: '#183642',
         petrolDark: '#0f232b',
-        segBeruflich: '#347FA0', // Beruflich bleibt blau
-        segKinder: '#39835B',    // Kinder & Jugend bleibt grün
+        // Dunkler/satter (Blau) bzw. klarer/kontrastreicher (Gruen) als zuvor — die alten Toene
+        // (#347FA0 / #39835B) lagen fast auf derselben Helligkeit und waren an der schmalen
+        // linken Linie der Ergebnis-Karten bei kleiner Darstellung kaum auseinanderzuhalten.
+        segBeruflich: '#155E7C', // Beruflich bleibt blau, jetzt satter und dunkler
+        segKinder: '#1F9D55',    // Kinder & Jugend bleibt gruen, jetzt klarer und kontrastreicher
         // Privat & Hobby bleibt orange — nutzt weiterhin den bestehenden `primary`-Token.
         borderSubtle: '#EBE4DE', // etwas wärmerer Rahmenton als `grey`, fürs Header/Hero-Umfeld
       },
