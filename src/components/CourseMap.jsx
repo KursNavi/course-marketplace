@@ -1,0 +1,271 @@
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { AlertTriangle, Loader } from 'lucide-react';
+
+/**
+ * Kartenansicht der Kurstreffer.
+ *
+ * Gewählte Bausteine und warum:
+ *   • Leaflet als Kartenbibliothek — quelloffen (BSD-2), keine Registrierung,
+ *     keine laufenden Kosten, kein Zugangsschlüssel.
+ *   • Kartenbilder standardmässig von OpenStreetMap (ODbL, Namensnennung
+ *     erforderlich und unten sichtbar eingeblendet). Über
+ *     VITE_MAP_TILE_URL / VITE_MAP_TILE_ATTRIBUTION kann jederzeit ein
+ *     anderer Kartendienst eingesetzt werden, ohne Code zu ändern — nötig,
+ *     sobald die Zugriffszahlen über die Fair-Use-Regeln von OpenStreetMap
+ *     hinauswachsen.
+ *   • Leaflet und die Kartenbilder werden erst geladen, wenn diese Ansicht
+ *     tatsächlich geöffnet wird (dynamischer Import in einem Effekt).
+ *
+ * Verhalten:
+ *   • Verschieben und Zoomen ändert die Suche NICHT. Die Karte zeigt genau
+ *     die Treffer der Ergebnisliste, nichts anderes.
+ *   • Fällt der Kartendienst aus, erscheint hier ein Hinweis; die
+ *     Ergebnisliste daneben bleibt unberührt benutzbar.
+ *   • Eigene Marker-Symbole (divIcon) statt der Leaflet-Standardbilder —
+ *     damit gibt es keine fehlenden Bildpfade nach dem Bündeln.
+ */
+
+const DEFAULT_TILE_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+const DEFAULT_TILE_ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a>-Mitwirkende';
+
+const tileUrl = import.meta.env?.VITE_MAP_TILE_URL || DEFAULT_TILE_URL;
+const tileAttribution = import.meta.env?.VITE_MAP_TILE_ATTRIBUTION || DEFAULT_TILE_ATTRIBUTION;
+
+/** Mitte der Schweiz — Startansicht, wenn kein Ausgangsort gewählt ist. */
+const SWITZERLAND_CENTER = [46.8, 8.23];
+
+function escapeHtml(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+/**
+ * Inhalt eines Marker-Fensters.
+ *
+ * Bei mehreren Kursen am selben Punkt entspricht die Reihenfolge der
+ * Ergebnisliste — also der bestehenden Priorisierung. Hier wird nichts
+ * umsortiert.
+ */
+function buildPopupHtml(marker, buildPath) {
+    const maxEintraege = 5;
+    const sichtbar = marker.courses.slice(0, maxEintraege);
+    const rest = marker.courses.length - sichtbar.length;
+    const ort = escapeHtml(sichtbar[0]?.label || '');
+
+    const eintraege = sichtbar.map(({ course }) => {
+        const pfad = escapeHtml(buildPath(course));
+        const titel = escapeHtml(course.title || 'Kurs');
+        return `<li style="margin:0 0 6px"><a href="${pfad}" data-course-id="${escapeHtml(course.id)}" class="kn-map-link" style="color:#FA6E28;font-weight:700;text-decoration:none">${titel}</a></li>`;
+    }).join('');
+
+    return `
+        <div style="min-width:180px;max-width:240px">
+            <div style="font-size:11px;color:#6b7280;margin-bottom:6px">${ort} · ungefähr</div>
+            <ul style="list-style:none;margin:0;padding:0;font-size:13px">${eintraege}</ul>
+            ${rest > 0 ? `<div style="font-size:11px;color:#6b7280;margin-top:4px">und ${rest} weitere an diesem Ort</div>` : ''}
+        </div>
+    `;
+}
+
+const CourseMap = ({ markers, origin, radiusKm, buildCoursePath, onSelectCourse, totalCourses }) => {
+    const containerRef = useRef(null);
+    const mapRef = useRef(null);
+    const leafletRef = useRef(null);
+    const layerRef = useRef(null);
+    const overlayRef = useRef(null);
+    const [status, setStatus] = useState('loading');
+
+    const markersRef = useRef(markers);
+    markersRef.current = markers;
+    const buildPathRef = useRef(buildCoursePath);
+    buildPathRef.current = buildCoursePath;
+    const onSelectRef = useRef(onSelectCourse);
+    onSelectRef.current = onSelectCourse;
+
+    // --- Karte einmalig aufbauen ---
+    useEffect(() => {
+        let abgebrochen = false;
+
+        (async () => {
+            try {
+                const [leafletModul] = await Promise.all([
+                    import('leaflet'),
+                    import('leaflet/dist/leaflet.css'),
+                ]);
+                const L = leafletModul.default || leafletModul;
+                // markercluster erweitert das globale Leaflet-Objekt und braucht
+                // es darum vorher auf window.
+                window.L = L;
+                await Promise.all([
+                    import('leaflet.markercluster'),
+                    import('leaflet.markercluster/dist/MarkerCluster.css'),
+                    import('leaflet.markercluster/dist/MarkerCluster.Default.css'),
+                ]);
+
+                if (abgebrochen || !containerRef.current) return;
+
+                const map = L.map(containerRef.current, {
+                    center: SWITZERLAND_CENTER,
+                    zoom: 7,
+                    scrollWheelZoom: false, // sonst verschluckt die Karte das Seiten-Scrollen
+                    attributionControl: true,
+                });
+                L.tileLayer(tileUrl, {
+                    attribution: tileAttribution,
+                    maxZoom: 18,
+                    crossOrigin: true,
+                }).addTo(map);
+
+                leafletRef.current = L;
+                mapRef.current = map;
+                setStatus('ready');
+            } catch {
+                if (!abgebrochen) setStatus('error');
+            }
+        })();
+
+        return () => {
+            abgebrochen = true;
+            if (mapRef.current) {
+                mapRef.current.remove();
+                mapRef.current = null;
+            }
+            layerRef.current = null;
+            overlayRef.current = null;
+        };
+    }, []);
+
+    const handlePopupClick = useCallback((event) => {
+        const link = event.target.closest?.('.kn-map-link');
+        if (!link) return;
+        if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+        const courseId = link.getAttribute('data-course-id');
+        const treffer = markersRef.current
+            .flatMap((marker) => marker.courses)
+            .find(({ course }) => String(course.id) === String(courseId));
+        if (!treffer || !onSelectRef.current) return;
+        event.preventDefault();
+        onSelectRef.current(treffer.course);
+    }, []);
+
+    // --- Marker, Umkreis und Ausgangsort bei jeder Änderung neu zeichnen ---
+    useEffect(() => {
+        const L = leafletRef.current;
+        const map = mapRef.current;
+        if (status !== 'ready' || !L || !map) return;
+
+        if (layerRef.current) { map.removeLayer(layerRef.current); layerRef.current = null; }
+        if (overlayRef.current) { map.removeLayer(overlayRef.current); overlayRef.current = null; }
+
+        const cluster = typeof L.markerClusterGroup === 'function'
+            ? L.markerClusterGroup({ showCoverageOnHover: false, maxClusterRadius: 45 })
+            : L.layerGroup();
+
+        const icon = L.divIcon({
+            className: 'kn-map-marker',
+            html: '<span style="display:block;width:16px;height:16px;border-radius:50%;background:#FA6E28;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.35)"></span>',
+            iconSize: [16, 16],
+            iconAnchor: [8, 8],
+        });
+
+        markers.forEach((marker) => {
+            const leafletMarker = L.marker([marker.lat, marker.lng], {
+                icon,
+                title: marker.courses[0]?.course?.title || 'Kurs',
+            });
+            leafletMarker.bindPopup(buildPopupHtml(marker, buildPathRef.current), { closeButton: true });
+            cluster.addLayer(leafletMarker);
+        });
+
+        cluster.addTo(map);
+        layerRef.current = cluster;
+
+        const overlay = L.layerGroup();
+        if (origin && Number.isFinite(origin.lat) && Number.isFinite(origin.lng)) {
+            L.circleMarker([origin.lat, origin.lng], {
+                radius: 6,
+                color: '#183642',
+                weight: 2,
+                fillColor: '#183642',
+                fillOpacity: 1,
+            }).bindPopup(`<strong>${escapeHtml(origin.label || 'Ausgangsort')}</strong>`).addTo(overlay);
+
+            if (Number.isFinite(radiusKm) && radiusKm > 0) {
+                L.circle([origin.lat, origin.lng], {
+                    radius: radiusKm * 1000,
+                    color: '#FA6E28',
+                    weight: 1.5,
+                    fillColor: '#FA6E28',
+                    fillOpacity: 0.07,
+                }).addTo(overlay);
+            }
+        }
+        overlay.addTo(map);
+        overlayRef.current = overlay;
+
+        // Ausschnitt setzen: Umkreis zeigt den Umkreis, sonst alle Marker.
+        // Danach bleibt der Ausschnitt dem Nutzer überlassen — Verschieben und
+        // Zoomen löst keine neue Suche aus.
+        try {
+            if (origin && Number.isFinite(radiusKm) && radiusKm > 0) {
+                const circle = L.circle([origin.lat, origin.lng], { radius: radiusKm * 1000 });
+                map.fitBounds(circle.getBounds(), { padding: [20, 20] });
+            } else if (markers.length > 0) {
+                map.fitBounds(L.latLngBounds(markers.map((m) => [m.lat, m.lng])), { padding: [30, 30], maxZoom: 13 });
+            } else {
+                map.setView(SWITZERLAND_CENTER, 7);
+            }
+        } catch {
+            map.setView(SWITZERLAND_CENTER, 7);
+        }
+    }, [markers, origin, radiusKm, status]);
+
+    const markerKurse = markers.reduce((summe, marker) => summe + marker.courses.length, 0);
+    const ohneMarker = typeof totalCourses === 'number' ? Math.max(0, totalCourses - new Set(markers.flatMap((m) => m.courses.map((c) => c.course.id))).size) : 0;
+
+    if (status === 'error') {
+        return (
+            <div className="rounded-2xl border border-dashed border-amber-200 bg-amber-50 px-6 py-12 text-center" data-testid="map-error">
+                <AlertTriangle className="mx-auto mb-3 h-8 w-8 text-amber-500" aria-hidden="true" />
+                <h3 className="mb-1 font-heading text-lg font-bold text-gray-900">Karte nicht verfügbar</h3>
+                <p className="mx-auto max-w-md text-sm text-gray-600">
+                    Die Karte konnte nicht geladen werden. Wechsle auf «Liste» – deine Treffer und Filter bleiben unverändert.
+                </p>
+            </div>
+        );
+    }
+
+    return (
+        <div data-testid="course-map">
+            <div className="relative overflow-hidden rounded-2xl border border-borderSubtle bg-white">
+                <div
+                    ref={containerRef}
+                    onClick={handlePopupClick}
+                    className="h-[60vh] min-h-[320px] w-full lg:h-[calc(100vh-14rem)]"
+                    role="application"
+                    aria-label="Karte mit Kursorten"
+                />
+                {status === 'loading' && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-white/80" data-testid="map-loading">
+                        <span className="flex items-center gap-2 text-sm text-gray-600">
+                            <Loader className="h-4 w-4 animate-spin" aria-hidden="true" />
+                            Karte wird geladen …
+                        </span>
+                    </div>
+                )}
+            </div>
+            <p className="mt-2 text-[11px] leading-relaxed text-gray-500">
+                {markers.length === 0
+                    ? 'Für die aktuellen Treffer gibt es keine Kursorte auf der Karte.'
+                    : `${markers.length} ${markers.length === 1 ? 'Ort' : 'Orte'} mit ${markerKurse} ${markerKurse === 1 ? 'Kurseintrag' : 'Kurseinträgen'}. Positionen sind Ortsmittelpunkte und darum ungefähr.`}
+                {ohneMarker > 0 && ` ${ohneMarker} ${ohneMarker === 1 ? 'Treffer hat' : 'Treffer haben'} keinen Kartenpunkt (Onlinekurs oder kein eindeutiger Veranstaltungsort) – in der Liste sind sie weiterhin dabei.`}
+            </p>
+        </div>
+    );
+};
+
+export default CourseMap;

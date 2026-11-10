@@ -28,13 +28,17 @@
     "dev:finalize-yoga": "node scripts/finalize-yoga-cleanup-dev.mjs",
     "cleanup:check": "node scripts/cleanup-images.js --dry-run",
     "cleanup:execute": "node scripts/cleanup-images.js --execute",
-    "import:validate": "node scripts/import-pipeline/validate-import-json.mjs examples/import/import-run.example.json"
+    "import:validate": "node scripts/import-pipeline/validate-import-json.mjs examples/import/import-run.example.json",
+    "geo:coverage": "node scripts/geo-coverage.mjs",
+    "geo:places": "node scripts/build-swiss-places.mjs"
   },
   "dependencies": {
     "@sentry/react": "^10.43.0",
     "@supabase/supabase-js": "^2.86.0",
     "@vercel/analytics": "^2.0.1",
     "browser-image-compression": "^2.0.2",
+    "leaflet": "^1.9.4",
+    "leaflet.markercluster": "^1.5.3",
     "lucide-react": "^0.555.0",
     "pdfkit": "^0.17.2",
     "react": "^19.2.0",
