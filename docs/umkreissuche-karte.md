@@ -3,7 +3,12 @@
 Erste Version: Besucher wählen einen Ausgangsort (Ort oder Postleitzahl) oder
 geben freiwillig ihren Gerätestandort frei und filtern die Kurssuche auf einen
 Umkreis von 5, 10, 25 oder 50 km. Dieselbe Treffermenge ist als Liste oder als
-Karte darstellbar.
+Karte darstellbar. Die Kursdetailseite zeigt zusätzlich eine Standortkarte.
+
+In der Seitenleiste der Suche steht das Umkreis-Feld bewusst als **letzter**
+Schritt, nach «Bereiche entdecken», «Gezielt suchen» und «Verfeinern»: Bereich,
+Suchbegriff und die bestehenden Filter sind der übliche Weg zum Ziel, der
+Umkreis ist die Feinjustierung danach.
 
 ## Verbindliche Regel: die Priorisierung bleibt unverändert
 
@@ -104,9 +109,28 @@ gefiltert werden soll. Einspielen nur auf ausdrücklichen Auftrag.
 * Verschieben und Zoomen ändert die Suche **nicht**. Liste und Karte beruhen
   auf derselben `sortedCourses`-Liste; innerhalb eines Markers gilt dieselbe
   Priorisierung.
+* **Mausrad-Zoom** ist zunächst gesperrt, damit die Karte das Scrollen der
+  Seite nicht verschluckt. Ein Klick in die Karte schaltet ihn frei, das
+  Verlassen der Karte sperrt ihn wieder. Wer über der gesperrten Karte
+  scrollt, bekommt kurz den Hinweis eingeblendet. Auf Touchgeräten zoomt die
+  Zwei-Finger-Geste ohnehin.
+* Die **Ortstabelle wird für die Kartenansicht genauso geladen wie für den
+  Umkreis** (`(radiusOrigin || searchMapView)` in `src/App.jsx`). Ohne das
+  blieb die Karte ohne aktiven Umkreis leer — siehe
+  `tests/umkreis-karte-einbindung.test.jsx`.
 * Fällt die Karte aus, greift `MapErrorBoundary` bzw. der Fehlerzustand in
   `CourseMap`: ein Hinweis mit Weg zurück zur Liste. Die Ergebnisliste bleibt
   unberührt.
+
+### Standortkarte auf der Kursdetailseite
+
+`src/components/CourseLocationMap.jsx` zeigt unter der Ortsangabe eine kleine
+Karte mit dem oder den Veranstaltungsorten. Sie nutzt dieselbe Zuordnung wie
+die Umkreissuche und lädt Kartenbibliothek und Ortstabelle erst, wenn der
+Abschnitt in den sichtbaren Bereich scrollt (`IntersectionObserver`). Bei
+reinen Onlinekursen und bei Kursen ohne eindeutig zuordenbaren Ort erscheint
+der Abschnitt gar nicht — eine Karte mit geratenem Punkt wäre schlechter als
+keine Karte.
 
 ## Standortfreigabe
 
@@ -145,3 +169,5 @@ kein Neuladen.
 | `tests/umkreis-prio-regression.test.js` | **Die Priorisierung bleibt unverändert** |
 | `tests/umkreis-panel.test.jsx` | Bedienfeld, Standortfreigabe in allen Fällen |
 | `tests/umkreis-suchparameter.test.js` | Zusammenspiel mit bestehenden Filtern, Datenschutz |
+| `tests/umkreis-karte-ausschnitt.test.js` | Kartenausschnitt passt zum Umkreis |
+| `tests/umkreis-karte-einbindung.test.jsx` | Ortstabelle für die Karte, Mausrad-Zoom, Reihenfolge der Seitenleiste, Detailseiten-Karte |

@@ -23,6 +23,7 @@ import {
 import { getRobotsPolicy } from '../lib/seoUtils';
 import { getRelatedCourses } from '../lib/courseRecommendations';
 import { buildLeadConfirmationPath } from '../lib/leadConfirmation';
+import CourseLocationMap from './CourseLocationMap';
 import { isRelevantEvent } from '../lib/eventDates';
 import { writeStored, readSession, writeSession, removeSession } from '../lib/safeStorage';
 
@@ -880,6 +881,12 @@ const DetailView = ({ course, courses, setView, t, setSelectedTeacher, user, set
                             );
                         })()}
                     </div>
+
+                    {/* Standortkarte: steht bewusst direkt unter der Ortsangabe
+                        in der Faktenliste. Lädt sich selbst erst, wenn sie in
+                        den sichtbaren Bereich scrollt, und erscheint gar nicht
+                        bei Onlinekursen oder ohne zuordenbaren Ort. */}
+                    <CourseLocationMap course={course} />
 
                     <button
                         type="button"

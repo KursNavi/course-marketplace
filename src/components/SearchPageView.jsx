@@ -104,7 +104,7 @@ const SearchPageView = ({
     autoType, setAutoType,
     // --- Umkreissuche und Kartenansicht ---
     radiusOrigin, setRadiusOrigin, radiusKm, setRadiusKm, radiusActive, onResetRadius,
-    placesIndex, placesLoading, placesError, onEnsurePlaces, resolveCourseGeo,
+    placesIndex, placesLoading, placesError, placesReady, onEnsurePlaces, resolveCourseGeo,
     coursesBeforeRadius,
     mapView, setMapView,
 }) => {
@@ -899,24 +899,6 @@ const SearchPageView = ({
                                 </div>
                             )}
 
-                            {/* ========== UMKREISSUCHE ==========
-                                Filtert räumlich (Luftlinie) und wirkt zusätzlich zu allen
-                                bestehenden Filtern. Die Priorisierung der Treffer bleibt
-                                unberührt — die Entfernung geht in keine Sortierung ein. */}
-                            <RadiusSearchPanel
-                                origin={radiusOrigin || null}
-                                onOriginChange={setRadiusOrigin}
-                                radiusKm={radiusKm || 0}
-                                onRadiusChange={setRadiusKm}
-                                onReset={onResetRadius}
-                                placesIndex={placesIndex}
-                                placesLoading={placesLoading}
-                                placesError={placesError}
-                                onEnsurePlaces={onEnsurePlaces}
-                                geoStats={geoStats}
-                                resultCount={radiusActive ? filteredCourses.length : undefined}
-                            />
-
                             {/* ========== SCHRITT 1: BEREICHE ENTDECKEN ==========
                                 Zeigt entweder die drei gleichwertigen Bereiche (kein searchType) oder den
                                 aktuellen Kategoriepfad mit klickbarer naechster Ebene und einer "Alle Kurse in
@@ -1253,6 +1235,27 @@ const SearchPageView = ({
                         </div>
                     )}
                 </div>
+
+                            {/* ========== SCHRITT 4: UMKREIS ==========
+                                Bewusst NACH «Gezielt suchen» und «Verfeinern»: Bereich,
+                                Suchbegriff und die bestehenden Filter sind der übliche Weg
+                                zum Ziel, der Umkreis ist die Feinjustierung danach.
+                                Filtert räumlich (Luftlinie) und wirkt zusätzlich zu allen
+                                bestehenden Filtern. Die Priorisierung der Treffer bleibt
+                                unberührt — die Entfernung geht in keine Sortierung ein. */}
+                            <RadiusSearchPanel
+                                origin={radiusOrigin || null}
+                                onOriginChange={setRadiusOrigin}
+                                radiusKm={radiusKm || 0}
+                                onRadiusChange={setRadiusKm}
+                                onReset={onResetRadius}
+                                placesIndex={placesIndex}
+                                placesLoading={placesLoading}
+                                placesError={placesError}
+                                onEnsurePlaces={onEnsurePlaces}
+                                geoStats={geoStats}
+                                resultCount={radiusActive ? filteredCourses.length : undefined}
+                            />
                         </div>
                     </aside>
 
@@ -1338,6 +1341,7 @@ const SearchPageView = ({
                                 buildCoursePath={buildCoursePath}
                                 onSelectCourse={openCourseFromMap}
                                 totalCourses={sortedCourses.length}
+                                placesReady={Boolean(placesReady ?? placesIndex)}
                             />
                         </Suspense>
                     </MapErrorBoundary>

@@ -58,7 +58,12 @@ function escapeHtml(value) {
  * Ergebnisliste — also der bestehenden Priorisierung. Hier wird nichts
  * umsortiert.
  */
-function buildPopupHtml(marker, buildPath) {
+function buildPopupHtml(marker, buildPath, popupMode) {
+    // Auf der Kursdetailseite ist der Kurs schon bekannt — dort genügt der Ort.
+    if (popupMode === 'place') {
+        return `<div style="min-width:140px"><strong>${escapeHtml(marker.courses[0]?.label || '')}</strong><div style="font-size:11px;color:#6b7280;margin-top:2px">ungefähre Lage (Ortsmittelpunkt)</div></div>`;
+    }
+
     const maxEintraege = 5;
     const sichtbar = marker.courses.slice(0, maxEintraege);
     const rest = marker.courses.length - sichtbar.length;
@@ -79,7 +84,23 @@ function buildPopupHtml(marker, buildPath) {
     `;
 }
 
-const CourseMap = ({ markers, origin, radiusKm, buildCoursePath, onSelectCourse, totalCourses }) => {
+const CourseMap = ({
+    markers,
+    origin,
+    radiusKm,
+    buildCoursePath,
+    onSelectCourse,
+    totalCourses,
+    // Kursorte werden aus einer nachgeladenen Ortstabelle aufgelöst. Solange
+    // die nicht da ist, gibt es noch keine Marker — das ist etwas anderes als
+    // «es gibt keine Kursorte» und muss darum anders aussehen.
+    placesReady = true,
+    heightClass = 'h-[60vh] min-h-[320px] lg:h-[calc(100vh-14rem)]',
+    footnote = true,
+    // 'courses' = Liste der Kurse am Punkt (Suchergebnisse),
+    // 'place'   = nur der Ort (Kursdetailseite, der Kurs ist dort bekannt).
+    popupMode = 'courses',
+}) => {
     const containerRef = useRef(null);
     const mapRef = useRef(null);
     const leafletRef = useRef(null);
@@ -91,7 +112,10 @@ const CourseMap = ({ markers, origin, radiusKm, buildCoursePath, onSelectCourse,
     // hat. Danach wird er nicht mehr automatisch zurückgesetzt.
     const userMovedRef = useRef(false);
     const programmaticRef = useRef(false);
+    const hinweisTimerRef = useRef(null);
     const [status, setStatus] = useState('loading');
+    const [wheelAktiv, setWheelAktiv] = useState(false);
+    const [hinweisSichtbar, setHinweisSichtbar] = useState(false);
 
     const markersRef = useRef(markers);
     markersRef.current = markers;
@@ -125,7 +149,10 @@ const CourseMap = ({ markers, origin, radiusKm, buildCoursePath, onSelectCourse,
                 const map = L.map(containerRef.current, {
                     center: SWITZERLAND_CENTER,
                     zoom: 7,
-                    scrollWheelZoom: false, // sonst verschluckt die Karte das Seiten-Scrollen
+                    // Zu Beginn aus, damit die Karte das Scrollen der Seite
+                    // nicht verschluckt. Ein Klick in die Karte schaltet das
+                    // Mausrad frei (siehe unten) — so bleibt beides möglich.
+                    scrollWheelZoom: false,
                     attributionControl: true,
                 });
                 L.tileLayer(tileUrl, {
@@ -137,6 +164,28 @@ const CourseMap = ({ markers, origin, radiusKm, buildCoursePath, onSelectCourse,
                 map.on('dragstart zoomstart', () => {
                     if (!programmaticRef.current) userMovedRef.current = true;
                 });
+
+                // --- Mausrad-Zoom ---
+                // Ein Klick in die Karte schaltet ihn frei, das Verlassen der
+                // Karte wieder ab. Damit zoomt das Mausrad dort, wo man es
+                // erwartet, reisst aber nie das Scrollen der Seite an sich,
+                // wenn man nur an der Karte vorbeiscrollt.
+                map.on('click', () => {
+                    map.scrollWheelZoom.enable();
+                    setWheelAktiv(true);
+                });
+                map.on('mouseout', () => {
+                    map.scrollWheelZoom.disable();
+                    setWheelAktiv(false);
+                });
+                // Wer ueber der noch gesperrten Karte scrollt, bekommt kurz den
+                // Hinweis, wie er sie freischaltet — sonst wirkt sie kaputt.
+                containerRef.current.addEventListener('wheel', () => {
+                    if (map.scrollWheelZoom.enabled()) return;
+                    setHinweisSichtbar(true);
+                    clearTimeout(hinweisTimerRef.current);
+                    hinweisTimerRef.current = setTimeout(() => setHinweisSichtbar(false), 1600);
+                }, { passive: true });
 
                 leafletRef.current = L;
                 mapRef.current = map;
@@ -170,6 +219,7 @@ const CourseMap = ({ markers, origin, radiusKm, buildCoursePath, onSelectCourse,
 
         return () => {
             abgebrochen = true;
+            clearTimeout(hinweisTimerRef.current);
             if (resizeObserverRef.current) {
                 resizeObserverRef.current.disconnect();
                 resizeObserverRef.current = null;
@@ -222,7 +272,7 @@ const CourseMap = ({ markers, origin, radiusKm, buildCoursePath, onSelectCourse,
                 icon,
                 title: marker.courses[0]?.course?.title || 'Kurs',
             });
-            leafletMarker.bindPopup(buildPopupHtml(marker, buildPathRef.current), { closeButton: true });
+            leafletMarker.bindPopup(buildPopupHtml(marker, buildPathRef.current, popupMode), { closeButton: true });
             cluster.addLayer(leafletMarker);
         });
 
@@ -293,7 +343,7 @@ const CourseMap = ({ markers, origin, radiusKm, buildCoursePath, onSelectCourse,
         userMovedRef.current = false;
         map.invalidateSize();
         ausschnittSetzen();
-    }, [markers, origin, radiusKm, status]);
+    }, [markers, origin, radiusKm, status, popupMode]);
 
     // Kurse mit mehreren Standorten erscheinen an jedem davon. Gezählt wird
     // darum ausdrücklich die Zahl der KURSE, nicht die der Markereinträge —
@@ -321,26 +371,40 @@ const CourseMap = ({ markers, origin, radiusKm, buildCoursePath, onSelectCourse,
                 <div
                     ref={containerRef}
                     onClick={handlePopupClick}
-                    className="h-[60vh] min-h-[320px] w-full lg:h-[calc(100vh-14rem)]"
+                    className={`w-full ${heightClass}`}
                     role="application"
                     aria-label="Karte mit Kursorten"
                 />
-                {status === 'loading' && (
+                {(status === 'loading' || !placesReady) && (
                     <div className="absolute inset-0 flex items-center justify-center bg-white/80" data-testid="map-loading">
                         <span className="flex items-center gap-2 text-sm text-gray-600">
                             <Loader className="h-4 w-4 animate-spin" aria-hidden="true" />
-                            Karte wird geladen …
+                            {status === 'loading' ? 'Karte wird geladen …' : 'Kursorte werden geladen …'}
+                        </span>
+                    </div>
+                )}
+                {/* Mausrad-Hinweis: erscheint nur, wenn jemand über der noch
+                    gesperrten Karte scrollt. */}
+                {hinweisSichtbar && !wheelAktiv && (
+                    <div className="pointer-events-none absolute inset-0 flex items-center justify-center" data-testid="map-wheel-hint">
+                        <span className="rounded-lg bg-petrol/85 px-4 py-2 text-sm font-semibold text-white shadow-lg">
+                            Zum Zoomen mit dem Mausrad in die Karte klicken
                         </span>
                     </div>
                 )}
             </div>
-            <p className="mt-2 text-[11px] leading-relaxed text-gray-500">
-                {markers.length === 0
-                    ? 'Für die aktuellen Treffer gibt es keine Kursorte auf der Karte.'
-                    : `${kurseAufDerKarte} ${kurseAufDerKarte === 1 ? 'Kurs' : 'Kurse'} an ${markers.length} ${markers.length === 1 ? 'Ort' : 'Orten'}. Positionen sind Ortsmittelpunkte und darum ungefähr.`}
-                {mehrfachStandorte && ' Kurse mit mehreren Standorten erscheinen an jedem davon.'}
-                {ohneMarker > 0 && ` ${ohneMarker} ${ohneMarker === 1 ? 'Treffer hat' : 'Treffer haben'} keinen Kartenpunkt (Onlinekurs oder kein eindeutiger Veranstaltungsort) – in der Liste sind sie weiterhin dabei.`}
-            </p>
+            {footnote && (
+                <p className="mt-2 text-[11px] leading-relaxed text-gray-500">
+                    {!placesReady
+                        ? 'Kursorte werden geladen …'
+                        : markers.length === 0
+                            ? 'Für die aktuellen Treffer gibt es keine Kursorte auf der Karte.'
+                            : `${kurseAufDerKarte} ${kurseAufDerKarte === 1 ? 'Kurs' : 'Kurse'} an ${markers.length} ${markers.length === 1 ? 'Ort' : 'Orten'}. Positionen sind Ortsmittelpunkte und darum ungefähr.`}
+                    {placesReady && mehrfachStandorte && ' Kurse mit mehreren Standorten erscheinen an jedem davon.'}
+                    {placesReady && ohneMarker > 0 && ` ${ohneMarker} ${ohneMarker === 1 ? 'Treffer hat' : 'Treffer haben'} keinen Kartenpunkt (Onlinekurs oder kein eindeutiger Veranstaltungsort) – in der Liste sind sie weiterhin dabei.`}
+                    {' '}Mausrad-Zoom: einmal in die Karte klicken.
+                </p>
+            )}
         </div>
     );
 };
