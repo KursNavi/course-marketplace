@@ -34,6 +34,14 @@ const tileAttribution = import.meta.env?.VITE_MAP_TILE_ATTRIBUTION || DEFAULT_TI
 /** Mitte der Schweiz — Startansicht, wenn kein Ausgangsort gewählt ist. */
 const SWITZERLAND_CENTER = [46.8, 8.23];
 
+/**
+ * Zoomstufe, bei der ein Umkreis in eine übliche Kartenfläche passt.
+ * Nur als Rückfallebene gedacht, wenn das Einpassen über die Eckpunkte
+ * nicht möglich ist — besser ein etwas unpassender Ausschnitt am richtigen
+ * Ort als ein Blick auf die halbe Schweiz.
+ */
+const ZOOM_FOR_RADIUS = { 5: 12, 10: 11, 25: 10, 50: 9 };
+
 function escapeHtml(value) {
     return String(value ?? '')
         .replace(/&/g, '&amp;')
@@ -252,17 +260,28 @@ const CourseMap = ({ markers, origin, radiusKm, buildCoursePath, onSelectCourse,
         const ausschnittSetzen = () => {
             if (!mapRef.current) return;
             programmaticRef.current = true;
+            const radiusAktiv = origin && Number.isFinite(radiusKm) && radiusKm > 0;
             try {
-                if (origin && Number.isFinite(radiusKm) && radiusKm > 0) {
-                    const circle = L.circle([origin.lat, origin.lng], { radius: radiusKm * 1000 });
-                    map.fitBounds(circle.getBounds(), { padding: [20, 20], animate: false });
+                if (radiusAktiv) {
+                    // Bewusst latLng().toBounds() statt circle.getBounds():
+                    // Ein Kreis kennt seine Eckpunkte erst, wenn er auf einer
+                    // Karte liegt — ohne Karte wirft getBounds(), und der
+                    // Ausschnitt fiel dann auf die Notfallansicht über der
+                    // ganzen Schweiz zurück. toBounds rechnet ohne Karte.
+                    map.fitBounds(L.latLng(origin.lat, origin.lng).toBounds(radiusKm * 2000), { padding: [20, 20], animate: false });
                 } else if (markers.length > 0) {
                     map.fitBounds(L.latLngBounds(markers.map((m) => [m.lat, m.lng])), { padding: [30, 30], maxZoom: 13, animate: false });
                 } else {
                     map.setView(SWITZERLAND_CENTER, 7, { animate: false });
                 }
             } catch {
-                map.setView(SWITZERLAND_CENTER, 7, { animate: false });
+                // Rückfallebene: lieber beim gewählten Ort bleiben als bei der
+                // Landesmitte.
+                if (radiusAktiv) {
+                    map.setView([origin.lat, origin.lng], ZOOM_FOR_RADIUS[radiusKm] || 10, { animate: false });
+                } else {
+                    map.setView(SWITZERLAND_CENTER, 7, { animate: false });
+                }
             } finally {
                 programmaticRef.current = false;
             }
