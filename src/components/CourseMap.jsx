@@ -77,6 +77,12 @@ const CourseMap = ({ markers, origin, radiusKm, buildCoursePath, onSelectCourse,
     const leafletRef = useRef(null);
     const layerRef = useRef(null);
     const overlayRef = useRef(null);
+    const resizeObserverRef = useRef(null);
+    const fitRef = useRef(null);
+    // Merkt sich, ob der Nutzer den Ausschnitt selbst verschoben oder gezoomt
+    // hat. Danach wird er nicht mehr automatisch zurückgesetzt.
+    const userMovedRef = useRef(false);
+    const programmaticRef = useRef(false);
     const [status, setStatus] = useState('loading');
 
     const markersRef = useRef(markers);
@@ -120,8 +126,34 @@ const CourseMap = ({ markers, origin, radiusKm, buildCoursePath, onSelectCourse,
                     crossOrigin: true,
                 }).addTo(map);
 
+                map.on('dragstart zoomstart', () => {
+                    if (!programmaticRef.current) userMovedRef.current = true;
+                });
+
                 leafletRef.current = L;
                 mapRef.current = map;
+
+                // Der Container bekommt seine endgültige Grösse erst nach dem
+                // Layout. Misst Leaflet vorher, fällt der Ausschnitt zu weit
+                // heraus — auf dem Handy war genau das sichtbar. Darum einmal
+                // nach dem nächsten Bildaufbau nachmessen und zusätzlich bei
+                // jeder späteren Grössenänderung.
+                requestAnimationFrame(() => {
+                    if (abgebrochen || !mapRef.current) return;
+                    map.invalidateSize();
+                    if (!userMovedRef.current) fitRef.current?.();
+                });
+
+                if (typeof ResizeObserver === 'function' && containerRef.current) {
+                    const beobachter = new ResizeObserver(() => {
+                        if (!mapRef.current) return;
+                        map.invalidateSize();
+                        if (!userMovedRef.current) fitRef.current?.();
+                    });
+                    beobachter.observe(containerRef.current);
+                    resizeObserverRef.current = beobachter;
+                }
+
                 setStatus('ready');
             } catch {
                 if (!abgebrochen) setStatus('error');
@@ -130,12 +162,17 @@ const CourseMap = ({ markers, origin, radiusKm, buildCoursePath, onSelectCourse,
 
         return () => {
             abgebrochen = true;
+            if (resizeObserverRef.current) {
+                resizeObserverRef.current.disconnect();
+                resizeObserverRef.current = null;
+            }
             if (mapRef.current) {
                 mapRef.current.remove();
                 mapRef.current = null;
             }
             layerRef.current = null;
             overlayRef.current = null;
+            fitRef.current = null;
         };
     }, []);
 
@@ -210,22 +247,42 @@ const CourseMap = ({ markers, origin, radiusKm, buildCoursePath, onSelectCourse,
         // Ausschnitt setzen: Umkreis zeigt den Umkreis, sonst alle Marker.
         // Danach bleibt der Ausschnitt dem Nutzer überlassen — Verschieben und
         // Zoomen löst keine neue Suche aus.
-        try {
-            if (origin && Number.isFinite(radiusKm) && radiusKm > 0) {
-                const circle = L.circle([origin.lat, origin.lng], { radius: radiusKm * 1000 });
-                map.fitBounds(circle.getBounds(), { padding: [20, 20] });
-            } else if (markers.length > 0) {
-                map.fitBounds(L.latLngBounds(markers.map((m) => [m.lat, m.lng])), { padding: [30, 30], maxZoom: 13 });
-            } else {
-                map.setView(SWITZERLAND_CENTER, 7);
+        // Bewusst ohne Animation: so laufen die Leaflet-Ereignisse synchron und
+        // die Erkennung einer echten Nutzerbewegung schlägt nicht fälschlich an.
+        const ausschnittSetzen = () => {
+            if (!mapRef.current) return;
+            programmaticRef.current = true;
+            try {
+                if (origin && Number.isFinite(radiusKm) && radiusKm > 0) {
+                    const circle = L.circle([origin.lat, origin.lng], { radius: radiusKm * 1000 });
+                    map.fitBounds(circle.getBounds(), { padding: [20, 20], animate: false });
+                } else if (markers.length > 0) {
+                    map.fitBounds(L.latLngBounds(markers.map((m) => [m.lat, m.lng])), { padding: [30, 30], maxZoom: 13, animate: false });
+                } else {
+                    map.setView(SWITZERLAND_CENTER, 7, { animate: false });
+                }
+            } catch {
+                map.setView(SWITZERLAND_CENTER, 7, { animate: false });
+            } finally {
+                programmaticRef.current = false;
             }
-        } catch {
-            map.setView(SWITZERLAND_CENTER, 7);
-        }
+        };
+
+        fitRef.current = ausschnittSetzen;
+        // Eine neue Treffermenge heisst neuer passender Ausschnitt — eine
+        // frühere Nutzerbewegung gilt dafür nicht mehr.
+        userMovedRef.current = false;
+        map.invalidateSize();
+        ausschnittSetzen();
     }, [markers, origin, radiusKm, status]);
 
-    const markerKurse = markers.reduce((summe, marker) => summe + marker.courses.length, 0);
-    const ohneMarker = typeof totalCourses === 'number' ? Math.max(0, totalCourses - new Set(markers.flatMap((m) => m.courses.map((c) => c.course.id))).size) : 0;
+    // Kurse mit mehreren Standorten erscheinen an jedem davon. Gezählt wird
+    // darum ausdrücklich die Zahl der KURSE, nicht die der Markereinträge —
+    // sonst stünde unter der Karte eine höhere Zahl als über der Liste.
+    const kurseAufDerKarte = new Set(markers.flatMap((m) => m.courses.map((c) => c.course.id))).size;
+    const markerEintraege = markers.reduce((summe, marker) => summe + marker.courses.length, 0);
+    const mehrfachStandorte = markerEintraege > kurseAufDerKarte;
+    const ohneMarker = typeof totalCourses === 'number' ? Math.max(0, totalCourses - kurseAufDerKarte) : 0;
 
     if (status === 'error') {
         return (
@@ -261,7 +318,8 @@ const CourseMap = ({ markers, origin, radiusKm, buildCoursePath, onSelectCourse,
             <p className="mt-2 text-[11px] leading-relaxed text-gray-500">
                 {markers.length === 0
                     ? 'Für die aktuellen Treffer gibt es keine Kursorte auf der Karte.'
-                    : `${markers.length} ${markers.length === 1 ? 'Ort' : 'Orte'} mit ${markerKurse} ${markerKurse === 1 ? 'Kurseintrag' : 'Kurseinträgen'}. Positionen sind Ortsmittelpunkte und darum ungefähr.`}
+                    : `${kurseAufDerKarte} ${kurseAufDerKarte === 1 ? 'Kurs' : 'Kurse'} an ${markers.length} ${markers.length === 1 ? 'Ort' : 'Orten'}. Positionen sind Ortsmittelpunkte und darum ungefähr.`}
+                {mehrfachStandorte && ' Kurse mit mehreren Standorten erscheinen an jedem davon.'}
                 {ohneMarker > 0 && ` ${ohneMarker} ${ohneMarker === 1 ? 'Treffer hat' : 'Treffer haben'} keinen Kartenpunkt (Onlinekurs oder kein eindeutiger Veranstaltungsort) – in der Liste sind sie weiterhin dabei.`}
             </p>
         </div>
