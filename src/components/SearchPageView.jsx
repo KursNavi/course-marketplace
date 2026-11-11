@@ -103,7 +103,7 @@ const SearchPageView = ({
     setSelectedCatPath,
     autoType, setAutoType,
     // --- Umkreissuche und Kartenansicht ---
-    radiusOrigin, setRadiusOrigin, radiusKm, setRadiusKm, radiusActive, onResetRadius,
+    radiusOrigin, setRadiusOrigin, radiusKm, setRadiusKm, radiusActive, radiusCantons, onResetRadius,
     placesIndex, placesLoading, placesError, placesReady, onEnsurePlaces, resolveCourseGeo,
     coursesBeforeRadius,
     mapView, setMapView,
@@ -677,8 +677,12 @@ const SearchPageView = ({
         return buildMapMarkers(sortedCourses, resolveCourseGeo, {
             center: radiusActive ? radiusOrigin : null,
             radiusKm: radiusActive ? radiusKm : 0,
+            // Bei aktivem Umkreis zeigt die Karte nur Orte, die auch zum
+            // Kantonsfilter passen — sonst stuende ein Marker an einem Ort,
+            // ueber den der Kurs gar nicht in die Liste gekommen ist.
+            cantons: radiusActive ? (radiusCantons || []) : [],
         });
-    }, [mapView, resolveCourseGeo, sortedCourses, radiusActive, radiusOrigin, radiusKm]);
+    }, [mapView, resolveCourseGeo, sortedCourses, radiusActive, radiusOrigin, radiusKm, radiusCantons]);
 
     const openCourseFromMap = useCallback((course) => {
         const coursePath = buildCoursePath(course);

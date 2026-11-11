@@ -139,6 +139,11 @@ function resolveEntry(entry, placesIndex) {
   const kantonHinweis = String(entry.canton ?? '').trim();
   const kombiniert = [street, city, freitext].filter(Boolean).join(', ');
 
+  // Der Kanton WANDERT MIT dem Punkt. Nur so lässt sich später prüfen, ob
+  // Kantonsfilter und Umkreis von demselben Veranstaltungsort erfüllt werden
+  // — und nicht von zwei verschiedenen Orten desselben Kurses.
+  const kantonVonEintrag = kantonHinweis;
+
   const plzTreffer = kombiniert.match(/\b(\d{4})\b/);
   if (plzTreffer) {
     const plz = plzTreffer[1];
@@ -151,6 +156,9 @@ function resolveEntry(entry, placesIndex) {
         lng: row.lng,
         label: `${row.plz} ${row.ort}${row.kantonCode ? ` (${row.kantonCode})` : ''}`,
         approximate: true,
+        // Der am Datensatz hinterlegte Kanton zaehlt; nur wenn er fehlt,
+        // springt der Kanton aus der Ortstabelle ein.
+        canton: kantonVonEintrag || row.kanton || '',
       };
     }
   }
@@ -173,6 +181,7 @@ function resolveEntry(entry, placesIndex) {
         lng: locality.lng,
         label: `${locality.ort}${locality.kantonCode ? ` (${locality.kantonCode})` : ''}`,
         approximate: true,
+        canton: kantonVonEintrag || locality.kanton || '',
       };
     }
   }
@@ -212,7 +221,7 @@ export function getCourseGeoInfo(course, placesIndex, options = {}) {
   entries.forEach((entry) => {
     const point = resolveEntry(entry, placesIndex);
     if (!point) return;
-    const key = `${point.lat.toFixed(4)},${point.lng.toFixed(4)}`;
+    const key = `${point.lat.toFixed(4)},${point.lng.toFixed(4)}|${point.canton || ''}`;
     if (gesehen.has(key)) return;
     gesehen.add(key);
     points.push(point);
@@ -242,10 +251,47 @@ export function createGeoResolver(placesIndex, options = {}) {
   };
 }
 
-/** Liegt mindestens ein relevanter Veranstaltungsort im Umkreis? */
-export function courseWithinRadius(geoInfo, center, radiusKm) {
+/**
+ * Welche der ausgewählten Standort-Filter sind echte Kantone?
+ *
+ * «Online» und «Ausland» sind im Standortfilter keine Kantone, sondern
+ * Formatangaben. Sie bleiben von der kombinierten Prüfung unberührt.
+ */
+export function realCantonSelections(selectedLocations) {
+  if (!Array.isArray(selectedLocations)) return [];
+  return selectedLocations.filter((value) => {
+    const token = tokenOf(value);
+    return token && token !== ONLINE_TOKEN && token !== AUSLAND_TOKEN;
+  });
+}
+
+/** Gehört ein Punkt zu einem der ausgewählten Kantone? */
+export function pointMatchesCantons(point, cantons) {
+  if (!Array.isArray(cantons) || cantons.length === 0) return true;
+  const punktKanton = tokenOf(point?.canton);
+  if (!punktKanton) return false;
+  return cantons.some((canton) => tokenOf(canton) === punktKanton);
+}
+
+/**
+ * Liegt mindestens ein relevanter Veranstaltungsort im Umkreis?
+ *
+ * Mit `cantons` muss EIN UND DERSELBE Ort beide Bedingungen erfüllen.
+ *
+ * Hintergrund: Ein Kurs mit Terminen in Bern und in Aarburg erfüllte vorher
+ * den Kantonsfilter «Bern» über den Berner Termin und den Umkreis «50 km um
+ * Zürich» über Aarburg — zwei verschiedene Orte, zusammen ein Treffer, den
+ * niemand erwartet. Weil der Kanton am Punkt hängt, lässt sich das jetzt
+ * punktweise prüfen.
+ *
+ * Der Datumsfilter ist bereits eingearbeitet: Die Punkte stammen aus den
+ * Terminen, die zum gewählten Zeitraum passen (siehe collectLocationEntries).
+ * Damit gehören Datum, Kanton und Umkreis zwingend zum selben Termin.
+ */
+export function courseWithinRadius(geoInfo, center, radiusKm, { cantons = [] } = {}) {
   if (!geoInfo || geoInfo.status !== 'located') return false;
-  return geoInfo.points.some((point) => isWithinRadius(center, point, radiusKm));
+  return geoInfo.points.some((point) => isWithinRadius(center, point, radiusKm)
+    && pointMatchesCantons(point, cantons));
 }
 
 /**
@@ -266,13 +312,14 @@ export function filterCoursesByRadius(courses, {
   resolveGeo = null,
   dateFrom = '',
   dateTo = '',
+  cantons = [],
 } = {}) {
   if (!Array.isArray(courses)) return [];
   if (!center || !Number.isFinite(radiusKm) || radiusKm <= 0) return courses;
   if (!placesIndex && !resolveGeo) return courses;
 
   const resolve = resolveGeo || createGeoResolver(placesIndex, { dateFrom, dateTo });
-  return courses.filter((course) => courseWithinRadius(resolve(course), center, radiusKm));
+  return courses.filter((course) => courseWithinRadius(resolve(course), center, radiusKm, { cantons }));
 }
 
 /**
@@ -300,7 +347,7 @@ export function countGeoStatuses(courses, resolveGeo) {
  * @param {Function} resolveGeo
  * @param {{center?: object, radiusKm?: number}} [options] - optional: nur Punkte im Umkreis
  */
-export function buildMapMarkers(courses, resolveGeo, { center = null, radiusKm = 0 } = {}) {
+export function buildMapMarkers(courses, resolveGeo, { center = null, radiusKm = 0, cantons = [] } = {}) {
   const marker = new Map();
   if (!Array.isArray(courses) || !resolveGeo) return [];
 
@@ -310,7 +357,11 @@ export function buildMapMarkers(courses, resolveGeo, { center = null, radiusKm =
     const info = resolveGeo(course);
     if (!info || info.status !== 'located') return;
     info.points.forEach((point) => {
+      // Bei aktivem Umkreis zeigt die Karte nur Orte, die ALLE aktiven
+      // Bedingungen erfüllen — sonst erschiene ein Marker an einem Ort, über
+      // den der Kurs gar nicht in die Liste gekommen ist.
       if (radiusAktiv && !isWithinRadius(center, point, radiusKm)) return;
+      if (radiusAktiv && !pointMatchesCantons(point, cantons)) return;
       const key = `${point.lat.toFixed(4)},${point.lng.toFixed(4)}`;
       const vorhanden = marker.get(key);
       if (vorhanden) {

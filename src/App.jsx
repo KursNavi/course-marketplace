@@ -16,7 +16,7 @@ import { trackPageView, trackPurchase } from './lib/analytics';
 import { trackContentsquareRouteChange } from './lib/contentsquare';
 import { useTaxonomy } from './hooks/useTaxonomy';
 import { getSearchAreaSlugs } from './lib/searchAreaAliases';
-import { RADIUS_OPTIONS, courseWithinRadius, createGeoResolver } from './lib/courseGeo';
+import { RADIUS_OPTIONS, courseWithinRadius, createGeoResolver, realCantonSelections } from './lib/courseGeo';
 import { loadSwissPlaces, resolvePlaceId } from './lib/swissPlaces';
 
 // Disable browser scroll auto-restoration synchronously so it can't override
@@ -607,6 +607,13 @@ export default function KursNaviPro() {  // 1. Initial State Logic
   }, [radiusOrigin, searchMapView, placesIndex, ensurePlacesIndex]);
 
   const radiusActive = Boolean(radiusOrigin) && RADIUS_OPTIONS.includes(radiusKm) && Boolean(placesIndex);
+
+  // Bei aktivem Umkreis muss EIN UND DERSELBE Veranstaltungsort sowohl im
+  // Umkreis liegen als auch zum Kantonsfilter passen. Ohne das erfuellte ein
+  // Kurs mit Terminen in Bern und Aarburg die Kombination «Kanton Bern» +
+  // «50 km um Zuerich» ueber zwei verschiedene Orte.
+  // «Online» und «Ausland» sind keine Kantone und bleiben unberuehrt.
+  const radiusCantons = useMemo(() => realCantonSelections(selectedLocations), [selectedLocations]);
 
   // Ein Resolver mit Zwischenspeicher pro Kurs. Haengt am Datumsfilter, weil
   // bei aktivem Zeitraum nur die dazu passenden Termine (und damit deren Orte)
@@ -1744,7 +1751,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
   // Filtern, damit filteredCoursesPreRadius weiterhin als Bezugsmenge fuer den
   // erklaerenden Hinweis zu Online- und ortlosen Kursen verfuegbar bleibt.
   const filteredCoursesPreCategory = radiusActive
-    ? filteredCoursesPreRadius.filter(course => courseWithinRadius(resolveCourseGeo(course), radiusOrigin, radiusKm))
+    ? filteredCoursesPreRadius.filter(course => courseWithinRadius(resolveCourseGeo(course), radiusOrigin, radiusKm, { cantons: radiusCantons }))
     : filteredCoursesPreRadius;
 
   // Stage 2: Apply category filters on top of pre-category results
@@ -2684,7 +2691,7 @@ useEffect(() => {
           </div>
           {searchTab === 'anbieter'
             ? <ProviderDirectory t={t} setView={setView} embedded={true} />
-            : <SearchPageView courses={courses} filteredCoursesPreCategory={filteredCoursesPreCategory} coursesBeforeRadius={filteredCoursesPreRadius} searchQuery={searchQuery} setSearchQuery={setSearchQuery} searchType={searchType} setSearchType={setSearchType} autoType={searchAutoType} setAutoType={setSearchAutoType} searchArea={searchArea} setSearchArea={setSearchArea} searchSpecialty={searchSpecialty} setSearchSpecialty={setSearchSpecialty} searchFocus={searchFocus} setSearchFocus={setSearchFocus} selectedLocations={selectedLocations} setSelectedLocations={setSelectedLocations} locMenuOpen={locMenuOpen} setLocMenuOpen={setLocMenuOpen} locMenuRef={locMenuRef} loading={loading} filteredCourses={filteredCourses} setSelectedCourse={setSelectedCourse} setView={setView} t={t} getCatLabel={getCatLabel} filterDateFrom={filterDateFrom} setFilterDateFrom={setFilterDateFrom} filterDateTo={filterDateTo} setFilterDateTo={setFilterDateTo} filterPriceMax={filterPriceMax} setFilterPriceMax={setFilterPriceMax} filterLevel={filterLevel} setFilterLevel={setFilterLevel} filterPro={filterPro} setFilterPro={setFilterPro} filterDirectBooking={filterDirectBooking} setFilterDirectBooking={setFilterDirectBooking} selectedLanguages={selectedLanguages} setSelectedLanguages={setSelectedLanguages} langMenuOpen={langMenuOpen} setLangMenuOpen={setLangMenuOpen} langMenuRef={langMenuRef} selectedDeliveryTypes={selectedDeliveryTypes} setSelectedDeliveryTypes={setSelectedDeliveryTypes} deliveryMenuOpen={deliveryMenuOpen} setDeliveryMenuOpen={setDeliveryMenuOpen} deliveryMenuRef={deliveryMenuRef} savedCourseIds={savedCourseIds} onToggleSaveCourse={toggleSaveCourse} user={user} selectedSaule={selectedSaule} setSelectedSaule={setSelectedSaule} selectedKursart={selectedKursart} setSelectedKursart={setSelectedKursart} fetchError={fetchError} onRetry={fetchCourses} setSelectedCatPath={setSelectedCatPath} radiusOrigin={radiusOrigin} setRadiusOrigin={setRadiusOrigin} radiusKm={radiusKm} setRadiusKm={setRadiusKm} radiusActive={radiusActive} onResetRadius={resetRadiusFilter} placesIndex={placesIndex} placesLoading={placesLoading} placesError={placesError} placesReady={Boolean(placesIndex)} onEnsurePlaces={ensurePlacesIndex} resolveCourseGeo={resolveCourseGeo} mapView={searchMapView} setMapView={setSearchMapView} />
+            : <SearchPageView courses={courses} filteredCoursesPreCategory={filteredCoursesPreCategory} coursesBeforeRadius={filteredCoursesPreRadius} searchQuery={searchQuery} setSearchQuery={setSearchQuery} searchType={searchType} setSearchType={setSearchType} autoType={searchAutoType} setAutoType={setSearchAutoType} searchArea={searchArea} setSearchArea={setSearchArea} searchSpecialty={searchSpecialty} setSearchSpecialty={setSearchSpecialty} searchFocus={searchFocus} setSearchFocus={setSearchFocus} selectedLocations={selectedLocations} setSelectedLocations={setSelectedLocations} locMenuOpen={locMenuOpen} setLocMenuOpen={setLocMenuOpen} locMenuRef={locMenuRef} loading={loading} filteredCourses={filteredCourses} setSelectedCourse={setSelectedCourse} setView={setView} t={t} getCatLabel={getCatLabel} filterDateFrom={filterDateFrom} setFilterDateFrom={setFilterDateFrom} filterDateTo={filterDateTo} setFilterDateTo={setFilterDateTo} filterPriceMax={filterPriceMax} setFilterPriceMax={setFilterPriceMax} filterLevel={filterLevel} setFilterLevel={setFilterLevel} filterPro={filterPro} setFilterPro={setFilterPro} filterDirectBooking={filterDirectBooking} setFilterDirectBooking={setFilterDirectBooking} selectedLanguages={selectedLanguages} setSelectedLanguages={setSelectedLanguages} langMenuOpen={langMenuOpen} setLangMenuOpen={setLangMenuOpen} langMenuRef={langMenuRef} selectedDeliveryTypes={selectedDeliveryTypes} setSelectedDeliveryTypes={setSelectedDeliveryTypes} deliveryMenuOpen={deliveryMenuOpen} setDeliveryMenuOpen={setDeliveryMenuOpen} deliveryMenuRef={deliveryMenuRef} savedCourseIds={savedCourseIds} onToggleSaveCourse={toggleSaveCourse} user={user} selectedSaule={selectedSaule} setSelectedSaule={setSelectedSaule} selectedKursart={selectedKursart} setSelectedKursart={setSelectedKursart} fetchError={fetchError} onRetry={fetchCourses} setSelectedCatPath={setSelectedCatPath} radiusOrigin={radiusOrigin} setRadiusOrigin={setRadiusOrigin} radiusKm={radiusKm} setRadiusKm={setRadiusKm} radiusActive={radiusActive} radiusCantons={radiusCantons} onResetRadius={resetRadiusFilter} placesIndex={placesIndex} placesLoading={placesLoading} placesError={placesError} placesReady={Boolean(placesIndex)} onEnsurePlaces={ensurePlacesIndex} resolveCourseGeo={resolveCourseGeo} mapView={searchMapView} setMapView={setSearchMapView} />
           }
         </>
       )}

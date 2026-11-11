@@ -19,8 +19,17 @@ Entfernungssortierung und keinen Schalter dafür.
   übrigen Filtern und *vor* der Anzeige: `filteredCoursesPreRadius` →
   `filteredCoursesPreCategory`. Er nutzt `Array.filter` und behält damit die
   Reihenfolge; es wird nur entfernt.
-* `sortCoursesByRelevance` in `src/lib/searchRelevance.js` ist unverändert und
-  kennt keine Koordinaten.
+* `sortCoursesByRelevance` in `src/lib/searchRelevance.js` kennt keine
+  Koordinaten. **Eine Korrektur war dort trotzdem nötig:** Die Streuung
+  gleichrangiger Kurse stammte aus der *Position* eines Kurses in der
+  übergebenen Liste (`Math.sin(seed * 10000 + i + 1)`). Entfernte ein Filter
+  einen Kurs, rutschten alle folgenden eine Position vor und bekamen einen
+  anderen Streuwert — bei rund zwei Dritteln aller Seitenaufrufe reichte das,
+  um zwei fast gleichrangige Kurse zu tauschen. Die Streuung kommt jetzt aus
+  Seed **und Kurs-ID**. Rangstufen, Faktoren und Relevanzlogik sind
+  unverändert; neu ist nur, dass der Streuwert eines Kurses nicht mehr davon
+  abhängt, welche anderen Kurse danebenstehen. Das galt für jeden Filter, der
+  Umkreis hat es nur sichtbar gemacht.
 * Nachgewiesen in `tests/umkreis-prio-regression.test.js` — unter anderem
   explizit für den Fall, dass ein niedriger priorisierter Kurs näher liegt.
 
@@ -50,6 +59,22 @@ jemand die Umkreissuche benutzt.
 
 Damit zählt immer der Veranstaltungsort, nie der Firmensitz — und eine veraltete
 Adresse am Kurs kann einen Kurs nicht an den falschen Ort setzen.
+
+### Kantonsfilter und Umkreis gehören zum selben Ort
+
+Jeder aufgelöste Punkt trägt seinen Kanton mit sich. Bei aktivem Umkreis muss
+**ein und derselbe** Veranstaltungsort beide Bedingungen erfüllen.
+
+Ohne diese Regel erfüllte ein Kurs mit Terminen in Thun (BE) und Aarburg (AG)
+die Kombination «Kanton Bern» + «50 km um Zürich» über zwei verschiedene Orte
+und erschien samt Marker in Aarburg. Weil die Punkte bei aktivem Datumsfilter
+ohnehin nur aus den passenden Terminen stammen, gehören damit Datum, Kanton
+und Umkreis zwingend zum selben Termin.
+
+«Online» und «Ausland» sind im Standortfilter keine Kantone und bleiben von
+der Regel unberührt; reine Onlinekurse scheitern ohnehin schon am Umkreis.
+Die Regel greift nur, solange ein Umkreis aktiv ist — ohne Umkreis verhält
+sich der Standortfilter unverändert.
 
 ### Genauigkeit und Grenzen
 
@@ -171,3 +196,5 @@ kein Neuladen.
 | `tests/umkreis-suchparameter.test.js` | Zusammenspiel mit bestehenden Filtern, Datenschutz |
 | `tests/umkreis-karte-ausschnitt.test.js` | Kartenausschnitt passt zum Umkreis |
 | `tests/umkreis-karte-einbindung.test.jsx` | Ortstabelle für die Karte, Mausrad-Zoom, Reihenfolge der Seitenleiste, Detailseiten-Karte |
+| `tests/umkreis-reihenfolge-anzeige.test.jsx` | **Reihenfolge im vollständigen Anzeigeablauf** (echte SearchPageView, mehrere Seitenaufrufe) |
+| `tests/umkreis-kanton-gleicher-ort.test.js` | Kanton und Umkreis am selben Ort, inkl. Datumsfilter und Karte |
