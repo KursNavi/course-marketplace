@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { AlertTriangle, Loader } from 'lucide-react';
+import { buildPopupHtml } from '../lib/mapPopup';
 
 /**
  * Kartenansicht der Kurstreffer.
@@ -49,39 +50,6 @@ function escapeHtml(value) {
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
-}
-
-/**
- * Inhalt eines Marker-Fensters.
- *
- * Bei mehreren Kursen am selben Punkt entspricht die Reihenfolge der
- * Ergebnisliste — also der bestehenden Priorisierung. Hier wird nichts
- * umsortiert.
- */
-function buildPopupHtml(marker, buildPath, popupMode) {
-    // Auf der Kursdetailseite ist der Kurs schon bekannt — dort genügt der Ort.
-    if (popupMode === 'place') {
-        return `<div style="min-width:140px"><strong>${escapeHtml(marker.courses[0]?.label || '')}</strong><div style="font-size:11px;color:#6b7280;margin-top:2px">ungefähre Lage (Ortsmittelpunkt)</div></div>`;
-    }
-
-    const maxEintraege = 5;
-    const sichtbar = marker.courses.slice(0, maxEintraege);
-    const rest = marker.courses.length - sichtbar.length;
-    const ort = escapeHtml(sichtbar[0]?.label || '');
-
-    const eintraege = sichtbar.map(({ course }) => {
-        const pfad = escapeHtml(buildPath(course));
-        const titel = escapeHtml(course.title || 'Kurs');
-        return `<li style="margin:0 0 6px"><a href="${pfad}" data-course-id="${escapeHtml(course.id)}" class="kn-map-link" style="color:#FA6E28;font-weight:700;text-decoration:none">${titel}</a></li>`;
-    }).join('');
-
-    return `
-        <div style="min-width:180px;max-width:240px">
-            <div style="font-size:11px;color:#6b7280;margin-bottom:6px">${ort} · ungefähr</div>
-            <ul style="list-style:none;margin:0;padding:0;font-size:13px">${eintraege}</ul>
-            ${rest > 0 ? `<div style="font-size:11px;color:#6b7280;margin-top:4px">und ${rest} weitere an diesem Ort</div>` : ''}
-        </div>
-    `;
 }
 
 const CourseMap = ({
@@ -165,6 +133,21 @@ const CourseMap = ({
                     if (!programmaticRef.current) userMovedRef.current = true;
                 });
 
+                // Klicks auf Kurslinks DIREKT am Fenster abfangen: Leaflet
+                // unterbindet die Klick-Weitergabe aus dem Fenster an die
+                // Seite (disableClickPropagation), der Handler am Container
+                // bekäme sie also nie zu sehen. Ohne diesen Listener würde
+                // der Browser dem Link als ganze Seitenneuladung folgen,
+                // statt die Kursseite in der laufenden Anwendung zu öffnen.
+                map.on('popupopen', (popupEvent) => {
+                    const node = popupEvent.popup?.getElement?.();
+                    if (!node || node.dataset.knLinksBound) return;
+                    node.dataset.knLinksBound = '1';
+                    node.addEventListener('click', (clickEvent) => {
+                        popupClickRef.current?.(clickEvent);
+                    });
+                });
+
                 // --- Mausrad-Zoom ---
                 // Ein Klick in die Karte schaltet ihn frei, das Verlassen der
                 // Karte wieder ab. Damit zoomt das Mausrad dort, wo man es
@@ -235,6 +218,7 @@ const CourseMap = ({
     }, []);
 
     const handlePopupClick = useCallback((event) => {
+        if (event.defaultPrevented) return; // bereits vom Fenster-Handler erledigt
         const link = event.target.closest?.('.kn-map-link');
         if (!link) return;
         if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
@@ -246,6 +230,8 @@ const CourseMap = ({
         event.preventDefault();
         onSelectRef.current(treffer.course);
     }, []);
+    const popupClickRef = useRef(handlePopupClick);
+    popupClickRef.current = handlePopupClick;
 
     // --- Marker, Umkreis und Ausgangsort bei jeder Änderung neu zeichnen ---
     useEffect(() => {

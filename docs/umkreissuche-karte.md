@@ -149,6 +149,13 @@ gefiltert werden soll. Einspielen nur auf ausdrücklichen Auftrag.
 * Verschieben und Zoomen ändert die Suche **nicht**. Liste und Karte beruhen
   auf derselben `sortedCourses`-Liste; innerhalb eines Markers gilt dieselbe
   Priorisierung.
+* Das Marker-Fenster (`src/lib/mapPopup.js`) führt **alle** Kurse des Punktes
+  als Link — bei vielen Kursen scrollt die Liste innerhalb des Fensters,
+  statt abzuschneiden. Früher endete sie nach fünf Einträgen mit «und N
+  weitere an diesem Ort»; diese Kurse waren aus der Karte nicht erreichbar.
+  Klicks auf die Links werden direkt am Fenster abgefangen (Leaflet stoppt
+  die Klick-Weitergabe an die Seite), damit die Kursseite in der laufenden
+  Anwendung öffnet und die Rückkehr Filter und Kartenansicht behält.
 * **Mausrad-Zoom** ist zunächst gesperrt, damit die Karte das Scrollen der
   Seite nicht verschluckt. Ein Klick in die Karte schaltet ihn frei, das
   Verlassen der Karte sperrt ihn wieder. Wer über der gesperrten Karte
@@ -213,3 +220,4 @@ kein Neuladen.
 | `tests/umkreis-karte-einbindung.test.jsx` | Ortstabelle für die Karte, Mausrad-Zoom, Reihenfolge der Seitenleiste, Detailseiten-Karte |
 | `tests/umkreis-reihenfolge-anzeige.test.jsx` | **Reihenfolge im vollständigen Anzeigeablauf** (echte SearchPageView, mehrere Seitenaufrufe) |
 | `tests/umkreis-kanton-gleicher-ort.test.js` | Kanton und Umkreis am selben Ort, inkl. Datumsfilter und Karte |
+| `tests/umkreis-karte-popup.test.js` | Marker-Fenster: alle Kurse erreichbar, Prio-Reihenfolge, Scrollen, Klick-Verdrahtung |
