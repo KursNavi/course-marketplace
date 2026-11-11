@@ -76,6 +76,21 @@ der Regel unberührt; reine Onlinekurse scheitern ohnehin schon am Umkreis.
 Die Regel greift nur, solange ein Umkreis aktiv ist — ohne Umkreis verhält
 sich der Standortfilter unverändert.
 
+Zwei Feinheiten, die beim Prüfen der Preview dazukamen:
+
+* **Der Kanton beschreibt den aufgelösten Ort, nicht den Datensatz.** Es gibt
+  Kursdaten mit Kanton «Bern» und Ort «Zug». Die Koordinate kommt aus der
+  Ortstabelle, also muss auch der Kanton denselben Punkt beschreiben — sonst
+  stünde ein Marker in Zug, während nach Bern gefiltert wird. Der hinterlegte
+  Kanton springt nur ein, wenn die Ortstabelle keinen kennt.
+* **Eine Kantonsaufzählung ist keine Adresse.** Manche Kurse tragen im
+  Adressfeld die Liste der Kantone, in denen sie angeboten werden («Bern,
+  Basel-Stadt, Luzern, Solothurn, Zürich»). Daraus einen Veranstaltungsort zu
+  lesen hiesse, den zufällig letzten Eintrag zu nehmen. Solche Kurse bleiben
+  ohne Koordinate (`isCantonListText` in `src/lib/courseGeo.js`). Ein
+  einzelner Name bleibt verwertbar — «Zürich» allein ist im Zweifel die
+  Stadt.
+
 ### Genauigkeit und Grenzen
 
 * Alle Positionen sind **Ortsmittelpunkte** (PLZ-Kreis bzw. Ortschaft), nie

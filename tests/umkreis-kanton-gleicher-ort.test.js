@@ -34,6 +34,7 @@ import {
   createGeoResolver,
   filterCoursesByRadius,
   getCourseGeoInfo,
+  isCantonListText,
   pointMatchesCantons,
   realCantonSelections,
 } from '../src/lib/courseGeo.js';
@@ -298,5 +299,81 @@ describe('7 — die Anwendung reicht die Kantonsauswahl durch', () => {
 
   it('die Kartenmarker bekommen die Kantone ebenfalls', () => {
     expect(searchSource).toMatch(/cantons: radiusActive \? \(radiusCantons \|\| \[\]\) : \[\]/);
+  });
+});
+
+/**
+ * Zweiter Teil desselben Fehlerbilds, in der Preview aufgefallen:
+ *
+ * Bei «Kanton Bern + 50 km um Zürich» erschienen Marker in Zug und Zürich.
+ * Ursache waren Kurse, deren Adressfeld gar keine Adresse enthält, sondern
+ * die Liste der Kantone, in denen der Kurs angeboten wird
+ * («Bern, Basel-Stadt, Luzern, Solothurn, Zürich»). Daraus wurde der zufällig
+ * letzte Eintrag als Veranstaltungsort gelesen.
+ */
+describe('8 — eine Kantonsaufzählung ist keine Adresse', () => {
+  it.each([
+    ['Bern, Basel-Stadt, Luzern, Solothurn, Zürich', true],
+    ['Bern, Aargau, Zug', true],
+    ['Zürich, Online', true],
+    ['Bahnhofstrasse 1, 8001 Zürich', false],
+    ['8820 Wädenswil', false],
+    ['Zürich', false],          // einzelner Name: im Zweifel die Stadt
+    ['Stöckarkerstrasse 93, Braunwald', false],
+    ['', false],
+  ])('%s → Kantonsliste: %s', (text, erwartet) => {
+    expect(isCantonListText(text)).toBe(erwartet);
+  });
+
+  const kantonsliste = {
+    id: 'kantonsliste',
+    title: 'Kurs in vielen Kantonen',
+    canton: 'Bern',
+    address: 'Bern, Basel-Stadt, Luzern, Solothurn, Zürich',
+    course_events: [],
+    course_locations: [],
+  };
+
+  it('ein solcher Kurs bekommt KEINEN Ort — statt des letzten Listeneintrags', () => {
+    const info = getCourseGeoInfo(kantonsliste, index);
+    expect(info.status).toBe('unknown');
+    expect(info.points).toEqual([]);
+  });
+
+  it('er ist damit kein räumlicher Treffer und bekommt keinen Marker', () => {
+    expect(filterCoursesByRadius([kantonsliste], {
+      center: ZUERICH, radiusKm: 50, placesIndex: index, cantons: ['Bern'],
+    })).toEqual([]);
+    expect(buildMapMarkers([kantonsliste], resolver(), {
+      center: ZUERICH, radiusKm: 50, cantons: ['Bern'],
+    })).toEqual([]);
+  });
+
+  it('eine echte Adresse im selben Feld bleibt verwertbar', () => {
+    const echteAdresse = { id: 'echt', canton: 'Zürich', address: '8820 Wädenswil', course_events: [], course_locations: [] };
+    const info = getCourseGeoInfo(echteAdresse, index);
+    expect(info.status).toBe('located');
+    expect(info.points[0].canton).toBe('Zürich');
+  });
+});
+
+describe('9 — der Kanton beschreibt den tatsächlich aufgelösten Ort', () => {
+  it('widerspricht der hinterlegte Kanton dem Ort, zählt der Ort', () => {
+    // Es gibt Kursdaten mit Kanton «Bern» und Ort «Zug». Ein Marker in Zug,
+    // während nach Bern gefiltert wird, waere nicht erklaerbar.
+    const widerspruch = {
+      id: 'widerspruch',
+      course_events: [{ start_date: '2027-07-05', canton: 'Bern', city: 'Horgen' }],
+    };
+    const info = resolver()(widerspruch);
+    expect(info.points[0].canton).toBe('Zürich');
+    expect(courseWithinRadius(info, ZUERICH, 50, { cantons: ['Bern'] })).toBe(false);
+    expect(courseWithinRadius(info, ZUERICH, 50, { cantons: ['Zürich'] })).toBe(true);
+  });
+
+  it('stimmen beide überein, ändert sich nichts', () => {
+    const info = resolver()({ id: 'stimmig', course_events: [{ start_date: '2027-07-05', canton: 'Aargau', city: 'Aarburg' }] });
+    expect(info.points[0].canton).toBe('Aargau');
+    expect(courseWithinRadius(info, ZUERICH, 50, { cantons: ['Aargau'] })).toBe(true);
   });
 });

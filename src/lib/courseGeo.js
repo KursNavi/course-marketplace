@@ -29,7 +29,7 @@
  */
 
 import { isWithinRadius } from './geoDistance';
-import { lookupByLocalityName, lookupByPlz } from './swissPlaces';
+import { cantonCodeFromName, lookupByLocalityName, lookupByPlz } from './swissPlaces';
 
 /** Auswählbare Umkreise in Kilometern. */
 export const RADIUS_OPTIONS = [5, 10, 25, 50];
@@ -55,6 +55,28 @@ function isAuslandLocation(entry) {
   return tokenOf(entry?.location_type) === AUSLAND_TOKEN
     || tokenOf(entry?.canton) === AUSLAND_TOKEN
     || tokenOf(entry?.location) === AUSLAND_TOKEN;
+}
+
+/**
+ * Ist dieser Text in Wahrheit eine Aufzählung von Kantonen statt einer Adresse?
+ *
+ * Manche Kurse tragen im Adressfeld die Liste der Kantone, in denen sie
+ * angeboten werden: «Bern, Basel-Stadt, Luzern, Solothurn, Zürich». Daraus
+ * einen Veranstaltungsort zu machen wäre reines Raten — man würde den
+ * zufällig letzten Eintrag erwischen. Solche Kurse haben keinen Ort, der für
+ * einen Umkreis taugt, und bleiben darum ohne Koordinate.
+ *
+ * Bewusst nur bei MEHREREN Teilen: Ein einzelnes «Zürich» ist im Zweifel die
+ * Stadt und bleibt wie bisher verwertbar.
+ */
+export function isCantonListText(value) {
+  const text = String(value ?? '').trim();
+  if (!text.includes(',')) return false;
+  const teile = text.split(',').map((teil) => teil.trim()).filter(Boolean);
+  if (teile.length < 2) return false;
+  return teile.every((teil) => Boolean(cantonCodeFromName(teil))
+    || tokenOf(teil) === ONLINE_TOKEN
+    || tokenOf(teil) === AUSLAND_TOKEN);
 }
 
 function isPhysicalLocation(entry) {
@@ -135,13 +157,22 @@ function resolveEntry(entry, placesIndex) {
 
   const street = String(entry.street ?? '').trim();
   const city = String(entry.city ?? '').trim();
-  const freitext = String(entry.location ?? entry.address ?? '').trim();
+  const roherFreitext = String(entry.location ?? entry.address ?? '').trim();
+  // Eine Kantonsaufzählung ist keine Adresse (siehe isCantonListText).
+  const freitext = isCantonListText(roherFreitext) ? '' : roherFreitext;
   const kantonHinweis = String(entry.canton ?? '').trim();
   const kombiniert = [street, city, freitext].filter(Boolean).join(', ');
 
   // Der Kanton WANDERT MIT dem Punkt. Nur so lässt sich später prüfen, ob
   // Kantonsfilter und Umkreis von demselben Veranstaltungsort erfüllt werden
   // — und nicht von zwei verschiedenen Orten desselben Kurses.
+  //
+  // Massgebend ist der Kanton des AUFGELÖSTEN Ortes, nicht der am Datensatz
+  // hinterlegte: Die Koordinate kommt aus der Ortstabelle, also muss der
+  // Kanton denselben Punkt beschreiben. Widersprechen sich beide (es gibt
+  // Kursdaten mit Kanton «Bern» und Ort «Zug»), wäre sonst ein Marker in Zug
+  // zu sehen, während nach Bern gefiltert wird. Der Eintrag springt nur ein,
+  // wenn die Ortstabelle keinen Kanton kennt.
   const kantonVonEintrag = kantonHinweis;
 
   const plzTreffer = kombiniert.match(/\b(\d{4})\b/);
@@ -158,7 +189,7 @@ function resolveEntry(entry, placesIndex) {
         approximate: true,
         // Der am Datensatz hinterlegte Kanton zaehlt; nur wenn er fehlt,
         // springt der Kanton aus der Ortstabelle ein.
-        canton: kantonVonEintrag || row.kanton || '',
+        canton: row.kanton || kantonVonEintrag || '',
       };
     }
   }
@@ -181,7 +212,7 @@ function resolveEntry(entry, placesIndex) {
         lng: locality.lng,
         label: `${locality.ort}${locality.kantonCode ? ` (${locality.kantonCode})` : ''}`,
         approximate: true,
-        canton: kantonVonEintrag || locality.kanton || '',
+        canton: locality.kanton || kantonVonEintrag || '',
       };
     }
   }
