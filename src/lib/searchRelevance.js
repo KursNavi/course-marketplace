@@ -194,7 +194,10 @@ export function getRelevanceScore(course, query) {
  *      Ein direkter Titeltreffer steht vor einem hervorgehobenen Kurs, der nur
  *      über die Kategorie passt. Genau das war der gemeldete Fehler.
  *   3. Sichtbarkeits-Score (Hervorhebung × Buchungsfaktor + Streuung) — wirkt
- *      unverändert weiter, aber nur innerhalb einer Relevanzstufe.
+ *      unverändert weiter, aber nur innerhalb einer Relevanzstufe. Die
+ *      Streuung haengt am Kurs, nicht an seiner Position in der Liste: Das
+ *      Entfernen eines Kurses durch einen Filter darf die Reihenfolge der
+ *      uebrigen nicht verschieben.
  *   4. Kurs-ID als letzter Anker, damit die Reihenfolge nicht von der
  *      Eingangsreihenfolge der Datenbankantwort abhängt.
  *
@@ -221,11 +224,22 @@ export function sortCoursesByRelevance(courses, options = {}) {
   const relevance = new Map();
   const visibility = new Map();
 
-  courses.forEach((course, i) => {
+  courses.forEach((course) => {
     const planFactor = course?.is_prio ? 1.2 : 1.0;
     const bookingFactor = course?.booking_factor || 1.0;
-    const hash = Math.sin(seed * 10000 + i + 1) * 10000;
-    const jitter = (hash - Math.floor(hash)) * 0.15;
+    // Streuung aus Seed UND Kurs-ID — bewusst NICHT aus der Position in der
+    // Liste. Mit der Position als Grundlage verschob jedes Filtern die
+    // Streuwerte aller verbleibenden Kurse und damit ihre relative
+    // Reihenfolge: Ein Kurs konnte allein dadurch an einem anderen
+    // vorbeiziehen, dass ein dritter Kurs weggefiltert wurde. Gemeldet wurde
+    // das beim Umkreisfilter, es galt aber genauso fuer Kanton, Sprache und
+    // jeden anderen Filter.
+    //
+    // Die Wirkung bleibt dieselbe: gleichrangige Kurse werden gestreut, und
+    // der Seed wechselt weiterhin pro Seitenaufruf (bzw. ist bei aktiver
+    // Sucheingabe aus ihr abgeleitet). Neu ist nur, dass der Streuwert eines
+    // Kurses nicht mehr davon abhaengt, welche anderen Kurse danebenstehen.
+    const jitter = stableSeed(`${seed}|${course?.id}`) * 0.15;
 
     relevance.set(course?.id, getRelevanceScore(course, query));
     // Basic-Lead-Penalty wirkt als Multiplikator auf den fertigen

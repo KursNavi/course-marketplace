@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useRef, useCallback } from 'react';
-import { Search, ChevronRight, ChevronDown, Filter, User, X, Shield, MapPin, CheckCircle, Loader, Bell, ArrowDown, Sparkles, Bookmark, BookmarkCheck, CreditCard, Info, EyeOff, Briefcase, Palette, Smile, BookOpen, Compass, SearchX, AlertTriangle, RotateCcw, Mail } from 'lucide-react';
+import React, { useEffect, useMemo, useRef, useCallback, Suspense } from 'react';
+import { Search, ChevronRight, ChevronDown, Filter, User, X, Shield, MapPin, CheckCircle, Loader, Bell, ArrowDown, Sparkles, Bookmark, BookmarkCheck, CreditCard, Info, EyeOff, Briefcase, Palette, Smile, BookOpen, Compass, SearchX, AlertTriangle, RotateCcw, Mail, Map as MapIcon, List as ListIcon } from 'lucide-react';
 import { LocationDropdown, LanguageDropdown, DeliveryTypeFilter, SaeulenFilter, KursartFilter } from './Filters';
 import { PRIVAT_KURSART_ICONS, KINDER_KURSART_ICONS } from '../lib/kursartIcons';
 import { Globe } from 'lucide-react';
@@ -19,6 +19,13 @@ import { getSearchAreaSlugs } from '../lib/searchAreaAliases';
 import { sortCoursesByRelevance, stableSeed } from '../lib/searchRelevance';
 import { SectionMarker } from './SectionMarker';
 import { SEGMENT_VISUALS, SEG_BORDER_60 } from '../lib/segmentVisuals';
+import RadiusSearchPanel from './RadiusSearchPanel';
+import MapErrorBoundary from './MapErrorBoundary';
+import { buildMapMarkers, countGeoStatuses } from '../lib/courseGeo';
+
+// Die Kartenbibliothek wird erst geladen, wenn die Kartenansicht geöffnet wird.
+// Besucher, die nur die Liste nutzen, laden kein Kartenpaket.
+const CourseMap = React.lazy(() => import('./CourseMap'));
 
 import { DEFAULT_COURSE_IMAGE } from '../lib/imageUtils';
 const fallbackImage = DEFAULT_COURSE_IMAGE;
@@ -95,6 +102,11 @@ const SearchPageView = ({
     fetchError, onRetry,
     setSelectedCatPath,
     autoType, setAutoType,
+    // --- Umkreissuche und Kartenansicht ---
+    radiusOrigin, setRadiusOrigin, radiusKm, setRadiusKm, radiusActive, radiusCantons, onResetRadius,
+    placesIndex, placesLoading, placesError, placesReady, onEnsurePlaces, resolveCourseGeo,
+    coursesBeforeRadius,
+    mapView, setMapView,
 }) => {
 
     // Ref used as the scroll-margin anchor for the results column (no auto-scroll-into-view
@@ -536,7 +548,11 @@ const SearchPageView = ({
         if (setSelectedLanguages) setSelectedLanguages([]);
         if (setSelectedDeliveryTypes) setSelectedDeliveryTypes([]);
         if (setSelectedCatPath) setSelectedCatPath([]);
-    }, [setSearchArea, setSearchSpecialty, setSearchFocus, setSelectedLocations, setSearchQuery, setFilterDateFrom, setFilterDateTo, setFilterPriceMax, setFilterLevel, setFilterPro, setFilterDirectBooking, setSelectedSaule, setSelectedKursart, setSelectedLanguages, setSelectedDeliveryTypes, setSelectedCatPath]);
+        // Der Umkreis ist ein Filter wie jeder andere — «Alle zurücksetzen»
+        // entfernt ihn mit. Daneben gibt es im Umkreis-Feld weiterhin ein
+        // eigenes Zurücksetzen, das nur den Umkreis betrifft.
+        if (onResetRadius) onResetRadius();
+    }, [setSearchArea, setSearchSpecialty, setSearchFocus, setSelectedLocations, setSearchQuery, setFilterDateFrom, setFilterDateTo, setFilterPriceMax, setFilterLevel, setFilterPro, setFilterDirectBooking, setSelectedSaule, setSelectedKursart, setSelectedLanguages, setSelectedDeliveryTypes, setSelectedCatPath, onResetRadius]);
 
     const clearSearchText = useCallback(() => {
         setSearchQuery("");
@@ -641,6 +657,39 @@ const SearchPageView = ({
             preferDated: Boolean(filterDateFrom || filterDateTo),
         });
     }, [filteredCourses, filterDateFrom, filterDateTo, sortSeed, searchQuery]);
+
+    // --- UMKREIS UND KARTE ---
+    // Beides arbeitet auf sortedCourses, also auf genau der Treffermenge und
+    // Reihenfolge der Ergebnisliste. Die Karte kann dadurch keine anderen
+    // Kurse zeigen als die Liste, und die Reihenfolge innerhalb eines
+    // Kartenmarkers entspricht der bestehenden Priorisierung.
+    // Bezugsmenge sind die Treffer VOR dem Umkreisfilter — nur dort sind
+    // Onlinekurse und Kurse ohne zuordenbaren Ort ueberhaupt noch enthalten.
+    // Auf der bereits gefilterten Liste waere der erklaerende Hinweis immer
+    // leer, obwohl genau diese Kurse der Grund fuer ihn sind.
+    const geoStats = useMemo(() => {
+        if (!resolveCourseGeo) return null;
+        return countGeoStatuses(coursesBeforeRadius || filteredCoursesPreCategory || [], resolveCourseGeo);
+    }, [coursesBeforeRadius, filteredCoursesPreCategory, resolveCourseGeo]);
+
+    const mapMarkers = useMemo(() => {
+        if (!mapView || !resolveCourseGeo) return [];
+        return buildMapMarkers(sortedCourses, resolveCourseGeo, {
+            center: radiusActive ? radiusOrigin : null,
+            radiusKm: radiusActive ? radiusKm : 0,
+            // Bei aktivem Umkreis zeigt die Karte nur Orte, die auch zum
+            // Kantonsfilter passen — sonst stuende ein Marker an einem Ort,
+            // ueber den der Kurs gar nicht in die Liste gekommen ist.
+            cantons: radiusActive ? (radiusCantons || []) : [],
+        });
+    }, [mapView, resolveCourseGeo, sortedCourses, radiusActive, radiusOrigin, radiusKm, radiusCantons]);
+
+    const openCourseFromMap = useCallback((course) => {
+        const coursePath = buildCoursePath(course);
+        if (coursePath) window.history.pushState({ view: 'detail', courseId: course.id }, '', coursePath);
+        setSelectedCourse?.(course);
+        setView?.('detail');
+    }, [setSelectedCourse, setView]);
 
     // Welche Bereiche stecken tatsaechlich in der aktuellen Trefferliste? Treibt die kleine
     // Legende oberhalb der Ergebnisse: nur bei echt gemischten Bereichen sichtbar, und nie bei
@@ -760,9 +809,17 @@ const SearchPageView = ({
                               selectedDeliveryTypes.length > 0 || (filterPriceMax && filterPriceMax !== '') ||
                               (filterLevel && filterLevel !== 'All') || filterDateFrom || filterDateTo ||
                               filterPro || filterDirectBooking || selectedSaule ||
-                              searchArea || searchSpecialty || searchFocus || searchQuery) && (
+                              searchArea || searchSpecialty || searchFocus || searchQuery || radiusActive) && (
                                 <div className="flex gap-2 flex-wrap items-center bg-white border border-borderSubtle rounded-xl p-3" data-testid="filter-chips">
                                     <span className="text-[11px] font-semibold uppercase tracking-wide text-gray-400 w-full mb-0.5">Aktuelle Auswahl</span>
+                                    {/* Umkreis-Chip: einzeln entfernbar, damit ein Umkreis, der sich
+                                        mit einem Kantonsfilter beisst, sichtbar und gezielt
+                                        auflösbar bleibt. */}
+                                    {radiusActive && (
+                                        <span onClick={onResetRadius} data-testid="chip-radius" className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-orange-200 flex items-center">
+                                            <MapPin className="w-3 h-3 mr-1" aria-hidden="true" />{radiusKm} km um {radiusOrigin?.label} <X className="w-3 h-3 ml-1 opacity-50" />
+                                        </span>
+                                    )}
                                     {/* Search query chip */}
                                     {searchQuery && (
                                         <span onClick={() => setSearchQuery('')} className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-md font-bold cursor-pointer hover:bg-gray-200 flex items-center">
@@ -1182,6 +1239,27 @@ const SearchPageView = ({
                         </div>
                     )}
                 </div>
+
+                            {/* ========== SCHRITT 4: UMKREIS ==========
+                                Bewusst NACH «Gezielt suchen» und «Verfeinern»: Bereich,
+                                Suchbegriff und die bestehenden Filter sind der übliche Weg
+                                zum Ziel, der Umkreis ist die Feinjustierung danach.
+                                Filtert räumlich (Luftlinie) und wirkt zusätzlich zu allen
+                                bestehenden Filtern. Die Priorisierung der Treffer bleibt
+                                unberührt — die Entfernung geht in keine Sortierung ein. */}
+                            <RadiusSearchPanel
+                                origin={radiusOrigin || null}
+                                onOriginChange={setRadiusOrigin}
+                                radiusKm={radiusKm || 0}
+                                onRadiusChange={setRadiusKm}
+                                onReset={onResetRadius}
+                                placesIndex={placesIndex}
+                                placesLoading={placesLoading}
+                                placesError={placesError}
+                                onEnsurePlaces={onEnsurePlaces}
+                                geoStats={geoStats}
+                                resultCount={radiusActive ? filteredCourses.length : undefined}
+                            />
                         </div>
                     </aside>
 
@@ -1205,18 +1283,73 @@ const SearchPageView = ({
                             );
                         })()}
 
-                        {/* --- RESULTS HEADER (counter + aria-live) --- */}
-                <div
-                    className="mb-6"
-                    aria-live="polite"
-                    aria-atomic="true"
-                    role="status"
-                    data-testid="results-counter"
-                >
-                    <p className="text-sm text-gray-500 font-medium">
-                        {resultsCountText}
-                    </p>
+                        {/* --- RESULTS HEADER (counter + aria-live + Ansichtswechsel) --- */}
+                <div className="mb-6 flex items-center justify-between gap-3 flex-wrap">
+                    <div
+                        aria-live="polite"
+                        aria-atomic="true"
+                        role="status"
+                        data-testid="results-counter"
+                    >
+                        <p className="text-sm text-gray-500 font-medium">
+                            {resultsCountText}
+                        </p>
+                    </div>
+
+                    {/* Liste oder Karte — zeigt immer dieselbe Treffermenge.
+                        Reiner Ansichtswechsel im Seitenzustand: Filter, Suchbegriff
+                        und Umkreis bleiben dabei unverändert. Die Schaltflächen sind
+                        bewusst mindestens 40 px hoch, damit sie auf dem Handy gut
+                        treffbar sind. */}
+                    {setMapView && (
+                        <div className="inline-flex rounded-lg border border-gray-200 bg-white p-0.5" role="group" aria-label="Ansicht">
+                            <button
+                                type="button"
+                                onClick={() => setMapView(false)}
+                                aria-pressed={!mapView}
+                                data-testid="btn-view-list"
+                                className={`min-h-10 inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-semibold transition
+                                    ${!mapView ? 'bg-petrol text-white' : 'text-gray-600 hover:text-gray-900'}`}
+                            >
+                                <ListIcon className="h-4 w-4" aria-hidden="true" />
+                                Liste
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setMapView(true)}
+                                aria-pressed={Boolean(mapView)}
+                                data-testid="btn-view-map"
+                                className={`min-h-10 inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-semibold transition
+                                    ${mapView ? 'bg-petrol text-white' : 'text-gray-600 hover:text-gray-900'}`}
+                            >
+                                <MapIcon className="h-4 w-4" aria-hidden="true" />
+                                Karte
+                            </button>
+                        </div>
+                    )}
                 </div>
+
+                {/* --- KARTENANSICHT --- */}
+                {!loading && !fetchError && mapView && filteredCourses.length > 0 && (
+                    <MapErrorBoundary onBackToList={() => setMapView(false)}>
+                        <Suspense fallback={(
+                            <div className="rounded-2xl border border-borderSubtle bg-white px-6 py-20 text-center" data-testid="map-suspense">
+                                <Loader className="mx-auto mb-3 h-8 w-8 animate-spin text-primary" aria-hidden="true" />
+                                <p className="text-sm text-gray-500">Karte wird geladen …</p>
+                            </div>
+                        )}>
+                            <CourseMap
+                                markers={mapMarkers}
+                                origin={radiusActive ? radiusOrigin : null}
+                                radiusKm={radiusActive ? radiusKm : 0}
+                                buildCoursePath={buildCoursePath}
+                                onSelectCourse={openCourseFromMap}
+                                totalCourses={sortedCourses.length}
+                                placesReady={Boolean(placesReady ?? placesIndex)}
+                            />
+                        </Suspense>
+                    </MapErrorBoundary>
+                )}
 
                 {/* BEREICHE-LEGENDE — nur bei echt gemischten Treffern (kein Bereich aktiv
                     ausgewaehlt), dieselben Farben wie die linke Linie auf den Ergebnis-Karten.
@@ -1267,7 +1400,7 @@ const SearchPageView = ({
                 )}
 
                 {/* --- RESULTS LIST (vertikale Trefferliste statt Kartenraster) --- */}
-                {!loading && !fetchError && filteredCourses.length > 0 && (
+                {!loading && !fetchError && !mapView && filteredCourses.length > 0 && (
                   <div className="flex flex-col gap-3" data-testid="course-grid">
                     {sortedCourses.flatMap((course, courseIndex) => {
                       const bereichConfig = searchArea ? getBereichByAreaSlug(searchArea) : null;

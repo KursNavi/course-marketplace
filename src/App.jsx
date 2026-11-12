@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useLayoutEffect, useRef, Suspense, useCallback } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useMemo, useRef, Suspense, useCallback } from 'react';
 import { CheckCircle, XCircle } from 'lucide-react';
 
 // Build: 2026-02-22 - Use DB taxonomy instead of constants
@@ -16,6 +16,8 @@ import { trackPageView, trackPurchase } from './lib/analytics';
 import { trackContentsquareRouteChange } from './lib/contentsquare';
 import { useTaxonomy } from './hooks/useTaxonomy';
 import { getSearchAreaSlugs } from './lib/searchAreaAliases';
+import { RADIUS_OPTIONS, courseWithinRadius, createGeoResolver, realCantonSelections } from './lib/courseGeo';
+import { loadSwissPlaces, resolvePlaceId } from './lib/swissPlaces';
 
 // Disable browser scroll auto-restoration synchronously so it can't override
 // React's scroll-to-top in useLayoutEffect before scrollRestoration is set in useEffect.
@@ -534,10 +536,103 @@ export default function KursNaviPro() {  // 1. Initial State Logic
     return new URLSearchParams(window.location.search).get('tab') === 'anbieter' ? 'anbieter' : 'kurse';
   });
 
+  // --- UMKREISSUCHE ---
+  // radiusOrigin ist der Ausgangsort. Bei einem manuell gewaehlten Ort steht
+  // nur seine Kennung (z.B. plz:8001:Zuerich) in der Adresszeile — ein
+  // Geraetestandort NIE: dessen Koordinaten bleiben ausschliesslich im
+  // Seitenzustand (siehe src/lib/deviceLocation.js).
+  const [radiusOrigin, setRadiusOrigin] = useState(null);
+  const [pendingRadiusPlaceId, setPendingRadiusPlaceId] = useState(() => {
+    if (window.location.pathname !== '/search') return '';
+    return new URLSearchParams(window.location.search).get('near') || '';
+  });
+  const [radiusKm, setRadiusKm] = useState(() => {
+    if (window.location.pathname !== '/search') return 0;
+    const raw = Number(new URLSearchParams(window.location.search).get('radius'));
+    return RADIUS_OPTIONS.includes(raw) ? raw : 0;
+  });
+  const [searchMapView, setSearchMapView] = useState(() => {
+    if (window.location.pathname !== '/search') return false;
+    return new URLSearchParams(window.location.search).get('map') === '1';
+  });
+  const [placesIndex, setPlacesIndex] = useState(null);
+  const [placesLoading, setPlacesLoading] = useState(false);
+  const [placesError, setPlacesError] = useState(false);
+
   const catMenuRef = useRef(null);
   const locMenuRef = useRef(null);
   // Guard: prevent syncFromUrl from re-applying state during programmatic URL updates
   const isUrlSyncingRef = useRef(false);
+
+  // Ortstabelle (rund 200 KB) erst auf Anforderung laden — wer die
+  // Umkreissuche nicht benutzt, laedt sie nie.
+  const ensurePlacesIndex = useCallback(() => {
+    if (placesIndex || placesLoading) return;
+    setPlacesLoading(true);
+    setPlacesError(false);
+    loadSwissPlaces()
+      .then((index) => { setPlacesIndex(index); })
+      .catch(() => { setPlacesError(true); })
+      .finally(() => { setPlacesLoading(false); });
+  }, [placesIndex, placesLoading]);
+
+  // Ein `near=`-Parameter in der Adresszeile (geteilter Link, Zurueck-Taste)
+  // braucht die Ortstabelle, um wieder zu Koordinaten zu werden.
+  useEffect(() => {
+    if (!pendingRadiusPlaceId) return;
+    if (!placesIndex) { ensurePlacesIndex(); return; }
+    const place = resolvePlaceId(placesIndex, pendingRadiusPlaceId);
+    setPendingRadiusPlaceId('');
+    if (place) {
+      setRadiusOrigin({
+        id: place.id,
+        label: place.label,
+        lat: place.lat,
+        lng: place.lng,
+        source: 'place',
+        approximate: true,
+      });
+    } else {
+      // Unbekannte Kennung: Umkreis bleibt aus statt auf einen geratenen Ort
+      // zu zeigen.
+      setRadiusKm(0);
+    }
+  }, [pendingRadiusPlaceId, placesIndex, ensurePlacesIndex]);
+
+  // Die Ortstabelle braucht es in ZWEI Faellen: fuer den Umkreis und fuer die
+  // Kartenansicht. Ohne sie laesst sich kein Kursort einem Punkt zuordnen —
+  // die Karte bliebe leer, auch wenn gar kein Umkreis gesetzt ist.
+  useEffect(() => {
+    if ((radiusOrigin || searchMapView) && !placesIndex) ensurePlacesIndex();
+  }, [radiusOrigin, searchMapView, placesIndex, ensurePlacesIndex]);
+
+  const radiusActive = Boolean(radiusOrigin) && RADIUS_OPTIONS.includes(radiusKm) && Boolean(placesIndex);
+
+  // Bei aktivem Umkreis muss EIN UND DERSELBE Veranstaltungsort sowohl im
+  // Umkreis liegen als auch zum Kantonsfilter passen. Ohne das erfuellte ein
+  // Kurs mit Terminen in Bern und Aarburg die Kombination «Kanton Bern» +
+  // «50 km um Zuerich» ueber zwei verschiedene Orte.
+  // «Online» und «Ausland» sind keine Kantone und bleiben unberuehrt.
+  const radiusCantons = useMemo(() => realCantonSelections(selectedLocations), [selectedLocations]);
+
+  // Ein Resolver mit Zwischenspeicher pro Kurs. Haengt am Datumsfilter, weil
+  // bei aktivem Zeitraum nur die dazu passenden Termine (und damit deren Orte)
+  // als raeumliche Treffer zaehlen duerfen.
+  const resolveCourseGeo = useMemo(
+    () => createGeoResolver(placesIndex, { dateFrom: filterDateFrom, dateTo: filterDateTo }),
+    [placesIndex, filterDateFrom, filterDateTo],
+  );
+
+  const resetRadiusFilter = useCallback(() => {
+    setRadiusOrigin(null);
+    setPendingRadiusPlaceId('');
+    setRadiusKm(0);
+  }, []);
+
+  // Spiegel des Ausgangsorts fuer syncFromUrl: der Effekt dort laeuft nur
+  // einmal und darf den aktuellen Wert nicht als Abhaengigkeit brauchen.
+  const radiusOriginRef = useRef(null);
+  useEffect(() => { radiusOriginRef.current = radiusOrigin; }, [radiusOrigin]);
 
   const t = TRANSLATIONS[lang] || TRANSLATIONS['de'];
 
@@ -1524,7 +1619,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
   };
 
   // Stage 1: All filters EXCEPT category (type/area/specialty/focus)
-  const filteredCoursesPreCategory = courses.filter(course => {
+  const filteredCoursesPreRadius = courses.filter(course => {
     if (!course) return false;
 
     // Status filter: Only show published courses OR user's own courses
@@ -1644,6 +1739,20 @@ export default function KursNaviPro() {  // 1. Initial State Logic
 
     return matchesLocation && matchesSearch && matchesDate && matchesPrice && matchesLevel && matchesPro && matchesLanguage && matchesDirectBooking && matchesDeliveryType;
   });
+
+  // Umkreisfilter: entscheidet NUR darueber, WELCHE Kurse enthalten sind.
+  // Array.filter behaelt die Reihenfolge, die Entfernung geht nirgends in eine
+  // Sortierung ein — die Priorisierung in SearchPageView arbeitet unveraendert
+  // auf der verbleibenden Liste weiter (siehe
+  // tests/umkreis-prio-regression.test.js).
+  //
+  // Der Filter laeuft hier, also auf dem gesamten relevanten Kursbestand und
+  // vor jeder Aufteilung der Anzeige. Als eigener Schritt NACH den uebrigen
+  // Filtern, damit filteredCoursesPreRadius weiterhin als Bezugsmenge fuer den
+  // erklaerenden Hinweis zu Online- und ortlosen Kursen verfuegbar bleibt.
+  const filteredCoursesPreCategory = radiusActive
+    ? filteredCoursesPreRadius.filter(course => courseWithinRadius(resolveCourseGeo(course), radiusOrigin, radiusKm, { cantons: radiusCantons }))
+    : filteredCoursesPreRadius;
 
   // Stage 2: Apply category filters on top of pre-category results
   const dbSearchType = searchType ? (URL_TO_DB_TYPE_FILTER[searchType] || searchType) : '';
@@ -1892,11 +2001,15 @@ export default function KursNaviPro() {  // 1. Initial State Logic
       const sauleParam = query.get('saule');
       const kursartParam = query.get('kursart');
       const tabParam = query.get('tab');
+      const nearParam = query.get('near');
+      const radiusParam = Number(query.get('radius'));
+      const mapParam = query.get('map');
 
       // Reset filters first when navigating to search, then apply URL params
       if (nextView === 'search') {
         const hasAnyParam = typeParam || areaParam || specParam || focusParam || qParam || locParam || levelParam
-          || langParam || deliveryParam || fromParam || toParam || priceParam || proParam || bookingParam || sauleParam || tabParam;
+          || langParam || deliveryParam || fromParam || toParam || priceParam || proParam || bookingParam || sauleParam || tabParam
+          || nearParam || mapParam;
         // Only reset if no params are provided (clean /search navigation)
         if (!hasAnyParam) {
           setSearchType("");
@@ -1916,6 +2029,10 @@ export default function KursNaviPro() {  // 1. Initial State Logic
           setFilterDirectBooking(false);
           setSelectedSaule("");
           setSearchTab('kurse');
+          setRadiusOrigin(null);
+          setPendingRadiusPlaceId('');
+          setRadiusKm(0);
+          setSearchMapView(false);
         } else {
           // Apply URL params — restore present ones, reset missing ones
           if (typeParam) setSearchType(typeParam); else setSearchType("");
@@ -1936,6 +2053,23 @@ export default function KursNaviPro() {  // 1. Initial State Logic
           if (sauleParam) setSelectedSaule(sauleParam); else setSelectedSaule("");
           if (kursartParam) setSelectedKursart(kursartParam); else setSelectedKursart("");
           setSearchTab(tabParam === 'anbieter' ? 'anbieter' : 'kurse');
+          // Umkreis: Ein `near=` in der Adresszeile wird ueber die Ortstabelle
+          // wieder aufgeloest (siehe Effekt zu pendingRadiusPlaceId). Fehlt es,
+          // ist der Umkreis aus — auch ein per Standortfreigabe gesetzter
+          // Ausgangsort, denn der steht bewusst nie in der URL.
+          if (nearParam) {
+            setRadiusOrigin((prev) => (prev && prev.id === nearParam ? prev : null));
+            setPendingRadiusPlaceId((prev) => (prev === nearParam ? prev : nearParam));
+            setRadiusKm(RADIUS_OPTIONS.includes(radiusParam) ? radiusParam : 0);
+          } else if (radiusOriginRef.current?.source !== 'device') {
+            // Ein per Standortfreigabe gesetzter Ausgangsort steht nicht in der
+            // Adresszeile und darf deshalb auch nicht daran scheitern, dass er
+            // dort fehlt. Nur ein manuell gewaehlter Ort wird hier geloescht.
+            setRadiusOrigin(null);
+            setPendingRadiusPlaceId('');
+            setRadiusKm(0);
+          }
+          setSearchMapView(mapParam === '1');
         }
       }
     };
@@ -2014,6 +2148,15 @@ export default function KursNaviPro() {  // 1. Initial State Logic
     if (selectedSaule) params.set('saule', selectedSaule);
     if (selectedKursart) params.set('kursart', selectedKursart);
     if (searchTab === 'anbieter') params.set('tab', 'anbieter');
+    // Umkreis: NUR die Kennung eines manuell gewaehlten Ortes landet in der
+    // Adresszeile. Ein Geraetestandort hat `source === 'device'` und keine
+    // Kennung — seine Koordinaten werden hier bewusst nicht geschrieben.
+    const nearId = radiusOrigin?.source === 'place' ? radiusOrigin.id : (pendingRadiusPlaceId || '');
+    if (nearId) {
+      params.set('near', nearId);
+      if (radiusKm) params.set('radius', String(radiusKm));
+    }
+    if (searchMapView) params.set('map', '1');
 
     const newUrl = '/search' + (params.toString() ? '?' + params.toString() : '');
     const currentUrl = window.location.pathname + window.location.search;
@@ -2024,7 +2167,8 @@ export default function KursNaviPro() {  // 1. Initial State Logic
     }
   }, [view, searchType, searchArea, searchSpecialty, searchFocus, searchQuery,
       selectedLocations, filterLevel, selectedLanguages, selectedDeliveryTypes,
-      filterDateFrom, filterDateTo, filterPriceMax, filterPro, filterDirectBooking, selectedSaule, selectedKursart, searchTab]);
+      filterDateFrom, filterDateTo, filterPriceMax, filterPro, filterDirectBooking, selectedSaule, selectedKursart, searchTab,
+      radiusOrigin, pendingRadiusPlaceId, radiusKm, searchMapView]);
 
   useEffect(() => {
     let cancelled = false;
@@ -2547,7 +2691,7 @@ useEffect(() => {
           </div>
           {searchTab === 'anbieter'
             ? <ProviderDirectory t={t} setView={setView} embedded={true} />
-            : <SearchPageView courses={courses} filteredCoursesPreCategory={filteredCoursesPreCategory} searchQuery={searchQuery} setSearchQuery={setSearchQuery} searchType={searchType} setSearchType={setSearchType} autoType={searchAutoType} setAutoType={setSearchAutoType} searchArea={searchArea} setSearchArea={setSearchArea} searchSpecialty={searchSpecialty} setSearchSpecialty={setSearchSpecialty} searchFocus={searchFocus} setSearchFocus={setSearchFocus} selectedLocations={selectedLocations} setSelectedLocations={setSelectedLocations} locMenuOpen={locMenuOpen} setLocMenuOpen={setLocMenuOpen} locMenuRef={locMenuRef} loading={loading} filteredCourses={filteredCourses} setSelectedCourse={setSelectedCourse} setView={setView} t={t} getCatLabel={getCatLabel} filterDateFrom={filterDateFrom} setFilterDateFrom={setFilterDateFrom} filterDateTo={filterDateTo} setFilterDateTo={setFilterDateTo} filterPriceMax={filterPriceMax} setFilterPriceMax={setFilterPriceMax} filterLevel={filterLevel} setFilterLevel={setFilterLevel} filterPro={filterPro} setFilterPro={setFilterPro} filterDirectBooking={filterDirectBooking} setFilterDirectBooking={setFilterDirectBooking} selectedLanguages={selectedLanguages} setSelectedLanguages={setSelectedLanguages} langMenuOpen={langMenuOpen} setLangMenuOpen={setLangMenuOpen} langMenuRef={langMenuRef} selectedDeliveryTypes={selectedDeliveryTypes} setSelectedDeliveryTypes={setSelectedDeliveryTypes} deliveryMenuOpen={deliveryMenuOpen} setDeliveryMenuOpen={setDeliveryMenuOpen} deliveryMenuRef={deliveryMenuRef} savedCourseIds={savedCourseIds} onToggleSaveCourse={toggleSaveCourse} user={user} selectedSaule={selectedSaule} setSelectedSaule={setSelectedSaule} selectedKursart={selectedKursart} setSelectedKursart={setSelectedKursart} fetchError={fetchError} onRetry={fetchCourses} setSelectedCatPath={setSelectedCatPath} />
+            : <SearchPageView courses={courses} filteredCoursesPreCategory={filteredCoursesPreCategory} coursesBeforeRadius={filteredCoursesPreRadius} searchQuery={searchQuery} setSearchQuery={setSearchQuery} searchType={searchType} setSearchType={setSearchType} autoType={searchAutoType} setAutoType={setSearchAutoType} searchArea={searchArea} setSearchArea={setSearchArea} searchSpecialty={searchSpecialty} setSearchSpecialty={setSearchSpecialty} searchFocus={searchFocus} setSearchFocus={setSearchFocus} selectedLocations={selectedLocations} setSelectedLocations={setSelectedLocations} locMenuOpen={locMenuOpen} setLocMenuOpen={setLocMenuOpen} locMenuRef={locMenuRef} loading={loading} filteredCourses={filteredCourses} setSelectedCourse={setSelectedCourse} setView={setView} t={t} getCatLabel={getCatLabel} filterDateFrom={filterDateFrom} setFilterDateFrom={setFilterDateFrom} filterDateTo={filterDateTo} setFilterDateTo={setFilterDateTo} filterPriceMax={filterPriceMax} setFilterPriceMax={setFilterPriceMax} filterLevel={filterLevel} setFilterLevel={setFilterLevel} filterPro={filterPro} setFilterPro={setFilterPro} filterDirectBooking={filterDirectBooking} setFilterDirectBooking={setFilterDirectBooking} selectedLanguages={selectedLanguages} setSelectedLanguages={setSelectedLanguages} langMenuOpen={langMenuOpen} setLangMenuOpen={setLangMenuOpen} langMenuRef={langMenuRef} selectedDeliveryTypes={selectedDeliveryTypes} setSelectedDeliveryTypes={setSelectedDeliveryTypes} deliveryMenuOpen={deliveryMenuOpen} setDeliveryMenuOpen={setDeliveryMenuOpen} deliveryMenuRef={deliveryMenuRef} savedCourseIds={savedCourseIds} onToggleSaveCourse={toggleSaveCourse} user={user} selectedSaule={selectedSaule} setSelectedSaule={setSelectedSaule} selectedKursart={selectedKursart} setSelectedKursart={setSelectedKursart} fetchError={fetchError} onRetry={fetchCourses} setSelectedCatPath={setSelectedCatPath} radiusOrigin={radiusOrigin} setRadiusOrigin={setRadiusOrigin} radiusKm={radiusKm} setRadiusKm={setRadiusKm} radiusActive={radiusActive} radiusCantons={radiusCantons} onResetRadius={resetRadiusFilter} placesIndex={placesIndex} placesLoading={placesLoading} placesError={placesError} placesReady={Boolean(placesIndex)} onEnsurePlaces={ensurePlacesIndex} resolveCourseGeo={resolveCourseGeo} mapView={searchMapView} setMapView={setSearchMapView} />
           }
         </>
       )}

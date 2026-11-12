@@ -46,8 +46,20 @@ describe('Permissions-Policy', () => {
     expect(policy()).toBeTruthy();
   });
 
-  it.each(['camera', 'microphone', 'geolocation', 'usb'])('schaltet %s ab', (feature) => {
+  it.each(['camera', 'microphone', 'usb'])('schaltet %s ab', (feature) => {
     expect(policy()).toContain(`${feature}=()`);
+  });
+
+  /**
+   * geolocation war vollstaendig gesperrt. Die Umkreissuche braucht die
+   * Standortfreigabe aber genau einmal: nach Klick auf «Meinen Standort
+   * verwenden». Freigegeben ist darum ausschliesslich die eigene Website
+   * (self) — eingebettete Fremdinhalte bekommen den Standort weiterhin nicht.
+   */
+  it('gibt geolocation nur fuer die eigene Website frei', () => {
+    expect(policy()).toContain('geolocation=(self)');
+    expect(policy()).not.toMatch(/geolocation=\(\s*\*/);
+    expect(policy()).not.toMatch(/geolocation=\(self\s+http/);
   });
 
   it('laesst payment unangetastet, damit Bezahlvorgaenge nicht brechen', () => {
