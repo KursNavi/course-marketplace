@@ -9,10 +9,11 @@
  *   - price > 0                     → 'fixed'    (Betrag; Preisbasis unbestätigt)
  *   - price_info (Freitext) gesetzt → 'info_text' (für Muss wie unbekannt)
  *
- * Invariante: Ein unbekannter Preis ist nicht gratis und erfüllt kein
- * Budget-Muss. 'from' und 'per_unit' sind reserviert für P02 (explizite
- * Preisbasis am Feld); heute liefert die Ableitung sie nie, Konsumenten
- * müssen sie aber behandeln können.
+ * Invarianten: Ein unbekannter Preis ist nicht gratis und erfüllt kein
+ * Budget-Muss. Ein positiver Preis mit UNBESTÄTIGTER Gesamtpreisbasis
+ * (heutiger Normalfall, z. B. mögliche Einzellektion) bestätigt ein
+ * Gesamtbudget-Muss ebenfalls nicht — erst ein explizites P02-Feld
+ * `price_basis` ('total' | 'per_unit' | 'from') kann die Basis belegen.
  */
 
 export const PRICE_STATUS = Object.freeze({
@@ -50,6 +51,10 @@ export function derivePriceStatus(course) {
     return { ...result, status: PRICE_STATUS.INFO_TEXT, infoText };
   }
 
+  // Vorgriff auf P02: ein explizites Preisbasis-Feld (heute im Schema nicht
+  // vorhanden) kann die Basis bestätigen bzw. 'ab'/'pro Einheit' ausweisen.
+  const explicitBasis = typeof course.price_basis === 'string' ? course.price_basis : null;
+
   // Bewusst KEIN Default auf 'platform': fehlt der Buchungstyp, bleibt ein
   // fehlender Preis unbekannt (konservativer als das Anzeige-Label).
   const type = course.booking_type;
@@ -59,7 +64,18 @@ export function derivePriceStatus(course) {
   const price = Number.isFinite(parsed) ? parsed : null;
 
   if (price !== null && price > 0) {
-    return { ...result, status: PRICE_STATUS.FIXED, amount: price };
+    if (explicitBasis === 'per_unit') {
+      return { ...result, status: PRICE_STATUS.PER_UNIT, amount: price };
+    }
+    if (explicitBasis === 'from') {
+      return { ...result, status: PRICE_STATUS.FROM, amount: price };
+    }
+    return {
+      ...result,
+      status: PRICE_STATUS.FIXED,
+      amount: price,
+      basisConfirmed: explicitBasis === 'total',
+    };
   }
 
   // price ist null oder 0:
@@ -87,14 +103,19 @@ export function checkBudgetMust(priceStatus, maxBudget) {
     case PRICE_STATUS.FREE:
       return 'confirmed';
     case PRICE_STATUS.FIXED:
-      return priceStatus.amount <= maxBudget ? 'confirmed' : 'failed';
+      if (priceStatus.amount > maxBudget) return 'failed';
+      // Betrag liegt im Budget — aber nur eine BESTÄTIGTE Gesamtpreisbasis
+      // darf ein Gesamtbudget-Muss bestätigen. Ein positiver Preis mit
+      // unbekannter Einheit (z. B. Einzellektion) bleibt ungeklärt.
+      return priceStatus.basisConfirmed === true ? 'confirmed' : 'unknown';
     case PRICE_STATUS.FROM:
-      // "ab X": liegt schon X über dem Budget, ist der Verstoss belegt;
+    case PRICE_STATUS.PER_UNIT:
+      // "ab X" bzw. "X pro Einheit": liegt schon X über dem Budget, ist der
+      // Verstoss belegt (der Gesamtpreis ist mindestens eine Einheit);
       // sonst bleibt der Endpreis offen.
       return priceStatus.amount !== null && priceStatus.amount > maxBudget
         ? 'failed'
         : 'unknown';
-    case PRICE_STATUS.PER_UNIT:
     case PRICE_STATUS.INFO_TEXT:
     case PRICE_STATUS.UNKNOWN:
     default:

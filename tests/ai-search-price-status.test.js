@@ -72,15 +72,35 @@ describe('checkBudgetMust', () => {
     expect(checkBudgetMust(free, 1)).toBe('confirmed');
   });
 
-  it('fester Preis wird deterministisch verglichen', () => {
+  it('Prüfbefund 2: positiver Preis mit UNBESTÄTIGTER Basis bestätigt kein Gesamtbudget', () => {
+    // Heutiger Normalfall: kein price_basis-Feld — 120 könnte eine
+    // Einzellektion sein, der Gesamtpreis darüber liegen.
     const fixed = derivePriceStatus({ booking_type: 'lead', price: 120 });
-    expect(checkBudgetMust(fixed, 120)).toBe('confirmed');
-    expect(checkBudgetMust(fixed, 119)).toBe('failed');
+    expect(fixed.basisConfirmed).toBe(false);
+    expect(checkBudgetMust(fixed, 120)).toBe('unknown');  // nie 'confirmed'
+    expect(checkBudgetMust(fixed, 119)).toBe('failed');   // Verstoss bleibt belegbar
   });
 
-  it('"ab"-Preis über Budget ist belegter Verstoss, unter Budget bleibt offen', () => {
+  it('nur eine bestätigte Gesamtpreisbasis (P02: price_basis=total) bestätigt das Budget', () => {
+    const confirmed = derivePriceStatus({ booking_type: 'lead', price: 120, price_basis: 'total' });
+    expect(confirmed.basisConfirmed).toBe(true);
+    expect(checkBudgetMust(confirmed, 120)).toBe('confirmed');
+    expect(checkBudgetMust(confirmed, 119)).toBe('failed');
+  });
+
+  it('explizite Einheiten-/Ab-Preise (P02) werden als per_unit/from abgeleitet', () => {
+    expect(derivePriceStatus({ booking_type: 'lead', price: 22, price_basis: 'per_unit' }).status)
+      .toBe(PRICE_STATUS.PER_UNIT);
+    expect(derivePriceStatus({ booking_type: 'lead', price: 200, price_basis: 'from' }).status)
+      .toBe(PRICE_STATUS.FROM);
+  });
+
+  it('"ab"-/Einheitspreis über Budget ist belegter Verstoss, unter Budget bleibt offen', () => {
     const from = { status: PRICE_STATUS.FROM, amount: 200, currency: 'CHF', basisConfirmed: false, infoText: null };
     expect(checkBudgetMust(from, 150)).toBe('failed');
     expect(checkBudgetMust(from, 250)).toBe('unknown');
+    const perUnit = { status: PRICE_STATUS.PER_UNIT, amount: 150, currency: 'CHF', basisConfirmed: false, infoText: null };
+    expect(checkBudgetMust(perUnit, 100)).toBe('failed'); // eine Einheit sprengt das Budget
+    expect(checkBudgetMust(perUnit, 500)).toBe('unknown');
   });
 });

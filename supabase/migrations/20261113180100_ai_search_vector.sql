@@ -25,20 +25,33 @@ CREATE OR REPLACE FUNCTION ai_search_semantic(
   p_model_version TEXT,
   p_limit INTEGER DEFAULT 100
 )
-RETURNS TABLE (course_id BIGINT, distance REAL, section TEXT, chunk_index INTEGER)
+RETURNS TABLE (course_id BIGINT, distance REAL, best_section TEXT, best_chunk_index INTEGER)
 LANGUAGE sql
 STABLE
 SECURITY INVOKER
 SET search_path = public
 AS $$
-  SELECT c.course_id,
-         (c.embedding <=> p_embedding)::REAL AS distance,
-         c.section,
-         c.chunk_index
-  FROM ai_search_chunks c
-  WHERE c.embedding IS NOT NULL
-    AND c.model_version = p_model_version
-  ORDER BY c.embedding <=> p_embedding, c.course_id, c.chunk_index
+  -- Wie ai_search_lexical: Chunktreffer werden VOR dem Limit je Kurs auf den
+  -- besten (naechsten) Chunk zusammengefuehrt. Das Limit begrenzt KURSE —
+  -- ein einzelner langer Kurs verdraengt keine anderen passenden Kurse.
+  WITH hits AS (
+    SELECT c.course_id,
+           (c.embedding <=> p_embedding)::REAL AS distance,
+           c.section,
+           c.chunk_index
+    FROM ai_search_chunks c
+    WHERE c.embedding IS NOT NULL
+      AND c.model_version = p_model_version
+  ),
+  best_per_course AS (
+    SELECT DISTINCT ON (h.course_id)
+           h.course_id, h.distance, h.section, h.chunk_index
+    FROM hits h
+    ORDER BY h.course_id, h.distance ASC, h.chunk_index
+  )
+  SELECT b.course_id, b.distance, b.section, b.chunk_index
+  FROM best_per_course b
+  ORDER BY b.distance ASC, b.course_id
   LIMIT GREATEST(p_limit, 1);
 $$;
 

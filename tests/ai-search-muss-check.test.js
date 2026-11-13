@@ -65,6 +65,7 @@ describe('checkCourseMusts – derselbe Event muss alles erfüllen', () => {
     const course = {
       booking_type: 'lead',
       price: 100,
+      price_basis: 'total', // bestätigte Gesamtpreisbasis (P02-Feld)
       course_events: [zurichEvent({ start_date: '2027-03-15' })],
     };
     const { result, matchingEvent } = checkCourseMusts(
@@ -74,6 +75,21 @@ describe('checkCourseMusts – derselbe Event muss alles erfüllen', () => {
     );
     expect(result).toBe(MUST_RESULT.CONFIRMED);
     expect(matchingEvent.id).toBe(1);
+  });
+
+  it('Prüfbefund 2: Preis im Budget, aber ohne bestätigte Gesamtpreisbasis → unvollständig, nie bestätigt', () => {
+    const course = {
+      booking_type: 'lead',
+      price: 100, // könnte Einzellektion sein — Basis unbestätigt
+      course_events: [zurichEvent({ start_date: '2027-03-15' })],
+    };
+    const { result, unknowns } = checkCourseMusts(
+      course,
+      { location: 'ZH', maxBudget: 120, dateFrom: '2027-03-01', dateTo: '2027-03-31' },
+      { today: TODAY },
+    );
+    expect(result).toBe(MUST_RESULT.INCOMPLETE);
+    expect(unknowns).toContain('budget');
   });
 });
 

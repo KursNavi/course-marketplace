@@ -37,8 +37,11 @@ Such-API (serverseitig)   lexikalisch + semantisch über den GESAMTEN Index,
    erscheint kein „Aus allen veröffentlichten Kursen gesucht“.
 3. **Keine Längenannahme.** Chunking (`src/lib/aiSearch/chunking.js`) verarbeitet
    beliebig lange Texte vollständig mit Überlappung; das Formularlimit von 2000 Zeichen
-   ist keine Architekturgrenze (Importe können länger sein). Kein stilles Abschneiden;
-   Kursdedupe nach Chunkretrieval, Länge allein erhöht die Trefferchance nicht.
+   ist keine Architekturgrenze (Importe können länger sein). Kein stilles Abschneiden.
+   **Kursdedupe VOR dem Kandidatenlimit:** die Abruffunktionen führen Chunktreffer
+   bereits in SQL je Kurs auf den besten Chunk zusammen (`DISTINCT ON` vor `LIMIT`) —
+   das Limit begrenzt Kurse, nie Chunks; ein einzelner langer Kurs verdrängt keine
+   anderen passenden Kurse (JS-Referenz: `src/lib/aiSearch/retrieval.js`).
 4. **Serverseitiger Zugriff.** `ai_search_*`-Tabellen: RLS aktiviert, keine Policies für
    `anon`/`authenticated`; Zugriff ausschliesslich Worker/Such-API mit Service-Rolle auf
    Vercel. Der Browser spricht nur die Such-API.
@@ -83,6 +86,16 @@ Die Such-API bekommt vor jeder Inferenz zwei Stufen:
 | Aktueller Katalogzugang (E1) | exakte Abdeckungszahlen, Backfill-Benchmarks | offen |
 | Modell-/Anbieterwahl + Budget (E3) | Embedding-Backfill, Reranker, Livebetrieb | offen; Evaluationsplan steht, keine kostenpflichtigen Läufe |
 
-Alle lokal prüfbaren Teile (Preisstatus-, Publikations-, Chunking-, Muss- und
-Paid-Logik samt Tests, Migrations-SQL, Goldstandard-Format) sind unabhängig davon in
-diesem PR enthalten.
+Alle lokal prüfbaren Teile (Preisstatus-, Publikations-, Chunking-, Muss-, Paid-,
+Kontingent- und Abruflogik samt Tests, Migrations-SQL, Goldstandard-Format) sind
+unabhängig davon in diesem PR enthalten.
+
+**Echte Datenbanktests (vorbereitet, erst nach E5 ausführbar):**
+`scripts/ai-search-db-tests.mjs` (`npm run test:ai-db`) prüft gegen das
+Supabase-Testprojekt: Rollen/RLS (anon ohne Zugriff), Zehnerlimit, 15 parallele
+Reservierungen → exakt 10, gleichzeitige identische request_id → genau ein Vorgang,
+Nutzer-/Inhaltsbindung, Ablauf + später Abschluss ohne Limitüberschreitung,
+Monatsgrenze inkl. Sommerzeit, Cleanup verwaister Reservierungen; mit
+Produktionsschutz (bricht gegen das Produktionsprojekt ab) und dokumentiertem
+Testdaten-Cleanup. Die lokalen JS-Tests und eine grüne CI ersetzen diese
+DB-Nachweise nicht.

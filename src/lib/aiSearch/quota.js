@@ -7,9 +7,18 @@
  *
  * Die ATOMARE Durchsetzung lebt serverseitig in der Datenbank
  * (supabase/migrations/20261113180200_ai_search_quota.sql, Advisory-Lock).
- * Dieses Modul bündelt die deterministische Fachlogik, die Client und Server
- * identisch verstehen müssen: Monatsschlüssel, was zählt / nicht zählt,
- * Restberechnung und Zustandsübergänge — lokal testbar ohne Datenbank.
+ * Dieses Modul ist die deterministische fachliche REFERENZ desselben
+ * Vertrags — lokal testbar ohne Datenbank. Konsistenzmodell:
+ *
+ *  - 'reserved' zählt nur bis zum Ablauf (reservedUntil) gegen das Limit;
+ *    danach gilt der Platz als frei und kann neu vergeben werden.
+ *  - Später Abschluss einer ABGELAUFENEN Reservierung prüft erneut: ist das
+ *    Limit inzwischen durch einen Ersatzplatz belegt, wird sie 'released'
+ *    (Ergebnis darf ausgeliefert werden, aber Verbrauch + aktive
+ *    Reservierungen überschreiten NIE das Limit).
+ *  - Eine request_id ist an Nutzer UND Suchinhalt (queryHash) gebunden;
+ *    gleichzeitige identische Wiederholungen erhalten denselben Vorgang,
+ *    fremde/abweichende Wiederverwendung wird abgelehnt.
  */
 
 export const QUOTA_LIMIT = 10;
@@ -87,43 +96,70 @@ export function remainingQuota(rows, now = new Date(), limit = QUOTA_LIMIT) {
 /**
  * Deterministische Referenz des Reservierungsablaufs — der fachliche Vertrag,
  * den die SQL-Funktionen erfüllen müssen (dort zusätzlich atomar per
- * Advisory-Lock). Für Tests der Zähl-/Idempotenzregeln ohne Datenbank.
+ * Advisory-Lock unter echter Parallelität; das weist erst der DB-Test auf
+ * dem Testprojekt nach, nicht dieses Modul).
  */
 export function createQuotaLedger(limit = QUOTA_LIMIT) {
   const rows = new Map(); // requestId → row
 
+  const activeCount = (userId, monthKey, now) => [...rows.values()].filter((row) => (
+    row.userId === userId
+    && row.monthKey === monthKey
+    && (row.state === 'completed'
+      || (row.state === 'reserved' && row.reservedUntil.getTime() > now.getTime()))
+  )).length;
+
   return {
-    reserve(userId, requestId, now = new Date()) {
+    /**
+     * @returns {'reserved'|'already_reserved'|'already_completed'|
+     *           'already_released'|'request_mismatch'|'limit_reached'}
+     */
+    reserve(userId, requestId, queryHash, now = new Date()) {
       const existing = rows.get(requestId);
-      if (existing) return `already_${existing.state}`;
+      if (existing) {
+        // Bindung an Nutzer UND Suchinhalt: dieselbe ID darf weder von einem
+        // anderen Konto noch für veränderte Inhalte wiederverwendet werden.
+        if (existing.userId !== userId || existing.queryHash !== queryHash) {
+          return 'request_mismatch';
+        }
+        return `already_${existing.state}`;
+      }
       const monthKey = monthKeyZurich(now);
-      const active = [...rows.values()].filter((row) => (
-        row.userId === userId
-        && row.monthKey === monthKey
-        && (row.state === 'completed'
-          || (row.state === 'reserved' && row.reservedUntil.getTime() > now.getTime()))
-      )).length;
-      if (active >= limit) return 'limit_reached';
+      if (activeCount(userId, monthKey, now) >= limit) return 'limit_reached';
       rows.set(requestId, {
         userId,
+        queryHash,
         monthKey,
         state: 'reserved',
         reservedUntil: new Date(now.getTime() + RESERVATION_TTL_MINUTES * 60 * 1000),
       });
       return 'reserved';
     },
-    finalize(requestId) {
+
+    /**
+     * @returns {'completed'|'released_expired'|'not_reserved'}
+     *   'released_expired': Reservierung war abgelaufen und das Limit ist
+     *   inzwischen belegt — nicht gezählt, Limit hält.
+     */
+    finalize(requestId, now = new Date()) {
       const row = rows.get(requestId);
-      if (!row || row.state !== 'reserved') return false;
+      if (!row || row.state !== 'reserved') return 'not_reserved';
+      const expired = row.reservedUntil.getTime() <= now.getTime();
+      if (expired && activeCount(row.userId, row.monthKey, now) >= limit) {
+        row.state = 'released';
+        return 'released_expired';
+      }
       row.state = 'completed';
-      return true;
+      return 'completed';
     },
+
     release(requestId) {
       const row = rows.get(requestId);
       if (!row || row.state !== 'reserved') return false;
       row.state = 'released';
       return true;
     },
+
     cleanup(now = new Date()) {
       let released = 0;
       for (const row of rows.values()) {
@@ -134,6 +170,7 @@ export function createQuotaLedger(limit = QUOTA_LIMIT) {
       }
       return released;
     },
+
     remaining(userId, now = new Date()) {
       const monthRows = [...rows.values()]
         .filter((row) => row.userId === userId)

@@ -1,17 +1,22 @@
 /**
  * Monatskontingent der KI-Suche (Nachtrag 07): Zähl-, Idempotenz- und
- * Monatsgrenzen-Regeln.
+ * Monatsgrenzen-Regeln, inkl. der Prüfbefunde 1 und 3:
+ *  - Ein später Abschluss einer abgelaufenen Reservierung darf das
+ *    Zehnerlimit nie überschreiten, auch wenn der Platz neu vergeben wurde.
+ *  - Eine request_id ist an Nutzer UND Suchinhalt gebunden; identische
+ *    Wiederholungen erhalten denselben Vorgang.
  *
  * Diese Tests prüfen die deterministische Fachlogik (quota.js) als Referenz
  * des Vertrags. Die ATOMARE Durchsetzung unter echter Parallelität (Advisory-
- * Lock in ai_search_quota_reserve) kann nur gegen eine echte Datenbank
- * getestet werden — das ist ausdrücklich Teil der Testumgebungs-Abnahme (E5)
- * und wird hier nicht behauptet.
+ * Lock in ai_search_quota_reserve/finalize) kann nur gegen eine echte
+ * Datenbank getestet werden — vorbereitet in scripts/ai-search-db-tests.mjs,
+ * Ausführung erst nach Freigabe der Testumgebung (E5). Hier nicht behauptet.
  */
 
 import { describe, it, expect } from 'vitest';
 import {
   QUOTA_LIMIT,
+  RESERVATION_TTL_MINUTES,
   monthKeyZurich,
   quotaResetDate,
   actionConsumesQuota,
@@ -22,6 +27,10 @@ import {
 } from '../src/lib/aiSearch/quota.js';
 
 const NOW = new Date('2026-11-13T12:00:00+01:00');
+const HASH = 'hash-standard';
+const afterTtl = (base = NOW, extraMinutes = 1) => new Date(
+  base.getTime() + (RESERVATION_TTL_MINUTES + extraMinutes) * 60 * 1000,
+);
 
 describe('monthKeyZurich / quotaResetDate', () => {
   it('liefert den Zürcher Kalendermonat', () => {
@@ -64,52 +73,65 @@ describe('createQuotaLedger – Limit und Zustände', () => {
   it('zehn neue Vorgänge erlaubt, der elfte blockiert', () => {
     const ledger = createQuotaLedger();
     for (let i = 1; i <= QUOTA_LIMIT; i += 1) {
-      expect(ledger.reserve(uid, rid(i), NOW)).toBe('reserved');
-      expect(ledger.finalize(rid(i))).toBe(true);
+      expect(ledger.reserve(uid, rid(i), HASH, NOW)).toBe('reserved');
+      expect(ledger.finalize(rid(i), NOW)).toBe('completed');
     }
-    expect(ledger.reserve(uid, rid(11), NOW)).toBe('limit_reached');
+    expect(ledger.reserve(uid, rid(11), HASH, NOW)).toBe('limit_reached');
     expect(ledger.remaining(uid, NOW)).toBe(0);
   });
 
   it('aktive Reservierungen zählen gegen das Limit (parallele Tabs überschreiten 10 nie)', () => {
     const ledger = createQuotaLedger();
-    // 10 offene Reservierungen gleichzeitig (noch nichts finalisiert):
     for (let i = 1; i <= QUOTA_LIMIT; i += 1) {
-      expect(ledger.reserve(uid, rid(i), NOW)).toBe('reserved');
+      expect(ledger.reserve(uid, rid(i), HASH, NOW)).toBe('reserved');
     }
-    expect(ledger.reserve(uid, rid(11), NOW)).toBe('limit_reached');
+    expect(ledger.reserve(uid, rid(11), HASH, NOW)).toBe('limit_reached');
   });
 
   it('idempotenter Retry mit derselben request_id belastet nie doppelt', () => {
     const ledger = createQuotaLedger();
-    expect(ledger.reserve(uid, rid(1), NOW)).toBe('reserved');
-    expect(ledger.reserve(uid, rid(1), NOW)).toBe('already_reserved'); // Double-click
-    expect(ledger.finalize(rid(1))).toBe(true);
-    expect(ledger.reserve(uid, rid(1), NOW)).toBe('already_completed'); // Reload nach Erfolg
+    expect(ledger.reserve(uid, rid(1), HASH, NOW)).toBe('reserved');
+    expect(ledger.reserve(uid, rid(1), HASH, NOW)).toBe('already_reserved'); // Double-click
+    expect(ledger.finalize(rid(1), NOW)).toBe('completed');
+    expect(ledger.reserve(uid, rid(1), HASH, NOW)).toBe('already_completed'); // Reload nach Erfolg
     expect(ledger.remaining(uid, NOW)).toBe(QUOTA_LIMIT - 1);
+  });
+
+  it('request_id ist an den Nutzer gebunden: fremde Wiederverwendung wird abgelehnt', () => {
+    const ledger = createQuotaLedger();
+    expect(ledger.reserve('user-1', rid(1), HASH, NOW)).toBe('reserved');
+    expect(ledger.reserve('user-2', rid(1), HASH, NOW)).toBe('request_mismatch');
+    // Keine Belastung beim fremden Nutzer:
+    expect(ledger.remaining('user-2', NOW)).toBe(QUOTA_LIMIT);
+  });
+
+  it('request_id ist an den Suchinhalt gebunden: veränderter Inhalt wird abgelehnt', () => {
+    const ledger = createQuotaLedger();
+    expect(ledger.reserve(uid, rid(1), 'hash-a', NOW)).toBe('reserved');
+    expect(ledger.reserve(uid, rid(1), 'hash-b', NOW)).toBe('request_mismatch');
+    expect(ledger.remaining(uid, NOW)).toBe(QUOTA_LIMIT - 1); // nur der Originalvorgang
   });
 
   it('echter System-/Providerfehler gibt das Kontingent frei', () => {
     const ledger = createQuotaLedger();
-    expect(ledger.reserve(uid, rid(1), NOW)).toBe('reserved');
+    expect(ledger.reserve(uid, rid(1), HASH, NOW)).toBe('reserved');
     expect(ledger.release(rid(1))).toBe(true);
     expect(ledger.remaining(uid, NOW)).toBe(QUOTA_LIMIT);
-    // Nach Freigabe keine doppelte Freigabe/Finalisierung:
     expect(ledger.release(rid(1))).toBe(false);
-    expect(ledger.finalize(rid(1))).toBe(false);
+    expect(ledger.finalize(rid(1), NOW)).toBe('not_reserved');
   });
 
   it('korrekter Nulltreffer zählt (finalize, nicht release)', () => {
     const ledger = createQuotaLedger();
-    ledger.reserve(uid, rid(1), NOW);
-    ledger.finalize(rid(1)); // Nulltreffer ist ein erfolgreiches Ergebnis
+    ledger.reserve(uid, rid(1), HASH, NOW);
+    expect(ledger.finalize(rid(1), NOW)).toBe('completed');
     expect(ledger.remaining(uid, NOW)).toBe(QUOTA_LIMIT - 1);
   });
 
   it('verwaiste Reservierungen werden per Cleanup freigegeben (Crash-Recovery)', () => {
     const ledger = createQuotaLedger();
-    ledger.reserve(uid, rid(1), NOW);
-    const later = new Date(NOW.getTime() + 11 * 60 * 1000); // nach Ablauf der Frist
+    ledger.reserve(uid, rid(1), HASH, NOW);
+    const later = afterTtl();
     expect(ledger.cleanup(later)).toBe(1);
     expect(ledger.remaining(uid, later)).toBe(QUOTA_LIMIT);
   });
@@ -117,23 +139,74 @@ describe('createQuotaLedger – Limit und Zustände', () => {
   it('neuer Kalendermonat setzt das Kontingent zurück, kein Übertrag', () => {
     const ledger = createQuotaLedger();
     for (let i = 1; i <= QUOTA_LIMIT; i += 1) {
-      ledger.reserve(uid, rid(i), NOW);
-      ledger.finalize(rid(i));
+      ledger.reserve(uid, rid(i), HASH, NOW);
+      ledger.finalize(rid(i), NOW);
     }
     expect(ledger.remaining(uid, NOW)).toBe(0);
     const december = new Date('2026-12-01T08:00:00+01:00');
     expect(ledger.remaining(uid, december)).toBe(QUOTA_LIMIT);
-    expect(ledger.reserve(uid, rid(99), december)).toBe('reserved');
+    expect(ledger.reserve(uid, rid(99), HASH, december)).toBe('reserved');
   });
 
   it('Kontingente sind pro Nutzer getrennt', () => {
     const ledger = createQuotaLedger();
     for (let i = 1; i <= QUOTA_LIMIT; i += 1) {
-      ledger.reserve('user-1', `a-${i}`, NOW);
-      ledger.finalize(`a-${i}`);
+      ledger.reserve('user-1', `a-${i}`, HASH, NOW);
+      ledger.finalize(`a-${i}`, NOW);
     }
-    expect(ledger.reserve('user-1', 'a-11', NOW)).toBe('limit_reached');
-    expect(ledger.reserve('user-2', 'b-1', NOW)).toBe('reserved');
+    expect(ledger.reserve('user-1', 'a-11', HASH, NOW)).toBe('limit_reached');
+    expect(ledger.reserve('user-2', 'b-1', HASH, NOW)).toBe('reserved');
+  });
+});
+
+describe('Prüfbefund 1: Ablauf, Ersatzvergabe und später Abschluss', () => {
+  const uid = 'user-1';
+
+  it('später Abschluss einer abgelaufenen Reservierung überschreitet das Limit NIE', () => {
+    const ledger = createQuotaLedger();
+    // Reservierung 0 läuft ab, ohne abgeschlossen zu werden:
+    ledger.reserve(uid, 'old-req', HASH, NOW);
+    const later = afterTtl();
+    // Nach dem Ablauf wird das volle Kontingent anderweitig verbraucht
+    // (Ersatzplatz für den freigewordenen Slot inklusive):
+    for (let i = 1; i <= QUOTA_LIMIT; i += 1) {
+      expect(ledger.reserve(uid, `new-${i}`, HASH, later)).toBe('reserved');
+      expect(ledger.finalize(`new-${i}`, later)).toBe('completed');
+    }
+    expect(ledger.remaining(uid, later)).toBe(0);
+    // Der verspätete Worker meldet jetzt Erfolg für die abgelaufene
+    // Reservierung: sie darf NICHT nachträglich als elfter Verbrauch zählen.
+    expect(ledger.finalize('old-req', later)).toBe('released_expired');
+    expect(ledger.remaining(uid, later)).toBe(0); // exakt 10, nie 11
+  });
+
+  it('später Abschluss zählt regulär, wenn noch Platz frei ist', () => {
+    const ledger = createQuotaLedger();
+    ledger.reserve(uid, 'old-req', HASH, NOW);
+    const later = afterTtl();
+    // Nur 5 Ersatzvorgänge — es ist noch Platz:
+    for (let i = 1; i <= 5; i += 1) {
+      ledger.reserve(uid, `new-${i}`, HASH, later);
+      ledger.finalize(`new-${i}`, later);
+    }
+    expect(ledger.finalize('old-req', later)).toBe('completed');
+    expect(ledger.remaining(uid, later)).toBe(QUOTA_LIMIT - 6);
+  });
+
+  it('nicht abgelaufene Reservierung wird immer regulär abgeschlossen', () => {
+    const ledger = createQuotaLedger();
+    ledger.reserve(uid, 'req', HASH, NOW);
+    const withinTtl = new Date(NOW.getTime() + (RESERVATION_TTL_MINUTES - 1) * 60 * 1000);
+    expect(ledger.finalize('req', withinTtl)).toBe('completed');
+  });
+
+  it('nach Cleanup ist der späte Abschluss wirkungslos (kein Wiederbeleben)', () => {
+    const ledger = createQuotaLedger();
+    ledger.reserve(uid, 'old-req', HASH, NOW);
+    const later = afterTtl();
+    ledger.cleanup(later); // old-req → released
+    expect(ledger.finalize('old-req', later)).toBe('not_reserved');
+    expect(ledger.remaining(uid, later)).toBe(QUOTA_LIMIT);
   });
 });
 

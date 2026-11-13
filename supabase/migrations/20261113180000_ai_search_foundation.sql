@@ -190,21 +190,34 @@ REVOKE ALL ON ai_search_config, ai_search_documents, ai_search_chunks, ai_search
 -- Lexikalische Suche ueber den GESAMTEN Index (Fallback-Kanal der Hybridsuche)
 -- ---------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION ai_search_lexical(p_query TEXT, p_limit INTEGER DEFAULT 100)
-RETURNS TABLE (course_id BIGINT, rank REAL, section TEXT, chunk_index INTEGER)
+RETURNS TABLE (course_id BIGINT, rank REAL, best_section TEXT, best_chunk_index INTEGER)
 LANGUAGE sql
 STABLE
 SECURITY INVOKER
 SET search_path = public
 AS $$
-  -- websearch_to_tsquery: robust gegen Rohtext; Dedupe auf Kursebene macht
-  -- der Aufrufer (Textlaenge allein darf keinen Vorteil verschaffen).
-  SELECT c.course_id,
-         ts_rank(c.tsv, websearch_to_tsquery('german', p_query)) AS rank,
-         c.section,
-         c.chunk_index
-  FROM ai_search_chunks c
-  WHERE c.tsv @@ websearch_to_tsquery('german', p_query)
-  ORDER BY rank DESC, c.course_id, c.chunk_index
+  -- websearch_to_tsquery: robust gegen Rohtext.
+  -- WICHTIG: Chunktreffer werden VOR dem Limit auf Kursebene zusammengefuehrt
+  -- (bester Chunk je Kurs). Das Limit begrenzt KURSE, nicht Chunks — ein
+  -- einzelner langer Kurs mit vielen Treffern darf anderen passenden Kursen
+  -- keine Kandidatenplaetze wegnehmen; Textlaenge allein ist kein Vorteil.
+  WITH hits AS (
+    SELECT c.course_id,
+           ts_rank(c.tsv, websearch_to_tsquery('german', p_query)) AS rank,
+           c.section,
+           c.chunk_index
+    FROM ai_search_chunks c
+    WHERE c.tsv @@ websearch_to_tsquery('german', p_query)
+  ),
+  best_per_course AS (
+    SELECT DISTINCT ON (h.course_id)
+           h.course_id, h.rank, h.section, h.chunk_index
+    FROM hits h
+    ORDER BY h.course_id, h.rank DESC, h.chunk_index
+  )
+  SELECT b.course_id, b.rank, b.section, b.chunk_index
+  FROM best_per_course b
+  ORDER BY b.rank DESC, b.course_id
   LIMIT GREATEST(p_limit, 1);
 $$;
 

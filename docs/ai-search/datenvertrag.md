@@ -54,13 +54,17 @@ Abgeleitet pro Kurs aus `booking_type` + `price` + `price_info`
 |---|---|---|
 | `lead` + `price` 0/null/leer | `unknown` („Preis auf Anfrage“) | **nicht erfüllt** (nie „bestätigt“) |
 | `platform`/`platform_flex` + 0/null | `free` (echtes Gratis) | erfüllt jedes Budget |
-| `price > 0` | `fixed` (CHF, Gesamtpreis-Annahme; Einheit unbestätigt → §5 Datenlücke) | deterministisch vergleichbar |
+| `price > 0`, Preisbasis **unbestätigt** (heutiger Normalfall) | `fixed` mit `basisConfirmed: false` | über Budget → **belegt verletzt**; im Budget → **ungeklärt** (nie „bestätigt“ — der Betrag könnte eine Einzellektion sein) |
+| `price > 0` + P02-Feld `price_basis = 'total'` | `fixed` mit `basisConfirmed: true` | deterministisch vergleichbar |
+| P02 `price_basis = 'per_unit'` / `'from'` | `per_unit` / `from` | eine Einheit bzw. „ab“ über Budget → belegt verletzt; sonst ungeklärt |
 | `price_info` vorhanden (Freitext) | `info_text`; für Muss wie `unknown`, Text wird als Datenlücke angezeigt | **nicht erfüllt** |
 
 „Gratis“, „auf Anfrage“, „ab“, „pro Einheit“ und Zusatzkosten sind unterscheidbare
-Zustände; heute existiert im Schema keine explizite Preisart — `fixed` trägt deshalb die
-Kennzeichnung `basis: 'unbestätigt'`, bis P02 die Preisbasis als Feld einführt. Keine
-pauschale Nullwertmigration; bestehende Speicherzustände bleiben unverändert.
+Zustände. Heute existiert im Schema keine explizite Preisart; erst das P02-Feld
+`price_basis` kann die Gesamtpreisbasis bestätigen. **Bis dahin bestätigt ein positiver
+Preis ein zwingendes Gesamtbudget nie** — solche Kurse erscheinen bei Budget-Muss unter
+„Angaben unvollständig“ mit sichtbarer Lücke. Keine pauschale Nullwertmigration;
+bestehende Speicherzustände bleiben unverändert.
 
 ## 4. Event-/Terminvertrag
 
@@ -136,11 +140,19 @@ ist auf **10 Suchen je Nutzer und Kalendermonat** begrenzt.
 - **Atomare Reservierung:** vor jedem kostenverursachenden Aufruf wird serverseitig
   atomar reserviert (Verbrauch + aktive Reservierungen ≤ 10, auch bei parallelen
   Tabs/Geräten); Erfolg finalisiert, echter Fehler gibt frei. Keine UI-Zählung und
-  kein nicht-atomares Count-then-insert. Idempotente Such-ID je bewusstem Vorgang:
-  Double-click/Retry/Reload erzeugt weder doppelte Inferenz noch doppelten Verbrauch;
-  dieselbe ID darf nicht für veränderte Suchinhalte wiederverwendet werden.
-  Reservierungen sind befristet (Crash-Recovery); verlorene Antworten nach Erfolg
-  werden aus demselben Ergebnis wiederhergestellt, kein kostenloser Neulauf.
+  kein nicht-atomares Count-then-insert. Idempotente Such-ID je bewusstem Vorgang,
+  **gebunden an Nutzer und Suchinhalt** (query_hash): gleichzeitige identische
+  Wiederholungen erhalten unter demselben Lock zuverlässig denselben Vorgang
+  (Prüfung erst NACH dem Sperren); fremde Nutzer oder veränderte Inhalte mit
+  derselben ID werden ohne Belastung abgelehnt. Reservierungen sind befristet
+  (Crash-Recovery); verlorene Antworten nach Erfolg werden aus demselben Ergebnis
+  wiederhergestellt, kein kostenloser Neulauf.
+- **Konsistenz Ablauf/später Abschluss:** Eine abgelaufene Reservierung gibt ihren
+  Platz frei und kann neu vergeben werden. Meldet der verspätete Vorgang danach noch
+  Erfolg, wird unter demselben Nutzer-Monats-Lock erneut geprüft: Ist noch Platz,
+  zählt er regulär; ist das Limit inzwischen durch einen Ersatzplatz belegt, wird er
+  freigegeben (`released_expired`) — das Ergebnis darf ausgeliefert werden, aber
+  Verbrauch plus aktive Reservierungen überschreiten das Zehnerlimit **nie**.
 - **Keine Paket-Ausnahme:** Bezahlpakete erhalten kein höheres Kontingent; die
   bezahlte Anbieterpriorität innerhalb geeigneter Treffer (§Paid) bleibt davon
   getrennt.
