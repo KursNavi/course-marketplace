@@ -40,10 +40,51 @@ export const PRODUCTION_REF = 'nplxmpfasgpumpiddjfl';
 export const EXPECTED_TEST_REF = 'omoapbvfligjfznzivyu'; // "TESTumgebung KursNavi"
 export const REQUIRED_ENV = ['SUPABASE_URL_TEST', 'SUPABASE_SECRET_KEY_TEST', 'SUPABASE_PUBLISHABLE_KEY_TEST'];
 
-/** Projekt-Referenz aus einer Supabase-URL (https://<ref>.supabase.co). */
-export function projectRefFromUrl(url) {
-  const match = /^https?:\/\/([a-z0-9]{20})\.supabase\.co(?:[/:?#]|$)/i.exec(String(url ?? '').trim());
-  return match ? match[1].toLowerCase() : null;
+/**
+ * Strikte Zieladressprüfung mit echtem URL-Parser (WHATWG URL).
+ *
+ * Erlaubt ist AUSSCHLIESSLICH exakt `https://omoapbvfligjfznzivyu.supabase.co`
+ * (optional mit blossem '/'-Pfad). Abgelehnt werden: anderes Protokoll,
+ * anderer Hostname (inkl. täuschender Aufbauten wie
+ * `https://omoapbvfligjfznzivyu.supabase.co@evil.com` — dort ist der Teil vor
+ * dem @ Benutzerinformation und der echte Host evil.com), Benutzername/
+ * Passwort in der URL, explizite Ports, Pfade, Abfrageparameter und Fragmente.
+ *
+ * @returns {{ok: boolean, reason: string|null, ref: string|null}}
+ */
+export function checkTargetUrl(rawUrl, expectedRef = EXPECTED_TEST_REF) {
+  const expectedHost = `${expectedRef}.supabase.co`;
+  let parsed;
+  try {
+    parsed = new URL(String(rawUrl ?? '').trim());
+  } catch {
+    return { ok: false, reason: 'keine gültige URL', ref: null };
+  }
+  if (parsed.protocol !== 'https:') {
+    return { ok: false, reason: `Protokoll "${parsed.protocol}" abgelehnt — nur https:`, ref: null };
+  }
+  if (parsed.username || parsed.password) {
+    return { ok: false, reason: 'Benutzerinformationen in der URL abgelehnt', ref: null };
+  }
+  if (parsed.port !== '') {
+    return { ok: false, reason: `expliziter Port "${parsed.port}" abgelehnt`, ref: null };
+  }
+  if (parsed.hostname !== expectedHost) {
+    const reason = parsed.hostname === `${PRODUCTION_REF}.supabase.co`
+      ? 'Hostname ist das PRODUKTIONSprojekt. Niemals dort testen.'
+      : `Hostname "${parsed.hostname}" abgelehnt — erlaubt ist ausschliesslich "${expectedHost}" (TESTumgebung KursNavi)`;
+    return { ok: false, reason, ref: null };
+  }
+  if (parsed.pathname !== '/' && parsed.pathname !== '') {
+    return { ok: false, reason: `Pfad "${parsed.pathname}" abgelehnt`, ref: null };
+  }
+  if (parsed.search !== '') {
+    return { ok: false, reason: 'Abfrageparameter abgelehnt', ref: null };
+  }
+  if (parsed.hash !== '') {
+    return { ok: false, reason: 'Fragment abgelehnt', ref: null };
+  }
+  return { ok: true, reason: null, ref: expectedRef };
 }
 
 /**
@@ -56,19 +97,9 @@ export function checkTestTarget(env, expectedRef = EXPECTED_TEST_REF) {
   if (missing.length > 0) {
     return { ok: false, reason: `fehlende Testprojekt-Umgebungsvariablen: ${missing.join(', ')}` };
   }
-  const ref = projectRefFromUrl(env.SUPABASE_URL_TEST);
-  if (!ref) {
-    return { ok: false, reason: `SUPABASE_URL_TEST ist keine gültige Supabase-Projekt-URL` };
-  }
-  if (ref === PRODUCTION_REF) {
-    return { ok: false, reason: 'SUPABASE_URL_TEST zeigt auf das PRODUKTIONSprojekt. Niemals dort testen.' };
-  }
-  if (ref !== expectedRef) {
-    return {
-      ok: false,
-      reason: `SUPABASE_URL_TEST zeigt auf "${ref}", freigegeben ist ausschliesslich `
-        + `"${expectedRef}" (TESTumgebung KursNavi). Zuordnung zuerst bestätigen.`,
-    };
+  const target = checkTargetUrl(env.SUPABASE_URL_TEST, expectedRef);
+  if (!target.ok) {
+    return { ok: false, reason: `SUPABASE_URL_TEST: ${target.reason}` };
   }
   return { ok: true, reason: null };
 }
