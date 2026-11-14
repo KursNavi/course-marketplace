@@ -147,12 +147,19 @@ ist auf **10 Suchen je Nutzer und Kalendermonat** begrenzt.
   derselben ID werden ohne Belastung abgelehnt. Reservierungen sind befristet
   (Crash-Recovery); verlorene Antworten nach Erfolg werden aus demselben Ergebnis
   wiederhergestellt, kein kostenloser Neulauf.
-- **Konsistenz Ablauf/später Abschluss:** Eine abgelaufene Reservierung gibt ihren
-  Platz frei und kann neu vergeben werden. Meldet der verspätete Vorgang danach noch
-  Erfolg, wird unter demselben Nutzer-Monats-Lock erneut geprüft: Ist noch Platz,
-  zählt er regulär; ist das Limit inzwischen durch einen Ersatzplatz belegt, wird er
-  freigegeben (`released_expired`) — das Ergebnis darf ausgeliefert werden, aber
-  Verbrauch plus aktive Reservierungen überschreiten das Zehnerlimit **nie**.
+- **Konsistenz Ablauf/später Abschluss und Ergebnisfreigabe:** Eine abgelaufene
+  Reservierung gibt ihren Platz frei und kann neu vergeben werden. Meldet der
+  verspätete Vorgang danach noch Erfolg, wird unter demselben Nutzer-Monats-Lock
+  erneut geprüft: Ist noch Platz, zählt er regulär; ist das Limit inzwischen durch
+  einen Ersatzplatz belegt, wird er abgelehnt (`rejected_expired`) — er zählt nicht
+  **und sein Ergebnis wird nicht ausgeliefert**. Die Ergebnisfreigabe ist strikt an
+  den Kontingentabschluss gekoppelt: Ein gespeichertes Ergebnis wird nur bei Zustand
+  `completed` ausgeliefert; damit erreichen **höchstens zehn** erfolgreiche neue
+  KI-Suchen pro Monat die Nutzerin — auch keine verspätete elfte gratis. Wiederholtes
+  Anzeigen eines bereits freigegebenen (`completed`) Ergebnisses bleibt erlaubt und
+  verbraucht nichts; ist ein gespeichertes Ergebnis nicht mehr verfügbar, gibt es
+  keinen stillen kostenlosen Neulauf, sondern das Angebot einer neuen (zählenden)
+  Suche.
 - **Keine Paket-Ausnahme:** Bezahlpakete erhalten kein höheres Kontingent; die
   bezahlte Anbieterpriorität innerhalb geeigneter Treffer (§Paid) bleibt davon
   getrennt.

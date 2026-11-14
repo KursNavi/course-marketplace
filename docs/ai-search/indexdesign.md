@@ -82,20 +82,26 @@ Die Such-API bekommt vor jeder Inferenz zwei Stufen:
 | Gate | Blockiert | Status |
 |---|---|---|
 | pgvector-Verfügbarkeit/Version auf dem Zielprojekt | Anwendung der Vektor-Migration | offen; Prüfung auf Testprojekt nach E5 |
-| Freigabe Testumgebung (E5) | jede Remote-Anwendung der Migrationen, Reconciliation-Tests | offen |
+| Freigabe Testumgebung (E5) | jede Remote-Anwendung der Migrationen, DB-/Reconciliation-Tests | Testprojekt benannt: **„TESTumgebung KursNavi“, Referenz `omoapbvfligjfznzivyu`** (im DB-Testskript als einzig zulässiges Ziel verankert); Zuordnung von `SUPABASE_URL_TEST` zu dieser Referenz noch unbestätigt; Migrationsanwendung braucht separate Freigabe |
 | Aktueller Katalogzugang (E1) | exakte Abdeckungszahlen, Backfill-Benchmarks | offen |
-| Modell-/Anbieterwahl + Budget (E3) | Embedding-Backfill, Reranker, Livebetrieb | offen; Evaluationsplan steht, keine kostenpflichtigen Läufe |
+| Sprachmodell (E3, Teil 1) | — | **entschieden: OpenAI `gpt-6-luna`** (Nachtrag 08); Adapter-Vertrag `src/lib/aiSearch/lunaAdapter.js`, nur Mock-Tests |
+| API-Zugang, Ausgabenbudget, Embeddingmodell (E3, Teil 2) | Embedding-Backfill, echte Luna-Aufrufe, Livebetrieb | offen; keine kostenpflichtigen Aufrufe; Vektordimension wird vor Anwendung auf die Embeddingwahl gesetzt |
 
 Alle lokal prüfbaren Teile (Preisstatus-, Publikations-, Chunking-, Muss-, Paid-,
 Kontingent- und Abruflogik samt Tests, Migrations-SQL, Goldstandard-Format) sind
 unabhängig davon in diesem PR enthalten.
 
 **Echte Datenbanktests (vorbereitet, erst nach E5 ausführbar):**
-`scripts/ai-search-db-tests.mjs` (`npm run test:ai-db`) prüft gegen das
-Supabase-Testprojekt: Rollen/RLS (anon ohne Zugriff), Zehnerlimit, 15 parallele
-Reservierungen → exakt 10, gleichzeitige identische request_id → genau ein Vorgang,
-Nutzer-/Inhaltsbindung, Ablauf + später Abschluss ohne Limitüberschreitung,
-Monatsgrenze inkl. Sommerzeit, Cleanup verwaister Reservierungen; mit
-Produktionsschutz (bricht gegen das Produktionsprojekt ab) und dokumentiertem
-Testdaten-Cleanup. Die lokalen JS-Tests und eine grüne CI ersetzen diese
-DB-Nachweise nicht.
+`scripts/ai-search-db-tests.mjs` (`npm run test:ai-db`) prüft gegen das freigegebene
+Testprojekt: Rollen/RLS (anon ohne Zugriff), Zehnerlimit, 15 parallele Reservierungen
+→ exakt 10, gleichzeitige identische request_id → genau ein Vorgang,
+Nutzer-/Inhaltsbindung, Ablauf + später Abschluss ohne Limitüberschreitung und ohne
+Freigabe eines elften Ergebnisses, Monatsgrenze inkl. Sommerzeit, Ablauf-Semantik auf
+eigenen Zeilen. Schutzmechanismen: Das Skript läuft **ausschliesslich** gegen
+„TESTumgebung KursNavi“ (`omoapbvfligjfznzivyu`) — jede andere Adresse, insbesondere
+Produktion, wird vor Ausführung hart abgewiesen (Guard lokal getestet); alle
+Schreibzugriffe betreffen nur eigene Zufalls-UUID-Zeilen; das Aufräumen läuft im
+`finally`-Block auch bei Fehlern und verifiziert Rückstandsfreiheit; der **globale**
+Cleanup-Test ist standardmässig deaktiviert und erfordert eine vollständig isolierte,
+entbehrliche Umgebung plus explizites Flag (`AI_DB_TESTS_ALLOW_GLOBAL_CLEANUP=1`).
+Die lokalen JS-Tests und eine grüne CI ersetzen diese DB-Nachweise nicht.

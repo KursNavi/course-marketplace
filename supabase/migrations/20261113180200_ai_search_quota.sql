@@ -20,9 +20,14 @@
 --  * finalize einer ABGELAUFENEN (noch nicht bereinigten) Reservierung
 --    prueft unter demselben Nutzer-Monats-Lock erneut: Ist noch Platz,
 --    wird sie regulaer abgeschlossen; ist das Limit inzwischen durch einen
---    Ersatzplatz belegt, wird sie 'released' (Ergebnis darf ausgeliefert
---    werden, belastet das Kontingent aber nicht doppelt und ueberschreitet
---    nie die 10).
+--    Ersatzplatz belegt, wird sie 'released' und das Ergebnis wird NICHT
+--    freigegeben ('rejected_expired') — hoechstens zehn erfolgreiche neue
+--    KI-Suchen werden je Monat ausgeliefert, auch keine elfte gratis.
+--  * ERGEBNISFREIGABE ist an den Kontingentabschluss gekoppelt: Die Such-API
+--    darf ein gespeichertes Ergebnis nur ausliefern, wenn die zugehoerige
+--    Zeile state = 'completed' traegt. Wiederholtes Anzeigen eines bereits
+--    freigegebenen ('completed') Ergebnisses bleibt erlaubt und verbraucht
+--    nichts.
 
 BEGIN;
 
@@ -147,10 +152,11 @@ $$;
 -- Abschluss: zaehlt endgueltig (auch korrekter Nulltreffer zaehlt).
 -- ---------------------------------------------------------------------------
 -- Rueckgabe:
---   'completed'        - regulaer abgeschlossen und gezaehlt
---   'released_expired' - Reservierung war abgelaufen und das Limit ist
---                        inzwischen belegt: NICHT gezaehlt (Limit haelt),
---                        Ergebnis darf trotzdem ausgeliefert werden.
+--   'completed'        - regulaer abgeschlossen und gezaehlt; NUR dieser
+--                        Zustand gibt das gespeicherte Ergebnis frei.
+--   'rejected_expired' - Reservierung war abgelaufen und das Limit ist
+--                        inzwischen belegt: NICHT gezaehlt UND das Ergebnis
+--                        wird NICHT ausgeliefert (keine elfte Gratis-Suche).
 --   'not_reserved'     - unbekannte oder bereits finalisierte request_id
 CREATE OR REPLACE FUNCTION ai_search_quota_finalize(
   p_request_id UUID,
@@ -180,11 +186,12 @@ BEGIN
 
   IF v_row.reserved_until <= now()
      AND ai_search_quota_used(v_row.user_id, v_row.month_key) >= p_limit THEN
-    -- Platz wurde nach Ablauf bereits neu vergeben: nie ueber das Limit.
+    -- Platz wurde nach Ablauf bereits neu vergeben: nie ueber das Limit,
+    -- und das verspaetete Ergebnis wird NICHT freigegeben.
     UPDATE ai_search_usage
     SET state = 'released', finalized_at = now()
     WHERE request_id = p_request_id;
-    RETURN 'released_expired';
+    RETURN 'rejected_expired';
   END IF;
 
   UPDATE ai_search_usage

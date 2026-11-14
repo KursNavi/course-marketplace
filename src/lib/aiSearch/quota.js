@@ -14,8 +14,13 @@
  *    danach gilt der Platz als frei und kann neu vergeben werden.
  *  - Später Abschluss einer ABGELAUFENEN Reservierung prüft erneut: ist das
  *    Limit inzwischen durch einen Ersatzplatz belegt, wird sie 'released'
- *    (Ergebnis darf ausgeliefert werden, aber Verbrauch + aktive
- *    Reservierungen überschreiten NIE das Limit).
+ *    und das Ergebnis wird NICHT freigegeben ('rejected_expired') —
+ *    höchstens zehn erfolgreiche neue KI-Suchen werden je Monat
+ *    ausgeliefert, auch keine elfte gratis.
+ *  - ERGEBNISFREIGABE ist an den Kontingentabschluss gekoppelt: nur eine
+ *    Zeile im Zustand 'completed' gibt das gespeicherte Ergebnis frei
+ *    (canDeliverResult). Wiederholtes Anzeigen eines bereits freigegebenen
+ *    Ergebnisses bleibt erlaubt und verbraucht nichts.
  *  - Eine request_id ist an Nutzer UND Suchinhalt (queryHash) gebunden;
  *    gleichzeitige identische Wiederholungen erhalten denselben Vorgang,
  *    fremde/abweichende Wiederverwendung wird abgelehnt.
@@ -69,6 +74,17 @@ export const UNCOUNTED_ACTIONS = Object.freeze([
 
 export function actionConsumesQuota(action) {
   return COUNTED_ACTIONS.includes(action);
+}
+
+/**
+ * Ergebnisfreigabe-Gate: Ein gespeichertes Suchergebnis darf NUR ausgeliefert
+ * werden, wenn der zugehörige Kontingentvorgang 'completed' ist. 'reserved'
+ * (noch nicht abgeschlossen), 'released' (Fehler oder abgelaufen/abgelehnt)
+ * geben nie ein Ergebnis frei. Wiederholtes Anzeigen eines 'completed'-
+ * Ergebnisses ist erlaubt und verbraucht nichts.
+ */
+export function canDeliverResult(state) {
+  return state === 'completed';
 }
 
 /**
@@ -137,9 +153,10 @@ export function createQuotaLedger(limit = QUOTA_LIMIT) {
     },
 
     /**
-     * @returns {'completed'|'released_expired'|'not_reserved'}
-     *   'released_expired': Reservierung war abgelaufen und das Limit ist
-     *   inzwischen belegt — nicht gezählt, Limit hält.
+     * @returns {'completed'|'rejected_expired'|'not_reserved'}
+     *   Nur 'completed' gibt das gespeicherte Ergebnis frei (canDeliverResult).
+     *   'rejected_expired': Reservierung war abgelaufen und das Limit ist
+     *   inzwischen belegt — nicht gezählt UND Ergebnis nicht ausgeliefert.
      */
     finalize(requestId, now = new Date()) {
       const row = rows.get(requestId);
@@ -147,10 +164,15 @@ export function createQuotaLedger(limit = QUOTA_LIMIT) {
       const expired = row.reservedUntil.getTime() <= now.getTime();
       if (expired && activeCount(row.userId, row.monthKey, now) >= limit) {
         row.state = 'released';
-        return 'released_expired';
+        return 'rejected_expired';
       }
       row.state = 'completed';
       return 'completed';
+    },
+
+    /** Ergebnisfreigabe-Gate für einen Vorgang (nur 'completed' liefert aus). */
+    canDeliver(requestId) {
+      return canDeliverResult(rows.get(requestId)?.state);
     },
 
     release(requestId) {

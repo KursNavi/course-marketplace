@@ -20,6 +20,7 @@ import {
   monthKeyZurich,
   quotaResetDate,
   actionConsumesQuota,
+  canDeliverResult,
   remainingQuota,
   createQuotaLedger,
   COUNTED_ACTIONS,
@@ -162,7 +163,7 @@ describe('createQuotaLedger – Limit und Zustände', () => {
 describe('Prüfbefund 1: Ablauf, Ersatzvergabe und später Abschluss', () => {
   const uid = 'user-1';
 
-  it('später Abschluss einer abgelaufenen Reservierung überschreitet das Limit NIE', () => {
+  it('später Abschluss einer abgelaufenen Reservierung überschreitet das Limit NIE und liefert kein elftes Ergebnis', () => {
     const ledger = createQuotaLedger();
     // Reservierung 0 läuft ab, ohne abgeschlossen zu werden:
     ledger.reserve(uid, 'old-req', HASH, NOW);
@@ -175,9 +176,33 @@ describe('Prüfbefund 1: Ablauf, Ersatzvergabe und später Abschluss', () => {
     }
     expect(ledger.remaining(uid, later)).toBe(0);
     // Der verspätete Worker meldet jetzt Erfolg für die abgelaufene
-    // Reservierung: sie darf NICHT nachträglich als elfter Verbrauch zählen.
-    expect(ledger.finalize('old-req', later)).toBe('released_expired');
+    // Reservierung: sie darf weder als elfter Verbrauch zählen NOCH ihr
+    // Ergebnis gratis ausliefern.
+    expect(ledger.finalize('old-req', later)).toBe('rejected_expired');
     expect(ledger.remaining(uid, later)).toBe(0); // exakt 10, nie 11
+    expect(ledger.canDeliver('old-req')).toBe(false); // kein elftes Ergebnis
+    // Die zehn regulären Ergebnisse bleiben wiederholt abrufbar:
+    for (let i = 1; i <= QUOTA_LIMIT; i += 1) {
+      expect(ledger.canDeliver(`new-${i}`)).toBe(true);
+    }
+  });
+
+  it('Ergebnisfreigabe ist an den Abschluss gekoppelt: genau die completed-Vorgänge liefern aus', () => {
+    const ledger = createQuotaLedger();
+    ledger.reserve(uid, 'done', HASH, NOW);
+    ledger.finalize('done', NOW);
+    ledger.reserve(uid, 'open', HASH, NOW);          // reserviert, nicht fertig
+    ledger.reserve(uid, 'failed', HASH, NOW);
+    ledger.release('failed');                         // echter Fehler
+    expect(ledger.canDeliver('done')).toBe(true);
+    expect(ledger.canDeliver('done')).toBe(true);     // wiederholtes Anzeigen erlaubt
+    expect(ledger.remaining(uid, NOW)).toBe(QUOTA_LIMIT - 2); // kein Mehrverbrauch
+    expect(ledger.canDeliver('open')).toBe(false);
+    expect(ledger.canDeliver('failed')).toBe(false);
+    expect(ledger.canDeliver('unbekannt')).toBe(false);
+    expect(canDeliverResult('completed')).toBe(true);
+    expect(canDeliverResult('reserved')).toBe(false);
+    expect(canDeliverResult('released')).toBe(false);
   });
 
   it('später Abschluss zählt regulär, wenn noch Platz frei ist', () => {
