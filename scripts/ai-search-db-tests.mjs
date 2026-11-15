@@ -293,9 +293,12 @@ async function main() {
     // ai_search_apply_*). Ist sie nicht angewendet, werden diese Abschnitte
     // ausdruecklich als NICHT GEPRUEFT ausgewiesen (kein stilles Gruen).
     {
+      // Bewusst GET statt HEAD-Count: HEAD-Antworten tragen keinen Fehlerkoerper,
+      // eine fehlende Tabelle bliebe dort unbemerkt (in CI beobachtet).
       const { error: stateProbeError } = await service
         .from('ai_search_index_state')
-        .select('*', { count: 'exact', head: true });
+        .select('course_id')
+        .limit(1);
       workerApplyAvailable = !stateProbeError;
     }
     if (!workerApplyAvailable) {

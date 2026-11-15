@@ -49,9 +49,10 @@ async function main() {
     { auth: { persistSession: false } },
   );
 
-  // Bereitstellungs-Check (alle vier Migrationen muessen angewendet sein):
+  // Bereitstellungs-Check (alle vier Migrationen muessen angewendet sein).
+  // GET statt HEAD-Count: fehlende Tabellen sind sonst nicht erkennbar.
   for (const table of ['ai_search_jobs', 'ai_search_documents', 'ai_search_index_state']) {
-    const { error } = await service.from(table).select('*', { count: 'exact', head: true });
+    const { error } = await service.from(table).select('course_id').limit(1);
     if (error) {
       console.error(`Abbruch: ${table} nicht verfuegbar (${error.message}) — Migrationen pruefen.`);
       process.exit(2);
