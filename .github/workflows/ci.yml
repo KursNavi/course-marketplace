@@ -55,6 +55,22 @@ jobs:
       - name: E2E (harness)
         run: npm run test:e2e:harness
 
+      # Echte DB-Tests der KI-Such-Grundlage gegen die TESTumgebung
+      # (omoapbvfligjfznzivyu): parallele Reservierungen, gleichzeitige
+      # identische request_ids und HTTP-Zugriff mit anon-/Servicerolle.
+      # Bewusst OHNE Skip-Bedingung: das Skript prueft die Zieladresse
+      # strikt (checkTargetUrl) und bricht bei fehlenden Variablen oder
+      # abweichendem Ziel ab — keine Ersatzkonfiguration, kein stilles
+      # Ueberspringen. Kein Seeding, kein globales Cleanup
+      # (AI_DB_TESTS_ALLOW_GLOBAL_CLEANUP bleibt ungesetzt); eigene
+      # Testkennungen werden auch bei Fehlern im finally bereinigt.
+      - name: KI-Suche DB-Tests (TESTumgebung)
+        env:
+          SUPABASE_URL_TEST: ${{ secrets.SUPABASE_URL_TEST }}
+          SUPABASE_PUBLISHABLE_KEY_TEST: ${{ secrets.SUPABASE_PUBLISHABLE_KEY_TEST }}
+          SUPABASE_SECRET_KEY_TEST: ${{ secrets.SUPABASE_SECRET_KEY_TEST }}
+        run: npm run test:ai-db
+
       - name: E2E (app — hybrid)
         if: env.HAS_E2E_SECRETS != ''
         env:
