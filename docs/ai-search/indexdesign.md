@@ -1,9 +1,20 @@
 # KI-Suche: Index- und Betriebsdesign (Phase 1 – Entwurf)
 
-Stand 13.11.2026. Architektur für S02 (Index/Aktualisierung) und die Schnittstellen zu
-S03 (Hybridsuche). Migrationen liegen als Dateien unter `supabase/migrations/` bereit und
-sind **nicht angewendet**; Anwendung zuerst auf dem verifizierten Supabase-Testprojekt
-nach Freigabe (E5), nie direkt in Produktion.
+Stand 15.11.2026. Architektur für S02 (Index/Aktualisierung) und die Schnittstellen zu
+S03 (Hybridsuche). Die drei Migrationen sind seit 14.11.2026 auf der freigegebenen
+TESTumgebung (`omoapbvfligjfznzivyu`) angewendet und per CI-DB-Tests verifiziert
+(PR #197); **Produktion weiterhin NICHT** (separate Freigabe nötig).
+
+**Umsetzungsstand Worker/Backfill/Reconciliation (dieser Branch):**
+Outbox-Worker (`src/lib/aiSearch/worker.js`), Reconciliation inkl. Stufe-1-Backfill
+(`src/lib/aiSearch/reconciliation.js`) und der Cron-Endpunkt (`api/cron-ai-search.js`,
+`?task=worker|reconcile|all`) sind implementiert und unit-getestet. Der Endpunkt ist
+bewusst **noch nicht** in `vercel.json` als Cron registriert: das Cron-Kontingent des
+Projekts ist mit den zwei bestehenden Jobs ausgeschöpft, und in Produktion fehlen die
+Tabellen (der Endpunkt erkennt das und beendet sich als No-op `provisioned:false`).
+Einplanung erfolgt mit dem Produktions-Rollout. Embeddings entstehen weiterhin nicht
+(Gate E3: Modellwahl/Budget/API-Zugang offen) — der Worker schreibt Projektion,
+Chunks und Lexikalik; `embedding`/`model_version` bleiben NULL (Backfill-Stufe 2).
 
 ## Komponenten
 

@@ -19,6 +19,9 @@
  *      finalize = rejected_expired (kein elftes Ergebnis), Zählung exakt 10.
  *   6. Monatsgrenze: ai_search_month_key an UTC-Randzeitpunkten (inkl. DST).
  *   7. Ablauf-Semantik NUR auf eigenen Zeilen (ohne globalen Cleanup).
+ *   8. Outbox-Worker: eigene synthetische Jobs (nicht existente Kurs-IDs)
+ *      werden koalesziert verarbeitet und abgeschlossen; echte Kurse und
+ *      fremde Jobs bleiben unberührt (onlyCourseIds-Filter).
  *
  * Datensicherheit:
  *   - Sämtliche Schreibzugriffe betreffen ausschliesslich Zeilen mit eigenen,
@@ -35,6 +38,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { randomUUID } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
+import { processOutboxBatch } from '../src/lib/aiSearch/worker.js';
 
 export const PRODUCTION_REF = 'nplxmpfasgpumpiddjfl';
 export const EXPECTED_TEST_REF = 'omoapbvfligjfznzivyu'; // "TESTumgebung KursNavi"
@@ -118,6 +122,11 @@ async function main() {
 
   let failures = 0;
   const createdUsers = [];
+  const createdJobCourseIds = [];
+  // Eigene, garantiert nicht existente Kurs-IDs für Worker-Jobtests
+  // (ai_search_jobs hat bewusst keinen FK auf courses; weit ausserhalb
+  // realer ID-Bereiche, aber Number-sicher):
+  const fakeCourseId = () => 900_000_000_000_000 + Math.floor(Math.random() * 1_000_000_000);
 
   const check = (name, condition, detail = '') => {
     if (condition) {
@@ -270,6 +279,35 @@ async function main() {
       console.log('7b. GLOBALER Cleanup übersprungen (AI_DB_TESTS_ALLOW_GLOBAL_CLEANUP nicht gesetzt) — '
         + 'er würde fremde abgelaufene Reservierungen mitverändern.');
     }
+
+    // --- 8. Outbox-Worker auf eigenen Jobzeilen ------------------------------
+    console.log('8. Outbox-Worker: eigene Jobs koalesziert verarbeiten und abschliessen');
+    const workerCourseIds = [fakeCourseId(), fakeCourseId()];
+    createdJobCourseIds.push(...workerCourseIds);
+    {
+      // Zwei Jobs für denselben (nicht existenten) Kurs → Koaleszenz; einer
+      // für einen zweiten. Fehlende Quellzeile bedeutet Löschanweisung
+      // (Tombstone) — es werden also keinerlei Dokumente/Chunks angelegt.
+      const { error: enqueueError } = await service.from('ai_search_jobs').insert([
+        { course_id: workerCourseIds[0], reason: 'reconciliation', priority: 5 },
+        { course_id: workerCourseIds[0], reason: 'course_upsert', priority: 3 },
+        { course_id: workerCourseIds[1], reason: 'reconciliation', priority: 5 },
+      ]);
+      check('eigene Testjobs eingereiht', !enqueueError, enqueueError?.message ?? '');
+
+      const summary = await processOutboxBatch(service, { onlyCourseIds: workerCourseIds });
+      check('Worker verarbeitet genau die eigenen Jobs (3 Jobs, 2 Kurse, keine Fehler)',
+        summary.fetchedJobs === 3 && summary.courses === 2 && summary.failures === 0,
+        JSON.stringify({ fetchedJobs: summary.fetchedJobs, courses: summary.courses, failures: summary.failures, errors: summary.errors }));
+      check('fehlende Quellzeilen ergeben Löschanweisungen (kein Indexeintrag)',
+        summary.deleted === 2, String(summary.deleted));
+
+      const { data: jobRows, error: jobReadError } = await service
+        .from('ai_search_jobs').select('status').in('course_id', workerCourseIds);
+      check('alle eigenen Jobs sind abgeschlossen (done)',
+        !jobReadError && (jobRows ?? []).length === 3 && jobRows.every((row) => row.status === 'done'),
+        jobReadError?.message ?? JSON.stringify(jobRows));
+    }
   } finally {
     // Aufräumen der EIGENEN Testdaten — läuft auch bei Fehlern/Abbrüchen.
     try {
@@ -292,6 +330,30 @@ async function main() {
     } catch (cleanupException) {
       failures += 1;
       console.error('FEHLER beim Cleanup:', cleanupException);
+    }
+    // Eigene Worker-Testjobs entfernen (nur eigene synthetische Kurs-IDs).
+    try {
+      if (createdJobCourseIds.length > 0) {
+        const { error: jobCleanupError, count: jobCount } = await service
+          .from('ai_search_jobs')
+          .delete({ count: 'exact' })
+          .in('course_id', createdJobCourseIds);
+        console.log(`Cleanup: ${jobCount ?? 0} Testjobzeilen gelöscht${jobCleanupError ? ` (FEHLER: ${jobCleanupError.message})` : ''}`);
+        if (jobCleanupError) failures += 1;
+        if (!jobCleanupError) {
+          const { count: jobResidual } = await service
+            .from('ai_search_jobs')
+            .select('*', { count: 'exact', head: true })
+            .in('course_id', createdJobCourseIds);
+          if ((jobResidual ?? 0) > 0) {
+            failures += 1;
+            console.error(`FEHLER Job-Cleanup unvollständig: ${jobResidual} Zeilen verblieben.`);
+          }
+        }
+      }
+    } catch (jobCleanupException) {
+      failures += 1;
+      console.error('FEHLER beim Job-Cleanup:', jobCleanupException);
     }
   }
 
