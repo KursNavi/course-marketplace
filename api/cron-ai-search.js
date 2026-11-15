@@ -52,18 +52,22 @@ export default async function handler(req, res) {
 
   try {
     // Bereitstellungs-Check: in Produktion existieren die ai_search-Tabellen
-    // noch nicht — dann sauberer No-op statt Fehlerlauf.
-    const probe = await supabase.from('ai_search_jobs').select('*', { count: 'exact', head: true });
-    if (probe.error) {
-      if (isMissingTableError(probe.error)) {
-        return res.status(200).json({
-          success: true,
-          provisioned: false,
-          skipped: true,
-          message: 'ai_search-Tabellen nicht vorhanden (Migrationen nicht angewendet) — nichts zu tun.',
-        });
+    // noch nicht — dann sauberer No-op statt Fehlerlauf. Geprueft werden die
+    // Outbox UND die Wasserstandstabelle der atomaren Uebernahme (Migration
+    // 20261115190000); fehlt eine davon, laeuft der Worker nicht an.
+    for (const table of ['ai_search_jobs', 'ai_search_index_state']) {
+      const probe = await supabase.from(table).select('*', { count: 'exact', head: true });
+      if (probe.error) {
+        if (isMissingTableError(probe.error)) {
+          return res.status(200).json({
+            success: true,
+            provisioned: false,
+            skipped: true,
+            message: `${table} nicht vorhanden (Migrationen nicht vollstaendig angewendet) — nichts zu tun.`,
+          });
+        }
+        throw new Error(`Bereitstellungs-Check ${table}: ${probe.error.message}`);
       }
-      throw new Error(`Bereitstellungs-Check: ${probe.error.message}`);
     }
 
     const startedAt = Date.now();

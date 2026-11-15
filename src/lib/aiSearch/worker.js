@@ -6,11 +6,16 @@
  *  - Jobs werden je Kurs KOALESZIERT: ein Lauf verarbeitet pro Kurs genau
  *    einmal den aktuellsten Stand (hoechste source_version im Batch) und
  *    schliesst alle aelteren Jobs desselben Kurses mit ab.
- *  - Out-of-order-Schutz: geschrieben wird nur, wenn die Jobversion neuer ist
- *    als die gespeicherte source_version des Dokuments; Loeschungen entfernen
- *    nur Staende bis zur Jobversion.
- *  - Idempotenz: unveraenderter content_hash aktualisiert nur Version/
- *    Zeitstempel (kein Chunk-Rewrite, vorhandene Embeddings bleiben).
+ *  - Die UEBERNAHME selbst (Versionspruefung + Dokument + Chunks bzw.
+ *    Loeschung + Tombstone) laeuft ATOMAR in der Datenbank
+ *    (ai_search_apply_upsert / ai_search_apply_delete, Migration
+ *    20261115190000): kursbezogener Advisory-Lock serialisiert parallele
+ *    Worker; ein aelterer Lauf kann weder einen neueren Stand ueberschreiben
+ *    noch einen zurueckgezogenen Kurs wieder anlegen (Wasserstand in
+ *    ai_search_index_state ueberlebt Loeschungen).
+ *  - Idempotenz: unveraenderter content_hash bei vollstaendigem Bestand
+ *    aktualisiert nur Version/Zeitstempel ('refreshed'); ein unvollstaendiger
+ *    frueherer Stand wird repariert ('repaired') statt uebersprungen.
  *  - Fehler: attempts zaehlt hoch; ab maxAttempts wird der Job 'failed'
  *    (Fehlerwarteschlange fuer die Reconciliation), sonst bleibt er 'pending'
  *    und der naechste Cron-Lauf ist der Backoff.
@@ -26,7 +31,6 @@ import { buildProjection } from './projection.js';
 
 export const DEFAULT_BATCH_SIZE = 50;
 export const DEFAULT_MAX_ATTEMPTS = 5;
-const CHUNK_INSERT_BATCH = 200;
 const ERROR_TEXT_LIMIT = 500;
 
 /**
@@ -100,73 +104,36 @@ export async function loadCourseSource(client, courseId) {
   };
 }
 
-async function deleteProjection(client, courseId, sourceVersion) {
-  // Nur Staende bis zur Jobversion entfernen: ein veralteter Loesch-Job darf
-  // einen inzwischen neu geschriebenen Eintrag nicht wegraeumen.
-  const { error: chunkError } = await client
-    .from('ai_search_chunks')
-    .delete()
-    .eq('course_id', courseId)
-    .lte('source_version', sourceVersion);
-  if (chunkError) throw new Error(`Chunks loeschen ${courseId}: ${chunkError.message}`);
-  const { error: documentError } = await client
-    .from('ai_search_documents')
-    .delete()
-    .eq('course_id', courseId)
-    .lte('source_version', sourceVersion);
-  if (documentError) throw new Error(`Dokument loeschen ${courseId}: ${documentError.message}`);
-  return 'deleted';
-}
-
-async function upsertProjection(client, projection, nowIso) {
-  const doc = projection.document;
-  const { data: existing, error: readError } = await client
-    .from('ai_search_documents')
-    .select('source_version, content_hash')
-    .eq('course_id', doc.course_id)
-    .maybeSingle();
-  if (readError) throw new Error(`Dokument lesen ${doc.course_id}: ${readError.message}`);
-
-  if (existing && existing.source_version >= doc.source_version) {
-    return 'stale_skipped';
+/**
+ * Uebergibt die Projektion an die atomare Datenbankfunktion. Versionsschutz,
+ * Tombstone-Pruefung, Vollstaendigkeitsreparatur und das konsistente
+ * Schreiben von Dokument + Chunks liegen vollstaendig in SQL (eine
+ * Transaktion, kursbezogener Advisory-Lock) — hier wird nur noch das
+ * Ergebnis entgegengenommen.
+ */
+async function applyProjection(client, courseId, projection, sourceVersion) {
+  if (projection.action === 'delete') {
+    const { data, error } = await client.rpc('ai_search_apply_delete', {
+      p_course_id: courseId,
+      p_source_version: sourceVersion,
+    });
+    if (error) throw new Error(`Loeschung ${courseId}: ${error.message}`);
+    return data;
   }
-
-  if (existing && existing.content_hash === doc.content_hash) {
-    // Inhalt unveraendert: nur Version/Frische nachziehen, Chunks (und damit
-    // spaeter vorhandene Embeddings) bleiben unangetastet.
-    const { error: refreshError } = await client
-      .from('ai_search_documents')
-      .update({
-        source_version: doc.source_version,
-        source_updated_at: nowIso,
-        indexed_at: nowIso,
-      })
-      .eq('course_id', doc.course_id)
-      .lt('source_version', doc.source_version);
-    if (refreshError) throw new Error(`Dokument auffrischen ${doc.course_id}: ${refreshError.message}`);
-    return 'refreshed';
-  }
-
-  const { error: upsertError } = await client
-    .from('ai_search_documents')
-    .upsert({ ...doc, source_updated_at: nowIso, indexed_at: nowIso }, { onConflict: 'course_id' });
-  if (upsertError) throw new Error(`Dokument schreiben ${doc.course_id}: ${upsertError.message}`);
-
-  // Vollersatz der Chunks: Inhalt hat sich geaendert, alte Abschnitte (und
-  // deren Embeddings) sind nicht mehr gueltig.
-  const { error: clearError } = await client
-    .from('ai_search_chunks')
-    .delete()
-    .eq('course_id', doc.course_id);
-  if (clearError) throw new Error(`Chunks ersetzen ${doc.course_id}: ${clearError.message}`);
-
-  for (let offset = 0; offset < projection.chunks.length; offset += CHUNK_INSERT_BATCH) {
-    const batch = projection.chunks.slice(offset, offset + CHUNK_INSERT_BATCH);
-    const { error: insertError } = await client.from('ai_search_chunks').insert(batch);
-    if (insertError) throw new Error(`Chunks einfuegen ${doc.course_id}: ${insertError.message}`);
-  }
-
-  return existing ? 'updated' : 'inserted';
+  const { data, error } = await client.rpc('ai_search_apply_upsert', {
+    p_course_id: courseId,
+    p_source_version: sourceVersion,
+    p_document: projection.document,
+    p_chunks: projection.chunks.map((chunk) => ({
+      section: chunk.section,
+      chunk_index: chunk.chunk_index,
+      char_start: chunk.char_start,
+      char_end: chunk.char_end,
+      text: chunk.text,
+    })),
+  });
+  if (error) throw new Error(`Uebernahme ${courseId}: ${error.message}`);
+  return data;
 }
 
 /**
@@ -204,6 +171,7 @@ export async function processOutboxBatch(client, options = {}) {
     inserted: 0,
     updated: 0,
     refreshed: 0,
+    repaired: 0,
     deleted: 0,
     staleSkipped: 0,
     failures: 0,
@@ -222,13 +190,12 @@ export async function processOutboxBatch(client, options = {}) {
         },
       );
 
-      const outcome = projection.action === 'delete'
-        ? await deleteProjection(client, group.courseId, group.sourceVersion)
-        : await upsertProjection(client, projection, now().toISOString());
+      const outcome = await applyProjection(client, group.courseId, projection, group.sourceVersion);
 
       if (outcome === 'inserted') summary.inserted += 1;
       else if (outcome === 'updated') summary.updated += 1;
       else if (outcome === 'refreshed') summary.refreshed += 1;
+      else if (outcome === 'repaired') summary.repaired += 1;
       else if (outcome === 'deleted') summary.deleted += 1;
       else if (outcome === 'stale_skipped') summary.staleSkipped += 1;
 
@@ -280,6 +247,7 @@ export async function drainOutbox(client, options = {}) {
     inserted: 0,
     updated: 0,
     refreshed: 0,
+    repaired: 0,
     deleted: 0,
     staleSkipped: 0,
     failures: 0,
@@ -295,6 +263,7 @@ export async function drainOutbox(client, options = {}) {
     total.inserted += batch.inserted;
     total.updated += batch.updated;
     total.refreshed += batch.refreshed;
+    total.repaired += batch.repaired;
     total.deleted += batch.deleted;
     total.staleSkipped += batch.staleSkipped;
     total.failures += batch.failures;

@@ -167,12 +167,19 @@ export async function runReconciliation(client, options = {}) {
   }
 
   // Verwaiste Kontingent-Reservierungen freigeben (Crash-Recovery, Nachtrag 07).
+  // skipQuotaCleanup: true fuer begrenzte Test-/Backfill-Laeufe — der Cleanup
+  // wirkt GLOBAL auf alle abgelaufenen Reservierungen und darf dort nicht
+  // mitlaufen (gleiches Prinzip wie AI_DB_TESTS_ALLOW_GLOBAL_CLEANUP).
   let releasedReservations = 0;
-  const { data: cleanupResult, error: cleanupError } = await client.rpc('ai_search_quota_cleanup');
-  if (cleanupError) {
-    alarms.push(`Kontingent-Cleanup fehlgeschlagen: ${cleanupError.message}`);
+  if (options.skipQuotaCleanup === true) {
+    releasedReservations = null;
   } else {
-    releasedReservations = cleanupResult ?? 0;
+    const { data: cleanupResult, error: cleanupError } = await client.rpc('ai_search_quota_cleanup');
+    if (cleanupError) {
+      alarms.push(`Kontingent-Cleanup fehlgeschlagen: ${cleanupError.message}`);
+    } else {
+      releasedReservations = cleanupResult ?? 0;
+    }
   }
 
   return {

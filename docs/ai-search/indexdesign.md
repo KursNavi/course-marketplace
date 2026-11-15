@@ -8,11 +8,22 @@ TESTumgebung (`omoapbvfligjfznzivyu`) angewendet und per CI-DB-Tests verifiziert
 **Umsetzungsstand Worker/Backfill/Reconciliation (dieser Branch):**
 Outbox-Worker (`src/lib/aiSearch/worker.js`), Reconciliation inkl. Stufe-1-Backfill
 (`src/lib/aiSearch/reconciliation.js`) und der Cron-Endpunkt (`api/cron-ai-search.js`,
-`?task=worker|reconcile|all`) sind implementiert und unit-getestet. Der Endpunkt ist
-bewusst **noch nicht** in `vercel.json` als Cron registriert: das Cron-Kontingent des
-Projekts ist mit den zwei bestehenden Jobs ausgeschöpft, und in Produktion fehlen die
-Tabellen (der Endpunkt erkennt das und beendet sich als No-op `provisioned:false`).
-Einplanung erfolgt mit dem Produktions-Rollout. Embeddings entstehen weiterhin nicht
+`?task=worker|reconcile|all`) sind implementiert und unit-getestet. Die eigentliche
+**Übernahme läuft atomar in der Datenbank** (Migration `20261115190000`, liegt zur
+Prüfung vor, noch nicht angewendet): `ai_search_apply_upsert`/`ai_search_apply_delete`
+mit kursbezogenem Advisory-Lock serialisieren parallele Worker; die Wasserstandstabelle
+`ai_search_index_state` trägt die zuletzt angewendete Version als Tombstone, damit ein
+älterer Lauf weder einen neueren Stand überschreibt noch einen zurückgezogenen Kurs
+wieder anlegt; ein unvollständiger früherer Stand wird beim Retry repariert statt
+übersprungen. Der Endpunkt ist bewusst **noch nicht** in `vercel.json` als Cron
+registriert: das Cron-Kontingent des Projekts ist mit den zwei bestehenden Jobs
+ausgeschöpft, und in Produktion fehlen die Tabellen (der Endpunkt erkennt das und
+beendet sich als No-op `provisioned:false`). Für die spätere Testbefüllung existiert
+ein ausdrücklich auf die TESTumgebung begrenzter Lauf (`npm run backfill:ai-test`,
+doppelter Zielschutz + `AI_BACKFILL_CONFIRM`, Kontingent-Cleanup aus, kein
+Mailversand) samt Nachweisen zu Abdeckung, Chunk-Vollständigkeit, offenen/
+fehlgeschlagenen Jobs und entfernten Rücknahmen; er ersetzt den E1-Abgleich mit dem
+aktuellen öffentlichen Katalog nicht. Embeddings entstehen weiterhin nicht
 (Gate E3: Modellwahl/Budget/API-Zugang offen) — der Worker schreibt Projektion,
 Chunks und Lexikalik; `embedding`/`model_version` bleiben NULL (Backfill-Stufe 2).
 

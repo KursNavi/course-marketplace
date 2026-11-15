@@ -135,6 +135,13 @@ describe('runReconciliation', () => {
     expect(report.alarms.some((a) => a.includes('Hash-Stichprobe'))).toBe(false);
   });
 
+  it('skipQuotaCleanup: globaler Kontingent-Cleanup wird nicht aufgerufen (Test-/Backfill-Laeufe)', async () => {
+    const { client, calls } = createFakeSupabase(makeScenario({}));
+    const report = await runReconciliation(client, { sampleSize: 0, skipQuotaCleanup: true });
+    expect(report.releasedReservations).toBeNull();
+    expect(findCall(calls, (c) => c.op === 'rpc' && c.table === 'ai_search_quota_cleanup')).toBeUndefined();
+  });
+
   it('failed-Jobs erscheinen als Alarm (Fehlerwarteschlange)', async () => {
     const { client } = createFakeSupabase(makeScenario({ failedCount: 3 }));
     const report = await runReconciliation(client, { sampleSize: 0 });

@@ -22,6 +22,12 @@
  *   8. Outbox-Worker: eigene synthetische Jobs (nicht existente Kurs-IDs)
  *      werden koalesziert verarbeitet und abgeschlossen; echte Kurse und
  *      fremde Jobs bleiben unberührt (onlyCourseIds-Filter).
+ *   9. Atomare Übernahme (Migration 20261115190000) am EIGENEN Testkurs:
+ *      Trigger→Worker→Indexeintrag, zwei gleichzeitige Übernahmen mit
+ *      unterschiedlicher Version, Rücknahme gegen verspäteten älteren
+ *      Upsert (Tombstone), Reparatur eines unvollständigen Bestands.
+ *      Ist die Migration nicht angewendet, werden 8./9. ausdrücklich als
+ *      NICHT GEPRÜFT ausgewiesen (kein stilles Grün).
  *
  * Datensicherheit:
  *   - Sämtliche Schreibzugriffe betreffen ausschliesslich Zeilen mit eigenen,
@@ -121,7 +127,9 @@ async function main() {
   const anon = createClient(url, process.env.SUPABASE_PUBLISHABLE_KEY_TEST, { auth: { persistSession: false } });
 
   let failures = 0;
+  let workerApplyAvailable = false;
   const createdUsers = [];
+  const createdCourseIds = [];
   const createdJobCourseIds = [];
   // Eigene, garantiert nicht existente Kurs-IDs für Worker-Jobtests
   // (ai_search_jobs hat bewusst keinen FK auf courses; weit ausserhalb
@@ -280,33 +288,158 @@ async function main() {
         + 'er würde fremde abgelaufene Reservierungen mitverändern.');
     }
 
-    // --- 8. Outbox-Worker auf eigenen Jobzeilen ------------------------------
-    console.log('8. Outbox-Worker: eigene Jobs koalesziert verarbeiten und abschliessen');
-    const workerCourseIds = [fakeCourseId(), fakeCourseId()];
-    createdJobCourseIds.push(...workerCourseIds);
+    // --- 8./9. Outbox-Worker und atomare Uebernahme --------------------------
+    // Benoetigen Migration 20261115190000 (ai_search_index_state +
+    // ai_search_apply_*). Ist sie nicht angewendet, werden diese Abschnitte
+    // ausdruecklich als NICHT GEPRUEFT ausgewiesen (kein stilles Gruen).
     {
-      // Zwei Jobs für denselben (nicht existenten) Kurs → Koaleszenz; einer
-      // für einen zweiten. Fehlende Quellzeile bedeutet Löschanweisung
-      // (Tombstone) — es werden also keinerlei Dokumente/Chunks angelegt.
-      const { error: enqueueError } = await service.from('ai_search_jobs').insert([
-        { course_id: workerCourseIds[0], reason: 'reconciliation', priority: 5 },
-        { course_id: workerCourseIds[0], reason: 'course_upsert', priority: 3 },
-        { course_id: workerCourseIds[1], reason: 'reconciliation', priority: 5 },
-      ]);
-      check('eigene Testjobs eingereiht', !enqueueError, enqueueError?.message ?? '');
+      const { error: stateProbeError } = await service
+        .from('ai_search_index_state')
+        .select('*', { count: 'exact', head: true });
+      workerApplyAvailable = !stateProbeError;
+    }
+    if (!workerApplyAvailable) {
+      console.log('8./9. ÜBERSPRUNGEN (NICHT GEPRÜFT): Migration 20261115190000 '
+        + '(ai_search_index_state / ai_search_apply_*) ist auf dem Testprojekt noch '
+        + 'nicht angewendet — die Worker-DB-Nachweise stehen damit noch aus.');
+    } else {
+      // --- 8. Outbox-Worker auf eigenen synthetischen Jobzeilen --------------
+      console.log('8. Outbox-Worker: eigene Jobs koalesziert verarbeiten und abschliessen');
+      const workerCourseIds = [fakeCourseId(), fakeCourseId()];
+      createdJobCourseIds.push(...workerCourseIds);
+      {
+        // Zwei Jobs für denselben (nicht existenten) Kurs → Koaleszenz; einer
+        // für einen zweiten. Fehlende Quellzeile bedeutet Löschanweisung
+        // (Tombstone) — es werden also keinerlei Dokumente/Chunks angelegt.
+        const { error: enqueueError } = await service.from('ai_search_jobs').insert([
+          { course_id: workerCourseIds[0], reason: 'reconciliation', priority: 5 },
+          { course_id: workerCourseIds[0], reason: 'course_upsert', priority: 3 },
+          { course_id: workerCourseIds[1], reason: 'reconciliation', priority: 5 },
+        ]);
+        check('eigene Testjobs eingereiht', !enqueueError, enqueueError?.message ?? '');
 
-      const summary = await processOutboxBatch(service, { onlyCourseIds: workerCourseIds });
-      check('Worker verarbeitet genau die eigenen Jobs (3 Jobs, 2 Kurse, keine Fehler)',
-        summary.fetchedJobs === 3 && summary.courses === 2 && summary.failures === 0,
-        JSON.stringify({ fetchedJobs: summary.fetchedJobs, courses: summary.courses, failures: summary.failures, errors: summary.errors }));
-      check('fehlende Quellzeilen ergeben Löschanweisungen (kein Indexeintrag)',
-        summary.deleted === 2, String(summary.deleted));
+        const summary = await processOutboxBatch(service, { onlyCourseIds: workerCourseIds });
+        check('Worker verarbeitet genau die eigenen Jobs (3 Jobs, 2 Kurse, keine Fehler)',
+          summary.fetchedJobs === 3 && summary.courses === 2 && summary.failures === 0,
+          JSON.stringify({ fetchedJobs: summary.fetchedJobs, courses: summary.courses, failures: summary.failures, errors: summary.errors }));
+        check('fehlende Quellzeilen ergeben Löschanweisungen (kein Indexeintrag)',
+          summary.deleted === 2, String(summary.deleted));
 
-      const { data: jobRows, error: jobReadError } = await service
-        .from('ai_search_jobs').select('status').in('course_id', workerCourseIds);
-      check('alle eigenen Jobs sind abgeschlossen (done)',
-        !jobReadError && (jobRows ?? []).length === 3 && jobRows.every((row) => row.status === 'done'),
-        jobReadError?.message ?? JSON.stringify(jobRows));
+        const { data: jobRows, error: jobReadError } = await service
+          .from('ai_search_jobs').select('status').in('course_id', workerCourseIds);
+        check('alle eigenen Jobs sind abgeschlossen (done)',
+          !jobReadError && (jobRows ?? []).length === 3 && jobRows.every((row) => row.status === 'done'),
+          jobReadError?.message ?? JSON.stringify(jobRows));
+      }
+
+      // --- 9. Atomare Uebernahme am eigenen echten Kurs ----------------------
+      console.log('9. Atomare Übernahme: eigener Testkurs, Nebenläufigkeit, Rücknahme, Reparatur');
+      const marker = `AI-DB-TEST ${randomUUID()}`;
+      const { data: ownCourse, error: courseInsertError } = await service
+        .from('courses')
+        .insert({
+          title: marker,
+          status: 'published',
+          booking_type: 'lead',
+          description: 'Eigener Testkurs der KI-Such-DB-Tests. Wird im Cleanup gelöscht.',
+          canton: 'Zürich',
+        })
+        .select('id')
+        .single();
+      check('eigener Testkurs angelegt', !courseInsertError && Boolean(ownCourse?.id),
+        courseInsertError?.message ?? '');
+
+      if (ownCourse?.id) {
+        createdCourseIds.push(ownCourse.id);
+        createdJobCourseIds.push(ownCourse.id);
+
+        const docPayload = (hash, title) => ({
+          title, description_clean: 'x', facts: {}, price_status: 'unknown',
+          price_amount: null, content_hash: hash,
+        });
+        const chunksPayload = (n) => Array.from({ length: n }, (_, i) => ({
+          section: 'description', chunk_index: i, char_start: 0, char_end: 1, text: `t${i}`,
+        }));
+        const chunkCountOf = async () => {
+          const { count } = await service.from('ai_search_chunks')
+            .select('*', { count: 'exact', head: true }).eq('course_id', ownCourse.id);
+          return count ?? 0;
+        };
+
+        // 9a. Trigger → Worker → Index (Ende-zu-Ende): Das Anlegen des Kurses
+        // hat per Outbox-Trigger bereits einen echten Job eingereiht.
+        const run1 = await processOutboxBatch(service, { onlyCourseIds: [ownCourse.id] });
+        check('Trigger-Job des Kursanlegens wird zum Indexeintrag verarbeitet',
+          run1.inserted === 1 && run1.failures === 0,
+          JSON.stringify({ run1: { inserted: run1.inserted, failures: run1.failures, errors: run1.errors } }));
+        const { data: docRow } = await service.from('ai_search_documents')
+          .select('title, content_hash, source_version')
+          .eq('course_id', ownCourse.id).maybeSingle();
+        check('Dokument vorhanden und trägt den Kurstitel', docRow?.title === marker, JSON.stringify(docRow));
+        check('Chunks vollständig vorhanden', (await chunkCountOf()) > 0, 'keine Chunks');
+
+        const baseVersion = Number(docRow?.source_version ?? 0);
+
+        // 9b. Zwei gleichzeitig arbeitende Übernahmen mit unterschiedlicher
+        // Version (echte parallele HTTP-Sitzungen): am Ende gewinnt die höhere.
+        const vHigh = baseVersion + 10;
+        const vLow = baseVersion + 5;
+        const [highRes, lowRes] = await Promise.all([
+          service.rpc('ai_search_apply_upsert', {
+            p_course_id: ownCourse.id, p_source_version: vHigh,
+            p_document: docPayload('hash-high', `${marker} H`), p_chunks: chunksPayload(2),
+          }),
+          service.rpc('ai_search_apply_upsert', {
+            p_course_id: ownCourse.id, p_source_version: vLow,
+            p_document: docPayload('hash-low', `${marker} L`), p_chunks: chunksPayload(3),
+          }),
+        ]);
+        const { data: afterConcurrent } = await service.from('ai_search_documents')
+          .select('content_hash, source_version').eq('course_id', ownCourse.id).maybeSingle();
+        check('parallele Übernahmen: keine Fehler, am Ende gewinnt die höchste Version',
+          !highRes.error && !lowRes.error
+            && Number(afterConcurrent?.source_version) === vHigh
+            && afterConcurrent?.content_hash === 'hash-high'
+            && (await chunkCountOf()) === 2,
+          JSON.stringify({
+            high: highRes.data ?? highRes.error?.message,
+            low: lowRes.data ?? lowRes.error?.message,
+            afterConcurrent,
+          }));
+
+        // 9c. Rücknahme während eines älteren laufenden Auftrags: die ältere
+        // Übernahme darf den zurückgezogenen Kurs nicht wieder anlegen.
+        const vDelete = baseVersion + 20;
+        const vLate = baseVersion + 15;
+        const del = await service.rpc('ai_search_apply_delete', {
+          p_course_id: ownCourse.id, p_source_version: vDelete,
+        });
+        const late = await service.rpc('ai_search_apply_upsert', {
+          p_course_id: ownCourse.id, p_source_version: vLate,
+          p_document: docPayload('hash-late', 'verspätet'), p_chunks: chunksPayload(1),
+        });
+        const { data: afterDelete } = await service.from('ai_search_documents')
+          .select('course_id').eq('course_id', ownCourse.id).maybeSingle();
+        check('Rücknahme gewinnt: Eintrag entfernt, verspäteter älterer Upsert legt NICHT wieder an',
+          del.data === 'deleted' && late.data === 'stale_skipped' && afterDelete === null,
+          JSON.stringify({ del: del.data ?? del.error?.message, late: late.data ?? late.error?.message, afterDelete }));
+
+        // 9d. Fehler zwischen Schreibschritten: ein unvollständiger Bestand
+        // (Dokument da, Chunks lückenhaft) wird beim erneuten Versuch mit
+        // GLEICHER Version/gleichem Inhalt repariert statt übersprungen.
+        const vRepair = baseVersion + 30;
+        const repairArgs = {
+          p_course_id: ownCourse.id, p_source_version: vRepair,
+          p_document: docPayload('hash-repair', 'Reparatur'), p_chunks: chunksPayload(3),
+        };
+        const first = await service.rpc('ai_search_apply_upsert', repairArgs);
+        const { error: breakError } = await service.from('ai_search_chunks')
+          .delete().eq('course_id', ownCourse.id).eq('chunk_index', 2);
+        const retry = await service.rpc('ai_search_apply_upsert', repairArgs);
+        check('unvollständiger Bestand wird bei identischem Retry repariert (alle Chunks wieder da)',
+          !breakError && first.data === 'inserted' && retry.data === 'repaired' && (await chunkCountOf()) === 3,
+          JSON.stringify({ first: first.data ?? first.error?.message, retry: retry.data ?? retry.error?.message, breakError: breakError?.message }));
+      }
     }
   } finally {
     // Aufräumen der EIGENEN Testdaten — läuft auch bei Fehlern/Abbrüchen.
@@ -331,6 +464,32 @@ async function main() {
       failures += 1;
       console.error('FEHLER beim Cleanup:', cleanupException);
     }
+    // Eigene Testkurse entfernen (ON DELETE CASCADE räumt Dokumente/Chunks;
+    // der Lösch-Trigger reiht noch einen Job ein, der direkt danach mit den
+    // Jobzeilen entfernt wird).
+    try {
+      if (createdCourseIds.length > 0) {
+        const { error: courseCleanupError, count: courseCount } = await service
+          .from('courses')
+          .delete({ count: 'exact' })
+          .in('id', createdCourseIds);
+        console.log(`Cleanup: ${courseCount ?? 0} Testkurs(e) gelöscht${courseCleanupError ? ` (FEHLER: ${courseCleanupError.message})` : ''}`);
+        if (courseCleanupError) failures += 1;
+        if (!courseCleanupError) {
+          const { count: courseResidual } = await service
+            .from('courses')
+            .select('*', { count: 'exact', head: true })
+            .in('id', createdCourseIds);
+          if ((courseResidual ?? 0) > 0) {
+            failures += 1;
+            console.error(`FEHLER Kurs-Cleanup unvollständig: ${courseResidual} Zeilen verblieben.`);
+          }
+        }
+      }
+    } catch (courseCleanupException) {
+      failures += 1;
+      console.error('FEHLER beim Kurs-Cleanup:', courseCleanupException);
+    }
     // Eigene Worker-Testjobs entfernen (nur eigene synthetische Kurs-IDs).
     try {
       if (createdJobCourseIds.length > 0) {
@@ -354,6 +513,30 @@ async function main() {
     } catch (jobCleanupException) {
       failures += 1;
       console.error('FEHLER beim Job-Cleanup:', jobCleanupException);
+    }
+    // Eigene Wasserstands-/Tombstonezeilen entfernen (nur eigene Kurs-IDs).
+    try {
+      if (workerApplyAvailable && createdJobCourseIds.length > 0) {
+        const { error: stateCleanupError, count: stateCount } = await service
+          .from('ai_search_index_state')
+          .delete({ count: 'exact' })
+          .in('course_id', createdJobCourseIds);
+        console.log(`Cleanup: ${stateCount ?? 0} Wasserstandszeilen gelöscht${stateCleanupError ? ` (FEHLER: ${stateCleanupError.message})` : ''}`);
+        if (stateCleanupError) failures += 1;
+        if (!stateCleanupError) {
+          const { count: stateResidual } = await service
+            .from('ai_search_index_state')
+            .select('*', { count: 'exact', head: true })
+            .in('course_id', createdJobCourseIds);
+          if ((stateResidual ?? 0) > 0) {
+            failures += 1;
+            console.error(`FEHLER State-Cleanup unvollständig: ${stateResidual} Zeilen verblieben.`);
+          }
+        }
+      }
+    } catch (stateCleanupException) {
+      failures += 1;
+      console.error('FEHLER beim State-Cleanup:', stateCleanupException);
     }
   }
 

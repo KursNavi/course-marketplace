@@ -38,9 +38,14 @@ FROM pg_available_extensions WHERE name IN ('vector', 'unaccent');
 2. `supabase/migrations/20261113180100_ai_search_vector.sql` — **nur wenn** Schritt 1
    `vector` als verfügbar ausgewiesen hat; sonst auslassen und berichten.
 3. `supabase/migrations/20261113180200_ai_search_quota.sql`
+4. `supabase/migrations/20261115190000_ai_search_worker_apply.sql` — atomare
+   Worker-Übernahme (`ai_search_index_state`, `ai_search_apply_*`). **Status:
+   liegt zur Prüfung vor; Anwendung erst nach Freigabe.** Ohne sie weisen die
+   DB-Tests die Abschnitte 8/9 ausdrücklich als NICHT GEPRÜFT aus.
 
 Keine bestehenden Testdaten zurücksetzen; die Migrationen legen ausschliesslich neue
-`ai_search_*`-Objekte und Trigger an.
+`ai_search_*`-Objekte und Trigger an. (1–3 sind seit 14.11.2026 auf der TESTumgebung
+angewendet und verifiziert.)
 
 ## 3. Verifikation nach Anwendung
 
@@ -57,6 +62,15 @@ Eigene neue Zufalls-Testkennungen; `AI_DB_TESTS_ALLOW_GLOBAL_CLEANUP` bleibt
 **ungesetzt**; Aufräumen eigener Testdaten läuft im finally auch bei Fehlern und
 verifiziert Rückstandsfreiheit. Bei Fehlern: anhalten, Einzelergebnisse berichten,
 nichts weiter anwenden.
+
+## 4b. Begrenzter Befüllungslauf (nach separater Freigabe)
+
+`npm run backfill:ai-test` — ausschliesslich TESTumgebung: strikter URL-Parser
+**plus** ausdrückliche Bestätigung `AI_BACKFILL_CONFIRM=omoapbvfligjfznzivyu`.
+Globale Kontingentbereinigung ist ausgeschaltet, kein Mailversand, keine
+Modellaufrufe. Gibt die Nachweise aus: Kursabdeckung, Dokumente ohne Chunks,
+offene/fehlgeschlagene Jobs, entfernte Rücknahmen. Ersetzt den E1-Abgleich mit
+dem aktuellen öffentlichen Katalog nicht.
 
 ## 5. Rückweg
 
